@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.1.1.1 2000-11-24 00:20:09 troup Exp $
+# $Id: db_access.py,v 1.2 2000-11-27 03:15:26 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,6 +44,10 @@ def get_suite_id (suite):
         return suite_id_cache[suite]
 
     q = projectB.query("SELECT id FROM suite WHERE suite_name = '%s'" % (suite))
+    ql = q.getresult();
+    if ql == []:
+        return -1; 
+    
     suite_id = q.getresult()[0][0]
     suite_id_cache[suite] = suite_id
 

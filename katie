@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.3 2000-11-26 16:35:41 troup Exp $
+# $Id: katie,v 1.4 2000-11-27 03:15:26 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ def usage (exit_code):
 def check_signature (filename):
     global reject_message
 
-    (result, output) = commands.getstatusoutput("gpg --emulate-md-encode-bug --batch --no-options --no-default-keyring --always-trust --load-extension rsaref --keyring=%s --keyring=%s < %s >/dev/null" % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename))
+    (result, output) = commands.getstatusoutput("gpg --emulate-md-encode-bug --batch --no-options --no-default-keyring --always-trust --keyring=%s --keyring=%s < %s >/dev/null" % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename))
     if (result != 0):
         reject_message = "Rejected: GPG signature check failed on `%s'.\n%s\n" % (filename, output)
         return 0
@@ -132,6 +132,10 @@ def read_override_file (filename, suite, component):
 
 def in_override_p (package, component, suite):
     global overrides;
+
+    # Avoid <undef> on unknown distributions
+    if db_access.get_suite_id(suite) == -1:
+        return None;
 
     # FIXME: nasty non-US speficic hack
     if string.lower(component[:7]) == "non-us/":
@@ -823,8 +827,8 @@ def announce (short_summary, action):
     summary = ""
 
     for dist in changes["distribution"].keys():
-        list = Cnf["Suite::%s::Announce" % (dist)]
-        if lists_done.has_key(list):
+        list = Cnf.Find("Suite::%s::Announce" % (dist))
+        if list == None or lists_done.has_key(list):
             continue
         lists_done[list] = 1
         summary = summary + "Announcing to %s\n" % (list)

@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.3 2000-11-26 16:35:41 troup Exp $
+# $Id: utils.py,v 1.4 2000-11-27 03:15:26 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -232,7 +232,7 @@ def where_am_i ():
     res = socket.gethostbyaddr(socket.gethostname());
     if res[0] == 'pandora.debian.org':
         return 'non-US';
-    elif res[1] == 'auric.debian.org':
+    elif res[0] == 'auric.debian.org':
         return 'ftp-master';
     else:
         raise unknown_hostname_exc, res;
