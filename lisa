@@ -1,0 +1,758 @@
+#!/usr/bin/env python
+
+# Handles NEW and BYHAND packages
+# Copyright (C) 2001  James Troup <james@nocrew.org>
+# $Id: lisa,v 1.1 2002-02-12 23:08:07 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# 23:12|<aj> I will not hush!
+# 23:12|<elmo> :>
+# 23:12|<aj> Where there is injustice in the world, I shall be there!
+# 23:13|<aj> I shall not be silenced!
+# 23:13|<aj> The world shall know!
+# 23:13|<aj> The world *must* know!
+# 23:13|<elmo> oh dear, he's gone back to powerpuff girls... ;-)
+# 23:13|<aj> yay powerpuff girls!!
+# 23:13|<aj> buttercup's my favourite, who's yours?
+# 23:14|<aj> you're backing away from the keyboard right now aren't you?
+# 23:14|<aj> *AREN'T YOU*?!
+# 23:15|<aj> I will not be treated like this.
+# 23:15|<aj> I shall have my revenge.
+# 23:15|<aj> I SHALL!!!
+
+################################################################################
+
+# TODO
+# ----
+
+# We don't check error codes very thoroughly; the old 'trust jennifer'
+# chess nut... db_access calls in particular
+
+# Possible TODO
+# -------------
+
+# Handle multiple different section/priorities (?)
+# hardcoded debianness (debian-installer, source priority etc.) (?)
+# Slang/ncurses interface (?)
+# write changed sections/priority back to katie for later processing (?)
+
+################################################################################
+
+import errno, os, readline, string, stat, sys, tempfile;
+import apt_pkg, apt_inst;
+import db_access, fernanda, katie, logging, utils;
+
+# Globals
+lisa_version = "$Revision: 1.1 $";
+
+Cnf = None;
+Options = None;
+Katie = None;
+projectB = None;
+Logger = None;
+
+Priorities = None;
+Sections = None;
+
+################################################################################
+################################################################################
+################################################################################
+
+def determine_new (changes, files):
+    new = {};
+
+    # Build up a list of potentially new things
+    for file in files.keys():
+        f = files[file];
+        # Skip byhand elements
+        if f["type"] == "byhand":
+            continue;
+        pkg = f["package"];
+        priority = f["priority"];
+        section = f["section"];
+        type = get_type(f);
+        component = f["component"];
+
+        if type == "dsc":
+            priority = "source";
+        if not new.has_key(pkg):
+            new[pkg] = {};
+            new[pkg]["priority"] = priority;
+            new[pkg]["section"] = section;
+            new[pkg]["type"] = type;
+            new[pkg]["component"] = component;
+            new[pkg]["files"] = [];
+        else:
+            old_type = new[pkg]["type"];
+            if old_type != type:
+                # source gets trumped by deb or udeb
+                if old_type == "dsc":
+                    new[pkg]["priority"] = priority;
+                    new[pkg]["section"] = section;
+                    new[pkg]["type"] = type;
+                    new[pkg]["component"] = component;
+        new[pkg]["files"].append(file);
+
+    for suite in changes["distribution"].keys():
+        suite_id = db_access.get_suite_id(suite);
+        for pkg in new.keys():
+            component_id = db_access.get_component_id(new[pkg]["component"]);
+            type_id = db_access.get_override_type_id(new[pkg]["type"]);
+            q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id));
+            ql = q.getresult();
+            if ql:
+                for file in new[pkg]["files"]:
+                    if files[file].has_key("new"):
+                        del files[file]["new"];
+                del new[pkg];
+
+    return new;
+
+################################################################################
+
+# Sort by 'have source', by ctime, by source name, by source version number, by filename
+
+def changes_compare_by_time (a, b):
+    try:
+        a_changes = utils.parse_changes(a, 0)
+    except:
+        return -1;
+
+    try:
+        b_changes = utils.parse_changes(b, 0)
+    except:
+        return 1;
+
+    utils.cc_fix_changes (a_changes);
+    utils.cc_fix_changes (b_changes);
+
+    # Sort by 'have source'
+
+    a_has_source = a_changes["architecture"].get("source")
+    b_has_source = b_changes["architecture"].get("source")
+    if a_has_source and not b_has_source:
+        return -1;
+    elif b_has_source and not a_has_source:
+        return 1;
+
+    # Sort by ctime
+    a_ctime = os.stat(a)[stat.ST_CTIME];
+    b_ctime = os.stat(b)[stat.ST_CTIME];
+    q = cmp (a_ctime, b_ctime);
+    if q:
+        return q;
+
+    # Sort by source name
+
+    a_source = a_changes.get("source");
+    b_source = b_changes.get("source");
+    q = cmp (a_source, b_source);
+    if q:
+        return q;
+
+    # Sort by source version
+
+    a_version = a_changes.get("version");
+    b_version = b_changes.get("version");
+    q = apt_pkg.VersionCompare(a_version, b_version);
+    if q:
+        return q
+
+    # Fall back to sort by filename
+
+    return cmp(a, b);
+
+################################################################################
+
+class Section_Completer:
+    def __init__ (self):
+        self.sections = [];
+        q = projectB.query("SELECT section FROM section");
+        for i in q.getresult():
+            self.sections.append(i[0]);
+
+    def complete(self, text, state):
+        if state == 0:
+            self.matches = [];
+            n = len(text);
+            for word in self.sections:
+                if word[:n] == text:
+                    self.matches.append(word);
+        try:
+            return self.matches[state]
+        except IndexError:
+            return None
+
+############################################################
+
+class Priority_Completer:
+    def __init__ (self):
+        self.priorities = [];
+        q = projectB.query("SELECT priority FROM priority");
+        for i in q.getresult():
+            self.priorities.append(i[0]);
+
+    def complete(self, text, state):
+        if state == 0:
+            self.matches = [];
+            n = len(text);
+            for word in self.priorities:
+                if word[:n] == text:
+                    self.matches.append(word);
+        try:
+            return self.matches[state]
+        except IndexError:
+            return None
+
+################################################################################
+
+def check_valid (new):
+    for pkg in new.keys():
+        section = new[pkg]["section"];
+        priority = new[pkg]["priority"];
+        type = new[pkg]["type"];
+        new[pkg]["section id"] = db_access.get_section_id(section);
+        new[pkg]["priority id"] = db_access.get_priority_id(new[pkg]["priority"]);
+        # Sanity checks
+        if (section == "debian-installer" and type != "udeb") or \
+           (section != "debian-installer" and type == "udeb"):
+            new[pkg]["section id"] = -1;
+        if (priority == "source" and type != "dsc") or \
+           (priority != "source" and type == "dsc"):
+            new[pkg]["priority id"] = -1;
+
+################################################################################
+
+def print_new (new, indexed, file=sys.stdout):
+    check_valid(new);
+    ret_code = 0;
+    index = 0;
+    for pkg in new.keys():
+        index = index + 1;
+        section = new[pkg]["section"];
+        priority = new[pkg]["priority"];
+        if new[pkg]["section id"] == -1:
+            section = section + "[!]";
+            ret_code = 1;
+        if new[pkg]["priority id"] == -1:
+            priority = priority + "[!]";
+            ret_code = 1;
+        if indexed:
+            line = "(%s): %-20s %-20s %-20s" % (index, pkg, priority, section);
+        else:
+            line = "%-20s %-20s %-20s" % (pkg, priority, section);
+        line = string.strip(line)+'\n';
+        file.write(line);
+    return ret_code;
+
+################################################################################
+
+def get_type (f):
+    # Determine the type
+    if f.has_key("dbtype"):
+        type = f["dbtype"];
+    elif f["type"] == "orig.tar.gz" or f["type"] == "tar.gz" or f["type"] == "diff.gz" or f["type"] == "dsc":
+        type = "dsc";
+    else:
+        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type));
+
+    # Validate the override type
+    type_id = db_access.get_override_type_id(type);
+    if type_id == -1:
+        utils.fubar("invalid type (%s) for new.  Say wha?" % (type));
+
+    return type;
+
+################################################################################
+
+def index_range (index):
+    if index == 1:
+        return "1";
+    else:
+        return "1-%s" % (index);
+
+################################################################################
+################################################################################
+
+def spawn_editor (new):
+    # Write the current data to a temporary file
+    temp_filename = tempfile.mktemp();
+    fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+    os.close(fd);
+    temp_file = utils.open_file(temp_filename, 'w');
+    print_new (new, 0, temp_file);
+    temp_file.close();
+    # Spawn an editor on that file
+    editor = os.environ.get("EDITOR","vi")
+    result = os.system("%s %s" % (editor, temp_filename))
+    if result != 0:
+        utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
+    # Read the (edited) data back in
+    file = utils.open_file(temp_filename);
+    for line in file.readlines():
+        line = string.strip(line[:-1]);
+        if line == "":
+            continue;
+        s = string.split(line);
+        # Pad the list if necessary
+        s[len(s):3] = [None] * (3-len(s));
+        (pkg, priority, section) = s[:3];
+        if not new.has_key(pkg):
+            utils.warn("Ignoring unknown package '%s'" % (pkg));
+        else:
+            # Strip off any invalid markers, print_new will readd them.
+            if section[-3:] == "[!]":
+                section = section[:-3];
+            if priority[-3:] == "[!]":
+                priority = priority[:-3];
+            for file in new[pkg]["files"]:
+                Katie.pkg.files[file]["section"] = section;
+                Katie.pkg.files[file]["priority"] = priority;
+            new[pkg]["section"] = section;
+            new[pkg]["priority"] = priority;
+    os.unlink(temp_filename);
+
+################################################################################
+
+def edit_index (new, index):
+    priority = new[index]["priority"]
+    section = new[index]["section"]
+    type = new[index]["type"];
+    done = 0
+    while not done:
+        print string.join([index, priority, section], '\t');
+
+        answer = "XXX";
+        if type != "dsc":
+            prompt = "[B]oth, Priority, Section, Done ? ";
+        else:
+            prompt = "[S]ection, Done ? ";
+        edit_priority = edit_section = 0;
+
+        while string.find(prompt, answer) == -1:
+            answer = raw_input(prompt);
+            m = katie.re_default_answer.match(prompt)
+            if answer == "":
+                answer = m.group(1)
+            answer = string.upper(answer[:1])
+
+        if answer == 'P':
+            edit_priority = 1;
+        elif answer == 'S':
+            edit_section = 1;
+        elif answer == 'B':
+            edit_priority = edit_section = 1;
+        elif answer == 'D':
+            done = 1;
+
+        # Edit the priority
+        if edit_priority:
+            readline.set_completer(Priorities.complete);
+            got_priority = 0;
+            while not got_priority:
+                new_priority = string.strip(raw_input("New priority: "));
+                if Priorities.priorities.count(new_priority) == 0:
+                    print "E: '%s' is not a valid priority, try again." % (new_priority);
+                else:
+                    got_priority = 1;
+                    priority = new_priority;
+
+        # Edit the section
+        if edit_section:
+            readline.set_completer(Sections.complete);
+            got_section = 0;
+            while not got_section:
+                new_section = string.strip(raw_input("New section: "));
+                if Sections.sections.count(new_section) == 0:
+                    print "E: '%s' is not a valid section, try again." % (new_section);
+                else:
+                    got_section = 1;
+                    section = new_section;
+
+        # Reset the readline completer
+        readline.set_completer(None);
+
+    for file in new[index]["files"]:
+        Katie.pkg.files[file]["section"] = section;
+        Katie.pkg.files[file]["priority"] = priority;
+    new[index]["priority"] = priority;
+    new[index]["section"] = section;
+    return new;
+
+################################################################################
+
+def edit_overrides (new):
+    print;
+    done = 0
+    while not done:
+        print_new (new, 1);
+        new_index = {};
+        index = 0;
+        for i in new.keys():
+            index = index + 1;
+            new_index[index] = i;
+
+        prompt = "(%s) edit override <n>, Editor, Done ? " % (index_range(index));
+
+        got_answer = 0
+        while not got_answer:
+            answer = raw_input(prompt)
+            answer = string.upper(answer[:1])
+            if answer == "E" or answer == "D":
+                got_answer = 1;
+            elif katie.re_isanum.match (answer):
+                answer = int(answer);
+                if (answer < 1) or (answer > index):
+                    print "%s is not a valid index (%s).  Please retry." % (index_range(index), answer);
+                else:
+                    got_answer = 1;
+
+        if answer == 'E':
+            spawn_editor(new);
+        elif answer == 'D':
+            done = 1;
+        else:
+            edit_index (new, new_index[answer]);
+
+    return new;
+
+################################################################################
+
+def check_pkg ():
+    try:
+        less_fd = os.popen("less -", 'w', 0);
+        stdout_fd = sys.stdout;
+        try:
+            sys.stdout = less_fd;
+            fernanda.display_changes(Katie.pkg.changes_file);
+            files = Katie.pkg.files;
+            for file in files.keys():
+                if files[file].has_key("new"):
+                    type = files[file]["type"];
+                    if type == "deb":
+                        fernanda.check_deb(file);
+                    elif type == "dsc":
+                        fernanda.check_dsc(file);
+        finally:
+            sys.stdout = stdout_fd;
+    except IOError, e:
+        if errno.errorcode[e.errno] == 'EPIPE':
+            utils.warn("[fernanda] Caught EPIPE; skipping.");
+            pass;
+        else:
+            raise;
+    except KeyboardInterrupt:
+        utils.warn("[fernanda] Caught C-c; skipping.");
+        pass;
+
+################################################################################
+
+## FIXME: horribly Debian specific
+
+def do_bxa_notification():
+    files = Katie.pkg.files;
+    summary = "";
+    for file in files.keys():
+        if files[file]["type"] == "deb":
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)));
+            summary = summary + "\n";
+            summary = summary + "Package: %s\n" % (control.Find("Package"));
+            summary = summary + "Description: %s\n" % (control.Find("Description"));
+    Katie.Subst["__BINARY_DESCRIPTIONS__"] = summary;
+    bxa_mail = utils.TemplateSubst(Katie.Subst,open(Cnf["Dir::TemplatesDir"]+"/lisa.bxa_notification","r").read());
+    utils.send_mail(bxa_mail,"");
+
+################################################################################
+
+def add_overrides (new):
+    changes = Katie.pkg.changes;
+    files = Katie.pkg.files;
+
+    projectB.query("BEGIN WORK");
+    for suite in changes["distribution"].keys():
+        suite_id = db_access.get_suite_id(suite);
+        for pkg in new.keys():
+            component_id = db_access.get_component_id(new[pkg]["component"]);
+            type_id = db_access.get_override_type_id(new[pkg]["type"]);
+            priority_id = new[pkg]["priority id"];
+            section_id = new[pkg]["section id"];
+            projectB.query("INSERT INTO override (suite, component, type, package, priority, section) VALUES (%s, %s, %s, '%s', %s, %s)" % (suite_id, component_id, type_id, pkg, priority_id, section_id));
+            for file in new[pkg]["files"]:
+                if files[file].has_key("new"):
+                    del files[file]["new"];
+            del new[pkg];
+
+    projectB.query("COMMIT WORK");
+
+    if Cnf.FindI("Dinstall::BXANotify"):
+        do_bxa_notification();
+
+################################################################################
+
+def do_new():
+    print "NEW\n";
+    files = Katie.pkg.files;
+    changes = Katie.pkg.changes;
+
+    # Fix up the list of target suites
+    for suite in changes["distribution"].keys():
+        override = Cnf.Find("Suite::%s::OverrideSuite" % (suite));
+        if override:
+            del changes["distribution"][suite];
+            changes["distribution"][override] = 1;
+    # Validate suites
+    for suite in changes["distribution"].keys():
+        suite_id = db_access.get_suite_id(suite);
+        if suite_id == -1:
+            utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite));
+
+    # The main NEW processing loop
+    done = 0;
+    while not done:
+        # Find out what's new
+        new = determine_new(changes, files);
+
+        if not new:
+            break;
+
+        answer = "XXX";
+        if Options["No-Action"] or Options["Automatic"]:
+            answer = 'S'
+        if Options["Automatic"]:
+            answer = 'A';
+
+        broken = print_new(new, 0);
+        prompt = "";
+        if not broken:
+            prompt = "[A]dd overrides, ";
+        else:
+            print "W: [!] marked entries must be fixed before package can be processed.";
+            if answer == 'A':
+                answer = 'E';
+        prompt = prompt + "Edit overrides, Check, Manual reject, Skip, Quit ?";
+
+        while string.find(prompt, answer) == -1:
+            answer = raw_input(prompt)
+            m = katie.re_default_answer.match(prompt)
+            if answer == "":
+                answer = m.group(1)
+            answer = string.upper(answer[:1])
+
+        if answer == 'A':
+            done = add_overrides (new);
+        elif answer == 'C':
+            check_pkg();
+        elif answer == 'E':
+            new = edit_overrides (new);
+        elif answer == 'M':
+            Katie.do_reject(1, Options["Manual-Reject"]);
+            os.unlink(Katie.pkg.changes_file[:-8]+".katie");
+            done = 1;
+        elif answer == 'S':
+            done = 1;
+        elif answer == 'Q':
+            sys.exit(0)
+
+################################################################################
+################################################################################
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: lisa [OPTION]... [CHANGES]...
+  -a, --automatic           automatic run
+  -h, --help                show this help and exit.
+  -m, --manual-reject=MSG   manual reject with `msg'
+  -n, --no-action           don't do anything
+  -s, --sort=TYPE           sort type ('time' or 'normal')
+  -V, --version             display the version number and exit"""
+    sys.exit(exit_code)
+
+################################################################################
+
+def init():
+    global Cnf, Options, Logger, Katie, projectB, Sections, Priorities;
+
+    Cnf = utils.get_conf();
+
+    Arguments = [('a',"automatic","Lisa::Options::Automatic"),
+                 ('h',"help","Lisa::Options::Help"),
+                 ('m',"manual-reject","Lisa::Options::Manual-Reject", "HasArg"),
+                 ('n',"no-action","Lisa::Options::No-Action"),
+                 ('s',"sort","Lisa::Options::Sort","HasArg"),
+                 ('V',"version","Lisa::Options::Version")];
+
+    for i in ["automatic", "help", "manual-reject", "no-action", "version"]:
+        if not Cnf.has_key("Lisa::Options::%s" % (i)):
+            Cnf["Lisa::Options::%s" % (i)] = "";
+    if not Cnf.has_key("Lisa::Options::Sort"):
+        Cnf["Lisa::Options::Sort"] = "time";
+
+    changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Lisa::Options")
+
+    if Options["Help"]:
+        usage();
+
+    if Options["Version"]:
+        print "lisa %s" % (lisa_version);
+        sys.exit(0);
+
+    if Options["Sort"] != "time" and Options["Sort"] != "normal":
+        utils.fubar("Unrecognised sort type '%s'. (Recognised sort types are: time and normal)" % (Options["Sort"]));
+
+    Katie = katie.Katie(Cnf);
+
+    if not Options["No-Action"]:
+        Logger = Katie.Logger = logging.Logger(Cnf, "lisa");
+
+    projectB = Katie.projectB;
+
+    Sections = Section_Completer();
+    Priorities = Priority_Completer();
+    readline.parse_and_bind("tab: complete");
+
+    return changes_files;
+
+################################################################################
+
+def do_byhand():
+    done = 0;
+    while not done:
+        files = Katie.pkg.files;
+        will_install = 1;
+        byhand = [];
+
+        for file in files.keys():
+            if files[file]["type"] == "byhand":
+                if os.path.exists(file):
+                    print "W: %s still present; please process byhand components and try again." % (file);
+                    will_install = 0;
+                else:
+                    byhand.append(file);
+
+        answer = "XXXX";
+        if Options["No-Action"]:
+            answer = "S";
+        if will_install:
+            if Options["Automatic"] and not Options["No-Action"]:
+                answer = 'A';
+            prompt = "[A]ccept, Manual reject, Skip, Quit ?";
+        else:
+            prompt = "Manual reject, [S]kip, Quit ?";
+
+        while string.find(prompt, answer) == -1:
+            answer = raw_input(prompt)
+            m = katie.re_default_answer.match(prompt)
+            if answer == "":
+                answer = m.group(1)
+            answer = string.upper(answer[:1])
+
+        if answer == 'A':
+            done = 1;
+            for file in byhand:
+                del files[file];
+        elif answer == 'M':
+            Katie.do_reject(1, Options["Manual-Reject"]);
+            os.unlink(Katie.pkg.changes_file[:-8]+".katie");
+            done = 1;
+        elif answer == 'S':
+            done = 1;
+        elif answer == 'Q':
+            sys.exit(0);
+
+################################################################################
+
+def do_accept():
+    print "ACCEPT";
+    if not Options["No-Action"]:
+        (summary, short_summary) = Katie.build_summaries();
+        Katie.accept(summary, short_summary);
+        os.unlink(Katie.pkg.changes_file[:-8]+".katie");
+
+def check_status(files):
+    new = byhand = 0;
+    for file in files.keys():
+        if files[file]["type"] == "byhand":
+            byhand = 1;
+        elif files[file].has_key("new"):
+            new = 1;
+    return (new, byhand);
+
+def do_pkg(changes_file):
+    Katie.pkg.changes_file = changes_file;
+    Katie.init_vars();
+    Katie.update_vars();
+    Katie.update_subst();
+    files = Katie.pkg.files;
+
+    (new, byhand) = check_status(files);
+    if new or byhand:
+        if new:
+            do_new();
+        if byhand:
+            do_byhand();
+        (new, byhand) = check_status(files);
+
+    if not new and not byhand:
+        do_accept();
+
+################################################################################
+
+def end():
+    accept_count = Katie.accept_count;
+    accept_bytes = Katie.accept_bytes;
+
+    if accept_count:
+        sets = "set"
+        if accept_count > 1:
+            sets = "sets"
+        sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))));
+        Logger.log(["total",accept_count,accept_bytes]);
+
+    if not Options["No-Action"]:
+        Logger.close();
+
+################################################################################
+
+def main():
+    changes_files = init();
+
+    # Sort the changes files
+    if Options["Sort"] == "time":
+        changes_files.sort(changes_compare_by_time);
+    else:
+        changes_files.sort(utils.changes_compare);
+
+    # Kill me now? **FIXME**
+    Cnf["Dinstall::Options::No-Mail"] = "";
+    bcc = "X-Lisa: %s" % (lisa_version);
+    if Cnf.has_key("Dinstall::Bcc"):
+        Katie.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
+    else:
+        Katie.Subst["__BCC__"] = bcc;
+
+    for changes_file in changes_files:
+        print "\n" + changes_file;
+        do_pkg (changes_file);
+
+    end();
+
+################################################################################
+
+if __name__ == '__main__':
+    main()

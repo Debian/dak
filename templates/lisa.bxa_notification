@@ -1,0 +1,49 @@
+From: __KATIE_ADDRESS__
+To: crypt@bxa.doc.gov
+Cc: bxa@ftp-master.debian.org
+__BCC__
+Subject: Addition to __DISTRO__ Source Code
+
+				                      Department of Commerce
+				             Bureau of Export Administration
+		       Office of Strategic Trade and Foreign Policy Controls
+                                     14th Street and Pennsylvania Ave., N.W.
+                                                                   Room 2705
+                                                        Washington, DC 20230
+
+Re:  Unrestricted Encryption Source Code Notification
+Commodity: Addition to Debian Source Code
+
+Dear Sir/Madam,
+
+     Pursuant to paragraph (e)(1) of Part 740.13 of the U.S. Export
+Administration Regulations ("EAR", 15 CFR Part 730 et seq.), we are
+providing this written notification of the Internet location of the
+unrestricted, publicly available Source Code of a package being added
+to the Debian Source Code. Debian Source Code is a free operating
+system developed by a group of individuals, coordinated by the
+non-profit Software in the Public Interest.  This notification serves
+as a notification of an addition of new software to the Debian
+archive.  Previous notifications have covered the archive as a whole
+and other software added in the past.  This archive is updated from
+time to time, but its location is constant.  Therefore, and this
+notification serves as a one-time notification for subsequent updates
+that may occur in the future to the software covered by this
+notification.  Such updates may add or enhance cryptographic
+functionality of the Debian operating system.  The Internet location
+for the Debian Source Code is: http://ftp.debian.org/debian/
+
+This site is mirrored to a number of other sites located outside the
+United States.
+
+The following software is added to the Debian archive:
+
+----------------------------------------------------------------------
+__BINARY_DESCRIPTIONS__
+----------------------------------------------------------------------
+
+If you have any questions, please call me on (804) 695-9730.
+
+     Sincerely,
+        Ben Collins
+        Debian Developer

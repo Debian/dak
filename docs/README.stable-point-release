@@ -1,0 +1,30 @@
+Rough Guide to doing Stable Point Releases in Debian
+----------------------------------------------------
+
+o Install, reject and remove packages as directed by the SRM
+o Do anything in proposed-updates/TODO
+o Close any applicable potato bugs (hint: http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=ftp.debian.org&include=potato)
+o Update README and dists/README
+o Update the 'Debian<n>.<n>r<n>' symlink in dists/
+o Comment out "Untouchable" in katie.conf[-non-US]
+o Run 'jenna -s'
+o Run apt-ftparchive generate apt.conf.stable[-non-US]
+o Uncomment "Untouchable" in katie.conf[-non-US]
+o Update version fields in katie.conf[-non-US]
+o Update fields in suite table in postgresql
+o Copy tree/directory for stable to apt.conf[-non-US], run ziyi, remove it from apt.conf[-non-US]
+
+Yes, this sucks and more of it should be automated.
+
+update suite set version = '2.2r5' where id = 2;
+update suite set version = '2.2r6' where id = 3;
+update suite set version = '3.0-testing' where id = 4;
+update suite set version = '3.0' where id = 5;
+update suite set version = '3.0-testing-updates' where id = 6;
+update suite set description = 'Debian 2.2r5 Released 10th January 2002' where id = 2;
+update suite set description = 'Proposed Updates for Debian 2.2r5 - Not Released' where id = 3;
+update suite set description = 'Debian 3.0 Testing distribution - Not Released' where id = 4;
+update suite set description = 'Debian 3.0 Unstable - Not Released' where id = 5;
+update suite set description = 'Debian 3.0 Testing distribution updates - Not Released' where id = 6;
+
+

@@ -1,0 +1,1155 @@
+#!/usr/bin/env python
+
+# Checks Debian packages from Incoming
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: jennifer,v 1.1 2002-02-12 23:08:07 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Originally based on dinstall by Guy Maor <maor@debian.org>
+
+################################################################################
+
+# Computer games don't affect kids. I mean if Pacman affected our generation as
+# kids, we'd all run around in a darkened room munching pills and listening to
+# repetitive music.
+#         -- Unknown
+
+################################################################################
+
+import FCNTL, errno, fcntl, gzip, os, re, select, shutil, stat, string, sys, time, traceback;
+import apt_inst, apt_pkg;
+import db_access, katie, logging, utils;
+
+from types import *;
+from string import lower;
+
+################################################################################
+
+re_bad_diff = re.compile("^[\-\+][\-\+][\-\+] /dev/null");
+re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
+
+################################################################################
+
+# Globals
+jennifer_version = "$Revision: 1.1 $";
+
+Cnf = None;
+Options = None;
+Logger = None;
+Katie = None;
+
+reprocess = 0;
+in_holding = {};
+
+# Aliases to the real vars in the Katie class; hysterical raisins.
+reject_message = "";
+changes = {};
+dsc = {};
+dsc_files = {};
+files = {};
+pkg = {};
+
+###############################################################################
+
+def init():
+    global Cnf, Options, Katie, changes, dsc, dsc_files, files, pkg;
+
+    apt_pkg.init();
+
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
+                 ('h',"help","Dinstall::Options::Help"),
+                 ('n',"no-action","Dinstall::Options::No-Action"),
+                 ('p',"no-lock", "Dinstall::Options::No-Lock"),
+                 ('s',"no-mail", "Dinstall::Options::No-Mail"),
+                 ('V',"version","Dinstall::Options::Version")];
+
+    for i in ["automatic", "help", "no-action", "no-lock", "no-mail",
+              "override-distribution", "version"]:
+        Cnf["Dinstall::Options::%s" % (i)] = "";
+
+    changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Dinstall::Options")
+
+    Katie = katie.Katie(Cnf);
+
+    changes = Katie.pkg.changes;
+    dsc = Katie.pkg.dsc;
+    dsc_files = Katie.pkg.dsc_files;
+    files = Katie.pkg.files;
+    pkg = Katie.pkg;
+
+    return changes_files;
+
+#########################################################################################
+
+def usage (exit_code=0):
+    print """Usage: dinstall [OPTION]... [CHANGES]...
+  -a, --automatic           automatic run
+  -h, --help                show this help and exit.
+  -n, --no-action           don't do anything
+  -p, --no-lock             don't check lockfile !! for cron.daily only !!
+  -s, --no-mail             don't send any mail
+  -V, --version             display the version number and exit"""
+    sys.exit(exit_code)
+
+#########################################################################################
+
+# Our very own version of commands.getouputstatus(), hacked to support
+# gpgv's status fd.
+def get_status_output(cmd, status_read, status_write):
+    cmd = ['/bin/sh', '-c', cmd];
+    p2cread, p2cwrite = os.pipe();
+    c2pread, c2pwrite = os.pipe();
+    errout, errin = os.pipe();
+    pid = os.fork();
+    if pid == 0:
+        # Child
+        os.close(0);
+        os.close(1);
+        os.dup(p2cread);
+        os.dup(c2pwrite);
+        os.close(2);
+        os.dup(errin);
+        for i in range(3, 256):
+            if i != status_write:
+                try:
+                    os.close(i);
+                except:
+                    pass;
+        try:
+            os.execvp(cmd[0], cmd);
+        finally:
+            os._exit(1);
+
+    # parent
+    os.close(p2cread)
+    os.dup2(c2pread, c2pwrite);
+    os.dup2(errout, errin);
+
+    output = status = "";
+    while 1:
+        i, o, e = select.select([c2pwrite, errin, status_read], [], []);
+        more_data = [];
+        for fd in i:
+            r = os.read(fd, 8196);
+            if len(r) > 0:
+                more_data.append(fd);
+                if fd == c2pwrite or fd == errin:
+                    output = output + r;
+                elif fd == status_read:
+                    status = status + r;
+                else:
+                    utils.fubar("Unexpected file descriptor [%s] returned from select\n" % (fd));
+        if not more_data:
+            pid, exit_status = os.waitpid(pid, 0)
+            try:
+                os.close(status_write);
+                os.close(status_read);
+                os.close(c2pwrite);
+                os.close(p2cwrite);
+                os.close(errin);
+            except:
+                pass;
+            break;
+
+    return output, status, exit_status;
+
+#########################################################################################
+
+def Dict(**dict): return dict
+
+def prefix_multi_line_string(str, prefix):
+    out = "";
+    for line in string.split(str, '\n'):
+        line = string.strip(line);
+        if line:
+            out = out + "%s %s\n" % (prefix, line);
+    # Strip trailing new line
+    if out:
+        out = out[:-1];
+    return out;
+
+def reject (str, prefix="Rejected: "):
+    global reject_message;
+    if str:
+        reject_message = reject_message + prefix + str + "\n";
+
+#########################################################################################
+
+def check_signature (filename):
+    if not utils.re_taint_free.match(os.path.basename(filename)):
+        reject("!!WARNING!! tainted filename: '%s'." % (filename));
+        return 0;
+
+    status_read, status_write = os.pipe();
+    cmd = "gpgv --status-fd %s --keyring %s --keyring %s %s" \
+          % (status_write, Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename);
+    (output, status, exit_status) = get_status_output(cmd, status_read, status_write);
+
+    # Process the status-fd output
+    keywords = {};
+    bad = internal_error = "";
+    for line in string.split(status, '\n'):
+        line = string.strip(line);
+        if line == "":
+            continue;
+        split = string.split(line);
+        if len(split) < 2:
+            internal_error = internal_error + "gpgv status line is malformed (< 2 atoms) ['%s'].\n" % (line);
+            continue;
+        (gnupg, keyword) = split[:2];
+        if gnupg != "[GNUPG:]":
+            internal_error = internal_error + "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg);
+            continue;
+        args = split[2:];
+        if keywords.has_key(keyword) and keyword != "NODATA":
+            internal_error = internal_error + "found duplicate status token ('%s')." % (keyword);
+            continue;
+        else:
+            keywords[keyword] = args;
+
+    # If we failed to parse the status-fd output, let's just whine and bail now
+    if internal_error:
+        reject("internal error while performing signature check on %s." % (filename));
+        reject(internal_error, "");
+        reject("Please report the above errors to the Archive maintainers by replying to this mail.", "");
+        return None;
+
+    # Now check for obviously bad things in the processed output
+    if keywords.has_key("SIGEXPIRED"):
+        reject("key used to sign %s has expired." % (filename));
+        bad = 1;
+    if keywords.has_key("KEYREVOKED"):
+        reject("key used to sign %s has been revoked." % (filename));
+        bad = 1;
+    if keywords.has_key("BADSIG"):
+        reject("bad signature on %s." % (filename));
+        bad = 1;
+    if keywords.has_key("ERRSIG") and not keywords.has_key("NO_PUBKEY"):
+        reject("failed to check signature on %s." % (filename));
+        bad = 1;
+    if keywords.has_key("NO_PUBKEY"):
+        reject("key used to sign %s not found in keyring." % (filename));
+        bad = 1;
+    if keywords.has_key("BADARMOR"):
+        reject("ascii armour of signature was corrupt in %s." % (filename));
+        bad = 1;
+    if keywords.has_key("NODATA"):
+        reject("no signature found in %s." % (filename));
+        bad = 1;
+
+    if bad:
+        return None;
+
+    # Next check gpgv exited with a zero return code
+    if exit_status:
+        reject("gpgv failed while checking %s." % (filename));
+        if string.strip(status):
+            reject(prefix_multi_line_string(status, " [GPG status-fd output:]"), "");
+        else:
+            reject(prefix_multi_line_string(output, " [GPG output:]"), "");
+        return None;
+
+    # Sanity check the good stuff we expect
+    if not keywords.has_key("VALIDSIG"):
+        reject("signature on %s does not appear to be valid [No VALIDSIG]." % (filename));
+        bad = 1;
+    else:
+        args = keywords["VALIDSIG"];
+        if len(args) < 1:
+            reject("internal error while checking signature on %s." % (filename));
+            bad = 1;
+        else:
+            fingerprint = args[0];
+    if not keywords.has_key("GOODSIG"):
+        reject("signature on %s does not appear to be valid [No GOODSIG]." % (filename));
+        bad = 1;
+    if not keywords.has_key("SIG_ID"):
+        reject("signature on %s does not appear to be valid [No SIG_ID]." % (filename));
+        bad = 1;
+
+    # Finally ensure there's not something we don't recognise
+    known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+                          SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
+                          NODATA="");
+
+    for keyword in keywords.keys():
+        if not known_keywords.has_key(keyword):
+            reject("found unknown status token '%s' from gpgv with args '%s' in %s." % (keyword, repr(keywords[keyword]), filename));
+            bad = 1;
+
+    if bad:
+        return None;
+    else:
+        return fingerprint;
+
+################################################################################
+
+def copy_to_holding(filename):
+    global in_holding;
+
+    base_filename = os.path.basename(filename);
+
+    dest = Cnf["Dir::QueueHoldingDir"] + '/' + base_filename;
+    try:
+        fd = os.open(dest, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0640);
+        os.close(fd);
+    except OSError, e:
+        # Shouldn't happen, but will if, for example, someone lists a
+        # file twice in the .changes.
+        if errno.errorcode[e.errno] == 'EEXIST':
+            reject("%s already exists in holding area; can not overwrite." % (base_filename));
+            return;
+        raise;
+
+    try:
+        shutil.copy(filename, dest);
+    except IOError, e:
+        # In either case (ENOENT or EPERM) we want to remove the
+        # O_CREAT | O_EXCLed ghost file, so add the file to the list
+        # of 'in holding' even if it's not the real file.
+        if errno.errorcode[e.errno] == 'ENOENT':
+            reject("can not copy %s to holding area: file not found." % (base_filename));
+            os.unlink(dest);
+            return;
+        elif errno.errorcode[e.errno] == 'EACCES':
+            reject("can not copy %s to holding area: read permission denied." % (base_filename));
+            os.unlink(dest);
+            return;
+        raise;
+
+    in_holding[base_filename] = "";
+    return dest;
+
+################################################################################
+
+def clean_holding():
+    global in_holding;
+
+    cwd = os.getcwd();
+    os.chdir(Cnf["Dir::QueueHoldingDir"]);
+    for file in in_holding.keys():
+        if os.path.exists(file):
+            if string.find(file, '/') != -1:
+                utils.fubar("WTF? clean_holding() got a file ('%s') with / in it!" % (file));
+            else:
+                os.unlink(file);
+    in_holding = {};
+    os.chdir(cwd);
+
+################################################################################
+
+def check_changes():
+    filename = pkg.changes_file;
+
+    # Default in case we bail out
+    changes["maintainer822"] = Cnf["Dinstall::MyEmailAddress"];
+    changes["changedby822"] = Cnf["Dinstall::MyEmailAddress"];
+    changes["architecture"] = {};
+
+    # Parse the .changes field into a dictionary
+    try:
+        changes.update(utils.parse_changes(filename, 0));
+    except utils.cant_open_exc:
+        reject("can't read changes file '%s'." % (filename));
+        return 0;
+    except utils.changes_parse_error_exc, line:
+        reject("error parsing changes file '%s', can't grok: %s." % (filename, line));
+        return 0;
+
+    # Parse the Files field from the .changes into another dictionary
+    try:
+        files.update(utils.build_file_list(changes, ""));
+    except utils.changes_parse_error_exc, line:
+        reject("error parsing changes file '%s', can't grok: %s." % (filename, line));
+    except utils.nk_format_exc, format:
+        reject("unknown format '%s' of changes file '%s'." % (format, filename));
+        return 0;
+
+    # Check for mandatory fields
+    for i in ("source", "binary", "architecture", "version", "distribution", "maintainer", "files"):
+        if not changes.has_key(i):
+            reject("Missing field `%s' in changes file." % (i));
+            return 0    # Avoid <undef> errors during later tests
+
+    # Split multi-value fields into a lower-level dictionary
+    for i in ("architecture", "distribution", "binary", "closes"):
+        o = changes.get(i, "")
+        if o != "":
+            del changes[i]
+        changes[i] = {}
+        for j in string.split(o):
+            changes[i][j] = 1
+
+    # Fix the Maintainer: field to be RFC822 compatible
+    (changes["maintainer822"], changes["maintainername"], changes["maintaineremail"]) = utils.fix_maintainer (changes["maintainer"])
+
+    # Fix the Changed-By: field to be RFC822 compatible; if it exists.
+    (changes["changedby822"], changes["changedbyname"], changes["changedbyemail"]) = utils.fix_maintainer(changes.get("changed-by",""));
+
+    # Ensure all the values in Closes: are numbers
+    if changes.has_key("closes"):
+        for i in changes["closes"].keys():
+            if katie.re_isanum.match (i) == None:
+                reject("`%s' from Closes field isn't a number." % (i));
+
+    # Ensure there is a target distribution
+    if changes["distribution"].keys() == []:
+        reject("huh? Distribution field is empty in changes file.");
+
+    # Map frozen to unstable if frozen doesn't exist
+    if changes["distribution"].has_key("frozen") and not Cnf.has_key("Suite::Frozen"):
+        del changes["distribution"]["frozen"]
+        changes["distribution"]["unstable"] = 1;
+        reject("Mapping frozen to unstable.","");
+
+    # Map testing to unstable
+    if changes["distribution"].has_key("testing"):
+        if len(changes["distribution"].keys()) > 1:
+            del changes["distribution"]["testing"];
+            reject("Ignoring testing as a target suite.", "Warning: ");
+        else:
+            reject("invalid distribution 'testing'.");
+
+    # Ensure target distributions exist
+    for i in changes["distribution"].keys():
+        if not Cnf.has_key("Suite::%s" % (i)):
+            reject("Unknown distribution `%s'." % (i));
+
+    # Map unreleased arches from stable to unstable
+    if changes["distribution"].has_key("stable"):
+        for i in changes["architecture"].keys():
+            if not Cnf.has_key("Suite::Stable::Architectures::%s" % (i)):
+                reject("Mapping stable to unstable for unreleased arch %s." % (i),"");
+                del changes["distribution"]["stable"];
+                changes["distribution"]["unstable"] = 1;
+                break;
+
+    # Map arches not being released from frozen to unstable
+    if changes["distribution"].has_key("frozen"):
+        for i in changes["architecture"].keys():
+            if not Cnf.has_key("Suite::Frozen::Architectures::%s" % (i)):
+                reject("Mapping frozen to unstable for non-releasing arch `%s'." % (i),"");
+                del changes["distribution"]["frozen"]
+                changes["distribution"]["unstable"] = 1;
+
+    # Map stable uploads to proposed-updates
+    if changes["distribution"].has_key("stable"):
+        reject("Mapping stable to updates.","");
+        del changes["distribution"]["stable"];
+        changes["distribution"]["proposed-updates"] = 1;
+
+    # chopversion = no epoch; chopversion2 = no epoch and no revision (e.g. for .orig.tar.gz comparison)
+    changes["chopversion"] = utils.re_no_epoch.sub('', changes["version"])
+    changes["chopversion2"] = utils.re_no_revision.sub('', changes["chopversion"])
+
+    # Ensure the changes filename matches it's contents.
+
+    base_filename = os.path.basename(filename);
+    m = re_is_changes.match(base_filename);
+    # source package name
+    if m:
+        file_source = m.group(1);
+        if changes["source"] != file_source:
+            reject("package name part of changes filename (%s) does not match source field (%s) in the changes file." % (file_source, changes["source"]));
+        # source version
+        file_version = m.group(2);
+        if changes["chopversion"] != file_version:
+            reject("version part of changes filename (%s) does not match version field (%s) in the changes file." % (file_version, changes["chopversion"]));
+    else:
+        reject("invalid changes filename '%s'." % (filename));
+
+    # But ... we can't check architecture because there's no
+    # established policy or practice on how to handle
+    # multi-architecture uploads.  Instead we check what we can and
+    # reject if there's a changes file of the same name already in one
+    # of the queue directories.
+    for dir in [ "Accepted", "Byhand", "Done", "New" ]:
+        if os.path.exists(Cnf["Dir::Queue%sDir" % (dir) ]+'/'+base_filename):
+            reject("a changes file with the same name exists in the %s directory." % (dir));
+
+    return 1;
+
+################################################################################
+
+def check_files():
+    global reprocess
+
+    archive = utils.where_am_i();
+    file_keys = files.keys();
+
+    # if reprocess is 2 we've already done this and we're checking
+    # things again for the new .orig.tar.gz.
+    # [Yes, I'm fully aware of how disgusting this is]
+    if not Options["No-Action"] and reprocess < 2:
+        cwd = os.getcwd();
+        os.chdir(pkg.directory);
+        for file in file_keys:
+            copy_to_holding(file);
+        os.chdir(cwd);
+
+    reprocess = 0;
+
+    for file in file_keys:
+        # Ensure the file does not already exist in one of the accepted directories
+        for dir in [ "Accepted", "Byhand", "New" ]:
+            if os.path.exists(Cnf["Dir::Queue%sDir" % (dir) ]+'/'+file):
+                reject("%s file already exists in the %s directory." % (file, dir));
+        if not utils.re_taint_free.match(file):
+            reject("!!WARNING!! tainted filename: '%s'." % (file));
+        # Check the file is readable
+        if os.access(file,os.R_OK) == 0:
+            # When running in -n, copy_to_holding() won't have
+            # generated the reject_message, so we need to.
+            if Options["No-Action"]:
+                if os.path.exists(file):
+                    reject("Can't read `%s'. [permission denied]" % (file));
+                else:
+                    reject("Can't read `%s'. [file not found]" % (file));
+            files[file]["type"] = "unreadable";
+            continue;
+        # If it's byhand skip remaining checks
+        if files[file]["section"] == "byhand":
+            files[file]["byhand"] = 1;
+            files[file]["type"] = "byhand";
+        # Checks for a binary package...
+        elif utils.re_isadeb.match(file) != None:
+            files[file]["type"] = "deb";
+
+            # Extract package control information
+            try:
+                control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)));
+            except:
+                reject("%s: debExtractControl() raised %s." % (file, sys.exc_type));
+                # Can't continue, none of the checks on control would work.
+                continue;
+
+            # Check for mandatory fields
+            for field in [ "Package", "Architecture", "Version" ]:
+                if control.Find(field) == None:
+                    reject("%s: No %s field in control." % (file, field));
+
+            # Ensure the package name matches the one give in the .changes
+            if not changes["binary"].has_key(control.Find("Package", "")):
+                reject("%s: control file lists name as `%s', which isn't in changes file." % (file, control.Find("Package", "")));
+
+            # Ensure the architecture of the .deb is one we know about.
+            if not Cnf.has_key("Suite::Unstable::Architectures::%s" % (control.Find("Architecture", ""))):
+                reject("Unknown architecture '%s'." % (control.Find("Architecture", "")));
+
+            # Ensure the architecture of the .deb is one of the ones
+            # listed in the .changes.
+            if not changes["architecture"].has_key(control.Find("Architecture", "")):
+                reject("%s: control file lists arch as `%s', which isn't in changes file." % (file, control.Find("Architecture", "")));
+
+            # Check the section & priority match those given in the .changes (non-fatal)
+            if control.Find("Section") != None and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
+                reject("%s control file lists section as `%s', but changes file has `%s'." % (file, control.Find("Section", ""), files[file]["section"]), "Warning: ");
+            if control.Find("Priority") != None and files[file]["priority"] != "" and files[file]["priority"] != control.Find("Priority"):
+                reject("%s control file lists priority as `%s', but changes file has `%s'." % (file, control.Find("Priority", ""), files[file]["priority"]),"Warning: ");
+
+            files[file]["package"] = control.Find("Package");
+            files[file]["architecture"] = control.Find("Architecture");
+            files[file]["version"] = control.Find("Version");
+            files[file]["maintainer"] = control.Find("Maintainer", "");
+            if file[-5:] == ".udeb":
+                files[file]["dbtype"] = "udeb";
+            elif file[-4:] == ".deb":
+                files[file]["dbtype"] = "deb";
+            else:
+                reject("%s is neither a .deb or a .udeb." % (file));
+            files[file]["source"] = control.Find("Source", "");
+            if files[file]["source"] == "":
+                files[file]["source"] = files[file]["package"];
+            # Get the source version
+            source = files[file]["source"];
+            source_version = ""
+            if string.find(source, "(") != -1:
+                m = utils.re_extract_src_version.match(source)
+                source = m.group(1)
+                source_version = m.group(2)
+            if not source_version:
+                source_version = files[file]["version"];
+            files[file]["source package"] = source;
+            files[file]["source version"] = source_version;
+
+            # Ensure the filename matches the contents of the .deb
+            m = utils.re_isadeb.match(file);
+            #  package name
+            file_package = m.group(1);
+            if files[file]["package"] != file_package:
+                reject("%s: package part of filename (%s) does not match package name in the %s (%s)." % (file, file_package, files[file]["dbtype"], files[file]["package"]));
+            epochless_version = utils.re_no_epoch.sub('', control.Find("Version", ""))
+            #  version
+            file_version = m.group(2);
+            if epochless_version != file_version:
+                reject("%s: version part of filename (%s) does not match package version in the %s (%s)." % (file, file_version, files[file]["dbtype"], epochless_version));
+            #  architecture
+            file_architecture = m.group(3);
+            if files[file]["architecture"] != file_architecture:
+                reject("%s: architecture part of filename (%s) does not match package architecture in the %s (%s)." % (file, file_architecture, files[file]["dbtype"], files[file]["architecture"]));
+
+            # Check for existent source
+            source_version = files[file]["source version"];
+            source_package = files[file]["source package"];
+            if changes["architecture"].has_key("source"):
+                if source_version != changes["version"]:
+                    reject("source version (%s) for %s doesn't match changes version %s." % (source_version, file, changes["version"]));
+            else:
+                # Check in the SQL database
+                if not Katie.source_exists(source_package, source_version):
+                    # Check in one of the other directories
+                    source_epochless_version = utils.re_no_epoch.sub('', source_version);
+                    dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version);
+                    if os.path.exists(Cnf["Dir::QueueByhandDir"] + '/' + dsc_filename):
+                        files[file]["byhand"] = 1;
+                    elif os.path.exists(Cnf["Dir::QueueNewDir"] + '/' + dsc_filename):
+                        files[file]["new"] = 1;
+                    elif not os.path.exists(Cnf["Dir::QueueAcceptedDir"] + '/' + dsc_filename):
+                        reject("no source found for %s %s (%s)." % (source_package, source_version, file));
+
+        # Checks for a source package...
+        else:
+            m = utils.re_issource.match(file);
+            if m != None:
+                files[file]["package"] = m.group(1);
+                files[file]["version"] = m.group(2);
+                files[file]["type"] = m.group(3);
+
+                # Ensure the source package name matches the Source filed in the .changes
+                if changes["source"] != files[file]["package"]:
+                    reject("%s: changes file doesn't say %s for Source" % (file, files[file]["package"]));
+
+                # Ensure the source version matches the version in the .changes file
+                if files[file]["type"] == "orig.tar.gz":
+                    changes_version = changes["chopversion2"];
+                else:
+                    changes_version = changes["chopversion"];
+                if changes_version != files[file]["version"]:
+                    reject("%s: should be %s according to changes file." % (file, changes_version));
+
+                # Ensure the .changes lists source in the Architecture field
+                if not changes["architecture"].has_key("source"):
+                    reject("%s: changes file doesn't list `source' in Architecture field." % (file));
+
+                # Check the signature of a .dsc file
+                if files[file]["type"] == "dsc":
+                    dsc["fingerprint"] = check_signature(file);
+
+                files[file]["architecture"] = "source";
+
+            # Not a binary or source package?  Assume byhand...
+            else:
+                files[file]["byhand"] = 1;
+                files[file]["type"] = "byhand";
+
+        # Per-suite file checks
+        files[file]["oldfiles"] = {};
+        for suite in changes["distribution"].keys():
+            # Skip byhand
+            if files[file].has_key("byhand"):
+                continue
+
+            # Ensure the component is valid for the target suite
+            if Cnf.has_key("Suite:%s::Components" % (suite)) and not Cnf.has_key("Suite::%s::Components::%s" % (suite, files[file]["component"])):
+                reject("unknown component `%s' for suite `%s'." % (files[file]["component"], suite));
+                continue
+
+            # See if the package is NEW
+            if not Katie.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
+                files[file]["new"] = 1;
+
+            if files[file]["type"] == "deb":
+                reject(Katie.check_binaries_against_db(file, suite));
+
+            # Validate the component
+            component = files[file]["component"];
+            component_id = db_access.get_component_id(component);
+            if component_id == -1:
+                reject("file '%s' has unknown component '%s'." % (file, component));
+                continue;
+
+            # Validate the priority
+            if string.find(files[file]["priority"],'/') != -1:
+                reject("file '%s' has invalid priority '%s' [contains '/']." % (file, files[file]["priority"]));
+
+            # Check the md5sum & size against existing files (if any)
+            location = Cnf["Dir::PoolDir"];
+            files[file]["location id"] = db_access.get_location_id (location, component, archive);
+
+            files[file]["pool name"] = utils.poolify (changes["source"], files[file]["component"]);
+            files_id = db_access.get_files_id(files[file]["pool name"] + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"]);
+            if files_id == -1:
+                reject("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (file));
+            elif files_id == -2:
+                reject("md5sum and/or size mismatch on existing copy of %s." % (file));
+            files[file]["files id"] = files_id
+
+            # Check for packages that have moved from one component to another
+            if files[file]["oldfiles"].has_key(suite) and files[file]["oldfiles"][suite]["name"] != files[file]["component"]:
+                files[file]["othercomponents"] = files[file]["oldfiles"][suite]["name"];
+
+###############################################################################
+
+def check_dsc ():
+    global reprocess;
+
+    for file in files.keys():
+        if files[file]["type"] == "dsc":
+            # Parse the .dsc file
+            try:
+                dsc.update(utils.parse_changes(file, 1));
+            except utils.cant_open_exc:
+                # if not -n copy_to_holding() will have done this for us...
+                if Options["No-Action"]:
+                    reject("can't read .dsc file '%s'." % (file));
+            except utils.changes_parse_error_exc, line:
+                reject("error parsing .dsc file '%s', can't grok: %s." % (file, line));
+            except utils.invalid_dsc_format_exc, line:
+                reject("syntax error in .dsc file '%s', line %s." % (file, line));
+            # Build up the file list of files mentioned by the .dsc
+            try:
+                dsc_files.update(utils.build_file_list(dsc, 1));
+            except utils.no_files_exc:
+                reject("no Files: field in .dsc file.");
+                continue;
+            except utils.changes_parse_error_exc, line:
+                reject("error parsing .dsc file '%s', can't grok: %s." % (file, line));
+                continue;
+
+            # Enforce mandatory fields
+            for i in ("format", "source", "version", "binary", "maintainer", "architecture", "files"):
+                if not dsc.has_key(i):
+                    reject("Missing field `%s' in dsc file." % (i));
+
+            # The dpkg maintainer from hell strikes again! Bumping the
+            # version number of the .dsc breaks extraction by stable's
+            # dpkg-source.
+            if dsc["format"] != "1.0":
+                reject("""[dpkg-sucks] source package was produced by a broken version
+          of dpkg-dev 1.9.1{3,4}; please rebuild with >= 1.9.15 version
+          installed.""");
+
+            # Ensure the version number in the .dsc matches the version number in the .changes
+            epochless_dsc_version = utils.re_no_epoch.sub('', dsc.get("version"));
+            changes_version = files[file]["version"];
+            if epochless_dsc_version != files[file]["version"]:
+                reject("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version));
+
+            # Ensure source is newer than existing source in target suites
+            reject(Katie.check_source_against_db(file));
+
+            (reject_msg, is_in_incoming) = Katie.check_dsc_against_db(file);
+            reject(reject_msg);
+            if is_in_incoming:
+                if not Options["No-Action"]:
+                    copy_to_holding(is_in_incoming);
+                orig_tar_gz = os.path.basename(is_in_incoming);
+                files[orig_tar_gz] = {};
+                files[orig_tar_gz]["size"] = os.stat(orig_tar_gz)[stat.ST_SIZE];
+                files[orig_tar_gz]["md5sum"] = dsc_files[orig_tar_gz]["md5sum"];
+                files[orig_tar_gz]["section"] = files[file]["section"];
+                files[orig_tar_gz]["priority"] = files[file]["priority"];
+                files[orig_tar_gz]["component"] = files[file]["component"];
+                files[orig_tar_gz]["type"] = "orig.tar.gz";
+                reprocess = 2;
+
+################################################################################
+
+# Some cunning stunt broke dpkg-source in dpkg 1.8{,.1}; detect the
+# resulting bad source packages and reject them.
+
+# Even more amusingly the fix in 1.8.1.1 didn't actually fix the
+# problem just changed the symptoms.
+
+def check_diff ():
+    for filename in files.keys():
+        if files[filename]["type"] == "diff.gz":
+            file = gzip.GzipFile(filename, 'r');
+            for line in file.readlines():
+                if re_bad_diff.search(line):
+                    reject("[dpkg-sucks] source package was produced by a broken version of dpkg-dev 1.8.x; please rebuild with >= 1.8.3 version installed.");
+                    break;
+
+################################################################################
+
+# FIXME: should be a debian specific check called from a hook
+
+def check_urgency ():
+    if changes["architecture"].has_key("source"):
+        if not changes.has_key("urgency"):
+            changes["urgency"] = Cnf["Urgency::Default"];
+        if not Cnf.has_key("Urgency::Valid::%s" % changes["urgency"]):
+            reject("%s is not a valid urgency; it will be treated as %s by testing." % (changes["urgency"], Cnf["Urgency::Default"]), "Warning: ");
+            changes["urgency"] = Cnf["Urgency::Default"];
+        changes["urgency"] = lower(changes["urgency"]);
+
+################################################################################
+
+def check_md5sums ():
+    for file in files.keys():
+        try:
+            file_handle = utils.open_file(file);
+        except utils.cant_open_exc:
+            pass;
+        else:
+            if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
+                reject("md5sum check failed for %s." % (file));
+
+################################################################################
+
+# Sanity check the time stamps of files inside debs.
+# [Files in the near future cause ugly warnings and extreme time
+#  travel can causes errors on extraction]
+
+def check_timestamps():
+    class Tar:
+        def __init__(self, future_cutoff, past_cutoff):
+            self.reset();
+            self.future_cutoff = future_cutoff;
+            self.past_cutoff = past_cutoff;
+
+        def reset(self):
+            self.future_files = {};
+            self.ancient_files = {};
+
+        def callback(self, Kind,Name,Link,Mode,UID,GID,Size,MTime,Major,Minor):
+            if MTime > self.future_cutoff:
+                self.future_files[Name] = MTime;
+            if MTime < self.past_cutoff:
+                self.ancient_files[Name] = MTime;
+    ####
+
+    future_cutoff = time.time() + int(Cnf["Dinstall::FutureTimeTravelGrace"]);
+    past_cutoff = time.mktime(time.strptime(Cnf["Dinstall::PastCutoffYear"],"%Y"));
+    tar = Tar(future_cutoff, past_cutoff);
+    for filename in files.keys():
+        if files[filename]["type"] == "deb":
+            tar.reset();
+            try:
+                deb_file = utils.open_file(filename);
+                apt_inst.debExtract(deb_file,tar.callback,"control.tar.gz");
+                deb_file.seek(0);
+                apt_inst.debExtract(deb_file,tar.callback,"data.tar.gz");
+                #
+                future_files = tar.future_files.keys();
+                if future_files:
+                    num_future_files = len(future_files);
+                    future_file = future_files[0];
+                    future_date = tar.future_files[future_file];
+                    reject("%s: has %s file(s) with a time stamp too far into the future (e.g. %s [%s])."
+                           % (filename, num_future_files, future_file,
+                              time.ctime(future_date)));
+                #
+                ancient_files = tar.ancient_files.keys();
+                if ancient_files:
+                    num_ancient_files = len(ancient_files);
+                    ancient_file = ancient_files[0];
+                    ancient_date = tar.ancient_files[ancient_file];
+                    reject("%s: has %s file(s) with a time stamp too ancient (e.g. %s [%s])."
+                           % (filename, num_ancient_files, ancient_file,
+                              time.ctime(ancient_date)));
+            except:
+                reject("%s: timestamp check failed; caught %s" % (filename, sys.exc_type));
+                raise;
+
+################################################################################
+################################################################################
+
+# If any file of an upload has a recent mtime then chances are good
+# the file is still being uploaded.
+
+def upload_too_new():
+    file_list = pkg.files.keys();
+    file_list.extend(pkg.dsc_files.keys());
+    file_list.append(pkg.changes_file);
+    for file in file_list:
+        try:
+            last_modified = time.time()-os.path.getmtime(pkg.changes_file);
+            if last_modified < int(Cnf["Dinstall::SkipTime"]):
+                return 1;
+        except:
+            pass;
+    return 0;
+
+def action ():
+    # changes["distribution"] may not exist in corner cases
+    # (e.g. unreadable changes files)
+    if not changes.has_key("distribution") or not isinstance(changes["distribution"], DictType):
+        changes["distribution"] = {};
+
+    (summary, short_summary) = Katie.build_summaries();
+
+    byhand = new = "";
+    for file in files.keys():
+        if files[file].has_key("byhand"):
+            byhand = 1
+        elif files[file].has_key("new"):
+            new = 1
+
+    (prompt, answer) = ("", "XXX")
+    if Options["No-Action"] or Options["Automatic"]:
+        answer = 'S'
+
+    if string.find(reject_message, "Rejected") != -1:
+        if upload_too_new():
+            print "SKIP (too new)\n" + reject_message,;
+            prompt = "[S]kip, Quit ?";
+        else:
+            print "REJECT\n" + reject_message,;
+            prompt = "[R]eject, Skip, Quit ?";
+            if Options["Automatic"]:
+                answer = 'R';
+    elif new:
+        print "NEW to %s\n%s%s" % (string.join(changes["distribution"].keys(), ", "), reject_message, summary),;
+        prompt = "[N]ew, Skip, Quit ?";
+        if Options["Automatic"]:
+            answer = 'N';
+    elif byhand:
+        print "BYHAND\n" + reject_message + summary,;
+        prompt = "[B]yhand, Skip, Quit ?";
+        if Options["Automatic"]:
+            answer = 'B';
+    else:
+        print "ACCEPT\n" + reject_message + summary,;
+        prompt = "[A]ccept, Skip, Quit ?";
+        if Options["Automatic"]:
+            answer = 'A';
+
+    while string.find(prompt, answer) == -1:
+        print prompt,;
+        answer = utils.our_raw_input()
+        m = katie.re_default_answer.match(prompt)
+        if answer == "":
+            answer = m.group(1)
+        answer = string.upper(answer[:1])
+
+    if answer == 'R':
+        os.chdir (pkg.directory);
+        Katie.do_reject(0, reject_message);
+    elif answer == 'A':
+        accept(summary, short_summary);
+    elif answer == 'B':
+        do_byhand(summary);
+    elif answer == 'N':
+        acknowledge_new (summary);
+    elif answer == 'Q':
+        sys.exit(0)
+
+################################################################################
+
+def accept (summary, short_summary):
+    Katie.accept(summary, short_summary);
+
+    # Check for override disparities
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        Katie.check_override();
+
+    # Finally, remove the originals from the unchecked directory
+    os.chdir (pkg.directory);
+    for file in files.keys():
+        os.unlink(file);
+    os.unlink(pkg.changes_file);
+
+################################################################################
+
+def do_byhand (summary):
+    print "Moving to BYHAND holding area."
+
+    Katie.dump_vars(Cnf["Dir::QueueByhandDir"]);
+
+    file_keys = files.keys();
+
+    # Move all the files into the accepted directory
+    utils.move (pkg.changes_file, Cnf["Dir::QueueByhandDir"]);
+    for file in file_keys:
+        utils.move (file, Cnf["Dir::QueueByhandDir"]);
+
+    # Check for override disparities
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        Katie.Subst["__SUMMARY__"] = summary;
+        Katie.check_override();
+
+    # Finally remove the originals.
+    os.chdir (pkg.directory);
+    for file in file_keys:
+        os.unlink(file);
+    os.unlink(pkg.changes_file);
+
+################################################################################
+
+def acknowledge_new (summary):
+    Subst = Katie.Subst;
+
+    print "Moving to NEW holding area."
+
+    Katie.dump_vars(Cnf["Dir::QueueNewDir"]);
+
+    file_keys = files.keys();
+
+    # Move all the files into the accepted directory
+    utils.move (pkg.changes_file, Cnf["Dir::QueueNewDir"]);
+    for file in file_keys:
+        utils.move (file, Cnf["Dir::QueueNewDir"]);
+
+    if not Options["No-Mail"]:
+        print "Sending new ack.";
+        Subst["__SUMMARY__"] = summary;
+        new_ack_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/jennifer.new","r").read());
+        utils.send_mail(new_ack_message,"");
+
+    # Finally remove the originals.
+    os.chdir (pkg.directory);
+    for file in file_keys:
+        os.unlink(file);
+    os.unlink(pkg.changes_file);
+
+################################################################################
+
+# reprocess is necessary for the case of foo_1.2-1 and foo_1.2-2 in
+# Incoming. -1 will reference the .orig.tar.gz, but -2 will not.
+# dsccheckdistrib() can find the .orig.tar.gz but it will not have
+# processed it during it's checks of -2.  If -1 has been deleted or
+# otherwise not checked by jennifer, the .orig.tar.gz will not have been
+# checked at all.  To get round this, we force the .orig.tar.gz into
+# the .changes structure and reprocess the .changes file.
+
+def process_it (changes_file):
+    global reprocess, reject_message;
+
+    # Reset some globals
+    reprocess = 1;
+    Katie.init_vars();
+    reject_message = "";
+
+    # Absolutize the filename to avoid the requirement of being in the
+    # same directory as the .changes file.
+    pkg.changes_file = os.path.abspath(changes_file);
+
+    # Remember where we are so we can come back after cd-ing into the
+    # holding directory.
+    pkg.directory = os.getcwd();
+
+    try:
+        # If this is the Real Thing(tm), copy things into a private
+        # holding directory first to avoid replacable file races.
+        if not Options["No-Action"]:
+            os.chdir(Cnf["Dir::QueueHoldingDir"]);
+            copy_to_holding(pkg.changes_file);
+            # Relativize the filename so we use the copy in holding
+            # rather than the original...
+            pkg.changes_file = os.path.basename(pkg.changes_file);
+        changes["fingerprint"] = check_signature(pkg.changes_file);
+        changes_valid = check_changes();
+        if changes_valid:
+            while reprocess:
+                check_files();
+                check_md5sums();
+                check_dsc();
+                check_diff();
+                check_urgency();
+                check_timestamps();
+        Katie.update_subst(reject_message);
+        action();
+    except SystemExit:
+        raise;
+    except:
+        print "ERROR";
+	traceback.print_exc(file=sys.stdout);
+        pass;
+
+    # Restore previous WD
+    os.chdir(pkg.directory);
+
+###############################################################################
+
+def main():
+    global Cnf, Options, Logger, nmu;
+
+    changes_files = init();
+
+    if Options["Help"]:
+        usage();
+
+    if Options["Version"]:
+        print "jennifer %s" % (jennifer_version);
+        sys.exit(0);
+
+    # -n/--dry-run invalidates some other options which would involve things happening
+    if Options["No-Action"]:
+        Options["Automatic"] = "";
+
+    # Ensure all the arguments we were given are .changes files
+    for file in changes_files:
+        if file[-8:] != ".changes":
+            utils.warn("Ignoring '%s' because it's not a .changes file." % (file));
+            changes_files.remove(file);
+
+    if changes_files == []:
+        utils.fubar("Need at least one .changes file as an argument.");
+
+    # Check that we aren't going to clash with the daily cron job
+
+    if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Options["No-Lock"]:
+        utils.fubar("Archive maintenance in progress.  Try again later.");
+
+    # Obtain lock if not in no-action mode and initialize the log
+
+    if not Options["No-Action"]:
+        lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT);
+        fcntl.lockf(lock_fd, FCNTL.F_TLOCK);
+        Logger = Katie.Logger = logging.Logger(Cnf, "jennifer");
+
+    # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
+    bcc = "X-Katie: %s" % (jennifer_version);
+    if Cnf.has_key("Dinstall::Bcc"):
+        Katie.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
+    else:
+        Katie.Subst["__BCC__"] = bcc;
+
+
+    # Sort the .changes files so that we process sourceful ones first
+    changes_files.sort(utils.changes_compare);
+
+    # Process the changes files
+    for changes_file in changes_files:
+        print "\n" + changes_file;
+        try:
+            process_it (changes_file);
+        finally:
+            if not Options["No-Action"]:
+                clean_holding();
+
+    accept_count = Katie.accept_count;
+    accept_bytes = Katie.accept_bytes;
+    if accept_count:
+        sets = "set"
+        if accept_count > 1:
+            sets = "sets"
+        sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))));
+        Logger.log(["total",accept_count,accept_bytes]);
+
+    if not Options["No-Action"]:
+        Logger.close();
+
+################################################################################
+
+if __name__ == '__main__':
+    main()
+
