@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: madison,v 1.29 2004-01-21 03:20:13 troup Exp $
+# $Id: madison,v 1.30 2004-04-19 15:59:12 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,8 +43,10 @@ def usage (exit_code=0):
 Display information about PACKAGE(s).
 
   -a, --architecture=ARCH    only show info for ARCH(s)
-  -b, --binary-type=TYPE     only show info for binary TYPE(s)
+  -b, --binary-type=TYPE     only show info for binary TYPE
   -c, --component=COMPONENT  only show info for COMPONENT(s)
+  -g, --greaterorequal       show buildd 'dep-wait pkg >= {highest version}' info
+  -G, --greaterthan          show buildd 'dep-wait pkg >> {highest version}' info
   -h, --help                 show this help and exit
   -r, --regex                treat PACKAGE as a regex
   -s, --suite=SUITE          only show info for this suite
@@ -65,12 +67,15 @@ def main ():
                  ('b', "binarytype", "Madison::Options::BinaryType", "HasArg"),
                  ('c', "component", "Madison::Options::Component", "HasArg"),
                  ('f', "format", "Madison::Options::Format", "HasArg"),
+                 ('g', "greaterorequal", "Madison::Options::GreaterOrEqual"),
+                 ('G', "greaterthan", "Madison::Options::GreaterThan"),
                  ('r', "regex", "Madison::Options::Regex"),
                  ('s', "suite", "Madison::Options::Suite", "HasArg"),
                  ('S', "source-and-binary", "Madison::Options::Source-And-Binary"),
                  ('h', "help", "Madison::Options::Help")];
-    for i in [ "architecture", "binarytype", "component", "format", "regex",
-               "suite", "source-and-binary", "help" ]:
+    for i in [ "architecture", "binarytype", "component", "format",
+               "greaterorequal", "greaterthan", "regex", "suite",
+               "source-and-binary", "help" ]:
 	if not Cnf.has_key("Madison::Options::%s" % (i)):
 	    Cnf["Madison::Options::%s" % (i)] = "";
 
@@ -88,6 +93,13 @@ def main ():
     # If cron.daily is running; warn the user that our output might seem strange
     if os.path.exists(os.path.join(Cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
         utils.warn("Archive maintenance is in progress; database inconsistencies are possible.");
+
+    # Handle buildd maintenance helper options
+    if Options["GreaterOrEqual"] or Options["GreaterThan"]:
+        if Options["GreaterOrEqual"] and Options["GreaterThan"]:
+            utils.fubar("-g/--greaterorequal and -G/--greaterthan are mutually exclusive.");
+        if not Options["Suite"]:
+            Options["Suite"] = "unstable";
 
     # Parse -a/--architecture, -c/--component and -s/--suite
     (con_suites, con_architectures, con_components, check_source) = \
@@ -125,6 +137,7 @@ def main ():
             q = projectB.query("SELECT s.source, s.version, 'source', su.suite_name, m.name FROM source s, suite su, src_associations sa, maintainer m WHERE s.source %s '%s' AND su.id = sa.suite AND s.id = sa.source AND s.maintainer = m.id %s" % (comparison_operator, package, con_suites));
             ql.extend(q.getresult());
         d = {};
+        highver = {};
         for i in ql:
             results += 1;
             pkg = i[0];
@@ -133,8 +146,11 @@ def main ():
             suite = i[3];
             if not d.has_key(pkg):
                 d[pkg] = {};
+            highver.setdefault(pkg,"");
             if not d[pkg].has_key(version):
                 d[pkg][version] = {};
+                if apt_pkg.VersionCompare(version, highver[pkg]) > 0:
+                    highver[pkg] = version;
             if not d[pkg][version].has_key(suite):
                 d[pkg][version][suite] = [];
             d[pkg][version][suite].append(architecture);
@@ -157,6 +173,10 @@ def main ():
                     elif Options["Format"] == "heidi":
                         for arch in arches:
                             sys.stdout.write("%s %s %s\n" % (pkg, version, arch));
+            if Options["GreaterOrEqual"]:
+                print "\ndep-retry %s (>= %s)" % (pkg, highver[pkg])
+            if Options["GreaterThan"]:
+                print "\ndep-retry %s (>> %s)" % (pkg, highver[pkg])
 
     if not results:
         sys.exit(1);

@@ -44,9 +44,24 @@
 	</LISTITEM>
       </VarListEntry>
 
+      <VarListEntry><term><option>-b/--binary-type=<replaceable>binary type</replaceable></option></>
+	<ListItem>
+	  <Para>Only show package information for the binary type ('deb' or 'udeb').</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
       <varlistentry><term><option>-c/--component=<replaceable>component</replaceable></option></term>
 	<listitem>
 	  <para>Only list package information for the listed component(s).</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><option>-g/--greaterorequal</option></term>
+	<term><option>-G/--greaterthan</option></term>
+	<listitem>
+	  <para>Determine the highest version of each package in the target suite (which is forced to just unstable if one was not specificed) and, in addition to the normal output, also print a line suitable for sending in a reply to a buildd as a 'dep-wait' command.  For <option>-g/--greaterorequal</option>, the versioned dependency is a >= one, e.g. <literallayout>dep-retry libgdbm-dev (>= 1.8.3-2)</literallayout></para>
+	  <para>And for <option>-G/--greaterthan</option>, the versioned dependency is a >> one, e.g. <literallayout>dep-retry libflac-dev (>> 1.1.0-10)</literallayout></para>
 	</listitem>
       </varlistentry>
 
