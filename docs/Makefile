@@ -10,7 +10,7 @@ MANPAGES	= $(patsubst %.sgml, %, $(SGMLMANPAGES))
 all: $(MANPAGES)
 
 %: %.sgml
-	nsgmls $< | sgmlspl /usr/lib/perl5/sgmlspl-specs/docbook2man-spec.pl
+	docbook2man $< > /dev/null
 
 clean:
 	rm -f $(MANPAGES) manpage.lings manpage.log manpage.refs
