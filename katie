@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.64 2001-11-19 00:26:22 troup Exp $
+# $Id: katie,v 1.65 2001-11-19 02:02:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ orig_tar_location = "";
 legacy_source_untouchable = {};
 Subst = {};
 nmu = None;
-katie_version = "$Revision: 1.64 $";
+katie_version = "$Revision: 1.65 $";
 
 ###############################################################################
 
@@ -835,7 +835,7 @@ def action (changes_filename):
 
     file_keys = files.keys();
     file_keys.sort();
-    for file in files_keys:
+    for file in file_keys:
         if files[file].has_key("byhand"):
             byhand = 1
             summary = summary + file + " byhand\n"

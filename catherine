@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.14 2001-11-19 00:26:22 troup Exp $
+# $Id: catherine,v 1.15 2001-11-19 02:02:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ def main ():
 
     Cnf = utils.get_conf()
 
-    for i in ["help", "limit", "no-action", "verose" ]:
+    for i in ["help", "limit", "no-action", "verbose" ]:
 	if not Cnf.has_key("Catherine::Options::%s" % (i)):
 	    Cnf["Catherine::Options::%s" % (i)] = "";
 
