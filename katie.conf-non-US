@@ -214,6 +214,7 @@ Suite
 	Origin "Debian";
 	Description "Debian Testing distribution updates - Not Released";
 	CodeName "woody-proposed-updates";
+	OverrideSuite "unstable";
 	OverrideCodeName "woody";
 	Priority "4";
 	VersionChecks
