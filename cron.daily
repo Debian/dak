@@ -59,6 +59,15 @@ jenna
 # FIXME
 cd /org/ftp.debian.org/database/dists/
 for i in proposed-updates_-_binary-*; do cat $i >> proposed-updates_-_binary.list; done
+
+# Generate override files
+cd $overridedir
+denise
+# FIXME
+rm override.potato.all3
+for i in main contrib non-free; do cat override.potato.$i >> override.potato.all3; done
+
+# Generate Packages and Sources files
 cd $masterdir
 apt-ftparchive generate apt.conf
 

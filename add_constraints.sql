@@ -74,25 +74,11 @@ GRANT ALL ON
   bin_associations, bin_associations_id_seq, binaries,
   binaries_id_seq, component, component_id_seq, dsc_files,
   dsc_files_id_seq, files, files_id_seq, location, location_id_seq,
-  maintainer, maintainer_id_seq, source, source_id_seq,
-  src_associations, src_associations_id_seq, suite,
-  suite_architectures, suite_id_seq
-     TO troup;
-
--- Give write privileges to the associations tables for AJ for the purposes of `testing'
-GRANT ALL ON 
-  binaries, binaries_id_seq, 
-  bin_associations, bin_associations_id_seq,
-  source, source_id_seq, 
-  src_associations, src_associations_id_seq,
-  suite, suite_id_seq 
-     TO ajt;
-
--- RO access to AJ for all other tables
-GRANT SELECT ON 
-  architecture, archive, binaries, component,
-  dsc_files, files, location, maintainer, source, suite, suite_architectures
-     TO ajt;
+  maintainer, maintainer_id_seq, override, override_type,
+  override_type_id_seq, priority, priority_id_seq, section,
+  section_id_seq, source, source_id_seq, src_associations,
+  src_associations_id_seq, suite, suite_architectures, suite_id_seq
+     TO GROUP ftpmaster;
 
 -- Read only access to user 'nobody'
 GRANT SELECT ON 
@@ -100,7 +86,8 @@ GRANT SELECT ON
   bin_associations, bin_associations_id_seq, binaries,
   binaries_id_seq, component, component_id_seq, dsc_files,
   dsc_files_id_seq, files, files_id_seq, location, location_id_seq,
-  maintainer, maintainer_id_seq, source, source_id_seq,
-  src_associations, src_associations_id_seq, suite,
-  suite_architectures, suite_id_seq
+  maintainer, maintainer_id_seq, override, override_type,
+  override_type_id_seq, priority, priority_id_seq, section,
+  section_id_seq, source, source_id_seq, src_associations,
+  src_associations_id_seq, suite, suite_architectures, suite_id_seq
      TO PUBLIC;
