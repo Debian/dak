@@ -2,7 +2,7 @@
 
 # Various different sanity checks
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: tea,v 1.25 2003-10-14 21:52:49 troup Exp $
+# $Id: tea,v 1.26 2003-10-17 11:20:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -393,7 +393,7 @@ def check_files_not_symlinks():
 
 def chk_bd_process_dir (unused, dirname, filenames):
     for name in filenames:
-        if name[-4:] != ".dsc":
+        if not name.endswith(".dsc"):
             continue;
         filename = os.path.abspath(dirname+'/'+name);
         dsc = utils.parse_changes(filename);

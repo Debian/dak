@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.41 2003-10-14 21:52:59 troup Exp $
+# $Id: jennifer,v 1.42 2003-10-17 11:20:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.41 $";
+jennifer_version = "$Revision: 1.42 $";
 
 Cnf = None;
 Options = None;
@@ -622,7 +622,7 @@ def check_dsc ():
         field = dsc.get(field_name);
         if field:
             # Check for broken dpkg-dev lossage...
-            if field.find("ARRAY") == 0:
+            if field.startswith("ARRAY"):
                 reject("%s: invalid %s field produced by a broken version of dpkg-dev (1.10.11)" % (dsc_filename, field_name.title()));
 
             # Have apt try to parse them...
