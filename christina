@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# ???
+# Compares Packages-Arch-Specific (from Quinn-Diff) against the archive
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: christina,v 1.1 2001-03-21 01:03:41 troup Exp $
+# $Id: christina,v 1.2 2001-07-07 03:15:36 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,20 @@
 
 ################################################################################
 
-# <Omnic> elmo wrote docs?!!?!?!?!?!?!
-# <aj> as if he wasn't scary enough before!!
-# * aj imagines a little red furry toy sitting hunched over a computer
-#   tapping furiously and giggling to himself
-# <aj> eventually he stops, and his heads slowly spins around and you
-#      see this really evil grin and then he sees you, and picks up a
-#      knife from beside the keyboard and throws it at you, and as you
-#      breathe your last breath, he starts giggling again
-# <aj> but i should be telling this to my psychiatrist, not you guys,
-#      right? :)
+# 23:12|<aj> I will not hush!
+# 23:12|<elmo> :>
+# 23:12|<aj> Where there is injustice in the world, I shall be there!
+# 23:13|<aj> I shall not be silenced!
+# 23:13|<aj> The world shall know!
+# 23:13|<aj> The world *must* know!
+# 23:13|<elmo> oh dear, he's gone back to powerpuff girls... ;-)
+# 23:13|<aj> yay powerpuff girls!!
+# 23:13|<aj> buttercup's my favourite, who's yours?
+# 23:14|<aj> you're backing away from the keyboard right now aren't you?
+# 23:14|<aj> *AREN'T YOU*?!
+# 23:15|<aj> I will not be treated like this.
+# 23:15|<aj> I shall have my revenge.
+# 23:15|<aj> I SHALL!!!
 
 ################################################################################
 
@@ -44,8 +48,54 @@ projectB = None;
 
 ################################################################################
 
+def rev_cmp_by_suite (a, b):
+    ai = Cnf["Suite::%s::Priority" % (a)];
+    bi = Cnf["Suite::%s::Priority" % (b)];
+
+    if a < b:
+        return 1;
+    elif a > b:
+        return -1;
+
+    return 0;
+
+def sort_dict (d):
+    sys.stderr.write("Sorting... ");
+    for i in d.keys():
+        suites = d[i];
+        suites.sort(rev_cmp_by_suite);
+        d[i] = suites[0];
+    sys.stderr.write("done.\n");
+
+def add_to_dict (q):
+    d = {};
+    ql = q.getresult();
+    for i in ql:
+        package = i[0];
+        suite = i[1];
+        if not d.has_key(package):
+            d[package] = [];
+        d[package].append(suite);
+    return d;
+
+def get_binaries ():
+    sys.stderr.write("Binaries query... ");
+    q = projectB.query("SELECT DISTINCT b.package, su.suite_name FROM binaries b, bin_associations ba, suite su WHERE b.id = ba.bin AND su.id = ba.suite");
+    sys.stderr.write("done.\n");
+    binaries = add_to_dict (q);
+    sort_dict(binaries);
+    return binaries;
+
+def get_source ():
+    sys.stderr.write("Source query... ");
+    q = projectB.query("SELECT DISTINCT s.source, su.suite_name FROM source s, src_associations sa, suite su WHERE s.id = sa.source AND su.id = sa.suite");
+    sys.stderr.write("done.\n");
+    source = add_to_dict (q);
+    sort_dict(source);
+    return source;
+
 def main ():
-    global Cnf, projectB, db_files, waste, excluded;
+    global Cnf, projectB;
 
     apt_pkg.init();
     
@@ -59,6 +109,85 @@ def main ():
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
+
+    # Get a list of binaries and source with their latest suite
+    binaries = get_binaries();
+    source = get_source();
+
+    as_binaries = {};
+    as_source = {};
+
+    filename = "/org/buildd.debian.org/web/quinn-diff/Packages-arch-specific";
+    file = utils.open_file(filename, 'r');
+    line_count = 0;
+    for line in file.readlines():
+        line = string.strip(utils.re_comments.sub("", line));
+        line_count = line_count + 1;
+        if line == "":
+            continue;
+        sline = string.split(line, ':');
+        if len(sline) != 2:
+            utils.warn("parse error on line %s; skipping" % (line_count));
+            continue;
+        (package, architectures) = map(string.strip, sline);
+        # Binary
+        if package[0] != '%':
+            if not binaries.has_key(package):
+                if source.has_key(package):
+                    print "SHOULD BE SOURCE: %s ==> %s" % (package, architectures);
+                else:
+                    print "MISSING: %s ==> %s" % (package, architectures);
+            else:
+                if binaries[package] == "unstable":
+                    as_binaries[package] = architectures;
+            
+        # Source
+        else:
+            package = package[1:]
+            if not source.has_key(package):
+                if binaries.has_key(package):
+                    print "SHOULD BE BINARY: %s ==> %s" % (package, architectures);
+                else:
+                    print "[source] MISSING: %s ==> %s" % (package, architectures);
+            else:
+                if source[package] == "unstable":
+                    as_source[package] = architectures;
+
+    suite_id = db_access.get_suite_id("unstable");
+    for package in as_binaries.keys():
+        as_architectures = string.split(as_binaries[package]);
+        arches_arch_specific = {};
+        for i in as_architectures:
+            arches_arch_specific[i] = "";
+
+        q = projectB.query("SELECT a.arch_string FROM bin_associations ba, binaries b, architecture a WHERE a.id = b.architecture AND b.package = '%s' AND ba.suite = %s AND ba.bin = b.id" % (package, suite_id));
+        ql = q.getresult();
+
+        print "%s: %s vs. %s" % (package, ql, as_architectures);
+        
+        arches_in_archive = {};
+        for i in ql:
+            arches_in_archive[i[0]] = "";
+
+        for arch in as_architectures:
+            if arch[0] == "!":
+                arch = arch[1:];
+                if arches_in_archive.has_key(arch):
+                    utils.warn("%s is excluded from %s but is in the archive for %s.[1]" % (package, arch, arch));
+            else:
+                if not arches_in_archive.has_key(arch):
+                    utils.warn("%s is listed as buildable on %s but isn't in the archive for %s." % (package, arch, arch));
+
+        for arch in arches_in_archive.keys():
+            if not arches_arch_specific.has_key(arch):
+                utils.warn("%s is excluded from %s but is in the archive for %s.[2]" % (package, arch, arch));
+        
+# HO HUM; maybe have control words in the comments like "<STABLE>" ? bit icky
+# see if package exists at all
+# see if package exists for excluded arch
+# see if package in specific suite
+# compare against source package's .dsc!
+# ??
 
 #######################################################################################
 
