@@ -32,6 +32,8 @@ ALTER TABLE override ADD CONSTRAINT override_priority FOREIGN KEY (priority) REF
 ALTER TABLE override ADD CONSTRAINT override_section FOREIGN KEY (section) REFERENCES section(id) MATCH FULL;
 ALTER TABLE override ADD CONSTRAINT override_type FOREIGN KEY (type) REFERENCES override_type(id) MATCH FULL;
 
+ALTER TABLE accepted_autobuild ADD CONSTRAINT accepted_autobuild_suite FOREIGN KEY (suite) REFERENCES suite(id) MATCH FULL;
+
 -- Then correct all the id SERIAL PRIMARY KEY columns...
 
 CREATE FUNCTION files_id_max() RETURNS INT4

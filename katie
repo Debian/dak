@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie,v 1.83 2002-05-19 19:55:29 troup Exp $
+# $Id: katie,v 1.84 2002-05-23 12:18:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.83 $";
+katie_version = "$Revision: 1.84 $";
 
 Cnf = None;
 Options = None;
@@ -391,30 +391,37 @@ def install ():
 
     # Undo the work done in katie.py(accept) to help auto-building
     # from accepted.
-    if Cnf.FindB("Dinstall::SpecialAcceptedAutoBuild") and \
-       changes["distribution"].has_key("unstable"):
+    projectB.query("BEGIN WORK");
+    for suite in changes["distribution"].keys():
+        if suite not in Cnf.ValueList("Dinstall::AcceptedAutoBuildSuites"):
+            continue;
         now_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()));
-        projectB.query("BEGIN WORK");
+        suite_id = db_access.get_suite_id(suite);
+        dest_dir = Cnf["Dir::AcceptedAutoBuild"];
+        if Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
+            dest_dir = os.path.join(dest_dir, suite);
         for file in files.keys():
-            dest = os.path.join(Cnf["Dir::AcceptedAutoBuild"], file);
+            dest = os.path.join(dest_dir, file);
             # Remove it from the list of packages for later processing by apt-ftparchive
-            projectB.query("UPDATE unstable_accepted SET in_accepted = 'f', last_used = '%s' WHERE filename = '%s'" % (now_date, dest));
-            # Update the symlink to point to the new location in the pool
-            pool_location = utils.poolify (changes["source"], files[file]["component"]);
-            src = os.path.join(Cnf["Dir::Pool"], pool_location, os.path.basename(file));
-            if os.path.islink(dest):
-                os.unlink(dest);
-            os.symlink(src, dest);
+            projectB.query("UPDATE accepted_autobuild SET in_accepted = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, dest, suite_id));
+            if not Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
+                # Update the symlink to point to the new location in the pool
+                pool_location = utils.poolify (changes["source"], files[file]["component"]);
+                src = os.path.join(Cnf["Dir::Pool"], pool_location, os.path.basename(file));
+                if os.path.islink(dest):
+                    os.unlink(dest);
+                os.symlink(src, dest);
         # Update last_used on any non-upload .orig.tar.gz symlink
         if orig_tar_id:
             # Determine the .orig.tar.gz file name
             for dsc_file in dsc_files.keys():
                 if dsc_file[-12:] == ".orig.tar.gz":
-                    orig_tar_gz = os.path.join(Cnf["Dir::AcceptedAutoBuild"], dsc_file);
+                    orig_tar_gz = os.path.join(dest_dir, dsc_file);
             # Remove it from the list of packages for later processing by apt-ftparchive
-            projectB.query("UPDATE unstable_accepted SET in_accepted = 'f', last_used = '%s' WHERE filename = '%s'" % (now_date, orig_tar_gz));
-        projectB.query("COMMIT WORK");
+            projectB.query("UPDATE accepted_autobuild SET in_accepted = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, orig_tar_gz, suite_id));
+    projectB.query("COMMIT WORK");
 
+    # Finally...
     install_count = install_count + 1;
 
 ################################################################################

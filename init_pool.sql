@@ -142,7 +142,8 @@ CREATE TABLE override (
        unique (suite, component, package, type)
 );
 
-CREATE TABLE unstable_accepted (
+CREATE TABLE accepted_autobuild (
+       suite INT4 NOT NULL, -- references suite
        filename TEXT NOT NULL,
        in_accepted BOOLEAN NOT NULL,
        last_used TIMESTAMP

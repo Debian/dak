@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.22 2002-05-19 00:47:07 troup Exp $
+# $Id: katie.py,v 1.23 2002-05-23 12:18:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -391,16 +391,25 @@ distribution.""";
             self.announce(short_summary, 1)
 
         # Special support to enable clean auto-building of accepted packages
-        if Cnf.FindB("Dinstall::SpecialAcceptedAutoBuild") and \
-           self.pkg.changes["distribution"].has_key("unstable"):
-            self.projectB.query("BEGIN WORK");
+        self.projectB.query("BEGIN WORK");
+        for suite in self.pkg.changes["distribution"].keys():
+            if suite not in Cnf.ValueList("Dinstall::AcceptedAutoBuildSuites"):
+                continue;
+            suite_id = db_access.get_suite_id(suite);
+            dest_dir = Cnf["Dir::AcceptedAutoBuild"];
+            if Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
+                dest_dir = os.path.join(dest_dir, suite);
             for file in file_keys:
                 src = os.path.join(Cnf["Dir::Queue::Accepted"], file);
-                dest = os.path.join(Cnf["Dir::AcceptedAutoBuild"], file);
-                # Create a symlink to it
-                os.symlink(src, dest);
+                dest = os.path.join(dest_dir, file);
+                if Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
+                    # Copy it since the original won't be readable by www-data
+                    utils.copy(src, dest);
+                else:
+                    # Create a symlink to it
+                    os.symlink(src, dest);
                 # Add it to the list of packages for later processing by apt-ftparchive
-                self.projectB.query("INSERT INTO unstable_accepted (filename, in_accepted) VALUES ('%s', 't')" % (dest));
+                self.projectB.query("INSERT INTO accepted_autobuild (suite, filename, in_accepted) VALUES (%s, '%s', 't')" % (suite_id, dest));
             # If the .orig.tar.gz is in the pool, create a symlink to
             # it (if one doesn't already exist)
             if self.pkg.orig_tar_id:
@@ -408,7 +417,7 @@ distribution.""";
                 for dsc_file in self.pkg.dsc_files.keys():
                     if dsc_file[-12:] == ".orig.tar.gz":
                         filename = dsc_file;
-                dest = os.path.join(Cnf["Dir::AcceptedAutoBuild"],filename);
+                dest = os.path.join(dest_dir, filename);
                 # If it doesn't exist, create a symlink
                 if not os.path.exists(dest):
                     # Find the .orig.tar.gz in the pool
@@ -419,9 +428,12 @@ distribution.""";
                     src = os.path.join(ql[0][0], ql[0][1]);
                     os.symlink(src, dest);
                     # Add it to the list of packages for later processing by apt-ftparchive
-                    self.projectB.query("INSERT INTO unstable_accepted (filename, in_accepted) VALUES ('%s', 't')" % (dest));
+                    self.projectB.query("INSERT INTO accepted_autobuild (suite, filename, in_accepted) VALUES (%s, '%s', 't')" % (suite_id, dest));
+                # if it does, update things to ensure it's not removed prematurely
+                else:
+                    self.projectB.query("UPDATE accepted_autobuild SET in_accepted = 't', last_used = NULL WHERE filename = '%s' AND suite = %s" % (dest, suite_id));
 
-            self.projectB.query("COMMIT WORK");
+        self.projectB.query("COMMIT WORK");
 
     ###########################################################################
 

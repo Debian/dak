@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.23 2002-05-08 11:13:30 troup Exp $
+# $Id: rhona,v 1.24 2002-05-23 12:18:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -288,7 +288,7 @@ SELECT f.id FROM fingerprint f
 def clean_accepted_autobuild():
     global now_date;
 
-    if not Cnf.FindB("Dinstall::SpecialAcceptedAutoBuild") or Options["No-Action"]:
+    if not Cnf.ValueList("Dinstall::AcceptedAutoBuildSuites") or Options["No-Action"]:
         return;
 
     print "Cleaning out accepted autobuild symlinks..."
@@ -296,19 +296,20 @@ def clean_accepted_autobuild():
     our_delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::AcceptedAutoBuildStayOfExecution"])));
     count = 0;
 
-    q = projectB.query("SELECT filename FROM unstable_accepted WHERE last_used <= '%s'" % (our_delete_date));
+    q = projectB.query("SELECT filename FROM accepted_autobuild WHERE last_used <= '%s'" % (our_delete_date));
     for i in q.getresult():
         filename = i[0];
         if not os.path.exists(filename):
-            utils.fubar("%s (from unstable_accepted) doesn't exist." % (filename));
-        if not os.path.islink(filename):
-            utils.fubar("%s (from unstable_accepted) should be a symlink but isn't." % (filename));
+            utils.warn("%s (from accepted_autobuild) doesn't exist." % (filename));
+            continue;
+        if not Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild") and not os.path.islink(filename):
+            utils.fubar("%s (from accepted_autobuild) should be a symlink but isn't." % (filename));
         os.unlink(filename);
         count = count + 1;
-    projectB.query("DELETE FROM unstable_accepted WHERE last_used <= '%s'" % (our_delete_date));
+    projectB.query("DELETE FROM accepted_autobuild WHERE last_used <= '%s'" % (our_delete_date));
 
-    if count > 0:
-        sys.stderr.write("Cleaned %d accepted-autobuild symlinks.\n" % (count));
+    if count:
+        sys.stderr.write("Cleaned %d accepted-autobuild files.\n" % (count));
 
 ################################################################################
 
