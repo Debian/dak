@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.16 2000-12-20 08:25:56 troup Exp $
+# $Id: katie,v 1.17 2001-01-10 06:08:03 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 
 #########################################################################################
 
-import FCNTL, commands, fcntl, getopt, os, pg, pwd, re, shutil, stat, string, sys, tempfile, time
+import FCNTL, commands, fcntl, getopt, gzip, os, pg, pwd, re, shutil, stat, string, sys, tempfile, time
 import apt_inst, apt_pkg
 import utils, db_access
 
@@ -41,15 +41,10 @@ import utils, db_access
 re_isanum = re.compile (r'^\d+$');
 re_isadeb = re.compile (r'.*\.u?deb$');
 re_issource = re.compile (r'(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)');
-re_dpackage = re.compile (r'^package:\s*(.*)', re.IGNORECASE);
-re_darchitecture = re.compile (r'^architecture:\s*(.*)', re.IGNORECASE);
-re_dversion = re.compile (r'^version:\s*(.*)', re.IGNORECASE);
-re_dsection = re.compile (r'^section:\s*(.*)', re.IGNORECASE);
-re_dpriority = re.compile (r'^priority:\s*(.*)', re.IGNORECASE);
 re_changes = re.compile (r'changes$');
-re_override_package = re.compile(r'(\S*)\s+.*');
 re_default_answer = re.compile(r"\[(.*)\]");
 re_fdnic = re.compile("\n\n");
+re_bad_diff = re.compile("^[\-\+][\-\+][\-\+] /dev/null");
 
 ###############################################################################
 
@@ -85,11 +80,11 @@ files = {};
 projectB = None;
 new_ack_new = {};
 new_ack_old = {};
-overrides = {};
 install_count = 0;
 install_bytes = 0.0;
 reprocess = 0;
 orig_tar_id = None;
+legacy_source_untouchable = {};
 
 #########################################################################################
 
@@ -116,53 +111,38 @@ def check_signature (filename):
 
 #####################################################################################################################
 
-def read_override_file (filename, suite, component, binary_type):
-    global overrides;
-
-    file = utils.open_file(filename, 'r');
-    for line in file.readlines():
-        line = string.strip(utils.re_comments.sub('', line))
-        override_package = re_override_package.sub(r'\1', line)
-        if override_package != "":
-            overrides[suite][component][binary_type][override_package] = 1
-    file.close()
-
-
-# See if a given package is in the override file.  Caches and only loads override files on demand.
+# See if a given package is in the override table
 
 def in_override_p (package, component, suite, binary_type):
     global overrides;
 
-    if binary_type == "" or binary_type == "deb":
-        binary_type = "-";
+    if binary_type == "": # must be source
+        type = "dsc";
+    else:
+        type = binary_type;
 
     # Avoid <undef> on unknown distributions
-    if db_access.get_suite_id(suite) == -1:
+    suite_id = db_access.get_suite_id(suite);
+    if suite_id == -1:
         return None;
+    component_id = db_access.get_component_id(component);
+    type_id = db_access.get_override_type_id(type);
 
     # FIXME: nasty non-US speficic hack
     if string.lower(component[:7]) == "non-us/":
         component = component[7:];
-    if not overrides.has_key(suite) or not overrides[suite].has_key(component) or not overrides[suite][component].has_key(binary_type):
-        if not overrides.has_key(suite):
-            overrides[suite] = {}
-        if not overrides[suite].has_key(component):
-            overrides[suite][component] = {}
-        if not overrides[suite][component].has_key(binary_type):
-            overrides[suite][component][binary_type] = {}
-        if Cnf.has_key("Suite::%s::SingleOverrideFile" % (suite)): # legacy mixed suite (i.e. experimental)
-            override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)];
-            read_override_file (override_filename, suite, component, binary_type);
-        else: # all others.
-            if binary_type == "udeb":
-                override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)] + '.debian-installer.' + component;
-                read_override_file (override_filename, suite, component, binary_type);
-            else:
-                for src in ("", ".src"):
-                    override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)] + '.' + component + src;
-                    read_override_file (override_filename, suite, component, binary_type);
 
-    return overrides[suite][component][binary_type].get(package, None);
+    q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s"
+                       % (package, suite_id, component_id, type_id));
+    result = q.getresult();
+    # If checking for a source package fall back on the binary override type
+    if type == "dsc" and not result:
+        type_id = db_access.get_override_type_id("deb");
+        q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s"
+                           % (package, suite_id, component_id, type_id));
+        result = q.getresult();
+        
+    return result;
 
 #####################################################################################################################
 
@@ -442,7 +422,7 @@ def check_files():
 ###############################################################################
 
 def check_dsc ():
-    global dsc, dsc_files, reject_message, reprocess, orig_tar_id;
+    global dsc, dsc_files, reject_message, reprocess, orig_tar_id, legacy_source_untouchable;
 
     for file in files.keys():
         if files[file]["type"] == "dsc":
@@ -470,23 +450,44 @@ def check_dsc ():
                     found = "%s in incoming" % (dsc_file)
                     # Check the file does not already exist in the archive
                     if not changes.has_key("stable upload"):
-                        q = projectB.query("SELECT f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
+                        q = projectB.query("SELECT f.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
                         if q.getresult() != []:
                             reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
                 elif dsc_file[-12:] == ".orig.tar.gz":
                     # Check in the pool
-                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
+                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
                     ql = q.getresult();
-                    if len(ql) > 0:
-                        old_file = ql[0][0] + ql[0][1];
+
+
+                    if ql != []:
+                        # Unfortunately, we make get more than one match
+                        # here if, for example, the package was in potato
+                        # but had a -sa upload in woody.  So we need to a)
+                        # choose the right one and b) mark all wrong ones
+                        # as excluded from the source poolification (to
+                        # avoid file overwrites).
+
+                        x = ql[0]; # default to something sane in case we don't match any or have only one
+
+                        if len(ql) > 1:
+                            for i in ql:
+                                old_file = i[0] + i[1];
+                                actual_md5 = apt_pkg.md5sum(utils.open_file(old_file,"r"));
+                                actual_size = os.stat(old_file)[stat.ST_SIZE];
+                                if actual_md5 == dsc_files[dsc_file]["md5sum"] and actual_size == int(dsc_files[dsc_file]["size"]):
+                                    x = i;
+                                else:
+                                    legacy_source_untouchable[i[3]] = "";
+
+                        old_file = x[0] + x[1];
                         actual_md5 = apt_pkg.md5sum(utils.open_file(old_file,"r"));
                         actual_size = os.stat(old_file)[stat.ST_SIZE];
                         found = old_file;
-                        suite_type = ql[0][2];
-                        dsc_files[dsc_file]["files id"] = ql[0][3]; # need this for updating dsc_files in install()
+                        suite_type = x[2];
+                        dsc_files[dsc_file]["files id"] = x[3]; # need this for updating dsc_files in install()
                         # See install()...
                         if suite_type == "legacy" or suite_type == "legacy-mixed":
-                            orig_tar_id = ql[0][3];
+                            orig_tar_id = x[3];
                     else:
                         # Not there? Check in Incoming...
                         # [See comment above process_it() for explanation
@@ -498,6 +499,7 @@ def check_dsc ():
                             files[dsc_file]["section"] = files[file]["section"];
                             files[dsc_file]["priority"] = files[file]["priority"];
                             files[dsc_file]["component"] = files[file]["component"];
+                            files[dsc_file]["type"] = "orig.tar.gz";
                             reprocess = 1;
                             return 1;
                         else:
@@ -510,6 +512,30 @@ def check_dsc ():
                     reject_message = reject_message + "Rejected: md5sum for %s doesn't match %s.\n" % (found, file);
                 if actual_size != int(dsc_files[dsc_file]["size"]):
                     reject_message = reject_message + "Rejected: size for %s doesn't match %s.\n" % (found, file);
+
+    if string.find(reject_message, "Rejected:") != -1:
+        return 0
+    else: 
+        return 1
+
+###############################################################################
+
+# Some cunning stunt broke dpkg-source in dpkg 1.8{,.1}; detect the
+# resulting bad source packages and reject them.
+
+# Even more amusingly the fix in 1.8.1.1 didn't actually fix the
+# problem just changed the symptoms.
+
+def check_diff ():
+    global dsc, dsc_files, reject_message, reprocess, orig_tar_id;
+
+    for filename in files.keys():
+        if files[filename]["type"] == "diff.gz":
+            file = gzip.GzipFile(filename, 'r');
+            for line in file.readlines():
+                if re_bad_diff.search(line):
+                    reject_message = reject_message + "Rejected: source package was produced by broken dpkg 1.8.1[.1]; please rebuild with later version.\n";
+                    break;
 
     if string.find(reject_message, "Rejected:") != -1:
         return 0
@@ -713,6 +739,9 @@ def install (changes_filename, summary, short_summary):
         q = projectB.query("SELECT DISTINCT ON (f.id) l.path, f.filename, f.id as files_id, df.source, df.id as dsc_files_id, f.size, f.md5sum FROM files f, dsc_files df, location l WHERE df.source IN (SELECT source FROM dsc_files WHERE file = %s) AND f.id = df.file AND l.id = f.location AND (l.type = 'legacy' OR l.type = 'legacy-mixed')" % (orig_tar_id));
         qd = q.dictresult();
         for qid in qd:
+            # Is this an old upload superseded by a newer -sa upload?  (See check_dsc() for details)
+            if legacy_source_untouchable.has_key(qid["files_id"]):
+                continue;
             # First move the files to the new location
             legacy_filename = qid["path"]+qid["filename"];
             pool_location = utils.poolify (changes["source"], files[file]["component"]);
@@ -1080,6 +1109,7 @@ def process_it (changes_file):
     dsc_files = {};
     files = {};
     orig_tar_id = None;
+    legacy_source_untouchable = {};
 
     # Absolutize the filename to avoid the requirement of being in the
     # same directory as the .changes file.
@@ -1096,6 +1126,7 @@ def process_it (changes_file):
         check_files ();
         check_md5sums ();
         check_dsc ();
+        check_diff ();
         
     action(changes_file);
 

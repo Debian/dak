@@ -31,6 +31,10 @@ Less Urgent
   o jenna's untochable flag doesn't stop adding new packages
   o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS
   o Fix 'mixed' component handling
+  o Fix component handling in overrides (aj)
+  o Fix lack of entires in source overrides (aj)
+  o Fix potato files to not regen and sort by in jenna
+  o Fix rhona to unconditionally read override file on startup
 
 ===================================================================================================
 

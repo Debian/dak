@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.4 2000-12-18 07:11:25 troup Exp $
+# $Id: db_access.py,v 1.5 2001-01-10 06:08:03 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,16 +18,23 @@
 
 import pg, string
 
-Cnf = None
-projectB = None
-suite_id_cache = {}
-architecture_id_cache = {}
-archive_id_cache = {}
-component_id_cache = {}
-location_id_cache = {}
-maintainer_id_cache = {}
-source_id_cache = {}
-files_id_cache = {}
+############################################################################################
+
+Cnf = None;
+projectB = None;
+suite_id_cache = {};
+section_id_cache = {};
+priority_id_cache = {};
+override_type_id_cache = {};
+architecture_id_cache = {};
+archive_id_cache = {};
+component_id_cache = {};
+location_id_cache = {};
+maintainer_id_cache = {};
+source_id_cache = {};
+files_id_cache = {};
+
+############################################################################################
 
 def init (config, sql):
     global Cnf, projectB
@@ -48,22 +55,74 @@ def get_suite_id (suite):
     if ql == []:
         return -1; 
     
-    suite_id = q.getresult()[0][0]
+    suite_id = ql[0][0];
     suite_id_cache[suite] = suite_id
 
     return suite_id
 
+def get_section_id (section):
+    global section_id_cache
+
+    if section_id_cache.has_key(section):
+        return section_id_cache[section]
+
+    q = projectB.query("SELECT id FROM section WHERE section = '%s'" % (section))
+    ql = q.getresult();
+    if ql == []:
+        return -1; 
+    
+    section_id = ql[0][0];
+    section_id_cache[section] = section_id
+
+    return section_id
+
+def get_priority_id (priority):
+    global priority_id_cache
+
+    if priority_id_cache.has_key(priority):
+        return priority_id_cache[priority]
+
+    q = projectB.query("SELECT id FROM priority WHERE priority = '%s'" % (priority))
+    ql = q.getresult();
+    if ql == []:
+        return -1; 
+    
+    priority_id = ql[0][0];
+    priority_id_cache[priority] = priority_id
+
+    return priority_id
+
+def get_override_type_id (type):
+    global override_type_id_cache;
+
+    if override_type_id_cache.has_key(type):
+        return override_type_id_cache[type];
+
+    q = projectB.query("SELECT id FROM override_type WHERE type = '%s'" % (type));
+    ql = q.getresult();
+    if ql == []:
+        return -1; 
+    
+    override_type_id = ql[0][0];
+    override_type_id_cache[type] = override_type_id;
+
+    return override_type_id;
+
 def get_architecture_id (architecture):
-    global architecture_id_cache
+    global architecture_id_cache;
 
     if architecture_id_cache.has_key(architecture):
-        return architecture_id_cache[architecture]
+        return architecture_id_cache[architecture];
 
     q = projectB.query("SELECT id FROM architecture WHERE arch_string = '%s'" % (architecture))
-    architecture_id = q.getresult()[0][0]
-    architecture_id_cache[architecture] = architecture_id
+    ql = q.getresult();
+    if ql == []:
+        return -1;
+    
+    architecture_id = ql[0][0];
+    architecture_id_cache[architecture] = architecture_id;
 
-    return architecture_id
+    return architecture_id;
 
 def get_archive_id (archive):
     global archive_id_cache
@@ -88,7 +147,7 @@ def get_component_id (component):
     if ql == []:
         return -1;
 
-    component_id = ql[0][0]
+    component_id = ql[0][0];
     component_id_cache[component] = component_id
 
     return component_id
@@ -162,12 +221,12 @@ def get_files_id (filename, size, md5sum, location_id):
     if ql:
         if len(ql) != 1:
             return -1;
-        ql = ql[0] 
+        ql = ql[0]; 
         orig_size = int(ql[1]);
         orig_md5sum = ql[2];
         if orig_size != size or orig_md5sum != md5sum:
             return -2;
-        files_id_cache[cache_key] = ql[0]
+        files_id_cache[cache_key] = ql[0];
         return files_id_cache[cache_key]
     else:
         return None
