@@ -2,8 +2,8 @@
 
 # Create all the Release files
 
-# Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.17 2002-02-12 22:14:38 troup Exp $
+# Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
+# $Id: ziyi,v 1.18 2002-05-08 11:17:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ def create_temp_file (cmd):
     return (size, f)
 
 def print_md5sha_files (tree, files, hashop):
-    path = Cnf["Dir::RootDir"] + tree + "/"
+    path = Cnf["Dir::Root"] + tree + "/"
     for name in files:
         try:
 	    if name[0] == "<":
@@ -168,8 +168,17 @@ def main ():
 		    nonus = 0
 	else:
 	    nonus = 0
+
+	if not nonus and  string.find(codename, "/updates") > 0:
+	    security = 1
+	else:
+	    security = 0
+
 	if nonus:
 	    longsuite = suite + "/non-US"
+	elif security:
+	    suite = suite + "/updates"
+	    longsuite = suite
 	else:
 	    longsuite = suite
 
@@ -183,8 +192,8 @@ def main ():
 	    print "ALERT: suite %s not in apt.conf, nor untouchable!" % (suite)
 	    continue
 
-	print Cnf["Dir::RootDir"] + tree + "/Release"
-	out = open(Cnf["Dir::RootDir"] + tree + "/Release", "w")
+	print Cnf["Dir::Root"] + tree + "/Release"
+	out = open(Cnf["Dir::Root"] + tree + "/Release", "w")
 
 	out.write("Origin: %s\n" % (origin))
 	out.write("Label: %s\n" % (label))
@@ -212,7 +221,7 @@ def main ():
 			    files.append(file)
 		    else:
 			disks = "%s/disks-%s" % (sec, arch)
-			diskspath = Cnf["Dir::RootDir"]+tree+"/"+disks
+			diskspath = Cnf["Dir::Root"]+tree+"/"+disks
 			if os.path.exists(diskspath):
 			    for dir in os.listdir(diskspath):
 				if os.path.exists("%s/%s/md5sum.txt" % (diskspath, dir)):
@@ -225,7 +234,7 @@ def main ():
 			rel = "%s/%s/Release" % (sec, arch)
 		    else:
 			rel = "%s/binary-%s/Release" % (sec, arch)
-		    relpath = Cnf["Dir::RootDir"]+tree+"/"+rel
+		    relpath = Cnf["Dir::Root"]+tree+"/"+rel
 
 		    if os.path.exists(relpath):
 			try:
@@ -285,7 +294,7 @@ def main ():
 	    else:
 		signkeyids = [""]
 
-	    dest = Cnf["Dir::RootDir"] + tree + "/Release.gpg"
+	    dest = Cnf["Dir::Root"] + tree + "/Release.gpg"
 	    if os.path.exists(dest):
 		os.unlink(dest)
 
@@ -294,7 +303,7 @@ def main ():
 		else: defkeyid = ""
 		os.system("gpg %s %s %s --detach-sign <%s >>%s" %
 			(keyring, defkeyid, arguments,
-			Cnf["Dir::RootDir"] + tree + "/Release", dest))
+			Cnf["Dir::Root"] + tree + "/Release", dest))
 
 #######################################################################################
 
