@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.7 2002-02-22 02:19:26 troup Exp $
+# $Id: jennifer,v 1.8 2002-02-25 15:38:06 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.7 $";
+jennifer_version = "$Revision: 1.8 $";
 
 Cnf = None;
 Options = None;
@@ -459,30 +459,12 @@ def check_changes():
     changes["chopversion"] = utils.re_no_epoch.sub('', changes["version"])
     changes["chopversion2"] = utils.re_no_revision.sub('', changes["chopversion"])
 
-    # Ensure the changes filename matches it's contents.
-
-    base_filename = os.path.basename(filename);
-    m = re_is_changes.match(base_filename);
-    # source package name
-    if m:
-        file_source = m.group(1);
-        if changes["source"] != file_source:
-            reject("package name part of changes filename (%s) does not match source field (%s) in the changes file." % (file_source, changes["source"]));
-        # source version
-        file_version = m.group(2);
-        if changes["chopversion"] != file_version:
-            reject("version part of changes filename (%s) does not match version field (%s) in the changes file." % (file_version, changes["chopversion"]));
-    else:
-        reject("invalid changes filename '%s'." % (filename));
-
-    # But ... we can't check architecture because there's no
-    # established policy or practice on how to handle
-    # multi-architecture uploads.  Instead we check what we can and
-    # reject if there's a changes file of the same name already in one
+    # Check there isn't already a changes file of the same name in one
     # of the queue directories.
+    base_filename = os.path.basename(filename);
     for dir in [ "Accepted", "Byhand", "Done", "New" ]:
         if os.path.exists(Cnf["Dir::Queue%sDir" % (dir) ]+'/'+base_filename):
-            reject("a changes file with the same name exists in the %s directory." % (dir));
+            reject("a changes file with the same name already exists in the %s directory." % (dir));
 
     return 1;
 
