@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.25 2002-10-16 02:47:32 troup Exp $
+# $Id: rhona,v 1.26 2003-01-02 18:13:41 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -321,8 +321,6 @@ def main():
 	if not Cnf.has_key("Rhona::Options::%s" % (i)):
 	    Cnf["Rhona::Options::%s" % (i)] = "";
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-
     Arguments = [('h',"help","Rhona::Options::Help"),
                  ('n',"no-action","Rhona::Options::No-Action")];
 
@@ -331,6 +329,8 @@ def main():
 
     if Options["Help"]:
         usage();
+
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
 
     now_date = time.strftime("%Y-%m-%d %H:%M");
     delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::StayOfExecution"])));
