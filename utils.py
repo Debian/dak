@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Utility functions
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.60 2003-11-17 17:59:29 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: utils.py,v 1.61 2004-01-21 03:20:52 troup Exp $
 
 ################################################################################
 
@@ -181,6 +181,9 @@ def parse_changes(filename, dsc_whitespace_rules=0):
                 while index < num_of_lines and line != "":
                     index += 1;
                     line = indexed_lines[index];
+            continue;
+        # If we're not inside the signed data, don't process anything
+        if not inside_signature:
             continue;
         slf = re_single_line_field.match(line);
         if slf:
