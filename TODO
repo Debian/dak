@@ -13,8 +13,6 @@ Actually Urgent
 
   o UrgencyLog stuff should minimize it's bombing out(?)
   o Log stuff should open the log file g+w lamer
-<aj> elmo_home: (although, if you haven't already, you might want to add a `Reject: invalid character in Version:' check to katie sometime)
-<aj> elmo_home: (at least while auric's apt doesn't handle ~'s)
 
 More Urgent
 -----------

@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.25 2002-07-14 17:07:45 troup Exp $
+# $Id: jennifer,v 1.26 2002-07-14 18:19:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.25 $";
+jennifer_version = "$Revision: 1.26 $";
 
 Cnf = None;
 Options = None;
@@ -837,28 +837,40 @@ def check_urgency ():
 
 ################################################################################
 
-def md5sum_size_check(file, orig_file):
-    try:
-        file_handle = utils.open_file(file);
-    except utils.cant_open_exc:
-        return;
-
-    # Check md5sum
-    if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
-        reject("%s: md5sum check failed." % (file));
-    file_handle.close();
-    # Check size
-    actual_size = os.stat(file)[stat.ST_SIZE];
-    size = int(files[file]["size"]);
-    if size != actual_size:
-        reject("%s: actual file size (%s) does not match size (%s) in %s"
-               % (file, actual_size, size, orig_file));
-
 def check_md5sums ():
     for file in files.keys():
-        md5sum_size_check(file, ".changes");
+        try:
+            file_handle = utils.open_file(file);
+        except utils.cant_open_exc:
+            continue;
+
+        # Check md5sum
+        if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
+            reject("%s: md5sum check failed." % (file));
+        file_handle.close();
+        # Check size
+        actual_size = os.stat(file)[stat.ST_SIZE];
+        size = int(files[file]["size"]);
+        if size != actual_size:
+            reject("%s: actual file size (%s) does not match size (%s) in .changes"
+                   % (file, actual_size, size));
+
     for file in dsc_files.keys():
-        md5sum_size_check(file, ".dsc");
+        try:
+            file_handle = utils.open_file(file);
+        except utils.cant_open_exc:
+            continue;
+
+        # Check md5sum
+        if apt_pkg.md5sum(file_handle) != dsc_files[file]["md5sum"]:
+            reject("%s: md5sum check failed." % (file));
+        file_handle.close();
+        # Check size
+        actual_size = os.stat(file)[stat.ST_SIZE];
+        size = int(dsc_files[file]["size"]);
+        if size != actual_size:
+            reject("%s: actual file size (%s) does not match size (%s) in .dsc"
+                   % (file, actual_size, size));
 
 ################################################################################
 
