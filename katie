@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.69 2002-02-12 23:13:59 troup Exp $
+# $Id: katie,v 1.70 2002-02-13 02:38:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.69 $";
+katie_version = "$Revision: 1.70 $";
 
 Cnf = None;
 Options = None;
@@ -219,11 +219,12 @@ def action ():
 
 def do_reject ():
     Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"];
-    Subst["__MANUAL_REJECT_MESSAGE__"] = Cnf["Dinstall::MyEmailAddress"];
+    Subst["__REJECT_MESSAGE__"] = reject_message;
+    Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
     reject_mail_message = utils.TemplateSubst(Subst,utils.open_file(Cnf["Dir::TemplatesDir"]+"/katie.unaccept").read());
 
     # Write the rejection email out as the <foo>.reason file
-    reason_filename = pkg.changes_file[:-8] + ".reason";
+    reason_filename = os.path.basename(pkg.changes_file[:-8]) + ".reason";
     reject_filename = Cnf["Dir::QueueRejectDir"] + '/' + reason_filename;
     # If we fail here someone is probably trying to exploit the race
     # so let's just raise an exception ...
@@ -392,6 +393,7 @@ def process_it (changes_file):
 
     Katie.init_vars();
     Katie.update_vars();
+    Katie.update_subst();
     check();
     action();
 
