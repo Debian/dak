@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.10 2002-03-06 07:39:24 rmurray Exp $
+# $Id: katie.py,v 1.11 2002-03-14 14:12:04 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -416,7 +416,7 @@ class Katie:
                         # someone is trying to exploit us.
                         utils.warn("**WARNING** failed to move %s from the reject directory to the morgue." % (file));
                         return;
-                    utils.move(dest_file, morgue_file);
+                    utils.move(dest_file, morgue_file, perms=0660);
                     try:
                         os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
                     except OSError, e:
@@ -427,7 +427,8 @@ class Katie:
                     raise;
             # If we got here, we own the destination file, so we can
             # safely overwrite it.
-            utils.move(file, dest_file, 1);
+            utils.move(file, dest_file, 1, perms=0660);
+
 
     ###########################################################################
 

@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.8 2002-02-25 15:38:06 troup Exp $
+# $Id: jennifer,v 1.9 2002-03-14 14:12:04 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.8 $";
+jennifer_version = "$Revision: 1.9 $";
 
 Cnf = None;
 Options = None;
@@ -967,10 +967,10 @@ def do_byhand (summary):
 
     file_keys = files.keys();
 
-    # Move all the files into the accepted directory
+    # Move all the files into the byhand directory
     utils.move (pkg.changes_file, Cnf["Dir::QueueByhandDir"]);
     for file in file_keys:
-        utils.move (file, Cnf["Dir::QueueByhandDir"]);
+        utils.move (file, Cnf["Dir::QueueByhandDir"], perms=0660);
 
     # Check for override disparities
     if not Cnf["Dinstall::Options::No-Mail"]:
@@ -998,7 +998,7 @@ def acknowledge_new (summary):
     # Move all the files into the accepted directory
     utils.move (pkg.changes_file, Cnf["Dir::QueueNewDir"]);
     for file in file_keys:
-        utils.move (file, Cnf["Dir::QueueNewDir"]);
+        utils.move (file, Cnf["Dir::QueueNewDir"], perms=0660);
 
     if not Options["No-Mail"]:
         print "Sending new ack.";

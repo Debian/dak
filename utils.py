@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.39 2002-02-22 02:19:26 troup Exp $
+# $Id: utils.py,v 1.40 2002-03-14 14:12:04 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -301,7 +301,7 @@ def poolify (source, component):
 
 ######################################################################################
 
-def move (src, dest, overwrite = 0):
+def move (src, dest, overwrite = 0, perms = 0664):
     if os.path.exists(dest) and os.path.isdir(dest):
 	dest_dir = dest;
     else:
@@ -321,10 +321,10 @@ def move (src, dest, overwrite = 0):
             if not os.access(dest, os.W_OK):
                 raise cant_overwrite_exc
     shutil.copy2(src, dest);
-    os.chmod(dest, 0664);
+    os.chmod(dest, perms);
     os.unlink(src);
 
-def copy (src, dest, overwrite = 0):
+def copy (src, dest, overwrite = 0, perms = 0664):
     if os.path.exists(dest) and os.path.isdir(dest):
 	dest_dir = dest;
     else:
@@ -344,7 +344,7 @@ def copy (src, dest, overwrite = 0):
             if not os.access(dest, os.W_OK):
                 raise cant_overwrite_exc
     shutil.copy2(src, dest);
-    os.chmod(dest, 0664);
+    os.chmod(dest, perms);
 
 ######################################################################################
 
