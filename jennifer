@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.3 2002-02-15 04:01:14 troup Exp $
+# $Id: jennifer,v 1.4 2002-02-22 01:03:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.3 $";
+jennifer_version = "$Revision: 1.4 $";
 
 Cnf = None;
 Options = None;
@@ -676,7 +676,7 @@ def check_files():
                 files[file]["new"] = 1;
 
             if files[file]["type"] == "deb":
-                reject(Katie.check_binaries_against_db(file, suite));
+                reject(Katie.check_binaries_against_db(file, suite),"");
 
             # Validate the component
             component = files[file]["component"];
@@ -753,10 +753,10 @@ def check_dsc ():
                 reject("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version));
 
             # Ensure source is newer than existing source in target suites
-            reject(Katie.check_source_against_db(file));
+            reject(Katie.check_source_against_db(file),"");
 
             (reject_msg, is_in_incoming) = Katie.check_dsc_against_db(file);
-            reject(reject_msg);
+            reject(reject_msg, "");
             if is_in_incoming:
                 if not Options["No-Action"]:
                     copy_to_holding(is_in_incoming);
