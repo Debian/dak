@@ -33,6 +33,10 @@ pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
+update-readmenonus
+
+################################################################################
+
 cd $incoming
 rm -f REPORT
 katie -pak *.changes | direport | tee REPORT | \

@@ -35,6 +35,7 @@ pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 update-bugdoctxt
 update-mirrorlists
+update-mailingliststxt
 
 ################################################################################
 

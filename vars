@@ -1,6 +1,7 @@
 # locations used by many scripts
 
 ftpdir=/org/ftp.debian.org/ftp
+webdir=/org/ftp.debian.org/web
 indices=$ftpdir/indices
 archs="alpha arm hppa hurd-i386 i386 m68k powerpc sparc mips mipsel sh"
 
