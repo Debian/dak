@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.21 2001-04-13 20:11:20 troup Exp $
+# $Id: utils.py,v 1.22 2001-05-17 01:17:54 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -148,6 +148,7 @@ def parse_changes(filename, dsc_whitespace_rules):
         if slf:
             field = string.lower(slf.groups()[0]);
             changes[field] = slf.groups()[1];
+	    first = 1;
             continue;
         mld = re.match(r'^ \.$', line);
         if mld:
@@ -155,6 +156,9 @@ def parse_changes(filename, dsc_whitespace_rules):
             continue;
         mlf = re.match(r'^\s(.*)', line);
         if mlf:
+            if first == 1 and changes[field] != "":
+                changes[field] = changes[field] + '\n';
+            first = 0;
 	    changes[field] = changes[field] + mlf.groups()[0] + '\n';
             continue;
 	error = error + line;
