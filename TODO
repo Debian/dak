@@ -5,13 +5,23 @@ Urgent
 ------
 
   o Claire needs to know about sections on auric
+
   o maintainers file needs overrides
-  o jenna needs to use order by [aj]
-  o seperate apt.conf for stable... [jgg]
+
   o need to have process_it run a big try: loop so that individual
     package screws up don't kill the daily cron run.
+
   o Add an 'add' ability to melanie (? separate prog maybe)
+
   o Make experimental work
+
+  o fix katie's handling of source packages in different directories;
+    e.g. if a package moves from main to contrib, the .orig.tar.gz
+    needs to what? copy or be moved and old source removed; one of the
+    two.
+
+  o fix ssh appearing in 3 packages files
+
 
 Less Urgent
 -----------

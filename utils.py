@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.11 2001-01-16 21:52:37 troup Exp $
+# $Id: utils.py,v 1.12 2001-01-25 06:00:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,6 +54,29 @@ def our_raw_input():
 
 ######################################################################################
 
+# What a mess.  FIXME
+def extract_component_from_section(section):
+    component = "";
+    
+    if string.find(section, '/') != -1: 
+        component = string.split(section, '/')[0];
+    if string.lower(component) == "non-us" and string.count(section, '/') > 0:
+        s = string.split(section, '/')[1];
+        if s == "main" or s == "non-free" or s == "contrib": # Avoid e.g. non-US/libs
+            component = string.split(section, '/')[0]+ '/' + string.split(section, '/')[1];
+
+    if string.lower(section) == "non-us":
+        component = "non-US/main";
+            
+    if component == "":
+        component = "main";
+    elif string.lower(component) == "non-us":
+        component = "non-US/main";
+
+    return (section, component);
+
+######################################################################################
+
 def parse_changes(filename):
     changes_in = open_file(filename,'r');
     error = ""
@@ -104,7 +127,7 @@ def build_file_list(changes, dsc):
         if i == "":
             break
         s = string.split(i)
-        section = priority = component = ""
+        section = priority = "";
         try:
             if dsc != "":
                 (md5, size, name) = s
@@ -116,21 +139,7 @@ def build_file_list(changes, dsc):
         if section == "": section = "-"
         if priority == "": priority = "-"
 
-        # What a mess.  FIXME
-        if string.find(section, '/') != -1: 
-	    component = string.split(section, '/')[0]
-	if string.lower(component) == "non-us" and string.count(section, '/') > 0:
-            s = string.split(section, '/')[1]
-            if s == "main" or s == "non-free" or s == "contrib": # Avoid e.g. non-US/libs
-                component = string.split(section, '/')[0]+ '/' + string.split(section, '/')[1]
-
-        if string.lower(section) == "non-us":
-            component = "non-US/main";
-            
-        if component == "":
-            component = "main";
-        elif string.lower(component) == "non-us":
-            component = "non-US/main";
+        (section, component) = extract_component_from_section(section);
         
         files[name] = { "md5sum" : md5,
                         "size" : size,
