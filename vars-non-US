@@ -3,7 +3,7 @@
 nonushome=/org/non-us.debian.org
 ftpdir=$nonushome/ftp
 indices=$ftpdir/indices-non-US
-archs="alpha arm hppa hurd-i386 i386 ia64 m68k powerpc s390 sparc mips mipsel sh"
+archs="alpha arm hppa hurd-i386 i386 ia64 m68k mips mipsel powerpc s390 sh sparc"
 
 masterdir=$nonushome/katie
 overridedir=$nonushome/scripts/override
