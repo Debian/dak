@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: madison,v 1.16 2002-03-29 15:27:47 troup Exp $
+# $Id: madison,v 1.17 2002-03-29 15:58:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -146,32 +146,37 @@ def main ():
         d = {};
         for i in ql:
             results = results + 1;
-            package = i[0];
+            pkg = i[0];
             version = i[1];
             architecture = i[2];
             suite = i[3];
-            if not d.has_key(version):
-                d[version] = {};
-            if not d[version].has_key(suite):
-                d[version][suite] = [];
-            d[version][suite].append(architecture);
+            if not d.has_key(pkg):
+                d[pkg] = {};
+            if not d[pkg].has_key(version):
+                d[pkg][version] = {};
+            if not d[pkg][version].has_key(suite):
+                d[pkg][version][suite] = [];
+            d[pkg][version][suite].append(architecture);
 
-        versions = d.keys();
-        versions.sort(apt_pkg.VersionCompare);
-        for version in versions:
-            suites = d[version].keys();
-            suites.sort();
-            for suite in suites:
-                sys.stdout.write("%10s | %10s | %13s | " % (package, version, suite));
-                count = 0;
-                arches = d[version][suite];
-                arches.sort(arch_compare);
-                for arch in arches:
-                    if count > 0:
-                        sys.stdout.write(', ');
-                    sys.stdout.write(arch);
-                    count = count + 1;
-                sys.stdout.write('\n');
+        packages = d.keys();
+        packages.sort();
+        for pkg in packages:
+            versions = d[pkg].keys();
+            versions.sort(apt_pkg.VersionCompare);
+            for version in versions:
+                suites = d[pkg][version].keys();
+                suites.sort();
+                for suite in suites:
+                    sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite));
+                    count = 0;
+                    arches = d[pkg][version][suite];
+                    arches.sort(arch_compare);
+                    for arch in arches:
+                        if count > 0:
+                            sys.stdout.write(', ');
+                        sys.stdout.write(arch);
+                        count = count + 1;
+                    sys.stdout.write('\n');
 
     if not results:
         sys.exit(1);
