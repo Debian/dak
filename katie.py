@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.35 2003-07-29 14:00:39 ajt Exp $
+# $Id: katie.py,v 1.36 2003-07-29 14:57:03 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -604,7 +604,7 @@ distribution.""";
     def source_exists (self, package, source_version, suites = ["any"]):
 	okay = 1
 	for suite in suites:
-	    if suites == "any":
+	    if suite == "any":
 	    	que = "SELECT s.version FROM source s WHERE s.source = '%s'" % \
 		    (package)
 	    else:
@@ -631,6 +631,7 @@ distribution.""";
 
             # No source found...
             okay = 0
+	return okay
 
     ################################################################################
 
