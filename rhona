@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary (and source) packages
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.1.1.1 2000-11-24 00:20:10 troup Exp $
+# $Id: rhona,v 1.2 2000-11-24 04:04:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ projectB = None
 Cnf = None
 
 def check_binaries():
-
     # A nicer way to do this would be `SELECT bin FROM
     # bin_associations EXCEPT SELECT id from binaries WHERE
     # last_update IS NULL', but it seems postgresql can't handle that
@@ -75,7 +74,6 @@ def check_binaries():
     projectB.query("COMMIT WORK");
 
 def check_sources():
-
     # A nicer way to do this would be using `EXCEPT', but see the
     # commeint in process_binary.
 
@@ -100,15 +98,13 @@ def check_sources():
             q = projectB.query("SELECT f.id FROM files f, dsc_files d WHERE d.source = %d AND d.file = f.id" % (id));
             ql = q.getresult();
             for i in ql:
-                q_others = projectB.query("SELECT id FROM dsc_files d WHERE file = %s" % (i[0]));
+                q_others = projectB.query("SELECT file FROM dsc_files d WHERE file = %s" % (i[0]));
                 ql_others = q.getresult();
                 if len(ql) == 1:
                     projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (date, i[0]));
     projectB.query("COMMIT WORK");
 
     # Check for any sources which are marked for eventual deletion but are now used again.
-    # Need to check versus dsc_files too!
-
     all_marked_sources = {};
     q = projectB.query("SELECT s.id, s.file FROM source s, files f WHERE f.last_used IS NOT NULL AND f.id = s.file");
     ql = q.getresult();
@@ -121,7 +117,28 @@ def check_sources():
             print "W: %s has released %s from the target list." % (id, all_marked_sources[id]);
             projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (all_marked_sources[id]));
             # Unmark all other files references by .dsc too
-            q = projectB.query("SELECT id FROM dsc_files WHERE source = %d" % (id));
+            q = projectB.query("SELECT file FROM dsc_files WHERE source = %d" % (id));
+            ql = q.getresult();
+            for i in ql:
+                    projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (i[0]));
+    projectB.query("COMMIT WORK");
+
+    # Whee, check for any source files (i.e. non .dsc) which are
+    # marked for eventual deletion but are now used by a source
+    # package again.
+    all_marked_dsc_files = {}
+    q = projectB.query("SELECT s.id, s.file FROM source s, files f, dsc_files d WHERE f.last_used IS NOT NULL AND f.id = d.file AND d.source = s.id");
+    ql = q.getresult();
+    for i in ql:
+        all_marked_dsc_files[i[0]] = i[1];
+    projectB.query("BEGIN WORK");
+    for id in all_marked_dsc_files.keys():
+        if linked_sources.has_key(id):
+            # Can't imagine why this would happen, so warn about it for now.
+            print "W: %s has released %s from the target list." % (id, all_marked_sources[id]);
+            projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (all_marked_sources[id]));
+            # Unmark all other files references by .dsc too
+            q = projectB.query("SELECT file FROM dsc_files WHERE source = %d" % (id));
             ql = q.getresult();
             for i in ql:
                     projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (i[0]));

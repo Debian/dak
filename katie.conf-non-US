@@ -77,7 +77,7 @@ Rhona
 
   Morgue "/org/non-us.debian.org/morgue/";
   // How long (in seconds) dead packages are left before being killed
-  StayOfExecution 259200;
+  StayOfExecution 172800; // 2 days
 };
 
 Suite
