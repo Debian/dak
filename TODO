@@ -8,23 +8,10 @@
 
 ================================================================================
 
-queue/approved
---------------
-
- o What to do with multi-suite uploads?  Presumably hold in unapproved
-   and warn?  Or what?  Can't accept just for unstable or reject just
-   from stable.
-
- o Whenever we check for anything in accepted we also need to check in
-   unapproved.
-
- o non-sourceful uploads should go straight through if they have
-   source in accepted or the archive.
-
- o security uploads on auric should be pre-approved.
-
 Others
 ------
+
+  o tabnanny the source
 
   o drop map-unreleased
 
@@ -269,6 +256,23 @@ Others
   o saffron: add non-US
   o saffron: add ability to control components, architectures, archives, suites
   o saffron: add key to expand header
+
+================================================================================
+
+queue/approved
+--------------
+
+ o What to do with multi-suite uploads?  Presumably hold in unapproved
+   and warn?  Or what?  Can't accept just for unstable or reject just
+   from stable.
+
+ o Whenever we check for anything in accepted we also need to check in
+   unapproved.
+
+ o non-sourceful uploads should go straight through if they have
+   source in accepted or the archive.
+
+ o security uploads on auric should be pre-approved.
 
 ================================================================================
 
