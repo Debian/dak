@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.59 2003-09-24 00:13:43 troup Exp $
+# $Id: utils.py,v 1.60 2003-11-17 17:59:29 troup Exp $
 
 ################################################################################
 
@@ -155,16 +155,16 @@ def parse_changes(filename, dsc_whitespace_rules=0):
 
     inside_signature = 0;
 
-    indices = indexed_lines.keys()
+    num_of_lines = len(indexed_lines.keys());
     index = 0;
     first = -1;
-    while index < max(indices):
+    while index < num_of_lines:
         index += 1;
         line = indexed_lines[index];
         if line == "":
             if dsc_whitespace_rules:
                 index += 1;
-                if index > max(indices):
+                if index > num_of_lines:
                     raise invalid_dsc_format_exc, index;
                 line = indexed_lines[index];
                 if not line.startswith("-----BEGIN PGP SIGNATURE"):
@@ -178,7 +178,7 @@ def parse_changes(filename, dsc_whitespace_rules=0):
         if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
             if dsc_whitespace_rules:
                 inside_signature = 1;
-                while index < max(indices) and line != "":
+                while index < num_of_lines and line != "":
                     index += 1;
                     line = indexed_lines[index];
             continue;
