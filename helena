@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Produces a report on NEW and BYHAND packages
-# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: helena,v 1.4 2003-01-02 18:10:02 troup Exp $
+# Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: helena,v 1.5 2003-07-15 17:29:26 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ def time_pp(x):
         unit="month";
     else:
         x /= 29030400;
-        unit="years";
+        unit="year";
     x = int(x);
     return "%s %s%s" % (x, unit, plural(x));
 
