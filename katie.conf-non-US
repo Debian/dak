@@ -133,9 +133,9 @@ Suite
 	  sparc "";
 	};
 	Announce "debian-changes@lists.debian.org";
-	Version "2.2r5";
+	Version "2.2r6";
 	Origin "Debian";
-	Description "Debian 2.2r5 Released 10th January 2002";
+	Description "Debian 2.2r6 Released 3rd April 2002";
 	CodeName "potato";
 	OverrideCodeName "potato";
 	Priority "1";
@@ -159,9 +159,9 @@ Suite
 	Announce "debian-changes@lists.debian.org";
 	CopyChanges "dists/proposed-updates/";
 	CopyKatie "/org/non-us.debian.org/queue/proposed-updates/";
-	Version "2.2r5";
+	Version "2.2r6";
 	Origin "Debian";
-	Description "Proposed Updates for Debian 2.2r5 - Not Released";
+	Description "Proposed Updates for Debian 2.2r6 - Not Released";
 	CodeName "proposed-updates";
 	OverrideCodeName "potato";
 	OverrideSuite "stable";
