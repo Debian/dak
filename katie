@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.15 2000-12-20 08:15:35 troup Exp $
+# $Id: katie,v 1.16 2000-12-20 08:25:56 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -216,6 +216,11 @@ def check_changes(filename):
     if changes["distribution"].has_key("frozen") and not Cnf.has_key("Suite::Frozen"):
         del changes["distribution"]["frozen"]
         reject_message = reject_message + "Mapping frozen to unstable.\n"
+
+    # Map testing to unstable
+    if changes["distribution"].has_key("testing"):
+        del changes["distribution"]["testing"]
+        reject_message = reject_message + "Mapping testing to unstable.\n"
 
     # Ensure target distributions exist
     for i in changes["distribution"].keys():
