@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.21 2002-05-18 23:55:07 troup Exp $
+# $Id: katie.py,v 1.22 2002-05-19 00:47:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -143,7 +143,16 @@ class Katie:
             exec "%s = self.pkg.%s;" % (i,i);
         dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".katie");
         dump_file = utils.open_file(dump_filename, 'w');
-        os.chmod(dump_filename, 0660);
+        try:
+            os.chmod(dump_filename, 0660);
+        except OSError, e:
+            if errno.errorcode[e.errno] == 'EPERM':
+                perms = stat.S_IMODE(os.stat(dump_filename)[stat.ST_MODE]);
+                if perms & stat.S_IROTH:
+                    utils.fubar("%s is world readable and chmod failed." % (dump_filename));
+            else:
+                raise;
+
         p = cPickle.Pickler(dump_file, 1);
         for i in [ "d_changes", "d_dsc", "d_files", "d_dsc_files" ]:
             exec "%s = {}" % i;
