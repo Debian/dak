@@ -13,10 +13,10 @@ Default
    FileMode 0664;
 }
 
-tree "dists/potato/updates"
+tree "dists/stable/updates"
 {
-   FileList "/org/security.debian.org/katie-database/dists/potato_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/security.debian.org/katie-database/dists/potato_$(SECTION)_source.list";
+   FileList "/org/security.debian.org/katie-database/dists/stable_updates/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/security.debian.org/katie-database/dists/stable_updates/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm i386 m68k powerpc sparc source";
    BinOverride "override.potato.$(SECTION)";
@@ -24,10 +24,10 @@ tree "dists/potato/updates"
    Contents " ";
 };
 
-tree "dists/woody/updates"
+tree "dists/testing/updates"
 {
-   FileList "/org/security.debian.org/katie-database/dists/woody_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/security.debian.org/katie-database/dists/woody_$(SECTION)_source.list";
+   FileList "/org/security.debian.org/katie-database/dists/testing_updates/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/security.debian.org/katie-database/dists/testing_updates/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 mips mipsel m68k powerpc s390 sparc source";
    BinOverride "override.woody.$(SECTION)";
