@@ -320,6 +320,7 @@ Dir
   RootDir "/org/non-us.debian.org/ftp/";
   PoolDir "/org/non-us.debian.org/ftp/pool/";
   PoolRoot "pool/";
+  TemplatesDir "/org/non-us.debian.org/katie/templates/";
   IncomingDir "/org/non-us.debian.org/incoming/";
   OverrideDir "/org/non-us.debian.org/scripts/override/";
   ListsDir "/org/non-us.debian.org/database/dists/";
