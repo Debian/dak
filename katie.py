@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.42 2003-10-29 16:57:44 troup Exp $
+# $Id: katie.py,v 1.43 2003-11-07 01:48:42 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -469,7 +469,9 @@ distribution.""";
             return;
 
         summary = "";
-        for file in files.keys():
+        file_keys = files.keys();
+        file_keys.sort();
+        for file in file_keys:
             if not files[file].has_key("new") and files[file]["type"] == "deb":
                 section = files[file]["section"];
                 override_section = files[file]["override section"];
