@@ -61,8 +61,9 @@ for i in proposed-updates_-_binary-* proposed-updates_-_source.list; do cat $i >
 cd $overridedir
 denise
 # FIXME
-rm -f override.potato.all3
+rm -f override.potato.all3 override.sid.all3
 for i in main contrib non-free; do cat override.potato.$i >> override.potato.all3; done
+for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
 
 # Generate Packages and Sources files
 cd $masterdir
