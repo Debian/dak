@@ -11,7 +11,6 @@ Default
    Sources::Compress "gzip";
    Contents::Compress "gzip";
    DeLinkLimit 0;
-   MaxContentsChange 6000;
    FileMode 0664;
 }
 
