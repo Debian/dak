@@ -3,7 +3,7 @@
 
 # Test utils.fix_maintainer()
 # Copyright (C) 2004  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.1 2004-04-03 02:49:54 troup Exp $
+# $Id: test.py,v 1.2 2004-06-23 23:11:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,6 +94,14 @@ def main ():
 
     # Check just-email form
     s = "james@nocrew.org"
+    xa = " <james@nocrew.org>"
+    xb = " <james@nocrew.org>"
+    xc = ""
+    xd = "james@nocrew.org"
+    check_valid(s, xa, xb, xc, xd);
+
+    # Check bracketed just-email form
+    s = "<james@nocrew.org>"
     xa = " <james@nocrew.org>"
     xb = " <james@nocrew.org>"
     xc = ""

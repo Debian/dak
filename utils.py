@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.67 2004-04-07 14:23:30 dsilvers Exp $
+# $Id: utils.py,v 1.68 2004-06-23 23:11:47 troup Exp $
 
 ################################################################################
 
@@ -327,9 +327,11 @@ switched to 'email (name)' format."""
     if not maintainer:
         return ('', '', '', '');
 
-    if maintainer.find("<") == -1 or (maintainer[0] == "<" and \
-                                      maintainer[-1:] == ">"):
+    if maintainer.find("<") == -1:
         email = maintainer;
+        name = "";
+    elif (maintainer[0] == "<" and maintainer[-1:] == ">"):
+        email = maintainer[1:-1];
         name = "";
     else:
         m = re_parse_maintainer.match(maintainer);
