@@ -21,6 +21,16 @@ More Urgent
 
  <drow> Can't read file.: /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.katie.  You assume that the filenames are relative to accepted/, might want to doc or fix that.
 
+  o SecurityAcceptedAutoBuild doesn't handle the case of foo_3.3woody1
+  with a new .orig.tar.gz followed by a foo_3.3potato1 with the same
+  .orig.tar.gz; jennifer sees it and copes, but the AA code doesn't
+  and can't really easily know so the potato AA dir is left with no
+  .orig.tar.gz copy.  doh.
+
+  o orig.tar.gz in accepted not handled properly (?)
+
+  o amber doesn't include .orig.tar.gz but it should
+
   o permissions (paranoia, group write, etc.) configurability and overhaul
 
   o <M>ove option for lisa byhand proecessing
