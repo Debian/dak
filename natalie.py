@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.10 2001-09-17 11:18:37 troup Exp $
+# $Id: natalie.py,v 1.11 2001-09-27 01:23:41 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,11 +32,9 @@ Logger = None;
 
 ################################################################################
 
-def usage (exit_code):
+def usage (exit_code=0):
     print """Usage: natalie.py [OPTIONS]
-  -D, --debug=VALUE        debug
   -h, --help               this help
-  -V, --version            retrieve version
   -c, --component=CMPT     list/set overrides by component
                                   (contrib,*main,non-free)
   -s, --suite=SUITE        list/set overrides by suite
@@ -211,18 +209,24 @@ def main ():
 
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
-    Arguments = [('D',"debug","Natalie::Options::Debug", "IntVal"),
-                 ('h',"help","Natalie::Options::Help"),
-                 ('V',"version","Natalie::Options::Version"),
+    Arguments = [('h',"help","Natalie::Options::Help"),
                  ('c',"component", "Natalie::Options::Component", "HasArg"),
                  ('l',"list", "Natalie::Options::List"),
                  ('s',"suite","Natalie::Options::Suite", "HasArg"),
                  ('S',"set","Natalie::Options::Set"),
                  ('t',"type","Natalie::Options::Type", "HasArg")];
+
+    # Default arguments
+    for i in ["help", "list", "set" ]:
+        Cnf["Natalie::Options::%s" % (i)] = "";
+    Cnf["Natalie::Options::Component"] = "main";
+    Cnf["Natalie::Options::Suite"] = "unstable";
+    Cnf["Natalie::Options::Type"] = "deb";
+
     file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
 
     if Cnf["Natalie::Options::Help"]:
-        usage(0);
+        usage();
 
     init();
 

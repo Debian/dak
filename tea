@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.11 2001-06-22 22:53:14 troup Exp $
+# $Id: tea,v 1.12 2001-09-27 01:23:41 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,8 +39,8 @@ excluded = {};
 
 def process_dir (arg, dirname, filenames):
     global waste, db_files, excluded;
-    
-    if string.find(dirname, '/disks-') != -1 or string.find(dirname, 'upgrade-') != -1: 
+
+    if string.find(dirname, '/disks-') != -1 or string.find(dirname, 'upgrade-') != -1:
         return;
     # hack; can't handle .changes files
     if string.find(dirname, 'proposed-updates') != -1:
@@ -161,7 +161,7 @@ def check_md5sums():
     print "Getting file information from database...";
     q = projectB.query("SELECT l.path, f.filename, f.md5sum, f.size FROM files f, location l WHERE f.location = l.id")
     ql = q.getresult();
-    
+
     print "Checking file md5sums & sizes...";
     for i in ql:
 	filename = os.path.abspath(i[0] + i[1]);
@@ -187,18 +187,14 @@ def main ():
     global Cnf, projectB, db_files, waste, excluded;
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
-    Arguments = [('d',"debug","Tea::Options::Debug", "IntVal"),
-                 ('h',"help","Tea::Options::Help"),
-                 ('v',"version","Tea::Options::Version")];
-
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
-    
+
     #check_md5sums();
     check_source_in_one_dir();
     #check_override();
