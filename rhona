@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.21 2002-04-22 11:06:49 troup Exp $
+# $Id: rhona,v 1.22 2002-04-24 01:56:24 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -285,6 +285,33 @@ SELECT f.id FROM fingerprint f
 
 ################################################################################
 
+def clean_accepted_autobuild():
+    global now_date;
+
+    if not Cnf.get("Dinstall::SpecialAcceptedAutoBuild") or Options["No-Action"]:
+        return;
+
+    print "Cleaning out accepted autobuild symlinks..."
+
+    our_delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::AcceptedAutoBuildStayOfExecution"])));
+    count = 0;
+
+    q = projectB.query("SELECT filename FROM unstable_accepted WHERE last_used <= '%s'" % (our_delete_date));
+    for i in q.getresult():
+        filename = i[0];
+        if not os.path.exists(filename):
+            utils.fubar("%s (from unstable_accepted) doesn't exist." % (filename));
+        if not os.path.islink(filename):
+            utils.fubar("%s (from unstable_accepted) should be a symlink but isn't." % (filename));
+        os.unlink(filename);
+        count = count + 1;
+    projectB.query("DELETE FROM unstable_accepted WHERE last_used <= '%s'" % (our_delete_date));
+
+    if count > 0:
+        sys.stderr.write("Cleaned %d accepted-autobuild symlinks.\n" % (count));
+
+################################################################################
+
 def main():
     global Cnf, Options, projectB, delete_date, now_date;
 
@@ -314,6 +341,7 @@ def main():
     clean();
     clean_maintainers();
     clean_fingerprints();
+    clean_accepted_autobuild();
 
 ################################################################################
 
