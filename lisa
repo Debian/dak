@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.1 2002-02-12 23:08:07 troup Exp $
+# $Id: lisa,v 1.2 2002-02-15 04:01:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.1 $";
+lisa_version = "$Revision: 1.2 $";
 
 Cnf = None;
 Options = None;
@@ -131,12 +131,12 @@ def changes_compare_by_time (a, b):
     try:
         a_changes = utils.parse_changes(a, 0)
     except:
-        return -1;
+        return 1;
 
     try:
         b_changes = utils.parse_changes(b, 0)
     except:
-        return 1;
+        return -1;
 
     utils.cc_fix_changes (a_changes);
     utils.cc_fix_changes (b_changes);
