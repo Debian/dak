@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Script to automate some parts of checking NEW packages
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: fernanda.py,v 1.9 2002-11-28 08:21:04 rdonald Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: fernanda.py,v 1.10 2003-11-10 23:01:17 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -203,7 +203,7 @@ def read_dsc (dsc_filename):
 	print "can't parse control info"
     dsc_file.close();
 
-    filecontents = dsc["filecontents"];
+    filecontents = strip_pgp_signature(dsc_filename);
 
     if dsc.has_key("build-depends"):
 	builddep = split_depends(dsc["build-depends"]);
@@ -344,13 +344,38 @@ def check_deb (deb_filename):
     print "---- file listing of %s ----" % (filename);
     do_command ("ls -l", deb_filename);
 
+# Read a file, strip the signature and return the modified contents as
+# a string.
+def strip_pgp_signature (filename):
+    file = utils.open_file (filename);
+    contents = "";
+    inside_signature = 0;
+    skip_next = 0;
+    for line in file.readlines():
+        if line[:-1] == "":
+            continue;
+        if inside_signature:
+            continue;
+        if skip_next:
+            skip_next = 0;
+            continue;
+        if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
+            skip_next = 1;
+            continue;
+        if line.startswith("-----BEGIN PGP SIGNATURE"):
+            inside_signature = 1;
+            continue;
+        if line.startswith("-----END PGP SIGNATURE"):
+            inside_signature = 0;
+            continue;
+	contents += line;
+    file.close();
+    return contents;
+
+# Display the .changes [without the signature]
 def display_changes (changes_filename):
     print "---- .changes file for %s ----" % (changes_filename);
-    file = utils.open_file (changes_filename);
-    for line in file.readlines():
-	print line[:-1]
-    print ;
-    file.close();
+    print strip_pgp_signature(changes_filename);
 
 def check_changes (changes_filename):
     display_changes(changes_filename);
