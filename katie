@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.38 2001-04-13 20:18:41 troup Exp $
+# $Id: katie,v 1.39 2001-04-13 21:21:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -140,8 +140,9 @@ def check_changes(filename):
     global reject_message, changes, files
 
     # Default in case we bail out
-    (changes["changedby822"], changes["maintainer822"]) = Cnf["Dinstall::MyEmailAddress"]; 
-
+    changes["maintainer822"] = Cnf["Dinstall::MyEmailAddress"];
+    changes["changedby822"] = Cnf["Dinstall::MyEmailAddress"];
+    
     # Parse the .changes field into a dictionary
     try:
         changes = utils.parse_changes(filename, 0)
@@ -633,7 +634,7 @@ def update_subst (changes_filename):
     if changes["architecture"].has_key("source") and changes["changedby822"] != "" and (changes["changedby822"] != changes["maintainer822"]):
         Subst["__MAINTAINER_FROM__"] = changes["changedby822"];
         Subst["__MAINTAINER_TO__"] = changes["changedby822"] + ", " + changes["maintainer822"];
-        Subst["__MAINTAINER__"] = changes["changedby"];
+        Subst["__MAINTAINER__"] = changes.get("changed-by", "Unknown");
     else:
         Subst["__MAINTAINER_FROM__"] = changes["maintainer822"];
         Subst["__MAINTAINER_TO__"] = changes["maintainer822"];
@@ -1239,7 +1240,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.38 $"
+    bcc = "X-Katie: $Revision: 1.39 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:

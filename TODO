@@ -7,7 +7,7 @@ Urgent
   o jenna doesn't handle arch: any -> arch: all transitions
 
   o direport misreports things as section 'devel'
- 
+
   o Fix rhona to obey StayOfExecution
 
   o rewrite shania to a) be sane, b) clean REJECT properly
@@ -33,6 +33,8 @@ Urgent
 
 Less Urgent
 -----------
+
+  o validate email addresses ?  harsh to reject tho [errge]
 
   o Rene doesn't look at debian-installer but should.
 
