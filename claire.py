@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.18 2002-10-16 02:47:32 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: claire.py,v 1.19 2003-09-07 13:52:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,12 @@
 
 ################################################################################
 
-# "Look around... leaves are brown... and the sky's a hazy shade of winter,
-#  Look around... leaves are brown... there's a patch of snow on the ground."
-#                                         -- Simon & Garfunkel / 'A Hazy Shade'
+#  _   _ ____
+# | \ | | __ )_
+# |  \| |  _ (_)
+# | |\  | |_) |   This has been obsoleted since the release of woody.
+# |_| \_|____(_)
+#
 
 ################################################################################
 
@@ -47,17 +50,6 @@ Create compatibility symlinks from legacy locations to the pool.
   -h, --help                 show this help and exit"""
 
     sys.exit(exit_code)
-
-################################################################################
-
-# Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
-# Returns fixed 'src'
-def clean_symlink (src, dest, root):
-    src = src.replace(root, '', 1);
-    dest = dest.replace(root, '', 1);
-    dest = os.path.dirname(dest);
-    new_src = '../' * len(dest.split('/'));
-    return new_src + src;
 
 ################################################################################
 
@@ -101,7 +93,7 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
 #        AND f2.id = s.file AND f2.location = l2.id AND df.source = s.id
 #        AND f.id = df.file AND f.location = l.id AND o.package = s.source
 #        AND sec.id = o.section AND NOT (f.filename ~ '^%s/') AND o.suite = su.id
-#        AND NOT EXISTS (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
+#        AND NOT EXISTS (SELECT 1 FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
     for i in q.getresult():
         (component, section) = fix_component_section(i[0], i[1]);
         if Cnf.FindB("Dinstall::LegacyStableHasNoSections"):
@@ -109,7 +101,7 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
         dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], codename, component, section, os.path.basename(i[3]));
         if not os.path.exists(dest):
 	    src = i[2]+i[3];
-	    src = clean_symlink(src, dest, Cnf["Dir::Root"]);
+	    src = utils.clean_symlink(src, dest, Cnf["Dir::Root"]);
             if Cnf.Find("Claire::Options::Verbose"):
                 print src+' -> '+dest
             os.symlink(src, dest);
@@ -136,7 +128,7 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
 #        AND f.id = b.file AND f.location = l.id AND o.package = b.package
 #        AND sec.id = o.section AND NOT (f.filename ~ '^%s/')
 #        AND b.architecture = a.id AND o.suite = su.id AND NOT EXISTS
-#          (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
+#          (SELECT 1 FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
     for i in q.getresult():
         (component, section) = fix_component_section(i[0], i[2]);
         if Cnf.FindB("Dinstall::LegacyStableHasNoSections"):
@@ -147,7 +139,7 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
         src = i[5]+i[6];
 
         dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, architecture, section, package, version);
-        src = clean_symlink(src, dest, Cnf["Dir::Root"]);
+        src = utils.clean_symlink(src, dest, Cnf["Dir::Root"]);
         if not os.path.exists(dest):
             if Cnf.Find("Claire::Options::Verbose"):
                 print src+' -> '+dest;
