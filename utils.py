@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.68 2004-06-23 23:11:47 troup Exp $
+# $Id: utils.py,v 1.69 2004-06-24 00:41:39 troup Exp $
 
 ################################################################################
 
@@ -634,6 +634,19 @@ def join_with_commas_and(list):
 	if len(list) == 0: return "nothing";
 	if len(list) == 1: return list[0];
 	return ", ".join(list[:-1]) + " and " + list[-1];
+
+################################################################################
+
+def pp_dep (deps):
+    pp_deps = [];
+    for atom in deps:
+        (pkg, version, constraint) = atom;
+        if constraint:
+            pp_dep = "%s (%s %s)" % (pkg, constraint, version);
+        else:
+            pp_dep = pkg;
+        pp_deps.append(pp_dep);
+    return " |".join(pp_deps);
 
 ################################################################################
 

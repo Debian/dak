@@ -2,7 +2,7 @@
 
 # Dependency check proposed-updates
 # Copyright (C) 2001, 2002, 2004  James Troup <james@nocrew.org>
-# $Id: jeri,v 1.12 2004-02-27 20:07:40 troup Exp $
+# $Id: jeri,v 1.13 2004-06-24 00:41:39 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,19 +58,6 @@ Need either changes files, deb files or an admin.txt file with a '.joey' suffix.
 
 ################################################################################
 
-def pp_dep (deps):
-    pp_deps = [];
-    for atom in deps:
-        (pkg, version, constraint) = atom;
-        if constraint:
-            pp_dep = "%s (%s %s)" % (pkg, constraint, version);
-        else:
-            pp_dep = pkg;
-        pp_deps.append(pp_dep);
-    return " |".join(pp_deps);
-
-################################################################################
-
 def d_test (dict, key, positive, negative):
     if not dict:
         return negative;
@@ -93,7 +80,7 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                     if stable[dep].has_key(arch):
                         if apt_pkg.CheckDep(stable[dep][arch], constraint, version):
                             if Options["debug"]:
-                                print "Found %s as a real package." % (pp_dep(parsed_dep));
+                                print "Found %s as a real package." % (utils.pp_dep(parsed_dep));
                             unsat = 0;
                             break;
                 # As a virtual?
@@ -101,7 +88,7 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                     if stable_virtual[dep].has_key(arch):
                         if not constraint and not version:
                             if Options["debug"]:
-                                print "Found %s as a virtual package." % (pp_dep(parsed_dep));
+                                print "Found %s as a virtual package." % (utils.pp_dep(parsed_dep));
                             unsat = 0;
                             break;
                 # As part of the same .changes?
@@ -109,12 +96,12 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                 dep_filename = "%s_%s_%s.deb" % (dep, epochless_version, arch);
                 if files.has_key(dep_filename):
                     if Options["debug"]:
-                        print "Found %s in the same upload." % (pp_dep(parsed_dep));
+                        print "Found %s in the same upload." % (utils.pp_dep(parsed_dep));
                     unsat = 0;
                     break;
                 # Not found...
                 # [FIXME: must be a better way ... ]
-                error = "%s not found. [Real: " % (pp_dep(parsed_dep))
+                error = "%s not found. [Real: " % (utils.pp_dep(parsed_dep))
                 if stable.has_key(dep):
                     if stable[dep].has_key(arch):
                         error += "%s:%s:%s" % (dep, arch, stable[dep][arch]);
@@ -139,7 +126,7 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                 unsat.append(error);
 
             if unsat:
-                sys.stderr.write("MWAAP! %s: '%s' %s can not be satisifed:\n" % (filename, pp_dep(parsed_dep), dep_type));
+                sys.stderr.write("MWAAP! %s: '%s' %s can not be satisifed:\n" % (filename, utils.pp_dep(parsed_dep), dep_type));
                 for error in unsat:
                     sys.stderr.write("  %s\n" % (error));
                 pkg_unsat = 1;

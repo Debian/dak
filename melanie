@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.40 2004-04-01 17:13:11 troup Exp $
+# $Id: melanie,v 1.41 2004-06-24 00:41:39 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,10 +47,12 @@ import apt_pkg, apt_inst;
 ################################################################################
 
 re_strip_source_version = re.compile (r'\s+.*$');
+re_build_dep_arch = re.compile(r"\[[^]]+\]");
 
 ################################################################################
 
 Cnf = None;
+Options = None;
 projectB = None;
 
 ################################################################################
@@ -68,6 +70,7 @@ Remove PACKAGE(s) from suite(s).
   -m, --reason=MSG           reason for removal
   -n, --no-action            don't do anything
   -p, --partial              don't affect override files
+  -R, --rdep-check           check reverse dependencies
   -s, --suite=SUITE          act on this suite
   -S, --source-only          remove source only
 
@@ -91,8 +94,114 @@ def game_over():
 
 ################################################################################
 
+def reverse_depends_check(removals, suites):
+    print "Checking reverse dependencies..."
+    components = Cnf.ValueList("Suite::%s::Components" % suites[0])
+    dep_problem = 0
+    for architecture in Cnf.ValueList("Suite::%s::Architectures" % suites[0]):
+        if architecture in ["source", "all"]:
+            continue
+        deps = {}
+        virtual_packages = {}
+        for component in components:
+            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suites[0], component, architecture)
+            packages = utils.open_file(filename, "r")
+            Packages = apt_pkg.ParseTagFile(packages)
+            while Packages.Step():
+                package = Packages.Section.Find("Package")
+                depends = Packages.Section.Find("Depends")
+                if depends:
+                    deps[package] = depends
+                provides = Packages.Section.Find("Provides")
+                # Maintain a counter for each virtual package.  If a
+                # Provides: exists, set the counter to 0 and count all
+                # provides by a package not in the list for removal.
+                # If the counter stays 0 at the end, we know that only
+                # the to-be-removed packages provided this virtual
+                # package.
+                if provides:
+                    for virtual_pkg in provides.split(","):
+                        virtual_pkg = virtual_pkg.strip()
+                        if virtual_pkg == package: continue
+                        if not virtual_packages.has_key(virtual_pkg):
+                            virtual_packages[virtual_pkg] = 0
+                        if package not in removals:
+                            virtual_packages[virtual_pkg] += 1
+            packages.close()
+
+        # If a virtual package is only provided by the to-be-removed
+        # packages, treat the virtual package as to-be-removed too.
+        for virtual_pkg in virtual_packages.keys():
+            if virtual_packages[virtual_pkg] == 0:
+                removals.append(virtual_pkg)
+
+        # Check binary dependencies (Depends)
+        for package in deps.keys():
+            if package in removals: continue
+            parsed_dep = []
+            try:
+                parsed_dep += apt_pkg.ParseDepends(deps[package])
+            except ValueError, e:
+                print "Error for package %s: %s" % (package, e)
+            for dep in parsed_dep:
+                # Check for partial breakage.  If a package has a ORed
+                # dependency, there is only a dependency problem if all
+                # packages in the ORed depends will be removed.
+                unsat = 0
+                for dep_package, _, _ in dep:
+                    if dep_package in removals:
+                            unsat += 1
+                if unsat == len(dep):
+                    print "%s has an unsatisfied dependency on %s: %s" % (package, architecture, utils.pp_dep(dep))
+                    dep_problem = 1
+
+    # Check source dependencies (Build-Depends and Build-Depends-Indep)
+    for component in components:
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suites[0], component)
+        # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+        temp_filename = utils.temp_filename();
+        result, output = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
+        if result != 0:
+            sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
+            sys.exit(result)
+        sources = utils.open_file(temp_filename, "r")
+        Sources = apt_pkg.ParseTagFile(sources)
+        while Sources.Step():
+            source = Sources.Section.Find("Package")
+            if source in removals: continue
+            parsed_dep = []
+            for build_dep_type in ["Build-Depends", "Build-Depends-Indep"]:
+                build_dep = Sources.Section.get(build_dep_type)
+                if build_dep:
+                    # Remove [arch] information since we want to see breakage on all arches
+                    build_dep = re_build_dep_arch.sub("", build_dep)
+                    try:
+                        parsed_dep += apt_pkg.ParseDepends(build_dep)
+                    except ValueError, e:
+                        print "Error for source %s: %s" % (source, e)
+            for dep in parsed_dep:
+                unsat = 0
+                for dep_package, _, _ in dep:
+                    if dep_package in removals:
+                            unsat += 1
+                if unsat == len(dep):
+                    print "%s has an unsatisfied build-dependency: %s" % (source, utils.pp_dep(dep))
+                    dep_problem = 1
+        sources.close()
+        os.unlink(temp_filename)
+
+    if dep_problem:
+        print "Dependency problem found."
+        if not Options["No-Action"]:
+            game_over()
+    else:
+        print "No dependency problem found."
+    print
+    
+################################################################################
+
 def main ():
-    global Cnf, projectB;
+    global Cnf, Options, projectB;
 
     Cnf = utils.get_conf()
 
@@ -102,6 +211,7 @@ def main ():
                  ('c',"component", "Melanie::Options::Component", "HasArg"),
                  ('C',"carbon-copy", "Melanie::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
                  ('d',"done","Melanie::Options::Done", "HasArg"), # Bugs fixed
+                 ('R',"rdep-check", "Melanie::Options::Rdep-Check"),
                  ('m',"reason", "Melanie::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
                  ('n',"no-action","Melanie::Options::No-Action"),
                  ('p',"partial", "Melanie::Options::Partial"),
@@ -109,7 +219,9 @@ def main ():
                  ('S',"source-only", "Melanie::Options::Source-Only"),
                  ];
 
-    for i in ["help", "architecture", "binary-only", "component", "carbon-copy", "done", "reason", "no-action", "partial", "source-only" ]:
+    for i in [ "architecture", "binary-only", "carbon-copy", "component",
+               "done", "help", "no-action", "partial", "rdep-check", "reason",
+               "source-only" ]:
 	if not Cnf.has_key("Melanie::Options::%s" % (i)):
 	    Cnf["Melanie::Options::%s" % (i)] = "";
     if not Cnf.has_key("Melanie::Options::Suite"):
@@ -267,9 +379,10 @@ def main ():
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
             utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
-        file = utils.open_file(temp_filename);
-        for line in file.readlines():
+        temp_file = utils.open_file(temp_filename);
+        for line in temp_file.readlines():
             Options["Reason"] += line;
+        temp_file.close();
         os.unlink(temp_filename);
 
     # Generate the summary of what's to be removed
@@ -291,9 +404,9 @@ def main ():
     for maintainer_id in maintainers.keys():
         maintainer_list.append(db_access.get_maintainer(maintainer_id));
     summary = "";
-    packages = d.keys();
-    packages.sort();
-    for package in packages:
+    removals = d.keys();
+    removals.sort();
+    for package in removals:
         versions = d[package].keys();
         versions.sort(apt_pkg.VersionCompare);
         for version in versions:
@@ -313,10 +426,14 @@ def main ():
     print "----------------------------------------------"
     print
 
+    if Options["Rdep-Check"]:
+        reverse_depends_check(removals, suites);
+
     # If -n/--no-action, drop out here
     if Options["No-Action"]:
         sys.exit(0);
 
+    print "Going to remove the packages now."
     game_over();
 
     whoami = utils.whoami();
@@ -375,7 +492,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.40 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.41 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;

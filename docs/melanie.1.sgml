@@ -98,6 +98,12 @@
 	</LISTITEM>
       </VarListEntry>
 
+      <VarListEntry><term><option>-R/--rdep-check</option></>
+	<ListItem>
+	  <Para>Check the reverse dependencies (and build-dependencies) of the packages that are to be removed and warn if anything will break.</literal></PARA>
+	</LISTITEM>
+      </VarListEntry>
+
       <VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
 	<ListItem>
 	  <Para>Only add/remove the packages from the suite(s) listed.  The default is <literal>unstable</literal></PARA>
