@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Check for fixable discrepancies between stable and unstable
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: andrea,v 1.9 2003-01-02 18:10:02 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: andrea,v 1.10 2003-09-07 13:52:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -84,11 +84,11 @@ SELECT b_src.package, b_src.version, a.arch_string
   WHERE ba.bin = b_src.id AND ba.suite = %s AND b_src.architecture = %s
         AND a.id = b_src.architecture AND o.package = b_src.package
         AND o.suite = %s AND o.type != %s AND NOT EXISTS
-    (SELECT b_dst.id FROM bin_associations ba2, binaries b_dst
+    (SELECT 1 FROM bin_associations ba2, binaries b_dst
        WHERE ba2.bin = b_dst.id AND b_dst.package = b_src.package
              AND (b_dst.architecture = %s OR b_dst.architecture = %s)
              AND ba2.suite = %s AND EXISTS
-               (SELECT b2.id FROM bin_associations ba3, binaries b2
+               (SELECT 1 FROM bin_associations ba3, binaries b2
                   WHERE ba3.bin = b2.id AND ba3.suite = %s AND b2.package = b_dst.package))
 ORDER BY b_src.package;"""
                            % (src_suite_id, arch_id, dst_suite_id, dsc_type_id, arch_id, arch_all_id, dst_suite_id, dst_suite_id));
