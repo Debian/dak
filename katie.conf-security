@@ -29,6 +29,7 @@ Dinstall
    SecurityAcceptedAutoBuild "true";     
    DefaultSuite "Woody";
    OverrideMaintainer "katie@security.debian.org";
+   StableDislocationSupport "true";
 };
 
 Julia

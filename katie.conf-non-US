@@ -23,6 +23,7 @@ Dinstall
    SkipTime 300;
    CloseBugs "true";
    OverrideDisparityCheck "true";
+   StableDislocationSupport "true";
 };
 
 Julia
