@@ -19,4 +19,4 @@ echo "$timestamp": "$changes"  >> $report
 jennifer -a $changes >> $report
 echo "--" >> $report
 
-sh $base/cron.buildd-security
+sh $masterdir/cron.buildd-security
