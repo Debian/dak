@@ -22,9 +22,9 @@ Urgent
 
   o Add urgency + installed date to the DB for aj/testing (? still needed ?)
 
-  o Disallow binary versions >> source except for bin-only NMUs (but:
-    have to change sorting so that sourceful uploads are processed
-    first).
+  o Disallow binary versions with no source (both newer and older)
+    except for bin-only NMUs (but: have to change sorting so that
+    sourceful uploads are processed first).
 
   o Revisit linking of binary->source in install() in katie.
 

@@ -133,3 +133,8 @@ CREATE TABLE override (
        maintainer TEXT,
        unique (suite, component, package, type)
 );
+
+-- Critical indexes
+
+CREATE INDEX bin_associations_bin ON bin_associations (bin);
+CREATE INDEX src_associations_source ON src_associations (source);

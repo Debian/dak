@@ -1,0 +1,340 @@
+#!/usr/bin/env python
+
+# Whee!  Fix testing fubarity
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: hack.3,v 1.1 2001-03-14 20:32:05 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# Computer games don't affect kids. I mean if Pacman affected our generation as
+# kids, we'd all run around in a darkened room munching pills and listening to
+# repetitive music.
+#         -- Unknown
+
+################################################################################
+
+import pg, sys, os, string, stat
+import utils, db_access
+import apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+
+################################################################################
+
+def main ():
+    global Cnf, projectB, db_files, waste, excluded;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('d',"debug","Christina::Options::Debug", "IntVal"),
+                 ('h',"help","Christina::Options::Help"),
+                 ('v',"version","Christina::Options::Version")];
+
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    projectB = pg.connect('projectb', 'localhost');
+    christina = pg.connect('christina', 'localhost');
+    db_access.init(Cnf, projectB);
+
+    q = christina.query("""
+SELECT l.path, f.filename, b.package, b.version, b.architecture, a.arch_string
+    FROM bin_associations ba, binaries b, files f, location l, architecture a
+    WHERE ba.suite = 4 AND ba.bin = b.id AND f.id = b.file
+          AND f.location = l.id AND a.id = b.architecture;""");
+    ql = q.getresult();
+
+    for i in ql:
+        filename = i[0] + i[1]
+        if not os.path.exists(filename):
+            package = i[2];
+            testing_version = i[3];
+            architecture_id = i[4];
+            architecture = i[5];
+            x = projectB.query("SELECT b.id, b.version FROM bin_associations ba, binaries b WHERE ba.suite = 5 AND ba.bin = b.id AND b.package = '%s' AND b.architecture = %s" % (package, architecture_id));
+            xl = x.getresult();
+            new_id = xl[0][0];
+            unstable_version = xl[0][1];
+            #print "%s [%s]: %s ==> %s" % (package, architecture, testing_version, unstable_version);
+            print "%s %s %s" % (package, unstable_version, architecture);
+
+    sys.exit(0);
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+
+
+#      # And yes, I'm all too well aware of how appaling this code is;
+#      # I'm so not caring right now.
+
+#      # Basic plan: From a known-good backup, get a list of what should
+#      # be in testing and search for every file.  If it's not in the
+#      # pool, check in the morgue and double check the md5sum + size.
+
+#      # Binaries
+
+#      q = christina.query("""
+#  SELECT l.path, f.filename, f.md5sum, f.size, b.id
+#      FROM bin_associations ba, binaries b, files f, location l
+#      WHERE ba.suite = 4 AND ba.bin = b.id AND f.id = b.file
+#            AND f.location = l.id;""");
+#      ql = q.getresult();
+
+#  #      q = christina.query("""
+#  #  SELECT l.path, f.filename, f.md5sum, f.size, s.id
+#  #     FROM src_associations sa, source s, files f, location l, dsc_files df
+#  #     WHERE sa.suite = 4 AND sa.source = s.id AND f.id = df.file AND f.location = l.id
+#  #           AND df.source = s.id;""");
+#  #      ql = q.getresult();
+
+#      bad_ids = {};
+#      count_total = 0;
+#      count_good = 0;
+#      count_recoverable = 0;
+#      for i in ql:
+#          filename = i[0] + i[1]
+#          count_total = count_total + 1;
+#          if not os.path.exists(filename):
+#              basename = os.path.basename(filename)
+#              morgue_filename = string.join([Cnf["Dir::Morgue"],Cnf["Rhona::MorgueSubDir"],basename],'/');
+#              if os.path.exists(morgue_filename):
+#                  db_md5sum = i[2];
+#                  db_size = int(i[3]);
+#                  try:
+#                      file = utils.open_file(morgue_filename, 'r');
+#                  except:
+#                      sys.stderr.write("E: can't open '%s'.\n" % (morgue_filename));
+#                      continue;
+#                  md5sum = apt_pkg.md5sum(file);
+#                  size = os.stat(morgue_filename)[stat.ST_SIZE];
+#                  if md5sum != db_md5sum:
+#                      #print "E: %s" % (filename);
+#                      #sys.stderr.write("E: **WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db]).\n" % (morgue_filename, md5sum, db_md5sum));
+#                      continue;
+#                  if size != db_size:
+#                      #print "E: %s" % (filename);
+#                      #sys.stderr.write("E: **WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db]).\n" % (morgue_filename, size, db_size));
+#                      continue;
+#                  bad_ids[i[4]] = "";
+#                  print "R: %s [%s]" % (filename, morgue_filename);
+#                  ###utils.copy(morgue_filename, filename);
+#                  count_recoverable = count_recoverable + 1;
+#              else:
+#                  #print "E: %s" % (filename);
+#                  baz = 0;
+#          else:
+#              #print "G: %s" % (filename);
+#              count_good = count_good + 1;
+
+#      print "Good: %d / %d (%.2f%%)" % (count_good, count_total, (float(count_good)/count_total*100));
+#      print "Recoverable: %d / %d (%.2f%%)" % (count_recoverable, count_total, (float(count_recoverable)/count_total*100));
+#      count_bad = count_total - count_good - count_recoverable;
+#      print "Bad: %d / %d (%.2f%%)" % (count_bad, count_total, (float(count_bad)/count_total*100));
+
+#      sys.exit(0);
+#      projectB.query("BEGIN WORK;");
+
+#      for id in bad_ids.keys():
+#          q = christina.query("SELECT f.filename, f.size, f.md5sum, f.location FROM files f, binaries b WHERE b.id = %d and b.file = f.id;" % (id));
+#          ql = q.getresult();
+#          if len(ql) != 1:
+#              sys.exit(9);
+#          for i in ql:
+#              filename = i[0];
+#              size = i[1];
+#              md5sum = i[2];
+#              location_id = i[3];
+#              files_id = db_access.get_files_id(filename, size, md5sum, location_id);
+#              if files_id == -1:
+#                  sys.stderr.write("Rejected: INTERNAL ERROR, get_files_id() returned multiple matches for %s.\n" % (filename));
+#                  sys.exit(8);
+#              elif files_id == -2:
+#                  sys.stderr.write("Rejected: md5sum and/or size mismatch on existing copy of %s.\n" % (filename));
+#                  sys.exit(8);
+#              if not files_id:
+#                  #files_id = 42;
+#                  files_id = db_access.set_files_id(filename, size, md5sum, location_id);
+#                  print "INSERT(ed) INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id);
+
+#              else:
+#                  print "%s already exists; skipping." % (filename)
+#                  baz = 0;
+
+#          q = christina.query("""
+#  SELECT b.package, b.version, s.source, s.version, b.architecture, m.name
+#      FROM binaries b, source s, maintainer m
+#      WHERE b.id = %s AND s.id = b.source AND m.id = b.maintainer
+#  UNION SELECT b.package, b.version, null, null, b.architecture, m.name
+#      FROM binaries b, maintainer m
+#      WHERE b.id = %s AND b.source is null AND b.maintainer = m.id;""" % (id, id));
+#          ql = q.getresult();
+#          if len(ql) != 1:
+#              sys.exit(9);
+#          for i in ql:
+#              package = i[0];
+#              version = i[1];
+#              source_name = i[2];
+#              source_version = i[3];
+#              source_id = None;
+#              architecture_id = i[4];
+#              maintainer = i[5];
+#              maintainer = string.replace(maintainer, "'", "\\'");
+#              maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
+#              if source_name:
+#                  source_id = db_access.get_source_id (source_name, source_version);
+#                  if not source_id:
+#                      print "Say what?";
+#                      sys.exit(3);
+#              if source_id:
+#                  print "INSERT INTO binaries (package, version, maintainer, source, architecture, file, type) VALUES ('%s', '%s', %d, %d, %d, %s, '%s')" % (package, version, maintainer_id, source_id, architecture_id, files_id, "deb");
+#                  projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type) VALUES ('%s', '%s', %d, %d, %d, %s, '%s')" % (package, version, maintainer_id, source_id, architecture_id, files_id, "deb"));
+#              else:
+#                  print "INSERT INTO binaries (package, version, maintainer, architecture, file, type) VALUES ('%s', '%s', %d, %d, %s, '%s')" % (package, version, maintainer_id, architecture_id, files_id, "deb");
+#                  projectB.query("INSERT INTO binaries (package, version, maintainer, architecture, file, type) VALUES ('%s', '%s', %d, %d, %s, '%s')" % (package, version, maintainer_id, architecture_id, files_id, "deb"));
+
+#      projectB.query("COMMIT WORK;");
+
+#      sys.exit(0);
+
+
+
+
+#      ## source .. already done
+#      projectB.query("BEGIN WORK;");
+
+#      for id in bad_ids.keys():
+#          q = christina.query("SELECT f.filename, f.md5sum, f.size, f.location FROM files f, dsc_files df WHERE df.source = %s and f.id = df.file;""" % (id));
+#          ql = q.getresult();
+#          for i in ql:
+#              filename = i[0];
+#              md5sum = i[1];
+#              size = i[2];
+#              location_id = i[3];
+#              files_id = db_access.get_files_id(filename, size, md5sum, location_id);
+#              if files_id == -1:
+#                  sys.stderr.write("Rejected: INTERNAL ERROR, get_files_id() returned multiple matches for %s.\n" % (filename));
+#                  sys.exit(8);
+#              elif files_id == -2:
+#                  sys.stderr.write("Rejected: md5sum and/or size mismatch on existing copy of %s.\n" % (filename));
+#                  sys.exit(8);
+#              if not files_id:
+#                  #files_id = 42;
+#                  files_id = db_access.set_files_id(filename, size, md5sum, location_id);
+#                  print "INSERT(ed) INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id);
+
+#              else:
+#                  print "%s already exists; skipping." % (filename)
+#              if filename[-4:] == '.dsc':
+#                  dsc_files_id = files_id;
+#              print "--"
+
+#          q = christina.query("SELECT s.source, s.version, m.name FROM source s, maintainer m WHERE s.id = %s and s.maintainer = m.id;""" % (id));
+#          ql = q.getresult();
+#          if len(ql) != 1:
+#              sys.exit(9);
+#          for i in ql:
+#              source = i[0]
+#              version = i[1];
+#              maintainer = i[2];
+#              maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
+#              print "INSERT INTO source (source, version, maintainer, file) VALUES ('%s', '%s', %d, %d)" % (source, version, maintainer_id, dsc_files_id);
+#              projectB.query("INSERT INTO source (source, version, maintainer, file) VALUES ('%s', '%s', %d, %d)" % (source, version, maintainer_id, dsc_files_id));
+
+#      projectB.query("COMMIT WORK;");
+
+
+
+
+
+#      def nevermind():
+#          new_bad_ids = {};
+#          qx = christina.query("SELECT l.path, f.filename, f.md5sum, f.size, s.id FROM source s, files f, location l, dsc_files df WHERE f.id = df.file AND f.location = l.id AND df.source = s.id AND s.source = '%s' AND s.version = '%s';" % (source_name, source_version));
+#          qxl = qx.getresult();
+#          for ix in qxl:
+#              filename = ix[0] + ix[1]
+#              if os.path.exists(filename):
+#                  continue;
+#                      basename = os.path.basename(filename)
+#                      morgue_filename = string.join([Cnf["Dir::Morgue"],Cnf["Rhona::MorgueSubDir"],basename],'/');
+#                      if os.path.exists(morgue_filename):
+#                          db_md5sum = ix[2];
+#                          db_size = int(ix[3]);
+#                          try:
+#                              file = utils.open_file(morgue_filename, 'r');
+#                          except:
+#                              sys.stderr.write("E: can't open '%s'.\n" % (morgue_filename));
+#                              continue;
+#                          md5sum = apt_pkg.md5sum(file);
+#                          size = os.stat(morgue_filename)[stat.ST_SIZE];
+#                          if md5sum != db_md5sum:
+#                              sys.stderr.write("E: **WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db]).\n" % (morgue_filename, md5sum, db_md5sum));
+#                              continue;
+#                          if size != db_size:
+#                              sys.stderr.write("E: **WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db]).\n" % (morgue_filename, size, db_size));
+#                              continue;
+#                          new_bad_ids[ix[4]] = "";
+#                          print "R: %s [%s]" % (filename, morgue_filename);
+#                          utils.copy(morgue_filename, filename);
+#                      else:
+#                          print "E: %s" % (filename);
+
+#                      projectB.query("BEGIN WORK;");
+
+#                      for new_id in new_bad_ids.keys():
+#                          qx = christina.query("SELECT f.filename, f.md5sum, f.size, f.location FROM files f, dsc_files df WHERE df.source = %s and f.id = df.file;""" % (new_id));
+#                          qlx = qx.getresult();
+#                          for ix in qlx:
+#                              filename = ix[0];
+#                              md5sum = ix[1];
+#                              size = ix[2];
+#                              location_id = ix[3];
+#                              files_id = db_access.get_files_id(filename, size, md5sum, location_id);
+#                              if files_id == -1:
+#                                  sys.stderr.write("Rejected: INTERNAL ERROR, get_files_id() returned multiple matches for %s.\n" % (filename));
+#                                  sys.exit(8);
+#                              elif files_id == -2:
+#                                  sys.stderr.write("Rejected: md5sum and/or size mismatch on existing copy of %s.\n" % (filename));
+#                                  sys.exit(8);
+#                              if not files_id:
+#                                  #files_id = 42;
+#                                  files_id = db_access.set_files_id(filename, size, md5sum, location_id);
+#                                  print "INSERT(ed) INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id);
+#                              else:
+#                                  print "%s already exists; skipping." % (filename)
+#                              if filename[-4:] == '.dsc':
+#                                  dsc_files_id = files_id;
+#                              print "--"
+
+#                          qx = christina.query("SELECT s.source, s.version, m.name FROM source s, maintainer m WHERE s.id = %s and s.maintainer = m.id;""" % (new_id));
+#                          qlx = qx.getresult();
+#                          if len(qlx) != 1:
+#                              sys.exit(9);
+#                          for ix in qlx:
+#                              source = ix[0];
+#                              version = ix[1];
+#                              maintainer = ix[2];
+#                              maintainer = string.replace(maintainer, "'", "\\'");
+#                              maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
+#                              print "INSERT INTO source (source, version, maintainer, file) VALUES ('%s', '%s', %d, %d)" % (source, version, maintainer_id, dsc_files_id);
+#                              projectB.query("INSERT INTO source (source, version, maintainer, file) VALUES ('%s', '%s', %d, %d)" % (source, version, maintainer_id, dsc_files_id));
+#                      projectB.query("COMMIT WORK;");
