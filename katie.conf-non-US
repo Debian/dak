@@ -32,7 +32,7 @@ Dinstall
 Lauren
 {
    StableRejector "Martin (Joey) Schulze <joey@debian.org>";
-   MoreInfoURL "http://people.debian.org/~joey/3.0r1/";
+   MoreInfoURL "http://people.debian.org/~joey/3.0r2/";
 };
 
 Julia
@@ -123,9 +123,9 @@ Suite
 	  sparc;
 	};
 	Announce "debian-changes@lists.debian.org";
-	Version "3.0r1";
+	Version "3.0r2";
 	Origin "Debian";
-	Description "Debian 3.0r1 Released 15th December 2002";
+	Description "Debian 3.0r2 Released 20th November 2003";
 	CodeName "woody";
 	OverrideCodeName "woody";
 	Priority "3";
