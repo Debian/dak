@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.39 2003-09-16 20:41:21 troup Exp $
+# $Id: katie.py,v 1.40 2003-09-17 23:36:17 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -325,8 +325,8 @@ distribution.""";
 			    Subst["__STABLE_WARNING__"] = "";
 			    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-close");
 			    utils.send_mail (mail_message);
-			if action:
-			    self.Logger.log(["closing bugs"]+bugs);
+                if action:
+                    self.Logger.log(["closing bugs"]+bugs);
 
 	else:                     # NMU
             summary += "Setting bugs to severity fixed: ";
