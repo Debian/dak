@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.8 2001-03-02 02:24:33 troup Exp $
+# $Id: rhona,v 1.9 2001-03-14 20:31:56 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,71 +52,39 @@ def usage (exit_code):
 
 ###################################################################################################
 
-# See if a given package is in the override file.  Caches and only loads override files on demand.
-
-def in_override_p (package):
-    global overrides;
-
-    if overrides == {}:
-        filename = Cnf["Dir::OverrideDir"] + Cnf["Rhona::OverrideFilename"];
-        try:
-            file = utils.open_file(filename, 'r');
-        except utils.cant_open_exc:
-            pass;
-        else:
-            for line in file.readlines():
-                line = string.strip(utils.re_comments.sub('', line))
-                if line != "":
-                    overrides[line] = 1
-            file.close()
-
-    return overrides.get(package, None);
-
-###################################################################################################
+# FIXME: why can't we make (sane speed) UPDATEs out of these SELECTs?
 
 def check_binaries():
     global delete_date;
     
     print "Checking for orphaned binary packages..."
 
-    # A nicer way to do this would be `SELECT bin FROM
-    # bin_associations EXCEPT SELECT id from binaries WHERE
-    # last_update IS NULL', but it seems postgresql can't handle that
-    # query as it hadn't return after I left it running for 20 minutes
-    # on auric.
-    
-    linked_binaries = {};
-    q = projectB.query("SELECT bin FROM bin_associations");
+    # Get the list of binary packages not in a suite and mark them for
+    # deletion.
+
+    q = projectB.query("""
+SELECT b.file FROM binaries b WHERE NOT EXISTS
+        (SELECT ba.bin FROM bin_associations ba WHERE ba.bin = b.id)""");
     ql = q.getresult();
-    for i in ql:
-        linked_binaries[i[0]] = "";
-    
-    all_binaries = {};
-    q = projectB.query("SELECT b.id, b.file FROM binaries b, files f WHERE f.last_used IS NULL AND f.id = b.file")
-    ql = q.getresult();
-    for i in ql:
-        all_binaries[i[0]] = i[1];
 
     projectB.query("BEGIN WORK");
-    for id in all_binaries.keys():
-        if not linked_binaries.has_key(id):
-            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, all_binaries[id]))
+    for i in ql:
+        file_id = i[0];
+        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, file_id))
     projectB.query("COMMIT WORK");
 
-    # Check for any binaries which are marked for eventual deletion but are now used again.
+    # Check for any binaries which are marked for eventual deletion
+    # but are now used again.
 
-    all_marked_binaries = {};
-    q = projectB.query("SELECT b.id, b.file FROM binaries b, files f WHERE f.last_used IS NOT NULL AND f.id = b.file")
+    q = projectB.query("""
+SELECT b.file FROM binaries b, files f
+   WHERE f.last_used IS NOT NULL AND f.id = b.file AND
+      EXISTS (SELECT suite FROM bin_associations ba WHERE ba.bin = b.id)""");
     ql = q.getresult();
-    for i in ql:
-        all_marked_binaries[i[0]] = i[1];
-        
     projectB.query("BEGIN WORK");
-    for id in all_marked_binaries.keys():
-        if linked_binaries.has_key(id):
-            # Can't imagine why this would happen, so warn about it for now.
-            print "W: %s has released %s from the target list." % (id, all_marked_binaries[id]);
-            projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (all_marked_binaries[id]));
+    for i in ql:
+        file_id = i[0];
+        projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (file_id));
     projectB.query("COMMIT WORK");
 
 def check_sources():
@@ -124,105 +92,56 @@ def check_sources():
 
     print "Checking for orphaned source packages..."
 
-    # A nicer way to do this would be using `EXCEPT', but see the
-    # comment in check_binaries().
+    # Get the list of source packages not in a suite and not linked to
+    # by any binary packages.
 
-    linked_sources = {};
-    q = projectB.query("SELECT source FROM binaries WHERE source is not null");
+    q = projectB.query("""
+SELECT s.id, s.file FROM source s
+  WHERE NOT EXISTS
+   (SELECT sa.suite FROM src_associations sa WHERE sa.source = s.id)
+  AND NOT EXISTS (SELECT b.id FROM binaries b WHERE b.source = s.id)""");
     ql = q.getresult();
-    for i in ql:
-        linked_sources[i[0]] = "";
-    
-    all_sources = {};
-    all_sources_package = {};
-    q = projectB.query("SELECT s.id, s.file, s.source FROM source s, files f WHERE f.last_used IS NULL AND f.id = s.file");
-    ql = q.getresult();
-    for i in ql:
-        all_sources[i[0]] = i[1];
-        all_sources_package[i[0]] = i[2];
 
     projectB.query("BEGIN WORK");
-    for id in all_sources.keys():
-        if not linked_sources.has_key(id):
-            # Is this a known source-only package?
-            if in_override_p(all_sources_package[id]):
-                continue;
-            # Then check to see if the source is still in any suites
-            untouchable = 0;
-            q = projectB.query("SELECT su.suite_name FROM src_associations sa, suite su WHERE sa.source = %s and su.id = sa.suite" % (id));
-            for i in q.getresult():
-                if Cnf.Find("Suite::%s::Untouchable" % (i[0])):
-                    untouchable = 1;
-                else:
-                    if not Cnf["Rhona::Options::No-Action"]:
-                        projectB.query("DELETE FROM src_associations WHERE source = %s" % (id));
-                    
-            # We can't delete binary-less source-only packages if
-            # they're in an untouchable suite (i.e. stable)...
-            if untouchable:
-                continue;
+    for i in ql:
+        source_id = i[0];
+        dsc_file_id = i[1];
 
-            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, all_sources[id]))
-            # Delete all other files references by .dsc too if they're not used by anyone else
-            q = projectB.query("SELECT f.id FROM files f, dsc_files d WHERE d.source = %d AND d.file = f.id" % (id));
-            for i in q.getresult(): 
-                q = projectB.query("SELECT id FROM dsc_files d WHERE file = %s" % (i[0]));
-                ql = q.getresult();
-                if len(ql) == 1:
-                    projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, i[0]));
-
-            # If the file is used by another source package
-            # (e.g. because it's an .orig.tar.gz) We need to delete
-            # this source package's reference to it from dsc_files.
-            # So just clear out all references to the source file in
-            # dsc_files now.
-            if not Cnf["Rhona::Options::No-Action"]:
-                projectB.query("DELETE FROM dsc_files WHERE source = %s" % (id));
-                    
+        # Mark the .dsc file for deletion
+        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, dsc_file_id))
+        # Mark all other files references by .dsc too if they're not used by anyone else
+        x = projectB.query("SELECT f.id FROM files f, dsc_files d WHERE d.source = %s AND d.file = f.id" % (source_id));
+        for j in x.getresult():
+            file_id = i[0];
+            y = projectB.query("SELECT id FROM dsc_files d WHERE file = %s" % (file_id));
+            if len(y.getresult()) == 1:
+                projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, file_id));
     projectB.query("COMMIT WORK");
 
-    # Check for any sources which are marked for eventual deletion but are now used again.
-    all_marked_sources = {};
-    q = projectB.query("SELECT s.id, s.file FROM source s, files f WHERE f.last_used IS NOT NULL AND f.id = s.file");
-    ql = q.getresult();
-    for i in ql:
-        all_marked_sources[i[0]] = i[1];
-    projectB.query("BEGIN WORK");
-    for id in all_marked_sources.keys():
-        if linked_sources.has_key(id):
-            # Can't imagine why this would happen, so warn about it for now.
-            print "W: %s has released %s from the target list." % (id, all_marked_sources[id]);
-            projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (all_marked_sources[id]));
-            # Unmark all other files references by .dsc too
-            q = projectB.query("SELECT file FROM dsc_files WHERE source = %d" % (id));
-            ql = q.getresult();
-            for i in ql:
-                    projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (i[0]));
-    projectB.query("COMMIT WORK");
+    # Check for any sources which are marked for deletion but which
+    # are now used again.
 
-    # Whee, check for any source files (i.e. non .dsc) which are
-    # marked for eventual deletion but are now used by a source
-    # package again.
-    all_marked_dsc_files = {}
-    q = projectB.query("SELECT s.id, s.file FROM source s, files f, dsc_files d WHERE f.last_used IS NOT NULL AND f.id = d.file AND d.source = s.id");
+    q = projectB.query("""
+SELECT f.id FROM source s, files f, dsc_files df
+  WHERE f.last_used IS NOT NULL AND s.id = df.source AND df.file = f.id
+    AND ((EXISTS (SELECT sa.suite FROM src_associations sa WHERE sa.source = s.id))
+      OR (EXISTS (SELECT b.id FROM binaries b WHERE b.source = s.id)))""");
     ql = q.getresult();
-    for i in ql:
-        all_marked_dsc_files[i[0]] = i[1];
+    # Could be done in SQL; but left this way for hysterical raisins
+    # [and freedom to innovate don'cha know?]
     projectB.query("BEGIN WORK");
-    for id in all_marked_dsc_files.keys():
-        if linked_sources.has_key(id):
-            # Can't imagine why this would happen, so warn about it for now.
-            print "W: %s has released %s from the target list." % (id, all_marked_sources[id]);
-            projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (all_marked_sources[id]));
-            # Unmark all other files references by .dsc too
-            q = projectB.query("SELECT file FROM dsc_files WHERE source = %d" % (id));
-            ql = q.getresult();
-            for i in ql:
-                    projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (i[0]));
+    for i in ql:
+        file_id = i[0];
+        projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (file_id));
     projectB.query("COMMIT WORK");
 
 def check_files():
     global delete_date;
+
+    # FIXME: this is evil; nothing should ever be in this state.  if
+    # they are, it's a bug and the files should not be auto-deleted.
+
+    return;
 
     print "Checking for unused files..."
 
@@ -271,10 +190,11 @@ def clean():
     if not os.path.exists(dest):
         os.mkdir(dest);
         
-    # Delete from source (dsc_file should already be done!)
+    # Delete from source
     if not Cnf["Rhona::Options::No-Action"]:
         before = time.time();
         sys.stdout.write("[Deleting from source table... ");
+        projectB.query("DELETE FROM dsc_files WHERE EXISTS (SELECT df.id FROM source s, files f, dsc_files df WHERE f.last_used <= '%s' AND s.file = f.id AND s.id = df.source AND df.id = dsc_files.id)" % (delete_date));
         projectB.query("DELETE FROM source WHERE EXISTS (SELECT id FROM files WHERE source.file = files.id AND files.last_used <= '%s')" % (delete_date));
         sys.stdout.write("done. (%d)]\n" % (int(time.time()-before)));
         
@@ -355,10 +275,12 @@ def main():
                  ('V',"version","Rhona::Options::Version")];
     
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
-    if Cnf["Rhona::Options::Help"]:
+    Options = Cnf.SubTree("Rhona::Options")
+
+    if Options["Help"]:
         usage(0);
         
-    if Cnf["Rhona::Options::Version"]:
+    if Options["Version"]:
         print "rhona version 0.0000000000";
         usage(0);
 
@@ -366,12 +288,12 @@ def main():
     if not os.access(override_filename, os.R_OK):
         sys.stderr.write("W: Could not find source-only override file '%s'.\n" % (override_filename));
 
-    delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()));
+    delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::StayOfExecution"])));
 
     check_binaries();
     clean_binaries();
     check_sources();
-    check_files();
+    #check_files();
     clean();
     clean_maintainers();
 
