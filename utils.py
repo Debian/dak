@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.40 2002-03-14 14:12:04 ajt Exp $
+# $Id: utils.py,v 1.41 2002-04-21 15:39:06 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,10 +56,6 @@ def open_file(filename, mode='r'):
     except IOError:
         raise cant_open_exc, filename
     return f
-
-def touch_file(filename):
-    fd = os.open(filename, os.O_RDONLY | os.O_CREAT);
-    os.close(fd);
 
 ######################################################################################
 
@@ -494,11 +490,18 @@ def result_join (original, sep = '\t'):
             list.append(original[i]);
     return string.join(list, sep);
 
-def plural (x):
-    if x > 1:
-        return "s";
-    else:
-        return "";
+################################################################################
+
+def prefix_multi_line_string(str, prefix):
+    out = "";
+    for line in string.split(str, '\n'):
+        line = string.strip(line);
+        if line:
+            out = out + "%s%s\n" % (prefix, line);
+    # Strip trailing new line
+    if out:
+        out = out[:-1];
+    return out;
 
 ################################################################################
 
