@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.25 2001-06-01 00:17:45 troup Exp $
+# $Id: utils.py,v 1.26 2001-06-10 16:35:03 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,6 +46,15 @@ file_exists_exc = "Destination file exists";
 send_mail_invalid_args_exc = "Both arguments are non-null.";
 sendmail_failed_exc = "Sendmail invocation failed";
 
+# Valid components; used by extract_component_from_section() because
+# it doesn't know about Conf from it's caller.  FIXME
+
+valid_components = {
+    "main": "",
+    "contrib": "",
+    "non-free": ""
+    };
+
 ######################################################################################
 
 def open_file(filename, mode):
@@ -77,7 +86,9 @@ def str_isnum (s):
 
 ######################################################################################
 
-# What a mess.  FIXME
+# Prefix and components hardcoded into this like a good'un; need to unhardcod at some
+# stage. [FIXME]
+
 def extract_component_from_section(section):
     component = "";
     
@@ -85,15 +96,23 @@ def extract_component_from_section(section):
         component = string.split(section, '/')[0];
     if string.lower(component) == "non-us" and string.count(section, '/') > 0:
         s = string.split(section, '/')[1];
-        if s == "main" or s == "non-free" or s == "contrib": # Avoid e.g. non-US/libs
+        if valid_components.has_key(s): # Avoid e.g. non-US/libs
             component = string.split(section, '/')[0]+ '/' + string.split(section, '/')[1];
 
     if string.lower(section) == "non-us":
         component = "non-US/main";
-            
+
+    # non-US prefix is case insensitive
+    if string.lower(component)[:6] == "non-us":
+        component = "non-US"+component[6:];
+
+    # Expand default component
     if component == "":
-        component = "main";
-    elif string.lower(component) == "non-us":
+        if valid_components.has_key(section):
+            component = section;
+        else:
+            component = "main";
+    elif component == "non-US":
         component = "non-US/main";
 
     return (section, component);
