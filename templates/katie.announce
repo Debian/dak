@@ -1,0 +1,9 @@
+From: __MAINTAINER_ADDRESS__
+To: __ANNOUNCE_LIST_ADDRESS__
+__BCC__
+Subject: Installed __SOURCE__ __VERSION__ (__ARCHITECTURE__)
+
+__FILE_CONTENTS__
+
+Installed:
+__SHORT_SUMMARY__

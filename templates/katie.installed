@@ -1,0 +1,12 @@
+From: __KATIE_ADDRESS__
+To: __MAINTAINER_ADDRESS__
+__BCC__
+Subject: __CHANGES_FILENAME__ INSTALLED __SUITE__
+
+__REJECT_MESSAGE__
+Installing:
+__SUMMARY__
+
+If the override file requires editing, reply to this mail.
+
+Thank you for your contribution to __DISTRO__.

@@ -93,6 +93,7 @@ Less Urgent
   o Need the ability to rebuild all other tables from dists _or_ pools (in the event of disaster) (?)
   o Make the --help and --version options do stuff for all scripts
   o Need to check for .dsc when source is mentioned
+  o Do a checkpc(1)-a-like which sanitizes a config files.
 
   o fix parse_changes()/build_file_list() to sanity check filenames
   o saftey check and/or rename debs so they match what they should be

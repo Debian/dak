@@ -1,0 +1,28 @@
+From: __MAINTAINER_ADDRESS__
+To: __BUG_NUMBER__-close@__BUG_SERVER__
+__BCC__
+Subject: Bug#__BUG_NUMBER__: fixed in __SOURCE__ __VERSION__
+
+We believe that the bug you reported is fixed in the latest version of
+__SOURCE__, which has been installed in the __DISTRO__ FTP archive:
+
+__SHORT_SUMMARY__
+__STABLE_WARNING__
+
+A summary of the changes between this version and the previous one is
+attached.
+
+Thank you for reporting the bug, which will now be closed.  If you
+have further comments please address them to __BUG_NUMBER__@__BUG_SERVER__,
+and the maintainer will reopen the bug report if appropriate.
+
+__DISTRO__ distribution maintenance software
+pp.
+__MAINTAINER__ (supplier of updated __SOURCE__ package)
+
+(This message was generated automatically at their request; if you
+believe that there is a problem with it please contact the archive
+administrators by mailing __ADMIN_ADDRESS__)
+
+
+__FILE_CONTENTS__

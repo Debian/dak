@@ -18,9 +18,13 @@ Dinstall
    GPGKeyring "/org/keyring.debian.org/keyrings/debian-keyring.gpg";
    SendmailCommand "/usr/sbin/sendmail -oi -t";
    MyEmailAddress "Debian Installer <installer@ftp-master.debian.org>";
+   MyAdminAddress "ftpmaster@debian.org";
    MyHost "debian.org";  // used for generating user@my_host addresses in e.g. manual_reject()
+   MyDistribution "Debian"; // Used in emails
+   BugServer "bugs.debian.org";
    NewAckList "/org/non-us.debian.org/katie/log";
    LockFile "/org/non-us.debian.org/katie/lock";
+   Bcc "troup@auric.debian.org";
 
 };
 
@@ -324,7 +328,7 @@ Dir
 DB
 {
   Name "projectb";
-  Host "non-us.debian.org";
+  Host "";
   Port -1;
   ROUser "nobody";
 };
@@ -356,6 +360,7 @@ Archive
   non-US 
   {
     OriginServer "non-us.debian.org";
+    PrimaryMirror "non-us.debian.org";
     Description "Non-US Archive for the Debian project";
   };
 

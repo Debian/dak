@@ -1,0 +1,39 @@
+From: __MELANIE_ADDRESS__
+To: __BUG_NUMBER__-close@__BUG_SERVER__
+__CC__ 
+__BCC__
+Subject: Bug#__BUG_NUMBER__: fixed
+
+We believe that the bug you reported is now fixed; the following
+package(s) have been removed from __SUITE_LIST__:
+
+__SUMMARY__
+Note that the package(s) have simply been removed from the tag
+database and may (or may not) still be in the pool; this is not a bug.
+The package(s) will be physically removed automatically when no suite
+references them (and in the case of source, when no binary references
+it).  Please also remember that the changes have been done on the
+master archive (__MASTER_ARCHIVE__) and will not propagate to any
+mirrors (__PRIMARY_MIRROR__ included) until the next cron.daily run at the
+earliest.
+
+Packages are never removed from testing by hand.  Testing tracks
+unstable and will automatically remove packages which were removed
+from unstable when removing them from testing causes no dependency
+problems.
+
+Bugs which have been reported against this package are not automatically
+removed from the Bug Tracking System.  Please check all open bugs and
+close them or re-assign them to another package if the removed package
+was superseded by another one.
+
+Thank you for reporting the bug, which will now be closed.  If you
+have further comments please address them to __BUG_NUMBER__@__BUG_SERVER__.
+
+This message was generated automatically; if you believe that there is
+a problem with it please contact the archive administrators by mailing
+__ADMIN_ADDRESS__.
+
+__DISTRO__ distribution maintenance software
+pp.
+__WHOAMI__ (the ftpmaster behind the curtain)
