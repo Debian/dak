@@ -27,6 +27,9 @@ queue/approved
 Others
 ------
 
+  o jennifer crashes if run as a user in -n mode when orig.tar.gz is
+   in queue/new...
+
 <elmo_home> [<random>maybe I should reject debian packages with a non-Debian origin or bugs field</>]
 <Kamion> [<random>agreed; dunno what origin does but non-Debian bugs fields would be bad]
 

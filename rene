@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: rene,v 1.21 2003-04-15 16:01:45 troup Exp $
+# $Id: rene,v 1.22 2003-10-03 16:39:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -311,7 +311,7 @@ def main ():
         os.unlink(temp_filename);
 
     # Checks based on the Packages files
-    for component in components:
+    for component in components + ['main/debian-installer']:
         architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)));
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suite, component, architecture);
