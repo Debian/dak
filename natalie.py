@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.13 2001-11-18 19:57:58 rmurray Exp $
+# $Id: natalie.py,v 1.14 2001-11-19 22:19:46 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -215,7 +215,7 @@ def main ():
 
     # Default arguments
     for i in ["help", "list", "set" ]:
-	if not Cnf.has_key("Natalie::Options::%s" (i)):
+	if not Cnf.has_key("Natalie::Options::%s" % (i)):
 	    Cnf["Natalie::Options::%s" % (i)] = "";
     if not Cnf.has_key("Natalie::Options::Component"):
 	Cnf["Natalie::Options::Component"] = "main";
