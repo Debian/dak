@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: denise,v 1.6 2001-06-23 19:16:27 troup Exp $
+# $Id: denise,v 1.7 2001-09-13 23:51:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,9 +36,18 @@ override = {}
 
 ################################################################################
 
+def result_join (original):
+    list = [];
+    for i in xrange(len(original)):
+        if original[i] == None:
+            list.append("");
+        else:
+            list.append(original[i]);
+    return string.join(list, '\t');
+
 def list(suite, component, type):
     global override;
-    
+
     suite_id = db_access.get_suite_id(suite);
     if suite_id == -1:
         utils.fubar("Suite '%s' not recognised." % (suite));
@@ -62,13 +71,13 @@ def list(suite, component, type):
         q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, type_id));
         for i in q.getresult():
             override[suite][component][type][i[0]] = i;
-            print string.join(i, '\t');
+            print result_join(i);
     else:
         q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, type_id));
         for i in q.getresult():
             i = i[:-1]; # Strip the priority level
             override[suite][component][type][i[0]] = i;
-            print string.join(i, '\t');
+            print result_join(i);
 
 ################################################################################
 
@@ -76,7 +85,7 @@ def main ():
     global Cnf, projectB, override;
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
     Arguments = [('D',"debug","Denise::Options::Debug", "IntVal"),
@@ -136,15 +145,14 @@ def main ():
             for i in q.getresult():
                 package = i[0];
                 if override["unstable"][component][type].has_key(package):
-                    print string.join(override["unstable"][component][type][package], '\t');
+                    print result_join(override["unstable"][component][type][package]);
                 elif override["stable"][component][type].has_key(package):
-                    print string.join(override["stable"][component][type][package], '\t');
+                    print result_join(override["stable"][component][type][package]);
                 else:
                     if type == "dsc" and (override["unstable"][component]["deb"].has_key(package) or override["stable"][component]["deb"].has_key(package)):
                         continue; # source falls back on binary; so accept silently
                     utils.warn("Can't find override entry for testing package '%s' (component %s, type %s)." % (package, component, type));
             sys.stdout.close();
-    
 
 #######################################################################################
 

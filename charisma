@@ -2,7 +2,7 @@
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.8 2001-09-05 18:51:21 rmurray Exp $
+# $Id: charisma,v 1.9 2001-09-13 23:51:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,12 +55,12 @@ def get_maintainer (maintainer):
 
 def get_maintainer_from_source (source_id):
     global maintainer_from_source_cache
-    
+
     if not maintainer_from_source_cache.has_key(source_id):
         q = projectB.query("SELECT m.name FROM maintainer m, source s WHERE s.id = %s and s.maintainer = m.id" % (source_id));
         maintainer = q.getresult()[0][0]
         maintainer_from_source_cache[source_id] = fix_maintainer(maintainer)
-        
+
     return maintainer_from_source_cache[source_id]
 
 ####################################################################################################################################
@@ -69,7 +69,7 @@ def main():
     global Cnf, projectB;
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
@@ -104,7 +104,7 @@ def main():
             source_id = binary[1];
             version = binary[3];
             # Use the source maintainer first; falling back on the binary maintainer as a last resort only
-            if source_id != 0:
+            if source_id != 0 and source_id != None:
                 maintainer = get_maintainer_from_source(source_id);
             else:
                 maintainer = get_maintainer(binary[2]);
@@ -125,7 +125,7 @@ def main():
             if not packages.has_key(package):
                 packages[package] = { "maintainer": maintainer, "priority": 0 }
         file.close()
-    
+
     package_keys = packages.keys()
     package_keys.sort()
     for package in package_keys:

@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.8 2001-08-21 15:40:10 troup Exp $
+# $Id: natalie.py,v 1.9 2001-09-13 23:51:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ def process_file (file, suite, component, type):
         if line == "":
             continue;
 
-        maintainer_override = "";
+        maintainer_override = None;
         if type == "dsc":
             split_line = string.split(line, None, 2);
             if len(split_line) == 2:
@@ -200,7 +200,10 @@ def list(suite, component, type):
     else:
         q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, type_id));
         for i in q.getresult():
-            print string.join(i[:-1], '\t');
+	    if ( i[-2] ):
+		print string.join(i[:-1], '\t');
+	    else:
+		print string.join(i[:-2], '\t');
 
 ################################################################################
 
