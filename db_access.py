@@ -1,6 +1,6 @@
 # DB access fucntions
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.12 2002-02-22 22:49:19 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: db_access.py,v 1.13 2002-05-03 16:06:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Script to automate some parts of checking NEW packages
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: fernanda.py,v 1.1 2002-02-12 23:08:07 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: fernanda.py,v 1.2 2002-05-03 16:06:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
