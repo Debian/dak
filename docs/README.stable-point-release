@@ -1,9 +1,10 @@
 Rough Guide to doing Stable Point Releases in Debian
 ----------------------------------------------------
 
-o use halle to get rid of obsolete .changes
+o use halle to get rid of obsolete .changes from p-u ['halle *.changes' from within p-u]
 o [also check for obsolete .changes caused by melanie-ing from p-u]
-o Install, reject and remove packages as directed by the SRM using lauren
+o Install, reject and remove packages as directed by the SRM using
+  kelly (installs), lauren (rejects) and melanie (removals)
 
   NB: removing packages are not logged to the stable ChangeLog; you
       need to do that byhand.
@@ -18,18 +19,15 @@ o Update version fields in katie.conf[-non-US]
 o Update fields in suite table in postgresql (see below)
 
 o Comment out "Untouchable" in katie.conf[-non-US]
-o Run apt-ftparchive generate apt.conf.stable[-non-US]
-o Copy tree/directory for stable to apt.conf[-non-US]
-
 o Run 'jenna -s stable'
-o Run 'ziyi stable'
-
-o Remove tree/directory for stable from apt.conf[-non-US]
+o Run apt-ftparchive generate apt.conf.stable[-non-US]
+o Run 'ziyi stable'  ** FIXME: requires apt.conf.stable stanza for stable in apt.conf
+		     ** FIXME: must be run as katie
 o Uncomment "Untouchable" in katie.conf[-non-US]
 
 Yes, this sucks and more of it should be automated.
 
 #######################################################
 
-update suite set version = '3.0r2' where suite_name = 'stable';
-update suite set description = 'Debian 3.0r2 Released 20th November 2003' where suite_name = 'stable';
+update suite set version = '3.0r3' where suite_name = 'stable';
+update suite set description = 'Debian 3.0r3 Released 25th October 2004' where suite_name = 'stable';

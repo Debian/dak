@@ -26,6 +26,8 @@ queue/approved
 Others
 ------
 
+  o drop map-unreleased
+
   o check email only portions of addresses match too, iff the names
   don't, helps with the "James Troup <james@nocrew.org>"
   vs. "<james@nocrew.org>" case.
