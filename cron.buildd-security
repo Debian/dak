@@ -29,8 +29,8 @@ if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
 		esac
 		cd /org/security.debian.org/buildd/$d
 		for a in $ARCHS; do
-			quinn-diff -a /org/security.debian.org/buildd/Packages-arch-specific -A $a 2>/dev/null | ssh buildd@auric wanna-build -d $d-security -b $a/build-db --merge-partial-quinn
-			ssh buildd@auric wanna-build -d $d-security -A $a -b $a/build-db --merge-packages < Packages
+			quinn-diff -a /org/security.debian.org/buildd/Packages-arch-specific -A $a 2>/dev/null | ssh buildd@buildd wanna-build -d $d-security -b $a/build-db --merge-partial-quinn
+			ssh buildd@buildd wanna-build -d $d-security -A $a -b $a/build-db --merge-packages < Packages
 		done
 	done
 fi
