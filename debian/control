@@ -1,7 +1,7 @@
 Source: katie
 Section: misc
 Priority: extra
-Build-Depends: postgresql-dev, libapt-pkg-dev
+Build-Depends: postgresql-dev, libapt-pkg-dev, sp, docbook, docbook2man
 Maintainer: James Troup <james@nocrew.org>
 Standards-Version: 3.2.1
 

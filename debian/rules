@@ -9,15 +9,17 @@
 # paternity under the Copyright, Designs and Patents Act 1988.)
 # This file may have to be extensively modified
 
-build:
-	make
+build: build-stamp
+build-stamp:
+	$(MAKE)
+	touch $@
 
-clean:
+clean: checkroot
 	$(checkdir)
-	-rm -rf debian/tmp debian/*~ debian/files* debian/substvars
-	make clean
+	-rm -rf debian/tmp debian/*~ debian/files* debian/substvars build-stamp
+	$(MAKE) clean
 
-binary-indep: checkroot
+binary-indep: checkroot build
 	$(checkdir)
 	-rm -rf debian/tmp
 
@@ -36,6 +38,8 @@ binary-indep: checkroot
 	install -m 755 natalie.py debian/tmp/usr/bin/da_override
 	install -m 755 melanie debian/tmp/usr/da_remove
 
+	install -d -m 755 debian/tmp/usr/lib/python1.5/site-packages/
+	install -m 644 db_access.py utils.py debian/tmp/usr/lib/python1.5/site-packages/
 	install -d -m 755 debian/tmp/usr/share/man/man1/	
 	install -m 644 docs/katie.1 debian/tmp/usr/share/man/man1/da_install.1
 	install -m 644 docs/natalie.1 debian/tmp/usr/share/man/man1/da_override.1
@@ -51,7 +55,7 @@ binary-indep: checkroot
 	gzip -9v debian/tmp/usr/share/doc/katie/*
 	install -m 644 debian/copyright debian/tmp/usr/share/doc/katie/
 
-	dpkg-shlibdeps sql-aptvc.o
+	dpkg-shlibdeps sql-aptvc.so
 	dpkg-gencontrol -isp
 	chown -R root.root debian/tmp
 	chmod -R go=rX debian/tmp
