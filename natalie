@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Manipulate override files
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: natalie,v 1.4 2002-10-16 02:47:32 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: natalie,v 1.5 2003-03-14 19:05:43 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# On 30 Nov 1998, James Troup wrote:
+# 
+# > James Troup<2> <troup2@debian.org>
+# > 
+# >    James is a clone of James; he's going to take over the world.
+# >    After he gets some sleep.
+# 
+# Could you clone other things too? Sheep? Llamas? Giant mutant turnips?
+# 
+# Your clone will need some help to take over the world, maybe clone up an
+# army of penguins and threaten to unleash them on the world, forcing
+# governments to sway to the new James' will!
+# 
+# Yes, I can envision a day when James' duplicate decides to take a horrific
+# vengance on the James that spawned him and unleashes his fury in the form
+# of thousands upon thousands of chickens that look just like Captin Blue
+# Eye! Oh the horror.
+# 
+# Now you'll have to were name tags to people can tell you apart, unless of
+# course the new clone is truely evil in which case he should be easy to
+# identify!
+# 
+# Jason
+# Chicken. Black. Helicopters.
+# Be afraid.
+
+# <Pine.LNX.3.96.981130011300.30365Z-100000@wakko>
 
 ################################################################################
 
