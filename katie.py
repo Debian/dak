@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.23 2002-05-23 12:18:32 troup Exp $
+# $Id: katie.py,v 1.24 2002-06-08 00:19:55 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -163,7 +163,7 @@ class Katie:
                        "md5sum", "component", "location id", "source package",
                        "source version", "maintainer", "dbtype", "files id",
                        "new", "section", "priority", "othercomponents",
-                       "pool name" ]:
+                       "pool name", "original component" ]:
                 if files[file].has_key(i):
                     d_files[file][i] = files[file][i];
         ## changes
