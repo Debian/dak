@@ -15,13 +15,15 @@ jenna - generates lists of files in suites which are then fed to apt-ftparchive
 jennifer - processes packages in incoming
 jeri - basic dependency checking for proposed-updates
 julia - Sync PostgreSQL users with (LDAP-generated) passwd file
-katie - installs packages into the pool
+katie - common code used by lisa, jennifer, kelly and others
+kelly - installs packages into the pool
 lisa - processes NEW and BYHAND packages
 madison - shows which suites a package is in
 melanie - removes packages from suites
 natalie - manpiulates/list override entries
 neve - populates the SQL database
 rene - check for obsolete or duplicated packages
+rose - initial setup of an archive
 rhona - cleans unused/superseded packages out of the pool and the database
 saffron - stats pr0n generator
 shania - cleans cruft from incoming
@@ -30,11 +32,12 @@ ziyi - creates Release files
 
 With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
  Judd, Catherine Zeta Jones, Charisma Carpenter, Cindy Crawford,
- Claire Forlani, Denise Richards, Fernanda Tervares, Halle Berry,
- Heidi Klum, Helena Christensen, Jenna Elfman, Jennifer Lopez, Jeri
- Ryan, Julia Roberts, Katie Holmes, Lisa Falkner, Madison Michele,
- Melanie Sykes, Natalie Portman, Neve Campbell, Rene O'Connor, Rhona
- Mitra, Saffron Burrows, Shania Twain, Tea Leoni and Ziyi Zhang.
+ Claire Forlani, Denise Richards, Fernanda Tavares, Halle Berry, Heidi
+ Klum, Helena Christensen, Jenna Elfman, Jennifer Lopez, Jeri Ryan,
+ Julia Roberts, Katie Holmes, Kelly Brook, Lisa Falkner, Madison
+ Michele, Melanie Sykes, Natalie Portman, Neve Campbell, Rene
+ O'Connor, Rose McGowan, Rhona Mitra, Saffron Burrows, Shania Twain,
+ Tea Leoni and Ziyi Zhang.
 
 In Use Elsewhere:
 -----------------
@@ -51,7 +54,10 @@ Michelle (Yeoh)		[joey]
 Courtney (Cox)		[neuro]
 Sandra (Bullock)	[neuro]
 
-Linda			[python lintian]
+Linda (Evangelista)	[python lintian]
+Jane (Fonda)		[linda over the entire archive]
+Lucy (Lawless)		[files from jane -> html]
+
 Kate			[kde text editor]
 
 Possible Future Candidates:
@@ -76,19 +82,18 @@ Heather (Graham)
 Holly (Valance)
 Jessica (Alba)
 Jewel (Kilcher)
+Jill (Hennessy)
 Kari (Wuhrer)
 Kristin (Kreuk)
-Kelly (Brook)
 Kim (Smith)
 Kirsten (Dunst)
-Lucy (Liu)
 Michelle (Hunziker)
 Naima (Belkhiati)
 Nicole (Appleton)
 Rebecca (Romijn-Stamos)
 Reese (Witherspoon)
-Rose (McGowan)
 Salma (Hayek)
+Sarah (Whatmore)
 Shannen (Doherty)
 Sophie (Marceau)
 Tara (Reid)
