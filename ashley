@@ -2,7 +2,7 @@
 
 # Dump variables from a .katie file to stdout
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: ashley,v 1.1 2002-02-12 23:08:07 troup Exp $
+# $Id: ashley,v 1.2 2002-02-15 22:42:52 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,15 +36,15 @@ def main():
         changes = k.pkg.changes;
         print " Changes:";
         # Mandatory changes fields
-        for i in [ "source", "version", "maintainer", "urgency" ]:
+        for i in [ "source", "version", "maintainer", "urgency", "changedby822", "changedbyname", "maintainername", "maintaineremail", "fingerprint" ]:
             print "  %s: %s" % (string.capitalize(i), changes[i]);
             del changes[i];
         # Mandatory changes lists
-        for i in [ "distribution", "architecture" ]:
+        for i in [ "distribution", "architecture", "closes" ]:
             print "  %s: %s" % (string.capitalize(i), string.join(changes[i].keys()));
             del changes[i];
         # Optional changes fields
-        for i in [ "changed-by", "changedby822", "maintainer822", "filecontents" ]:
+        for i in [ "changed-by", "maintainer822", "filecontents", "format" ]:
             if changes.has_key(i):
                 print "  %s: %s" % (string.capitalize(i), changes[i]);
                 del changes[i];
@@ -54,7 +54,7 @@ def main():
 
         dsc = k.pkg.dsc;
         print " Dsc:";
-        for i in [ "source", "version", "maintainer" ]:
+        for i in [ "source", "version", "maintainer", "fingerprint", "uploaders" ]:
             if dsc.has_key(i):
                 print "  %s: %s" % (string.capitalize(i), dsc[i]);
                 del dsc[i];
