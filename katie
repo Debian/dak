@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.31 2001-03-14 05:12:53 troup Exp $
+# $Id: katie,v 1.32 2001-03-20 00:28:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1275,7 +1275,7 @@ def main():
         Cnf["Dinstall::Options::Ack-New"] = ""
         postgresql_user = Cnf["DB::ROUser"];
 
-    projectB = pg.connect('projectb', Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, postgresql_user);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, postgresql_user);
 
     db_access.init(Cnf, projectB);
 

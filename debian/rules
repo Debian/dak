@@ -36,7 +36,7 @@ binary-indep: checkroot build
 	install -m 755 rhona debian/tmp/usr/bin/da_clean
 	install -m 755 madison debian/tmp/usr/bin/da_chkver
 	install -m 755 natalie.py debian/tmp/usr/bin/da_override
-	install -m 755 melanie debian/tmp/usr/da_remove
+	install -m 755 melanie debian/tmp/usr/bin/da_remove
 
 	install -d -m 755 debian/tmp/usr/lib/python1.5/site-packages/
 	install -m 644 db_access.py utils.py debian/tmp/usr/lib/python1.5/site-packages/

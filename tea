@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.7 2001-03-15 00:35:30 troup Exp $
+# $Id: tea,v 1.8 2001-03-20 00:28:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -192,7 +192,7 @@ def main ():
                  ('v',"version","Tea::Options::Version")];
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
-    projectB = pg.connect('projectb', 'localhost');
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
     check_md5sums();

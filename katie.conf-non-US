@@ -323,6 +323,7 @@ Dir
 
 DB
 {
+  Name "projectb";
   Host "non-us.debian.org";
   Port -1;
   ROUser "nobody";

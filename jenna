@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.6 2001-03-02 02:24:33 troup Exp $
+# $Id: jenna,v 1.7 2001-03-20 00:28:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -140,8 +140,6 @@ def main():
     global Cnf, projectB;
     dislocated_files = {};
     
-    projectB = pg.connect('projectb', 'localhost');
-    
     apt_pkg.init();
     
     Cnf = apt_pkg.newConfiguration();
@@ -157,6 +155,7 @@ def main():
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
 
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
     if Cnf["Jenna::Options::Suite"] == "":

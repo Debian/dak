@@ -28,6 +28,8 @@ Urgent
 
   o Revisit linking of binary->source in install() in katie.
 
+  o debian/* assumes arch: all but sql-aptvc.o isn't arch: all.
+
 Less Urgent
 -----------
 

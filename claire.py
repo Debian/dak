@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.5 2001-03-02 02:24:33 troup Exp $
+# $Id: claire.py,v 1.6 2001-03-20 00:28:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -156,7 +156,7 @@ def main ():
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
 
-    projectB = pg.connect('projectb', 'localhost');
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
 
     db_access.init(Cnf, projectB);
 
