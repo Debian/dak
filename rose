@@ -2,7 +2,7 @@
 
 # Initial setup of an archive
 # Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: rose,v 1.1 2002-10-16 02:45:12 troup Exp $
+# $Id: rose,v 1.2 2002-11-22 04:07:10 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import apt_pkg;
 ################################################################################
 
 Cnf = None;
+AptCnf = None;
 
 ################################################################################
 
@@ -90,7 +91,7 @@ def create_directories():
 ################################################################################
 
 def main ():
-    global Cnf, projectB;
+    global AptCnf, Cnf, projectB;
 
     Cnf = utils.get_conf()
     apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
