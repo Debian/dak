@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rene,v 1.6 2001-06-20 18:46:35 troup Exp $
+# $Id: rene,v 1.7 2001-07-25 15:51:15 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -109,6 +109,9 @@ def main ():
                         version = i[1];
                         if not architectures.has_key(arch):
                             print "[%s]: %s appears for %s (vs. '%s')" % (source, binary, arch, architecture),
+                            if not latest_version:
+                                print "** mwaap, mwapp!  Ignore me **";
+                                continue;
                             if apt_pkg.VersionCompare(latest_version, version) != -1:
                                 print "- out of date.", 
                             else:

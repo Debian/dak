@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.29 2001-07-13 15:54:59 troup Exp $
+# $Id: utils.py,v 1.30 2001-07-25 15:51:15 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ valid_components = {
 
 ######################################################################################
 
-def open_file(filename, mode):
+def open_file(filename, mode='r'):
     try:
 	f = open(filename, mode);
     except IOError:
