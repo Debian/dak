@@ -7,7 +7,6 @@ More Urgent
 -----------
 
   o Lisa:
-    * installing into stable
     * priority >> optional
     * arch != {any,all}
     * build-depends wrong (via andrea)
