@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.28 2004-02-27 20:07:40 troup Exp $
+# $Id: lisa,v 1.29 2004-03-11 00:14:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.28 $";
+lisa_version = "$Revision: 1.29 $";
 
 Cnf = None;
 Options = None;
@@ -472,7 +472,7 @@ def edit_index (new, index):
             got_priority = 0;
             while not got_priority:
                 new_priority = utils.our_raw_input("New priority: ").strip();
-                if new_priority in Priorities.priorities:
+                if new_priority not in Priorities.priorities:
                     print "E: '%s' is not a valid priority, try again." % (new_priority);
                 else:
                     got_priority = 1;
@@ -484,7 +484,7 @@ def edit_index (new, index):
             got_section = 0;
             while not got_section:
                 new_section = utils.our_raw_input("New section: ").strip();
-                if new_section in Sections.sections:
+                if new_section not in Sections.sections:
                     print "E: '%s' is not a valid section, try again." % (new_section);
                 else:
                     got_section = 1;
