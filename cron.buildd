@@ -19,7 +19,12 @@ if [ ! -e "$ftpdir/Archive_Maintenance_In_Progress" ]; then
         cd $overridedir
         denise &>/dev/null
         rm -f override.sid.all3
-        for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
+        for i in main contrib non-free main.debian-installer; do
+		cat override.sid.$i >> override.sid.all3
+		if [ "$i" != "main.debian-installer" ]; then
+			cat override.sid.$i.src >> override.sid.all3.src
+		fi
+	done
 	cd $masterdir
 	apt-ftparchive -qq generate apt.conf.buildd
 	cd /org/incoming.debian.org/buildd
