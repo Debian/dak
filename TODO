@@ -663,14 +663,51 @@ Joey Hess in <20040317065216.GA29816@kitenet.net>
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-<elmo> oh, right, we'd need remote power switch too
-<elmo> mdz: i.e. you can get as low as the iLOs (on HPs) at least.. the only feature I can see missing is the ability to upload CDROM/floppy stuff
-<elmo> and besides, that's why we have thom! ;-0
 <mdz> the Thom Remote Management Unit
 <mdz> TRMU
 <thom> i cost 3 times the amount an IBM remote management card would. per use.
 <jdub> last time *i* checked, you were free
 <jdub> oh, different service
 <jdub> never mind
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+From: Stan Shebs <shebs@apple.com>
+Subject: Re: MS/CW-style inline assembly for GCC
+To: gcc@gcc.gnu.org
+Date: Mon, 03 May 2004 17:35:40 -0700
+
+Can you be more specific about the difficulties? The CW version didn't
+seem that hard (unless Apple mgmt is reading this, in which case it was
+fiendishly difficult :-) ), but I did impose some restrictions in edge
+[...]
+
+Stan
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+buildd@caballero:~/logs$ du -sh kernel-patch-powerpc-2.6.5_2.6.5-2_20040506-1033 
+54G     kernel-patch-powerpc-2.6.5_2.6.5-2_20040506-1033
+
+Next week on "When Good Buildds Go Bad"[...]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<aj>  153 NP+ 11 James Troup     (7.9K) you know you want it.  err.
+* aj looks disturbed as he trolls through his saved mail
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+From: Andrew Morton <akpm@osdl.org>
+Subject: 2.6.6-mm5
+To: linux-kernel@vger.kernel.org
+Date: Sat, 22 May 2004 01:36:36 -0700
+X-Mailer: Sylpheed version 0.9.7 (GTK+ 1.2.10; i386-redhat-linux-gnu)
+
+[...]
+
+  Although this feature has been around for a while it is new code, and the
+  usual cautions apply.  If it munches all your files please tell Jens and
+  he'll type them in again for you.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
