@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.9 2001-11-04 22:34:02 troup Exp $
+# $Id: db_access.py,v 1.10 2001-11-24 18:42:05 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -128,10 +128,12 @@ def get_architecture_id (architecture):
 def get_archive_id (archive):
     global archive_id_cache
 
+    archive = string.lower(archive);
+
     if archive_id_cache.has_key(archive):
         return archive_id_cache[archive]
 
-    q = projectB.query("SELECT id FROM archive WHERE name = '%s'" % (archive))
+    q = projectB.query("SELECT id FROM archive WHERE lower(name) = '%s'" % (archive));
     ql = q.getresult();
     if not ql:
         return -1;
@@ -144,10 +146,12 @@ def get_archive_id (archive):
 def get_component_id (component):
     global component_id_cache
 
+    component = string.lower(component);
+
     if component_id_cache.has_key(component):
         return component_id_cache[component]
 
-    q = projectB.query("SELECT id FROM component WHERE lower(name) = '%s'" % (string.lower(component)))
+    q = projectB.query("SELECT id FROM component WHERE lower(name) = '%s'" % (component))
     ql = q.getresult();
     if not ql:
         return -1;
