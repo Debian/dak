@@ -1,0 +1,82 @@
+[ This was some notes to myself that I made while removing potato; I
+  kept it because it turned out to be a far more traumatic experience
+  than was necesary.  Hopefully rhona will be fixed by the time I need
+  to do this again which would obsolete most of the complex SQL
+  crap. (JT) ]
+
+
+			 Potato Removal Plan
+			 -------------------
+
+o Create potato copy on archive.debian.org
+o poolize any not-just-potato files with monica.
+o force-remove any just-potato files (i.e. by setting last used to 3 weeks ago and run rhona)
+o remove any files (dists/potato) (NB: not pool symlinks!)
+o remove oldstable etc. from the db and config files
+
+********************************************************************************
+DROP TABLE moo;
+
+SELECT f.id INTO TEMP moo FROM files f, binaries b, bin_associations ba
+  WHERE ba.suite IN (2, 3) AND ba.bin = b.id AND f.id = b.file
+EXCEPT
+SELECT f.id FROM files f, binaries b, bin_associations ba
+  WHERE ba.suite NOT IN (2, 3) AND ba.bin = b.id AND f.id = b.file;
+
+CREATE INDEX moo_index on moo (id);
+VACUUM; VACUUM ANALYZE;
+
+EXPLAIN UPDATE files set last_used = '2003/09/03'
+  WHERE EXISTS (
+    SELECT id FROM moo WHERE files.id = moo.id);
+
+DELeditmeETE FROM bin_associations WHERE suite IN (2, 3);
+
+[ run rhona ]
+
+****************************************
+
+DROP TABLE moo;
+
+SELECT f.id INTO TEMP moo FROM files f, source s, src_associations sa, dsc_files df
+  WHERE sa.suite IN (2, 3) AND sa.source = s.id AND df.source = s.id AND df.file = f.id
+    AND NOT EXISTS (SELECT b.id FROM binaries b WHERE b.source = s.id)
+EXCEPT
+SELECT f.id FROM files f, source s, src_associations sa, dsc_files df
+  WHERE sa.suite NOT IN (2, 3) AND sa.source = s.id  AND df.source = s.id AND df.file = f.id;
+
+CREATE INDEX moo_index on moo (id);
+VACUUM; VACUUM ANALYZE;
+
+EXPLAIN UPDATE files set last_used = '2003/09/03'
+  WHERE EXISTS (
+    SELECT id FROM moo WHERE files.id = moo.id);
+
+DELeditmeETE FROM src_associations WHERE suite IN (2, 3);
+
+[ run rhona ]
+
+********************************************************************************
+
+[Code for catherine (poolize); to go after the move of the file]
+# Create symlink
+src = utils.clean_symlink(destination, legacy_filename, Cnf["Dir::Root"]);
+if verbose:
+    print "Symlinking: %s -> %s" % (legacy_filename, src);
+if not no_action:
+    os.symlink(src, legacy_filename);
+
+
+[Query for catherine]
+SELECT l.path, f.filename, f.id as files_id, c.name as component
+   FROM files f, binaries b, bin_associations ba, location l, component c
+  WHERE ba.suite NOT IN (2, 3) AND f.filename ~ '^potato'
+    AND ba.bin = b.id AND f.id = b.file AND l.id = f.location
+    AND c.id = l.component
+UNION
+SELECT DISTINCT ON (f.filename) l.path, f.filename, f.id as files_id, c.name as component
+   FROM files f, source s, src_associations sa, dsc_files df,
+        location l, component c
+  WHERE sa.suite NOT IN (2, 3) AND f.filename ~ '^potato'
+    AND sa.source = s.id AND df.source = s.id AND f.id = df.file
+    AND l.id = f.location AND c.id = l.component;
