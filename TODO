@@ -39,6 +39,9 @@ Others
     might also be a good idea to put everything in one big dict after
     that?
 
+  o [?, wishlist, distant future] RFC2047-ing should be extended to
+    all headers of mails sent out.
+
   o reject sparc64 binaries in a non '*64*' package.
 
   o katie.py(source_exists): a) we take arguments as parameters that

@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.46 2004-04-03 02:49:46 troup Exp $
+# $Id: katie.py,v 1.47 2004-04-07 00:12:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -851,12 +851,11 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 actual_size = int(files[dsc_file]["size"]);
                 found = "%s in incoming" % (dsc_file)
                 # Check the file does not already exist in the archive
-                q = self.projectB.query("SELECT size, md5sum, filename FROM files WHERE filename LIKE '%%%s%%'" % (dsc_file));
-
+                q = self.projectB.query("SELECT f.size, f.md5sum, l.path, f.filename FROM files f, location l WHERE f.filename LIKE '%%%s%%' AND l.id = f.location" % (dsc_file));
                 ql = q.getresult();
                 # Strip out anything that isn't '%s' or '/%s$'
                 for i in ql:
-                    if i[2] != dsc_file and i[2][-(len(dsc_file)+1):] != '/'+dsc_file:
+                    if i[3] != dsc_file and i[3][-(len(dsc_file)+1):] != '/'+dsc_file:
                         ql.remove(i);
 
                 # "[katie] has not broken them.  [katie] has fixed a
@@ -878,6 +877,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                                files[dsc_file]["md5sum"] == i[1]:
                                 self.reject("ignoring %s, since it's already in the archive." % (dsc_file), "Warning: ");
                                 del files[dsc_file];
+                                self.pkg.orig_tar_gz = i[2] + i[3];
                                 match = 1;
 
                     if not match:
