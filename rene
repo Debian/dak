@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: rene,v 1.13 2002-06-08 00:18:02 troup Exp $
+# $Id: rene,v 1.14 2002-08-07 17:19:29 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@
 
 ################################################################################
 
-# "Welcome to where time stands still,
-#  No one leaves and no one will."
-#   - Sanitarium - Metallica / Master of the puppets
+# ``If you're claiming that's a "problem" that needs to be "fixed",
+#   you might as well write some letters to God about how unfair entropy
+#   is while you're at it.'' -- 20020802143104.GA5628@azure.humbug.org.au
 
 ################################################################################
 
