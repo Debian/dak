@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.30 2001-07-25 15:51:15 troup Exp $
+# $Id: utils.py,v 1.31 2001-09-13 23:52:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,10 +27,7 @@ re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
 re_isadeb = re.compile (r".*\.u?deb$");
 re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)");
 
-re_begin_pgp_signature = re.compile("^-----BEGIN PGP SIGNATURE");
-re_begin_pgp_signed_msg = re.compile("^-----BEGIN PGP SIGNED MESSAGE");
 re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)");
-re_multi_line_description = re.compile(r"^ \.$");
 re_multi_line_field = re.compile(r"^\s(.*)");
 
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\> \t]+)\>");
@@ -92,8 +89,8 @@ def str_isnum (s):
 
 def extract_component_from_section(section):
     component = "";
-    
-    if string.find(section, '/') != -1: 
+
+    if string.find(section, '/') != -1:
         component = string.split(section, '/')[0];
     if string.lower(component) == "non-us" and string.count(section, '/') > 0:
         s = string.split(section, '/')[1];
@@ -163,13 +160,13 @@ def parse_changes(filename, dsc_whitespace_rules):
                 if index > max(indices):
                     raise invalid_dsc_format_exc, index;
                 line = indexed_lines[index];
-                if not re_begin_pgp_signature.match(line):
+                if line[:24] != "-----BEGIN PGP SIGNATURE":
                     raise invalid_dsc_format_exc, index;
                 inside_signature = 0;
                 break;
-        if re_begin_pgp_signature.match(line):
+        if line[:24] == "-----BEGIN PGP SIGNATURE":
             break;
-        if re_begin_pgp_signed_msg.match(line):
+        if line[:29] == "-----BEGIN PGP SIGNED MESSAGE":
             if dsc_whitespace_rules:
                 inside_signature = 1;
                 while index < max(indices) and line != "":
@@ -182,8 +179,7 @@ def parse_changes(filename, dsc_whitespace_rules):
             changes[field] = slf.groups()[1];
 	    first = 1;
             continue;
-        mld = re_multi_line_description.match(line);
-        if mld:
+        if line == " .":
             changes[field] = changes[field] + '\n';
             continue;
         mlf = re_multi_line_field.match(line);
@@ -197,7 +193,7 @@ def parse_changes(filename, dsc_whitespace_rules):
 
     if dsc_whitespace_rules and inside_signature:
         raise invalid_dsc_format_exc, index;
-        
+
     changes_in.close();
     changes["filecontents"] = string.join (lines, "");
 
@@ -221,7 +217,7 @@ def build_file_list(changes, dsc):
     # No really, this has happened.  Think 0 length .dsc file.
     if not changes.has_key("files"):
 	raise no_files_exc
-    
+
     for i in string.split(changes["files"], "\n"):
         if i == "":
             break
@@ -239,7 +235,7 @@ def build_file_list(changes, dsc):
         if priority == "": priority = "-"
 
         (section, component) = extract_component_from_section(section);
-        
+
         files[name] = { "md5sum" : md5,
                         "size" : size,
                         "section": section,
@@ -256,7 +252,7 @@ def build_file_list(changes, dsc):
 # 06:28|<Culus> 'The standard sucks, but my tool is supposed to
 #                interoperate with it. I know - I'll fix the suckage
 #                and make things incompatible!'
-        
+
 def fix_maintainer (maintainer):
     m = re_parse_maintainer.match(maintainer);
     rfc822 = maintainer
@@ -407,7 +403,7 @@ def regex_safe (s):
 
 ######################################################################################
 
-# Perform a substition of template 
+# Perform a substition of template
 def TemplateSubst(Map,Template):
     for x in Map.keys():
         Template = string.replace(Template,x,Map[x]);
@@ -463,7 +459,7 @@ def changes_compare (a, b):
         b_changes = parse_changes(b, 0)
     except:
         return 1;
-    
+
     cc_fix_changes (a_changes);
     cc_fix_changes (b_changes);
 
@@ -477,7 +473,7 @@ def changes_compare (a, b):
         return 1;
 
     # Sort by source name
-    
+
     a_source = a_changes.get("source");
     b_source = b_changes.get("source");
     q = cmp (a_source, b_source);
@@ -507,5 +503,5 @@ def find_next_free (dest, too_many=100):
     if extra >= too_many:
         raise tried_too_hard_exc;
     return dest;
-    
+
 ################################################################################
