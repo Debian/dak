@@ -118,6 +118,8 @@ Less Urgent
      @ reject
      @ newchanges
 
+  o logging: hostname + pid ?
+
   o katie could vrfy email addresses (?) [errge@]
   o auto-purge out-of-date stuff from non-free/contrib so that testing and stuff works
   o doogie's binary -> source index
