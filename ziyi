@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.21 2002-05-18 23:54:59 troup Exp $
+# $Id: ziyi,v 1.22 2002-06-08 00:18:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -135,9 +135,6 @@ def main ():
     if not suites:
         suites = Cnf.SubTree("Suite").List()
 
-    def real_arch(x):
-	return x != "source" and x != "all"
-
     for suite in suites:
         print "Processing: " + suite
 	SuiteBlock = Cnf.SubTree("Suite::" + suite)
@@ -163,26 +160,11 @@ def main ():
 	else:
 	    components = []
 
-	nonus = 1
-	if components:
-	    for c in components:
-	        if string.find(c, "non-US/") != 0:
-		    nonus = 0
-	else:
-	    nonus = 0
-
-	if not nonus and  string.find(codename, "/updates") > 0:
-	    security = 1
-	else:
-	    security = 0
-
-	if nonus:
-	    longsuite = suite + "/non-US"
-	elif security:
-	    suite = suite + "/updates"
-	    longsuite = suite
-	else:
-	    longsuite = suite
+        suite_suffix = Cnf.Find("Dinstall::SuiteSuffix");
+        if components and suite_suffix:
+            longsuite = suite + "/" + suite_suffix;
+        else:
+            longsuite = suite;
 
 	tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
 
@@ -207,7 +189,7 @@ def main ():
 	out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
 	if notautomatic != "":
 	    out.write("NotAutomatic: %s\n" % (notautomatic))
-	out.write("Architectures: %s\n" % (string.join(filter(real_arch, SuiteBlock.ValueList("Architectures")))))
+	out.write("Architectures: %s\n" % (string.join(filter(utils.real_arch, SuiteBlock.ValueList("Architectures")))))
 	if components:
             out.write("Components: %s\n" % (string.join(components)))
 
@@ -238,28 +220,26 @@ def main ():
 			rel = "%s/binary-%s/Release" % (sec, arch)
 		    relpath = Cnf["Dir::Root"]+tree+"/"+rel
 
-		    if os.path.exists(relpath):
-			try:
-			    os.unlink(relpath)
-			    release = open(relpath, "w")
-			    #release = open(string.replace(longsuite,"/","_") + "_" + arch + "_" + sec + "_Release", "w")
-			except IOError:
-			    print "Couldn't write to " + relpath
-			else:
-			    release.write("Archive: %s\n" % (suite))
-			    if version != "":
-				release.write("Version: %s\n" % (version))
-			    if nonus:
-				release.write("Component: non-US/%s\n" % (sec))
-			    else:
-				release.write("Component: %s\n" % (sec))
-			    release.write("Origin: %s\n" % (origin))
-			    release.write("Label: %s\n" % (label))
-			    if notautomatic != "":
-				release.write("NotAutomatic: %s\n" % (notautomatic))
-			    release.write("Architecture: %s\n" % (arch))
-			    release.close()
-			    files.append(rel)
+                    try:
+                        release = open(relpath, "w")
+                        #release = open(string.replace(longsuite,"/","_") + "_" + arch + "_" + sec + "_Release", "w")
+                    except IOError:
+                        utils.fubar("Couldn't write to " + relpath);
+
+                    release.write("Archive: %s\n" % (suite))
+                    if version != "":
+                        release.write("Version: %s\n" % (version))
+                    if suite_suffix:
+                        release.write("Component: %s/%s\n" % (suite_suffix,sec));
+                    else:
+                        release.write("Component: %s\n" % (sec));
+                    release.write("Origin: %s\n" % (origin))
+                    release.write("Label: %s\n" % (label))
+                    if notautomatic != "":
+                        release.write("NotAutomatic: %s\n" % (notautomatic))
+                    release.write("Architecture: %s\n" % (arch))
+                    release.close()
+                    files.append(rel)
 
 	    if AptCnf.has_key("tree::%s/main" % (tree)):
 	        sec = string.split(AptCnf["tree::%s/main::Sections" % (tree)])[0]
