@@ -26,22 +26,10 @@ More Urgent
 
   o lisa doesn't trap signals from fernanda properly
 
-  o cross-suite version checking
+  o jenna sucks; should be rewritten to use python arrays rather than
+    multiple selects, similar to heidi/natalie rewrites.
 
-     Priority based; stable == 1, proposed-update == 2, etc.
-
-      i.e. A package targeted for a suite, must have a higher (or
-      equal) version number than anything in a suite with a lower
-      priority and also must have a lower (or equal) version number
-      than anything in a suite with a higher priorty.  The checks are
-      always "or equal to" because two seperate uploads with the same
-      version will fail thanks to the file overwrite errors (at least
-      ignoring potato) and multi-suite uploads (e.g. "stable
-      unstable") need to work.
-
-  o jenna sucks
-
-  o queued and/or perl on sparc stable sucks
+  o queued and/or perl on sparc stable sucks - reimplement it.
 
   o aj's bin nmu changes
 
