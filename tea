@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.9 2001-03-21 05:37:57 troup Exp $
+# $Id: tea,v 1.10 2001-03-24 03:30:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -148,9 +148,7 @@ SELECT l.path, f.filename FROM files f, dsc_files df, location l WHERE df.source
                 first_filename = filename;
             elif first_path != path:
                 symlink = path + '/' + os.path.basename(first_filename);
-                if os.path.exists(symlink):
-                    print "Not live, exists... %s[%s] {%s}" % (filename, source_id, symlink);
-                else:
+                if not os.path.exists(symlink):
                     broken = 1;
                     print "WOAH, we got a live one here... %s [%s] {%s}" % (filename, source_id, symlink);
         if broken:
