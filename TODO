@@ -8,8 +8,8 @@
 
 ================================================================================
 
-approved
---------
+queue/approved
+--------------
 
  o What to do with multi-suite uploads?  Presumably hold in unapproved
    and warn?  Or what?  Can't accept just for unstable or reject just
@@ -26,6 +26,15 @@ approved
 
 Others
 ------
+
+  o by default hamstring katie's mail sending so that she won't send
+    anything until someone edits a script; she's been used far too
+    much to send spam atm :(
+
+  o $ftpdir/indices isn't created by rose because it's not in katie.conf
+
+  o sanity check depends/recommends/suggests too?  in fact for any
+    empty field?
 
 [minor] kelly's copychanges, copykatie handling sucks, the per-suite
         thing is static for all packages, so work out in advance dummy.
