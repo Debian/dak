@@ -25,7 +25,7 @@ tree "dists/testing/non-US"
    FileList "/org/non-us.debian.org/database/dists/testing_non-us/$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/org/non-us.debian.org/database/dists/testing_non-us/$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "alpha arm i386 m68k powerpc sparc source";
+   Architectures "alpha arm hppa i386 ia64 m68k powerpc sparc source";
    BinOverride "override.woody.$(SECTION)";
    SrcOverride "override.woody.$(SECTION).src";
 };

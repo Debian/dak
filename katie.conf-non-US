@@ -284,7 +284,9 @@ Suite
 	  "all" "";
 	  "alpha" ""; 
 	  "arm" "";
+	  "hppa" "";
 	  "i386" "";
+	  "ia64" "";
 	  "m68k" "";
 	  "powerpc" "";
 	  "sparc" "";
