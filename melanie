@@ -2,7 +2,7 @@
 
 # General purpose archive tool for ftpmaster
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.14 2001-06-22 22:53:14 troup Exp $
+# $Id: melanie,v 1.15 2001-08-11 22:04:27 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,24 @@ re_strip_source_version = re.compile (r'\s+.*$');
 
 Cnf = None;
 projectB = None;
+
+################################################################################
+
+def usage (exit_code):
+    print """Usage: melanie [OPTIONS] package[...]
+  -D, --debug=VALUE          turn on debugging
+  -h, --help                 show this help and exit
+  -a, --architecture=ARCH    only act on this architecture
+  -b, --binary               remove binaries only
+  -c, --component=COMPONENT  act on this component
+  -C, --carbon-copy=EMAIL    send a CC of removal message to EMAIL
+  -d, --done=BUG#            send removal message as closure to bug#
+  -m, --reason=MSG           reason for removal
+  -n, --no-action            don't do anything
+  -p, --partial              don't affect override files
+  -s, --suite=SUITE          act on this suite
+  -S, --source-only          remove source only"""
+    sys.exit(exit_code)
 
 ################################################################################
 
@@ -74,6 +92,10 @@ def main ():
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Melanie::Options")
+
+    if Options["Help"]:
+	usage(0)
+
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
@@ -357,7 +379,7 @@ def main ():
         else:
             bcc = "Bcc: " + bcc;
         Subst["__BCC__"] = bcc[:-2];
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.14 $\n" + carbon_copy[:-1];
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.15 $\n" + carbon_copy[:-1];
         Subst["__SUITE_LIST__"] = suites_list;
         Subst["__SUMMARY__"] = summary;
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
