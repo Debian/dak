@@ -77,7 +77,7 @@ GRANT ALL ON
   maintainer, maintainer_id_seq, source, source_id_seq,
   src_associations, src_associations_id_seq, suite,
   suite_architectures, suite_id_seq
-     TO GROUP ftpmaster;
+     TO troup;
 
 -- Give write privileges to the associations tables for AJ for the purposes of `testing'
 GRANT ALL ON 

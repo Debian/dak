@@ -12,6 +12,7 @@ Less Urgent
   o Optimize all the queries by using EXAMINE and building some INDEXs.
   o enclose all the setting SQL stuff in transactions (mostly done).
   o clear out maintainers table
+  o jenna needs to use order by to keep aj from going nutzo
 
   == 
 

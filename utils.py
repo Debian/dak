@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.9 2000-12-18 07:11:25 troup Exp $
+# $Id: utils.py,v 1.10 2000-12-19 17:23:03 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ nk_format_exc = "Unknown Format: in .changes file";
 no_files_exc = "No Files: field in .dsc file.";
 cant_open_exc = "Can't read file.";
 unknown_hostname_exc = "Unknown hostname";
+cant_overwrite_exc = "Permission denied; can't overwrite existent file."
 	
 ######################################################################################
 
@@ -208,9 +209,12 @@ def move (src, dest):
 	os.makedirs(dest_dir, 02775);
 	os.umask(umask);
     #print "Moving %s to %s..." % (src, dest);
-    shutil.copy2(src, dest);
     if os.path.exists(dest) and os.path.isdir(dest):
 	dest = dest + '/' + os.path.basename(src);
+    # Check for overwrite permission on existent files
+    if os.path.exists(dest) and not os.access(dest, os.W_OK):
+        raise cant_overwrite_exc
+    shutil.copy2(src, dest);
     os.chmod(dest, 0664);
     os.unlink(src);
 
@@ -224,9 +228,11 @@ def copy (src, dest):
 	os.makedirs(dest_dir, 02775);
 	os.umask(umask);
     #print "Copying %s to %s..." % (src, dest);
-    shutil.copy2(src, dest);
     if os.path.exists(dest) and os.path.isdir(dest):
 	dest = dest + '/' + os.path.basename(src);
+    if os.path.exists(dest) and not os.access(dest, os.W_OK):
+        raise cant_overwrite_exc
+    shutil.copy2(src, dest);
     os.chmod(dest, 0664);
 
 ######################################################################################
