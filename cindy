@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: cindy,v 1.6 2001-11-18 19:57:58 rmurray Exp $
+# $Id: cindy,v 1.7 2002-02-12 22:13:06 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@
 
 ################################################################################
 
-import pg, sys, string
-import utils, db_access, natalie
+import pg, sys;
+import utils, db_access;
 import apt_pkg;
 
 ################################################################################
@@ -38,7 +38,7 @@ override = {}
 
 def process(suite, component, type):
     global override;
-    
+
     suite_id = db_access.get_suite_id(suite);
     if suite_id == -1:
         utils.fubar("Suite '%s' not recognised." % (suite));
@@ -88,7 +88,7 @@ def process(suite, component, type):
                 #projectB.query("DELETE FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s"
                 #% (package, suite_id, component_id, type_id));
     projectB.query("COMMIT WORK");
-            
+
 
 ################################################################################
 
@@ -96,10 +96,7 @@ def main ():
     global Cnf, projectB, override;
 
     Cnf = utils.get_conf()
-    Arguments = [('D',"debug","Denise::Options::Debug", "IntVal"),
-                 ('h',"help","Denise::Options::Help"),
-                 ('V',"version","Denise::Options::Version")];
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);

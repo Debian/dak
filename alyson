@@ -2,7 +2,7 @@
 
 # Sync the ISC configuartion file and the SQL database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: alyson,v 1.6 2001-11-18 19:57:58 rmurray Exp $
+# $Id: alyson,v 1.7 2002-02-12 22:13:06 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,10 +42,7 @@ def main ():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('D',"debug","Alyson::Options::Debug", "IntVal"),
-                 ('h',"help","Alyson::Options::Help"),
-                 ('v',"version","Alyson::Options::Version")];
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
