@@ -2,7 +2,7 @@
 
 # Manipulate suite tags
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.9 2001-09-27 01:22:51 troup Exp $
+# $Id: heidi,v 1.10 2001-11-04 22:40:12 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ def get_id (package, version, architecture):
         q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
 
     ql = q.getresult();
-    if ql == []:
+    if not ql:
         utils.warn("Couldn't find '%s~%s~%s'." % (package, version, architecture));
         return None;
     if len(ql) > 1:
@@ -142,7 +142,9 @@ def set_suite (file, suite_id):
 
 #######################################################################################
 
-def process_file (file, suite_id, action):
+def process_file (file, suite, action):
+
+    suite_id = db_access.get_suite_id(suite);
 
     if action == "set":
         set_suite (file, suite_id);
@@ -168,20 +170,20 @@ def process_file (file, suite_id, action):
             # Find the existing assoications ID, if any
             q = projectB.query("SELECT id FROM src_associations WHERE suite = %s and source = %s" % (suite_id, id));
             ql = q.getresult();
-            if ql == []:
+            if not ql:
                 assoication_id = None;
             else:
                 assoication_id = ql[0][0];
             # Take action
             if action == "add":
                 if assoication_id != None:
-                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite_id));
+                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite));
                     continue;
                 else:
                     q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id));
             elif action == "remove":
                 if assoication_id == None:
-                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite_id));
+                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite));
                     continue;
                 else:
                     q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (assoication_id));
@@ -189,20 +191,20 @@ def process_file (file, suite_id, action):
             # Find the existing assoications ID, if any
             q = projectB.query("SELECT id FROM bin_associations WHERE suite = %s and bin = %s" % (suite_id, id));
             ql = q.getresult();
-            if ql == []:
+            if not ql:
                 assoication_id = None;
             else:
                 assoication_id = ql[0][0];
             # Take action
             if action == "add":
                 if assoication_id != None:
-                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite_id));
+                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite));
                     continue;
                 else:
                     q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id));
             elif action == "remove":
                 if assoication_id == None:
-                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite_id));
+                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite));
                     continue;
                 else:
                     q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (assoication_id));
@@ -211,7 +213,8 @@ def process_file (file, suite_id, action):
 
 #######################################################################################
 
-def get_list (suite_id):
+def get_list (suite):
+    suite_id = db_access.get_suite_id(suite);
     # List binaries
     q = projectB.query("SELECT b.package, b.version, a.arch_string FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id));
     ql = q.getresult();
@@ -256,12 +259,11 @@ def main ():
     action = None;
 
     for i in ("add", "list", "remove", "set"):
-        suite = Cnf["Heidi::Options::%s" % (i)];
-        if suite !="":
+        if Cnf["Heidi::Options::%s" % (i)] != "":
+            suite = Cnf["Heidi::Options::%s" % (i)];
             if not Cnf.has_key("Suite::%s" % (suite)):
                 utils.fubar("Unknown suite '%s'." %(suite));
             else:
-                suite_id = db_access.get_suite_id(suite);
                 if action != None:
                     utils.fubar("Can only perform one action at a time.");
                 action = i;
@@ -275,14 +277,14 @@ def main ():
         utils.fubar("Will not reset a suite other than testing.");
 
     if action == "list":
-        get_list(suite_id);
+        get_list(suite);
     else:
         Logger = logging.Logger(Cnf, "heidi");
         if file_list != []:
             for file in file_list:
-                process_file(utils.open_file(file,'r'), suite_id, action);
+                process_file(utils.open_file(file), suite, action);
         else:
-            process_file(sys.stdin, suite_id, action);
+            process_file(sys.stdin, suite, action);
         Logger.close();
 
 #######################################################################################
