@@ -1,10 +1,12 @@
 Rough Guide to doing Stable Point Releases in Debian
 ----------------------------------------------------
 
+o use halle to get rid of obsolete .changes
+o [also check for obsolete .changes caused by melanie-ing from p-u]
 o Install, reject and remove packages as directed by the SRM using lauren
 
   NB: removing packages are not logged to the stable ChangeLog; you
-       need to do that byhand.
+      need to do that byhand.
 
 o Do anything in proposed-updates/TODO
 o Close any applicable woody bugs
@@ -25,5 +27,5 @@ Yes, this sucks and more of it should be automated.
 
 #######################################################
 
-update suite set version = '3.0r1' where suite_name = 'stable';
-update suite set description = 'Debian 3.0r1 Released 15th December 2002' where suite_name = 'stable';
+update suite set version = '3.0r2' where suite_name = 'stable';
+update suite set description = 'Debian 3.0r2 Released 20th November 2003' where suite_name = 'stable';
