@@ -25,6 +25,9 @@ approved:
 [minor] kelly's copychanges, copykatie handling sucks, the per-suite
         thing is static for all packages, so work out in advance dummy.
 
+[madison] # filenames ?
+[madison] # maintainer, component, install date (source only?), fingerprint?
+
 Actually Urgent
 ---------------
 
