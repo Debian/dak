@@ -2,7 +2,7 @@
 
 # Microscopic modification and query tool for overrides in projectb
 # Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: alicia,v 1.3 2004-02-02 23:50:18 dsilvers Exp $
+# $Id: alicia,v 1.4 2004-03-11 00:08:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -173,7 +173,7 @@ def main ():
         print "I: Will change section from %s to %s" % (oldsection,newsection);
 
     if not Options.has_key("Done"):
-        utils.warn("No bugs to close have been specified. Noone will know you have done this.");
+        #utils.warn("No bugs to close have been specified. Noone will know you have done this.");
     else:
         print "I: Will close bug(s): %s" % (Options["Done"]);
 
@@ -219,7 +219,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: alicia $Revision: 1.3 $";
+        Subst["__CC__"] = "X-Katie: alicia $Revision: 1.4 $";
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"];
         Subst["__WHOAMI__"] = utils.whoami();
