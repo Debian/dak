@@ -4,14 +4,13 @@ TOFIX
 Urgent
 ------
 
+  o Fix the source-not-in-one-dir stuff
+
+  o Fix something (rene? jenna?) to delete multi-component stuff [aj]
+
   o rewrite shania to a) be sane, b) clean REJECT properly
     (i.e. ignore the fact that stuff is in a valid .changes file and
     just clean the mofo)
-
-  o fix katie's handling of source packages in different directories;
-    e.g. if a package moves from main to contrib, the .orig.tar.gz
-    needs to what? copy or be moved and old source removed; one of the
-    two.
 
   o maintainers file needs overrides  
  
@@ -35,7 +34,7 @@ Less Urgent
 
   o melanie should warn/error on -C without -d
 
-  o ziyi shouldn't really do stable
+  o ziyi shouldn't really do stable (?)
 
   o need to have process_it run a big try: loop so that individual
     package screws up don't kill the daily cron run.
