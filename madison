@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Display information about package(s) (suite, version, etc.)
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: madison,v 1.23 2003-01-02 18:11:20 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: madison,v 1.24 2003-02-10 18:05:49 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,7 +93,7 @@ def main ():
     if Options["Source-And-Binary"]:
         new_packages = [];
         for package in packages:
-            q = projectB.query("SELECT DISTINCT package FROM binaries WHERE EXISTS (SELECT s.source FROM source s WHERE binaries.source = s.id AND s.source %s '%s')" % (comparison_operator, package));
+            q = projectB.query("SELECT DISTINCT package FROM binaries JOIN source ON binaries.source = source.id WHERE source.source %s '%s'" % (comparison_operator, package));
             new_packages.extend(map(lambda x: x[0], q.getresult()));
             new_packages.append(package);
         packages = new_packages;
