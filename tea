@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Sanity check the database
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.17 2002-04-16 14:47:19 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: tea,v 1.18 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,14 +74,14 @@ def check_files():
         if os.access(filename, os.R_OK) == 0:
             utils.warn("'%s' doesn't exist." % (filename));
 
-    file = utils.open_file(Cnf["Dir::OverrideDir"]+'override.unreferenced');
+    file = utils.open_file(Cnf["Dir::Override"]+'override.unreferenced');
     for filename in file.readlines():
         filename = filename[:-1];
         excluded[filename] = "";
 
     print "Checking against existent files...";
 
-    os.path.walk(Cnf["Dir::RootDir"]+'dists/', process_dir, None);
+    os.path.walk(Cnf["Dir::Root"]+'dists/', process_dir, None);
 
     print
     print "%s wasted..." % (utils.size_type(waste));
@@ -95,7 +95,7 @@ def check_dscs():
         if component == "mixed":
             continue;
         component = string.lower(component);
-        list_filename = '%s%s_%s_source.list' % (Cnf["Dir::ListsDir"], suite, component);
+        list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component);
         list_file = utils.open_file(list_filename);
         for line in list_file.readlines():
             file = line[:-1];

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Output override files for apt-ftparchive and indices/
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: denise,v 1.9 2001-11-18 19:57:58 rmurray Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: denise,v 1.10 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 ################################################################################
 
 import pg, sys, string
-import utils, db_access, natalie
+import utils, db_access
 import apt_pkg;
 
 ################################################################################
@@ -84,8 +84,6 @@ def main ():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
-    natalie.init();
-
     for suite in [ "stable", "unstable" ]:
         sys.stderr.write("Processing %s...\n" % (suite));
         override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
@@ -101,7 +99,7 @@ def main ():
                     override_type = ".debian-installer";
                 elif type == "dsc":
                     override_type = ".src";
-                filename = "%s/override.%s.%s%s" % (Cnf["Dir::OverrideDir"], override_suite, string.replace(component, "non-US/", ""), override_type);
+                filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, string.replace(component, "non-US/", ""), override_type);
                 file = utils.open_file(filename, 'w');
                 sys.stdout = file;
                 list(suite, component, type);

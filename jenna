@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.15 2001-11-18 19:57:58 rmurray Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: jenna,v 1.16 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -264,17 +264,17 @@ def main():
                     continue
                 if architecture == "source":
                     Logger.log(["Processing dists/%s/%s/%s..." % (suite, component, architecture)]);
-                    output = utils.open_file("%s/%s_%s_%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w")
+                    output = utils.open_file("%s/%s_%s_%s.list" % (Cnf["Dir::Lists"], suite, component, architecture), "w")
                     generate_src_list(suite, component, output, dislocated_files);
                     output.close();
                 else:
                     Logger.log(["Processing dists/%s/%s/binary-%s..." % (suite, component, architecture)]);
-                    output = utils.open_file("%s/%s_%s_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
+                    output = utils.open_file("%s/%s_%s_binary-%s.list" % (Cnf["Dir::Lists"], suite, component, architecture), "w");
                     generate_bin_list(suite, component, architecture, output, "deb", dislocated_files);
                     output.close();
                     if component == "main" and (suite == "unstable" or suite == "testing") and Cnf.has_key("Section::debian-installer"): # FIXME: must be a cleaner way to say debian-installer is main only?
                         Logger.log(["Processing dists/%s/%s/debian-installer/binary-%s..." % (suite,component, architecture)]);
-                        output = utils.open_file("%s/%s_%s_debian-installer_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
+                        output = utils.open_file("%s/%s_%s_debian-installer_binary-%s.list" % (Cnf["Dir::Lists"], suite, component, architecture), "w");
                         generate_bin_list(suite, component, architecture, output, "udeb", dislocated_files);
                         output.close();
     Logger.close();

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Clean incoming of old unused files
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: shania,v 1.13 2002-03-14 14:12:04 ajt Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: shania,v 1.14 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ def init ():
     # Move to the directory to clean
     incoming = Options["Incoming"];
     if incoming == "":
-        incoming = Cnf["Dir::IncomingDir"];
+        incoming = Cnf["Dir::Queue::Unchecked"];
     os.chdir(incoming);
 
 # Remove a file to the morgue

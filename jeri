@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Dependency check proposed-updates
-# Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: jeri,v 1.4 2002-02-12 22:12:44 troup Exp $
+# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
+# $Id: jeri,v 1.5 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -198,7 +198,7 @@ def check_changes (filename):
     # Move to the pool directory
     cwd = os.getcwd();
     file = files.keys()[0];
-    pool_dir = Cnf["Dir::PoolDir"] + '/' + utils.poolify(changes["source"], files[file]["component"]);
+    pool_dir = Cnf["Dir::Pool"] + '/' + utils.poolify(changes["source"], files[file]["component"]);
     os.chdir(pool_dir);
 
     changes_result = 0;
@@ -227,7 +227,7 @@ def check_joey (filename):
     file = utils.open_file(filename);
 
     cwd = os.getcwd();
-    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::RootDir"]));
+    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]));
 
     for line in file.readlines():
         line = line[:-1];
@@ -260,7 +260,7 @@ def parse_packages():
             architectures.remove(arch);
     for component in components:
         for architecture in architectures:
-            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::RootDir"], suite, component, architecture);
+            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suite, component, architecture);
             packages = utils.open_file(filename, 'r');
             Packages = apt_pkg.ParseTagFile(packages);
             while Packages.Step():

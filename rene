@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Check for obsolete binary packages
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rene,v 1.10 2002-02-12 23:14:30 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: rene,v 1.11 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
 
 # "Welcome to where time stands still,
 #  No one leaves and no one will."
@@ -60,7 +62,7 @@ def main ():
 
     components = Cnf.SubTree("Suite::%s::Components" % (suite)).List();
     for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::RootDir"], suite, component);
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component);
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
         temp_filename = tempfile.mktemp();
         fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
@@ -134,7 +136,7 @@ def main ():
         for architecture in architectures:
             if [ "source", "all" ].count(architecture) != 0:
                 continue;
-            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::RootDir"], suite, component, architecture);
+            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suite, component, architecture);
             packages = utils.open_file(filename);
             Packages = apt_pkg.ParseTagFile(packages);
             while Packages.Step():

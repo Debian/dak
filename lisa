@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Handles NEW and BYHAND packages
-# Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.8 2002-04-21 15:38:54 troup Exp $
+# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
+# $Id: lisa,v 1.9 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.8 $";
+lisa_version = "$Revision: 1.9 $";
 
 Cnf = None;
 Options = None;
@@ -485,7 +485,7 @@ def do_bxa_notification():
             summary = summary + "Package: %s\n" % (control.Find("Package"));
             summary = summary + "Description: %s\n" % (control.Find("Description"));
     Katie.Subst["__BINARY_DESCRIPTIONS__"] = summary;
-    bxa_mail = utils.TemplateSubst(Katie.Subst,open(Cnf["Dir::TemplatesDir"]+"/lisa.bxa_notification","r").read());
+    bxa_mail = utils.TemplateSubst(Katie.Subst,Cnf["Dir::Templates"]+"/lisa.bxa_notification");
     utils.send_mail(bxa_mail,"");
 
 ################################################################################
@@ -510,7 +510,7 @@ def add_overrides (new):
 
     projectB.query("COMMIT WORK");
 
-    if Cnf.FindI("Dinstall::BXANotify"):
+    if Cnf.FindB("Dinstall::BXANotify"):
         do_bxa_notification();
 
 ################################################################################

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.12 2001-11-19 20:42:40 rmurray Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: claire.py,v 1.13 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,8 +104,8 @@ UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
     for i in q.getresult():
         src = i[2]+i[3]
         (component, section) = fix_component_section(i[0], i[1]);
-        dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::RootDir"], Cnf.get("Suite::Stable::CodeName", "stable"), component, section, os.path.basename(i[3]));
-        src = clean_symlink(src, dest, Cnf["Dir::RootDir"]);
+        dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], Cnf.get("Suite::Stable::CodeName", "stable"), component, section, os.path.basename(i[3]));
+        src = clean_symlink(src, dest, Cnf["Dir::Root"]);
         if not os.path.exists(dest):
             if Cnf.Find("Claire::Options::Verbose"):
                 print src+' -> '+dest
@@ -143,8 +143,8 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
         version = utils.re_no_epoch.sub('', i[4]);
         src = i[5]+i[6]
 
-        dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::RootDir"], Cnf.get("Suite::Stable::CodeName", "stable"), component, architecture, section, package, version);
-        src = clean_symlink(src, dest, Cnf["Dir::RootDir"]);
+        dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], Cnf.get("Suite::Stable::CodeName", "stable"), component, architecture, section, package, version);
+        src = clean_symlink(src, dest, Cnf["Dir::Root"]);
         if not os.path.exists(dest):
             if Cnf.Find("Claire::Options::Verbose"):
                 print src+' -> '+dest
@@ -153,7 +153,7 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
         # Add per-arch symlinks for arch: all debs
         if architecture == "all":
             for arch in architectures:
-                dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::RootDir"], Cnf.get("Suite::Stable::CodeName", "stable"), component, arch, section, package, version);
+                dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], Cnf.get("Suite::Stable::CodeName", "stable"), component, arch, section, package, version);
                 if not os.path.exists(dest):
                     if Cnf.Find("Claire::Options::Verbose"):
                         print src+' -> '+dest

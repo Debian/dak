@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Remove obsolete .changes files from proposed-updates
-# Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: halle,v 1.5 2002-03-31 16:14:42 troup Exp $
+# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
+# $Id: halle,v 1.6 2002-05-08 11:13:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ def check_joey (filename):
     file = utils.open_file(filename);
 
     cwd = os.getcwd();
-    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::RootDir"]));
+    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]));
 
     for line in file.readlines():
         line = line[:-1];
