@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.24 2002-12-08 17:25:00 troup Exp $
+# $Id: ziyi,v 1.25 2003-01-02 18:14:28 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,10 +37,12 @@ AptCnf = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: ziyi [OPTION]
-Generate Release files.
+    print """Usage: ziyi [OPTION]... [SUITE]...
+Generate Release files (for SUITE).
 
-  -h, --help                 show this help and exit"""
+  -h, --help                 show this help and exit
+
+If no SUITE is given Release files are generated for all suites."""
 
     sys.exit(exit_code)
 
@@ -118,9 +120,6 @@ def main ():
 
     Cnf = utils.get_conf()
 
-    AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
-
     Arguments = [('h',"help","Ziyi::Options::Help")];
     for i in [ "help" ]:
 	if not Cnf.has_key("Ziyi::Options::%s" % (i)):
@@ -131,6 +130,9 @@ def main ():
 
     if Options["Help"]:
 	usage();
+
+    AptCnf = apt_pkg.newConfiguration()
+    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
 
     if not suites:
         suites = Cnf.SubTree("Suite").List()
