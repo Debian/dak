@@ -4,10 +4,6 @@ TOFIX
 Urgent
 ------
 
-  o migrate non-US proposed-updates to the pool; this allows us to
-    remove the null component handling and de facto fixes the ssh
-    multi-component problem.
-
   o Write something to sync architectures.
 
   o fix katie's handling of source packages in different directories;
@@ -25,7 +21,7 @@ Urgent
   o need to have process_it run a big try: loop so that individual
     package screws up don't kill the daily cron run.
 
-  o Add urgency to DB for testing
+  o Add urgency + installed date to the DB for aj/testing
 
   o [Easy] Enable catherine
 
