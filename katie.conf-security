@@ -15,7 +15,7 @@ Dinstall
    LockFile "/org/security.debian.org/katie/lock";
    Bcc "archive@ftp-master.debian.org";
    // GroupOverrideFilename "override.group-maint";
-   FutureTimeTravelGrace 28800; // 6 hours
+   FutureTimeTravelGrace 28800; // 8 hours
    PastCutoffYear "1984";
    SkipTime 300;
    CloseBugs "false";
@@ -197,7 +197,6 @@ Dir
   AcceptedAutoBuild "/org/security.debian.org/buildd/";
   Queue
   {
-    Root "/org/security.debian.org/queue/";
     Accepted "/org/security.debian.org/queue/accepted/";
     Byhand "/org/security.debian.org/queue/byhand/";
     Done "/org/security.debian.org/queue/done/";

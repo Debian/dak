@@ -101,10 +101,24 @@ o katie - common code used by lisa, jennifer, kelly and others
 
 [Very incomplete - FIXME]
 
-o Write your own katie.conf and apt.conf files
-o Run rose
+o Write your own katie.conf and apt.conf files.  katie looks for those
+  config files in /etc/katie/.  /etc/katie/katie.conf can define
+  alternative configuration files with Config::host::KatieConfig and
+  Config::host::AptConfig (where "host" is the fully qualified domain
+  name of your machine).
+o Create a PostgreSQL database on the host given in katie.conf's DB::Host
+  with the name specified in DB::Name.
+o Run rose: this will create all directories which are specified in
+  katie.conf and apt.conf.
 o If you have an existing archive:
    * Run neve
   otherwise:
-   * Run alyson
+   * Create the table structure.  init_pool.sql contains all SQL statements
+     which are needed for this.  After changing all occurences of "projectb"
+     to the name of your database (as defined in DB::Name) you can run:
+         psql DB::Name < init_pool.sql
+   * Run alyson: it will populate your database with the values from
+     katie.conf and apt.conf.
+   * Copy all templates from the "templates" directory to to the directory
+     specified in Dir::Templates, and adapt them to your distribution.
 
