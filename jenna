@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.12 2001-06-22 22:53:14 troup Exp $
+# $Id: jenna,v 1.13 2001-08-21 15:47:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,16 +28,17 @@
 
 import pg, string, os, sys
 import apt_pkg
-import db_access, utils, claire
+import db_access, utils, claire, logging
 
 projectB = None
 Cnf = None
+Logger = None;
 
 def generate_src_list(suite, component, output, dislocated_files):
     sources = {}
 
     suite_id = db_access.get_suite_id(suite);
-    
+
     if component == "-":
         q = projectB.query("SELECT s.source, l.path, f.filename, f.id FROM source s, src_associations sa, location l, files f WHERE sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id ORDER BY s.source, s.version"
                            % (suite_id));
@@ -61,14 +62,14 @@ def generate_src_list(suite, component, output, dislocated_files):
     source_keys.sort();
     for source in source_keys:
         output.write(sources[source]+'\n')
-    
+
 #########################################################################################
 
 def generate_bin_list(suite, component, architecture, output, type, dislocated_files):
     packages = {}
 
     suite_id = db_access.get_suite_id(suite);
-    
+
     if component == "-":
         q = projectB.query("SELECT b.package, l.path, f.filename, f.id FROM architecture a, binaries b, bin_associations ba, location l, files f WHERE ( a.arch_string = '%s' OR a.arch_string = 'all' ) AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s' ORDER BY b.package, b.version, a.arch_string" % (architecture, suite_id, type));
     else:
@@ -84,7 +85,7 @@ def generate_bin_list(suite, component, architecture, output, type, dislocated_f
             utils.warn("%s in %s / %s / %s / %s is duplicated." % (package, suite, component, architecture, type));
         else:
             packages[package] = filename;
-        
+
     # Write the list of files out
     package_keys = packages.keys();
     package_keys.sort();
@@ -112,7 +113,7 @@ def generate_bin_list(suite, component, architecture, output, type, dislocated_f
 # because it's lame. I have no idea. </aj>
 
 def clean_duplicate_packages(suite):
-    print "Cleaning duplicate packages for %s..." % (suite)
+    Logger.log(["Cleaning duplicate packages", suite]);
 
     suite_id = db_access.get_suite_id(suite)
     q = projectB.query("""
@@ -136,18 +137,18 @@ ORDER BY b1.package, b1.version, a1.arch_string;""" % (suite_id))
 	(package, oldid, oldver, oldarch, newid, newver, newarch) = i
 	if not seen.has_key(oldid):
 	    seen[oldid] = newid
-	    print "Removing %s %s on %s (ifo %s/%s)" % (package, oldver, oldarch, newver, newarch)
+	    Logger.log(["Removing", package, oldver, oldarch, newver, newarch]);
 	    projectB.query("DELETE FROM bin_associations WHERE suite = %s AND bin = %s" % (suite_id, oldid))
 	else:
-	    print "%s %s on %s also superceded by %s/%s" % (package, oldver, oldarch, newver, newarch)
+	    Logger.log(["Superceded", package, oldver, oldarch, newver, newarch]);
 
 # If something has moved from one component to another we need to
 # clean out the old versions here.  The rest of jenna won't do this
 # because it works on a per-component level for flexibility.
 
 def clean_suite (suite):
-    print "Cleaning out packages for %s..." % (suite)
-    
+    Logger.log(["Cleaning out packages", suite]);
+
     suite_id = db_access.get_suite_id(suite)
     q = projectB.query("""
 SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name
@@ -182,29 +183,23 @@ SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name
                     (delete_id, delete_version, delete_component) = (other_id, other_version, other_component)
                     d[key] = (version, component, id);
                 if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
-                    print "deleting %s on %s (%s [%s]) in favour of newer version %s [%s]..." \
-                          % (package, architecture, delete_version, delete_component, keep_version, keep_component);
+                    Logger.log(["deleting", package, architecture, delete_version, delete_component, keep_version, keep_component]);
                     projectB.query("DELETE FROM %s WHERE suite = %s AND %s = %s" % (delete_table, suite_id, delete_col, delete_id));
                 else:
-                    print "[untouchable] would delete %s on %s (%s [%s]) in favour of newer version %s [%s]..." \
-                          % (package, architecture, delete_version, delete_component, keep_version, keep_component);
+                    Logger.log(["[untouchable]", package, architecture, delete_version, delete_component, keep_version, keep_component]);
             else:
                 d[key] = (version, component, id);
         else:
-            if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
-                sys.stderr.write("WARNING: deleting %s because it doesn't exist.\n" % (filename));
-                projectB.query("DELETE FROM %s WHERE suite = %s AND %s = %s" % (delete_table, suite_id, delete_col, delete_id));
-            else:
-                sys.stderr.write("WARNING: [untouchable] would delete %s because it doesn't exist.\n" % (filename));
+            utils.warn("%s is in %s but doesn't appear to exist?" % (filename, suite));
 
 #########################################################################################
 
 def main():
-    global Cnf, projectB;
+    global Cnf, projectB, Logger;
     dislocated_files = {};
-    
+
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
@@ -220,13 +215,13 @@ def main():
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
+    Logger = logging.Logger(Cnf, "jenna");
 
     if Cnf["Jenna::Options::Suite"] == "":
         Cnf["Jenna::Options::Suite"] = string.join(Cnf.SubTree("Suite").List());
     for suite in string.split(Cnf["Jenna::Options::Suite"]):
         suite = string.lower(suite);
         if suite == 'stable':
-            print "Undoing dislocation..."
             dislocated_files = claire.find_dislocated_stable(Cnf, projectB);
         else:
             dislocated_files = {};
@@ -247,20 +242,21 @@ def main():
                 if architecture == "all":
                     continue
                 if architecture == "source":
-                    print "Processing dists/%s/%s/%s..." % (suite, component, architecture);
+                    Logger.log(["Processing dists/%s/%s/%s..." % (suite, component, architecture)]);
                     output = utils.open_file("%s/%s_%s_%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w")
                     generate_src_list(suite, component, output, dislocated_files);
                     output.close();
                 else:
-                    print "Processing dists/%s/%s/binary-%s..." % (suite, component, architecture);
+                    Logger.log(["Processing dists/%s/%s/binary-%s..." % (suite, component, architecture)]);
                     output = utils.open_file("%s/%s_%s_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
                     generate_bin_list(suite, component, architecture, output, "deb", dislocated_files);
                     output.close();
                     if component == "main" and (suite == "unstable" or suite == "testing"): # FIXME: must be a cleaner way to say debian-installer is main only?
-                        print "Processing dists/%s/%s/debian-installer/binary-%s..." % (suite,component, architecture);
+                        Logger.log(["Processing dists/%s/%s/debian-installer/binary-%s..." % (suite,component, architecture)]);
                         output = utils.open_file("%s/%s_%s_debian-installer_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
                         generate_bin_list(suite, component, architecture, output, "udeb", dislocated_files);
                         output.close();
+    Logger.close();
 
 #########################################################################################
 
