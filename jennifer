@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.31 2003-02-07 14:53:42 troup Exp $
+# $Id: jennifer,v 1.32 2003-02-11 18:10:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 
 ################################################################################
 
-import FCNTL, errno, fcntl, gzip, os, re, shutil, stat, sys, time, traceback;
+import errno, fcntl, gzip, os, re, shutil, stat, sys, time, traceback;
 import apt_inst, apt_pkg;
 import db_access, katie, logging, utils;
 
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.31 $";
+jennifer_version = "$Revision: 1.32 $";
 
 Cnf = None;
 Options = None;
@@ -1008,7 +1008,13 @@ def main():
 
     if not Options["No-Action"]:
         lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT);
-        fcntl.lockf(lock_fd, FCNTL.F_TLOCK);
+        try:
+            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB);
+        except IOError, e:
+            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
+                utils.fubar("Couldn't obtain lock; assuming another jennifer is already running.");
+            else:
+                raise;
         Logger = Katie.Logger = logging.Logger(Cnf, "jennifer");
 
     # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header

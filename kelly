@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Installs Debian packages
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.4 2003-01-02 18:12:05 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: kelly,v 1.5 2003-02-11 18:10:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,14 +32,14 @@
 
 ###############################################################################
 
-import FCNTL, fcntl, os, sys, time;
+import fcntl, os, sys, time;
 import apt_pkg;
 import db_access, katie, logging, utils;
 
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.4 $";
+kelly_version = "$Revision: 1.5 $";
 
 Cnf = None;
 Options = None;
@@ -575,7 +575,13 @@ def main():
     # Obtain lock if not in no-action mode and initialize the log
     if not Options["No-Action"]:
         lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT);
-        fcntl.lockf(lock_fd, FCNTL.F_TLOCK);
+        try:
+            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB);
+        except IOError, e:
+            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
+                utils.fubar("Couldn't obtain lock; assuming another kelly is already running.");
+            else:
+                raise;
         Logger = Katie.Logger = logging.Logger(Cnf, "katie");
         if not installing_to_stable and Cnf.get("Dir::UrgencyLog"):
             Urgency_Logger = Urgency_Log(Cnf);
