@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.14 2002-04-20 14:24:48 troup Exp $
+# $Id: katie.py,v 1.15 2002-04-21 15:38:29 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ###############################################################################
 
-import cPickle, errno, os, pg, re, stat, string, sys, time;
+import cPickle, errno, os, pg, re, stat, string, sys, tempfile, time;
 import utils, db_access;
 import apt_inst, apt_pkg;
 
@@ -463,6 +463,35 @@ class Katie:
     ###########################################################################
 
     def do_reject (self, manual = 0, reject_message = ""):
+        # If we weren't given a manual rejection message, spawn an
+        # editor so the user can add one in...
+        if manual and not reject_message:
+            temp_filename = tempfile.mktemp();
+            fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+            os.close(fd);
+            editor = os.environ.get("EDITOR","vi")
+            answer = 'E';
+            while answer == 'E':
+                os.system("%s %s" % (editor, temp_filename))
+                file = utils.open_file(temp_filename);
+                reject_message = string.join(file.readlines());
+                file.close();
+                print "Reject message:";
+                print utils.prefix_multi_line_string(reject_message,"  ");
+                prompt = "[R]eject, Edit, Abandon, Quit ?"
+                answer = "XXX";
+                while string.find(prompt, answer) == -1:
+                    answer = utils.our_raw_input(prompt);
+                    m = re_default_answer.search(prompt);
+                    if answer == "":
+                        answer = m.group(1);
+                    answer = string.upper(answer[:1]);
+            os.unlink(temp_filename);
+            if answer == 'A':
+                return 1;
+            elif answer == 'Q':
+                sys.exit(0);
+
         print "Rejecting.\n"
 
         Cnf = self.Cnf;
@@ -502,20 +531,12 @@ class Katie:
             os.write(fd, reject_mail_message);
             os.close(fd);
 
-            # If we weren't given a manual rejection message, spawn an
-            # editor so the user can add one in...
-            if reject_message == "":
-                editor = os.environ.get("EDITOR","vi")
-                result = os.system("%s +6 %s" % (editor, reject_filename))
-                if result != 0:
-                    utils.fubar("editor invocation failed for '%s'!" % (reject_filename), result);
-		reject_mail_message = utils.open_file(reject_filename).read();
-
         # Send the rejection mail if appropriate
         if not Cnf["Dinstall::Options::No-Mail"]:
             utils.send_mail (reject_mail_message, "");
 
         self.Logger.log(["rejected", pkg.changes_file]);
+        return 0;
 
     ################################################################################
 
