@@ -93,25 +93,23 @@ VACUUM override_type;
 VACUUM override;
 
 -- FIXME: has to be a better way to do this
-GRANT ALL ON
-  architecture, architecture_id_seq, archive, archive_id_seq,
-  bin_associations, bin_associations_id_seq, binaries,
+GRANT ALL ON architecture, architecture_id_seq, archive,
+  archive_id_seq, bin_associations, bin_associations_id_seq, binaries,
   binaries_id_seq, component, component_id_seq, dsc_files,
-  dsc_files_id_seq, files, files_id_seq, location, location_id_seq,
-  maintainer, maintainer_id_seq, override, override_type,
-  override_type_id_seq, priority, priority_id_seq, section,
-  section_id_seq, source, source_id_seq, src_associations,
-  src_associations_id_seq, suite, suite_architectures, suite_id_seq
-     TO GROUP ftpmaster;
+  dsc_files_id_seq, files, files_id_seq, fingerprint,
+  fingerprint_id_seq, location, location_id_seq, maintainer,
+  maintainer_id_seq, override, override_type, override_type_id_seq,
+  priority, priority_id_seq, section, section_id_seq, source,
+  source_id_seq, src_associations, src_associations_id_seq, suite,
+  suite_architectures, suite_id_seq TO GROUP ftpmaster;
 
 -- Read only access to user 'nobody'
-GRANT SELECT ON
-  architecture, architecture_id_seq, archive, archive_id_seq,
-  bin_associations, bin_associations_id_seq, binaries,
+GRANT SELECT ON architecture, architecture_id_seq, archive,
+  archive_id_seq, bin_associations, bin_associations_id_seq, binaries,
   binaries_id_seq, component, component_id_seq, dsc_files,
-  dsc_files_id_seq, files, files_id_seq, location, location_id_seq,
-  maintainer, maintainer_id_seq, override, override_type,
-  override_type_id_seq, priority, priority_id_seq, section,
-  section_id_seq, source, source_id_seq, src_associations,
-  src_associations_id_seq, suite, suite_architectures, suite_id_seq
-     TO PUBLIC;
+  dsc_files_id_seq, files, files_id_seq, fingerprint,
+  fingerprint_id_seq, location, location_id_seq, maintainer,
+  maintainer_id_seq, override, override_type, override_type_id_seq,
+  priority, priority_id_seq, section, section_id_seq, source,
+  source_id_seq, src_associations, src_associations_id_seq, suite,
+  suite_architectures, suite_id_seq TO PUBLIC;

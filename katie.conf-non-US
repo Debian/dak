@@ -18,6 +18,8 @@ Dinstall
    Bcc "archive@ftp-master.debian.org";
    GroupOverrideFilename "override.group-maint";
    StableRejector "Martin (Joey) Schulze <joey@debian.org>";
+   FutureTimeTravelGrace "8640"; // 6 hours
+   PastCutoffYear "1984";
    BXANotify 0;
 };
 
@@ -35,6 +37,15 @@ Shania
     Days 14;
    };
  MorgueSubDir "shania";
+};
+
+
+Catherine 
+{
+  Options 
+  {
+     Limit	10240;
+  };
 };
 
 Natalie
@@ -265,6 +276,16 @@ Dir
   ListsDir "/org/non-us.debian.org/database/dists/";
   LogDir "/org/non-us.debian.org/log/";
   Morgue "/org/non-us.debian.org/morgue/";
+  MorgueRejectDir "reject";
+  QueueRootDir "/org/non-us.debian.org/queue/";
+  QueueAcceptedDir "/org/non-us.debian.org/queue/accepted/";
+  QueueByhandDir "/org/non-us.debian.org/queue/byhand/";
+  QueueDoneDir "/org/non-us.debian.org/queue/done/";
+  QueueHoldingDir "/org/non-us.debian.org/queue/holding/";
+  QueueNewDir "/org/non-us.debian.org/queue/new/";
+  QueueRejectDir "/org/non-us.debian.org/queue/reject/";
+  QueueUncheckedDir "/org/non-us.debian.org/queue/unchecked/";
+  UrgencyLogDir "/org/non-us.debian.org/testing/";
 };
 
 DB
@@ -390,8 +411,16 @@ Location
 
 };
 
-Catherine {
-	Options {
-		Limit	10240;
-	};
+Urgency
+{
+  Default "low";
+  Valid
+  {
+    low "";
+    medium "";
+    high "";
+    emergency "";
+    critical "";
+  };
 };
+
