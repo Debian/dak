@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.56 2003-02-21 19:20:00 troup Exp $
+# $Id: utils.py,v 1.57 2003-03-14 19:05:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -271,7 +271,7 @@ def fix_maintainer (maintainer):
 ######################################################################################
 
 # sendmail wrapper, takes _either_ a message string or a file as arguments
-def send_mail (message, filename):
+def send_mail (message, filename=""):
 	# Sanity check arguments
 	if message != "" and filename != "":
             raise send_mail_invalid_args_exc;
@@ -561,7 +561,7 @@ def parse_args(Options):
     # Process suite
     if Options["Suite"]:
         suite_ids_list = [];
-        for suite in Options["Suite"].split():
+        for suite in split_args(Options["Suite"]):
             suite_id = db_access.get_suite_id(suite);
             if suite_id == -1:
                 warn("suite '%s' not recognised." % (suite));
@@ -577,7 +577,7 @@ def parse_args(Options):
     # Process component
     if Options["Component"]:
         component_ids_list = [];
-        for component in Options["Component"].split():
+        for component in split_args(Options["Component"]):
             component_id = db_access.get_component_id(component);
             if component_id == -1:
                 warn("component '%s' not recognised." % (component));
@@ -595,7 +595,7 @@ def parse_args(Options):
     if Options["Architecture"]:
         arch_ids_list = [];
         check_source = 0;
-        for architecture in Options["Architecture"].split():
+        for architecture in split_args(Options["Architecture"]):
             if architecture == "source":
                 check_source = 1;
             else:
@@ -665,6 +665,22 @@ def arch_compare_sw (a, b):
         return 1;
 
     return cmp (a, b);
+
+################################################################################
+
+# Split command line arguments which can be separated by either commas
+# or whitespace.  If dwim is set, it will complain about string ending
+# in comma since this usually means someone did 'madison -a i386, m68k
+# foo' or something and the inevitable confusion resulting from 'm68k'
+# being treated as an argument is undesirable.
+
+def split_args (s, dwim=1):
+    if s.find(",") == -1:
+        return s.split();
+    else:
+        if s[-1:] == "," and dwim:
+            fubar("split_args: found trailing comma, spurious space maybe?");
+        return s.split(",");
 
 ################################################################################
 
