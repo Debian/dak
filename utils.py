@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.58 2003-09-07 13:54:20 troup Exp $
+# $Id: utils.py,v 1.59 2003-09-24 00:13:43 troup Exp $
 
 ################################################################################
 
@@ -327,10 +327,10 @@ def move (src, dest, overwrite = 0, perms = 0664):
     # Don't overwrite unless forced to
     if os.path.exists(dest):
         if not overwrite:
-            raise file_exists_exc;
+            fubar("Can't move %s to %s - file already exists." % (src, dest));
         else:
             if not os.access(dest, os.W_OK):
-                raise cant_overwrite_exc
+                fubar("Can't move %s to %s - can't write to existing file." % (src, dest));
     shutil.copy2(src, dest);
     os.chmod(dest, perms);
     os.unlink(src);

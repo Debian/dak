@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.11 2003-09-17 23:36:17 troup Exp $
+# $Id: kelly,v 1.12 2003-09-24 00:13:43 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.11 $";
+kelly_version = "$Revision: 1.12 $";
 
 Cnf = None;
 Options = None;
@@ -394,11 +394,10 @@ def install ():
     projectB.query("COMMIT WORK");
 
     # Move the .changes into the 'done' directory
-    try:
-        utils.move (pkg.changes_file, os.path.join(Cnf["Dir::Queue::Done"], os.path.basename(pkg.changes_file)));
-    except:
-        utils.warn("couldn't move changes file '%s' to DONE directory. [Got %s]" % (os.path.basename(pkg.changes_file), sys.exc_type));
+    utils.move (pkg.changes_file,
+                os.path.join(Cnf["Dir::Queue::Done"], os.path.basename(pkg.changes_file)));
 
+    # Remove the .katie file
     os.unlink(Katie.pkg.changes_file[:-8]+".katie");
 
     if changes["architecture"].has_key("source") and Urgency_Logger:
