@@ -1,6 +1,7 @@
 From: __KATIE_ADDRESS__
 To: __MAINTAINER_TO__
 __BCC__
+Precedence: bulk
 Subject: __CHANGES_FILENAME__ ACCEPTED__SUITE__
 
 __REJECT_MESSAGE__

@@ -2,6 +2,7 @@ From: Ben Collins <bxa@ftp-master.debian.org>
 To: crypt@bxa.doc.gov
 Cc: bxa@ftp-master.debian.org
 __BCC__
+Precedence: junk
 Subject: Addition to __DISTRO__ Source Code
 
 				                      Department of Commerce

@@ -1,6 +1,7 @@
 From: __KATIE_ADDRESS__
 To: __MAINTAINER_TO__
 __BCC__
+Precedence: junk
 Subject: __SOURCE__ override disparity
 
 There are disparities between your recently accepted upload and the
