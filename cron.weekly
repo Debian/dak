@@ -20,6 +20,7 @@ fi
 
 # Clean up apt-ftparchive's databases
 
-apt-ftparchive clean apt.conf
+cd $masterdir
+apt-ftparchive -q clean apt.conf
 
 ################################################################################
