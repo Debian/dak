@@ -13,6 +13,10 @@ Others
 
   o reject on > or < in a version constraint
 
+23:07 < aba> elmo: and, how about enhancing rene to spot half-dropped
+   binaries on one arch (i.e. package used to build A and B, but B is
+   no longer built on some archs)?
+
   o tabnanny the source
 
   o drop map-unreleased
