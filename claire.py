@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.9 2001-10-10 16:04:14 ajt Exp $
+# $Id: claire.py,v 1.10 2001-11-04 20:41:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -113,6 +113,10 @@ UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
         dislocated_files[i[4]] = dest;
 
     # Binary
+    architectures = Cnf.SubTree("Suite::Stable::Architectures").List();
+    for arch in [ "source", "all" ]:
+        if architectures.count(arch):
+            architectures.remove(arch);
     q = projectB.query("""
 SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
                           b.version, l.path, f.filename, f.id
@@ -146,6 +150,14 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
                 print src+' -> '+dest
             os.symlink(src, dest);
         dislocated_files[i[7]] = dest;
+        # Add per-arch symlinks for arch: all debs
+        if architecture == "all":
+            for arch in architectures:
+                dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::RootDir"], Cnf.get("Suite::Stable::CodeName", "stable"), component, arch, section, package, version);
+                if not os.path.exists(dest):
+                    if Cnf.Find("Claire::Options::Verbose"):
+                        print src+' -> '+dest
+                    os.symlink(src, dest);
 
     return dislocated_files
 
