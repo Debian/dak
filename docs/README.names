@@ -18,6 +18,7 @@ jeri - basic dependency checking for proposed-updates
 julia - Sync PostgreSQL users with (LDAP-generated) passwd file
 katie - common code used by lisa, jennifer, kelly and others
 kelly - installs packages into the pool
+lauren - manually reject packages from proposed-updates
 lisa - processes NEW and BYHAND packages
 madison - shows which suites a package is in
 melanie - removes packages from suites
@@ -35,10 +36,10 @@ With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
  Judd, Catherine Zeta Jones, Charisma Carpenter, Cindy Crawford,
  Claire Forlani, Denise Richards, Emilie de Ravin, Fernanda Tavares,
  Halle Berry, Heidi Klum, Helena Christensen, Jenna Elfman, Jennifer
- Lopez, Jeri Ryan, Julia Roberts, Katie Holmes, Kelly Brook, Lisa
- Falkner, Madison Michele, Melanie Sykes, Natalie Portman, Neve
- Campbell, Rene O'Connor, Rose McGowan, Rhona Mitra, Saffron Burrows,
- Shania Twain, Tea Leoni and Ziyi Zhang.
+ Lopez, Jeri Ryan, Julia Roberts, Katie Holmes, Kelly Brook, Lauren
+ Lee Smith, Lisa Falkner, Madison Michele, Melanie Sykes, Natalie
+ Portman, Neve Campbell, Rene O'Connor, Rose McGowan, Rhona Mitra,
+ Saffron Burrows, Shania Twain, Tea Leoni and Ziyi Zhang.
 
 In Use Elsewhere:
 -----------------
@@ -95,7 +96,6 @@ Kim (Smith)
 Kirsten (Dunst)
 Kristin (Kreuk)
 Kylie (Minogue)
-Lauren (Lee Smith)
 Mariska (Hargitay)
 Michelle (Hunziker)
 Mira (Sorvino)

@@ -76,6 +76,7 @@ o amber - wrapper for Debian security team
 o halle - removes obsolete .changes files from proposed-updates
 o jeri - basic dependency checking for proposed-updates
 o emilie - syncs fingerprint and uid information with a debian.org LDAP DB
+o lauren - manually reject packages from proposed-updates
 
 Very Incomplete or otherwise not generally useful
 -------------------------------------------------
