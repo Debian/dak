@@ -35,7 +35,7 @@ tree "dists/unstable/non-US"
    FileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "alpha arm hppa hurd-i386 i386 mips mipsel m68k powerpc sh sparc source";
+   Architectures "alpha arm hppa hurd-i386 i386 ia64 mips mipsel m68k powerpc s390 sh sparc source";
    BinOverride "override.sid.$(SECTION)";
    SrcOverride "override.sid.$(SECTION).src";
 };

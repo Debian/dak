@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: madison,v 1.1 2000-12-20 08:15:35 troup Exp $
+# $Id: madison,v 1.2 2001-01-27 02:51:00 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ def main ():
 
     packages = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
 
-    projectB = pg.connect('projectb', 'localhost');
+    projectB = pg.connect('projectb', Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, Cnf["DB::ROUser"]);
 
     db_access.init(Cnf, projectB);
 

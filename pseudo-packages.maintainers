@@ -9,6 +9,7 @@ ftp.debian.org		James Troup and others <ftpmaster@debian.org>
 qa.debian.org		debian-qa@lists.debian.org
 nonus.debian.org	James Troup and others <ftpmaster@debian.org>
 www.debian.org		James Treacy and others <debian-www@lists.debian.org>
+mirrors			Josip Rodin and others <mirrors@debian.org>
 listarchives		Cesar Mendoza and others <debian-www@lists.debian.org>
 project			debian-devel@lists.debian.org
 general			debian-devel@lists.debian.org
