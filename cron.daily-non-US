@@ -37,12 +37,14 @@ update-readmenonus
 
 ################################################################################
 
-cd $accepted
-rm -f REPORT
-kelly -pa *.changes | tee REPORT | \
+if [ ! -z "$(find "$accepted" -name \*.changes -maxdepth 1 -mindepth 1)" ]; then
+  cd $accepted
+  rm -f REPORT
+  kelly -pa *.changes | tee REPORT | \
      mail -s "Non-US Install for $(date +%D)" ftpmaster@ftp-master.debian.org
-chgrp debadmin REPORT
-chmod 664 REPORT
+  chgrp debadmin REPORT
+  chmod 664 REPORT
+fi
 
 cd $masterdir
 symlinks -d -r $ftpdir
