@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.20 2002-05-14 15:35:22 troup Exp $
+# $Id: katie.py,v 1.21 2002-05-18 23:55:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -143,6 +143,7 @@ class Katie:
             exec "%s = self.pkg.%s;" % (i,i);
         dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".katie");
         dump_file = utils.open_file(dump_filename, 'w');
+        os.chmod(dump_filename, 0660);
         p = cPickle.Pickler(dump_file, 1);
         for i in [ "d_changes", "d_dsc", "d_files", "d_dsc_files" ]:
             exec "%s = {}" % i;
@@ -164,7 +165,8 @@ class Katie:
             d_changes[i] = changes[i];
         # Optional changes fields
         # FIXME: changes should be mandatory
-        for i in [ "changed-by", "maintainer822", "filecontents", "format", "changes" ]:
+        for i in [ "changed-by", "maintainer822", "filecontents", "format",
+                   "changes", "lisa note" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i];
         ## dsc
@@ -322,7 +324,6 @@ distribution.""";
         Subst = self.Subst;
         Cnf = self.Cnf;
         changes = self.pkg.changes;
-        dsc = self.pkg.dsc;
 
         # Only do announcements for source uploads with a recent dpkg-dev installed
         if float(changes.get("format", 0)) < 1.6 or not changes["architecture"].has_key("source"):

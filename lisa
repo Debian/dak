@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.10 2002-05-10 00:24:23 troup Exp $
+# $Id: lisa,v 1.11 2002-05-18 23:55:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.10 $";
+lisa_version = "$Revision: 1.11 $";
 
 Cnf = None;
 Options = None;
@@ -136,26 +136,34 @@ def determine_new (changes, files):
 
 ################################################################################
 
-# Sort by 'have source', by ctime, by source name, by source version number, by filename
+# Sort by 'have note', 'have source', by ctime, by source name, by
+# source version number, and finally by filename
 
-def changes_compare_by_time (a, b):
+def changes_compare (a, b):
     try:
-        a_changes = utils.parse_changes(a, 0)
+        a_changes = utils.parse_changes(a);
     except:
         return 1;
 
     try:
-        b_changes = utils.parse_changes(b, 0)
+        b_changes = utils.parse_changes(b);
     except:
         return -1;
 
     utils.cc_fix_changes (a_changes);
     utils.cc_fix_changes (b_changes);
 
-    # Sort by 'have source'
+    # Sort by 'have note';
+    a_has_note = a_changes.get("lisa note");
+    b_has_note = b_changes.get("lisa note");
+    if a_has_note and not b_has_note:
+        return -1;
+    elif b_has_note and not a_has_note:
+        return 1;
 
-    a_has_source = a_changes["architecture"].get("source")
-    b_has_source = b_changes["architecture"].get("source")
+    # Sort by 'have source'
+    a_has_source = a_changes["architecture"].get("source");
+    b_has_source = b_changes["architecture"].get("source");
     if a_has_source and not b_has_source:
         return -1;
     elif b_has_source and not a_has_source:
@@ -166,10 +174,9 @@ def changes_compare_by_time (a, b):
     b_ctime = os.stat(b)[stat.ST_CTIME];
     q = cmp (a_ctime, b_ctime);
     if q:
-        return q;
+        return -q;
 
     # Sort by source name
-
     a_source = a_changes.get("source");
     b_source = b_changes.get("source");
     q = cmp (a_source, b_source);
@@ -177,15 +184,13 @@ def changes_compare_by_time (a, b):
         return q;
 
     # Sort by source version
-
     a_version = a_changes.get("version");
     b_version = b_changes.get("version");
     q = apt_pkg.VersionCompare(a_version, b_version);
     if q:
-        return q
+        return q;
 
     # Fall back to sort by filename
-
     return cmp(a, b);
 
 ################################################################################
@@ -251,7 +256,7 @@ def check_valid (new):
 
 def print_new (new, indexed, file=sys.stdout):
     check_valid(new);
-    ret_code = 0;
+    broken = 0;
     index = 0;
     for pkg in new.keys():
         index = index + 1;
@@ -259,17 +264,22 @@ def print_new (new, indexed, file=sys.stdout):
         priority = new[pkg]["priority"];
         if new[pkg]["section id"] == -1:
             section = section + "[!]";
-            ret_code = 1;
+            broken = 1;
         if new[pkg]["priority id"] == -1:
             priority = priority + "[!]";
-            ret_code = 1;
+            broken = 1;
         if indexed:
             line = "(%s): %-20s %-20s %-20s" % (index, pkg, priority, section);
         else:
             line = "%-20s %-20s %-20s" % (pkg, priority, section);
         line = string.strip(line)+'\n';
         file.write(line);
-    return ret_code;
+    note = Katie.pkg.changes.get("lisa note");
+    if note:
+        print "*"*75;
+        print note;
+        print "*"*75;
+    return broken, note;
 
 ################################################################################
 
@@ -300,7 +310,7 @@ def index_range (index):
 ################################################################################
 ################################################################################
 
-def spawn_editor (new):
+def edit_new (new):
     # Write the current data to a temporary file
     temp_filename = tempfile.mktemp();
     fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
@@ -312,10 +322,14 @@ def spawn_editor (new):
     editor = os.environ.get("EDITOR","vi")
     result = os.system("%s %s" % (editor, temp_filename))
     if result != 0:
-        utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
-    # Read the (edited) data back in
-    file = utils.open_file(temp_filename);
-    for line in file.readlines():
+        utils.fubar ("%s invocation failed for %s." % (editor, temp_filename), result)
+    # Read the edited data back in
+    temp_file = utils.open_file(temp_filename);
+    lines = temp_file.readlines();
+    temp_file.close();
+    os.unlink(temp_filename);
+    # Parse the new data
+    for line in lines:
         line = string.strip(line[:-1]);
         if line == "":
             continue;
@@ -336,7 +350,6 @@ def spawn_editor (new):
                 Katie.pkg.files[file]["priority"] = priority;
             new[pkg]["section"] = section;
             new[pkg]["priority"] = priority;
-    os.unlink(temp_filename);
 
 ################################################################################
 
@@ -434,13 +447,48 @@ def edit_overrides (new):
                     got_answer = 1;
 
         if answer == 'E':
-            spawn_editor(new);
+            edit_new(new);
         elif answer == 'D':
             done = 1;
         else:
             edit_index (new, new_index[answer]);
 
     return new;
+
+################################################################################
+
+def edit_note(note):
+    # Write the current data to a temporary file
+    temp_filename = tempfile.mktemp();
+    fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+    os.close(fd);
+    temp_file = utils.open_file(temp_filename, 'w');
+    temp_file.write(note);
+    temp_file.close();
+    editor = os.environ.get("EDITOR","vi")
+    answer = 'E';
+    while answer == 'E':
+        os.system("%s %s" % (editor, temp_filename))
+        temp_file = utils.open_file(temp_filename);
+        note = string.rstrip(temp_file.read());
+        temp_file.close();
+        print "Note:";
+        print utils.prefix_multi_line_string(note,"  ");
+        prompt = "[D]one, Edit, Abandon, Quit ?"
+        answer = "XXX";
+        while string.find(prompt, answer) == -1:
+            answer = utils.our_raw_input(prompt);
+            m = katie.re_default_answer.search(prompt);
+            if answer == "":
+                answer = m.group(1);
+            answer = string.upper(answer[:1]);
+    os.unlink(temp_filename);
+    if answer == 'A':
+        return;
+    elif answer == 'Q':
+        sys.exit(0);
+    Katie.pkg.changes["lisa note"] = note;
+    Katie.dump_vars(Cnf["Dir::Queue::New"]);
 
 ################################################################################
 
@@ -548,15 +596,16 @@ def do_new():
         if Options["No-Action"] or Options["Automatic"]:
             answer = 'S';
 
-        broken = print_new(new, 0);
+        (broken, note) = print_new(new, 0);
         prompt = "";
         if not broken:
             prompt = "Add overrides, ";
         else:
             print "W: [!] marked entries must be fixed before package can be processed.";
-            if answer == 'A':
-                answer = 'E';
-        prompt = prompt + "Edit overrides, Check, Manual reject, [S]kip, Quit ?";
+        if note:
+            print "W: note must be removed before package can be processed.";
+            prompt = prompt + "Remove note, ";
+        prompt = prompt + "Edit overrides, Check, Manual reject, Note edit, [S]kip, Quit ?";
 
         while string.find(prompt, answer) == -1:
             answer = utils.our_raw_input(prompt);
@@ -576,6 +625,12 @@ def do_new():
             if not aborted:
                 os.unlink(Katie.pkg.changes_file[:-8]+".katie");
                 done = 1;
+        elif answer == 'N':
+            edit_note(changes.get("lisa note", ""));
+        elif answer == 'R':
+            confirm = string.lower(utils.our_raw_input("Really clear note (y/N)? "));
+            if confirm == "y":
+                del changes["lisa note"];
         elif answer == 'S':
             done = 1;
         elif answer == 'Q':
@@ -591,7 +646,6 @@ def usage (exit_code=0):
   -h, --help                show this help and exit.
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
-  -s, --sort=TYPE           sort type ('time' or 'normal')
   -V, --version             display the version number and exit"""
     sys.exit(exit_code)
 
@@ -606,14 +660,11 @@ def init():
                  ('h',"help","Lisa::Options::Help"),
                  ('m',"manual-reject","Lisa::Options::Manual-Reject", "HasArg"),
                  ('n',"no-action","Lisa::Options::No-Action"),
-                 ('s',"sort","Lisa::Options::Sort","HasArg"),
                  ('V',"version","Lisa::Options::Version")];
 
     for i in ["automatic", "help", "manual-reject", "no-action", "version"]:
         if not Cnf.has_key("Lisa::Options::%s" % (i)):
             Cnf["Lisa::Options::%s" % (i)] = "";
-    if not Cnf.has_key("Lisa::Options::Sort"):
-        Cnf["Lisa::Options::Sort"] = "time";
 
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Lisa::Options")
@@ -624,9 +675,6 @@ def init():
     if Options["Version"]:
         print "lisa %s" % (lisa_version);
         sys.exit(0);
-
-    if Options["Sort"] != "time" and Options["Sort"] != "normal":
-        utils.fubar("Unrecognised sort type '%s'. (Recognised sort types are: time and normal)" % (Options["Sort"]));
 
     Katie = katie.Katie(Cnf);
 
@@ -744,12 +792,7 @@ def end():
 
 def main():
     changes_files = init();
-
-    # Sort the changes files
-    if Options["Sort"] == "time":
-        changes_files.sort(changes_compare_by_time);
-    else:
-        changes_files.sort(utils.changes_compare);
+    changes_files.sort(changes_compare);
 
     # Kill me now? **FIXME**
     Cnf["Dinstall::Options::No-Mail"] = "";
