@@ -16,4 +16,17 @@ if [ ! -z "$changes" ]; then
   echo "--" >> $report
 else
   echo "$timestamp": Nothing to do >> $report
-fi;
+fi
+
+psql projectb -A -t -q -c "SELECT filename FROM accepted_autobuild WHERE suite = 5 AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+cd $overridedir
+denise &>/dev/null
+rm -f override.sid.all3 override.sid.all3.src
+for i in main contrib non-free main.debian-installer; do
+  cat override.sid.$i >> override.sid.all3
+  if [ "$i" != "main.debian-installer" ]; then
+    cat override.sid.$i.src >> override.sid.all3.src
+  fi
+done
+cd $masterdir
+apt-ftparchive -qq generate apt.conf.buildd &>/dev/null
