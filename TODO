@@ -3,7 +3,13 @@ TOFIX
 
 Urgent
 ------
+  
+  o Rene doesn't look at debian-installer but should.
 
+  o Rene also doesn't seem to warn about missing binary packages?
+
+  o cron.daily* should change umask (aj sucks)
+ 
   o Fix the source-not-in-one-dir stuff
 
   o Fix rhona to obey StayOfExecution
@@ -32,12 +38,10 @@ Urgent
 Less Urgent
 -----------
 
+  o Don't do override checks for stable only uploads
+
   o katie should validate multi-suite uploads; only possible valid one
     is "stable unstable" [but see d-policy@l.d.o]
-
-  o melanie should warn/error on -C without -d
-
-  o ziyi shouldn't really do stable (?)
 
   o need to have process_it run a big try: loop so that individual
     package screws up don't kill the daily cron run.

@@ -87,6 +87,19 @@ Jenna
 
 };
 
+Madison
+{
+
+  Options
+  {
+    Debug "";
+    Help "";
+    Suite "";
+    Version "";
+   };
+
+};
+
 Shania
 {
 
@@ -144,6 +157,7 @@ Melanie
 
    MyEmailAddress "Debian Archive Maintenance <ftpmaster@ftp-master.debian.org>";
    LogFile "/home/troup/public_html/removals.txt";
+   Bcc "removed-packages@qa.debian.org";
 };
 
 Neve
