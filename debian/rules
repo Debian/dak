@@ -27,16 +27,23 @@ binary-indep: checkroot build
 	install -m 755 debian/prerm debian/postinst debian/tmp/DEBIAN/
 
 	install -d debian/tmp/usr/bin/
-	install -m 755 katie debian/tmp/usr/bin/da_install
-	install -m 755 jenna debian/tmp/usr/bin/da_mkfilelist
-	install -m 755 heidi debian/tmp/usr/bin/da_tags
-	install -m 755 catherine debian/tmp/usr/bin/da_poolize
-	install -m 755 charisma debian/tmp/usr/bin/da_mkmaintainers
-	install -m 755 neve debian/tmp/usr/bin/da_populate
-	install -m 755 rhona debian/tmp/usr/bin/da_clean
-	install -m 755 madison debian/tmp/usr/bin/da_chkver
-	install -m 755 natalie.py debian/tmp/usr/bin/da_override
-	install -m 755 melanie debian/tmp/usr/bin/da_remove
+
+	install -m 755 katie jenna heidi catherine charisma neve rhona \
+		madison natalie.py melanie ziyi shania fernada rene tea \
+		debian/tmp/usr/bin/
+
+	ln -s katie debian/tmp/usr/bin/da_install
+	ln -s katie debian/tmp/usr/bin/dinstall
+	ln -s jenna debian/tmp/usr/bin/da_mkfilelist
+	ln -s heidi debian/tmp/usr/bin/da_tags
+	ln -s catherine debian/tmp/usr/bin/da_poolize
+	ln -s charisma debian/tmp/usr/bin/da_mkmaintainers
+	ln -s neve debian/tmp/usr/bin/da_populate
+	ln -s rhona debian/tmp/usr/bin/da_clean
+	ln -s madison debian/tmp/usr/bin/da_chkver
+	ln -s natalie.py debian/tmp/usr/bin/da_override
+	ln -s melanie debian/tmp/usr/bin/da_remove
+	ln -s ziyi debian/tmp/usr/bin/da_mkrelease
 
 	install -d -m 755 debian/tmp/usr/lib/python1.5/site-packages/
 	install -m 644 db_access.py utils.py debian/tmp/usr/lib/python1.5/site-packages/
