@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.9 2001-09-13 23:51:51 troup Exp $
+# $Id: natalie.py,v 1.10 2001-09-17 11:18:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -196,14 +196,11 @@ def list(suite, component, type):
     if type == "dsc":
         q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, type_id));
         for i in q.getresult():
-            print string.join(i, '\t');
+            print utils.result_join(i);
     else:
         q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, type_id));
         for i in q.getresult():
-	    if ( i[-2] ):
-		print string.join(i[:-1], '\t');
-	    else:
-		print string.join(i[:-2], '\t');
+            print utils.result_join(i[:-1]);
 
 ################################################################################
 

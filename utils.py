@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.31 2001-09-13 23:52:37 troup Exp $
+# $Id: utils.py,v 1.32 2001-09-17 11:18:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -503,5 +503,16 @@ def find_next_free (dest, too_many=100):
     if extra >= too_many:
         raise tried_too_hard_exc;
     return dest;
+
+################################################################################
+
+def result_join (original, sep = '\t'):
+    list = [];
+    for i in xrange(len(original)):
+        if original[i] == None:
+            list.append("");
+        else:
+            list.append(original[i]);
+    return string.join(list, sep);
 
 ################################################################################
