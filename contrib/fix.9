@@ -2,7 +2,7 @@
 
 # Fix for bug in katie where dsc_files was initialized from changes and not dsc
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: fix.9,v 1.1 2000-12-05 04:27:48 troup Exp $
+# $Id: fix.9,v 1.2 2000-12-18 07:11:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ def main ():
             #print " size: ", dsc_files[i]["size"]
             #print " md5sum: ",dsc_files[i]["md5sum"]
             #print " location_id: ", location_id
-            files_id = db_access.get_files_id(filename, repr(dsc_files[i]["size"]), dsc_files[i]["md5sum"], location_id);
+            files_id = db_access.get_files_id(filename, dsc_files[i]["size"], dsc_files[i]["md5sum"], location_id);
             if files_id < 0 or files_id == None:
                 print " BORK!!!!!!!!!!!!"
                 print " ",filename

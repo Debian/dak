@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.8 2000-12-13 03:18:50 troup Exp $
+# $Id: utils.py,v 1.9 2000-12-18 07:11:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -268,3 +268,12 @@ def regex_safe (s):
 
 ######################################################################################
 
+def size_type (c):
+    t  = " b";
+    if c > 10000:
+        c = c / 1000;
+        t = " Kb";
+    if c > 10000:
+        c = c / 1000;
+        t = " Mb";
+    return ("%d%s" % (c, t))

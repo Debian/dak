@@ -1,16 +1,14 @@
-Show Stopper
-------------
+Urgent
+------
 
-  o finish rhona
-  o claire needs to know about sections on non-non-US
+  o Claire needs to know about sections on auric.
 
-  o Testing... lots of it.
-
-Non-Show Stopper
-----------------
+Less Urgent
+-----------
 
   o CD building scripts need fixing
 
+  o Log files for jenna, rhona and katie.
   o Optimize all the queries by using EXAMINE and building some INDEXs.
   o enclose all the setting SQL stuff in transactions (mostly done).
   o clear out maintainers table

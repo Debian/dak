@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.3 2000-12-05 04:27:48 troup Exp $
+# $Id: db_access.py,v 1.4 2000-12-18 07:11:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -156,13 +156,14 @@ def get_files_id (filename, size, md5sum, location_id):
     if files_id_cache.has_key(cache_key):
         return files_id_cache[cache_key]
 
+    size = int(size);
     q = projectB.query("SELECT id, size, md5sum FROM files WHERE filename = '%s' AND location = %d" % (filename, location_id));
     ql = q.getresult();
     if ql:
         if len(ql) != 1:
             return -1;
         ql = ql[0] 
-        orig_size = ql[1];
+        orig_size = int(ql[1]);
         orig_md5sum = ql[2];
         if orig_size != size or orig_md5sum != md5sum:
             return -2;

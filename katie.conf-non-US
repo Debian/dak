@@ -96,6 +96,7 @@ Rhona
   // How long (in seconds) dead packages are left before being killed
   StayOfExecution 0; // 0 days
  MorgueSubDir "rhona";
+ OverrideFilename "override.source-only";
 };
 
 Suite

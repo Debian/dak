@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# rhona, cleans up unassociated binary (and source) packages
+# rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.3 2000-12-13 03:18:50 troup Exp $
+# $Id: rhona,v 1.4 2000-12-18 07:11:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+###################################################################################################
+
 # 07:05|<elmo> well.. *shrug*.. no, probably not.. but to fix it,
 #      |       we're going to have to implement reference counting
 #      |       through dependencies.. do we really want to go down
@@ -25,20 +27,50 @@
 #
 # 07:05|<Culus> elmo: Augh! <brain jumps out of skull>
 
-import pg, string, os, sys, time
+###################################################################################################
+
+import os, pg, stat, string, sys, time
 import apt_pkg
 import utils
 
+###################################################################################################
+
 projectB = None
 Cnf = None
+delete_date = None;
+overrides = {};
+
+###################################################################################################
+
+# See if a given package is in the override file.  Caches and only loads override files on demand.
+
+def in_override_p (package):
+    global overrides;
+
+    if overrides == {}:
+        filename = Cnf["Dir::OverrideDir"] + Cnf["Rhona::OverrideFilename"];
+        file = utils.open_file(filename, 'r');
+        for line in file.readlines():
+            line = string.strip(utils.re_comments.sub('', line))
+            if line != "":
+                overrides[line] = 1
+        file.close()
+
+    return overrides.get(package, None);
+
+###################################################################################################
 
 def check_binaries():
+    global delete_date;
+    
+    print "Checking for orphaned binary packages..."
+
     # A nicer way to do this would be `SELECT bin FROM
     # bin_associations EXCEPT SELECT id from binaries WHERE
     # last_update IS NULL', but it seems postgresql can't handle that
     # query as it hadn't return after I left it running for 20 minutes
     # on auric.
-
+    
     linked_binaries = {};
     q = projectB.query("SELECT bin FROM bin_associations");
     ql = q.getresult();
@@ -54,8 +86,7 @@ def check_binaries():
     projectB.query("BEGIN WORK");
     for id in all_binaries.keys():
         if not linked_binaries.has_key(id):
-            date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-(4*(24*60*60))))
-            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (date, all_binaries[id]))
+            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, all_binaries[id]))
     projectB.query("COMMIT WORK");
 
     # Check for any binaries which are marked for eventual deletion but are now used again.
@@ -65,6 +96,7 @@ def check_binaries():
     ql = q.getresult();
     for i in ql:
         all_marked_binaries[i[0]] = i[1];
+        
     projectB.query("BEGIN WORK");
     for id in all_marked_binaries.keys():
         if linked_binaries.has_key(id):
@@ -74,8 +106,12 @@ def check_binaries():
     projectB.query("COMMIT WORK");
 
 def check_sources():
+    global delete_date;
+
+    print "Checking for orphaned source packages..."
+
     # A nicer way to do this would be using `EXCEPT', but see the
-    # commeint in process_binary.
+    # comment in check_binaries().
 
     linked_sources = {};
     q = projectB.query("SELECT source FROM binaries WHERE source is not null");
@@ -84,24 +120,49 @@ def check_sources():
         linked_sources[i[0]] = "";
     
     all_sources = {};
-    q = projectB.query("SELECT s.id, s.file FROM source s, files f WHERE f.last_used IS NULL AND f.id = s.file")
+    all_sources_package = {};
+    q = projectB.query("SELECT s.id, s.file, s.source FROM source s, files f WHERE f.last_used IS NULL AND f.id = s.file");
     ql = q.getresult();
     for i in ql:
         all_sources[i[0]] = i[1];
+        all_sources_package[i[0]] = i[2];
 
     projectB.query("BEGIN WORK");
     for id in all_sources.keys():
         if not linked_sources.has_key(id):
-            date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-(4*(24*60*60))))
-            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (date, all_sources[id]))
+            # Is this a known source-only package?
+            if in_override_p(all_sources_package[id]):
+                continue;
+            # Then check to see if the source is still in any suites
+            untouchable = 0;
+            q = projectB.query("SELECT su.suite_name FROM src_associations sa, suite su WHERE sa.source = %s and su.id = sa.suite" % (id));
+            for i in q.getresult():
+                if Cnf.Find("Suite::%s::Untouchable" % (i[0])):
+                    untouchable = 1;
+                else:
+                    projectB.query("DELETE FROM src_associations WHERE source = %s" % (id));
+
+            # We can't delete binary-less source-only packages if
+            # they're in an untouchable suite (i.e. stable)...
+            if untouchable:
+                continue;
+
+            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, all_sources[id]))
             # Delete all other files references by .dsc too if they're not used by anyone else
             q = projectB.query("SELECT f.id FROM files f, dsc_files d WHERE d.source = %d AND d.file = f.id" % (id));
-            ql = q.getresult();
-            for i in ql:
-                q_others = projectB.query("SELECT file FROM dsc_files d WHERE file = %s" % (i[0]));
-                ql_others = q.getresult();
+            for i in q.getresult(): 
+                q = projectB.query("SELECT id FROM dsc_files d WHERE file = %s" % (i[0]));
+                ql = q.getresult();
                 if len(ql) == 1:
-                    projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (date, i[0]));
+                    projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, i[0]));
+
+            # If the file is used by another source package
+            # (e.g. because it's an .orig.tar.gz) We need to delete
+            # this source package's reference to it from dsc_files.
+            # So just clear out all references to the source file in
+            # dsc_files now.
+            projectB.query("DELETE FROM dsc_files WHERE source = %s" % (id));
+                    
     projectB.query("COMMIT WORK");
 
     # Check for any sources which are marked for eventual deletion but are now used again.
@@ -144,26 +205,108 @@ def check_sources():
                     projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (i[0]));
     projectB.query("COMMIT WORK");
 
+def check_files():
+    global delete_date;
+
+    print "Checking for unused files..."
+
+    # Check for files not references in either binaries or dsc_files
+    used = {};
+    q = projectB.query("SELECT file FROM binaries");
+    for i in q.getresult():
+        used[i[0]] = "";
+    q = projectB.query("SELECT file FROM dsc_files");
+    for i in q.getresult():
+        used[i[0]] = "";
+        
+    all = {};
+    q = projectB.query("SELECT f.id, l.path, f.filename FROM files f, location l WHERE f.location = l.id;");
+    for i in q.getresult():
+        all[i[0]] = i[1] + i[2];
+
+    projectB.query("BEGIN WORK");
+    for id in all.keys():
+        if not used.has_key(id):
+            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, id));
+    projectB.query("COMMIT WORK");
+    
 def clean_binaries():
-    date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::StayOfExecution"])));
-    print projectB.query("DELETE FROM binaries WHERE file IN (SELECT id FROM files WHERE last_used < '%s')" % (date));
+    global delete_date;
+
+    # We do this here so that the binaries we remove will have their
+    # source also removed (if possible).
+
+    print "Cleaning binaries from the DB..."
+    projectB.query("DELETE FROM binaries WHERE file IN (SELECT id FROM files WHERE last_used < '%s')" % (delete_date));
 
 def clean():
-    date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::StayOfExecution"])));
-    # Delete from source + dsc_files
-    q = projectB.query("SELECT l.path, f.filename FROM location l, files f WHERE f.last_used < '%s' AND l.id = f.location" % (date));
+    global delete_date;
+    count = 0;
+    size = 0;
+
+    print "Cleaning out packages..."
+
+    # Ensure destination directory exists
+    dest = Cnf["Dir::Morgue"] + '/' + Cnf["Rhona::MorgueSubDir"];
+    if not os.path.exists(dest):
+        os.mkdir(dest);
+        
+    # Delete from source (dsc_file should already be done!)
+    projectB.query("DELETE FROM source WHERE file IN (SELECT id FROM files WHERE last_used <= '%s')" % (delete_date));
+    # Delete files from the pool
+    q = projectB.query("SELECT l.path, f.filename FROM location l, files f WHERE f.last_used <= '%s' AND l.id = f.location" % (delete_date));
     for i in q.getresult():
         filename = i[0] + i[1];
         if not os.path.exists(filename):
             sys.stderr.write("E: can not find %s.\n" % (filename));
             continue;
-        dest = Cnf["Dir::Morgue"] + '/' + Cnf["Rhona::MorgueSubDir"];
-        print "Cleaning %s to %s..." % (filename, dest);
-        #utils.move(filename, dest);
+        if os.path.isfile(filename):
+            if os.path.islink(filename):
+                count = count + 1;
+                #print "Removing symlink %s..." % (filename);
+                os.unlink(filename);
+            else:
+                size = size + os.stat(filename)[stat.ST_SIZE];
+                count = count + 1;
+                #print "Cleaning %s to %s..." % (filename, dest);
+                utils.move(filename, dest);
+        else:
+            sys.stderr.write("%s is neither symlink nor file?!\n" % (filename));
+            sys.exit(1);
     # delete from files
+    projectB.query("DELETE FROM files WHERE last_used <= '%s'" % (delete_date));
+    if count > 0:
+        sys.stderr.write("Cleaned %d files, %s.\n" % (count, utils.size_type(size)));
+
+def clean_maintainers():
+    print "Cleaning out unused Maintainer entries..."
+    
+    used = {};
+    q = projectB.query("SELECT maintainer FROM binaries WHERE maintainer IS NOT NULL");
+    for i in q.getresult():
+        used[i[0]] = "";
+    q = projectB.query("SELECT maintainer FROM source WHERE maintainer IS NOT NULL");
+    for i in q.getresult():
+        used[i[0]] = "";
+
+    all = {};
+    q = projectB.query("SELECT id, name FROM maintainer");
+    for i in q.getresult():
+        all[i[0]] = i[1];
+
+    count = 0;
+    projectB.query("BEGIN WORK");
+    for id in all.keys():
+        if not used.has_key(id):
+            projectB.query("DELETE FROM maintainer WHERE id = %s" % (id));
+            count = count + 1;
+    projectB.query("COMMIT WORK");
+
+    if count > 0:
+        sys.stderr.write("Cleared out %d maintainer entries.\n" % (count));
 
 def main():
-    global Cnf, projectB;
+    global Cnf, projectB, delete_date;
     
     projectB = pg.connect('projectb', 'localhost');
 
@@ -172,14 +315,14 @@ def main():
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
-    print "Checking for orphaned binary packages..."
+    delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()));
+
     check_binaries();
-    print "Cleaning binaries from the DB..."
     clean_binaries();
-    print "Checking for orphaned source packages..."
     check_sources();
-    print "Cleaning orphaned packages..."
+    check_files();
     clean();
+    clean_maintainers();
 
 if __name__ == '__main__':
     main()
