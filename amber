@@ -2,7 +2,7 @@
 
 # Wrapper for Debian Security team
 # Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: amber,v 1.3 2002-06-08 00:15:53 troup Exp $
+# $Id: amber,v 1.4 2002-06-09 17:31:12 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 
 ################################################################################
 
-import commands, pwd, os, string, sys, time;
+import commands, os, pwd, re, string, sys, time;
 import apt_pkg;
 import katie, utils;
 
@@ -40,6 +40,8 @@ import katie, utils;
 Cnf = None;
 Options = None;
 Katie = None;
+
+re_taint_free = re.compile(r"^['/;\-\+\.\s\w]+$");
 
 ################################################################################
 
@@ -62,6 +64,7 @@ def do_upload(changes_files):
     for component in Cnf.SubTree("Amber::ComponentMappings").List():
         component_mapping[component] = Cnf["Amber::ComponentMappings::%s" % (component)];
     uploads = {}; # uploads[uri] = file_list;
+    package_list = {} # package_list[source_name][version];
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file);
         # Reset variables
@@ -74,6 +77,7 @@ def do_upload(changes_files):
         Katie.update_vars();
         files = Katie.pkg.files;
         changes = Katie.pkg.changes;
+        dsc = Katie.pkg.dsc;
         # Build the file list for this .changes file
         for file in files.keys():
             poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
@@ -101,9 +105,15 @@ def do_upload(changes_files):
         if not uploads.has_key(upload_uri):
             uploads[upload_uri] = [];
         uploads[upload_uri].extend(file_list);
-        # Remember the suites
+        # Remember the suites and source name/version
         for suite in changes["distribution"].keys():
             suites[suite] = "";
+        # Remember the source name and version
+        if changes["architecture"].has_key("source") and \
+           changes["distribution"].has_key("testing"):
+            if not package_list.has_key(dsc["source"]):
+                package_list[dsc["source"]] = {};
+            package_list[dsc["source"]][dsc["version"]] = "";
 
     if len(suites.keys()) == 1 and suites.has_key("oldstable"):
         print "Advisory only for 'oldstable'; not uploading elsewhere.";
@@ -120,7 +130,13 @@ def do_upload(changes_files):
         print "Uploading files to %s..." % (host);
         spawn("lftp -c 'open %s; cd %s; put %s'" % (host, path, file_list));
 
-    return file_list;
+    if not Options["No-Action"]:
+        filename = "%s/testing-processed" % (Cnf["Dir::Log"]);
+        file = utils.open_file(filename, 'a');
+        for source in package_list.keys():
+            for version in package_list[source].keys():
+                file.write(string.join([source, version])+'\n');
+        file.close();
 
 ################################################################################
 
@@ -197,8 +213,12 @@ def make_advisory(advisory_nr, changes_files):
     	"__ADVISORY__": advisory_nr,
 	"__WHOAMI__": username,
 	"__DATE__": time.strftime("%B %d, %Y", time.gmtime(time.time())),
-	"__PACKAGE__": string.join(adv_packages,", ")
-    };
+	"__PACKAGE__": string.join(adv_packages,", "),
+        "__KATIE_ADDRESS__": Cnf["Dinstall::MyEmailAddress"]
+        };
+
+    if Cnf.has_key("Dinstall::Bcc"):
+        Subst["__BCC__"] = "Bcc: %s" % (Cnf["Dinstall::Bcc"]);
 
     adv = "";
     archive = Cnf["Archive::%s::PrimaryMirror" % (utils.where_am_i())];
@@ -293,6 +313,9 @@ def yes_no(prompt):
 ######################################################################
 
 def spawn(command):
+    if not re_taint_free.match(command):
+        utils.fubar("Invalid character in \"%s\"." % (command));
+
     if Options["No-Action"]:
         print "[%s]" % (command);
     else:
