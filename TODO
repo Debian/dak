@@ -12,6 +12,15 @@ Urgent
     files from p-u when removing stuff superseded by newer versions.
 
   o experimental needs to auto clean (relative to unstable)
+  ['
+   SELECT s.source, s.version AS experimental, s2.version AS unstable 
+     FROM src_associations sa, source s, source s2, src_associations sa2 
+     WHERE sa.suite = 1 AND sa2.suite = 5 AND sa.source = s.id 
+       AND sa2.source = s2.id AND s.source = s2.source 
+       AND versioncmp(s.version, s2.version) < 0;
+  ']
+  [ but, needs to hook into melanie ... ]
+  [ and, err, fix the gay hardcoding of suites in rene ... ]
 
   o jenna doesn't handle arch: any -> arch: all transitions 
     [aj worked around; need to revisit]

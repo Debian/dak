@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rene,v 1.4 2001-05-21 02:25:08 troup Exp $
+# $Id: rene,v 1.5 2001-05-24 18:56:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -151,6 +151,21 @@ def main ():
                     print " %s has no source [%s: %s]" % (package, source, source_binaries.get(source, "(source does not exist)"));
             packages.close();
 
+    # Check for packages in experimental obsoleted by versions in unstable
+    #
+    # [If melanie was callable from python, we could auto-remove these
+    #  packages...]
+
+    q = projectB.query("""
+SELECT s.source, s.version AS experimental, s2.version AS unstable 
+  FROM src_associations sa, source s, source s2, src_associations sa2 
+  WHERE sa.suite = 1 AND sa2.suite = 5 AND sa.source = s.id 
+   AND sa2.source = s2.id AND s.source = s2.source 
+   AND versioncmp(s.version, s2.version) < 0""");
+    ql = q.getresult();
+    if ql != []:
+        print
+        print q
 
 ####################################################################################################
 

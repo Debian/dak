@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.22 2001-05-17 01:17:54 troup Exp $
+# $Id: utils.py,v 1.23 2001-05-24 18:56:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +17,23 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import commands, os, pwd, re, socket, shutil, stat, string, sys, tempfile
+import apt_pkg
 
 re_comments = re.compile(r"\#.*")
 re_no_epoch = re.compile(r"^\d*\:")
 re_no_revision = re.compile(r"\-[^-]*$")
 re_arch_from_filename = re.compile(r"/binary-[^/]+/")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
-re_isadeb = re.compile (r'.*\.u?deb$');
-re_issource = re.compile (r'(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)');
+re_isadeb = re.compile (r".*\.u?deb$");
+re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)");
+
+re_begin_pgp_signature = re.compile("^-----BEGIN PGP SIGNATURE");
+re_begin_pgp_signed_msg = re.compile("^-----BEGIN PGP SIGNED MESSAGE");
+re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)");
+re_multi_line_description = re.compile(r"^ \.$");
+re_multi_line_field = re.compile(r"^\s(.*)");
+
+re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\> \t]+)\>");
 
 changes_parse_error_exc = "Can't parse line in .changes file";
 invalid_dsc_format_exc = "Invalid .dsc file";
@@ -131,30 +140,30 @@ def parse_changes(filename, dsc_whitespace_rules):
                 if index > max(indices):
                     raise invalid_dsc_format_exc, index;
                 line = indexed_lines[index];
-                if not re.match('^-----BEGIN PGP SIGNATURE', line):
+                if not re_begin_pgp_signature.match(line):
                     raise invalid_dsc_format_exc, index;
                 inside_signature = 0;
                 break;
-        if re.match('^-----BEGIN PGP SIGNATURE', line):
+        if re_begin_pgp_signature.match(line):
             break;
-        if re.match(r'^-----BEGIN PGP SIGNED MESSAGE', line):
+        if re_begin_pgp_signed_msg.match(line):
             if dsc_whitespace_rules:
                 inside_signature = 1;
                 while index < max(indices) and line != "":
                     index = index + 1;
                     line = indexed_lines[index];
             continue;
-        slf = re.match(r'^(\S*)\s*:\s*(.*)', line);
+        slf = re_single_line_field.match(line);
         if slf:
             field = string.lower(slf.groups()[0]);
             changes[field] = slf.groups()[1];
 	    first = 1;
             continue;
-        mld = re.match(r'^ \.$', line);
+        mld = re_multi_line_description.match(line);
         if mld:
             changes[field] = changes[field] + '\n';
             continue;
-        mlf = re.match(r'^\s(.*)', line);
+        mlf = re_multi_line_field.match(line);
         if mlf:
             if first == 1 and changes[field] != "":
                 changes[field] = changes[field] + '\n';
@@ -226,15 +235,15 @@ def build_file_list(changes, dsc):
 #                and make things incompatible!'
         
 def fix_maintainer (maintainer):
-    m = re.match(r"^\s*(\S.*\S)\s*\<([^\> \t]+)\>", maintainer)
+    m = re_parse_maintainer.match(maintainer);
     rfc822 = maintainer
     name = ""
     email = ""
     if m != None and len(m.groups()) == 2:
         name = m.group(1)
         email = m.group(2)
-        if re.search(r'[,.]', name) != None:
-            rfc822 = re.sub(r"^\s*(\S.*\S)\s*\<([^\> \t]+)\>", r"\2 (\1)", maintainer)
+        if string.find(name, ',') != -1 or string.find(name, '.') != -1:
+            rfc822 = re_parse_maintainer.sub(r"\2 (\1)", maintainer)
     return (rfc822, name, email)
 
 ######################################################################################
@@ -398,3 +407,60 @@ def size_type (c):
         c = c / 1000;
         t = " Mb";
     return ("%d%s" % (c, t))
+
+################################################################################
+
+def cc_fix_changes (changes):
+    o = changes.get("architecture", "")
+    if o != "":
+        del changes["architecture"]
+    changes["architecture"] = {}
+    for j in string.split(o):
+        changes["architecture"][j] = 1
+
+# Sort by 'have source', by source name, by source version number, by filename
+
+def changes_compare (a, b):
+    try:
+        a_changes = parse_changes(a, 0)
+    except changes_parse_error_exc, line:
+        return -1;
+
+    try:
+        b_changes = parse_changes(b, 0)
+    except changes_parse_error_exc, line:
+        return 1;
+    
+    cc_fix_changes (a_changes);
+    cc_fix_changes (b_changes);
+
+    # Sort by 'have source'
+
+    a_has_source = a_changes["architecture"].get("source")
+    b_has_source = b_changes["architecture"].get("source")
+    if a_has_source and not b_has_source:
+        return -1;
+    elif b_has_source and not a_has_source:
+        return 1;
+
+    # Sort by source name
+    
+    a_source = a_changes.get("source");
+    b_source = b_changes.get("source");
+    q = cmp (a_source, b_source);
+    if q:
+        return q;
+
+    # Sort by source version
+
+    a_version = a_changes.get("version");
+    b_version = b_changes.get("version");
+    q = apt_pkg.VersionCompare(a_version, b_version);
+    if q:
+        return q
+
+    # Fall back to sort by filename
+
+    return cmp(a, b);
+
+################################################################################

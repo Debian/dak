@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.41 2001-05-17 01:21:40 troup Exp $
+# $Id: katie,v 1.42 2001-05-24 18:56:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,11 +38,12 @@ import utils, db_access
 
 ###############################################################################
 
-re_isanum = re.compile (r'^\d+$');
-re_changes = re.compile (r'changes$');
+re_isanum = re.compile (r"^\d+$");
+re_changes = re.compile (r"changes$");
 re_default_answer = re.compile(r"\[(.*)\]");
 re_fdnic = re.compile("\n\n");
 re_bad_diff = re.compile("^[\-\+][\-\+][\-\+] /dev/null");
+re_bin_only_nmu = re.compile("\.\d+\.\d+$");
 
 #########################################################################################
 
@@ -327,6 +328,18 @@ def check_files():
             files[file]["source"] = control.Find("Source", "");
             if files[file]["source"] == "":
                 files[file]["source"] = files[file]["package"];
+            # Get the source version
+            source = files[file]["source"];
+            source_version = ""
+            if string.find(source, "(") != -1:
+                m = utils.re_extract_src_version.match(source)
+                source = m.group(1)
+                source_version = m.group(2)
+            if not source_version:
+                source_version = files[file]["version"];
+            files[file]["source package"] = source;
+            files[file]["source version"] = source_version;
+                
         # Checks for a source package...
         else:
             m = utils.re_issource.match(file)
@@ -376,8 +389,8 @@ def check_files():
             if not in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
                 files[file]["new"] = 1
                 
-            # Find any old binary packages
             if files[file]["type"] == "deb":
+                # Find any old binary packages
                 q = projectB.query("SELECT b.id, b.version, f.filename, l.path, c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f WHERE b.package = '%s' AND s.suite_name = '%s' AND a.arch_string = '%s' AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id AND f.location = l.id AND l.component = c.id AND b.file = f.id"
                                    % (files[file]["package"], suite, files[file]["architecture"]))
                 oldfiles = q.dictresult()
@@ -391,6 +404,24 @@ def check_files():
                     q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
                     if q.getresult() != []:
                         reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (file)
+
+                # Check for existent source
+                # FIXME: this is no longer per suite
+                if changes["architecture"].has_key("source"):
+                    source_version = files[file]["source version"];
+                    if source_version != changes["version"]:
+                        reject_message = reject_message + "Rejected: source version (%s) for %s doesn't match changes version %s.\n" % (files[file]["sourceversion"], file, changes["version"]);
+                else:
+                    q = projectB.query("SELECT s.version FROM source s WHERE s.source = '%s'" % (files[file]["source package"]));
+                    ql = map(lambda x: x[0], q.getresult());
+                    if ql.count(source_version) == 0:
+                        # Maybe it's a binary only NMU ?
+                        if re_bin_only_nmu.search(source_version):
+                            orig_source_version = re_bin_only_nmu.sub('', source_version);
+                            if ql.count(orig_source_version) == 0:
+                                reject_message = reject_message + "Rejected: no source version (%s [or %s]) found in %s for %s (%s).\n" % (source_version, orig_source_version, suite, files[file]["source package"], file);
+                        else:
+                            reject_message = reject_message + "Rejected: no source version (%s) found in %s for %s (%s).\n" % (source_version, suite, files[file]["source package"], file);
 
             # Find any old .dsc files
             elif files[file]["type"] == "dsc":
@@ -803,14 +834,8 @@ def install (changes_filename, summary, short_summary):
             architecture_id = db_access.get_architecture_id (architecture);
             type = files[file]["dbtype"];
             dsc_component = files[file]["component"]
-            source = files[file]["source"]
-            source_version = ""
-            if string.find(source, "(") != -1:
-                m = utils.re_extract_src_version.match(source)
-                source = m.group(1)
-                source_version = m.group(2)
-            if not source_version:
-                source_version = version
+            source = files[file]["source package"]
+            source_version = files[file]["source version"];
             filename = files[file]["pool name"] + file;
             if not files[file]["files id"]:
                 files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
@@ -1243,13 +1268,16 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.41 $"
+    bcc = "X-Katie: $Revision: 1.42 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
         Subst["__BCC__"] = bcc;
     Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"];
     Subst["__KATIE_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"];
+
+    # Sort the .changes files so that we process sourceful ones first
+    changes_files.sort(utils.changes_compare);
 
     # Process the changes files
     for changes_file in changes_files:
