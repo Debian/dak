@@ -509,11 +509,30 @@ OverrideType
 
 Location
 {
-  
-  // Pool locations on non-US.debian.org
+  /org/non-us.debian.org/ftp/dists/
+    {
+      Archive "non-US";
+      Type "legacy";
+    };
+
+  /org/non-us.debian.org/ftp/dists/old-proposed-updates/
+    {
+      Archive "non-US";
+      Type "legacy-mixed";
+    };
+
   /org/non-us.debian.org/ftp/pool/
     {
       Archive "non-US";
+      Suites 
+	{
+	  OldStable;
+	  Stable;
+	  Proposed-Updates;
+	  Testing;
+	  Testing-Proposed-Updates;
+	  Unstable;
+        };
       Type "pool";
     };
 
