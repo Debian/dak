@@ -1,16 +1,20 @@
 # locations used by many scripts
 
-ftpdir=/org/ftp.debian.org/ftp
-webdir=/org/ftp.debian.org/web
+base=/org/ftp.debian.org
+ftpdir=$base/ftp
+webdir=$base/web
 indices=$ftpdir/indices
 archs="alpha arm hppa hurd-i386 i386 ia64 m68k powerpc sparc mips mipsel sh"
 
-scriptdir=/org/ftp.debian.org/scripts
-masterdir=/org/ftp.debian.org/katie/
-dbdir=/org/ftp.debian.org/database/
+scriptdir=$base/scripts
+masterdir=$base/katie/
+dbdir=$base/database/
 overridedir=$scriptdir/override
 
-incoming=/org/ftp.debian.org/incoming
+queuedir=$base/queue/
+unchecked=$queuedir/unchecked/
+accepted=$queuedir/accepted/
+incoming=$base/incoming
 
 ftpgroup=debadmin
 

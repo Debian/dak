@@ -22,8 +22,22 @@ TODO:
 
  o update tagdb.dia
 
-==========================================================================
+ o clean fingerprint
 
+ o fix up cron.weekly and/or shania
+
+Lisa:
+
+ o installing into stable
+ o warn about other components
+ o priority >> optional
+ o arch != {any,all}
+ o build-depends wrong (via andrea)
+ o suid
+ o conficlits
+ o notification/stats to admin daily
+
+==========================================================================
 
 To fix
 ======
@@ -103,6 +117,8 @@ Less Urgent
     o catherine should udpate db; move files, not the other way around [neuro]
     o melanie should update the stable changelog [joey]
   
+
+
  * Bizzare/uncertain:
    
     o validate source consistency, i.e. .dsc and .tar.gz as minimum (??)
