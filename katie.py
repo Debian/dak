@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.9 2002-02-25 15:12:01 troup Exp $
+# $Id: katie.py,v 1.10 2002-03-06 07:39:24 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -457,6 +457,7 @@ class Katie:
             Subst["__CC__"] = "X-Katie-Rejection: automatic (moo)";
             os.write(fd, reject_message);
             os.close(fd);
+            reject_mail_message = utils.TemplateSubst(Subst,utils.open_file(Cnf["Dir::TemplatesDir"]+"/katie.rejected").read());
         else:
             # Build up the rejection email
             user_email_address = utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"]);
@@ -477,10 +478,10 @@ class Katie:
                 result = os.system("%s +6 %s" % (editor, reject_filename))
                 if result != 0:
                     utils.fubar("editor invocation failed for '%s'!" % (reject_filename), result);
+		reject_mail_message = utils.open_file(reject_filename).read();
 
         # Send the rejection mail if appropriate
         if not Cnf["Dinstall::Options::No-Mail"]:
-            reject_mail_message = utils.TemplateSubst(Subst,utils.open_file(Cnf["Dir::TemplatesDir"]+"/katie.rejected").read());
             utils.send_mail (reject_mail_message, "");
 
         self.Logger.log(["rejected", pkg.changes_file]);
