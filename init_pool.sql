@@ -74,7 +74,7 @@ CREATE TABLE binaries (
        file INT4 UNIQUE NOT NULL, -- REFERENCES files,
        type TEXT NOT NULL,
 -- joeyh@ doesn't want .udebs and .debs with the same name, which is why the unique () doesn't mention type
-       unique (package, version, source, architecture)
+       unique (package, version, architecture)
 );
 
 CREATE TABLE suite (

@@ -1,14 +1,13 @@
 Show Stopper
 ------------
 
-  o finish new cron.daily file
+  o finish new cron.daily file for auric
 
   o finish rhona
 
   o Testing... lots of it.
 
   o jenna needs to munge files in stable
-  o need to handle (i.e. not crash, but reject) -sa builds.
 
 Non-Show Stopper
 ----------------

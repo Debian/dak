@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.4 2000-11-27 03:15:26 troup Exp $
+# $Id: katie,v 1.5 2000-11-30 04:19:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -375,6 +375,11 @@ def check_files():
                         else:
                             reject_message = reject_message + "Rejected"
                         reject_message = reject_message + ": %s Old version `%s' >= new version `%s'.\n" % (file, oldfile["version"], files[file]["version"])
+                # Check for existing copies of the file
+                q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
+                if q.getresult() != []:
+                    reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (file)
+
             # Find any old .dsc files
             elif files[file]["type"] == "dsc":
                 q = projectB.query("SELECT s.id, s.version, f.filename, l.path, c.name FROM source s, src_associations sa, suite su, location l, component c, files f WHERE s.source = '%s' AND su.suite_name = '%s' AND sa.source = s.id AND sa.suite = su.id AND f.location = l.id AND l.component = c.id AND f.id = s.file"
@@ -438,6 +443,10 @@ def check_dsc ():
                 if files.has_key(dsc_file):
                     actual_md5 = files[dsc_file]["md5sum"]
                     found = "%s in incoming" % (dsc_file)
+                    # Check the file does not already exist in the archive
+                    q = projectB.query("SELECT f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (dsc_file));
+                    if q.getresult() != []:
+                        reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
                 elif dsc_file[-12:] == ".orig.tar.gz":
                     # Check in Incoming
                     # See comment above process_it() for explanation...
@@ -469,7 +478,7 @@ def check_dsc ():
                     continue;
                 if actual_md5 != dsc_files[dsc_file]["md5sum"]:
                     reject_message = reject_message + "Rejected: md5sum for %s doesn't match %s.\n" % (found, file)
-                
+
     if string.find(reject_message, "Rejected:") != -1:
         return 0
     else: 

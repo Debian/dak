@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.4 2000-11-27 03:15:26 troup Exp $
+# $Id: utils.py,v 1.5 2000-11-30 04:19:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -206,6 +206,8 @@ def move (src, dest):
 	os.umask(umask);
     #print "Moving %s to %s..." % (src, dest);
     shutil.copy2(src, dest);
+    if os.path.exists(dest) and stat.S_ISDIR(os.stat(dest)[stat.ST_MODE]):
+	dest = dest + '/' + os.path.basename(src);
     os.chmod(dest, 0664);
     os.unlink(src);
 
@@ -220,6 +222,8 @@ def copy (src, dest):
 	os.umask(umask);
     #print "Copying %s to %s..." % (src, dest);
     shutil.copy2(src, dest);
+    if os.path.exists(dest) and stat.S_ISDIR(os.stat(dest)[stat.ST_MODE]):
+	dest = dest + '/' + os.path.basename(src);
     os.chmod(dest, 0664);
 
 ######################################################################################
