@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: denise,v 1.11 2002-05-14 15:28:53 troup Exp $
+# $Id: denise,v 1.12 2002-06-05 00:18:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
 
 # This is seperate because it's horribly Debian specific and I don't
 # want that kind of horribleness in the otherwise generic natalie.  It
@@ -36,7 +38,7 @@ override = {}
 
 ################################################################################
 
-def list(suite, component, type):
+def list(file, suite, component, type):
     global override;
 
     suite_id = db_access.get_suite_id(suite);
@@ -62,13 +64,13 @@ def list(suite, component, type):
         q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, type_id));
         for i in q.getresult():
             override[suite][component][type][i[0]] = i;
-            print utils.result_join(i);
+            file.write(utils.result_join(i)+'\n');
     else:
         q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, type_id));
         for i in q.getresult():
             i = i[:-1]; # Strip the priority level
             override[suite][component][type][i[0]] = i;
-            print utils.result_join(i);
+            file.write(utils.result_join(i)+'\n');
 
 ################################################################################
 
@@ -101,9 +103,8 @@ def main ():
                     override_type = ".src";
                 filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, string.replace(component, "non-US/", ""), override_type);
                 file = utils.open_file(filename, 'w');
-                sys.stdout = file;
-                list(suite, component, type);
-                sys.stdout.close();
+                list(file, suite, component, type);
+                file.close();
 
     # Munge the override file for testing by using unstable's where
     # possible and falling back on stable's where it's not.
@@ -127,18 +128,17 @@ def main ():
                 continue;
             filename = "override.%s.%s%s" % (override_suite, string.replace(component, "non-US/", ""), override_type);
             file = utils.open_file(filename, 'w');
-            sys.stdout = file;
             for i in q.getresult():
                 package = i[0];
                 if override["unstable"][component][type].has_key(package):
-                    print utils.result_join(override["unstable"][component][type][package]);
+                    file.write(utils.result_join(override["unstable"][component][type][package])+'\n');
                 elif override["stable"][component][type].has_key(package):
-                    print utils.result_join(override["stable"][component][type][package]);
+                    file.write(utils.result_join(override["stable"][component][type][package])+'\n');
                 else:
                     if type == "dsc" and (override["unstable"][component]["deb"].has_key(package) or override["stable"][component]["deb"].has_key(package)):
                         continue; # source falls back on binary; so accept silently
                     utils.warn("Can't find override entry for testing package '%s' (component %s, type %s)." % (package, component, type));
-            sys.stdout.close();
+            file.close();
 
 #######################################################################################
 
