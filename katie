@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.74 2002-03-08 03:21:57 rmurray Exp $
+# $Id: katie,v 1.75 2002-03-08 03:59:50 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.74 $";
+katie_version = "$Revision: 1.75 $";
 
 Cnf = None;
 Options = None;
@@ -299,7 +299,9 @@ def install ():
             source = files[file]["source package"]
             source_version = files[file]["source version"];
             filename = files[file]["pool name"] + file;
-            if not file[file].has_key("files id") or not files[file]["files id"]:
+	    if not files[file].has_key("location id") or not files[file]["location id"]:
+		files[file]["location id"] = db_access.get_location_id(Cnf["Dir::PoolDir"],files[file]["component"],utils.where_am_i());
+            if not files[file].has_key("files id") or not files[file]["files id"]:
                 files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
             source_id = db_access.get_source_id (source, source_version);
             if source_id:
