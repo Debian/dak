@@ -30,6 +30,17 @@ tree "dists/testing/non-US"
    SrcOverride "override.woody.$(SECTION).src";
 };
 
+tree "dists/woody-proposed-updates/non-US"
+{
+   FileList "/org/non-us.debian.org/database/dists/woody-proposed-updates_non-us/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/woody-proposed-updates_non-us/$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm hppa i386 ia64 m68k powerpc sparc source";
+   BinOverride "override.woody.$(SECTION)";
+   SrcOverride "override.woody.$(SECTION).src";
+   Contents " ";
+};
+
 tree "dists/unstable/non-US"
 {
    FileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_binary-$(ARCH).list";

@@ -298,6 +298,34 @@ Suite
 	Priority "3";
   };
 
+  Woody-Proposed-Updates
+  {
+	Components 
+	{
+	  non-US/main "";
+	  non-US/contrib "";
+	  non-US/non-free "";
+	};
+	Architectures 
+	{
+	  "source" "";  
+	  "all" "";
+	  "alpha" ""; 
+	  "arm" "";
+	  "hppa" "";
+	  "i386" "";
+	  "ia64" "";
+	  "m68k" "";
+	  "powerpc" "";
+	  "sparc" "";
+	};
+	Origin "Debian";
+	Description "Debian Testing distribution updates - Not Released";
+	CodeName "woody-proposed-updates";
+	OverrideCodeName "woody";
+	Priority "4";
+  };
+
   Unstable
   {
 	Components 
@@ -329,7 +357,7 @@ Suite
 	Description "Debian Unstable - Not Released";
 	CodeName "sid";
 	OverrideCodeName "sid";
-	Priority "4";
+	Priority "5";
   };
 
 };
