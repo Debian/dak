@@ -4,7 +4,8 @@
 # finishes
 #
 PATH="/bin:/usr/bin"
-DISTS="unstable oldstable-security stable stable-security testing testing-security"
+#testing must be before unstable so late upld don't build for testing needlessly
+DISTS="oldstable-security stable stable-security testing testing-security unstable"
 SECTIONS="main contrib non-free"
 ARCHS_oldstable="m68k arm sparc alpha powerpc i386"
 ARCHS_stable="mips mipsel ia64 hppa s390 $ARCHS_oldstable"
