@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.60 2001-09-27 14:39:06 troup Exp $
+# $Id: katie,v 1.61 2001-11-04 20:42:38 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ orig_tar_location = "";
 legacy_source_untouchable = {};
 Subst = {};
 nmu = None;
-katie_version = "$Revision: 1.60 $";
+katie_version = "$Revision: 1.61 $";
 
 ###############################################################################
 
@@ -343,16 +343,17 @@ def check_changes(filename):
     if changes["distribution"].has_key("stable"):
         # If running from within proposed-updates; assume an install to stable
         if string.find(os.getcwd(), 'proposed-updates') != -1:
-            # FIXME: should probably remove anything that != stable
-            for i in ("frozen", "unstable"):
-                if changes["distribution"].has_key(i):
-                    reject_message = reject_message + "Removing %s from distribution list.\n" % (i)
-                    del changes["distribution"][i]
-            changes["stable upload"] = 1;
+            # Remove non-stable target distributions
+            for dist in changes["distribution"].keys():
+                if dist != "stable":
+                    reject_message = reject_message + "Removing %s from distribution list.\n" % (dist);
+                    del changes["distribution"][dist];
+            changes["stable install"] = 1;
             # If we can't find a file from the .changes; assume it's a package already in the pool and move into the pool
             file = files.keys()[0];
             if os.access(file, os.R_OK) == 0:
                 pool_dir = Cnf["Dir::PoolDir"] + '/' + utils.poolify(changes["source"], files[file]["component"]);
+                changes["installing from the pool"] = 1;
                 os.chdir(pool_dir);
         # Otherwise (normal case) map stable to updates
         else:
@@ -514,7 +515,7 @@ def check_files():
                     if apt_pkg.VersionCompare(files[file]["version"], oldfile["version"]) != 1:
                         reject_message = reject_message + "Rejected: %s Old version `%s' >= new version `%s'.\n" % (file, oldfile["version"], files[file]["version"])
                 # Check for existing copies of the file
-                if not changes.has_key("stable upload"):
+                if not changes.has_key("stable install"):
                     q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
                     if q.getresult() != []:
                         reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (file)
@@ -637,7 +638,7 @@ def check_dsc ():
                     actual_size = int(files[dsc_file]["size"]);
                     found = "%s in incoming" % (dsc_file)
                     # Check the file does not already exist in the archive
-                    if not changes.has_key("stable upload"):
+                    if not changes.has_key("stable install"):
                         q = projectB.query("SELECT f.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
 
                         # "It has not broken them.  It has fixed a
@@ -759,8 +760,8 @@ def check_md5sums ():
 def check_override ():
     global Subst;
 
-    # Only check section & priority on sourceful uploads
-    if not changes["architecture"].has_key("source"):
+    # Only check section & priority on sourceful non-stable installs
+    if not changes["architecture"].has_key("source") or changes.has_key("stable install"):
         return;
 
     summary = ""
@@ -918,8 +919,8 @@ def action (changes_filename):
 def install (changes_filename, summary, short_summary):
     global install_count, install_bytes, Subst;
 
-    # Stable uploads are a special case
-    if changes.has_key("stable upload"):
+    # stable installs are a special case
+    if changes.has_key("stable install"):
         stable_install (changes_filename, summary, short_summary);
         return;
 
@@ -1088,6 +1089,7 @@ def stable_install (changes_filename, summary, short_summary):
             projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id));
             suite_id = db_access.get_suite_id('stable');
             projectB.query("INSERT INTO src_associations (suite, source) VALUES ('%s', '%s')" % (suite_id, source_id));
+            install_bytes = install_bytes + float(files[file]["size"])
 
     # Add the .deb files to the DB
     for file in files.keys():
@@ -1104,6 +1106,7 @@ def stable_install (changes_filename, summary, short_summary):
             projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
             suite_id = db_access.get_suite_id('stable');
             projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id));
+            install_bytes = install_bytes + float(files[file]["size"])
 
     projectB.query("COMMIT WORK");
 
@@ -1144,7 +1147,7 @@ def stable_install (changes_filename, summary, short_summary):
         utils.send_mail (mail_message, "")
         announce (short_summary, 1)
 
-#####################################################################################################################
+################################################################################
 
 def reject (changes_filename, manual_reject_mail_filename):
     global Subst;
@@ -1161,13 +1164,37 @@ def reject (changes_filename, manual_reject_mail_filename):
     except:
         utils.warn("couldn't reject changes file '%s'. [Got %s]" % (base_changes_filename, sys.exc_type));
         pass;
-    for file in files.keys():
-        if os.path.exists(file):
-            try:
-                utils.move (file, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
-            except:
-                utils.warn("couldn't reject file '%s'. [Got %s]" % (file, sys.exc_type));
-                pass;
+    if not changes.has_key("stable install"):
+        for file in files.keys():
+            if os.path.exists(file):
+                try:
+                    utils.move (file, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
+                except:
+                    utils.warn("couldn't reject file '%s'. [Got %s]" % (file, sys.exc_type));
+                    pass;
+    else:
+        suite_id = db_access.get_suite_id('proposed-updates');
+        # Remove files from proposed-updates suite
+        for file in files.keys():
+            if files[file]["type"] == "dsc":
+                package = dsc["source"];
+                version = dsc["version"];  # NB: not files[file]["version"], that has no epoch
+                q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version));
+                ql = q.getresult();
+                if ql == []:
+                    utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version));
+                source_id = ql[0][0];
+                projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id));
+            elif files[file]["type"] == "deb":
+                package = files[file]["package"];
+                version = files[file]["version"];
+                architecture = files[file]["architecture"];
+                q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture));
+                ql = q.getresult();
+                if ql == []:
+                    utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture));
+                binary_id = ql[0][0];
+                projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
 
     # If this is not a manual rejection generate the .reason file and rejection mail message
     if manual_reject_mail_filename == "":
@@ -1195,11 +1222,15 @@ def manual_reject (changes_filename):
 
     # Build up the rejection email
     user_email_address = utils.whoami() + " <%s@%s>" % (pwd.getpwuid(os.getuid())[0], Cnf["Dinstall::MyHost"])
-    manual_reject_message = Cnf.get("Dinstall::Options::Manual-Reject", "")
+    manual_reject_message = Options.get("Manual-Reject", "")
 
     Subst["__MANUAL_REJECT_MESSAGE__"] = manual_reject_message;
     Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
-    reject_mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.rejected","r").read());
+    if changes.has_key("stable install"):
+        template = "katie.stable-rejected";
+    else:
+        template = "katie.rejected";
+    reject_mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/"+template,"r").read());
 
     # Write the rejection email out as the <foo>.reason file
     reason_filename = re_changes.sub("reason", os.path.basename(changes_filename));
@@ -1408,6 +1439,7 @@ def main():
         Subst["__BCC__"] = bcc;
     Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"];
     Subst["__KATIE_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"];
+    Subst["__STABLE_REJECTOR__"] = Cnf["Dinstall::StableRejector"];
 
     # Read in the group-maint override file
     nmu = nmu_p();
