@@ -1,10 +1,11 @@
 Assumptions
 -----------
 
-[Incomplete, to be sure]
+o Usernames do not contain ",". [julia]
+o Password files do not contain ":" except as a field separator. [julia]
+o Version numbers do not contain "~" [logging, charisma, db_access.py, heidi, neve]
+o Suites are case-independent in conf files, but forced lower case in use. [jenna]
+o Components are case-sensitive. [jenna]
 
-Usernames do not contain ",". [julia]
-Password files do not contain ":" except as a field separator. [julia]
-Version numbers do not contain "~" [logging, charisma]
-suites are case-independent in conf files, but forced lower case in use
-components are case-sensitive
+[Very incomplete...]
+

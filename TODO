@@ -29,9 +29,6 @@ More Urgent
 
   o the whole versioncmp thing should be documented
 
-  o security.debian.org: BYHAND auto-uploading doesn't work
-  o security.debian.org: BYHAND auto-uploading assumes ftp-master
-
   o lisa doesn't do the right thing with -2 and -1 uploads, as you can
     end up with the .orig.tar.gz not in the pool
 
@@ -184,6 +181,8 @@ Less Urgent
 
  * Easy:
 
+    o suite mapping and component mapping are parsed per changes file,
+      they should probably be stored in a dictionary created at startup.
     o don't stat/md5sum files you have entries for in the DB, moron
       boy (Katie.check_source_blah_blah)
     o promote changes["changes"] to mandatory in katie.py(dump_vars)
