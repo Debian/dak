@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.27 2002-05-23 12:36:44 troup Exp $
+# $Id: melanie,v 1.28 2002-07-14 15:01:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -161,61 +161,32 @@ def main ():
     else:
         field = "s.source";
     con_packages = "AND %s IN (%s)" % (field, string.join(map(repr, arguments), ", "));
-    suites = [];
-    suite_ids_list = [];
-    for suite in string.split(Options["Suite"]):
 
-        if not Options["No-Action"] and suite == "stable":
-            print "**WARNING** About to remove from the stable suite!"
-            print "This should only be done just prior to a (point) release and not at"
-            print "any other time."
-            game_over();
-        elif not Options["No-Action"] and suite == "testing":
-            print "**WARNING About to remove from the testing suite!"
-            print "There's no need to do this normally as removals from unstable will"
-            print "propogate to testing automagically."
-            game_over();
+    (con_suites, con_architectures, con_components, check_source) = \
+                 utils.parse_args(Options);
 
-        suite_id = db_access.get_suite_id(suite);
-        if suite_id == -1:
-            utils.warn("suite '%s' not recognised." % (suite));
-        else:
-            suites.append(suite);
-            suite_ids_list.append(suite_id);
-    if suite_ids_list:
-        suites_list = string.join(suites, ", ")
-        con_suites = "AND su.id IN (%s)" % string.join(map(str, suite_ids_list), ", ");
-    else:
-        utils.fubar("No correct suite given.");
-    if Options["Component"]:
-        components_ids_list = [];
-        for component in string.split(Options["Component"]):
-            component_id = db_access.get_component_id(component);
-            if component_id == -1:
-                utils.warn("component '%s' not recognised." % (component));
-            else:
-                components_ids_list.append(component_id);
-        con_components = "AND c.id IN (%s)" % string.join(map(str, components_ids_list), ", ");
-        over_con_components = "AND component IN (%s)" % string.join(map(str, components_ids_list), ", ");
-    else:
-        con_components = "";
-        over_con_components = "";
+    # Additional suite checks
+    suites = string.split(Options["Suite"]);
+    suites_list = utils.join_with_commas_and(suites);
+    if not Options["No-Action"]:
+        for suite in suites:
+            if suite == "stable":
+                print "**WARNING** About to remove from the stable suite!"
+                print "This should only be done just prior to a (point) release and not at"
+                print "any other time."
+                game_over();
+            elif suite == "testing":
+                print "**WARNING About to remove from the testing suite!"
+                print "There's no need to do this normally as removals from unstable will"
+                print "propogate to testing automagically."
+                game_over();
 
-    if Options["Architecture"]:
-        arch_ids_list = [];
-        for architecture in string.split(Options["Architecture"]):
-            architecture_id = db_access.get_architecture_id(architecture);
-            if architecture_id == -1:
-                utils.warn("architecture '%s' not recognised." % (architecture));
-            else:
-                arch_ids_list.append(architecture_id);
-        if arch_ids_list:
-            con_architectures = "AND a.id IN (%s)" % string.join(map(str, arch_ids_list), ", ");
-        else:
-            utils.fubar("No correct architecture given");
-    else:
-        con_architectures = "";
+    # Additional architecture checks
+    if Options["Architecture"] and check_source:
+        utils.warn("'source' in -a/--argument makes no sense and is ignored.");
 
+    # Additional component processing
+    over_con_components = string.replace(con_components, "c.id", "component");
 
     print "Working...",
     sys.stdout.flush();
@@ -271,6 +242,10 @@ def main ():
                     if source_packages.has_key(source):
                         to_remove.append(i[2:]);
     print "done."
+
+    if not to_remove:
+        print "Nothing to do."
+        sys.exit(0);
 
     # If we don't have a reason; spawn an editor so the user can add one
     # Write the rejection email out as the <foo>.reason file
@@ -389,7 +364,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + string.join(bcc, ", ");
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.27 $";
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.28 $";
         if carbon_copy:
             Subst["__CC__"] = Subst["__CC__"] + "\nCc: " + string.join(carbon_copy, ", ");
         Subst["__SUITE_LIST__"] = suites_list;
