@@ -2,7 +2,7 @@
 
 # Remove obsolete .changes files from proposed-updates
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: halle,v 1.3 2001-11-18 19:57:58 rmurray Exp $
+# $Id: halle,v 1.4 2002-02-12 22:12:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,20 +20,32 @@
 
 ################################################################################
 
-import os, pg, re, sys, string
-import utils, db_access
-import apt_pkg, apt_inst;
+import os, pg, re, sys, string;
+import utils, db_access;
+import apt_pkg;
 
 ################################################################################
 
 Cnf = None;
 projectB = None;
+Options = None;
 pu = {};
 
 re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).deb$");
 
 ################################################################################
 
+def usage (exit_code=0):
+    print """Usage: halle [OPTION] <CHANGES FILE | ADMIN FILE>[...]
+Remove obsolete changes files from proposed-updates.
+
+  -v, --verbose              be more verbose about what is being done
+  -h, --help                 show this help and exit
+
+Need either changes files or an admin.txt file with a '.joey' suffix."""
+    sys.exit(exit_code)
+
+################################################################################
 
 def check_changes (filename):
     try:
@@ -44,8 +56,6 @@ def check_changes (filename):
         return;
     num_files = len(files.keys());
     for file in files.keys():
-        re_isadeb = re.compile (r".*\.u?deb$");
-
         if utils.re_isadeb.match(file) != None:
             m = re_isdeb.match(file);
             pkg = m.group(1);
@@ -146,12 +156,9 @@ def main ():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('q',"quiet","Halle::Options::Quiet"),
-                 ('v',"verbose","Halle::Options::Verbose"),
-                 ('D',"debug","Halle::Options::Debug"),
-                 ('h',"help","Halle::Options::Help"),
-                 ('V',"version","Halle::Options::Version")];
-    for i in [ "quiet", "verbose", "help", "debug" ]:
+    Arguments = [('v',"verbose","Halle::Options::Verbose"),
+                 ('h',"help","Halle::Options::Help")];
+    for i in [ "verbose", "help" ]:
 	if not Cnf.has_key("Halle::Options::%s" % (i)):
 	    Cnf["Halle::Options::%s" % (i)] = "";
 
