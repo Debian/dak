@@ -2,7 +2,7 @@
 
 # Prepare and maintain partial trees by architecture
 # Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: billie,v 1.1 2004-03-21 16:55:19 dsilvers Exp $
+# $Id: billie,v 1.2 2004-04-12 12:44:06 dsilvers Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,10 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-################################################################################
+###############################################################################
 ## <kinnison> So Martin, do you have a quote for me yet?
 ## <tbm> Make something damned stupid up and attribute it to me, that's okay
-################################################################################
+###############################################################################
 
 import pg, pwd, sys;
 import utils, db_access;
@@ -40,7 +40,7 @@ TREE_ROOT = "***Configure Billie::TreeRootPath Please***";
 TREE_DB_ROOT = "***Configure Billie::TreeDatabasePath Please***";
 trees = []
 
-#################################################################################
+###############################################################################
 # A BillieTarget is a representation of a target. It is a set of archs, a path
 # and whether or not the target includes source.
 ##################
@@ -94,7 +94,7 @@ class BillieTarget:
             return 0;
         return 1;
     
-##################################################################################
+##############################################################################
 # The applicable function is basically a predicate. Given a path and a
 # target object its job is to decide if the path conforms for the
 # target and thus is wanted.
@@ -109,6 +109,7 @@ verbatim = [
     "/README.CD-manufacture",
     "/README.mirrors.html",
     "/README.mirrors.txt",
+    "/README.non-US",
     ];
 
 verbprefix = [
@@ -129,8 +130,9 @@ def applicable(path, target):
     return 0;
 
 
-#################################################################################
-# A BillieDir is a representation of a tree. It distinguishes files dirs and links
+##############################################################################
+# A BillieDir is a representation of a tree.
+#   It distinguishes files dirs and links
 # Dirs are dicts of (name, BillieDir)
 # Files are dicts of (name, inode)
 # Links are dicts of (name, target)
@@ -142,7 +144,7 @@ class BillieDir:
         self.files = {};
         self.links = {};
 
-#################################################################################
+##############################################################################
 # A BillieDB is a container for a BillieDir...
 ##############
 
@@ -189,7 +191,7 @@ class BillieDB:
         f.close();
 
         
-#################################################################################
+##############################################################################
 # Helper functions for the tree syncing...
 ##################
 
@@ -218,7 +220,7 @@ def do_unlink(targ,path):
 def do_unlink_dir(targ,path):
     os.system( "rm -Rf '%s'" % _pth(targ.root, path) );
 
-#################################################################################
+##############################################################################
 # Reconciling a target with the sourcedb
 ################
 
@@ -301,7 +303,7 @@ def _internal_reconcile( path, srcdir, targdir, targ ):
 def reconcile_target_db( src, targ ):
     _internal_reconcile( "", src.root, targ.db.root, targ );
 
-#################################################################################
+###############################################################################
 
 def load_config():
     global MASTER_PATH
@@ -383,7 +385,7 @@ def main ():
         tree.save_db();
         print "Done"
     
-#################################################################################
+##############################################################################
 
 if __name__ == '__main__':
     main()
