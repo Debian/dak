@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rene,v 1.2 2001-03-02 02:24:33 troup Exp $
+# $Id: rene,v 1.3 2001-04-13 20:17:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,14 +24,74 @@
 
 ################################################################################
 
-import commands, os, string, sys, tempfile;
-import utils;
+import commands, pg, os, string, sys, tempfile;
+import utils, db_access;
 import apt_pkg;
 
 ################################################################################
 
 Cnf = None;
 projectB = None;
+
+def bar():
+
+    suite = "unstable";
+    suite_id = db_access.get_suite_id(suite);
+
+    components = Cnf.SubTree("Suite::%s::Components" % (suite)).List();
+    for component in components:
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::RootDir"], suite, component);
+        print "Processing %s..." % (filename);
+        # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+        temp_filename = tempfile.mktemp();
+        fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+        os.close(fd);
+        (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+        if (result != 0):
+            sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
+            sys.exit(result);
+        sources = utils.open_file(temp_filename, 'r');
+        Sources = apt_pkg.ParseTagFile(sources);
+        while Sources.Step():
+            source = Sources.Section.Find('Package');
+            architecture = Sources.Section.Find('Architecture');
+            if architecture == "any" or architecture == "all":
+                continue;
+            architectures = {};
+            for arch in string.split(architecture):
+                architectures[string.strip(arch)] = "";
+            binaries = Sources.Section.Find('Binary');
+            for binary in string.split(binaries, ','):
+                binary = string.strip(binary);
+                q = projectB.query("SELECT a.arch_string, b.version FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id AND b.package = '%s'" % (suite_id, binary));
+                ql = q.getresult();
+                if ql == []:
+                    utils.warn("%s lists %s as a binary, but it doesn't seem to exist in %s?" % (source, binary, suite));
+                # Loop around twice; first to get the latest 'valid' version
+                versions = [];
+                for i in q.getresult():
+                    arch = i[0];
+                    version = i[1];
+                    if architectures.has_key(arch):
+                        versions.append(version);
+                versions.sort(apt_pkg.VersionCompare);
+                if versions != []:
+                    latest_version = versions.pop()
+                else:
+                    latest_version = None;
+                # ... then to check for 'invalid' architectures
+                for i in q.getresult():
+                    arch = i[0];
+                    version = i[1];
+                    if not architectures.has_key(arch):
+                        print "[%s]: %s appears for %s (vs. '%s')" % (source, binary, arch, architecture),
+                        if apt_pkg.VersionCompare(latest_version, version) != -1:
+                            print "- out of date.", 
+                        else:
+                            print "- current.",
+                        print "[%s vs %s (%s)]" % (latest_version, version, arch);
+        sources.close();
+        os.unlink(temp_filename);
 
 ################################################################################
 
@@ -51,6 +111,8 @@ def main ():
                  ('v',"verbose","Catherine::Options::Verbose")];
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    db_access.init(Cnf, projectB);
 
     bin_pkgs = {};
     miss_src = {};
@@ -111,7 +173,6 @@ def main ():
                     print " %s has no source [%s: %s]" % (package, source, source_binaries.get(source, "(source does not exist)"));
             packages.close();
 
-    return;
 
 ####################################################################################################
 
