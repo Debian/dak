@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.67 2001-11-25 01:21:34 troup Exp $
+# $Id: katie,v 1.68 2002-01-28 18:53:01 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ orig_tar_location = "";
 legacy_source_untouchable = {};
 Subst = {};
 nmu = None;
-katie_version = "$Revision: 1.67 $";
+katie_version = "$Revision: 1.68 $";
 
 ###############################################################################
 
@@ -811,6 +811,8 @@ def update_subst (changes_filename):
         Subst["__MAINTAINER_FROM__"] = changes["maintainer822"];
         Subst["__MAINTAINER_TO__"] = changes["maintainer822"];
         Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown");
+    if Cnf.has_key("Dinstall::TrackingServer") and changes.has_key("source"):
+        Subst["__MAINTAINER_TO__"] = Subst["__MAINTAINER_TO__"] + "\nBcc: %s@%s" % (changes.get("source"), Cnf["Dinstall::TrackingServer"])
 
     Subst["__REJECT_MESSAGE__"] = reject_message;
     Subst["__SOURCE__"] = changes.get("source", "Unknown");

@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: shania,v 1.10 2001-11-19 20:42:40 rmurray Exp $
+# $Id: shania,v 1.11 2002-01-28 18:53:01 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@ def main ():
 	Cnf["Shania::Options::Days"] = "14";
 
     Arguments = [('h',"help","Shania::Options::Help"),
-                 ('d',"days","Shania::Options::Days", "IntVal"),
+                 ('d',"days","Shania::Options::Days", "IntLevel"),
                  ('i',"incoming","Shania::Options::Incoming", "HasArg"),
                  ('n',"no-action","Shania::Options::No-Action"),
                  ('v',"verbose","Shania::Options::Verbose")];

@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.20 2001-11-19 03:56:29 rmurray Exp $
+# $Id: melanie,v 1.21 2002-01-28 18:53:01 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -122,7 +122,7 @@ def main ():
     #
     # Accept 3 types of arguments (space separated):
     #  1) a number - assumed to be a bug number, i.e. nnnnn@bugs.debian.org
-    #  2) the keyword 'package' - cc's $arch@packages.debian.org for every argument
+    #  2) the keyword 'package' - cc's $package@packages.debian.org for every argument
     #  3) contains a '@' - assumed to be an email address, used unmofidied
     #
     carbon_copy = [];
@@ -132,6 +132,8 @@ def main ():
         elif copy_to == 'package':
             for package in arguments:
                 carbon_copy.append(package + "@" + Cnf["Dinstall::PackagesServer"]);
+                if Cnf.has_key("Dinstall::TrackingServer"):
+                    carbon_copy.append(package + "@" + Cnf["Dinstall::TrackingServer"]);
         elif '@' in copy_to:
             carbon_copy.append(copy_to);
         else:
@@ -375,7 +377,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + string.join(bcc, ", ");
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.20 $";
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.21 $";
         if carbon_copy:
             Subst["__CC__"] = Subst["__CC__"] + "\nCc: " + string.join(carbon_copy, ", ");
         Subst["__SUITE_LIST__"] = suites_list;
