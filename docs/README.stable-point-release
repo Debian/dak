@@ -18,9 +18,13 @@ o Update version fields in katie.conf[-non-US]
 o Update fields in suite table in postgresql (see below)
 
 o Comment out "Untouchable" in katie.conf[-non-US]
-o Run 'jenna -s stable'
 o Run apt-ftparchive generate apt.conf.stable[-non-US]
-o Copy tree/directory for stable to apt.conf[-non-US], run ziyi, remove it from apt.conf[-non-US]
+o Copy tree/directory for stable to apt.conf[-non-US]
+
+o Run 'jenna -s stable'
+o Run 'ziyi stable'
+
+o Remove tree/directory for stable from apt.conf[-non-US]
 o Uncomment "Untouchable" in katie.conf[-non-US]
 
 Yes, this sucks and more of it should be automated.
