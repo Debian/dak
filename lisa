@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.11 2002-05-18 23:55:07 troup Exp $
+# $Id: lisa,v 1.12 2002-05-19 02:00:48 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.11 $";
+lisa_version = "$Revision: 1.12 $";
 
 Cnf = None;
 Options = None;
@@ -169,16 +169,17 @@ def changes_compare (a, b):
     elif b_has_source and not a_has_source:
         return 1;
 
-    # Sort by ctime
-    a_ctime = os.stat(a)[stat.ST_CTIME];
-    b_ctime = os.stat(b)[stat.ST_CTIME];
-    q = cmp (a_ctime, b_ctime);
-    if q:
-        return -q;
-
-    # Sort by source name
+    # Sort by ctime-per-source
     a_source = a_changes.get("source");
     b_source = b_changes.get("source");
+    if a_source != b_source:
+        a_ctime = os.stat(a)[stat.ST_CTIME];
+        b_ctime = os.stat(b)[stat.ST_CTIME];
+        q = cmp (a_ctime, b_ctime);
+        if q:
+            return q;
+
+    # Sort by source name
     q = cmp (a_source, b_source);
     if q:
         return q;
@@ -188,7 +189,7 @@ def changes_compare (a, b):
     b_version = b_changes.get("version");
     q = apt_pkg.VersionCompare(a_version, b_version);
     if q:
-        return q;
+        return -q;
 
     # Fall back to sort by filename
     return cmp(a, b);
@@ -598,13 +599,15 @@ def do_new():
 
         (broken, note) = print_new(new, 0);
         prompt = "";
-        if not broken:
+
+        if not broken and not note:
             prompt = "Add overrides, ";
-        else:
+        if broken:
             print "W: [!] marked entries must be fixed before package can be processed.";
         if note:
             print "W: note must be removed before package can be processed.";
             prompt = prompt + "Remove note, ";
+
         prompt = prompt + "Edit overrides, Check, Manual reject, Note edit, [S]kip, Quit ?";
 
         while string.find(prompt, answer) == -1:
