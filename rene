@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: rene,v 1.19 2003-02-10 18:24:25 troup Exp $
+# $Id: rene,v 1.20 2003-03-14 19:03:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ import apt_pkg;
 Cnf = None;
 projectB = None;
 suite_id = None;
+no_longer_in_suite = {}; # Really should be static to add_nbs, but I'm lazy
 
 ################################################################################
 
@@ -50,6 +51,15 @@ Check for obsolete or duplicated packages.
 ################################################################################
 
 def add_nbs(nbs_d, source, version, package):
+    # Ensure the package is still unstable (someone may have already removed it)
+    if no_longer_in_suite.has_key(package):
+        return;
+    else:
+        q = projectB.query("SELECT b.id FROM binaries b, bin_associations ba WHERE ba.bin = b.id AND ba.suite = %s AND b.package = '%s' LIMIT 1" % (suite_id, package));
+        if not q.getresult():
+            no_longer_in_suite[package] = "";
+            return;
+
     if not nbs_d.has_key(source):
         nbs_d[source] = {};
     if not nbs_d[source].has_key(version):
