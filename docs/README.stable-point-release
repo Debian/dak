@@ -28,7 +28,7 @@ Yes, this sucks and more of it should be automated.
 
 #######################################################
 
-update suite set version = '2.2r6' where suite_name = 'stable';
+update suite set version = '2.2r7' where suite_name = 'stable';
 update suite set version = '2.2r7' where suite_name = 'proposed-updates';
-update suite set description = 'Debian 2.2r6 Released 3rd April 2002' where suite_name = 'stable';
-update suite set description = 'Proposed Updates for Debian 2.2r6 - Not Released' where suite_name = 'proposed-updates';
+update suite set description = 'Debian 2.2r7 Released 12th July 2002' where suite_name = 'stable';
+update suite set description = 'Proposed Updates for Debian 2.2r7 - Not Released' where suite_name = 'proposed-updates';
