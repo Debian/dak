@@ -3,7 +3,7 @@ TOFIX
 
 Urgent
 ------
-  
+
   o Rene doesn't look at debian-installer but should.
 
   o Rene also doesn't seem to warn about missing binary packages?
@@ -38,6 +38,10 @@ Urgent
 Less Urgent
 -----------
 
+  o override checks sucks; it needs to track changes made by the
+    maintainer and pass them onto ftpmaster instead of warning the
+    maintainer.
+
   o Don't do override checks for stable only uploads
 
   o katie should validate multi-suite uploads; only possible valid one
@@ -50,6 +54,8 @@ Less Urgent
   o [Hard] Need to merge non-non-US and non-US DBs.
   o [Easy] Need to vacuum daily
   o [Easy] remove empty directories in the pool in cron.weekly or so
+
+  o need to do proper rfc822 escaping of from lines (as opposed to s/\.//g)
 
   o Fix dinstall to remove != stable on stable install, not just f + u
   o Fix 'mixed' component handling (?)
@@ -81,7 +87,6 @@ Urgent
 
   o Secure incoming handling
   o [Hard] dependency checking
-  o dpkg 1.7 Changed-By field support
   o Need log files for jenna, rhona and katie.
 
 Less Urgent
