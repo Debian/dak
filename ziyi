@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.14 2001-11-27 04:18:18 rmurray Exp $
+# $Id: ziyi,v 1.15 2001-12-18 16:26:12 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 ################################################################################
 
-import pg, sys, os, stat, string, time
+import pg, sys, os, popen2, tempfile, stat, string, time
 import utils, db_access
 import apt_pkg
 
@@ -47,42 +47,66 @@ Generate Release files.
 def compressnames (tree,type,file):
     compress = AptCnf.get("%s::%s::Compress" % (tree,type), AptCnf.get("Default::%s::Compress" % (type), ". gzip"))
     result = []
+    cl = string.split(compress)
+    uncompress = ("." not in cl)
     for mode in string.split(compress):
 	if mode == ".":
 	    result.append(file)
 	elif mode == "gzip":
+	    if uncompress:
+		result.append("<zcat/.gz>" + file)
+		uncompress = 0
 	    result.append(file + ".gz")
 	elif mode == "bzip2":
+	    if uncompress:
+		result.append("<bzcat/.bz2>" + file)
+		uncompress = 0
 	    result.append(file + ".bz2")
     return result
 
-def print_md5_files (tree, files):
+def create_temp_file (cmd):
+    f = tempfile.TemporaryFile()
+    r = popen2.popen2(cmd)
+    r[1].close()
+    r = r[0]
+    size = 0
+    while 1:
+	x = r.readline()
+	if not x:
+	    r.close()
+	    del x,r
+	    break
+	f.write(x)
+	size = size + len(x)
+    f.flush()
+    f.seek(0)
+    return (size, f)
+
+def print_md5sha_files (tree, files, hashop):
     path = Cnf["Dir::RootDir"] + tree + "/"
     for name in files:
         try:
-            file_handle = utils.open_file(path + name)
+	    if name[0] == "<":
+		j = string.index(name, "/")
+		k = string.index(name, ">")
+		(cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
+		(size, file_handle) = create_temp_file("%s %s%s%s" % 
+		    (cat, path, name, ext))
+	    else:
+        	size = os.stat(path + name)[stat.ST_SIZE]
+       	        file_handle = utils.open_file(path + name)
         except utils.cant_open_exc:
             print "ALERT: Couldn't open " + path + name
         else:
-	    md5 = apt_pkg.md5sum(file_handle)
+	    hash = hashop(file_handle)
 	    file_handle.close()
+	    out.write(" %s         %8d %s\n" % (hash, size, name))
 
-        size = os.stat(path + name)[stat.ST_SIZE]
-        out.write(" %s         %8d %s\n" % (md5, size, name))
+def print_md5_files (tree, files):
+    print_md5sha_files (tree, files, apt_pkg.md5sum)
 
 def print_sha1_files (tree, files):
-    path = Cnf["Dir::RootDir"] + tree + "/"
-    for name in files:
-        try:
-            file_handle = utils.open_file(path + name)
-        except utils.cant_open_exc:
-            print "ALERT: Couldn't open " + path + name
-        else:
-	    sha1 = apt_pkg.sha1sum(file_handle)
-	    file_handle.close()
-
-        size = os.stat(path + name)[stat.ST_SIZE]
-        out.write(" %s %8d %s\n" % (sha1, size, name))
+    print_md5sha_files (tree, files, apt_pkg.sha1sum)
 
 ################################################################################
 
@@ -205,6 +229,7 @@ def main ():
 
 		    if os.path.exists(relpath):
 			try:
+			    os.unlink(relpath)
 			    release = open(relpath, "w")
 			    #release = open(string.replace(longsuite,"/","_") + "_" + arch + "_" + sec + "_Release", "w")
 			except IOError:
