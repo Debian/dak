@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.28 2001-02-06 00:39:44 troup Exp $
+# $Id: katie,v 1.29 2001-02-09 22:15:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1165,7 +1165,7 @@ administrators by mailing ftpmaster@debian.org)
         control_message = ""
         for bug in bugs:
             summary = summary + "%s " % (bug)
-            control_message = control_message + "severity %s fixed\n" % (bug)
+            control_message = control_message + "tag %s + fixed\n" % (bug)
         if action and control_message != "":
             mail_message = """Return-Path: %s
 From: %s
