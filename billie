@@ -2,7 +2,7 @@
 
 # Prepare and maintain partial trees by architecture
 # Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: billie,v 1.2 2004-04-12 12:44:06 dsilvers Exp $
+# $Id: billie,v 1.3 2004-07-12 15:44:09 dsilvers Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,16 +104,12 @@ class BillieTarget:
 ##################
 
 verbatim = [
-    "/README.html",
-    "/README.pgp",
-    "/README.CD-manufacture",
-    "/README.mirrors.html",
-    "/README.mirrors.txt",
-    "/README.non-US",
     ];
 
 verbprefix = [
     "/tools/",
+    "/README",
+    "/doc/"
     ];
 
 def applicable(path, target):
