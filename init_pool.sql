@@ -142,6 +142,8 @@ CREATE TABLE override (
        unique (suite, component, package, type)
 );
 
+-- CREATE TABLE unstable_accepted (filename TEXT NOT NULL);
+
 -- Critical indexes
 
 CREATE INDEX bin_associations_bin ON bin_associations (bin);
