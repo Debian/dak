@@ -70,7 +70,7 @@ Others
   o <neuro> the orig was in NEW, the changes that caused it to be NEW
     were pulled out in -2, and we end up with no orig in the archive
     :(
-  
+
   o SecurityAcceptedAutoBuild doesn't handle the case of foo_3.3woody1
     with a new .orig.tar.gz followed by a foo_3.3potato1 with the same
     .orig.tar.gz; jennifer sees it and copes, but the AA code doesn't
@@ -88,7 +88,7 @@ Others
   o <M>ove option for lisa byhand proecessing
 
   o rene could do with overrides
- 
+
   o db_access.get_location_id should handle the lack of archive_id properly
 
   o the whole versioncmp thing should be documented
@@ -124,11 +124,8 @@ Others
   o Fix BTS vs. katie sync issues by queueing(via BSMTP) BTS mail so
     that it can be released on deman (e.g. ETRN to exim).
 
-  o write our own locking module or in some other way fix things so we
-    don't require a patch to python since upstream refuse to fix it.
- 
-  o maintainers file needs overrides  
- 
+  o maintainers file needs overrides
+
     [ change override.maintainer to override.maintainer-from +
       override.maintainer-to and have them reference the maintainers
       table.  Then fix charisma to use them and write some scripting
@@ -225,7 +222,7 @@ Less Urgent
 
  * Harder:
 
-    o interrupting of stracing jennifer causes exceptions errors from apt_inst calls 
+    o interrupting of stracing jennifer causes exceptions errors from apt_inst calls
     o dependency checking (esp. stable) (partially done)
     o override checks sucks; it needs to track changes made by the
       maintainer and pass them onto ftpmaster instead of warning the
@@ -275,9 +272,9 @@ Less Urgent
     o catherine should udpate db; move files, not the other way around [neuro]
     o melanie should update the stable changelog [joey]
     o update tagdb.dia
-  
+
  * Bizzare/uncertain:
-   
+
     o drop rather dubious currval stuff (?)
     o rationalize os.path.join() usage
     o Rene also doesn't seem to warn about missing binary packages (??)
@@ -290,9 +287,9 @@ Less Urgent
       implement -e/--exact (a la joey's "elmo")
     o dsc files are not checked for existence/perms (only an issue if
       they're in the .dsc, but not the .changes.. possible?)
-  
- * Cleanups & misc: 
-   
+
+ * Cleanups & misc:
+
     o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
     o The untouchable flag doesn't stop new packages being added to ``untouchable'' suites
 
