@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Utility functions
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.54 2002-12-08 17:25:17 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: utils.py,v 1.55 2003-02-07 14:53:42 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import commands, os, pwd, re, socket, shutil, string, sys, tempfile, traceback;
+import commands, os, pwd, re, select, socket, shutil, string, sys, tempfile, traceback;
 import apt_pkg;
 import db_access;
 
@@ -665,6 +665,194 @@ def arch_compare_sw (a, b):
         return 1;
 
     return cmp (a, b);
+
+################################################################################
+
+def Dict(**dict): return dict
+
+########################################
+
+# Our very own version of commands.getouputstatus(), hacked to support
+# gpgv's status fd.
+def gpgv_get_status_output(cmd, status_read, status_write):
+    cmd = ['/bin/sh', '-c', cmd];
+    p2cread, p2cwrite = os.pipe();
+    c2pread, c2pwrite = os.pipe();
+    errout, errin = os.pipe();
+    pid = os.fork();
+    if pid == 0:
+        # Child
+        os.close(0);
+        os.close(1);
+        os.dup(p2cread);
+        os.dup(c2pwrite);
+        os.close(2);
+        os.dup(errin);
+        for i in range(3, 256):
+            if i != status_write:
+                try:
+                    os.close(i);
+                except:
+                    pass;
+        try:
+            os.execvp(cmd[0], cmd);
+        finally:
+            os._exit(1);
+
+    # parent
+    os.close(p2cread)
+    os.dup2(c2pread, c2pwrite);
+    os.dup2(errout, errin);
+
+    output = status = "";
+    while 1:
+        i, o, e = select.select([c2pwrite, errin, status_read], [], []);
+        more_data = [];
+        for fd in i:
+            r = os.read(fd, 8196);
+            if len(r) > 0:
+                more_data.append(fd);
+                if fd == c2pwrite or fd == errin:
+                    output += r;
+                elif fd == status_read:
+                    status += r;
+                else:
+                    fubar("Unexpected file descriptor [%s] returned from select\n" % (fd));
+        if not more_data:
+            pid, exit_status = os.waitpid(pid, 0)
+            try:
+                os.close(status_write);
+                os.close(status_read);
+                os.close(c2pread);
+                os.close(c2pwrite);
+                os.close(p2cwrite);
+                os.close(errin);
+                os.close(errout);
+            except:
+                pass;
+            break;
+
+    return output, status, exit_status;
+
+############################################################
+
+
+def check_signature (filename, reject):
+    """Check the signature of a file and return the fingerprint if the
+signature is valid or 'None' if it's not.  The first argument is the
+filename whose signature should be checked.  The second argument is a
+reject function and is called when an error is found.  The reject()
+function must allow for two arguments: the first is the error message,
+the second is an optional prefix string.  It is possible that reject()
+is called more than once during an invocation of check_signature()."""
+
+    # Ensure the filename contains no shell meta-characters or other badness
+    if not re_taint_free.match(os.path.basename(filename)):
+        reject("!!WARNING!! tainted filename: '%s'." % (filename));
+        return 0;
+
+    # Invoke gpgv on the file
+    status_read, status_write = os.pipe();
+    cmd = "gpgv --status-fd %s --keyring %s --keyring %s %s" \
+          % (status_write, Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename);
+    (output, status, exit_status) = gpgv_get_status_output(cmd, status_read, status_write);
+
+    # Process the status-fd output
+    keywords = {};
+    bad = internal_error = "";
+    for line in status.split('\n'):
+        line = line.strip();
+        if line == "":
+            continue;
+        split = line.split();
+        if len(split) < 2:
+            internal_error += "gpgv status line is malformed (< 2 atoms) ['%s'].\n" % (line);
+            continue;
+        (gnupg, keyword) = split[:2];
+        if gnupg != "[GNUPG:]":
+            internal_error += "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg);
+            continue;
+        args = split[2:];
+        if keywords.has_key(keyword) and (keyword != "NODATA" and keyword != "SIGEXPIRED"):
+            internal_error += "found duplicate status token ('%s').\n" % (keyword);
+            continue;
+        else:
+            keywords[keyword] = args;
+
+    # If we failed to parse the status-fd output, let's just whine and bail now
+    if internal_error:
+        reject("internal error while performing signature check on %s." % (filename));
+        reject(internal_error, "");
+        reject("Please report the above errors to the Archive maintainers by replying to this mail.", "");
+        return None;
+
+    # Now check for obviously bad things in the processed output
+    if keywords.has_key("SIGEXPIRED"):
+        reject("key used to sign %s has expired." % (filename));
+        bad = 1;
+    if keywords.has_key("KEYREVOKED"):
+        reject("key used to sign %s has been revoked." % (filename));
+        bad = 1;
+    if keywords.has_key("BADSIG"):
+        reject("bad signature on %s." % (filename));
+        bad = 1;
+    if keywords.has_key("ERRSIG") and not keywords.has_key("NO_PUBKEY"):
+        reject("failed to check signature on %s." % (filename));
+        bad = 1;
+    if keywords.has_key("NO_PUBKEY"):
+        reject("key used to sign %s not found in keyring." % (filename));
+        bad = 1;
+    if keywords.has_key("BADARMOR"):
+        reject("ascii armour of signature was corrupt in %s." % (filename));
+        bad = 1;
+    if keywords.has_key("NODATA"):
+        reject("no signature found in %s." % (filename));
+        bad = 1;
+
+    if bad:
+        return None;
+
+    # Next check gpgv exited with a zero return code
+    if exit_status:
+        reject("gpgv failed while checking %s." % (filename));
+        if status.strip():
+            reject(prefix_multi_line_string(status, " [GPG status-fd output:] "), "");
+        else:
+            reject(prefix_multi_line_string(output, " [GPG output:] "), "");
+        return None;
+
+    # Sanity check the good stuff we expect
+    if not keywords.has_key("VALIDSIG"):
+        reject("signature on %s does not appear to be valid [No VALIDSIG]." % (filename));
+        bad = 1;
+    else:
+        args = keywords["VALIDSIG"];
+        if len(args) < 1:
+            reject("internal error while checking signature on %s." % (filename));
+            bad = 1;
+        else:
+            fingerprint = args[0];
+    if not keywords.has_key("GOODSIG"):
+        reject("signature on %s does not appear to be valid [No GOODSIG]." % (filename));
+        bad = 1;
+    if not keywords.has_key("SIG_ID"):
+        reject("signature on %s does not appear to be valid [No SIG_ID]." % (filename));
+        bad = 1;
+
+    # Finally ensure there's not something we don't recognise
+    known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+                          SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
+                          NODATA="");
+
+    for keyword in keywords.keys():
+        if not known_keywords.has_key(keyword):
+            reject("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], filename));
+            bad = 1;
+
+    if bad:
+        return None;
+    else:
+        return fingerprint;
 
 ################################################################################
 

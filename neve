@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Populate the DB
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: neve,v 1.17 2003-01-02 18:15:07 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: neve,v 1.18 2003-02-07 14:53:42 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 
 ###############################################################################
 
-import commands, os, pg, re, select, sys, tempfile, time;
+import commands, os, pg, re, sys, tempfile, time;
 import apt_pkg;
 import db_access, utils;
 
@@ -85,70 +85,6 @@ Initializes a projectB database from an existing archive
 
 ###############################################################################
 
-# Our very own version of commands.getouputstatus(), hacked to support
-# gpgv's status fd.
-def get_status_output(cmd, status_read, status_write):
-    cmd = ['/bin/sh', '-c', cmd];
-    p2cread, p2cwrite = os.pipe();
-    c2pread, c2pwrite = os.pipe();
-    errout, errin = os.pipe();
-    pid = os.fork();
-    if pid == 0:
-        # Child
-        os.close(0);
-        os.close(1);
-        os.dup(p2cread);
-        os.dup(c2pwrite);
-        os.close(2);
-        os.dup(errin);
-        for i in range(3, 256):
-            if i != status_write:
-                try:
-                    os.close(i);
-                except:
-                    pass;
-        try:
-            os.execvp(cmd[0], cmd);
-        finally:
-            os._exit(1);
-
-    # parent
-    os.close(p2cread)
-    os.dup2(c2pread, c2pwrite);
-    os.dup2(errout, errin);
-
-    output = status = "";
-    while 1:
-        i, o, e = select.select([c2pwrite, errin, status_read], [], []);
-        more_data = [];
-        for fd in i:
-            r = os.read(fd, 8196);
-            if len(r) > 0:
-                more_data.append(fd);
-                if fd == c2pwrite or fd == errin:
-                    output += r;
-                elif fd == status_read:
-                    status += r;
-                else:
-                    utils.fubar("Unexpected file descriptor [%s] returned from select\n" % (fd));
-        if not more_data:
-            pid, exit_status = os.waitpid(pid, 0)
-            try:
-                os.close(status_write);
-                os.close(status_read);
-                os.close(c2pwrite);
-                os.close(p2cwrite);
-                os.close(errin);
-            except:
-                pass;
-            break;
-
-    return output, status, exit_status;
-
-###############################################################################
-
-def Dict(**dict): return dict
-
 def reject (str, prefix="Rejected: "):
     global reject_message;
     if str:
@@ -164,7 +100,7 @@ def check_signature (filename):
     status_read, status_write = os.pipe();
     cmd = "gpgv --status-fd %s --keyring %s --keyring %s %s" \
           % (status_write, Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename);
-    (output, status, exit_status) = get_status_output(cmd, status_read, status_write);
+    (output, status, exit_status) = utils.gpgv_get_status_output(cmd, status_read, status_write);
 
     # Process the status-fd output
     keywords = {};
@@ -183,7 +119,7 @@ def check_signature (filename):
             continue;
         args = split[2:];
         if keywords.has_key(keyword) and keyword != "NODATA" and keyword != "SIGEXPIRED":
-            internal_error += "found duplicate status token ('%s')." % (keyword);
+            internal_error += "found duplicate status token ('%s').\n" % (keyword);
             continue;
         else:
             keywords[keyword] = args;
@@ -255,9 +191,9 @@ def check_signature (filename):
         bad = 1;
 
     # Finally ensure there's not something we don't recognise
-    known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
-                          SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
-                          NODATA="");
+    known_keywords = utils.Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+                                SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
+                                NODATA="");
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
