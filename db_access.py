@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # DB access fucntions
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.15 2003-02-11 18:09:59 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: db_access.py,v 1.16 2004-06-17 15:00:41 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import sys, time;
+import sys, time, types;
 
 ################################################################################
 
@@ -56,6 +56,12 @@ def do_query(q):
     r = projectB.query(q);
     time_diff = time.time()-before;
     sys.stderr.write("took %.3f seconds.\n" % (time_diff));
+    if type(r) is int:
+        sys.stderr.write("int result: %s\n" % (r));
+    elif type(r) is types.NoneType:
+        sys.stderr.write("result: None\n");
+    else:
+        sys.stderr.write("pgresult: %s\n" % (r.getresult()));
     return r;
 
 ################################################################################
