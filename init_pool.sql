@@ -138,3 +138,6 @@ CREATE TABLE override (
 
 CREATE INDEX bin_associations_bin ON bin_associations (bin);
 CREATE INDEX src_associations_source ON src_associations (source);
+CREATE INDEX source_maintainer ON source (maintainer);
+CREATE INDEX binaries_maintainer ON binaries (maintainer);
+CREATE INDEX dsc_files_file ON dsc_files (file);
