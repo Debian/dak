@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: madison,v 1.26 2003-03-05 15:58:04 troup Exp $
+# $Id: madison,v 1.27 2003-03-14 19:04:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,8 +48,8 @@ Display information about PACKAGE(s).
   -s, --suite=SUITE          only show info for this suite
   -S, --source-and-binary    show info for the binary children of source pkgs
 
-Both ARCH and SUITE can be space seperated lists, e.g.
-    --architecture=\"m68k i386\""""
+Both ARCH and SUITE can be comma (or space) seperated lists, e.g.
+    --architecture=m68k,i386"""
     sys.exit(exit_code)
 
 ################################################################################
