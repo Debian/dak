@@ -2,7 +2,7 @@
 
 # Script to automate some parts of checking NEW packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: fernanda.py,v 1.6 2002-11-26 02:21:46 anonymous Exp $
+# $Id: fernanda.py,v 1.7 2002-11-26 02:51:52 rdonald Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,8 +76,6 @@ end_colour = "\033[0m"
 bold_colour = "\033[1m"
 # Bad maintainer
 maintainer_colour = arch_colour
-
-
 
 ################################################################################
 
