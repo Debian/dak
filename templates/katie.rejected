@@ -12,8 +12,3 @@ __REJECT_MESSAGE__
 
 If you don't understand why your files were rejected, or if the
 override file requires editing, reply to this email.
-
-Your rejected files are in incoming/REJECT/.  (Some may also be in
-incoming/ if your .changes file was unparsable.)  If only some of the
-files need to repaired, you may move any good files back to incoming/.
-Please remove any bad files from incoming/REJECT/.
