@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.32 2001-03-20 00:28:11 troup Exp $
+# $Id: katie,v 1.33 2001-03-21 01:05:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# Based (almost entirely) on dinstall by Guy Maor <maor@debian.org>
+# Originally based almost entirely on dinstall by Guy Maor <maor@debian.org>
 
 #########################################################################################
 
@@ -44,28 +44,6 @@ re_default_answer = re.compile(r"\[(.*)\]");
 re_fdnic = re.compile("\n\n");
 re_bad_diff = re.compile("^[\-\+][\-\+][\-\+] /dev/null");
 
-###############################################################################
-
-#
-reject_footer = """If you don't understand why your files were rejected, or if the
-override file requires editing, reply to this email.
-
-Your rejected files are in incoming/REJECT/.  (Some may also be in
-incoming/ if your .changes file was unparsable.)  If only some of the
-files need to repaired, you may move any good files back to incoming/.
-Please remove any bad files from incoming/REJECT/."""
-#
-new_ack_footer = """Your package contains new components which requires manual editing of
-the override file.  It is ok otherwise, so please be patient.  New
-packages are usually added to the override file about once a week.
-
-You may have gotten the distribution wrong.  You'll get warnings above
-if files already exist in other distributions."""
-#
-installed_footer = """If the override file requires editing, file a bug on ftp.debian.org.
-
-Thank you for your contribution to Debian GNU."""
-
 #########################################################################################
 
 # Globals
@@ -83,6 +61,7 @@ install_bytes = 0.0;
 reprocess = 0;
 orig_tar_id = None;
 legacy_source_untouchable = {};
+Subst = {};
 
 #########################################################################################
 
@@ -98,6 +77,8 @@ def usage (exit_code):
   -u, --distribution=DIST   override distribution to `dist'
   -v, --version             display the version number and exit"""
     sys.exit(exit_code)
+
+#########################################################################################
 
 def check_signature (filename):
     global reject_message
@@ -607,6 +588,8 @@ def check_md5sums ():
                 reject_message = reject_message + "Rejected: md5sum check failed for %s.\n" % (file);
 
 def check_override ():
+    global Subst;
+    
     # Only check section & priority on sourceful uploads
     if not changes["architecture"].has_key("source"):
         return;
@@ -628,30 +611,26 @@ def check_override ():
 
     if summary == "":
         return;
-    
-    mail_message = """Return-Path: %s
-From: %s
-To: %s
-Bcc: troup@auric.debian.org
-Subject: %s override disparity
 
-There are disparities between your recently installed upload and the
-override file for the following file(s):
-
-%s
-Either the package or the override file is incorrect.  If you think
-the override is correct and the package wrong please fix the package
-so that this disparity is fixed in the next upload.  If you feel the
-override is incorrect then please reply to this mail and explain why.
-
---
-Debian distribution maintenance software
-
-(This message was generated automatically; if you believe that there
-is a problem with it please contact the archive administrators by
-mailing ftpmaster@debian.org)
-""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes["source"], summary);
+    Subst["__SUMMARY__"] = summary;
+    mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.override-disparity","r").read());
     utils.send_mail (mail_message, "")
+
+#####################################################################################################################
+
+# Set up the per-package template substitution mappings
+
+def update_subst (changes_filename):
+    global Subst;
+    
+    Subst["__ARCHITECTURE__"] = string.join(changes["architecture"].keys(), ' ' );
+    Subst["__CHANGES_FILENAME__"] = os.path.basename(changes_filename);
+    Subst["__FILE_CONTENTS__"] = changes["filecontents"];
+    Subst["__MAINTAINER_ADDRESS__"] = changes["maintainer822"];
+    Subst["__MAINTAINER__"] = changes["maintainer"];
+    Subst["__REJECT_MESSAGE__"] = reject_message;
+    Subst["__SOURCE__"] = changes["source"];
+    Subst["__VERSION__"] = changes["version"];
 
 #####################################################################################################################
 
@@ -748,7 +727,7 @@ def action (changes_filename):
 #####################################################################################################################
 
 def install (changes_filename, summary, short_summary):
-    global install_count, install_bytes
+    global install_count, install_bytes, Subst;
 
     # Stable uploads are a special case
     if changes.has_key("stable upload"):
@@ -872,17 +851,9 @@ def install (changes_filename, summary, short_summary):
     install_count = install_count + 1;
 
     if not Cnf["Dinstall::Options::No-Mail"]:
-        mail_message = """Return-Path: %s
-From: %s
-To: %s
-Bcc: troup@auric.debian.org
-Subject: %s INSTALLED
-
-%s
-Installing:
-%s
-
-%s""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], os.path.basename(changes_filename), reject_message, summary, installed_footer)
+        Subst["__SUITE__"] = "";
+        Subst["__SUMMARY__"] = summary;
+        mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.installed","r").read());
         utils.send_mail (mail_message, "")
         announce (short_summary, 1)
         check_override ();
@@ -890,7 +861,7 @@ Installing:
 #####################################################################################################################
 
 def stable_install (changes_filename, summary, short_summary):
-    global install_count, install_bytes
+    global install_count, install_bytes, Subst;
     
     print "Installing to stable."
 
@@ -964,23 +935,16 @@ def stable_install (changes_filename, summary, short_summary):
     install_count = install_count + 1;
 
     if not Cnf["Dinstall::Options::No-Mail"]:
-        mail_message = """Return-Path: %s
-From: %s
-To: %s
-Bcc: troup@auric.debian.org
-Subject: %s INSTALLED into stable
-
-%s
-Installing:
-%s
-
-%s""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], os.path.basename(changes_filename), reject_message, summary, installed_footer)
+        Subst["__SUITE__"] = "into stable";
+        Subst["__SUMMARY__"] = summary;
         utils.send_mail (mail_message, "")
         announce (short_summary, 1)
 
 #####################################################################################################################
 
 def reject (changes_filename, manual_reject_mail_filename):
+    global Subst;
+    
     print "Rejecting.\n"
 
     base_changes_filename = os.path.basename(changes_filename);
@@ -1008,14 +972,8 @@ def reject (changes_filename, manual_reject_mail_filename):
         fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
         os.write(fd, reject_message);
         os.close(fd);
-        reject_mail_message = """From: %s
-To: %s
-Bcc: troup@auric.debian.org
-Subject: %s REJECTED
-
-%s
-===
-%s""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], os.path.basename(changes_filename), reject_message, reject_footer);
+        Subst["__MANUAL_REJECT_MESSAGE__"] = "";
+        reject_mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.rejected","r").read());
     else: # Have a manual rejection file to use
         reject_mail_message = ""; # avoid <undef>'s
         
@@ -1026,21 +984,15 @@ Subject: %s REJECTED
 ##################################################################
 
 def manual_reject (changes_filename):
+    global Subst;
+    
     # Build up the rejection email 
     user_email_address = string.replace(string.split(pwd.getpwuid(os.getuid())[4],',')[0], '.', '')
     user_email_address = user_email_address + " <%s@%s>" % (pwd.getpwuid(os.getuid())[0], Cnf["Dinstall::MyHost"])
     manual_reject_message = Cnf.get("Dinstall::Options::Manual-Reject", "")
 
-    reject_mail_message = """From: %s
-Cc: %s
-To: %s
-Bcc: troup@auric.debian.org
-Subject: %s REJECTED
-
-%s
-%s
-===
-%s""" % (user_email_address, Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], os.path.basename(changes_filename), manual_reject_message, reject_message, reject_footer)
+    Subst["__MANUAL_REJECT_MESSAGE__"] = manual_reject_message;
+    reject_mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.rejected","r").read());
     
     # Write the rejection email out as the <foo>.reason file
     reason_filename = re_changes.sub("reason", os.path.basename(changes_filename));
@@ -1064,7 +1016,7 @@ Subject: %s REJECTED
 #####################################################################################################################
  
 def acknowledge_new (changes_filename, summary):
-    global new_ack_new;
+    global new_ack_new, Subst;
 
     changes_filename = os.path.basename(changes_filename);
 
@@ -1076,46 +1028,33 @@ def acknowledge_new (changes_filename, summary):
 
     print "Sending new ack.";
     if not Cnf["Dinstall::Options::No-Mail"]:
-        new_ack_message = """Return-Path: %s
-From: %s
-To: %s
-Bcc: troup@auric.debian.org
-Subject: %s is NEW
-
-%s
-%s""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, summary, new_ack_footer);
+        Subst["__SUMMARY__"] = summary;
+        new_ack_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.new","r").read());
         utils.send_mail(new_ack_message,"");
 
 #####################################################################################################################
 
 def announce (short_summary, action):
+    global Subst;
+    
     # Only do announcements for source uploads with a recent dpkg-dev installed
     if float(changes.get("format", 0)) < 1.6 or not changes["architecture"].has_key("source"):
         return ""
 
     lists_done = {}
     summary = ""
+    Subst["__SHORT_SUMMARY__"] = short_summary;
 
     for dist in changes["distribution"].keys():
         list = Cnf.Find("Suite::%s::Announce" % (dist))
-        if list == None or lists_done.has_key(list):
+        if list == "" or lists_done.has_key(list):
             continue
         lists_done[list] = 1
         summary = summary + "Announcing to %s\n" % (list)
 
         if action:
-            mail_message = """Return-Path: %s
-From: %s
-To: %s
-Bcc: troup@auric.debian.org
-Subject: Installed %s %s (%s)
-
-%s
-
-Installed:
-%s
-""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], list, changes["source"], changes["version"], string.join(changes["architecture"].keys(), ' ' ),
-       changes["filecontents"], short_summary)
+            Subst["__ANNOUNCE_LIST_ADDRESS__"] = list;
+            mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.announce","r").read());
             utils.send_mail (mail_message, "")
 
     (dsc_rfc822, dsc_name, dsc_email) = utils.fix_maintainer (dsc.get("maintainer",Cnf["Dinstall::MyEmailAddress"]));
@@ -1128,42 +1067,17 @@ Installed:
         for bug in bugs:
             summary = summary + "%s " % (bug)
             if action:
-                mail_message = """Return-Path: %s
-From: %s
-To: %s-close@bugs.debian.org
-Bcc: troup@auric.debian.org
-Subject: Bug#%s: fixed in %s %s
-
-We believe that the bug you reported is fixed in the latest version of
-%s, which has been installed in the Debian FTP archive:
-
-%s""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], bug, bug, changes["source"], changes["version"], changes["source"], short_summary)
-
+                Subst["__BUG_NUMBER__"] = bug;
                 if changes["distribution"].has_key("stable"):
-                    mail_message = mail_message + """Note that this package is not part of the released stable Debian
+                    Subst["__STABLE_WARNING__"] = """
+Note that this package is not part of the released stable Debian
 distribution.  It may have dependencies on other unreleased software,
 or other instabilities.  Please take care if you wish to install it.
 The update will eventually make its way into the next released Debian
 distribution."""
-
-                mail_message = mail_message + """A summary of the changes between this version and the previous one is
-attached.
-
-Thank you for reporting the bug, which will now be closed.  If you
-have further comments please address them to %s@bugs.debian.org,
-and the maintainer will reopen the bug report if appropriate.
-
-Debian distribution maintenance software
-pp.
-%s (supplier of updated %s package)
-
-(This message was generated automatically at their request; if you
-believe that there is a problem with it please contact the archive
-administrators by mailing ftpmaster@debian.org)
-
-
-%s""" % (bug, changes["maintainer"], changes["source"], changes["filecontents"])
-
+                else:
+                    Subst["__STABLE_WARNING__"] = "";
+                mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.bug-close","r").read());
                 utils.send_mail (mail_message, "")
     else:                     # NMU
         summary = summary + "Setting bugs to severity fixed: "
@@ -1172,20 +1086,8 @@ administrators by mailing ftpmaster@debian.org)
             summary = summary + "%s " % (bug)
             control_message = control_message + "tag %s + fixed\n" % (bug)
         if action and control_message != "":
-            mail_message = """Return-Path: %s
-From: %s
-To: control@bugs.debian.org
-Bcc: troup@auric.debian.org, %s
-Subject: Fixed in NMU of %s %s
-
-%s
-quit
-
-This message was generated automatically in response to a
-non-maintainer upload.  The .changes file follows.
-
-%s
-""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes["maintainer822"], changes["source"], changes["version"], control_message, changes["filecontents"])
+            Subst["__CONTROL_MESSAGE__"] = control_message;
+            mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.bug-nmu-fixed","r").read());
             utils.send_mail (mail_message, "")
     summary = summary + "\n"
 
@@ -1232,6 +1134,7 @@ def process_it (changes_file):
         check_dsc ();
         check_diff ();
         
+    update_subst(changes_file);
     action(changes_file);
 
     # Restore CWD
@@ -1240,7 +1143,7 @@ def process_it (changes_file):
 ###############################################################################
 
 def main():
-    global Cnf, projectB, install_bytes, new_ack_old
+    global Cnf, projectB, install_bytes, new_ack_old, Subst
 
     apt_pkg.init();
     
@@ -1297,6 +1200,18 @@ def main():
     for line in new_ack_list.readlines():
         new_ack_old[line[:-1]] = 1;
     new_ack_list.close();
+
+    # Initialize the substitution template mapping global
+    Subst = {}
+    Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
+    Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
+    bcc = "X-Katie: $Id: katie,v 1.33 2001-03-21 01:05:07 troup Exp $"
+    if Cnf.has_key("Dinstall::Bcc"):
+        Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
+    else:
+        Subst["__BCC__"] = bcc;
+    Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"];
+    Subst["__KATIE_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"];
 
     # Process the changes files
     for changes_file in changes_files:

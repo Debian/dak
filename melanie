@@ -2,7 +2,7 @@
 
 # General purpose archive tool for ftpmaster
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.8 2001-03-20 00:28:11 troup Exp $
+# $Id: melanie,v 1.9 2001-03-21 01:05:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,9 @@ Cnf = None;
 projectB = None;
 
 ################################################################################
+
+# "That's just fucking great!  Game over, man!  What the fuck are we
+#  going to do now?"
 
 def game_over():
     print "Continue (y/N)? ",
@@ -336,48 +339,26 @@ def main ():
 
     # Send the bug closing messages
     if Options["Done"]:
+        Subst = {};
+        Subst["__MELANIE_ADDRESS__"] = Cnf["Melanie::MyEmailAddress"];
+        Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
+        if Cnf.Find("Dinstall::Bcc") != "":
+            Subst["__BCC__"] = "Bcc: " + Cnf["Dinstall::Bcc"];
+        else:
+            Subst["__BCC__"] = "X-Filler: 42";
+        Subst["__CC__"] = "X-Melanie: $Id: melanie,v 1.9 2001-03-21 01:05:07 troup Exp $\n" + carbon_copy[:-1];
+        Subst["__SUITE_LIST__"] = suites_list;
+        Subst["__SUMMARY__"] = summary;
+        Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
+        Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"];
+        Subst["__WHOAMI__"] = whoami;
+        whereami = utils.where_am_i();
+        Archive = Cnf.SubTree("Archive::%s" % (whereami));
+        Subst["__MASTER_ARCHIVE__"] = Archive["OriginServer"];
+        Subst["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"];
         for bug in string.split(Options["Done"]):
-            mail_message = """Return-Path: %s
-From: %s
-To: %s-close@bugs.debian.org
-Bcc: troup@auric.debian.org
-Bcc: removed-packages@qa.debian.org
-%sSubject: Bug#%s: fixed
-
-We believe that the bug you reported is now fixed; the following
-package(s) have been removed from %s:
-
-%s
-Note that the package(s) have simply been removed from the tag
-database and may (or may not) still be in the pool; this is not a bug.
-The package(s) will be physically removed automatically when no suite
-references them (and in the case of source, when no binary references
-it).  Please also remember that the changes have been done on the
-master archive (ftp-master.debian.org) and will not propagate to any
-mirrors (ftp.debian.org included) until the next cron.daily run at the
-earliest.
-
-Packages are never removed from testing by hand.  Testing tracks
-unstable and will automatically remove packages which were removed
-from unstable when removing them from testing causes no dependency
-problems.
-
-Bugs which have been reported against this package are not automatically
-removed from the Bug Tracking System.  Please check all open bugs and
-close them or re-assign them to another package if the removed package
-was superseded by another one.
-
-Thank you for reporting the bug, which will now be closed.  If you
-have further comments please address them to %s@bugs.debian.org.
-
-This message was generated automatically; if you believe that there is
-a problem with it please contact the archive administrators by mailing
-ftpmaster@debian.org.
-
-Debian distribution maintenance software
-pp.
-%s (the ftpmaster behind the curtain)
-""" % (Cnf["Melanie::MyEmailAddress"], Cnf["Melanie::MyEmailAddress"], bug, carbon_copy, bug, suites_list, summary, bug, whoami);
+            Subst["__BUG_NUMBER__"] = bug;
+            mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/melanie.bug-close","r").read());
             utils.send_mail (mail_message, "")
             
     logfile.write("=========================================================================\n");
