@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie,v 1.84 2002-05-23 12:18:32 troup Exp $
+# $Id: katie,v 1.85 2002-08-07 17:19:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.84 $";
+katie_version = "$Revision: 1.85 $";
 
 Cnf = None;
 Options = None;
@@ -369,12 +369,17 @@ def install ():
         install_bytes = install_bytes + float(files[file]["size"]);
 
     # Copy the .changes file across for suite which need it.
+    copy_changes_p = copy_katie_p = 0;
     for suite in changes["distribution"].keys():
         if Cnf.has_key("Suite::%s::CopyChanges" % (suite)):
-            utils.copy(pkg.changes_file, Cnf["Dir::Root"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
+            copy_changes_p = 1;
         # and the .katie file...
         if Cnf.has_key("Suite::%s::CopyKatie" % (suite)):
-            utils.copy(Katie.pkg.changes_file[:-8]+".katie", Cnf["Suite::%s::CopyKatie" % (suite)]);
+            copy_katie_p = 1;
+    if copy_changes_p:
+        utils.copy(pkg.changes_file, Cnf["Dir::Root"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
+    if copy_katie_p:
+        utils.copy(Katie.pkg.changes_file[:-8]+".katie", Cnf["Suite::%s::CopyKatie" % (suite)]);
 
     projectB.query("COMMIT WORK");
 
