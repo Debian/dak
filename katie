@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.2 2000-11-24 00:35:45 troup Exp $
+# $Id: katie,v 1.3 2000-11-26 16:35:41 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -663,9 +663,8 @@ def install (changes_filename, summary, short_summary):
 
     # Copy the .changes file across for suite which need it.
     for suite in changes["distribution"].keys():
-        if Cnf.has_key("Suties::%s::CopyChanges" % (suite)):
-            destination = Cnf["Dir::RootDir"] + Cnf["Suite::%s::CopyChanges" % (suite)] + os.path.basename(changes_filename)
-            copy_file (changes_filename, destination)
+        if Cnf.has_key("Suite::%s::CopyChanges" % (suite)):
+            utils.copy (changes_filename, Cnf["Dir::RootDir"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
 
     # If the .orig.tar.gz is in a legacy directory we need to poolify
     # it, so that apt-get source (and anything else that goes by the
