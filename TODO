@@ -1,52 +1,20 @@
-TOFIX
-=====
-
-
- o doogie's binary -> source
-
- o ANIAS should be done in katie ?
- 
- o natalie doesn't warn when lisitng invalid components!
-
- o new tool: why is this still here?
-
- o run apt-ftparchive clean <conf file> weekly [culus sucks]
-
- o when dinstall is run in install mode but not as a cron job, it
- should probably run jenna to avoid madison originated user confusion
-
- o purge older stuff from non-free/contrib so that testing and stuff works
-
-23:12|<aj> I will not hush!
-23:12|<elmo> :>
-23:12|<aj> Where there is injustice in the world, I shall be there!
-23:13|<aj> I shall not be silenced!
-23:13|<aj> The world shall know!
-23:13|<aj> The world *must* know!
-23:13|<elmo> oh dear, he's gone back to powerpuff girls... ;-)
-23:13|<aj> yay powerpuff girls!!
-23:13|<aj> buttercup's my favourite, who's yours?
-23:14|<aj> you're backing away from the keyboard right now aren't you?
-23:14|<aj> *AREN'T YOU*?!
-23:15|<aj> I will not be treated like this.
-23:15|<aj> I shall have my revenge.
-23:15|<aj> I SHALL!!!
+To fix
+======
 
 Urgent
 ------
-
-  o [not really urgent, but I'm too lazy to page down..] check for empty debs.
 
   o katie needs a stable_reject() which a) removes the package from
     p-u, b) doesn't remove the file from the pool, and c) (optionally, I
     guess) uses a template mail.
 
-  o katie/jenna/rhona/what de fuck ever needs to clear out .changes
+  o katie/jenna/rhona/whatever needs to clear out .changes
     files from p-u when removing stuff superseded by newer versions.
 
-  o experimental needs to auto clean dude
+  o experimental needs to auto clean (relative to unstable)
 
-  o jenna doesn't handle arch: any -> arch: all transitions [aj worked around; need to revisit]
+  o jenna doesn't handle arch: any -> arch: all transitions 
+    [aj worked around; need to revisit]
 
   o direport misreports things as section 'devel'
 
@@ -65,57 +33,72 @@ Urgent
 
   o Add urgency + installed date to the DB for aj/testing (? still needed ?)
 
-  o Disallow binary versions with no source (both newer and older)
-    except for bin-only NMUs (but: have to change sorting so that
-    sourceful uploads are processed first).
+  o Enforce NMU and bin-only NMU versioning schemes
 
   o Revisit linking of binary->source in install() in katie.
 
   o debian/* assumes arch: all but sql-aptvc.o isn't arch: all.
 
+  o jt's web stuff, matt's changelog stuff (overlap)
+
 Less Urgent
 -----------
 
-  o validate email addresses ?  harsh to reject tho [errge]
+ o doogie's binary -> source index
 
-  o validate source consistency, i.e. .dsc and .tar.gz as minimum
-
-  o Rene doesn't look at debian-installer but should.
-
-  o Rene also doesn't seem to warn about missing binary packages?
-
-  o cron.daily* should change umask (aj sucks)
+ o ANIAS should be done in katie ?
  
-  o override checks sucks; it needs to track changes made by the
-    maintainer and pass them onto ftpmaster instead of warning the
-    maintainer.
+ o natalie doesn't warn when lisitng invalid components!
 
-  o Don't do override checks for stable only uploads
+ o run apt-ftparchive clean <conf file> weekly [culus sucks]
 
-  o katie should validate multi-suite uploads; only possible valid one
-    is "stable unstable" [but see d-policy@l.d.o]
+ o purge older stuff from non-free/contrib so that testing and stuff works
 
-  o need to have process_it run a big try: loop so that individual
+ o when dinstall is run in install mode but not as a cron job, it
+   should probably run jenna to avoid madison originated user confusion
+
+ o check for empty debs; check for empty (or small (<1k ?)) .tar.gz's.
+
+ o validate email addresses ?  harsh to reject tho [errge]
+
+ o validate source consistency, i.e. .dsc and .tar.gz as minimum
+
+ o Rene doesn't look at debian-installer but should.
+
+ o Rene also doesn't seem to warn about missing binary packages?
+
+ o cron.daily* should change umask (aj sucks)
+ 
+ o override checks sucks; it needs to track changes made by the
+   maintainer and pass them onto ftpmaster instead of warning the
+   maintainer.
+
+ o Don't do override checks for stable only uploads
+
+ o katie should validate multi-suite uploads; only possible valid one
+   is "stable unstable" [but see d-policy@l.d.o]
+
+ o need to have process_it run a big try: loop so that individual
     package screws up don't kill the daily cron run.
 
-  o Add an 'add' ability to melanie (? separate prog maybe)
-  o [Hard] Need to merge non-non-US and non-US DBs.
-  o [Easy] Need to vacuum daily
-  o [Easy] remove empty directories in the pool in cron.weekly or so
+ o Add an 'add' ability to melanie (? separate prog maybe)
+ o [Hard] Need to merge non-non-US and non-US DBs.
+ o [Easy] Need to vacuum daily
+ o [Easy] remove empty directories in the pool in cron.weekly or so
 
-  o need to do proper rfc822 escaping of from lines (as opposed to s/\.//g)
+ o need to do proper rfc822 escaping of from lines (as opposed to s/\.//g)
 
-  o Fix dinstall to remove != stable on stable install, not just f + u
-  o Fix 'mixed' component handling (?)
-  o Fix component handling in overrides (aj)
-  o Fix lack of entires in source overrides (aj)
-  o Fix rhona to unconditionally read override file on startup
-  o Fix dinstall to warn if not in incoming or p-u
-  o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
-  o check errors on apt_pkg calls (?)
-  o The untouchable flag doesn't stop adding new packages
-  o jenna needs to validate arguments (?)
-  o jenna is too damn slow
+ o Fix dinstall to remove != stable on stable install, not just f + u
+ o Fix 'mixed' component handling (?)
+ o Fix component handling in overrides (aj)
+ o Fix lack of entires in source overrides (aj)
+ o Fix rhona to unconditionally read override file on startup
+ o Fix dinstall to warn if not in incoming or p-u
+ o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
+ o check errors on apt_pkg calls (?)
+ o The untouchable flag doesn't stop adding new packages
+ o jenna needs to validate arguments (?)
+ o jenna is too damn slow
 
 ===================================================================================================
 
@@ -166,3 +149,21 @@ Less Urgent
   o substitution stuff (cf. userdir-ldap) for announce, reject etc.
 
   o s/distribution/suite/g
+
+===================================================================================================
+
+23:12|<aj> I will not hush!
+23:12|<elmo> :>
+23:12|<aj> Where there is injustice in the world, I shall be there!
+23:13|<aj> I shall not be silenced!
+23:13|<aj> The world shall know!
+23:13|<aj> The world *must* know!
+23:13|<elmo> oh dear, he's gone back to powerpuff girls... ;-)
+23:13|<aj> yay powerpuff girls!!
+23:13|<aj> buttercup's my favourite, who's yours?
+23:14|<aj> you're backing away from the keyboard right now aren't you?
+23:14|<aj> *AREN'T YOU*?!
+23:15|<aj> I will not be treated like this.
+23:15|<aj> I shall have my revenge.
+23:15|<aj> I SHALL!!!
+
