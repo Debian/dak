@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.2 2002-02-15 04:01:07 troup Exp $
+# $Id: lisa,v 1.3 2002-02-22 01:03:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.2 $";
+lisa_version = "$Revision: 1.3 $";
 
 Cnf = None;
 Options = None;
@@ -107,6 +107,8 @@ def determine_new (changes, files):
                     new[pkg]["type"] = type;
                     new[pkg]["component"] = component;
         new[pkg]["files"].append(file);
+        if f.has_key("othercomponents"):
+            new[pkg]["othercomponents"] = f["othercomponents"];
 
     for suite in changes["distribution"].keys():
         suite_id = db_access.get_suite_id(suite);
@@ -257,6 +259,8 @@ def print_new (new, indexed, file=sys.stdout):
         else:
             line = "%-20s %-20s %-20s" % (pkg, priority, section);
         line = string.strip(line)+'\n';
+        if new[pkg].has_key("othercomponents"):
+            line = line + "WARNING: Already present in %s distribution.\n" % (new[pkg]["othercomponents"]);
         file.write(line);
     return ret_code;
 
