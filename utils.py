@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.19 2001-03-24 03:29:38 troup Exp $
+# $Id: utils.py,v 1.20 2001-04-03 10:05:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -363,9 +363,18 @@ def regex_safe (s):
 
 # Perform a substition of template 
 def TemplateSubst(Map,Template):
-   for x in Map.keys():
-      Template = string.replace(Template,x,Map[x]);
-   return Template;
+    for x in Map.keys():
+        Template = string.replace(Template,x,Map[x]);
+    return Template;
+
+######################################################################################
+
+def fubar(msg, exit_code=1):
+    sys.stderr.write("E: %s\n" % (msg));
+    sys.exit(exit_code);
+
+def warn(msg):
+    sys.stderr.write("W: %s\n" % (msg));
 
 ######################################################################################
 
