@@ -137,7 +137,7 @@ Less Urgent
   o Add urgency + installed date to the DB for aj/testing (? still needed ?)
   o jt's web stuff, matt's changelog stuff (overlap)
 
-  o [Hard] Need to merge non-non-US and non-US DBs. (Need to upgrade to 7.1 for SSL)
+  o [Hard] Need to merge non-non-US and non-US DBs.
 
   o experimental needs to auto clean (relative to unstable) [warns in rene about this]
 
@@ -145,7 +145,6 @@ Less Urgent
   o fix parse_changes()/build_file_list() to sanity check filenames
   o saftey check and/or rename debs so they match what they should be
 
-  o Enable catherine (when daily mirror hit drops down below 300Mb maybe..)
   o Improve andrea.
   o Need to optimize all the queries by using EXAMINE and building some INDEXs.
   o Need to enclose all the setting SQL stuff in transactions (mostly done).
