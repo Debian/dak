@@ -27,7 +27,19 @@ queue/approved
 Others
 ------
 
+  o halle doesn't deal with melanie'd packages, partial replacements
+   etc. and more.
+
+  o lauren, the tramp, blindly deletes with no check that the delete
+   failed which it might well given we only look for package/version,
+   not package/version _in p-u_.  duh.
+
+  o melanie should remove obsolete changes when removing from p-u, or
+   at least warn.  or halle should handle it.
+
   o need a testsuite _badly_
+
+  o lisa should have an Bitch-Then-Accept option
 
   o jennifer crashes if run as a user in -n mode when orig.tar.gz is
    in queue/new...
@@ -429,3 +441,5 @@ Possible Quotes:
 | <eigood> no need to be hostile
 | <Joy> eigood: he told you he's too busy and you kept bugging him. take
 |       a hint :)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
