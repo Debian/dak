@@ -142,20 +142,7 @@ Less Urgent
 
   o s/distribution/suite/g
 
-===================================================================================================
-
-23:12|<aj> I will not hush!
-23:12|<elmo> :>
-23:12|<aj> Where there is injustice in the world, I shall be there!
-23:13|<aj> I shall not be silenced!
-23:13|<aj> The world shall know!
-23:13|<aj> The world *must* know!
-23:13|<elmo> oh dear, he's gone back to powerpuff girls... ;-)
-23:13|<aj> yay powerpuff girls!!
-23:13|<aj> buttercup's my favourite, who's yours?
-23:14|<aj> you're backing away from the keyboard right now aren't you?
-23:14|<aj> *AREN'T YOU*?!
-23:15|<aj> I will not be treated like this.
-23:15|<aj> I shall have my revenge.
-23:15|<aj> I SHALL!!!
-
+  o cron.weekly:
+     @ weekly postins to d-c (?)
+     @ backup of report (?)
+     @ backup of changes.tgz (?)
