@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.42 2004-11-27 13:28:16 troup Exp $
+# $Id: melanie,v 1.43 2004-11-27 18:12:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,11 +98,12 @@ def reverse_depends_check(removals, suites):
     print "Checking reverse dependencies..."
     components = Cnf.ValueList("Suite::%s::Components" % suites[0])
     dep_problem = 0
+    p2c = {};
     for architecture in Cnf.ValueList("Suite::%s::Architectures" % suites[0]):
         if architecture in ["source", "all"]:
             continue
-        deps = {}
-        virtual_packages = {}
+        deps = {};
+        virtual_packages = {};
         for component in components:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suites[0], component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
@@ -132,6 +133,7 @@ def reverse_depends_check(removals, suites):
                             virtual_packages[virtual_pkg] = 0
                         if package not in removals:
                             virtual_packages[virtual_pkg] += 1
+                p2c[package] = component;
             packages.close()
             os.unlink(temp_filename);
 
@@ -158,7 +160,12 @@ def reverse_depends_check(removals, suites):
                     if dep_package in removals:
                             unsat += 1
                 if unsat == len(dep):
-                    print "%s has an unsatisfied dependency on %s: %s" % (package, architecture, utils.pp_dep(dep))
+                    component = p2c[package];
+                    if component != "main":
+                        what = "%s/%s" (package, component);
+                    else:
+                        what = "** %s" % (package);
+                    print "%s has an unsatisfied dependency on %s: %s" % (what, architecture, utils.pp_deps(dep));
                     dep_problem = 1
 
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
@@ -191,7 +198,11 @@ def reverse_depends_check(removals, suites):
                     if dep_package in removals:
                             unsat += 1
                 if unsat == len(dep):
-                    print "%s has an unsatisfied build-dependency: %s" % (source, utils.pp_dep(dep))
+                    if component != "main":
+                        source = "%s/%s" % (source, component);
+                    else:
+                        source = "** %s" % (source);
+                    print "%s has an unsatisfied build-dependency: %s" % (source, utils.pp_deps(dep))
                     dep_problem = 1
         sources.close()
         os.unlink(temp_filename)
@@ -498,7 +509,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.42 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.43 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;

@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.71 2004-11-27 16:05:12 troup Exp $
+# $Id: utils.py,v 1.72 2004-11-27 18:12:57 troup Exp $
 
 ################################################################################
 
@@ -31,8 +31,8 @@ import db_access;
 ################################################################################
 
 re_comments = re.compile(r"\#.*")
-re_no_epoch = re.compile(r"^\d*\:")
-re_no_revision = re.compile(r"\-[^-]*$")
+re_no_epoch = re.compile(r"^\d+\:")
+re_no_revision = re.compile(r"-[^-]+$")
 re_arch_from_filename = re.compile(r"/binary-[^/]+/")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
 re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$");
@@ -48,7 +48,7 @@ changes_parse_error_exc = "Can't parse line in .changes file";
 invalid_dsc_format_exc = "Invalid .dsc file";
 nk_format_exc = "Unknown Format: in .changes file";
 no_files_exc = "No Files: field in .dsc or .changes file.";
-cant_open_exc = "Can't read file.";
+cant_open_exc = "Can't open file";
 unknown_hostname_exc = "Unknown hostname";
 cant_overwrite_exc = "Permission denied; can't overwrite existent file."
 file_exists_exc = "Destination file exists";
@@ -546,8 +546,8 @@ def changes_compare (a, b):
         return q;
 
     # Sort by source version
-    a_version = a_changes.get("version");
-    b_version = b_changes.get("version");
+    a_version = a_changes.get("version", "0");
+    b_version = b_changes.get("version", "0");
     q = apt_pkg.VersionCompare(a_version, b_version);
     if q:
         return q;
@@ -654,7 +654,7 @@ def join_with_commas_and(list):
 
 ################################################################################
 
-def pp_dep (deps):
+def pp_deps (deps):
     pp_deps = [];
     for atom in deps:
         (pkg, version, constraint) = atom;
