@@ -1,34 +1,36 @@
+[An updated version of the proposal sent to debian-devel-announce@l.d.o.  
+ Debian-specific, but useful as a general overview of New Incoming.]
 
-                     Proposed New Incoming System
-		     ============================
+                     New Incoming System
+		     ===================
 
-This document outlines the proposed new system for handling the
-Incoming directories on ftp-master and non-US.
+This document outlines the new system for handling Incoming
+directories on ftp-master and non-US.
 
-The present:
-------------
+The old system:
+---------------
 
-  o incoming is a world writable directory
+  o incoming was a world writable directory
 
-  o incoming is available to all through http://incoming.debian.org/
+  o incoming was available to everyone through http://incoming.debian.org/
 
-  o incoming is processed once a day by dinstall
+  o incoming was processed once a day by dinstall
 
-  o uploads in incoming must have been there > 24 hours before they
-    are REJECTed.  If they are processed before that and have problems
-    they will be SKIPped (with no notification to the maintainer and/or
-    uploader).
+  o uploads in incoming had to have been there > 24 hours before they
+    were REJECTed.  If they were processed before that and had
+    problems they were SKIPped (with no notification to the maintainer
+    and/or uploader).
 
-The proposed future:
---------------------
+The new system:
+---------------
 
-  o There will be 4 incoming directories:
+  o There's 4 incoming directories:
 
      @ "unchecked"  - where uploads from Queue Daemons and maintainers
-		      initially go
+		      initially go.
 
-     @ "install"    - where installable packages stay until the daily
-                      dinstall run
+     @ "accepted"   - where accepted packages stay until the daily
+                      dinstall run.
 
      @ "new"	    - where NEW packages (and their dependents[1]) requiring
 		      human processing go after being automatically
@@ -38,7 +40,7 @@ The proposed future:
                       requiring human intervention go after being
                       automatically checked by dinstall.
 
-    In addition there will be 3 support directories:
+    In addition there's 3 support directories:
 
      @ "reject"	    - where rejected uploads go
 
@@ -49,24 +51,24 @@ The proposed future:
 		      packages while checking them.
 
   o Packages in 'unchecked' are automatically checked every 15 minutes
-    and are either: REJECT, ACCEPT (i.e. -> 'install'), NEW or BYHAND.
+    and are either: REJECT, ACCEPT, NEW or BYHAND.
 
   o Only 'unchecked' is locally world-writeable.  The others are all,
-    of course, locally world-readable but only 'install' and 'byhand'
+    of course, locally world-readable but only 'accepted' and 'byhand'
     are publicly visible on http://incoming.debian.org/
 
-  o 'install' and 'byhand' are made available to the auto-builders so
+  o 'accepted' and 'byhand' are made available to the auto-builders so
      they can build out of them.
 
-  o 'install' is processed once a day as before.
+  o 'accepted' is processed once a day as before.
 
-  o list notification and bug closures are changed to be done for
-    ACCEPTs, not INSTALLs. Mail is sent only to the maintainer/uploader
-    on INSTALL.
+  o Maintainer/uploader & list notification and bug closures are
+    changed to be done for ACCEPTs, not INSTALLs. 
     [Rationale: this reduces the load both on our list server and our
      BTS server; it also gives people better notice of uploads to
-     avoid duplication of work especially, for example, in the case of NMUs]
-    [NB: see [3] for clarifications of when ACCEPT/INSTALL mails are sent]
+     avoid duplication of work especially, for example, in the case of
+     NMUs.]
+    [NB: see [3] for clarifications of when mails are sent.]
 
 Why:
 ----
@@ -74,21 +76,13 @@ Why:
   o Security (no more replaceable file races)
   o Integrity (new http://i.d.o contains only signed (+installable) uploads[2])
   o Needed for crypto-in-main integration
-  o Allows safe auto-building out of incoming
+  o Allows safe auto-building out of accepted
   o Allows previously-prohibitively-expensive checks to be added to dinstall
   o Much faster feedback on packages; no more 48 hour waits before
     finding out your package has been REJECTed.
 
 What breaks:
 ------------
-
-  o uploads of large packages directly to incoming over a slow link
-    can lead to bogus rejections.
-
-    * solution: Ensure the .changes file is the last file to be
-                uploaded (dput and dupload already do this) or upload
-                to a temporary directory then mv them into place with
-                ssh.
 
   o people who upload packages but then want to retract or replace the
     upload.
@@ -105,16 +99,16 @@ What breaks:
     source-must-exist checking, these binaries must be held back until
     the BYHAND/NEW uploads are processed.
 
-[2] When this was initially written there was still at least one
+[2] When this mail was initially written there was still at least one
     upload queue which will accept unsigned uploads from any
-    source. [I've since discover it's been deactivated, but not, AFAIK
-    because it allowed unsigned uploads.]
+    source. [I've since discovered it's been deactivated, but not,
+    AFAIK because it allowed unsigned uploads.]
 
 [3]
              --> reject
             /
            /
-unchecked  ---------------------------[*]-------> install ------[+]------> pool
+unchecked  -----------------------------[*]------> accepted ---------------> pool
            \               ^   ^
             |             /   /
             |-->   new  --   /
@@ -122,11 +116,8 @@ unchecked  ---------------------------[*]-------> install ------[+]------> pool
             |       V      /
             |--> byhand --/
 
-[*] is ACCEPT and when list notification and bug closure occurs
-[+] is INSTALL and when maintainer/uploader notification occurs
-
 [4] This is a corner case, included for completeness, ignore
     it. [Boring details: NEW trumps BYHAND, so it's possible for a
     upload with both BYHAND and NEW components to go from 'unchecked'
-    -> 'new' -> 'byhand' -> 'install']
+    -> 'new' -> 'byhand' -> 'accepted']
 
