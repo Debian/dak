@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rene,v 1.5 2001-05-24 18:56:23 troup Exp $
+# $Id: rene,v 1.6 2001-06-20 18:46:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -156,12 +156,13 @@ def main ():
     # [If melanie was callable from python, we could auto-remove these
     #  packages...]
 
+    suite_id = db_access.get_suite_id("unstable");
     q = projectB.query("""
 SELECT s.source, s.version AS experimental, s2.version AS unstable 
   FROM src_associations sa, source s, source s2, src_associations sa2 
-  WHERE sa.suite = 1 AND sa2.suite = 5 AND sa.source = s.id 
+  WHERE sa.suite = 1 AND sa2.suite = %d AND sa.source = s.id 
    AND sa2.source = s2.id AND s.source = s2.source 
-   AND versioncmp(s.version, s2.version) < 0""");
+   AND versioncmp(s.version, s2.version) < 0""" % (suite_id));
     ql = q.getresult();
     if ql != []:
         print
