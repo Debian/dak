@@ -27,6 +27,10 @@ queue/approved
 Others
 ------
 
+  o rhona should make use of select..except select, temporary tables
+  etc. rather than looping and calling SQL every time so we can do
+  suite removal sanely (see potato-removal document)
+
   o melanie will happily include packages in the Cc list that aren't
     being removed...
 
@@ -364,4 +368,32 @@ ziyi	      X
 
 ================================================================================
 
-<mdz_> SirDibos: that sentence sounds like it wants to be a bug report when it grows up
+Possible Quotes:
+----------------
+ 
+| <mdz_> SirDibos: that sentence sounds like it wants to be a bug report when it grows up
+ 
+-------
+
+| From: Andrew Morton <akpm@osdl.org>
+| Subject: Re: Linux 2.6.0-test1 Ext3 Ooops. Reboot needed.
+| To: Ricardo Galli <gallir@uib.es>
+| Cc: linux-kernel@vger.kernel.org
+| Date: Fri, 18 Jul 2003 14:27:20 -0700
+| 
+| Ricardo Galli <gallir@uib.es> wrote:
+| >
+| > "File alteration monitor", from Debian.
+| 
+| OK.
+| 
+| > $ apt-cache show fam
+| 
+| I was attacked by dselect as a small child and have since avoided debian. 
+| Is there a tarball anywhere?
+
+| From: Bob Hilliard <hilliard@debian.org>
+| 
+|      In my experience, James has been very responsive, albeit not
+| verbose, to reasonable questions/requests that don't start out saying
+| "James is a bum - throw him out".

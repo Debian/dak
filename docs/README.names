@@ -5,7 +5,7 @@ ashley - display the contents of a .katie file
 catherine - poolifies packages; i.e. moves them from legacy dists/ locations into the pool
 charisma - generates Maintainers files used by e.g. the Debian BTS
 cindy - override cruft checker
-claire - generates compatability symlink tree for legacy dists/ locations
+claire - generates compatability symlink tree for legacy dists/ locations [obsolete]
 denise - outputs the override tables to text files
 emilie - syncs fingerprint and uid tables with a Debian LDAP DB
 fernanda - checker script for new packages in incoming 
@@ -26,6 +26,7 @@ natalie - manpiulates/list override entries
 neve - populates the SQL database
 rene - check for obsolete or duplicated packages
 rose - initial setup of an archive
+rosamund - check for users with no packages in the archive
 rhona - cleans unused/superseded packages out of the pool and the database
 saffron - stats pr0n generator
 shania - cleans cruft from incoming
@@ -38,8 +39,8 @@ With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
  Halle Berry, Heidi Klum, Helena Christensen, Jenna Elfman, Jennifer
  Lopez, Jeri Ryan, Julia Roberts, Katie Holmes, Kelly Brook, Lauren
  Lee Smith, Lisa Falkner, Madison Michele, Melanie Sykes, Natalie
- Portman, Neve Campbell, Rene O'Connor, Rose McGowan, Rhona Mitra,
- Saffron Burrows, Shania Twain, Tea Leoni and Ziyi Zhang.
+ Portman, Neve Campbell, Rene O'Connor, Rosamund Pike, Rose McGowan,
+ Rhona Mitra, Saffron Burrows, Shania Twain, Tea Leoni and Ziyi Zhang.
 
 In Use Elsewhere:
 -----------------
@@ -106,6 +107,7 @@ Kirsten (Dunst)
 Kristin (Kreuk)
 Kylie (Minogue)
 Laetitia (Casta)
+Lana (Parrilla)
 Liv (Tyler)
 Mariska (Hargitay)
 Michelle (Hunziker)
@@ -113,9 +115,9 @@ Mira (Sorvino)
 Monica (Belluci)
 Naima (Belkhiati)
 Nicole (Appleton)
+Nina (Garbiras)
 Rebecca (Romijn-Stamos)
 Reese (Witherspoon)
-Rosamund (Pike)
 Salma (Hayek)
 Sarah (Whatmore)
 Shannen (Doherty)
