@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.70 2004-11-27 13:32:16 troup Exp $
+# $Id: utils.py,v 1.71 2004-11-27 16:05:12 troup Exp $
 
 ################################################################################
 
@@ -601,30 +601,44 @@ def prefix_multi_line_string(str, prefix, include_blank_lines=0):
 
 ################################################################################
 
-def validate_changes_file_arg(file, fatal=1):
+def validate_changes_file_arg(filename, require_changes=1):
+    """'filename' is either a .changes or .katie file.  If 'filename' is a
+.katie file, it's changed to be the corresponding .changes file.  The
+function then checks if the .changes file a) exists and b) is
+readable and returns the .changes filename if so.  If there's a
+problem, the next action depends on the option 'require_changes'
+argument:
+
+ o If 'require_changes' == -1, errors are ignored and the .changes
+                               filename is returned.
+ o If 'require_changes' == 0, a warning is given and 'None' is returned.
+ o If 'require_changes' == 1, a fatal error is raised.
+"""
     error = None;
 
-    orig_filename = file
-    if file.endswith(".katie"):
-        file = file[:-6]+".changes";
+    orig_filename = filename
+    if filename.endswith(".katie"):
+        filename = filename[:-6]+".changes";
 
-    if not file.endswith(".changes"):
+    if not filename.endswith(".changes"):
         error = "invalid file type; not a changes file";
     else:
-        if not os.access(file,os.R_OK):
-            if os.path.exists(file):
+        if not os.access(filename,os.R_OK):
+            if os.path.exists(filename):
                 error = "permission denied";
             else:
                 error = "file not found";
 
     if error:
-        if fatal:
+        if require_changes == 1:
             fubar("%s: %s." % (orig_filename, error));
-        else:
+        elif require_changes == 0:
             warn("Skipping %s - %s" % (orig_filename, error));
             return None;
+        else: # We only care about the .katie file
+            return filename;
     else:
-        return file;
+        return filename;
 
 ################################################################################
 
