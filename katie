@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.20 2001-01-21 18:12:50 troup Exp $
+# $Id: katie,v 1.21 2001-01-22 22:32:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ def usage (exit_code):
   -d, --debug=VALUE         debug
   -k, --ack-new             acknowledge new packages
   -m, --manual-reject=MSG   manual reject with `msg'
-  -n, --dry-run             don't do anything
+  -n, --no-action           don't do anything
   -p, --no-lock             don't check lockfile !! for cron.daily only !!
   -r, --no-version-check    override version check
   -u, --distribution=DIST   override distribution to `dist'"""
@@ -207,11 +207,13 @@ def check_changes(filename):
     # Map frozen to unstable if frozen doesn't exist
     if changes["distribution"].has_key("frozen") and not Cnf.has_key("Suite::Frozen"):
         del changes["distribution"]["frozen"]
+        changes["distribution"]["unstable"] = 1;
         reject_message = reject_message + "Mapping frozen to unstable.\n"
 
     # Map testing to unstable
     if changes["distribution"].has_key("testing"):
         del changes["distribution"]["testing"]
+        changes["distribution"]["unstable"] = 1;
         reject_message = reject_message + "Mapping testing to unstable.\n"
 
     # Ensure target distributions exist
@@ -225,6 +227,7 @@ def check_changes(filename):
             if not Cnf.has_key("Suite::Stable::Architectures::%s" % (i)):
                 reject_message = reject_message + "Mapping stable to unstable for unreleased arch `%s'.\n" % (i)
                 del changes["distribution"]["stable"]
+                changes["distribution"]["unstable"] = 1;
     
     # Map arches not being released from frozen to unstable
     if changes["distribution"].has_key("frozen"):
@@ -232,6 +235,7 @@ def check_changes(filename):
             if not Cnf.has_key("Suite::Frozen::Architectures::%s" % (i)):
                 reject_message = reject_message + "Mapping frozen to unstable for non-releasing arch `%s'.\n" % (i)
                 del changes["distribution"]["frozen"]
+                changes["distribution"]["unstable"] = 1;
 
     # Handle uploads to stable
     if changes["distribution"].has_key("stable"):
@@ -362,7 +366,7 @@ def check_files():
             else:
                 files[file]["byhand"] = 1;
                 files[file]["type"] = "byhand";
-                
+
         files[file]["oldfiles"] = {}
         for suite in changes["distribution"].keys():
             # Skip byhand
@@ -415,7 +419,7 @@ def check_files():
             # Check the md5sum & size against existing files (if any)
             location = Cnf["Dir::PoolDir"];
             files[file]["location id"] = db_access.get_location_id (location, component, archive);
-            
+
             files[file]["pool name"] = utils.poolify (changes["source"], files[file]["component"]);
             files_id = db_access.get_files_id(files[file]["pool name"] + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"]);
             if files_id == -1:

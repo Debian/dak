@@ -230,6 +230,7 @@ Suite
 	Description "Proposed Updates for Debian 2.2r3 - Not Released";
 	CodeName "proposed-updates";
 	OverrideCodeName "potato";
+	OverrideSuite "stable";
 	Priority "2";
   };
 

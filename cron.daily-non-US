@@ -33,11 +33,6 @@ pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
-# temporary hack to work around the lack of an apt-utils & python-apt package
-export PYTHONPATH=$PYTHONPATH:/org/non-us.debian.org/scripts/apt/build/bin/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/non-us.debian.org/scripts/apt/build/bin/
-export PATH=$PATH:/org/non-us.debian.org/scripts/apt/build/bin/
-
 cd $incoming
 rm -f REPORT
 katie -pak *.changes | direport | tee REPORT | \
