@@ -4,7 +4,9 @@ TOFIX
 Urgent
 ------
 
-  o Write something to sync architectures.
+  o rewrite shania to a) be sane, b) clean REJECT properly
+    (i.e. ignore the fact that stuff is in a valid .changes file and
+    just clean the mofo)
 
   o fix katie's handling of source packages in different directories;
     e.g. if a package moves from main to contrib, the .orig.tar.gz
@@ -18,17 +20,20 @@ Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
-  o need to have process_it run a big try: loop so that individual
-    package screws up don't kill the daily cron run.
-
-  o Add urgency + installed date to the DB for aj/testing
-
-  o [Easy] Enable catherine
+  o Add urgency + installed date to the DB for aj/testing (?)
 
 Less Urgent
 -----------
 
-  o check out hardlinks [aj]
+  o configurize all the hardcoded Bcc's in mail templates
+  o melanie (and possibly others) hardcode @*debian.org all over the shop
+  o melanie should warn/error on -C without -d
+
+  o ziyi shouldn't really do stable
+
+  o need to have process_it run a big try: loop so that individual
+    package screws up don't kill the daily cron run.
+
   o Add an 'add' ability to melanie (? separate prog maybe)
   o [Hard] Need to merge non-non-US and non-US DBs.
   o [Easy] Need to vacuum daily
@@ -71,6 +76,8 @@ Urgent
 Less Urgent
 -----------
 
+  o Enable catherine (when daily mirror hit drops down below 300Mb maybe..)
+  o Improve andrea.
   o Need a poolifier that will poolify X mb a day.. (catherine)
   o Need to optimize all the queries by using EXAMINE and building some INDEXs.
   o Need to enclose all the setting SQL stuff in transactions (mostly done).
