@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.20 2002-05-18 23:54:51 troup Exp $
+# $Id: jennifer,v 1.21 2002-05-19 00:47:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.20 $";
+jennifer_version = "$Revision: 1.21 $";
 
 Cnf = None;
 Options = None;
@@ -311,7 +311,7 @@ def copy_to_holding(filename):
     try:
         shutil.copy(filename, dest);
     except IOError, e:
-        # In either case (ENOENT or EPERM) we want to remove the
+        # In either case (ENOENT or EACCES) we want to remove the
         # O_CREAT | O_EXCLed ghost file, so add the file to the list
         # of 'in holding' even if it's not the real file.
         if errno.errorcode[e.errno] == 'ENOENT':
