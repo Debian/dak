@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.3 2001-03-02 02:24:33 troup Exp $
+# $Id: natalie.py,v 1.4 2001-03-21 01:03:28 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ def usage (exit_code):
 def init():
     global projectB;
     
-    projectB = pg.connect('projectb', 'localhost');
+    projectB = pg.connect('projectb', None);
     db_access.init(Cnf, projectB);
 
 def process_file (file, suite, component, type, action):
