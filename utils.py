@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.23 2001-05-24 18:56:23 troup Exp $
+# $Id: utils.py,v 1.24 2001-05-31 02:19:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,8 @@ no_files_exc = "No Files: field in .dsc file.";
 cant_open_exc = "Can't read file.";
 unknown_hostname_exc = "Unknown hostname";
 cant_overwrite_exc = "Permission denied; can't overwrite existent file."
-	
+file_exists_exc = "Destination file exists";
+
 ######################################################################################
 
 def open_file(filename, mode):
@@ -287,7 +288,7 @@ def poolify (source, component):
 
 ######################################################################################
 
-def move (src, dest):
+def move (src, dest, overwrite = 0):
     if os.path.exists(dest) and os.path.isdir(dest):
 	dest_dir = dest;
     else:
@@ -299,14 +300,18 @@ def move (src, dest):
     #print "Moving %s to %s..." % (src, dest);
     if os.path.exists(dest) and os.path.isdir(dest):
 	dest = dest + '/' + os.path.basename(src);
-    # Check for overwrite permission on existent files
-    if os.path.exists(dest) and not os.access(dest, os.W_OK):
-        raise cant_overwrite_exc
+    # Don't overwrite unless forced to
+    if os.path.exists(dest):
+        if not overwrite:
+            raise file_exists_exc;
+        else:
+            if not os.access(dest, os.W_OK):
+                raise cant_overwrite_exc
     shutil.copy2(src, dest);
     os.chmod(dest, 0664);
     os.unlink(src);
 
-def copy (src, dest):
+def copy (src, dest, overwrite = 0):
     if os.path.exists(dest) and os.path.isdir(dest):
 	dest_dir = dest;
     else:
@@ -318,8 +323,13 @@ def copy (src, dest):
     #print "Copying %s to %s..." % (src, dest);
     if os.path.exists(dest) and os.path.isdir(dest):
 	dest = dest + '/' + os.path.basename(src);
-    if os.path.exists(dest) and not os.access(dest, os.W_OK):
-        raise cant_overwrite_exc
+    # Don't overwrite unless forced to
+    if os.path.exists(dest):
+        if not overwrite:
+            raise file_exists_exc
+        else:
+            if not os.access(dest, os.W_OK):
+                raise cant_overwrite_exc
     shutil.copy2(src, dest);
     os.chmod(dest, 0664);
 

@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.13 2001-03-20 00:28:11 troup Exp $
+# $Id: rhona,v 1.14 2001-05-31 02:19:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,8 +37,11 @@ import utils
 
 projectB = None
 Cnf = None
-delete_date = None;
+now_date = None;     # mark newly "deleted" things as deleted "now"
+delete_date = None;  # delete things marked "deleted" earler than this
 overrides = {};
+
+tried_too_hard_exc = "Tried too hard to find a free filename for %s; something's gone Pete Tong";
 
 ###################################################################################################
 
@@ -52,10 +55,21 @@ def usage (exit_code):
 
 ###################################################################################################
 
+def find_next_free (dest):
+    extra = 0;
+    orig_dest = dest;
+    too_much = 100;
+    while os.path.exists(dest) and extra < too_much:
+        dest = orig_dest + '.' + repr(extra);
+        extra = extra + 1;
+    if extra >= too_much:
+        raise tried_too_hard_exc;
+    return dest;
+    
 # FIXME: why can't we make (sane speed) UPDATEs out of these SELECTs?
 
 def check_binaries():
-    global delete_date;
+    global delete_date, now_date;
     
     print "Checking for orphaned binary packages..."
 
@@ -70,7 +84,7 @@ SELECT b.file FROM binaries b WHERE NOT EXISTS
     projectB.query("BEGIN WORK");
     for i in ql:
         file_id = i[0];
-        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, file_id))
+        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s AND last_used IS NULL" % (now_date, file_id))
     projectB.query("COMMIT WORK");
 
     # Check for any binaries which are marked for eventual deletion
@@ -88,7 +102,7 @@ SELECT b.file FROM binaries b, files f
     projectB.query("COMMIT WORK");
 
 def check_sources():
-    global delete_date;
+    global delete_date, now_date;
 
     print "Checking for orphaned source packages..."
 
@@ -100,6 +114,11 @@ SELECT s.id, s.file FROM source s
   WHERE NOT EXISTS
    (SELECT sa.suite FROM src_associations sa WHERE sa.source = s.id)
   AND NOT EXISTS (SELECT b.id FROM binaries b WHERE b.source = s.id)""");
+
+    #### XXX: this should ignore cases where the files for the binary b
+    ####      have been marked for deletion (so the delay between bins go
+    ####      byebye and sources go byebye is 0 instead of StayOfExecution)
+
     ql = q.getresult();
     
     projectB.query("BEGIN WORK");
@@ -108,14 +127,14 @@ SELECT s.id, s.file FROM source s
         dsc_file_id = i[1];
 
         # Mark the .dsc file for deletion
-        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, dsc_file_id))
+        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s AND last_used IS NULL" % (now_date, dsc_file_id))
         # Mark all other files references by .dsc too if they're not used by anyone else
         x = projectB.query("SELECT f.id FROM files f, dsc_files d WHERE d.source = %s AND d.file = f.id" % (source_id));
         for j in x.getresult():
             file_id = j[0];
             y = projectB.query("SELECT id FROM dsc_files d WHERE d.file = %s" % (file_id));
             if len(y.getresult()) == 1:
-                projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, file_id));
+                projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s AND last_used IS NULL" % (now_date, file_id));
     projectB.query("COMMIT WORK");
 
     # Check for any sources which are marked for deletion but which
@@ -126,6 +145,10 @@ SELECT f.id FROM source s, files f, dsc_files df
   WHERE f.last_used IS NOT NULL AND s.id = df.source AND df.file = f.id
     AND ((EXISTS (SELECT sa.suite FROM src_associations sa WHERE sa.source = s.id))
       OR (EXISTS (SELECT b.id FROM binaries b WHERE b.source = s.id)))""");
+
+    #### XXX: this should also handle deleted binaries specially (ie, not
+    ####      reinstate sources because of them
+
     ql = q.getresult();
     # Could be done in SQL; but left this way for hysterical raisins
     # [and freedom to innovate don'cha know?]
@@ -136,7 +159,7 @@ SELECT f.id FROM source s, files f, dsc_files df
     projectB.query("COMMIT WORK");
 
 def check_files():
-    global delete_date;
+    global delete_date, now_date;
 
     # FIXME: this is evil; nothing should ever be in this state.  if
     # they are, it's a bug and the files should not be auto-deleted.
@@ -153,15 +176,17 @@ SELECT id FROM files f
     projectB.query("BEGIN WORK");
     for i in q.getresult():
         file_id = i[0];
-        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, file_id));
+        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (now_date, file_id));
     projectB.query("COMMIT WORK");
     
 def clean_binaries():
-    global delete_date;
+    global delete_date, now_date;
 
     # We do this here so that the binaries we remove will have their
     # source also removed (if possible).
 
+    # XXX: why doesn't this remove the files here as well? I don't think it
+    #      buys anything keeping this separate
     print "Cleaning binaries from the DB..."
     if not Cnf["Rhona::Options::No-Action"]:
         before = time.time();
@@ -170,14 +195,14 @@ def clean_binaries():
         sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)));
 
 def clean():
-    global delete_date;
+    global delete_date, now_date;
     count = 0;
     size = 0;
 
     print "Cleaning out packages..."
 
-    # Ensure destination directory exists
-    dest = Cnf["Dir::Morgue"] + '/' + Cnf["Rhona::MorgueSubDir"];
+    date = time.strftime("%Y-%m-%d", time.localtime(time.time()));
+    dest = Cnf["Dir::Morgue"] + '/' + Cnf["Rhona::MorgueSubDir"] + '/' + date;
     if not os.path.exists(dest):
         os.mkdir(dest);
         
@@ -206,14 +231,21 @@ def clean():
             else:
                 size = size + os.stat(filename)[stat.ST_SIZE];
                 count = count + 1;
+
+                dest_filename = dest + '/' + os.path.basename(filename);
+                # If the destination file exists; try to find another filename to use
+                if os.path.exists(dest_filename):
+                    dest_filename = find_next_free(dest_filename);
+                
                 if Cnf["Rhona::Options::No-Action"]:
-                    print "Cleaning %s to %s..." % (filename, dest);
+                    print "Cleaning %s -> %s ..." % (filename, dest_filename);
                 else:
-                    utils.move(filename, dest);
+                    utils.move(filename, dest_filename);
         else:
             sys.stderr.write("%s is neither symlink nor file?!\n" % (filename));
             sys.exit(1);
-    # delete from files
+            
+    # Delete from the 'files' table
     if not Cnf["Rhona::Options::No-Action"]:
         before = time.time();
         sys.stdout.write("[Deleting from files table... ");
@@ -244,7 +276,7 @@ SELECT m.id FROM maintainer m
         sys.stderr.write("Cleared out %d maintainer entries.\n" % (count));
 
 def main():
-    global Cnf, projectB, delete_date;
+    global Cnf, projectB, delete_date, now_date;
     
     apt_pkg.init();
     
@@ -272,6 +304,7 @@ def main():
     if not os.access(override_filename, os.R_OK):
         sys.stderr.write("W: Could not find source-only override file '%s'.\n" % (override_filename));
 
+    now_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()));
     delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::StayOfExecution"])));
     
     check_binaries();
