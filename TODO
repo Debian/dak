@@ -30,6 +30,8 @@ Others
   o melanie will happily include packages in the Cc list that aren't
     being removed...
 
+  o melanie doesn't remove udebs when removing the source they build from
+
   o check_dsc_against_db's "delete an entry from files while you're
     not looking" habit is Evil and Bad.
 
