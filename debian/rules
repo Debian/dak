@@ -29,7 +29,7 @@ binary-indep: checkroot build
 	install -d debian/tmp/usr/bin/
 
 	install -m 755 katie jenna heidi catherine charisma neve rhona \
-		madison natalie.py melanie ziyi shania fernada rene tea \
+		madison natalie.py melanie ziyi shania fernanda rene tea \
 		debian/tmp/usr/bin/
 
 	ln -s katie debian/tmp/usr/bin/da_install
