@@ -1,0 +1,35 @@
+#! /bin/sh
+#
+# Executed after jennifer (merge there??)
+
+ARCHS_stable="alpha arm i386 m68k powerpc sparc"
+ARCHS_testing="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
+DISTS="stable testing"
+
+set -e
+export SCRIPTVARS=/org/security.debian.org/katie/vars-security
+. $SCRIPTVARS
+
+if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
+	cd $masterdir
+	apt-ftparchive -qq generate apt.conf.buildd-security
+	for d in $DISTS; do
+		case "$d" in
+			stable)
+				ARCHS="$ARCHS_stable"
+				;;
+			testing)
+				ARCHS="$ARCHS_testing"
+				;;
+			*)
+				echo "unknown value in dists: $d"
+				exit 1
+				;;
+		esac
+		cd /org/security.debian.org/buildd/$d
+		for a in $ARCHS; do
+			quinn-diff -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -A $a 2>/dev/null | ssh buildd@auric wanna-build -d $d-security -b $a/build-db --merge-partial-quinn
+			ssh buildd@auric wanna-build -d $d-security -A $a -b $a/build-db --merge-packages < Packages
+		done
+	done
+fi

@@ -1,0 +1,184 @@
+#!/usr/bin/env python
+
+# Produces a report on NEW and BYHAND packages
+# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
+# $Id: helena,v 1.1 2002-06-05 00:17:22 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# <o-o> XP runs GCC, XFREE86, SSH etc etc,.,, I feel almost like linux....
+# <o-o> I am very confident that I can replicate any Linux application on XP
+# <willy> o-o: *boggle*
+# <o-o> building from source.
+# <o-o> Viiru: I already run GIMP under XP
+# <willy> o-o: why do you capitalise the names of all pieces of software?
+# <o-o> willy: because I want the EMPHASIZE them....
+# <o-o> grr s/the/to/
+# <willy> o-o: it makes you look like ZIPPY the PINHEAD
+# <o-o> willy: no idea what you are talking about.
+# <willy> o-o: do some research
+# <o-o> willy: for what reason?
+
+################################################################################
+
+import copy, glob, os, stat, string, sys, time;
+import apt_pkg;
+import katie, utils;
+
+Cnf = None;
+Katie = None;
+
+################################################################################
+
+def plural (x):
+    if x > 1:
+        return "s";
+    else:
+        return "";
+
+################################################################################
+
+def time_pp(x):
+    if x < 60:
+        unit="second";
+    elif x < 3600:
+        x = x / 60;
+        unit="minute";
+    elif x < 86400:
+        x = x / 3600;
+        unit="hour";
+    elif x < 604800:
+        x = x / 86400;
+        unit="day";
+    elif x < 2419200:
+        x = x / 604800;
+        unit="week";
+    elif x < 29030400:
+        x = x / 2419200;
+        unit="month";
+    else:
+        x = x / 29030400;
+        unit="years";
+    x = int(x);
+    return "%s %s%s" % (x, unit, plural(x));
+
+################################################################################
+
+def sg_compare (a, b):
+    a = a[1];
+    b = b[1];
+    """Sort by have note, time of oldest upload."""
+    # Sort by have note
+    a_note_state = a["note_state"];
+    b_note_state = b["note_state"];
+    if a_note_state < b_note_state:
+        return -1;
+    elif a_note_state > b_note_state:
+        return 1;
+
+    # Sort by time of oldest upload
+    return cmp(a["oldest"], b["oldest"]);
+
+############################################################
+
+def process_changes_files(changes_files, type):
+    msg = "";
+    cache = {};
+    # Read in all the .changes files
+    for filename in changes_files:
+        try:
+            Katie.pkg.changes_file = filename;
+            Katie.init_vars();
+            Katie.update_vars();
+            cache[filename] = copy.copy(Katie.pkg.changes);
+            cache[filename]["filename"] = filename;
+        except:
+            break;
+    # Divide the .changes into per-source groups
+    per_source = {};
+    for filename in cache.keys():
+        source = cache[filename]["source"];
+        if not per_source.has_key(source):
+            per_source[source] = {};
+            per_source[source]["list"] = [];
+        per_source[source]["list"].append(cache[filename]);
+    # Determine oldest time and have note status for each source group
+    for source in per_source.keys():
+        source_list = per_source[source]["list"];
+        first = source_list[0];
+        oldest = os.stat(first["filename"])[stat.ST_CTIME];
+        have_note = 0;
+        for d in per_source[source]["list"]:
+            ctime = os.stat(d["filename"])[stat.ST_CTIME];
+            if ctime < oldest:
+                oldest = ctime;
+            have_note = have_note + (d.has_key("lisa note"));
+        per_source[source]["oldest"] = oldest;
+        if not have_note:
+            per_source[source]["note_state"] = 0; # none
+        elif have_note < len(source_list):
+            per_source[source]["note_state"] = 1; # some
+        else:
+            per_source[source]["note_state"] = 2; # all
+    per_source_items = per_source.items();
+    per_source_items.sort(sg_compare);
+    msg = "";
+    for i in per_source_items:
+        last_modified = time.time()-i[1]["oldest"];
+        source = i[1]["list"][0]["source"];
+        arches = {};
+        versions = {};
+        for j in i[1]["list"]:
+            for arch in j["architecture"].keys():
+                arches[arch] = "";
+            versions[j["version"]] = "";
+        arch_list = string.join(arches.keys(), ", ");
+        version_list = string.join(versions.keys(), ", ");
+        if i[1]["note_state"]:
+            note = " | [note]";
+        else:
+            note = "";
+        msg = msg + "%10s | %10s | %10s%s | %s old\n" % (source, version_list, arch_list, note, time_pp(last_modified));
+
+    if msg:
+        total_count = len(changes_files);
+        source_count = len(per_source_items);
+        print string.upper(type)
+        print "-"*len(type)
+        print
+        print msg
+        print "%s %s source package%s / %s %s package%s in total." % (source_count, type, plural(source_count), total_count, type, plural(total_count));
+        print
+
+################################################################################
+
+def main():
+    global Cnf, Katie;
+
+    Cnf = utils.get_conf();
+    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
+    Katie = katie.Katie(Cnf);
+
+    changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::Byhand"]));
+    process_changes_files(changes_files, "byhand");
+    changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::New"]));
+    process_changes_files(changes_files, "new");
+
+################################################################################
+
+if __name__ == '__main__':
+    main();

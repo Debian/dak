@@ -1,0 +1,39 @@
+Dir 
+{
+   ArchiveDir "/org/security.debian.org/buildd/";
+   OverrideDir "/org/security.debian.org/override/";
+   CacheDir "/org/security.debian.org/katie-database/";
+};
+
+Default
+{
+   Packages::Compress ". gzip";
+   Sources::Compress ". gzip";
+   DeLinkLimit 0;
+   FileMode 0664;
+}
+
+bindirectory "stable"
+{
+   Packages "stable/Packages";
+   Sources "stable/Sources";
+   Contents " ";
+
+   BinOverride "override.potato.all3";
+   BinCacheDB "packages-accepted-stable.db";
+   PathPrefix "";
+   Packages::Extensions ".deb .udeb";
+};
+
+bindirectory "testing"
+{
+   Packages "testing/Packages";
+   Sources "testing/Sources";
+   Contents " ";
+
+   BinOverride "override.woody.all3";
+   BinCacheDB "packages-accepted-testing.db";
+   PathPrefix "";
+   Packages::Extensions ".deb .udeb";
+};
+
