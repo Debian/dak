@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.8 2001-09-27 01:12:42 troup Exp $
+# $Id: db_access.py,v 1.9 2001-11-04 22:34:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ def get_suite_id (suite):
 
     q = projectB.query("SELECT id FROM suite WHERE suite_name = '%s'" % (suite))
     ql = q.getresult();
-    if ql == []:
+    if not ql:
         return -1;
 
     suite_id = ql[0][0];
@@ -69,7 +69,7 @@ def get_section_id (section):
 
     q = projectB.query("SELECT id FROM section WHERE section = '%s'" % (section))
     ql = q.getresult();
-    if ql == []:
+    if not ql:
         return -1;
 
     section_id = ql[0][0];
@@ -85,7 +85,7 @@ def get_priority_id (priority):
 
     q = projectB.query("SELECT id FROM priority WHERE priority = '%s'" % (priority))
     ql = q.getresult();
-    if ql == []:
+    if not ql:
         return -1;
 
     priority_id = ql[0][0];
@@ -101,7 +101,7 @@ def get_override_type_id (type):
 
     q = projectB.query("SELECT id FROM override_type WHERE type = '%s'" % (type));
     ql = q.getresult();
-    if ql == []:
+    if not ql:
         return -1;
 
     override_type_id = ql[0][0];
@@ -117,7 +117,7 @@ def get_architecture_id (architecture):
 
     q = projectB.query("SELECT id FROM architecture WHERE arch_string = '%s'" % (architecture))
     ql = q.getresult();
-    if ql == []:
+    if not ql:
         return -1;
 
     architecture_id = ql[0][0];
@@ -132,7 +132,11 @@ def get_archive_id (archive):
         return archive_id_cache[archive]
 
     q = projectB.query("SELECT id FROM archive WHERE name = '%s'" % (archive))
-    archive_id = q.getresult()[0][0]
+    ql = q.getresult();
+    if not ql:
+        return -1;
+
+    archive_id = ql[0][0]
     archive_id_cache[archive] = archive_id
 
     return archive_id
@@ -145,7 +149,7 @@ def get_component_id (component):
 
     q = projectB.query("SELECT id FROM component WHERE lower(name) = '%s'" % (string.lower(component)))
     ql = q.getresult();
-    if ql == []:
+    if not ql:
         return -1;
 
     component_id = ql[0][0];
@@ -167,7 +171,11 @@ def get_location_id (location, component, archive):
             q = projectB.query("SELECT id FROM location WHERE path = '%s' AND component = %d AND archive = %d" % (location, component_id, archive_id))
     else:
         q = projectB.query("SELECT id FROM location WHERE path = '%s' AND archive = %d" % (location, archive_id))
-    location_id = q.getresult()[0][0]
+    ql = q.getresult();
+    if not ql:
+        return -1;
+
+    location_id = ql[0][0]
     location_id_cache[cache_key] = location_id
 
     return location_id
