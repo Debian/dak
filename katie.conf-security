@@ -58,7 +58,7 @@ Melanie
    };
 
    MyEmailAddress "Debian Archive Maintenance <ftpmaster@ftp-master.debian.org>";
-   LogFile "/org/security.debian.org/web/removals.txt";
+   LogFile "/org/security.debian.org/katie-log/removals.txt";
 };
 
 Neve
@@ -206,12 +206,12 @@ Architectures
   all "Architecture Independent";
   alpha "DEC Alpha";
   hppa "HP PA RISC";
-  arm "Arm";
+  arm "ARM";
   i386 "Intel ia32";
   ia64 "Intel ia64";
   m68k "Motorola Mc680x0";
-  mips "SGI MIPS";
-  mipsel "SGI MIPS (Little Endian)";
+  mips "MIPS (Big Endian)";
+  mipsel "MIPS (Little Endian)";
   powerpc "PowerPC";
   s390 "IBM S/390";
   sparc "Sun SPARC/UltraSPARC";
