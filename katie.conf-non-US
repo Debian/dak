@@ -20,8 +20,10 @@ Dinstall
    StableRejector "Martin (Joey) Schulze <joey@debian.org>";
    FutureTimeTravelGrace 28800; // 6 hours
    PastCutoffYear "1984";
-   BXANotify 0;
+   BXANotify "false";
    SkipTime 300;
+   CloseBugs "true";
+   OverrideDisparityCheck "true";
 };
 
 Julia
@@ -267,27 +269,37 @@ Suite
 
 };
 
+SuiteMappings
+{
+ "map stable proposed-updates"
+ "map-unreleased stable unstable"
+ "map-unreleased proposed-updates unstable"
+ "ignore testing"
+};
+
 Dir
 {
-  RootDir "/org/non-us.debian.org/ftp/";
-  PoolDir "/org/non-us.debian.org/ftp/pool/";
+  Root "/org/non-us.debian.org/ftp/";
+  Pool "/org/non-us.debian.org/ftp/pool/";
   PoolRoot "pool/";
-  TemplatesDir "/org/non-us.debian.org/katie/templates/";
-  IncomingDir "/org/non-us.debian.org/incoming/";
-  OverrideDir "/org/non-us.debian.org/scripts/override/";
-  ListsDir "/org/non-us.debian.org/database/dists/";
-  LogDir "/org/non-us.debian.org/log/";
+  Templates "/org/non-us.debian.org/katie/templates/";
+  Override "/org/non-us.debian.org/scripts/override/";
+  Lists "/org/non-us.debian.org/database/dists/";
+  Log "/org/non-us.debian.org/log/";
   Morgue "/org/non-us.debian.org/morgue/";
-  MorgueRejectDir "reject";
-  QueueRootDir "/org/non-us.debian.org/queue/";
-  QueueAcceptedDir "/org/non-us.debian.org/queue/accepted/";
-  QueueByhandDir "/org/non-us.debian.org/queue/byhand/";
-  QueueDoneDir "/org/non-us.debian.org/queue/done/";
-  QueueHoldingDir "/org/non-us.debian.org/queue/holding/";
-  QueueNewDir "/org/non-us.debian.org/queue/new/";
-  QueueRejectDir "/org/non-us.debian.org/queue/reject/";
-  QueueUncheckedDir "/org/non-us.debian.org/queue/unchecked/";
-  UrgencyLogDir "/org/non-us.debian.org/testing/";
+  MorgueReject "reject";
+  UrgencyLog "/org/non-us.debian.org/testing/";
+  Queue
+  {
+    Root "/org/non-us.debian.org/queue/";
+    Accepted "/org/non-us.debian.org/queue/accepted/";
+    Byhand "/org/non-us.debian.org/queue/byhand/";
+    Done "/org/non-us.debian.org/queue/done/";
+    Holding "/org/non-us.debian.org/queue/holding/";
+    New "/org/non-us.debian.org/queue/new/";
+    Reject "/org/non-us.debian.org/queue/reject/";
+    Unchecked "/org/non-us.debian.org/queue/unchecked/";
+  };
 };
 
 DB
