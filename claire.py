@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.6 2001-03-20 00:28:11 troup Exp $
+# $Id: claire.py,v 1.7 2001-04-03 10:02:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,14 +78,14 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
       AND f2.id = s.file AND f2.location = l2.id AND df.source = s.id
       AND f.id = df.file AND f.location = l.id AND o.package = s.source
       AND sec.id = o.section AND NOT (f.filename ~ '^potato/')
-      AND l.component = c.id
+      AND l.component = c.id AND o.suite = su.id
 UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
     FROM component c, override o, section sec, source s, files f, location l,
          dsc_files df, suite su, src_associations sa, files f2, location l2
     WHERE su.suite_name = 'stable' AND sa.suite = su.id AND sa.source = s.id
       AND f2.id = s.file AND f2.location = l2.id AND df.source = s.id
       AND f.id = df.file AND f.location = l.id AND o.package = s.source
-      AND sec.id = o.section AND NOT (f.filename ~ '^potato/')
+      AND sec.id = o.section AND NOT (f.filename ~ '^potato/') AND o.suite = su.id
       AND NOT EXISTS (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
 """);
     for i in q.getresult():
@@ -111,7 +111,7 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
     WHERE su.suite_name = 'stable' AND ba.suite = su.id AND ba.bin = b.id
       AND f.id = b.file AND f.location = l.id AND o.package = b.package
       AND sec.id = o.section AND NOT (f.filename ~ '^potato/')
-      AND b.architecture = a.id AND l.component = c.id
+      AND b.architecture = a.id AND l.component = c.id AND o.suite = su.id
 UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
                           b.version, l.path, f.filename, f.id
     FROM architecture a, bin_associations ba, binaries b, component c, files f,
@@ -119,7 +119,7 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
     WHERE su.suite_name = 'stable' AND ba.suite = su.id AND ba.bin = b.id
       AND f.id = b.file AND f.location = l.id AND o.package = b.package
       AND sec.id = o.section AND NOT (f.filename ~ '^potato/')
-      AND b.architecture = a.id AND NOT EXISTS
+      AND b.architecture = a.id AND o.suite = su.id AND NOT EXISTS
         (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
 """);
     for i in q.getresult():
