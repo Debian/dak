@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.10 2002-03-15 15:51:20 troup Exp $
+# $Id: jennifer,v 1.11 2002-04-16 14:46:56 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.10 $";
+jennifer_version = "$Revision: 1.11 $";
 
 Cnf = None;
 Options = None;
@@ -742,6 +742,18 @@ def check_dsc ():
             changes_version = files[file]["version"];
             if epochless_dsc_version != files[file]["version"]:
                 reject("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version));
+
+            # Ensure there is a .tar.gz in the .dsc file
+            has_tar = 0;
+            for f in dsc_files.keys():
+                m = utils.re_issource.match(f);
+                if not m:
+                    reject("%s mentioned in the Files field of %s not recognised as source." % (f, file));
+                type = m.group(3);
+                if type == "orig.tar.gz" or type == "tar.gz":
+                    has_tar = 1;
+            if not has_tar:
+                reject("no .tar.gz or .orig.tar.gz listed in the Files field of %s." % (file));
 
             # Ensure source is newer than existing source in target suites
             reject(Katie.check_source_against_db(file),"");
