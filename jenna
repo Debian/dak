@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Generate file lists used by apt-ftparchive to generate Packages and Sources files
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.23 2002-11-26 15:49:16 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: jenna,v 1.24 2003-02-11 18:11:24 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,7 +105,7 @@ def resolve_arch_all_vs_any(versions, packages):
         unique_id = i[1];
         arch = packages[unique_id]["arch"];
         if arch == "all":
-            arch_all_versions = i;
+            arch_all_versions = [i];
             arch_all_version = i[0];
             arch_any_versions.remove(i);
     # Sort arch: any versions into descending order
@@ -148,7 +148,7 @@ def remove_duplicate_versions(versions, packages):
     # Remove all but the highest
     delete_packages(dominated_versions, pkg, arch, suite,
                     dominant_version, delete_table, delete_col, packages);
-    return dominant_versions;
+    return [dominant_versions];
 
 ################################################################################
 
@@ -192,7 +192,7 @@ def cleanup(packages):
                 for arch in arches.keys():
                     if arch != "source":
                         versions.extend(d[suite][pkg][arch]);
-                remove_duplicate_versions(versions, packages);
+                resolve_arch_all_vs_any(versions, packages);
 
 ################################################################################
 
