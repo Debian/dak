@@ -1,8 +1,80 @@
+Evil new incoming!
+==================
+
+To recheck in kate:
+
+ o source still exists		   - code
+ o in override			   - code
+ o binary version >> current	   - code
+ o binary file not in archive	   - code
+ o source version >> current	   - code
+ o source file not in archive      - code
+ o md5sum/size mismatch            - code
+
+TO CHECK:
+-=-=-=-=-
+
+ (o) unchecked (jennifer):
+    o - accept                     'runs'
+    o - new			   'runs'
+    o - new dependent              'runs'
+    o - byhand			   'runs'
+    o - byhand dependent	   'runs'
+    o - new + byhand		   'runs'
+    o - new + byhand dependent	   'runs'
+    o - reject                     'runs'
+ (o) byhand (lisa):
+    o - accept			   'runs'
+    o - accept dependent	   'runs'
+    o - reject			   'runs'
+ (o) new (lisa):
+    o - accept                     'runs'
+    o - accept dependent	   'runs'
+    o - reject                     'runs'
+    o - byhand			   'runs'
+ (o) accepted (katie):
+    o - accept			   'runs'
+    o - unaccept		   code
+
+
+TODO:
+-=-=-
+
+ o DONE
+
+[Final stuff]
+------------
+
+[Can be done later]
+-------------------
+
+ o when encountering suspicous things (e.g. file tainting) do something more drastic
+
+ o test the REJECT paranoia stuff (katie.force_move())
+
+ o Go through each check validate in new setup
+
+ o still not good crash-handling behaviour, too often end up with
+   bogus rejects afterwards...
+
+ o stable installs are FUBAR
+
+==========================================================================
+
+
 To fix
 ======
 
 More Urgent
 -----------
+
+  o Fix BTS vs. katie sync issues by queueing(via BSMTP) BTS mail so
+    that it can be released on deman (e.g. ETRN to exim).
+
+  o write our own locking module or in some other way fix things so we
+    don't require a patch to python since upstream refuse to fix it.
+ 
+  o test sig checking stuff in test/
 
   o katie/jenna/rhona/whatever needs to clear out .changes
     files from p-u when removing stuff superseded by newer versions.
@@ -15,6 +87,7 @@ More Urgent
       to handle the Santiago situation. ]
 
   o katie can loop on rejects if target's exist in REJECT... 
+  o (Depends) <aj> elmo: it should match  \(\s*(<<|<|<=|=|>=|>|>>)\s*<VERSIONREGEXP>\) fwiw
 
 Less Urgent
 -----------
@@ -44,9 +117,12 @@ Less Urgent
       esound_0.2.22-6, and it is sourceful, and there is no diff ->
       REJECT (version has a dash, therefore not debian native.)
     o check linking of .tar.gz's to .dsc's.. see proftpd 1.2.1 as an example
+    o archive needs md5sum'ed regularly, but takes too long to do all
+      in one go; make progressive or weekly.
 
  * Easy:
- 
+
+    o Rationalize config stuff.. Dir::Foo not Dir::FooDir [breaks other people??] 
     o melanie should behave better with -a and without -b; see
       gcc-defaults removal for an example.
     o Reject on misconfigured kernel-package uploads
@@ -64,6 +140,7 @@ Less Urgent
     o we don't check for .orig.tar.gz's, so it's possible to upload -2 with no .orig.tar.gz.
     o byhand stuff should send notification
     o catherine should udpate db; move files, not the other way around [neuro]
+    o melanie should update the stable changelog [joey]
   
  * Bizzare/uncertain:
    
@@ -100,7 +177,8 @@ More Urgent
     unstable -> testing-updates ?
 
   o [Complexish] Secure incoming handling
-  o [Hard] dependency checking (esp. stable)
+  o [Hard] dependency checking (esp. stable) (partially done)
+  o hooks for debian specific checks (e.g. check_urgency)
   o Logging [mostly done]
   o Abstraction of suite hardcoding (q.v. progengy)
   o morgue needs auto-cleaning
@@ -115,6 +193,9 @@ Packaging
 
 Less Urgent
 -----------
+
+ o store a list of removed/files versions; also compare against them.
+   be careful about scalability.
 
  o fernanda: print_copyright should be a lot more intelligent
      @ handle copyright.gz

@@ -1,25 +1,70 @@
+ashley - display the contents of a .katie file
 alyson - sync's the ISC-style configuration file with the SQL DB
 andrea - looks for fixable descrepancies between stable and unstable
 catherine - poolifies packages; i.e. moves them from legacy dists/ locations into the pool
 charisma - generates Maintainers files used by e.g. the Debian BTS
 claire - generates compatability symlink tree for legacy dists/ locations
 fernanda - checker script for new packages in incoming 
+halle - removes obsolete .changes files from proposed-updates
 heidi - manipulates suite tags; i.e. removes/adds packages from any given suite
 jenna - generates lists of files in suites which are then fed to apt-ftparchive
+jennifer - processes packages in incoming
+jeri - basic dependency checking for proposed-updates
 julia - Sync PostgreSQL users with (LDAP-generated) passwd file
 katie - installs packages into the pool
+lisa - processes NEW and BYHAND packages
 madison - shows which suites a binary package is in
 melanie - archive maintenance tool; removes packages from the distribution
 natalie - manpiulates override entries
 neve - populates the SQL database
 rene - check for obsolete or duplicated binary packages and duplicate source packages
 rhona - cleans old packages out of the pool and the database
+saffron - stats pr0n generator
 shania - cleans cruft from incoming
 tea - sanity checks the database
 ziyi - creates Release files
 
-With apologies to Alyson Hannigan, Andrea Corr, Catherine Zeta Jones,
-Charisma Carpenter, Christina Aguilera, Claire Forlani, Fernanda
-Tervares, Heidi Klum, Jenna Elfman, Julia Roberts, Katie Holmes,
-Madison Michele, Melanie Sykes, Natalie Portman, Neve Campbell, Rene
-O'Connor, Rhona Mitra, Shania Twain, Tea Leoni and Ziyi Zhang.
+With apologies to Ashley Judd, Alyson Hannigan, Andrea Corr, Catherine
+ Zeta Jones, Charisma Carpenter, Claire Forlani, Fernanda Tervares,
+ Halle Berry, Heidi Klum, Jenna Elfman, Jennifer Lopez, Jeri Ryan,
+ Julia Roberts, Katie Holmes, Lisa Falkner, Madison Michele, Melanie
+ Sykes, Natalie Portman, Neve Campbell, Rene O'Connor, Rhona Mitra,
+ Saffron Burrows, Shania Twain, Tea Leoni and Ziyi Zhang.
+
+Possible Future Candidates:
+---------------------------
+
+Billie (Piper)
+Cameron (Diaz)
+Elisabeth (Shue)
+Eliza (Dushku)
+Gail (Porter)
+Heather (Graham)
+Jewel (Kilcher)
+Kari (Wuhrer)
+Kelly (Brook)
+Kim (Smith)
+Lucy (Liu)
+Michelle (Hunziker)
+Rebecca (Romijn-Stamos)
+Rose (McGowan)
+Salma (Hayek)
+Sophie (Marceau)
+Tara (Reid)
+Teri (Hatcher)
+Tiffani (Amber Thiesen)
+Virgine (Leoyden)
+
+Already Used Elsewhere:
+-----------------------
+
+Christina (Aguilera)	[lene]
+Emily (Mortimer)	[lene]
+Lene (Nystrom)		[lene]
+Lonneke (Engel)		[lene]
+Louise (Nurding)	[lene]
+
+Michelle (Yeoh)		[joey]
+Britney (Spears)	[aj]
+Sandra (Bullock)	[neuro]
+Courtney (Cox)		[neuro]
