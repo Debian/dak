@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Sanity check the database
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: tea,v 1.22 2003-01-02 18:14:02 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: tea,v 1.23 2003-09-07 13:52:17 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@
 
 ################################################################################
 
-import pg, sys, os, stat, time
-import utils, db_access
+import commands, os, pg, stat, string, sys, tempfile, time;
+import db_access, utils;
 import apt_pkg, apt_inst;
 
 ################################################################################
@@ -59,6 +59,7 @@ The following MODEs are available:
   source-in-one-dir  - ensure the source for each package is in one directory
   timestamps         - check for future timestamps in .deb's
   tar-gz-in-dsc      - ensure each .dsc lists a .tar.gz file
+  validate-indices   - ensure files mentioned in Packages & Sources exist
 """
     sys.exit(exit_code)
 
@@ -140,13 +141,13 @@ def check_override():
         q = projectB.query("""
 SELECT DISTINCT b.package FROM binaries b, bin_associations ba
  WHERE b.id = ba.bin AND ba.suite = %s AND NOT EXISTS
-       (SELECT * FROM override o WHERE o.suite = %s AND o.package = b.package)"""
+       (SELECT 1 FROM override o WHERE o.suite = %s AND o.package = b.package)"""
                            % (suite_id, suite_id));
         print q
         q = projectB.query("""
 SELECT DISTINCT s.source FROM source s, src_associations sa
   WHERE s.id = sa.source AND sa.suite = %s AND NOT EXISTS
-       (SELECT * FROM override o WHERE o.suite = %s and o.package = s.source)"""
+       (SELECT 1 FROM override o WHERE o.suite = %s and o.package = s.source)"""
                            % (suite_id, suite_id));
         print q
 
@@ -213,8 +214,6 @@ def check_md5sums():
 # Check all files for timestamps in the future; common from hardware
 # (e.g. alpha) which have far-future dates as their default dates.
 
-
-
 def Ent(Kind,Name,Link,Mode,UID,GID,Size,MTime,Major,Minor):
     global future_files;
 
@@ -276,6 +275,75 @@ def check_missing_tar_gz_in_dsc():
     if count:
         utils.warn("Found %s invalid .dsc files." % (count));
 
+
+################################################################################
+
+def validate_sources(suite, component):
+    filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component);
+    print "Processing %s..." % (filename);
+    # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+    temp_filename = tempfile.mktemp();
+    fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+    os.close(fd);
+    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+    if (result != 0):
+        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
+        sys.exit(result);
+    sources = utils.open_file(temp_filename);
+    Sources = apt_pkg.ParseTagFile(sources);
+    while Sources.Step():
+        source = Sources.Section.Find('Package');
+        directory = Sources.Section.Find('Directory');
+        files = Sources.Section.Find('Files');
+        for i in files.split('\n'):
+            s = i.split();
+            (md5, size, name) = s;
+            filename = "%s/%s/%s" % (Cnf["Dir::Root"], directory, name);
+            if not os.path.exists(filename):
+                if directory.find("potato") == -1:
+                    print "W: %s missing." % (filename);
+                else:
+                    pool_location = utils.poolify (source, component);
+                    pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name);
+                    if not os.path.exists(pool_filename):
+                        print "E: %s missing (%s)." % (filename, pool_filename);
+                    else:
+                        # Create symlink
+                        pool_filename = os.path.normpath(pool_filename);
+                        filename = os.path.normpath(filename);
+                        src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"]);
+                        print "Symlinking: %s -> %s" % (filename, src);
+                        #os.symlink(src, filename);
+    os.unlink(temp_filename);
+
+########################################
+
+def validate_packages(suite, component, architecture):
+    filename = "%s/dists/%s/%s/binary-%s/Packages" \
+               % (Cnf["Dir::Root"], suite, component, architecture);
+    print "Processing %s..." % (filename);
+    packages = utils.open_file(filename);
+    Packages = apt_pkg.ParseTagFile(packages);
+    while Packages.Step():
+        filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'));
+        if not os.path.exists(filename):
+            print "W: %s missing." % (filename);
+    packages.close();
+
+########################################
+
+def check_indices_files_exist():
+    for suite in [ "stable", "testing", "unstable" ]:
+        for component in Cnf.ValueList("Suite::%s::Components" % (suite)):
+            architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite));
+            for arch in map(string.lower, architectures):
+                if arch == "source":
+                    validate_sources(suite, component);
+                elif arch == "all":
+                    continue;
+                else:
+                    validate_packages(suite, component, arch);
+
 ################################################################################
 
 def main ():
@@ -318,6 +386,8 @@ def main ():
         check_timestamps();
     elif mode == "tar-gz-in-dsc":
         check_missing_tar_gz_in_dsc();
+    elif mode == "validate-indices":
+        check_indices_files_exist();
     else:
         utils.warn("unknown mode '%s'" % (mode));
         usage(1);
