@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.1.1.1 2000-11-24 00:20:09 troup Exp $
+# $Id: utils.py,v 1.2 2000-11-25 04:18:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,14 +112,22 @@ def build_file_list(changes, dsc):
         if section == "": section = "-"
         if priority == "": priority = "-"
 
+        # What a mess.  FIXME
         if string.find(section, '/') != -1: 
 	    component = string.split(section, '/')[0]
-	if string.lower(component) == "non-us":
-	    component = string.split(section, '/')[0]+ '/' + string.split(section, '/')[1]
+	if string.lower(component) == "non-us" and string.count(section, '/') > 1:
+            s = string.split(section, '/')[1]
+            if s == "main" or s == "non-free" or s == "contrib": # Avoid e.g. non-US/libs
+                component = string.split(section, '/')[0]+ '/' + string.split(section, '/')[1]
 
+        if string.lower(section) == "non-us":
+            component = "non-US/main";
+            
         if component == "":
-            component = "main"
-
+            component = "main";
+        elif string.lower(component) == "non-us":
+            component = "non-US/main";
+        
         files[name] = { "md5sum" : md5,
                         "size" : size,
                         "section": section,
@@ -154,7 +162,7 @@ def fix_maintainer (maintainer):
 # sendmail wrapper, takes _either_ a message string or a file as arguments
 def send_mail (message, filename):
 	#### FIXME, how do I get this out of Cnf in katie?
-	sendmail_command = "/usr/sbin/sendmail -oi -t";
+	sendmail_command = "/usr/sbin/sendmail -odq -oi -t";
 
 	# Sanity check arguments
 	if message != "" and filename != "":
