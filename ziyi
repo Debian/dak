@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.23 2002-10-16 02:47:32 troup Exp $
+# $Id: ziyi,v 1.24 2002-12-08 17:25:00 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -173,7 +173,8 @@ def main ():
 	elif AptCnf.has_key("bindirectory::%s" % (tree)):
 	    pass
 	else:
-	    print "ALERT: suite %s not in apt.conf, nor untouchable!" % (suite)
+            aptcnf_filename = os.path.basename(utils.which_apt_conf_file());
+	    print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename);
 	    continue
 
 	print Cnf["Dir::Root"] + tree + "/Release"
