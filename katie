@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.35 2001-03-24 03:30:16 troup Exp $
+# $Id: katie,v 1.36 2001-04-03 10:01:08 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -626,16 +626,18 @@ def check_override ():
 
 def update_subst (changes_filename):
     global Subst;
-    
+
     if changes.has_key("architecture"):
         Subst["__ARCHITECTURE__"] = string.join(changes["architecture"].keys(), ' ' );
+    else:
+        Subst["__ARCHITECTURE__"] = "Unknown";
     Subst["__CHANGES_FILENAME__"] = os.path.basename(changes_filename);
-    Subst["__FILE_CONTENTS__"] = changes.get("filecontents");
+    Subst["__FILE_CONTENTS__"] = changes.get("filecontents", "");
     Subst["__MAINTAINER_ADDRESS__"] = changes["maintainer822"];
-    Subst["__MAINTAINER__"] = changes.get("maintainer");
+    Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown");
     Subst["__REJECT_MESSAGE__"] = reject_message;
-    Subst["__SOURCE__"] = changes.get("source");
-    Subst["__VERSION__"] = changes.get("version");
+    Subst["__SOURCE__"] = changes.get("source", "Unknown");
+    Subst["__VERSION__"] = changes.get("version", "Unknown");
 
 #####################################################################################################################
 
@@ -1228,7 +1230,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.35 $"
+    bcc = "X-Katie: $Revision: 1.36 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
