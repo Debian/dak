@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.8 2001-09-27 01:22:51 troup Exp $
+# $Id: claire.py,v 1.9 2001-10-10 16:04:14 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ def clean_symlink (src, dest, root):
 
 def fix_component_section (component, section):
     if component == "":
-        (None, component) = utils.extract_component_from_section(section);
+        component = utils.extract_component_from_section(section)[1];
 
     # FIXME: ugly hacks to work around override brain damage
     section = re_strip_section_prefix.sub('', section);
