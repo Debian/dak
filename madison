@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Display information about package(s) (suite, version, etc.)
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: madison,v 1.28 2003-05-02 13:54:08 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: madison,v 1.29 2004-01-21 03:20:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ def usage (exit_code=0):
 Display information about PACKAGE(s).
 
   -a, --architecture=ARCH    only show info for ARCH(s)
+  -b, --binary-type=TYPE     only show info for binary TYPE(s)
   -c, --component=COMPONENT  only show info for COMPONENT(s)
   -h, --help                 show this help and exit
   -r, --regex                treat PACKAGE as a regex
@@ -61,14 +62,15 @@ def main ():
     Cnf = utils.get_conf()
 
     Arguments = [('a', "architecture", "Madison::Options::Architecture", "HasArg"),
+                 ('b', "binarytype", "Madison::Options::BinaryType", "HasArg"),
                  ('c', "component", "Madison::Options::Component", "HasArg"),
                  ('f', "format", "Madison::Options::Format", "HasArg"),
                  ('r', "regex", "Madison::Options::Regex"),
                  ('s', "suite", "Madison::Options::Suite", "HasArg"),
                  ('S', "source-and-binary", "Madison::Options::Source-And-Binary"),
                  ('h', "help", "Madison::Options::Help")];
-    for i in [ "architecture", "component", "format", "regex", "suite",
-               "source-and-binary", "help" ]:
+    for i in [ "architecture", "binarytype", "component", "format", "regex",
+               "suite", "source-and-binary", "help" ]:
 	if not Cnf.has_key("Madison::Options::%s" % (i)):
 	    Cnf["Madison::Options::%s" % (i)] = "";
 
@@ -87,9 +89,19 @@ def main ():
     if os.path.exists(os.path.join(Cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
         utils.warn("Archive maintenance is in progress; database inconsistencies are possible.");
 
-    # Parse -a/--architecture, -s/--suite
+    # Parse -a/--architecture, -c/--component and -s/--suite
     (con_suites, con_architectures, con_components, check_source) = \
                  utils.parse_args(Options);
+
+    if Options["BinaryType"]:
+        if Options["BinaryType"] != "udeb" and Options["BinaryType"] != "deb":
+            utils.fubar("Invalid binary type.  'udeb' and 'deb' recognised.");
+        con_bintype = "AND b.type = '%s'" % (Options["BinaryType"]);
+        # REMOVE ME TRAMP
+        if Options["BinaryType"] == "udeb":
+            check_source = 0;
+    else:
+        con_bintype = "";
 
     if Options["Regex"]:
         comparison_operator = "~";
@@ -107,7 +119,7 @@ def main ():
 
     results = 0;
     for package in packages:
-        q = projectB.query("SELECT b.package, b.version, a.arch_string, su.suite_name, m.name FROM binaries b, architecture a, suite su, bin_associations ba, maintainer m WHERE b.package %s '%s' AND a.id = b.architecture AND su.id = ba.suite AND b.id = ba.bin AND b.maintainer = m.id %s %s" % (comparison_operator, package, con_suites, con_architectures));
+        q = projectB.query("SELECT b.package, b.version, a.arch_string, su.suite_name, m.name FROM binaries b, architecture a, suite su, bin_associations ba, maintainer m WHERE b.package %s '%s' AND a.id = b.architecture AND su.id = ba.suite AND b.id = ba.bin AND b.maintainer = m.id %s %s %s" % (comparison_operator, package, con_suites, con_architectures, con_bintype));
         ql = q.getresult();
         if check_source:
             q = projectB.query("SELECT s.source, s.version, 'source', su.suite_name, m.name FROM source s, suite su, src_associations sa, maintainer m WHERE s.source %s '%s' AND su.id = sa.suite AND s.id = sa.source AND s.maintainer = m.id %s" % (comparison_operator, package, con_suites));
