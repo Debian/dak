@@ -23,9 +23,17 @@ queue/approved
 
  o security uploads on auric should be pre-approved.
 
-
 Others
 ------
+
+  o check email only portions of addresses match too, iff the names
+  don't, helps with the "James Troup <james@nocrew.org>"
+  vs. "<james@nocrew.org>" case.
+
+  o ensure .dsc section/prio match .changes section/prio
+
+  o rhona's kind of crap when asked to remove a lot of files (e.g. 2k
+   or so).
 
   o we don't handle the case where an identical orig.tar.gz is
    mentioned in the .changes, but not in unchecked; but should we
@@ -445,269 +453,19 @@ shania	      X
 tea	      X
 ziyi	      X
 
+
 ================================================================================
 
-Possible Quotes:
-----------------
- 
-| <mdz_> SirDibos: that sentence sounds like it wants to be a bug report when it grows up
- 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-| From: Andrew Morton <akpm@osdl.org>
-| Subject: Re: Linux 2.6.0-test1 Ext3 Ooops. Reboot needed.
-| To: Ricardo Galli <gallir@uib.es>
-| Cc: linux-kernel@vger.kernel.org
-| Date: Fri, 18 Jul 2003 14:27:20 -0700
-| 
-| Ricardo Galli <gallir@uib.es> wrote:
-| >
-| > "File alteration monitor", from Debian.
-| 
-| OK.
-| 
-| > $ apt-cache show fam
-| 
-| I was attacked by dselect as a small child and have since avoided debian. 
-| Is there a tarball anywhere?
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-| From: Bob Hilliard <hilliard@debian.org>
-| 
-|      In my experience, James has been very responsive, albeit not
-| verbose, to reasonable questions/requests that don't start out saying
-| "James is a bum - throw him out".
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-| <eigood> Kamion: are you too busy to look at my generic
-|          include/exclude stuff for the bts yet?
-| <Kamion> eigood: expect me to be busy for about the next week at this
-|          rate
-| <eigood> my %field_match = (
-| <eigood>     'subject' => \&contains_field_match,
-| <eigood>     'severity' => \&exact_field_match,
-| <eigood> that's how it works, basically
-| <eigood> I'm a big fan of callbacks
-| [...]
-| <eigood> Kamion: how do you feel about having
-|          per-bug/per-package/per-source notes support in the bts?
-| <Kamion> eigood: as I said five minutes ago, I really don't have time
-|          to think about it right now, sorry
-| <Kamion> here, maybe it would be clearer if I /part
-| <-- Kamion (~cjwatson@host81-129-36-235.in-addr.btopenworld.com) has left #debian-devel (too busy. no, really.)
-| <eigood> no need to be hostile
-| <Joy> eigood: he told you he's too busy and you kept bugging him. take
-|       a hint :)
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<mstone> bwahahaha. Dear "security@debian.org" Thank you for your
-         email about "[SECURITY] [DSA-403-1] userland can access Linux
-         kernel memory" ...I need to filter out spam... To send email to
-         vhs@flexdesign.com please put "ducks" anywhere on your subject
-         line. ...Thanks, Bob...
-<mstone> I'll be sure to do that...
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<drow> Hmm, that was a nice short bug report.
-<drow> to submit@: "strdup(NULL) segfaults" to -done@: "Yes, go away"
-[...]
-<Kamion> how did he pass T&S? sheer bloody-mindedness?
-[...]
-<drow> Good attention to detail?
-<drow> Masking of psychopathic tendencies?
-* drow shrugs
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<DanielS> the people love me
-<Joy> like pneumonia
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-test.c:5: `long long long' is too long for GCC
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-http://yro.slashdot.org/comments.pl?sid=91696&cid=7890274
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<Joy> argh.
-<Joy> i accidentally banned all mails to the bts that had 'ossi' in them
-<Joy> "possible" etc
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<http://www.livejournal.com/users/mjg59/2003/12/24/>
-
-Wednesday, December 24th, 2003
-3:34 pm 	
-Dear PC World,
-
-1) The most common chipset used in Pentium-II machines is the Intel 440BX. It is also relatively common in slower P-IIIs, and is approximately identical to the 440MX (a one-chip version aimed at laptops).
-
-2) The 440BX has the interesting feature of only being able to address up to 128MBit density RAM. This is a relatively widely known issue.
-
-3) Simple maths suggests that if you have a 128MB DIMM with 4 chips on it, they are likely to be 256MBit parts.
-
-4) Marking said DIMMs as being suitable for Pentium-IIs is therefore really indescribably stupid, you wankwits. Please fuck off and die in a great big chemical fire before I get back there to beat you.
-
-Love,
-
-Matthew.
-
-PS,
-
-Die. No, really. 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<http://www.livejournal.com/users/mjg59/2003/11/12/>
-
-Wednesday, November 12th, 2003
-2:43 am 	
-It's true that you learn something new every day. Yesterday I discovered that playdough is electrically conductive. I also discovered that RAM becomes unhappy if all of its pins are joined together with electrically conductive material.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<http://www.livejournal.com/users/mjg59/2003/11/03/>
-
-Monday, November 3rd, 2003
-3:13 pm 	
-Hint to people attempting to sell things online:
-
-DON'T PUT http://172.16.100.107/ IN YOUR URLS, YOU INCOMPETENT FUCKMONKEYS 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-| priviledged positions? What privilege? The honour of working harder
-| than most people for absolutely no recognition?
-
-Manoj Srivastava <srivasta@debian.org> in <87lln8aqfm.fsf@glaurung.internal.golden-gryphon.com>
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<elmo_h> you could just r00t klecker through [...] and do it yourself
-<mdz> heh
-<mdz> I think there's a bit in the DMUP about that
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<Yoe> well, thing is, he doesn't seem to understand you usually don't
-      have the time to give everyone status updates when a fly moves a
-      leg
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-In Soviet Russia...
-
-The cops arrest YOU for not showing papers. Wait, I didn't have to
-reverse it this time, what's going on?
-
-http://slashdot.org/comments.pl?sid=97501&cid=8334726
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<infinity> <shrug>... Messaging IRCops isn't the end of the world,
-           unless its "/msg ircop I fucked your wife."
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<aj> ooo, elmo has "special powers"
-<neuro> ooo, does he have lasers that shoot out of his eyes?
-<aj> dunno
-<aj> maybe he can turn invisible? that'd sure help with improved transparency!
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-| From: Andrew Morton <akpm@osdl.org>
-| Subject: Re: [PATCH] Compile kernel with GCC-3.5 and without regparm
-| To: "Art Haas" <ahaas@airmail.net>
-| Cc: linux-kernel@vger.kernel.org
-| Date: Tue, 2 Mar 2004 16:59:28 -0800
-| X-Mailer: Sylpheed version 0.9.7 (GTK+ 1.2.10; i586-pc-linux-gnu)
-| 
-| "Art Haas" <ahaas@airmail.net> wrote:
-| >
-| > I tried to build the kernel with my CVS GCC-3.5 compiler today, and had
-| > all sorts of failures about prototypes not matching.
-| 
-| -mm is where the gcc-3.5 action is.  There seems to be a bit of an arms
-| race going on wherein the gcc developers are trying to break the kernel
-| build faster than I and others can fix it.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-(Note that the above is a gross oversimplification, and ignores issues
-including but not necessarily limited to subarchitectures, and quality
-of hardware coverage within certian architectures. It contains forward
-looking statements, and may cause cancer in lab animals.)
-
-Joey Hess in <20040317065216.GA29816@kitenet.net>
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<jdub> now there's a thought
-<jdub> DD trading cards
-<mdz> official joeyh action figure, with rapid-fire upload action
-<jdub> lamont with pump-action NMU flame-thrower!
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<aj> "attempt to de-scare ... may cause cancer"
-* aj thinks elmo needs to work on his de-scaring
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<mdz> the Thom Remote Management Unit
-<mdz> TRMU
-<thom> i cost 3 times the amount an IBM remote management card would. per use.
-<jdub> last time *i* checked, you were free
-<jdub> oh, different service
-<jdub> never mind
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-From: Stan Shebs <shebs@apple.com>
-Subject: Re: MS/CW-style inline assembly for GCC
-To: gcc@gcc.gnu.org
-Date: Mon, 03 May 2004 17:35:40 -0700
-
-Can you be more specific about the difficulties? The CW version didn't
-seem that hard (unless Apple mgmt is reading this, in which case it was
-fiendishly difficult :-) ), but I did impose some restrictions in edge
-[...]
-
-Stan
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-buildd@caballero:~/logs$ du -sh kernel-patch-powerpc-2.6.5_2.6.5-2_20040506-1033 
-54G     kernel-patch-powerpc-2.6.5_2.6.5-2_20040506-1033
-
-Next week on "When Good Buildds Go Bad"[...]
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<aj>  153 NP+ 11 James Troup     (7.9K) you know you want it.  err.
-* aj looks disturbed as he trolls through his saved mail
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-From: Andrew Morton <akpm@osdl.org>
-Subject: 2.6.6-mm5
-To: linux-kernel@vger.kernel.org
-Date: Sat, 22 May 2004 01:36:36 -0700
-X-Mailer: Sylpheed version 0.9.7 (GTK+ 1.2.10; i386-redhat-linux-gnu)
-
-[...]
-
-  Although this feature has been around for a while it is new code, and the
-  usual cautions apply.  If it munches all your files please tell Jens and
-  he'll type them in again for you.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Random useful-at-some-point SQL
+-------------------------------
+
+UPDATE files SET last_used = '1980-01-01'
+  FROM binaries WHERE binaries.architecture = <x> 
+                  AND binaries.file = files.id;
+
+DELETE FROM bin_associations 
+ WHERE EXISTS (SELECT id FROM binaries 
+                WHERE architecture = <x> 
+                  AND id = bin_associations.bin);
+
+================================================================================
