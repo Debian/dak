@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.2 2002-02-15 02:54:22 troup Exp $
+# $Id: jennifer,v 1.3 2002-02-15 04:01:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.2 $";
+jennifer_version = "$Revision: 1.3 $";
 
 Cnf = None;
 Options = None;
@@ -1026,11 +1026,12 @@ def acknowledge_new (summary):
 
 # reprocess is necessary for the case of foo_1.2-1 and foo_1.2-2 in
 # Incoming. -1 will reference the .orig.tar.gz, but -2 will not.
-# dsccheckdistrib() can find the .orig.tar.gz but it will not have
-# processed it during it's checks of -2.  If -1 has been deleted or
-# otherwise not checked by jennifer, the .orig.tar.gz will not have been
-# checked at all.  To get round this, we force the .orig.tar.gz into
-# the .changes structure and reprocess the .changes file.
+# Katie.check_dsc_against_db() can find the .orig.tar.gz but it will
+# not have processed it during it's checks of -2.  If -1 has been
+# deleted or otherwise not checked by jennifer, the .orig.tar.gz will
+# not have been checked at all.  To get round this, we force the
+# .orig.tar.gz into the .changes structure and reprocess the .changes
+# file.
 
 def process_it (changes_file):
     global reprocess, reject_message;

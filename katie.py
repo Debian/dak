@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.3 2002-02-15 02:54:22 troup Exp $
+# $Id: katie.py,v 1.4 2002-02-15 04:01:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -575,11 +575,11 @@ class Katie:
             files[file]["oldfiles"][suite] = oldfile;
             # Check versions [NB: per-suite only; no cross-suite checking done (yet)]
             if apt_pkg.VersionCompare(files[file]["version"], oldfile["version"]) != 1:
-                reject("%s Old version `%s' >= new version `%s'." % (file, oldfile["version"], files[file]["version"]));
+                self.reject("%s Old version `%s' >= new version `%s'." % (file, oldfile["version"], files[file]["version"]));
         # Check for any existing copies of the file
         q = self.projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
         if q.getresult() != []:
-            reject("can not overwrite existing copy of '%s' already in the archive." % (file));
+            self.reject("can not overwrite existing copy of '%s' already in the archive." % (file));
 
         return self.reject_message;
 
@@ -599,7 +599,7 @@ class Katie:
             ql = map(lambda x: x[0], q.getresult());
             for old_version in ql:
                 if apt_pkg.VersionCompare(new_version, old_version) != 1:
-                    reject("%s: Old version `%s' >= new version `%s'." % (file, old_version, new_version));
+                    self.reject("%s: Old version `%s' >= new version `%s'." % (file, old_version, new_version));
         return self.reject_message;
 
     ################################################################################
@@ -610,6 +610,7 @@ class Katie:
         dsc_files = self.pkg.dsc_files;
         legacy_source_untouchable = self.pkg.legacy_source_untouchable;
         orig_tar_gz = None;
+        found = None;
 
         # Try and find all files mentioned in the .dsc.  This has
         # to work harder to cope with the multiple possible
@@ -632,7 +633,7 @@ class Katie:
                 #                        -- ajk@ on d-devel@l.d.o
 
                 if q.getresult() != []:
-                    reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_file));
+                    self.reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_file));
             elif dsc_file[-12:] == ".orig.tar.gz":
                 # Check in the pool
                 q = self.projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
@@ -669,22 +670,29 @@ class Katie:
                     else:
                         self.pkg.orig_tar_location = x[4];
                 else:
+                    # Not there? Check the queue directories...
 
-                    # Not there? Check in Incoming...
-                    # [See comment above jennifer's process_it() for
-                    # explanation of why this is necessary...]
-                    orig_tar_gz = self.pkg.directory + '/' + dsc_file;
-                    if os.path.exists(orig_tar_gz):
+                    in_unchecked = os.path.join(self.Cnf["Dir::QueueUncheckedDir"],dsc_file);
+                    # See process_it() in jennifer for explanation of this
+                    if os.path.exists(in_unchecked):
                         return (self.reject_message, orig_tar_gz);
                     else:
-                        reject("%s refers to %s, but I can't find it in Incoming or in the pool." % (file, dsc_file));
+                        for dir in [ "Accepted", "New", "Byhand" ]:
+                            in_otherdir = os.path.join(self.Cnf["Dir::Queue%sDir" % (dir)],dsc_file);
+                            if os.path.exists(in_otherdir):
+                                actual_md5 = apt_pkg.md5sum(utils.open_file(in_otherdir));
+                                actual_size = os.stat(in_otherdir)[stat.ST_SIZE];
+                                found = in_otherdir;
+
+                    if not found:
+                        self.reject("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_file));
                         continue;
             else:
-                reject("%s refers to %s, but I can't find it in Incoming." % (file, dsc_file));
+                self.reject("%s refers to %s, but I can't find it in the queue." % (file, dsc_file));
                 continue;
             if actual_md5 != dsc_files[dsc_file]["md5sum"]:
-                reject("md5sum for %s doesn't match %s." % (found, file));
+                self.reject("md5sum for %s doesn't match %s." % (found, file));
             if actual_size != int(dsc_files[dsc_file]["size"]):
-                reject("size for %s doesn't match %s." % (found, file));
+                self.reject("size for %s doesn't match %s." % (found, file));
 
         return (self.reject_message, orig_tar_gz);
