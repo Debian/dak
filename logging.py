@@ -1,6 +1,6 @@
 # Logging functions
-# Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: logging.py,v 1.1 2001-07-07 03:59:45 troup Exp $
+# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
+# $Id: logging.py,v 1.2 2002-05-08 11:17:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-    
+
 ################################################################################
 
 import os, pwd, string, time
@@ -34,7 +34,7 @@ class Logger:
         self.Cnf = Cnf;
         self.program = program;
         # Create the log directory if it doesn't exist
-        logdir = Cnf["Dir::LogDir"];
+        logdir = Cnf["Dir::Log"];
         if not os.path.exists(logdir):
             umask = os.umask(00000);
             os.makedirs(logdir, 02775);
@@ -42,7 +42,7 @@ class Logger:
         logfilename = "%s/%s" % (logdir, time.strftime("%Y-%m", time.localtime(time.time())));
         logfile = utils.open_file(logfilename, 'a');
         # Seek to the end of the logfile
-        logfile.seek(0,2); 
+        logfile.seek(0,2);
         self.logfile = logfile;
         # Log the start of the program
         user = pwd.getpwuid(os.getuid())[0];
