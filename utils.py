@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.53 2002-11-26 15:49:16 troup Exp $
+# $Id: utils.py,v 1.54 2002-12-08 17:25:17 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -650,6 +650,21 @@ def try_with_debug(function):
         raise;
     except:
         print_exc();
+
+################################################################################
+
+# Function for use in sorting lists of architectures.
+# Sorts normally except that 'source' dominates all others.
+
+def arch_compare_sw (a, b):
+    if a == "source" and b == "source":
+        return 0;
+    elif a == "source":
+        return -1;
+    elif b == "source":
+        return 1;
+
+    return cmp (a, b);
 
 ################################################################################
 
