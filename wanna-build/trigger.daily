@@ -3,6 +3,9 @@
 # Updates wanna-build databases after the archive maintenance
 # finishes
 #
+# Files:
+#     Sources-* == upstream fetched file
+#     Sources.* == uncompressed, concat'd version
 PATH="/bin:/usr/bin"
 #testing must be before unstable so late upld don't build for testing needlessly
 DISTS="oldstable-security stable stable-security testing testing-security unstable"
@@ -161,10 +164,10 @@ for d in $DISTS ; do
 		done
 	fi
 	for a in $ARCHS ; do
-		if [ "$d" = "unstable" ]; then
+		if [ "$d" = "unstable" -o ! -e "quinn-unstable.$a-old" ]; then
 			quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a >> quinn-$d.$a
 		else
-			quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a | fgrep -v -f quinn-unstable.$a >> quinn-$d.$a
+			quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a | fgrep -v -f quinn-unstable.$a-old >> quinn-$d.$a
 		fi
 	done
 done
