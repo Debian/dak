@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.72 2002-02-22 22:49:08 troup Exp $
+# $Id: katie,v 1.73 2002-02-24 20:47:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.72 $";
+katie_version = "$Revision: 1.73 $";
 
 Cnf = None;
 Options = None;
@@ -382,6 +382,10 @@ def install ():
 ################################################################################
 
 def process_it (changes_file):
+    global reject_message;
+
+    reject_message = "";
+
     # Absolutize the filename to avoid the requirement of being in the
     # same directory as the .changes file.
     pkg.changes_file = os.path.abspath(changes_file);
