@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.59 2001-09-13 23:56:29 troup Exp $
+# $Id: katie,v 1.60 2001-09-27 14:39:06 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,20 +70,50 @@ orig_tar_location = "";
 legacy_source_untouchable = {};
 Subst = {};
 nmu = None;
+katie_version = "$Revision: 1.60 $";
+
+###############################################################################
+
+def init():
+    global Cnf, Options;
+
+    apt_pkg.init();
+
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
+                 ('h',"help","Dinstall::Options::Help"),
+                 ('k',"ack-new","Dinstall::Options::Ack-New"),
+                 ('m',"manual-reject","Dinstall::Options::Manual-Reject", "HasArg"),
+                 ('n',"no-action","Dinstall::Options::No-Action"),
+                 ('p',"no-lock", "Dinstall::Options::No-Lock"),
+                 ('s',"no-mail", "Dinstall::Options::No-Mail"),
+                 ('u',"override-distribution", "Dinstall::Options::Override-Distribution", "HasArg"),
+                 ('V',"version","Dinstall::Options::Version")];
+
+    for i in ["automatic", "help", "ack-new", "manual-reject", "no-action",
+              "no-lock", "no-mail", "override-distribution", "version"]:
+        Cnf["Dinstall::Options::%s" % (i)] = "";
+
+    changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Dinstall::Options")
+
+    return changes_files;
 
 #########################################################################################
 
-def usage (exit_code):
+def usage (exit_code=0):
     print """Usage: dinstall [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
-  -D, --debug=VALUE         turn on debugging
   -h, --help                show this help and exit.
   -k, --ack-new             acknowledge new packages !! for cron.daily only !!
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
   -p, --no-lock             don't check lockfile !! for cron.daily only !!
+  -s, --no-mail             don't send any mail
   -u, --distribution=DIST   override distribution to `dist'
-  -v, --version             display the version number and exit"""
+  -V, --version             display the version number and exit"""
     sys.exit(exit_code)
 
 #########################################################################################
@@ -300,7 +330,7 @@ def check_changes(filename):
                 reject_message = reject_message + "Mapping stable to unstable for unreleased arch `%s'.\n" % (i)
                 del changes["distribution"]["stable"]
                 changes["distribution"]["unstable"] = 1;
-    
+
     # Map arches not being released from frozen to unstable
     if changes["distribution"].has_key("frozen"):
         for i in changes["architecture"].keys():
@@ -336,7 +366,7 @@ def check_changes(filename):
 
     if string.find(reject_message, "Rejected:") != -1:
         return 0
-    else: 
+    else:
         return 1
 
 def check_files():
@@ -1327,31 +1357,14 @@ def process_it (changes_file):
 def main():
     global Cnf, Options, projectB, install_bytes, new_ack_old, Subst, nmu, Logger
 
-    apt_pkg.init();
-
-    Cnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
-
-    Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
-                 ('d',"debug","Dinstall::Options::Debug", "IntVal"),
-                 ('h',"help","Dinstall::Options::Help"),
-                 ('k',"ack-new","Dinstall::Options::Ack-New"),
-                 ('m',"manual-reject","Dinstall::Options::Manual-Reject", "HasArg"),
-                 ('n',"no-action","Dinstall::Options::No-Action"),
-                 ('p',"no-lock", "Dinstall::Options::No-Lock"),
-                 ('s',"no-mail", "Dinstall::Options::No-Mail"),
-                 ('u',"override-distribution", "Dinstall::Options::Override-Distribution", "HasArg"),
-                 ('v',"version","Dinstall::Options::Version")];
-
-    changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
-    Options = Cnf.SubTree("Dinstall::Options")
+    changes_files = init();
 
     if Options["Help"]:
-        usage(0);
+        usage();
 
     if Options["Version"]:
-        print "katie version 0.0000000000";
-        usage(0);
+        print "katie %s" % (katie_version);
+        sys.exit(0);
 
     # -n/--dry-run invalidates some other options which would involve things happening
     if Options["No-Action"]:
@@ -1370,22 +1383,25 @@ def main():
     # Obtain lock if not in no-action mode and initialize the log
 
     if not Options["No-Action"]:
-        lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR);
+        lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT);
         fcntl.lockf(lock_fd, FCNTL.F_TLOCK);
         Logger = logging.Logger(Cnf, "katie");
 
-    # Read in the list of already-acknowledged NEW packages
-    new_ack_list = utils.open_file(Cnf["Dinstall::NewAckList"],'r');
-    new_ack_old = {};
-    for line in new_ack_list.readlines():
-        new_ack_old[line[:-1]] = 1;
-    new_ack_list.close();
+    if Options["Ack-New"]:
+        # Read in the list of already-acknowledged NEW packages
+        if not os.path.exists(Cnf["Dinstall::NewAckList"]):
+            utils.touch_file(Cnf["Dinstall::NewAckList"]);
+        new_ack_list = utils.open_file(Cnf["Dinstall::NewAckList"],'r');
+        new_ack_old = {};
+        for line in new_ack_list.readlines():
+            new_ack_old[line[:-1]] = 1;
+        new_ack_list.close();
 
     # Initialize the substitution template mapping global
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.59 $"
+    bcc = "X-Katie: %s" % (katie_version);
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
