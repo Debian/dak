@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Poolify (move packages from "legacy" type locations to pool locations)
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.17 2002-10-16 02:47:32 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: catherine,v 1.18 2003-09-07 13:52:50 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,13 +18,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+################################################################################
+
 # "Welcome to where time stands still,
 #  No one leaves and no one will."
 #   - Sanitarium - Metallica / Master of the puppets
 
 ################################################################################
 
-import os, pg, stat, sys;
+import os, pg, re, stat, sys;
 import utils, db_access;
 import apt_pkg, apt_inst;
 
@@ -32,6 +34,8 @@ import apt_pkg, apt_inst;
 
 Cnf = None;
 projectB = None;
+
+re_isadeb = re.compile (r"(.+?)_(.+?)(_(.+))?\.u?deb$");
 
 ################################################################################
 
@@ -75,7 +79,7 @@ def poolize (q, limit, verbose, no_action):
         base_filename = os.path.basename(legacy_filename);
         destination_filename = base_filename;
         # Work out the source package name
-        if utils.re_isadeb.match(base_filename) != None:
+        if re_isadeb.match(base_filename) != None:
             control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(legacy_filename)))
             package = control.Find("Package", "");
             source = control.Find("Source", package);
@@ -172,13 +176,13 @@ def main ():
     q = projectB.query("""
 SELECT l.path, f.filename, f.id as files_id, c.name as component
    FROM files f, location l, component c WHERE
-    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id)
+    NOT EXISTS (SELECT 1 FROM location l WHERE l.type = 'pool' AND f.location = l.id)
     AND NOT (f.filename ~ '^potato') AND f.location = l.id AND l.component = c.id
 UNION SELECT l.path, f.filename, f.id as files_id, null as component
    FROM files f, location l WHERE
-    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id)
+    NOT EXISTS (SELECT 1 FROM location l WHERE l.type = 'pool' AND f.location = l.id)
     AND NOT (f.filename ~ '^potato') AND f.location = l.id AND NOT EXISTS
-     (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);""");
+     (SELECT 1 FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);""");
 
     poolize(q, limit, Options["Verbose"], Options["No-Action"]);
 
