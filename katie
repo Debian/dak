@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.50 2001-06-24 23:17:43 troup Exp $
+# $Id: katie,v 1.51 2001-07-07 04:01:08 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 
 import FCNTL, commands, fcntl, getopt, gzip, os, pg, pwd, re, shutil, stat, string, sys, tempfile, time, traceback
 import apt_inst, apt_pkg
-import utils, db_access
+import utils, db_access, logging
 
 ###############################################################################
 
@@ -50,6 +50,8 @@ re_bin_only_nmu_of_nmu = re.compile("\.\d+$");
 
 # Globals
 Cnf = None;
+Options = None;
+Logger = None;
 reject_message = "";
 changes = {};
 dsc = {};
@@ -89,7 +91,7 @@ def check_signature (filename):
 
     (result, output) = commands.getstatusoutput("gpg --emulate-md-encode-bug --batch --no-options --no-default-keyring --always-trust --keyring=%s --keyring=%s < %s >/dev/null" % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename))
     if (result != 0):
-        reject_message = "Rejected: GPG signature check failed on `%s'.\n%s\n" % (os.path.basename(filename), output)
+        reject_message = reject_message + "Rejected: GPG signature check failed on `%s'.\n%s\n" % (os.path.basename(filename), output)
         return 0
     return 1
 
@@ -111,7 +113,7 @@ class nmu_p:
     def is_an_nmu (self, changes, dsc):
         (dsc_rfc822, dsc_name, dsc_email) = utils.fix_maintainer (dsc.get("maintainer",Cnf["Dinstall::MyEmailAddress"]));
         # changes["changedbyname"] == dsc_name is probably never true, but better safe than sorry
-        if dsc_name == changes["maintainername"] and (changes["changedbyname"] == "" or changes["changedbyname"] == dsc_name):
+        if dsc_name == changes["maintainername"] and (changes["changedby822"] == "" or changes["changedbyname"] == dsc_name):
             return 0;
         
         if dsc.has_key("uploaders"):
@@ -219,28 +221,28 @@ def check_changes(filename):
     try:
         changes = utils.parse_changes(filename, 0)
     except utils.cant_open_exc:
-        reject_message = "Rejected: can't read changes file '%s'.\n" % (filename)
+        reject_message = reject_message + "Rejected: can't read changes file '%s'.\n" % (filename)
         return 0;
     except utils.changes_parse_error_exc, line:
-        reject_message = "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line)
+        reject_message = reject_message + "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line)
         return 0;
 
     # Parse the Files field from the .changes into another dictionary
     try:
         files = utils.build_file_list(changes, "");
     except utils.changes_parse_error_exc, line:
-        reject_message = "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line);
+        reject_message = reject_message + "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line);
 
     # Check for mandatory fields
     for i in ("source", "binary", "architecture", "version", "distribution","maintainer", "files"):
         if not changes.has_key(i):
-            reject_message = "Rejected: Missing field `%s' in changes file.\n" % (i)
+            reject_message = reject_message + "Rejected: Missing field `%s' in changes file.\n" % (i)
             return 0    # Avoid <undef> errors during later tests
 
     # Override the Distribution: field if appropriate
-    if Cnf["Dinstall::Options::Override-Distribution"] != "":
-        reject_message = reject_message + "Warning: Distribution was overriden from %s to %s.\n" % (changes["distribution"], Cnf["Dinstall::Options::Override-Distribution"])
-        changes["distribution"] = Cnf["Dinstall::Options::Override-Distribution"]
+    if Options["Override-Distribution"] != "":
+        reject_message = reject_message + "Warning: Distribution was overriden from %s to %s.\n" % (changes["distribution"], Options["Override-Distribution"])
+        changes["distribution"] = Options["Override-Distribution"]
 
     # Split multi-value fields into a lower-level dictionary
     for i in ("architecture", "distribution", "binary", "closes"):
@@ -443,6 +445,7 @@ def check_files():
                     check_signature(file)
 
                 files[file]["fullname"] = file
+                files[file]["architecture"] = "source";
 
             # Not a binary or source package?  Assume byhand...
             else:
@@ -554,8 +557,17 @@ def check_dsc ():
                 reject_message = reject_message + "Rejected: no Files: field in .dsc file.\n";
                 continue;
             except utils.changes_parse_error_exc, line:
-                reject_message = "Rejected: error parsing .dsc file '%s', can't grok: %s.\n" % (file, line);
+                reject_message = reject_message + "Rejected: error parsing .dsc file '%s', can't grok: %s.\n" % (file, line);
                 continue;
+
+            # The dpkg maintainer from hell strikes again! Bumping the
+            # version number of the .dsc breaks extraction by stable's
+            # dpkg-source.
+            if dsc["format"] != "1.0":
+                reject_message = reject_message + """Rejected: [dpkg-sucks] source package was produced by a broken version
+          of dpkg-dev 1.9.1{3,4}; please rebuild with >= 1.9.15 version
+          installed.
+""";
 
             # Try and find all files mentioned in the .dsc.  This has
             # to work harder to cope with the multiple possible
@@ -786,7 +798,7 @@ def action (changes_filename):
     summary = summary + announce (short_summary, 0)
     
     (prompt, answer) = ("", "XXX")
-    if Cnf["Dinstall::Options::No-Action"] or Cnf["Dinstall::Options::Automatic"]:
+    if Options["No-Action"] or Options["Automatic"]:
         answer = 'S'
 
     if string.find(reject_message, "Rejected") != -1:
@@ -800,12 +812,12 @@ def action (changes_filename):
         else:
             print "REJECT\n" + reject_message,;
             prompt = "[R]eject, Manual reject, Skip, Quit ?";
-            if Cnf["Dinstall::Options::Automatic"]:
+            if Options["Automatic"]:
                 answer = 'R';
     elif new:
         print "NEW to %s\n%s%s" % (suites, reject_message, summary),;
         prompt = "[S]kip, New ack, Manual reject, Quit ?";
-        if Cnf["Dinstall::Options::Automatic"] and Cnf["Dinstall::Options::Ack-New"]:
+        if Options["Automatic"] and Options["Ack-New"]:
             answer = 'N';
     elif byhand:
         print "BYHAND\n" + reject_message + summary,;
@@ -816,7 +828,7 @@ def action (changes_filename):
     else:
         print "INSTALL\n" + reject_message + summary,;
         prompt = "[I]nstall, Manual reject, Skip, Quit ?";
-        if Cnf["Dinstall::Options::Automatic"]:
+        if Options["Automatic"]:
             answer = 'I';
 
     while string.find(prompt, answer) == -1:
@@ -850,6 +862,8 @@ def install (changes_filename, summary, short_summary):
     
     print "Installing."
 
+    Logger.log(["installing changes",changes_filename]);
+
     archive = utils.where_am_i();
 
     # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
@@ -869,7 +883,7 @@ def install (changes_filename, summary, short_summary):
                 files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
             projectB.query("INSERT INTO source (source, version, maintainer, file) VALUES ('%s', '%s', %d, %d)"
                            % (package, version, maintainer_id, files[file]["files id"]))
-            
+
             for suite in changes["distribution"].keys():
                 suite_id = db_access.get_suite_id(suite);
                 projectB.query("INSERT INTO src_associations (suite, source) VALUES (%d, currval('source_id_seq'))" % (suite_id))
@@ -960,6 +974,7 @@ def install (changes_filename, summary, short_summary):
         destination = Cnf["Dir::PoolDir"] + files[file]["pool name"] + file
         destdir = os.path.dirname(destination)
         utils.move (file, destination)
+        Logger.log(["installed", file, files[file]["type"], files[file]["size"], files[file]["architecture"]]);
         install_bytes = install_bytes + float(files[file]["size"])
 
     # Copy the .changes file across for suite which need it.
@@ -976,7 +991,7 @@ def install (changes_filename, summary, short_summary):
 
     install_count = install_count + 1;
 
-    if not Cnf["Dinstall::Options::No-Mail"]:
+    if not Options["No-Mail"]:
         Subst["__SUITE__"] = "";
         Subst["__SUMMARY__"] = summary;
         mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.installed","r").read());
@@ -1059,7 +1074,7 @@ def stable_install (changes_filename, summary, short_summary):
 
     install_count = install_count + 1;
 
-    if not Cnf["Dinstall::Options::No-Mail"]:
+    if not Options["No-Mail"]:
         Subst["__SUITE__"] = " into stable";
         Subst["__SUMMARY__"] = summary;
         mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.installed","r").read());
@@ -1105,8 +1120,10 @@ def reject (changes_filename, manual_reject_mail_filename):
         reject_mail_message = ""; # avoid <undef>'s
         
     # Send the rejection mail if appropriate
-    if not Cnf["Dinstall::Options::No-Mail"]:
+    if not Options["No-Mail"]:
         utils.send_mail (reject_mail_message, manual_reject_mail_filename);
+
+    Logger.log(["rejected", changes_filename]);
 
 ##################################################################
 
@@ -1153,7 +1170,7 @@ def acknowledge_new (changes_filename, summary):
         return;
 
     print "Sending new ack.";
-    if not Cnf["Dinstall::Options::No-Mail"]:
+    if not Options["No-Mail"]:
         Subst["__SUMMARY__"] = summary;
         new_ack_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.new","r").read());
         utils.send_mail(new_ack_message,"");
@@ -1202,6 +1219,7 @@ distribution."""
                     Subst["__STABLE_WARNING__"] = "";
                 mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.bug-close","r").read());
                 utils.send_mail (mail_message, "")
+        Logger.log(["closing bugs"]+bugs);
     else:                     # NMU
         summary = summary + "Setting bugs to severity fixed: "
         control_message = ""
@@ -1212,6 +1230,7 @@ distribution."""
             Subst["__CONTROL_MESSAGE__"] = control_message;
             mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.bug-nmu-fixed","r").read());
             utils.send_mail (mail_message, "")
+        Logger.log(["setting bugs to fixed"]+bugs);
     summary = summary + "\n"
 
     return summary
@@ -1271,7 +1290,7 @@ def process_it (changes_file):
 ###############################################################################
 
 def main():
-    global Cnf, projectB, install_bytes, new_ack_old, Subst, nmu
+    global Cnf, Options, projectB, install_bytes, new_ack_old, Subst, nmu, Logger
 
     apt_pkg.init();
     
@@ -1290,20 +1309,21 @@ def main():
                  ('v',"version","Dinstall::Options::Version")];
     
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Dinstall::Options")
 
-    if Cnf["Dinstall::Options::Help"]:
+    if Options["Help"]:
         usage(0);
         
-    if Cnf["Dinstall::Options::Version"]:
+    if Options["Version"]:
         print "katie version 0.0000000000";
         usage(0);
 
     postgresql_user = None; # Default == Connect as user running program.
 
     # -n/--dry-run invalidates some other options which would involve things happening
-    if Cnf["Dinstall::Options::No-Action"]:
-        Cnf["Dinstall::Options::Automatic"] = ""
-        Cnf["Dinstall::Options::Ack-New"] = ""
+    if Options["No-Action"]:
+        Options["Automatic"] = "";
+        Options["Ack-New"] = "";
         postgresql_user = Cnf["DB::ROUser"];
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, postgresql_user);
@@ -1312,14 +1332,15 @@ def main():
 
     # Check that we aren't going to clash with the daily cron job
 
-    if os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Cnf["Dinstall::Options::No-Lock"]:
+    if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Options["No-Lock"]:
         utils.fubar("Archive maintenance in progress.  Try again later.");
     
-    # Obtain lock if not in no-action mode
+    # Obtain lock if not in no-action mode and initialize the log
 
-    if not Cnf["Dinstall::Options::No-Action"]:
+    if not Options["No-Action"]:
         lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR);
         fcntl.lockf(lock_fd, FCNTL.F_TLOCK);
+        Logger = logging.Logger(Cnf, "katie");
 
     # Read in the list of already-acknowledged NEW packages
     new_ack_list = utils.open_file(Cnf["Dinstall::NewAckList"],'r');
@@ -1332,7 +1353,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.50 $"
+    bcc = "X-Katie: $Revision: 1.51 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
@@ -1356,14 +1377,17 @@ def main():
         if install_count > 1:
             sets = "sets"
         sys.stderr.write("Installed %d package %s, %s.\n" % (install_count, sets, utils.size_type(int(install_bytes))));
+        Logger.log(["total",install_count,install_bytes]);
 
     # Write out the list of already-acknowledged NEW packages
-    if Cnf["Dinstall::Options::Ack-New"]:
+    if Options["Ack-New"]:
         new_ack_list = utils.open_file(Cnf["Dinstall::NewAckList"],'w')
         for i in new_ack_new.keys():
             new_ack_list.write(i+'\n')
         new_ack_list.close()
     
+    if not Options["No-Action"]:
+        Logger.close();
             
 if __name__ == '__main__':
     main()
