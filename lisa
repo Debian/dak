@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.9 2002-05-08 11:13:02 troup Exp $
+# $Id: lisa,v 1.10 2002-05-10 00:24:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.9 $";
+lisa_version = "$Revision: 1.10 $";
 
 Cnf = None;
 Options = None;
@@ -760,8 +760,8 @@ def main():
         Katie.Subst["__BCC__"] = bcc;
 
     for changes_file in changes_files:
-        if not os.path.exists(changes_file):
-            print "\nSkipping %s - file does not exist." % (changes_file);
+        changes_file = utils.validate_changes_file_arg(changes_file, 0);
+        if not changes_file:
             continue;
         print "\n" + changes_file;
         do_pkg (changes_file);
