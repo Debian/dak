@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.5 2002-02-15 04:16:13 troup Exp $
+# $Id: katie.py,v 1.6 2002-02-15 22:27:27 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -158,14 +158,15 @@ class Katie:
         ## changes
         # Mandatory changes fields
         for i in [ "distribution", "source", "architecture", "version", "maintainer",
-                   "urgency", "fingerprint" ]:
+                   "urgency", "fingerprint", "changedby822", "changedbyname",
+                   "maintainername", "maintaineremail", "closes" ]:
             d_changes[i] = changes[i];
         # Optional changes fields
-        for i in [ "changed-by", "changedby822", "maintainer822", "filecontents" ]:
+        for i in [ "changed-by", "maintainer822", "filecontents", "format" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i];
         ## dsc
-        for i in [ "source", "version", "maintainer", "fingerprint" ]:
+        for i in [ "source", "version", "maintainer", "fingerprint", "uploaders" ]:
             if dsc.has_key(i):
                 d_dsc[i] = dsc[i];
         ## dsc_files
@@ -675,7 +676,7 @@ class Katie:
                     in_unchecked = os.path.join(self.Cnf["Dir::QueueUncheckedDir"],dsc_file);
                     # See process_it() in jennifer for explanation of this
                     if os.path.exists(in_unchecked):
-                        return (self.reject_message, orig_tar_gz);
+                        return (self.reject_message, in_unchecked);
                     else:
                         for dir in [ "Accepted", "New", "Byhand" ]:
                             in_otherdir = os.path.join(self.Cnf["Dir::Queue%sDir" % (dir)],dsc_file);
