@@ -18,5 +18,6 @@ fi
 
 cd $masterdir
 apt-ftparchive -q clean apt.conf
+apt-ftparchive -q clean apt.conf.buildd
 
 ################################################################################
