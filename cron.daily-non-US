@@ -34,9 +34,9 @@ pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 ################################################################################
 
 # temporary hack to work around the lack of an apt-utils & python-apt package
-export PYTHONPATH=$PYTHONPATH:/org/ftp.debian.org/scripts/apt/build/bin/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/ftp.debian.org/scripts/apt/build/bin/
-export PATH=$PATH:/org/ftp.debian.org/scripts/apt/build/bin/
+export PYTHONPATH=$PYTHONPATH:/org/non-us.debian.org/scripts/apt/build/bin/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/non-us.debian.org/scripts/apt/build/bin/
+export PATH=$PATH:/org/non-us.debian.org/scripts/apt/build/bin/
 
 cd $incoming
 rm -f REPORT
@@ -78,6 +78,6 @@ pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ulimit -m 90000 -d 90000 -s 10000 -v 90000
 
-run-parts --report /org/ftp.debian.org/scripts/distmnt
+run-parts --report /org/non-us.debian.org/scripts/distmnt
 
 echo Daily cron scripts successful.
