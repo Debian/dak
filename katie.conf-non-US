@@ -18,6 +18,7 @@ Dinstall
    Bcc "archive@ftp-master.debian.org";
    GroupOverrideFilename "override.group-maint";
    StableRejector "Martin (Joey) Schulze <joey@debian.org>";
+   BXANotify 0;
 };
 
 Julia
