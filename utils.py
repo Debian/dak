@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.55 2003-02-07 14:53:42 troup Exp $
+# $Id: utils.py,v 1.56 2003-02-21 19:20:00 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -250,7 +250,7 @@ def build_file_list(changes, is_a_dsc=0):
 ######################################################################################
 
 # Fix the `Maintainer:' field to be an RFC822 compatible address.
-# cf. Packaging Manual (4.2.4)
+# cf. Debian Policy Manual (D.2.4)
 #
 # 06:28|<Culus> 'The standard sucks, but my tool is supposed to
 #                interoperate with it. I know - I'll fix the suckage
@@ -258,14 +258,14 @@ def build_file_list(changes, is_a_dsc=0):
 
 def fix_maintainer (maintainer):
     m = re_parse_maintainer.match(maintainer);
-    rfc822 = maintainer
-    name = ""
-    email = ""
+    rfc822 = maintainer;
+    name = "";
+    email = "";
     if m != None and len(m.groups()) == 2:
-        name = m.group(1)
-        email = m.group(2)
+        name = m.group(1);
+        email = m.group(2);
         if name.find(',') != -1 or name.find('.') != -1:
-            rfc822 = re_parse_maintainer.sub(r"\2 (\1)", maintainer)
+            rfc822 = "%s (%s)" % (email, name);
     return (rfc822, name, email)
 
 ######################################################################################
@@ -499,11 +499,11 @@ def result_join (original, sep = '\t'):
 
 ################################################################################
 
-def prefix_multi_line_string(str, prefix):
+def prefix_multi_line_string(str, prefix, include_blank_lines=0):
     out = "";
     for line in str.split('\n'):
         line = line.strip();
-        if line:
+        if line or include_blank_lines:
             out += "%s%s\n" % (prefix, line);
     # Strip trailing new line
     if out:
