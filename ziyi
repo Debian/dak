@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.12 2001-11-27 04:13:43 rmurray Exp $
+# $Id: ziyi,v 1.13 2001-11-27 04:15:14 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -255,7 +255,7 @@ def main ():
 		os.unlink(dest)
 	    keyring = "--secret-keyring \"%s\"" % Cnf["Dinstall::SigningKeyring"]
 	    if Cnf.has_key("Dinstall::SigningPubKeyring"):
-		keyring += " --keyring \"%s\"" % Cnf["Dinstall::SigningPubKeyring"])
+		keyring = keyring + " --keyring \"%s\"" % Cnf["Dinstall::SigningPubKeyring"])
 
 	    os.system("gpg %s --no-options --batch --no-tty --armour --detach-sign <%s --output=%s" % (keyring,
 		Cnf["Dir::RootDir"] + tree + "/Release", dest))
