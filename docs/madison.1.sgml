@@ -44,6 +44,13 @@
 	</LISTITEM>
       </VarListEntry>
 
+      <varlistentry>
+	<term><option>-r/--regex</option></term>
+	<listitem>
+	  <para>Treat the <replaceable>package</replaceable> argument as a regex, rather than doing an exact search.</para>
+	</listitem>
+      </varlistentry>
+
       <VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
 	<ListItem>
 	  <Para>Only list package information for the suite(s) listed.</PARA>

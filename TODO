@@ -9,10 +9,14 @@ Actually Urgent
   o lisa doesn't do the right thing with -2 and -1 uploads, as you can
     end up with the .orig.tar.gz not in the pool
 
-More Urgent
------------
+  o lisa can't handle non-existent .changes files
+
+  o lisa doesn't handle :q! from rejections well at all
 
   o lisa exits if you check twice (aj)
+
+More Urgent
+-----------
 
   o jenna sucks
 
@@ -189,6 +193,8 @@ Less Urgent
     o Add an 'add' ability to melanie (? separate prog maybe)
     o Replicate old dinstall report stuff (? needed ?)
     o Handle the case of 1:1.1 which would overwrite 1.1 (?)
+    o maybe drop -r/--regex in madison, make it the default and
+      implement -e/--exact (a la joey's "elmo")
   
  * Cleanups & misc: 
    
