@@ -1,6 +1,11 @@
 				 TODO
 				 ====
 
+[NB: I use this as a thought record/scribble, not everything on here
+     makes sense and/or is actually ever going to get done, so IIWY I
+     wouldn't use it as gospel for the future of katie or as a TODO
+     list for random hacking.]
+
 ================================================================================
 
 Actually Urgent
@@ -8,6 +13,8 @@ Actually Urgent
 
   o UrgencyLog stuff should minimize it's bombing out(?)
   o Log stuff should open the log file g+w lamer
+<aj> elmo_home: (although, if you haven't already, you might want to add a `Reject: invalid character in Version:' check to katie sometime)
+<aj> elmo_home: (at least while auric's apt doesn't handle ~'s)
 
 More Urgent
 -----------
@@ -81,6 +88,14 @@ More Urgent
 
 Less Urgent
 -----------
+
+  o [hard, long term] unchecked -> accepted should go into the db, not
+  a suite, but similar.  this would allow katie to get even faster,
+  make madison more useful, decomplexify specialacceptedautobuild and
+  generally be more sane.  may even be helpful to have e.g. new in the
+  DB, so that we avoid corner cases like the .orig.tar.gz disappearing
+  'cos the package has been entirely removed but was still on
+  stayofexecution when it entered new.
 
   o Logging [mostly done] (todo: rhona (hard), .. ?)
 
