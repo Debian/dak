@@ -1,0 +1,205 @@
+#!/usr/bin/env python
+
+# Manipulate suite tags
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: heidi,v 1.1 2000-11-24 00:20:11 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+#######################################################################################
+
+# 8to6Guy: "Wow, Bob, You look rough!"
+# BTAF: "Mbblpmn..."
+# BTAF <.oO>: "You moron! This is what you get for staying up all night drinking vodka and salad dressing!"
+# BTAF <.oO>: "This coffee I.V. drip is barely even keeping me awake! I need something with more kick! But what?"
+# BTAF: "OMIGOD! I OVERDOSED ON HEROIN"
+# CoWorker#n: "Give him air!!"
+# CoWorker#n+1: "We need a syringe full of adrenaline!"
+# CoWorker#n+2: "Stab him in the heart!"
+# BTAF: "*YES!*"
+# CoWorker#n+3: "Bob's been overdosing quite a bit lately..."
+# CoWorker#n+4: "Third time this week."
+
+# -- http://www.angryflower.com/8to6.gif
+
+#######################################################################################
+
+# Adds or removes packages from a suite.  Takes the list of files
+# either from stdin or as a command line argument.  Special action
+# "set", will reset the suite (!) and add all packages from scratch. 
+
+#######################################################################################
+
+import os, pg, string, sys;
+import apt_pkg;
+import utils, db_access;
+
+#######################################################################################
+
+Cnf = None;
+projectB = None;
+
+#######################################################################################
+
+def process_file (file, suite_id, action):
+
+    if action == "set":
+        projectB.query("DELETE FROM bin_associations WHERE suite = %d" % (suite_id));
+        projectB.query("DELETE FROM src_associations WHERE suite = %d" % (suite_id));
+        action = "add";
+        
+    for line in file.readlines():
+        split_line = string.split(string.strip(line[:-1]));
+        if len(split_line) != 3:
+            sys.stderr.write("W: '%s' does not break into 'package version architecture'.\n");
+            continue;
+        
+        (package, version, architecture) = split_line;
+
+        if architecture == "source":
+            q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
+        else:
+            q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
+
+        ql = q.getresult();
+        if ql == []:
+            sys.stderr.write("W: Couldn't find '%s~%s~%s'.\n" % (package, version, architecture));
+            continue;
+        if len(ql) > 1:
+            sys.stderr.write("E: Found more than one match for '%s~%s~%s'.\n" % (package, version, architecture));
+            continue;
+        id = ql[0][0];
+
+        if architecture == "source": 
+            # Find the existing assoications ID, if any
+            q = projectB.query("SELECT id FROM src_associations WHERE suite = %d and source = %d" % (suite_id, id));
+            ql = q.getresult();
+            if ql == []:
+                assoication_id = None;
+            else:
+                assoication_id = ql[0][0];
+            # Take action
+            if action == "add":
+                if assoication_id != None:
+                    sys.stderr.write("W: '%s~%s~%s' already exists in suite %d.\n" % (package, version, architecture, suite_id));
+                    continue;
+                else:
+                    q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%d, %d)" % (suite_id, id));
+            elif action == "remove":
+                if assoication_id == None:
+                    sys.stderr.write("W: '%s~%s~%s' doesn't exist in suite %d.\n" % (package, version, architecture, suite_id));
+                    continue;
+                else:
+                    q = projectB.query("DELETE FROM src_associations WHERE id = %d" % (assoication_id));
+        else:
+            # Find the existing assoications ID, if any
+            q = projectB.query("SELECT id FROM bin_associations WHERE suite = %d and bin = %d" % (suite_id, id));
+            ql = q.getresult();
+            if ql == []:
+                assoication_id = None;
+            else:
+                assoication_id = ql[0][0];
+            # Take action
+            if action == "add":
+                if assoication_id != None:
+                    sys.stderr.write("W: '%s~%s~%s' already exists in suite %d.\n" % (package, version, architecture, suite_id));
+                    continue;
+                else:
+                    q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, %d)" % (suite_id, id));
+            elif action == "remove":
+                if assoication_id == None:
+                    sys.stderr.write("W: '%s~%s~%s' doesn't exist in suite %d.\n" % (package, version, architecture, suite_id));
+                    continue;
+                else:
+                    q = projectB.query("DELETE FROM bin_associations WHERE id = %d" % (assoication_id));
+              
+#######################################################################################
+
+def get_list (suite_id):
+    # List binaries
+    q = projectB.query("SELECT b.package, b.version, a.arch_string FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %d AND ba.bin = b.id AND b.architecture = a.id" % (suite_id));
+    ql = q.getresult();
+    for i in ql:
+        print "%s %s %s" % (i[0], i[1], i[2]);
+
+    # List source
+    q = projectB.query("SELECT s.source, s.version FROM source s, src_associations sa WHERE sa.suite = %d AND sa.source = s.id" % (suite_id));
+    ql = q.getresult();
+    for i in ql:
+        print "%s %s source" % (i[0], i[1]);
+
+#######################################################################################
+
+def main ():
+    global Cnf, projectB;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('a',"add","Heidi::Options::Add", "HasArg"),
+                 ('d',"debug","Heidi::Options::Debug", "IntVal"),
+                 ('h',"help","Heidi::Options::Help"),
+                 ('l',"list","Heidi::Options::List","HasArg"),
+                 ('r',"remove", "Heidi::Options::Remove", "HasArg"),
+                 ('s',"set", "Heidi::Options::Set", "HasArg"),
+                 ('v',"version","Heidi::Options::Version")];
+
+    file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    projectB = pg.connect('projectb', 'localhost');
+
+    db_access.init(Cnf, projectB);
+
+    action = None;
+
+    for i in ("add", "list", "remove", "set"):
+        suite = Cnf["Heidi::Options::%s" % (i)];
+        if suite !="":
+            if not Cnf.has_key("Suite::%s" % (suite)):
+                sys.stderr.write("Unknown suite %s.\n" %(suite));
+                sys.exit(2);
+            else:
+                suite_id = db_access.get_suite_id(suite);
+                if action != None:
+                    sys.stderr.write("Can only do one action at a time.\n");
+                    sys.exit(2);
+                action = i;
+
+    # Need an action...
+    if action == None:
+        sys.stderr.write("No action specified.\n");
+        sys.exit(2);
+
+    # Safety/Sanity check
+    if action == "set" and suite != "testing":
+        sys.stderr.write("Will not reset a suite other than testing...\n");
+        sys.exit(2);
+
+    if action == "list":
+        get_list(suite_id);
+    else:
+        if file_list != []:
+            for file in file_list:
+                process_file(utils.open_file(file_list[0],'r'), suite_id, action);
+        else:
+            process_file(sys.stdin, suite_id, action);
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+

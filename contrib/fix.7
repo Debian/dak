@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# "I tried to understand you.. I tried to love you right"
+
+dists=/org/ftp.debian.org/ftp/dists/
+dir=$dists/woody/
+
+for i in main contrib non-free; do # main contrib non-free
+  for j in arm; do # hurd-i386 hppa mips mipsel sh
+    echo "Processing $j ($i)..."
+    for k in $(find $dir/$i/binary-$j/ -type l); do
+      dest=$(readlink $k)
+      echo $dest | grep -q /binary-all/
+      if [ $? -eq 0 ]; then
+        file=$(basename $k)
+	woody=$(find $dists/woody/$i/binary-all/ -name $file)
+	if [ -z "$woody" ]; then 
+          echo "Killing link to $file"; 
+	  rm $k
+        fi
+      fi
+    done
+  done
+done

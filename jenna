@@ -1,0 +1,197 @@
+#!/usr/bin/env python
+
+# Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: jenna,v 1.1 2000-11-24 00:20:11 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+#######################################################################################
+
+# BTAF: "GOD *DAMMIT*!!  What the FUCK happened to my free will??"
+#
+# -- http://www.angryflower.com/timelo.gif
+
+#######################################################################################
+
+import pg, string, os, sys
+import apt_pkg
+import db_access, utils
+
+projectB = None
+Cnf = None
+
+def generate_src_list(suite, component, output):
+    sources = {}
+
+    suite_id = db_access.get_suite_id(suite);
+    
+    if component == "-":
+        q = projectB.query("SELECT s.source, s.version, l.path, f.filename, s.id FROM source s, src_associations sa, location l, files f WHERE sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id"
+                           % (suite_id));
+    else:
+        q = projectB.query("SELECT s.source, s.version, l.path, f.filename, s.id FROM source s, src_associations sa, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id"
+                           % (component, suite_id));
+    entries = q.getresult();
+    for entry in entries:
+        source = entry[0]
+        version = entry[1]
+        filename = entry[2]+entry[3];
+        id = entry[4]
+        add_new = 0
+        if os.path.exists(filename):
+            if sources.has_key(source):
+                if apt_pkg.VersionCompare(sources[source]["version"], version) == -1:
+                    if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+                        print "deleting %s (%s) in favour of newer version %s..." % (source, sources[source]["version"], version)
+                        projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %d" % (sources[source]["id"], suite_id))
+                    else:
+                        if Cnf.Find("Jenna::Options::Verbose"):
+                            print "[untouchable] would delete %s (%s) in favour of newer version %s..." % (source, sources[source]["version"], version)
+                    sources[source] = { "id": id, "version": version, "filename": filename }
+                else:
+                    if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+                        print "deleting %s (%s) in favour of newer version %s..." % (source, version, sources[source]["version"])
+                        projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %d" % (id, suite_id))
+                    else:
+                        if Cnf.Find("Jenna::Options::Verbose"):
+                            print "[untouchable] would delete %s (%s) in favour of newer version %s..." % (source, version, sources[source]["version"])
+            else:
+                sources[source] = { "id": id, "version": version, "filename": filename }
+        else:
+            if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+                sys.stderr.write("WARNING: deleting %s because it doesn't exist.\n" % (filename));
+                projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %d" % (id, suite_id))
+
+    # Write the list of files out
+    source_keys = sources.keys();
+    source_keys.sort();
+    for source in source_keys:
+        output.write(sources[source]["filename"]+'\n')
+    
+def generate_bin_list(suite, component, architecture, output, type):
+    packages = {}
+
+    suite_id = db_access.get_suite_id(suite);
+    
+    if component == "-":
+        q = projectB.query("SELECT b.package, b.version, l.path, f.filename, b.id FROM architecture a, binaries b, bin_associations ba, location l, files f WHERE ( a.arch_string = '%s' OR a.arch_string = 'all' ) AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s'" % (architecture, suite_id, type));
+    else:
+        q = projectB.query("SELECT b.package, b.version, l.path, f.filename, b.id FROM architecture a, binaries b, bin_associations ba, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND (a.arch_string = '%s' OR a.arch_string = 'all') AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s'" % (component, architecture, suite_id, type));
+    entries = q.getresult();
+    for entry in entries:
+        package = entry[0]
+        version = entry[1]
+        filename = entry[2]+entry[3];
+        id = entry[4]
+        add_new = 0
+        
+        # Hack to handle screwed up sid distro [FIXME: this may have issues, remove ASAP]
+        if not os.path.exists(filename):
+            sid_filename = string.replace(filename, "/woody/", "/potato/");
+            if os.path.exists(sid_filename):
+                filename = sid_filename;
+                
+        if os.path.exists(filename):
+            if packages.has_key(package):
+                if apt_pkg.VersionCompare(packages[package]["version"], version) == -1:
+                    if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+                        print "deleting %s (%s) in favour of newer version %s..." % (package, packages[package]["version"], version)
+                        projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %d" % (packages[package]["id"], suite_id))
+                    else:
+                        if Cnf.Find("Jenna::Options::Verbose"):
+                            print "[untouchable] would delete %s (%s) in favour of newer version %s..." % (package, packages[package]["version"], version)
+                    packages[package] = { "id": id, "version": version, "filename": filename }
+                else:
+                    if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+                        print "deleting %s (%s) in favour of newer version %s..." % (package, version, packages[package]["version"])
+                        projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %d" % (id, suite_id))
+                    else:
+                        if Cnf.Find("Jenna::Options::Verbose"):
+                            print "[untochable] would delete %s (%s) in favour of newer version %s..." % (package, version, packages[package]["version"])
+            else:
+                packages[package] = { "id": id, "version": version, "filename": filename }
+        else:
+            if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+                sys.stderr.write("WARNING: deleting %s because it doesn't exist.\n" % (filename));
+                projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %d" % (id, suite_id))
+
+    # Write the list of files out
+    package_keys = packages.keys();
+    package_keys.sort();
+    for package in package_keys:
+        output.write(packages[package]["filename"]+'\n')
+    
+    
+
+def main():
+    global Cnf, projectB;
+    
+    projectB = pg.connect('projectb', 'localhost');
+    
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('a',"architecture","Jenna::Options::Architecture", "HasArg"),
+                 ('c',"component","Jenna::Options::Component", "HasArg"),
+                 ('d',"debug","Jenna::Options::Debug", "IntVal"),
+                 ('h',"help","Jenna::Options::Help"),
+                 ('s',"suite", "Jenna::Options::Suite", "HasArg"),
+                 ('v',"verbose","Jenna::Options::Verbose"),
+                 ('V',"version","Jenna::Options::Version")];
+
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    db_access.init(Cnf, projectB);
+
+    if Cnf["Jenna::Options::Suite"] == "":
+        Cnf["Jenna::Options::Suite"] = string.join(Cnf.SubTree("Suite").List());
+    for suite in string.split(Cnf["Jenna::Options::Suite"]):
+        suite = string.lower(suite);
+        components = Cnf["Jenna::Options::Component"];
+        if not Cnf.has_key("Suite::%s::Components" % (suite)):
+            components = "-";
+        if components == "":
+            components = string.join(Cnf.SubTree("Suite::%s::Components" % (suite)).List());
+        for component in string.split(components):
+            component = string.lower(component)
+            architectures = Cnf["Jenna::Options::Architecture"];
+            if architectures == "":
+                architectures = string.join(Cnf.SubTree("Suite::%s::Architectures" % (suite)).List());
+            for architecture in string.split(architectures):
+                architecture = string.lower(architecture)
+                if architecture == "all":
+                    continue
+                if architecture == "source":
+                    print "Processing dists/%s/%s/%s..." % (suite, component, architecture);
+                    output = utils.open_file("%s/%s_%s_%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w")
+                    generate_src_list(suite, component, output);
+                    output.close();
+                else:
+                    print "Processing dists/%s/%s/binary-%s..." % (suite, component, architecture);
+                    output = utils.open_file("%s/%s_%s_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
+                    generate_bin_list(suite, component, architecture, output, "deb");
+                    output.close();
+                    if component == "main": # FIXME: must be a cleaner way to say debian-installer is main only?
+                        print "Processing dists/%s/%s/debian-installer/binary-%s..." % (suite,component, architecture);
+                        output = utils.open_file("%s/%s_%s_debian-installer_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
+                        generate_bin_list(suite, component, architecture, output, "udeb");
+                        output.close();
+
+if __name__ == '__main__':
+    main()
+

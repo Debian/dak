@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "configure" ]; then
+      if [ -d /usr/doc -a ! -e /usr/doc/katie \
+          -a -d /usr/share/doc/katie ]; then
+              ln -sf ../share/doc/katie /usr/doc/katie
+      fi
+fi

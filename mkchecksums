@@ -1,0 +1,16 @@
+#!/bin/sh
+# Update the md5sums file
+# $Id: mkchecksums,v 1.1 2000-11-24 00:20:11 troup Exp $
+
+set -e
+. $SCRIPTVARS
+
+dsynclist=$indices/dsync.list
+md5list=$indices/md5sums
+
+echo -n "Creating md5 / dsync index file ... "
+
+cd "$ftpdir"
+dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
+dsync-flist -q md5sums $dsynclist | tee $md5list | gzip -9n > ${md5list}.gz
+dsync-flist -q link-dups $dsynclist || true

@@ -1,0 +1,25 @@
+This is the README file for da-katie version -1.
+
+da-katie is the collection of programs used to maintain the Debian GNU
+project archive.
+
+See TODO for an incomplete list of things needing to be done.
+
+See the file NEWS for user-visible changes since the last version.
+
+See the file INSTALL for installation instructions.
+
+da-katie is used on the following platforms :-
+
+Linux/i386 2.2
+Linux/UltraSparc 2.2
+
+da-katie is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, a copy of
+which is provided under the name COPYING, or (at your option) any
+later version.
+
+-- 
+James Troup <james@nocrew.org>, Oldenburg, Germany
+Thu, 12 Oct 2000 12:45:16 +0100

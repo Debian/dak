@@ -1,0 +1,32 @@
+#! /bin/sh
+# $Id: copyoverrides,v 1.1 2000-11-24 00:20:11 troup Exp $
+
+set -e
+. $SCRIPTVARS
+echo 'Copying override files into public view ...'
+
+for f in $copyoverrides ; do
+	cd $overridedir
+	sortover.pl <override.$f >override.$f.new
+	ln -f override.$f old/override.$f.old
+	mv override.$f.new override.$f
+	chmod g+w override.$f
+
+	cd $indices
+	rm -f .newover-$f.gz
+	pc="`gzip 2>&1 -9nv <$overridedir/override.$f >.newover-$f.gz`"
+	set +e
+	nf=override.$f.gz
+	cmp -s .newover-$f.gz $nf
+	rc=$?
+	set -e
+        if [ $rc = 0 ]; then
+		rm -f .newover-$f.gz
+	elif [ $rc = 1 -o ! -f $nf ]; then
+		echo "   installing new $nf $pc"
+		mv -f .newover-$f.gz $nf
+	else
+		echo $? $pc
+		exit 1
+	fi
+done

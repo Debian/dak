@@ -1,0 +1,78 @@
+#! /bin/sh
+#
+# Executed daily via cron, out of troup's crontab.
+
+set -e
+export SCRIPTVARS=/org/non-us.debian.org/katie/vars-non-US
+. $SCRIPTVARS
+
+################################################################################
+
+echo Archive maintenance started at $(date +%X)
+
+NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
+
+cleanup() {
+  rm -f "$NOTICE"
+}
+trap cleanup 0
+
+rm -f "$NOTICE"
+cat > "$NOTICE" <<EOF
+Packages are currently being installed and indices rebuilt.
+Maintenance is automatic, starting at 13:52 US Central time, and
+ending at about 15:30.  This file is then removed.
+
+You should not mirror the archive during this period.
+EOF
+
+################################################################################
+
+echo "Creating pre-daily-cron-job backup of projectb database..."
+pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+
+################################################################################
+
+# temporary hack to work around the lack of an apt-utils & python-apt package
+export PYTHONPATH=$PYTHONPATH:/org/ftp.debian.org/scripts/apt/build/bin/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/ftp.debian.org/scripts/apt/build/bin/
+export PATH=$PATH:/org/ftp.debian.org/scripts/apt/build/bin/
+
+cd $incoming
+rm -f REPORT
+katie -pak *.changes | direport | tee REPORT | \
+     mail -s "Non-US Install for $(date +%D)" ftpmaster@ftp-master.debian.org
+chgrp debadmin REPORT
+chmod 664 REPORT
+
+cd $masterdir
+symlinks -d -r $ftpdir
+
+cd $masterdir
+jenna
+apt-ftparchive generate apt.conf-non-US
+cd $indices
+charisma > .new-maintainers
+mv -f .new-maintainers Maintainers
+gzip -9v <Maintainers >.new-maintainers.gz
+mv -f .new-maintainers.gz Maintainers.gz
+cd $masterdir
+copyoverrides
+mklslar
+mkchecksums
+
+rm -f $NOTICE
+echo Archive maintenance finished at $(date +%X)
+
+################################################################################
+
+echo "Creating post-daily-cron-job backup of projectb database..."
+pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+
+################################################################################
+
+ulimit -m 90000 -d 90000 -s 10000 -v 90000
+
+run-parts --report /org/ftp.debian.org/scripts/distmnt
+
+echo Daily cron scripts successful.

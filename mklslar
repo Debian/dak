@@ -1,0 +1,36 @@
+#!/bin/sh
+# Update the ls-lR.
+# $Id: mklslar,v 1.1 2000-11-24 00:20:11 troup Exp $
+
+set -e
+. $SCRIPTVARS
+
+cd $ftpdir
+
+filename=ls-lR
+
+echo "Removing any core files ..."
+find -type f -name core -print0 | xargs -0r rm -v
+
+echo "Checking permissions on files in the FTP tree ..."
+find -type f \( \! -perm -444 -o -perm +002 \) -ls
+find -type d \( \! -perm -555 -o -perm +002 \) -ls
+
+echo "Checking symlinks ..."
+symlinks -r .
+
+echo "Creating recursive directory listing ... "
+rm -f .$filename.new
+ls -lR | grep -v Archive_Maintenance_In_Progress > .$filename.new
+
+if [ -r $filename ] ; then
+  mv -f $filename $filename.old
+  mv -f .$filename.new $filename
+  rm -f $filename.patch.gz
+  diff -u $filename.old $filename | gzip -9cfn - >$filename.patch.gz
+  rm -f $filename.old
+else
+  mv -f .$filename.new $filename
+fi
+
+gzip -9cfN $filename >$filename.gz

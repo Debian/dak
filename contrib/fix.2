@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import commands, os, string, sys
+import apt_inst, apt_pkg
+import utils
+
+Cnf = None
+
+def main():
+    global Cnf
+    
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,'/home/troup/katie/katie.conf');
+
+    Arguments = [];
+    
+    dsc_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    for dsc_file in dsc_files:
+	dsc = utils.parse_changes(dsc_file);
+        files = utils.build_file_list(dsc, 1);
+        for file in files.keys():
+            if not os.path.exists(file):
+                (result, output) = commands.getstatusoutput("locate %s | grep /org/ftp.debian.org/ftp/dists/potato/" % (file));
+                if (result != 0):
+                    print "%s: can't find '%s'." % (dsc_file, file);
+                    continue;
+                output = string.replace(output, "/org/ftp.debian.org/ftp/dists/potato/", "../potato/");
+                print "symlinking '%s' to '%s'." % (output, file);
+                os.symlink(output, file);
+
+if __name__ == '__main__':
+    main()
+

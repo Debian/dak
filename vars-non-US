@@ -1,0 +1,19 @@
+# locations used by many scripts
+
+nonushome=/org/non-us.debian.org
+ftpdir=$nonushome/ftp
+indices=$ftpdir/indices-non-US
+archs="alpha arm hppa hurd-i386 i386 m68k powerpc sparc mips mipsel sh"
+
+masterdir=$nonushome/katie
+overridedir=$nonushome/scripts/override
+incoming=$nonushome/incoming
+
+packagesfiles=packagesfiles-non-US
+sourcesfiles=sourcesfiles-non-US
+contentsfiles=contentsfiles-non-US
+
+copyoverrides="potato potato.contrib potato.non-free woody woody.contrib woody.non-free"
+
+PATH=$masterdir:$PATH
+umask 022

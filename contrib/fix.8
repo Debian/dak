@@ -1,0 +1,23 @@
+#!/bin/sh
+
+total=0
+
+for i in $(cat foo.2); do
+  if [ -f $i -a ! -L $i ]; then
+    dir=$(dirname $i)
+    file=$(basename $i)
+    size=$(du -b $i | cut -f 1)
+    arch=$(echo $i | sed -e "s#.*binary-\([a-z]*\).*#\1#")
+    pushd $dir > /dev/null
+    destdir=/home/troup/removed-from-ftp/badmd5-$arch/
+    if [ ! -d $destdir ]; then mkdir $destdir; fi
+    mv -iv $file $destdir/
+    ln -s ../../../../potato/$(echo $i | sed -e "s#.*woody/##") .
+    popd > /dev/null
+    total=$(expr $total + $size)
+  fi
+done
+
+echo
+echo "Replaced $total bytes."
+

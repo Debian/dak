@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import pg, string, os, shutil
+import utils
+import apt_pkg
+
+def move(src, dest):
+    if os.path.exists(dest):
+        print 'overwrite `'+dest+'\'? ',
+        yn = utils.our_raw_input()
+        if yn != 'Y' and yn != 'y':
+            return
+    print src + ' -> ' + dest
+    shutil.copyfile (src, dest)
+    os.unlink (src)
+
+def main():
+    projectB = pg.connect('projectb', 'localhost')
+
+    apt_pkg.init();
+    
+    suite = "unstable";
+    architecture = "i386";
+
+# too slow to run every time
+# "select b.package from binaries b, architecture a where a.arch_string = 'all' and b.architecture = a.id INTERSECT select b.package from binaries b, architecture a where a.arch_string = 'i386' and b.architecture = a.id;"
+
+    borked = utils.open_file('broken', 'r')
+    for line in borked.readlines():
+        package = string.strip(line[:-1])
+
+        #print "========="
+        #print package
+        q = projectB.query("SELECT b.version, a.arch_string, l.path, b.filename FROM bin_associations ba, binaries b, architecture a, suite s, location l WHERE b.package = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND s.suite_name = '%s' AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id AND l.id = b .location" % (package, architecture, suite))
+        entries = q.getresult()
+        version = {}
+        filename = ""
+        for entry in entries:
+            version[entry[1]] = entry[0]
+            if entry[1] == "all":
+                filename = entry[2] + entry[3]
+        if not version.has_key(architecture) or not version.has_key("all"):
+            #print "SKIPPING"
+            continue
+        if apt_pkg.VersionCompare(version[architecture], version["all"]) != 1:
+            #print architecture+" too new... SKIPPING"
+            continue
+        #print "  "+repr(version)
+        if os.path.exists(filename):
+            if os.path.islink(filename):
+                print "FIXING: unlinking %s" % (filename);
+                os.unlink(filename);
+            else:
+                print "FIXING: moving %s to /home/troup/removed-from-ftp/foad/" % (filename);
+                move(filename, "/home/troup/removed-from-ftp/foad/%s" % (os.path.basename(filename)));
+
+if __name__ == '__main__':
+    main()
+

@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+
+# Poolify (move packages from "legacy" type locations to pool locations)
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: catherine,v 1.1 2000-11-24 00:20:11 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+import pg
+import utils
+import apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+
+################################################################################
+
+def main ():
+    global Cnf, projectB;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('d',"debug","Heidi::Options::Debug", "IntVal"),
+                 ('h',"help","Heidi::Options::Help"),
+                 ('v',"version","Heidi::Options::Version")];
+
+    amount = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    print amount
+    
+    return
+
+    projectB = pg.connect('projectb', 'localhost');
+
+    db_access.init(Cnf, projectB);
+
+    if (Cnf["Heidi::Options::Add"] == "" and Cnf["Heidi::Options::Remove"] == "") or (Cnf["Heidi::Options::Add"] != "" and Cnf["Heidi::Options::Remove"] != ""):
+
+        sys.stderr.write("Need either --add <suite> or --remove <suite> command line argument; not neither or both.\n");
+        sys.exit(2);
+
+    for i in ("add", "remove"):
+        suite = Cnf["Heidi::Options::%s" % (i)];
+        if suite !="":
+            if not Cnf.has_key("Suite::%s" % (suite)):
+                sys.stderr.write("Unknown suite %s.\n" %(suite));
+                sys.exit(2);
+            else:
+                suite_id = db_access.get_suite_id(suite);
+                action = i;
+
+    if file_list != []:
+        for file in file_list:
+            process_file(utils.open_file(file_list[0],'r'), suite_id, action);
+    else:
+        process_file(sys.stdin, suite_id, action);
+
+    db_access.init (Cnf, projectB);
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+

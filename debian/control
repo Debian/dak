@@ -1,0 +1,13 @@
+Source: katie
+Section: misc
+Priority: extra
+Maintainer: James Troup <james@nocrew.org>
+Standards-Version: 3.1.1.1
+
+Package: katie
+Architecture: all
+Depends: python, apt-utils, gnupg
+Suggests: gnupg (>= 1.0.3-1)
+Description: Debian's archive maintenance scripts
+ This is a collection of archive maintenance scripts used by the
+ Debian project.

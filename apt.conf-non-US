@@ -1,0 +1,57 @@
+Dir 
+{
+   ArchiveDir "/org/non-us.debian.org/ftp/";
+   OverrideDir "/org/non-us.debian.org/scripts/override/";
+   CacheDir "/org/non-us.debian.org/database/";
+};
+
+Default
+{
+   Packages::Compress ". gzip";
+   Sources::Compress "gzip";
+   Contents::Compress "gzip";
+   DeLinkLimit 0;
+   MaxContentsChange 6000;
+   FileMode 0664;
+}
+
+TreeDefault
+{
+   Contents::Header "/org/non-us.debian.org/scripts/masterfiles/Contents.top";
+};
+
+tree "dists/stable/non-US"
+{
+   FileList "/org/non-us.debian.org/database/dists/stable_non-us/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/stable_non-us/$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm i386 m68k powerpc sparc source";
+   BinOverride "override.potato.$(SECTION)";
+   SrcOverride "override.potato.$(SECTION).src";
+   External-Links false;
+};
+
+tree "dists/unstable/non-US"
+{
+   FileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm hppa hurd-i386 i386 mips mipsel m68k powerpc sh sparc source";
+   BinOverride "override.woody.$(SECTION)";
+   SrcOverride "override.woody.$(SECTION).src";
+};
+
+bindirectory "dists/proposed-updates"
+{
+
+   FileList "/org/non-us.debian.org/database/dists/proposed-updates_-_binary.list";
+   SourceFileList "/org/non-us.debian.org/database/proposed-updates_-_source.list";
+   Packages "dists/proposed-updates/Packages";
+   Sources "dists/proposed-updates/Sources";
+   Contents "";
+
+   BinOverride "override.potato.all3";
+   BinCacheDB "packages-proposed-updates.db";
+   
+   PathPrefix "";
+};
