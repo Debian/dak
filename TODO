@@ -27,6 +27,29 @@ queue/approved
 Others
 ------
 
+  o katie.py(source_exists): a) we take arguments as parameters that
+    we could figure out for ourselves (we're part of the Katie class
+    after all), b) we have this 3rd argument which defaults to "any"
+    but could in fact be dropped since no one uses it like that.
+
+  o jennifer: doesn't handle bin-only NMUs of stuff still in NEW,
+    BYHAND or ACCEPTED (but not the pool) - not a big deal, upload can
+    be retried once the source is in the archive, but still.
+
+  o security global mail overrides should special case buildd stuff so
+    that buildds get ACCEPTED mails (or maybe amber (?)), that way
+    upload-security doesn't grow boundlessly.
+
+  o amber should upload sourceful packages first, otherwise with big
+    packages (e.g. X) and esp. when source is !i386, half the arches
+    can be uploaded without source, get copied into queue/unaccepted
+    and promptly rejected.
+
+  o rene's NVIU check doesn't catch cases where source package changed
+    name, should check binaries too. [debian-devel@l.d.o, 2004-02-03]
+
+  o cnf[melanie::logfile] is misnamed...
+
 <aj> i'd be kinda inclined to go with insisting the .changes file take
    the form ---- BEGIN PGP MESSAGE --- <non -- BEGIN/END lines> --
    BEGIN PGP SIG -- END PGP MESSAGE -- with no lines before or after,
@@ -473,6 +496,15 @@ Possible Quotes:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+<DanielS> the people love me
+<Joy> like pneumonia
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test.c:5: `long long long' is too long for GCC
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 http://yro.slashdot.org/comments.pl?sid=91696&cid=7890274
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -522,5 +554,38 @@ Monday, November 3rd, 2003
 Hint to people attempting to sell things online:
 
 DON'T PUT http://172.16.100.107/ IN YOUR URLS, YOU INCOMPETENT FUCKMONKEYS 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+| priviledged positions? What privilege? The honour of working harder
+| than most people for absolutely no recognition?
+
+Manoj Srivastava <srivasta@debian.org> in <87lln8aqfm.fsf@glaurung.internal.golden-gryphon.com>
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<elmo_h> you could just r00t klecker through [...] and do it yourself
+<mdz> heh
+<mdz> I think there's a bit in the DMUP about that
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<Yoe> well, thing is, he doesn't seem to understand you usually don't
+      have the time to give everyone status updates when a fly moves a
+      leg
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In Soviet Russia...
+
+The cops arrest YOU for not showing papers. Wait, I didn't have to
+reverse it this time, what's going on?
+
+http://slashdot.org/comments.pl?sid=97501&cid=8334726
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<infinity> <shrug>... Messaging IRCops isn't the end of the world,
+           unless its "/msg ircop I fucked your wife."
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
