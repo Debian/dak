@@ -2,7 +2,7 @@
 
 # Script to automate some parts of checking NEW packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: fernanda.py,v 1.3 2002-05-18 23:54:51 troup Exp $
+# $Id: fernanda.py,v 1.4 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ def check_dsc (dsc_filename):
 def check_deb (deb_filename):
     filename = os.path.basename(deb_filename);
 
-    if filename[-5:] == ".udeb":
+    if filename.endswith(".udeb"):
 	is_a_udeb = 1;
     else:
 	is_a_udeb = 0;
@@ -131,9 +131,9 @@ def check_changes (changes_filename):
     changes = utils.parse_changes (changes_filename);
     files = utils.build_file_list(changes);
     for file in files.keys():
-	if file[-4:] == ".deb" or file[-5:] == ".udeb":
+	if file.endswith(".deb") or file.endswith(".udeb"):
 	    check_deb(file);
-        if file[-4:] == ".dsc":
+        if file.endswith(".dsc"):
             check_dsc(file);
         # else: => byhand
 
@@ -162,11 +162,11 @@ def main ():
             sys.stdout = less_fd;
 
             try:
-                if file[-8:] == ".changes":
+                if file.endswith(".changes"):
                     check_changes(file);
-                elif file[-4:] == ".deb" or file[-5:] == ".udeb":
+                elif file.endswith(".deb") or file.endswith(".udeb"):
                     check_deb(file);
-                elif file[-4:] == ".dsc":
+                elif file.endswith(".dsc"):
                     check_dsc(file);
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (file));

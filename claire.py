@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.17 2002-06-08 00:15:57 troup Exp $
+# $Id: claire.py,v 1.18 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@
 
 ################################################################################
 
-import os, pg, re, string, sys
-import utils, db_access
+import os, pg, re, sys;
+import utils, db_access;
 import apt_pkg;
 
 ################################################################################
@@ -53,10 +53,10 @@ Create compatibility symlinks from legacy locations to the pool.
 # Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
 # Returns fixed 'src'
 def clean_symlink (src, dest, root):
-    src = string.replace(src, root, '', 1);
-    dest = string.replace(dest, root, '', 1);
+    src = src.replace(root, '', 1);
+    dest = dest.replace(root, '', 1);
     dest = os.path.dirname(dest);
-    new_src = '../' * len(string.split(dest, '/'));
+    new_src = '../' * len(dest.split('/'));
     return new_src + src;
 
 ################################################################################
@@ -67,11 +67,11 @@ def fix_component_section (component, section):
 
     # FIXME: ugly hacks to work around override brain damage
     section = re_strip_section_prefix.sub('', section);
-    section = string.replace(string.lower(section), 'non-us', '');
+    section = section.lower().replace('non-us', '');
     if section == "main" or section == "contrib" or section == "non-free":
         section = '';
     if section != '':
-        section = section + '/';
+        section += '/';
 
     return (component, section);
 

@@ -2,7 +2,7 @@
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.14 2002-05-03 16:06:45 troup Exp $
+# $Id: charisma,v 1.15 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 ################################################################################
 
-import pg, string, sys;
+import pg, sys;
 import db_access, utils;
 import apt_pkg;
 
@@ -92,7 +92,7 @@ def main():
     db_access.init(Cnf, projectB);
 
     for suite in Cnf.SubTree("Suite").List():
-        suite = string.lower(suite);
+        suite = suite.lower();
         suite_priority = int(Cnf["Suite::%s::Priority" % (suite)]);
 
         # Source packages
@@ -132,16 +132,14 @@ def main():
     for filename in extra_files:
         file = utils.open_file(filename);
         for line in file.readlines():
-            line = string.strip(utils.re_comments.sub('', line[:-1]))
+            line = utils.re_comments.sub('', line[:-1]).strip();
             if line == "":
                 continue;
-            split = string.split(line);
+            split = line.split();
             lhs = split[0];
-            maintainer = fix_maintainer(string.join(split[1:]));
-            if string.find(lhs,'~') != -1:
-                lhs_split = string.split(lhs, '~');
-                package = lhs_split[0];
-                version = lhs_split[1];
+            maintainer = fix_maintainer(" ".join(split[1:]));
+            if lhs.find('~') != -1:
+                (package, version) = lhs.split('~');
             else:
                 package = lhs;
                 version = '*';
@@ -154,7 +152,7 @@ def main():
     package_keys = packages.keys()
     package_keys.sort()
     for package in package_keys:
-        lhs = string.join([package, packages[package]["version"]], '~');
+        lhs = "~".join([package, packages[package]["version"]]);
         print "%-30s %s" % (lhs, packages[package]["maintainer"]);
 
 ################################################################################

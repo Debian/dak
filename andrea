@@ -2,7 +2,7 @@
 
 # Check for fixable discrepancies between stable and unstable
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: andrea,v 1.7 2002-05-14 15:28:53 troup Exp $
+# $Id: andrea,v 1.8 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
 ################################################################################
 
-import pg, string, sys;
+import pg, sys;
 import utils, db_access;
 import apt_pkg;
 
@@ -76,7 +76,7 @@ SELECT b_src.package, b_src.version, a.arch_string
 ORDER BY b_src.package;"""
                            % (src_suite_id, arch_id, dst_suite_id, dsc_type_id, arch_id, arch_all_id, dst_suite_id, dst_suite_id));
         for i in q.getresult():
-            print string.join(i, ' ');
+            print " ".join(i);
 
 #######################################################################################
 

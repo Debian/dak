@@ -2,7 +2,7 @@
 
 # Remove obsolete .changes files from proposed-updates
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: halle,v 1.8 2002-06-08 00:17:53 troup Exp $
+# $Id: halle,v 1.9 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import os, pg, re, sys, string;
+import os, pg, re, sys;
 import utils, db_access;
 import apt_pkg;
 
@@ -71,7 +71,7 @@ def check_changes (filename):
                 type = m.group(3);
                 if type != "dsc":
                     del files[file];
-                    num_files = num_files - 1;
+                    num_files -= 1;
                     continue;
                 arch = "source";
                 if Options["debug"]:
@@ -111,9 +111,9 @@ def check_joey (filename):
     os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]));
 
     for line in file.readlines():
-        line = string.rstrip(line)
-        if string.find(line, 'install') != -1:
-            split_line = string.split(line);
+        line = line.rstrip();
+        if line.find('install') != -1:
+            split_line = line.split();
             if len(split_line) != 2:
                 utils.fubar("Parse error (not exactly 2 elements): %s" % (line));
             install_type = split_line[0];
@@ -177,9 +177,9 @@ def main ():
     init_pu();
 
     for file in arguments:
-        if file[-8:] == ".changes":
+        if file.endswith(".changes"):
             check_changes(file);
-        elif file[-5:] == ".joey":
+        elif file.endswith(".joey"):
             check_joey(file);
         else:
             utils.fubar("Unrecognised file type: '%s'." % (file));

@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: tea,v 1.20 2002-06-08 00:23:51 troup Exp $
+# $Id: tea,v 1.21 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 ################################################################################
 
-import pg, sys, os, string, stat, time
+import pg, sys, os, stat, time
 import utils, db_access
 import apt_pkg, apt_inst;
 
@@ -45,16 +45,16 @@ current_time = time.time();
 def process_dir (unused, dirname, filenames):
     global waste, db_files, excluded;
 
-    if string.find(dirname, '/disks-') != -1 or string.find(dirname, 'upgrade-') != -1:
+    if dirname.find('/disks-') != -1 or dirname.find('upgrade-') != -1:
         return;
     # hack; can't handle .changes files
-    if string.find(dirname, 'proposed-updates') != -1:
+    if dirname.find('proposed-updates') != -1:
         return;
     for name in filenames:
         filename = os.path.abspath(dirname+'/'+name);
-        filename = string.replace(filename, 'potato-proposed-updates', 'proposed-updates');
+        filename = filename.replace('potato-proposed-updates', 'proposed-updates');
         if os.path.isfile(filename) and not os.path.islink(filename) and not db_files.has_key(filename) and not excluded.has_key(filename):
-            waste = waste + os.stat(filename)[stat.ST_SIZE];
+            waste += os.stat(filename)[stat.ST_SIZE];
             print filename
 
 ################################################################################
@@ -93,7 +93,7 @@ def check_dscs():
     for component in Cnf.SubTree("Component").List():
         if component == "mixed":
             continue;
-        component = string.lower(component);
+        component = component.lower();
         list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component);
         list_file = utils.open_file(list_filename);
         for line in list_file.readlines():
@@ -102,7 +102,7 @@ def check_dscs():
                 utils.parse_changes(file, dsc_whitespace_rules=1);
             except utils.invalid_dsc_format_exc, line:
                 utils.warn("syntax error in .dsc file '%s', line %s." % (file, line));
-                count = count + 1;
+                count += 1;
 
     if count:
         utils.warn("Found %s invalid .dsc files." % (count));
@@ -146,7 +146,7 @@ SELECT l.path, f.filename FROM files f, dsc_files df, location l WHERE df.source
         first_filename = "";
         broken = 0;
         for j in q2.getresult():
-            filename = j[0]+j[1];
+            filename = j[0] + j[1];
             path = os.path.dirname(filename);
             if first_path == "":
                 first_path = path;
@@ -157,7 +157,7 @@ SELECT l.path, f.filename FROM files f, dsc_files df, location l WHERE df.source
                     broken = 1;
                     print "WOAH, we got a live one here... %s [%s] {%s}" % (filename, source_id, symlink);
         if broken:
-            broken_count = broken_count + 1;
+            broken_count += 1;
     print "Found %d source packages where the source is not all in one directory." % (broken_count);
 
 ################################################################################
@@ -216,7 +216,7 @@ def check_timestamps():
             apt_inst.debExtract(file,Ent,"control.tar.gz");
             file.seek(0);
             apt_inst.debExtract(file,Ent,"data.tar.gz");
-            count = count + 1;
+            count += 1;
     print "Checked %d files (out of %d)." % (count, len(db_files.keys()));
 
 ################################################################################
@@ -249,7 +249,7 @@ def check_missing_tar_gz_in_dsc():
                 has_tar = 1;
         if not has_tar:
             utils.warn("%s has no .tar.gz in the .dsc file." % (file));
-            count = count + 1;
+            count += 1;
 
     if count:
         utils.warn("Found %s invalid .dsc files." % (count));

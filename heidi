@@ -2,7 +2,7 @@
 
 # Manipulate suite tags
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.14 2002-05-14 15:29:18 troup Exp $
+# $Id: heidi,v 1.15 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 
 #######################################################################################
 
-import pg, string, sys;
+import pg, sys;
 import apt_pkg;
 import utils, db_access, logging;
 
@@ -96,28 +96,28 @@ def set_suite (file, suite_id):
     q = projectB.query("SELECT b.package, b.version, a.arch_string, ba.id FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id));
     ql = q.getresult();
     for i in ql:
-        key = string.join(i[:3]);
+        key = " ".join(i[:3]);
         current[key] = i[3];
     q = projectB.query("SELECT s.source, s.version, sa.id FROM source s, src_associations sa WHERE sa.suite = %s AND sa.source = s.id" % (suite_id));
     ql = q.getresult();
     for i in ql:
-        key = string.join(i[:2]) + " source";
+        key = " ".join(i[:2]) + " source";
         current[key] = i[2];
 
     # Build up a dictionary of what should be in the suite
     desired = {};
     for line in lines:
-        split_line = string.split(string.strip(line[:-1]));
+        split_line = line[:-1].strip().split();
         if len(split_line) != 3:
             utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]));
             continue;
-        key = string.join(split_line);
+        key = " ".join(split_line);
         desired[key] = "";
 
     # Check to see which packages need removed and remove them
     for key in current.keys():
         if not desired.has_key(key):
-            (package, version, architecture) = string.split(key);
+            (package, version, architecture) = key.split();
             id = current[key];
             if architecture == "source":
                 q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (id));
@@ -128,7 +128,7 @@ def set_suite (file, suite_id):
     # Check to see which packages need added and add them
     for key in desired.keys():
         if not current.has_key(key):
-            (package, version, architecture) = string.split(key);
+            (package, version, architecture) = key.split();
             id = get_id (package, version, architecture);
             if not id:
                 continue;
@@ -155,7 +155,7 @@ def process_file (file, suite, action):
     projectB.query("BEGIN WORK");
 
     for line in lines:
-        split_line = string.split(string.strip(line[:-1]));
+        split_line = line[:-1].strip().split();
         if len(split_line) != 3:
             utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]));
             continue;
@@ -219,13 +219,13 @@ def get_list (suite):
     q = projectB.query("SELECT b.package, b.version, a.arch_string FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id));
     ql = q.getresult();
     for i in ql:
-        print string.join(i);
+        print " ".join(i);
 
     # List source
     q = projectB.query("SELECT s.source, s.version FROM source s, src_associations sa WHERE sa.suite = %s AND sa.source = s.id" % (suite_id));
     ql = q.getresult();
     for i in ql:
-        print string.join(i) + " source";
+        print " ".join(i) + " source";
 
 #######################################################################################
 

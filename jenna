@@ -2,7 +2,7 @@
 
 # Generate file lists used by apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.20 2002-07-14 15:02:07 troup Exp $
+# $Id: jenna,v 1.21 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -185,7 +185,7 @@ def cleanup(packages):
             # Check to see if we have arch: all and arch: !all (ignoring source)
             num_arches = len(arches.keys());
             if arches.has_key("source"):
-                num_arches = num_arches - 1;
+                num_arches -= 1;
             # If we do, remove the duplicates
             if num_arches > 1:
                 versions = [];
@@ -281,14 +281,14 @@ def write_filelists(packages, dislocated_files):
     if not Options["Suite"]:
         suites = Cnf.SubTree("Suite").List();
     else:
-        suites = string.split(Options["Suite"]);
+        suites = Options["Suite"].split();
     for suite in map(string.lower, suites):
         if not d.has_key(suite):
             d[suite] = {};
         if not Options["Component"]:
             components = Cnf.ValueList("Suite::%s::Components" % (suite));
         else:
-            components = string.split(Options["Components"]);
+            components = Options["Components"].split();
         udeb_components = Cnf.ValueList("Suite::%s::UdebComponents" % (suite));
         udeb_components = udeb_components;
         for component in components:
@@ -301,7 +301,7 @@ def write_filelists(packages, dislocated_files):
             if not Options["Architecture"]:
                 architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite));
             else:
-                architectures = string.split(Options["Architectures"]);
+                architectures = Options["Architectures"].split();
             for arch in map(string.lower, architectures):
                 if not d[suite][component].has_key(arch):
                     d[suite][component][arch] = {};
@@ -349,7 +349,7 @@ def stable_dislocation_p():
     if not Options["Suite"]:
         return 1;
     # Otherwise, look in what suites the user specified
-    suites = string.split(Options["Suite"]);
+    suites = Options["Suite"].split();
     return suites.count("stable");
 
 ################################################################################
@@ -372,7 +372,7 @@ SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name,
     AND f.location = l.id AND l.component = c.id AND ba.suite = su.id
     %s %s %s""" % (con_suites, con_architectures, con_components);
     if check_source:
-        query = query + """
+        query += """
 UNION
 SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name, f.id,
        su.suite_name, 'dsc'
@@ -387,7 +387,7 @@ SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name, f.id,
     for i in ql:
         (id, pkg, arch, version, path, filename, component, file_id, suite, type) = i;
         # 'id' comes from either 'binaries' or 'source', so it's not unique
-        unique_id = unique_id + 1;
+        unique_id += 1;
         packages[unique_id] = Dict(id=id, pkg=pkg, arch=arch, version=version,
                                    path=path, filename=filename,
                                    component=component, file_id=file_id,

@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie,v 1.85 2002-08-07 17:19:25 troup Exp $
+# $Id: kelly,v 1.1 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,14 +32,14 @@
 
 ###############################################################################
 
-import FCNTL, fcntl, os, string, sys, time;
+import FCNTL, fcntl, os, sys, time;
 import apt_pkg;
 import db_access, katie, logging, utils;
 
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.85 $";
+kelly_version = "$Revision: 1.1 $";
 
 Cnf = None;
 Options = None;
@@ -71,7 +71,7 @@ class Urgency_Log:
     def __init__ (self, Cnf):
         "Initialize a new Urgency Logger object"
         self.Cnf = Cnf;
-        self.timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()));
+        self.timestamp = time.strftime("%Y%m%d%H%M%S");
         # Create the log directory if it doesn't exist
         self.log_dir = Cnf["Dir::UrgencyLog"];
         if not os.path.exists(self.log_dir):
@@ -84,9 +84,9 @@ class Urgency_Log:
 
     def log (self, source, version, urgency):
         "Log an event"
-        self.log_file.write(string.join([source, version, urgency])+'\n');
+        self.log_file.write(" ".join([source, version, urgency])+'\n');
         self.log_file.flush();
-        self.writes = self.writes + 1;
+        self.writes += 1;
 
     def close (self):
         "Close a Logger object"
@@ -103,10 +103,10 @@ class Urgency_Log:
 def reject (str, prefix="Rejected: "):
     global reject_message;
     if str:
-        reject_message = reject_message + prefix + str + "\n";
+        reject_message += prefix + str + "\n";
 
 # Recheck anything that relies on the database; since that's not
-# frozen between accept and katie's run time.
+# frozen between accept and our run time.
 
 def check():
     for file in files.keys():
@@ -188,7 +188,7 @@ def action ():
     if Options["No-Action"] or Options["Automatic"]:
         answer = 'S'
 
-    if string.find(reject_message, "Rejected") != -1:
+    if reject_message.find("Rejected") != -1:
         print "REJECT\n" + reject_message,;
         prompt = "[R]eject, Skip, Quit ?";
         if Options["Automatic"]:
@@ -199,12 +199,12 @@ def action ():
         if Options["Automatic"]:
             answer = 'I';
 
-    while string.find(prompt, answer) == -1:
+    while prompt.find(answer) == -1:
         answer = utils.our_raw_input(prompt);
         m = katie.re_default_answer.match(prompt);
         if answer == "":
             answer = m.group(1);
-        answer = string.upper(answer[:1]);
+        answer = answer[:1].upper();
 
     if answer == 'R':
         do_reject ();
@@ -227,7 +227,7 @@ def do_reject ():
     Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"];
     Subst["__REJECT_MESSAGE__"] = reject_message;
     Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
-    reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.unaccept");
+    reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/kelly.unaccept");
 
     # Write the rejection email out as the <foo>.reason file
     reason_filename = os.path.basename(pkg.changes_file[:-8]) + ".reason";
@@ -261,10 +261,10 @@ def install ():
             package = dsc["source"]
             version = dsc["version"]  # NB: not files[file]["version"], that has no epoch
             maintainer = dsc["maintainer"]
-            maintainer = string.replace(maintainer, "'", "\\'")
+            maintainer = maintainer.replace("'", "\\'")
             maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
             fingerprint_id = db_access.get_or_set_fingerprint_id(dsc["fingerprint"]);
-            install_date = time.strftime("%Y-%m-%d", time.localtime(time.time()));
+            install_date = time.strftime("%Y-%m-%d");
             filename = files[file]["pool name"] + file;
             dsc_location_id = files[file]["location id"];
             if not files[file].has_key("files id") or not files[file]["files id"]:
@@ -296,7 +296,7 @@ def install ():
             package = files[file]["package"]
             version = files[file]["version"]
             maintainer = files[file]["maintainer"]
-            maintainer = string.replace(maintainer, "'", "\\'")
+            maintainer = maintainer.replace("'", "\\'")
             maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
             fingerprint_id = db_access.get_or_set_fingerprint_id(changes["fingerprint"]);
             architecture = files[file]["architecture"]
@@ -335,7 +335,7 @@ def install ():
             if legacy_source_untouchable.has_key(qid["files_id"]):
                 continue;
             # First move the files to the new location
-            legacy_filename = qid["path"]+qid["filename"];
+            legacy_filename = qid["path"] + qid["filename"];
             pool_location = utils.poolify (changes["source"], files[file]["component"]);
             pool_filename = pool_location + os.path.basename(qid["filename"]);
             destination = Cnf["Dir::Pool"] + pool_location
@@ -366,7 +366,7 @@ def install ():
         destination = Cnf["Dir::Pool"] + files[file]["pool name"] + file;
         utils.move(file, destination);
         Logger.log(["installed", file, files[file]["type"], files[file]["size"], files[file]["architecture"]]);
-        install_bytes = install_bytes + float(files[file]["size"]);
+        install_bytes += float(files[file]["size"]);
 
     # Copy the .changes file across for suite which need it.
     copy_changes_p = copy_katie_p = 0;
@@ -400,7 +400,7 @@ def install ():
     for suite in changes["distribution"].keys():
         if suite not in Cnf.ValueList("Dinstall::AcceptedAutoBuildSuites"):
             continue;
-        now_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()));
+        now_date = time.strftime("%Y-%m-%d %H:%M");
         suite_id = db_access.get_suite_id(suite);
         dest_dir = Cnf["Dir::AcceptedAutoBuild"];
         if Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
@@ -420,14 +420,14 @@ def install ():
         if orig_tar_id:
             # Determine the .orig.tar.gz file name
             for dsc_file in dsc_files.keys():
-                if dsc_file[-12:] == ".orig.tar.gz":
+                if dsc_file.endswith(".orig.tar.gz"):
                     orig_tar_gz = os.path.join(dest_dir, dsc_file);
             # Remove it from the list of packages for later processing by apt-ftparchive
             projectB.query("UPDATE accepted_autobuild SET in_accepted = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, orig_tar_gz, suite_id));
     projectB.query("COMMIT WORK");
 
     # Finally...
-    install_count = install_count + 1;
+    install_count += 1;
 
 ################################################################################
 
@@ -498,12 +498,12 @@ def stable_install (summary, short_summary):
         os.unlink(changelog_filename);
     utils.move(new_changelog_filename, changelog_filename);
 
-    install_count = install_count + 1;
+    install_count += 1;
 
     if not Options["No-Mail"] and changes["architecture"].has_key("source"):
         Subst["__SUITE__"] = " into stable";
         Subst["__SUMMARY__"] = summary;
-        mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.installed");
+        mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/kelly.installed");
         utils.send_mail(mail_message, "");
         Katie.announce(short_summary, 1)
 
@@ -555,7 +555,7 @@ def main():
         usage();
 
     if Options["Version"]:
-        print "katie %s" % (katie_version);
+        print "kelly %s" % (kelly_version);
         sys.exit(0);
 
     # -n/--dry-run invalidates some other options which would involve things happening
@@ -568,7 +568,7 @@ def main():
         utils.fubar("Archive maintenance in progress.  Try again later.");
 
     # If running from within proposed-updates; assume an install to stable
-    if string.find(os.getcwd(), 'proposed-updates') != -1:
+    if os.getcwd().find('proposed-updates') != -1:
         installing_to_stable = 1;
 
     # Obtain lock if not in no-action mode and initialize the log
@@ -580,7 +580,7 @@ def main():
             Urgency_Logger = Urgency_Log(Cnf);
 
     # Initialize the substitution template mapping global
-    bcc = "X-Katie: %s" % (katie_version);
+    bcc = "X-Katie: %s" % (kelly_version);
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:

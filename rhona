@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.24 2002-05-23 12:18:32 troup Exp $
+# $Id: rhona,v 1.25 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -185,7 +185,7 @@ def clean():
 
     print "Cleaning out packages..."
 
-    date = time.strftime("%Y-%m-%d", time.localtime(time.time()));
+    date = time.strftime("%Y-%m-%d");
     dest = Cnf["Dir::Morgue"] + '/' + Cnf["Rhona::MorgueSubDir"] + '/' + date;
     if not os.path.exists(dest):
         os.mkdir(dest);
@@ -207,14 +207,14 @@ def clean():
             continue;
         if os.path.isfile(filename):
             if os.path.islink(filename):
-                count = count + 1;
+                count += 1;
                 if Options["No-Action"]:
                     print "Removing symlink %s..." % (filename);
                 else:
                     os.unlink(filename);
             else:
-                size = size + os.stat(filename)[stat.ST_SIZE];
-                count = count + 1;
+                size += os.stat(filename)[stat.ST_SIZE];
+                count += 1;
 
                 dest_filename = dest + '/' + os.path.basename(filename);
                 # If the destination file exists; try to find another filename to use
@@ -254,7 +254,7 @@ SELECT m.id FROM maintainer m
         maintainer_id = i[0];
         if not Options["No-Action"]:
             projectB.query("DELETE FROM maintainer WHERE id = %s" % (maintainer_id));
-            count = count + 1;
+            count += 1;
     projectB.query("COMMIT WORK");
 
     if count > 0:
@@ -277,7 +277,7 @@ SELECT f.id FROM fingerprint f
         fingerprint_id = i[0];
         if not Options["No-Action"]:
             projectB.query("DELETE FROM fingerprint WHERE id = %s" % (fingerprint_id));
-            count = count + 1;
+            count += 1;
     projectB.query("COMMIT WORK");
 
     if count > 0:
@@ -305,7 +305,7 @@ def clean_accepted_autobuild():
         if not Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild") and not os.path.islink(filename):
             utils.fubar("%s (from accepted_autobuild) should be a symlink but isn't." % (filename));
         os.unlink(filename);
-        count = count + 1;
+        count += 1;
     projectB.query("DELETE FROM accepted_autobuild WHERE last_used <= '%s'" % (our_delete_date));
 
     if count:
@@ -332,7 +332,7 @@ def main():
     if Options["Help"]:
         usage();
 
-    now_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()));
+    now_date = time.strftime("%Y-%m-%d %H:%M");
     delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::StayOfExecution"])));
 
     check_binaries();

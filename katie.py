@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.26 2002-08-26 18:07:24 ajt Exp $
+# $Id: katie.py,v 1.27 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import utils, db_access;
 import apt_inst, apt_pkg;
 
 from types import *;
-from string import lower;
 
 ###############################################################################
 
@@ -57,7 +56,7 @@ class nmu_p:
             filename = Cnf["Dir::Override"] + Cnf["Dinstall::GroupOverrideFilename"];
             file = utils.open_file(filename);
             for line in file.readlines():
-                line = lower(string.strip(utils.re_comments.sub('', line)));
+                line = utils.re_comments.sub('', line).lower().strip();
                 if line != "":
                     self.group_maint[line] = 1;
             file.close();
@@ -67,23 +66,23 @@ class nmu_p:
         changes = pkg.changes;
         dsc = pkg.dsc;
 
-        (dsc_rfc822, dsc_name, dsc_email) = utils.fix_maintainer (lower(dsc.get("maintainer",Cnf["Dinstall::MyEmailAddress"])));
+        (dsc_rfc822, dsc_name, dsc_email) = utils.fix_maintainer (dsc.get("maintainer",Cnf["Dinstall::MyEmailAddress"]).lower());
         # changes["changedbyname"] == dsc_name is probably never true, but better safe than sorry
-        if dsc_name == lower(changes["maintainername"]) and \
-           (changes["changedby822"] == "" or lower(changes["changedbyname"]) == dsc_name):
+        if dsc_name == changes["maintainername"].lower() and \
+           (changes["changedby822"] == "" or changes["changedbyname"].lower() == dsc_name):
             return 0;
 
         if dsc.has_key("uploaders"):
-            uploaders = string.split(lower(dsc["uploaders"]), ",");
+            uploaders = dsc["uploaders"].lower().split(",");
             uploadernames = {};
             for i in uploaders:
-                (rfc822, name, email) = utils.fix_maintainer (string.strip(i));
+                (rfc822, name, email) = utils.fix_maintainer (i.strip());
                 uploadernames[name] = "";
-            if uploadernames.has_key(lower(changes["changedbyname"])):
+            if uploadernames.has_key(changes["changedbyname"].lower()):
                 return 0;
 
         # Some group maintained packages (e.g. Debian QA) are never NMU's
-        if self.group_maint.has_key(lower(changes["maintaineremail"])):
+        if self.group_maint.has_key(changes["maintaineremail"].lower()):
             return 0;
 
         return 1;
@@ -212,7 +211,7 @@ class Katie:
         if not changes.has_key("maintainer822"):
             changes["maintainer822"] = self.Cnf["Dinstall::MyEmailAddress"];
 
-        Subst["__ARCHITECTURE__"] = string.join(changes["architecture"].keys(), ' ' );
+        Subst["__ARCHITECTURE__"] = " ".join(changes["architecture"].keys());
         Subst["__CHANGES_FILENAME__"] = os.path.basename(self.pkg.changes_file);
         Subst["__FILE_CONTENTS__"] = changes.get("filecontents", "");
 
@@ -226,7 +225,7 @@ class Katie:
             Subst["__MAINTAINER_TO__"] = changes["maintainer822"];
             Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown");
         if self.Cnf.has_key("Dinstall::TrackingServer") and changes.has_key("source"):
-            Subst["__MAINTAINER_TO__"] = Subst["__MAINTAINER_TO__"] + "\nBcc: %s@%s" % (changes["source"], self.Cnf["Dinstall::TrackingServer"])
+            Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (changes["source"], self.Cnf["Dinstall::TrackingServer"])
 
         # Apply any global override of the Maintainer field
         if self.Cnf.get("Dinstall::OverrideMaintainer"):
@@ -255,18 +254,18 @@ class Katie:
         for file in file_keys:
             if files[file].has_key("byhand"):
                 byhand = 1
-                summary = summary + file + " byhand\n"
+                summary += file + " byhand\n"
             elif files[file].has_key("new"):
                 new = 1
-                summary = summary + "(new) %s %s %s\n" % (file, files[file]["priority"], files[file]["section"])
+                summary += "(new) %s %s %s\n" % (file, files[file]["priority"], files[file]["section"])
                 if files[file].has_key("othercomponents"):
-                    summary = summary + "WARNING: Already present in %s distribution.\n" % (files[file]["othercomponents"])
+                    summary += "WARNING: Already present in %s distribution.\n" % (files[file]["othercomponents"])
                 if files[file]["type"] == "deb":
-                    summary = summary + apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)))["Description"] + '\n';
+                    summary += apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)))["Description"] + '\n';
             else:
                 files[file]["pool name"] = utils.poolify (changes["source"], files[file]["component"])
                 destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
-                summary = summary + file + "\n  to " + destination + "\n"
+                summary += file + "\n  to " + destination + "\n"
 
         short_summary = summary;
 
@@ -274,9 +273,9 @@ class Katie:
         f = re_fdnic.sub("\n .\n", changes.get("changes",""));
 
         if byhand or new:
-            summary = summary + "Changes: " + f;
+            summary += "Changes: " + f;
 
-        summary = summary + self.announce(short_summary, 0)
+        summary += self.announce(short_summary, 0)
 
         return (summary, short_summary);
 
@@ -294,9 +293,9 @@ class Katie:
 
         bugs.sort();
         if not self.nmu.is_an_nmu(self.pkg):
-            summary = summary + "Closing bugs: ";
+            summary += "Closing bugs: ";
             for bug in bugs:
-                summary = summary + "%s " % (bug);
+                summary += "%s " % (bug);
                 if action:
                     Subst["__BUG_NUMBER__"] = bug;
                     if changes["distribution"].has_key("stable"):
@@ -313,18 +312,18 @@ distribution.""";
             if action:
                 self.Logger.log(["closing bugs"]+bugs);
         else:                     # NMU
-            summary = summary + "Setting bugs to severity fixed: ";
+            summary += "Setting bugs to severity fixed: ";
             control_message = "";
             for bug in bugs:
-                summary = summary + "%s " % (bug);
-                control_message = control_message + "tag %s + fixed\n" % (bug);
+                summary += "%s " % (bug);
+                control_message += "tag %s + fixed\n" % (bug);
             if action and control_message != "":
                 Subst["__CONTROL_MESSAGE__"] = control_message;
                 mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-nmu-fixed");
                 utils.send_mail (mail_message, "");
             if action:
                 self.Logger.log(["setting bugs to fixed"]+bugs);
-        summary = summary + "\n";
+        summary += "\n";
         return summary;
 
     ###########################################################################
@@ -347,7 +346,7 @@ distribution.""";
             if list == "" or lists_done.has_key(list):
                 continue;
             lists_done[list] = 1;
-            summary = summary + "Announcing to %s\n" % (list);
+            summary += "Announcing to %s\n" % (list);
 
             if action:
                 Subst["__ANNOUNCE_LIST_ADDRESS__"] = list;
@@ -378,8 +377,8 @@ distribution.""";
         file_keys = files.keys();
         for file in file_keys:
             utils.move(file, Cnf["Dir::Queue::Accepted"]);
-            self.accept_bytes = self.accept_bytes + float(files[file]["size"])
-        self.accept_count = self.accept_count + 1;
+            self.accept_bytes += float(files[file]["size"])
+        self.accept_count += 1;
 
         # Send accept mail, announce to lists, close bugs and check for
         # override disparities
@@ -415,7 +414,7 @@ distribution.""";
             if self.pkg.orig_tar_id:
                 # Determine the .orig.tar.gz file name
                 for dsc_file in self.pkg.dsc_files.keys():
-                    if dsc_file[-12:] == ".orig.tar.gz":
+                    if dsc_file.endswith(".orig.tar.gz"):
                         filename = dsc_file;
                 dest = os.path.join(dest_dir, filename);
                 # If it doesn't exist, create a symlink
@@ -457,15 +456,15 @@ distribution.""";
             if not files[file].has_key("new") and files[file]["type"] == "deb":
                 section = files[file]["section"];
                 override_section = files[file]["override section"];
-                if lower(section) != lower(override_section) and section != "-":
+                if section.lower() != override_section.lower() and section != "-":
                     # Ignore this; it's a common mistake and not worth whining about
-                    if lower(section) == "non-us/main" and lower(override_section) == "non-us":
+                    if section.lower() == "non-us/main" and override_section.lower() == "non-us":
                         continue;
-                    summary = summary + "%s: section is overridden from %s to %s.\n" % (file, section, override_section);
+                    summary += "%s: section is overridden from %s to %s.\n" % (file, section, override_section);
                 priority = files[file]["priority"];
                 override_priority = files[file]["override priority"];
                 if priority != override_priority and priority != "-":
-                    summary = summary + "%s: priority is overridden from %s to %s.\n" % (file, priority, override_priority);
+                    summary += "%s: priority is overridden from %s to %s.\n" % (file, priority, override_priority);
 
         if summary == "":
             return;
@@ -528,18 +527,18 @@ distribution.""";
             while answer == 'E':
                 os.system("%s %s" % (editor, temp_filename))
                 file = utils.open_file(temp_filename);
-                reject_message = string.join(file.readlines());
+                reject_message = " ".join(file.readlines());
                 file.close();
                 print "Reject message:";
                 print utils.prefix_multi_line_string(reject_message,"  ");
                 prompt = "[R]eject, Edit, Abandon, Quit ?"
                 answer = "XXX";
-                while string.find(prompt, answer) == -1:
+                while prompt.find(answer) == -1:
                     answer = utils.our_raw_input(prompt);
                     m = re_default_answer.search(prompt);
                     if answer == "":
                         answer = m.group(1);
-                    answer = string.upper(answer[:1]);
+                    answer = answer[:1].upper();
             os.unlink(temp_filename);
             if answer == 'A':
                 return 1;
@@ -646,7 +645,7 @@ distribution.""";
         type_id = db_access.get_override_type_id(type);
 
         # FIXME: nasty non-US speficic hack
-        if lower(component[:7]) == "non-us/":
+        if component[:7].lower() == "non-us/":
             component = component[7:];
 
         q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND type = %s AND o.section = s.id AND o.priority = p.id"
@@ -674,8 +673,8 @@ distribution.""";
             # Unlike other rejects we add new lines first to avoid trailing
             # new lines when this message is passed back up to a caller.
             if self.reject_message:
-                self.reject_message = self.reject_message + "\n";
-            self.reject_message = self.reject_message + prefix + str;
+                self.reject_message += "\n";
+            self.reject_message += prefix + str;
 
     ################################################################################
 
@@ -686,8 +685,8 @@ distribution.""";
 
         # Check versions for each target suite
         for target_suite in self.pkg.changes["distribution"].keys():
-            must_be_newer_than = map(lower, self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeNewerThan" % (target_suite)));
-            must_be_older_than = map(lower, self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeOlderThan" % (target_suite)));
+            must_be_newer_than = map(string.lower, self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeNewerThan" % (target_suite)));
+            must_be_older_than = map(string.lower, self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeOlderThan" % (target_suite)));
             # Enforce "must be newer than target suite" even if conffile omits it
             if target_suite not in must_be_newer_than:
                 must_be_newer_than.append(target_suite);
@@ -778,7 +777,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 if ql:
                     # Ignore exact matches for .orig.tar.gz
                     match = 0;
-                    if dsc_file[-12:] == ".orig.tar.gz":
+                    if dsc_file.endswith(".orig.tar.gz"):
                         for i in ql:
                             if files.has_key(dsc_file) and \
                                int(files[dsc_file]["size"]) == int(i[0]) and \
@@ -789,7 +788,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
 
                     if not match:
                         self.reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_file));
-            elif dsc_file[-12:] == ".orig.tar.gz":
+            elif dsc_file.endswith(".orig.tar.gz"):
                 # Check in the pool
                 q = self.projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
                 ql = q.getresult();

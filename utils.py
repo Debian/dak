@@ -1,6 +1,8 @@
+#!/usr/bin/env python
+
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.50 2002-07-14 15:01:04 troup Exp $
+# $Id: utils.py,v 1.51 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -88,18 +90,18 @@ def str_isnum (s):
 def extract_component_from_section(section):
     component = "";
 
-    if string.find(section, '/') != -1:
-        component = string.split(section, '/')[0];
-    if string.lower(component) == "non-us" and string.count(section, '/') > 0:
-        s = component + '/' + string.split(section, '/')[1];
+    if section.find('/') != -1:
+        component = section.split('/')[0];
+    if component.lower() == "non-us" and section.count('/') > 0:
+        s = component + '/' + section.split('/')[1];
         if Cnf.has_key("Component::%s" % s): # Avoid e.g. non-US/libs
             component = s;
 
-    if string.lower(section) == "non-us":
+    if section.lower() == "non-us":
         component = "non-US/main";
 
     # non-US prefix is case insensitive
-    if string.lower(component)[:6] == "non-us":
+    if component.lower()[:6] == "non-us":
         component = "non-US"+component[6:];
 
     # Expand default component
@@ -142,7 +144,7 @@ def parse_changes(filename, dsc_whitespace_rules=0):
     index = 0;
     indexed_lines = {};
     for line in lines:
-        index = index + 1;
+        index += 1;
         indexed_lines[index] = line[:-1];
 
     inside_signature = 0;
@@ -151,52 +153,52 @@ def parse_changes(filename, dsc_whitespace_rules=0):
     index = 0;
     first = -1;
     while index < max(indices):
-        index = index + 1;
+        index += 1;
         line = indexed_lines[index];
         if line == "":
             if dsc_whitespace_rules:
-                index = index + 1;
+                index += 1;
                 if index > max(indices):
                     raise invalid_dsc_format_exc, index;
                 line = indexed_lines[index];
-                if string.find(line, "-----BEGIN PGP SIGNATURE") != 0:
+                if not line.startswith("-----BEGIN PGP SIGNATURE"):
                     raise invalid_dsc_format_exc, index;
                 inside_signature = 0;
                 break;
-        if string.find(line, "-----BEGIN PGP SIGNATURE") == 0:
+        if line.startswith("-----BEGIN PGP SIGNATURE"):
             break;
-        if string.find(line, "-----BEGIN PGP SIGNED MESSAGE") == 0:
+        if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
             if dsc_whitespace_rules:
                 inside_signature = 1;
                 while index < max(indices) and line != "":
-                    index = index + 1;
+                    index += 1;
                     line = indexed_lines[index];
             continue;
         slf = re_single_line_field.match(line);
         if slf:
-            field = string.lower(slf.groups()[0]);
+            field = slf.groups()[0].lower();
             changes[field] = slf.groups()[1];
 	    first = 1;
             continue;
         if line == " .":
-            changes[field] = changes[field] + '\n';
+            changes[field] += '\n';
             continue;
         mlf = re_multi_line_field.match(line);
         if mlf:
             if first == -1:
                 raise changes_parse_error_exc, "'%s'\n [Multi-line field continuing on from nothing?]" % (line);
             if first == 1 and changes[field] != "":
-                changes[field] = changes[field] + '\n';
+                changes[field] += '\n';
             first = 0;
-	    changes[field] = changes[field] + mlf.groups()[0] + '\n';
+	    changes[field] += mlf.groups()[0] + '\n';
             continue;
-	error = error + line;
+	error += line;
 
     if dsc_whitespace_rules and inside_signature:
         raise invalid_dsc_format_exc, index;
 
     changes_in.close();
-    changes["filecontents"] = string.join (lines, "");
+    changes["filecontents"] = "".join(lines);
 
     if error != "":
 	raise changes_parse_error_exc, error;
@@ -219,10 +221,10 @@ def build_file_list(changes, is_a_dsc=0):
     if not changes.has_key("files"):
 	raise no_files_exc
 
-    for i in string.split(changes["files"], "\n"):
+    for i in changes["files"].split("\n"):
         if i == "":
             break
-        s = string.split(i)
+        s = i.split();
         section = priority = "";
         try:
             if is_a_dsc:
@@ -262,7 +264,7 @@ def fix_maintainer (maintainer):
     if m != None and len(m.groups()) == 2:
         name = m.group(1)
         email = m.group(2)
-        if string.find(name, ',') != -1 or string.find(name, '.') != -1:
+        if name.find(',') != -1 or name.find('.') != -1:
             rfc822 = re_parse_maintainer.sub(r"\2 (\1)", maintainer)
     return (rfc822, name, email)
 
@@ -294,10 +296,9 @@ def send_mail (message, filename):
 
 def poolify (source, component):
     if component != "":
-	component = component + '/';
+	component += '/';
     # FIXME: this is nasty
-    component = string.lower(component);
-    component = string.replace(component, 'non-us/', 'non-US/');
+    component = component.lower().replace('non-us/', 'non-US/');
     if source[:3] == "lib":
 	return component + source[:4] + '/' + source + '/'
     else:
@@ -316,7 +317,7 @@ def move (src, dest, overwrite = 0, perms = 0664):
 	os.umask(umask);
     #print "Moving %s to %s..." % (src, dest);
     if os.path.exists(dest) and os.path.isdir(dest):
-	dest = dest + '/' + os.path.basename(src);
+	dest += '/' + os.path.basename(src);
     # Don't overwrite unless forced to
     if os.path.exists(dest):
         if not overwrite:
@@ -339,7 +340,7 @@ def copy (src, dest, overwrite = 0, perms = 0664):
 	os.umask(umask);
     #print "Copying %s to %s..." % (src, dest);
     if os.path.exists(dest) and os.path.isdir(dest):
-	dest = dest + '/' + os.path.basename(src);
+	dest += '/' + os.path.basename(src);
     # Don't overwrite unless forced to
     if os.path.exists(dest):
         if not overwrite:
@@ -380,8 +381,8 @@ def which_apt_conf_file ():
 # (woefully incomplete)
 
 def regex_safe (s):
-    s = string.replace(s, '+', '\\\\+');
-    s = string.replace(s, '.', '\\\\.');
+    s = s.replace('+', '\\\\+');
+    s = s.replace('.', '\\\\.');
     return s
 
 ######################################################################################
@@ -391,7 +392,7 @@ def TemplateSubst(map, filename):
     file = open_file(filename);
     template = file.read();
     for x in map.keys():
-        template = string.replace(template,x,map[x]);
+        template = template.replace(x,map[x]);
     file.close();
     return template;
 
@@ -409,7 +410,7 @@ def warn(msg):
 # Returns the user name with a laughable attempt at rfc822 conformancy
 # (read: removing stray periods).
 def whoami ():
-    return string.replace(string.split(pwd.getpwuid(os.getuid())[4],',')[0], '.', '');
+    return pwd.getpwuid(os.getuid())[4].split(',')[0].replace('.', '');
 
 ######################################################################################
 
@@ -430,7 +431,7 @@ def cc_fix_changes (changes):
     if o != "":
         del changes["architecture"]
     changes["architecture"] = {}
-    for j in string.split(o):
+    for j in o.split():
         changes["architecture"][j] = 1
 
 # Sort by source name, source version, 'have source', and then by filename
@@ -480,7 +481,7 @@ def find_next_free (dest, too_many=100):
     orig_dest = dest;
     while os.path.exists(dest) and extra < too_many:
         dest = orig_dest + '.' + repr(extra);
-        extra = extra + 1;
+        extra += 1;
     if extra >= too_many:
         raise tried_too_hard_exc;
     return dest;
@@ -494,16 +495,16 @@ def result_join (original, sep = '\t'):
             list.append("");
         else:
             list.append(original[i]);
-    return string.join(list, sep);
+    return sep.join(list);
 
 ################################################################################
 
 def prefix_multi_line_string(str, prefix):
     out = "";
-    for line in string.split(str, '\n'):
-        line = string.strip(line);
+    for line in str.split('\n'):
+        line = line.strip();
         if line:
-            out = out + "%s%s\n" % (prefix, line);
+            out += "%s%s\n" % (prefix, line);
     # Strip trailing new line
     if out:
         out = out[:-1];
@@ -515,10 +516,10 @@ def validate_changes_file_arg(file, fatal=1):
     error = None;
 
     orig_filename = file
-    if file[-6:] == ".katie":
+    if file.endswith(".katie"):
         file = file[:-6]+".changes";
 
-    if file[-8:] != ".changes":
+    if not file.endswith(".changes"):
         error = "invalid file type; not a changes file";
     else:
         if not os.access(file,os.R_OK):
@@ -546,7 +547,7 @@ def real_arch(arch):
 def join_with_commas_and(list):
 	if len(list) == 0: return "nothing";
 	if len(list) == 1: return list[0];
-	return string.join(list[:-1], ", ") + " and " + list[-1];
+	return ", ".join(list[:-1]) + " and " + list[-1];
 
 ################################################################################
 
@@ -560,14 +561,14 @@ def parse_args(Options):
     # Process suite
     if Options["Suite"]:
         suite_ids_list = [];
-        for suite in string.split(Options["Suite"]):
+        for suite in Options["Suite"].split():
             suite_id = db_access.get_suite_id(suite);
             if suite_id == -1:
-                utils.warn("suite '%s' not recognised." % (suite));
+                warn("suite '%s' not recognised." % (suite));
             else:
                 suite_ids_list.append(suite_id);
         if suite_ids_list:
-            con_suites = "AND su.id IN (%s)" % string.join(map(str, suite_ids_list), ", ");
+            con_suites = "AND su.id IN (%s)" % ", ".join(map(str, suite_ids_list));
         else:
             fubar("No valid suite given.");
     else:
@@ -576,14 +577,14 @@ def parse_args(Options):
     # Process component
     if Options["Component"]:
         component_ids_list = [];
-        for component in string.split(Options["Component"]):
+        for component in Options["Component"].split():
             component_id = db_access.get_component_id(component);
             if component_id == -1:
                 warn("component '%s' not recognised." % (component));
             else:
                 component_ids_list.append(component_id);
         if component_ids_list:
-            con_components = "AND c.id IN (%s)" % string.join(map(str, component_ids_list), ", ");
+            con_components = "AND c.id IN (%s)" % ", ".join(map(str, component_ids_list));
         else:
             fubar("No valid component given.");
     else:
@@ -594,7 +595,7 @@ def parse_args(Options):
     if Options["Architecture"]:
         arch_ids_list = [];
         check_source = 0;
-        for architecture in string.split(Options["Architecture"]):
+        for architecture in Options["Architecture"].split():
             if architecture == "source":
                 check_source = 1;
             else:
@@ -604,7 +605,7 @@ def parse_args(Options):
                 else:
                     arch_ids_list.append(architecture_id);
         if arch_ids_list:
-            con_architectures = "AND a.id IN (%s)" % string.join(map(str, arch_ids_list), ", ");
+            con_architectures = "AND a.id IN (%s)" % ", ".join(map(str, arch_ids_list));
         else:
             if not check_source:
                 fubar("No valid architecture given.");

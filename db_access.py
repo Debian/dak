@@ -1,6 +1,8 @@
+#!/usr/bin/env python
+
 # DB access fucntions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.13 2002-05-03 16:06:45 troup Exp $
+# $Id: db_access.py,v 1.14 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +20,7 @@
 
 ############################################################################################
 
-import string, sys, time;
+import sys, time;
 
 ############################################################################################
 
@@ -140,7 +142,7 @@ def get_architecture_id (architecture):
 def get_archive_id (archive):
     global archive_id_cache
 
-    archive = string.lower(archive);
+    archive = archive.lower();
 
     if archive_id_cache.has_key(archive):
         return archive_id_cache[archive]
@@ -158,7 +160,7 @@ def get_archive_id (archive):
 def get_component_id (component):
     global component_id_cache
 
-    component = string.lower(component);
+    component = component.lower();
 
     if component_id_cache.has_key(component):
         return component_id_cache[component]

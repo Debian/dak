@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: rene,v 1.14 2002-08-07 17:19:29 troup Exp $
+# $Id: rene,v 1.15 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 ################################################################################
 
-import commands, pg, os, string, sys, tempfile;
+import commands, pg, os, sys, tempfile;
 import utils, db_access;
 import apt_pkg;
 
@@ -42,13 +42,7 @@ def main ():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('h',"help","Catherine::Options::Help"),
-                 ('V',"version","Catherine::Options::Version"),
-                 ('l',"limit", "Catherine::Options::Limit", "HasArg"),
-                 ('n',"no-action","Catherine::Options::No-Action"),
-                 ('v',"verbose","Catherine::Options::Verbose")];
-
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
@@ -81,10 +75,10 @@ def main ():
             # Check for packages built on architectures they shouldn't be.
             if architecture != "any" and architecture != "all":
                 architectures = {};
-                for arch in string.split(architecture):
-                    architectures[string.strip(arch)] = "";
-                for binary in string.split(binaries, ','):
-                    binary = string.strip(binary);
+                for arch in architecture.split():
+                    architectures[arch.strip()] = "";
+                for binary in binaries.split(','):
+                    binary = binary.strip();
                     q = projectB.query("SELECT a.arch_string, b.version FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id AND b.package = '%s'" % (suite_id, binary));
                     ql = q.getresult();
                     if not ql:
@@ -121,10 +115,10 @@ def main ():
             if src_pkgs.has_key(source):
                 print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source]);
             src_pkgs[source] = source_index;
-            for binary in string.split(binaries, ','):
-                binary = string.strip(binary);
+            for binary in binaries.split(','):
+                binary = binary.strip();
                 if bin_pkgs.has_key(binary):
-                    print " %s is duplicated in %s and %s" % (binary, source, bin_pkgs[binary]);
+                    print " binary %s is duplicated in source packages %s and %s" % (binary, source, bin_pkgs[binary]);
                 bin_pkgs[binary] = source;
             source_binaries[source] = binaries;
 
@@ -142,7 +136,7 @@ def main ():
                 source = Packages.Section.Find('Source', "");
                 if source == "":
                     source = package;
-                if string.find(source, "(") != -1:
+                if source.find("(") != -1:
                     m = utils.re_extract_src_version.match(source)
                     source = m.group(1)
                 if not bin_pkgs.has_key(package) and not miss_src.has_key(package):

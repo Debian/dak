@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: natalie,v 1.3 2002-07-14 15:01:19 troup Exp $
+# $Id: natalie,v 1.4 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import pg, string, sys, time;
+import pg, sys, time;
 import utils, db_access, logging;
 import apt_pkg;
 
@@ -87,47 +87,47 @@ def process_file (file, suite, component, type, action):
     start_time = time.time();
     projectB.query("BEGIN WORK");
     for line in file.readlines():
-        line = string.strip(utils.re_comments.sub('', line[:-1]))
+        line = utils.re_comments.sub('', line[:-1]).strip();
         if line == "":
             continue;
 
         maintainer_override = None;
         if type == "dsc":
-            split_line = string.split(line, None, 2);
+            split_line = line.split(None, 2);
             if len(split_line) == 2:
                 (package, section) = split_line;
             elif len(split_line) == 3:
                 (package, section, maintainer_override) = split_line;
             else:
                 utils.warn("'%s' does not break into 'package section [maintainer-override]'." % (line));
-                c_error = c_error + 1;
+                c_error += 1;
                 continue;
             priority = "source";
         else: # binary or udeb
-            split_line = string.split(line, None, 3);
+            split_line = line.split(None, 3);
             if len(split_line) == 3:
                 (package, priority, section) = split_line;
             elif len(split_line) == 4:
                 (package, priority, section, maintainer_override) = split_line;
             else:
                 utils.warn("'%s' does not break into 'package priority section [maintainer-override]'." % (line));
-                c_error = c_error + 1;
+                c_error += 1;
                 continue;
 
         section_id = db_access.get_section_id(section);
         if section_id == -1:
             utils.warn("'%s' is not a valid section. ['%s' in suite %s, component %s]." % (section, package, suite, component));
-            c_error = c_error + 1;
+            c_error += 1;
             continue;
         priority_id = db_access.get_priority_id(priority);
         if priority_id == -1:
             utils.warn("'%s' is not a valid priority. ['%s' in suite %s, component %s]." % (priority, package, suite, component));
-            c_error = c_error + 1;
+            c_error += 1;
             continue;
 
         if new.has_key(package):
             utils.warn("Can't insert duplicate entry for '%s'; ignoring all but the first. [suite %s, component %s]" % (package, suite, component));
-            c_error = c_error + 1;
+            c_error += 1;
             continue;
         new[package] = "";
         if original.has_key(package):
@@ -136,12 +136,12 @@ def process_file (file, suite, component, type, action):
                old_section_id == section_id and \
                old_maintainer_override == maintainer_override:
                 # If it's unchanged or we're in 'add only' mode, ignore it
-                c_skipped = c_skipped + 1;
+                c_skipped += 1;
                 continue;
             else:
                 # If it's changed, delete the old one so we can
                 # reinsert it with the new information
-                c_updated = c_updated + 1;
+                c_updated += 1;
                 projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
                                % (suite_id, component_id, package, type_id));
                 # Log changes
@@ -153,7 +153,7 @@ def process_file (file, suite, component, type, action):
                     Logger.log(["changed maintainer override",package,old_maintainer_override,maintainer_override]);
                 update_p = 1;
         else:
-            c_added = c_added + 1;
+            c_added += 1;
             update_p = 0;
 
         if maintainer_override:
@@ -172,7 +172,7 @@ def process_file (file, suite, component, type, action):
             if not new.has_key(package):
                 projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
                                % (suite_id, component_id, package, type_id));
-                c_removed = c_removed + 1;
+                c_removed += 1;
                 Logger.log(["removed override",suite,component,type,package]);
 
     projectB.query("COMMIT WORK");

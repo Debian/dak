@@ -2,7 +2,7 @@
 
 # Check utils.parse_changes()'s for handling of multi-line fields
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.1 2001-05-17 01:17:54 troup Exp $
+# $Id: test.py,v 1.2 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 
 ################################################################################
 
-import os, string, sys
+import os, sys
 
 sys.path.append(os.path.abspath('../../'));
 
@@ -43,7 +43,7 @@ import utils
 def fail(message):
     sys.stderr.write("%s\n" % (message));
     sys.exit(1);
-    
+
 ################################################################################
 
 def main ():
@@ -57,7 +57,7 @@ def main ():
     if o != "":
         del changes["binary"]
     changes["binary"] = {}
-    for j in string.split(o):
+    for j in o.split():
         changes["binary"][j] = 1
 
     if not changes["binary"].has_key("krb5-ftpd"):

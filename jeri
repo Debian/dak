@@ -2,7 +2,7 @@
 
 # Dependency check proposed-updates
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jeri,v 1.9 2002-06-08 00:17:59 troup Exp $
+# $Id: jeri,v 1.10 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 
 ################################################################################
 
-import pg, sys, os, string
+import pg, sys, os;
 import utils, db_access
 import apt_pkg, apt_inst;
 
@@ -67,7 +67,7 @@ def pp_dep (deps):
         else:
             pp_dep = pkg;
         pp_deps.append(pp_dep);
-    return string.join(pp_deps, " |");
+    return " |".join(pp_deps);
 
 ################################################################################
 
@@ -117,25 +117,25 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                 error = "%s not found. [Real: " % (pp_dep(parsed_dep))
                 if stable.has_key(dep):
                     if stable[dep].has_key(arch):
-                        error = error + "%s:%s:%s" % (dep, arch, stable[dep][arch]);
+                        error += "%s:%s:%s" % (dep, arch, stable[dep][arch]);
                     else:
-                        error = error + "%s:-:-" % (dep);
+                        error += "%s:-:-" % (dep);
                 else:
-                    error = error + "-:-:-";
-                error = error + ", Virtual: ";
+                    error += "-:-:-";
+                error += ", Virtual: ";
                 if stable_virtual.has_key(dep):
                     if stable_virtual[dep].has_key(arch):
-                        error = error + "%s:%s" % (dep, arch);
+                        error += "%s:%s" % (dep, arch);
                     else:
-                        error = error + "%s:-";
+                        error += "%s:-";
                 else:
-                    error = error + "-:-";
-                error = error + ", Upload: ";
+                    error += "-:-";
+                error += ", Upload: ";
                 if files.has_key(dep_filename):
-                    error = error + "yes";
+                    error += "yes";
                 else:
-                    error = error + "no";
-                error = error + "]";
+                    error += "no";
+                error += "]";
                 unsat.append(error);
 
             if unsat:
@@ -164,12 +164,12 @@ def check_package(filename, files):
 
     pkg_unsat = 0;
     if Pre_Depends:
-        pkg_unsat = pkg_unsat + check_dep(Pre_Depends, "pre-dependency", check_archs, base_file, files);
+        pkg_unsat += check_dep(Pre_Depends, "pre-dependency", check_archs, base_file, files);
 
     if Depends:
-        pkg_unsat = pkg_unsat + check_dep(Depends, "dependency", check_archs, base_file, files);
+        pkg_unsat += check_dep(Depends, "dependency", check_archs, base_file, files);
     #if Recommends:
-    #pkg_unsat = pkg_unsat + check_dep(Recommends, "recommendation", check_archs, base_file, files);
+    #pkg_unsat += check_dep(Recommends, "recommendation", check_archs, base_file, files);
 
     return pkg_unsat;
 
@@ -203,11 +203,11 @@ def check_changes (filename):
 
     changes_result = 0;
     for file in files.keys():
-        if file[-4:] == ".deb":
+        if file.endswith(".deb"):
             result = check_package(file, files);
             if Options["verbose"]:
                 pass_fail(file, result);
-            changes_result = changes_result + result;
+            changes_result += result;
 
     pass_fail (filename, changes_result);
 
@@ -230,9 +230,9 @@ def check_joey (filename):
     os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]));
 
     for line in file.readlines():
-        line = string.rstrip(line);
-        if string.find(line, 'install') != -1:
-            split_line = string.split(line);
+        line = line.rstrip();
+        if line.find('install') != -1:
+            split_line = line.split();
             if len(split_line) != 2:
                 utils.fubar("Parse error (not exactly 2 elements): %s" % (line));
             install_type = split_line[0];
@@ -269,8 +269,8 @@ def parse_packages():
                     stable[package] = {};
                 stable[package][architecture] = version;
                 if provides:
-                    for virtual_pkg in string.split(provides,","):
-                        virtual_pkg = string.strip(virtual_pkg);
+                    for virtual_pkg in provides.split(","):
+                        virtual_pkg = virtual_pkg.strip();
                         if not stable_virtual.has_key(virtual_pkg):
                             stable_virtual[virtual_pkg] = {};
                         stable_virtual[virtual_pkg][architecture] = "NA";
@@ -307,11 +307,11 @@ def main ():
     print "done.";
 
     for file in arguments:
-        if file[-8:] == ".changes":
+        if file.endswith(".changes"):
             check_changes(file);
-        elif file[-4:] == ".deb":
+        elif file.endswith(".deb"):
             check_deb(file);
-        elif file[-5:] == ".joey":
+        elif file.endswith(".joey"):
             check_joey(file);
         else:
             utils.fubar("Unrecognised file type: '%s'." % (file));

@@ -2,7 +2,7 @@
 
 # Produces a report on NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: helena,v 1.1 2002-06-05 00:17:22 troup Exp $
+# $Id: helena,v 1.2 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
 
 ################################################################################
 
-import copy, glob, os, stat, string, sys, time;
+import copy, glob, os, stat, sys, time;
 import apt_pkg;
 import katie, utils;
 
@@ -56,22 +56,22 @@ def time_pp(x):
     if x < 60:
         unit="second";
     elif x < 3600:
-        x = x / 60;
+        x /= 60;
         unit="minute";
     elif x < 86400:
-        x = x / 3600;
+        x /= 3600;
         unit="hour";
     elif x < 604800:
-        x = x / 86400;
+        x /= 86400;
         unit="day";
     elif x < 2419200:
-        x = x / 604800;
+        x /= 604800;
         unit="week";
     elif x < 29030400:
-        x = x / 2419200;
+        x /= 2419200;
         unit="month";
     else:
-        x = x / 29030400;
+        x /= 29030400;
         unit="years";
     x = int(x);
     return "%s %s%s" % (x, unit, plural(x));
@@ -126,7 +126,7 @@ def process_changes_files(changes_files, type):
             ctime = os.stat(d["filename"])[stat.ST_CTIME];
             if ctime < oldest:
                 oldest = ctime;
-            have_note = have_note + (d.has_key("lisa note"));
+            have_note += (d.has_key("lisa note"));
         per_source[source]["oldest"] = oldest;
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -146,21 +146,21 @@ def process_changes_files(changes_files, type):
             for arch in j["architecture"].keys():
                 arches[arch] = "";
             versions[j["version"]] = "";
-        arch_list = string.join(arches.keys(), ", ");
-        version_list = string.join(versions.keys(), ", ");
+        arch_list = ", ".join(arches.keys());
+        version_list = ", ".join(versions.keys());
         if i[1]["note_state"]:
             note = " | [note]";
         else:
             note = "";
-        msg = msg + "%10s | %10s | %10s%s | %s old\n" % (source, version_list, arch_list, note, time_pp(last_modified));
+        msg += "%10s | %10s | %10s%s | %s old\n" % (source, version_list, arch_list, note, time_pp(last_modified));
 
     if msg:
         total_count = len(changes_files);
         source_count = len(per_source_items);
-        print string.upper(type)
-        print "-"*len(type)
+        print type.upper();
+        print "-"*len(type);
         print
-        print msg
+        print msg;
         print "%s %s source package%s / %s %s package%s in total." % (source_count, type, plural(source_count), total_count, type, plural(total_count));
         print
 

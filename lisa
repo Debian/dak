@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.17 2002-05-23 12:19:05 troup Exp $
+# $Id: lisa,v 1.18 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,12 +37,12 @@
 
 ################################################################################
 
-import copy, errno, os, readline, string, stat, sys, tempfile;
+import copy, errno, os, readline, stat, sys, tempfile;
 import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.17 $";
+lisa_version = "$Revision: 1.18 $";
 
 Cnf = None;
 Options = None;
@@ -62,7 +62,7 @@ reject_message = "";
 def reject (str, prefix="Rejected: "):
     global reject_message;
     if str:
-        reject_message = reject_message + prefix + str + "\n";
+        reject_message += prefix + str + "\n";
 
 def recheck():
     global reject_message;
@@ -97,12 +97,12 @@ def recheck():
         print "REJECT\n" + reject_message,;
         prompt = "[R]eject, Skip, Quit ?";
 
-        while string.find(prompt, answer) == -1:
+        while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt);
             m = katie.re_default_answer.match(prompt);
             if answer == "":
                 answer = m.group(1);
-            answer = string.upper(answer[:1]);
+            answer = answer[:1].upper();
 
         if answer == 'R':
             Katie.do_reject(0, reject_message);
@@ -253,7 +253,7 @@ def sort_changes(changes_files):
             ctime = os.stat(d["filename"])[stat.ST_CTIME];
             if ctime < oldest:
                 oldest = ctime;
-            have_note = have_note + (d.has_key("lisa note"));
+            have_note += (d.has_key("lisa note"));
         per_source[source]["oldest"] = oldest;
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -335,20 +335,20 @@ def print_new (new, indexed, file=sys.stdout):
     broken = 0;
     index = 0;
     for pkg in new.keys():
-        index = index + 1;
+        index += 1;
         section = new[pkg]["section"];
         priority = new[pkg]["priority"];
         if new[pkg]["section id"] == -1:
-            section = section + "[!]";
+            section += "[!]";
             broken = 1;
         if new[pkg]["priority id"] == -1:
-            priority = priority + "[!]";
+            priority += "[!]";
             broken = 1;
         if indexed:
             line = "(%s): %-20s %-20s %-20s" % (index, pkg, priority, section);
         else:
             line = "%-20s %-20s %-20s" % (pkg, priority, section);
-        line = string.strip(line)+'\n';
+        line = line.strip()+'\n';
         file.write(line);
     note = Katie.pkg.changes.get("lisa note");
     if note:
@@ -406,10 +406,10 @@ def edit_new (new):
     os.unlink(temp_filename);
     # Parse the new data
     for line in lines:
-        line = string.strip(line[:-1]);
+        line = line.strip();
         if line == "":
             continue;
-        s = string.split(line);
+        s = line.split();
         # Pad the list if necessary
         s[len(s):3] = [None] * (3-len(s));
         (pkg, priority, section) = s[:3];
@@ -417,9 +417,9 @@ def edit_new (new):
             utils.warn("Ignoring unknown package '%s'" % (pkg));
         else:
             # Strip off any invalid markers, print_new will readd them.
-            if section[-3:] == "[!]":
+            if section.endswith("[!]"):
                 section = section[:-3];
-            if priority[-3:] == "[!]":
+            if priority.endswith("[!]"):
                 priority = priority[:-3];
             for file in new[pkg]["files"]:
                 Katie.pkg.files[file]["section"] = section;
@@ -435,7 +435,7 @@ def edit_index (new, index):
     type = new[index]["type"];
     done = 0
     while not done:
-        print string.join([index, priority, section], '\t');
+        print "\t".join([index, priority, section]);
 
         answer = "XXX";
         if type != "dsc":
@@ -444,12 +444,12 @@ def edit_index (new, index):
             prompt = "[S]ection, Done ? ";
         edit_priority = edit_section = 0;
 
-        while string.find(prompt, answer) == -1:
+        while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt);
             m = katie.re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
-            answer = string.upper(answer[:1])
+            answer = answer[:1].upper()
 
         if answer == 'P':
             edit_priority = 1;
@@ -465,7 +465,7 @@ def edit_index (new, index):
             readline.set_completer(Priorities.complete);
             got_priority = 0;
             while not got_priority:
-                new_priority = string.strip(utils.our_raw_input("New priority: "));
+                new_priority = utils.our_raw_input("New priority: ").strip();
                 if Priorities.priorities.count(new_priority) == 0:
                     print "E: '%s' is not a valid priority, try again." % (new_priority);
                 else:
@@ -477,7 +477,7 @@ def edit_index (new, index):
             readline.set_completer(Sections.complete);
             got_section = 0;
             while not got_section:
-                new_section = string.strip(utils.our_raw_input("New section: "));
+                new_section = utils.our_raw_input("New section: ").strip();
                 if Sections.sections.count(new_section) == 0:
                     print "E: '%s' is not a valid section, try again." % (new_section);
                 else:
@@ -504,7 +504,7 @@ def edit_overrides (new):
         new_index = {};
         index = 0;
         for i in new.keys():
-            index = index + 1;
+            index += 1;
             new_index[index] = i;
 
         prompt = "(%s) edit override <n>, Editor, Done ? " % (index_range(index));
@@ -512,7 +512,7 @@ def edit_overrides (new):
         got_answer = 0
         while not got_answer:
             answer = utils.our_raw_input(prompt);
-            answer = string.upper(answer[:1]);
+            answer = answer[:1].upper();
             if answer == "E" or answer == "D":
                 got_answer = 1;
             elif katie.re_isanum.match (answer):
@@ -546,18 +546,18 @@ def edit_note(note):
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
         temp_file = utils.open_file(temp_filename);
-        note = string.rstrip(temp_file.read());
+        note = temp_file.read().rstrip();
         temp_file.close();
         print "Note:";
         print utils.prefix_multi_line_string(note,"  ");
         prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX";
-        while string.find(prompt, answer) == -1:
+        while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt);
             m = katie.re_default_answer.search(prompt);
             if answer == "":
                 answer = m.group(1);
-            answer = string.upper(answer[:1]);
+            answer = answer[:1].upper();
     os.unlink(temp_filename);
     if answer == 'A':
         return;
@@ -605,9 +605,9 @@ def do_bxa_notification():
     for file in files.keys():
         if files[file]["type"] == "deb":
             control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)));
-            summary = summary + "\n";
-            summary = summary + "Package: %s\n" % (control.Find("Package"));
-            summary = summary + "Description: %s\n" % (control.Find("Description"));
+            summary += "\n";
+            summary += "Package: %s\n" % (control.Find("Package"));
+            summary += "Description: %s\n" % (control.Find("Description"));
     Katie.Subst["__BINARY_DESCRIPTIONS__"] = summary;
     bxa_mail = utils.TemplateSubst(Katie.Subst,Cnf["Dir::Templates"]+"/lisa.bxa_notification");
     utils.send_mail(bxa_mail,"");
@@ -681,16 +681,16 @@ def do_new():
             print "W: [!] marked entries must be fixed before package can be processed.";
         if note:
             print "W: note must be removed before package can be processed.";
-            prompt = prompt + "Remove note, ";
+            prompt += "Remove note, ";
 
-        prompt = prompt + "Edit overrides, Check, Manual reject, Note edit, [S]kip, Quit ?";
+        prompt += "Edit overrides, Check, Manual reject, Note edit, [S]kip, Quit ?";
 
-        while string.find(prompt, answer) == -1:
+        while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt);
             m = katie.re_default_answer.search(prompt);
             if answer == "":
                 answer = m.group(1)
-            answer = string.upper(answer[:1])
+            answer = answer[:1].upper()
 
         if answer == 'A':
             done = add_overrides (new);
@@ -706,7 +706,7 @@ def do_new():
         elif answer == 'N':
             edit_note(changes.get("lisa note", ""));
         elif answer == 'R':
-            confirm = string.lower(utils.our_raw_input("Really clear note (y/N)? "));
+            confirm = utils.our_raw_input("Really clear note (y/N)? ").lower();
             if confirm == "y":
                 del changes["lisa note"];
         elif answer == 'S':
@@ -794,12 +794,12 @@ def do_byhand():
         else:
             prompt = "Manual reject, [S]kip, Quit ?";
 
-        while string.find(prompt, answer) == -1:
+        while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt);
             m = katie.re_default_answer.search(prompt);
             if answer == "":
                 answer = m.group(1);
-            answer = string.upper(answer[:1]);
+            answer = answer[:1].upper();
 
         if answer == 'A':
             done = 1;

@@ -2,7 +2,7 @@
 
 # Sync the ISC configuartion file and the SQL database
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: alyson,v 1.9 2002-05-14 15:28:53 troup Exp $
+# $Id: alyson,v 1.10 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@
 
 ################################################################################
 
-import pg, sys, string
-import utils, db_access
+import pg, sys;
+import utils, db_access;
 import apt_pkg;
 
 ################################################################################
@@ -74,7 +74,7 @@ def main ():
     for name in Cnf.SubTree("Component").List():
         Component = Cnf.SubTree("Component::%s" % (name));
         description = get(Component, "Description");
-        if string.lower(Component.get("MeetsDFSG")) == "true":
+        if Component.get("MeetsDFSG").lower() == "true":
             meets_dfsg = "true";
         else:
             meets_dfsg = "false";
@@ -110,7 +110,7 @@ def main ():
         origin = get(Suite, "Origin");
         description = get(Suite, "Description");
         projectB.query("INSERT INTO suite (suite_name, version, origin, description) VALUES ('%s', %s, %s, %s)"
-                       % (string.lower(suite), version, origin, description));
+                       % (suite.lower(), version, origin, description));
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
             architecture_id = db_access.get_architecture_id (architecture);
             if architecture_id < 0:
@@ -147,7 +147,7 @@ def main ():
                 prefix = "";
         else:
             prefix = "";
-            component = string.replace(component, "non-US/", "");
+            component = component.replace("non-US/", "");
             if component != 'main':
                 suffix = '/' + component;
             else:

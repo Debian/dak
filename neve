@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: neve,v 1.13 2002-06-09 17:33:46 troup Exp $
+# $Id: neve,v 1.14 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 
 ###############################################################################
 
-import commands, os, pg, re, select, string, tempfile, time;
+import commands, os, pg, re, select, tempfile, time;
 import apt_pkg;
 import db_access, utils;
 
@@ -115,9 +115,9 @@ def get_status_output(cmd, status_read, status_write):
             if len(r) > 0:
                 more_data.append(fd);
                 if fd == c2pwrite or fd == errin:
-                    output = output + r;
+                    output += r;
                 elif fd == status_read:
-                    status = status + r;
+                    status += r;
                 else:
                     utils.fubar("Unexpected file descriptor [%s] returned from select\n" % (fd));
         if not more_data:
@@ -141,7 +141,7 @@ def Dict(**dict): return dict
 def reject (str, prefix="Rejected: "):
     global reject_message;
     if str:
-        reject_message = reject_message + prefix + str + "\n";
+        reject_message += prefix + str + "\n";
 
 ###############################################################################
 
@@ -158,21 +158,21 @@ def check_signature (filename):
     # Process the status-fd output
     keywords = {};
     bad = internal_error = "";
-    for line in string.split(status, '\n'):
-        line = string.strip(line);
+    for line in status.split('\n'):
+        line = line.strip();
         if line == "":
             continue;
-        split = string.split(line);
+        split = line.split();
         if len(split) < 2:
-            internal_error = internal_error + "gpgv status line is malformed (< 2 atoms) ['%s'].\n" % (line);
+            internal_error += "gpgv status line is malformed (< 2 atoms) ['%s'].\n" % (line);
             continue;
         (gnupg, keyword) = split[:2];
         if gnupg != "[GNUPG:]":
-            internal_error = internal_error + "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg);
+            internal_error += "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg);
             continue;
         args = split[2:];
         if keywords.has_key(keyword) and keyword != "NODATA" and keyword != "SIGEXPIRED":
-            internal_error = internal_error + "found duplicate status token ('%s')." % (keyword);
+            internal_error += "found duplicate status token ('%s')." % (keyword);
             continue;
         else:
             keywords[keyword] = args;
@@ -218,7 +218,7 @@ def check_signature (filename):
     # Next check gpgv exited with a zero return code
     if exit_status and not keywords.has_key("NO_PUBKEY"):
         reject("gpgv failed while checking %s." % (filename));
-        if string.strip(status):
+        if status.strip():
             reject(utils.prefix_multi_line_string(status, " [GPG status-fd output:] "), "");
         else:
             reject(utils.prefix_multi_line_string(output, " [GPG output:] "), "");
@@ -250,7 +250,7 @@ def check_signature (filename):
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
-            reject("found unknown status token '%s' from gpgv with args '%s' in %s." % (keyword, repr(keywords[keyword]), filename));
+            reject("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], filename));
             bad = 1;
 
     if bad:
@@ -304,10 +304,10 @@ def update_suites ():
     projectB.query("DELETE FROM suite")
     for suite in Cnf.SubTree("Suite").List():
         SubSec = Cnf.SubTree("Suite::%s" %(suite))
-        projectB.query("INSERT INTO suite (suite_name) VALUES ('%s')" % string.lower(suite));
+        projectB.query("INSERT INTO suite (suite_name) VALUES ('%s')" % suite.lower());
         for i in ("Version", "Origin", "Description"):
             if SubSec.has_key(i):
-                projectB.query("UPDATE suite SET %s = '%s' WHERE suite_name = '%s'" % (string.lower(i), SubSec[i], string.lower(suite)))
+                projectB.query("UPDATE suite SET %s = '%s' WHERE suite_name = '%s'" % (i.lower(), SubSec[i], suite.lower()))
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
             architecture_id = db_access.get_architecture_id (architecture);
             projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id));
@@ -327,9 +327,9 @@ def update_priority():
 def get_or_set_files_id (filename, size, md5sum, location_id):
     global files_id_cache, files_id_serial, files_query_cache;
 
-    cache_key = string.join((filename, size, md5sum, repr(location_id)), '~')
+    cache_key = "~".join((filename, size, md5sum, repr(location_id)));
     if not files_id_cache.has_key(cache_key):
-        files_id_serial = files_id_serial + 1
+        files_id_serial += 1
         files_query_cache.write("%d\t%s\t%s\t%s\t%d\n" % (files_id_serial, filename, size, md5sum, location_id));
         files_id_cache[cache_key] = files_id_serial
 
@@ -340,7 +340,7 @@ def get_or_set_files_id (filename, size, md5sum, location_id):
 def process_sources (location, filename, suite, component, archive, dsc_dir):
     global source_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, source_id_serial, src_associations_id_serial, dsc_files_id_serial, source_cache_for_binaries, orig_tar_gz_cache, reject_message;
 
-    suite = string.lower(suite);
+    suite = suite.lower();
     suite_id = db_access.get_suite_id(suite);
     try:
         file = utils.open_file (filename);
@@ -358,23 +358,23 @@ def process_sources (location, filename, suite, component, archive, dsc_dir):
         if reject_message:
             utils.fubar("%s: %s" % (dsc_file, reject_message));
         maintainer = Scanner.Section["maintainer"]
-        maintainer = string.replace(maintainer, "'", "\\'");
+        maintainer = maintainer.replace("'", "\\'");
         maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
         directory = Scanner.Section["directory"];
         location_id = db_access.get_location_id (location, component, archive);
-        if directory[-1:] != "/":
-            directory = directory + '/';
+        if not directory.endswith("/"):
+            directory += '/';
         directory = poolify (directory, location);
-        if directory != "" and directory[-1:] != "/":
-            directory = directory + '/';
+        if directory != "" and not directory.endswith("/"):
+            directory += '/';
         no_epoch_version = utils.re_no_epoch.sub('', version);
         # Add all files referenced by the .dsc to the files table
         ids = [];
-        for line in string.split(Scanner.Section["files"],'\n'):
+        for line in Scanner.Section["files"].split('\n'):
             id = None;
-            (md5sum, size, filename) = string.split(string.strip(line));
+            (md5sum, size, filename) = line.strip().split();
             # Don't duplicate .orig.tar.gz's
-            if filename[-12:] == ".orig.tar.gz":
+            if filename.endswith(".orig.tar.gz"):
                 cache_key = "%s~%s~%s" % (filename, size, md5sum);
                 if orig_tar_gz_cache.has_key(cache_key):
                     id = orig_tar_gz_cache[cache_key];
@@ -385,25 +385,25 @@ def process_sources (location, filename, suite, component, archive, dsc_dir):
                 id = get_or_set_files_id (directory + filename, size, md5sum, location_id);
             ids.append(id);
             # If this is the .dsc itself; save the ID for later.
-            if filename[-4:] == ".dsc":
+            if filename.endswith(".dsc"):
                 files_id = id;
         filename = directory + package + '_' + no_epoch_version + '.dsc'
         cache_key = "%s~%s" % (package, version);
         if not source_cache.has_key(cache_key):
             nasty_key = "%s~%s" % (package, version)
-            source_id_serial = source_id_serial + 1;
+            source_id_serial += 1;
             if not source_cache_for_binaries.has_key(nasty_key):
                 source_cache_for_binaries[nasty_key] = source_id_serial;
             tmp_source_id = source_id_serial;
             source_cache[cache_key] = source_id_serial;
             source_query_cache.write("%d\t%s\t%s\t%d\t%d\t%s\t%s\n" % (source_id_serial, package, version, maintainer_id, files_id, install_date, fingerprint_id))
             for id in ids:
-                dsc_files_id_serial = dsc_files_id_serial + 1;
+                dsc_files_id_serial += 1;
                 dsc_files_query_cache.write("%d\t%d\t%d\n" % (dsc_files_id_serial, tmp_source_id,id));
         else:
             tmp_source_id = source_cache[cache_key];
 
-        src_associations_id_serial = src_associations_id_serial + 1;
+        src_associations_id_serial += 1;
         src_associations_query_cache.write("%d\t%d\t%d\n" % (src_associations_id_serial, suite_id, tmp_source_id))
 
     file.close();
@@ -415,7 +415,7 @@ def process_packages (location, filename, suite, component, archive):
 
     count_total = 0;
     count_bad = 0;
-    suite = string.lower(suite);
+    suite = suite.lower();
     suite_id = db_access.get_suite_id(suite);
     try:
         file = utils.open_file (filename);
@@ -427,7 +427,7 @@ def process_packages (location, filename, suite, component, archive):
         package = Scanner.Section["package"]
         version = Scanner.Section["version"]
         maintainer = Scanner.Section["maintainer"]
-        maintainer = string.replace(maintainer, "'", "\\'")
+        maintainer = maintainer.replace("'", "\\'")
         maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
         architecture = Scanner.Section["architecture"]
         architecture_id = db_access.get_architecture_id (architecture);
@@ -438,7 +438,7 @@ def process_packages (location, filename, suite, component, archive):
         else:
             source = Scanner.Section["source"]
         source_version = ""
-        if string.find(source, "(") != -1:
+        if source.find("(") != -1:
             m = utils.re_extract_src_version.match(source)
             source = m.group(1)
             source_version = m.group(2)
@@ -462,19 +462,19 @@ def process_packages (location, filename, suite, component, archive):
             if not binary_cache.has_key(cache_key):
                 if not source_id:
                     source_id = "\N";
-                    count_bad = count_bad + 1;
+                    count_bad += 1;
                 else:
                     source_id = repr(source_id);
-                binaries_id_serial = binaries_id_serial + 1;
+                binaries_id_serial += 1;
                 binaries_query_cache.write("%d\t%s\t%s\t%d\t%s\t%d\t%d\t%s\t%s\n" % (binaries_id_serial, package, version, maintainer_id, source_id, architecture_id, files_id, type, fingerprint_id));
                 binary_cache[cache_key] = binaries_id_serial;
                 tmp_binaries_id = binaries_id_serial;
             else:
                 tmp_binaries_id = binary_cache[cache_key];
 
-            bin_associations_id_serial = bin_associations_id_serial + 1;
+            bin_associations_id_serial += 1;
             bin_associations_query_cache.write("%d\t%d\t%d\n" % (bin_associations_id_serial, suite_id, tmp_binaries_id));
-            count_total = count_total +1;
+            count_total += 1;
 
     file.close();
     if count_bad != 0:

@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.16 2002-05-08 11:13:02 troup Exp $
+# $Id: catherine,v 1.17 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@
 
 ################################################################################
 
-import os, pg, stat, string, sys
-import utils, db_access
+import os, pg, stat, sys;
+import utils, db_access;
 import apt_pkg, apt_inst;
 
 ################################################################################
@@ -70,8 +70,8 @@ def poolize (q, limit, verbose, no_action):
         if (poolized_size + size) > limit and limit >= 0:
             utils.warn("Hit %s limit." % (utils.size_type(limit)));
             break;
-        poolized_size = poolized_size + size;
-        poolized_count = poolized_count + 1;
+        poolized_size += size;
+        poolized_count += 1;
         base_filename = os.path.basename(legacy_filename);
         destination_filename = base_filename;
         # Work out the source package name
@@ -79,7 +79,7 @@ def poolize (q, limit, verbose, no_action):
             control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(legacy_filename)))
             package = control.Find("Package", "");
             source = control.Find("Source", package);
-            if string.find(source, "(") != -1:
+            if source.find("(") != -1:
                 m = utils.re_extract_src_version.match(source)
                 source = m.group(1)
             # If it's a binary, we need to also rename the file to include the architecture

@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.26 2002-07-14 18:19:25 troup Exp $
+# $Id: jennifer,v 1.27 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 
 ################################################################################
 
-import FCNTL, errno, fcntl, gzip, os, re, select, shutil, stat, string, sys, time, traceback;
+import FCNTL, errno, fcntl, gzip, os, re, select, shutil, stat, sys, time, traceback;
 import apt_inst, apt_pkg;
 import db_access, katie, logging, utils;
 
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.26 $";
+jennifer_version = "$Revision: 1.27 $";
 
 Cnf = None;
 Options = None;
@@ -152,9 +152,9 @@ def get_status_output(cmd, status_read, status_write):
             if len(r) > 0:
                 more_data.append(fd);
                 if fd == c2pwrite or fd == errin:
-                    output = output + r;
+                    output += r;
                 elif fd == status_read:
-                    status = status + r;
+                    status += r;
                 else:
                     utils.fubar("Unexpected file descriptor [%s] returned from select\n" % (fd));
         if not more_data:
@@ -180,7 +180,7 @@ def Dict(**dict): return dict
 def reject (str, prefix="Rejected: "):
     global reject_message;
     if str:
-        reject_message = reject_message + prefix + str + "\n";
+        reject_message += prefix + str + "\n";
 
 #########################################################################################
 
@@ -197,21 +197,21 @@ def check_signature (filename):
     # Process the status-fd output
     keywords = {};
     bad = internal_error = "";
-    for line in string.split(status, '\n'):
-        line = string.strip(line);
+    for line in status.split('\n'):
+        line = line.strip();
         if line == "":
             continue;
-        split = string.split(line);
+        split = line.split();
         if len(split) < 2:
-            internal_error = internal_error + "gpgv status line is malformed (< 2 atoms) ['%s'].\n" % (line);
+            internal_error += "gpgv status line is malformed (< 2 atoms) ['%s'].\n" % (line);
             continue;
         (gnupg, keyword) = split[:2];
         if gnupg != "[GNUPG:]":
-            internal_error = internal_error + "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg);
+            internal_error += "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg);
             continue;
         args = split[2:];
         if keywords.has_key(keyword) and keyword != "NODATA":
-            internal_error = internal_error + "found duplicate status token ('%s').\n" % (keyword);
+            internal_error += "found duplicate status token ('%s').\n" % (keyword);
             continue;
         else:
             keywords[keyword] = args;
@@ -252,7 +252,7 @@ def check_signature (filename):
     # Next check gpgv exited with a zero return code
     if exit_status:
         reject("gpgv failed while checking %s." % (filename));
-        if string.strip(status):
+        if status.strip():
             reject(utils.prefix_multi_line_string(status, " [GPG status-fd output:] "), "");
         else:
             reject(utils.prefix_multi_line_string(output, " [GPG output:] "), "");
@@ -283,7 +283,7 @@ def check_signature (filename):
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
-            reject("found unknown status token '%s' from gpgv with args '%s' in %s." % (keyword, repr(keywords[keyword]), filename));
+            reject("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], filename));
             bad = 1;
 
     if bad:
@@ -327,7 +327,6 @@ def copy_to_holding(filename):
         raise;
 
     in_holding[base_filename] = "";
-    return dest;
 
 ################################################################################
 
@@ -338,7 +337,7 @@ def clean_holding():
     os.chdir(Cnf["Dir::Queue::Holding"]);
     for file in in_holding.keys():
         if os.path.exists(file):
-            if string.find(file, '/') != -1:
+            if file.find(file, '/') != -1:
                 utils.fubar("WTF? clean_holding() got a file ('%s') with / in it!" % (file));
             else:
                 os.unlink(file);
@@ -386,7 +385,7 @@ def check_changes():
         if o != "":
             del changes[i]
         changes[i] = {}
-        for j in string.split(o):
+        for j in o.split():
             changes[i][j] = 1
 
     # Fix the Maintainer: field to be RFC822 compatible
@@ -422,7 +421,7 @@ def check_distributions():
 
     # Handle suite mappings
     for map in Cnf.ValueList("SuiteMappings"):
-        args = string.split(map);
+        args = map.split();
         type = args[0];
         if type == "map" or type == "silent-map":
             (source, dest) = args[1:3];
@@ -554,9 +553,9 @@ def check_files():
             files[file]["architecture"] = architecture;
             files[file]["version"] = version;
             files[file]["maintainer"] = control.Find("Maintainer", "");
-            if file[-5:] == ".udeb":
+            if file.endswith(".udeb"):
                 files[file]["dbtype"] = "udeb";
-            elif file[-4:] == ".deb":
+            elif file.endswith(".deb"):
                 files[file]["dbtype"] = "deb";
             else:
                 reject("%s is neither a .deb or a .udeb." % (file));
@@ -564,7 +563,7 @@ def check_files():
             # Get the source version
             source = files[file]["source"];
             source_version = ""
-            if string.find(source, "(") != -1:
+            if source.find("(") != -1:
                 m = utils.re_extract_src_version.match(source)
                 source = m.group(1)
                 source_version = m.group(2)
@@ -654,7 +653,7 @@ def check_files():
 
             # Handle component mappings
             for map in Cnf.ValueList("ComponentMappings"):
-                (source, dest) = string.split(map);
+                (source, dest) = map.split();
                 if files[file]["component"] == source:
                     files[file]["original component"] = source;
                     files[file]["component"] = dest;
@@ -676,7 +675,7 @@ def check_files():
                 continue;
 
             # Validate the priority
-            if string.find(files[file]["priority"],'/') != -1:
+            if files[file]["priority"].find('/') != -1:
                 reject("file '%s' has invalid priority '%s' [contains '/']." % (file, files[file]["priority"]));
 
             # Determine the location
@@ -833,7 +832,7 @@ def check_urgency ():
         if changes["urgency"] not in Cnf.ValueList("Urgency::Valid"):
             reject("%s is not a valid urgency; it will be treated as %s by testing." % (changes["urgency"], Cnf["Urgency::Default"]), "Warning: ");
             changes["urgency"] = Cnf["Urgency::Default"];
-        changes["urgency"] = string.lower(changes["urgency"]);
+        changes["urgency"] = changes["urgency"].lower();
 
 ################################################################################
 
@@ -975,7 +974,7 @@ def action ():
     if Options["No-Action"] or Options["Automatic"]:
         answer = 'S'
 
-    if string.find(reject_message, "Rejected") != -1:
+    if reject_message.find("Rejected") != -1:
         if upload_too_new():
             print "SKIP (too new)\n" + reject_message,;
             prompt = "[S]kip, Quit ?";
@@ -985,7 +984,7 @@ def action ():
             if Options["Automatic"]:
                 answer = 'R';
     elif new:
-        print "NEW to %s\n%s%s" % (string.join(changes["distribution"].keys(), ", "), reject_message, summary),;
+        print "NEW to %s\n%s%s" % (", ".join(changes["distribution"].keys()), reject_message, summary),;
         prompt = "[N]ew, Skip, Quit ?";
         if Options["Automatic"]:
             answer = 'N';
@@ -1000,12 +999,12 @@ def action ():
         if Options["Automatic"]:
             answer = 'A';
 
-    while string.find(prompt, answer) == -1:
+    while prompt.find(answer) == -1:
         answer = utils.our_raw_input(prompt);
         m = katie.re_default_answer.match(prompt);
         if answer == "":
             answer = m.group(1);
-        answer = string.upper(answer[:1]);
+        answer = answer[:1].upper();
 
     if answer == 'R':
         os.chdir (pkg.directory);
@@ -1164,7 +1163,7 @@ def main():
 
     # Ensure all the arguments we were given are .changes files
     for file in changes_files:
-        if file[-8:] != ".changes":
+        if not file.endswith(".changes"):
             utils.warn("Ignoring '%s' because it's not a .changes file." % (file));
             changes_files.remove(file);
 

@@ -2,7 +2,7 @@
 
 # Check utils.extract_component_from_section()
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.2 2002-01-19 18:58:07 troup Exp $
+# $Id: test.py,v 1.3 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import os, string, sys
+import os, sys;
 
 sys.path.append(os.path.abspath('../../'));
 
@@ -31,7 +31,7 @@ import utils
 def fail(message):
     sys.stderr.write("%s\n" % (message));
     sys.exit(1);
-    
+
 ################################################################################
 
 # prefix: non-US
@@ -49,7 +49,7 @@ def fail(message):
 def test(input, output):
     result = utils.extract_component_from_section(input);
     if result != output:
-        fail ("%s -> %s [should have been %s]" % (input, repr(result), repr(output)));
+        fail ("%s -> %r [should have been %r]" % (input, result, output));
 
 def main ():
     # Err, whoops?  should probably be "utils", "main"...

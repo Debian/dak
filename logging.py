@@ -1,6 +1,8 @@
+#!/usr/bin/env python
+
 # Logging functions
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: logging.py,v 1.2 2002-05-08 11:17:45 troup Exp $
+# $Id: logging.py,v 1.3 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +20,8 @@
 
 ################################################################################
 
-import os, pwd, string, time
-import utils
+import os, pwd, time;
+import utils;
 
 ################################################################################
 
@@ -39,7 +41,7 @@ class Logger:
             umask = os.umask(00000);
             os.makedirs(logdir, 02775);
         # Open the logfile
-        logfilename = "%s/%s" % (logdir, time.strftime("%Y-%m", time.localtime(time.time())));
+        logfilename = "%s/%s" % (logdir, time.strftime("%Y-%m"));
         logfile = utils.open_file(logfilename, 'a');
         # Seek to the end of the logfile
         logfile.seek(0,2);
@@ -52,12 +54,12 @@ class Logger:
         "Log an event"
         # Prepend the timestamp and program name
         details.insert(0, self.program);
-        timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()));
+        timestamp = time.strftime("%Y%m%d%H%M%S");
         details.insert(0, timestamp);
         # Force the contents of the list to be string.join-able
         details = map(str, details);
         # Write out the log in TSV
-        self.logfile.write(string.join(details, '~')+'\n');
+        self.logfile.write("~".join(details)+'\n');
         # Flush the output to enable tail-ing
         self.logfile.flush();
 
