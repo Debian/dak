@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.8 2001-03-24 03:29:13 troup Exp $
+# $Id: catherine,v 1.9 2001-06-05 22:30:43 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ projectB = None;
 # verbose and no_action are booleans
 
 def poolize (q, limit, verbose, no_action):
-    poolized_size = 0;
+    poolized_size = 0L;
     poolized_count = 0;
 
     # Parse -l/--limit argument
