@@ -2,7 +2,7 @@
 
 # General purpose archive tool for ftpmaster
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.4 2001-01-31 03:36:36 troup Exp $
+# $Id: melanie,v 1.5 2001-02-04 04:28:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -327,6 +327,11 @@ it).  Please also remember that the changes have been done on the
 master archive (ftp-master.debian.org) and will not propagate to any
 mirrors (ftp.debian.org included) until the next cron.daily run at the
 earliest.
+
+Packages are never removed from testing by hand.  Testing tracks
+unstable and will automatically remove packages which were removed
+from unstable when removing them from testing causes no dependency
+problems.
 
 Bugs which have been reported against this package are not automatically
 removed from the Bug Tracking System.  Please check all open bugs and
