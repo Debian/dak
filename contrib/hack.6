@@ -1,0 +1,273 @@
+#!/usr/bin/env python
+
+# Fix testing
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: hack.6,v 1.1 2001-06-05 22:31:33 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# 'Too afraid to touch; too afraid you'll like too much'
+
+################################################################################
+
+import pg, sys, os, string
+import utils, db_access
+import apt_inst, apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+
+################################################################################
+
+def main ():
+    global Cnf, projectB, db_files, waste, excluded;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('d',"debug","Christina::Options::Debug", "IntVal"),
+                 ('h',"help","Christina::Options::Help"),
+                 ('v',"version","Christina::Options::Version")];
+
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    christina = pg.connect('christina', Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    db_access.init(Cnf, projectB);
+
+    total = 0; found = 0;
+    morgue = Cnf["Dir::Morgue"] + '/' + Cnf["Rhona::MorgueSubDir"];
+
+    xxx = utils.open_file ("xxx", 'r');
+    for line in xxx.readlines():
+        (package, version, arch) = string.split(line);
+        eversion = utils.re_no_epoch.sub('', version);
+        total = total + 1;
+        if arch != "source":
+            #filename = "%s/%s_%s_%s.deb" % (morgue, package, eversion, arch);
+            filename = "%s/%s_%s.deb" % (morgue, package, eversion);
+        else:
+            continue
+        if os.access(filename, os.R_OK) == 0:
+            continue;
+
+        control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename,"r")));
+        deb_arch = control.Find("Architecture");
+        if arch != deb_arch:
+            continue;
+
+        arch_id = db_access.get_architecture_id (arch);
+        q = christina.query("SELECT f.*, l.path, b.* FROM binaries b, files f, location l WHERE b.package = '%s' AND b.architecture = %s AND b.version = '%s' AND b.file = f.id AND l.id = f.location" % (package, arch_id, version));
+        ql = q.getresult();
+        if len(ql) != 1:
+            print "YOU LOSE: "+package+"~"+version+"~"+arch+"~"+repr(ql)
+            continue;
+        ql = ql[0];
+
+        x = projectB.query("SELECT * FROM source WHERE id = %s" % (ql[11]));
+        xl = x.getresult();
+        if len(xl) != 1:
+            old_filename = filename;
+            z = christina.query("SELECT f.*, l.path, s.*, df.* FROM source s, files f, location l, dsc_files df WHERE s.id = %s AND df.source = s.id AND df.file = f.id AND l.id = f.location" % (ql[11]));
+            zl = z.getresult();
+            if len(zl) < 1:
+                print old_filename
+                print repr(ql);
+                print "SELECT f.*, l.path, s.*, df.* FROM source s, files f, location l, dsc_files df WHERE s.id = %s AND df.source = s.id AND df.file = f.id AND l.id = f.location" % (ql[11]);
+                print " ==> "+repr(zl);
+                #sys.exit(3);
+            else:
+                projectB.query("BEGIN WORK");
+                gack = [];
+                for i in zl:
+                    new_filename = i[6] + i[1];
+                    filename = morgue + '/' + os.path.basename(new_filename);
+                    if os.access(filename, os.R_OK):
+                        print filename + " -> " + new_filename;
+                        if os.path.exists(new_filename):
+                            sys.exit(3);
+                        #utils.move(filename, new_filename);
+                        print "INSERT INTO files (id, filename, size, md5sum, location) VALUES (%s, '%s', %s, '%s', %s)" % (i[:5]);
+                        #projectB.query("INSERT INTO files (id, filename, size, md5sum, location) VALUES (%s, '%s', %s, '%s', %s)" % (i[:5]));
+                        gack.append("INSERT INTO dsc_files (id, source, file) VALUES (%s, %s, %s)" % (i[12:]));
+                        if new_filename[-4:] == ".dsc":
+                            print "INSERT INTO source (id, source, version, maintainer, file) VALUES (%s, '%s', '%s', %s, %s)" % (i[7:12]);
+                            #projectB.query("INSERT INTO source (id, source, version, maintainer, file) VALUES (%s, '%s', '%s', %s, %s)" % (i[7:12]));
+                for i in gack:
+                    print i;
+                    #projectB.query(i);
+            projectB.query("COMMIT WORK");
+            filename = old_filename;
+        
+        projectB.query("BEGIN WORK");
+        new_filename = ql[6] + ql[1];
+        print filename + " -> " + new_filename;
+        if os.path.exists(new_filename):
+            sys.exit(3);
+        utils.move(filename, new_filename);
+        print "INSERT INTO files (id, filename, size, md5sum, location) VALUES (%s, '%s', %s, '%s', %s)" % (ql[:5]);
+        projectB.query("INSERT INTO files (id, filename, size, md5sum, location) VALUES (%s, '%s', %s, '%s', %s)" % (ql[:5]));
+        if ql[11] == 0:
+            print "INSERT INTO binaries (id, package, version, maintainer, architecture, file, type) VALUES (%s, '%s', '%s', %s, %s, %s, '%s')" % (ql[7], ql[8], ql[9], ql[10], ql[12], ql[13], ql[14]);
+            projectB.query("INSERT INTO binaries (id, package, version, maintainer, architecture, file, type) VALUES (%s, '%s', '%s', %s, %s, %s, '%s')" % (ql[7], ql[8], ql[9], ql[10], ql[12], ql[13], ql[14]));
+        else:
+            print "INSERT INTO binaries (id, package, version, maintainer, source, architecture, file, type) VALUES (%s, '%s', '%s', %s, %s, %s, %s, '%s')" % (ql[7:]);
+            projectB.query("INSERT INTO binaries (id, package, version, maintainer, source, architecture, file, type) VALUES (%s, '%s', '%s', %s, %s, %s, %s, '%s')" % (ql[7:]));
+        print "INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (4, ql[7]);
+        projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (4, ql[7]));
+
+        projectB.query("COMMIT WORK");
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+
+#######################################################################################
+
+#      xxx = utils.open_file ("xxx", 'r');
+#      for line in xxx.readlines():
+#          (package, version, arch) = string.split(line);
+#          eversion = utils.re_no_epoch.sub('', version);
+#          total = total + 1;
+#          if arch == "source":
+#              filename = "%s/%s_%s.dsc" % (morgue, package, eversion);
+#          else:
+#              continue
+#          if os.access(filename, os.R_OK) == 0:
+#              continue;
+
+#          arch_id = db_access.get_architecture_id (arch);
+#          q = christina.query("SELECT f.*, l.path, s.*, df.* FROM source s, files f, location l, dsc_files df WHERE s.source = '%s' AND s.version = '%s' AND df.source = s.id AND df.file = f.id AND l.id = f.location" % (package, version));
+#          ql = q.getresult();
+#          if len(ql) < 1:
+#              print "YOU LOSE: "+package+"~"+version+"~"+arch+"~"+repr(ql)
+#              continue;
+#          projectB.query("BEGIN WORK");
+#          gack = [];
+#          for i in ql:
+#              new_filename = i[6] + i[1];
+#              filename = morgue + '/' + os.path.basename(new_filename);
+#              if os.access(filename, os.R_OK) == 0:
+#                  continue;
+#              print filename + " -> " + new_filename;
+#              if os.path.exists(new_filename):
+#                  sys.exit(3);
+#              utils.move(filename, new_filename);
+#              print "INSERT INTO files (id, filename, size, md5sum, location) VALUES (%s, '%s', %s, '%s', %s)" % (i[:5]);
+#              projectB.query("INSERT INTO files (id, filename, size, md5sum, location) VALUES (%s, '%s', %s, '%s', %s)" % (i[:5]));
+#              gack.append("INSERT INTO dsc_files (id, source, file) VALUES (%s, %s, %s)" % (i[12:]));
+#              if new_filename[-4:] == ".dsc":
+#                  print "INSERT INTO source (id, source, version, maintainer, file) VALUES (%s, '%s', '%s', %s, %s)" % (i[7:12]);
+#                  projectB.query("INSERT INTO source (id, source, version, maintainer, file) VALUES (%s, '%s', '%s', %s, %s)" % (i[7:12]));
+#                  print "INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (4, i[7]);
+#                  projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (4, i[7]));
+#              #print repr(i)
+#          for i in gack:
+#              print i;
+#              projectB.query(i);
+#          projectB.query("COMMIT WORK");
+
+#######################################################################################
+
+#######################################################################################
+
+#      bad = {};
+#      xxx = utils.open_file ("xxx", 'r');
+#      for line in xxx.readlines():
+#          (package, version, arch) = string.split(line);
+#          version = utils.re_no_epoch.sub('', version);
+#          total = total + 1;
+#          if arch != "source":
+#              filename = "%s/%s_%s_%s.deb" % (morgue, package, version, arch);
+#          else:
+#              filename = "%s/%s_%s.dsc" % (morgue, package, version);
+#          if os.access(filename, os.R_OK):
+#              found = found + 1;
+#          else:
+#              if arch != "source":
+#                  filename = "%s/%s_%s.deb" % (morgue, package, version);
+#                  if os.access(filename, os.R_OK):
+#                      control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename,"r")));
+#                      deb_arch = control.Find("Architecture");
+#                      if arch == deb_arch:
+#                          found = found + 1;
+#                          continue;
+#              if arch != "source":
+#                  xf = 0;
+#                  arch_id = db_access.get_architecture_id (arch);
+#                  q = projectB.query("SELECT version FROM binaries b, bin_associations ba WHERE b.package = '%s' AND b.architecture = %s AND ba.bin = b.id AND ba.suite = 5" % (package, arch_id));
+#                  ql = q.getresult();
+#                  if len(ql) != 1:
+#                      q = projectB.query("SELECT version FROM binaries b, bin_associations ba WHERE b.package = '%s' AND b.architecture = %s AND ba.bin = b.id AND ba.suite = 2" % (package, arch_id));
+#                      ql = q.getresult();
+#                      if len(ql) != 1:
+#                          #print "YOU LOSE: "+package+"~"+version+"~"+arch+"~"+repr(ql)
+#                          continue;
+
+#                  unstable_version = ql[0][0];
+#                  print package+" "+unstable_version+" "+arch;
+#                  found = found + 1;
+#              else:
+#                  q = projectB.query("SELECT version FROM source s, src_associations sa WHERE s.source = '%s' AND sa.source = s.id AND sa.suite = 5" % (package));
+#                  ql = q.getresult();
+#                  if len(ql) != 1:
+#                      q = projectB.query("SELECT version FROM source s, src_associations sa WHERE s.source = '%s' AND sa.source = s.id AND sa.suite = 2" % (package));
+#                      ql = q.getresult();
+#                      if len(ql) != 1:
+#                          #print "YOU LOSE: "+package+"~"+version+"~"+arch+"~"+repr(ql)
+#                          continue;
+
+#                  unstable_version = ql[0][0];
+#                  print package+" "+unstable_version+" "+arch;
+#                  found = found + 1;
+
+#      #print "Good: %d / %d (%.2f%%)" % (found, total, (float(found)/total*100));
+#      #not_found = total - found;
+#      #print "Bad: %d / %d (%.2f%%)" % (not_found, total, (float(not_found)/total*100));
+
+#######################################################################################
+
+# Pretty print bad stuff code
+
+#              key = package+'~'+version;
+#              if not bad.has_key(key):
+#                  bad[key] = [];
+#              bad[key].append(arch);
+
+#      keys = bad.keys();
+#      keys.sort();
+#      for i in keys:
+#          print i+": "+repr(bad[i]);
+
+
+
+# Check if is in DB code
+
+#              arch_id = db_access.get_architecture_id (arch);
+#              q = projectB.query("SELECT id FROM binaries WHERE package = '%s' AND version = '%s' AND architecture = %s" % (package, version, arch_id));
+#              ql = q.getresult();
+#              if ql != []:
+#                  found = found + 1;
+
+#              q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version));
+#              ql = q.getresult();
+#              if ql != []:
+#                  found = found + 1;
