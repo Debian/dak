@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.3 2002-11-19 03:15:20 troup Exp $
+# $Id: kelly,v 1.4 2003-01-02 18:12:05 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.3 $";
+kelly_version = "$Revision: 1.4 $";
 
 Cnf = None;
 Options = None;
@@ -155,6 +155,13 @@ def init():
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Dinstall::Options")
 
+    if Options["Help"]:
+        usage();
+
+    if Options["Version"]:
+        print "kelly %s" % (kelly_version);
+        sys.exit(0);
+
     Katie = katie.Katie(Cnf);
     projectB = Katie.projectB;
 
@@ -170,7 +177,7 @@ def init():
 ###############################################################################
 
 def usage (exit_code=0):
-    print """Usage: dinstall [OPTION]... [CHANGES]...
+    print """Usage: kelly [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -h, --help                show this help and exit.
   -n, --no-action           don't do anything
@@ -551,13 +558,6 @@ def main():
     global projectB, Logger, Urgency_Logger, installing_to_stable;
 
     changes_files = init();
-
-    if Options["Help"]:
-        usage();
-
-    if Options["Version"]:
-        print "kelly %s" % (kelly_version);
-        sys.exit(0);
 
     # -n/--dry-run invalidates some other options which would involve things happening
     if Options["No-Action"]:
