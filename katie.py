@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.31 2003-03-14 19:06:02 troup Exp $
+# $Id: katie.py,v 1.32 2003-04-08 18:44:21 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -763,9 +763,16 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 actual_size = int(files[dsc_file]["size"]);
                 found = "%s in incoming" % (dsc_file)
                 # Check the file does not already exist in the archive
-                q = self.projectB.query("SELECT f.size, f.md5sum FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
+                q = self.projectB.query("SELECT f.size, f.md5sum FROM files f WHERE f.filename LIKE '%%%s%%'" % (dsc_file));
 
-                # "It has not broken them.  It has fixed a
+                ql = q.getresult();
+                # Strip out anything that isn't '%s' or '/%s$'
+                for i in ql:
+                    if i[0] != dsc_file and i[0][-(len(dsc_file)+1):] != '/'+dsc_file:
+                        self.Logger.log(["check_dsc_against_db",i[0],dsc_file]);
+                        ql.remove(i);
+
+                # "[katie] has not broken them.  [katie] has fixed a
                 # brokenness.  Your crappy hack exploited a bug in
                 # the old dinstall.
                 #
@@ -774,7 +781,6 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 # the same name and version.)"
                 #                        -- ajk@ on d-devel@l.d.o
 
-                ql = q.getresult();
                 if ql:
                     # Ignore exact matches for .orig.tar.gz
                     match = 0;
@@ -791,8 +797,13 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                         self.reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_file));
             elif dsc_file.endswith(".orig.tar.gz"):
                 # Check in the pool
-                q = self.projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
+                q = self.projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE f.filename LIKE '%%%s%%' AND l.id = f.location" % (dsc_file));
                 ql = q.getresult();
+                # Strip out anything that isn't '%s' or '/%s$'
+                for i in ql:
+                    if i[1] != dsc_file and i[1][-(len(dsc_file)+1):] != '/'+dsc_file:
+                        self.Logger.log(["check_dsc_against_db",i[1],dsc_file]);
+                        ql.remove(i);
 
                 if ql:
                     # Unfortunately, we make get more than one
