@@ -2,7 +2,7 @@
 
 # Generate file lists used by apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.19 2002-06-05 16:53:05 troup Exp $
+# $Id: jenna,v 1.20 2002-07-14 15:02:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,63 +64,6 @@ Write out file lists suitable for use with apt-ftparchive.
 ARCH, COMPONENT and SUITE can be space seperated lists, e.g.
     --architecture=\"m68k i386\"""";
     sys.exit(exit_code);
-
-################################################################################
-
-# Handle -a, -c and -s arguments; returns them as SQL constraints
-def parse_args():
-    if Options["Suite"]:
-        suite_ids_list = [];
-        for suite in string.split(Options["Suite"]):
-            suite_id = db_access.get_suite_id(suite);
-            if suite_id == -1:
-                utils.warn("suite '%s' not recognised." % (suite));
-            else:
-                suite_ids_list.append(suite_id);
-        if suite_ids_list:
-            con_suites = "AND su.id IN (%s)" % string.join(map(str, suite_ids_list), ", ");
-        else:
-            utils.fubar("No valid suite given.");
-    else:
-        con_suites = "";
-
-    if Options["Architecture"]:
-        arch_ids_list = [];
-        check_source = 0;
-        for architecture in string.split(Options["Architecture"]):
-            if architecture == "source":
-                check_source = 1;
-            else:
-                architecture_id = db_access.get_architecture_id(architecture);
-                if architecture_id == -1:
-                    utils.warn("architecture '%s' not recognised." % (architecture));
-                else:
-                    arch_ids_list.append(architecture_id);
-        if arch_ids_list:
-            con_architectures = "AND a.id IN (%s)" % string.join(map(str, arch_ids_list), ", ");
-        else:
-            if not check_source:
-                utils.fubar("No valid architecture given.");
-    else:
-        con_architectures = "";
-        check_source = 1;
-
-    if Options["Component"]:
-        component_ids_list = [];
-        for component in string.split(Options["Component"]):
-            component_id = db_access.get_component_id(component);
-            if component_id == -1:
-                utils.warn("component '%s' not recognised." % (component));
-            else:
-                component_ids_list.append(component_id);
-        if component_ids_list:
-            con_components = "AND su.id IN (%s)" % string.join(map(str, component_ids_list), ", ");
-        else:
-            utils.fubar("No valid component given.");
-    else:
-        con_components = "";
-
-    return (con_suites, con_architectures, con_components, check_source);
 
 ################################################################################
 
@@ -412,7 +355,8 @@ def stable_dislocation_p():
 ################################################################################
 
 def do_da_do_da():
-    (con_suites, con_architectures, con_components, check_source) = parse_args();
+    (con_suites, con_architectures, con_components, check_source) = \
+                 utils.parse_args(Options);
 
     if stable_dislocation_p():
         dislocated_files = claire.find_dislocated_stable(Cnf, projectB);
