@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.47 2001-06-22 22:53:14 troup Exp $
+# $Id: katie,v 1.48 2001-06-23 16:57:26 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,8 @@ re_changes = re.compile (r"changes$");
 re_default_answer = re.compile(r"\[(.*)\]");
 re_fdnic = re.compile("\n\n");
 re_bad_diff = re.compile("^[\-\+][\-\+][\-\+] /dev/null");
-re_bin_only_nmu = re.compile("\.\d+\.\d+$");
+re_bin_only_nmu_of_mu = re.compile("\.\d+\.\d+$");
+re_bin_only_nmu_of_nmu = re.compile("\.\d+$");
 
 #########################################################################################
 
@@ -128,6 +129,38 @@ class nmu_p:
 
         return 1;
     
+######################################################################################################
+
+# Ensure that source exists somewhere in the archive for the binary
+# upload being processed.  
+#
+# (1) exact match                      => 1.0-3
+# (2) Bin-only NMU of an MU            => 1.0-3.0.1
+# (3) Bin-only NMU of a sourceful-NMU  => 1.0-3.1.1
+
+def source_exists (package, source_version):
+    q = projectB.query("SELECT s.version FROM source s WHERE s.source = '%s'" % (package));
+
+    # Reduce the query results to a list of version numbers
+    ql = map(lambda x: x[0], q.getresult());
+
+    # Try (1)
+    if ql.count(source_version):
+        return 1;
+
+    # Try (2)
+    orig_source_version = re_bin_only_nmu_of_mu.sub('', source_version);
+    if ql.count(orig_source_version):
+        return 1;
+
+    # Try (3)
+    orig_source_version = re_bin_only_nmu_of_nmu.sub('', source_version);
+    if ql.count(orig_source_version):
+        return 1;
+
+    # No source found...
+    return 0;
+
 ######################################################################################################
 
 # See if a given package is in the override table
@@ -453,16 +486,8 @@ def check_files():
                     if source_version != changes["version"]:
                         reject_message = reject_message + "Rejected: source version (%s) for %s doesn't match changes version %s.\n" % (files[file]["sourceversion"], file, changes["version"]);
                 else:
-                    q = projectB.query("SELECT s.version FROM source s WHERE s.source = '%s'" % (files[file]["source package"]));
-                    ql = map(lambda x: x[0], q.getresult());
-                    if ql.count(source_version) == 0:
-                        # Maybe it's a binary only NMU ?
-                        if re_bin_only_nmu.search(source_version):
-                            orig_source_version = re_bin_only_nmu.sub('', source_version);
-                            if ql.count(orig_source_version) == 0:
-                                reject_message = reject_message + "Rejected: no source version (%s [or %s]) found in %s for %s (%s).\n" % (source_version, orig_source_version, suite, files[file]["source package"], file);
-                        else:
-                            reject_message = reject_message + "Rejected: no source version (%s) found in %s for %s (%s).\n" % (source_version, suite, files[file]["source package"], file);
+                    if not source_exists (files[file]["source package"], source_version):
+                        reject_message = reject_message + "Rejected: no source found for %s %s (%s).\n" % (files[file]["source package"], source_version, file);
 
             # Find any old .dsc files
             elif files[file]["type"] == "dsc":
@@ -1307,7 +1332,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.47 $"
+    bcc = "X-Katie: $Revision: 1.48 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:

@@ -14,8 +14,6 @@ More Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
-  o Fix binary-only NMUs of NMUs in katie's source-must-exist check.
-
 Less Urgent
 -----------
 
@@ -69,6 +67,10 @@ TODO
 
 More Urgent
 -----------
+
+  o testing-updates suite: if binary-only and version << version in
+    unstable and source-ver ~= source-ver in testing; then map
+    unstable -> testing-updates ?
 
   o katie needs a stable_reject() which a) removes the package from
     p-u, b) doesn't remove the file from the pool, and c) (optionally, I
