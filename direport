@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+
+@t = ('BYHAND', 'CONFIRM', 'NEW', 'REJECT', 'INSTALL', 'SKIP');
+
+$/="";
+IR: while (<>) {
+  for $i (1..$#t) {
+    if (/^$t[$i]/m) {
+      $data[$i] .= "$_\n";
+      $cnt[$i]++;
+      
+      if ($t[$i] eq "NEW") {
+	($dist) = (/^NEW to (.*)/m);
+	while (/^\(new\) ([^_]*)_\S* (\S*) (\S*)$/mg) {
+	  ($n,$p,$s) = ($1,$2,$3);
+	  $p = "?" if (!$p);
+	  $s = "?" if (!$s);
+	  $s = "non-free/$p" if ($dist=~'non-free' && $s!~'non-free');
+	  $s = "contrib/$p" if ($dist=~'contrib' && $s!~'contrib');
+	  $l = length($n)>15 ? 30-length($n) : 15;
+	  for $d (split(/, /,$dist)) {
+	    $d.='-contrib' if ($s =~ 'contrib' && $d!~'contrib');
+	    $d.='-non-free' if ($s =~ 'non-free' && $d!~'non-free');
+	    $override{$d} .= sprintf("%-15s %-${l}s %s\n", $n, $p, $s)
+	      if (!$over{$n});
+	    $over{$n} = 1;
+	  }
+	}
+      }
+	
+      next IR;
+    }
+  }
+  $data[0] .= "$_\n";
+  $cnt[$i]++;
+}
+
+for $i (0..$#t) {
+  print "-"x40, "\n$cnt[$i] $t[$i]\n", "-"x40, "\n$data[$i]" if $cnt[$i];
+}
+print "-"x40, "\nOVERRIDE ADDITIONS\n", "-"x40,"\n";
+for $d (sort keys %override) {
+  print "-"x5," $d\n$override{$d}\n\n";
+}
