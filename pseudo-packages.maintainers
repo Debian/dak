@@ -13,7 +13,7 @@ mirrors			Josip Rodin and others <mirrors@debian.org>
 listarchives		Josip Rodin and others <listarchives@debian.org>
 project			debian-project@lists.debian.org
 general			debian-devel@lists.debian.org
-kernel			Herbert Xu <herbert@debian.org>
+kernel			Debian Kernel Team <debian-kernel@lists.debian.org>
 lists.debian.org	Martin Schulze and others <listmaster@lists.debian.org>
 spam			spam@debian.org
 slink-cd		Steve McIntyre <stevem@chiark.greenend.org.uk>
