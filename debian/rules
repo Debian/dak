@@ -9,6 +9,8 @@
 # paternity under the Copyright, Designs and Patents Act 1988.)
 # This file may have to be extensively modified
 
+PYTHONVER := `/usr/bin/python -c 'import sys;print sys.version[:3]'`
+
 build: build-stamp
 build-stamp:
 	$(MAKE)
@@ -47,8 +49,8 @@ binary-indep: checkroot build
 	ln -s melanie debian/tmp/usr/bin/da_remove
 	ln -s ziyi debian/tmp/usr/bin/da_mkrelease
 
-	install -d -m 755 debian/tmp/usr/lib/python1.5/site-packages/
-	install -m 644 db_access.py utils.py claire.py logging.py debian/tmp/usr/lib/python1.5/site-packages/
+	install -d -m 755 debian/tmp/usr/lib/python$(PYTHONVER)/site-packages/
+	install -m 644 db_access.py utils.py claire.py logging.py debian/tmp/usr/lib/python$(PYTHONVER)/site-packages/
 	install -d -m 755 debian/tmp/usr/share/man/man1/
 	install -m 644 docs/*.1 debian/tmp/usr/share/man/man1/
 	gzip -9v debian/tmp/usr/share/man/man1/*
@@ -70,6 +72,7 @@ binary-indep: checkroot build
 	gzip -9v debian/tmp/usr/share/doc/katie/examples/*
 
 	dpkg-shlibdeps sql-aptvc.so
+	/usr/bin/python debian/python-dep >> debian/substvars
 	dpkg-gencontrol -isp
 	chown -R root.root debian/tmp
 	chmod -R go=rX debian/tmp
