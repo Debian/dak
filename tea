@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.15 2002-01-19 18:57:49 troup Exp $
+# $Id: tea,v 1.16 2002-02-12 23:14:58 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ current_time = time.time();
 
 ################################################################################
 
-def process_dir (arg, dirname, filenames):
+def process_dir (unused, dirname, filenames):
     global waste, db_files, excluded;
 
     if string.find(dirname, '/disks-') != -1 or string.find(dirname, 'upgrade-') != -1:
@@ -67,7 +67,7 @@ def check_files():
     q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id")
     ql = q.getresult();
 
-    db_files = {};
+    db_files.clear();
     for i in ql:
 	filename = os.path.abspath(i[0] + i[1]);
         db_files[filename] = "";
@@ -199,14 +199,14 @@ def Ent(Kind,Name,Link,Mode,UID,GID,Size,MTime,Major,Minor):
 
     if MTime > current_time:
         future_files[current_file] = MTime;
-        print "%s: %s '%s','%s',%u,%u,%u,%u,%u" % (current_file, Kind,Name,Link,Mode,UID,GID,Size, MTime);
+        print "%s: %s '%s','%s',%u,%u,%u,%u,%u,%u,%u" % (current_file, Kind,Name,Link,Mode,UID,GID,Size, MTime, Major, Minor);
 
 def check_timestamps():
     global current_file;
 
     q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.deb$'")
     ql = q.getresult();
-    db_files = {};
+    db_files.clear();
     count = 0;
     for i in ql:
 	filename = os.path.abspath(i[0] + i[1]);
