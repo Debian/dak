@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.1 2002-02-12 23:08:07 troup Exp $
+# $Id: katie.py,v 1.2 2002-02-15 01:48:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -211,7 +211,7 @@ class Katie:
             Subst["__MAINTAINER_TO__"] = changes["maintainer822"];
             Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown");
         if self.Cnf.has_key("Dinstall::TrackingServer") and changes.has_key("source"):
-            Subst["__MAINTAINER_TO__"] = Subst["__MAINTAINER_TO__"] + "\nBcc: %s@%s" % (changes["source"], Cnf["Dinstall::TrackingServer"])
+            Subst["__MAINTAINER_TO__"] = Subst["__MAINTAINER_TO__"] + "\nBcc: %s@%s" % (changes["source"], self.Cnf["Dinstall::TrackingServer"])
 
         Subst["__REJECT_MESSAGE__"] = reject_message;
         Subst["__SOURCE__"] = changes.get("source", "Unknown");
