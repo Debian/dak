@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.9 2001-06-05 22:30:43 troup Exp $
+# $Id: catherine,v 1.10 2001-06-22 22:53:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ def poolize (q, limit, verbose, no_action):
         legacy_filename = qid["path"]+qid["filename"];
         size = os.stat(legacy_filename)[stat.ST_SIZE];
         if (poolized_size + size) > limit and limit >= 0:
-            sys.stderr.write("Hit %s limit.\n" % (utils.size_type(limit)));
+            utils.warn("Hit %s limit." % (utils.size_type(limit)));
             break;
         poolized_size = poolized_size + size;
         poolized_count = poolized_count + 1;
@@ -71,8 +71,7 @@ def poolize (q, limit, verbose, no_action):
             version = control.Find("Version", "");
             architecture = control.Find("Architecture", "");
             if package == "" or version == "" or architecture == "":
-                sys.stderr.write("%s: couldn't determine required information to rename .deb file.\n" % (legacy_filename));
-                sys.exit(1);
+                utils.fubar("%s: couldn't determine required information to rename .deb file." % (legacy_filename));
             version = utils.re_no_epoch.sub('', version);
             destination_filename = "%s_%s_%s.deb" % (package, version, architecture);
         else:
@@ -80,34 +79,29 @@ def poolize (q, limit, verbose, no_action):
             if m != None:
                 source = m.group(1);
             else:
-                sys.stderr.write("%s: say what?\n" % (legacy_filename));
-                sys.exit(1);
+                utils.fubar("expandsion of source filename '%s' failed." % (legacy_filename));
         # Work out the component name
         component = qid["component"];
         if component == "":
             q = projectB.query("SELECT DISTINCT(c.name) FROM override o, component c WHERE o.package = '%s' AND o.component = c.id;" % (source));
             ql = q.getresult();
             if ql == []:
-                sys.stderr.write("%s: No override match so I can't work out the component.\n" % (source));
-                sys.exit(1);
+                utils.fubar("No override match for '%s' so I can't work out the component." % (source));
             if len(ql) > 1:
-                sys.stderr.write("%s: multiple override matches for %s so I can't work out the component.\n" % (source));
-                sys.exit(1);
+                utils.fubar("Multiple override matches for '%s' so I can't work out the component." % (source));
             component = ql[0][0];
         # Work out the new location
         q = projectB.query("SELECT l.id FROM location l, component c WHERE c.name = '%s' AND c.id = l.component AND l.type = 'pool';" % (component));
         ql = q.getresult();
         if len(ql) != 1:
-            sys.stderr.write("%s: couldn't determine location ID, query returned %d matches and not 1 as expected.\n" % (source, len(ql)));
-            sys.exit(1);
+            utils.fubar("couldn't determine location ID for '%s'. [query returned %d matches, not 1 as expected]" % (source, len(ql)));
         location_id = ql[0][0];
         # First move the files to the new location
         pool_location = utils.poolify (source, component);
         pool_filename = pool_location + destination_filename;
         destination = Cnf["Dir::PoolDir"] + pool_location + destination_filename;
         if os.path.exists(destination):
-            sys.stderr.write("%s: already exists in the pool; serious FUBARity.\n" % (legacy_filename));
-            sys.exit(1);
+            utils.fubar("'%s' already exists in the pool; serious FUBARity." % (legacy_filename));
         if verbose:
             print "Moving: %s -> %s" % (legacy_filename, destination);
         if not no_action:
@@ -154,8 +148,7 @@ def main ():
 
     # Sanity check the limit argument
     if limit > 0 and limit < 1024:
-        sys.stderr.write("-l/--limit takes an argument with a value in kilobytes.\n");
-        sys.exit(1);
+        utils.fubar("-l/--limit takes an argument with a value in kilobytes.");
 
     # Grab a list of all files not already in the pool
     q = projectB.query("""

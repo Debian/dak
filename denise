@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: denise,v 1.4 2001-03-20 00:28:11 troup Exp $
+# $Id: denise,v 1.5 2001-06-22 22:53:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,18 +41,15 @@ def list(suite, component, type):
     
     suite_id = db_access.get_suite_id(suite);
     if suite_id == -1:
-        sys.stderr.write("Suite '%s' not recognised.\n" % (suite));
-        sys.exit(2);
+        utils.fubar("Suite '%s' not recognised." % (suite));
 
     component_id = db_access.get_component_id(component);
     if component_id == -1:
-        sys.stderr.write("Component '%s' not recognised.\n" % (component));
-        sys.exit(2);
+        utils.fubar("Component '%s' not recognised." % (component));
 
     type_id = db_access.get_override_type_id(type);
     if type_id == -1:
-        sys.stderr.write("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)\n" % (type));
-        sys.exit(2);
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type));
 
     if not override.has_key(suite):
         override[suite] = {};
@@ -93,7 +90,7 @@ def main ():
     natalie.init();
 
     for suite in [ "stable", "unstable" ]:
-        sys.stderr.write("Processing %s...\n" % (suite));
+        print "Processing %s..." % (suite);
         override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
         for component in Cnf.SubTree("Component").List():
             if component == "mixed":
@@ -116,7 +113,7 @@ def main ():
     # Munge the override file for testing by using unstable's where
     # possible and falling back on stable's where it's not.
 
-    sys.stderr.write("Processing testing...\n");
+    print "Processing testing...";
     suite = "testing";
     suite_id = db_access.get_suite_id(suite);
     override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
@@ -145,7 +142,7 @@ def main ():
                 else:
                     if type == "dsc" and (override["unstable"][component]["deb"].has_key(package) or override["stable"][component]["deb"].has_key(package)):
                         continue; # source falls back on binary; so accept silently
-                    sys.stderr.write("W: Can't find override entry for testing package '%s' (component %s, type %s).\n" % (package, component, type));
+                    utils.warn("Can't find override entry for testing package '%s' (component %s, type %s)." % (package, component, type));
             sys.stdout.close();
     
 

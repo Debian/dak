@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.5 2001-04-13 20:13:36 troup Exp $
+# $Id: natalie.py,v 1.6 2001-06-22 22:53:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -177,7 +177,7 @@ def list(suite, component, type):
 
     type_id = db_access.get_override_type_id(type);
     if type_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)\n" % (type));
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type));
 
     if type == "dsc":
         q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, type_id));

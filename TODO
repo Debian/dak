@@ -47,12 +47,13 @@ Less Urgent
     o Don't do override checks for stable only uploads
     o cron.daily* should change umask (aj sucks)
     o Rene doesn't look at debian-installer but should.
+    o Rene needs to check for binary-less source packages.
   
- * Bizzare:
+ * Bizzare/uncertain:
    
-    o Fix rhona to unconditionally read override file on startup (huh? no override reading at all!)
     o validate source consistency, i.e. .dsc and .tar.gz as minimum (??)
     o Rene also doesn't seem to warn about missing binary packages (??)
+    o jenna should not delete things because they don't exist (?)
   
  * Cleanups & misc: 
    

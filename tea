@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.10 2001-03-24 03:30:35 troup Exp $
+# $Id: tea,v 1.11 2001-06-22 22:53:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ def check_files():
 	filename = os.path.abspath(i[0] + i[1]);
         db_files[filename] = "";
         if os.access(filename, os.R_OK) == 0:
-            sys.stderr.write("W: '%s' doesn't exist.\n" % (filename));
+            utils.warn("'%s' doesn't exist." % (filename));
 
     file = utils.open_file(Cnf["Dir::OverrideDir"]+'override.unreferenced','r');
     for filename in file.readlines():
@@ -96,11 +96,11 @@ def check_dscs():
             try:
                 utils.parse_changes(file, 1);
             except utils.invalid_dsc_format_exc, line:
-                sys.stderr.write("E: syntax error in .dsc file '%s', line %s.\n" % (file, line));
+                utils.warn("syntax error in .dsc file '%s', line %s." % (file, line));
                 count = count + 1;
 
     if count:
-        sys.stderr.write("Found %s invalid .dsc files.\n" % (count));
+        utils.warn("Found %s invalid .dsc files." % (count));
 
 ################################################################################
 
@@ -170,14 +170,14 @@ def check_md5sums():
         try:
             file = utils.open_file(filename, 'r');
         except:
-            sys.stderr.write("E: can't open '%s'.\n" % (filename));
+            utils.warn("can't open '%s'." % (filename));
             continue;
         md5sum = apt_pkg.md5sum(file);
         size = os.stat(filename)[stat.ST_SIZE];
         if md5sum != db_md5sum:
-            sys.stderr.write("E: **WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db]).\n" % (filename, md5sum, db_md5sum));
+            utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum));
         if size != db_size:
-            sys.stderr.write("E: **WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db]).\n" % (filename, size, db_size));
+            utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size));
 
     print "Done."
 

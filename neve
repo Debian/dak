@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: neve,v 1.3 2001-03-20 00:28:11 troup Exp $
+# $Id: neve,v 1.4 2001-06-22 22:53:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -295,8 +295,7 @@ def do_sources(location, prefix, suite, component, server):
     sources = location + prefix + 'Sources.gz';
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (sources, temp_filename));
     if (result != 0):
-        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
-        sys.exit(result);
+        utils.fubar("Gunzip invocation failed!\n%s" % (output), result);
     print 'Processing '+sources+'...';
     process_sources (location, temp_filename, suite, component, server);
     os.unlink(temp_filename);
@@ -358,8 +357,7 @@ def main ():
 #                prefix = component + '/'
 #                do_sources(location, prefix);
         else:
-            sys.stderr.write("Unknown location type ('%s').\n" % (type));
-            sys.exit(2);
+            utils.fubar("Unknown location type ('%s')." % (type));
     
     # Process Packages files to populate `binaries' and friends
 
@@ -412,8 +410,7 @@ def main ():
     (result, output) = commands.getstatusoutput("psql projectb < add_constraints.sql");
     print output
     if (result != 0):
-        sys.stderr.write("psql invocation failed!\n");
-        sys.exit(result);
+        utils.fubar("psql invocation failed!\n%s" % (output), result);
     
     return;
             

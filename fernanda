@@ -2,7 +2,7 @@
 
 # Script to automate some parts of checking NEW packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: fernanda,v 1.1 2001-06-15 01:18:25 troup Exp $
+# $Id: fernanda,v 1.2 2001-06-22 22:53:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -163,12 +163,12 @@ def main ():
                 sys.stdout = stdout_fd;
         except IOError, e:
             if errno.errorcode[e.errno] == 'EPIPE':
-                utils.warn("[fernanda] Caught EPIPE; skipping.\n");
+                utils.warn("[fernanda] Caught EPIPE; skipping.");
                 pass;
             else:
                 raise;
         except KeyboardInterrupt:
-            utils.warn("[fernanda] Caught C-c; skipping.\n");
+            utils.warn("[fernanda] Caught C-c; skipping.");
             pass;
 
 #######################################################################################

@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.46 2001-06-21 18:19:09 troup Exp $
+# $Id: katie,v 1.47 2001-06-22 22:53:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -947,7 +947,7 @@ def install (changes_filename, summary, short_summary):
     try:
         utils.move (changes_filename, Cnf["Dir::IncomingDir"] + 'DONE/' + os.path.basename(changes_filename))
     except:
-        sys.stderr.write("W: couldn't move changes file '%s' to DONE directory [Got %s].\n" % (os.path.basename(changes_filename), sys.exc_type));
+        utils.warn("couldn't move changes file '%s' to DONE directory. [Got %s]" % (os.path.basename(changes_filename), sys.exc_type));
 
     install_count = install_count + 1;
 
@@ -979,8 +979,7 @@ def stable_install (changes_filename, summary, short_summary):
             q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
             ql = q.getresult()
             if ql == []:
-                sys.stderr.write("INTERNAL ERROR: couldn't find '%s' (%s) in source table.\n" % (package, version));
-                sys.exit(1);
+                utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version));
             source_id = ql[0][0];
             suite_id = db_access.get_suite_id('proposed-updates');
             projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id));
@@ -996,8 +995,7 @@ def stable_install (changes_filename, summary, short_summary):
             q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
             ql = q.getresult()
             if ql == []:
-                sys.stderr.write("INTERNAL ERROR: couldn't find '%s' (%s for %s architecture) in binaries table.\n" % (package, version, architecture));
-                sys.exit(1);
+                utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture));
             binary_id = ql[0][0];
             suite_id = db_access.get_suite_id('proposed-updates');
             projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
@@ -1058,14 +1056,14 @@ def reject (changes_filename, manual_reject_mail_filename):
     try:
         utils.move (changes_filename, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], base_changes_filename));
     except:
-        sys.stderr.write("W: couldn't reject changes file '%s' [Got %s].\n" % (base_changes_filename, sys.exc_type));
+        utils.warn("couldn't reject changes file '%s'. [Got %s]" % (base_changes_filename, sys.exc_type));
         pass;
     for file in files.keys():
         if os.path.exists(file):
             try:
                 utils.move (file, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
             except:
-                sys.stderr.write("W: couldn't reject file '%s' [Got %s].\n" % (file, sys.exc_type));
+                utils.warn("couldn't reject file '%s'. [Got %s]" % (file, sys.exc_type));
                 pass;
 
     # If this is not a manual rejection generate the .reason file and rejection mail message
@@ -1111,8 +1109,7 @@ def manual_reject (changes_filename):
     if manual_reject_message == "":
         result = os.system("vi +6 %s" % (reject_filename))
         if result != 0:
-            sys.stderr.write ("vi invocation failed for `%s'!\n" % (reject_filename))
-            sys.exit(result)
+            utils.fubar("vi invocation failed for `%s'!" % (reject_filename), result);
 
     # Then process it as if it were an automatic rejection
     reject (changes_filename, reject_filename)
@@ -1291,8 +1288,7 @@ def main():
     # Check that we aren't going to clash with the daily cron job
 
     if os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Cnf["Dinstall::Options::No-Lock"]:
-        sys.stderr.write("Archive maintenance in progress.  Try again later.\n");
-        sys.exit(2);
+        utils.fubar("Archive maintenance in progress.  Try again later.");
     
     # Obtain lock if not in no-action mode
 
@@ -1311,7 +1307,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.46 $"
+    bcc = "X-Katie: $Revision: 1.47 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
