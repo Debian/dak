@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.13 2002-04-20 13:13:32 troup Exp $
+# $Id: katie.py,v 1.14 2002-04-20 14:24:48 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -378,7 +378,7 @@ class Katie:
                 # If it doesn't exist, create a symlink
                 if not os.path.exists(dest):
                     # Find the .orig.tar.gz in the pool
-                    q = self.projectB.query("SELECT l.path, f.filename from location l, files f WHERE f.id = %s" % (self.pkg.orig_tar_id));
+                    q = self.projectB.query("SELECT l.path, f.filename from location l, files f WHERE f.id = %s and f.location = l.id" % (self.pkg.orig_tar_id));
                     ql = q.getresult();
                     if not ql:
                         utils.fubar("[INTERNAL ERROR] Couldn't find id %s in files table." % (self.pkg.orig_tar_id));
