@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Various statistical pr0nography fun and games
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: saffron,v 1.1 2003-01-02 18:06:19 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: saffron,v 1.2 2003-02-07 14:53:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# <aj>    can we change the standards instead?
+# <neuro> standards?
+# <aj>    whatever we're not conforming to
+# <aj>    if there's no written standard, why don't we declare linux as
+#         the defacto standard
+# <aj>    go us!
+
+# [aj's attempt to avoid ABI changes for released architecture(s)]
 
 ################################################################################
 
@@ -53,6 +64,8 @@ SELECT a.arch_string as Architecture, sum(f.size)
   FROM files f, binaries b, architecture a
   WHERE a.id=b.architecture AND f.id=b.file
   GROUP BY a.arch_string""");
+    print q;
+    q = projectB.query("SELECT sum(size) FROM files WHERE filename ~ '.(diff.gz|tar.gz|dsc)$'");
     print q;
 
 ################################################################################
@@ -104,7 +117,7 @@ def output_format(suite):
     output_suite = [];
     for word in suite.split("-"):
         output_suite.append(word[0]);
-    return output_suite.join("-");
+    return "-".join(output_suite);
 
 # Obvious query with GROUP BY and mapped names                  -> 50 seconds
 # GROUP BY but ids instead of suite/architecture names          -> 28 seconds
