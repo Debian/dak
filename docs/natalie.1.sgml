@@ -17,27 +17,36 @@
   <!-- Man page title -->
   <refnamediv>
     <refname>natalie</>
-    <refpurpose>Override Utility to remove/add packages from suites</>
+    <refpurpose>Utility to manipulate the packages overrides</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>natalie</>
-      <arg><option><replaceable>options</replaceable></></arg>
+      <arg><option><replaceable>options</replaceable></option></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
   <RefSect1><Title>Description</>
     <para>
-      <command>natalie</command> is the command line tool to handle override files.  Override files can be listed to stdout or updated from stdin.
-
+      <command>natalie</command> is the command line tool to handle override files.  Override files can be listed or updated.
+    </para>
+  </refsect1>
   <RefSect1><Title>Options</>
 
-      <VariableList>
-	<VarListEntry><term><option>-c/--component=<replaceable>component</replaceable></option></>
-	  <ListItem><Para>Uses the override DB for the component listed.  The default is <literal>main</literal>.</PARA></LISTITEM>
-	</VarListEntry>
+    <VariableList>
+      <varlistentry>
+	<term><option>-a/--add</option></term>
+	<listitem>
+	  <para>Add entries to the override DB.  Changes and deletions are ignored.</para>
+	</listitem>
+      </varlistentry>
+
+      <VarListEntry><term><option>-c/--component=<replaceable>component</replaceable></option></>
+	<ListItem><Para>Uses the override DB for the component listed.</para>
+	</listitem>
+      </VarListEntry>
 
       <varlistentry>
 	<term><option>-h/--help</option></term>
@@ -46,12 +55,12 @@
 	</listitem>
       </varlistentry>
 
-	<varlistentry>
-	  <term><option>-l/--list</option></term>
-	  <listitem>
-	    <para>Lists the override DB to stdout.</para>
-	  </listitem>
-	</varlistentry>
+      <varlistentry>
+	<term><option>-l/--list</option></term>
+	<listitem>
+	  <para>Lists the override DB to stdout.</para>
+	</listitem>
+      </varlistentry>
 
       <varlistentry>
 	<term><option>-q/--quiet</option></term>
@@ -60,20 +69,20 @@
 	</listitem>
       </varlistentry>
 
-	<VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
-	  <ListItem><Para>Uses the override DB for the suite listed.  The default is <literal>unstable</literal>.</PARA></LISTITEM>
-	</VarListEntry>
+      <VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
+	<ListItem><Para>Uses the override DB for the suite listed.</para></listitem>
+      </varlistentry>
 
-	<VarListEntry><term><option>-S/--set</option></term>
-	  <ListItem><Para>Update the override DB based on the contents of stdin.  Information on the results of the update are printed to stdout.</PARA></LISTITEM>
-	</VarListEntry>
+      <VarListEntry><term><option>-S/--set</option></term>
+	<ListItem><Para>Set the override DB to the provided input.</PARA></LISTITEM>
+      </VarListEntry>
 
-	<varlistentry>
-	  <term><option>-t/--type=<replaceable>type</replaceable></option></term>
-	  <listitem>
-	    <para>Uses the override DB for the type listed.  The default is <literal>deb</literal>.  Possible values are: <literal>deb</literal>, <literal>udeb</literal> and <literal>dsc</literal>.</para>
-	  </listitem>
-	</varlistentry>
+      <varlistentry>
+	<term><option>-t/--type=<replaceable>type</replaceable></option></term>
+	<listitem>
+	  <para>Uses the override DB for the type listed.  Possible values are: <literal>deb</literal>, <literal>udeb</literal> and <literal>dsc</literal>.</para>
+	</listitem>
+      </varlistentry>
 
     </VariableList>
   </RefSect1>
@@ -81,6 +90,7 @@
   <RefSect1><Title>Diagnostics</>
     <para>
       <command>natalie</command> returns zero on normal operation, non-zero on error.
+    </para>
   </RefSect1>
 
   &manauthor;
