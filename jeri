@@ -2,7 +2,7 @@
 
 # Dependency check proposed-updates
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jeri,v 1.10 2002-10-16 02:47:32 troup Exp $
+# $Id: jeri,v 1.11 2003-01-02 18:13:03 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ architectures = None;
 
 def usage (exit_code=0):
     print """Usage: jeri [OPTION] <CHANGES FILE | DEB FILE | ADMIN FILE>[...]
-Remove obsolete changes files from proposed-updates.
+(Very) Basic dependency checking for proposed-updates.
 
   -q, --quiet                be quieter about what is being done
   -v, --verbose              be more verbose about what is being done
