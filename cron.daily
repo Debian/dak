@@ -3,10 +3,10 @@
 # Executed daily via cron, out of troup's crontab.
 
 set -e
-export SCRIPTVARS=/org/ftp.debian.org/scripts/masterfiles/vars
+export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 . $SCRIPTVARS
 
-##### 
+################################################################################
 
 echo Archive maintenance started at $(date +%X)
 
@@ -26,24 +26,26 @@ ending at about 15:30.  This file is then removed.
 You should not mirror the archive during this period.
 EOF
 
-##### 
+################################################################################
 
-TERM=vt100 update-bugdoctxt
+echo "Creating pre-daily-cron-job backup of projectb database..."
+pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
-##### 
+################################################################################
 
-pg_dump > FIXME
+update-bugdoctxt
+update-mirrorlists
 
-##### 
+################################################################################
 
-# temporary hack to work around the lack of an apt-utils package
+# temporary hack to work around the lack of an apt-utils & python-apt package
 export PYTHONPATH=$PYTHONPATH:/org/ftp.debian.org/scripts/apt/build/bin/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/ftp.debian.org/scripts/apt/build/bin/
 export PATH=$PATH:/org/ftp.debian.org/scripts/apt/build/bin/
 
 cd $incoming
 rm -f REPORT
-dak-install -pak *.changes | direport | tee REPORT | \
+katie -pak *.changes | direport | tee REPORT | \
      mail -s "Install for $(date +%D)" ftpmaster@ftp-master.debian.org
 chgrp debadmin REPORT
 chmod 664 REPORT
@@ -52,19 +54,32 @@ cd $masterdir
 symlinks -d -r $ftpdir
 
 cd $masterdir
+jenna
+# FIXME
+cd /org/ftp.debian.org/database/dists/
+for i in proposed-updates_-_binary-*; do cat $i >> proposed-updates_-_binary.list; done
+cd $masterdir
 apt-ftparchive generate apt.conf
-dak-mkmaintainers
+rhona
+cd $indices
+charisma > .new-maintainers
+mv -f .new-maintainers Maintainers
+gzip -9v <Maintainers >.new-maintainers.gz
+mv -f .new-maintainers.gz Maintainers.gz
+cd $masterdir
 copyoverrides
 mklslar
 mkchecksums
 
-# [JT] temporary hack to make the buildd daemons and proposed-updates get along
-pushd /org/ftp.debian.org/ftp/dists/proposed-updates
-/home/troup/katie/drow *.dsc
-popd
-
 rm -f $NOTICE
 echo Archive maintenance finished at $(date +%X)
+
+################################################################################
+
+echo "Creating post-daily-cron-job backup of projectb database..."
+pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+
+################################################################################
 
 ulimit -m 90000 -d 90000 -s 10000 -v 90000
 

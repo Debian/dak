@@ -1,0 +1,27 @@
+#!/bin/sh -e
+
+. vars
+
+export TERM=linux
+
+destdir=$ftpdir/doc
+urlbase=http://www.debian.org/Bugs/
+
+cd $destdir
+
+convert () {
+	src=$1; dst=$2
+	rm -f .new-$dst
+	echo Generating $dst from http://www.debian.org/Bugs/$src ...
+	lynx -nolist -dump $urlbase$src | sed -e 's/^ *$//' | perl -00 -ne 'exit if /Back to the Debian Project homepage/; print unless ($.==1 || /^\s*Other pages:$/m)' >.new-$dst
+	if cmp -s .new-$dst $dst ; then rm -f .new-$dst
+	else mv -f .new-$dst $dst
+	fi
+}
+
+convert Reporting.html bug-reporting.txt
+convert Access.html bug-log-access.txt
+convert server-request.html bug-log-mailserver.txt
+convert Developer.html bug-maint-info.txt
+convert server-control.html bug-maint-mailcontrol.txt
+convert server-refcard.html bug-mailserver-refcard.txt

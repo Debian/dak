@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.9 2000-12-05 04:27:48 troup Exp $
+# $Id: katie,v 1.10 2000-12-13 03:18:50 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ def read_override_file (filename, suite, component):
 
 # See if a given package is in the override file.  Caches and only loads override files on demand.
 
-def in_override_p (package, component, suite):
+def in_override_p (package, component, suite, binary_type):
     global overrides;
 
     # Avoid <undef> on unknown distributions
@@ -149,9 +149,13 @@ def in_override_p (package, component, suite):
             override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)];
             read_override_file (override_filename, suite, component);
         else: # all others.
-            for src in ("", ".src"):
-                override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)] + '.' + component + src;
+            if binary_type == "udeb":
+                override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)] + '.debian-installer.' + component;
                 read_override_file (override_filename, suite, component);
+            else:
+                for src in ("", ".src"):
+                    override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)] + '.' + component + src;
+                    read_override_file (override_filename, suite, component);
 
     return overrides[suite][component].get(package, None);
 
@@ -365,7 +369,7 @@ def check_files():
                 continue
 
             # See if the package is NEW
-            if not in_override_p(files[file]["package"], files[file]["component"], suite):
+            if not in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype","")):
                 files[file]["new"] = 1
                 
             # Find any old binary packages
@@ -427,7 +431,7 @@ def check_files():
 
 def check_dsc ():
     global dsc, dsc_files, reject_message, reprocess, orig_tar_id;
-    
+
     for file in files.keys():
         if files[file]["type"] == "dsc":
             try:
@@ -458,13 +462,14 @@ def check_dsc ():
                             reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
                 elif dsc_file[-12:] == ".orig.tar.gz":
                     # Check in the pool
-                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE f.filename ~ '%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
+                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE f.filename ~ '%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
                     ql = q.getresult();
                     if len(ql) > 0:
                         old_file = ql[0][0] + ql[0][1];
                         actual_md5 = apt_pkg.md5sum(utils.open_file(old_file,"r"));
                         found = old_file;
                         suite_type = ql[0][2];
+                        dsc_files[dsc_file]["location id"] = ql[0][4]; # need this for updating dsc_files in install()
                         # See install()...
                         if suite_type == "legacy" or suite_type == "legacy-mixed":
                             orig_tar_id = ql[0][3];
@@ -641,12 +646,16 @@ def install (changes_filename, summary, short_summary):
             projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files[file]["files id"]));
             for dsc_file in dsc_files.keys():
                 filename = files[file]["pool name"] + dsc_file;
-                files_id = db_access.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["location id"]);
+                # use location id from dsc_files first if it exists as
+                # the .orig.tar.gz may still be in a legacy location
+                location_id = dsc_files[dsc_file].get("location id", None);
+                if location_id == None:
+                    location_id = files[file]["location id"];
+                files_id = db_access.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], location_id);
                 # FIXME: needs to check for -1/-2 and or handle exception
                 if files_id == None:
-                    files_id = db_access.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["location id"]);
+                    files_id = db_access.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], location_id);
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id));
-            
             
     # Add the .deb files to the DB
     for file in files.keys():
@@ -682,20 +691,6 @@ def install (changes_filename, summary, short_summary):
                 suite_id = db_access.get_suite_id(suite);
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id));
 
-    # Install the files into the pool
-    for file in files.keys():
-        if files[file].has_key("byhand"):
-            continue
-        destination = Cnf["Dir::PoolDir"] + files[file]["pool name"] + file
-        destdir = os.path.dirname(destination)
-        utils.move (file, destination)
-        install_bytes = install_bytes + float(files[file]["size"])
-
-    # Copy the .changes file across for suite which need it.
-    for suite in changes["distribution"].keys():
-        if Cnf.has_key("Suite::%s::CopyChanges" % (suite)):
-            utils.copy (changes_filename, Cnf["Dir::RootDir"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
-
     # If the .orig.tar.gz is in a legacy directory we need to poolify
     # it, so that apt-get source (and anything else that goes by the
     # "Directory:" field in the Sources.gz file) works.
@@ -722,6 +717,20 @@ def install (changes_filename, summary, short_summary):
             projectB.query("DELETE FROM dsc_files WHERE id = %s" % (qid["dsc_files_id"]));
             # Remove old data from the DB: files table
             projectB.query("DELETE FROM files WHERE id = %s" % (qid["files_id"]));
+
+    # Install the files into the pool
+    for file in files.keys():
+        if files[file].has_key("byhand"):
+            continue
+        destination = Cnf["Dir::PoolDir"] + files[file]["pool name"] + file
+        destdir = os.path.dirname(destination)
+        utils.move (file, destination)
+        install_bytes = install_bytes + float(files[file]["size"])
+
+    # Copy the .changes file across for suite which need it.
+    for suite in changes["distribution"].keys():
+        if Cnf.has_key("Suite::%s::CopyChanges" % (suite)):
+            utils.copy (changes_filename, Cnf["Dir::RootDir"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
 
     projectB.query("COMMIT WORK");
 
@@ -864,7 +873,7 @@ Subject: %s REJECTED
 
 %s
 ===
-%s""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, reject_message, reject_footer);
+%s""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], os.path.basename(changes_filename), reject_message, reject_footer);
     else: # Have a manual rejection file to use
         reject_mail_message = ""; # avoid <undef>'s
         
@@ -889,7 +898,7 @@ Subject: %s REJECTED
 %s
 %s
 ===
-%s""" % (user_email_address, Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, manual_reject_message, reject_message, reject_footer)
+%s""" % (user_email_address, Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], os.path.basename(changes_filename), manual_reject_message, reject_message, reject_footer)
     
     # Write the rejection email out as the <foo>.reason file
     reason_filename = re_changes.sub("reason", os.path.basename(changes_filename));

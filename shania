@@ -1,0 +1,198 @@
+#!/usr/bin/env python
+
+# Clean incoming of old unused files
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: shania,v 1.1 2000-12-13 03:18:50 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Caveat Emptor: If run with -m/--mail argument, expects to be in
+# Incoming/REJECT or somewhere with .reason files.
+
+################################################################################
+
+import os, re, stat, string, sys, time
+import utils
+import apt_pkg;
+
+################################################################################
+
+re_ischanges = re.compile(r"\.changes$")
+re_isdsc = re.compile(r"\.dsc$")
+
+################################################################################
+
+def file_to_string (filename):
+    try:
+        file = utils.open_file(filename, 'r');
+    except utils.cant_open_exc:
+        return "";
+
+    contents = "";
+    for line in file.readlines():
+        contents = contents + line;
+    return contents;
+
+################################################################################
+
+def main ():
+    Cnf = None;
+    all_files = {};
+    changes_files = [];
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('D',"debug","Shania::Options::Debug", "IntVal"),
+                 ('h',"help","Shania::Options::Help"),
+                 ('V',"version","Shania::Options::Version"),
+                 ('d',"days","Shania::Options::Days", "IntVal"),
+                 ('i',"incoming","Shania::Options::Incoming", "HasArg"),
+                 ('m',"mail","Shania::Options::Mail"),
+                 ('n',"no-action","Shania::Options::No-Action"),
+                 ('v',"verbose","Shania::Options::Verbose")];
+
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    delete_date = int(time.time())-(int(Cnf["Shania::Options::Days"])*84600);
+    del_dir = Cnf["Dir::Morgue"] + '/' + Cnf["Shania::MorgueSubDir"];
+
+    if not os.path.exists(del_dir):
+        sys.stderr.write("W: Creating morgue directory '%s'.\n" % (del_dir));
+        os.mkdir(del_dir);
+    elif not os.path.isdir(del_dir):
+        sys.stderr.write("E: %s must be a directory.\n" % (del_dir));
+
+    incoming = Cnf["Shania::Options::Incoming"];
+    if incoming == "":
+        incoming = Cnf["Dir::IncomingDir"];
+
+    os.chdir(incoming);
+
+    # Build up the list of all files in the directory
+    for i in os.listdir('.'):
+        if os.path.isfile(i):
+            all_files[i] = 1;
+            if re_ischanges.search(i) != None:
+                changes_files.append(i);
+
+    # Proces all .changes and .dsc files.
+    for changes_filename in changes_files:
+        try:
+            changes = utils.parse_changes(changes_filename)
+        except:
+            continue;
+        try:
+            files = utils.build_file_list(changes, "");
+        except:
+            continue;
+
+        dsc_files = {};
+        for file in files.keys():
+            if re_isdsc.search(file) != None:
+                try:
+                    dsc = utils.parse_changes(file)
+                except:
+                    continue;
+                try:
+                    dsc_files = utils.build_file_list(dsc, 1)
+                except:
+                    continue;
+
+        # If passed -m/--mail, assume in REJECT/ and send appropriate mails
+        if Cnf["Shania::Options::Mail"]:
+            reason_filename = re_ischanges.sub('.reason', changes_filename);
+            if not os.access(reason_filename, os.R_OK):
+                sys.stderr.write("W: %s lacks a (readable) reason file ('%s').\n" % (changes_filename, reason_filename));
+                continue;
+            
+            if os.stat(reason_filename)[stat.ST_MTIME] > delete_date:
+                # Ensure the files aren't later deleted.
+                for keys in (files.keys(), dsc_files.keys(), changes_filename, reason_filename):
+                    for i in keys:
+                        if all_files.has_key(i):
+                            del all_files[i];
+            
+                # Grab a copy of the .changes and .reason files for inclusion in the mail
+                try:
+                    changes_contents = file_to_string(changes_filename);
+                except utils.cant_open_exc:
+                    sys.stderr.write("W: %s lacks a (readable) changes file ('%s').\n" % (changes_filename, changes_filename));
+                    continue;
+
+                reason_contents = file_to_string(reason_filename);
+
+                # Fix the maintainer address to be RFC-822 compatible
+                (changes["maintainer822"], changes["maintainername"], changes["maintaineremail"]) = utils.fix_maintainer (changes["maintainer"])
+
+                if Cnf["Shania::Options::No-Action"]:
+                    print "Would send a reminder email to %s." % (changes["maintainer822"]);
+                else: # FIXME: need msg to be configurable
+                    mail_message = """Return-Path: %s
+From: %s
+To: %s
+Bcc: troup@auric.debian.org
+Subject: Reminder: %s was rejected
+
+This is an automated reminder.  Your Debian upload was rejected.  Its
+files are in %s/REJECT on %s.
+
+If the upload has been superceded, please delete it.  If not, please
+correct the error.  You do not have to reupload good files; simply
+move them from incoming/REJECT to incoming.  Do erase any bad files.
+This reminder is sent on Monday mornings.  After two reminders, the
+upload is deleted.
+
+----------------------------------------------------------------------
+%s
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+%s
+----------------------------------------------------------------------
+
+--
+Debian distribution maintenance software
+""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, Cnf["Dir::IncomingDir"], Cnf["Archive::%s::OriginServer" % (utils.where_am_i())], changes_contents, reason_contents)
+                    utils.send_mail(mail_message, "");
+                    if Cnf["Shania::Options::Verbose"]:
+                        print "Sent reminder email to %s." % (changes["maintainer822"]);
+        else:
+            # Ensure the files aren't deleted
+            for keys in (files.keys(), dsc_files.keys(), changes_filename):
+                for i in keys:
+                    if all_files.has_key(i):
+                        del all_files[i];
+
+    # Anthing left at this stage is not referenced by a .changes or
+    # .dsc and should be deleted if old enough.
+    for file in all_files.keys():
+        if os.stat(file)[stat.ST_MTIME] < delete_date:
+            if Cnf["Shania::Options::No-Action"]:
+                print "Would delete '%s'." % (os.path.basename(file));
+            else:
+                if Cnf["Shania::Options::Verbose"]:
+                    print "Removing '%s' (to '%s')."  % (os.path.basename(file), del_dir);
+                utils.move(file, del_dir);
+        else:
+            if Cnf["Shania::Options::Verbose"]:
+                print "Skipping, too new, '%s'." % (os.path.basename(file));
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()

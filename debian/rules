@@ -26,13 +26,13 @@ binary-indep: checkroot
 	install -m 755 heidi debian/tmp/usr/bin/da_tags
 	install -m 755 charisma debian/tmp/usr/bin/da_mkmaintainers
 	install -m 755 neve debian/tmp/usr/bin/da_populate
-	install -m 755 leon debian/tmp/usr/bin/da_clean
-	install -d debian/tmp/usr/share/doc/gnupg/
-	install -m 644 debian/changelog debian/tmp/usr/share/doc/gnupg/changelog.Debian
-	install -m 644 README NEWS THANKS TODO debian/tmp/usr/share/doc/gnupg/
-	install -m 644 ChangeLog debian/tmp/usr/share/doc/gnupg/changelog
-	gzip -9v debian/tmp/usr/share/doc/gnupg/*
-	install -m 644 debian/copyright debian/tmp/usr/share/doc/gnupg/
+	install -m 755 rhona debian/tmp/usr/bin/da_clean
+	install -d debian/tmp/usr/share/doc/katie/
+	install -m 644 debian/changelog debian/tmp/usr/share/doc/katie/changelog.Debian
+	install -m 644 README NEWS THANKS TODO debian/tmp/usr/share/doc/katie/
+	install -m 644 ChangeLog debian/tmp/usr/share/doc/katie/changelog
+	gzip -9v debian/tmp/usr/share/doc/katie/*
+	install -m 644 debian/copyright debian/tmp/usr/share/doc/katie/
 	dpkg-gencontrol -isp
 	chown -R root.root debian/tmp
 	chmod -R go=rX debian/tmp

@@ -1,0 +1,16 @@
+# locations used by many scripts
+
+ftpdir=/org/ftp.debian.org/ftp
+indices=$ftpdir/indices
+archs="alpha arm hppa hurd-i386 i386 m68k powerpc sparc mips mipsel sh"
+
+scriptdir=/org/ftp.debian.org/scripts
+masterdir=/org/ftp.debian.org/katie/
+overridedir=$scriptdir/override
+
+incoming=/org/ftp.debian.org/incoming
+
+copyoverrides="potato potato.contrib potato.non-free woody woody.contrib woody.non-free"
+
+PATH=$masterdir:$PATH
+umask 022

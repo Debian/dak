@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Run once a week via cron, out of troup's crontab.
+
+set -e
+export SCRIPTVARS=/org/ftp.debian.org/katie/vars
+. $SCRIPTVARS
+
+################################################################################
+
+echo "Creating pre-weekly-cron-job backup of projectb database..."
+pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+
+################################################################################
+
+# temporary hack to work around the lack of an apt-utils & python-apt package
+export PYTHONPATH=$PYTHONPATH:/org/ftp.debian.org/scripts/apt/build/bin/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/ftp.debian.org/scripts/apt/build/bin/
+export PATH=$PATH:/org/ftp.debian.org/scripts/apt/build/bin/
+
+cd $masterdir
+shania -v 
+shania -v -m -i $incoming
+
+# TODO: weekly postins to d-c (?), backup of report (?), backup of changes.tgz (?)
+
+################################################################################
+
+echo "Creating post-weekly-cron-job backup of projectb database..."
+pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+
+################################################################################

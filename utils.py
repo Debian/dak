@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.7 2000-12-05 04:27:48 troup Exp $
+# $Id: utils.py,v 1.8 2000-12-13 03:18:50 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -188,6 +188,9 @@ def send_mail (message, filename):
 def poolify (source, component):
     if component != "":
 	component = component + '/';
+    # FIXME: this is nasty
+    component = string.lower(component);
+    component = string.replace(component, 'non-us/', 'non-US/');
     if source[:3] == "lib":
 	return component + source[:4] + '/' + source + '/'
     else:

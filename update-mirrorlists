@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Very Very hackish script...  dont laugh.
+# Michael Beattie <mjb@debian.org>
+
+. vars
+
+prog=$scriptdir/mirrorlist/mirror_list.pl
+masterlist=$scriptdir/mirrorlist/Mirrors.masterlist
+
+test ! -f $HOME/.cvspass && \
+	echo ":pserver:anonymous@cvs.debian.org:/cvs/webwml A" > $HOME/.cvspass
+grep -q "cvs.debian.org:/cvs/webwml" ~/.cvspass || \
+	echo ":pserver:anonymous@cvs.debian.org:/cvs/webwml A" >> $HOME/.cvspass
+
+cd $(dirname $masterlist)
+cvs update
+
+if [ ! -f $ftpdir/README.mirrors.html -o $masterlist -nt $ftpdir/README.mirrors.html ] ; then
+	rm -f $ftpdir/README.mirrors.html $ftpdir/README.mirrors.txt
+	$prog -m $masterlist -t html > $ftpdir/README.mirrors.html
+	$prog -m $masterlist -t text > $ftpdir/README.mirrors.txt
+	echo Updated archive version of mirrors file
+fi
