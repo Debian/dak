@@ -34,7 +34,8 @@ Less Urgent
     o direport misreports things as section 'devel'
   
  * Easy:
-  
+
+    o denise abuses sys.stdout == badly  
     o utils.extract_component_from_section: main/utils -> main/utils, main rather than utils, main
     o Fix katie to remove != stable on stable install, not just f + u
     o Fix katie to warn if run when not in incoming or p-u

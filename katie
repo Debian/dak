@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.48 2001-06-23 16:57:26 troup Exp $
+# $Id: katie,v 1.49 2001-06-23 19:16:27 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -484,7 +484,7 @@ def check_files():
                 if changes["architecture"].has_key("source"):
                     source_version = files[file]["source version"];
                     if source_version != changes["version"]:
-                        reject_message = reject_message + "Rejected: source version (%s) for %s doesn't match changes version %s.\n" % (files[file]["sourceversion"], file, changes["version"]);
+                        reject_message = reject_message + "Rejected: source version (%s) for %s doesn't match changes version %s.\n" % (files[file]["source version"], file, changes["version"]);
                 else:
                     if not source_exists (files[file]["source package"], source_version):
                         reject_message = reject_message + "Rejected: no source found for %s %s (%s).\n" % (files[file]["source package"], source_version, file);
@@ -1332,7 +1332,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.48 $"
+    bcc = "X-Katie: $Revision: 1.49 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:

@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: denise,v 1.5 2001-06-22 22:53:14 troup Exp $
+# $Id: denise,v 1.6 2001-06-23 19:16:27 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ def main ():
     natalie.init();
 
     for suite in [ "stable", "unstable" ]:
-        print "Processing %s..." % (suite);
+        sys.stderr.write("Processing %s...\n" % (suite));
         override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
         for component in Cnf.SubTree("Component").List():
             if component == "mixed":
@@ -113,7 +113,7 @@ def main ():
     # Munge the override file for testing by using unstable's where
     # possible and falling back on stable's where it's not.
 
-    print "Processing testing...";
+    sys.stderr.write("Processing testing...\n");
     suite = "testing";
     suite_id = db_access.get_suite_id(suite);
     override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
