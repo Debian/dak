@@ -30,7 +30,7 @@ Julia
 {
   ValidGID "800";
   // Comma seperated list of users who are in Postgres but not the passwd file
-  KnownPostgres "postgres,www-data,katie,auric";
+  KnownPostgres "udmsearch,postgres,www-data,katie,auric";
 };
 
 Shania
