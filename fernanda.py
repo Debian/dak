@@ -2,7 +2,7 @@
 
 # Script to automate some parts of checking NEW packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: fernanda.py,v 1.4 2002-10-16 02:47:32 troup Exp $
+# $Id: fernanda.py,v 1.5 2002-11-19 03:15:05 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,6 +104,8 @@ def check_deb (deb_filename):
     else:
 	print "---- lintian check for %s ----" % (filename);
         do_command ("lintian", deb_filename);
+	print "---- linda check for %s ----" % (filename);
+        do_command ("linda", deb_filename);
 
     print "---- contents of %s ----" % (filename);
     do_command ("dpkg -c", deb_filename);
