@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.16 2002-05-23 09:54:23 troup Exp $
+# $Id: lisa,v 1.17 2002-05-23 12:19:05 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.16 $";
+lisa_version = "$Revision: 1.17 $";
 
 Cnf = None;
 Options = None;
@@ -106,6 +106,8 @@ def recheck():
 
         if answer == 'R':
             Katie.do_reject(0, reject_message);
+            os.unlink(Katie.pkg.changes_file[:-8]+".katie");
+            return 0;
         elif answer == 'S':
             return 0;
         elif answer == 'Q':
@@ -205,8 +207,10 @@ def sg_compare (a, b):
     # Sort by have note
     a_note_state = a["note_state"];
     b_note_state = b["note_state"];
-    if a_note_state != b_note_state:
-        return cmp(a, b);
+    if a_note_state < b_note_state:
+        return -1;
+    elif a_note_state > b_note_state:
+        return 1;
 
     # Sort by time of oldest upload
     return cmp(a["oldest"], b["oldest"]);
@@ -258,10 +262,10 @@ def sort_changes(changes_files):
         else:
             per_source[source]["note_state"] = 2; # all
         per_source[source]["list"].sort(indiv_sg_compare);
-    per_source_items =  per_source.items();
+    per_source_items = per_source.items();
     per_source_items.sort(sg_compare);
     for i in per_source_items:
-        for j in  i[1]["list"]:
+        for j in i[1]["list"]:
             sorted_list.append(j["filename"]);
     return sorted_list;
 
