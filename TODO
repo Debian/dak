@@ -54,6 +54,19 @@ Urgent
 
   o jt's web stuff, matt's changelog stuff (overlap)
 
+  o fernanda: print_copyright should be a lot more intelligent
+     @ handle copyright.gz
+     @ handle copyright.ja and copyright
+     @ handle (detect at least) symlinks to another package's doc directory
+     @ handle and/or fall back on source files?
+     @ check only NEW packages out of a source package with some NEW, some old
+
+  o To incorporate from utils:
+     @ unreject
+     @ genreport
+     @ reject
+     @ newchanges
+
 Less Urgent
 -----------
 

@@ -4,6 +4,7 @@ catherine - poolifies packages; i.e. moves them from legacy dists/ locations int
 charisma - generates Maintainers files used by e.g. the Debian BTS
 christina - ???
 claire - generates compatability symlink tree for legacy dists/ locations
+fernanda - checker script for new packages in incoming 
 heidi - manipulates suite tags; i.e. removes/adds packages from any given suite
 jenna - generates lists of files in suites which are then fed to apt-ftparchive
 katie - installs packages into the pool
@@ -18,7 +19,7 @@ tea - sanity checks the database
 ziyi - creates Release files
 
 With apologies to Alyson Hannigan, Andrea Corr, Catherine Zeta Jones,
-Charisma Carpenter, Christina Aguilera, Claire Daines, Heidi Klum,
-Jenna Elfman, Katie Holmes, Madison Michele, Melanie Sykes, Natalie
-Portman, Neve Campbell, Rene O'Connor, Rhona Mitre, Shania Twain, Tea
-Leoni and Ziyi Zhang.
+Charisma Carpenter, Christina Aguilera, Claire Forlani, Fernanda
+Tervares, Heidi Klum, Jenna Elfman, Katie Holmes, Madison Michele,
+Melanie Sykes, Natalie Portman, Neve Campbell, Rene O'Connor, Rhona
+Mitre, Shania Twain, Tea Leoni and Ziyi Zhang.
