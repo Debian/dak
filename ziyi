@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.8 2001-09-27 01:22:51 troup Exp $
+# $Id: ziyi,v 1.9 2001-11-04 22:33:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ def print_md5_files (tree, files):
     path = Cnf["Dir::RootDir"] + tree + "/"
     for name in files:
         try:
-            file_handle = utils.open_file(path + name, "r")
+            file_handle = utils.open_file(path + name)
         except utils.cant_open_exc:
             print "ALERT: Couldn't open " + path + name
         else:
@@ -74,7 +74,7 @@ def print_sha1_files (tree, files):
     path = Cnf["Dir::RootDir"] + tree + "/"
     for name in files:
         try:
-            file_handle = utils.open_file(path + name, "r")
+            file_handle = utils.open_file(path + name)
         except utils.cant_open_exc:
             print "ALERT: Couldn't open " + path + name
         else:
@@ -109,7 +109,7 @@ def main ():
     if Options["Help"]:
 	usage();
 
-    if suites == []:
+    if not suites:
         suites = Cnf.SubTree("Suite").List()
 
     def real_arch(x):
@@ -143,7 +143,7 @@ def main ():
 	nonus = 1
 	if components != []:
 	    for c in components:
-	        if c[:7] != "non-US/":
+	        if string.find(c, "non-US/") != 0:
 		    nonus = 0
 	else:
 	    nonus = 0

@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.34 2001-09-27 01:24:15 troup Exp $
+# $Id: utils.py,v 1.35 2001-11-04 22:33:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)");
 
 re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)");
 re_multi_line_field = re.compile(r"^\s(.*)");
+re_taint_free = re.compile(r"^[-+\.\w]+$");
 
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\> \t]+)\>");
 
@@ -140,12 +141,12 @@ def extract_component_from_section(section):
 #   "-----BEGIN PGP SIGNATURE-----".
 
 def parse_changes(filename, dsc_whitespace_rules):
-    changes_in = open_file(filename,'r');
+    changes_in = open_file(filename);
     error = "";
     changes = {};
     lines = changes_in.readlines();
 
-    if lines == []:
+    if not lines:
 	raise changes_parse_error_exc, "[Empty changes file]";
 
     # Reindex by line number so we can easily verify the format of
@@ -169,13 +170,13 @@ def parse_changes(filename, dsc_whitespace_rules):
                 if index > max(indices):
                     raise invalid_dsc_format_exc, index;
                 line = indexed_lines[index];
-                if line[:24] != "-----BEGIN PGP SIGNATURE":
+                if string.find(line, "-----BEGIN PGP SIGNATURE") != 0:
                     raise invalid_dsc_format_exc, index;
                 inside_signature = 0;
                 break;
-        if line[:24] == "-----BEGIN PGP SIGNATURE":
+        if string.find(line, "-----BEGIN PGP SIGNATURE") == 0:
             break;
-        if line[:29] == "-----BEGIN PGP SIGNED MESSAGE":
+        if string.find(line, "-----BEGIN PGP SIGNED MESSAGE") == 0:
             if dsc_whitespace_rules:
                 inside_signature = 1;
                 while index < max(indices) and line != "":
