@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.37 2001-04-03 21:28:20 troup Exp $
+# $Id: katie,v 1.38 2001-04-13 20:18:41 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ def check_changes(filename):
     global reject_message, changes, files
 
     # Default in case we bail out
-    changes["maintainer822"] = Cnf["Dinstall::MyEmailAddress"]; 
+    (changes["changedby822"], changes["maintainer822"]) = Cnf["Dinstall::MyEmailAddress"]; 
 
     # Parse the .changes field into a dictionary
     try:
@@ -184,11 +184,6 @@ def check_changes(filename):
     # Fix the Changed-By: field to be RFC822 compatible; if it exists.
     (changes["changedby822"], changes["changedbyname"], changes["changedbyemail"]) = utils.fix_maintainer(changes.get("changed-by",""));
 
-    # For source uploads the Changed-By field wins; otherwise Maintainer wins.
-    if changes["architecture"].has_key("source"):
-        changes["uploader822"] = "To: %s\nCc: %s" % (changes["changedby822"], changes["maintainer822"]);
-         #         changes["uploadername"], changes["uploaderemail"]) = (changes["changedby822"], changes["changedbyname"], changes["changedbyemail"]);
-        
     # Ensure all the values in Closes: are numbers
     if changes.has_key("closes"):
         for i in changes["closes"].keys():
@@ -633,8 +628,17 @@ def update_subst (changes_filename):
         Subst["__ARCHITECTURE__"] = "Unknown";
     Subst["__CHANGES_FILENAME__"] = os.path.basename(changes_filename);
     Subst["__FILE_CONTENTS__"] = changes.get("filecontents", "");
-    Subst["__MAINTAINER_ADDRESS__"] = changes["maintainer822"];
-    Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown");
+
+    # For source uploads the Changed-By field wins; otherwise Maintainer wins.
+    if changes["architecture"].has_key("source") and changes["changedby822"] != "" and (changes["changedby822"] != changes["maintainer822"]):
+        Subst["__MAINTAINER_FROM__"] = changes["changedby822"];
+        Subst["__MAINTAINER_TO__"] = changes["changedby822"] + ", " + changes["maintainer822"];
+        Subst["__MAINTAINER__"] = changes["changedby"];
+    else:
+        Subst["__MAINTAINER_FROM__"] = changes["maintainer822"];
+        Subst["__MAINTAINER_TO__"] = changes["maintainer822"];
+        Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown");
+
     Subst["__REJECT_MESSAGE__"] = reject_message;
     Subst["__SOURCE__"] = changes.get("source", "Unknown");
     Subst["__VERSION__"] = changes.get("version", "Unknown");
@@ -1002,6 +1006,7 @@ def reject (changes_filename, manual_reject_mail_filename):
         os.write(fd, reject_message);
         os.close(fd);
         Subst["__MANUAL_REJECT_MESSAGE__"] = "";
+        Subst["__CC__"] = "X-Katie-Rejection: automatic (moo)";
         reject_mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.rejected","r").read());
     else: # Have a manual rejection file to use
         reject_mail_message = ""; # avoid <undef>'s
@@ -1016,11 +1021,11 @@ def manual_reject (changes_filename):
     global Subst;
     
     # Build up the rejection email 
-    user_email_address = string.replace(string.split(pwd.getpwuid(os.getuid())[4],',')[0], '.', '')
-    user_email_address = user_email_address + " <%s@%s>" % (pwd.getpwuid(os.getuid())[0], Cnf["Dinstall::MyHost"])
+    user_email_address = utils.whoami() + " <%s@%s>" % (pwd.getpwuid(os.getuid())[0], Cnf["Dinstall::MyHost"])
     manual_reject_message = Cnf.get("Dinstall::Options::Manual-Reject", "")
 
     Subst["__MANUAL_REJECT_MESSAGE__"] = manual_reject_message;
+    Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
     reject_mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.rejected","r").read());
     
     # Write the rejection email out as the <foo>.reason file
@@ -1234,7 +1239,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.37 $"
+    bcc = "X-Katie: $Revision: 1.38 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
