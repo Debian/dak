@@ -7,10 +7,6 @@ More Urgent
   o katie/jenna/rhona/whatever needs to clear out .changes
     files from p-u when removing stuff superseded by newer versions.
 
-  o rewrite shania to a) be sane, b) clean REJECT properly
-    (i.e. ignore the fact that stuff is in a valid .changes file and
-    just clean the mofo)
-
   o maintainers file needs overrides  
  
     [ change override.maintainer to override.maintainer-from +
@@ -18,13 +14,16 @@ More Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
-  o Fix binary-only NMU handling for non-zero uploads
+  o Fix binary-only NMUs of NMUs in katie's source-must-exist check.
 
 Less Urgent
 -----------
 
  * Harder:
-    
+
+    o REJECT reminders in shania.
+    o Clean up DONE; archive to tar file every 2 weeks, update tar tvzf INDEX file.
+
     o override checks sucks; it needs to track changes made by the
       maintainer and pass them onto ftpmaster instead of warning the
       maintainer.
