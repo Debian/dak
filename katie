@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.40 2001-04-16 17:45:06 troup Exp $
+# $Id: katie,v 1.41 2001-05-17 01:21:40 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -142,6 +142,7 @@ def check_changes(filename):
     # Default in case we bail out
     changes["maintainer822"] = Cnf["Dinstall::MyEmailAddress"];
     changes["changedby822"] = Cnf["Dinstall::MyEmailAddress"];
+    changes["architecture"] = {};
     
     # Parse the .changes field into a dictionary
     try:
@@ -1242,7 +1243,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.40 $"
+    bcc = "X-Katie: $Revision: 1.41 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
