@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.33 2001-03-21 01:05:07 troup Exp $
+# $Id: katie,v 1.34 2001-03-21 05:37:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ install_count = 0;
 install_bytes = 0.0;
 reprocess = 0;
 orig_tar_id = None;
+orig_tar_location = "";
 legacy_source_untouchable = {};
 Subst = {};
 
@@ -438,7 +439,7 @@ def check_files():
 ###############################################################################
 
 def check_dsc ():
-    global dsc, dsc_files, reject_message, reprocess, orig_tar_id, legacy_source_untouchable;
+    global dsc, dsc_files, reject_message, reprocess, orig_tar_id, orig_tar_location, legacy_source_untouchable;
 
     for file in files.keys():
         if files[file]["type"] == "dsc":
@@ -487,7 +488,7 @@ def check_dsc ():
                             reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
                 elif dsc_file[-12:] == ".orig.tar.gz":
                     # Check in the pool
-                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
+                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
                     ql = q.getresult();
 
                     if ql != []:
@@ -517,8 +518,11 @@ def check_dsc ():
                         suite_type = x[2];
                         dsc_files[dsc_file]["files id"] = x[3]; # need this for updating dsc_files in install()
                         # See install()...
+                        orig_tar_id = x[3];
                         if suite_type == "legacy" or suite_type == "legacy-mixed":
-                            orig_tar_id = x[3];
+                            orig_tar_location = "legacy";
+                        else:
+                            orig_tar_location = x[4];
                     else:
                         # Not there? Check in Incoming...
                         # [See comment above process_it() for explanation
@@ -558,7 +562,7 @@ def check_dsc ():
 # problem just changed the symptoms.
 
 def check_diff ():
-    global dsc, dsc_files, reject_message, reprocess, orig_tar_id;
+    global dsc, dsc_files, reject_message, reprocess;
 
     for filename in files.keys():
         if files[filename]["type"] == "diff.gz":
@@ -623,14 +627,15 @@ def check_override ():
 def update_subst (changes_filename):
     global Subst;
     
-    Subst["__ARCHITECTURE__"] = string.join(changes["architecture"].keys(), ' ' );
+    if changes.has_key("architecture"):
+        Subst["__ARCHITECTURE__"] = string.join(changes["architecture"].keys(), ' ' );
     Subst["__CHANGES_FILENAME__"] = os.path.basename(changes_filename);
-    Subst["__FILE_CONTENTS__"] = changes["filecontents"];
+    Subst["__FILE_CONTENTS__"] = changes.get("filecontents");
     Subst["__MAINTAINER_ADDRESS__"] = changes["maintainer822"];
-    Subst["__MAINTAINER__"] = changes["maintainer"];
+    Subst["__MAINTAINER__"] = changes.get("maintainer");
     Subst["__REJECT_MESSAGE__"] = reject_message;
-    Subst["__SOURCE__"] = changes["source"];
-    Subst["__VERSION__"] = changes["version"];
+    Subst["__SOURCE__"] = changes.get("source");
+    Subst["__VERSION__"] = changes.get("version");
 
 #####################################################################################################################
 
@@ -785,7 +790,7 @@ def install (changes_filename, summary, short_summary):
             architecture = files[file]["architecture"]
             architecture_id = db_access.get_architecture_id (architecture);
             type = files[file]["dbtype"];
-            component = files[file]["component"]
+            dsc_component = files[file]["component"]
             source = files[file]["source"]
             source_version = ""
             if string.find(source, "(") != -1:
@@ -811,7 +816,7 @@ def install (changes_filename, summary, short_summary):
     # If the .orig.tar.gz is in a legacy directory we need to poolify
     # it, so that apt-get source (and anything else that goes by the
     # "Directory:" field in the Sources.gz file) works.
-    if orig_tar_id != None:
+    if orig_tar_id != None and orig_tar_location == "legacy":
         q = projectB.query("SELECT DISTINCT ON (f.id) l.path, f.filename, f.id as files_id, df.source, df.id as dsc_files_id, f.size, f.md5sum FROM files f, dsc_files df, location l WHERE df.source IN (SELECT source FROM dsc_files WHERE file = %s) AND f.id = df.file AND l.id = f.location AND (l.type = 'legacy' OR l.type = 'legacy-mixed')" % (orig_tar_id));
         qd = q.dictresult();
         for qid in qd:
@@ -826,6 +831,24 @@ def install (changes_filename, summary, short_summary):
             utils.move(legacy_filename, destination);
             # Then Update the DB's files table
             q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, dsc_location_id, qid["files_id"]));
+
+    # If this is a sourceful diff only upload that is moving non-legacy
+    # cross-component we need to copy the .orig.tar.gz into the new
+    # component too for the same reasons as above.
+    #
+    if changes["architecture"].has_key("source") and orig_tar_id != None and \
+       orig_tar_location != "legacy" and orig_tar_location != dsc_location_id:
+        q = projectB.query("SELECT l.path, f.filename, f.size, f.md5sum FROM files f, location l WHERE f.id = %s AND f.location = l.id" % (orig_tar_id));
+        ql = q.getresult()[0];
+        old_filename = ql[0] + ql[1];
+        file_size = ql[2];
+        file_md5sum = ql[3];
+        new_filename = utils.poolify (changes["source"], dsc_component) + os.path.basename(old_filename);
+        new_files_id = db_access.get_files_id(new_filename, file_size, file_md5sum, dsc_location_id);
+        if new_files_id == None:
+            utils.copy(old_filename, Cnf["Dir::PoolDir"] + new_filename);
+            new_files_id = db_access.set_files_id(new_filename, file_size, file_md5sum, dsc_location_id);
+            projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, source_id, orig_tar_id));
 
     # Install the files into the pool
     for file in files.keys():
@@ -1104,7 +1127,7 @@ distribution."""
 # into the .changes structure and reprocess the .changes file.
 
 def process_it (changes_file):
-    global reprocess, orig_tar_id, changes, dsc, dsc_files, files, reject_message;
+    global reprocess, orig_tar_id, orig_tar_location, changes, dsc, dsc_files, files, reject_message;
 
     # Reset some globals
     reprocess = 1;
@@ -1113,9 +1136,9 @@ def process_it (changes_file):
     dsc_files = {};
     files = {};
     orig_tar_id = None;
+    orig_tar_location = "";
     legacy_source_untouchable = {};
     reject_message = "";
-    orig_tar_id = None;
 
     # Absolutize the filename to avoid the requirement of being in the
     # same directory as the .changes file.
@@ -1205,7 +1228,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Id: katie,v 1.33 2001-03-21 01:05:07 troup Exp $"
+    bcc = "X-Katie: $Revision: 1.34 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
