@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: neve,v 1.16 2002-11-26 15:49:50 troup Exp $
+# $Id: neve,v 1.17 2003-01-02 18:15:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 
 ###############################################################################
 
-import commands, os, pg, re, select, tempfile, time;
+import commands, os, pg, re, select, sys, tempfile, time;
 import apt_pkg;
 import db_access, utils;
 
@@ -72,6 +72,16 @@ bin_associations_query_cache = None;
 #
 source_cache_for_binaries = {};
 reject_message = "";
+
+################################################################################
+
+def usage(exit_code=0):
+    print """Usage: neve
+Initializes a projectB database from an existing archive
+
+  -a, --action              actually perform the initalization
+  -h, --help                show this help and exit."""
+    sys.exit(exit_code)
 
 ###############################################################################
 
@@ -259,7 +269,7 @@ def check_signature (filename):
     else:
         return fingerprint;
 
-#########################################################################################
+################################################################################
 
 # Prepares a filename or directory (s) to be file.filename by stripping any part of the location (sub) from it.
 def poolify (s, sub):
@@ -356,7 +366,7 @@ def get_location_path(directory):
     location_path_cache[directory] = path;
     return path;
 
-###############################################################################
+################################################################################
 
 def get_or_set_files_id (filename, size, md5sum, location_id):
     global files_id_cache, files_id_serial, files_query_cache;
@@ -544,6 +554,23 @@ def do_da_do_da ():
     global Cnf, projectB, query_cache, files_query_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, bin_associations_query_cache, binaries_query_cache;
 
     Cnf = utils.get_conf();
+    Arguments = [('a', "action", "Neve::Options::Action"),
+                 ('h', "help", "Neve::Options::Help")];
+    for i in [ "action", "help" ]:
+	if not Cnf.has_key("Neve::Options::%s" % (i)):
+	    Cnf["Neve::Options::%s" % (i)] = "";
+
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+
+    Options = Cnf.SubTree("Neve::Options")
+    if Options["Help"]:
+	usage();
+
+    if not Options["Action"]:
+        utils.warn("""no -a/--action given; not doing anything.
+Please read the documentation before running this script.
+""");
+        usage(1);
 
     print "Re-Creating DB..."
     (result, output) = commands.getstatusoutput("psql -f init_pool.sql template1");
