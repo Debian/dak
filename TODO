@@ -6,15 +6,17 @@
 Actually Urgent
 ---------------
 
+  o UrgencyLog stuff should minimize it's bombing out
+
+More Urgent
+-----------
+
   o lisa doesn't do the right thing with -2 and -1 uploads, as you can
     end up with the .orig.tar.gz not in the pool
 
   o lisa exits if you check twice (aj)
 
   o lisa doesn't trap signals from fernanda properly
-
-More Urgent
------------
 
   o cross-suite version checking
 
@@ -54,8 +56,6 @@ More Urgent
     who their source is; source-must-exist does, but the info is not
     propogated down.
 
-  o DONE clean up
-
   o Fix BTS vs. katie sync issues by queueing(via BSMTP) BTS mail so
     that it can be released on deman (e.g. ETRN to exim).
 
@@ -77,22 +77,18 @@ More Urgent
     unstable and source-ver ~= source-ver in testing; then map
     unstable -> testing-updates ?
 
-  o [Hard] dependency checking (esp. stable) (partially done)
-
-  o hooks for debian specific checks (e.g. check_urgency)
-
-  o Logging [mostly done] (todo: rhona (hard), .. ?)
-
-  o Abstraction of suite hardcoding (q.v. progengy)
+  o hooks or configurability for debian specific checks (e.g. check_urgency, auto-building support)
 
   o morgue needs auto-cleaning (?)
-
-  o auto-building crap should be optional
 
 ================================================================================
 
 Less Urgent
 -----------
+
+  o Logging [mostly done] (todo: rhona (hard), .. ?)
+
+  o Abstraction of suite hardcoding (q.v. progengy)
 
   o jennifer is leaking file descriptors..
 
@@ -115,7 +111,6 @@ Less Urgent
   o To incorporate from utils:
      @ unreject
 
-  o katie could vrfy email addresses (?) [errge@]
   o auto-purge out-of-date stuff from non-free/contrib so that testing and stuff works
   o doogie's binary -> source index
   o Add urgency + installed date to the DB for aj/testing (? still needed ?)
@@ -131,6 +126,7 @@ Less Urgent
 
   o Improve andrea.
   o Need to optimize all the queries by using EXAMINE and building some INDEXs.
+    [postgresql 7.2 will help here]
   o Need to enclose all the setting SQL stuff in transactions (mostly done).
   o Need to finish alyson (a way to sync katie.conf and the DB)
   o Need the ability to rebuild all other tables from dists _or_ pools (in the event of disaster) (?)
@@ -149,12 +145,11 @@ Less Urgent
 
  * Harder:
 
+    o dependency checking (esp. stable) (partially done)
     o override checks sucks; it needs to track changes made by the
       maintainer and pass them onto ftpmaster instead of warning the
       maintainer.
     o need to do proper rfc822 escaping of from lines (as opposed to s/\.//g)
-    o when dinstall is run in install mode but not as a cron job, it
-      should probably run jenna to avoid madison originated user confusion
     o Revisit linking of binary->source in install() in katie.
     o Fix component handling in overrides (aj)
     o Fix lack of entires in source overrides (aj)
@@ -187,16 +182,13 @@ Less Urgent
     o Reject on misconfigured kernel-package uploads
     o denise abuses sys.stdout == badly  
     o utils.extract_component_from_section: main/utils -> main/utils, main rather than utils, main
-    o Fix katie to warn if run when not in incoming or p-u
-    o check for empty debs; check for empty (or small (<1k ?)) .tar.gz's.
+    o Fix jennier to warn if run when not in incoming or p-u
     o katie should validate multi-suite uploads; only possible valid one
       is "stable unstable"
     o cron.daily* should change umask (aj sucks)
     o Rene doesn't look at debian-installer but should.
     o Rene needs to check for binary-less source packages.
     o Rene could accept a suite argument (?)
-    o run shania every day (?) [ryan]
-    o we don't check for .orig.tar.gz's, so it's possible to upload -2 with no .orig.tar.gz.
     o byhand stuff should send notification
     o catherine should udpate db; move files, not the other way around [neuro]
     o melanie should update the stable changelog [joey]
@@ -204,9 +196,8 @@ Less Urgent
   
  * Bizzare/uncertain:
    
-    o validate source consistency, i.e. .dsc and .tar.gz as minimum (??)
+    o rationalize os.path.join() usage
     o Rene also doesn't seem to warn about missing binary packages (??)
-    o jenna should not delete things because they don't exist (?)
     o logging: hostname + pid ?
     o ANAIS should be done in katie (?)
     o Add an 'add' ability to melanie (? separate prog maybe)
@@ -219,9 +210,6 @@ Less Urgent
    
     o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
     o The untouchable flag doesn't stop new packages being added to ``untouchable'' suites
-    o jenna is too slow
-    o jenna doesn't handle arch: any -> arch: all transitions 
-      [aj worked around; need to revisit]
 
  * Stable:
 

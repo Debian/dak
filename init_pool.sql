@@ -142,7 +142,11 @@ CREATE TABLE override (
        unique (suite, component, package, type)
 );
 
--- CREATE TABLE unstable_accepted (filename TEXT NOT NULL);
+CREATE TABLE unstable_accepted (
+       filename TEXT NOT NULL,
+       in_accepted BOOLEAN NOT NULL,
+       last_used TIMESTAMP
+);
 
 -- Critical indexes
 
