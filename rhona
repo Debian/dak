@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.11 2001-03-15 22:40:43 troup Exp $
+# $Id: rhona,v 1.12 2001-03-15 22:42:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -246,7 +246,7 @@ SELECT m.id FROM maintainer m
 def main():
     global Cnf, projectB, delete_date;
     
-    projectB = pg.connect('projectB', 'localhost');
+    projectB = pg.connect('projectb', 'localhost');
 
     apt_pkg.init();
     
