@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.11 2001-09-27 01:22:51 troup Exp $
+# $Id: catherine,v 1.12 2001-11-04 22:28:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,7 +76,7 @@ def poolize (q, limit, verbose, no_action):
         destination_filename = base_filename;
         # Work out the source package name
         if utils.re_isadeb.match(base_filename) != None:
-            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(legacy_filename,"r")))
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(legacy_filename)))
             package = control.Find("Package", "");
             source = control.Find("Source", package);
             if string.find(source, "(") != -1:
@@ -100,7 +100,7 @@ def poolize (q, limit, verbose, no_action):
         if component == "":
             q = projectB.query("SELECT DISTINCT(c.name) FROM override o, component c WHERE o.package = '%s' AND o.component = c.id;" % (source));
             ql = q.getresult();
-            if ql == []:
+            if not ql:
                 utils.fubar("No override match for '%s' so I can't work out the component." % (source));
             if len(ql) > 1:
                 utils.fubar("Multiple override matches for '%s' so I can't work out the component." % (source));

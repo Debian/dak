@@ -2,7 +2,7 @@
 
 # Fix for bug in katie where dsc_files was initialized from changes and not dsc
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: fix.9,v 1.2 2000-12-18 07:11:25 troup Exp $
+# $Id: fix.9,v 1.3 2001-11-04 22:28:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ def main ():
         dsc_files = utils.build_file_list(dsc, 1);
         q = projectB.query("SELECT s.id, l.id, l.path FROM source s, location l, files f WHERE s.source = '%s' AND s.version = '%s' AND f.id = s.file AND f.location = l.id" % (dsc["source"], dsc["version"]));
         ql = q.getresult();
-        if ql == [] or len(ql) > 1:
+        if not ql or len(ql) > 1:
             print " EEEEEEEEEEEEEEK!!!"
             print " ",base_dsc_file
         source_id = ql[0][0];

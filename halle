@@ -2,7 +2,7 @@
 
 # Remove obsolete .changes files from proposed-updates
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: halle,v 1.1 2001-11-04 20:41:50 troup Exp $
+# $Id: halle,v 1.2 2001-11-04 22:28:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -162,7 +162,7 @@ def main ():
 
     if Options["Help"]:
         usage(0);
-    if arguments == []:
+    if not arguments:
         utils.fubar("need at least one package name as an argument.");
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));

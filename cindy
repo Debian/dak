@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: cindy,v 1.4 2001-06-22 22:53:14 troup Exp $
+# $Id: cindy,v 1.5 2001-11-04 22:28:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ def process(suite, component, type):
                     #% (package, suite_id, component_id, type_id));
                     # Then if source doesn't already have a copy, insert it into source
                     q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (package, suite_id, component_id, dsc_type_id));
-                    if q.getresult() == []:
+                    if not q.getresult():
                         #projectB.query("INSERT INTO override (package, suite, component, priority, section, type, maintainer) VALUES ('%s', %s, %s, %s, %s, %s, '%s')" % (package, suite_id, component_id, i[1], i[2], dsc_type_id, i[3]));
                         print "(nop)"
         else: # dsc

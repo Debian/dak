@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rene,v 1.7 2001-07-25 15:51:15 troup Exp $
+# $Id: rene,v 1.8 2001-11-04 22:28:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ def main ():
     global Cnf, projectB;
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
@@ -73,7 +73,7 @@ def main ():
         if (result != 0):
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
             sys.exit(result);
-        sources = utils.open_file(temp_filename, 'r');
+        sources = utils.open_file(temp_filename);
         Sources = apt_pkg.ParseTagFile(sources);
         while Sources.Step():
             source = Sources.Section.Find('Package');
@@ -89,7 +89,7 @@ def main ():
                     binary = string.strip(binary);
                     q = projectB.query("SELECT a.arch_string, b.version FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id AND b.package = '%s'" % (suite_id, binary));
                     ql = q.getresult();
-                    if ql == []:
+                    if not ql:
                         utils.warn("%s lists %s as a binary, but it doesn't seem to exist in %s?" % (source, binary, suite));
                     # Loop around twice; first to get the latest 'valid' version
                     versions = [];
@@ -113,11 +113,11 @@ def main ():
                                 print "** mwaap, mwapp!  Ignore me **";
                                 continue;
                             if apt_pkg.VersionCompare(latest_version, version) != -1:
-                                print "- out of date.", 
+                                print "- out of date.",
                             else:
                                 print "- current.",
                             print "[%s vs %s (%s)]" % (latest_version, version, arch);
-            
+
             # Check for duplicated packages and build indices for checking "no source" later
             source_index = component + '/' + source;
             if src_pkgs.has_key(source):
@@ -139,7 +139,7 @@ def main ():
             if [ "source", "all" ].count(architecture) != 0:
                 continue;
             filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::RootDir"], suite, component, architecture);
-            packages = utils.open_file(filename, 'r');
+            packages = utils.open_file(filename);
             Packages = apt_pkg.ParseTagFile(packages);
             while Packages.Step():
                 package = Packages.Section.Find('Package');
@@ -161,10 +161,10 @@ def main ():
 
     suite_id = db_access.get_suite_id("unstable");
     q = projectB.query("""
-SELECT s.source, s.version AS experimental, s2.version AS unstable 
-  FROM src_associations sa, source s, source s2, src_associations sa2 
-  WHERE sa.suite = 1 AND sa2.suite = %d AND sa.source = s.id 
-   AND sa2.source = s2.id AND s.source = s2.source 
+SELECT s.source, s.version AS experimental, s2.version AS unstable
+  FROM src_associations sa, source s, source s2, src_associations sa2
+  WHERE sa.suite = 1 AND sa2.suite = %d AND sa.source = s.id
+   AND sa2.source = s2.id AND s.source = s2.source
    AND versioncmp(s.version, s2.version) < 0""" % (suite_id));
     ql = q.getresult();
     if ql != []:

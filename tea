@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.12 2001-09-27 01:23:41 troup Exp $
+# $Id: tea,v 1.13 2001-11-04 22:28:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ def check_files():
         if os.access(filename, os.R_OK) == 0:
             utils.warn("'%s' doesn't exist." % (filename));
 
-    file = utils.open_file(Cnf["Dir::OverrideDir"]+'override.unreferenced','r');
+    file = utils.open_file(Cnf["Dir::OverrideDir"]+'override.unreferenced');
     for filename in file.readlines():
         filename = filename[:-1];
         excluded[filename] = "";
@@ -90,7 +90,7 @@ def check_dscs():
             continue;
         component = string.lower(component);
         list_filename = '%s%s_%s_source.list' % (Cnf["Dir::ListsDir"], suite, component);
-        list_file = utils.open_file(list_filename, 'r');
+        list_file = utils.open_file(list_filename);
         for line in list_file.readlines():
             file = line[:-1];
             try:
@@ -168,7 +168,7 @@ def check_md5sums():
         db_md5sum = i[2];
         db_size = int(i[3]);
         try:
-            file = utils.open_file(filename, 'r');
+            file = utils.open_file(filename);
         except:
             utils.warn("can't open '%s'." % (filename));
             continue;

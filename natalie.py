@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.11 2001-09-27 01:23:41 troup Exp $
+# $Id: natalie.py,v 1.12 2001-11-04 22:28:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -245,7 +245,7 @@ def main ():
         Logger = logging.Logger(Cnf, "natalie");
         if file_list != []:
             for file in file_list:
-                process_file(utils.open_file(file,'r'), suite, component, type);
+                process_file(utils.open_file(file), suite, component, type);
         else:
             process_file(sys.stdin, suite, component, type);
         Logger.close();
