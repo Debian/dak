@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.10 2001-03-15 00:35:12 troup Exp $
+# $Id: rhona,v 1.11 2001-03-15 22:40:43 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,7 +101,7 @@ SELECT s.id, s.file FROM source s
    (SELECT sa.suite FROM src_associations sa WHERE sa.source = s.id)
   AND NOT EXISTS (SELECT b.id FROM binaries b WHERE b.source = s.id)""");
     ql = q.getresult();
-
+    
     projectB.query("BEGIN WORK");
     for i in ql:
         source_id = i[0];
@@ -112,8 +112,8 @@ SELECT s.id, s.file FROM source s
         # Mark all other files references by .dsc too if they're not used by anyone else
         x = projectB.query("SELECT f.id FROM files f, dsc_files d WHERE d.source = %s AND d.file = f.id" % (source_id));
         for j in x.getresult():
-            file_id = i[0];
-            y = projectB.query("SELECT id FROM dsc_files d WHERE file = %s" % (file_id));
+            file_id = j[0];
+            y = projectB.query("SELECT id FROM dsc_files d WHERE d.file = %s" % (file_id));
             if len(y.getresult()) == 1:
                 projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (delete_date, file_id));
     projectB.query("COMMIT WORK");
@@ -246,7 +246,7 @@ SELECT m.id FROM maintainer m
 def main():
     global Cnf, projectB, delete_date;
     
-    projectB = pg.connect('projectb', 'localhost');
+    projectB = pg.connect('projectB', 'localhost');
 
     apt_pkg.init();
     
