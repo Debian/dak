@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.6 2001-03-02 02:24:33 troup Exp $
+# $Id: db_access.py,v 1.7 2001-04-03 10:01:27 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ location_id_cache = {};
 maintainer_id_cache = {};
 source_id_cache = {};
 files_id_cache = {};
+maintainer_cache = {}
 
 ############################################################################################
 
@@ -249,3 +250,13 @@ def set_files_id (filename, size, md5sum, location_id):
 
 ##########################################################################################
 
+def get_maintainer (maintainer_id):
+    global maintainer_cache;
+    
+    if not maintainer_cache.has_key(maintainer_id):
+        q = projectB.query("SELECT name FROM maintainer WHERE id = %s" % (maintainer_id));
+        maintainer_cache[maintainer_id] = q.getresult()[0][0];
+        
+    return maintainer_cache[maintainer_id];
+
+##########################################################################################

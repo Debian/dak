@@ -2,7 +2,7 @@
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.6 2001-03-20 00:28:11 troup Exp $
+# $Id: charisma,v 1.7 2001-04-03 10:01:27 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,14 +27,13 @@
 ####################################################################################################################################
 
 import os, pg, re, string, sys
+import db_access, utils
 import apt_pkg
-import utils
 
 ####################################################################################################################################
 
 projectB = None
 Cnf = None
-maintainer_cache = {}
 maintainer_from_source_cache = {}
 packages = {}
 fixed_maintainer_cache = {}
@@ -51,6 +50,9 @@ def fix_maintainer (maintainer):
 
     return fixed_maintainer_cache[maintainer]
 
+def get_maintainer (maintainer):
+    return fix_maintainer(db_access.get_maintainer(maintainer));
+
 def get_maintainer_from_source (source_id):
     global maintainer_from_source_cache
     
@@ -60,16 +62,6 @@ def get_maintainer_from_source (source_id):
         maintainer_from_source_cache[source_id] = fix_maintainer(maintainer)
         
     return maintainer_from_source_cache[source_id]
-
-def get_maintainer (maintainer_id):
-    global maintainer_cache
-    
-    if not maintainer_cache.has_key(maintainer_id):
-        q = projectB.query("SELECT name FROM maintainer WHERE id = %s" % (maintainer_id));
-        maintainer = q.getresult()[0][0]
-        maintainer_cache[maintainer_id] = fix_maintainer(maintainer)
-        
-    return maintainer_cache[maintainer_id]
 
 ####################################################################################################################################
 
@@ -84,6 +76,7 @@ def main():
     extra_files = apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, Cnf["DB::ROUser"]);
+    db_access.init(Cnf, projectB);
 
     for suite in Cnf.SubTree("Suite").List():
         suite = string.lower(suite);
