@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.4 2001-03-21 23:20:59 ajt Exp $
+# $Id: ziyi,v 1.5 2001-04-24 05:16:22 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,19 +46,33 @@ def compressnames (tree,type,file):
 	    result.append(file + ".bz2")
     return result
 
-def print_file (tree, name):
+def print_md5_files (tree, files):
     path = Cnf["Dir::RootDir"] + tree + "/"
-    try:
-        file_handle = utils.open_file(path + name, "r")
-    except utils.cant_open.exc:
-	print "ALERT: Couldn't open " + path + name
-    else:
-	md5 = apt_pkg.md5sum(file_handle)
-	file_handle.close()
+    for name in files:
+        try:
+            file_handle = utils.open_file(path + name, "r")
+        except utils.cant_open_exc:
+            print "ALERT: Couldn't open " + path + name
+        else:
+	    md5 = apt_pkg.md5sum(file_handle)
+	    file_handle.close()
 
-    size = os.stat(path + name)[stat.ST_SIZE]
+        size = os.stat(path + name)[stat.ST_SIZE]
+        out.write(" %s         %8d %s\n" % (md5, size, name))
 
-    out.write(" %s %8d %s\n" % (md5, size, name))
+def print_sha1_files (tree, files):
+    path = Cnf["Dir::RootDir"] + tree + "/"
+    for name in files:
+        try:
+            file_handle = utils.open_file(path + name, "r")
+        except utils.cant_open_exc:
+            print "ALERT: Couldn't open " + path + name
+        else:
+	    sha1 = apt_pkg.sha1sum(file_handle)
+	    file_handle.close()
+
+        size = os.stat(path + name)[stat.ST_SIZE]
+        out.write(" %s %8d %s\n" % (sha1, size, name))
 
 ################################################################################
 
@@ -137,13 +151,15 @@ def main ():
             out.write("Components: %s\n" % (string.join(components)))
 
 	out.write("Description: %s\n" % (SuiteBlock["Description"]))
-	out.write("MD5Sum:\n")
+
+	files = []
+
 	if AptCnf.has_key("tree::%s" % (tree)):
 	    for sec in string.split(AptCnf["tree::%s::Sections" % (tree)]):
 		for arch in string.split(AptCnf["tree::%s::Architectures" % (tree)]):
 		    if arch == "source":
 			for file in compressnames("tree::%s" % (tree), "Sources", "%s/%s/Sources" % (sec, arch)):
-			    print_file(tree,file)
+			    files.append(file)
 		    else:
 			rel = "%s/binary-%s/Release" % (sec, arch)
 			relpath = Cnf["Dir::RootDir"]+tree+"/"+rel
@@ -165,22 +181,46 @@ def main ():
 				release.write("Label: %s\n" % (label))
 				release.write("Architecture: %s\n" % (arch))
 				release.close()
-			    print_file(tree,"%s/binary-%s/Release" % (sec,arch))
+			    files.append("%s/binary-%s/Release" % (sec,arch))
+
+			disks = "%s/disks-%s" % (sec, arch)
+			diskspath = Cnf["Dir::RootDir"]+tree+"/"+disks
+			if os.path.exists(diskspath):
+			    for dir in os.listdir(diskspath):
+				if os.path.exists("%s/%s/md5sum.txt" % (diskspath, dir)):
+				    files.append("%s/%s/md5sum.txt" % (disks, dir))
+
 			for file in compressnames("tree::%s" % (tree), "Packages", "%s/binary-%s/Packages" % (sec, arch)):
-			    print_file(tree,file)
+			    files.append(file)
+
+	    if AptCnf.has_key("tree::%s/main" % (tree)):
+	        sec = string.split(AptCnf["tree::%s/main::Sections" % (tree)])[0]
+		if sec != "debian-installer":
+	    	    print "ALERT: weird non debian-installer section in %s" % (tree)
+
+		for arch in string.split(AptCnf["tree::%s/main::Architectures" % (tree)]):
+		    if arch != "source":  # always true
+			for file in compressnames("tree::%s/main" % (tree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
+			    files.append(file)
+
 	elif AptCnf.has_key("bindirectory::%s" % (tree)):
 	    for file in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
-		print_file(tree,string.replace(file,tree+"/","",1))
+		files.append(string.replace(file,tree+"/","",1))
 	    for file in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
-		print_file(tree,string.replace(file,tree+"/","",1))
+		files.append(string.replace(file,tree+"/","",1))
 	else:
 	    print "ALERT: no tree/bindirectory for %s" % (tree)
+
+	out.write("MD5Sum:\n")
+	print_md5_files(tree, files)
+	out.write("SHA1:\n")
+	print_sha1_files(tree, files)
 
 	out.close()
 	if Cnf.has_key("Dinstall::SigningKeyring"):
 	    dest = Cnf["Dir::RootDir"] + tree + "/Release.gpg"
 	    if os.path.exists(dest):
-		os.unlink(dest)
+		 os.unlink(dest)
 	    os.system("gpg --secret-keyring \"%s\" --no-options --batch --no-tty --armour --detach-sign <%s --output=%s" % (Cnf["Dinstall::SigningKeyring"], 
 		Cnf["Dir::RootDir"] + tree + "/Release", dest))
 
