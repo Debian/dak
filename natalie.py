@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.4 2001-03-21 01:03:28 troup Exp $
+# $Id: natalie.py,v 1.5 2001-04-13 20:13:36 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import pg, string, sys, time
+import errno, os, pg, pwd, string, sys, time
 import utils, db_access
 import apt_pkg;
 
@@ -50,7 +50,7 @@ def usage (exit_code):
 
 ################################################################################
 
-def init():
+def init ():
     global projectB;
     
     projectB = pg.connect('projectb', None);
@@ -59,18 +59,15 @@ def init():
 def process_file (file, suite, component, type, action):
     suite_id = db_access.get_suite_id(suite);
     if suite_id == -1:
-        sys.stderr.write("Suite '%s' not recognised.\n" % (suite));
-        sys.exit(2);
+        utils.fubar("Suite '%s' not recognised." % (suite));
 
     component_id = db_access.get_component_id(component);
     if component_id == -1:
-        sys.stderr.write("Component '%s' not recognised.\n" % (component));
-        sys.exit(2);
+        utils.fubar("Component '%s' not recognised." % (component));
 
     type_id = db_access.get_override_type_id(type);
     if type_id == -1:
-        sys.stderr.write("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)\n" % (type));
-        sys.exit(2);
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)" % (type));
 
     # --set is done mostly internal for performance reasons; most
     # invocations of --set will be updates and making people wait 2-3
@@ -104,7 +101,7 @@ def process_file (file, suite, component, type, action):
             elif len(split_line) == 3:
                 (package, section, maintainer_override) = split_line;
             else:
-                sys.stderr.write("W: '%s' does not break into 'package section [maintainer override]'.\n" % (line));
+                utils.warn("'%s' does not break into 'package section [maintainer-override]'." % (line));
                 c_error = c_error + 1;
                 continue;
             priority = "source";
@@ -115,23 +112,23 @@ def process_file (file, suite, component, type, action):
             elif len(split_line) == 4:
                 (package, priority, section, maintainer_override) = split_line;
             else:
-                sys.stderr.write("W: '%s' does not break into 'package priority section [maintainer override]'.\n" % (line));
+                utils.warn("'%s' does not break into 'package priority section [maintainer-override]'." % (line));
                 c_error = c_error + 1;
                 continue;
 
         section_id = db_access.get_section_id(section);
         if section_id == -1:
-            sys.stderr.write("W: '%s' is not a valid section. ['%s' in suite %s, component %s].\n" % (section, package, suite, component));
+            utils.warn("'%s' is not a valid section. ['%s' in suite %s, component %s]." % (section, package, suite, component));
             c_error = c_error + 1;
             continue;
         priority_id = db_access.get_priority_id(priority);
         if priority_id == -1:
-            sys.stderr.write("W: '%s' is not a valid priority. ['%s' in suite %s, component %s].\n" % (priority, package, suite, component));
+            utils.warn("'%s' is not a valid priority. ['%s' in suite %s, component %s]." % (priority, package, suite, component));
             c_error = c_error + 1;
             continue;
 
         if new.has_key(package):
-            sys.stderr.write("W: Can't insert duplicate entry for '%s'; ignoring all but the first. [suite %s, component %s]\n" % (package, suite, component));
+            utils.warn("Can't insert duplicate entry for '%s'; ignoring all but the first. [suite %s, component %s]" % (package, suite, component));
             c_error = c_error + 1;
             continue;
         new[package] = "";
@@ -172,18 +169,15 @@ def process_file (file, suite, component, type, action):
 def list(suite, component, type):
     suite_id = db_access.get_suite_id(suite);
     if suite_id == -1:
-        sys.stderr.write("Suite '%s' not recognised.\n" % (suite));
-        sys.exit(2);
+        utils.fubar("Suite '%s' not recognised." % (suite));
 
     component_id = db_access.get_component_id(component);
     if component_id == -1:
-        sys.stderr.write("Component '%s' not recognised.\n" % (component));
-        sys.exit(2);
+        utils.fubar("Component '%s' not recognised." % (component));
 
     type_id = db_access.get_override_type_id(type);
     if type_id == -1:
-        sys.stderr.write("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)\n" % (type));
-        sys.exit(2);
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)\n" % (type));
 
     if type == "dsc":
         q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, type_id));
@@ -222,8 +216,7 @@ def main ():
     for i in [ "list", "set" ]:
         if Cnf["Natalie::Options::%s" % (i)]:
             if action != None:
-                sys.stderr.write("Can not perform more than one action at once.\n");
-                sys.exit(2);
+                utils.fubar("Can not perform more than one action at once.");
             action = i;
 
     (suite, component, type) = (Cnf["Natalie::Options::Suite"], Cnf["Natalie::Options::Component"], Cnf["Natalie::Options::Type"])
