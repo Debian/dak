@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.1 2002-10-16 02:47:32 troup Exp $
+# $Id: kelly,v 1.2 2002-10-16 18:56:43 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.1 $";
+kelly_version = "$Revision: 1.2 $";
 
 Cnf = None;
 Options = None;
@@ -125,7 +125,7 @@ def check():
             elif files[file]["type"] == "dsc":
                 reject(Katie.check_source_against_db(file));
                 (reject_msg, is_in_incoming) = Katie.check_dsc_against_db(file);
-                reject(reject_msg);
+                reject(reject_msg, "");
 
         # Check the package is still in the override tables
         for suite in changes["distribution"].keys():
