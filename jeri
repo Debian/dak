@@ -2,7 +2,7 @@
 
 # Dependency check proposed-updates
 # Copyright (C) 2001, 2002, 2004  James Troup <james@nocrew.org>
-# $Id: jeri,v 1.14 2004-11-27 18:12:57 troup Exp $
+# $Id: jeri,v 1.15 2005-02-08 22:43:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,12 @@
 
 ################################################################################
 
-# <aj> ARRRGGGHHH
-# <aj> what's wrong with me!?!?!?
-# <aj> i was just nice to some mormon doorknockers!!!
-# <Omnic> AJ?!?!
-# <aj> i know!!!!!
-# <Omnic> I'm gonna have to kick your ass when you come over
-# <Culus> aj: GET THE HELL OUT OF THE CABAL! :P
+# | > amd64 is more mature than even some released architectures
+# |  
+# | This might be true of the architecture, unfortunately it seems to be the
+# | exact opposite for most of the people involved with it.
+# 
+# <1089213290.24029.6.camel@descent.netsplit.com>
 
 ################################################################################
 

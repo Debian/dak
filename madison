@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: madison,v 1.31 2004-11-27 18:00:16 troup Exp $
+# $Id: madison,v 1.32 2005-02-08 22:43:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 
 ################################################################################
 
-#   And, lo, a great and menacing voice rose from the depths, and with
-#   great wrath and vehemence it's voice boomed across the
-#   land... ``hehehehehehe... that *tickles*''
-#                                                       -- aj on IRC
+# <aj> ooo, elmo has "special powers"
+# <neuro> ooo, does he have lasers that shoot out of his eyes?
+# <aj> dunno
+# <aj> maybe he can turn invisible? that'd sure help with improved transparency!
 
 ################################################################################
 
