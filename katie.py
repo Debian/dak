@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.7 2002-02-22 01:03:13 troup Exp $
+# $Id: katie.py,v 1.8 2002-02-22 22:49:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ###############################################################################
 
-import cPickle, errno, os, pg, re, stat, string;
+import cPickle, errno, os, pg, re, stat, string, sys, time;
 import utils, db_access;
 import apt_inst, apt_pkg;
 
@@ -701,3 +701,11 @@ class Katie:
                 self.reject("size for %s doesn't match %s." % (found, file));
 
         return (self.reject_message, orig_tar_gz);
+
+    def do_query(self, q):
+        sys.stderr.write("query: \"%s\" ... " % (q));
+        before = time.time();
+        r = self.projectB.query(q);
+        time_diff = time.time()-before;
+        sys.stderr.write("took %.3f seconds.\n" % (time_diff));
+        return r;
