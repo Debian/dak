@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.13 2000-12-19 17:23:03 troup Exp $
+# $Id: katie,v 1.14 2000-12-19 21:06:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -851,13 +851,15 @@ def reject (changes_filename, manual_reject_mail_filename):
     # Move the .changes files and it's contents into REJECT/ (if we can; errors are ignored)
     try:
         utils.move (changes_filename, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], base_changes_filename));
-    except cant_overwrite_exc:
+    except utils.cant_overwrite_exc:
+        sys.stderr.write("W: couldn't overwrite existing file '%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], base_changes_filename));
         pass;
     for file in files.keys():
-        if os.access(file,os.R_OK) == 0:
+        if os.path.exists(file):
             try:
                 utils.move (file, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
-            except cant_overwrite_exc:
+            except utils.cant_overwrite_exc:
+                sys.stderr.write("W: couldn't overwrite existing file '%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
                 pass;
 
     # If this is not a manual rejection generate the .reason file and rejection mail message

@@ -95,8 +95,8 @@ Rhona
 
   // How long (in seconds) dead packages are left before being killed
   StayOfExecution 0; // 0 days
- MorgueSubDir "rhona";
- OverrideFilename "override.source-only";
+  MorgueSubDir "rhona";
+  OverrideFilename "override.source-only";
 };
 
 Suite
@@ -147,9 +147,9 @@ Suite
 	  "sparc" "";
 	};
 	Announce "debian-changes@lists.debian.org";
-	Version "2.2r0";
+	Version "2.2r2";
 	Origin "Debian";
-	Description "Debian 2.2r1 Released 12th November 2000";
+	Description "Debian 2.2r2 Released 5th December 2000";
 	CodeName "potato";
 	OverrideCodeName "potato";
 	Priority "1";
@@ -172,9 +172,9 @@ Suite
 	};
 	Announce "debian-changes@lists.debian.org";
 	CopyChanges "dists/proposed-updates/";
-	Version "2.2r2";
+	Version "2.2r3";
 	Origin "Debian";
-	Description "Proposed Updates for Debian 2.2r2 - Not Released";
+	Description "Proposed Updates for Debian 2.2r3 - Not Released";
 	CodeName "proposed-updates";
 	OverrideCodeName "potato";
 	Priority "2";

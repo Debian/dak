@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.4 2000-12-18 07:11:25 troup Exp $
+# $Id: rhona,v 1.5 2000-12-19 21:06:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,6 +39,16 @@ projectB = None
 Cnf = None
 delete_date = None;
 overrides = {};
+
+###################################################################################################
+
+def usage (exit_code):
+    print """Usage: rhona [OPTION]... [CHANGES]...
+  -D, --debug=VALUE         debug
+  -n, --no-action           don't do anything
+  -v, --verbose             be verbose
+  -V, --version             display version number and exit"""
+    sys.exit(exit_code)
 
 ###################################################################################################
 
@@ -314,6 +324,20 @@ def main():
     
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('D',"debug","Rhona::Options::Debug", "IntVal"),
+                 ('h',"help","Rhona::Options::Help"),
+                 ('n',"no-action","Rhona::Options::No-Action"),
+                 ('v',"verbose","Rhona::Options::Verbose"),
+                 ('V',"version","Rhona::Options::Version")];
+    
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    if Cnf["Rhona::Options::Help"]:
+        usage(0);
+        
+    if Cnf["Rhona::Options::Version"]:
+        print "rhona version 0.0000000000";
+        usage(0);
 
     delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()));
 

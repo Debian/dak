@@ -31,6 +31,16 @@ tree "dists/stable/non-US"
    External-Links false;
 };
 
+tree "dists/testing"
+{
+   FileList "/org/non-us.debian.org/database/dists/testing_non-us/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/testing_non-us/$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm i386 m68k powerpc sparc source";
+   BinOverride "override.woody.$(SECTION)";
+   SrcOverride "override.woody.$(SECTION).src";
+};
+
 tree "dists/unstable/non-US"
 {
    FileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_binary-$(ARCH).list";
@@ -48,7 +58,7 @@ bindirectory "dists/proposed-updates"
    SourceFileList "/org/non-us.debian.org/database/proposed-updates_-_source.list";
    Packages "dists/proposed-updates/Packages";
    Sources "dists/proposed-updates/Sources";
-   Contents "";
+   Contents " ";
 
    BinOverride "override.potato.all3";
    BinCacheDB "packages-proposed-updates.db";
