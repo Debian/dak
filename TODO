@@ -1,49 +1,25 @@
-TODO:
--=-=-
+				 TODO
+				 ====
 
- o DONE
-
-[Final stuff]
-------------
-
-[Can be done later]
--------------------
-
- o when encountering suspicous things (e.g. file tainting) do something more drastic
-
- o test the REJECT paranoia stuff (katie.force_move())
-
- o Go through each check validate in new setup
-
- o still not good crash-handling behaviour, too often end up with
-   bogus rejects afterwards...
-
- o stable installs are FUBAR
-
- o update tagdb.dia
-
- o clean fingerprint
-
- o fix up cron.weekly and/or shania
-
-Lisa:
-
- o installing into stable
- o warn about other components
- o priority >> optional
- o arch != {any,all}
- o build-depends wrong (via andrea)
- o suid
- o conficlits
- o notification/stats to admin daily
-
-==========================================================================
-
-To fix
-======
+================================================================================
 
 More Urgent
 -----------
+
+  o Lisa:
+    * installing into stable
+    * priority >> optional
+    * arch != {any,all}
+    * build-depends wrong (via andrea)
+    * suid
+    * conficlits
+    * notification/stats to admin daily
+
+  o DONE
+
+  o stable installs are FUBAR
+  o clean fingerprint
+  o fix up cron.weekly and/or shania
 
   o Fix BTS vs. katie sync issues by queueing(via BSMTP) BTS mail so
     that it can be released on deman (e.g. ETRN to exim).
@@ -60,15 +36,75 @@ More Urgent
 
   o (Depends) <aj> elmo: it should match  \(\s*(<<|<|<=|=|>=|>|>>)\s*<VERSIONREGEXP>\) fwiw
 
+  o Clean up DONE; archive to tar file every 2 weeks, update tar tvzf INDEX file.
+
+  o testing-updates suite: if binary-only and version << version in
+    unstable and source-ver ~= source-ver in testing; then map
+    unstable -> testing-updates ?
+
+  o [Hard] dependency checking (esp. stable) (partially done)
+
+  o hooks for debian specific checks (e.g. check_urgency)
+
+  o Logging [mostly done]
+
+  o Abstraction of suite hardcoding (q.v. progengy)
+
+  o morgue needs auto-cleaning (?)
+
+================================================================================
+
 Less Urgent
 -----------
 
- * Harder:
+  o reverse of source-must-exist; i.e. binary-for-source-must-not-exist
+  o REJECT reminders in shania.
+  o fernanda should check for conflicts and warn about them visavis priority [rmurray]
+  o store a list of removed/files versions; also compare against them.
+    [but be careful about scalability]
 
-    o reverse of source-must-exist; i.e. binary-for-source-must-not-exist
-    o fernanda should check for conflicts and warn about them visavis priority [rmurray]
-    o REJECT reminders in shania.
-    o Clean up DONE; archive to tar file every 2 weeks, update tar tvzf INDEX file.
+  o fernanda: print_copyright should be a lot more intelligent
+     @ handle copyright.gz
+     @ handle copyright.ja and copyright
+     @ handle (detect at least) symlinks to another package's doc directory
+     @ handle and/or fall back on source files (?)
+
+  o To incorporate from utils:
+     @ unreject
+
+  o katie could vrfy email addresses (?) [errge@]
+  o auto-purge out-of-date stuff from non-free/contrib so that testing and stuff works
+  o doogie's binary -> source index
+  o Add urgency + installed date to the DB for aj/testing (? still needed ?)
+  o jt's web stuff, matt's changelog stuff (overlap)
+
+  o [Hard] Need to merge non-non-US and non-US DBs.
+
+  o experimental needs to auto clean (relative to unstable) [partial: rene warns about this]
+
+  o Do a checkpc(1)-a-like which sanitizes a config files.
+  o fix parse_changes()/build_file_list() to sanity check filenames
+  o saftey check and/or rename debs so they match what they should be
+
+  o Improve andrea.
+  o Need to optimize all the queries by using EXAMINE and building some INDEXs.
+  o Need to enclose all the setting SQL stuff in transactions (mostly done).
+  o Need to finish alyson (a way to sync katie.conf and the DB)
+  o Need the ability to rebuild all other tables from dists _or_ pools (in the event of disaster) (?)
+  o Make the --help and --version options do stuff for all scripts
+
+  o charisma can't handle whitespace-only lines (for the moment, this is feature)
+
+  o generic way of saying isabinary and isadsc. (?)
+
+  o s/distribution/suite/g
+
+  o cron.weekly:
+     @ weekly postins to d-c (?)
+     @ backup of report (?)
+     @ backup of changes.tgz (?)
+
+ * Harder:
 
     o override checks sucks; it needs to track changes made by the
       maintainer and pass them onto ftpmaster instead of warning the
@@ -94,6 +130,7 @@ Less Urgent
       files from p-u when removing stuff superseded by newer versions.
       [but for now we have halle]
     o test sig checking stuff in test/ (stupid thing is not modularized)
+    o when encountering suspicous things (e.g. file tainting) do something more drastic
 
  * Easy:
 
@@ -116,14 +153,18 @@ Less Urgent
     o byhand stuff should send notification
     o catherine should udpate db; move files, not the other way around [neuro]
     o melanie should update the stable changelog [joey]
+    o update tagdb.dia
   
-
-
  * Bizzare/uncertain:
    
     o validate source consistency, i.e. .dsc and .tar.gz as minimum (??)
     o Rene also doesn't seem to warn about missing binary packages (??)
     o jenna should not delete things because they don't exist (?)
+    o logging: hostname + pid ?
+    o ANAIS should be done in katie (?)
+    o Add an 'add' ability to melanie (? separate prog maybe)
+    o Replicate old dinstall report stuff (? needed ?)
+    o Handle the case of 1:1.1 which would overwrite 1.1 (?)
   
  * Cleanups & misc: 
    
@@ -139,92 +180,11 @@ Less Urgent
 <neuro> you probably should have stable_install ignore Closes:
 <neuro> or it might be unique to the case of stable unstable uploads
 
-
-
-===================================================================================================
-
-TODO
-====
-
-More Urgent
------------
-
-  o testing-updates suite: if binary-only and version << version in
-    unstable and source-ver ~= source-ver in testing; then map
-    unstable -> testing-updates ?
-
-  o [Complexish] Secure incoming handling
-  o [Hard] dependency checking (esp. stable) (partially done)
-  o hooks for debian specific checks (e.g. check_urgency)
-  o Logging [mostly done]
-  o Abstraction of suite hardcoding (q.v. progengy)
-  o morgue needs auto-cleaning
+================================================================================
 
 Packaging
 ---------
 
-  o Install python libraries (db_access and utils)
-  o Install config file
   o Fix stuff to look in sensible places for libs and config file in debian package (?)
-  o man pages and/or documentation
 
-Less Urgent
------------
-
- o store a list of removed/files versions; also compare against them.
-   be careful about scalability.
-
- o fernanda: print_copyright should be a lot more intelligent
-     @ handle copyright.gz
-     @ handle copyright.ja and copyright
-     @ handle (detect at least) symlinks to another package's doc directory
-     @ handle and/or fall back on source files?
-     @ check only NEW packages out of a source package with some NEW, some old
-     @ check latest version if given multiples!
-
-  o To incorporate from utils:
-     @ unreject
-     @ genreport
-     @ reject
-     @ newchanges
-
-  o logging: hostname + pid ?
-
-  o katie could vrfy email addresses (?) [errge@]
-  o auto-purge out-of-date stuff from non-free/contrib so that testing and stuff works
-  o doogie's binary -> source index
-  o ANAIS should be done in katie (?)
-  o Add an 'add' ability to melanie (? separate prog maybe)
-  o Add urgency + installed date to the DB for aj/testing (? still needed ?)
-  o jt's web stuff, matt's changelog stuff (overlap)
-
-  o [Hard] Need to merge non-non-US and non-US DBs.
-
-  o experimental needs to auto clean (relative to unstable) [warns in rene about this]
-
-  o Do a checkpc(1)-a-like which sanitizes a config files.
-  o fix parse_changes()/build_file_list() to sanity check filenames
-  o saftey check and/or rename debs so they match what they should be
-
-  o Improve andrea.
-  o Need to optimize all the queries by using EXAMINE and building some INDEXs.
-  o Need to enclose all the setting SQL stuff in transactions (mostly done).
-  o Need to finish alyson (a way to sync katie.conf and the DB)
-  o Need the ability to rebuild all other tables from dists _or_ pools (in the event of disaster) (?)
-  o Make the --help and --version options do stuff for all scripts
-  o Need to check for .dsc when source is mentioned
-
-  o charisma can't handle whitespace-only lines (for the moment, this is feature)
-  o Should use $EDITOR, not hardcode vi
-  o Should reject packages with bad timestamps
-  o Replicate old dinstall report stuff (? needed ?)
-  o Handle the case of 1:1.1 which would overwrite 1.1 (?)
-
-  o generic way of saying isabinary and isadsc. (?)
-
-  o s/distribution/suite/g
-
-  o cron.weekly:
-     @ weekly postins to d-c (?)
-     @ backup of report (?)
-     @ backup of changes.tgz (?)
+================================================================================
