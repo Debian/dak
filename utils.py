@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.45 2002-05-19 00:47:27 troup Exp $
+# $Id: utils.py,v 1.46 2002-05-23 12:36:15 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -506,6 +506,7 @@ def prefix_multi_line_string(str, prefix):
 def validate_changes_file_arg(file, fatal=1):
     error = None;
 
+    orig_filename = file
     if file[-6:] == ".katie":
         file = file[:-6]+".changes";
 
@@ -520,9 +521,9 @@ def validate_changes_file_arg(file, fatal=1):
 
     if error:
         if fatal:
-            fubar("%s: %s." % (file, error));
+            fubar("%s: %s." % (orig_filename, error));
         else:
-            warn("Skipping %s - %s" % (file, error));
+            warn("Skipping %s - %s" % (orig_filename, error));
             return None;
     else:
         return file;
