@@ -1,4 +1,5 @@
 alyson - sync's the ISC-style configuration file with the SQL DB
+andrea - looks for fixable descrepancies between stable and unstable
 catherine - poolifies packages; i.e. moves them from legacy dists/ locations into the pool
 charisma - generates Maintainers files used by e.g. the Debian BTS
 claire - generates compatability symlink tree for legacy dists/ locations
@@ -9,11 +10,12 @@ madison - shows which suites a binary package is in
 melanie - archive maintenance tool; removes packages from the distribution
 natalie - manpiulates override entries
 neve - populates the SQL database
+rene - check for obsolete or duplicated binary packages and duplicate source packages
 rhona - cleans old packages out of the pool and the database
 shania - cleans cruft from incoming
 tea - sanity checks the database
 
-With apologies to Alyson Hannigan, Catherine Zeta Jones, Charisma
-Carpenter, Claire Daines, Heidi Klum, Jenna Elfman, Katie Holmes,
-Madison Michele, Melanie Sykes, Natalie Portman, Neve Campbell, Rhona
-Mitre, Shania Twain and Tea Leoni.
+With apologies to Alyson Hannigan, Andrea Corr, Catherine Zeta Jones,
+Charisma Carpenter, Claire Daines, Heidi Klum, Jenna Elfman, Katie
+Holmes, Madison Michele, Melanie Sykes, Natalie Portman, Neve
+Campbell, Rene O'Connor, Rhona Mitre, Shania Twain and Tea Leoni.
