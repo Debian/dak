@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: tea,v 1.4 2001-01-28 09:06:44 troup Exp $
+# $Id: tea,v 1.5 2001-02-04 04:27:58 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,6 +101,25 @@ def check_dscs():
     if count:
         sys.stderr.write("Found %s invalid .dsc files.\n" % (count));
 
+def check_override():
+    for suite in [ "stable", "unstable" ]:
+        print suite
+        print "-------------"
+        print
+        suite_id = db_access.get_suite_id(suite);
+        q = projectB.query("""
+SELECT DISTINCT b.package FROM binaries b, bin_associations ba
+ WHERE b.id = ba.bin AND ba.suite = %s AND NOT EXISTS
+       (SELECT * FROM override o WHERE o.suite = %s AND o.package = b.package)"""
+                           % (suite_id, suite_id));
+        print q
+        q = projectB.query("""
+SELECT DISTINCT s.source FROM source s, src_associations sa
+  WHERE s.id = sa.source AND sa.suite = %s AND NOT EXISTS
+       (SELECT * FROM override o WHERE o.suite = %s and o.package = s.source)"""
+                           % (suite_id, suite_id));
+        print q
+
 ################################################################################
 
 def main ():
@@ -119,7 +138,8 @@ def main ():
     projectB = pg.connect('projectb', 'localhost');
     db_access.init(Cnf, projectB);
 
-    check_dscs();
+    check_override();
+    #check_dscs();
     #check_files();
 
 #######################################################################################
