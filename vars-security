@@ -1,6 +1,7 @@
 # locations used by many scripts
 
 base=/org/security.debian.org
+ftpdir=$base/ftp/
 masterdir=$base/katie/
 overridedir=$base/override
 queuedir=$base/queue/
