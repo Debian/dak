@@ -2,7 +2,7 @@
 
 # Script to automate some parts of checking NEW packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: fernanda.py,v 1.8 2002-11-26 16:15:54 troup Exp $
+# $Id: fernanda.py,v 1.9 2002-11-28 08:21:04 rdonald Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -180,7 +180,7 @@ def read_control (filename):
 	else :
 	    # main
 	    section = main_colour +  section_str + end_colour
-    if control.has_key("Achitecture"):
+    if control.has_key("Architecture"):
 	arch_str = control.Find("Architecture")
    	arch = arch_colour + arch_str + end_colour
 
