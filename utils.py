@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.37 2002-01-19 18:58:07 troup Exp $
+# $Id: utils.py,v 1.38 2002-02-12 23:15:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import commands, os, pwd, re, socket, shutil, stat, string, sys, tempfile, traceback
+import commands, os, pwd, re, socket, shutil, string, sys, tempfile
 import apt_pkg
 
 re_comments = re.compile(r"\#.*")
@@ -24,8 +24,8 @@ re_no_epoch = re.compile(r"^\d*\:")
 re_no_revision = re.compile(r"\-[^-]*$")
 re_arch_from_filename = re.compile(r"/binary-[^/]+/")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
-re_isadeb = re.compile (r".*\.u?deb$");
-re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)");
+re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$");
+re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)$");
 
 re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)");
 re_multi_line_field = re.compile(r"^\s(.*)");
@@ -492,6 +492,12 @@ def result_join (original, sep = '\t'):
         else:
             list.append(original[i]);
     return string.join(list, sep);
+
+def plural (x):
+    if x > 1:
+        return "s";
+    else:
+        return "";
 
 ################################################################################
 
