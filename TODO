@@ -88,8 +88,6 @@ Less Urgent
 
   o Logging [mostly done] (todo: rhona (hard), .. ?)
 
-  o Abstraction of suite hardcoding (q.v. progengy)
-
   o jennifer is leaking file descriptors..
 
   o the tar extractor class doesn't need to be redone for each package
@@ -172,11 +170,11 @@ Less Urgent
 
  * Easy:
 
+    o don't stat/md5sum files you have entries for in the DB, moron
+      boy (Katie.check_source_blah_blah)
     o promote changes["changes"] to mandatory in katie.py(dump_vars)
       after a month or so (or all .katie files contain in the queue
       contain it).
-    o Rationalize config stuff.. Dir::Foo not Dir::FooDir [breaks other people??] 
-      Also Dir::Queue::Foo, not Dir::QueueFooDir
     o melanie should behave better with -a and without -b; see
       gcc-defaults removal for an example.
     o Reject on misconfigured kernel-package uploads
