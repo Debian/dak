@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.18 2002-05-08 11:17:53 troup Exp $
+# $Id: ziyi,v 1.19 2002-05-14 15:29:18 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -162,7 +162,7 @@ def main ():
 	    components = []
 
 	nonus = 1
-	if components != []:
+	if components:
 	    for c in components:
 	        if string.find(c, "non-US/") != 0:
 		    nonus = 0
@@ -206,7 +206,7 @@ def main ():
 	if notautomatic != "":
 	    out.write("NotAutomatic: %s\n" % (notautomatic))
 	out.write("Architectures: %s\n" % (string.join(filter(real_arch, SuiteBlock.SubTree("Architectures").List()))))
-	if components != []:
+	if components:
             out.write("Components: %s\n" % (string.join(components)))
 
 	out.write("Description: %s\n" % (SuiteBlock["Description"]))

@@ -2,7 +2,7 @@
 
 # Manipulate suite tags
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.13 2002-05-03 16:06:45 troup Exp $
+# $Id: heidi,v 1.14 2002-05-14 15:29:18 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -278,7 +278,7 @@ def main ():
         get_list(suite);
     else:
         Logger = logging.Logger(Cnf, "heidi");
-        if file_list != []:
+        if file_list:
             for file in file_list:
                 process_file(utils.open_file(file), suite, action);
         else:
