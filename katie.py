@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.24 2002-06-08 00:19:55 troup Exp $
+# $Id: katie.py,v 1.25 2002-07-12 14:59:08 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -356,7 +356,7 @@ distribution.""";
                 mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.announce");
                 utils.send_mail (mail_message, "");
 
-        if Cnf.get("Dinstall::CloseBugs"):
+        if Cnf.FindB("Dinstall::CloseBugs"):
             summary = self.close_bugs(summary, action);
 
         return summary;
