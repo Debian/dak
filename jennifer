@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.27 2002-10-16 02:47:32 troup Exp $
+# $Id: jennifer,v 1.28 2002-10-21 13:54:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.27 $";
+jennifer_version = "$Revision: 1.28 $";
 
 Cnf = None;
 Options = None;
@@ -337,7 +337,7 @@ def clean_holding():
     os.chdir(Cnf["Dir::Queue::Holding"]);
     for file in in_holding.keys():
         if os.path.exists(file):
-            if file.find(file, '/') != -1:
+            if file.find('/') != -1:
                 utils.fubar("WTF? clean_holding() got a file ('%s') with / in it!" % (file));
             else:
                 os.unlink(file);
