@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: shania,v 1.6 2001-09-27 01:22:51 troup Exp $
+# $Id: shania,v 1.7 2001-11-14 05:06:14 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -183,8 +183,9 @@ def main ():
                  ('i',"incoming","Shania::Options::Incoming", "HasArg"),
                  ('n',"no-action","Shania::Options::No-Action"),
                  ('v',"verbose","Shania::Options::Verbose")];
-    for i in ["help", "days", "incoming", "no-action", "verbose" ]:
+    for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
         Cnf["Shania::Options::%s" % (i)] = "";
+    Cnf["Shania::Options::Days"] = 14;
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Shania::Options")
