@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Remove obsolete .changes files from proposed-updates
-# Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: halle,v 1.10 2003-11-20 02:37:37 troup Exp $
+# Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: halle,v 1.11 2004-02-27 20:07:40 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ def check_joey (filename):
             if len(split_line) != 2:
                 utils.fubar("Parse error (not exactly 2 elements): %s" % (line));
             install_type = split_line[0];
-            if [ "install", "install-u", "sync-install" ].count(install_type) == 0:
+            if install_type not in [ "install", "install-u", "sync-install" ]:
                 utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line));
             changes_filename = split_line[1]
             if Options["debug"]:

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Utility functions for katie
-# Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.43 2003-11-07 01:48:42 troup Exp $
+# Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: katie.py,v 1.44 2004-02-27 20:07:40 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,7 +93,6 @@ class Katie:
 
     def __init__(self, Cnf):
         self.Cnf = Cnf;
-        self.values = {};
         # Read in the group-maint override file
         self.nmu = nmu_p(Cnf);
         self.accept_count = 0;
@@ -646,17 +645,17 @@ distribution.""";
             ql = map(lambda x: x[0], q.getresult());
 
             # Try (1)
-            if ql.count(source_version):
+            if source_version in ql:
                 continue
 
             # Try (2)
             orig_source_version = re_bin_only_nmu_of_mu.sub('', source_version)
-            if ql.count(orig_source_version):
+            if orig_source_version in ql:
                 continue
 
             # Try (3)
             orig_source_version = re_bin_only_nmu_of_nmu.sub('', source_version)
-            if ql.count(orig_source_version):
+            if orig_source_version in ql:
                 continue
 
             # No source found...

@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.62 2004-01-21 03:48:58 troup Exp $
+# $Id: utils.py,v 1.63 2004-02-27 20:07:40 troup Exp $
 
 ################################################################################
 
@@ -93,7 +93,7 @@ def extract_component_from_section(section):
 
     if section.find('/') != -1:
         component = section.split('/')[0];
-    if component.lower() == "non-us" and section.count('/') > 0:
+    if component.lower() == "non-us" and section.find('/') != -1:
         s = component + '/' + section.split('/')[1];
         if Cnf.has_key("Component::%s" % s): # Avoid e.g. non-US/libs
             component = s;
