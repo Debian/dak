@@ -1,4 +1,4 @@
-From: __KATIE_ADDRESS__
+From: Ben Collins <bxa@ftp-master.debian.org>
 To: crypt@bxa.doc.gov
 Cc: bxa@ftp-master.debian.org
 __BCC__
@@ -26,7 +26,7 @@ non-profit Software in the Public Interest.  This notification serves
 as a notification of an addition of new software to the Debian
 archive.  Previous notifications have covered the archive as a whole
 and other software added in the past.  This archive is updated from
-time to time, but its location is constant.  Therefore, and this
+time to time, but its location is constant.  Therefore this
 notification serves as a one-time notification for subsequent updates
 that may occur in the future to the software covered by this
 notification.  Such updates may add or enhance cryptographic
@@ -36,13 +36,14 @@ for the Debian Source Code is: http://ftp.debian.org/debian/
 This site is mirrored to a number of other sites located outside the
 United States.
 
-The following software is added to the Debian archive:
+The following software is being added to the Debian archive:
 
 ----------------------------------------------------------------------
 __BINARY_DESCRIPTIONS__
 ----------------------------------------------------------------------
 
-If you have any questions, please call me on (804) 695-9730.
+If you have any questions, please email me at bxa@ftp-master.debian.org,
+or call me on (804) 695-9730.
 
      Sincerely,
         Ben Collins
