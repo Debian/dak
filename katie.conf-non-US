@@ -41,6 +41,18 @@ Heidi
 
 };
 
+Tea
+{
+
+  Options
+  {
+    Debug "";
+    Help "";
+    Version "";
+   };
+
+};
+
 Jenna
 {
 
@@ -73,6 +85,47 @@ Shania
    };
 
  MorgueSubDir "shania";
+};
+
+Natalie
+{
+
+  Options
+  {
+    Debug "";
+    Help "";
+    Version "";
+    Component "main";
+    List "";
+    Suite "unstable";
+    Set "";
+    Type "deb";
+   };
+
+ ComponentPosition "suffix"; // Whether the component is prepended or appended to the section name
+};
+
+Melanie
+{
+
+  Options
+  {
+    Debug "";
+    Help "";
+    Version "";
+    Architecture "";
+    Binary-Only "";
+    Component "";
+    Done "";
+    No-Action "";
+    Partial "";
+    Reason "";
+    Source-Only "";
+    Suite "unstable";
+   };
+
+   MyEmailAddress "Debian Archive Maintenance <ftpmaster@ftp-master.debian.org>";
+   LogFile "/home/troup/public_html/removals.txt";
 };
 
 Neve
@@ -202,6 +255,7 @@ Suite
 	Version "2.3-testing";
 	Origin "Debian";
 	Description "Debian 2.3 Testing distribution - Not Released";
+	OverrideCodeName "woody";
 	Priority "3";
   };
 
@@ -233,8 +287,8 @@ Suite
 	Version "2.3";
 	Origin "Debian";
 	Description "Debian 2.3 Unstable - Not Released";
-	CodeName "woody";
-	OverrideCodeName "woody";
+	CodeName "sid";
+	OverrideCodeName "sid";
 	Priority "4";
   };
 
@@ -311,6 +365,34 @@ Component
 
 };
 
+Section
+{
+
+  "non-US" "";
+
+};
+
+Priority
+{
+
+  "required" 1;
+  "important" 2;
+  "standard" 3;
+  "optional" 4;
+  "extra" 5;
+  "source" 0; // i.e. unused
+
+};
+
+OverrideType
+{
+
+  "deb" "";
+  "udeb" "";
+  "dsc" "";
+
+};
+
 Location
 {
   
@@ -330,7 +412,7 @@ Location
 	{
 	  Stable "";
 	  Unstable "";
-	};
+        };
       Type "legacy";
     };
 

@@ -13,11 +13,6 @@ pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
-# temporary hack to work around the lack of an apt-utils & python-apt package
-export PYTHONPATH=$PYTHONPATH:/org/ftp.debian.org/scripts/apt/build/bin/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/ftp.debian.org/scripts/apt/build/bin/
-export PATH=$PATH:/org/ftp.debian.org/scripts/apt/build/bin/
-
 cd $masterdir
 shania -v 
 shania -v -m -i $incoming

@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.17 2001-01-10 06:08:03 troup Exp $
+# $Id: katie,v 1.18 2001-01-16 21:52:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,6 +121,10 @@ def in_override_p (package, component, suite, binary_type):
     else:
         type = binary_type;
 
+    # Override suite name; used for example with proposed-updates
+    if Cnf.Find("Suite::%s::OverrideSuite" % (suite)) != "":
+        suite = Cnf["Suite::%s::OverrideSuite" % (suite)];
+
     # Avoid <undef> on unknown distributions
     suite_id = db_access.get_suite_id(suite);
     if suite_id == -1:
@@ -161,7 +165,10 @@ def check_changes(filename):
         return 0;
 
     # Parse the Files field from the .changes into another dictionary [FIXME need to trap errors as above]
-    files = utils.build_file_list(changes, "")
+    try:
+        files = utils.build_file_list(changes, "");
+    except utils.changes_parse_error_exc, line:
+        reject_message = "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line);
 
     # Check for mandatory fields
     for i in ("source", "binary", "architecture", "version", "distribution","maintainer", "files"):
@@ -439,6 +446,9 @@ def check_dsc ():
             except utils.no_files_exc:
                 reject_message = reject_message + "Rejected: no Files: field in .dsc file.\n";
                 continue;
+            except utils.changes_parse_error_exc, line:
+                reject_message = "Rejected: error parsing .dsc file '%s', can't grok: %s.\n" % (filename, line);
+                continue;
 
             # Try and find all files mentioned in the .dsc.  This has
             # to work harder to cope with the multiple possible
@@ -451,6 +461,16 @@ def check_dsc ():
                     # Check the file does not already exist in the archive
                     if not changes.has_key("stable upload"):
                         q = projectB.query("SELECT f.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
+
+                        # "It has not broken them.  It has fixed a
+                        # brokenness.  Your crappy hack exploited a
+                        # bug in the old dinstall.
+                        #
+                        # "(Come on!  I thought it was always obvious
+                        # that one just doesn't release different
+                        # files with the same name and version.)"
+                        #                        -- ajk@ on d-devel@l.d.o
+
                         if q.getresult() != []:
                             reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
                 elif dsc_file[-12:] == ".orig.tar.gz":
@@ -534,7 +554,7 @@ def check_diff ():
             file = gzip.GzipFile(filename, 'r');
             for line in file.readlines():
                 if re_bad_diff.search(line):
-                    reject_message = reject_message + "Rejected: source package was produced by broken dpkg 1.8.1[.1]; please rebuild with later version.\n";
+                    reject_message = reject_message + "Rejected: [dpkg-sucks] source package was produced by a broken version of dpkg-dev 1.8.x; please rebuild with >= 1.8.3 version installed.\n";
                     break;
 
     if string.find(reject_message, "Rejected:") != -1:

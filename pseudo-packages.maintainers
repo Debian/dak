@@ -1,4 +1,8 @@
 base			Enrique Zanardi <sr1-boot-floppies@debian.org>
+install			Enrique Zanardi <sr1-boot-floppies@debian.org>
+installation		Enrique Zanardi <sr1-boot-floppies@debian.org>
+cdrom			Enrique Zanardi <sr1-boot-floppies@debian.org>
+boot-floppy		Enrique Zanardi <sr1-boot-floppies@debian.org>
 press			press@debian.org
 bugs.debian.org		Darren O. Benham and others <owner@bugs.debian.org>
 ftp.debian.org		James Troup and others <ftpmaster@debian.org>
@@ -12,6 +16,7 @@ kernel			Herbert Xu <herbert@debian.org>
 lists.debian.org	Martin Schulze and others <listmaster@lists.debian.org>
 spam			spam@debian.org
 slink-cd		Steve McIntyre <stevem@chiark.greenend.org.uk>
+potato-cd		Steve McIntyre <stevem@chiark.greenend.org.uk>
 dpkg-iwj		Ian Jackson <dpkg-maint@chiark.greenend.org.uk>
 wnpp			wnpp@debian.org
 cdimage.debian.org	debian-cd@lists.debian.org

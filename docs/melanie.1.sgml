@@ -1,0 +1,123 @@
+<!-- -*- mode: sgml; mode: fold -*- -->
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!ENTITY % katieent SYSTEM "katie.ent">
+%katieent;
+
+]>
+
+<refentry>
+  &katie-docinfo;
+  
+  <refmeta>
+    <refentrytitle>melanie</>
+    <manvolnum>1</>
+  </refmeta>
+  
+  <!-- Man page title -->
+  <refnamediv>
+    <refname>melanie</>
+    <refpurpose>Utility to remove/add packages from suites</>
+  </refnamediv>
+
+  <!-- Arguments -->
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>melanie</>
+      <arg><option><replaceable>options</replaceable></></arg>
+      <arg choice="plain"><replaceable>package</replaceable></arg>
+      <arg><option><replaceable>...</replaceable></option></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  
+  <RefSect1><Title>Description</>
+    <para>   
+      <command>melanie</command> is the command line tool to add and remove packages from suites.
+
+  <RefSect1><Title>Options</>
+    
+    <VariableList>
+      <VarListEntry><term><option>-a/--architecture=<replaceable>architecture</replaceable></option></>
+	<ListItem><Para>
+	    Restrict the packages being considered to the architecture(s) listed.
+      </VarListEntry>
+
+      <VarListEntry><term><option>-b/--binary</option></>
+	<ListItem><Para>
+	    Only look at binary packages.
+      </VarListEntry>
+
+      <VarListEntry><term><option>-c/--component=<replaceable>component</replaceable></option></>
+	<ListItem><Para>
+	    Restrict the packages being considered to those found in the component(s) listed.  The default is <literal>main</literal>.
+      </VarListEntry>
+
+      <VarListEntry><term><option>-d/--done=<replaceable>done</replaceable></option></>
+	<ListItem><Para>
+	    Close the bug(s) listed on successful completion.
+      </VarListEntry>
+
+      <VarListEntry><term><option>-m/--reason=<replaceable>reason</replaceable></option></>
+	<ListItem><Para>
+	    The reason for the removal or addition of the package(s).  This is a required option; if not provided an editor will be spawned so the reason can be added there.
+      </VarListEntry>
+
+      <VarListEntry><term><option>-n/--no-action</option></>
+	<ListItem><Para>
+	    Don't actually do anything; just show what would be done.
+      </VarListEntry>
+
+      <VarListEntry><term><option>-p/--partial</option></>
+	<ListItem><Para>
+	    Partial removal of a package, so the package is not removed from the overrides.  This option is implied by <option>-a/--architecture</option>.
+      </VarListEntry>
+
+      <VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
+	<ListItem><Para>
+	    Only add/remove the packages from the suite(s) listed.  The default is <literal>unstable</literal>
+      </VarListEntry>
+
+      <VarListEntry><term><option>-S/--source-only</option></>
+	<ListItem><Para>
+	    Only look at source packages.
+      </VarListEntry>
+
+    </VariableList>
+  </RefSect1>
+
+    <refsect1>
+      <title>How packages are chosen</title>
+      <para>There are 3 methods for selecting packages.</para>
+      <itemizedlist>
+	<listitem>
+	  <para>Source + Binary. (default)</para>
+	  <para>In this mode <command>melanie</command> will assume each of the package(s) passed as arguments are source packages and will also remove any binary packages built from these source packages.</para>
+	</listitem>
+	<listitem>
+	  <para>Binary only.</para>
+	  <para>Only binary packages are searched; source packages are ignored.  This mode is chosen by use of the <option>-b/--binary</option> switch.</para>
+	</listitem>
+	<listitem>
+	  <para>Source only.</para>
+	  <para>Only source packages are searched; binary packages are ignored.  This mode is chosen by use of the <option>-S/--source</option> switch.</para>
+	</listitem>
+      </itemizedlist>
+    </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+    <para></para>
+  </refsect1>
+
+  <RefSect1><Title>Description</>
+    <para>   
+      <command>melanie</command> is the command line tool to add and remove packages from suites.
+
+  <RefSect1><Title>Diagnostics</>
+    <para>
+      <command>melanie</command> returns zero on normal operation, non-zero on error.
+  </RefSect1>
+
+  &manauthor;
+  
+</refentry>

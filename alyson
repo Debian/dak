@@ -2,7 +2,7 @@
 
 # Sync the ISC configuartion file and the SQL database
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: alyson,v 1.1 2001-01-10 05:58:26 troup Exp $
+# $Id: alyson,v 1.2 2001-01-16 21:52:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import pg, sys
+import pg, sys, string
 import utils, db_access
 import apt_pkg;
 
@@ -63,12 +63,21 @@ def main ():
     projectB.query("BEGIN WORK");
     projectB.query("DELETE FROM section");
     for component in Cnf.SubTree("Component").List():
-        if component != 'main':
-            prefix = component + '/';
+        if Cnf["Natalie::ComponentPosition"] == "prefix":
+            suffix = "";
+            if component != 'main':
+                prefix = component + '/';
+            else:
+                prefix = "";
         else:
             prefix = "";
+            component = string.replace(component, "non-US/", "");
+            if component != 'main':
+                suffix = '/' + component;
+            else:
+                suffix = "";
         for section in Cnf.SubTree("Section").List():
-            projectB.query("INSERT INTO section (section) VALUES ('%s%s')" % (prefix, section));
+            projectB.query("INSERT INTO section (section) VALUES ('%s%s%s')" % (prefix, section, suffix));
     projectB.query("COMMIT WORK");
 
 

@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: denise,v 1.1 2001-01-10 05:58:26 troup Exp $
+# $Id: denise,v 1.2 2001-01-16 21:52:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ def main ():
                     override_type = ".debian-installer";
                 elif type == "dsc":
                     override_type = ".src";
-                filename = "override.%s.%s%s" % (override_suite, component, override_type);
+                filename = "override.%s.%s%s" % (override_suite, string.replace(component, "non-US/", ""), override_type);
                 file = utils.open_file(filename, 'w');
                 sys.stdout = file;
                 list(suite, component, type);
@@ -119,6 +119,7 @@ def main ():
     sys.stderr.write("Processing testing...\n");
     suite = "testing";
     suite_id = db_access.get_suite_id(suite);
+    override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
     for component in Cnf.SubTree("Component").List():
         if component == "mixed":
             continue;
@@ -132,7 +133,7 @@ def main ():
                 override_type = ".src";
             elif type == "udeb":
                 continue;
-            filename = "override.testing.%s%s" % (component, override_type);
+            filename = "override.%s.%s%s" % (override_suite, string.replace(component, "non-US/", ""), override_type);
             file = utils.open_file(filename, 'w');
             sys.stdout = file;
             for i in q.getresult():

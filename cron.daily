@@ -38,11 +38,6 @@ update-mirrorlists
 
 ################################################################################
 
-# temporary hack to work around the lack of an apt-utils & python-apt package
-export PYTHONPATH=$PYTHONPATH:/org/ftp.debian.org/scripts/apt/build/bin/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/ftp.debian.org/scripts/apt/build/bin/
-export PATH=$PATH:/org/ftp.debian.org/scripts/apt/build/bin/
-
 cd $incoming
 rm -f REPORT
 katie -pak *.changes | direport | tee REPORT | \
@@ -64,7 +59,7 @@ for i in proposed-updates_-_binary-*; do cat $i >> proposed-updates_-_binary.lis
 cd $overridedir
 denise
 # FIXME
-rm override.potato.all3
+rm -f override.potato.all3
 for i in main contrib non-free; do cat override.potato.$i >> override.potato.all3; done
 
 # Generate Packages and Sources files

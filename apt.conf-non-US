@@ -47,8 +47,8 @@ tree "dists/unstable/non-US"
    SourceFileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa hurd-i386 i386 mips mipsel m68k powerpc sh sparc source";
-   BinOverride "override.woody.$(SECTION)";
-   SrcOverride "override.woody.$(SECTION).src";
+   BinOverride "override.sid.$(SECTION)";
+   SrcOverride "override.sid.$(SECTION).src";
 };
 
 bindirectory "dists/proposed-updates"

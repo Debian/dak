@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.10 2000-12-19 17:23:03 troup Exp $
+# $Id: utils.py,v 1.11 2001-01-16 21:52:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,10 +105,13 @@ def build_file_list(changes, dsc):
             break
         s = string.split(i)
         section = priority = component = ""
-        if dsc != "":
-            (md5, size, name) = s
-        else:
-            (md5, size, section, priority, name) = s
+        try:
+            if dsc != "":
+                (md5, size, name) = s
+            else:
+                (md5, size, section, priority, name) = s
+        except ValueError:
+            raise changes_parse_error_exc, i
 
         if section == "": section = "-"
         if priority == "": priority = "-"

@@ -2,7 +2,7 @@
 
 # Quick hack to import override files
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: hack.1,v 1.1 2001-01-10 05:58:26 troup Exp $
+# $Id: hack.1,v 1.2 2001-01-16 21:52:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ def main ():
             continue;
         else:
             component = x[2];
-            if suite == "woody":
+            if suite == "sid":
                 suite = "unstable";
             elif suite == "potato":
                 suite = "stable";
@@ -72,7 +72,7 @@ def main ():
                 else:
                     print "say WHAT?";
                     sys.exit(4);
-        print "cat %s | natalie --set --suite=%s --component=%s --type=%s" % (filename, suite, component, type);
+        print "cat %s | natalie.py --set --suite=%s --component=%s --type=%s" % (filename, suite, component, type);
 
 #######################################################################################
 

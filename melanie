@@ -2,7 +2,7 @@
 
 # General purpose archive tool for ftpmaster
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.1 2001-01-10 05:58:26 troup Exp $
+# $Id: melanie,v 1.2 2001-01-16 21:52:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,7 +63,6 @@ def main ():
                  ('d',"done","Melanie::Options::Done", "HasArg"), # Bugs fixed
                  ('m',"reason", "Melanie::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
                  ('n',"no-action","Melanie::Options::No-Action"),
-                 ('o',"orphan", "Melanie::Options::Orphan"),
                  ('p',"partial", "Melanie::Options::Partial"),
                  ('s',"suite","Melanie::Options::Suite", "HasArg"),
                  ('S',"source-only", "Melanie::Options::Source-Only"),
@@ -328,6 +327,11 @@ it).  Please also remember that the changes have been done on the
 master archive (ftp-master.debian.org) and will not propagate to any
 mirrors (ftp.debian.org included) until the next cron.daily run at the
 earliest.
+
+Bugs which have been reported against this package are not automatically
+removed from the Bug Tracking System.  Please check all open bugs and
+close them or re-assign them to another package if the removed package
+was superseded by another one.
 
 Thank you for reporting the bug, which will now be closed.  If you
 have further comments please address them to %s@bugs.debian.org.

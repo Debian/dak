@@ -1,0 +1,19 @@
+<!-- -*- mode: sgml; mode: fold -*- -->
+
+<!-- Boiler plate docinfo section -->
+<!ENTITY katie-docinfo "
+ <docinfo>
+   <address><email>james@nocrew.org</></address>
+   <author><firstname>James</> <surname>Troup</></>
+   <copyright><year>2000-2001</> <holder>James Troup</></>
+   <date>15 January 2001</>
+ </docinfo>
+"> 
+
+<!-- Boiler plate Author section -->
+<!ENTITY manauthor "
+ <RefSect1><Title>Author</>
+   <para>
+   katie was written by James Troup <email>james@nocrew.org</>.
+ </RefSect1>
+">
