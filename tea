@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Sanity check the database
-# Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: tea,v 1.5 2001-02-04 04:27:58 troup Exp $
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: tea,v 1.6 2001-03-02 02:30:12 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,6 +101,8 @@ def check_dscs():
     if count:
         sys.stderr.write("Found %s invalid .dsc files.\n" % (count));
 
+################################################################################
+
 def check_override():
     for suite in [ "stable", "unstable" ]:
         print suite
@@ -122,6 +124,60 @@ SELECT DISTINCT s.source FROM source s, src_associations sa
 
 ################################################################################
 
+# Ensure that the source files for any given package is all in one
+# directory so that 'apt-get source' works...
+
+def check_source_in_one_dir():
+    # Not the most enterprising method, but hey...
+    broken_count = 0;
+    q = projectB.query("SELECT id FROM source;");
+    for i in q.getresult():
+        source_id = i[0];
+        q2 = projectB.query("""
+SELECT f.filename FROM files f, dsc_files df WHERE df.source = %s AND f.id = df.file"""
+                            % (source_id));
+        first_path = "";
+        broken = 0;
+        for j in q2.getresult():
+            path = os.path.dirname(j[0]);
+            if first_path == "":
+                first_path = path;
+            elif first_path != path:
+                broken = 1;
+                #print "Woah, we got a live one here... %s" % (source_id);
+        if broken:
+            broken_count = broken_count + 1;
+            print q2
+    print "Found %d source packages where the source is not all in one directory." % (broken_count);
+
+################################################################################
+
+def check_md5sums():
+    print "Getting file information from database...";
+    q = projectB.query("SELECT l.path, f.filename, f.md5sum, f.size FROM files f, location l WHERE f.location = l.id")
+    ql = q.getresult();
+    
+    print "Checking file md5sums & sizes...";
+    for i in ql:
+	filename = os.path.abspath(i[0] + i[1]);
+        db_md5sum = i[2];
+        db_size = int(i[3]);
+        try:
+            file = utils.open_file(filename, 'r');
+        except:
+            sys.stderr.write("E: can't open '%s'.\n" % (filename));
+            continue;
+        md5sum = apt_pkg.md5sum(file);
+        size = os.stat(filename)[stat.ST_SIZE];
+        if md5sum != db_md5sum:
+            sys.stderr.write("E: **WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db]).\n" % (filename, md5sum, db_md5sum));
+        if size != db_size:
+            sys.stderr.write("E: **WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db]).\n" % (filename, size, db_size));
+
+    print "Done."
+
+################################################################################
+
 def main ():
     global Cnf, projectB, db_files, waste, excluded;
 
@@ -138,7 +194,9 @@ def main ():
     projectB = pg.connect('projectb', 'localhost');
     db_access.init(Cnf, projectB);
 
-    check_override();
+    check_md5sums();
+    #check_source_in_one_dir();
+    #check_override();
     #check_dscs();
     #check_files();
 
