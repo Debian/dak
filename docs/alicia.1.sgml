@@ -45,6 +45,11 @@
 	  <Para>Show help and then exit.</PARA>
 	</LISTITEM>
       </VarListEntry>
+      <VarListEntry><term><option>-d/--done=<replaceable>BUG#</replaceable></option></>
+	<ListItem>
+	  <Para>Close the listed bugs as part of adjusting the overrides</PARA>
+	</LISTITEM>
+      </VarListEntry>
       <VarListEntry><term><option>-n/--no-action</option></>
 	<ListItem>
 	  <Para>Show what alicia would do but make no changes</PARA>

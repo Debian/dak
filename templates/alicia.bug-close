@@ -1,0 +1,21 @@
+From: __ALICIA_ADDRESS__
+To: __BUG_NUMBER__-close@__BUG_SERVER__
+__CC__ 
+__BCC__
+Subject: Bug#__BUG_NUMBER__: fixed
+
+We believe that the bug you reported is now fixed; the following
+changes were made to the overrides...
+
+__SUMMARY__
+
+Thank you for reporting the bug, which will now be closed.  If you
+have further comments please address them to __BUG_NUMBER__@__BUG_SERVER__.
+
+This message was generated automatically; if you believe that there is
+a problem with it please contact the archive administrators by mailing
+__ADMIN_ADDRESS__.
+
+__DISTRO__ distribution maintenance software
+pp.
+__WHOAMI__ (the ftpmaster behind the curtain)
