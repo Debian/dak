@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# Check utils.parse_changes()'s for handling of multi-line fields
+# Check utils.parse_changes() correctly ignores data outside the signed area
 # Copyright (C) 2004  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.2 2004-01-21 03:48:58 troup Exp $
+# $Id: test.py,v 1.3 2004-03-11 00:22:19 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-################################################################################
-
-# Check util.parse_changes() correctly ignores data outside the signed area
 
 ################################################################################
 
