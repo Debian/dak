@@ -4,18 +4,25 @@ TOFIX
 Urgent
 ------
 
-  o Add an 'add' ability to melanie (? separate prog maybe)
+  o migrate proposed-updates and experimental to the pool; this allows
+    us to remove the null component handling and de facto fixes the
+    ssh + w3m multi-component problem.
+
+  o Write something to sync architectures.
+
+  o Make experimental work
 
   o fix katie's handling of source packages in different directories;
     e.g. if a package moves from main to contrib, the .orig.tar.gz
     needs to what? copy or be moved and old source removed; one of the
     two.
 
-  o fix ssh appearing in 3 packages files
-
-  o maintainers file needs overrides
-
-  o Make experimental work
+  o maintainers file needs overrides  
+ 
+    [ change override.maintainer to override.maintainer-from +
+      override.maintainer-to and have them reference the maintainers
+      table.  Then fix charisma to use them and write some scripting
+      to handle the Santiago situation. ]
 
   o need to have process_it run a big try: loop so that individual
     package screws up don't kill the daily cron run.
@@ -24,6 +31,7 @@ Less Urgent
 -----------
 
   o check out hardlinks [aj]
+  o Add an 'add' ability to melanie (? separate prog maybe)
   o [Hard] Need to merge non-non-US and non-US DBs.
   o [Easy] Need to vacuum daily
   o [Easy] remove empty directories in the pool in cron.weekly or so

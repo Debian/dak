@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.25 2001-01-28 09:06:44 troup Exp $
+# $Id: katie,v 1.26 2001-01-31 03:36:36 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -505,7 +505,6 @@ def check_dsc ():
                     q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
                     ql = q.getresult();
 
-
                     if ql != []:
                         # Unfortunately, we make get more than one match
                         # here if, for example, the package was in potato
@@ -615,7 +614,7 @@ def check_override ():
             override_section = files[file]["override section"];
             if section != override_section and section != "-":
                 # Ignore this; it's a common mistake and not worth whining about
-                if section == "non-US/main" and override_section == "non-US":
+                if string.lower(section) == "non-us/main" and string.lower(override_section) == "non-us":
                     continue;
                 summary = summary + "%s: section is overridden from %s to %s.\n" % (file, section, override_section);
             if files[file]["type"] == "deb": # don't do priority for source
