@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Populate the DB
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: neve,v 1.8 2002-02-12 22:14:38 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: neve,v 1.9 2002-05-08 11:18:24 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-################################################################################
+###############################################################################
 
 # 04:36|<aj> elmo: you're making me waste 5 seconds per architecture!!!!!! YOU BASTARD!!!!!
 
-################################################################################
+###############################################################################
 
 # This code is a horrible mess for two reasons:
 
@@ -35,17 +35,17 @@
 #   script again in a hurry, and I don't want to spend any more time
 #   on it than absolutely necessary.
 
-###############################################################################################################
+###############################################################################
 
-import commands, os, pg, re, string, tempfile
-import apt_pkg
-import db_access, utils
+import commands, os, pg, re, select, string, sys, tempfile, time;
+import apt_pkg;
+import db_access, utils;
 
-###############################################################################################################
+###############################################################################
 
 re_arch_from_filename = re.compile(r"binary-[^/]+")
 
-###############################################################################################################
+###############################################################################
 
 Cnf = None;
 projectB = None;
@@ -70,8 +70,196 @@ bin_associations_id_serial = 0;
 bin_associations_query_cache = None;
 #
 source_cache_for_binaries = {};
+reject_message = "";
 
-###############################################################################################################
+###############################################################################
+
+# Our very own version of commands.getouputstatus(), hacked to support
+# gpgv's status fd.
+def get_status_output(cmd, status_read, status_write):
+    cmd = ['/bin/sh', '-c', cmd];
+    p2cread, p2cwrite = os.pipe();
+    c2pread, c2pwrite = os.pipe();
+    errout, errin = os.pipe();
+    pid = os.fork();
+    if pid == 0:
+        # Child
+        os.close(0);
+        os.close(1);
+        os.dup(p2cread);
+        os.dup(c2pwrite);
+        os.close(2);
+        os.dup(errin);
+        for i in range(3, 256):
+            if i != status_write:
+                try:
+                    os.close(i);
+                except:
+                    pass;
+        try:
+            os.execvp(cmd[0], cmd);
+        finally:
+            os._exit(1);
+
+    # parent
+    os.close(p2cread)
+    os.dup2(c2pread, c2pwrite);
+    os.dup2(errout, errin);
+
+    output = status = "";
+    while 1:
+        i, o, e = select.select([c2pwrite, errin, status_read], [], []);
+        more_data = [];
+        for fd in i:
+            r = os.read(fd, 8196);
+            if len(r) > 0:
+                more_data.append(fd);
+                if fd == c2pwrite or fd == errin:
+                    output = output + r;
+                elif fd == status_read:
+                    status = status + r;
+                else:
+                    utils.fubar("Unexpected file descriptor [%s] returned from select\n" % (fd));
+        if not more_data:
+            pid, exit_status = os.waitpid(pid, 0)
+            try:
+                os.close(status_write);
+                os.close(status_read);
+                os.close(c2pwrite);
+                os.close(p2cwrite);
+                os.close(errin);
+            except:
+                pass;
+            break;
+
+    return output, status, exit_status;
+
+###############################################################################
+
+def Dict(**dict): return dict
+
+def reject (str, prefix="Rejected: "):
+    global reject_message;
+    if str:
+        reject_message = reject_message + prefix + str + "\n";
+
+###############################################################################
+
+def check_signature (filename):
+    if not utils.re_taint_free.match(os.path.basename(filename)):
+        reject("!!WARNING!! tainted filename: '%s'." % (filename));
+        return 0;
+
+    status_read, status_write = os.pipe();
+    cmd = "gpgv --status-fd %s --keyring %s --keyring %s %s" \
+          % (status_write, Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename);
+    (output, status, exit_status) = get_status_output(cmd, status_read, status_write);
+
+    # Process the status-fd output
+    keywords = {};
+    bad = internal_error = "";
+    for line in string.split(status, '\n'):
+        line = string.strip(line);
+        if line == "":
+            continue;
+        split = string.split(line);
+        if len(split) < 2:
+            internal_error = internal_error + "gpgv status line is malformed (< 2 atoms) ['%s'].\n" % (line);
+            continue;
+        (gnupg, keyword) = split[:2];
+        if gnupg != "[GNUPG:]":
+            internal_error = internal_error + "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg);
+            continue;
+        args = split[2:];
+        if keywords.has_key(keyword) and keyword != "NODATA":
+            internal_error = internal_error + "found duplicate status token ('%s')." % (keyword);
+            continue;
+        else:
+            keywords[keyword] = args;
+
+    # If we failed to parse the status-fd output, let's just whine and bail now
+    if internal_error:
+        reject("internal error while performing signature check on %s." % (filename));
+        reject(internal_error, "");
+        reject("Please report the above errors to the Archive maintainers by replying to this mail.", "");
+        return None;
+
+    # Now check for obviously bad things in the processed output
+    if keywords.has_key("SIGEXPIRED"):
+        reject("key used to sign %s has expired." % (filename));
+        bad = 1;
+    if keywords.has_key("KEYREVOKED"):
+        reject("key used to sign %s has been revoked." % (filename));
+        bad = 1;
+    if keywords.has_key("BADSIG"):
+        reject("bad signature on %s." % (filename));
+        bad = 1;
+    if keywords.has_key("ERRSIG") and not keywords.has_key("NO_PUBKEY"):
+        reject("failed to check signature on %s." % (filename));
+        bad = 1;
+    if keywords.has_key("NO_PUBKEY"):
+        args = keywords["NO_PUBKEY"];
+        if len(args) < 1:
+            reject("internal error while checking signature on %s." % (filename));
+            bad = 1;
+        else:
+            fingerprint = args[0];
+    if keywords.has_key("BADARMOR"):
+        reject("ascii armour of signature was corrupt in %s." % (filename));
+        bad = 1;
+    if keywords.has_key("NODATA"):
+        utils.warn("no signature found for %s." % (filename));
+        return "NOSIG";
+        #reject("no signature found in %s." % (filename));
+        #bad = 1;
+
+    if bad:
+        return None;
+
+    # Next check gpgv exited with a zero return code
+    if exit_status and not keywords.has_key("NO_PUBKEY"):
+        reject("gpgv failed while checking %s." % (filename));
+        if string.strip(status):
+            reject(utils.prefix_multi_line_string(status, " [GPG status-fd output:] "), "");
+        else:
+            reject(utils.prefix_multi_line_string(output, " [GPG output:] "), "");
+        return None;
+
+    # Sanity check the good stuff we expect
+    if not keywords.has_key("VALIDSIG"):
+        if not keywords.has_key("NO_PUBKEY"):
+            reject("signature on %s does not appear to be valid [No VALIDSIG]." % (filename));
+            bad = 1;
+    else:
+        args = keywords["VALIDSIG"];
+        if len(args) < 1:
+            reject("internal error while checking signature on %s." % (filename));
+            bad = 1;
+        else:
+            fingerprint = args[0];
+    if not keywords.has_key("GOODSIG") and not keywords.has_key("NO_PUBKEY"):
+        reject("signature on %s does not appear to be valid [No GOODSIG]." % (filename));
+        bad = 1;
+    if not keywords.has_key("SIG_ID") and not keywords.has_key("NO_PUBKEY"):
+        reject("signature on %s does not appear to be valid [No SIG_ID]." % (filename));
+        bad = 1;
+
+    # Finally ensure there's not something we don't recognise
+    known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+                          SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
+                          NODATA="");
+
+    for keyword in keywords.keys():
+        if not known_keywords.has_key(keyword):
+            reject("found unknown status token '%s' from gpgv with args '%s' in %s." % (keyword, repr(keywords[keyword]), filename));
+            bad = 1;
+
+    if bad:
+        return None;
+    else:
+        return fingerprint;
+
+#########################################################################################
 
 # Prepares a filename or directory (s) to be file.filename by stripping any part of the location (sub) from it.
 def poolify (s, sub):
@@ -125,7 +313,7 @@ def update_suites ():
             architecture_id = db_access.get_architecture_id (architecture);
             projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id));
 
-##############################################################################################################
+###############################################################################
 
 def get_or_set_files_id (filename, size, md5sum, location_id):
     global files_id_cache, files_id_serial, files_query_cache;
@@ -138,12 +326,12 @@ def get_or_set_files_id (filename, size, md5sum, location_id):
 
     return files_id_cache[cache_key]
 
-##############################################################################################################
+###############################################################################
 
-def process_sources (location, filename, suite, component, archive):
-    global source_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, source_id_serial, src_associations_id_serial, dsc_files_id_serial, source_cache_for_binaries, orig_tar_gz_cache;
+def process_sources (location, filename, suite, component, archive, dsc_dir):
+    global source_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, source_id_serial, src_associations_id_serial, dsc_files_id_serial, source_cache_for_binaries, orig_tar_gz_cache, reject_message;
 
-    suite = string.lower(suite)
+    suite = string.lower(suite);
     suite_id = db_access.get_suite_id(suite);
     if suite == 'stable':
         testing_id = db_access.get_suite_id("testing");
@@ -152,21 +340,27 @@ def process_sources (location, filename, suite, component, archive):
     except utils.cant_open_exc:
         print "WARNING: can't open '%s'" % (filename);
         return;
-    Scanner = apt_pkg.ParseTagFile(file)
+    Scanner = apt_pkg.ParseTagFile(file);
     while Scanner.Step() != 0:
-        package = Scanner.Section["package"]
-        version = Scanner.Section["version"]
+        package = Scanner.Section["package"];
+        version = Scanner.Section["version"];
+        dsc_file = os.path.join(dsc_dir, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)));
+        install_date = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(dsc_file)));
+        fingerprint = check_signature(dsc_file);
+        fingerprint_id = db_access.get_or_set_fingerprint_id(fingerprint);
+        if reject_message:
+            utils.fubar("%s: %s" % (dsc_file, reject_message));
         maintainer = Scanner.Section["maintainer"]
-        maintainer = string.replace(maintainer, "'", "\\'")
+        maintainer = string.replace(maintainer, "'", "\\'");
         maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
-        directory = Scanner.Section["directory"]
-        location_id = db_access.get_location_id (location, component, archive)
+        directory = Scanner.Section["directory"];
+        location_id = db_access.get_location_id (location, component, archive);
         if directory[-1:] != "/":
             directory = directory + '/';
         directory = poolify (directory, location);
         if directory != "" and directory[-1:] != "/":
             directory = directory + '/';
-        no_epoch_version = utils.re_no_epoch.sub('', version)
+        no_epoch_version = utils.re_no_epoch.sub('', version);
         # Add all files referenced by the .dsc to the files table
         ids = [];
         for line in string.split(Scanner.Section["files"],'\n'):
@@ -187,7 +381,7 @@ def process_sources (location, filename, suite, component, archive):
             if filename[-4:] == ".dsc":
                 files_id = id;
         filename = directory + package + '_' + no_epoch_version + '.dsc'
-        cache_key = "%s~%s" % (package, version)
+        cache_key = "%s~%s" % (package, version);
         if not source_cache.has_key(cache_key):
             nasty_key = "%s~%s" % (package, version)
             source_id_serial = source_id_serial + 1;
@@ -195,7 +389,7 @@ def process_sources (location, filename, suite, component, archive):
                 source_cache_for_binaries[nasty_key] = source_id_serial;
             tmp_source_id = source_id_serial;
             source_cache[cache_key] = source_id_serial;
-            source_query_cache.write("%d\t%s\t%s\t%d\t%d\n" % (source_id_serial, package, version, maintainer_id, files_id))
+            source_query_cache.write("%d\t%s\t%s\t%d\t%d\t%s\t%s\n" % (source_id_serial, package, version, maintainer_id, files_id, install_date, fingerprint_id))
             for id in ids:
                 dsc_files_id_serial = dsc_files_id_serial + 1;
                 dsc_files_query_cache.write("%d\t%d\t%d\n" % (dsc_files_id_serial, tmp_source_id,id));
@@ -209,12 +403,12 @@ def process_sources (location, filename, suite, component, archive):
             src_associations_id_serial = src_associations_id_serial + 1;
             src_associations_query_cache.write("%d\t%d\t%d\n" % (src_associations_id_serial, testing_id, tmp_source_id))
 
-    file.close()
+    file.close();
 
-##############################################################################################################
+###############################################################################
 
 def process_packages (location, filename, suite, component, archive):
-    global arch_all_cache, binary_cache, binaries_id_serial, binaries_query_cache, bin_associations_id_serial, bin_associations_query_cache;
+    global arch_all_cache, binary_cache, binaries_id_serial, binaries_query_cache, bin_associations_id_serial, bin_associations_query_cache, reject_message;
 
     count_total = 0;
     count_bad = 0;
@@ -236,6 +430,8 @@ def process_packages (location, filename, suite, component, archive):
         maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
         architecture = Scanner.Section["architecture"]
         architecture_id = db_access.get_architecture_id (architecture);
+        fingerprint = "NOSIG";
+        fingerprint_id = db_access.get_or_set_fingerprint_id(fingerprint);
         if not Scanner.Section.has_key("source"):
             source = package
         else:
@@ -269,7 +465,7 @@ def process_packages (location, filename, suite, component, archive):
                 else:
                     source_id = repr(source_id);
                 binaries_id_serial = binaries_id_serial + 1;
-                binaries_query_cache.write("%d\t%s\t%s\t%d\t%s\t%d\t%d\t%s\n" % (binaries_id_serial, package, version, maintainer_id, source_id, architecture_id, files_id, type));
+                binaries_query_cache.write("%d\t%s\t%s\t%d\t%s\t%d\t%d\t%s\t%s\n" % (binaries_id_serial, package, version, maintainer_id, source_id, architecture_id, files_id, type, fingerprint_id));
                 binary_cache[cache_key] = binaries_id_serial;
                 tmp_binaries_id = binaries_id_serial;
             else:
@@ -288,7 +484,7 @@ def process_packages (location, filename, suite, component, archive):
     else:
         print "%d binary packages processed; 0 with no source match which is 0%%" % (count_total);
 
-##############################################################################################################
+###############################################################################
 
 def do_sources(location, prefix, suite, component, server):
     temp_filename = tempfile.mktemp();
@@ -299,23 +495,23 @@ def do_sources(location, prefix, suite, component, server):
     if (result != 0):
         utils.fubar("Gunzip invocation failed!\n%s" % (output), result);
     print 'Processing '+sources+'...';
-    process_sources (location, temp_filename, suite, component, server);
+    process_sources (location, temp_filename, suite, component, server, os.path.dirname(sources));
     os.unlink(temp_filename);
 
-##############################################################################################################
+###############################################################################
 
 def main ():
     global Cnf, projectB, query_cache, files_query_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, bin_associations_query_cache, binaries_query_cache;
 
-    Cnf = utils.get_conf()
+    Cnf = utils.get_conf();
 
     print "Re-Creating DB..."
-    (result, output) = commands.getstatusoutput("psql -f init_pool.sql")
+    (result, output) = commands.getstatusoutput("psql -f init_pool.sql template1");
     if (result != 0):
         utils.fubar("psql invocation failed!\n", result);
-    print output
+    print output;
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, 'postgres')
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
 
     db_access.init (Cnf, projectB);
 
@@ -406,7 +602,7 @@ def main ():
     # See add_constraints.sql for more details...
 
     print "Running add_constraints.sql...";
-    (result, output) = commands.getstatusoutput("psql projectb < add_constraints.sql");
+    (result, output) = commands.getstatusoutput("psql %s < add_constraints.sql" % (Cnf["DB::Name"]));
     print output
     if (result != 0):
         utils.fubar("psql invocation failed!\n%s" % (output), result);
@@ -414,4 +610,4 @@ def main ():
     return;
 
 if __name__ == '__main__':
-    main()
+    main();
