@@ -1,0 +1,312 @@
+#!/usr/bin/env python
+
+# Dependency check proposed-updates
+# Copyright (C) 2001  James Troup <james@nocrew.org>
+# $Id: jeri,v 1.1 2001-11-04 20:41:50 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# <aj> ARRRGGGHHH
+# <aj> what's wrong with me!?!?!?
+# <aj> i was just nice to some mormon doorknockers!!!
+# <Omnic> AJ?!?!
+# <aj> i know!!!!!
+# <Omnic> I'm gonna have to kick your ass when you come over
+# <Culus> aj: GET THE HELL OUT OF THE CABAL! :P
+
+################################################################################
+
+import pg, sys, os, string
+import utils, db_access
+import apt_pkg, apt_inst;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+stable = {};
+stable_virtual = {};
+architectures = None;
+
+################################################################################
+
+def pp_dep (deps):
+    pp_deps = [];
+    for atom in deps:
+        (pkg, version, constraint) = atom;
+        if constraint:
+            pp_dep = "%s (%s %s)" % (pkg, constraint, version);
+        else:
+            pp_dep = pkg;
+        pp_deps.append(pp_dep);
+    return string.join(pp_deps, " |");
+
+################################################################################
+
+def d_test (dict, key, positive, negative):
+    if not dict:
+        return negative;
+    if dict.has_key(key):
+        return positive;
+    else:
+        return negative;
+
+################################################################################
+
+def check_dep (depends, dep_type, check_archs, filename, files):
+    pkg_unsat = 0;
+    for arch in check_archs:
+        for parsed_dep in apt_pkg.ParseDepends(depends):
+            unsat = [];
+            for atom in parsed_dep:
+                (dep, version, constraint) = atom;
+                # As a real package?
+                if stable.has_key(dep):
+                    if stable[dep].has_key(arch):
+                        if apt_pkg.CheckDep(stable[dep][arch], constraint, version):
+                            if Options["debug"]:
+                                print "Found %s as a real package." % (pp_dep(parsed_dep));
+                            unsat = 0;
+                            break;
+                # As a virtual?
+                if stable_virtual.has_key(dep):
+                    if stable_virtual[dep].has_key(arch):
+                        if not constraint and not version:
+                            if Options["debug"]:
+                                print "Found %s as a virtual package." % (pp_dep(parsed_dep));
+                            unsat = 0;
+                            break;
+                # As part of the same .changes?
+                epochless_version = utils.re_no_epoch.sub('', version)
+                dep_filename = "%s_%s_%s.deb" % (dep, epochless_version, arch);
+                if files.has_key(dep_filename):
+                    if Options["debug"]:
+                        print "Found %s in the same upload." % (pp_dep(parsed_dep));
+                    unsat = 0;
+                    break;
+                # Not found...
+                # [FIXME: must be a better way ... ]
+                error = "%s not found. [Real: " % (pp_dep(parsed_dep))
+                if stable.has_key(dep):
+                    if stable[dep].has_key(arch):
+                        error = error + "%s:%s:%s" % (dep, arch, stable[dep][arch]);
+                    else:
+                        error = error + "%s:-:-" % (dep);
+                else:
+                    error = error + "-:-:-";
+                error = error + ", Virtual: ";
+                if stable_virtual.has_key(dep):
+                    if stable_virtual[dep].has_key(arch):
+                        error = error + "%s:%s" % (dep, arch);
+                    else:
+                        error = error + "%s:-";
+                else:
+                    error = error + "-:-";
+                error = error + ", Upload: ";
+                if files.has_key(dep_filename):
+                    error = error + "yes";
+                else:
+                    error = error + "no";
+                error = error + "]";
+                unsat.append(error);
+
+            if unsat:
+                sys.stderr.write("MWAAP! %s: '%s' %s can not be satisifed:\n" % (filename, pp_dep(parsed_dep), dep_type));
+                for error in unsat:
+                    sys.stderr.write("  %s\n" % (error));
+                pkg_unsat = 1;
+
+    return pkg_unsat;
+
+def check_package(filename, files):
+    try:
+        control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename)));
+    except:
+        utils.warn("%s: debExtractControl() raised %s." % (filename, sys.exc_type));
+        return 1;
+    Depends = control.Find("Depends");
+    Pre_Depends = control.Find("Pre-Depends");
+    Recommends = control.Find("Recommends");
+    pkg_arch = control.Find("Architecture");
+    base_file = os.path.basename(filename);
+    if pkg_arch == "all":
+        check_archs = architectures;
+    else:
+        check_archs = [pkg_arch];
+
+    pkg_unsat = 0;
+    if Pre_Depends:
+        pkg_unsat = pkg_unsat + check_dep(Pre_Depends, "pre-dependency", check_archs, base_file, files);
+
+    if Depends:
+        pkg_unsat = pkg_unsat + check_dep(Depends, "dependency", check_archs, base_file, files);
+    #if Recommends:
+    #pkg_unsat = pkg_unsat + check_dep(Recommends, "recommendation", check_archs, base_file, files);
+
+    return pkg_unsat;
+
+################################################################################
+
+def pass_fail (filename, result):
+    if not Options["quiet"]:
+        print "%s:" % (os.path.basename(filename)),
+        if result:
+            print "FAIL";
+        else:
+            print "ok";
+
+################################################################################
+
+def check_changes (filename):
+    try:
+        changes = utils.parse_changes(filename, 0)
+        files = utils.build_file_list(changes, "");
+    except:
+        utils.warn("Error parsing changes file '%s'" % (filename));
+        return;
+
+    result = 0;
+
+    # Move to the pool directory
+    cwd = os.getcwd();
+    file = files.keys()[0];
+    pool_dir = Cnf["Dir::PoolDir"] + '/' + utils.poolify(changes["source"], files[file]["component"]);
+    os.chdir(pool_dir);
+
+    changes_result = 0;
+    for file in files.keys():
+        if file[-4:] == ".deb":
+            result = check_package(file, files);
+            if Options["verbose"]:
+                pass_fail(file, result);
+            changes_result = changes_result + result;
+
+    pass_fail (filename, changes_result);
+
+    # Move back
+    os.chdir(cwd);
+
+################################################################################
+
+def check_deb (filename):
+    result = check_package(filename, {});
+    pass_fail(filename, result);
+
+
+################################################################################
+
+def check_joey (filename):
+    file = utils.open_file(filename);
+
+    cwd = os.getcwd();
+    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::RootDir"]));
+
+    for line in file.readlines():
+        line = line[:-1];
+        if string.find(line, 'install') != -1:
+            split_line = string.split(line);
+            install_type = split_line[0];
+            if [ "install", "install-u", "sync-install" ].count(install_type) == 0:
+                utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line));
+            changes_filename = split_line[1]
+            if len(split_line) != 2:
+                utils.fubar("Parse error (more than 2 elements): %s" % (line));
+            if Options["debug"]:
+                print "Processing %s..." % (changes_filename);
+            check_changes(changes_filename);
+
+    os.chdir(cwd);
+
+################################################################################
+
+def parse_packages():
+    global stable, stable_virtual, architectures;
+
+    # Parse the Packages files (since it's a sub-second operation on auric)
+    suite = "stable";
+    stable = {};
+    components = Cnf.SubTree("Suite::%s::Components" % (suite)).List();
+    architectures = Cnf.SubTree("Suite::%s::Architectures" % (suite)).List();
+    for arch in [ "source", "all" ]:
+        if architectures.count(arch):
+            architectures.remove(arch);
+    for component in components:
+        for architecture in architectures:
+            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::RootDir"], suite, component, architecture);
+            packages = utils.open_file(filename, 'r');
+            Packages = apt_pkg.ParseTagFile(packages);
+            while Packages.Step():
+                package = Packages.Section.Find('Package');
+                version = Packages.Section.Find('Version');
+                provides = Packages.Section.Find('Provides');
+                if not stable.has_key(package):
+                    stable[package] = {};
+                stable[package][architecture] = version;
+                if provides:
+                    for virtual_pkg in string.split(provides,","):
+                        virtual_pkg = string.strip(virtual_pkg);
+                        if not stable_virtual.has_key(virtual_pkg):
+                            stable_virtual[virtual_pkg] = {};
+                        stable_virtual[virtual_pkg][architecture] = "NA";
+
+################################################################################
+
+def main ():
+    global Cnf, projectB, Options;
+
+    apt_pkg.init();
+
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('q',"quiet","Jeri::Options::Quiet"),
+                 ('v',"verbose","Jeri::Options::Verbose"),
+                 ('D',"debug","Jeri::Options::Debug"),
+                 ('h',"help","Jeri::Options::Help"),
+                 ('V',"version","Jeri::Options::Version")];
+    for i in [ "quiet", "verbose", "help", "debug" ]:
+        Cnf["Jeri::Options::%s" % (i)] = "";
+
+    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Jeri::Options")
+
+    if Options["Help"]:
+        usage(0);
+    if arguments == []:
+        utils.fubar("need at least one package name as an argument.");
+
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    db_access.init(Cnf, projectB);
+
+    print "Parsing packages files...",
+    parse_packages();
+    print "done.";
+
+    for file in arguments:
+        if file[-8:] == ".changes":
+            check_changes(file);
+        elif file[-4:] == ".deb":
+            check_deb(file);
+        elif file[-5:] == ".joey":
+            check_joey(file);
+        else:
+            utils.fubar("Unrecognised file type: '%s'." % (file));
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
