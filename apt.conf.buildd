@@ -1,0 +1,29 @@
+Dir 
+{
+   ArchiveDir "/org/incoming.debian.org/buildd/";
+   OverrideDir "/org/ftp.debian.org/scripts/override/";
+   CacheDir "/org/ftp.debian.org/database/";
+};
+
+Default
+{
+   Packages::Compress ". gzip";
+   Sources::Compress ". gzip";
+   DeLinkLimit 0;
+   MaxContentsChange 12000;
+   FileMode 0664;
+}
+
+bindirectory "incoming"
+{
+   Packages "Packages";
+   Sources "Sources";
+   Contents " ";
+
+   FileList "/org/ftp.debian.org/database/dists/unstable_accepted.list";
+
+   BinOverride "override.sid.all3";
+   BinCacheDB "packages-accepted.db";
+   PathPrefix "";
+   Packages::Extensions ".deb .udeb";
+};
