@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Utility functions for katie
-# Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.52 2005-01-14 14:07:17 ajt Exp $
+# Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
+# $Id: katie.py,v 1.53 2005-01-18 22:18:55 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -265,7 +265,9 @@ class Katie:
                 if files[file].has_key("othercomponents"):
                     summary += "WARNING: Already present in %s distribution.\n" % (files[file]["othercomponents"])
                 if files[file]["type"] == "deb":
-                    summary += apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)))["Description"] + '\n';
+                    deb_fh = utils.open_file(file)
+                    summary += apt_pkg.ParseSection(apt_inst.debExtractControl(deb_fh))["Description"] + '\n';
+                    deb_fh.close()
             else:
                 files[file]["pool name"] = utils.poolify (changes.get("source",""), files[file]["component"])
                 destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
@@ -551,7 +553,7 @@ distribution.""";
                 continue;
             dest_file = os.path.join(Cnf["Dir::Queue::Reject"], file);
             try:
-                os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
+                dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
             except OSError, e:
                 # File exists?  Let's try and move it to the morgue
                 if errno.errorcode[e.errno] == 'EEXIST':
@@ -565,7 +567,7 @@ distribution.""";
                         return;
                     utils.move(dest_file, morgue_file, perms=0660);
                     try:
-                        os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
+                        dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
                     except OSError, e:
                         # Likewise
                         utils.warn("**WARNING** failed to claim %s in the reject directory." % (file));
@@ -575,6 +577,7 @@ distribution.""";
             # If we got here, we own the destination file, so we can
             # safely overwrite it.
             utils.move(file, dest_file, 1, perms=0660);
+            os.close(dest_fd)
 
     ###########################################################################
 
@@ -587,9 +590,9 @@ distribution.""";
             answer = 'E';
             while answer == 'E':
                 os.system("%s %s" % (editor, temp_filename))
-                file = utils.open_file(temp_filename);
-                reject_message = "".join(file.readlines());
-                file.close();
+                temp_fh = utils.open_file(temp_filename);
+                reject_message = "".join(temp_fh.readlines());
+                temp_fh.close();
                 print "Reject message:";
                 print utils.prefix_multi_line_string(reject_message,"  ",include_blank_lines=1);
                 prompt = "[R]eject, Edit, Abandon, Quit ?"
@@ -623,13 +626,13 @@ distribution.""";
         # so let's just raise an exception ...
         if os.path.exists(reason_filename):
             os.unlink(reason_filename);
-        reason_file = os.open(reason_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
+        reason_fd = os.open(reason_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
 
         if not manual:
             Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"];
             Subst["__MANUAL_REJECT_MESSAGE__"] = "";
             Subst["__CC__"] = "X-Katie-Rejection: automatic (moo)";
-            os.write(reason_file, reject_message);
+            os.write(reason_fd, reject_message);
             reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.rejected");
         else:
             # Build up the rejection email
@@ -640,9 +643,9 @@ distribution.""";
             Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
             reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.rejected");
             # Write the rejection email out as the <foo>.reason file
-            os.write(reason_file, reject_mail_message);
+            os.write(reason_fd, reject_mail_message);
 
-        os.close(reason_file);
+        os.close(reason_fd)
 
         # Send the rejection mail if appropriate
         if not Cnf["Dinstall::Options::No-Mail"]:
@@ -951,7 +954,9 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     if len(ql) > 1:
                         for i in ql:
                             old_file = i[0] + i[1];
-                            actual_md5 = apt_pkg.md5sum(utils.open_file(old_file));
+                            old_file_fh = utils.open_file(old_file)
+                            actual_md5 = apt_pkg.md5sum(old_file_fh);
+                            old_file_fh.close()
                             actual_size = os.stat(old_file)[stat.ST_SIZE];
                             if actual_md5 == dsc_files[dsc_file]["md5sum"] and actual_size == int(dsc_files[dsc_file]["size"]):
                                 x = i;
@@ -959,7 +964,9 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                                 legacy_source_untouchable[i[3]] = "";
 
                     old_file = x[0] + x[1];
-                    actual_md5 = apt_pkg.md5sum(utils.open_file(old_file));
+                    old_file_fh = utils.open_file(old_file)
+                    actual_md5 = apt_pkg.md5sum(old_file_fh);
+                    old_file_fh.close()
                     actual_size = os.stat(old_file)[stat.ST_SIZE];
                     found = old_file;
                     suite_type = x[2];
@@ -982,7 +989,9 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                         for dir in [ "Accepted", "New", "Byhand" ]:
                             in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (dir)],dsc_file);
                             if os.path.exists(in_otherdir):
-                                actual_md5 = apt_pkg.md5sum(utils.open_file(in_otherdir));
+                                in_otherdir_fh = utils.open_file(in_otherdir)
+                                actual_md5 = apt_pkg.md5sum(in_otherdir_fh);
+                                in_otherdir_fh.close()
                                 actual_size = os.stat(in_otherdir)[stat.ST_SIZE];
                                 found = in_otherdir;
                                 self.pkg.orig_tar_gz = in_otherdir;
