@@ -1,0 +1,22 @@
+Index: katie
+===================================================================
+RCS file: /cvs/dak/dak/katie,v
+retrieving revision 1.28
+diff -u -r1.28 katie
+--- katie	2001/02/06 00:39:44	1.28
++++ katie	2001/02/09 18:14:49
+@@ -102,7 +102,13 @@
+ def check_signature (filename):
+     global reject_message
+ 
+-    (result, output) = commands.getstatusoutput("gpg --emulate-md-encode-bug --batch --no-options --no-default-keyring --always-trust --keyring=%s --keyring=%s < %s >/dev/null" % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename))
++    if Cnf.FindB("Dinstall::NoSigCheck"):
++	return 1
++    keyrings = ""
++    for keyring in Cnf.ValueList("Dinstall::Keyrings"):
++	keyrings = keyrings + " --keyring " + keyring;
++
++    (result, output) = commands.getstatusoutput("gpg --emulate-md-encode-bug --batch --no-options --no-default-keyring --always-trust %s < %s >/dev/null" % (keyrings, filename))
+     if (result != 0):
+         reject_message = "Rejected: GPG signature check failed on `%s'.\n%s\n" % (os.path.basename(filename), output)
+         return 0
