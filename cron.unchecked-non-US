@@ -1,0 +1,19 @@
+#! /bin/sh
+
+set -e
+export SCRIPTVARS=/org/non-us.debian.org/katie/vars-non-US
+. $SCRIPTVARS
+
+cd $unchecked
+
+changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+report=$queuedir/REPORT
+timestamp=$(date "+%Y-%m-%d %H:%M")
+
+if [ ! -z "$changes" ]; then
+  echo "$timestamp": "$changes"  >> $report
+  jennifer -a $changes >> $report
+  echo "--" >> $report
+else
+  echo "$timestamp": Nothing to do >> $report
+fi;

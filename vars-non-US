@@ -8,7 +8,9 @@ archs="alpha arm hppa hurd-i386 i386 m68k powerpc sparc mips mipsel sh"
 masterdir=$nonushome/katie
 overridedir=$nonushome/scripts/override
 dbdir=$nonushome/database/
-incoming=$nonushome/incoming
+queuedir=$nonushome/queue/
+unchecked=$queuedir/unchecked/
+incoming=$nonushome/incoming/
 
 packagesfiles=packagesfiles-non-US
 sourcesfiles=sourcesfiles-non-US
