@@ -1,0 +1,19 @@
+# locations used by many scripts
+
+base=/org/security.debian.org
+masterdir=$base/katie/
+overridedir=$base/override
+queuedir=$base/queue/
+accepted=$queuedir/accepted/
+done=$queuedir/done/
+
+uploadhost=ftp-master.debian.org
+uploaddir=/pub/UploadQueue/
+
+components="main non-free contrib"
+suites="potato woody"
+override_types="deb dsc udeb"
+
+PATH=$masterdir:$PATH
+umask 022
+

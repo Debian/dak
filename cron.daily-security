@@ -1,0 +1,60 @@
+#! /bin/sh
+#
+# Executed daily via cron, out of katie's crontab.
+
+set -e
+export SCRIPTVARS=/org/security.debian.org/katie/vars-security
+. $SCRIPTVARS
+
+################################################################################
+
+rsync -ql ftp-master::indices/override\* $overridedir
+
+cd $overridedir
+find . -name override\*.gz -type f -maxdepth 1 -mindepth 1 | xargs gunzip -f
+find . -type l -maxdepth 1 -mindepth 1 | xargs rm
+
+rm -fr non-US
+mkdir non-US
+cd non-US
+rsync -ql non-us::indices/override\* .
+find . -name override\*.gz -type f -maxdepth 1 -mindepth 1 | xargs gunzip
+find . -type l -maxdepth 1 -mindepth 1 | xargs rm
+for i in *; do
+    if [ -f ../$i ]; then
+	cat $i >> ../$i;
+    fi;
+done
+cd ..
+rm -fr non-US
+
+for suite in $suites; do
+    for component in $components; do
+	for override_type in $override_types; do
+	    case $override_type in
+	       deb) type="" ;;
+	       dsc) type=".src" ;;
+	       udeb) type="skip" ;;
+	    esac
+	    if [ ! "$type" = "skip" ]; then
+		$masterdir/natalie -q -S -t $override_type -s $suite -c $component < override.$suite.$component$type
+	    fi
+	done
+    done
+done
+
+################################################################################
+
+cd $masterdir
+shania
+rhona
+apt-ftparchive -q clean apt.conf-security
+
+pg_dump obscurity > /org/security.debian.org/katie-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+
+# Vacuum the database
+set +e
+echo "VACUUM; VACUUM ANALYZE;" | psql obscurity 2>&1 | egrep -v "^NOTICE:  Skipping \"pg_.*only table or database owner can VACUUM it$|^VACUUM$"
+set -e
+
+################################################################################

@@ -1,0 +1,283 @@
+#!/usr/bin/env python
+
+# Wrapper for Debian Security team
+# Copyright (C) 2002  James Troup <james@nocrew.org>
+# $Id: amber,v 1.1 2002-05-14 15:24:45 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+
+################################################################################
+
+# <aj> neuro: <usual question>?
+# <neuro> aj: PPG: the movie!  july 3!
+# <aj> _PHWOAR_!!!!!
+# <aj> (you think you can distract me, and you're right)
+# <aj> urls?!
+# <aj> promo videos?!
+# <aj> where, where!?
+
+################################################################################
+
+import commands, pwd, os, string, sys, time;
+import apt_pkg;
+import katie, utils;
+
+################################################################################
+
+Cnf = None;
+Katie = None;
+
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: amber ADV_NUMBER CHANGES_FILE[...]
+Install CHANGES_FILE(s) as security advisory ADV_NUMBER
+
+  -h, --help                 show this help and exit
+
+"""
+    sys.exit(exit_code)
+
+################################################################################
+
+def get_file_list(arguments):
+    file_list = "";
+    for arg in arguments:
+        arg = utils.validate_changes_file_arg(arg);
+        Katie.pkg.changes_file = arg;
+	Katie.init_vars();
+        Katie.update_vars();
+        files = Katie.pkg.files;
+        changes = Katie.pkg.changes;
+        for file in files.keys():
+            poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
+                                    utils.poolify(changes["source"], files[file]["component"]),
+                                    file);
+            file_list = "%s %s" % (file_list, poolname);
+    file_list = "%s %s" % (file_list, string.join(map(os.path.abspath, arguments)));
+    return file_list;
+
+################################################################################
+
+def join_with_commas_and(list):
+	if len(list) == 0: return "nothing";
+	if len(list) == 1: return list[0];
+	return string.join(list[:-1], ", ") + " and " + list[-1];
+
+######################################################################
+
+# Originally written by aj, nih-ishly merged into amber by me.
+
+def make_advisory(advisory_nr, changes_files):
+    adv_packages = [];
+    updated_pkgs = {};  # updated_pkgs[distro][arch][file] = {path,md5,size}
+
+    for arg in changes_files:
+        arg = utils.validate_changes_file_arg(arg);
+	Katie.pkg.changes_file = arg;
+	Katie.init_vars();
+	Katie.update_vars();
+
+	src = Katie.pkg.changes["source"];
+	if src not in adv_packages:
+	    adv_packages = adv_packages + [src];
+
+	suites = Katie.pkg.changes["distribution"].keys();
+	for suite in suites:
+	    if not updated_pkgs.has_key(suite):
+                updated_pkgs[suite] = {};
+
+	files = Katie.pkg.files;
+	for file in files.keys():
+	    arch = files[file]["architecture"];
+	    md5 = files[file]["md5sum"];
+	    size = files[file]["size"];
+	    poolname = Cnf["Dir::PoolRoot"] + \
+	    	utils.poolify(src, files[file]["component"]);
+	    if arch == "source" and file[-4:] == ".dsc":
+	        dscpoolname = poolname;
+	    for suite in suites:
+	        if not updated_pkgs[suite].has_key(arch):
+		    updated_pkgs[suite][arch] = {}
+		updated_pkgs[suite][arch][file] = {
+                    "md5": md5, "size": size,
+                    "poolname": poolname };
+
+	dsc_files = Katie.pkg.dsc_files;
+	for file in dsc_files.keys():
+	    arch = "source"
+	    if not dsc_files[file].has_key("files id"):
+                continue;
+
+	    # otherwise, it's already in the pool and needs to be
+	    # listed specially
+	    md5 = dsc_files[file]["md5sum"];
+	    size = dsc_files[file]["size"];
+	    for suite in suites:
+	        if not updated_pkgs[suite].has_key(arch):
+		    updated_pkgs[suite][arch] = {};
+		updated_pkgs[suite][arch][file] = {
+                    "md5": md5, "size": size,
+                    "poolname": dscpoolname };
+
+    if os.environ.has_key("SUDO_UID"):
+        whoami = string.atol(os.environ["SUDO_UID"]);
+    else:
+        whoami = os.getuid();
+    whoamifull = pwd.getpwuid(whoami);
+    username = string.split(whoamifull[4], ",")[0];
+
+    Subst = {
+    	"__ADVISORY__": advisory_nr,
+	"__WHOAMI__": username,
+	"__DATE__": time.strftime("%B %d, %Y", time.gmtime(time.time())),
+	"__PACKAGE__": string.join(adv_packages,", ")
+    };
+
+    adv = "";
+    archive = Cnf["Archive::%s::PrimaryMirror" % (utils.where_am_i())];
+    for suite in updated_pkgs.keys():
+        suite_header = "%s %s (%s)" % (Cnf["Dinstall::MyDistribution"],
+                                       Cnf["Suite::%s::Version" % suite], suite);
+        adv = adv + "%s\n%s\n\n" % (suite_header, "-"*len(suite_header));
+
+	arches = Cnf.ValueList("Suite::%s::Architectures" % suite);
+	if "source" in arches:
+            arches.remove("source");
+	if "all" in arches:
+            arches.remove("all");
+	arches.sort();
+
+	adv = adv + "  %s was released for %s.\n\n" % (
+		string.capitalize(suite), join_with_commas_and(arches));
+
+	for a in ["source", "all"] + arches:
+	    if not updated_pkgs[suite].has_key(a):
+                continue;
+
+	    if a == "source":
+	    	adv = adv + "  Source archives:\n\n";
+	    elif a == "all":
+	        adv = adv + "  Architecture independent packages:\n\n";
+	    else:
+	        adv = adv + "  %s architecture (%s)\n\n" % (a,
+			Cnf["Architectures::%s" % a]);
+
+	    for file in updated_pkgs[suite][a].keys():
+		adv = adv + "    http://%s/%s%s\n" % (
+				archive, updated_pkgs[suite][a][file]["poolname"], file);
+		adv = adv + "      Size/MD5 checksum: %8s %s\n" % (
+			updated_pkgs[suite][a][file]["size"],
+			updated_pkgs[suite][a][file]["md5"]);
+	    adv = adv + "\n";
+    adv = string.rstrip(adv);
+
+    Subst["__ADVISORY_TEXT__"] = adv;
+
+    adv = utils.TemplateSubst(Subst, Cnf["Dir::Templates"]+"/amber.advisory");
+    utils.send_mail (adv, "");
+
+######################################################################
+
+def init():
+    global Cnf, Katie;
+
+    apt_pkg.init();
+    Cnf = utils.get_conf();
+
+    Arguments = [('h',"help","Amber::Options::Help")];
+
+    for i in [ "help" ]:
+        Cnf["Amber::Options::%s" % (i)] = "";
+
+    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Katie = katie.Katie(Cnf);
+
+    if Cnf["Amber::Options::Help"]:
+        usage(0);
+
+    if not arguments:
+        usage(1);
+
+    advisory_number = arguments[0];
+    changes_files = sys.argv[2:];
+    if advisory_number[-8:] == ".changes":
+        utils.warn("first argument must be the advisory number.");
+        usage(1);
+    for file in changes_files:
+        file = utils.validate_changes_file_arg(file);
+    return (advisory_number, changes_files);
+
+######################################################################
+
+def yes_no(prompt):
+    while 1:
+        answer = string.lower(utils.our_raw_input(prompt+" "));
+        if answer == "y" or answer == "n":
+            break;
+        else:
+            print "Invalid answer; please try again.";
+    return answer;
+
+######################################################################
+
+def spawn(command):
+    (result, output) = commands.getstatusoutput(command);
+    if (result != 0):
+        utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, output), result);
+
+######################################################################
+
+
+def main():
+    (advisory_number, changes_files) = init();
+
+    print "About to install the following files: "
+    for file in changes_files:
+        print "  %s" % (file);
+    answer = yes_no("Continue (Y/n)?");
+    if answer == "n":
+        sys.exit(0);
+
+    os.chdir(Cnf["Dir::Queue::Accepted"]);
+    print "Installing packages into the archive...";
+    spawn("%s/katie -pa %s" % (Cnf["Dir::Katie"], string.join(changes_files)));
+    os.chdir(Cnf["Dir::Katie"]);
+    print "Updating file lists for apt-ftparchive...";
+    spawn("./jenna");
+    print "Updating Packages and Sources files...";
+    spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()));
+    print "Updating Release files...";
+    spawn("./ziyi");
+
+    os.chdir(Cnf["Dir::Queue::Done"]);
+    print "Generating template advisory...";
+    make_advisory(advisory_number, changes_files);
+
+    answer = yes_no("Upload to ftp-master (Y/n)? ");
+    if answer == "y":
+        upload_files = get_file_list(changes_files);
+        print "Uploading files...";
+        spawn("lftp -c 'open %s; cd %s; put %s'" % (Cnf["Amber::UploadHost"],
+                                                    Cnf["Amber::UploadDir"],
+                                                    upload_files));
+
+################################################################################
+
+if __name__ == '__main__':
+    main();
+
+################################################################################

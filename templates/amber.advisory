@@ -1,0 +1,34 @@
+------------------------------------------------------------------------
+Debian Security Advisory __ADVISORY__
+http://www.debian.org/security/
+
+Issued by __WHOAMI__ <security@debian.org>
+__DATE__
+------------------------------------------------------------------------
+
+Package        : __PACKAGE__
+Problem type   : 
+Debian-specific: 
+
+...
+
+__ADVISORY_TEXT__
+
+------------------------------------------------------------------------
+
+Obtaining updates:
+
+  By hand:
+
+    wget URL
+        will fetch the file for you.
+    dpkg -i FILENAME.deb
+        will install the fetched file.
+
+  With apt:
+
+    deb http://security.debian.org/ potato/updates main
+        added to /etc/apt/sources.list will give you access to potato updates.
+    deb http://security.debian.org/ woody/updates main
+        added to /etc/apt/sources.list will give you access to woody updates.
+

@@ -1,0 +1,36 @@
+Dir 
+{
+   ArchiveDir "/org/security.debian.org/ftp/";
+   OverrideDir "/org/security.debian.org/override/";
+   CacheDir "/org/security.debian.org/katie-database/";
+};
+
+Default
+{
+   Packages::Compress ". gzip";
+   Sources::Compress "gzip";
+   DeLinkLimit 0;
+   FileMode 0664;
+}
+
+tree "dists/potato/updates"
+{
+   FileList "/org/security.debian.org/katie-database/dists/potato_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/security.debian.org/katie-database/dists/potato_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm i386 m68k powerpc sparc source";
+   BinOverride "override.potato.$(SECTION)";
+   SrcOverride "override.potato.$(SECTION).src";
+   Contents " ";
+};
+
+tree "dists/woody/updates"
+{
+   FileList "/org/security.debian.org/katie-database/dists/woody_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/security.debian.org/katie-database/dists/woody_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm hppa i386 ia64 mips mipsel m68k powerpc s390 sparc source";
+   BinOverride "override.woody.$(SECTION)";
+   SrcOverride "override.woody.$(SECTION).src";
+   Contents " ";
+};
