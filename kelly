@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.8 2003-03-14 19:06:02 troup Exp $
+# $Id: kelly,v 1.9 2003-07-15 17:29:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.8 $";
+kelly_version = "$Revision: 1.9 $";
 
 Cnf = None;
 Options = None;
@@ -110,6 +110,10 @@ def reject (str, prefix="Rejected: "):
 
 def check():
     for file in files.keys():
+        # The .orig.tar.gz can disappear out from under us is it's a
+        # duplicate of one in the archive.
+        if not files.has_key(file):
+            continue;
         # Check that the source still exists
         if files[file]["type"] == "deb":
             source_version = files[file]["source version"];
