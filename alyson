@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Sync the ISC configuartion file and the SQL database
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: alyson,v 1.11 2003-01-02 18:10:02 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: alyson,v 1.12 2003-09-07 13:52:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -158,14 +158,14 @@ def main ():
     for component in Cnf.SubTree("Component").List():
         if Cnf["Natalie::ComponentPosition"] == "prefix":
             suffix = "";
-            if component != 'main':
+            if component != "main":
                 prefix = component + '/';
             else:
                 prefix = "";
         else:
             prefix = "";
             component = component.replace("non-US/", "");
-            if component != 'main':
+            if component != "main":
                 suffix = '/' + component;
             else:
                 suffix = "";
