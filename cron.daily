@@ -39,14 +39,12 @@ update-mailingliststxt
 
 ################################################################################
 
-cd $incoming
+cd $accepted
 rm -f REPORT
-katie -pak *.changes | direport | tee REPORT | \
+katie -pa *.changes | tee REPORT | \
      mail -s "Install for $(date +%D)" ftpmaster@ftp-master.debian.org
 chgrp debadmin REPORT
 chmod 664 REPORT
-
-catherine
 
 cd $masterdir
 symlinks -d -r $ftpdir

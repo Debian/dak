@@ -14,6 +14,10 @@ More Urgent
     * conficlits
     * notification/stats to admin daily
 
+  o katie doesn't recognise binonlyNMUs correctly in terms of telling
+    who their source is; source-must-exist does, but the info is not
+    propogated down.
+
   o DONE
 
   o stable installs are FUBAR
