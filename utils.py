@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.24 2001-05-31 02:19:30 troup Exp $
+# $Id: utils.py,v 1.25 2001-06-01 00:17:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,8 @@ cant_open_exc = "Can't read file.";
 unknown_hostname_exc = "Unknown hostname";
 cant_overwrite_exc = "Permission denied; can't overwrite existent file."
 file_exists_exc = "Destination file exists";
+send_mail_invalid_args_exc = "Both arguments are non-null.";
+sendmail_failed_exc = "Sendmail invocation failed";
 
 ######################################################################################
 
@@ -256,22 +258,23 @@ def send_mail (message, filename):
 
 	# Sanity check arguments
 	if message != "" and filename != "":
-		sys.stderr.write ("send_mail() can't be called with both arguments as non-null! (`%s' and `%s')\n%s" % (message, filename))
-		sys.exit(1)
+            raise send_mail_invalid_args_exc;
+
 	# If we've been passed a string dump it into a temporary file
 	if message != "":
-		filename = tempfile.mktemp()
-		fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
-		os.write (fd, message)
-		os.close (fd)
+            filename = tempfile.mktemp();
+            fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+            os.write (fd, message);
+            os.close (fd);
+
 	# Invoke sendmail
-	(result, output) = commands.getstatusoutput("%s < %s" % (sendmail_command, filename))
+	(result, output) = commands.getstatusoutput("%s < %s" % (sendmail_command, filename));
 	if (result != 0):
-		sys.stderr.write ("Sendmail invocation (`%s') failed for `%s'!\n%s" % (sendmail_command, filename, output))
-		sys.exit(result)
+            raise sendmail_failed_exc, output;
+
 	# Clean up any temporary files
 	if message !="":
-		os.unlink (filename)
+            os.unlink (filename);
 
 ######################################################################################
 
