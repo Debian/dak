@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.4 2002-02-22 02:20:06 troup Exp $
+# $Id: lisa,v 1.5 2002-03-26 22:05:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,12 +53,12 @@
 
 ################################################################################
 
-import errno, os, readline, string, stat, sys, tempfile;
+import copy, errno, os, readline, string, stat, sys, tempfile;
 import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.4 $";
+lisa_version = "$Revision: 1.5 $";
 
 Cnf = None;
 Options = None;
@@ -113,7 +113,7 @@ def determine_new (changes, files):
         if f.has_key("othercomponents"):
             new[pkg]["othercomponents"] = f["othercomponents"];
 
-    for suite in changes["distribution"].keys():
+    for suite in changes["suite"].keys():
         suite_id = db_access.get_suite_id(suite);
         for pkg in new.keys():
             component_id = db_access.get_component_id(new[pkg]["component"]);
@@ -126,7 +126,7 @@ def determine_new (changes, files):
                         del files[file]["new"];
                 del new[pkg];
 
-    if changes["distribution"].has_key("stable"):
+    if changes["suite"].has_key("stable"):
         print "WARNING: overrides will be added for stable!";
     for pkg in new.keys():
         if new[pkg].has_key("othercomponents"):
@@ -495,7 +495,7 @@ def add_overrides (new):
     files = Katie.pkg.files;
 
     projectB.query("BEGIN WORK");
-    for suite in changes["distribution"].keys():
+    for suite in changes["suite"].keys():
         suite_id = db_access.get_suite_id(suite);
         for pkg in new.keys():
             component_id = db_access.get_component_id(new[pkg]["component"]);
@@ -520,14 +520,17 @@ def do_new():
     files = Katie.pkg.files;
     changes = Katie.pkg.changes;
 
+    # Make a copy of distribution we can happily trample on
+    changes["suite"] = copy.copy(changes["distribution"]);
+
     # Fix up the list of target suites
-    for suite in changes["distribution"].keys():
+    for suite in changes["suite"].keys():
         override = Cnf.Find("Suite::%s::OverrideSuite" % (suite));
         if override:
-            del changes["distribution"][suite];
-            changes["distribution"][override] = 1;
+            del changes["suite"][suite];
+            changes["suite"][override] = 1;
     # Validate suites
-    for suite in changes["distribution"].keys():
+    for suite in changes["suite"].keys():
         suite_id = db_access.get_suite_id(suite);
         if suite_id == -1:
             utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite));
