@@ -4,36 +4,63 @@ __BCC__
 Subject: Template Advisory __ADVISORY__
 
 ------------------------------------------------------------------------
-Debian Security Advisory __ADVISORY__
-http://www.debian.org/security/
-
-Issued by __WHOAMI__ <security@debian.org>
+Debian Security Advisory __ADVISORY__              security@debian.org
+http://www.debian.org/security/                         __WHOAMI__
 __DATE__
 ------------------------------------------------------------------------
 
 Package        : __PACKAGE__
-Problem type   : 
-Debian-specific: 
+Vulnerability  : XXX
+Problem type   : XXX
+Debian-specific: XXX
+CVE Id(s)      : XXX
 
 ...
 
-__ADVISORY_TEXT__
+[single issue]
+For the stable distribution (woody), this problem has been fixed in version XXX
 
-------------------------------------------------------------------------
+For the old stable distribution (potato), this problem has been fixed in
+version XXX
 
-Obtaining updates:
+[multiple issues]
+For the stable distribution (woody), these problems have been fixed in version
+XXX
 
-  By hand:
+For the old stable distribution (potato), these problems have been fixed in
+version XXX
+
+
+We recommend that you upgrade your __PACKAGE__ package.
+
+Upgrade instructions
+--------------------
+
+  To perform automated upgrades using apt:
+
+    deb http://security.debian.org/ woody/updates main
+        added to /etc/apt/sources.list will give you access to woody updates.
+
+    deb http://security.debian.org/ potato/updates main
+        added to /etc/apt/sources.list will give you access to potato updates.
+
+    apt-get update
+        will update apt's package database of packages and versions
+
+    apt-get upgrade
+        will install corrected packages
+
+  Alternatively, to obtain and install packages by hand:
 
     wget URL
         will fetch the file for you.
     dpkg -i FILENAME.deb
         will install the fetched file.
 
-  With apt:
 
-    deb http://security.debian.org/ potato/updates main
-        added to /etc/apt/sources.list will give you access to potato updates.
-    deb http://security.debian.org/ woody/updates main
-        added to /etc/apt/sources.list will give you access to woody updates.
+__ADVISORY_TEXT__
+
+-------------------------------------------------------------------------------
+Mailing list: http://lists.debian.org/debian-security-announce/
+Package info: 'apt-cache show <pkg>' and http://packages.debian.org/<pkg>
 
