@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.69 2004-06-24 00:41:39 troup Exp $
+# $Id: utils.py,v 1.70 2004-11-27 13:32:16 troup Exp $
 
 ################################################################################
 
@@ -40,7 +40,7 @@ re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)$");
 
 re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)");
 re_multi_line_field = re.compile(r"^\s(.*)");
-re_taint_free = re.compile(r"^[-+~\.\w]+$");
+re_taint_free = re.compile(r"^[-+~/\.\w]+$");
 
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>");
 
@@ -137,24 +137,27 @@ def extract_component_from_section(section):
 
 ################################################################################
 
-# Parses a changes file and returns a dictionary where each field is a
-# key.  The mandatory first argument is the filename of the .changes
-# file.
+def parse_changes(filename, signing_rules=0):
+    """Parses a changes file and returns a dictionary where each field is a
+key.  The mandatory first argument is the filename of the .changes
+file.
 
-# dsc_whitespace_rules is an optional boolean argument which defaults
-# to off.  If true, it turns on strict format checking to avoid
-# allowing in source packages which are unextracable by the
-# inappropriately fragile dpkg-source.
-#
-# The rules are:
-#
-#   o The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
-#     followed by any PGP header data and must end with a blank line.
-#
-#   o The data section must end with a blank line and must be followed by
-#     "-----BEGIN PGP SIGNATURE-----".
+signing_rules is an optional argument:
 
-def parse_changes(filename, dsc_whitespace_rules=0):
+ o If signing_rules == -1, no signature is required.
+ o If signing_rules == 0 (the default), a signature is required.
+ o If signing_rules == 1, it turns on the same strict format checking
+   as dpkg-source.
+
+The rules for (signing_rules == 1)-mode are:
+
+  o The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
+    followed by any PGP header data and must end with a blank line.
+
+  o The data section must end with a blank line and must be followed by
+    "-----BEGIN PGP SIGNATURE-----".
+"""
+
     error = "";
     changes = {};
 
@@ -181,7 +184,7 @@ def parse_changes(filename, dsc_whitespace_rules=0):
         index += 1;
         line = indexed_lines[index];
         if line == "":
-            if dsc_whitespace_rules:
+            if signing_rules == 1:
                 index += 1;
                 if index > num_of_lines:
                     raise invalid_dsc_format_exc, index;
@@ -196,13 +199,13 @@ def parse_changes(filename, dsc_whitespace_rules=0):
             break;
         if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
             inside_signature = 1;
-            if dsc_whitespace_rules:
+            if signing_rules == 1:
                 while index < num_of_lines and line != "":
                     index += 1;
                     line = indexed_lines[index];
             continue;
         # If we're not inside the signed data, don't process anything
-        if not inside_signature:
+        if signing_rules >= 0 and not inside_signature:
             continue;
         slf = re_single_line_field.match(line);
         if slf:
@@ -224,7 +227,7 @@ def parse_changes(filename, dsc_whitespace_rules=0):
             continue;
 	error += line;
 
-    if dsc_whitespace_rules and inside_signature:
+    if signing_rules == 1 and inside_signature:
         raise invalid_dsc_format_exc, index;
 
     changes_in.close();
@@ -852,24 +855,38 @@ def gpgv_get_status_output(cmd, status_read, status_write):
 ############################################################
 
 
-def check_signature (filename, reject):
+def check_signature (sig_filename, reject, data_filename="", keyrings=None):
     """Check the signature of a file and return the fingerprint if the
 signature is valid or 'None' if it's not.  The first argument is the
 filename whose signature should be checked.  The second argument is a
 reject function and is called when an error is found.  The reject()
 function must allow for two arguments: the first is the error message,
 the second is an optional prefix string.  It's possible for reject()
-to be called more than once during an invocation of check_signature()."""
+to be called more than once during an invocation of check_signature().
+The third argument is optional and is the name of the files the
+detached signature applies to.  The fourth argument is optional and is
+a *list* of keyrings to use.
+"""
 
     # Ensure the filename contains no shell meta-characters or other badness
-    if not re_taint_free.match(os.path.basename(filename)):
-        reject("!!WARNING!! tainted filename: '%s'." % (filename));
-        return 0;
+    if not re_taint_free.match(sig_filename):
+        reject("!!WARNING!! tainted signature filename: '%s'." % (sig_filename));
+        return None;
 
+    if data_filename and not re_taint_free.match(data_filename):
+        reject("!!WARNING!! tainted data filename: '%s'." % (data_filename));
+        return None;
+
+    if not keyrings:
+        keyrings = (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"])
+
+    # Build the command line
+    status_read, status_write = os.pipe(); 
+    cmd = "gpgv --status-fd %s" % (status_write);
+    for keyring in keyrings:
+        cmd += " --keyring %s" % (keyring);
+    cmd += " %s %s" % (sig_filename, data_filename);
     # Invoke gpgv on the file
-    status_read, status_write = os.pipe();
-    cmd = "gpgv --status-fd %s --keyring %s --keyring %s %s" \
-          % (status_write, Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename);
     (output, status, exit_status) = gpgv_get_status_output(cmd, status_read, status_write);
 
     # Process the status-fd output
@@ -896,35 +913,35 @@ to be called more than once during an invocation of check_signature()."""
 
     # If we failed to parse the status-fd output, let's just whine and bail now
     if internal_error:
-        reject("internal error while performing signature check on %s." % (filename));
+        reject("internal error while performing signature check on %s." % (sig_filename));
         reject(internal_error, "");
         reject("Please report the above errors to the Archive maintainers by replying to this mail.", "");
         return None;
 
     # Now check for obviously bad things in the processed output
     if keywords.has_key("SIGEXPIRED"):
-        reject("The key used to sign %s has expired." % (filename));
+        reject("The key used to sign %s has expired." % (sig_filename));
         bad = 1;
     if keywords.has_key("KEYREVOKED"):
-        reject("The key used to sign %s has been revoked." % (filename));
+        reject("The key used to sign %s has been revoked." % (sig_filename));
         bad = 1;
     if keywords.has_key("BADSIG"):
-        reject("bad signature on %s." % (filename));
+        reject("bad signature on %s." % (sig_filename));
         bad = 1;
     if keywords.has_key("ERRSIG") and not keywords.has_key("NO_PUBKEY"):
-        reject("failed to check signature on %s." % (filename));
+        reject("failed to check signature on %s." % (sig_filename));
         bad = 1;
     if keywords.has_key("NO_PUBKEY"):
         args = keywords["NO_PUBKEY"];
         if len(args) >= 1:
             key = args[0];
-        reject("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, filename));
+        reject("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, sig_filename));
         bad = 1;
     if keywords.has_key("BADARMOR"):
-        reject("ASCII armour of signature was corrupt in %s." % (filename));
+        reject("ASCII armour of signature was corrupt in %s." % (sig_filename));
         bad = 1;
     if keywords.has_key("NODATA"):
-        reject("no signature found in %s." % (filename));
+        reject("no signature found in %s." % (sig_filename));
         bad = 1;
 
     if bad:
@@ -932,7 +949,7 @@ to be called more than once during an invocation of check_signature()."""
 
     # Next check gpgv exited with a zero return code
     if exit_status:
-        reject("gpgv failed while checking %s." % (filename));
+        reject("gpgv failed while checking %s." % (sig_filename));
         if status.strip():
             reject(prefix_multi_line_string(status, " [GPG status-fd output:] "), "");
         else:
@@ -941,20 +958,20 @@ to be called more than once during an invocation of check_signature()."""
 
     # Sanity check the good stuff we expect
     if not keywords.has_key("VALIDSIG"):
-        reject("signature on %s does not appear to be valid [No VALIDSIG]." % (filename));
+        reject("signature on %s does not appear to be valid [No VALIDSIG]." % (sig_filename));
         bad = 1;
     else:
         args = keywords["VALIDSIG"];
         if len(args) < 1:
-            reject("internal error while checking signature on %s." % (filename));
+            reject("internal error while checking signature on %s." % (sig_filename));
             bad = 1;
         else:
             fingerprint = args[0];
     if not keywords.has_key("GOODSIG"):
-        reject("signature on %s does not appear to be valid [No GOODSIG]." % (filename));
+        reject("signature on %s does not appear to be valid [No GOODSIG]." % (sig_filename));
         bad = 1;
     if not keywords.has_key("SIG_ID"):
-        reject("signature on %s does not appear to be valid [No SIG_ID]." % (filename));
+        reject("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename));
         bad = 1;
 
     # Finally ensure there's not something we don't recognise
@@ -964,7 +981,7 @@ to be called more than once during an invocation of check_signature()."""
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
-            reject("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], filename));
+            reject("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], sig_filename));
             bad = 1;
 
     if bad:

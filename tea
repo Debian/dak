@@ -2,7 +2,7 @@
 
 # Various different sanity checks
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: tea,v 1.29 2004-09-01 07:52:15 rmurray Exp $
+# $Id: tea,v 1.30 2004-11-27 13:32:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ def check_dscs():
         for line in list_file.readlines():
             file = line[:-1];
             try:
-                utils.parse_changes(file, dsc_whitespace_rules=1);
+                utils.parse_changes(file, signing_rules=1);
             except utils.invalid_dsc_format_exc, line:
                 utils.warn("syntax error in .dsc file '%s', line %s." % (file, line));
                 count += 1;
