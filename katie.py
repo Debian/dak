@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.37 2003-08-09 02:49:35 rdonald Exp $
+# $Id: katie.py,v 1.38 2003-08-18 15:04:17 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -625,8 +625,20 @@ distribution.""";
 	    	que = "SELECT s.version FROM source s WHERE s.source = '%s'" % \
 		    (package)
 	    else:
-        	suite_id = db_access.get_suite_id(suite);
-		que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE sa.suite = %d AND s.source = '%s'" % (suite_id, package)
+		# source must exist in suite X, or in some other suite that's
+		# mapped to X, recursively... silent-maps are counted too,
+		# unreleased-maps aren't.
+		maps = self.Cnf.ValueList("SuiteMappings")[:]
+		maps.reverse()
+		maps = [ m.split() for m in maps ]
+		maps = [ (x[1], x[2]) for x in maps 
+				if x[0] == "map" or x[0] == "silent-map" ]
+		s = [suite]
+		for x in maps:
+			if x[1] in s and x[0] not in s:
+				s.append(x[0])
+		
+		que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) JOIN suite su ON (sa.suite = su.id) WHERE s.source = '%s' AND (%s)" % (package, string.join(["su.suite_name = '%s'" % a for a in s], " OR "));
             q = self.projectB.query(que)
 
             # Reduce the query results to a list of version numbers
