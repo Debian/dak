@@ -3,7 +3,7 @@ Assumptions
 
 [Incomplete, to be sure]
 
-Usernames do not contain ",". [aria]
-Password files do not contain ":" except as a field separator. [aria]
+Usernames do not contain ",". [julia]
+Password files do not contain ":" except as a field separator. [julia]
 Version numbers do not contain "~" [logging, charisma]
 

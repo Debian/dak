@@ -21,6 +21,7 @@ Less Urgent
 
  * Harder:
 
+    o reverse of source-must-exist; i.e. binary-for-source-must-not-exist
     o fernanda should check for conflicts and warn about them visavis priority [rmurray]
     o REJECT reminders in shania.
     o Clean up DONE; archive to tar file every 2 weeks, update tar tvzf INDEX file.
@@ -108,7 +109,6 @@ Packaging
   o Install config file
   o Fix stuff to look in sensible places for libs and config file in debian package (?)
   o man pages and/or documentation
-  o debian/* assumes arch: all but sql-aptvc.o isn't arch: all.
 
 Less Urgent
 -----------
@@ -159,7 +159,6 @@ Less Urgent
   o Should reject packages with bad timestamps
   o Replicate old dinstall report stuff (? needed ?)
   o Handle the case of 1:1.1 which would overwrite 1.1 (?)
-  o heidi should report suite name not ID [aj]
 
   o generic way of saying isabinary and isadsc. (?)
 
@@ -169,5 +168,3 @@ Less Urgent
      @ weekly postins to d-c (?)
      @ backup of report (?)
      @ backup of changes.tgz (?)
-
-------------------------------------------------
