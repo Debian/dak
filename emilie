@@ -2,7 +2,7 @@
 
 # Sync fingerprint and uid tables with a debian.org LDAP DB
 # Copyright (C) 2003  James Troup <james@nocrew.org>
-# $Id: emilie,v 1.1 2003-02-11 18:09:38 troup Exp $
+# $Id: emilie,v 1.2 2003-05-02 13:54:05 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# <elmo>  ping@debian.org ?
+# <aj>    missing@ ? wtfru@ ?
+# <elmo>  giggle
+# <elmo>  I like wtfru
+# <aj>    all you have to do is retrofit wtfru into an acronym and no one
+#         could possibly be offended!
+# <elmo>  aj: worried terriers for russian unity ?
+# <aj>    uhhh
+# <aj>    ooookkkaaaaay
+# <elmo>  wthru is a little less offensive maybe?  but myabe that's
+#         just because I read h as heck, not hell
+# <elmo>  ho hum
+# <aj>    (surely the "f" stands for "freedom" though...)
+# <elmo>  where the freedom are you?
+# <aj>    'xactly
+# <elmo>  or worried terriers freed (of) russian unilateralism ?
+# <aj>    freedom -- it's the "foo" of the 21st century
+# <aj>    oo, how about "wat@" as in wherefore art thou?
+# <neuro> or worried attack terriers
+# <aj>    Waning Trysts Feared - Return? Unavailable?
+# <aj>    (i find all these terriers more worrying, than worried)
+# <neuro> worrying attack terriers, then
 
 ################################################################################
 
