@@ -61,6 +61,9 @@ Less Urgent
     o Rene needs to check for binary-less source packages.
     o Rene could accept a suite argument (?)
     o run shania every day (?) [ryan]
+    o we don't check for .orig.tar.gz's, so it's possible to upload -2 with no .orig.tar.gz.
+    o byhand stuff should send notification
+    o catherine should udpate db; move files, not the other way around [neuro]
   
  * Bizzare/uncertain:
    

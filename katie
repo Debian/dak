@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.66 2001-11-24 18:41:08 troup Exp $
+# $Id: katie,v 1.67 2001-11-25 01:21:34 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 # Originally based almost entirely on dinstall by Guy Maor <maor@debian.org>
 
-#########################################################################################
+###############################################################################
 
 #    Cartman: "I'm trying to make the best of a bad situation, I don't
 #              need to hear crap from a bunch of hippy freaks living in
@@ -30,7 +30,7 @@
 #
 #    Cartman: "uhh.. screw you guys... home."
 
-#########################################################################################
+###############################################################################
 
 import FCNTL, commands, fcntl, getopt, gzip, os, pg, pwd, re, shutil, stat, string, sys, tempfile, time, traceback
 import apt_inst, apt_pkg
@@ -70,7 +70,7 @@ orig_tar_location = "";
 legacy_source_untouchable = {};
 Subst = {};
 nmu = None;
-katie_version = "$Revision: 1.66 $";
+katie_version = "$Revision: 1.67 $";
 
 ###############################################################################
 
@@ -99,7 +99,7 @@ def init():
 
     return changes_files;
 
-#########################################################################################
+###############################################################################
 
 def usage (exit_code=0):
     print """Usage: dinstall [OPTION]... [CHANGES]...
@@ -914,7 +914,7 @@ def action (changes_filename):
     elif answer == 'Q':
         sys.exit(0)
 
-#####################################################################################################################
+###############################################################################
 
 def install (changes_filename, summary, short_summary):
     global install_count, install_bytes, Subst;
@@ -1063,7 +1063,7 @@ def install (changes_filename, summary, short_summary):
         announce (short_summary, 1)
         check_override ();
 
-#####################################################################################################################
+################################################################################
 
 def stable_install (changes_filename, summary, short_summary):
     global install_count, install_bytes, Subst;
