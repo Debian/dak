@@ -2,7 +2,7 @@
 
 # Remove obsolete .changes files from proposed-updates
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: halle,v 1.11 2004-02-27 20:07:40 troup Exp $
+# $Id: halle,v 1.12 2004-03-11 00:20:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ def check_changes (filename):
         return;
     num_files = len(files.keys());
     for file in files.keys():
-        if utils.re_isadeb.match(file) != None:
+        if utils.re_isadeb.match(file):
             m = re_isdeb.match(file);
             pkg = m.group(1);
             version = m.group(2);
@@ -65,7 +65,7 @@ def check_changes (filename):
                 print "BINARY: %s ==> %s_%s_%s" % (file, pkg, version, arch);
         else:
             m = utils.re_issource.match(file)
-            if m != None:
+            if m:
                 pkg = m.group(1);
                 version = m.group(2);
                 type = m.group(3);

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Initial setup of an archive
-# Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: rose,v 1.3 2003-01-02 18:10:02 troup Exp $
+# Copyright (C) 2002, 2004  James Troup <james@nocrew.org>
+# $Id: rose,v 1.4 2004-03-11 00:20:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ def process_tree(config, tree):
     for entry in config.SubTree(tree).List():
         entry = entry.lower();
         if tree == "Dir":
-            if entry == "poolroot" or entry == "queue" or entry == "morguereject":
+            if entry in [ "poolroot", "queue" , "morguereject" ]:
                 continue;
         config_name = "%s::%s" % (tree, entry);
         target = config[config_name];

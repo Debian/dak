@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Manipulate suite tags
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.17 2003-04-15 16:03:31 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: heidi,v 1.18 2004-03-11 00:20:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -176,7 +176,7 @@ def process_file (file, suite, action):
                 assoication_id = ql[0][0];
             # Take action
             if action == "add":
-                if assoication_id != None:
+                if assoication_id:
                     utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite));
                     continue;
                 else:
@@ -197,7 +197,7 @@ def process_file (file, suite, action):
                 assoication_id = ql[0][0];
             # Take action
             if action == "add":
-                if assoication_id != None:
+                if assoication_id:
                     utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite));
                     continue;
                 else:
@@ -262,7 +262,7 @@ def main ():
             if not Cnf.has_key("Suite::%s" % (suite)):
                 utils.fubar("Unknown suite '%s'." %(suite));
             else:
-                if action != None:
+                if action:
                     utils.fubar("Can only perform one action at a time.");
                 action = i;
 

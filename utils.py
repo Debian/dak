@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.63 2004-02-27 20:07:40 troup Exp $
+# $Id: utils.py,v 1.64 2004-03-11 00:20:51 troup Exp $
 
 ################################################################################
 
@@ -274,7 +274,7 @@ def fix_maintainer (maintainer):
     rfc822 = maintainer;
     name = "";
     email = "";
-    if m != None and len(m.groups()) == 2:
+    if m and len(m.groups()) == 2:
         name = m.group(1);
         email = m.group(2);
         if name.find(',') != -1 or name.find('.') != -1:

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.16 2003-04-15 16:03:31 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: charisma,v 1.17 2004-03-11 00:20:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -117,7 +117,7 @@ def main():
             source_id = binary[1];
             version = binary[3];
             # Use the source maintainer first; falling back on the binary maintainer as a last resort only
-            if source_id != 0 and source_id != None:
+            if source_id:
                 maintainer = get_maintainer_from_source(source_id);
             else:
                 maintainer = get_maintainer(binary[2]);

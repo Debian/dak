@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Installs Debian packages from queue/accepted into the pool
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.13 2003-11-07 01:48:38 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: kelly,v 1.14 2004-03-11 00:20:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.13 $";
+kelly_version = "$Revision: 1.14 $";
 
 Cnf = None;
 Options = None;
@@ -334,7 +334,7 @@ def install ():
     orig_tar_id = Katie.pkg.orig_tar_id;
     orig_tar_location = Katie.pkg.orig_tar_location;
     legacy_source_untouchable = Katie.pkg.legacy_source_untouchable;
-    if orig_tar_id != None and orig_tar_location == "legacy":
+    if orig_tar_id and orig_tar_location == "legacy":
         q = projectB.query("SELECT DISTINCT ON (f.id) l.path, f.filename, f.id as files_id, df.source, df.id as dsc_files_id, f.size, f.md5sum FROM files f, dsc_files df, location l WHERE df.source IN (SELECT source FROM dsc_files WHERE file = %s) AND f.id = df.file AND l.id = f.location AND (l.type = 'legacy' OR l.type = 'legacy-mixed')" % (orig_tar_id));
         qd = q.dictresult();
         for qid in qd:
@@ -354,7 +354,7 @@ def install ():
     # cross-component we need to copy the .orig.tar.gz into the new
     # component too for the same reasons as above.
     #
-    if changes["architecture"].has_key("source") and orig_tar_id != None and \
+    if changes["architecture"].has_key("source") and orig_tar_id and \
        orig_tar_location != "legacy" and orig_tar_location != dsc_location_id:
         q = projectB.query("SELECT l.path, f.filename, f.size, f.md5sum FROM files f, location l WHERE f.id = %s AND f.location = l.id" % (orig_tar_id));
         ql = q.getresult()[0];
@@ -492,7 +492,7 @@ def stable_install (summary, short_summary):
     for file in files.keys():
         if files[file]["type"] == "deb":
             new_changelog.write("stable/%s/binary-%s/%s\n" % (files[file]["component"], files[file]["architecture"], file));
-        elif utils.re_issource.match(file) != None:
+        elif utils.re_issource.match(file):
             new_changelog.write("stable/%s/source/%s\n" % (files[file]["component"], file));
         else:
             new_changelog.write("%s\n" % (file));

@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.44 2004-02-27 20:07:40 troup Exp $
+# $Id: jennifer,v 1.45 2004-03-11 00:20:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.44 $";
+jennifer_version = "$Revision: 1.45 $";
 
 Cnf = None;
 Options = None;
@@ -335,7 +335,7 @@ def check_files():
             files[file]["byhand"] = 1;
             files[file]["type"] = "byhand";
         # Checks for a binary package...
-        elif utils.re_isadeb.match(file) != None:
+        elif utils.re_isadeb.match(file):
             has_binaries = 1;
             files[file]["type"] = "deb";
 
@@ -388,9 +388,9 @@ def check_files():
                 reject("%s: Depends field is empty." % (file));
 
             # Check the section & priority match those given in the .changes (non-fatal)
-            if control.Find("Section") != None and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
+            if control.Find("Section") and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
                 reject("%s control file lists section as `%s', but changes file has `%s'." % (file, control.Find("Section", ""), files[file]["section"]), "Warning: ");
-            if control.Find("Priority") != None and files[file]["priority"] != "" and files[file]["priority"] != control.Find("Priority"):
+            if control.Find("Priority") and files[file]["priority"] != "" and files[file]["priority"] != control.Find("Priority"):
                 reject("%s control file lists priority as `%s', but changes file has `%s'." % (file, control.Find("Priority", ""), files[file]["priority"]),"Warning: ");
 
             files[file]["package"] = package;
@@ -456,7 +456,7 @@ def check_files():
         # Checks for a source package...
         else:
             m = utils.re_issource.match(file);
-            if m != None:
+            if m:
                 has_source = 1;
                 files[file]["package"] = m.group(1);
                 files[file]["version"] = m.group(2);
