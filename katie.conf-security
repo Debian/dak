@@ -321,6 +321,7 @@ Location
       Suites 
 	{
 	  Stable;
+	  Testing;
         };
       Type "legacy";
     };
