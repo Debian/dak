@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.15 2002-10-16 02:47:32 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: charisma,v 1.16 2003-04-15 16:03:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -132,7 +132,7 @@ def main():
     for filename in extra_files:
         file = utils.open_file(filename);
         for line in file.readlines():
-            line = utils.re_comments.sub('', line[:-1]).strip();
+            line = utils.re_comments.sub('', line).strip();
             if line == "":
                 continue;
             split = line.split();

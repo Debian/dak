@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: natalie,v 1.5 2003-03-14 19:05:43 troup Exp $
+# $Id: natalie,v 1.6 2003-04-15 16:03:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -117,7 +117,7 @@ def process_file (file, suite, component, type, action):
     start_time = time.time();
     projectB.query("BEGIN WORK");
     for line in file.readlines():
-        line = utils.re_comments.sub('', line[:-1]).strip();
+        line = utils.re_comments.sub('', line).strip();
         if line == "":
             continue;
 

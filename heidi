@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Manipulate suite tags
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.16 2003-01-02 18:11:20 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: heidi,v 1.17 2003-04-15 16:03:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ def set_suite (file, suite_id):
     # Build up a dictionary of what should be in the suite
     desired = {};
     for line in lines:
-        split_line = line[:-1].strip().split();
+        split_line = line.strip().split();
         if len(split_line) != 3:
             utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]));
             continue;
@@ -155,7 +155,7 @@ def process_file (file, suite, action):
     projectB.query("BEGIN WORK");
 
     for line in lines:
-        split_line = line[:-1].strip().split();
+        split_line = line.strip().split();
         if len(split_line) != 3:
             utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]));
             continue;
