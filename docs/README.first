@@ -117,10 +117,10 @@ o If you have an existing archive:
      which are needed for this.  After changing all occurences of "projectb"
      to the name of your database (as defined in DB::Name) you can run:
          psql <DB::Name> < init_pool.sql
-o Run alyson: it will populate your database with the values from
-  katie.conf and apt.conf.
+   * Run alyson: it will populate your database with the values from
+     katie.conf and apt.conf.
+   * Run 'psql <DB::Name> < add_constraints.sql'.
 o Copy all templates from the "templates" directory to to the directory
   specified in Dir::Templates, and adapt them to your distribution.
 o Create an 'ftpmaster' group in postgres.
-o Run 'psql <DB::Name> < add_constraints.sql'.
 
