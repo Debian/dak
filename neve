@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: neve,v 1.19 2004-04-01 17:13:11 troup Exp $
+# $Id: neve,v 1.20 2004-06-17 14:59:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -310,7 +310,7 @@ def get_or_set_files_id (filename, size, md5sum, location_id):
     cache_key = "~".join((filename, size, md5sum, repr(location_id)));
     if not files_id_cache.has_key(cache_key):
         files_id_serial += 1
-        files_query_cache.write("%d\t%s\t%s\t%s\t%d\n" % (files_id_serial, filename, size, md5sum, location_id));
+        files_query_cache.write("%d\t%s\t%s\t%s\t%d\t\\N\n" % (files_id_serial, filename, size, md5sum, location_id));
         files_id_cache[cache_key] = files_id_serial
 
     return files_id_cache[cache_key]
