@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Cruft checker for overrides
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: cindy,v 1.11 2003-01-02 18:10:02 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2004  James Troup <james@nocrew.org>
+# $Id: cindy,v 1.12 2004-11-27 16:08:21 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ import apt_pkg;
 ################################################################################
 
 Cnf = None;
+Options = None;
 projectB = None;
 override = {}
 
@@ -70,12 +71,22 @@ def process(suite, component, type):
 
     if type == "deb" or type == "udeb":
         packages = {};
-        q = projectB.query("SELECT DISTINCT b.package FROM binaries b, bin_associations ba WHERE b.id = ba.bin AND ba.suite = %s" % (suite_id));
+        q = projectB.query("""
+SELECT b.package FROM binaries b, bin_associations ba, files f,
+                              location l, component c
+ WHERE b.id = ba.bin AND f.id = b.file AND l.id = f.location
+   AND c.id = l.component AND ba.suite = %s AND c.id = %s
+""" % (suite_id, component_id));
         for i in q.getresult():
             packages[i[0]] = "";
 
     src_packages = {};
-    q = projectB.query("SELECT DISTINCT s.source FROM source s, src_associations sa WHERE s.id = sa.source AND sa.suite = %s" % (suite_id));
+    q = projectB.query("""
+SELECT s.source FROM source s, src_associations sa, files f, location l,
+                     component c
+ WHERE s.id = sa.source AND f.id = s.file AND l.id = f.location
+   AND c.id = l.component AND sa.suite = %s AND c.id = %s
+""" % (suite_id, component_id));
     for i in q.getresult():
         src_packages[i[0]] = "";
 
@@ -87,34 +98,34 @@ def process(suite, component, type):
             if not packages.has_key(package):
                 if not src_packages.has_key(package):
                     print "DELETING: %s" % (package);
-                    #projectB.query("DELETE FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s"
-                    #% (package, suite_id, component_id, type_id));
+                    if not Options["No-Action"]:
+                        projectB.query("DELETE FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (package, suite_id, component_id, type_id));
                 else:
                     print "MAKING SOURCE: %s" % (package);
-                    #projectB.query("DELETE FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s"
-                    #% (package, suite_id, component_id, type_id));
+                    if not Options["No-Action"]:
+                        projectB.query("DELETE FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (package, suite_id, component_id, type_id));
                     # Then if source doesn't already have a copy, insert it into source
                     q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (package, suite_id, component_id, dsc_type_id));
-                    if not q.getresult():
-                        #projectB.query("INSERT INTO override (package, suite, component, priority, section, type, maintainer) VALUES ('%s', %s, %s, %s, %s, %s, '%s')" % (package, suite_id, component_id, i[1], i[2], dsc_type_id, i[3]));
-                        print "(nop)"
+                    if not q.getresult() and not Options["No-Action"]:
+                        projectB.query("INSERT INTO override (package, suite, component, priority, section, type, maintainer) VALUES ('%s', %s, %s, %s, %s, %s, '%s')" % (package, suite_id, component_id, i[1], i[2], dsc_type_id, i[3]));
         else: # dsc
             if not src_packages.has_key(package):
                 print "DELETING: %s" % (package);
-                #projectB.query("DELETE FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s"
-                #% (package, suite_id, component_id, type_id));
+                if not Options["No-Action"]:
+                    projectB.query("DELETE FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (package, suite_id, component_id, type_id));
     projectB.query("COMMIT WORK");
 
 
 ################################################################################
 
 def main ():
-    global Cnf, projectB, override;
+    global Cnf, Options, projectB, override;
 
     Cnf = utils.get_conf()
 
-    Arguments = [('h',"help","Cindy::Options::Help")];
-    for i in [ "help" ]:
+    Arguments = [('h',"help","Cindy::Options::Help"),
+                 ('n',"no-action", "Cindy::Options::No-Action")];
+    for i in [ "help", "no-action" ]:
 	if not Cnf.has_key("Cindy::Options::%s" % (i)):
 	    Cnf["Cindy::Options::%s" % (i)] = "";
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
@@ -126,14 +137,14 @@ def main ():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
-    for suite in [ "stable", "unstable" ]:
-        print "Processing %s..." % (suite);
-        for component in Cnf.SubTree("Component").List():
-            if component == "mixed":
-                continue; # Ick
-            for type in Cnf.ValueList("OverrideType"):
-                print "Processing %s [%s - %s]..." % (suite, component, type);
-		process(suite, component, type);
+    suite = "unstable"
+    print "Processing %s..." % (suite);
+    for component in Cnf.SubTree("Component").List():
+        if component == "mixed":
+            continue; # Ick
+        for otype in Cnf.ValueList("OverrideType"):
+            print "Processing %s [%s - %s]..." % (suite, component, otype);
+            process(suite, component, otype);
 
 ################################################################################
 
