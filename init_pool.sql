@@ -106,3 +106,30 @@ CREATE TABLE src_associations (
        source INT4 NOT NULL, -- REFERENCES source
        unique (suite, source)
 );
+
+CREATE TABLE section (
+       id SERIAL PRIMARY KEY,
+       section TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE priority (
+       id SERIAL PRIMARY KEY,
+       priority TEXT UNIQUE NOT NULL,
+       level INT4 UNIQUE NOT NULL
+);
+
+CREATE TABLE override_type (
+       id SERIAL PRIMARY KEY,
+       type TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE override (
+       package TEXT NOT NULL, 
+       suite INT4 NOT NULL, -- references suite
+       component INT4 NOT NULL, -- references component
+       priority INT4, -- references priority
+       section INT4 NOT NULL, -- references section
+       type INT4 NOT NULL, -- references override_type
+       maintainer TEXT,
+       unique (suite, component, package, type)
+);
