@@ -2,7 +2,7 @@
 
 # Wrapper for Debian Security team
 # Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: amber,v 1.1 2002-05-14 15:24:45 troup Exp $
+# $Id: amber,v 1.2 2002-05-23 12:36:03 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -267,7 +267,7 @@ def main():
     print "Generating template advisory...";
     make_advisory(advisory_number, changes_files);
 
-    answer = yes_no("Upload to ftp-master (Y/n)? ");
+    answer = yes_no("Upload to ftp-master (Y/n)?");
     if answer == "y":
         upload_files = get_file_list(changes_files);
         print "Uploading files...";
