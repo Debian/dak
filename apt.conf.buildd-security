@@ -13,26 +13,38 @@ Default
    FileMode 0664;
 }
 
-bindirectory "stable"
+bindirectory "potato"
 {
-   Packages "stable/Packages";
-   Sources "stable/Sources";
+   Packages "potato/Packages";
+   Sources "potato/Sources";
    Contents " ";
 
    BinOverride "override.potato.all3";
-   BinCacheDB "packages-accepted-stable.db";
+   BinCacheDB "packages-accepted-potato.db";
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
 };
 
-bindirectory "testing"
+bindirectory "woody"
 {
-   Packages "testing/Packages";
-   Sources "testing/Sources";
+   Packages "woody/Packages";
+   Sources "woody/Sources";
    Contents " ";
 
    BinOverride "override.woody.all3";
-   BinCacheDB "packages-accepted-testing.db";
+   BinCacheDB "packages-accepted-woody.db";
+   PathPrefix "";
+   Packages::Extensions ".deb .udeb";
+};
+
+bindirectory "sarge"
+{
+   Packages "sarge/Packages";
+   Sources "sarge/Sources";
+   Contents " ";
+
+   BinOverride "override.sarge.all3";
+   BinCacheDB "packages-accepted-sarge.db";
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
 };
