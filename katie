@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.44 2001-06-14 17:19:01 troup Exp $
+# $Id: katie,v 1.45 2001-06-20 18:47:12 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -268,7 +268,11 @@ def check_files():
     for file in files.keys():
         # Check the file is readable
         if os.access(file,os.R_OK) == 0:
-            reject_message = reject_message + "Rejected: Can't read `%s'.\n" % (file)
+            if os.path.exists(file):
+                reject_message = reject_message + "Rejected: Can't read `%s'. [permission denied]\n" % (file)
+            else:
+                reject_message = reject_message + "Rejected: Can't read `%s'. [file not found]\n" % (file)
+
             files[file]["type"] = "unreadable";
             continue
         # If it's byhand skip remaining checks
@@ -555,7 +559,7 @@ def check_dsc ():
                         # Not there? Check in Incoming...
                         # [See comment above process_it() for explanation
                         #  of why this is necessary...]
-                        if os.access(dsc_file, os.R_OK) != 0:
+                        if os.path.exists(dsc_file):
                             files[dsc_file] = {};
                             files[dsc_file]["size"] = os.stat(dsc_file)[stat.ST_SIZE];
                             files[dsc_file]["md5sum"] = dsc_files[dsc_file]["md5sum"];
@@ -1273,7 +1277,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.44 $"
+    bcc = "X-Katie: $Revision: 1.45 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
