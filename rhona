@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.20 2002-02-12 22:14:38 troup Exp $
+# $Id: rhona,v 1.21 2002-04-22 11:06:49 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -237,6 +237,8 @@ def clean():
     if count > 0:
         sys.stderr.write("Cleaned %d files, %s.\n" % (count, utils.size_type(size)));
 
+################################################################################
+
 def clean_maintainers():
     print "Cleaning out unused Maintainer entries..."
 
@@ -257,6 +259,29 @@ SELECT m.id FROM maintainer m
 
     if count > 0:
         sys.stderr.write("Cleared out %d maintainer entries.\n" % (count));
+
+################################################################################
+
+def clean_fingerprints():
+    print "Cleaning out unused fingerprint entries..."
+
+    q = projectB.query("""
+SELECT f.id FROM fingerprint f
+  WHERE NOT EXISTS (SELECT id FROM binaries b WHERE b.sig_fpr = f.id)
+    AND NOT EXISTS (SELECT id FROM source s WHERE s.sig_fpr = f.id)""");
+    ql = q.getresult();
+
+    count = 0;
+    projectB.query("BEGIN WORK");
+    for i in ql:
+        fingerprint_id = i[0];
+        if not Options["No-Action"]:
+            projectB.query("DELETE FROM fingerprint WHERE id = %s" % (fingerprint_id));
+            count = count + 1;
+    projectB.query("COMMIT WORK");
+
+    if count > 0:
+        sys.stderr.write("Cleared out %d fingerprint entries.\n" % (count));
 
 ################################################################################
 
@@ -288,6 +313,7 @@ def main():
     check_files();
     clean();
     clean_maintainers();
+    clean_fingerprints();
 
 ################################################################################
 
