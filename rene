@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: rene,v 1.9 2001-11-18 19:57:58 rmurray Exp $
+# $Id: rene,v 1.10 2002-02-12 23:14:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,8 +40,7 @@ def main ():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('D',"debug","Catherine::Options::Debug", "IntVal"),
-                 ('h',"help","Catherine::Options::Help"),
+    Arguments = [('h',"help","Catherine::Options::Help"),
                  ('V',"version","Catherine::Options::Version"),
                  ('l',"limit", "Catherine::Options::Limit", "HasArg"),
                  ('n',"no-action","Catherine::Options::No-Action"),
