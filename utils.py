@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.33 2001-09-26 03:49:16 troup Exp $
+# $Id: utils.py,v 1.34 2001-09-27 01:24:15 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,6 +66,10 @@ def open_file(filename, mode='r'):
     except IOError:
         raise cant_open_exc, filename
     return f
+
+def touch_file(filename):
+    fd = os.open(filename, os.O_RDONLY | os.O_CREAT);
+    os.close(fd);
 
 ######################################################################################
 
@@ -361,8 +365,9 @@ def copy (src, dest, overwrite = 0):
 
 def where_am_i ():
     res = socket.gethostbyaddr(socket.gethostname());
-    if DefaultCnf.get("Config::" + res[0] + "::DatbaseHostname"):
-	return DefaultCnf["Config::" + res[0] + "::DatabaseHostname"]
+    database_hostname = DefaultCnf.get("Config::" + res[0] + "::DatabaseHostname");
+    if database_hostname:
+	return database_hostname;
     else:
         return res[0];
 
