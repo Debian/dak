@@ -2,7 +2,7 @@
 
 # Check for fixable discrepancies between stable and unstable
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: andrea,v 1.6 2002-05-03 16:06:45 troup Exp $
+# $Id: andrea,v 1.7 2002-05-14 15:28:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ def main ():
     arch_all_id = db_access.get_architecture_id("all");
     dsc_type_id = db_access.get_override_type_id("dsc");
 
-    for arch in Cnf.SubTree("Suite::%s::Architectures" % (src_suite)).List():
+    for arch in Cnf.ValueList("Suite::%s::Architectures" % (src_suite)):
         if arch == "source":
             continue;
 

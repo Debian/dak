@@ -2,7 +2,7 @@
 
 # Sync the ISC configuartion file and the SQL database
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: alyson,v 1.8 2002-05-03 16:06:45 troup Exp $
+# $Id: alyson,v 1.9 2002-05-14 15:28:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@ def main ():
         description = get(Suite, "Description");
         projectB.query("INSERT INTO suite (suite_name, version, origin, description) VALUES ('%s', %s, %s, %s)"
                        % (string.lower(suite), version, origin, description));
-        for architecture in Cnf.SubTree("Suite::%s::Architectures" % (suite)).List():
+        for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
             architecture_id = db_access.get_architecture_id (architecture);
             if architecture_id < 0:
                 utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite));
@@ -122,7 +122,7 @@ def main ():
 
     projectB.query("BEGIN WORK");
     projectB.query("DELETE FROM override_type");
-    for type in Cnf.SubTree("OverrideType").List():
+    for type in Cnf.ValueList("OverrideType"):
         projectB.query("INSERT INTO override_type (type) VALUES ('%s')" % (type));
     projectB.query("COMMIT WORK");
 
@@ -152,7 +152,7 @@ def main ():
                 suffix = '/' + component;
             else:
                 suffix = "";
-        for section in Cnf.SubTree("Section").List():
+        for section in Cnf.ValueList("Section"):
             projectB.query("INSERT INTO section (section) VALUES ('%s%s%s')" % (prefix, section, suffix));
     projectB.query("COMMIT WORK");
 

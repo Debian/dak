@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.13 2002-05-08 11:13:02 troup Exp $
+# $Id: claire.py,v 1.14 2002-05-14 15:28:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
         dislocated_files[i[4]] = dest;
 
     # Binary
-    architectures = Cnf.SubTree("Suite::Stable::Architectures").List();
+    architectures = Cnf.ValueList("Suite::Stable::Architectures");
     for arch in [ "source", "all" ]:
         if architectures.count(arch):
             architectures.remove(arch);

@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: cindy,v 1.8 2002-05-03 16:06:45 troup Exp $
+# $Id: cindy,v 1.9 2002-05-14 15:28:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ def main ():
         for component in Cnf.SubTree("Component").List():
             if component == "mixed":
                 continue; # Ick
-            for type in Cnf.SubTree("OverrideType").List():
+            for type in Cnf.ValueList("OverrideType"):
                 print "Processing %s [%s - %s]..." % (suite, component, type);
 		process(suite, component, type);
 

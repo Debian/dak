@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: neve,v 1.9 2002-05-08 11:18:24 troup Exp $
+# $Id: neve,v 1.10 2002-05-14 15:28:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -309,7 +309,7 @@ def update_suites ():
         for i in ("Version", "Origin", "Description"):
             if SubSec.has_key(i):
                 projectB.query("UPDATE suite SET %s = '%s' WHERE suite_name = '%s'" % (string.lower(i), SubSec[i], string.lower(suite)))
-        for architecture in Cnf.SubTree("Suite::%s::Architectures" % (suite)).List():
+        for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
             architecture_id = db_access.get_architecture_id (architecture);
             projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id));
 
@@ -566,9 +566,9 @@ def main ():
             print 'Processing '+location+'...';
             process_packages (location, packages, suite, "", server);
         elif type == "legacy":
-            for suite in Cnf.SubTree("Location::%s::Suites" % (location)).List():
+            for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
                 for component in Cnf.SubTree("Component").List():
-                    for architecture in Cnf.SubTree("Suite::%s::Architectures" % (suite)).List():
+                    for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
                         if architecture == "source" or architecture == "all":
                             continue;
                         packages = location + Cnf.Find("Suite::%s::CodeName" % (suite)) + '/' + component + '/binary-' + architecture + '/Packages'
