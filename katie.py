@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.45 2004-04-01 17:14:25 troup Exp $
+# $Id: katie.py,v 1.46 2004-04-03 02:49:46 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,7 +66,9 @@ class nmu_p:
         changes = pkg.changes;
         dsc = pkg.dsc;
 
-        (dsc_rfc822, dsc_name, dsc_email) = utils.fix_maintainer (dsc.get("maintainer",Cnf["Dinstall::MyEmailAddress"]).lower());
+        i = utils.fix_maintainer (dsc.get("maintainer",
+                                          Cnf["Dinstall::MyEmailAddress"]).lower());
+        (dsc_rfc822, dsc_rfc2047, dsc_name, dsc_email) = i;
         # changes["changedbyname"] == dsc_name is probably never true, but better safe than sorry
         if dsc_name == changes["maintainername"].lower() and \
            (changes["changedby822"] == "" or changes["changedbyname"].lower() == dsc_name):
@@ -76,7 +78,7 @@ class nmu_p:
             uploaders = dsc["uploaders"].lower().split(",");
             uploadernames = {};
             for i in uploaders:
-                (rfc822, name, email) = utils.fix_maintainer (i.strip());
+                (rfc822, rfc2047, name, email) = utils.fix_maintainer (i.strip());
                 uploadernames[name] = "";
             if uploadernames.has_key(changes["changedbyname"].lower()):
                 return 0;
@@ -167,19 +169,19 @@ class Katie:
                     d_files[file][i] = files[file][i];
         ## changes
         # Mandatory changes fields
-        for i in [ "distribution", "source", "architecture", "version", "maintainer",
-                   "urgency", "fingerprint", "changedby822", "changedbyname",
-                   "maintainername", "maintaineremail", "closes" ]:
+        for i in [ "distribution", "source", "architecture", "version",
+                   "maintainer", "urgency", "fingerprint", "changedby822",
+                   "changedby2047", "changedbyname", "maintainer822",
+                   "maintainer2047", "maintainername", "maintaineremail",
+                   "closes", "changes" ]:
             d_changes[i] = changes[i];
         # Optional changes fields
-        # FIXME: changes should be mandatory
-        for i in [ "changed-by", "maintainer822", "filecontents", "format",
-                   "changes", "lisa note" ]:
+        for i in [ "changed-by", "filecontents", "format", "lisa note" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i];
         ## dsc
-        for i in [ "source", "version", "maintainer", "fingerprint", "uploaders",
-                   "bts changelog" ]:
+        for i in [ "source", "version", "maintainer", "fingerprint",
+                   "uploaders", "bts changelog" ]:
             if dsc.has_key(i):
                 d_dsc[i] = dsc[i];
         ## dsc_files
@@ -208,9 +210,9 @@ class Katie:
         # If jennifer crashed out in the right place, architecture may still be a string.
         if not changes.has_key("architecture") or not isinstance(changes["architecture"], DictType):
             changes["architecture"] = { "Unknown" : "" };
-        # and maintainer822 may not exist.
-        if not changes.has_key("maintainer822"):
-            changes["maintainer822"] = self.Cnf["Dinstall::MyEmailAddress"];
+        # and maintainer2047 may not exist.
+        if not changes.has_key("maintainer2047"):
+            changes["maintainer2047"] = self.Cnf["Dinstall::MyEmailAddress"];
 
         Subst["__ARCHITECTURE__"] = " ".join(changes["architecture"].keys());
         Subst["__CHANGES_FILENAME__"] = os.path.basename(self.pkg.changes_file);
@@ -218,12 +220,13 @@ class Katie:
 
         # For source uploads the Changed-By field wins; otherwise Maintainer wins.
         if changes["architecture"].has_key("source") and changes["changedby822"] != "" and (changes["changedby822"] != changes["maintainer822"]):
-            Subst["__MAINTAINER_FROM__"] = changes["changedby822"];
-            Subst["__MAINTAINER_TO__"] = changes["changedby822"] + ", " + changes["maintainer822"];
+            Subst["__MAINTAINER_FROM__"] = changes["changedby2047"];
+            Subst["__MAINTAINER_TO__"] = "%s, %s" % (changes["changedby2047"],
+                                                     changes["maintainer2047"]);
             Subst["__MAINTAINER__"] = changes.get("changed-by", "Unknown");
         else:
-            Subst["__MAINTAINER_FROM__"] = changes["maintainer822"];
-            Subst["__MAINTAINER_TO__"] = changes["maintainer822"];
+            Subst["__MAINTAINER_FROM__"] = changes["maintainer2047"];
+            Subst["__MAINTAINER_TO__"] = changes["maintainer2047"];
             Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown");
         if self.Cnf.has_key("Dinstall::TrackingServer") and changes.has_key("source"):
             Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (changes["source"], self.Cnf["Dinstall::TrackingServer"])

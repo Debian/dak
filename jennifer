@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.46 2004-04-01 17:14:25 troup Exp $
+# $Id: jennifer,v 1.47 2004-04-03 02:49:46 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.46 $";
+jennifer_version = "$Revision: 1.47 $";
 
 Cnf = None;
 Options = None;
@@ -182,9 +182,9 @@ def clean_holding():
 def check_changes():
     filename = pkg.changes_file;
 
-    # Default in case we bail out
-    changes["maintainer822"] = Cnf["Dinstall::MyEmailAddress"];
-    changes["changedby822"] = Cnf["Dinstall::MyEmailAddress"];
+    # Defaults in case we bail out
+    changes["maintainer2047"] = Cnf["Dinstall::MyEmailAddress"];
+    changes["changedby2047"] = Cnf["Dinstall::MyEmailAddress"];
     changes["architecture"] = {};
 
     # Parse the .changes field into a dictionary
@@ -207,7 +207,8 @@ def check_changes():
         return 0;
 
     # Check for mandatory fields
-    for i in ("source", "binary", "architecture", "version", "distribution", "maintainer", "files"):
+    for i in ("source", "binary", "architecture", "version", "distribution",
+              "maintainer", "files", "changes"):
         if not changes.has_key(i):
             reject("%s: Missing mandatory field `%s'." % (filename, i));
             return 0    # Avoid <undef> errors during later tests
@@ -221,11 +222,23 @@ def check_changes():
         for j in o.split():
             changes[i][j] = 1
 
-    # Fix the Maintainer: field to be RFC822 compatible
-    (changes["maintainer822"], changes["maintainername"], changes["maintaineremail"]) = utils.fix_maintainer (changes["maintainer"])
+    # Fix the Maintainer: field to be RFC822/2047 compatible
+    try:
+        (changes["maintainer822"], changes["maintainer2047"],
+         changes["maintainername"], changes["maintaineremail"]) = \
+         utils.fix_maintainer (changes["maintainer"]);
+    except utils.ParseMaintError, msg:
+        reject("%s: Maintainer field ('%s') failed to parse: %s" \
+               % (filename, changes["maintainer"], msg));
 
-    # Fix the Changed-By: field to be RFC822 compatible; if it exists.
-    (changes["changedby822"], changes["changedbyname"], changes["changedbyemail"]) = utils.fix_maintainer(changes.get("changed-by",""));
+    # ...likewise for the Changed-By: field if it exists.
+    try:
+        (changes["changedby822"], changes["changedby2047"],
+         changes["changedbyname"], changes["changedbyemail"]) = \
+         utils.fix_maintainer (changes.get("changed-by", ""));
+    except utils.ParseMaintError, msg:
+        reject("%s: Changed-By field ('%s') failed to parse: %s" \
+               % (filename, changes["changed-by"], msg));
 
     # Ensure all the values in Closes: are numbers
     if changes.has_key("closes"):
@@ -611,17 +624,25 @@ def check_dsc():
     for i in ("format", "source", "version", "binary", "maintainer", "architecture", "files"):
         if not dsc.has_key(i):
             reject("%s: missing mandatory field `%s'." % (dsc_filename, i));
+            return;
 
     # Validate the source and version fields
-    if dsc.has_key("source") and not re_valid_pkg_name.match(dsc["source"]):
+    if not re_valid_pkg_name.match(dsc["source"]):
         reject("%s: invalid source name '%s'." % (dsc_filename, dsc["source"]));
-    if dsc.has_key("version") and not re_valid_version.match(dsc["version"]):
+    if not re_valid_version.match(dsc["version"]):
         reject("%s: invalid version number '%s'." % (dsc_filename, dsc["version"]));
 
     # Bumping the version number of the .dsc breaks extraction by stable's
     # dpkg-source.  So let's not do that...
     if dsc["format"] != "1.0":
         reject("%s: incompatible 'Format' version produced by a broken version of dpkg-dev 1.9.1{3,4}." % (dsc_filename));
+
+    # Validate the Maintainer field
+    try:
+        utils.fix_maintainer (dsc["maintainer"]);
+    except utils.ParseMaintError, msg:
+        reject("%s: Maintainer field ('%s') failed to parse: %s" \
+               % (dsc_filename, changes["changed-by"], msg));
 
     # Validate the build-depends field(s)
     for field_name in [ "build-depends", "build-depends-indep" ]:
@@ -639,7 +660,7 @@ def check_dsc():
                 pass;
 
     # Ensure the version number in the .dsc matches the version number in the .changes
-    epochless_dsc_version = utils.re_no_epoch.sub('', dsc.get("version"));
+    epochless_dsc_version = utils.re_no_epoch.sub('', dsc["version"]);
     changes_version = files[dsc_filename]["version"];
     if epochless_dsc_version != files[dsc_filename]["version"]:
         reject("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version));
@@ -701,8 +722,7 @@ def get_changelog_versions(source_dir):
             type = m.group(3);
             if type == "orig.tar.gz" and pkg.orig_tar_gz:
                 continue;
-            else:
-                dest = os.path.join(os.getcwd(), f);
+            dest = os.path.join(os.getcwd(), f);
             os.symlink(src, dest);
 
     # If the orig.tar.gz is not a part of the upload, create a symlink to the

@@ -7,7 +7,7 @@ Standards-Version: 3.5.6.0
 
 Package: katie
 Architecture: any
-Depends: ${python:Depends}, python-pygresql, python-apt, apt-utils, gnupg (>= 1.0.6-1), ${shlibs:Depends}
+Depends: ${python:Depends}, python-pygresql, python2.1-email | python (>= 2.2), python-apt, apt-utils, gnupg (>= 1.0.6-1), ${shlibs:Depends}
 Suggests: lintian, linda, less, binutils-multiarch, symlinks, postgresql (>= 7.1.0), dsync
 Description: Debian's archive maintenance scripts
  This is a collection of archive maintenance scripts used by the

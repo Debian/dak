@@ -27,6 +27,18 @@ queue/approved
 Others
 ------
 
+  o need to decide on whether we're tying for most errors at once.. if
+    so (probably) then make sure code doesn't assume variables exist and
+    either way do something about checking error code of check_dsc and
+    later functions so we skip later checks if they're bailing.
+
+  o the .katie stuff is fundamentally braindamaged, it's not versioned
+    so there's no way to change the format, yay me.  need to fix.
+    probably by putting a version var as the first thing and checking
+    that.. auto-upgrade at least from original format would be good.
+    might also be a good idea to put everything in one big dict after
+    that?
+
   o reject sparc64 binaries in a non '*64*' package.
 
   o katie.py(source_exists): a) we take arguments as parameters that

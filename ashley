@@ -2,7 +2,7 @@
 
 # Dump variables from a .katie file to stdout
 # Copyright (C) 2001, 2002, 2004  James Troup <james@nocrew.org>
-# $Id: ashley,v 1.9 2004-04-01 17:14:25 troup Exp $
+# $Id: ashley,v 1.10 2004-04-03 02:49:46 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,7 +67,10 @@ def main():
         changes = k.pkg.changes;
         print " Changes:";
         # Mandatory changes fields
-        for i in [ "source", "version", "maintainer", "urgency", "changedby822", "changedbyname", "maintainername", "maintaineremail", "fingerprint" ]:
+        for i in [ "source", "version", "maintainer", "urgency", "changedby822",
+                   "changedby2047", "changedbyname", "maintainer822",
+                   "maintainer2047", "maintainername", "maintaineremail",
+                   "fingerprint", "changes" ]:
             print "  %s: %s" % (i.capitalize(), changes[i]);
             del changes[i];
         # Mandatory changes lists
@@ -75,7 +78,7 @@ def main():
             print "  %s: %s" % (i.capitalize(), " ".join(changes[i].keys()));
             del changes[i];
         # Optional changes fields
-        for i in [ "changed-by", "maintainer822", "filecontents", "format" ]:
+        for i in [ "changed-by", "filecontents", "format" ]:
             if changes.has_key(i):
                 print "  %s: %s" % (i.capitalize(), changes[i]);
                 del changes[i];
@@ -101,7 +104,7 @@ def main():
             for i in [ "package", "version", "architecture", "type", "size",
                        "md5sum", "component", "location id", "source package",
                        "source version", "maintainer", "dbtype", "files id",
-                       "new", "section", "priority" ]:
+                       "new", "section", "priority", "pool name" ]:
                 if files[file].has_key(i):
                     print "   %s: %s" % (i.capitalize(), files[file][i]);
                     del files[file][i];
