@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.23 2001-01-27 00:09:36 troup Exp $
+# $Id: katie,v 1.24 2001-01-27 03:51:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -982,7 +982,7 @@ def reject (changes_filename, manual_reject_mail_filename):
             try:
                 utils.move (file, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
             except:
-                sys.stderr.write("W: couldn't reject file '%s' [Got %s].\n" % (file, sys.exc_type);
+                sys.stderr.write("W: couldn't reject file '%s' [Got %s].\n" % (file, sys.exc_type));
                 pass;
 
     # If this is not a manual rejection generate the .reason file and rejection mail message
@@ -1184,7 +1184,7 @@ non-maintainer upload.  The .changes file follows.
 # into the .changes structure and reprocess the .changes file.
 
 def process_it (changes_file):
-    global reprocess, orig_tar_id, changes, dsc, dsc_files, files;
+    global reprocess, orig_tar_id, changes, dsc, dsc_files, files, reject_message;
 
     # Reset some globals
     reprocess = 1;
@@ -1222,7 +1222,7 @@ def process_it (changes_file):
 ###############################################################################
 
 def main():
-    global Cnf, projectB, reject_message, install_bytes, new_ack_old
+    global Cnf, projectB, install_bytes, new_ack_old
 
     apt_pkg.init();
     

@@ -94,7 +94,7 @@ Natalie
     Debug "";
     Help "";
     Version "";
-    Component "main";
+    Component "non-US/main";
     List "";
     Suite "unstable";
     Set "";
