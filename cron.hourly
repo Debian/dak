@@ -7,4 +7,4 @@ export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 . $SCRIPTVARS
 
 cd $masterdir
-julia /var/lib/misc/auric.debian.org/passwd
+julia

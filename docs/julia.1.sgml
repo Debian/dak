@@ -17,7 +17,7 @@
   <!-- Man page title -->
   <refnamediv>
     <refname>julia</>
-    <refpurpose>Utility to sync PostgreSQL with a (LDAP-generated) passwd file</>
+    <refpurpose>Utility to sync PostgreSQL users with system users</>
   </refnamediv>
 
   <!-- Arguments -->
@@ -25,19 +25,24 @@
     <cmdsynopsis>
       <command>julia</>
       <arg><option><replaceable>options</replaceable></></arg>
-      <arg choice="plain"><replaceable>passwd file</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
   <RefSect1><Title>Description</>
     <para>
-      <command>julia</command> is a utility to sync PostgreSQL's user database with a passwd file.  It is designed to allow the use of 'peer sameuser' authentication.  It simply adds any users in the password file into PostgreSQL's pg_user table if they are already not there.  It will also warn you about users who are in the pg_user table but not in the password file.
+      <command>julia</command> is a utility to sync PostgreSQL's user database with the system's users.  It is designed to allow the use of 'peer sameuser' authentication.  It simply adds any users in the password file into PostgreSQL's pg_user table if they are already not there.  It will also warn you about users who are in the pg_user table but not in the password file.
     </PARA>
   </REFSECT1>
 
   <RefSect1><Title>Options</>
 
     <VariableList>
+      <VarListEntry><term><option>-n/--no-action<replaceable></replaceable></option></>
+	<ListItem>
+	  <Para>Don't actually do anything.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
       <VarListEntry><term><option>-q/--quiet<replaceable></replaceable></option></>
 	<ListItem>
 	  <Para>Be quiet, i.e. display as little output as possible.</PARA>

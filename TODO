@@ -103,6 +103,8 @@ More Urgent
 Less Urgent
 -----------
 
+  o Accept "," as a seperator in -a, -s etc. args
+
   o change utils.copy to try rename() first
 
   o [hard, long term] unchecked -> accepted should go into the db, not

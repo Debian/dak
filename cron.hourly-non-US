@@ -7,4 +7,4 @@ export SCRIPTVARS=/org/non-us.debian.org/katie/vars-non-US
 . $SCRIPTVARS
 
 cd $masterdir
-julia /var/lib/misc/pandora.debian.org/passwd
+julia
