@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.10 2001-04-16 17:45:06 troup Exp $
+# $Id: jenna,v 1.11 2001-05-03 06:52:03 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -107,6 +107,40 @@ def generate_bin_list(suite, component, architecture, output, type, dislocated_f
 # <aj> yo momma was SQLin' like a pig last night!
 ##########
 
+# If something has gone from arch:all to arch:any or vice-versa,
+# clean out the old versions here.  The rest of jenna won't do this
+# because it's lame. I have no idea. </aj>
+
+def clean_duplicate_packages(suite):
+    print "Cleaning duplicate packages for %s..." % (suite)
+
+    suite_id = db_access.get_suite_id(suite)
+    q = projectB.query("""
+SELECT b1.package,
+       b1.id, b1.version, a1.arch_string,
+       b2.id, b2.version, a2.arch_string
+  FROM bin_associations ba1, binaries b1, architecture a1,
+       bin_associations ba2, binaries b2, architecture a2
+ WHERE ba1.suite = ba2.suite AND ba1.suite = %s
+   AND ba1.bin = b1.id AND b1.architecture = a1.id
+   AND ba2.bin = b2.id AND b2.architecture = a2.id
+   AND b1.package = b2.package
+   AND (a1.id = a2.id OR a1.arch_string = 'all' OR a2.arch_string = 'all')
+   AND b1.id != b2.id
+   AND versioncmp(b1.version, b2.version) <= 0
+ORDER BY b1.package, b1.version, a1.arch_string;""" % (suite_id))
+
+    ql = q.getresult()
+    seen = {}
+    for i in ql:
+	(package, oldid, oldver, oldarch, newid, newver, newarch) = i
+	if not seen.has_key(oldid):
+	    seen[oldid] = newid
+	    print "Removing %s %s on %s (ifo %s/%s)" % (package, oldver, oldarch, newver, newarch)
+	    projectB.query("DELETE FROM bin_associations WHERE suite = %s AND bin = %s" % (suite_id, oldid))
+	else:
+	    print "%s %s on %s also superceded by %s/%s" % (package, oldver, oldarch, newver, newarch)
+
 # If something has moved from one component to another we need to
 # clean out the old versions here.  The rest of jenna won't do this
 # because it works on a per-component level for flexibility.
@@ -114,7 +148,7 @@ def generate_bin_list(suite, component, architecture, output, type, dislocated_f
 def clean_suite (suite):
     print "Cleaning out packages for %s..." % (suite)
     
-    suite_id = db_access.get_suite_id(suite);
+    suite_id = db_access.get_suite_id(suite)
     q = projectB.query("""
 SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name
   FROM binaries b, bin_associations ba, files f, location l, architecture a, component c
@@ -197,6 +231,7 @@ def main():
         else:
             dislocated_files = {};
         clean_suite(suite);
+	clean_duplicate_packages(suite)
         components = Cnf["Jenna::Options::Component"];
         if not Cnf.has_key("Suite::%s::Components" % (suite)):
             components = "-";
