@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: madison,v 1.6 2001-04-03 10:03:30 troup Exp $
+# $Id: madison,v 1.7 2001-06-08 00:22:10 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,18 @@ import apt_pkg;
 
 Cnf = None;
 projectB = None;
+
+################################################################################
+
+def arch_compare (a, b):
+    if a == "source" and b == "source":
+        return 0;
+    elif a == "source":
+        return -1;
+    elif b == "source":
+        return 1;
+
+    return cmp (a, b);
 
 ################################################################################
 
@@ -95,7 +107,9 @@ def main ():
             for suite in suites:
                 sys.stdout.write("%10s | %10s | %13s | " % (package, version, suite));
                 count = 0;
-                for arch in d[version][suite]:
+                arches = d[version][suite];
+                arches.sort(arch_compare);
+                for arch in arches:
                     if count > 0:
                         sys.stdout.write(', ');
                     sys.stdout.write(arch);
