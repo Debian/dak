@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # General purpose package removal tool for ftpmaster
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.34 2003-01-02 18:14:52 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: melanie,v 1.35 2003-02-11 18:10:40 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,8 +78,10 @@ ARCH, BUG#, COMPONENT and SUITE can be space seperated lists, e.g.
 
 ################################################################################
 
-# "That's just fucking great!  Game over, man!  What the fuck are we
-#  going to do now?"
+# "Hudson: What that's great, that's just fucking great man, now what
+#  the fuck are we supposed to do? We're in some real pretty shit now
+#  man...That's it man, game over man, game over, man! Game over! What
+#  the fuck are we gonna do now? What are we gonna do?"
 
 def game_over():
     answer = utils.our_raw_input("Continue (y/N)? ").lower();
@@ -369,7 +371,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.34 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.35 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;
