@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.18 2002-05-14 15:35:22 troup Exp $
+# $Id: jennifer,v 1.19 2002-05-14 22:28:01 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.18 $";
+jennifer_version = "$Revision: 1.19 $";
 
 Cnf = None;
 Options = None;
@@ -828,7 +828,7 @@ def check_md5sums ():
 
 # Sanity check the time stamps of files inside debs.
 # [Files in the near future cause ugly warnings and extreme time
-#  travel can causes errors on extraction]
+#  travel can cause errors on extraction]
 
 def check_timestamps():
     class Tar:
