@@ -4,6 +4,15 @@ TOFIX
 Urgent
 ------
 
+  o katie needs a stable_reject() which a) removes the package from
+    p-u, b) doesn't remove the file from the pool, and c) (optionally, I
+    guess) uses a template mail.
+
+  o katie/jenna/rhona/what de fuck ever needs to clear out .changes
+    files from p-u when removing stuff superseded by newer versions.
+
+  o experimental needs to auto clean dude
+
   o jenna doesn't handle arch: any -> arch: all transitions
 
   o direport misreports things as section 'devel'
