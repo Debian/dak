@@ -10,7 +10,6 @@ Default
    Packages::Compress ". gzip";
    Sources::Compress ". gzip";
    DeLinkLimit 0;
-   MaxContentsChange 12000;
    FileMode 0664;
 }
 
