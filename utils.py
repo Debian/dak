@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.20 2001-04-03 10:05:02 troup Exp $
+# $Id: utils.py,v 1.21 2001-04-13 20:11:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import commands, os, re, socket, shutil, stat, string, sys, tempfile
+import commands, os, pwd, re, socket, shutil, stat, string, sys, tempfile
 
 re_comments = re.compile(r"\#.*")
 re_no_epoch = re.compile(r"^\d*\:")
@@ -375,6 +375,13 @@ def fubar(msg, exit_code=1):
 
 def warn(msg):
     sys.stderr.write("W: %s\n" % (msg));
+
+######################################################################################
+
+# Returns the user name with a laughable attempt at rfc822 conformancy
+# (read: removing stray periods).
+def whoami ():
+    return string.replace(string.split(pwd.getpwuid(os.getuid())[4],',')[0], '.', '');
 
 ######################################################################################
 
