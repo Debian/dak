@@ -2,7 +2,7 @@
 
 # Wrapper for Debian Security team
 # Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: amber,v 1.2 2002-05-23 12:36:03 troup Exp $
+# $Id: amber,v 1.3 2002-06-08 00:15:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ import katie, utils;
 ################################################################################
 
 Cnf = None;
+Options = None;
 Katie = None;
 
 ################################################################################
@@ -47,30 +48,84 @@ def usage (exit_code=0):
 Install CHANGES_FILE(s) as security advisory ADV_NUMBER
 
   -h, --help                 show this help and exit
+  -n, --no-action            don't do anything
 
 """
     sys.exit(exit_code)
 
 ################################################################################
 
-def get_file_list(arguments):
+def do_upload(changes_files):
     file_list = "";
-    for arg in arguments:
-        arg = utils.validate_changes_file_arg(arg);
-        Katie.pkg.changes_file = arg;
+    suites = {};
+    component_mapping = {};
+    for component in Cnf.SubTree("Amber::ComponentMappings").List():
+        component_mapping[component] = Cnf["Amber::ComponentMappings::%s" % (component)];
+    uploads = {}; # uploads[uri] = file_list;
+    for changes_file in changes_files:
+        changes_file = utils.validate_changes_file_arg(changes_file);
+        # Reset variables
+        components = {};
+        upload_uris = {};
+        file_list = [];
 	Katie.init_vars();
+        # Parse the .katie file for the .changes file
+        Katie.pkg.changes_file = changes_file;
         Katie.update_vars();
         files = Katie.pkg.files;
         changes = Katie.pkg.changes;
+        # Build the file list for this .changes file
         for file in files.keys():
             poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
                                     utils.poolify(changes["source"], files[file]["component"]),
                                     file);
-            file_list = "%s %s" % (file_list, poolname);
-    file_list = "%s %s" % (file_list, string.join(map(os.path.abspath, arguments)));
+            file_list.append(poolname);
+            orig_component = files[file].get("original component", files[file]["component"]);
+            components[orig_component] = "";
+        file_list.append(changes_file);
+        # Determine the upload uri for this .changes file
+        for component in components.keys():
+            upload_uri = component_mapping.get(component);
+            if upload_uri:
+                upload_uris[upload_uri] = "";
+        num_upload_uris = len(upload_uris.keys());
+        if num_upload_uris == 0:
+            utils.fubar("%s: No valid upload URI found from components (%s)."
+                        % (changes_file, string.join(components.keys(), ", ")));
+        elif num_upload_uris > 1:
+            utils.fubar("%s: more than one upload URI (%s) from components (%s)."
+                        % (changes_file, string.join(upload_uris.keys(), ", "),
+                           string.join(components.keys(), ", ")));
+        upload_uri = upload_uris.keys()[0];
+        # Update the file list for the upload uri
+        if not uploads.has_key(upload_uri):
+            uploads[upload_uri] = [];
+        uploads[upload_uri].extend(file_list);
+        # Remember the suites
+        for suite in changes["distribution"].keys():
+            suites[suite] = "";
+
+    if len(suites.keys()) == 1 and suites.has_key("oldstable"):
+        print "Advisory only for 'oldstable'; not uploading elsewhere.";
+        return;
+
+    if not Options["No-Action"]:
+        answer = yes_no("Upload to files to main archive (Y/n)?");
+        if answer != "y":
+            return;
+
+    for uri in uploads.keys():
+        (host, path) = string.split(uri, ":");
+        file_list = string.join(uploads[uri]);
+        print "Uploading files to %s..." % (host);
+        spawn("lftp -c 'open %s; cd %s; put %s'" % (host, path, file_list));
+
     return file_list;
 
 ################################################################################
+
+# Next two functions originally written by aj and NIHishly merged into
+# amber by me.
 
 def join_with_commas_and(list):
 	if len(list) == 0: return "nothing";
@@ -78,8 +133,6 @@ def join_with_commas_and(list):
 	return string.join(list[:-1], ", ") + " and " + list[-1];
 
 ######################################################################
-
-# Originally written by aj, nih-ishly merged into amber by me.
 
 def make_advisory(advisory_nr, changes_files):
     adv_packages = [];
@@ -188,32 +241,37 @@ def make_advisory(advisory_nr, changes_files):
     Subst["__ADVISORY_TEXT__"] = adv;
 
     adv = utils.TemplateSubst(Subst, Cnf["Dir::Templates"]+"/amber.advisory");
-    utils.send_mail (adv, "");
+    if not Options["No-Action"]:
+        utils.send_mail (adv, "");
+    else:
+        print "[<Would send template advisory mail>]";
 
 ######################################################################
 
 def init():
-    global Cnf, Katie;
+    global Cnf, Katie, Options;
 
     apt_pkg.init();
     Cnf = utils.get_conf();
 
-    Arguments = [('h',"help","Amber::Options::Help")];
+    Arguments = [('h', "help", "Amber::Options::Help"),
+                 ('n', "no-action", "Amber::Options::No-Action")];
 
-    for i in [ "help" ]:
+    for i in [ "help", "no-action" ]:
         Cnf["Amber::Options::%s" % (i)] = "";
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Amber::Options")
     Katie = katie.Katie(Cnf);
 
-    if Cnf["Amber::Options::Help"]:
+    if Options["Help"]:
         usage(0);
 
     if not arguments:
         usage(1);
 
     advisory_number = arguments[0];
-    changes_files = sys.argv[2:];
+    changes_files = arguments[1:];
     if advisory_number[-8:] == ".changes":
         utils.warn("first argument must be the advisory number.");
         usage(1);
@@ -235,9 +293,12 @@ def yes_no(prompt):
 ######################################################################
 
 def spawn(command):
-    (result, output) = commands.getstatusoutput(command);
-    if (result != 0):
-        utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, output), result);
+    if Options["No-Action"]:
+        print "[%s]" % (command);
+    else:
+        (result, output) = commands.getstatusoutput(command);
+        if (result != 0):
+            utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, output), result);
 
 ######################################################################
 
@@ -245,12 +306,13 @@ def spawn(command):
 def main():
     (advisory_number, changes_files) = init();
 
-    print "About to install the following files: "
-    for file in changes_files:
-        print "  %s" % (file);
-    answer = yes_no("Continue (Y/n)?");
-    if answer == "n":
-        sys.exit(0);
+    if not Options["No-Action"]:
+        print "About to install the following files: "
+        for file in changes_files:
+            print "  %s" % (file);
+        answer = yes_no("Continue (Y/n)?");
+        if answer == "n":
+            sys.exit(0);
 
     os.chdir(Cnf["Dir::Queue::Accepted"]);
     print "Installing packages into the archive...";
@@ -263,17 +325,14 @@ def main():
     print "Updating Release files...";
     spawn("./ziyi");
 
-    os.chdir(Cnf["Dir::Queue::Done"]);
+    if not Options["No-Action"]:
+        os.chdir(Cnf["Dir::Queue::Done"]);
+    else:
+        os.chdir(Cnf["Dir::Queue::Accepted"]);
     print "Generating template advisory...";
     make_advisory(advisory_number, changes_files);
 
-    answer = yes_no("Upload to ftp-master (Y/n)?");
-    if answer == "y":
-        upload_files = get_file_list(changes_files);
-        print "Uploading files...";
-        spawn("lftp -c 'open %s; cd %s; put %s'" % (Cnf["Amber::UploadHost"],
-                                                    Cnf["Amber::UploadDir"],
-                                                    upload_files));
+    do_upload(changes_files);
 
 ################################################################################
 
