@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.5 2000-11-30 04:19:30 troup Exp $
+# $Id: katie,v 1.6 2000-11-30 04:38:34 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -688,7 +688,7 @@ def install (changes_filename, summary, short_summary):
         for qid in qd:
             # First move the files to the new location
             legacy_filename = qid["path"]+qid["filename"];
-            pool_location = utils.poolify (files[file]["package"], files[file]["component"]);
+            pool_location = utils.poolify (files[file]["source"], files[file]["component"]);
             pool_filename = pool_location + os.path.basename(qid["filename"]);
             destination = Cnf["Dir::PoolDir"] + pool_location
             utils.move(legacy_filename, destination);
