@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.14 2001-02-04 04:28:34 troup Exp $
+# $Id: utils.py,v 1.15 2001-02-25 06:47:27 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -324,6 +324,17 @@ def which_conf_file ():
         return '/org/non-us.debian.org/katie/katie.conf-non-US';
     elif archive == 'ftp-master':
         return '/org/ftp.debian.org/katie/katie.conf';
+    else:
+        raise unknown_hostname_exc, archive
+
+# FIXME: if the above isn't great, this can't be either :)
+
+def which_apt_conf_file ():
+    archive = where_am_i ();
+    if archive == 'non-US':
+        return '/org/non-us.debian.org/katie/apt.conf-non-US';
+    elif archive == 'ftp-master':
+        return '/org/ftp.debian.org/katie/apt.conf';
     else:
         raise unknown_hostname_exc, archive
 
