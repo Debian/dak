@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: natalie,v 1.1 2002-05-08 11:15:38 troup Exp $
+# $Id: natalie,v 1.2 2002-05-14 15:33:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -245,7 +245,7 @@ def main ():
         list(suite, component, type);
     else:
         Logger = logging.Logger(Cnf, "natalie");
-        if file_list != []:
+        if file_list:
             for file in file_list:
                 process_file(utils.open_file(file), suite, component, type);
         else:
