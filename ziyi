@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.25 2003-01-02 18:14:28 troup Exp $
+# $Id: ziyi,v 1.26 2003-07-15 09:43:18 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -252,6 +252,16 @@ def main ():
 		for arch in AptCnf["tree::%s/main::Architectures" % (tree)].split():
 		    if arch != "source":  # always true
 			for file in compressnames("tree::%s/main" % (tree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
+			    files.append(file)
+	    elif AptCnf.has_key("tree::%s::FakeDI" % (tree)):
+		usetree = AptCnf["tree::%s::FakeDI" % (tree)]
+		sec = AptCnf["tree::%s/main::Sections" % (usetree)].split()[0]
+		if sec != "debian-installer":
+		    print "ALERT: weird non debian-installer section in %s" % (usetree)
+ 
+		for arch in AptCnf["tree::%s/main::Architectures" % (usetree)].split():
+		    if arch != "source":  # always true
+			for file in compressnames("tree::%s/main" % (usetree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
 			    files.append(file)
 
 	elif AptCnf.has_key("bindirectory::%s" % (tree)):
