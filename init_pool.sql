@@ -28,6 +28,11 @@ CREATE TABLE maintainer (
        name TEXT UNIQUE NOT NULL
 );
 
+CREATE TABLE fingerprint (
+       id SERIAL PRIMARY KEY,
+       fingerprint TEXT UNIQUE NOT NULL
+);
+
 CREATE TABLE location (
        id SERIAL PRIMARY KEY,
        path TEXT NOT NULL,
@@ -54,6 +59,8 @@ CREATE TABLE source (
         version TEXT NOT NULL,
         maintainer INT4 NOT NULL, -- REFERENCES maintainer
         file INT4 UNIQUE NOT NULL, -- REFERENCES files
+	install_date TIMESTAMP NOT NULL,
+	sig_fpr INT4 NOT NULL, -- REFERENCES fingerprint
 	unique (source, version)
 );
 
@@ -74,6 +81,7 @@ CREATE TABLE binaries (
        file INT4 UNIQUE NOT NULL, -- REFERENCES files,
        type TEXT NOT NULL,
 -- joeyh@ doesn't want .udebs and .debs with the same name, which is why the unique () doesn't mention type
+       sig_fpr INT4 NOT NULL, -- REFERENCES fingerprint
        unique (package, version, architecture)
 );
 
