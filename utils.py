@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.13 2001-01-28 09:06:44 troup Exp $
+# $Id: utils.py,v 1.14 2001-02-04 04:28:34 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ re_no_epoch = re.compile(r"^\d*\:")
 re_no_revision = re.compile(r"\-[^-]*$")
 re_arch_from_filename = re.compile(r"/binary-[^/]+/")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
+re_isadeb = re.compile (r'.*\.u?deb$');
+re_issource = re.compile (r'(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)');
 
 changes_parse_error_exc = "Can't parse line in .changes file";
 invalid_dsc_format_exc = "Invalid .dsc file";
