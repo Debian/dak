@@ -1,0 +1,82 @@
+<!-- -*- mode: sgml -*- -->
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!ENTITY % katieent SYSTEM "katie.ent">
+%katieent;
+
+]>
+
+<refentry>
+  &katie-docinfo;
+
+  <refmeta>
+    <refentrytitle>alicia</>
+    <manvolnum>1</>
+  </refmeta>
+
+  <!-- Man page title -->
+  <refnamediv>
+    <refname>alicia</>
+    <refpurpose>Make micromodifications or queries to the overrides table</>
+  </refnamediv>
+
+  <!-- Arguments -->
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>alicia</>
+      <arg><option><replaceable>options</replaceable></></arg>
+      <arg choice="plain"><replaceable>package</replaceable></arg>
+      <arg><option><replaceable>section</replaceable></></arg>
+      <arg><option><replaceable>priority</replaceable></></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <RefSect1><Title>Description</>
+    <para>
+      <command>alicia</command> makes micromodifications and queries the overrides.
+    </PARA>
+  </REFSECT1>
+
+  <RefSect1><Title>Options</>
+
+    <VariableList>
+      <VarListEntry><term><option>-h/--help</option></>
+	<ListItem>
+	  <Para>Show help and then exit.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+      <VarListEntry><term><option>-n/--no-action</option></>
+	<ListItem>
+	  <Para>Show what alicia would do but make no changes</PARA>
+	</LISTITEM>
+      </VarListEntry>
+      <VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
+	<ListItem>
+	  <Para>Affect the overrides in suite listed.  The default is <literal>unstable</literal></PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+    </VariableList>
+  </RefSect1>
+
+  <RefSect1><Title>Common use</>
+    <para>
+      <command>alicia</command> when invoked with only a package name will tell you what section and priority the given package has.
+    </PARA>
+    <para>
+      <command>alicia</command> when invoked with a package and one or two other values will set the section and/or priority to the values given. You may use a single period ('.') to represent "do not change" or you can ommit the value you do not want to change.
+    </PARA>
+  </RefSect1>
+  <RefSect1><Title>Notes</>
+
+  <Para>alicia essentially lets you do what natalie does only on the microscopic scale rather than the macroscopic scale of natalie. Use with care.</>
+
+  <RefSect1><Title>Diagnostics</>
+    <para>
+      <command>alicia</command> returns zero on normal operation, non-zero on error.
+    </PARA>
+  </RefSect1>
+
+  &manauthor;
+
+</refentry>

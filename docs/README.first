@@ -37,11 +37,13 @@ o To clean things up:
   * rhona - to remove obsolete files from the pool
   * shania - to remove obsolete/stray files from the queue
   * melanie - to remove package(s) from suite(s)
+  * alicia - to change individual override entries
 
 o Information display:
 
   * madison - shows information about package(s)
   * helena - shows information about package(s) in queue/
+  * alicia - can show you individual override entries
 
 Generic and useful, but only for those with existing archives
 -------------------------------------------------------------
