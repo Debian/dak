@@ -2,7 +2,7 @@
 
 # Various different sanity checks
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: tea,v 1.30 2004-11-27 13:32:16 troup Exp $
+# $Id: tea,v 1.31 2004-11-27 18:03:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ def check_dscs():
 def check_override():
     for suite in [ "stable", "unstable" ]:
         print suite
-        print "-------------"
+        print "-"*len(suite)
         print
         suite_id = db_access.get_suite_id(suite);
         q = projectB.query("""
@@ -321,16 +321,23 @@ def validate_sources(suite, component):
 ########################################
 
 def validate_packages(suite, component, architecture):
-    filename = "%s/dists/%s/%s/binary-%s/Packages" \
+    filename = "%s/dists/%s/%s/binary-%s/Packages.gz" \
                % (Cnf["Dir::Root"], suite, component, architecture);
     print "Processing %s..." % (filename);
-    packages = utils.open_file(filename);
+    # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+    temp_filename = utils.temp_filename();
+    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+    if (result != 0):
+        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
+        sys.exit(result);
+    packages = utils.open_file(temp_filename);
     Packages = apt_pkg.ParseTagFile(packages);
     while Packages.Step():
         filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'));
         if not os.path.exists(filename):
             print "W: %s missing." % (filename);
     packages.close();
+    os.unlink(temp_filename);
 
 ########################################
 
