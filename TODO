@@ -19,6 +19,8 @@ Actually Urgent
 More Urgent
 -----------
 
+ <drow> Can't read file.: /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.katie.  You assume that the filenames are relative to accepted/, might want to doc or fix that.
+
   o permissions (paranoia, group write, etc.) configurability and overhaul
 
   o <M>ove option for lisa byhand proecessing

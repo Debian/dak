@@ -6,6 +6,7 @@ o Password files do not contain ":" except as a field separator. [julia]
 o Version numbers do not contain "~" [logging, charisma, db_access.py, heidi, neve]
 o Suites are case-independent in conf files, but forced lower case in use. [jenna]
 o Components are case-sensitive. [jenna]
+o There's always source of some sort
 
 [Very incomplete...]
 
