@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import os, pg, stat, string, sys
+import utils, db_access
+import apt_pkg, apt_inst;
+
+
+def remove(file):
+    dir = '/org/ftp.debian.org/morgue/shania/'
+    if os.access(file,os.R_OK) == 0:
+        sys.stderr.write("E: can't read '%s' to remove it.\n" % (file));
+        return;
+    dest = dir + os.path.basename(file);
+    if os.path.exists(dest):
+        sys.stderr.write("E: '%s' already exists in '%s'.\n" % (file, dir));
+        return;
+    print "%s -> %s" % (file, dir);
+    utils.move(file, dest);
+    return;
+
+def main ():
+    for changes_file in sys.argv[1:]:
+        try:
+            changes = utils.parse_changes(changes_file, 0);
+        except:
+            sys.stderr.write("E: caught exception parsing '%s' [%s].\n" % (changes_file, sys.exc_type));
+            continue;
+        try:
+            files = utils.build_file_list(changes, "");
+        except:
+            sys.stderr.write("E: caught exception building file list for '%s' [%s].\n" % (changes_file, sys.exc_type));
+            continue;
+        for file in files.keys():
+            remove(file);
+        remove(changes_file);
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+
