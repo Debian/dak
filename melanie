@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.38 2003-03-26 15:16:36 troup Exp $
+# $Id: melanie,v 1.39 2003-05-02 13:53:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ Remove PACKAGE(s) from suite(s).
   -s, --suite=SUITE          act on this suite
   -S, --source-only          remove source only
 
-ARCH, BUG#, COMPONENT and SUITE can be comma (or space) seperated lists, e.g.
+ARCH, BUG#, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
     --architecture=m68k,i386"""
 
     sys.exit(exit_code)
@@ -377,7 +377,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.38 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.39 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;

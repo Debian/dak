@@ -38,7 +38,7 @@ Dinstall
 Julia
 {
   ValidGID "800";
-  // Comma seperated list of users who are in Postgres but not the passwd file
+  // Comma separated list of users who are in Postgres but not the passwd file
   KnownPostgres "postgres,katie,www-data,udmsearch";
 };
 
