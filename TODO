@@ -27,6 +27,8 @@ queue/approved
 Others
 ------
 
+  o need a testsuite _badly_
+
   o jennifer crashes if run as a user in -n mode when orig.tar.gz is
    in queue/new...
 
