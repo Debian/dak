@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: madison,v 1.18 2002-05-03 16:06:45 troup Exp $
+# $Id: madison,v 1.19 2002-06-05 00:20:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
 
 #   And, lo, a great and menacing voice rose from the depths, and with
 #   great wrath and vehemence it's voice boomed across the
@@ -168,14 +170,9 @@ def main ():
                 suites.sort();
                 for suite in suites:
                     sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite));
-                    count = 0;
                     arches = d[pkg][version][suite];
                     arches.sort(arch_compare);
-                    for arch in arches:
-                        if count > 0:
-                            sys.stdout.write(', ');
-                        sys.stdout.write(arch);
-                        count = count + 1;
+                    sys.stdout.write(string.join(arches, ", "));
                     sys.stdout.write('\n');
 
     if not results:
