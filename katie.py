@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.12 2002-04-01 21:20:28 troup Exp $
+# $Id: katie.py,v 1.13 2002-04-20 13:13:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -356,6 +356,35 @@ class Katie:
             mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/jennifer.accepted","r").read());
             utils.send_mail(mail_message, "")
             self.announce(short_summary, 1)
+
+        ## FIXME: this should go away to some Debian specific file
+        # If we're accepting something for unstable do extra work to
+        # make it auto-buildable from accepted
+        if self.pkg.changes["distribution"].has_key("unstable"):
+            self.projectB.query("BEGIN WORK");
+            # Add it to the list of packages for later processing by apt-ftparchive
+            for file in file_keys:
+                if files[file]["type"] == "dsc" or files[file]["type"] == "deb":
+                    filename = os.path.join(Cnf["Dir::QueueAcceptedDir"], file);
+                    self.projectB.query("INSERT INTO unstable_accepted (filename) VALUES ('%s')" % (filename));
+            # If the .orig.tar.gz is in the pool, create a symlink (if
+            # one doesn't already exist)
+            if self.pkg.orig_tar_id:
+                # Determine the .orig.tar.gz file name
+                for dsc_file in self.pkg.dsc_files.keys():
+                    if dsc_file[-12:] == ".orig.tar.gz":
+                        filename = dsc_file;
+                dest = os.path.join(Cnf["Dir::QueueAcceptedDir"],filename);
+                # If it doesn't exist, create a symlink
+                if not os.path.exists(dest):
+                    # Find the .orig.tar.gz in the pool
+                    q = self.projectB.query("SELECT l.path, f.filename from location l, files f WHERE f.id = %s" % (self.pkg.orig_tar_id));
+                    ql = q.getresult();
+                    if not ql:
+                        utils.fubar("[INTERNAL ERROR] Couldn't find id %s in files table." % (self.pkg.orig_tar_id));
+                    src = os.path.join(ql[0][0], ql[0][1]);
+                    os.symlink(src, dest);
+            self.projectB.query("COMMIT WORK");
 
     ###########################################################################
 
