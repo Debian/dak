@@ -13,10 +13,9 @@ pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
-### [JJT] Disabled until shania is rewritten
-#cd $masterdir
-#shania -v 
-#shania -v -m -i $incoming
+# Clean out incoming
+
+shania
 
 # Purge empty directories
 
