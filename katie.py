@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.6 2002-02-15 22:27:27 troup Exp $
+# $Id: katie.py,v 1.7 2002-02-22 01:03:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -563,7 +563,11 @@ class Katie:
 
     def reject (self, str, prefix="Rejected: "):
         if str:
-            self.reject_message = self.reject_message + prefix + str + "\n";
+            # Unlike other rejects we add new lines first to avoid trailing
+            # new lines when this message is passed back up to a caller.
+            if self.reject_message:
+                self.reject_message = self.reject_message + "\n";
+            self.reject_message = self.reject_message + prefix + str;
 
     def check_binaries_against_db(self, file, suite):
         self.reject_message = "";
@@ -576,7 +580,7 @@ class Katie:
             files[file]["oldfiles"][suite] = oldfile;
             # Check versions [NB: per-suite only; no cross-suite checking done (yet)]
             if apt_pkg.VersionCompare(files[file]["version"], oldfile["version"]) != 1:
-                self.reject("%s Old version `%s' >= new version `%s'." % (file, oldfile["version"], files[file]["version"]));
+                self.reject("%s: old version (%s) >= new version (%s)." % (file, oldfile["version"], files[file]["version"]));
         # Check for any existing copies of the file
         q = self.projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
         if q.getresult() != []:
