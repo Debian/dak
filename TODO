@@ -11,10 +11,9 @@ Non-Show Stopper
 
   o CD building scripts need fixing
 
-  o charisma needs to do version compares
- 
   o Optimize all the queries by using EXAMINE and building some INDEXs.
   o enclose all the setting SQL stuff in transactions (mostly done).
+  o clear out maintainers table
 
   == 
 
