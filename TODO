@@ -6,12 +6,15 @@
 Actually Urgent
 ---------------
 
-  o UrgencyLog stuff should minimize it's bombing out
+  o UrgencyLog stuff should minimize it's bombing out(?)
+  o Log stuff should open the log file g+w lamer
 
 More Urgent
 -----------
  
   o db_access.get_location_id should handle the lack of archive_id properly
+
+  o the whole versioncmp thing should be documented
 
   o security.debian.org: BYHAND auto-uploading doesn't work
   o security.debian.org: BYHAND auto-uploading assumes ftp-master
@@ -213,12 +216,6 @@ Less Urgent
    
     o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
     o The untouchable flag doesn't stop new packages being added to ``untouchable'' suites
-
- * Stable:
-
-<neuro> well, there's one other thing that doesn't work so well
-<neuro> you probably should have stable_install ignore Closes:
-<neuro> or it might be unique to the case of stable unstable uploads
 
 ================================================================================
 
