@@ -4,16 +4,7 @@ TOFIX
 Urgent
 ------
 
-  o Claire needs to know about sections on auric
-
-  o maintainers file needs overrides
-
-  o need to have process_it run a big try: loop so that individual
-    package screws up don't kill the daily cron run.
-
   o Add an 'add' ability to melanie (? separate prog maybe)
-
-  o Make experimental work
 
   o fix katie's handling of source packages in different directories;
     e.g. if a package moves from main to contrib, the .orig.tar.gz
@@ -22,6 +13,12 @@ Urgent
 
   o fix ssh appearing in 3 packages files
 
+  o maintainers file needs overrides
+
+  o Make experimental work
+
+  o need to have process_it run a big try: loop so that individual
+    package screws up don't kill the daily cron run.
 
 Less Urgent
 -----------

@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.2 2001-01-25 06:00:07 troup Exp $
+# $Id: claire.py,v 1.3 2001-01-25 07:27:08 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,6 +57,8 @@ def fix_component_section (component, section):
     # FIXME: ugly hacks to work around override brain damage
     section = re_strip_section_prefix.sub('', section);
     section = string.replace(string.lower(section), 'non-us', '');
+    if section == "main" or section == "contrib" or section == "non-free":
+        section = '';
     if section != '':
         section = section + '/';
 
@@ -97,7 +99,7 @@ UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
             os.symlink(src, dest);
         dislocated_files[i[4]] = dest;
 
-    return dislocated_files;
+    #return dislocated_files;
 
     # TODO later when there's something to test it with!
     # Binary
