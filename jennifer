@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.42 2003-10-17 11:20:47 troup Exp $
+# $Id: jennifer,v 1.43 2003-11-07 01:48:58 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.42 $";
+jennifer_version = "$Revision: 1.43 $";
 
 Cnf = None;
 Options = None;
@@ -406,11 +406,11 @@ def check_files():
             files[file]["source"] = control.Find("Source", files[file]["package"]);
             # Get the source version
             source = files[file]["source"];
-            source_version = ""
+            source_version = "";
             if source.find("(") != -1:
-                m = utils.re_extract_src_version.match(source)
-                source = m.group(1)
-                source_version = m.group(2)
+                m = utils.re_extract_src_version.match(source);
+                source = m.group(1);
+                source_version = m.group(2);
             if not source_version:
                 source_version = files[file]["version"];
             files[file]["source package"] = source;

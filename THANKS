@@ -1,5 +1,8 @@
-Special thanks go to Jason and AJ; without their patient help, none of
-this would be possible.
+The katie software is based in large part on 'dinstall' by Guy Maor.
+The original 'katie' script was pretty much a line by line
+reimplementation of the perl 'dinstall' in python.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [Alphabetical Order]
 
@@ -9,6 +12,7 @@ Antti-Juhani Kaijanaho	       <ajk@debian.org>
 Ben Collins		       <bcollins@debian.org>
 Brendan O'Dea		       <bod@debian.org>
 Daniel Jacobwitz	       <dan@debian.org>
+Daniel Silverstone	       <dsilvers@debian.org>
 Drake Diedrich		       <dld@debian.org>
 Guy Maor		       <maor@debian.org>
 Jason Gunthorpe		       <jgg@debian.org>
@@ -16,4 +20,12 @@ Joey Hess		       <joeyh@debian.org>
 Mark Brown		       <broonie@debian.org>
 Martin Michlmayr	       <tbm@debian.org>
 Michael Beattie		       <mjb@debian.org>
+Randall Donald		       <rdonald@debian.org>
 Ryan Murray		       <rmurray@debian.org>
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Special thanks go to Jason and AJ; without their patient help, none of
+this would have been possible.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
