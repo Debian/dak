@@ -17,6 +17,13 @@ Dinstall
    StableRejector "Martin (Joey) Schulze <joey@debian.org>";
 };
 
+Julia
+{
+  ValidGID "800";
+  // Comma seperated list of users who are in Postgres but not the passwd file
+  KnownPostgres "postgres,www-data,katie";
+};
+
 Shania
 {
   Options

@@ -1,0 +1,10 @@
+#! /bin/sh
+#
+# Executed hourly via cron, out of troup's crontab.
+
+set -e
+export SCRIPTVARS=/org/non-us.debian.org/katie/vars
+. $SCRIPTVARS
+
+cd $masterdir
+julia /var/lib/misc/pandora.debian.org/passwd
