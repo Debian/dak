@@ -3,7 +3,7 @@
 # Executed hourly via cron, out of troup's crontab.
 
 set -e
-export SCRIPTVARS=/org/non-us.debian.org/katie/vars
+export SCRIPTVARS=/org/non-us.debian.org/katie/vars-non-US
 . $SCRIPTVARS
 
 cd $masterdir
