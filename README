@@ -15,6 +15,13 @@ documentation in 'doc/README.first'.
 There are some manual pages and READMEs in the doc sub-directory.  The
 TODO file is an incomplete list of things needing to be done.
 
+There's a mailing list for discussion, development of and help with
+dak.  See:
+
+  http://mailman.nocrew.org/cgi-bin/mailman/listinfo/dak-disc
+
+for archives and details on how to subscribe.
+
 dak is developed and used on Linux but will probably work under any
 UNIX since it's almost entirely python and shell scripts.
 

@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.27 2002-10-16 02:47:32 troup Exp $
+# $Id: katie.py,v 1.28 2003-01-20 19:13:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -460,11 +460,11 @@ distribution.""";
                     # Ignore this; it's a common mistake and not worth whining about
                     if section.lower() == "non-us/main" and override_section.lower() == "non-us":
                         continue;
-                    summary += "%s: section is overridden from %s to %s.\n" % (file, section, override_section);
+                    summary += "%s: package says section is %s, override says %s.\n" % (file, section, override_section);
                 priority = files[file]["priority"];
                 override_priority = files[file]["override priority"];
                 if priority != override_priority and priority != "-":
-                    summary += "%s: priority is overridden from %s to %s.\n" % (file, priority, override_priority);
+                    summary += "%s: package says priority is %s, override says %s.\n" % (file, priority, override_priority);
 
         if summary == "":
             return;
