@@ -321,10 +321,14 @@ Section
   doc;
   editors;
   electronics;
+  embedded;
   games;
+  gnome;
   graphics;
   hamradio;
   interpreters;
+  kde;
+  libdevel;
   libs;
   mail;
   math;
@@ -333,6 +337,8 @@ Section
   news;
   oldlibs;
   otherosfs;
+  perl;
+  python;
   science;
   shells;
   sound;
