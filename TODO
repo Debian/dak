@@ -27,6 +27,11 @@ queue/approved
 Others
 ------
 
+<aj> i'd be kinda inclined to go with insisting the .changes file take
+   the form ---- BEGIN PGP MESSAGE --- <non -- BEGIN/END lines> --
+   BEGIN PGP SIG -- END PGP MESSAGE -- with no lines before or after,
+   and rejecting .changes that didn't match that
+
   o rene should check for source packages not building any binaries
 
   o heidi should have a diff mode that accepts diff output!

@@ -2,7 +2,7 @@
 
 # Check utils.parse_changes()'s for handling of multi-line fields
 # Copyright (C) 2004  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.1 2004-01-21 03:20:52 troup Exp $
+# $Id: test.py,v 1.2 2004-01-21 03:48:58 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,10 +39,8 @@ def fail(message):
 ################################################################################
 
 def main ():
-    for file in [ "valid", "bogus-pre", "bogus-post", "evil" ]:
+    for file in [ "valid", "bogus-pre", "bogus-post" ]:
         for strict_whitespace in [ 0, 1 ]:
-            if file == "evil" and strict_whitespace == 1:
-                continue;
             try:
                 changes = utils.parse_changes("%s.changes" % (file), strict_whitespace)
             except utils.changes_parse_error_exc, line:

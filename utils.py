@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.61 2004-01-21 03:20:52 troup Exp $
+# $Id: utils.py,v 1.62 2004-01-21 03:48:58 troup Exp $
 
 ################################################################################
 
@@ -45,7 +45,7 @@ re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\> \t]+)\>");
 changes_parse_error_exc = "Can't parse line in .changes file";
 invalid_dsc_format_exc = "Invalid .dsc file";
 nk_format_exc = "Unknown Format: in .changes file";
-no_files_exc = "No Files: field in .dsc file.";
+no_files_exc = "No Files: field in .dsc or .changes file.";
 cant_open_exc = "Can't read file.";
 unknown_hostname_exc = "Unknown hostname";
 cant_overwrite_exc = "Permission denied; can't overwrite existent file."
@@ -176,8 +176,8 @@ def parse_changes(filename, dsc_whitespace_rules=0):
         if line.startswith("-----BEGIN PGP SIGNATURE"):
             break;
         if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
+            inside_signature = 1;
             if dsc_whitespace_rules:
-                inside_signature = 1;
                 while index < num_of_lines and line != "":
                     index += 1;
                     line = indexed_lines[index];
