@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.7 2001-04-03 10:02:16 troup Exp $
+# $Id: claire.py,v 1.8 2001-09-27 01:22:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
 
 # "Look around... leaves are brown... and the sky's a hazy shade of winter,
 #  Look around... leaves are brown... there's a patch of snow on the ground."
@@ -34,6 +36,17 @@ re_strip_section_prefix = re.compile(r'.*/');
 
 Cnf = None;
 projectB = None;
+
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: claire [OPTIONS]
+Create compatability symlinks from legacy locations to the pool.
+
+  -v, --verbose              explain what is being done
+  -h, --help                 show this help and exit"""
+
+    sys.exit(exit_code)
 
 ################################################################################
 
@@ -99,9 +112,6 @@ UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
             os.symlink(src, dest);
         dislocated_files[i[4]] = dest;
 
-    #return dislocated_files;
-
-    # TODO later when there's something to test it with!
     # Binary
     q = projectB.query("""
 SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
@@ -128,7 +138,7 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
         package = i[3]
         version = utils.re_no_epoch.sub('', i[4]);
         src = i[5]+i[6]
-       
+
         dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::RootDir"], Cnf.get("Suite::Stable::CodeName", "stable"), component, architecture, section, package, version);
         src = clean_symlink(src, dest, Cnf["Dir::RootDir"]);
         if not os.path.exists(dest):
@@ -145,16 +155,20 @@ def main ():
     global Cnf, projectB;
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
-    Arguments = [('d',"debug","Claire::Options::Debug", "IntVal"),
-                 ('h',"help","Claire::Options::Help"),
-                 ('v',"verbose","Claire::Options::Verbose"),
-                 ('V',"version","Claire::Options::Version")];
+    Arguments = [('h',"help","Claire::Options::Help"),
+                 ('v',"verbose","Claire::Options::Verbose")];
+    for i in ["help", "verbose" ]:
+        Cnf["Claire::Options::%s" % (i)] = "";
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Claire::Options")
+
+    if Options["Help"]:
+	usage();
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
 

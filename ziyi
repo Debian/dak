@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.7 2001-08-21 15:40:10 troup Exp $
+# $Id: ziyi,v 1.8 2001-09-27 01:22:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,16 @@ import apt_pkg
 
 Cnf = None
 projectB = None
+
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: ziyi [OPTION]
+Generate Release files.
+
+  -h, --help                 show this help and exit"""
+
+    sys.exit(exit_code)
 
 ################################################################################
 
@@ -89,11 +99,15 @@ def main ():
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
 
-    Arguments = [('d',"debug","Ziyi::Options::Debug", "IntVal"),
-                 ('h',"help","Ziyi::Options::Help"),
-                 ('v',"version","Ziyi::Options::Version")]
+    Arguments = [('h',"help","Ziyi::Options::Help")];
+    for i in [ "help" ]:
+        Cnf["Ziyi::Options::%s" % (i)] = "";
 
     suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    Options = Cnf.SubTree("Ziyi::Options")
+
+    if Options["Help"]:
+	usage();
 
     if suites == []:
         suites = Cnf.SubTree("Suite").List()

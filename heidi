@@ -2,7 +2,7 @@
 
 # Manipulate suite tags
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.8 2001-09-14 17:16:18 troup Exp $
+# $Id: heidi,v 1.9 2001-09-27 01:22:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,6 +51,20 @@ import utils, db_access, logging;
 Cnf = None;
 projectB = None;
 Logger = None;
+
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: heidi [OPTIONS] [FILE]
+Display or alter the contents of a suite using FILE(s), or stdin.
+
+  -a, --add=SUITE            add to SUITE
+  -l, --list=SUITE           list the contents of SUITE
+  -r, --remove=SUITE         remove from SUITE
+  -s, --set=SUITE            set SUITE
+  -h, --help                 show this help and exit"""
+
+    sys.exit(exit_code)
 
 #######################################################################################
 
@@ -221,14 +235,19 @@ def main ():
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
     Arguments = [('a',"add","Heidi::Options::Add", "HasArg"),
-                 ('D',"debug","Heidi::Options::Debug", "IntVal"),
                  ('h',"help","Heidi::Options::Help"),
                  ('l',"list","Heidi::Options::List","HasArg"),
                  ('r',"remove", "Heidi::Options::Remove", "HasArg"),
-                 ('s',"set", "Heidi::Options::Set", "HasArg"),
-                 ('V',"version","Heidi::Options::Version")];
+                 ('s',"set", "Heidi::Options::Set", "HasArg")];
+
+    for i in ["add", "help", "list", "remove", "set", "version" ]:
+        Cnf["Heidi::Options::%s" % (i)] = "";
 
     file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Heidi::Options")
+
+    if Options["Help"]:
+	usage();
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],int(Cnf["DB::Port"]));
 

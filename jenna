@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.13 2001-08-21 15:47:47 troup Exp $
+# $Id: jenna,v 1.14 2001-09-27 01:22:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,21 +18,40 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#######################################################################################
+################################################################################
 
 # BTAF: "GOD *DAMMIT*!!  What the FUCK happened to my free will??"
 #
 # -- http://www.angryflower.com/timelo.gif
 
-#######################################################################################
+################################################################################
 
 import pg, string, os, sys
 import apt_pkg
 import db_access, utils, claire, logging
 
+################################################################################
+
 projectB = None
 Cnf = None
 Logger = None;
+
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: jenna [OPTION]
+Write out file lists suitable for use with apt-ftparchive.
+
+  -a, --architecture=ARCH   only write file lists for this architecture
+  -c, --component=COMPONENT only write file lists for this component
+  -s, --suite=SUITE         only write file lists for this suite
+  -h, --help                show this help and exit
+
+ARCH, COMPONENT and SUITE can be space seperated lists, e.g.
+    --architecture=\"m68k i386\""""
+    sys.exit(exit_code)
+
+################################################################################
 
 def generate_src_list(suite, component, output, dislocated_files):
     sources = {}
@@ -205,21 +224,25 @@ def main():
 
     Arguments = [('a',"architecture","Jenna::Options::Architecture", "HasArg"),
                  ('c',"component","Jenna::Options::Component", "HasArg"),
-                 ('d',"debug","Jenna::Options::Debug", "IntVal"),
                  ('h',"help","Jenna::Options::Help"),
-                 ('s',"suite", "Jenna::Options::Suite", "HasArg"),
-                 ('v',"verbose","Jenna::Options::Verbose"),
-                 ('V',"version","Jenna::Options::Version")];
+                 ('s',"suite", "Jenna::Options::Suite", "HasArg")];
+
+    for i in ["architecture", "component", "help", "suite" ]:
+        Cnf["Jenna::Options::%s" % (i)] = "";
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Jenna::Options");
+
+    if Options["Help"]:
+        usage();
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
     Logger = logging.Logger(Cnf, "jenna");
 
-    if Cnf["Jenna::Options::Suite"] == "":
-        Cnf["Jenna::Options::Suite"] = string.join(Cnf.SubTree("Suite").List());
-    for suite in string.split(Cnf["Jenna::Options::Suite"]):
+    if Options["Suite"] == "":
+        Options["Suite"] = string.join(Cnf.SubTree("Suite").List());
+    for suite in string.split(Options["Suite"]):
         suite = string.lower(suite);
         if suite == 'stable':
             dislocated_files = claire.find_dislocated_stable(Cnf, projectB);
@@ -227,14 +250,14 @@ def main():
             dislocated_files = {};
         clean_suite(suite);
 	clean_duplicate_packages(suite)
-        components = Cnf["Jenna::Options::Component"];
+        components = Options["Component"];
         if not Cnf.has_key("Suite::%s::Components" % (suite)):
             components = "-";
         if components == "":
             components = string.join(Cnf.SubTree("Suite::%s::Components" % (suite)).List());
         for component in string.split(components):
             component = string.lower(component)
-            architectures = Cnf["Jenna::Options::Architecture"];
+            architectures = Options["Architecture"];
             if architectures == "":
                 architectures = string.join(Cnf.SubTree("Suite::%s::Architectures" % (suite)).List());
             for architecture in string.split(architectures):

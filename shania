@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: shania,v 1.5 2001-06-23 00:25:52 troup Exp $
+# $Id: shania,v 1.6 2001-09-27 01:22:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import utils
 import apt_pkg;
 
 ################################################################################
- 
+
 # 23:12|<aj> I will not hush!
 # 23:12|<elmo> :>
 # 23:12|<aj> Where there is injustice in the world, I shall be there!
@@ -49,9 +49,23 @@ del_dir = None;
 
 ################################################################################
 
+def usage (exit_code=0):
+    print """Usage: shania [OPTIONS]
+Clean out incoming directories.
+
+  -d, --days=DAYS            remove anything older than DAYS old
+  -i, --incoming=INCOMING    the incoming directory to clean
+  -n, --no-action            don't do anything
+  -v, --verbose              explain what is being done
+  -h, --help                 show this help and exit"""
+
+    sys.exit(exit_code)
+
+################################################################################
+
 def init ():
     global delete_date, del_dir;
-    
+
     delete_date = int(time.time())-(int(Options["Days"])*84600);
 
     # Ensure a directory exists to remove files to
@@ -79,7 +93,7 @@ def remove (file):
         utils.move(file, dest_filename);
     else:
         utils.warn("skipping '%s', permission denied." % (os.path.basename(file)));
-        
+
 # Removes any old files.
 # [Used for Incoming/REJECT]
 #
@@ -103,7 +117,7 @@ def flush_old ():
 def flush_orphans ():
     all_files = {};
     changes_files = [];
-    
+
     # Build up the list of all files in the directory
     for i in os.listdir('.'):
         if os.path.isfile(i):
@@ -139,7 +153,7 @@ def flush_orphans ():
                 if Options["Verbose"]:
                     print "Skipping, has parents, '%s'." % (key);
                 del all_files[key];
-                    
+
     # Anthing left at this stage is not referenced by a .changes (or
     # a .dsc) and should be deleted if old enough.
     for file in all_files.keys():
@@ -153,25 +167,30 @@ def flush_orphans ():
         else:
             if Options["Verbose"]:
                 print "Skipping, too new, '%s'." % (os.path.basename(file));
-    
+
+################################################################################
+
 def main ():
     global Cnf, Options;
-    
+
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
-    Arguments = [('D',"debug","Shania::Options::Debug", "IntVal"),
-                 ('h',"help","Shania::Options::Help"),
-                 ('V',"version","Shania::Options::Version"),
+    Arguments = [('h',"help","Shania::Options::Help"),
                  ('d',"days","Shania::Options::Days", "IntVal"),
                  ('i',"incoming","Shania::Options::Incoming", "HasArg"),
                  ('n',"no-action","Shania::Options::No-Action"),
                  ('v',"verbose","Shania::Options::Verbose")];
+    for i in ["help", "days", "incoming", "no-action", "verbose" ]:
+        Cnf["Shania::Options::%s" % (i)] = "";
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Shania::Options")
+
+    if Options["Help"]:
+	usage();
 
     init ();
 

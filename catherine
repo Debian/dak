@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.10 2001-06-22 22:53:14 troup Exp $
+# $Id: catherine,v 1.11 2001-09-27 01:22:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +32,21 @@ import apt_pkg, apt_inst;
 
 Cnf = None;
 projectB = None;
+
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: catherine [OPTIONS]
+Migrate packages from legacy locations into the pool.
+
+  -l, --limit=AMOUNT         only migrate AMOUNT Kb of packages
+  -n, --no-action            don't do anything
+  -v, --verbose              explain what is being done
+  -h, --help                 show this help and exit"""
+
+    sys.exit(exit_code)
+
+################################################################################
 
 # Q is a python-postgresql query result set and must have the
 # following four columns:
@@ -113,26 +128,29 @@ def poolize (q, limit, verbose, no_action):
             q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, location_id, qid["files_id"]));
 
     sys.stderr.write("Poolized %s in %s files.\n" % (utils.size_type(poolized_size), poolized_count));
-    
+
 ################################################################################
 
 def main ():
     global Cnf, projectB;
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
-    Arguments = [('D',"debug","Catherine::Options::Debug", "IntVal"),
-                 ('h',"help","Catherine::Options::Help"),
-                 ('V',"version","Catherine::Options::Version"),
+    Arguments = [('h',"help","Catherine::Options::Help"),
                  ('l',"limit", "Catherine::Options::Limit", "HasArg"),
                  ('n',"no-action","Catherine::Options::No-Action"),
                  ('v',"verbose","Catherine::Options::Verbose")];
+    for i in ["help", "limit", "no-action", "verose" ]:
+        Cnf["Catherine::Options::%s" % (i)] = "";
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Catherine::Options")
+
+    if Options["Help"]:
+        usage();
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
@@ -152,14 +170,14 @@ def main ():
 
     # Grab a list of all files not already in the pool
     q = projectB.query("""
-SELECT l.path, f.filename, f.id as files_id, c.name as component 
-   FROM files f, location l, component c WHERE 
-    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id) 
-    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND l.component = c.id 
+SELECT l.path, f.filename, f.id as files_id, c.name as component
+   FROM files f, location l, component c WHERE
+    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id)
+    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND l.component = c.id
 UNION SELECT l.path, f.filename, f.id as files_id, null as component
-   FROM files f, location l WHERE 
-    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id) 
-    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND NOT EXISTS 
+   FROM files f, location l WHERE
+    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id)
+    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND NOT EXISTS
      (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);""");
 
     poolize(q, limit, Options["Verbose"], Options["No-Action"]);
