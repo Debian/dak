@@ -1,0 +1,70 @@
+<!-- -*- mode: sgml; mode: fold -*- -->
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!ENTITY % katieent SYSTEM "katie.ent">
+%katieent;
+
+]>
+
+<refentry>
+  &katie-docinfo;
+
+  <refmeta>
+    <refentrytitle>madison</>
+    <manvolnum>1</>
+  </refmeta>
+
+  <!-- Man page title -->
+  <refnamediv>
+    <refname>madison</>
+    <refpurpose>Utility to display information about packages</>
+  </refnamediv>
+
+  <!-- Arguments -->
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>madison</>
+      <arg><option><replaceable>options</replaceable></></arg>
+      <arg choice="plain"><replaceable>package</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <RefSect1><Title>Description</>
+    <para>
+      <command>madison</command> is a utility to display information about packages, specificaly what suites they are in and for which architectures.
+    </PARA>
+  </REFSECT1>
+
+  <RefSect1><Title>Options</>
+
+    <VariableList>
+      <VarListEntry><term><option>-a/--architecture=<replaceable>architecture</replaceable></option></>
+	<ListItem>
+	  <Para>Restrict the packages being considered to the architecture(s) listed.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+      <VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
+	<ListItem>
+	  <Para>Only list package information for the suite(s) listed.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+      <VarListEntry><term><option>-h/--help</option></>
+	<ListItem>
+	  <Para>Show help and then exit.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+    </VariableList>
+  </RefSect1>
+
+  <RefSect1><Title>Diagnostics</>
+    <para>
+      <command>madison</command> returns zero on normal operation, non-zero on error.
+    </PARA>
+  </RefSect1>
+
+  &manauthor;
+
+</refentry>

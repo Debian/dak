@@ -1,0 +1,89 @@
+<!-- -*- mode: sgml; mode: fold -*- -->
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!ENTITY % katieent SYSTEM "katie.ent">
+%katieent;
+
+]>
+
+<refentry>
+  &katie-docinfo;
+
+  <refmeta>
+    <refentrytitle>julia</>
+    <manvolnum>1</>
+  </refmeta>
+
+  <!-- Man page title -->
+  <refnamediv>
+    <refname>julia</>
+    <refpurpose>Utility to sync PostgreSQL with a (LDAP-generated) passwd file</>
+  </refnamediv>
+
+  <!-- Arguments -->
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>julia</>
+      <arg><option><replaceable>options</replaceable></></arg>
+      <arg choice="plain"><replaceable>passwd file</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <RefSect1><Title>Description</>
+    <para>
+      <command>julia</command> is a utility to sync PostgreSQL's user database with a passwd file.  It is designed to allow the use of 'peer sameuser' authentication.  It simply adds any users in the password file into PostgreSQL's pg_user table if they are already not there.  It will also warn you about users who are in the pg_user table but not in the password file.
+    </PARA>
+  </REFSECT1>
+
+  <RefSect1><Title>Options</>
+
+    <VariableList>
+      <VarListEntry><term><option>-q/--quiet<replaceable></replaceable></option></>
+	<ListItem>
+	  <Para>Be quiet, i.e. display as little output as possible.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+      <VarListEntry><term><option>-v/--verbose</option></>
+	<ListItem>
+	  <Para>Be verbose, i.e. display more output than normal.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+      <VarListEntry><term><option>-h/--help</option></>
+	<ListItem>
+	  <Para>Show help and then exit.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+    </VariableList>
+  </RefSect1>
+
+  <refsect1>
+    <title>Configuration</title>
+    <para><command>julia</command> uses katie's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
+    <variablelist>
+      <varlistentry>
+	<term>Julia::ValidGID</term>
+	<listitem>
+	  <para>Each user's primary GID is compared with this, if it's not blank.  If they match, the user will be processed, if they don't, the user will be skipped.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>Julia::KnownPostgresUsers</term>
+	<listitem>
+	  <para>This is a comma-separated list of users who are in PostgreSQL's pg_user table but are not in the password file.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <RefSect1><Title>Diagnostics</>
+    <para>
+      <command>julia</command> returns zero on normal operation, non-zero on error.
+    </PARA>
+  </RefSect1>
+
+  &manauthor;
+
+</refentry>

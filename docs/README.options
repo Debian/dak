@@ -1,0 +1,13 @@
+Standard options
+----------------
+
+-a/--architectures
+-c/--component
+-h/--help 
+-n/--no-action
+-s/--suite
+-V/--version
+
+Exceptions:
+  katie - backwardly compatible options with dinstall
+  heidi - ? hysterical raisins and testing compatibility

@@ -18,7 +18,7 @@ See the file INSTALL for installation instructions.
 dak is used on the following platforms :-
 
 Linux/i386 2.2
-Linux/UltraSparc 2.2
+Linux/Sparc 2.4
 
 dak is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
@@ -28,6 +28,7 @@ version.
 
 -- 
 James Troup <james@nocrew.org>, Horsforth, Leeds
-Wed, 21 Mar 2001 06:35:18 +0000
+Wed, 26 Sep 2001 06:34:50 +0100
+
 
 
