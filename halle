@@ -2,7 +2,7 @@
 
 # Remove obsolete .changes files from proposed-updates
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: halle,v 1.6 2002-05-08 11:13:02 troup Exp $
+# $Id: halle,v 1.7 2002-05-18 23:54:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,8 +49,8 @@ Need either changes files or an admin.txt file with a '.joey' suffix."""
 
 def check_changes (filename):
     try:
-        changes = utils.parse_changes(filename, 0)
-        files = utils.build_file_list(changes, "");
+        changes = utils.parse_changes(filename);
+        files = utils.build_file_list(changes);
     except:
         utils.warn("Couldn't read changes file '%s'." % (filename));
         return;

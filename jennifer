@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.19 2002-05-14 22:28:01 troup Exp $
+# $Id: jennifer,v 1.20 2002-05-18 23:54:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.19 $";
+jennifer_version = "$Revision: 1.20 $";
 
 Cnf = None;
 Options = None;
@@ -355,7 +355,7 @@ def check_changes():
 
     # Parse the .changes field into a dictionary
     try:
-        changes.update(utils.parse_changes(filename, 0));
+        changes.update(utils.parse_changes(filename));
     except utils.cant_open_exc:
         reject("can't read changes file '%s'." % (filename));
         return 0;
@@ -365,7 +365,7 @@ def check_changes():
 
     # Parse the Files field from the .changes into another dictionary
     try:
-        files.update(utils.build_file_list(changes, ""));
+        files.update(utils.build_file_list(changes));
     except utils.changes_parse_error_exc, line:
         reject("error parsing changes file '%s', can't grok: %s." % (filename, line));
     except utils.nk_format_exc, format:
@@ -713,7 +713,7 @@ def check_dsc ():
         if files[file]["type"] == "dsc":
             # Parse the .dsc file
             try:
-                dsc.update(utils.parse_changes(file, 1));
+                dsc.update(utils.parse_changes(file, dsc_whitespace_rules=1));
             except utils.cant_open_exc:
                 # if not -n copy_to_holding() will have done this for us...
                 if Options["No-Action"]:
@@ -724,7 +724,7 @@ def check_dsc ():
                 reject("syntax error in .dsc file '%s', line %s." % (file, line));
             # Build up the file list of files mentioned by the .dsc
             try:
-                dsc_files.update(utils.build_file_list(dsc, 1));
+                dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1));
             except utils.no_files_exc:
                 reject("no Files: field in .dsc file.");
                 continue;

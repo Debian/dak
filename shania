@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: shania,v 1.14 2002-05-08 11:13:02 troup Exp $
+# $Id: shania,v 1.15 2002-05-18 23:54:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -129,8 +129,8 @@ def flush_orphans ():
     # Proces all .changes and .dsc files.
     for changes_filename in changes_files:
         try:
-            changes = utils.parse_changes(changes_filename, 0)
-            files = utils.build_file_list(changes, "");
+            changes = utils.parse_changes(changes_filename);
+            files = utils.build_file_list(changes);
         except:
             utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type));
             continue;
@@ -139,8 +139,8 @@ def flush_orphans ():
         for file in files.keys():
             if file[-4:] == ".dsc":
                 try:
-                    dsc = utils.parse_changes(file, 0)
-                    dsc_files = utils.build_file_list(dsc, 1)
+                    dsc = utils.parse_changes(file);
+                    dsc_files = utils.build_file_list(dsc, is_a_dsc=1);
                 except:
                     utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type));
                     continue;

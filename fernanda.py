@@ -2,7 +2,7 @@
 
 # Script to automate some parts of checking NEW packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: fernanda.py,v 1.2 2002-05-03 16:06:45 troup Exp $
+# $Id: fernanda.py,v 1.3 2002-05-18 23:54:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -128,8 +128,8 @@ def display_changes (changes_filename):
 def check_changes (changes_filename):
     display_changes(changes_filename);
 
-    changes = utils.parse_changes (changes_filename, 0);
-    files = utils.build_file_list(changes, "");
+    changes = utils.parse_changes (changes_filename);
+    files = utils.build_file_list(changes);
     for file in files.keys():
 	if file[-4:] == ".deb" or file[-5:] == ".udeb":
 	    check_deb(file);

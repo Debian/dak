@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.43 2002-05-10 00:24:14 troup Exp $
+# $Id: utils.py,v 1.44 2002-05-18 23:54:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import commands, os, pwd, re, socket, shutil, string, sys, tempfile
+import os, pwd, re, socket, shutil, string, sys, tempfile
 import apt_pkg
 
 re_comments = re.compile(r"\#.*")
@@ -123,7 +123,7 @@ def extract_component_from_section(section):
 # o The data section must end with a blank line and must be followed by
 #   "-----BEGIN PGP SIGNATURE-----".
 
-def parse_changes(filename, dsc_whitespace_rules):
+def parse_changes(filename, dsc_whitespace_rules=0):
     changes_in = open_file(filename);
     error = "";
     changes = {};
@@ -199,12 +199,12 @@ def parse_changes(filename, dsc_whitespace_rules):
 
 # Dropped support for 1.4 and ``buggy dchanges 3.4'' (?!) compared to di.pl
 
-def build_file_list(changes, dsc):
+def build_file_list(changes, is_a_dsc=0):
     files = {}
     format = changes.get("format", "")
     if format != "":
 	format = float(format)
-    if dsc == "" and (format < 1.5 or format > 2.0):
+    if not is_a_dsc and (format < 1.5 or format > 2.0):
 	raise nk_format_exc, format;
 
     # No really, this has happened.  Think 0 length .dsc file.
@@ -217,7 +217,7 @@ def build_file_list(changes, dsc):
         s = string.split(i)
         section = priority = "";
         try:
-            if dsc != "":
+            if is_a_dsc:
                 (md5, size, name) = s
             else:
                 (md5, size, section, priority, name) = s
@@ -428,12 +428,12 @@ def cc_fix_changes (changes):
 # Sort by source name, source version, 'have source', and then by filename
 def changes_compare (a, b):
     try:
-        a_changes = parse_changes(a, 0)
+        a_changes = parse_changes(a);
     except:
         return -1;
 
     try:
-        b_changes = parse_changes(b, 0)
+        b_changes = parse_changes(b);
     except:
         return 1;
 
@@ -452,11 +452,11 @@ def changes_compare (a, b):
     b_version = b_changes.get("version");
     q = apt_pkg.VersionCompare(a_version, b_version);
     if q:
-        return q
+        return q;
 
     # Sort by 'have source'
-    a_has_source = a_changes["architecture"].get("source")
-    b_has_source = b_changes["architecture"].get("source")
+    a_has_source = a_changes["architecture"].get("source");
+    b_has_source = b_changes["architecture"].get("source");
     if a_has_source and not b_has_source:
         return -1;
     elif b_has_source and not a_has_source:
