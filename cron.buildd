@@ -18,7 +18,7 @@ if [ ! -e "$ftpdir/Archive_Maintenance_In_Progress" ]; then
 	trap cleanup 0
         cd $overridedir
         denise &>/dev/null
-        rm -f override.sid.all3
+        rm -f override.sid.all3 override.sid.all3.src
         for i in main contrib non-free main.debian-installer; do
 		cat override.sid.$i >> override.sid.all3
 		if [ "$i" != "main.debian-installer" ]; then
