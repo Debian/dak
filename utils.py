@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.51 2002-10-16 02:47:32 troup Exp $
+# $Id: utils.py,v 1.52 2002-11-22 04:06:34 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import commands, os, pwd, re, socket, shutil, string, sys, tempfile;
+import commands, os, pwd, re, socket, shutil, string, sys, tempfile, traceback;
 import apt_pkg;
 import db_access;
 
@@ -613,6 +613,33 @@ def parse_args(Options):
         check_source = 1;
 
     return (con_suites, con_architectures, con_components, check_source);
+
+################################################################################
+
+# Inspired(tm) by Bryn Keller's print_exc_plus (See
+# http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52215)
+
+def print_exc():
+    tb = sys.exc_info()[2];
+    while tb.tb_next:
+        tb = tb.tb_next;
+    stack = [];
+    frame = tb.tb_frame;
+    while frame:
+        stack.append(frame);
+        frame = frame.f_back;
+    stack.reverse();
+    traceback.print_exc();
+    for frame in stack:
+        print "\nFrame %s in %s at line %s" % (frame.f_code.co_name,
+                                             frame.f_code.co_filename,
+                                             frame.f_lineno);
+        for key, value in frame.f_locals.items():
+            print "\t%20s = " % key,;
+            try:
+                print value;
+            except:
+                print "<unable to print>";
 
 ################################################################################
 
