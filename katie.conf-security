@@ -42,12 +42,22 @@ Julia
   KnownPostgres "postgres,katie,www-data,udmsearch";
 };
 
+Helena
+{
+  Directories
+  {
+    byhand;
+    new;
+    accepted;
+  };
+};
+
 Shania
 {
   Options
   {
     Days 14;
-   };
+  };
  MorgueSubDir "shania";
 };
 
@@ -56,10 +66,10 @@ Melanie
   Options
   {
     Suite "unstable";
-   };
+  };
 
-   MyEmailAddress "Debian Archive Maintenance <ftpmaster@ftp-master.debian.org>";
-   LogFile "/org/security.debian.org/katie-log/removals.txt";
+  MyEmailAddress "Debian Archive Maintenance <ftpmaster@ftp-master.debian.org>";
+  LogFile "/org/security.debian.org/katie-log/removals.txt";
 };
 
 Neve
