@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.33 2003-04-08 21:38:52 troup Exp $
+# $Id: katie.py,v 1.34 2003-07-15 17:29:19 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -745,6 +745,14 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
         return self.reject_message;
 
     ################################################################################
+
+    # **WARNING**
+    # NB: this function can remove entries from the 'files' index [if
+    # the .orig.tar.gz is a duplicate of the one in the archive]; if
+    # you're iterating over 'files' and call this function as part of
+    # the loop, be sure to add a check to the top of the loop to
+    # ensure you haven't just tried to derefernece the deleted entry.
+    # **WARNING**
 
     def check_dsc_against_db(self, file):
         self.reject_message = "";
