@@ -1,0 +1,183 @@
+#!/usr/bin/env python
+
+# Create all the Release files
+
+# Copyright (C) 2001  Anthony Towns <ajt@debian.org>
+# $Id: ziyi,v 1.1 2001-03-02 02:25:15 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+#   ``Bored now''
+
+################################################################################
+
+import pg, sys, os, stat, string, time
+import utils, db_access
+import apt_pkg
+
+################################################################################
+
+Cnf = None
+projectB = None
+
+################################################################################
+
+def compressnames (tree,type,file):
+    compress = AptCnf.get("%s::%s::Compress" % (tree,type), AptCnf.get("Default::%s::Compress" % (type), ". gzip"))
+    result = []
+    for mode in string.split(compress):
+	if mode == ".":
+	    result.append(file)
+	elif mode == "gzip":
+	    result.append(file + ".gz")
+	elif mode == "bzip2":
+	    result.append(file + ".bz2")
+    return result
+
+def print_file (tree, name):
+    path = Cnf["Dir::RootDir"] + tree + "/"
+    try:
+        file_handle = utils.open_file(path + name, "r")
+    except utils.cant_open.exc:
+	print "ALERT: Couldn't open " + path + name
+    else:
+	md5 = apt_pkg.md5sum(file_handle)
+	file_handle.close()
+
+    size = os.stat(path + name)[stat.ST_SIZE]
+
+    out.write(" %s %8d %s\n" % (md5, size, name))
+
+################################################################################
+
+def main ():
+    global Cnf, AptCnf, projectB, out
+    out = sys.stdout;
+
+
+    apt_pkg.init()
+    
+    Cnf = apt_pkg.newConfiguration()
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file())
+
+    AptCnf = apt_pkg.newConfiguration()
+    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
+    print "APT.CONF IS: " + utils.which_apt_conf_file()
+
+    Arguments = [('d',"debug","Ziyi::Options::Debug", "IntVal"),
+                 ('h',"help","Ziyi::Options::Help"),
+                 ('v',"version","Ziyi::Options::Version")]
+
+    suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+
+    if suites == []:
+        suites = Cnf.SubTree("Suite").List()
+
+    def real_arch(x):
+	return x != "source" and x != "all"
+
+    for suite in suites:
+        print "Processing: " + suite
+	SuiteBlock = Cnf.SubTree("Suite::" + suite)
+
+	if SuiteBlock.has_key("Untouchable"):
+            print "Skipping: " + suite + " (untouchable)"
+            continue
+
+	suite = string.lower(suite)
+
+	origin = SuiteBlock["Origin"]
+	label = SuiteBlock.get("Label", origin)
+	version = SuiteBlock.get("Version", "")
+	codename = SuiteBlock.get("CodeName", "")
+	if SuiteBlock.has_key("Components"):
+	    components = SuiteBlock.SubTree("Components").List()
+	else:
+	    components = []
+
+	nonus = 1
+	if components != []:
+	    for c in components:
+	        if c[:7] != "non-US/":
+		    nonus = 0
+	else:
+	    nonus = 0
+	if nonus:
+	    longsuite = suite + "/non-US"
+	else:
+	    longsuite = suite
+
+	tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
+
+	print Cnf["Dir::RootDir"] + tree + "/Release"
+	out = open(Cnf["Dir::RootDir"] + tree + "/Release", "w")
+
+	out.write("Origin: %s\n" % (origin))
+	out.write("Label: %s\n" % (label))
+	out.write("Suite: %s\n" % (suite))
+	if version != "":
+	    out.write("Version: %s\n" % (version))
+	if codename != "":
+	    out.write("Codename: %s\n" % (codename))
+	out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
+	out.write("Architectures: %s\n" % (string.join(filter(real_arch, SuiteBlock.SubTree("Architectures").List()))))
+	if components != []:
+            out.write("Components: %s\n" % (string.join(components)))
+
+	out.write("Description: %s\n" % (SuiteBlock["Description"]))
+	out.write("MD5Sum:\n")
+	if AptCnf.has_key("tree::%s" % (tree)):
+	    for sec in string.split(AptCnf["tree::%s::Sections" % (tree)]):
+		for arch in string.split(AptCnf["tree::%s::Architectures" % (tree)]):
+		    if arch == "source":
+			for file in compressnames("tree::%s" % (tree), "Sources", "%s/%s/Sources" % (sec, arch)):
+			    print_file(tree,file)
+		    else:
+			rel = "%s/binary-%s/Release" % (sec, arch)
+			relpath = Cnf["Dir::RootDir"]+tree+"/"+rel
+			if os.path.exists(relpath):
+			    try:
+				release = open(relpath, "w")
+				#release = open(string.replace(longsuite,"/","_") + "_" + arch + "_" + sec + "_Release", "w")
+			    except IOError:
+				print "Couldn't write to " + relpath
+			    else:
+				release.write("Archive: %s\n" % (suite))
+				if version != "":
+				    release.write("Version: %s\n" % (version))
+				if nonus:
+				    release.write("Component: non-US/%s\n" % (sec))
+				else:
+				    release.write("Component: %s\n" % (sec))
+				release.write("Origin: %s\n" % (origin))
+				release.write("Label: %s\n" % (label))
+				release.write("Architecture: %s\n" % (arch))
+				release.close()
+			    print_file(tree,"%s/binary-%s/Release" % (sec,arch))
+			for file in compressnames("tree::%s" % (tree), "Packages", "%s/binary-%s/Packages" % (sec, arch)):
+			    print_file(tree,file)
+	elif AptCnf.has_key("bindirectory::%s" % (tree)):
+	    for file in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
+		print_file(tree,string.replace(file,tree+"/","",1))
+	    for file in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
+		print_file(tree,string.replace(file,tree+"/","",1))
+	else:
+	    print "ALERT: no tree/bindirectory for %s" % (tree)
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+
