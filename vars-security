@@ -12,7 +12,7 @@ uploadhost=ftp-master.debian.org
 uploaddir=/pub/UploadQueue/
 
 components="main non-free contrib"
-suites="potato woody"
+suites="stable testing"
 override_types="deb dsc udeb"
 
 PATH=$masterdir:$PATH
