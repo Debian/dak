@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.14 2002-04-21 15:38:41 troup Exp $
+# $Id: jennifer,v 1.15 2002-04-22 11:06:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.14 $";
+jennifer_version = "$Revision: 1.15 $";
 
 Cnf = None;
 Options = None;
@@ -663,10 +663,14 @@ def check_files():
             if string.find(files[file]["priority"],'/') != -1:
                 reject("file '%s' has invalid priority '%s' [contains '/']." % (file, files[file]["priority"]));
 
-            # Check the md5sum & size against existing files (if any)
+            # Determine the location
             location = Cnf["Dir::PoolDir"];
-            files[file]["location id"] = db_access.get_location_id (location, component, archive);
+            location_id = db_access.get_location_id (location, component, archive);
+            if location_id == -1:
+                reject("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive));
+            files[file]["location id"] = location_id;
 
+            # Check the md5sum & size against existing files (if any)
             files[file]["pool name"] = utils.poolify (changes["source"], files[file]["component"]);
             files_id = db_access.get_files_id(files[file]["pool name"] + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"]);
             if files_id == -1:
