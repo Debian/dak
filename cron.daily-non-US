@@ -44,8 +44,6 @@ katie -pak *.changes | direport | tee REPORT | \
 chgrp debadmin REPORT
 chmod 664 REPORT
 
-catherine
-
 cd $masterdir
 symlinks -d -r $ftpdir
 
