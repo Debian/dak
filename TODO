@@ -3,8 +3,21 @@
 
 ================================================================================
 
+Actually Urgent
+---------------
+
+  o Fix lisa not to trample distirbutions (DOH)
+
 More Urgent
 -----------
+
+  o lisa exits if you check twice (aj)
+
+  o jenna sucks
+
+  o queued and/or perl on sparc stable sucks
+
+  o aj's bin nmu changes
 
   o Lisa:
     * priority >> optional
