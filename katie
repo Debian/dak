@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.27 2001-02-04 04:27:47 troup Exp $
+# $Id: katie,v 1.28 2001-02-06 00:39:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -427,6 +427,10 @@ def check_files():
             if component_id == -1:
                 reject_message = reject_message + "Rejected: file '%s' has unknown component '%s'.\n" % (file, component);
                 continue;
+
+            # Validate the priority
+            if string.find(files[file]["priority"],'/') != -1:
+                reject_message = reject_message + "Rejected: file '%s' has invalid priority '%s' [contains '/'].\n" % (file, files[file]["priority"]);
             
             # Check the md5sum & size against existing files (if any)
             location = Cnf["Dir::PoolDir"];
@@ -609,7 +613,7 @@ def check_override ():
 
     summary = ""
     for file in files.keys():
-        if not files[file].has_key("new") and (files[file]["type"] == "dsc" or files[file]["type"] == "deb"):
+        if not files[file].has_key("new") and files[file]["type"] == "deb":
             section = files[file]["section"];
             override_section = files[file]["override section"];
             if section != override_section and section != "-":
@@ -617,11 +621,10 @@ def check_override ():
                 if string.lower(section) == "non-us/main" and string.lower(override_section) == "non-us":
                     continue;
                 summary = summary + "%s: section is overridden from %s to %s.\n" % (file, section, override_section);
-            if files[file]["type"] == "deb": # don't do priority for source
-                priority = files[file]["priority"];
-                override_priority = files[file]["override priority"];
-                if priority != override_priority and priority != "-":
-                    summary = summary + "%s: priority is overridden from %s to %s.\n" % (file, priority, override_priority);
+            priority = files[file]["priority"];
+            override_priority = files[file]["override priority"];
+            if priority != override_priority and priority != "-":
+                summary = summary + "%s: priority is overridden from %s to %s.\n" % (file, priority, override_priority);
 
     if summary == "":
         return;
