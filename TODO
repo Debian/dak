@@ -4,13 +4,11 @@ TOFIX
 Urgent
 ------
 
-  o migrate proposed-updates and experimental to the pool; this allows
-    us to remove the null component handling and de facto fixes the
-    ssh + w3m multi-component problem.
+  o migrate non-US proposed-updates to the pool; this allows us to
+    remove the null component handling and de facto fixes the ssh
+    multi-component problem.
 
   o Write something to sync architectures.
-
-  o Make experimental work
 
   o fix katie's handling of source packages in different directories;
     e.g. if a package moves from main to contrib, the .orig.tar.gz
@@ -28,6 +26,8 @@ Urgent
     package screws up don't kill the daily cron run.
 
   o Add urgency to DB for testing
+
+  o [Easy] Enable catherine
 
 Less Urgent
 -----------
