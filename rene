@@ -2,7 +2,7 @@
 
 # Check for obsolete binary packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: rene,v 1.20 2003-03-14 19:03:32 troup Exp $
+# $Id: rene,v 1.21 2003-04-15 16:01:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,13 +39,17 @@ projectB = None;
 suite_id = None;
 no_longer_in_suite = {}; # Really should be static to add_nbs, but I'm lazy
 
+source_binaries = {};
+source_versions = {};
+
 ################################################################################
 
 def usage(exit_code=0):
     print """Usage: rene
 Check for obsolete or duplicated packages.
 
-  -h, --help                show this help and exit."""
+  -h, --help                show this help and exit.
+  -m, --mode=MODE           chose the MODE to run in (full or daily)."""
     sys.exit(exit_code)
 
 ################################################################################
@@ -68,15 +72,151 @@ def add_nbs(nbs_d, source, version, package):
 
 ################################################################################
 
+# Check for packages built on architectures they shouldn't be.
+def do_anais(architecture, binaries_list, source):
+    if architecture == "any" or architecture == "all":
+        return "";
+
+    anais_output = "";
+    architectures = {};
+    for arch in architecture.split():
+        architectures[arch.strip()] = "";
+    for binary in binaries_list:
+        q = projectB.query("SELECT a.arch_string, b.version FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id AND b.package = '%s'" % (suite_id, binary));
+        ql = q.getresult();
+        versions = [];
+        for i in ql:
+            arch = i[0];
+            version = i[1];
+            if architectures.has_key(arch):
+                versions.append(version);
+        versions.sort(apt_pkg.VersionCompare);
+        if versions:
+            latest_version = versions.pop()
+        else:
+            latest_version = None;
+        # Check for 'invalid' architectures
+        versions_d = {}
+        for i in ql:
+            arch = i[0];
+            version = i[1];
+            if not architectures.has_key(arch):
+                if not versions_d.has_key(version):
+                    versions_d[version] = [];
+                versions_d[version].append(arch)
+
+        if versions_d != {}:
+            anais_output += "\n (*) %s_%s [%s]: %s\n" % (binary, latest_version, source, architecture);
+            versions = versions_d.keys();
+            versions.sort(apt_pkg.VersionCompare);
+            for version in versions:
+                arches = versions_d[version];
+                arches.sort();
+                anais_output += "    o %s: %s\n" % (version, ", ".join(arches));
+    return anais_output;
+
+################################################################################
+
+def do_nviu():
+    experimental_id = db_access.get_suite_id("experimental");
+    if experimental_id == -1:
+        return;
+    # Check for packages in experimental obsoleted by versions in unstable
+    q = projectB.query("""
+SELECT s.source, s.version AS experimental, s2.version AS unstable
+  FROM src_associations sa, source s, source s2, src_associations sa2
+  WHERE sa.suite = %s AND sa2.suite = %d AND sa.source = s.id
+   AND sa2.source = s2.id AND s.source = s2.source
+   AND versioncmp(s.version, s2.version) < 0""" % (experimental_id,
+                                                   db_access.get_suite_id("unstable")));
+    ql = q.getresult();
+    if ql:
+        nviu_to_remove = [];
+        print "Newer version in unstable";
+        print "-------------------------";
+        print ;
+        for i in ql:
+            (source, experimental_version, unstable_version) = i;
+            print " o %s (%s, %s)" % (source, experimental_version, unstable_version);
+            nviu_to_remove.append(source);
+        print
+        print "Suggested command:"
+        print " melanie -m \"[rene] NVIU\" -s experimental %s" % (" ".join(nviu_to_remove));
+        print
+
+################################################################################
+
+def do_nbs(real_nbs):
+    output = "";
+    output += "Not Built from Source\n";
+    output += "---------------------\n\n";
+
+    nbs_to_remove = [];
+    nbs_keys = real_nbs.keys();
+    nbs_keys.sort();
+    for source in nbs_keys:
+        output += " * %s_%s builds: %s\n" % (source,
+                                       source_versions.get(source, "??"),
+                                       source_binaries.get(source, "(source does not exist)"));
+        output += "      but no longer builds:\n"
+        versions = real_nbs[source].keys();
+        versions.sort(apt_pkg.VersionCompare);
+        for version in versions:
+            packages = real_nbs[source][version].keys();
+            packages.sort();
+            for pkg in packages:
+                # *cough* FIXME
+                if pkg.find("pcmcia") == -1:
+                    nbs_to_remove.append(pkg);
+            output += "        o %s: %s\n" % (version, ", ".join(packages));
+
+        output += "\n";
+
+    if nbs_to_remove:
+        print output;
+
+        print "Suggested command:"
+        print " melanie -m \"[rene] NBS\" -b %s" % (" ".join(nbs_to_remove));
+        print
+
+################################################################################
+
+def do_dubious_nbs(dubious_nbs):
+    print "Dubious NBS";
+    print "-----------";
+    print ;
+
+    dubious_nbs_keys = dubious_nbs.keys();
+    dubious_nbs_keys.sort();
+    for source in dubious_nbs_keys:
+        print " * %s_%s builds: %s" % (source,
+                                       source_versions.get(source, "??"),
+                                       source_binaries.get(source, "(source does not exist)"));
+        print "      won't admit to building:"
+        versions = dubious_nbs[source].keys();
+        versions.sort(apt_pkg.VersionCompare);
+        for version in versions:
+            packages = dubious_nbs[source][version].keys();
+            packages.sort();
+            print "        o %s: %s" % (version, ", ".join(packages));
+
+        print ;
+
+################################################################################
+
 def main ():
-    global Cnf, projectB, suite_id;
+    global Cnf, projectB, suite_id, source_binaries, source_versions;
 
     Cnf = utils.get_conf();
 
-    Arguments = [('h',"help","Rene::Options::Help")];
+    Arguments = [('h',"help","Rene::Options::Help"),
+                 ('m',"mode","Rene::Options::Mode", "HasArg")];
     for i in [ "help" ]:
 	if not Cnf.has_key("Rene::Options::%s" % (i)):
 	    Cnf["Rene::Options::%s" % (i)] = "";
+
+    if not Cnf.has_key("Rene::Options::Mode"):
+        Cnf["Rene::Options::Mode"] = "daily";
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
 
@@ -84,12 +224,20 @@ def main ():
     if Options["Help"]:
 	usage();
 
+    # Set up checks based on mode
+    if Options["Mode"] == "daily":
+        checks = [ "nbs", "nviu" ];
+    elif Options["Mode"] == "full":
+        checks = [ "nbs", "nviu", "dubious nbs", "bnb", "bms", "anais" ];
+    else:
+        utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]));
+        usage(1);
+
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
     bin_pkgs = {};
     src_pkgs = {};
-    source_binaries = {};
     bins_in_suite = {};
     nbs = {};
     source_versions = {};
@@ -102,15 +250,17 @@ def main ():
 
     bin_not_built = {};
 
-    # Initalize a large hash table of all binary packages
-    before = time.time();
-    sys.stderr.write("[Getting a list of binary packages in %s..." % (suite));
-    q = projectB.query("SELECT distinct b.package FROM binaries b, bin_associations ba WHERE ba.suite = 5 AND ba.bin = b.id");
-    ql = q.getresult();
-    sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)));
-    for i in ql:
-        bins_in_suite[i[0]] = "";
+    if "bnb" in checks:
+        # Initalize a large hash table of all binary packages
+        before = time.time();
+        sys.stderr.write("[Getting a list of binary packages in %s..." % (suite));
+        q = projectB.query("SELECT distinct b.package FROM binaries b, bin_associations ba WHERE ba.suite = %s AND ba.bin = b.id" % (suite_id));
+        ql = q.getresult();
+        sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)));
+        for i in ql:
+            bins_in_suite[i[0]] = "";
 
+    # Checks based on the Sources files
     components = Cnf.ValueList("Suite::%s::Components" % (suite));
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component);
@@ -131,50 +281,16 @@ def main ():
             binaries = Sources.Section.Find('Binary');
             binaries_list = map(string.strip, binaries.split(','));
 
-            # Check for binaries not built on any architecture.
-            for binary in binaries_list:
-                if not bins_in_suite.has_key(binary):
-                    if not bin_not_built.has_key(source):
-                        bin_not_built[source] = {};
-                    bin_not_built[source][binary] = "";
-
-            # Check for packages built on architectures they shouldn't be.
-            if architecture != "any" and architecture != "all":
-                architectures = {};
-                for arch in architecture.split():
-                    architectures[arch.strip()] = "";
+            if "bnb" in checks:
+                # Check for binaries not built on any architecture.
                 for binary in binaries_list:
-                    q = projectB.query("SELECT a.arch_string, b.version FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id AND b.package = '%s'" % (suite_id, binary));
-                    ql = q.getresult();
-                    versions = [];
-                    for i in ql:
-                        arch = i[0];
-                        version = i[1];
-                        if architectures.has_key(arch):
-                            versions.append(version);
-                    versions.sort(apt_pkg.VersionCompare);
-                    if versions:
-                        latest_version = versions.pop()
-                    else:
-                        latest_version = None;
-                    # Check for 'invalid' architectures
-                    versions_d = {}
-                    for i in ql:
-                        arch = i[0];
-                        version = i[1];
-                        if not architectures.has_key(arch):
-                            if not versions_d.has_key(version):
-                                versions_d[version] = [];
-                            versions_d[version].append(arch)
+                    if not bins_in_suite.has_key(binary):
+                        if not bin_not_built.has_key(source):
+                            bin_not_built[source] = {};
+                        bin_not_built[source][binary] = "";
 
-                    if versions_d != {}:
-                        anais_output += "\n (*) %s_%s [%s]: %s\n" % (binary, latest_version, source, architecture);
-                        versions = versions_d.keys();
-                        versions.sort(apt_pkg.VersionCompare);
-                        for version in versions:
-                            arches = versions_d[version];
-                            arches.sort();
-                            anais_output += "    o %s: %s\n" % (version, ", ".join(arches));
+            if "anais" in checks:
+                anais_output += do_anais(architecture, binaries_list, source);
 
             # Check for duplicated packages and build indices for checking "no source" later
             source_index = component + '/' + source;
@@ -194,6 +310,7 @@ def main ():
         sources.close();
         os.unlink(temp_filename);
 
+    # Checks based on the Packages files
     for component in components:
         architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)));
         for architecture in architectures:
@@ -226,114 +343,55 @@ def main ():
             versions.sort(apt_pkg.VersionCompare);
             latest_version = versions.pop();
             source_version = source_versions.get(source,"0");
-            if apt_pkg.VersionCompare(latest_version, source_version) == 0:
+            # *cough* FIXME
+            if apt_pkg.VersionCompare(latest_version, source_version) == 0 or source == "pcmcia-cs":
                 add_nbs(dubious_nbs, source, latest_version, package);
             else:
                 add_nbs(real_nbs, source, latest_version, package);
 
-    # Check for packages in experimental obsoleted by versions in unstable
-    suite_id = db_access.get_suite_id("unstable");
-    q = projectB.query("""
-SELECT s.source, s.version AS experimental, s2.version AS unstable
-  FROM src_associations sa, source s, source s2, src_associations sa2
-  WHERE sa.suite = 1 AND sa2.suite = %d AND sa.source = s.id
-   AND sa2.source = s2.id AND s.source = s2.source
-   AND versioncmp(s.version, s2.version) < 0""" % (suite_id));
-    ql = q.getresult();
-    if ql:
-        nviu_to_remove = [];
-        print "Newer version in unstable";
-        print "-------------------------";
-        print ;
-        for i in ql:
-            (source, experimental_version, unstable_version) = i;
-            print " o %s (%s, %s)" % (source, experimental_version, unstable_version);
-            nviu_to_remove.append(source);
-        print
-        print "Suggested command:"
-        print " melanie -m \"[rene] NVIU\" -s experimental %s" % (" ".join(nviu_to_remove));
+    if "nviu" in checks:
+        do_nviu();
+
+    if "nbs" in checks:
+        do_nbs(real_nbs);
+
+    ###
+
+    if Options["Mode"] == "full":
+        print "="*75
         print
 
-    print "Not Built from Source";
-    print "---------------------";
-    print ;
-
-    nbs_to_remove = [];
-    nbs_keys = real_nbs.keys();
-    nbs_keys.sort();
-    for source in nbs_keys:
-        binaries = source_binaries.get(source, "(source does not exist)")
-        print " * %s_%s builds: %s" % (source,
-                                       source_versions.get(source, "??"),
-                                       source_binaries.get(source, "(source does not exist)"));
-        print "      but no longer builds:"
-        versions = real_nbs[source].keys();
-        versions.sort(apt_pkg.VersionCompare);
-        for version in versions:
-            packages = real_nbs[source][version].keys();
-            packages.sort();
-            for pkg in packages:
-                # *cough* FIXME
-                if pkg.find("pcmcia") == -1:
-                    nbs_to_remove.append(pkg);
-            print "        o %s: %s" % (version, ", ".join(packages));
-
-        print ;
-
-    if nbs_to_remove:
-        print "Suggested command:"
-        print " melanie -m \"[rene] NBS\" -b %s" % (" ".join(nbs_to_remove));
+    if "bnb" in checks:
+        print "Unbuilt binary packages";
+        print "-----------------------";
         print
-
-    print "="*75
-    print
-
-    print "Unbuilt binary packages";
-    print "-----------------------";
-    print
-    keys = bin_not_built.keys();
-    keys.sort();
-    for source in keys:
-        binaries = bin_not_built[source].keys();
-        binaries.sort();
-        print " o %s: %s" % (source, ", ".join(binaries));
-    print ;
-
-    print "Built from multiple source packages";
-    print "-----------------------------------";
-    print ;
-    keys = duplicate_bins.keys();
-    keys.sort();
-    for key in keys:
-        (source_a, source_b) = key.split("~");
-        print " o %s & %s => %s" % (source_a, source_b, ", ".join(duplicate_bins[key]));
-    print ;
-
-    print "Architecture Not Allowed In Source";
-    print "----------------------------------";
-    print anais_output;
-    print ;
-
-    print "Dubious NBS";
-    print "-----------";
-    print ;
-
-    dubious_nbs_keys = dubious_nbs.keys();
-    dubious_nbs_keys.sort();
-    for source in dubious_nbs_keys:
-        binaries = source_binaries.get(source, "(source does not exist)")
-        print " * %s_%s builds: %s" % (source,
-                                       source_versions.get(source, "??"),
-                                       source_binaries.get(source, "(source does not exist)"));
-        print "      won't admit to building:"
-        versions = dubious_nbs[source].keys();
-        versions.sort(apt_pkg.VersionCompare);
-        for version in versions:
-            packages = dubious_nbs[source][version].keys();
-            packages.sort();
-            print "        o %s: %s" % (version, ", ".join(packages));
-
+        keys = bin_not_built.keys();
+        keys.sort();
+        for source in keys:
+            binaries = bin_not_built[source].keys();
+            binaries.sort();
+            print " o %s: %s" % (source, ", ".join(binaries));
         print ;
+
+    if "bms" in checks:
+        print "Built from multiple source packages";
+        print "-----------------------------------";
+        print ;
+        keys = duplicate_bins.keys();
+        keys.sort();
+        for key in keys:
+            (source_a, source_b) = key.split("~");
+            print " o %s & %s => %s" % (source_a, source_b, ", ".join(duplicate_bins[key]));
+        print ;
+
+    if "anais" in checks:
+        print "Architecture Not Allowed In Source";
+        print "----------------------------------";
+        print anais_output;
+        print ;
+
+    if "dubious nbs" in checks:
+        do_dubious_nbs(dubious_nbs);
 
 
 ################################################################################
