@@ -28,9 +28,15 @@ CREATE TABLE maintainer (
        name TEXT UNIQUE NOT NULL
 );
 
+CREATE TABLE uid (
+       id SERIAL PRIMARY KEY,
+       uid TEXT UNIQUE NOT NULL
+);
+
 CREATE TABLE fingerprint (
        id SERIAL PRIMARY KEY,
-       fingerprint TEXT UNIQUE NOT NULL
+       fingerprint TEXT UNIQUE NOT NULL,
+       uid INT4 REFERENCES uid
 );
 
 CREATE TABLE location (
