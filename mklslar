@@ -1,6 +1,6 @@
 #!/bin/sh
 # Update the ls-lR.
-# $Id: mklslar,v 1.2 2001-01-21 18:12:50 troup Exp $
+# $Id: mklslar,v 1.3 2001-09-24 21:47:54 rmurray Exp $
 
 set -e
 . $SCRIPTVARS
@@ -21,7 +21,7 @@ symlinks -rd .
 
 echo "Creating recursive directory listing ... "
 rm -f .$filename.new
-ls -lR | grep -v Archive_Maintenance_In_Progress > .$filename.new
+TZ=UTC ls -lR | grep -v Archive_Maintenance_In_Progress > .$filename.new
 
 if [ -r $filename ] ; then
   mv -f $filename $filename.old
