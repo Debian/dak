@@ -24,7 +24,7 @@ CREATE TABLE architecture (
 );
 
 CREATE TABLE maintainer (
-       id SERIAL PRIMARY KEY, 
+       id SERIAL PRIMARY KEY,
        name TEXT UNIQUE NOT NULL
 );
 
@@ -80,19 +80,19 @@ CREATE TABLE binaries (
 CREATE TABLE suite (
        id SERIAL PRIMARY KEY,
        suite_name TEXT NOT NULL,
-       version TEXT NOT NULL,
+       version TEXT,
        origin TEXT,
        label TEXT,
        policy_engine TEXT,
        description TEXT
 );
-  
+
 CREATE TABLE suite_architectures (
        suite INT4 NOT NULL, -- REFERENCES suite
        architecture INT4 NOT NULL, -- REFERENCES architecture
        unique (suite, architecture)
 );
-            
+
 CREATE TABLE bin_associations (
        id SERIAL PRIMARY KEY,
        suite INT4 NOT NULL, -- REFERENCES suite
@@ -124,7 +124,7 @@ CREATE TABLE override_type (
 );
 
 CREATE TABLE override (
-       package TEXT NOT NULL, 
+       package TEXT NOT NULL,
        suite INT4 NOT NULL, -- references suite
        component INT4 NOT NULL, -- references component
        priority INT4, -- references priority

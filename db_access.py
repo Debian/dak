@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.7 2001-04-03 10:01:27 troup Exp $
+# $Id: db_access.py,v 1.8 2001-09-27 01:12:42 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ maintainer_cache = {}
 
 def init (config, sql):
     global Cnf, projectB
-    
+
     Cnf = config;
     projectB = sql;
 
@@ -54,8 +54,8 @@ def get_suite_id (suite):
     q = projectB.query("SELECT id FROM suite WHERE suite_name = '%s'" % (suite))
     ql = q.getresult();
     if ql == []:
-        return -1; 
-    
+        return -1;
+
     suite_id = ql[0][0];
     suite_id_cache[suite] = suite_id
 
@@ -70,8 +70,8 @@ def get_section_id (section):
     q = projectB.query("SELECT id FROM section WHERE section = '%s'" % (section))
     ql = q.getresult();
     if ql == []:
-        return -1; 
-    
+        return -1;
+
     section_id = ql[0][0];
     section_id_cache[section] = section_id
 
@@ -86,8 +86,8 @@ def get_priority_id (priority):
     q = projectB.query("SELECT id FROM priority WHERE priority = '%s'" % (priority))
     ql = q.getresult();
     if ql == []:
-        return -1; 
-    
+        return -1;
+
     priority_id = ql[0][0];
     priority_id_cache[priority] = priority_id
 
@@ -102,8 +102,8 @@ def get_override_type_id (type):
     q = projectB.query("SELECT id FROM override_type WHERE type = '%s'" % (type));
     ql = q.getresult();
     if ql == []:
-        return -1; 
-    
+        return -1;
+
     override_type_id = ql[0][0];
     override_type_id_cache[type] = override_type_id;
 
@@ -119,7 +119,7 @@ def get_architecture_id (architecture):
     ql = q.getresult();
     if ql == []:
         return -1;
-    
+
     architecture_id = ql[0][0];
     architecture_id_cache[architecture] = architecture_id;
 
@@ -222,7 +222,7 @@ def get_files_id (filename, size, md5sum, location_id):
     if ql:
         if len(ql) != 1:
             return -1;
-        ql = ql[0]; 
+        ql = ql[0];
         orig_size = int(ql[1]);
         orig_md5sum = ql[2];
         if orig_size != size or orig_md5sum != md5sum:
@@ -241,7 +241,7 @@ def set_files_id (filename, size, md5sum, location_id):
     cache_key = "%s~%d" % (filename, location_id);
 
     #print "INSERT INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id);
-    projectB.query("INSERT INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id)); 
+    projectB.query("INSERT INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id));
     q = projectB.query("SELECT id FROM files WHERE id = currval('files_id_seq')");
     ql = q.getresult()[0];
     files_id_cache[cache_key] = ql[0]
@@ -252,11 +252,11 @@ def set_files_id (filename, size, md5sum, location_id):
 
 def get_maintainer (maintainer_id):
     global maintainer_cache;
-    
+
     if not maintainer_cache.has_key(maintainer_id):
         q = projectB.query("SELECT name FROM maintainer WHERE id = %s" % (maintainer_id));
         maintainer_cache[maintainer_id] = q.getresult()[0][0];
-        
+
     return maintainer_cache[maintainer_id];
 
 ##########################################################################################
