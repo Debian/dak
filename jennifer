@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.48 2004-04-19 16:04:34 troup Exp $
+# $Id: jennifer,v 1.49 2004-04-20 00:08:27 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.48 $";
+jennifer_version = "$Revision: 1.49 $";
 
 Cnf = None;
 Options = None;
@@ -322,6 +322,24 @@ def check_files():
         for file in file_keys:
             copy_to_holding(file);
         os.chdir(cwd);
+
+    # Check there isn't already a .changes or .katie file of the same name in
+    # the proposed-updates "CopyChanges" or "CopyKatie" storage directories.
+    # [NB: this check must be done post-suite mapping]
+    base_filename = os.path.basename(pkg.changes_file);
+    katie_filename = base_filename[:-8]+".katie"
+    for suite in changes["distribution"].keys():
+        copychanges = "Suite::%s::CopyChanges" % (suite);
+        if Cnf.has_key(copychanges) and \
+               os.path.exists(Cnf[copychanges]+"/"+base_filename):
+            reject("%s: a file with this name already exists in %s" \
+                   % (base_filename, Cnf[copychanges]));
+
+        copykatie = "Suite::%s::CopyKatie" % (suite);
+        if Cnf.has_key(copykatie) and \
+               os.path.exists(Cnf[copykatie]+"/"+katie_filename):
+            reject("%s: a file with this name already exists in %s" \
+                   % (katie_filename, Cnf[copykatie]));
 
     reprocess = 0;
     has_binaries = 0;
