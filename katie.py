@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.48 2004-06-17 15:02:02 troup Exp $
+# $Id: katie.py,v 1.49 2004-11-27 13:29:17 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -705,7 +705,7 @@ distribution.""";
 	return okay
 
     ################################################################################
-
+    
     def in_override_p (self, package, component, suite, binary_type, file):
         files = self.pkg.files;
 
@@ -726,7 +726,7 @@ distribution.""";
         type_id = db_access.get_override_type_id(type);
 
         # FIXME: nasty non-US speficic hack
-        if component[:7].lower() == "non-us/":
+        if component.lower().startswith() == "non-us/":
             component = component[7:];
 
         q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND type = %s AND o.section = s.id AND o.priority = p.id"
