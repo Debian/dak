@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.54 2001-07-13 16:01:37 troup Exp $
+# $Id: katie,v 1.55 2001-07-13 19:47:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -239,7 +239,7 @@ def check_changes(filename):
         return 0;
 
     # Check for mandatory fields
-    for i in ("source", "binary", "architecture", "version", "distribution","maintainer", "files"):
+    for i in ("source", "binary", "architecture", "version", "distribution", "maintainer", "files"):
         if not changes.has_key(i):
             reject_message = reject_message + "Rejected: Missing field `%s' in changes file.\n" % (i)
             return 0    # Avoid <undef> errors during later tests
@@ -430,7 +430,7 @@ def check_files():
                 files[file]["package"] = m.group(1)
                 files[file]["version"] = m.group(2)
                 files[file]["type"] = m.group(3)
-                
+
                 # Ensure the source package name matches the Source filed in the .changes
                 if changes["source"] != files[file]["package"]:
                     reject_message = reject_message + "Rejected: %s: changes file doesn't say %s for Source\n" % (file, files[file]["package"])
@@ -567,6 +567,11 @@ def check_dsc ():
                 reject_message = reject_message + "Rejected: error parsing .dsc file '%s', can't grok: %s.\n" % (file, line);
                 continue;
 
+            # Enforce mandatory fields
+            for i in ("format", "source", "version", "binary", "maintainer", "architecture", "files"):
+                if not dsc.has_key(i):
+                    reject_message = reject_message + "Rejected: Missing field `%s' in dsc file.\n" % (i)
+
             # The dpkg maintainer from hell strikes again! Bumping the
             # version number of the .dsc breaks extraction by stable's
             # dpkg-source.
@@ -575,6 +580,12 @@ def check_dsc ():
           of dpkg-dev 1.9.1{3,4}; please rebuild with >= 1.9.15 version
           installed.
 """;
+
+            # Ensure the version number in the .dsc matches the version number in the .changes
+            epochless_dsc_version = utils.re_no_epoch.sub('', dsc.get("version"));
+            changes_version = files[file]["version"];
+            if epochless_dsc_version != files[file]["version"]:
+                reject_message = reject_message + "Rejected: version ('%s') in .dsc does not match version ('%s') in .changes\n" % (epochless_dsc_version, changes_version);
 
             # Try and find all files mentioned in the .dsc.  This has
             # to work harder to cope with the multiple possible
@@ -1366,7 +1377,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.54 $"
+    bcc = "X-Katie: $Revision: 1.55 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
