@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.22 2002-06-08 00:17:57 troup Exp $
+# $Id: jennifer,v 1.23 2002-06-09 17:32:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.22 $";
+jennifer_version = "$Revision: 1.23 $";
 
 Cnf = None;
 Options = None;
@@ -546,9 +546,7 @@ def check_files():
                 files[file]["dbtype"] = "deb";
             else:
                 reject("%s is neither a .deb or a .udeb." % (file));
-            files[file]["source"] = control.Find("Source", "");
-            if files[file]["source"] == "":
-                files[file]["source"] = files[file]["package"];
+            files[file]["source"] = control.Find("Source", files[file]["package"]);
             # Get the source version
             source = files[file]["source"];
             source_version = ""
