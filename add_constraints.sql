@@ -103,7 +103,8 @@ GRANT ALL ON architecture, architecture_id_seq, archive,
   maintainer_id_seq, override, override_type, override_type_id_seq,
   priority, priority_id_seq, section, section_id_seq, source,
   source_id_seq, src_associations, src_associations_id_seq, suite,
-  suite_architectures, suite_id_seq, accepted_autobuild TO GROUP ftpmaster;
+  suite_architectures, suite_id_seq, accepted_autobuild, uid,
+  uid_id_seq TO GROUP ftpmaster;
 
 -- Read only access to user 'nobody'
 GRANT SELECT ON architecture, architecture_id_seq, archive,
@@ -114,4 +115,5 @@ GRANT SELECT ON architecture, architecture_id_seq, archive,
   maintainer_id_seq, override, override_type, override_type_id_seq,
   priority, priority_id_seq, section, section_id_seq, source,
   source_id_seq, src_associations, src_associations_id_seq, suite,
-  suite_architectures, suite_id_seq, accepted_autobuild TO PUBLIC;
+  suite_architectures, suite_id_seq, accepted_autobuild, uid,
+  uid_id_seq TO PUBLIC;
