@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Checks Debian packages from Incoming
-# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.55 2005-01-14 14:07:17 ajt Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
+# $Id: jennifer,v 1.56 2005-01-18 22:18:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.55 $";
+jennifer_version = "$Revision: 1.56 $";
 
 Cnf = None;
 Options = None;
@@ -314,6 +314,48 @@ def check_distributions():
 
 ################################################################################
 
+def check_deb_ar(filename, control):
+    """Sanity check the ar of a .deb, i.e. that there is:
+
+ o debian-binary
+ o control.tar.gz
+ o data.tar.gz or data.tar.bz2
+
+in that order, and nothing else.  If the third member is a
+data.tar.bz2, an additional check is performed for the required
+Pre-Depends on dpkg (>= 1.10.24)."""
+    cmd = "ar t %s" % (filename)
+    (result, output) = commands.getstatusoutput(cmd)
+    if result != 0:
+        reject("%s: 'ar t' invocation failed." % (filename))
+        reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
+    chunks = output.split('\n')
+    if len(chunks) != 3:
+        reject("%s: found %d chunks, expected 3." % (filename, len(chunks)))
+    if chunks[0] != "debian-binary":
+        reject("%s: first chunk is '%s', expected 'debian-binary'." % (filename, chunks[0]))
+    if chunks[1] != "control.tar.gz":
+        reject("%s: second chunk is '%s', expected 'control.tar.gz'." % (filename, chunks[1]))
+    if chunks[2] == "data.tar.bz2":
+        # Packages using bzip2 compression must have a Pre-Depends on dpkg >= 1.10.24.
+        found_needed_predep = 0
+        for parsed_dep in apt_pkg.ParseDepends(control.Find("Pre-Depends", "")):
+            for atom in parsed_dep:
+                (dep, version, constraint) = atom
+                if dep != "dpkg" or (constraint != ">=" and constraint != ">>") or \
+                       len(parsed_dep) > 1: # or'ed deps don't count
+                    continue
+                if (constraint == ">=" and apt_pkg.VersionCompare(version, "1.10.24") < 0) or \
+                       (constraint == ">>" and apt_pkg.VersionCompare(version, "1.10.23") < 0):
+                    continue
+                found_needed_predep = 1
+        if not found_needed_predep:
+            reject("%s: uses bzip2 compression, but doesn't Pre-Depend on dpkg (>= 1.10.24)" % (filename))
+    elif chunks[2] != "data.tar.gz":
+        reject("%s: third chunk is '%s', expected 'data.tar.gz' or 'data.tar.bz2'." % (filename, chunks[2]))
+
+################################################################################
+
 def check_files():
     global reprocess
 
@@ -371,7 +413,7 @@ def check_files():
             files[file]["type"] = "unreadable";
             continue;
         # If it's byhand skip remaining checks
-        if files[file]["section"] == "byhand":
+        if files[file]["section"] == "byhand" or files[file]["section"] == "raw-installer":
             files[file]["byhand"] = 1;
             files[file]["type"] = "byhand";
         # Checks for a binary package...
@@ -492,6 +534,8 @@ def check_files():
                         reject("no source found for %s %s (%s)." % (source_package, source_version, file));
             # Check the version and for file overwrites
             reject(Katie.check_binary_against_db(file),"");
+
+            check_deb_ar(file, control)
 
         # Checks for a source package...
         else:
@@ -923,7 +967,14 @@ def check_timestamps():
                 deb_file = utils.open_file(filename);
                 apt_inst.debExtract(deb_file,tar.callback,"control.tar.gz");
                 deb_file.seek(0);
-                apt_inst.debExtract(deb_file,tar.callback,"data.tar.gz");
+                try:
+                    apt_inst.debExtract(deb_file,tar.callback,"data.tar.gz")
+                except SystemError, e:
+                    # If we can't find a data.tar.gz, look for data.tar.bz2 instead.
+                    if not re.match(r"Cannot f[ui]nd chunk data.tar.gz$", str(e)):
+                        raise
+                    deb_file.seek(0)
+                    apt_inst.debExtract(deb_file,tar.callback,"data.tar.bz2")
                 deb_file.close();
                 #
                 future_files = tar.future_files.keys();
