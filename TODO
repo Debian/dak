@@ -1,3 +1,17 @@
+approved:
+
+ o What to do with multi-suite uploads?  Presumably hold in unapproved
+   and warn?  Or what?  Can't accept just for unstable or reject just
+   from stable.
+
+ o Whenever we check for anything in accepted we also need to check in
+   unapproved.
+
+ o non-sourceful uploads should go straight through if they have
+   source in accepted or the archive.
+
+ o security uploads on auric should be pre-approved.
+
 				 TODO
 				 ====
 
@@ -16,6 +30,8 @@ Actually Urgent
 
 More Urgent
 -----------
+
+  o julia should sync debadmin and ftpmaster
 
  <drow> Can't read file.: /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.katie.  You assume that the filenames are relative to accepted/, might want to doc or fix that.
 
