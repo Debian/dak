@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.16 2001-03-02 02:45:01 troup Exp $
+# $Id: utils.py,v 1.17 2001-03-02 02:46:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import commands, os, re, socket, shutil, stat, string, sys, tempfile, apt_pkg
+import commands, os, re, socket, shutil, stat, string, sys, tempfile
 
 re_comments = re.compile(r"\#.*")
 re_no_epoch = re.compile(r"^\d*\:")
@@ -56,8 +56,6 @@ def our_raw_input():
         raise SystemExit
 
 ######################################################################################
-
-# Obsoleted by python >= 1.6
 
 def str_isnum (s):
     for c in s:
