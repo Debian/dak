@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.12 2001-01-25 06:00:07 troup Exp $
+# $Id: utils.py,v 1.13 2001-01-28 09:06:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ re_arch_from_filename = re.compile(r"/binary-[^/]+/")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
 
 changes_parse_error_exc = "Can't parse line in .changes file";
+invalid_dsc_format_exc = "Invalid .dsc file";
 nk_format_exc = "Unknown Format: in .changes file";
 no_files_exc = "No Files: field in .dsc file.";
 cant_open_exc = "Can't read file.";
@@ -77,15 +78,58 @@ def extract_component_from_section(section):
 
 ######################################################################################
 
-def parse_changes(filename):
+# dsc_whitespace_rules turns on strict format checking to avoid
+# allowing in source packages which are unextracable by the
+# inappropriately fragile dpkg-source.
+#
+# The rules are:
+#
+#
+# o The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
+#   followed by any PGP header data and must end with a blank line.
+#
+# o The data section must end with a blank line and must be followed by
+#   "-----BEGIN PGP SIGNATURE-----".
+
+def parse_changes(filename, dsc_whitespace_rules):
     changes_in = open_file(filename,'r');
-    error = ""
+    error = "";
     changes = {};
     lines = changes_in.readlines();
+
+    # Reindex by line number so we can easily verify the format of
+    # .dsc files...
+    index = 0;
+    indexed_lines = {};
     for line in lines:
+        index = index + 1;
+        indexed_lines[index] = line[:-1];
+
+    inside_signature = 0;
+
+    indices = indexed_lines.keys()
+    index = 0;
+    while index < max(indices):
+        index = index + 1;
+        line = indexed_lines[index];
+        if line == "":
+            if dsc_whitespace_rules:
+                index = index + 1;
+                if index > max(indices):
+                    raise invalid_dsc_format_exc, index;
+                line = indexed_lines[index];
+                if not re.match('^-----BEGIN PGP SIGNATURE', line):
+                    raise invalid_dsc_format_exc, index;
+                inside_signature = 0;
+                break;
         if re.match('^-----BEGIN PGP SIGNATURE', line):
             break;
-        if re.match(r'^\s*$|^-----BEGIN PGP SIGNED MESSAGE', line):
+        if re.match(r'^-----BEGIN PGP SIGNED MESSAGE', line):
+            if dsc_whitespace_rules:
+                inside_signature = 1;
+                while index < max(indices) and line != "":
+                    index = index + 1;
+                    line = indexed_lines[index];
             continue;
         slf = re.match(r'^(\S*)\s*:\s*(.*)', line);
         if slf:
@@ -101,10 +145,16 @@ def parse_changes(filename):
 	    changes[field] = changes[field] + mlf.groups()[0] + '\n';
             continue;
 	error = error + line;
+
+    if dsc_whitespace_rules and inside_signature:
+        raise invalid_dsc_format_exc, index;
+        
     changes_in.close();
     changes["filecontents"] = string.join (lines, "");
+
     if error != "":
 	raise changes_parse_error_exc, error;
+
     return changes;
 
 ######################################################################################

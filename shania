@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: shania,v 1.1 2000-12-13 03:18:50 troup Exp $
+# $Id: shania,v 1.2 2001-01-28 09:06:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,7 +93,7 @@ def main ():
     # Proces all .changes and .dsc files.
     for changes_filename in changes_files:
         try:
-            changes = utils.parse_changes(changes_filename)
+            changes = utils.parse_changes(changes_filename, 0)
         except:
             continue;
         try:
@@ -105,7 +105,7 @@ def main ():
         for file in files.keys():
             if re_isdsc.search(file) != None:
                 try:
-                    dsc = utils.parse_changes(file)
+                    dsc = utils.parse_changes(file, 0)
                 except:
                     continue;
                 try:

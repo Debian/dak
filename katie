@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.24 2001-01-27 03:51:14 troup Exp $
+# $Id: katie,v 1.25 2001-01-28 09:06:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -161,7 +161,7 @@ def check_changes(filename):
 
     # Parse the .changes field into a dictionary [FIXME - need to trap errors, pass on to reject_message etc.]
     try:
-        changes = utils.parse_changes(filename)
+        changes = utils.parse_changes(filename, 0)
     except utils.cant_open_exc:
         reject_message = "Rejected: can't read changes file '%s'.\n" % (filename)
         return 0;
@@ -182,9 +182,6 @@ def check_changes(filename):
             reject_message = "Rejected: Missing field `%s' in changes file.\n" % (i)
             return 0    # Avoid <undef> errors during later tests
 
-    # Fix the Maintainer: field to be RFC822 compatible
-    (changes["maintainer822"], changes["maintainername"], changes["maintaineremail"]) = utils.fix_maintainer (changes["maintainer"])
-
     # Override the Distribution: field if appropriate
     if Cnf["Dinstall::Options::Override-Distribution"] != "":
         reject_message = reject_message + "Warning: Distribution was overriden from %s to %s.\n" % (changes["distribution"], Cnf["Dinstall::Options::Override-Distribution"])
@@ -199,6 +196,17 @@ def check_changes(filename):
         for j in string.split(o):
             changes[i][j] = 1
 
+    # Fix the Maintainer: field to be RFC822 compatible
+    (changes["maintainer822"], changes["maintainername"], changes["maintaineremail"]) = utils.fix_maintainer (changes["maintainer"])
+
+    # Fix the Changed-By: field to be RFC822 compatible; if it exists.
+    (changes["changedby822"], changes["changedbyname"], changes["changedbyemail"]) = utils.fix_maintainer(changes.get("changed-by",""));
+
+    # For source uploads the Changed-By field wins; otherwise Maintainer wins.
+    if changes["architecture"].has_key("source"):
+        changes["uploader822"] = "To: %s\nCc: %s" % (changes["changedby822"], changes["maintainer822"]);
+         #         changes["uploadername"], changes["uploaderemail"]) = (changes["changedby822"], changes["changedbyname"], changes["changedbyemail"]);
+        
     # Ensure all the values in Closes: are numbers
     if changes.has_key("closes"):
         for i in changes["closes"].keys():
@@ -450,12 +458,15 @@ def check_dsc ():
     for file in files.keys():
         if files[file]["type"] == "dsc":
             try:
-                dsc = utils.parse_changes(file)
+                dsc = utils.parse_changes(file, 1)
             except utils.cant_open_exc:
                 reject_message = reject_message + "Rejected: can't read changes file '%s'.\n" % (filename)
                 return 0;
             except utils.changes_parse_error_exc, line:
                 reject_message = reject_message + "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line)
+                return 0;
+            except utils.invalid_dsc_format_exc, line:
+                reject_message = reject_message + "Rejected: syntax error in .dsc file '%s', line %s.\n" % (filename, line)
                 return 0;
             try:
                 dsc_files = utils.build_file_list(dsc, 1)
