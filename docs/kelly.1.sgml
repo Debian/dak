@@ -8,35 +8,35 @@
 
 <refentry>
   &katie-docinfo;
-  
+
   <refmeta>
-    <refentrytitle>katie</>
+    <refentrytitle>kelly</>
     <manvolnum>1</>
   </refmeta>
-  
+
   <!-- Man page title -->
   <refnamediv>
-    <refname>katie</>
+    <refname>kelly</>
     <refpurpose>Installs packages from accepted</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>katie</>
+      <command>kelly</>
       <arg><option><replaceable>options</replaceable></></arg>
       <arg choice="plain"><replaceable>changes_file</replaceable></arg>
       <arg><option><replaceable>...</replaceable></option></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
-  
+
   <RefSect1><Title>Description</>
-    <para>   
-      <command>katie</command> is the program which installs packages from the accepted directory into the distribution.
+    <para>
+      <command>kelly</command> is the program which installs packages from the accepted directory into the distribution.
     </PARA></REFSECT1>
 
   <RefSect1><Title>Options</>
-    
+
     <VariableList>
 
       <varlistentry>
@@ -86,17 +86,15 @@
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>katie</command> returns zero on normal operation, non-zero on error.
+      <command>kelly</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
 
   <refsect1>
     <title>Acknowledgements</title>
-    <para>katie is based very heavily on dinstall, written by Guy Maor <email>maor@debian.org</email>; in fact it started out life as a dinstall clone.</para>
+    <para>kelly is based very heavily on dinstall, written by Guy Maor <email>maor@debian.org</email>; in fact it started out life as a dinstall clone.</para>
   </refsect1>
 
   &manauthor;
 
-
-  
 </refentry>
