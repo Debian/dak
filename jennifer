@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.49 2004-04-20 00:08:27 troup Exp $
+# $Id: jennifer,v 1.50 2004-06-08 23:31:05 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.49 $";
+jennifer_version = "$Revision: 1.50 $";
 
 Cnf = None;
 Options = None;
@@ -601,7 +601,7 @@ def check_dsc():
 
     # Ensure there is source to check
     if not changes["architecture"].has_key("source"):
-        return;
+        return 1;
 
     # Find the .dsc
     dsc_filename = None;
@@ -609,13 +609,13 @@ def check_dsc():
         if files[file]["type"] == "dsc":
             if dsc_filename:
                 reject("can not process a .changes file with multiple .dsc's.");
-                return;
+                return 0;
             else:
                 dsc_filename = file;
 
     # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
     if not dsc_filename:
-        return;
+        return 0;
 
     # Parse the .dsc file
     try:
@@ -633,16 +633,16 @@ def check_dsc():
         dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1));
     except utils.no_files_exc:
         reject("%s: no Files: field." % (dsc_filename));
-        return;
+        return 0;
     except utils.changes_parse_error_exc, line:
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line));
-        return;
+        return 0;
 
     # Enforce mandatory fields
     for i in ("format", "source", "version", "binary", "maintainer", "architecture", "files"):
         if not dsc.has_key(i):
             reject("%s: missing mandatory field `%s'." % (dsc_filename, i));
-            return;
+            return 0;
 
     # Validate the source and version fields
     if not re_valid_pkg_name.match(dsc["source"]):
@@ -712,6 +712,8 @@ def check_dsc():
         files[orig_tar_gz]["component"] = files[dsc_filename]["component"];
         files[orig_tar_gz]["type"] = "orig.tar.gz";
         reprocess = 2;
+
+    return 1;
 
 ################################################################################
 
@@ -1129,13 +1131,14 @@ def process_it (changes_file):
             # rather than the original...
             pkg.changes_file = os.path.basename(pkg.changes_file);
         changes["fingerprint"] = utils.check_signature(pkg.changes_file, reject);
-        changes_valid = check_changes();
-        if changes_valid:
+        valid_changes_p = check_changes();
+        if valid_changes_p:
             while reprocess:
                 check_distributions();
                 check_files();
-                check_dsc();
-                check_source();
+                valid_dsc_p = check_dsc();
+                if valid_dsc_p:
+                    check_source();
                 check_md5sums();
                 check_urgency();
                 check_timestamps();
