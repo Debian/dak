@@ -162,6 +162,9 @@ Less Urgent
 
  * Easy:
 
+    o promote changes["changes"] to mandatory in katie.py(dump_vars)
+      after a month or so (or all .katie files contain in the queue
+      contain it).
     o Rationalize config stuff.. Dir::Foo not Dir::FooDir [breaks other people??] 
       Also Dir::Queue::Foo, not Dir::QueueFooDir
     o melanie should behave better with -a and without -b; see

@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.11 2002-03-14 14:12:04 ajt Exp $
+# $Id: katie.py,v 1.12 2002-04-01 21:20:28 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -162,7 +162,8 @@ class Katie:
                    "maintainername", "maintaineremail", "closes" ]:
             d_changes[i] = changes[i];
         # Optional changes fields
-        for i in [ "changed-by", "maintainer822", "filecontents", "format" ]:
+        # FIXME: changes should be mandatory
+        for i in [ "changed-by", "maintainer822", "filecontents", "format", "changes" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i];
         ## dsc
