@@ -2,7 +2,7 @@
 
 # Initial setup of an archive
 # Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: rose,v 1.2 2002-11-22 04:07:10 troup Exp $
+# $Id: rose,v 1.3 2003-01-02 18:10:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,14 @@ AptCnf = None;
 
 ################################################################################
 
+def usage(exit_code=0):
+    print """Usage: rose
+Creates directories for an archive based on katie.conf configuration file.
+
+  -h, --help                show this help and exit."""
+    sys.exit(exit_code)
+
+################################################################################
 
 def do_dir(target, config_name):
     if os.path.exists(target):
@@ -94,7 +102,16 @@ def main ():
     global AptCnf, Cnf, projectB;
 
     Cnf = utils.get_conf()
-    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
+    Arguments = [('h',"help","Rose::Options::Help")];
+    for i in [ "help" ]:
+	if not Cnf.has_key("Rose::Options::%s" % (i)):
+	    Cnf["Rose::Options::%s" % (i)] = "";
+
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+
+    Options = Cnf.SubTree("Rose::Options")
+    if Options["Help"]:
+	usage();
 
     AptCnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file());

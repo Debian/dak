@@ -2,7 +2,7 @@
 
 # Check for fixable discrepancies between stable and unstable
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: andrea,v 1.8 2002-10-16 02:47:32 troup Exp $
+# $Id: andrea,v 1.9 2003-01-02 18:10:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,12 +32,29 @@ projectB = None;
 
 ################################################################################
 
+def usage(exit_code=0):
+    print """Usage: andrea
+Looks for fixable descrepancies between stable and unstable.
+
+  -h, --help                show this help and exit."""
+    sys.exit(exit_code)
+
+################################################################################
+
 def main ():
     global Cnf, projectB;
 
-    Cnf = utils.get_conf()
+    Cnf = utils.get_conf();
+    Arguments = [('h',"help","Andrea::Options::Help")];
+    for i in [ "help" ]:
+	if not Cnf.has_key("Andrea::Options::%s" % (i)):
+	    Cnf["Andrea::Options::%s" % (i)] = "";
 
-    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+
+    Options = Cnf.SubTree("Andrea::Options")
+    if Options["Help"]:
+	usage();
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);

@@ -2,7 +2,7 @@
 
 # Dump variables from a .katie file to stdout
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: ashley,v 1.7 2002-10-16 02:47:32 troup Exp $
+# $Id: ashley,v 1.8 2003-01-02 18:10:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 ################################################################################
 
 # <elmo> ooooooooooooooohhhhhhhhhhhhhhhhhhhhhhhhh            dddddddddeeeeeeeaaaaaaaarrrrrrrrrrr
-# <elmo> iiiiiiiiiiiii          tttttttttthhhhhhhhiiiiiiiiiiiinnnnnnnnnkkkkkkkkkkkkk              iiiiiiiiiiiiii       mmmmmmmmmmiiiiiiiisssssssssssssssseeeeeeeddd           uuuupppppppppppp       ttttttttthhhhhhhheeeeeeee          xxxxxxxssssssseeeeeeeeettttttttttttt             aaaaaaaarrrrrrrggggggsssssssss
+# <elmo> iiiiiiiiiiiii          tttttttttthhhhhhhhiiiiiiiiiiiinnnnnnnnnkkkkkkkkkkkkk              iiiiiiiiiiiiii       mmmmmmmmmmeeeeeeeesssssssssssssssseeeeeeeddd           uuuupppppppppppp       ttttttttthhhhhhhheeeeeeee          xxxxxxxssssssseeeeeeeeettttttttttttt             aaaaaaaarrrrrrrggggggsssssssss
 #
 # ['xset r rate 30 250' bad, mmkay]
 
@@ -29,9 +29,33 @@
 
 import sys;
 import katie, utils;
+import apt_pkg;
+
+
+################################################################################
+
+def usage(exit_code=0):
+    print """Usage: ashley FILE...
+Dumps the info in .katie FILE(s).
+
+  -h, --help                show this help and exit."""
+    sys.exit(exit_code)
+
+################################################################################
 
 def main():
     Cnf = utils.get_conf()
+    Arguments = [('h',"help","Ashley::Options::Help")];
+    for i in [ "help" ]:
+	if not Cnf.has_key("Ashley::Options::%s" % (i)):
+	    Cnf["Ashley::Options::%s" % (i)] = "";
+
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+
+    Options = Cnf.SubTree("Ashley::Options")
+    if Options["Help"]:
+	usage();
+
     k = katie.Katie(Cnf);
     for arg in sys.argv[1:]:
         arg = utils.validate_changes_file_arg(arg);
@@ -100,6 +124,7 @@ def main():
             if dsc_files[file]:
                 utils.warn("dsc_files[%s] still has following unrecognised keys: %s" % (file, dsc_files[file].keys()));
 
+################################################################################
 
 if __name__ == '__main__':
     main()

@@ -2,7 +2,7 @@
 
 # Cruft checker for overrides
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: cindy,v 1.10 2002-05-23 09:54:23 troup Exp $
+# $Id: cindy,v 1.11 2003-01-02 18:10:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@
 ######################################################################
 # NB: cindy is not a good idea with New Incoming as she doesn't take #
 # into account accepted.  You can minimize the impact of this by     #
-# running her immediately after katie but that's still racy because  #
-# lisa doesn't lock with katie.  A better long term fix is the evil  #
+# running her immediately after kelly but that's still racy because  #
+# lisa doesn't lock with kelly.  A better long term fix is the evil  #
 # plan for accepted to be in the DB.                                 #
 ######################################################################
 
@@ -39,6 +39,16 @@ import apt_pkg;
 Cnf = None;
 projectB = None;
 override = {}
+
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: cindy
+Check for cruft in overrides.
+
+  -h, --help                 show this help and exit"""
+
+    sys.exit(exit_code)
 
 ################################################################################
 
@@ -102,7 +112,16 @@ def main ():
     global Cnf, projectB, override;
 
     Cnf = utils.get_conf()
-    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
+
+    Arguments = [('h',"help","Cindy::Options::Help")];
+    for i in [ "help" ]:
+	if not Cnf.has_key("Cindy::Options::%s" % (i)):
+	    Cnf["Cindy::Options::%s" % (i)] = "";
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+    Options = Cnf.SubTree("Cindy::Options")
+
+    if Options["Help"]:
+	usage();
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
@@ -116,7 +135,7 @@ def main ():
                 print "Processing %s [%s - %s]..." % (suite, component, type);
 		process(suite, component, type);
 
-#######################################################################################
+################################################################################
 
 if __name__ == '__main__':
     main()

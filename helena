@@ -2,7 +2,7 @@
 
 # Produces a report on NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: helena,v 1.3 2002-12-08 17:25:47 troup Exp $
+# $Id: helena,v 1.4 2003-01-02 18:10:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,16 @@ Katie = None;
 
 ################################################################################
 
-def plural (x):
+def usage(exit_code=0):
+    print """Usage: helena
+Prints a report of packages in queue directories (usually new and byhand).
+
+  -h, --help                show this help and exit."""
+    sys.exit(exit_code)
+
+################################################################################
+
+def plural(x):
     if x > 1:
         return "s";
     else:
@@ -189,12 +198,22 @@ def main():
     global Cnf, Katie;
 
     Cnf = utils.get_conf();
-    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
+    Arguments = [('h',"help","Helena::Options::Help")];
+    for i in [ "help" ]:
+	if not Cnf.has_key("Helena::Options::%s" % (i)):
+	    Cnf["Helena::Options::%s" % (i)] = "";
+
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+
+    Options = Cnf.SubTree("Helena::Options")
+    if Options["Help"]:
+	usage();
+
     Katie = katie.Katie(Cnf);
 
     directories = Cnf.ValueList("Helena::Directories");
     if not directories:
-        directories = [ "byhand", "new"]
+        directories = [ "byhand", "new" ];
 
     for directory in directories:
         changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::%s" % (directory)]));
