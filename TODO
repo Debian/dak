@@ -3,6 +3,10 @@ To fix
 
 Urgent
 ------
+ 
+  o heidi should use transactions
+
+  o heidi should read from stdin, then process
 
   o katie needs a stable_reject() which a) removes the package from
     p-u, b) doesn't remove the file from the pool, and c) (optionally, I
@@ -26,8 +30,6 @@ Urgent
     [aj worked around; need to revisit]
 
   o direport misreports things as section 'devel'
-
-  o Fix rhona to obey StayOfExecution
 
   o rewrite shania to a) be sane, b) clean REJECT properly
     (i.e. ignore the fact that stuff is in a valid .changes file and
