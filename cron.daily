@@ -57,8 +57,9 @@ cd $overridedir
 denise
 
 # Update task overrides for testing and unstable
-cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sarge.extra.main
-cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sid.extra.main
+# [JT 2004-02-04 disabled; copying in by hand for now]
+#cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sarge.extra.main
+#cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sid.extra.main
 
 # FIXME
 rm -f override.potato.all3 override.sid.all3
@@ -86,7 +87,9 @@ echo Archive maintenance finished at $(date +%X)
 ################################################################################
 
 echo "Creating post-daily-cron-job backup of projectb database..."
-pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+POSTDUMP=/org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+pg_dump projectb > $POSTDUMP
+(cd /org/ftp.debian.org/backup; ln -sf $POSTDUMP current)
 
 ################################################################################
 
@@ -99,6 +102,12 @@ echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skippin
 helena | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org
 # and one on crufty packages
 rene | mail -e -s "rene run for $(date +%D)" ftpmaster@ftp-master.debian.org
+
+################################################################################
+
+# Run billie
+
+time billie
 
 ################################################################################
 

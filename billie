@@ -2,7 +2,7 @@
 
 # Prepare and maintain partial trees by architecture
 # Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: billie,v 1.3 2004-07-12 15:44:09 dsilvers Exp $
+# $Id: billie,v 1.4 2004-11-27 16:06:42 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,6 +64,8 @@ class BillieTarget:
     def poolish_match(self, path):
         for a in self.archs:
             if path.endswith( "_%s.deb" % (a) ):
+                return 1;
+            if path.endswith( "_%s.udeb" % (a) ):
                 return 1;
         if self.source:
             if (path.endswith( ".tar.gz" ) or
