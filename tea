@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.14 2001-11-18 19:57:58 rmurray Exp $
+# $Id: tea,v 1.15 2002-01-19 18:57:49 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,9 @@
 
 ################################################################################
 
-import pg, sys, os, string, stat
+import pg, sys, os, string, stat, time
 import utils, db_access
-import apt_pkg;
+import apt_pkg, apt_inst;
 
 ################################################################################
 
@@ -36,6 +36,11 @@ projectB = None;
 db_files = {};
 waste = 0.0;
 excluded = {};
+current_file = None;
+future_files = {};
+current_time = time.time();
+
+################################################################################
 
 def process_dir (arg, dirname, filenames):
     global waste, db_files, excluded;
@@ -51,6 +56,7 @@ def process_dir (arg, dirname, filenames):
         if os.path.isfile(filename) and not os.path.islink(filename) and not db_files.has_key(filename) and not excluded.has_key(filename):
             waste = waste + os.stat(filename)[stat.ST_SIZE];
             print filename
+
 ################################################################################
 
 def check_files():
@@ -182,6 +188,39 @@ def check_md5sums():
     print "Done."
 
 ################################################################################
+#
+# Check all files for timestamps in the future; common from hardware
+# (e.g. alpha) which have far-future dates as their default dates.
+
+
+
+def Ent(Kind,Name,Link,Mode,UID,GID,Size,MTime,Major,Minor):
+    global future_files;
+
+    if MTime > current_time:
+        future_files[current_file] = MTime;
+        print "%s: %s '%s','%s',%u,%u,%u,%u,%u" % (current_file, Kind,Name,Link,Mode,UID,GID,Size, MTime);
+
+def check_timestamps():
+    global current_file;
+
+    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.deb$'")
+    ql = q.getresult();
+    db_files = {};
+    count = 0;
+    for i in ql:
+	filename = os.path.abspath(i[0] + i[1]);
+        if os.access(filename, os.R_OK):
+            file = utils.open_file(filename);
+            current_file = filename;
+            sys.stderr.write("Processing %s.\n" % (filename));
+            apt_inst.debExtract(file,Ent,"control.tar.gz");
+            file.seek(0);
+            apt_inst.debExtract(file,Ent,"data.tar.gz");
+            count = count + 1;
+    print "Checked %d files (out of %d)." % (count, len(db_files.keys()));
+
+################################################################################
 
 def main ():
     global Cnf, projectB, db_files, waste, excluded;
@@ -193,13 +232,14 @@ def main ():
     db_access.init(Cnf, projectB);
 
     #check_md5sums();
-    check_source_in_one_dir();
+    #check_source_in_one_dir();
     #check_override();
     #check_dscs();
     #check_files();
+    check_timestamps();
 
 #######################################################################################
 
 if __name__ == '__main__':
-    main()
+    main();
 
