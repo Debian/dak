@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: neve,v 1.10 2002-05-14 15:28:53 troup Exp $
+# $Id: neve,v 1.11 2002-05-18 23:55:15 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 
 ###############################################################################
 
-import commands, os, pg, re, select, string, sys, tempfile, time;
+import commands, os, pg, re, select, string, tempfile, time;
 import apt_pkg;
 import db_access, utils;
 
@@ -148,7 +148,7 @@ def reject (str, prefix="Rejected: "):
 def check_signature (filename):
     if not utils.re_taint_free.match(os.path.basename(filename)):
         reject("!!WARNING!! tainted filename: '%s'." % (filename));
-        return 0;
+        return None;
 
     status_read, status_write = os.pipe();
     cmd = "gpgv --status-fd %s --keyring %s --keyring %s %s" \
