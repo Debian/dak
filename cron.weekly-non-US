@@ -8,11 +8,6 @@ export SCRIPTVARS=/org/non-us.debian.org/katie/vars-non-US
 
 ################################################################################
 
-echo "Creating pre-weekly-cron-job backup of projectb database..."
-pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
-
-################################################################################
-
 # Clean out incoming
 
 shania
@@ -26,12 +21,5 @@ fi
 # Clean up apt-ftparchive's databases
 
 apt-ftparchive clean apt.conf-non-US
-
-# TODO: weekly postins to d-c (?), backup of report (?), backup of changes.tgz (?)
-
-################################################################################
-
-echo "Creating post-weekly-cron-job backup of projectb database..."
-pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
