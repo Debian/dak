@@ -2,7 +2,7 @@
 
 # Wrapper for Debian Security team
 # Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: amber,v 1.4 2002-06-09 17:31:12 troup Exp $
+# $Id: amber,v 1.5 2002-07-14 15:03:26 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -138,17 +138,9 @@ def do_upload(changes_files):
                 file.write(string.join([source, version])+'\n');
         file.close();
 
-################################################################################
-
-# Next two functions originally written by aj and NIHishly merged into
-# amber by me.
-
-def join_with_commas_and(list):
-	if len(list) == 0: return "nothing";
-	if len(list) == 1: return list[0];
-	return string.join(list[:-1], ", ") + " and " + list[-1];
-
 ######################################################################
+# This function was originally written by aj and NIHishly merged into
+# amber by me.
 
 def make_advisory(advisory_nr, changes_files):
     adv_packages = [];
@@ -235,7 +227,7 @@ def make_advisory(advisory_nr, changes_files):
 	arches.sort();
 
 	adv = adv + "  %s was released for %s.\n\n" % (
-		string.capitalize(suite), join_with_commas_and(arches));
+		string.capitalize(suite), utils.join_with_commas_and(arches));
 
 	for a in ["source", "all"] + arches:
 	    if not updated_pkgs[suite].has_key(a):
