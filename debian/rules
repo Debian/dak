@@ -46,7 +46,7 @@ binary-indep: checkroot build
 	ln -s ziyi debian/tmp/usr/bin/da_mkrelease
 
 	install -d -m 755 debian/tmp/usr/lib/python1.5/site-packages/
-	install -m 644 db_access.py utils.py logging.py debian/tmp/usr/lib/python1.5/site-packages/
+	install -m 644 db_access.py utils.py claire.py logging.py debian/tmp/usr/lib/python1.5/site-packages/
 	install -d -m 755 debian/tmp/usr/share/man/man1/	
 	install -m 644 docs/katie.1 debian/tmp/usr/share/man/man1/da_install.1
 	install -m 644 docs/natalie.1 debian/tmp/usr/share/man/man1/da_override.1
