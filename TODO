@@ -20,7 +20,13 @@ Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
-  o Add urgency + installed date to the DB for aj/testing (?)
+  o Add urgency + installed date to the DB for aj/testing (? still needed ?)
+
+  o Disallow binary versions >> source except for bin-only NMUs (but:
+    have to change sorting so that sourceful uploads are processed
+    first).
+
+  o Revisit linking of binary->source in install() in katie.
 
 Less Urgent
 -----------
@@ -70,7 +76,6 @@ Urgent
   o [Hard] dependency checking
   o dpkg 1.7 Changed-By field support
   o Overrides for Maintainers
-  o Possibly disallow binary versions >> source except for bin-only NMUs (Branden Robinson, IWJ & others)
   o Kill orphaned
 
 Less Urgent
