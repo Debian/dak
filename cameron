@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Generate file list for unstable_accepted
-# Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: cameron,v 1.1 2002-05-05 19:59:32 rmurray Exp $
+# Copyright (C) 2002  Ryan Murray <rmurray@debian.org>
+# $Id: cameron,v 1.2 2002-05-10 00:24:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,38 +20,27 @@
 
 ################################################################################
 
-import pg, string, os, sys
-import apt_pkg
-import db_access, utils, claire, logging
-
-################################################################################
-
-projectB = None
-Cnf = None
-Logger = None;
+import pg, os, sys;
+import apt_pkg;
+import db_access, utils;
 
 ################################################################################
 
 def main():
-    global Cnf, projectB;
+    Cnf = utils.get_conf();
 
-    Cnf = utils.get_conf()
-
-    Arguments = [('h',"help","Cameron::Options::Help")];
-                 
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
-    list = utils.open_file("%s/unstable_accepted.list" % (Cnf["Dir::ListsDir"]), "w")
+    list = utils.open_file("%s/unstable_accepted.list" % (Cnf["Dir::Lists"]), "w");
     q = projectB.query("SELECT filename FROM unstable_accepted WHERE in_accepted AND filename ~ '(u?deb|dsc)$'");
-    entries = q.getresult();
-    for entry in entries:
-        filename = os.path.dirname(entry[0])+'/incoming/'+os.path.basename(entry[0]);
-	list.write("%s\n" % (filename))
-    list.close()
+    for entry in q.getresult():
+        filename = os.path.join(os.path.dirname(entry[0]),'/incoming/',os.path.basename(entry[0]));
+	list.write("%s\n" % (filename));
+    list.close();
 
-#########################################################################################
+################################################################################
 
 if __name__ == '__main__':
-    main()
+    main();
