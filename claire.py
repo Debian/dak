@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.3 2001-01-25 07:27:08 troup Exp $
+# $Id: claire.py,v 1.4 2001-02-27 06:10:42 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
     for i in q.getresult():
         src = i[2]+i[3]
         (component, section) = fix_component_section(i[0], i[1]);
-        dest = "%sdists/stable/%s/source/%s%s" % (Cnf["Dir::RootDir"], component, section, os.path.basename(i[3]));
+        dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::RootDir"], Cnf.get("Suite::Stable::CodeName", "stable"), component, section, os.path.basename(i[3]));
         src = clean_symlink(src, dest, Cnf["Dir::RootDir"]);
         if not os.path.exists(dest):
             if Cnf.Find("Claire::Options::Verbose"):
@@ -129,7 +129,7 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
         version = utils.re_no_epoch.sub('', i[4]);
         src = i[5]+i[6]
        
-        dest = "%sdists/stable/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::RootDir"], component, architecture, section, package, version);
+        dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::RootDir"], Cnf.get("Suite::Stable::CodeName", "stable"), component, architecture, section, package, version);
         src = clean_symlink(src, dest, Cnf["Dir::RootDir"]);
         if not os.path.exists(dest):
             if Cnf.Find("Claire::Options::Verbose"):
