@@ -2,7 +2,7 @@
 
 # Microscopic modification and query tool for overrides in projectb
 # Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: alicia,v 1.4 2004-03-11 00:08:32 troup Exp $
+# $Id: alicia,v 1.5 2004-03-11 00:36:08 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ def main ():
             arguments = (".",arg);
         else:
             utils.fubar("%s is not a valid section or priority" % (arg));
-        
+
 
     # Retrieve current section/priority...
     q = projectB.query("""
@@ -137,14 +137,14 @@ def main ():
         newsection = oldsection;
     if newpriority == ".":
         newpriority = oldpriority;
-    
+
     q = projectB.query("SELECT id FROM section WHERE section=%s" % (
         pg._quote(newsection,"str")));
 
     if q.ntuples() == 0:
         utils.fubar("Supplied section %s is invalid" % (newsection));
     newsecid = q.getresult()[0][0];
-    
+
     q = projectB.query("SELECT id FROM priority WHERE priority=%s" % (
         pg._quote(newpriority,"str")));
 
@@ -155,7 +155,7 @@ def main ():
     if newpriority == oldpriority and newsection == oldsection:
         print "I: Doing nothing"
         sys.exit(0);
-    
+
     # If we're in no-action mode
     if Options["No-Action"]:
         if newpriority != oldpriority:
@@ -164,7 +164,7 @@ def main ():
             print "I: Would change section from %s to %s" % (oldsection,newsection);
         if Options.has_key("Done"):
             print "I: Would also close bug(s): %s" % (Options["Done"]);
-            
+
         sys.exit(0);
 
     if newpriority != oldpriority:
@@ -173,6 +173,7 @@ def main ():
         print "I: Will change section from %s to %s" % (oldsection,newsection);
 
     if not Options.has_key("Done"):
+        pass;
         #utils.warn("No bugs to close have been specified. Noone will know you have done this.");
     else:
         print "I: Will close bug(s): %s" % (Options["Done"]);
@@ -219,7 +220,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: alicia $Revision: 1.4 $";
+        Subst["__CC__"] = "X-Katie: alicia $Revision: 1.5 $";
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"];
         Subst["__WHOAMI__"] = utils.whoami();
@@ -242,7 +243,7 @@ def main ():
     Logger.close();
 
     print "Done";
-    
+
 #################################################################################
 
 if __name__ == '__main__':
