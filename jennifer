@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.6 2002-02-22 01:20:12 troup Exp $
+# $Id: jennifer,v 1.7 2002-02-22 02:19:26 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.6 $";
+jennifer_version = "$Revision: 1.7 $";
 
 Cnf = None;
 Options = None;
@@ -942,12 +942,11 @@ def action ():
             answer = 'A';
 
     while string.find(prompt, answer) == -1:
-        print prompt,;
-        answer = utils.our_raw_input()
-        m = katie.re_default_answer.match(prompt)
+        answer = utils.our_raw_input(prompt);
+        m = katie.re_default_answer.match(prompt);
         if answer == "":
-            answer = m.group(1)
-        answer = string.upper(answer[:1])
+            answer = m.group(1);
+        answer = string.upper(answer[:1]);
 
     if answer == 'R':
         os.chdir (pkg.directory);

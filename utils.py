@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.38 2002-02-12 23:15:23 troup Exp $
+# $Id: utils.py,v 1.39 2002-02-22 02:19:26 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,15 +63,16 @@ def touch_file(filename):
 
 ######################################################################################
 
-# From reportbug
-def our_raw_input():
-    sys.stdout.flush()
+def our_raw_input(prompt=""):
+    if prompt:
+        sys.stdout.write(prompt);
+    sys.stdout.flush();
     try:
-        ret = raw_input()
+        ret = raw_input();
         return ret
     except EOFError:
-        sys.stderr.write('\nUser interrupt (^D).\n')
-        raise SystemExit
+        sys.stderr.write('\nUser interrupt (^D).\n');
+        raise SystemExit;
 
 ######################################################################################
 
