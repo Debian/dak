@@ -2,7 +2,7 @@
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.9 2001-09-13 23:51:51 troup Exp $
+# $Id: charisma,v 1.10 2001-09-26 03:47:15 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,19 +18,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-####################################################################################################################################
+################################################################################
 
 # ``As opposed to "Linux sucks. Respect my academic authoritah, damn
 #   you!" or whatever all this hot air amounts to.''
 #                             -- ajt@ in _that_ thread on debian-devel@
 
-####################################################################################################################################
+################################################################################
 
 import os, pg, re, string, sys
 import db_access, utils
 import apt_pkg
 
-####################################################################################################################################
+################################################################################
 
 projectB = None
 Cnf = None
@@ -38,9 +38,14 @@ maintainer_from_source_cache = {}
 packages = {}
 fixed_maintainer_cache = {}
 
-re_split = re.compile(r"(\S+)\s+(\S+.*)")
+################################################################################
+def usage (exit_code):
+    print """Usage: charisma [OPTION] EXTRA_FILE[...]
+Generate an index of packages <=> Maintainers.
+"""
+    sys.exit(exit_code)
 
-####################################################################################################################################
+################################################################################
 
 def fix_maintainer (maintainer):
     global fixed_maintainer_cache;
@@ -63,7 +68,7 @@ def get_maintainer_from_source (source_id):
 
     return maintainer_from_source_cache[source_id]
 
-####################################################################################################################################
+################################################################################
 
 def main():
     global Cnf, projectB;
@@ -75,6 +80,7 @@ def main():
 
     extra_files = apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
 
+    #projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, Cnf["DB::ROUser"]);
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
@@ -117,19 +123,34 @@ def main():
 
     # Process any additional Maintainer files (e.g. from non-US or pseudo packages)
     for filename in extra_files:
-        file = utils.open_file(filename, 'r')
+        file = utils.open_file(filename);
         for line in file.readlines():
-            m = re_split.match(line[:-1])
-            package = m.group(1)
-            maintainer = fix_maintainer(m.group(2))
-            if not packages.has_key(package):
-                packages[package] = { "maintainer": maintainer, "priority": 0 }
-        file.close()
+            line = string.strip(utils.re_comments.sub('', line[:-1]))
+            if line == "":
+                continue;
+            split = string.split(line);
+            lhs = split[0];
+            maintainer = fix_maintainer(string.join(split[1:]));
+            if string.find(lhs,'~') != -1:
+                lhs_split = string.split(lhs, '~');
+                package = lhs_split[0];
+                version = lhs_split[1];
+            else:
+                package = lhs;
+                version = '*';
+            # A version of '*' overwhelms all real version numbers
+            if not packages.has_key(package) or version == '*' \
+               or apt_pkg.VersionCompare(packages[package]["version"], version) == -1:
+                packages[package] = { "maintainer": maintainer, "version": version };
+        file.close();
 
     package_keys = packages.keys()
     package_keys.sort()
     for package in package_keys:
-        print "%-20s %s" % (package, packages[package]["maintainer"])
+        lhs = string.join([package, packages[package]["version"]], '~');
+        print "%-30s %s" % (lhs, packages[package]["maintainer"]);
+
+################################################################################
 
 if __name__ == '__main__':
     main()

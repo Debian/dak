@@ -70,11 +70,18 @@ ziyi
 # Clean out old packages
 rhona
 
+# Generate the Maintainers file
 cd $indices
-charisma > .new-maintainers
+charisma > .new-maintainers_versions
+mv -f .new-maintainers_versions Maintainers_Versions
+sed -e "s/~[^  ]*\([   ]\)/\1/" < Maintainers_Versions | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
 mv -f .new-maintainers Maintainers
 gzip -9v <Maintainers >.new-maintainers.gz
 mv -f .new-maintainers.gz Maintainers.gz
+gzip -9v <Maintainers_Versions >.new-maintainers_versions.gz
+mv -f .new-maintainers_versions.gz Maintainers_Versions.gz
+rm -f Maintainers_Versions
+
 cd $masterdir
 copyoverrides
 mklslar
