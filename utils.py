@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.49 2002-07-12 15:09:57 troup Exp $
+# $Id: utils.py,v 1.50 2002-07-14 15:01:04 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import commands, os, pwd, re, socket, shutil, string, sys, tempfile
-import apt_pkg
+################################################################################
+
+import commands, os, pwd, re, socket, shutil, string, sys, tempfile;
+import apt_pkg;
+import db_access;
+
+################################################################################
 
 re_comments = re.compile(r"\#.*")
 re_no_epoch = re.compile(r"^\d*\:")
@@ -538,8 +543,75 @@ def real_arch(arch):
 
 ################################################################################
 
+def join_with_commas_and(list):
+	if len(list) == 0: return "nothing";
+	if len(list) == 1: return list[0];
+	return string.join(list[:-1], ", ") + " and " + list[-1];
+
+################################################################################
+
 def get_conf():
 	return Cnf;
+
+################################################################################
+
+# Handle -a, -c and -s arguments; returns them as SQL constraints
+def parse_args(Options):
+    # Process suite
+    if Options["Suite"]:
+        suite_ids_list = [];
+        for suite in string.split(Options["Suite"]):
+            suite_id = db_access.get_suite_id(suite);
+            if suite_id == -1:
+                utils.warn("suite '%s' not recognised." % (suite));
+            else:
+                suite_ids_list.append(suite_id);
+        if suite_ids_list:
+            con_suites = "AND su.id IN (%s)" % string.join(map(str, suite_ids_list), ", ");
+        else:
+            fubar("No valid suite given.");
+    else:
+        con_suites = "";
+
+    # Process component
+    if Options["Component"]:
+        component_ids_list = [];
+        for component in string.split(Options["Component"]):
+            component_id = db_access.get_component_id(component);
+            if component_id == -1:
+                warn("component '%s' not recognised." % (component));
+            else:
+                component_ids_list.append(component_id);
+        if component_ids_list:
+            con_components = "AND c.id IN (%s)" % string.join(map(str, component_ids_list), ", ");
+        else:
+            fubar("No valid component given.");
+    else:
+        con_components = "";
+
+    # Process architecture
+    con_architectures = "";
+    if Options["Architecture"]:
+        arch_ids_list = [];
+        check_source = 0;
+        for architecture in string.split(Options["Architecture"]):
+            if architecture == "source":
+                check_source = 1;
+            else:
+                architecture_id = db_access.get_architecture_id(architecture);
+                if architecture_id == -1:
+                    warn("architecture '%s' not recognised." % (architecture));
+                else:
+                    arch_ids_list.append(architecture_id);
+        if arch_ids_list:
+            con_architectures = "AND a.id IN (%s)" % string.join(map(str, arch_ids_list), ", ");
+        else:
+            if not check_source:
+                fubar("No valid architecture given.");
+    else:
+        check_source = 1;
+
+    return (con_suites, con_architectures, con_components, check_source);
 
 ################################################################################
 
