@@ -54,9 +54,7 @@ More Urgent
     who their source is; source-must-exist does, but the info is not
     propogated down.
 
-  o DONE
-
-  o clean fingerprint
+  o DONE clean up
 
   o Fix BTS vs. katie sync issues by queueing(via BSMTP) BTS mail so
     that it can be released on deman (e.g. ETRN to exim).
@@ -83,7 +81,7 @@ More Urgent
 
   o hooks for debian specific checks (e.g. check_urgency)
 
-  o Logging [mostly done]
+  o Logging [mostly done] (todo: rhona (hard), .. ?)
 
   o Abstraction of suite hardcoding (q.v. progengy)
 

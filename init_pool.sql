@@ -150,4 +150,6 @@ CREATE INDEX bin_associations_bin ON bin_associations (bin);
 CREATE INDEX src_associations_source ON src_associations (source);
 CREATE INDEX source_maintainer ON source (maintainer);
 CREATE INDEX binaries_maintainer ON binaries (maintainer);
+CREATE INDEX binaries_fingerprint on binaries (sig_fpr);
+CREATE INDEX source_fingerprint on source (sig_fpr);
 CREATE INDEX dsc_files_file ON dsc_files (file);
