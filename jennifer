@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.5 2002-02-22 01:12:15 troup Exp $
+# $Id: jennifer,v 1.6 2002-02-22 01:20:12 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.5 $";
+jennifer_version = "$Revision: 1.6 $";
 
 Cnf = None;
 Options = None;
@@ -709,7 +709,7 @@ def check_files():
     if changes["architecture"].has_key("source"):
         has_source = 0;
         for file in file_keys:
-            if file[file]["type"] == "dsc":
+            if files[file]["type"] == "dsc":
                 has_source = 1;
         if not has_source:
             reject("no source found and Architecture line in changes mention source.");
