@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.7 2001-03-20 00:28:11 troup Exp $
+# $Id: catherine,v 1.8 2001-03-24 03:29:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,57 +33,21 @@ import apt_pkg, apt_inst;
 Cnf = None;
 projectB = None;
 
-################################################################################
+# Q is a python-postgresql query result set and must have the
+# following four columns:
+#  o files.id (as 'files_id')
+#  o files.filename
+#  o location.path
+#  o component.name (as 'component')
+#
+# limit is a value in bytes or -1 for no limit (use with care!)
+# verbose and no_action are booleans
 
-def main ():
-    global Cnf, projectB;
-
-    apt_pkg.init();
-    
-    Cnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
-
-    Arguments = [('D',"debug","Catherine::Options::Debug", "IntVal"),
-                 ('h',"help","Catherine::Options::Help"),
-                 ('V',"version","Catherine::Options::Version"),
-                 ('l',"limit", "Catherine::Options::Limit", "HasArg"),
-                 ('n',"no-action","Catherine::Options::No-Action"),
-                 ('v',"verbose","Catherine::Options::Verbose")];
-
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
-
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
-
+def poolize (q, limit, verbose, no_action):
     poolized_size = 0;
     poolized_count = 0;
 
     # Parse -l/--limit argument
-    if not Cnf["Catherine::Options::Limit"]:
-        limit = -1;
-    else:
-        limit = int(Cnf["Catherine::Options::Limit"]) * 1024;
-
-    # -n/--no-action implies -v/--verbose
-    if Cnf["Catherine::Options::No-Action"]:
-        Cnf["Catherine::Options::Verbose"] = "true";
-
-    # Sanity check the limit argument
-    if limit > 0 and limit < 1024:
-        sys.stderr.write("-l/--limit takes an argument with a value in kilobytes.\n");
-        sys.exit(1);
-
-    # Grab a list of all files not already in the pool
-    q = projectB.query("""
-SELECT l.path, f.filename, f.id as files_id, c.name as component 
-   FROM files f, location l, component c WHERE 
-    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id) 
-    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND l.component = c.id 
-UNION SELECT l.path, f.filename, f.id as files_id, null as component
-   FROM files f, location l WHERE 
-    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id) 
-    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND NOT EXISTS 
-     (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);""");
     qd = q.dictresult();
     for qid in qd:
         legacy_filename = qid["path"]+qid["filename"];
@@ -144,17 +108,68 @@ UNION SELECT l.path, f.filename, f.id as files_id, null as component
         if os.path.exists(destination):
             sys.stderr.write("%s: already exists in the pool; serious FUBARity.\n" % (legacy_filename));
             sys.exit(1);
-        if Cnf["Catherine::Options::Verbose"]:
+        if verbose:
             print "Moving: %s -> %s" % (legacy_filename, destination);
-        if not Cnf["Catherine::Options::No-Action"]:
+        if not no_action:
             utils.move(legacy_filename, destination);
         # Then Update the DB's files table
-        if Cnf["Catherine::Options::Verbose"]:
+        if verbose:
             print "SQL: UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, location_id, qid["files_id"]);
-        if not Cnf["Catherine::Options::No-Action"]:
+        if not no_action:
             q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, location_id, qid["files_id"]));
 
     sys.stderr.write("Poolized %s in %s files.\n" % (utils.size_type(poolized_size), poolized_count));
+    
+################################################################################
+
+def main ():
+    global Cnf, projectB;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('D',"debug","Catherine::Options::Debug", "IntVal"),
+                 ('h',"help","Catherine::Options::Help"),
+                 ('V',"version","Catherine::Options::Version"),
+                 ('l',"limit", "Catherine::Options::Limit", "HasArg"),
+                 ('n',"no-action","Catherine::Options::No-Action"),
+                 ('v',"verbose","Catherine::Options::Verbose")];
+
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Catherine::Options")
+
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    db_access.init(Cnf, projectB);
+
+    if not Options["Limit"]:
+        limit = -1;
+    else:
+        limit = int(Options["Limit"]) * 1024;
+
+    # -n/--no-action implies -v/--verbose
+    if Options["No-Action"]:
+        Options["Verbose"] = "true";
+
+    # Sanity check the limit argument
+    if limit > 0 and limit < 1024:
+        sys.stderr.write("-l/--limit takes an argument with a value in kilobytes.\n");
+        sys.exit(1);
+
+    # Grab a list of all files not already in the pool
+    q = projectB.query("""
+SELECT l.path, f.filename, f.id as files_id, c.name as component 
+   FROM files f, location l, component c WHERE 
+    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id) 
+    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND l.component = c.id 
+UNION SELECT l.path, f.filename, f.id as files_id, null as component
+   FROM files f, location l WHERE 
+    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id) 
+    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND NOT EXISTS 
+     (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);""");
+
+    poolize(q, limit, Options["Verbose"], Options["No-Action"]);
 
 #######################################################################################
 
