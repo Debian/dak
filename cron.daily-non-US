@@ -37,9 +37,9 @@ update-readmenonus
 
 ################################################################################
 
-cd $incoming
+cd $accepted
 rm -f REPORT
-katie -pak *.changes | direport | tee REPORT | \
+katie -pa *.changes | tee REPORT | \
      mail -s "Non-US Install for $(date +%D)" ftpmaster@ftp-master.debian.org
 chgrp debadmin REPORT
 chmod 664 REPORT

@@ -10,6 +10,7 @@ overridedir=$nonushome/scripts/override
 dbdir=$nonushome/database/
 queuedir=$nonushome/queue/
 unchecked=$queuedir/unchecked/
+accepted=$queuedir/accepted/
 incoming=$nonushome/incoming/
 
 packagesfiles=packagesfiles-non-US
