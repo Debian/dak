@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.47 2004-04-03 02:49:46 troup Exp $
+# $Id: jennifer,v 1.48 2004-04-19 16:04:34 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.47 $";
+jennifer_version = "$Revision: 1.48 $";
 
 Cnf = None;
 Options = None;
@@ -794,7 +794,22 @@ def check_source():
 
     # Move back and cleanup the temporary tree
     os.chdir(cwd);
-    shutil.rmtree(tmpdir);
+    try:
+        shutil.rmtree(tmpdir);
+    except OSError, e:
+        if errno.errorcode[e.errno] != 'EACCES':
+            utils.fubar("%s: couldn't remove tmp dir for source tree." % (dsc["source"]));
+
+        reject("%s: source tree could not be cleanly removed." % (dsc["source"]));
+        # We probably have u-r or u-w directories so chmod everything
+        # and try again.
+        cmd = "chmod -R u+rwx %s" % (tmpdir)
+        result = os.system(cmd)
+        if result != 0:
+            utils.fubar("'%s' failed with result %s." % (cmd, result));
+        shutil.rmtree(tmpdir);
+    except:
+        utils.fubar("%s: couldn't remove tmp dir for source tree." % (dsc["source"]));
 
 ################################################################################
 

@@ -27,6 +27,16 @@ queue/approved
 Others
 ------
 
+  o we don't handle the case where an identical orig.tar.gz is
+   mentioned in the .changes, but not in unchecked; but should we
+   care?
+
+  o madison could do better sanity checking for -g/-G (e.g. not more
+   than one suite, etc.)
+
+  o use python2.2-tarfile (once it's in stable?) to check orig.tar.gz
+   timestamps too.
+
   o need to decide on whether we're tying for most errors at once.. if
     so (probably) then make sure code doesn't assume variables exist and
     either way do something about checking error code of check_dsc and
