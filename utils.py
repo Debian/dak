@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.32 2001-09-17 11:18:37 troup Exp $
+# $Id: utils.py,v 1.33 2001-09-26 03:49:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,6 +52,11 @@ valid_components = {
     "contrib": "",
     "non-free": ""
     };
+
+default_config = "/etc/katie/katie.conf";
+default_apt_config = "/etc/katie/apt.conf";
+DefaultCnf = apt_pkg.newConfiguration();
+apt_pkg.ReadConfigFileISC(DefaultCnf,default_config);
 
 ######################################################################################
 
@@ -354,42 +359,26 @@ def copy (src, dest, overwrite = 0):
 
 ######################################################################################
 
-# FIXME: this is inherently nasty.  Can't put this mapping in a conf
-# file because the conf file depends on the archive.. doh.  Maybe an
-# archive independent conf file is needed.
-
 def where_am_i ():
     res = socket.gethostbyaddr(socket.gethostname());
-    if res[0] == 'pandora.debian.org':
-        return 'non-US';
-    elif res[0] == 'auric.debian.org':
-        return 'ftp-master';
+    if DefaultCnf.get("Config::" + res[0] + "::DatbaseHostname"):
+	return DefaultCnf["Config::" + res[0] + "::DatabaseHostname"]
     else:
-        raise unknown_hostname_exc, res;
-
-######################################################################################
-
-# FIXME: this isn't great either.
+        return res[0];
 
 def which_conf_file ():
-    archive = where_am_i ();
-    if archive == 'non-US':
-        return '/org/non-us.debian.org/katie/katie.conf-non-US';
-    elif archive == 'ftp-master':
-        return '/org/ftp.debian.org/katie/katie.conf';
+    res = socket.gethostbyaddr(socket.gethostname());
+    if DefaultCnf.get("Config::" + res[0] + "::KatieConfig"):
+	return DefaultCnf["Config::" + res[0] + "::KatieConfig"]
     else:
-        raise unknown_hostname_exc, archive
-
-# FIXME: if the above isn't great, this can't be either :)
+	return default_config;
 
 def which_apt_conf_file ():
-    archive = where_am_i ();
-    if archive == 'non-US':
-        return '/org/non-us.debian.org/katie/apt.conf-non-US';
-    elif archive == 'ftp-master':
-        return '/org/ftp.debian.org/katie/apt.conf';
+    res = socket.gethostbyaddr(socket.gethostname());
+    if DefaultCnf.get("Config::" + res[0] + "::AptConfig"):
+	return DefaultCnf["Config::" + res[0] + "::AptConfig"]
     else:
-        raise unknown_hostname_exc, archive
+	return default_apt_config;
 
 ######################################################################################
 
