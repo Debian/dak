@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.15 2001-12-18 16:26:12 ajt Exp $
+# $Id: ziyi,v 1.16 2002-01-12 16:33:23 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -275,15 +275,26 @@ def main ():
 
 	out.close()
 	if Cnf.has_key("Dinstall::SigningKeyring"):
-	    dest = Cnf["Dir::RootDir"] + tree + "/Release.gpg"
-	    if os.path.exists(dest):
-		os.unlink(dest)
 	    keyring = "--secret-keyring \"%s\"" % Cnf["Dinstall::SigningKeyring"]
 	    if Cnf.has_key("Dinstall::SigningPubKeyring"):
 		keyring = keyring + " --keyring \"%s\"" % Cnf["Dinstall::SigningPubKeyring"]
 
-	    os.system("gpg %s --no-options --batch --no-tty --armour --detach-sign <%s --output=%s" % (keyring,
-		Cnf["Dir::RootDir"] + tree + "/Release", dest))
+	    arguments = "--no-options --batch --no-tty --armour"
+	    if Cnf.has_key("Dinstall::SigningKeyIds"):
+		signkeyids = string.split(Cnf["Dinstall::SigningKeyIds"])
+	    else:
+		signkeyids = [""]
+
+	    dest = Cnf["Dir::RootDir"] + tree + "/Release.gpg"
+	    if os.path.exists(dest):
+		os.unlink(dest)
+
+	    for keyid in signkeyids:
+		if keyid != "": defkeyid = "--default-key %s" % keyid
+		else: defkeyid = ""
+		os.system("gpg %s %s %s --detach-sign <%s >>%s" % 
+			(keyring, defkeyid, arguments,
+			Cnf["Dir::RootDir"] + tree + "/Release", dest))
 
 #######################################################################################
 
