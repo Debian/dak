@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: shania,v 1.4 2001-06-22 23:23:59 troup Exp $
+# $Id: shania,v 1.5 2001-06-23 00:25:52 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,21 @@ import utils
 import apt_pkg;
 
 ################################################################################
-
-# ``where security is not an option''
+ 
+# 23:12|<aj> I will not hush!
+# 23:12|<elmo> :>
+# 23:12|<aj> Where there is injustice in the world, I shall be there!
+# 23:13|<aj> I shall not be silenced!
+# 23:13|<aj> The world shall know!
+# 23:13|<aj> The world *must* know!
+# 23:13|<elmo> oh dear, he's gone back to powerpuff girls... ;-)
+# 23:13|<aj> yay powerpuff girls!!
+# 23:13|<aj> buttercup's my favourite, who's yours?
+# 23:14|<aj> you're backing away from the keyboard right now aren't you?
+# 23:14|<aj> *AREN'T YOU*?!
+# 23:15|<aj> I will not be treated like this.
+# 23:15|<aj> I shall have my revenge.
+# 23:15|<aj> I SHALL!!!
 
 ################################################################################
 
