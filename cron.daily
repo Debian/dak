@@ -55,6 +55,11 @@ jenna
 # Generate override files
 cd $overridedir
 denise
+
+# Update task overrides for testing and unstable
+cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sarge.extra.main
+cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sid.extra.main
+
 # FIXME
 rm -f override.potato.all3 override.sid.all3
 for i in main contrib non-free; do cat override.potato.$i >> override.potato.all3; done

@@ -10,6 +10,7 @@ scriptdir=$base/scripts
 masterdir=$base/katie/
 dbdir=$base/database/
 overridedir=$scriptdir/override
+extoverridedir=$scriptdir/external-overrides
 
 queuedir=$base/queue/
 unchecked=$queuedir/unchecked/
