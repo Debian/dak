@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.21 2001-01-22 22:32:47 troup Exp $
+# $Id: katie,v 1.22 2001-01-23 20:27:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -221,6 +221,10 @@ def check_changes(filename):
         if not Cnf.has_key("Suite::%s" % (i)):
             reject_message = reject_message + "Rejected: Unknown distribution `%s'.\n" % (i)
 
+    # Ensure there _is_ a target distribution
+    if changes["distribution"].keys() == []:
+        reject_message = reject_message + "Rejected: huh? Distribution field is empty in changes file.\n";
+            
     # Map unreleased arches from stable to unstable
     if changes["distribution"].has_key("stable"):
         for i in changes["architecture"].keys():
@@ -284,11 +288,15 @@ def check_files():
             files[file]["type"] = "byhand";
         # Checks for a binary package...
         elif re_isadeb.match(file) != None:
+            files[file]["type"] = "deb";
+
             # Extract package information using dpkg-deb
             try:
                 control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file,"r")))
             except:
                 reject_message = reject_message + "Rejected: %s: debExtractControl() raised %s.\n" % (file, sys.exc_type);
+                # Can't continue, none of the checks on control would work.
+                continue;
 
             # Check for mandatory fields
             if control.Find("Package") == None:
@@ -327,7 +335,6 @@ def check_files():
                 files[file]["dbtype"] = "deb";
             else:
                 reject_message = reject_message + "Rejected: %s is neither a .deb or a .udeb.\n " % (file);
-            files[file]["type"] = "deb";
             files[file]["fullname"] = "%s_%s_%s.deb" % (control.Find("Package", ""), epochless_version, control.Find("Architecture", ""))
             files[file]["source"] = control.Find("Source", "");
             if files[file]["source"] == "":
