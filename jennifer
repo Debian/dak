@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.13 2002-04-16 17:35:16 troup Exp $
+# $Id: jennifer,v 1.14 2002-04-21 15:38:41 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.13 $";
+jennifer_version = "$Revision: 1.14 $";
 
 Cnf = None;
 Options = None;
@@ -174,17 +174,6 @@ def get_status_output(cmd, status_read, status_write):
 
 def Dict(**dict): return dict
 
-def prefix_multi_line_string(str, prefix):
-    out = "";
-    for line in string.split(str, '\n'):
-        line = string.strip(line);
-        if line:
-            out = out + "%s %s\n" % (prefix, line);
-    # Strip trailing new line
-    if out:
-        out = out[:-1];
-    return out;
-
 def reject (str, prefix="Rejected: "):
     global reject_message;
     if str:
@@ -261,9 +250,9 @@ def check_signature (filename):
     if exit_status:
         reject("gpgv failed while checking %s." % (filename));
         if string.strip(status):
-            reject(prefix_multi_line_string(status, " [GPG status-fd output:]"), "");
+            reject(utils.prefix_multi_line_string(status, " [GPG status-fd output:] "), "");
         else:
-            reject(prefix_multi_line_string(output, " [GPG output:]"), "");
+            reject(utils.prefix_multi_line_string(output, " [GPG output:] "), "");
         return None;
 
     # Sanity check the good stuff we expect
@@ -515,12 +504,15 @@ def check_files():
             files[file]["type"] = "deb";
 
             # Extract package control information
+            deb_file = utils.open_file(file);
             try:
-                control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)));
+                control = apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file));
             except:
                 reject("%s: debExtractControl() raised %s." % (file, sys.exc_type));
+                deb_file.close();
                 # Can't continue, none of the checks on control would work.
                 continue;
+            deb_file.close();
 
             # Check for mandatory fields
             for field in [ "Package", "Architecture", "Version" ]:
@@ -814,6 +806,7 @@ def check_md5sums ():
         else:
             if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
                 reject("md5sum check failed for %s." % (file));
+            file_handle.close();
 
 ################################################################################
 
@@ -850,6 +843,7 @@ def check_timestamps():
                 apt_inst.debExtract(deb_file,tar.callback,"control.tar.gz");
                 deb_file.seek(0);
                 apt_inst.debExtract(deb_file,tar.callback,"data.tar.gz");
+                deb_file.close();
                 #
                 future_files = tar.future_files.keys();
                 if future_files:
