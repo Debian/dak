@@ -12,6 +12,8 @@ Show Stopper
 Non-Show Stopper
 ----------------
 
+  o fix heimdal at some point on non-US.
+
   o CD building scripts need fixing
 
   o charisma needs to do version compares

@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.6 2000-11-30 04:38:34 troup Exp $
+# $Id: katie,v 1.7 2000-12-01 17:33:29 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -444,7 +444,7 @@ def check_dsc ():
                     actual_md5 = files[dsc_file]["md5sum"]
                     found = "%s in incoming" % (dsc_file)
                     # Check the file does not already exist in the archive
-                    q = projectB.query("SELECT f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (dsc_file));
+                    q = projectB.query("SELECT f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
                     if q.getresult() != []:
                         reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
                 elif dsc_file[-12:] == ".orig.tar.gz":
@@ -460,7 +460,7 @@ def check_dsc ():
                         reprocess = 1;
                         return 1;
                     # Check in the pool
-                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (dsc_file));
+                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
                     ql = q.getresult();
                     if len(ql) > 0:
                         old_file = ql[0][0] + ql[0][1];

@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.5 2000-11-30 04:19:30 troup Exp $
+# $Id: utils.py,v 1.6 2000-12-01 17:33:29 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -253,6 +253,15 @@ def which_conf_file ():
         return '/org/ftp.debian.org/katie/katie.conf';
     else:
         raise unknown_hostname_exc, archive
+
+######################################################################################
+
+# Escape characters which have meaning to SQL's regex comparison operator ('~')
+# (woefully incomplete)
+
+def regex_safe (s):
+    s = string.replace(s, '+', '\\\\+');
+    return s
 
 ######################################################################################
 
