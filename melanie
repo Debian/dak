@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.41 2004-06-24 00:41:39 troup Exp $
+# $Id: melanie,v 1.42 2004-11-27 13:28:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,8 +104,13 @@ def reverse_depends_check(removals, suites):
         deps = {}
         virtual_packages = {}
         for component in components:
-            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suites[0], component, architecture)
-            packages = utils.open_file(filename, "r")
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suites[0], component, architecture)
+            # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+            temp_filename = utils.temp_filename();
+            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+            if (result != 0):
+                utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result);
+            packages = utils.open_file(temp_filename);
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find("Package")
@@ -128,6 +133,7 @@ def reverse_depends_check(removals, suites):
                         if package not in removals:
                             virtual_packages[virtual_pkg] += 1
             packages.close()
+            os.unlink(temp_filename);
 
         # If a virtual package is only provided by the to-be-removed
         # packages, treat the virtual package as to-be-removed too.
@@ -251,8 +257,8 @@ def main ():
 
     # Force the admin to tell someone if we're not doing a rene-led removal
     # (or closing a bug, which counts as telling someone).
-    if not Options["Carbon-Copy"] and not Options["Done"] \
-       and Options["Reason"].find("[rene]") == -1:
+    if not Options["No-Action"] and not Options["Carbon-Copy"] \
+           and not Options["Done"] and Options["Reason"].find("[rene]") == -1:
         utils.fubar("Need a -C/--carbon-copy if not closing a bug and not doing a rene-led removal.");
 
     # Process -C/--carbon-copy
@@ -492,7 +498,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.41 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.42 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;
