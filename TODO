@@ -6,14 +6,21 @@
 Actually Urgent
 ---------------
 
-  o katie's per-suite version checks don't work for stable uploads
-    since "stable" has been removed from the list of target suites
-    (doh).
+  o cross-suite version checking
+
+     Priority based; stable == 1, proposed-update == 2, etc.
+
+      i.e. A package targeted for a suite, must have a higher (or
+      equal) version number than anything in a suite with a lower
+      priority and also must have a lower (or equal) version number
+      than anything in a suite with a higher priorty.  The checks are
+      always "or equal to" because two seperate uploads with the same
+      version will fail thanks to the file overwrite errors (at least
+      ignoring potato) and multi-suite uploads (e.g. "stable
+      unstable") need to work.
 
   o lisa doesn't do the right thing with -2 and -1 uploads, as you can
     end up with the .orig.tar.gz not in the pool
-
-  o lisa can't handle non-existent .changes files
 
   o lisa doesn't handle :q! from rejections well at all
 
@@ -83,6 +90,8 @@ More Urgent
   o Abstraction of suite hardcoding (q.v. progengy)
 
   o morgue needs auto-cleaning (?)
+
+  o auto-building crap should be optional
 
 ================================================================================
 
