@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.50 2004-11-27 16:07:07 troup Exp $
+# $Id: katie.py,v 1.51 2004-11-27 18:02:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,9 +30,9 @@ from types import *;
 
 re_isanum = re.compile (r"^\d+$");
 re_default_answer = re.compile(r"\[(.*)\]");
-re_fdnic = re.compile("\n\n");
-re_bin_only_nmu_of_mu = re.compile("\.\d+\.\d+$");
-re_bin_only_nmu_of_nmu = re.compile("\.\d+$");
+re_fdnic = re.compile(r"\n\n");
+re_bin_only_nmu_of_mu = re.compile(r"\.\d+\.\d+$");
+re_bin_only_nmu_of_nmu = re.compile(r"\.\d+$");
 
 ###############################################################################
 
