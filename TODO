@@ -1,42 +1,3 @@
-Evil new incoming!
-==================
-
-To recheck in kate:
-
- o source still exists		   - code
- o in override			   - code
- o binary version >> current	   - code
- o binary file not in archive	   - code
- o source version >> current	   - code
- o source file not in archive      - code
- o md5sum/size mismatch            - code
-
-TO CHECK:
--=-=-=-=-
-
- (o) unchecked (jennifer):
-    o - accept                     'runs'
-    o - new			   'runs'
-    o - new dependent              'runs'
-    o - byhand			   'runs'
-    o - byhand dependent	   'runs'
-    o - new + byhand		   'runs'
-    o - new + byhand dependent	   'runs'
-    o - reject                     'runs'
- (o) byhand (lisa):
-    o - accept			   'runs'
-    o - accept dependent	   'runs'
-    o - reject			   'runs'
- (o) new (lisa):
-    o - accept                     'runs'
-    o - accept dependent	   'runs'
-    o - reject                     'runs'
-    o - byhand			   'runs'
- (o) accepted (katie):
-    o - accept			   'runs'
-    o - unaccept		   code
-
-
 TODO:
 -=-=-
 
@@ -59,6 +20,8 @@ TODO:
 
  o stable installs are FUBAR
 
+ o update tagdb.dia
+
 ==========================================================================
 
 
@@ -74,11 +37,6 @@ More Urgent
   o write our own locking module or in some other way fix things so we
     don't require a patch to python since upstream refuse to fix it.
  
-  o test sig checking stuff in test/
-
-  o katie/jenna/rhona/whatever needs to clear out .changes
-    files from p-u when removing stuff superseded by newer versions.
-
   o maintainers file needs overrides  
  
     [ change override.maintainer to override.maintainer-from +
@@ -86,7 +44,6 @@ More Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
-  o katie can loop on rejects if target's exist in REJECT... 
   o (Depends) <aj> elmo: it should match  \(\s*(<<|<|<=|=|>=|>|>>)\s*<VERSIONREGEXP>\) fwiw
 
 Less Urgent
@@ -119,6 +76,10 @@ Less Urgent
     o check linking of .tar.gz's to .dsc's.. see proftpd 1.2.1 as an example
     o archive needs md5sum'ed regularly, but takes too long to do all
       in one go; make progressive or weekly.
+    o katie/jenna/rhona/whatever needs to clear out .changes
+      files from p-u when removing stuff superseded by newer versions.
+      [but for now we have halle]
+    o test sig checking stuff in test/ (stupid thing is not modularized)
 
  * Easy:
 
