@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.35 2003-07-29 14:00:39 ajt Exp $
+# $Id: jennifer,v 1.36 2003-09-16 20:41:21 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.35 $";
+jennifer_version = "$Revision: 1.36 $";
 
 Cnf = None;
 Options = None;
@@ -241,7 +241,7 @@ def check_changes():
     base_filename = os.path.basename(filename);
     for dir in [ "Accepted", "Byhand", "Done", "New" ]:
         if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+base_filename):
-            reject("a changes file with the same name already exists in the %s directory." % (dir));
+            reject("%s: a file with this name already exists in the %s directory." % (base_filename, dir));
 
     return 1;
 
@@ -596,13 +596,14 @@ def check_dsc ():
             if dsc.has_key("version") and not re_valid_version.match(dsc["version"]):
                 reject("%s: invalid version number '%s'." % (file, dsc["version"]));
 
-            # The dpkg maintainer from hell strikes again! Bumping the
-            # version number of the .dsc breaks extraction by stable's
-            # dpkg-source.
+            # Bumping the version number of the .dsc breaks extraction by stable's
+            # dpkg-source.  So let's not do that...
             if dsc["format"] != "1.0":
-                reject("""[dpkg-sucks] source package was produced by a broken version
-          of dpkg-dev 1.9.1{3,4}; please rebuild with >= 1.9.15 version
-          installed.""");
+                reject("%s: incompatible 'Format' version produced by a broken version of dpkg-dev 1.9.1{3,4}." % (file));
+
+            # Build-Depends: ARRAY(<hex>) is not good ...
+            if dsc.get("build-depends","").find("ARRAY") == 0:
+                reject("%s: invalid 'Build-Depends' field produced by a broken version of dpkg-dev (1.10.11)" % (file));
 
             # Ensure the version number in the .dsc matches the version number in the .changes
             epochless_dsc_version = utils.re_no_epoch.sub('', dsc.get("version"));
@@ -642,11 +643,8 @@ def check_dsc ():
 
 ################################################################################
 
-# Some cunning stunt broke dpkg-source in dpkg 1.8{,.1}; detect the
+# dpkg-source broke .diff.gz generation in dpkg 1.8.x; detect the
 # resulting bad source packages and reject them.
-
-# Even more amusingly the fix in 1.8.1.1 didn't actually fix the
-# problem just changed the symptoms.
 
 def check_diff ():
     for filename in files.keys():
@@ -654,7 +652,7 @@ def check_diff ():
             file = gzip.GzipFile(filename, 'r');
             for line in file.readlines():
                 if re_bad_diff.search(line):
-                    reject("[dpkg-sucks] source package was produced by a broken version of dpkg-dev 1.8.x; please rebuild with >= 1.8.3 version installed.");
+                    reject("%s: invalid .diff.gz produced by a broken version of dpkg-dev 1.8.x." % (filename));
                     break;
 
 ################################################################################

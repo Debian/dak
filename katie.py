@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.38 2003-08-18 15:04:17 ajt Exp $
+# $Id: katie.py,v 1.39 2003-09-16 20:41:21 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -764,7 +764,7 @@ SELECT b.id FROM binaries b, architecture a
                                    files[file]["version"],
                                    files[file]["architecture"]))
         if q.getresult():
-            self.reject("can not overwrite existing copy of '%s' already in the archive." % (file));
+            self.reject("%s: can not overwrite existing copy already in the archive." % (file));
 
         return self.reject_message;
 

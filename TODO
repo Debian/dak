@@ -373,7 +373,7 @@ Possible Quotes:
  
 | <mdz_> SirDibos: that sentence sounds like it wants to be a bug report when it grows up
  
--------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 | From: Andrew Morton <akpm@osdl.org>
 | Subject: Re: Linux 2.6.0-test1 Ext3 Ooops. Reboot needed.
@@ -392,8 +392,32 @@ Possible Quotes:
 | I was attacked by dselect as a small child and have since avoided debian. 
 | Is there a tarball anywhere?
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 | From: Bob Hilliard <hilliard@debian.org>
 | 
 |      In my experience, James has been very responsive, albeit not
 | verbose, to reasonable questions/requests that don't start out saying
 | "James is a bum - throw him out".
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+| <eigood> Kamion: are you too busy to look at my generic
+|          include/exclude stuff for the bts yet?
+| <Kamion> eigood: expect me to be busy for about the next week at this
+|          rate
+| <eigood> my %field_match = (
+| <eigood>     'subject' => \&contains_field_match,
+| <eigood>     'severity' => \&exact_field_match,
+| <eigood> that's how it works, basically
+| <eigood> I'm a big fan of callbacks
+| [...]
+| <eigood> Kamion: how do you feel about having
+|          per-bug/per-package/per-source notes support in the bts?
+| <Kamion> eigood: as I said five minutes ago, I really don't have time
+|          to think about it right now, sorry
+| <Kamion> here, maybe it would be clearer if I /part
+| <-- Kamion (~cjwatson@host81-129-36-235.in-addr.btopenworld.com) has left #debian-devel (too busy. no, really.)
+| <eigood> no need to be hostile
+| <Joy> eigood: he told you he's too busy and you kept bugging him. take
+|       a hint :)
