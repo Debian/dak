@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
-# Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.4 2001-02-27 06:10:42 ajt Exp $
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: claire.py,v 1.5 2001-03-02 02:24:33 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

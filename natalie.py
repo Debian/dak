@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Manipulate override files
-# Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.2 2001-01-27 00:09:36 troup Exp $
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: natalie.py,v 1.3 2001-03-02 02:24:33 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
