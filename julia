@@ -1,0 +1,123 @@
+#!/usr/bin/env python
+
+# Sync PostgreSQL with (LDAP-generated) passwd file
+# Copyright (C) 2001  James Troup <james@nocrew.org>
+# $Id: julia,v 1.1 2001-09-13 23:55:51 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# <aj> ARRRGGGHHH
+# <aj> what's wrong with me!?!?!?
+# <aj> i was just nice to some mormon doorknockers!!!
+# <Omnic> AJ?!?!
+# <aj> i know!!!!!
+# <Omnic> I'm gonna have to kick your ass when you come over
+# <Culus> aj: GET THE HELL OUT OF THE CABAL! :P
+
+################################################################################
+
+import os, pg, string, sys;
+import utils;
+import apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+################################################################################
+
+def usage (exit_code):
+    print """Usage: julia [OPTION]... PASSWD_FILE
+Sync postgres' pg_shadow with PASSWD_FILE.
+
+  -v, --verbose explain what is being done
+  -h, --help    display this help and exit"""
+    sys.exit(exit_code)
+
+################################################################################
+
+def main ():
+    global Cnf, projectB;
+
+    apt_pkg.init();
+
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('q',"quiet","Julia::Options::Quiet"),
+                 ('v',"verbose","Julia::Options::Verbose"),
+                 ('D',"debug","Julia::Options::Debug", "IntVal"),
+                 ('h',"help","Julia::Options::Help"),
+                 ('V',"version","Julia::Options::Version")];
+
+    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Julia::Options")
+
+    if Options["Help"]:
+        usage(0);
+    if arguments == []:
+        utils.warn("julia needs the name of the passwd file to sync with as an argument.");
+        usage(1);
+    elif len(arguments) > 1:
+        utils.warn("julia only takes one non-option argument, the passwd file to sync with.");
+        usage(1);
+
+    passwd = arguments[0];
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    valid_gid = Cnf.get("Julia::ValidGID","");
+
+    passwd_unames = {};
+    passwd_file = utils.open_file(passwd);
+    for line in passwd_file.readlines():
+        split = string.split(line, ':');
+        uname = split[0];
+        gid = split[3];
+        if valid_gid and gid != valid_gid:
+            if Options["Verbose"]:
+                print "Skipping %s (GID %s != Valid GID %s)." % (uname, gid, valid_gid);
+            continue;
+        passwd_unames[uname] = "";
+
+    postgres_unames = {};
+    q = projectB.query("SELECT usename FROM pg_user");
+    ql = q.getresult();
+    for i in ql:
+        uname = i[0];
+        postgres_unames[uname] = "";
+
+    known_postgres_unames = {};
+    for i in string.split(Cnf.get("Julia::KnownPostgres",""),","):
+        uname = string.strip(i);
+        known_postgres_unames[uname] = "";
+
+    keys = postgres_unames.keys()
+    keys.sort();
+    for uname in keys:
+        if not passwd_unames.has_key(uname)and not known_postgres_unames.has_key(uname):
+            print "W: %s is in Postgres but not the passwd file or list of known Postgres users." % (uname);
+
+    keys = passwd_unames.keys()
+    keys.sort();
+    for uname in keys:
+        if not postgres_unames.has_key(uname):
+            if not Options["Quiet"]:
+                print "Creating %s user in Postgres." % (uname);
+            q = projectB.query('CREATE USER "%s"' % (uname));
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+
