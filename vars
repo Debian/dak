@@ -3,7 +3,7 @@
 ftpdir=/org/ftp.debian.org/ftp
 webdir=/org/ftp.debian.org/web
 indices=$ftpdir/indices
-archs="alpha arm hppa hurd-i386 i386 m68k powerpc sparc mips mipsel sh"
+archs="alpha arm hppa hurd-i386 i386 ia64 m68k powerpc sparc mips mipsel sh"
 
 scriptdir=/org/ftp.debian.org/scripts
 masterdir=/org/ftp.debian.org/katie/
@@ -12,7 +12,10 @@ overridedir=$scriptdir/override
 
 incoming=/org/ftp.debian.org/incoming
 
+ftpgroup=debadmin
+
 copyoverrides="potato.contrib potato.contrib.src potato.main potato.main.src potato.non-free potato.non-free.src sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src woody.contrib woody.contrib.src woody.main woody.main.src woody.non-free woody.non-free.src"
 
 PATH=$masterdir:$PATH
 umask 022
+
