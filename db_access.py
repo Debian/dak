@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # DB access fucntions
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.14 2002-10-16 02:47:32 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: db_access.py,v 1.15 2003-02-11 18:09:59 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-############################################################################################
+################################################################################
 
 import sys, time;
 
-############################################################################################
+################################################################################
 
 Cnf = None;
 projectB = None;
@@ -39,8 +39,9 @@ source_id_cache = {};
 files_id_cache = {};
 maintainer_cache = {};
 fingerprint_id_cache = {};
+uid_id_cache = {};
 
-############################################################################################
+################################################################################
 
 def init (config, sql):
     global Cnf, projectB
@@ -57,7 +58,7 @@ def do_query(q):
     sys.stderr.write("took %.3f seconds.\n" % (time_diff));
     return r;
 
-############################################################################################
+################################################################################
 
 def get_suite_id (suite):
     global suite_id_cache
@@ -215,7 +216,7 @@ def get_source_id (source, version):
 
     return source_id
 
-##########################################################################################
+################################################################################
 
 def get_or_set_maintainer_id (maintainer):
     global maintainer_id_cache
@@ -232,24 +233,41 @@ def get_or_set_maintainer_id (maintainer):
 
     return maintainer_id
 
-##########################################################################################
+################################################################################
+
+def get_or_set_uid_id (uid):
+    global uid_id_cache;
+
+    if uid_id_cache.has_key(uid):
+        return uid_id_cache[uid];
+
+    q = projectB.query("SELECT id FROM uid WHERE uid = '%s'" % (uid))
+    if not q.getresult():
+        projectB.query("INSERT INTO uid (uid) VALUES ('%s')" % (uid));
+        q = projectB.query("SELECT id FROM uid WHERE uid = '%s'" % (uid));
+    uid_id = q.getresult()[0][0];
+    uid_id_cache[uid] = uid_id;
+
+    return uid_id;
+
+################################################################################
 
 def get_or_set_fingerprint_id (fingerprint):
-    global fingerprint_id_cache
+    global fingerprint_id_cache;
 
     if fingerprint_id_cache.has_key(fingerprint):
         return fingerprint_id_cache[fingerprint]
 
-    q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint))
+    q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint));
     if not q.getresult():
-        projectB.query("INSERT INTO fingerprint (fingerprint) VALUES ('%s')" % (fingerprint))
-        q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint))
-    fingerprint_id = q.getresult()[0][0]
-    fingerprint_id_cache[fingerprint] = fingerprint_id
+        projectB.query("INSERT INTO fingerprint (fingerprint) VALUES ('%s')" % (fingerprint));
+        q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint));
+    fingerprint_id = q.getresult()[0][0];
+    fingerprint_id_cache[fingerprint] = fingerprint_id;
 
-    return fingerprint_id
+    return fingerprint_id;
 
-##########################################################################################
+################################################################################
 
 def get_files_id (filename, size, md5sum, location_id):
     global files_id_cache
@@ -276,7 +294,7 @@ def get_files_id (filename, size, md5sum, location_id):
         return None
 
 
-##########################################################################################
+################################################################################
 
 def set_files_id (filename, size, md5sum, location_id):
     global files_id_cache
@@ -295,7 +313,7 @@ def set_files_id (filename, size, md5sum, location_id):
     ##files_id_cache[cache_key] = ql[0]
     ##return files_id_cache[cache_key];
 
-##########################################################################################
+################################################################################
 
 def get_maintainer (maintainer_id):
     global maintainer_cache;
@@ -306,4 +324,4 @@ def get_maintainer (maintainer_id):
 
     return maintainer_cache[maintainer_id];
 
-##########################################################################################
+################################################################################
