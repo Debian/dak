@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Remove obsolete .changes files from proposed-updates
-# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: halle,v 1.9 2002-10-16 02:47:32 troup Exp $
+# Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: halle,v 1.10 2003-11-20 02:37:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,9 +79,13 @@ def check_changes (filename):
             else:
                 utils.fubar("unknown type, fix me");
         if not pu.has_key(pkg):
-            utils.fubar("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename));
+            # FIXME
+            utils.warn("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename));
+            continue;
         if not pu[pkg].has_key(arch):
-            utils.fubar("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename));
+            # FIXME
+            utils.warn("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename));
+            continue;
         pu_version = utils.re_no_epoch.sub('', pu[pkg][arch]);
         if pu_version == version:
             if Options["verbose"]:
