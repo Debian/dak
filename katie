@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.7 2000-12-01 17:33:29 troup Exp $
+# $Id: katie,v 1.8 2000-12-01 22:09:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -232,7 +232,7 @@ def check_changes(filename):
         # If running from within proposed-updates kill non-stable distributions
         if string.find(os.getcwd(), 'proposed-updates') != -1:
             for i in ("frozen", "unstable"):
-                if changes["distributions"].has_key(i):
+                if changes["distribution"].has_key(i):
                     reject_message = reject_message + "Removing %s from distribution list.\n"
                     del changes["distribution"][i]
         # Otherwise (normal case) map stable to updates
@@ -688,7 +688,7 @@ def install (changes_filename, summary, short_summary):
         for qid in qd:
             # First move the files to the new location
             legacy_filename = qid["path"]+qid["filename"];
-            pool_location = utils.poolify (files[file]["source"], files[file]["component"]);
+            pool_location = utils.poolify (changes["source"], files[file]["component"]);
             pool_filename = pool_location + os.path.basename(qid["filename"]);
             destination = Cnf["Dir::PoolDir"] + pool_location
             utils.move(legacy_filename, destination);
@@ -706,9 +706,9 @@ def install (changes_filename, summary, short_summary):
             # Remove old data from the DB: files table
             projectB.query("DELETE FROM files WHERE id = %s" % (qid["files_id"]));
 
-    utils.move (changes_filename, Cnf["Dir::IncomingDir"] + 'DONE/' + os.path.basename(changes_filename))
-
     projectB.query("COMMIT WORK");
+
+    utils.move (changes_filename, Cnf["Dir::IncomingDir"] + 'DONE/' + os.path.basename(changes_filename))
 
     install_count = install_count + 1;
 
