@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: shania,v 1.17 2002-10-16 02:47:32 troup Exp $
+# $Id: shania,v 1.18 2005-03-06 21:51:51 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -197,10 +197,11 @@ def main ():
         print "Processing incoming..."
     flush_orphans();
 
-    if os.path.exists("REJECT") and os.path.isdir("REJECT"):
+    reject = Cnf["Dir::Queue::Reject"]
+    if os.path.exists(reject) and os.path.isdir(reject):
         if Options["Verbose"]:
             print "Processing incoming/REJECT..."
-        os.chdir("REJECT");
+        os.chdir(reject);
         flush_old();
 
 #######################################################################################
