@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.17 2001-09-27 01:23:41 troup Exp $
+# $Id: melanie,v 1.18 2001-11-04 22:35:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ def main ():
     db_access.init(Cnf, projectB);
 
     # Sanity check options
-    if arguments == []:
+    if not arguments:
         utils.fubar("need at least one package name as an argument.");
     if Options["Architecture"] and Options["Source-Only"]:
         utils.fubar("can't use -a/--architecutre and -S/--source-only options simultaneously.");
@@ -126,35 +126,30 @@ def main ():
     #  2) the keyword 'package' - cc's $arch@packages.debian.org for every argument
     #  3) contains a '@' - assumed to be an email address, used unmofidied
     #
-    carbon_copy = ""
+    carbon_copy = [];
     for copy_to in string.split(Options.get("Carbon-Copy")):
         if utils.str_isnum(copy_to):
-            carbon_copy = carbon_copy + copy_to + "@" + Cnf["Dinstall::BugServer"] + ", "
+            carbon_copy.append(copy_to + "@" + Cnf["Dinstall::BugServer"]);
         elif copy_to == 'package':
             for package in arguments:
-                carbon_copy = carbon_copy + package + "@" + Cnf["Dinstall::PackagesServer"] + ", "
+                carbon_copy.append(package + "@" + Cnf["Dinstall::PackagesServer"]);
         elif '@' in copy_to:
-            carbon_copy = carbon_copy + copy_to + ", "
+            carbon_copy.append(copy_to);
         else:
             utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to));
-    # Make it a real email header
-    if carbon_copy != "":
-        carbon_copy = "Cc: " + carbon_copy[:-2] + '\n'
 
     packages = {};
     if Options["Binary-Only"]:
         field = "b.package";
     else:
         field = "s.source";
-    con_packages = "AND (";
+    quoted_packages_list = []
     for package in arguments:
-        con_packages = con_packages + "%s = '%s' OR " % (field, package)
+        quoted_packages_list.append("'%s'" % package)
         packages[package] = "";
-    con_packages = con_packages[:-3] + ")"
-
-    suites_list = "";
+    con_packages = "AND %s IN (%s)" % (field, string.join(quoted_packages_list, ", "));
+    suites = [];
     suite_ids_list = [];
-    con_suites = "AND (";
     for suite in string.split(Options["Suite"]):
 
         if not Options["No-Action"] and suite == "stable":
@@ -172,38 +167,39 @@ def main ():
         if suite_id == -1:
             utils.warn("suite '%s' not recognised." % (suite));
         else:
-            con_suites = con_suites + "su.id = %s OR " % (suite_id)
-
-        suites_list = suites_list + suite + ", "
-        suite_ids_list.append(suite_id);
-    con_suites = con_suites[:-3] + ")"
-    suites_list = suites_list[:-2];
-
+            suites.append(suite);
+            suite_ids_list.append(suite_id);
+    if suite_ids_list:
+        suites_list = string.join(suites, ", ")
+        con_suites = "AND su.id IN (%s)" % string.join(map(str, suite_ids_list), ", ");
+    else:
+        utils.fubar("No correct suite given.");
     if Options["Component"]:
-        con_components = "AND (";
-        over_con_components = "AND (";
+        components_ids_list = [];
         for component in string.split(Options["Component"]):
             component_id = db_access.get_component_id(component);
             if component_id == -1:
                 utils.warn("component '%s' not recognised." % (component));
             else:
-                con_components = con_components + "c.id = %s OR " % (component_id);
-                over_con_components = over_con_components + "component = %s OR " % (component_id);
-        con_components = con_components[:-3] + ")"
-        over_con_components = over_con_components[:-3] + ")";
+                components_ids_list.append(component_id);
+        con_components = "AND c.id IN (%s)" % string.join(map(str, components_ids_list), ", ");
+        over_con_components = "AND component IN (%s)" % string.join(map(str, components_ids_list), ", ");
     else:
         con_components = "";
         over_con_components = "";
 
     if Options["Architecture"]:
-        con_architectures = "AND (";
+        arch_ids_list = [];
         for architecture in string.split(Options["Architecture"]):
             architecture_id = db_access.get_architecture_id(architecture);
             if architecture_id == -1:
                 utils.warn("architecture '%s' not recognised." % (architecture));
             else:
-                con_architectures = con_architectures + "a.id = %s OR " % (architecture_id)
-        con_architectures = con_architectures[:-3] + ")"
+                arch_ids_list.append(architecture_id);
+        if arch_ids_list:
+            con_architectures = "AND a.id IN (%s)" % string.join(map(str, arch_ids_list), ", ");
+        else:
+            utils.fubar("No correct architecture given");
     else:
         con_architectures = "";
 
@@ -256,7 +252,7 @@ def main ():
                 q = projectB.query("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package));
                 for i in q.getresult():
                     filename = string.join(i[:2], '/');
-                    control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename,"r")))
+                    control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename)))
                     source = control.Find("Source", control.Find("Package"));
                     source = re_strip_source_version.sub('', source);
                     if source_packages.has_key(source):
@@ -273,7 +269,7 @@ def main ():
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
             utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
-        file = utils.open_file(temp_filename, 'r');
+        file = utils.open_file(temp_filename);
         for line in file.readlines():
             Options["Reason"] = Options["Reason"] + line;
         os.unlink(temp_filename);
@@ -290,13 +286,12 @@ def main ():
             d[package] = {};
         if not d[package].has_key(version):
             d[package][version] = [];
-        d[package][version].append(architecture);
+        if architecture not in d[package][version]:
+            d[package][version].append(architecture);
 
-    maintainer_list = "Maintainer: "
+    maintainer_list = [];
     for maintainer_id in maintainers.keys():
-        maintainer_list = maintainer_list + db_access.get_maintainer(maintainer_id) + ", ";
-    maintainer_list = maintainer_list[:-2];
-
+        maintainer_list.append(db_access.get_maintainer(maintainer_id));
     summary = "";
     packages = d.keys();
     packages.sort();
@@ -304,19 +299,15 @@ def main ():
         versions = d[package].keys();
         versions.sort();
         for version in versions:
-            summary = summary + "%10s | %10s | " % (package, version);
-            for architecture in d[package][version]:
-                summary = "%s%s, " % (summary, architecture);
-            summary = summary[:-2] + '\n';
-
+            summary = summary + "%10s | %10s | %s\n" % (package, version, string.join(d[package][version], ", "));
     print "Will remove the following packages from %s:" % (suites_list);
     print
     print summary
-    print maintainer_list
+    print "Maintainer: %s" % string.join(maintainer_list, ", ")
     if Options["Done"]:
         print "Will also close bugs: "+Options["Done"];
     if carbon_copy:
-        print "Will also "+carbon_copy[:-1]
+        print "Will also send CCs to:" + string.join(carbon_copy, ", ")
     print
     print "------------------- Reason -------------------"
     print Options["Reason"];
@@ -376,17 +367,18 @@ def main ():
         Subst = {};
         Subst["__MELANIE_ADDRESS__"] = Cnf["Melanie::MyEmailAddress"];
         Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-        bcc = "";
+        bcc = [];
         if Cnf.Find("Dinstall::Bcc") != "":
-            bcc = bcc + Cnf["Dinstall::Bcc"] + ", ";
+            bcc.append(Cnf["Dinstall::Bcc"]);
         if Cnf.Find("Melanie::Bcc") != "":
-            bcc = bcc + Cnf["Melanie::Bcc"] + ", ";
-        if bcc == "":
-            bcc = "X-Filler: 42" + ", ";
+            bcc.append(Cnf["Melanie::Bcc"]);
+        if bcc:
+            Subst["__BCC__"] = "Bcc: " + string.join(bcc, ", ");
         else:
-            bcc = "Bcc: " + bcc;
-        Subst["__BCC__"] = bcc[:-2];
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.17 $\n" + carbon_copy[:-1];
+            Subst["__BCC__"] = "X-Filler: 42";
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.18 $";
+        if carbon_copy:
+            Subst["__CC__"] = Subst["__CC__"] + "\nCc: " + string.join(carbon_copy, ", ");
         Subst["__SUITE_LIST__"] = suites_list;
         Subst["__SUMMARY__"] = summary;
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
