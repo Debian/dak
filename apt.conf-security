@@ -20,6 +20,7 @@ tree "dists/stable/updates"
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 mips mipsel m68k powerpc s390 sparc source";
    BinOverride "override.woody.$(SECTION)";
+   ExtraOverride "override.woody.extra.$(SECTION)";
    SrcOverride "override.woody.$(SECTION).src";
    Contents " ";
 };
@@ -31,6 +32,7 @@ tree "dists/testing/updates"
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 mips mipsel m68k powerpc s390 sparc source";
    BinOverride "override.sarge.$(SECTION)";
+   ExtraOverride "override.sarge.extra.$(SECTION)";
    SrcOverride "override.sarge.$(SECTION).src";
    Contents " ";
 };
