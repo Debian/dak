@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.71 2002-02-22 02:19:26 troup Exp $
+# $Id: katie,v 1.72 2002-02-22 22:49:08 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.71 $";
+katie_version = "$Revision: 1.72 $";
 
 Cnf = None;
 Options = None;
@@ -306,7 +306,7 @@ def install ():
                 projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, %d, '%s', %d)"
                                % (package, version, maintainer_id, source_id, architecture_id, files[file]["files id"], type, fingerprint_id));
             else:
-                projectB.query("INSERT INTO binaries (package, version, maintainer, architecture, file, type) VALUES ('%s', '%s', %d, %d, %d, '%s', %d)"
+                projectB.query("INSERT INTO binaries (package, version, maintainer, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, '%s', %d)"
                                % (package, version, maintainer_id, architecture_id, files[file]["files id"], type, fingerprint_id));
             for suite in changes["distribution"].keys():
                 suite_id = db_access.get_suite_id(suite);
