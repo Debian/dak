@@ -4,7 +4,7 @@ Dinstall
    GPGKeyring "/org/keyring.debian.org/keyrings/debian-keyring.gpg";
    SigningKeyring "/org/non-us.debian.org/s3kr1t/dot-gnupg/secring.gpg";
    SigningPubKeyring "/org/non-us.debian.org/s3kr1t/dot-gnupg/pubring.gpg";
-   SigningKeyIds "722F1AED";
+   SigningKeyIds "38C6029A";
    SendmailCommand "/usr/sbin/sendmail -odq -oi -t";
    MyEmailAddress "Debian Installer <installer@ftp-master.debian.org>";
    MyAdminAddress "ftpmaster@debian.org";
@@ -119,9 +119,9 @@ Suite
 	  sparc;
 	};
 	Announce "debian-changes@lists.debian.org";
-	Version "3.0";
+	Version "3.0r1";
 	Origin "Debian";
-	Description "Debian 3.0 Released 20th July 2002";
+	Description "Debian 3.0r1 Released 15th December 2002";
 	CodeName "woody";
 	OverrideCodeName "woody";
 	Priority "3";
