@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.28 2002-10-21 13:54:53 troup Exp $
+# $Id: jennifer,v 1.29 2002-12-10 21:48:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.28 $";
+jennifer_version = "$Revision: 1.29 $";
 
 Cnf = None;
 Options = None;
@@ -542,6 +542,11 @@ def check_files():
             # listed in the .changes.
             if not changes["architecture"].has_key(architecture):
                 reject("%s: control file lists arch as `%s', which isn't in changes file." % (file, architecture));
+
+            # Sanity-check the Depends field
+            depends = control.Find("Depends");
+            if depends == '':
+                reject("%s: Depends field is empty." % (file));
 
             # Check the section & priority match those given in the .changes (non-fatal)
             if control.Find("Section") != None and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
