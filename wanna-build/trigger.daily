@@ -8,7 +8,9 @@
 #     Sources.* == uncompressed, concat'd version
 PATH="/bin:/usr/bin"
 #testing must be before unstable so late upld don't build for testing needlessly
-DISTS="stable stable-security testing testing-security unstable"
+#DISTS="stable stable-security testing testing-security unstable"
+DISTS="stable stable-security testing unstable"
+STATS_DISTS="unstable testing stable"
 SECTIONS="main contrib non-free"
 ARCHS_stable="m68k arm sparc alpha powerpc i386 mips mipsel ia64 hppa s390"
 ARCHS_testing="$ARCHS_stable"
@@ -144,7 +146,11 @@ for d in $DISTS ; do
 		if [ "$d" = "unstable" -o ! -e "quinn-unstable.$a-old" ]; then
 			quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a >> quinn-$d.$a
 		else
-			quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a | fgrep -v -f quinn-unstable.$a-old >> quinn-$d.$a
+			if echo $d | grep -qv -- -security; then
+				quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a | fgrep -v -f quinn-unstable.$a-old | grep ":out-of-date\]$" >> quinn-$d.$a
+			else
+				quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a >> quinn-$d.$a
+			fi
 		fi
 	done
 done
@@ -176,12 +182,13 @@ for a in $ARCHS_unstable ; do
 		perl -pi -e 's#^(non-US/)?(non-free)/.*$##msg' quinn-$d.$a
 		wanna-build --merge-quinn --dist=$d --database=$a/build-db quinn-$d.$a
 		wanna-build --merge-sources --dist=$d --database=$a/build-db Sources.$d
+		wanna-build --clean-db --dist=$d --database=$a/build-db
 		mv Packages.$d.$a Packages.$d.$a-old
 		mv quinn-$d.$a quinn-$d.$a-old
-		if [ "$DAY" = "0" -a "$d" = "unstable" ]; then
-			savelog -p -c 26 /org/wanna-build/db/$a/transactions.log
-		fi
 	done
+	if [ "$DAY" = "0" ]; then
+		savelog -p -c 26 /org/wanna-build/db/$a/transactions.log
+	fi
 	wanna-build --remove-maintenance-lock --database=$a/build-db
 done
 umask 022
@@ -195,3 +202,9 @@ echo "merge ended `date`"
 rm -f "$LOCKFILE"
 trap -
 /org/buildd.debian.org/bin/makegraph
+for a in $ARCHS_stable; do
+	echo Last Updated: `date -u` > /org/buildd.debian.org/web/stats/$a.txt
+	for d in $STATS_DISTS; do
+		/org/wanna-build/bin/wanna-build-statistics --database=$a/build-db --dist=$d >> /org/buildd.debian.org/web/stats/$a.txt
+	done
+done
