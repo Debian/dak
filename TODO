@@ -27,6 +27,8 @@ queue/approved
 Others
 ------
 
+  o reject sparc64 binaries in a non '*64*' package.
+
   o katie.py(source_exists): a) we take arguments as parameters that
     we could figure out for ourselves (we're part of the Katie class
     after all), b) we have this 3rd argument which defaults to "any"
@@ -587,5 +589,30 @@ http://slashdot.org/comments.pl?sid=97501&cid=8334726
 
 <infinity> <shrug>... Messaging IRCops isn't the end of the world,
            unless its "/msg ircop I fucked your wife."
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<aj> ooo, elmo has "special powers"
+<neuro> ooo, does he have lasers that shoot out of his eyes?
+<aj> dunno
+<aj> maybe he can turn invisible? that'd sure help with improved transparency!
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+| From: Andrew Morton <akpm@osdl.org>
+| Subject: Re: [PATCH] Compile kernel with GCC-3.5 and without regparm
+| To: "Art Haas" <ahaas@airmail.net>
+| Cc: linux-kernel@vger.kernel.org
+| Date: Tue, 2 Mar 2004 16:59:28 -0800
+| X-Mailer: Sylpheed version 0.9.7 (GTK+ 1.2.10; i586-pc-linux-gnu)
+| 
+| "Art Haas" <ahaas@airmail.net> wrote:
+| >
+| > I tried to build the kernel with my CVS GCC-3.5 compiler today, and had
+| > all sorts of failures about prototypes not matching.
+| 
+| -mm is where the gcc-3.5 action is.  There seems to be a bit of an arms
+| race going on wherein the gcc developers are trying to break the kernel
+| build faster than I and others can fix it.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
