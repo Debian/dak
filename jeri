@@ -2,7 +2,7 @@
 
 # Dependency check proposed-updates
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jeri,v 1.7 2002-05-18 23:54:51 troup Exp $
+# $Id: jeri,v 1.8 2002-05-23 12:36:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -242,6 +242,7 @@ def check_joey (filename):
             if Options["debug"]:
                 print "Processing %s..." % (changes_filename);
             check_changes(changes_filename);
+    file.close();
 
     os.chdir(cwd);
 
@@ -276,6 +277,7 @@ def parse_packages():
                         if not stable_virtual.has_key(virtual_pkg):
                             stable_virtual[virtual_pkg] = {};
                         stable_virtual[virtual_pkg][architecture] = "NA";
+            packages.close()
 
 ################################################################################
 
@@ -284,10 +286,11 @@ def main ():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('q',"quiet","Jeri::Options::Quiet"),
+    Arguments = [('d', "debug", "Jeri::Options::Debug"),
+                 ('q',"quiet","Jeri::Options::Quiet"),
                  ('v',"verbose","Jeri::Options::Verbose"),
                  ('h',"help","Jeri::Options::Help")];
-    for i in [ "quiet", "verbose", "help" ]:
+    for i in [ "debug", "quiet", "verbose", "help" ]:
 	if not Cnf.has_key("Jeri::Options::%s" % (i)):
 	    Cnf["Jeri::Options::%s" % (i)] = "";
 
