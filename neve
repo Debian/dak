@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: neve,v 1.14 2002-10-16 02:47:32 troup Exp $
+# $Id: neve,v 1.15 2002-11-22 04:07:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ files_id_cache = {};
 source_cache = {};
 arch_all_cache = {};
 binary_cache = {};
+location_path_cache = {};
 #
 files_id_serial = 0;
 source_id_serial = 0;
@@ -322,6 +323,20 @@ def update_priority():
     for priority in Cnf.SubTree("Priority").List():
         projectB.query("INSERT INTO priority (priority, level) VALUES ('%s', %s)" % (priority, Cnf["Priority::%s" % (priority)]));
 
+def get_location_path(directory):
+    global location_path_cache;
+
+    if location_path_cache.has_key(directory):
+        return location_path_cache[directory];
+
+    q = projectB.query("SELECT DISTINCT path FROM location WHERE path ~ '%s'" % (directory));
+    try:
+        path = q.getresult()[0][0];
+    except:
+        utils.fubar("[neve] get_location_path(): Couldn't get path for %s" % (directory));
+    location_path_cache[directory] = path;
+    return path;
+
 ###############################################################################
 
 def get_or_set_files_id (filename, size, md5sum, location_id):
@@ -337,7 +352,7 @@ def get_or_set_files_id (filename, size, md5sum, location_id):
 
 ###############################################################################
 
-def process_sources (location, filename, suite, component, archive, dsc_dir):
+def process_sources (filename, suite, component, archive):
     global source_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, source_id_serial, src_associations_id_serial, dsc_files_id_serial, source_cache_for_binaries, orig_tar_gz_cache, reject_message;
 
     suite = suite.lower();
@@ -345,13 +360,14 @@ def process_sources (location, filename, suite, component, archive, dsc_dir):
     try:
         file = utils.open_file (filename);
     except utils.cant_open_exc:
-        print "WARNING: can't open '%s'" % (filename);
+        utils.warn("can't open '%s'" % (filename));
         return;
     Scanner = apt_pkg.ParseTagFile(file);
     while Scanner.Step() != 0:
         package = Scanner.Section["package"];
         version = Scanner.Section["version"];
-        dsc_file = os.path.join(dsc_dir, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)));
+        directory = Scanner.Section["directory"];
+        dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)));
         install_date = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(dsc_file)));
         fingerprint = check_signature(dsc_file);
         fingerprint_id = db_access.get_or_set_fingerprint_id(fingerprint);
@@ -360,7 +376,7 @@ def process_sources (location, filename, suite, component, archive, dsc_dir):
         maintainer = Scanner.Section["maintainer"]
         maintainer = maintainer.replace("'", "\\'");
         maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
-        directory = Scanner.Section["directory"];
+        location = get_location_path(directory.split('/')[0]);
         location_id = db_access.get_location_id (location, component, archive);
         if not directory.endswith("/"):
             directory += '/';
@@ -410,7 +426,7 @@ def process_sources (location, filename, suite, component, archive, dsc_dir):
 
 ###############################################################################
 
-def process_packages (location, filename, suite, component, archive):
+def process_packages (filename, suite, component, archive):
     global arch_all_cache, binary_cache, binaries_id_serial, binaries_query_cache, bin_associations_id_serial, bin_associations_query_cache, reject_message;
 
     count_total = 0;
@@ -420,7 +436,7 @@ def process_packages (location, filename, suite, component, archive):
     try:
         file = utils.open_file (filename);
     except utils.cant_open_exc:
-        print "WARNING: can't open '%s'" % (filename);
+        utils.warn("can't open '%s'" % (filename));
         return;
     Scanner = apt_pkg.ParseTagFile(file);
     while Scanner.Step() != 0:
@@ -445,6 +461,7 @@ def process_packages (location, filename, suite, component, archive):
         if not source_version:
             source_version = version
         filename = Scanner.Section["filename"]
+        location = get_location_path(filename.split('/')[0]);
         location_id = db_access.get_location_id (location, component, archive)
         filename = poolify (filename, location)
         if architecture == "all":
@@ -484,21 +501,20 @@ def process_packages (location, filename, suite, component, archive):
 
 ###############################################################################
 
-def do_sources(location, prefix, suite, component, server):
+def do_sources(sources, suite, component, server):
     temp_filename = tempfile.mktemp();
     fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
     os.close(fd);
-    sources = location + prefix + 'Sources.gz';
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (sources, temp_filename));
     if (result != 0):
         utils.fubar("Gunzip invocation failed!\n%s" % (output), result);
     print 'Processing '+sources+'...';
-    process_sources (location, temp_filename, suite, component, server, os.path.dirname(sources));
+    process_sources (temp_filename, suite, component, server);
     os.unlink(temp_filename);
 
 ###############################################################################
 
-def main ():
+def do_da_do_da ():
     global Cnf, projectB, query_cache, files_query_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, bin_associations_query_cache, binaries_query_cache;
 
     Cnf = utils.get_conf();
@@ -538,19 +554,14 @@ def main ():
         server = SubSec["Archive"];
         type = Cnf.Find("Location::%s::Type" % (location));
         if type == "legacy-mixed":
-            prefix = ''
+            sources = location + 'Sources.gz';
             suite = Cnf.Find("Location::%s::Suite" % (location));
-            do_sources(location, prefix, suite, "",  server);
-        elif type == "legacy":
+            do_sources(sources, suite, "",  server);
+        elif type == "legacy" or type == "pool":
             for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
                 for component in Cnf.SubTree("Component").List():
-                    prefix = Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/source/'
-                    do_sources(location, prefix, suite, component, server);
-        elif type == "pool":
-            continue;
-#            for component in Cnf.SubTree("Component").List():
-#                prefix = component + '/'
-#                do_sources(location, prefix);
+                    sources = Cnf["Dir::Root"] + "dists/" + Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/source/' + 'Sources.gz';
+                    do_sources(sources, suite, component, server);
         else:
             utils.fubar("Unknown location type ('%s')." % (type));
 
@@ -564,18 +575,16 @@ def main ():
             packages = location + 'Packages';
             suite = Cnf.Find("Location::%s::Suite" % (location));
             print 'Processing '+location+'...';
-            process_packages (location, packages, suite, "", server);
-        elif type == "legacy":
+            process_packages (packages, suite, "", server);
+        elif type == "legacy" or type == "pool":
             for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
                 for component in Cnf.SubTree("Component").List():
                     architectures = filter(utils.real_arch,
                                            Cnf.ValueList("Suite::%s::Architectures" % (suite)));
                     for architecture in architectures:
-                        packages = location + Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/binary-' + architecture + '/Packages'
+                        packages = Cnf["Dir::Root"] + "dists/" + Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/binary-' + architecture + '/Packages'
                         print 'Processing '+packages+'...';
-                        process_packages (location, packages, suite, component, server);
-        elif type == "pool":
-            continue;
+                        process_packages (packages, suite, component, server);
 
     files_query_cache.close();
     source_query_cache.close();
@@ -608,6 +617,16 @@ def main ():
         utils.fubar("psql invocation failed!\n%s" % (output), result);
 
     return;
+
+################################################################################
+
+def main():
+    try:
+        do_da_do_da();
+    except:
+        utils.print_exc();
+
+################################################################################
 
 if __name__ == '__main__':
     main();
