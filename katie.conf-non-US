@@ -1,19 +1,5 @@
 Dinstall
 {
-  Options
-  {
-	Automatic "";
-        Debug "";
-        Help "";
-        Ack-New "";
-        Manual-Reject "";
-        No-Action "";
-        No-Lock "";
-        No-Mail "";
-        Override-Distribution "";
-        Version "";
-   };
-
    PGPKeyring "/org/keyring.debian.org/keyrings/debian-keyring.pgp";
    GPGKeyring "/org/keyring.debian.org/keyrings/debian-keyring.gpg";
    SigningKeyring "/org/non-us.debian.org/s3kr1t/dot-gnupg/secring.gpg";
@@ -28,135 +14,35 @@ Dinstall
    LockFile "/org/non-us.debian.org/katie/lock";
    Bcc "archive@ftp-master.debian.org";
    GroupOverrideFilename "override.group-maint";
-
 };
 
-Heidi
-{
-
-  Options
-  {
-    Add "";
-    Debug "";
-    Help "";
-    List "";
-    Remove "";
-    Set "";
-    Version "";
-   };
-
-};
-
-Catherine
-{
-
-  Options
-  {
-    Debug "";
-    Help "";
-    Limit "";
-    No-Action "";
-    Version "";
-   };
-
-};
-
-Tea
-{
-
-  Options
-  {
-    Debug "";
-    Help "";
-    Version "";
-   };
-
-};
-
-Jenna
-{
-
-  Options
-  {
-    Architecture "";
-    Component "";
-    Debug "";
-    Help "";
-    Suite "";
-    Verbose "";
-    Version "";
-   };
-
-};
-
-Madison
-{
-
-  Options
-  {
-    Debug "";
-    Help "";
-    Suite "";
-    Version "";
-   };
-
-};
 
 Shania
 {
-
   Options
   {
-    Debug "";
-    Help "";
-    Version "";
     Days 14;
-    Incoming "";
-    Mail "";
-    No-Action "";
-    Verbose "";
    };
-
  MorgueSubDir "shania";
 };
 
 Natalie
 {
-
   Options
   {
-    Debug "";
-    Help "";
-    Version "";
     Component "non-US/main";
-    List "";
     Suite "unstable";
-    Set "";
     Type "deb";
    };
-
  ComponentPosition "suffix"; // Whether the component is prepended or appended to the section name
 };
 
 Melanie
 {
-
   Options
   {
-    Debug "";
-    Help "";
-    Version "";
-    Architecture "";
-    Binary-Only "";
-    Component "";
-    Done "";
-    No-Action "";
-    Partial "";
-    Reason "";
-    Source-Only "";
     Suite "unstable";
    };
-
    MyEmailAddress "Debian Archive Maintenance <ftpmaster@ftp-master.debian.org>";
    LogFile "/home/troup/public_html/removals.txt";
    Bcc "removed-packages@qa.debian.org";
@@ -164,22 +50,11 @@ Melanie
 
 Neve
 {
-
   ExportDir "/org/non-us.debian.org/katie/neve-files/";
-
 };
 
 Rhona
 {
-
-  Options
-  {
-        Debug "";
-        Help "";
-	No-Action "";
-        Version "";
-   };
-
   // How long (in seconds) dead packages are left before being killed
   StayOfExecution 129600; // 1.5 days
   MorgueSubDir "rhona";
@@ -196,14 +71,14 @@ Suite
 //    {
 //  	Architectures 
 //  	{
-//  	  "source" "";  
-//  	  "all" "";
-//  	  "alpha" ""; 
-//  	  "arm" "";
-//  	  "i386" "";
-//  	  "m68k" "";
-//  	  "powerpc" "";
-//  	  "sparc" "";
+//  	  source "";  
+//  	  all "";
+//  	  alpha ""; 
+//  	  arm "";
+//  	  i386 "";
+//  	  m68k "";
+//  	  powerpc "";
+//  	  sparc "";
 //  	};
 //  	Announce "debian-devel-changes@lists.debian.org";
 //  	Origin "Debian";
@@ -226,14 +101,14 @@ Suite
 	};
 	Architectures 
 	{
-	  "source" "";  
-	  "all" "";
-	  "alpha" ""; 
-	  "arm" "";
-	  "i386" "";
-	  "m68k" "";
-	  "powerpc" "";
-	  "sparc" "";
+	  source "";  
+	  all "";
+	  alpha ""; 
+	  arm "";
+	  i386 "";
+	  m68k "";
+	  powerpc "";
+	  sparc "";
 	};
 	Announce "debian-changes@lists.debian.org";
 	Version "2.2r3";
@@ -250,14 +125,14 @@ Suite
   {
 	Architectures 
 	{
-	  "source" "";  
-	  "all" "";
-	  "alpha" ""; 
-	  "arm" "";
-	  "i386" "";
-	  "m68k" "";
-	  "powerpc" "";
-	  "sparc" "";
+	  source "";  
+	  all "";
+	  alpha ""; 
+	  arm "";
+	  i386 "";
+	  m68k "";
+	  powerpc "";
+	  sparc "";
 	};
 	Announce "debian-changes@lists.debian.org";
 	CopyChanges "dists/proposed-updates/";
@@ -280,16 +155,16 @@ Suite
 	};
 	Architectures 
 	{
-	  "source" "";  
-	  "all" "";
-	  "alpha" ""; 
-	  "arm" "";
-	  "hppa" "";
-	  "i386" "";
-	  "ia64" "";
-	  "m68k" "";
-	  "powerpc" "";
-	  "sparc" "";
+	  source "";  
+	  all "";
+	  alpha ""; 
+	  arm "";
+	  hppa "";
+	  i386 "";
+	  ia64 "";
+	  m68k "";
+	  powerpc "";
+	  sparc "";
 	};
 	Origin "Debian";
 	Description "Debian Testing distribution - Not Released";
@@ -308,16 +183,16 @@ Suite
 	};
 	Architectures 
 	{
-	  "source" "";  
-	  "all" "";
-	  "alpha" ""; 
-	  "arm" "";
-	  "hppa" "";
-	  "i386" "";
-	  "ia64" "";
-	  "m68k" "";
-	  "powerpc" "";
-	  "sparc" "";
+	  source "";  
+	  all "";
+	  alpha ""; 
+	  arm "";
+	  hppa "";
+	  i386 "";
+	  ia64 "";
+	  m68k "";
+	  powerpc "";
+	  sparc "";
 	};
 	Origin "Debian";
 	Description "Debian Testing distribution updates - Not Released";
@@ -336,21 +211,21 @@ Suite
 	};
 	Architectures 
 	{
-	  "source" ""; 
-	  "all" "";
-	  "alpha" ""; 
-	  "arm" "";
-	  "hppa" "";
-	  "hurd-i386" "";
-	  "i386" "";
-	  "ia64" "";
-	  "m68k" "";
-	  "mips" "";
-	  "mipsel" "";
-	  "powerpc" "";
-	  "s390" "";
-	  "sh" "";
-	  "sparc" "";
+	  source ""; 
+	  all "";
+	  alpha ""; 
+	  arm "";
+	  hppa "";
+	  hurd-i386 "";
+	  i386 "";
+	  ia64 "";
+	  m68k "";
+	  mips "";
+	  mipsel "";
+	  powerpc "";
+	  s390 "";
+	  sh "";
+	  sparc "";
 	};
 	Announce "debian-devel-changes@lists.debian.org";
 	Origin "Debian";
@@ -441,28 +316,28 @@ Component
 Section
 {
 
-  "non-US" "";
+  non-US "";
 
 };
 
 Priority
 {
 
-  "required" 1;
-  "important" 2;
-  "standard" 3;
-  "optional" 4;
-  "extra" 5;
-  "source" 0; // i.e. unused
+  required 1;
+  important 2;
+  standard 3;
+  optional 4;
+  extra 5;
+  source 0; // i.e. unused
 
 };
 
 OverrideType
 {
 
-  "deb" "";
-  "udeb" "";
-  "dsc" "";
+  deb "";
+  udeb "";
+  dsc "";
 
 };
 
