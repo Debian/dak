@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# Installs Debian packaes
+# Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.61 2001-11-04 20:42:38 troup Exp $
+# $Id: katie,v 1.62 2001-11-04 22:41:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ orig_tar_location = "";
 legacy_source_untouchable = {};
 Subst = {};
 nmu = None;
-katie_version = "$Revision: 1.61 $";
+katie_version = "$Revision: 1.62 $";
 
 ###############################################################################
 
@@ -135,7 +135,7 @@ class nmu_p:
         self.group_maint = {};
         if Cnf.get("Dinstall::GroupOverrideFilename"):
             filename = Cnf["Dir::OverrideDir"] + Cnf["Dinstall::GroupOverrideFilename"];
-            file = utils.open_file(filename, 'r');
+            file = utils.open_file(filename);
             for line in file.readlines():
                 line = string.strip(utils.re_comments.sub('', line));
                 if line != "":
@@ -301,7 +301,7 @@ def check_changes(filename):
                 reject_message = reject_message + "Rejected: `%s' from Closes field isn't a number.\n" % (i)
 
     # Ensure there _is_ a target distribution
-    if changes["distribution"].keys() == []:
+    if not changes["distribution"].keys():
         reject_message = reject_message + "Rejected: huh? Distribution field is empty in changes file.\n";
 
     # Map frozen to unstable if frozen doesn't exist
@@ -395,7 +395,7 @@ def check_files():
 
             # Extract package information using dpkg-deb
             try:
-                control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file,"r")))
+                control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)));
             except:
                 reject_message = reject_message + "Rejected: %s: debExtractControl() raised %s.\n" % (file, sys.exc_type);
                 # Can't continue, none of the checks on control would work.
@@ -670,7 +670,7 @@ def check_dsc ():
                         if len(ql) > 1:
                             for i in ql:
                                 old_file = i[0] + i[1];
-                                actual_md5 = apt_pkg.md5sum(utils.open_file(old_file,"r"));
+                                actual_md5 = apt_pkg.md5sum(utils.open_file(old_file));
                                 actual_size = os.stat(old_file)[stat.ST_SIZE];
                                 if actual_md5 == dsc_files[dsc_file]["md5sum"] and actual_size == int(dsc_files[dsc_file]["size"]):
                                     x = i;
@@ -678,7 +678,7 @@ def check_dsc ():
                                     legacy_source_untouchable[i[3]] = "";
 
                         old_file = x[0] + x[1];
-                        actual_md5 = apt_pkg.md5sum(utils.open_file(old_file,"r"));
+                        actual_md5 = apt_pkg.md5sum(utils.open_file(old_file));
                         actual_size = os.stat(old_file)[stat.ST_SIZE];
                         found = old_file;
                         suite_type = x[2];
@@ -750,7 +750,7 @@ def check_md5sums ():
 
     for file in files.keys():
         try:
-            file_handle = utils.open_file(file,"r");
+            file_handle = utils.open_file(file);
         except utils.cant_open_exc:
             pass;
         else:
@@ -821,19 +821,19 @@ def update_subst (changes_filename):
 #####################################################################################################################
 
 def action (changes_filename):
-    byhand = confirm = suites = summary = new = "";
+    byhand = summary = new = "";
 
     # changes["distribution"] may not exist in corner cases
     # (e.g. unreadable changes files)
     if not changes.has_key("distribution") or not isinstance(changes["distribution"], DictType):
         changes["distribution"] = {};
 
+    confirm = []
+    suites = []
     for suite in changes["distribution"].keys():
         if Cnf.has_key("Suite::%s::Confirm"):
-            confirm = confirm + suite + ", "
-        suites = suites + suite + ", "
-    confirm = confirm[:-2]
-    suites = suites[:-2]
+            confirm.append(suite)
+        suites.append(suite)
 
     for file in files.keys():
         if files[file].has_key("byhand"):
@@ -845,7 +845,7 @@ def action (changes_filename):
             if files[file].has_key("othercomponents"):
                 summary = summary + "WARNING: Already present in %s distribution.\n" % (files[file]["othercomponents"])
             if files[file]["type"] == "deb":
-                summary = summary + apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file,"r")))["Description"] + '\n';
+                summary = summary + apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)))["Description"] + '\n';
         else:
             files[file]["pool name"] = utils.poolify (changes["source"], files[file]["component"])
             destination = Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
@@ -879,7 +879,7 @@ def action (changes_filename):
             if Options["Automatic"]:
                 answer = 'R';
     elif new:
-        print "NEW to %s\n%s%s" % (suites, reject_message, summary),;
+        print "NEW to %s\n%s%s" % (string.join(suites, ", "), reject_message, summary),;
         prompt = "[S]kip, New ack, Manual reject, Quit ?";
         if Options["Automatic"] and Options["Ack-New"]:
             answer = 'N';
@@ -887,7 +887,7 @@ def action (changes_filename):
         print "BYHAND\n" + reject_message + summary,;
         prompt = "[I]nstall, Manual reject, Skip, Quit ?";
     elif confirm:
-        print "CONFIRM to %s\n%s%s" % (confirm, reject_message, summary),
+        print "CONFIRM to %s\n%s%s" % (string.join(confirm, ", "), reject_message, summary),
         prompt = "[I]nstall, Manual reject, Skip, Quit ?";
     else:
         print "INSTALL\n" + reject_message + summary,;
@@ -1082,7 +1082,7 @@ def stable_install (changes_filename, summary, short_summary):
             version = dsc["version"]  # NB: not files[file]["version"], that has no epoch
             q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
             ql = q.getresult()
-            if ql == []:
+            if not ql:
                 utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version));
             source_id = ql[0][0];
             suite_id = db_access.get_suite_id('proposed-updates');
@@ -1099,7 +1099,7 @@ def stable_install (changes_filename, summary, short_summary):
             architecture = files[file]["architecture"]
             q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
             ql = q.getresult()
-            if ql == []:
+            if not ql:
                 utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture));
             binary_id = ql[0][0];
             suite_id = db_access.get_suite_id('proposed-updates');
@@ -1131,7 +1131,7 @@ def stable_install (changes_filename, summary, short_summary):
     chop_changes = re_fdnic.sub("\n", changes["changes"]);
     new_changelog.write(chop_changes + '\n\n');
     if os.access(changelog_filename, os.R_OK) != 0:
-        changelog = utils.open_file(changelog_filename, 'r');
+        changelog = utils.open_file(changelog_filename);
         new_changelog.write(changelog.read());
     new_changelog.close();
     if os.access(changelog_filename, os.R_OK) != 0:
@@ -1181,7 +1181,7 @@ def reject (changes_filename, manual_reject_mail_filename):
                 version = dsc["version"];  # NB: not files[file]["version"], that has no epoch
                 q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version));
                 ql = q.getresult();
-                if ql == []:
+                if not ql:
                     utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version));
                 source_id = ql[0][0];
                 projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id));
@@ -1191,7 +1191,7 @@ def reject (changes_filename, manual_reject_mail_filename):
                 architecture = files[file]["architecture"];
                 q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture));
                 ql = q.getresult();
-                if ql == []:
+                if not ql:
                     utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture));
                 binary_id = ql[0][0];
                 projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
@@ -1422,7 +1422,7 @@ def main():
         # Read in the list of already-acknowledged NEW packages
         if not os.path.exists(Cnf["Dinstall::NewAckList"]):
             utils.touch_file(Cnf["Dinstall::NewAckList"]);
-        new_ack_list = utils.open_file(Cnf["Dinstall::NewAckList"],'r');
+        new_ack_list = utils.open_file(Cnf["Dinstall::NewAckList"]);
         new_ack_old = {};
         for line in new_ack_list.readlines():
             new_ack_old[line[:-1]] = 1;
