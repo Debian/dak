@@ -5,7 +5,7 @@ cdrom			Debian CD-ROM Team <debian-cd@lists.debian.org>
 boot-floppy		Debian Install Team <debian-boot@lists.debian.org>
 press			press@debian.org
 bugs.debian.org		Adam Heath and others <owner@bugs.debian.org>
-ftp.debian.org		James Troup and others <ftpmaster@debian.org>
+ftp.debian.org		James Troup and others <ftpmaster@ftp-master.debian.org>
 qa.debian.org		debian-qa@lists.debian.org
 nonus.debian.org	James Troup and others <ftpmaster@debian.org>
 www.debian.org		James Treacy and others <debian-www@lists.debian.org>
