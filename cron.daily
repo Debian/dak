@@ -88,6 +88,11 @@ pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
+# Vacuum the database
+echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
+
+################################################################################
+
 ulimit -m 90000 -d 90000 -s 10000 -v 90000
 
 run-parts --report /org/ftp.debian.org/scripts/distmnt

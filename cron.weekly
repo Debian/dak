@@ -13,9 +13,20 @@ pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
-cd $masterdir
-shania -v 
-shania -v -m -i $incoming
+### [JJT] Disabled until shania is rewritten
+#cd $masterdir
+#shania -v 
+#shania -v -m -i $incoming
+
+# Purge empty directories
+
+if [ ! -z "$(find $ftpdir/pool/ -type d -empty)" ]; then 
+   find $ftpdir/pool/ -type d -empty | xargs rmdir; 
+fi
+
+# Clean up apt-ftparchive's databases
+
+apt-ftparchive clean apt.conf
 
 # TODO: weekly postins to d-c (?), backup of report (?), backup of changes.tgz (?)
 

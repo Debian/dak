@@ -13,15 +13,20 @@ pg_dump projectb > /org/non-us.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
-# temporary hack to work around the lack of an apt-utils & python-apt package
-export PYTHONPATH=$PYTHONPATH:/org/non-us.debian.org/scripts/apt/build/bin/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/org/non-us.debian.org/scripts/apt/build/bin/
-export PATH=$PATH:/org/non-us.debian.org/scripts/apt/build/bin/
-export PATH=$PATH:/org/non-us.debian.org/scripts/apt/build/bin/
+### [JJT] Disabled until shania is rewritten
+#cd $masterdir
+#shania -v 
+#shania -v -m -i $incoming
 
-cd $masterdir
-shania -v 
-shania -v -m -i $incoming
+# Purge empty directories
+
+if [ ! -z "$(find $ftpdir/pool/ -type d -empty)" ]; then 
+   find $ftpdir/pool/ -type d -empty | xargs rmdir; 
+fi
+
+# Clean up apt-ftparchive's databases
+
+apt-ftparchive clean apt.conf-non-US
 
 # TODO: weekly postins to d-c (?), backup of report (?), backup of changes.tgz (?)
 

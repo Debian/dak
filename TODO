@@ -1,37 +1,11 @@
 To fix
 ======
 
-Urgent
-------
-
-  o katie should distingusih between can not read does not exist and perm denied.
- 
-  o heidi should use transactions
-
-  o heidi should read from stdin, then process
-
-  o katie needs a stable_reject() which a) removes the package from
-    p-u, b) doesn't remove the file from the pool, and c) (optionally, I
-    guess) uses a template mail.
+More Urgent
+-----------
 
   o katie/jenna/rhona/whatever needs to clear out .changes
     files from p-u when removing stuff superseded by newer versions.
-
-  o experimental needs to auto clean (relative to unstable)
-  ['
-   SELECT s.source, s.version AS experimental, s2.version AS unstable 
-     FROM src_associations sa, source s, source s2, src_associations sa2 
-     WHERE sa.suite = 1 AND sa2.suite = 5 AND sa.source = s.id 
-       AND sa2.source = s2.id AND s.source = s2.source 
-       AND versioncmp(s.version, s2.version) < 0;
-  ']
-  [ but, needs to hook into melanie ... ]
-  [ and, err, fix the gay hardcoding of suites in rene ... ]
-
-  o jenna doesn't handle arch: any -> arch: all transitions 
-    [aj worked around; need to revisit]
-
-  o direport misreports things as section 'devel'
 
   o rewrite shania to a) be sane, b) clean REJECT properly
     (i.e. ignore the fact that stuff is in a valid .changes file and
@@ -44,17 +18,80 @@ Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
-  o Add urgency + installed date to the DB for aj/testing (? still needed ?)
+  o Fix binary-only NMU handling for non-zero uploads
 
-  o Enforce NMU and bin-only NMU versioning schemes
+Less Urgent
+-----------
 
-  o Revisit linking of binary->source in install() in katie.
+ * Harder:
+    
+    o override checks sucks; it needs to track changes made by the
+      maintainer and pass them onto ftpmaster instead of warning the
+      maintainer.
+    o need to do proper rfc822 escaping of from lines (as opposed to s/\.//g)
+    o when dinstall is run in install mode but not as a cron job, it
+      should probably run jenna to avoid madison originated user confusion
+    o Revisit linking of binary->source in install() in katie.
+    o Fix component handling in overrides (aj)
+    o Fix lack of entires in source overrides (aj)
+    o direport misreports things as section 'devel'
+  
+ * Easy:
+  
+    o utils.extract_component_from_section: main/utils -> main/utils, main rather than utils, main
+    o Fix katie to remove != stable on stable install, not just f + u
+    o Fix katie to warn if run when not in incoming or p-u
+    o check for empty debs; check for empty (or small (<1k ?)) .tar.gz's.
+    o katie should validate multi-suite uploads; only possible valid one
+      is "stable unstable"
+    o Don't do override checks for stable only uploads
+    o cron.daily* should change umask (aj sucks)
+    o Rene doesn't look at debian-installer but should.
+  
+ * Bizzare:
+   
+    o Fix rhona to unconditionally read override file on startup (huh? no override reading at all!)
+    o validate source consistency, i.e. .dsc and .tar.gz as minimum (??)
+    o Rene also doesn't seem to warn about missing binary packages (??)
+  
+ * Cleanups & misc: 
+   
+    o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
+    o The untouchable flag doesn't stop new packages being added to ``untouchable'' suites
+    o jenna is too slow
+    o jenna doesn't handle arch: any -> arch: all transitions 
+      [aj worked around; need to revisit]
 
+===================================================================================================
+
+TODO
+====
+
+More Urgent
+-----------
+
+  o katie needs a stable_reject() which a) removes the package from
+    p-u, b) doesn't remove the file from the pool, and c) (optionally, I
+    guess) uses a template mail.
+
+  o [Complexish] Secure incoming handling
+  o [Hard] dependency checking (esp. stable)
+  o Logging
+  o Abstraction of suite hardcoding (q.v. progengy)
+
+Packaging
+---------
+
+  o Install python libraries (db_access and utils)
+  o Install config file
+  o Fix stuff to look in sensible places for libs and config file in debian package (?)
+  o man pages and/or documentation
   o debian/* assumes arch: all but sql-aptvc.o isn't arch: all.
 
-  o jt's web stuff, matt's changelog stuff (overlap)
+Less Urgent
+-----------
 
-  o fernanda: print_copyright should be a lot more intelligent
+ o fernanda: print_copyright should be a lot more intelligent
      @ handle copyright.gz
      @ handle copyright.ja and copyright
      @ handle (detect at least) symlinks to another package's doc directory
@@ -68,89 +105,17 @@ Urgent
      @ reject
      @ newchanges
 
-Less Urgent
------------
+  o katie could vrfy email addresses (?) [errge@]
+  o auto-purge out-of-date stuff from non-free/contrib so that testing and stuff works
+  o doogie's binary -> source index
+  o ANAIS should be done in katie (?)
+  o Add an 'add' ability to melanie (? separate prog maybe)
+  o Add urgency + installed date to the DB for aj/testing (? still needed ?)
+  o jt's web stuff, matt's changelog stuff (overlap)
 
- o main/utils -> main/utils, main rather than utils, main
+  o [Hard] Need to merge non-non-US and non-US DBs. (Need to upgrade to 7.1 for SSL)
 
- o doogie's binary -> source index
-
- o ANIAS should be done in katie ?
- 
- o natalie doesn't warn when lisitng invalid components!
-
- o run apt-ftparchive clean <conf file> weekly [culus sucks]
-
- o purge older stuff from non-free/contrib so that testing and stuff works
-
- o when dinstall is run in install mode but not as a cron job, it
-   should probably run jenna to avoid madison originated user confusion
-
- o check for empty debs; check for empty (or small (<1k ?)) .tar.gz's.
-
- o validate email addresses ?  harsh to reject tho [errge]
-
- o validate source consistency, i.e. .dsc and .tar.gz as minimum
-
- o Rene doesn't look at debian-installer but should.
-
- o Rene also doesn't seem to warn about missing binary packages?
-
- o cron.daily* should change umask (aj sucks)
- 
- o override checks sucks; it needs to track changes made by the
-   maintainer and pass them onto ftpmaster instead of warning the
-   maintainer.
-
- o Don't do override checks for stable only uploads
-
- o katie should validate multi-suite uploads; only possible valid one
-   is "stable unstable" [but see d-policy@l.d.o]
-
- o need to have process_it run a big try: loop so that individual
-    package screws up don't kill the daily cron run.
-
- o Add an 'add' ability to melanie (? separate prog maybe)
- o [Hard] Need to merge non-non-US and non-US DBs.
- o [Easy] Need to vacuum daily
- o [Easy] remove empty directories in the pool in cron.weekly or so
-
- o need to do proper rfc822 escaping of from lines (as opposed to s/\.//g)
-
- o Fix dinstall to remove != stable on stable install, not just f + u
- o Fix 'mixed' component handling (?)
- o Fix component handling in overrides (aj)
- o Fix lack of entires in source overrides (aj)
- o Fix rhona to unconditionally read override file on startup
- o Fix dinstall to warn if not in incoming or p-u
- o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
- o check errors on apt_pkg calls (?)
- o The untouchable flag doesn't stop adding new packages
- o jenna needs to validate arguments (?)
- o jenna is too damn slow
-
-===================================================================================================
-
-TODO
-====
-
-Packaging
----------
-
-  o Install python libraries (db_access and utils)
-  o Install config file
-  o Fix stuff to look in sensible places for libs and config file in debian package (?)
-  o man pages and/or documentation
-
-Urgent
-------
-
-  o Secure incoming handling
-  o [Hard] dependency checking
-  o Need log files for jenna, rhona and katie.
-
-Less Urgent
------------
+  o experimental needs to auto clean (relative to unstable) [warns in rene about this]
 
   o Do a checkpc(1)-a-like which sanitizes a config files.
   o fix parse_changes()/build_file_list() to sanity check filenames
