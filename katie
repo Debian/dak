@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.42 2001-05-24 18:56:23 troup Exp $
+# $Id: katie,v 1.43 2001-05-31 23:20:36 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1188,14 +1188,19 @@ def process_it (changes_file):
     # save and restore it.
     cwd = os.getcwd();
     
-    check_signature (changes_file);
-    check_changes (changes_file);
-    while reprocess:
-        reprocess = 0;
-        check_files ();
-        check_md5sums ();
-        check_dsc ();
-        check_diff ();
+    try:
+        check_signature (changes_file);
+        check_changes (changes_file);
+        while reprocess:
+            reprocess = 0;
+            check_files ();
+            check_md5sums ();
+            check_dsc ();
+            check_diff ();
+    except:
+        print "ERROR";
+	traceback.print_exc(file=sys.stdout);
+        pass;
         
     update_subst(changes_file);
     action(changes_file);
@@ -1268,7 +1273,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.42 $"
+    bcc = "X-Katie: $Revision: 1.43 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
