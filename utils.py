@@ -1,6 +1,6 @@
 # Utility functions
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.41 2002-04-21 15:39:06 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: utils.py,v 1.42 2002-05-08 11:13:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -379,10 +379,13 @@ def regex_safe (s):
 ######################################################################################
 
 # Perform a substition of template
-def TemplateSubst(Map,Template):
-    for x in Map.keys():
-        Template = string.replace(Template,x,Map[x]);
-    return Template;
+def TemplateSubst(map,filename):
+    file = open_file(filename);
+    template = file.read();
+    for x in map.keys():
+        template = string.replace(template,x,map[x]);
+    file.close();
+    return template;
 
 ######################################################################################
 
