@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.32 2002-10-21 14:11:51 troup Exp $
+# $Id: melanie,v 1.33 2002-11-19 03:14:59 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -299,7 +299,7 @@ def main ():
     if Options["Done"]:
         print "Will also close bugs: "+Options["Done"];
     if carbon_copy:
-        print "Will also send CCs to:" + ", ".join(carbon_copy)
+        print "Will also send CCs to: " + ", ".join(carbon_copy)
     print
     print "------------------- Reason -------------------"
     print Options["Reason"];
@@ -368,7 +368,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.32 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.33 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;
