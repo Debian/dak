@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # General purpose archive tool for ftpmaster
-# Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.6 2001-02-25 02:41:44 mjb Exp $
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: melanie,v 1.7 2001-03-02 02:26:17 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ def main ():
                  ('a',"architecture","Melanie::Options::Architecture", "HasArg"),
                  ('b',"binary", "Melanie::Options::Binary-Only"),
                  ('c',"component", "Melanie::Options::Component", "HasArg"),
+                 ('C',"carbon-copy", "Melanie::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
                  ('d',"done","Melanie::Options::Done", "HasArg"), # Bugs fixed
                  ('m',"reason", "Melanie::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
                  ('n',"no-action","Melanie::Options::No-Action"),
@@ -69,6 +70,7 @@ def main ():
                  ];
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    Options = Cnf.SubTree("Melanie::Options")
     projectB = pg.connect('projectb', 'localhost');
     db_access.init(Cnf, projectB);
 
@@ -76,18 +78,41 @@ def main ():
     if arguments == []:
         sys.stderr.write("E: need at least one package name as an argument.\n");
         sys.exit(1);
-    if Cnf["Melanie::Options::Architecture"] and Cnf["Melanie::Options::Source-Only"]:
+    if Options["Architecture"] and Options["Source-Only"]:
         sys.stderr.write("E: can't use -a/--architecutre and -S/--source-only options simultaneously.\n");
         sys.exit(1);
-    if Cnf["Melanie::Options::Binary-Only"] and Cnf["Melanie::Options::Source-Only"]:
+    if Options["Binary-Only"] and Options["Source-Only"]:
         sys.stderr.write("E: can't use -b/--binary-only and -S/--source-only options simultaneously.\n");
         sys.exit(1);
-    if Cnf["Melanie::Options::Architecture"] and not Cnf["Melanie::Options::Partial"]:
+    if Options["Architecture"] and not Options["Partial"]:
         sys.stderr.write("W: -a/--architecture implies -p/--partial.\n");
-        Cnf["Melanie::Options::Partial"] = "true";
+        Options["Partial"] = "true";
+
+    # Process -C/--carbon-copy
+    #
+    # Accept 3 types of arguments (space separated):
+    #  1) a number - assumed to be a bug number, i.e. nnnnn@bugs.debian.org
+    #  2) the keyword 'package' - cc's $arch@packages.debian.org for every argument
+    #  3) contains a '@' - assumed to be an email address, used unmofidied
+    #
+    carbon_copy = ""
+    for copy_to in string.split(Options.get("Carbon-Copy")):
+        if utils.str_isnum(copy_to):
+            carbon_copy = carbon_copy + copy_to + "@bugs.debian.org, "
+        elif copy_to == 'package':
+            for package in arguments:
+                carbon_copy = carbon_copy + package + "@packages.debian.org, "
+        elif '@' in copy_to:
+            carbon_copy = carbon_copy + copy_to + ", "
+        else:
+            sys.stderr.write("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address.\n" % (copy_to));
+            sys.exit(1);
+    # Make it a real email header
+    if carbon_copy != "":
+        carbon_copy = "Cc: " + carbon_copy[:-2] + '\n'
 
     packages = {};
-    if Cnf["Melanie::Options::Binary-Only"]:
+    if Options["Binary-Only"]:
         field = "b.package";
     else:
         field = "s.source";
@@ -100,14 +125,14 @@ def main ():
     suites_list = "";
     suite_ids_list = [];
     con_suites = "AND (";
-    for suite in string.split(Cnf["Melanie::Options::Suite"]):
+    for suite in string.split(Options["Suite"]):
         
-        if not Cnf["Melanie::Options::No-Action"] and suite == "stable":
+        if not Options["No-Action"] and suite == "stable":
             print "**WARNING** About to remove from the stable suite!"
             print "This should only be done just prior to a (point) release and not at"
             print "any other time."
             game_over();
-        elif not Cnf["Melanie::Options::No-Action"] and suite == "testing":
+        elif not Options["No-Action"] and suite == "testing":
             print "**WARNING About to remove from the testing suite!"
             print "There's no need to do this normally as removals from unstable will"
             print "propogate to testing automagically."
@@ -124,10 +149,10 @@ def main ():
     con_suites = con_suites[:-3] + ")"
     suites_list = suites_list[:-2];
 
-    if Cnf["Melanie::Options::Component"]:
+    if Options["Component"]:
         con_components = "AND (";
         over_con_components = "AND (";
-        for component in string.split(Cnf["Melanie::Options::Component"]):
+        for component in string.split(Options["Component"]):
             component_id = db_access.get_component_id(component);
             if component_id == -1:
                 sys.stderr.write("W: component '%s' not recognised.\n" % (component));
@@ -140,9 +165,9 @@ def main ():
         con_components = "";    
         over_con_components = "";
 
-    if Cnf["Melanie::Options::Architecture"]:
+    if Options["Architecture"]:
         con_architectures = "AND (";
-        for architecture in string.split(Cnf["Melanie::Options::Architecture"]):
+        for architecture in string.split(Options["Architecture"]):
             architecture_id = db_access.get_architecture_id(architecture);
             if architecture_id == -1:
                 sys.stderr.write("W: architecture '%s' not recognised.\n" % (architecture));
@@ -161,7 +186,7 @@ def main ():
     # latter is a nasty mess, but very nice from a UI perspective so
     # we try to support it.
 
-    if Cnf["Melanie::Options::Binary-Only"]:
+    if Options["Binary-Only"]:
         # Binary-only
         q = projectB.query("SELECT b.package, b.version, a.arch_string, b.id FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures));
         for i in q.getresult():
@@ -173,7 +198,7 @@ def main ():
         for i in q.getresult():
             source_packages[i[2]] = i[:2];
             to_remove.append(i[2:]);
-        if not Cnf["Melanie::Options::Source-Only"]:
+        if not Options["Source-Only"]:
             # Source + Binary
             binary_packages = {};
             # First get a list of binary package names we suspect are linked to the source
@@ -210,7 +235,7 @@ def main ():
 
     # If we don't have a reason; spawn an editor so the user can add one
     # Write the rejection email out as the <foo>.reason file
-    if not Cnf["Melanie::Options::Reason"] and not Cnf["Melanie::Options::No-Action"]:
+    if not Options["Reason"] and not Options["No-Action"]:
         temp_filename = tempfile.mktemp();
         fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
         os.close(fd);
@@ -221,7 +246,7 @@ def main ():
             sys.exit(result)
         file = utils.open_file(temp_filename, 'r');
         for line in file.readlines():
-            Cnf["Melanie::Options::Reason"] = Cnf["Melanie::Options::Reason"] + line;
+            Options["Reason"] = Options["Reason"] + line;
         os.unlink(temp_filename);
 
     # Generate the summary of what's to be removed
@@ -251,16 +276,18 @@ def main ():
     print "Will remove the following packages from %s:" % (suites_list);
     print
     print summary
-    if Cnf["Melanie::Options::Done"]:
-        print "Will also close bugs: "+Cnf["Melanie::Options::Done"];
+    if Options["Done"]:
+        print "Will also close bugs: "+Options["Done"];
+    if carbon_copy:
+        print "Will also "+carbon_copy[:-1]
     print
     print "------------------- Reason -------------------"
-    print Cnf["Melanie::Options::Reason"];
+    print Options["Reason"];
     print "----------------------------------------------"
     print
 
     # If -n/--no-action, drop out here
-    if Cnf["Melanie::Options::No-Action"]:
+    if Options["No-Action"]:
         sys.exit(0);
         
     game_over();
@@ -273,9 +300,9 @@ def main ():
     logfile.write("=========================================================================\n");
     logfile.write("[Date: %s] [ftpmaster: %s]\n" % (date, whoami));
     logfile.write("Removed the following packages from %s:\n\n%s" % (suites_list, summary));
-    if Cnf["Melanie::Options::Done"]:
-        logfile.write("Closed bugs: %s\n" % (Cnf["Melanie::Options::Done"]));
-    logfile.write("\n------------------- Reason -------------------\n%s\n" % (Cnf["Melanie::Options::Reason"]));
+    if Options["Done"]:
+        logfile.write("Closed bugs: %s\n" % (Options["Done"]));
+    logfile.write("\n------------------- Reason -------------------\n%s\n" % (Options["Reason"]));
     logfile.write("----------------------------------------------\n");
     logfile.flush();
         
@@ -298,7 +325,7 @@ def main ():
                 projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id));
                 #print "DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id);
             # Delete from the override file
-            if not Cnf["Melanie::Options::Partial"]:
+            if not Options["Partial"]:
                 if architecture == "source":
                     type_id = dsc_type_id;
                 else:
@@ -308,13 +335,14 @@ def main ():
     print "done."
 
     # Send the bug closing messages
-    if Cnf["Melanie::Options::Done"]:
-        for bug in string.split(Cnf["Melanie::Options::Done"]):
+    if Options["Done"]:
+        for bug in string.split(Options["Done"]):
             mail_message = """Return-Path: %s
 From: %s
 To: %s-close@bugs.debian.org
 Bcc: troup@auric.debian.org
-Subject: Bug#%s: fixed
+Bcc: removed-packages@qa.debian.org
+%sSubject: Bug#%s: fixed
 
 We believe that the bug you reported is now fixed; the following
 package(s) have been removed from %s:
@@ -349,7 +377,7 @@ ftpmaster@debian.org.
 Debian distribution maintenance software
 pp.
 %s (the ftpmaster behind the curtain)
-""" % (Cnf["Melanie::MyEmailAddress"], Cnf["Melanie::MyEmailAddress"], bug, bug, suites_list, summary, bug, whoami);
+""" % (Cnf["Melanie::MyEmailAddress"], Cnf["Melanie::MyEmailAddress"], bug, carbon_copy, bug, suites_list, summary, bug, whoami);
             utils.send_mail (mail_message, "")
             
     logfile.write("=========================================================================\n");
