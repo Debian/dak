@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.41 2003-10-14 21:52:46 troup Exp $
+# $Id: katie.py,v 1.42 2003-10-29 16:57:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -263,7 +263,7 @@ class Katie:
                 if files[file]["type"] == "deb":
                     summary += apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)))["Description"] + '\n';
             else:
-                files[file]["pool name"] = utils.poolify (changes["source"], files[file]["component"])
+                files[file]["pool name"] = utils.poolify (changes.get("source",""), files[file]["component"])
                 destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
                 summary += file + "\n  to " + destination + "\n"
 
