@@ -22,6 +22,9 @@ approved:
 
 ================================================================================
 
+[minor] kelly's copychanges, copykatie handling sucks, the per-suite
+        thing is static for all packages, so work out in advance dummy.
+
 Actually Urgent
 ---------------
 
@@ -30,6 +33,9 @@ Actually Urgent
 
 More Urgent
 -----------
+
+  o [melanie] I was thinking, bomb out if a) no '[rene]' in the
+    -m/--message, and b) no other -d/--done or -C/--carbon-copy
 
   o helena should footnote the actual notes, and also * the versions
     with notes so we can see new versions since being noted...
