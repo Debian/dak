@@ -11,6 +11,8 @@
 Others
 ------
 
+  o reject on > or < in a version constraint
+
   o tabnanny the source
 
   o drop map-unreleased
