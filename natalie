@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: natalie,v 1.2 2002-05-14 15:33:51 troup Exp $
+# $Id: natalie,v 1.3 2002-07-14 15:01:19 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ Logger = None;
 
 def usage (exit_code=0):
     print """Usage: natalie.py [OPTIONS]
-  -h, --help               this help
+  -h, --help               print this help and exit
 
   -c, --component=CMPT     list/set overrides by component
                                   (contrib,*main,non-free)
@@ -43,8 +43,9 @@ def usage (exit_code=0):
   -t, --type=TYPE          list/set overrides by type
                                   (*deb,dsc,udeb)
 
-  -S, --set                set overrides from stdin
-  -l, --list               list overrides on stdout
+  -a, --add                add overrides (changes and deletions are ignored)
+  -S, --set                set overrides
+  -l, --list               list overrides
 
   -q, --quiet              be less verbose
 
@@ -53,7 +54,7 @@ def usage (exit_code=0):
 
 ################################################################################
 
-def process_file (file, suite, component, type):
+def process_file (file, suite, component, type, action):
     suite_id = db_access.get_suite_id(suite);
     if suite_id == -1:
         utils.fubar("Suite '%s' not recognised." % (suite));
@@ -131,12 +132,15 @@ def process_file (file, suite, component, type):
         new[package] = "";
         if original.has_key(package):
             (old_priority_id, old_section_id, old_maintainer_override, old_priority, old_section) = original[package];
-            if old_priority_id == priority_id and old_section_id == section_id and old_maintainer_override == maintainer_override:
-                # Same?  Ignore it
+            if action == "add" or old_priority_id == priority_id and \
+               old_section_id == section_id and \
+               old_maintainer_override == maintainer_override:
+                # If it's unchanged or we're in 'add only' mode, ignore it
                 c_skipped = c_skipped + 1;
                 continue;
             else:
-                # Changed?  Delete the old one so we can reinsert it with the new information
+                # If it's changed, delete the old one so we can
+                # reinsert it with the new information
                 c_updated = c_updated + 1;
                 projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
                                % (suite_id, component_id, package, type_id));
@@ -162,13 +166,14 @@ def process_file (file, suite, component, type):
         if not update_p:
             Logger.log(["new override",suite,component,type,package,priority,section,maintainer_override]);
 
-    # Delete any packages which were removed
-    for package in original.keys():
-        if not new.has_key(package):
-            projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
-                           % (suite_id, component_id, package, type_id));
-            c_removed = c_removed + 1;
-            Logger.log(["removed override",suite,component,type,package]);
+    if not action == "add":
+        # Delete any packages which were removed
+        for package in original.keys():
+            if not new.has_key(package):
+                projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
+                               % (suite_id, component_id, package, type_id));
+                c_removed = c_removed + 1;
+                Logger.log(["removed override",suite,component,type,package]);
 
     projectB.query("COMMIT WORK");
     if not Cnf["Natalie::Options::Quiet"]:
@@ -205,8 +210,9 @@ def main ():
     global Cnf, projectB, Logger;
 
     Cnf = utils.get_conf();
-    Arguments = [('h', "help", "Natalie::Options::Help"),
+    Arguments = [('a', "add", "Natalie::Options::Add"),
                  ('c', "component", "Natalie::Options::Component", "HasArg"),
+                 ('h', "help", "Natalie::Options::Help"),
                  ('l', "list", "Natalie::Options::List"),
                  ('q', "quiet", "Natalie::Options::Quiet"),
                  ('s', "suite", "Natalie::Options::Suite", "HasArg"),
@@ -214,7 +220,7 @@ def main ():
                  ('t', "type", "Natalie::Options::Type", "HasArg")];
 
     # Default arguments
-    for i in ["help", "list", "quiet", "set" ]:
+    for i in [ "add", "help", "list", "quiet", "set" ]:
 	if not Cnf.has_key("Natalie::Options::%s" % (i)):
 	    Cnf["Natalie::Options::%s" % (i)] = "";
     if not Cnf.has_key("Natalie::Options::Component"):
@@ -233,9 +239,9 @@ def main ():
     db_access.init(Cnf, projectB);
 
     action = None;
-    for i in [ "list", "set" ]:
+    for i in [ "add", "list", "set" ]:
         if Cnf["Natalie::Options::%s" % (i)]:
-            if action != None:
+            if action:
                 utils.fubar("Can not perform more than one action at once.");
             action = i;
 
@@ -247,9 +253,9 @@ def main ():
         Logger = logging.Logger(Cnf, "natalie");
         if file_list:
             for file in file_list:
-                process_file(utils.open_file(file), suite, component, type);
+                process_file(utils.open_file(file), suite, component, type, action);
         else:
-            process_file(sys.stdin, suite, component, type);
+            process_file(sys.stdin, suite, component, type, action);
         Logger.close();
 
 #######################################################################################
