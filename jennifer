@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.17 2002-05-10 00:24:33 troup Exp $
+# $Id: jennifer,v 1.18 2002-05-14 15:35:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.17 $";
+jennifer_version = "$Revision: 1.18 $";
 
 Cnf = None;
 Options = None;
@@ -160,9 +160,11 @@ def get_status_output(cmd, status_read, status_write):
             try:
                 os.close(status_write);
                 os.close(status_read);
+                os.close(c2pread);
                 os.close(c2pwrite);
                 os.close(p2cwrite);
                 os.close(errin);
+                os.close(errout);
             except:
                 pass;
             break;
@@ -207,7 +209,7 @@ def check_signature (filename):
             continue;
         args = split[2:];
         if keywords.has_key(keyword) and keyword != "NODATA":
-            internal_error = internal_error + "found duplicate status token ('%s')." % (keyword);
+            internal_error = internal_error + "found duplicate status token ('%s').\n" % (keyword);
             continue;
         else:
             keywords[keyword] = args;
@@ -431,7 +433,7 @@ def check_distributions():
                 (source, dest) = args[1:3];
                 if changes["distribution"].has_key(source):
                     for arch in changes["architecture"].keys():
-                        if not Cnf.has_key("Suite::%s::Architectures::%s" % (source, arch)):
+                        if arch not in Cnf.ValueList("Suite::%s::Architectures" % (source)):
                             reject("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch),"");
                             del changes["distribution"][source];
                             changes["distribution"][dest] = 1;
@@ -519,13 +521,14 @@ def check_files():
 
             # Ensure the architecture of the .deb is one we know about.
             default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
-            if not Cnf.has_key("Suite::%s::Architectures::%s" % (default_suite, control.Find("Architecture", ""))):
-                reject("Unknown architecture '%s'." % (control.Find("Architecture", "")));
+            architecture = control.Find("Architecture", "");
+            if architecture not in Cnf.ValueList("Suite::%s::Architectures" % (default_suite)):
+                reject("Unknown architecture '%s'." % (architecture));
 
             # Ensure the architecture of the .deb is one of the ones
             # listed in the .changes.
-            if not changes["architecture"].has_key(control.Find("Architecture", "")):
-                reject("%s: control file lists arch as `%s', which isn't in changes file." % (file, control.Find("Architecture", "")));
+            if not changes["architecture"].has_key(architecture):
+                reject("%s: control file lists arch as `%s', which isn't in changes file." % (file, architecture));
 
             # Check the section & priority match those given in the .changes (non-fatal)
             if control.Find("Section") != None and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
@@ -534,7 +537,7 @@ def check_files():
                 reject("%s control file lists priority as `%s', but changes file has `%s'." % (file, control.Find("Priority", ""), files[file]["priority"]),"Warning: ");
 
             files[file]["package"] = control.Find("Package");
-            files[file]["architecture"] = control.Find("Architecture");
+            files[file]["architecture"] = architecture;
             files[file]["version"] = control.Find("Version");
             files[file]["maintainer"] = control.Find("Maintainer", "");
             if file[-5:] == ".udeb":
@@ -592,6 +595,8 @@ def check_files():
                         files[file]["new"] = 1;
                     elif not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
                         reject("no source found for %s %s (%s)." % (source_package, source_version, file));
+            # Check the version and for file overwrites
+            reject(Katie.check_binary_against_db(file),"");
 
         # Checks for a source package...
         else:
@@ -636,16 +641,14 @@ def check_files():
                 continue
 
             # Ensure the component is valid for the target suite
-            if Cnf.has_key("Suite:%s::Components" % (suite)) and not Cnf.has_key("Suite::%s::Components::%s" % (suite, files[file]["component"])):
+            if Cnf.has_key("Suite:%s::Components" % (suite)) and \
+               files[file]["component"] not in Cnf.ValueList("Suite::%s::Components" % (suite)):
                 reject("unknown component `%s' for suite `%s'." % (files[file]["component"], suite));
                 continue
 
             # See if the package is NEW
             if not Katie.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
                 files[file]["new"] = 1;
-
-            if files[file]["type"] == "deb":
-                reject(Katie.check_binaries_against_db(file, suite),"");
 
             # Validate the component
             component = files[file]["component"];
@@ -675,8 +678,18 @@ def check_files():
             files[file]["files id"] = files_id
 
             # Check for packages that have moved from one component to another
-            if files[file]["oldfiles"].has_key(suite) and files[file]["oldfiles"][suite]["name"] != files[file]["component"]:
-                files[file]["othercomponents"] = files[file]["oldfiles"][suite]["name"];
+            q = Katie.projectB.query("""
+SELECT c.name FROM binaries b, bin_associations ba, suite s, location l,
+                   component c, architecture a, files f
+ WHERE b.package = '%s' AND s.suite_name = '%s'
+   AND (a.arch_string = '%s' OR a.arch_string = 'all')
+   AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id
+   AND f.location = l.id AND l.component = c.id AND b.file = f.id"""
+                               % (files[file]["package"], suite,
+                                  files[file]["architecture"]));
+            ql = q.getresult();
+            if ql:
+                files[file]["othercomponents"] = ql[0][0];
 
     # If the .changes file says it has source, it must have source.
     if changes["architecture"].has_key("source"):
@@ -793,7 +806,7 @@ def check_urgency ():
     if changes["architecture"].has_key("source"):
         if not changes.has_key("urgency"):
             changes["urgency"] = Cnf["Urgency::Default"];
-        if not Cnf.has_key("Urgency::Valid::%s" % changes["urgency"]):
+        if changes["urgency"] not in Cnf.ValueList("Urgency::Valid"):
             reject("%s is not a valid urgency; it will be treated as %s by testing." % (changes["urgency"], Cnf["Urgency::Default"]), "Warning: ");
             changes["urgency"] = Cnf["Urgency::Default"];
         changes["urgency"] = string.lower(changes["urgency"]);

@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.19 2002-05-10 00:24:33 troup Exp $
+# $Id: katie.py,v 1.20 2002-05-14 15:35:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -152,7 +152,7 @@ class Katie:
             for i in [ "package", "version", "architecture", "type", "size",
                        "md5sum", "component", "location id", "source package",
                        "source version", "maintainer", "dbtype", "files id",
-                       "new", "section", "priority", "oldfiles", "othercomponents",
+                       "new", "section", "priority", "othercomponents",
                        "pool name" ]:
                 if files[file].has_key(i):
                     d_files[file][i] = files[file][i];
@@ -638,7 +638,7 @@ distribution.""";
             result = q.getresult();
 
         # Remember the section and priority so we can check them later if appropriate
-        if result != []:
+        if result:
             files[file]["override section"] = result[0][0];
             files[file]["override priority"] = result[0][1];
 
@@ -654,21 +654,55 @@ distribution.""";
                 self.reject_message = self.reject_message + "\n";
             self.reject_message = self.reject_message + prefix + str;
 
-    def check_binaries_against_db(self, file, suite):
+    ################################################################################
+
+    def cross_suite_version_check(self, query_result, file, new_version):
+        """Ensure versions are newer than existing packages in target
+        suites and that cross-suite version checking rules as
+        set out in the conf file are satisfied."""
+
+        # Check versions for each target suite
+        for target_suite in self.pkg.changes["distribution"].keys():
+            must_be_newer_than = map(lower, self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeNewerThan" % (target_suite)));
+            must_be_older_than = map(lower, self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeOlderThan" % (target_suite)));
+            # Enforce "must be newer than target suite" even if conffile omits it
+            if target_suite not in must_be_newer_than:
+                must_be_newer_than.append(target_suite);
+            for entry in query_result:
+                existent_version = entry[0];
+                suite = entry[1];
+                if suite in must_be_newer_than and \
+                   apt_pkg.VersionCompare(new_version, existent_version) != 1:
+                    self.reject("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite));
+                if suite in must_be_older_than and \
+                   apt_pkg.VersionCompare(new_version, existent_version) != -1:
+                    self.reject("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite));
+
+    ################################################################################
+
+    def check_binary_against_db(self, file):
         self.reject_message = "";
         files = self.pkg.files;
 
-        # Find any old binary packages
-        q = self.projectB.query("SELECT b.id, b.version, f.filename, l.path, c.name  FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f WHERE b.package = '%s' AND s.suite_name = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id AND f.location = l.id AND l.component = c.id AND b.file = f.id"
-                           % (files[file]["package"], suite, files[file]["architecture"]))
-        for oldfile in q.dictresult():
-            files[file]["oldfiles"][suite] = oldfile;
-            # Check versions [NB: per-suite only; no cross-suite checking done (yet)]
-            if apt_pkg.VersionCompare(files[file]["version"], oldfile["version"]) != 1:
-                self.reject("%s: old version (%s) >= new version (%s)." % (file, oldfile["version"], files[file]["version"]));
+        # Ensure version is sane
+        q = self.projectB.query("""
+SELECT b.version, su.suite_name FROM binaries b, bin_associations ba, suite su,
+                                     architecture a
+ WHERE b.package = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all')
+   AND ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id"""
+                                % (files[file]["package"],
+                                   files[file]["architecture"]));
+        self.cross_suite_version_check(q.getresult(), file, files[file]["version"]);
+
         # Check for any existing copies of the file
-        q = self.projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
-        if q.getresult() != []:
+        q = self.projectB.query("""
+SELECT b.id FROM binaries b, architecture a
+ WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s'
+   AND a.id = b.architecture"""
+                                % (files[file]["package"],
+                                   files[file]["version"],
+                                   files[file]["architecture"]))
+        if q.getresult():
             self.reject("can not overwrite existing copy of '%s' already in the archive." % (file));
 
         return self.reject_message;
@@ -676,20 +710,15 @@ distribution.""";
     ################################################################################
 
     def check_source_against_db(self, file):
-        """Ensure source is newer than existing source in target suites."""
         self.reject_message = "";
-        changes = self.pkg.changes;
         dsc = self.pkg.dsc;
 
-        package = dsc.get("source");
-        new_version = dsc.get("version");
-        for suite in changes["distribution"].keys():
-            q = self.projectB.query("SELECT s.version FROM source s, src_associations sa, suite su WHERE s.source = '%s' AND su.suite_name = '%s' AND sa.source = s.id AND sa.suite = su.id"
-                               % (package, suite));
-            ql = map(lambda x: x[0], q.getresult());
-            for old_version in ql:
-                if apt_pkg.VersionCompare(new_version, old_version) != 1:
-                    self.reject("%s: Old version `%s' >= new version `%s'." % (file, old_version, new_version));
+        # Ensure version is sane
+        q = self.projectB.query("""
+SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
+ WHERE s.source = '%s' AND sa.source = s.id AND sa.suite = su.id""" % (dsc.get("source")));
+        self.cross_suite_version_check(q.getresult(), file, dsc.get("version"));
+
         return self.reject_message;
 
     ################################################################################
@@ -742,7 +771,7 @@ distribution.""";
                 q = self.projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
                 ql = q.getresult();
 
-                if ql != []:
+                if ql:
                     # Unfortunately, we make get more than one
                     # match here if, for example, the package was
                     # in potato but had a -sa upload in woody.  So
