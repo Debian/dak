@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.13 2001-11-18 19:57:58 rmurray Exp $
+# $Id: catherine,v 1.14 2001-11-19 00:26:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ def poolize (q, limit, verbose, no_action):
             if m != None:
                 source = m.group(1);
             else:
-                utils.fubar("expandsion of source filename '%s' failed." % (legacy_filename));
+                utils.fubar("expansion of source filename '%s' failed." % (legacy_filename));
         # Work out the component name
         component = qid["component"];
         if component == "":
