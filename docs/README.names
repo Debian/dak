@@ -1,6 +1,8 @@
-ashley - display the contents of a .katie file
 alyson - sync's the ISC-style configuration file with the SQL DB
+amber - 'installer' wrapper for security team
 andrea - looks for fixable descrepancies between stable and unstable
+ashley - display the contents of a .katie file
+cameron - generate file list for unstable_accepted
 catherine - poolifies packages; i.e. moves them from legacy dists/ locations into the pool
 charisma - generates Maintainers files used by e.g. the Debian BTS
 claire - generates compatability symlink tree for legacy dists/ locations
@@ -24,42 +26,16 @@ shania - cleans cruft from incoming
 tea - sanity checks the database
 ziyi - creates Release files
 
-With apologies to Ashley Judd, Alyson Hannigan, Andrea Corr, Catherine
- Zeta Jones, Charisma Carpenter, Claire Forlani, Fernanda Tervares,
- Halle Berry, Heidi Klum, Jenna Elfman, Jennifer Lopez, Jeri Ryan,
- Julia Roberts, Katie Holmes, Lisa Falkner, Madison Michele, Melanie
- Sykes, Natalie Portman, Neve Campbell, Rene O'Connor, Rhona Mitra,
- Saffron Burrows, Shania Twain, Tea Leoni and Ziyi Zhang.
+With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
+ Judd, Catherine Zeta Jones, Cameron Diaz, Charisma Carpenter, Claire
+ Forlani, Fernanda Tervares, Halle Berry, Heidi Klum, Jenna Elfman,
+ Jennifer Lopez, Jeri Ryan, Julia Roberts, Katie Holmes, Lisa Falkner,
+ Madison Michele, Melanie Sykes, Natalie Portman, Neve Campbell, Rene
+ O'Connor, Rhona Mitra, Saffron Burrows, Shania Twain, Tara Reid, Tea
+ Leoni and Ziyi Zhang.
 
-Possible Future Candidates:
----------------------------
-
-Billie (Piper)
-Cameron (Diaz)
-Emma (Thompson)
-Elisabeth (Shue)
-Eliza (Dushku)
-Gail (Porter)
-Gwyneth (Paltrow)
-Heather (Graham)
-Jewel (Kilcher)
-Kari (Wuhrer)
-Kelly (Brook)
-Kim (Smith)
-Lucy (Liu)
-Michelle (Hunziker)
-Rebecca (Romijn-Stamos)
-Reese (Witherspoon)
-Rose (McGowan)
-Salma (Hayek)
-Sophie (Marceau)
-Tara (Reid)
-Teri (Hatcher)
-Tiffani (Amber Thiesen)
-Virgine (Leoyden)
-
-Already Used Elsewhere:
------------------------
+In Use Elsewhere:
+-----------------
 
 Christina (Aguilera)	[lene]
 Emily (Mortimer)	[lene]
@@ -67,7 +43,45 @@ Lene (Nystrom)		[lene]
 Lonneke (Engel)		[lene]
 Louise (Nurding)	[lene]
 
-Michelle (Yeoh)		[joey]
 Britney (Spears)	[aj]
-Sandra (Bullock)	[neuro]
+
+Michelle (Yeoh)		[joey]
 Courtney (Cox)		[neuro]
+Sandra (Bullock)	[neuro]
+
+Possible Future Candidates:
+---------------------------
+
+Alicia (Witt)
+Angelina (Jolie)
+Billie (Piper)
+Carly (Pope)
+Carrie (Ann Moss)
+Emma (Thompson)
+Elisabeth (Shue)
+Eliza (Dushku)
+Famke (Janssen)
+Gail (Porter)
+Gillian (Anderson)
+Gwyneth (Paltrow)
+Heather (Graham)
+Helena (Christensen)
+Jessica (Alba)
+Jewel (Kilcher)
+Kari (Wuhrer)
+Kelly (Brook)
+Kim (Smith)
+Kirsten (Dunst)
+Lucy (Liu)
+Michelle (Hunziker)
+Rebecca (Romijn-Stamos)
+Reese (Witherspoon)
+Rose (McGowan)
+Salma (Hayek)
+Shannen (Doherty)
+Sophie (Marceau)
+Tara (Reid)
+Teri (Hatcher)
+Tiffani (Amber Thiesen)
+Virgine (Leoyden)
+

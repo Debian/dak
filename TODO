@@ -10,6 +10,11 @@ Actually Urgent
 
 More Urgent
 -----------
+ 
+  o db_access.get_location_id should handle the lack of archive_id properly
+
+  o security.debian.org: BYHAND auto-uploading doesn't work
+  o security.debian.org: BYHAND auto-uploading assumes ftp-master
 
   o lisa doesn't do the right thing with -2 and -1 uploads, as you can
     end up with the .orig.tar.gz not in the pool

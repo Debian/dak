@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run once a week via cron, out of troup's crontab.
+# Run once a week via cron, out of katie's crontab.
 
 set -e
 export SCRIPTVARS=/org/ftp.debian.org/katie/vars
@@ -8,14 +8,10 @@ export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 
 ################################################################################
 
-# Clean out incoming
-
-shania
-
 # Purge empty directories
 
-if [ ! -z "$(find $ftpdir/pool/ -type d -empty)" ]; then 
-   find $ftpdir/pool/ -type d -empty | xargs rmdir; 
+if [ ! -z "$(find $ftpdir/pool/ -type d -empty)" ]; then
+   find $ftpdir/pool/ -type d -empty | xargs rmdir;
 fi
 
 # Clean up apt-ftparchive's databases
