@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Manipulate override files
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.15 2002-02-12 22:14:38 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: natalie,v 1.1 2002-05-08 11:15:38 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,25 +35,23 @@ Logger = None;
 def usage (exit_code=0):
     print """Usage: natalie.py [OPTIONS]
   -h, --help               this help
+
   -c, --component=CMPT     list/set overrides by component
                                   (contrib,*main,non-free)
   -s, --suite=SUITE        list/set overrides by suite
                                   (experimental,stable,testing,*unstable)
   -t, --type=TYPE          list/set overrides by type
                                   (*deb,dsc,udeb)
+
   -S, --set                set overrides from stdin
   -l, --list               list overrides on stdout
+
+  -q, --quiet              be less verbose
 
  starred (*) values are default"""
     sys.exit(exit_code)
 
 ################################################################################
-
-def init ():
-    global projectB;
-
-    projectB = pg.connect('projectb', None);
-    db_access.init(Cnf, projectB);
 
 def process_file (file, suite, component, type):
     suite_id = db_access.get_suite_id(suite);
@@ -173,7 +171,8 @@ def process_file (file, suite, component, type):
             Logger.log(["removed override",suite,component,type,package]);
 
     projectB.query("COMMIT WORK");
-    print "Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time()-start_time), c_updated, c_added, c_removed, c_skipped, c_error);
+    if not Cnf["Natalie::Options::Quiet"]:
+        print "Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time()-start_time), c_updated, c_added, c_removed, c_skipped, c_error);
     Logger.log(["set complete",c_updated, c_added, c_removed, c_skipped, c_error]);
 
 ################################################################################
@@ -205,16 +204,17 @@ def list(suite, component, type):
 def main ():
     global Cnf, projectB, Logger;
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Natalie::Options::Help"),
-                 ('c',"component", "Natalie::Options::Component", "HasArg"),
-                 ('l',"list", "Natalie::Options::List"),
-                 ('s',"suite","Natalie::Options::Suite", "HasArg"),
-                 ('S',"set","Natalie::Options::Set"),
-                 ('t',"type","Natalie::Options::Type", "HasArg")];
+    Cnf = utils.get_conf();
+    Arguments = [('h', "help", "Natalie::Options::Help"),
+                 ('c', "component", "Natalie::Options::Component", "HasArg"),
+                 ('l', "list", "Natalie::Options::List"),
+                 ('q', "quiet", "Natalie::Options::Quiet"),
+                 ('s', "suite", "Natalie::Options::Suite", "HasArg"),
+                 ('S', "set", "Natalie::Options::Set"),
+                 ('t', "type", "Natalie::Options::Type", "HasArg")];
 
     # Default arguments
-    for i in ["help", "list", "set" ]:
+    for i in ["help", "list", "quiet", "set" ]:
 	if not Cnf.has_key("Natalie::Options::%s" % (i)):
 	    Cnf["Natalie::Options::%s" % (i)] = "";
     if not Cnf.has_key("Natalie::Options::Component"):
@@ -229,7 +229,8 @@ def main ():
     if Cnf["Natalie::Options::Help"]:
         usage();
 
-    init();
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    db_access.init(Cnf, projectB);
 
     action = None;
     for i in [ "list", "set" ]:
