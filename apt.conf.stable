@@ -37,5 +37,6 @@ tree "dists/stable"
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
    BinOverride "override.woody.$(SECTION)";
+   ExtraOverride "override.woody.extra.$(SECTION)";
    SrcOverride "override.woody.$(SECTION).src";
 };
