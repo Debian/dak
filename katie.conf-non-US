@@ -24,7 +24,7 @@ Dinstall
    CloseBugs "true";
    SuiteSuffix "non-US";
    OverrideDisparityCheck "true";
-   StableDislocationSupport "true";
+   StableDislocationSupport "false";
 };
 
 Julia
@@ -89,7 +89,7 @@ Rhona
 
 Suite
 {
-  Stable
+  OldStable
   {
 	Components 
 	{
@@ -116,10 +116,10 @@ Suite
 	OverrideCodeName "potato";
 	Priority "1";
 	Untouchable "1";
-	ChangeLogBase "dists/stable/non-US/";
+	ChangeLogBase "dists/oldstable/non-US/";
   };
 
-  Proposed-Updates
+  Old-Proposed-Updates
   {
 	Architectures 
 	{
@@ -133,19 +133,108 @@ Suite
 	  sparc;
 	};
 	Announce "debian-changes@lists.debian.org";
-	CopyChanges "dists/proposed-updates/";
-	CopyKatie "/org/non-us.debian.org/queue/proposed-updates/";
+	CopyChanges "dists/old-proposed-updates/";
+	CopyKatie "/org/non-us.debian.org/queue/old-proposed-updates/";
 	Version "2.2r7";
 	Origin "Debian";
 	Description "Proposed Updates for Debian 2.2r7 - Not Released";
-	CodeName "proposed-updates";
+	CodeName "old-proposed-updates";
 	OverrideCodeName "potato";
-	OverrideSuite "stable";
+	OverrideSuite "oldstable";
 	Priority "2";
 	VersionChecks
 	{
 	  MustBeNewerThan
 	  {
+	    OldStable;
+	  };
+	  MustBeOlderThan
+	  {
+	    Stable;
+	    Proposed-Updates;
+	    Testing;
+	    Testing-Proposed-Updates;
+	    Unstable;
+	    Experimental;
+	  };
+	};
+  };
+
+  Stable
+  {
+	Components 
+	{
+	  non-US/main;
+	  non-US/contrib;
+	  non-US/non-free;
+	};
+	Architectures 
+	{
+	  source;  
+	  all;
+	  alpha; 
+	  arm;
+	  hppa;
+	  i386;
+	  ia64;
+	  m68k;
+	  mips;
+	  mipsel;
+	  powerpc;
+	  s390;
+	  sparc;
+	};
+	Announce "debian-changes@lists.debian.org";
+	Version "3.0";
+	Origin "Debian";
+	Description "Debian 3.0 Released 20th July 2002";
+	CodeName "woody";
+	OverrideCodeName "woody";
+	Priority "3";
+	Untouchable "1";
+	ChangeLogBase "dists/stable/non-US/";
+  };
+
+  Proposed-Updates
+  {
+	Components 
+	{
+	  non-US/main;
+	  non-US/contrib;
+	  non-US/non-free;
+	};
+	Architectures 
+	{
+	  source;  
+	  all;
+	  alpha; 
+	  arm;
+	  hppa;
+	  i386;
+	  ia64;
+	  m68k;
+	  mips;
+	  mipsel;
+	  powerpc;
+	  s390;
+	  sparc;
+	};
+	Announce "debian-changes@lists.debian.org";
+	CopyChanges "dists/proposed-updates/";
+	CopyKatie "/org/non-us.debian.org/queue/proposed-updates/";
+	Version "3.0-updates";
+	Origin "Debian";
+	Description "Debian 3.0 Proposed Updates - Not Released";
+	CodeName "proposed-updates";
+	OverrideCodeName "woody";
+	OverrideSuite "stable";
+	Priority "4";
+	VersionChecks
+	{
+	  MustBeNewerThan
+	  {
+	    OldStable;
+	    Old-Proposed-Updates;
 	    Stable;
 	  };
 	  MustBeOlderThan
@@ -182,12 +271,12 @@ Suite
 	};
 	Origin "Debian";
 	Description "Debian Testing distribution - Not Released";
-	CodeName "woody";
-	OverrideCodeName "woody";
-	Priority "3";
+	CodeName "sarge";
+	OverrideCodeName "sarge";
+	Priority "5";
   };
 
-  Woody-Proposed-Updates
+  Testing-Proposed-Updates
   {
 	Components 
 	{
@@ -213,14 +302,16 @@ Suite
 	};
 	Origin "Debian";
 	Description "Debian Testing distribution updates - Not Released";
-	CodeName "woody-proposed-updates";
-	OverrideCodeName "woody";
+	CodeName "testing-proposed-updates";
+	OverrideCodeName "sarge";
 	OverrideSuite "unstable";
-	Priority "4";
+	Priority "6";
 	VersionChecks
 	{
 	  MustBeNewerThan
 	  {
+	    OldStable;
+	    Old-Proposed-Updates;
 	    Stable;
 	    Proposed-Updates;
 	    Testing;
@@ -264,15 +355,17 @@ Suite
 	Description "Debian Unstable - Not Released";
 	CodeName "sid";
 	OverrideCodeName "sid";
-	Priority "5";
+	Priority "7";
 	VersionChecks
 	{
 	  MustBeNewerThan
 	  {
+	    OldStable;
+	    Old-Proposed-Updates;
 	    Stable;
 	    Proposed-Updates;
 	    Testing;
-	    Woody-Proposed-Updates;
+	    Testing-Proposed-Updates;
 	  };
 	};
   };
@@ -281,14 +374,22 @@ Suite
 
 SuiteMappings
 {
+ "map oldstable old-proposed-updates";
+ "map oldstable-security old-proposed-updates";
+ "map-unreleased oldstable stable";
+ "map-unreleased old-proposed-updates stable";
+
+ // JT - temp measure
+ "map testing-security proposed-updates";
+
  "map stable proposed-updates";
  "map stable-security proposed-updates";
  "map-unreleased stable unstable";
  "map-unreleased proposed-updates unstable";
- "map testing woody-proposed-updates";
- "map testing-security woody-proposed-updates";
- "map-unreleased testing unstable-";
- "map-unreleased woody-proposed-updates unstable";
+ "map testing testing-proposed-updates";
+ //"map testing-security testing-proposed-updates";
+ "map-unreleased testing unstable";
+ "map-unreleased testing-proposed-updates unstable";
 };
 
 Dir
@@ -410,27 +511,7 @@ OverrideType
 Location
 {
   
-  // Old style locations on non-US.debian.org
-
-  /org/non-us.debian.org/ftp/dists/proposed-updates/
-    {
-      Archive "non-US";
-      Suite "proposed-updates";
-      Type "legacy-mixed";
-    };
-
-  /org/non-us.debian.org/ftp/dists/
-    {
-      Archive "non-US";
-      Suites 
-	{
-	  Stable;
-	  Unstable;
-        };
-      Type "legacy";
-    };
-
-  // New pool locations on non-US.debian.org
+  // Pool locations on non-US.debian.org
   /org/non-us.debian.org/ftp/pool/
     {
       Archive "non-US";
@@ -451,4 +532,3 @@ Urgency
     critical;
   };
 };
-

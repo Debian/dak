@@ -20,12 +20,22 @@ TreeDefault
    Contents::Header "/org/ftp.debian.org/katie/Contents.top";
 };
 
+tree "dists/oldstable"
+{
+   FileList "/org/ftp.debian.org/database/dists/oldstable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/ftp.debian.org/database/dists/oldstable_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm i386 m68k powerpc sparc source";
+   BinOverride "override.potato.$(SECTION)";
+   SrcOverride "override.potato.$(SECTION).src";
+};
+
 tree "dists/stable"
 {
    FileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "alpha arm i386 m68k powerpc sparc source";
-   BinOverride "override.potato.$(SECTION)";
-   SrcOverride "override.potato.$(SECTION).src";
+   Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
+   BinOverride "override.woody.$(SECTION)";
+   SrcOverride "override.woody.$(SECTION).src";
 };

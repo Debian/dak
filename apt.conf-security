@@ -13,14 +13,25 @@ Default
    FileMode 0664;
 }
 
+tree "dists/oldstable/updates"
+{
+   FileList "/org/security.debian.org/katie-database/dists/oldstable_updates/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/security.debian.org/katie-database/dists/oldstable_updates/$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm i386 m68k powerpc sparc source";
+   BinOverride "override.potato.$(SECTION)";
+   SrcOverride "override.potato.$(SECTION).src";
+   Contents " ";
+};
+
 tree "dists/stable/updates"
 {
    FileList "/org/security.debian.org/katie-database/dists/stable_updates/$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/org/security.debian.org/katie-database/dists/stable_updates/$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "alpha arm i386 m68k powerpc sparc source";
-   BinOverride "override.potato.$(SECTION)";
-   SrcOverride "override.potato.$(SECTION).src";
+   Architectures "alpha arm hppa i386 ia64 mips mipsel m68k powerpc s390 sparc source";
+   BinOverride "override.woody.$(SECTION)";
+   SrcOverride "override.woody.$(SECTION).src";
    Contents " ";
 };
 
@@ -30,7 +41,7 @@ tree "dists/testing/updates"
    SourceFileList "/org/security.debian.org/katie-database/dists/testing_updates/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 mips mipsel m68k powerpc s390 sparc source";
-   BinOverride "override.woody.$(SECTION)";
-   SrcOverride "override.woody.$(SECTION).src";
+   BinOverride "override.sarge.$(SECTION)";
+   SrcOverride "override.sarge.$(SECTION).src";
    Contents " ";
 };

@@ -20,24 +20,35 @@ TreeDefault
    Contents::Header "/org/non-us.debian.org/katie/Contents.top";
 };
 
+tree "dists/proposed-updates/non-US"
+{
+   FileList "/org/non-us.debian.org/database/dists/proposed-updates_non-US/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/proposed-updates_non-US/$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
+   BinOverride "override.woody.$(SECTION)";
+   SrcOverride "override.woody.$(SECTION).src";
+   Contents " ";
+};
+
 tree "dists/testing/non-US"
 {
    FileList "/org/non-us.debian.org/database/dists/testing_non-US/$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/org/non-us.debian.org/database/dists/testing_non-US/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
-   BinOverride "override.woody.$(SECTION)";
-   SrcOverride "override.woody.$(SECTION).src";
+   BinOverride "override.sarge.$(SECTION)";
+   SrcOverride "override.sarge.$(SECTION).src";
 };
 
-tree "dists/woody-proposed-updates/non-US"
+tree "dists/testing-proposed-updates/non-US"
 {
-   FileList "/org/non-us.debian.org/database/dists/woody-proposed-updates_non-US/$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/non-us.debian.org/database/dists/woody-proposed-updates_non-US/$(SECTION)_source.list";
+   FileList "/org/non-us.debian.org/database/dists/testing-proposed-updates_non-US/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/testing-proposed-updates_non-US/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
-   BinOverride "override.woody.$(SECTION)";
-   SrcOverride "override.woody.$(SECTION).src";
+   BinOverride "override.sarge.$(SECTION)";
+   SrcOverride "override.sarge.$(SECTION).src";
    Contents " ";
 };
 
@@ -51,16 +62,16 @@ tree "dists/unstable/non-US"
    SrcOverride "override.sid.$(SECTION).src";
 };
 
-bindirectory "dists/proposed-updates"
+bindirectory "dists/old-proposed-updates"
 {
 
-   FileList "/org/non-us.debian.org/database/dists/proposed-updates_-_all.list";
-   Packages "dists/proposed-updates/Packages";
-   Sources "dists/proposed-updates/Sources";
+   FileList "/org/non-us.debian.org/database/dists/old-proposed-updates_-_all.list";
+   Packages "dists/old-proposed-updates/Packages";
+   Sources "dists/old-proposed-updates/Sources";
    Contents " ";
 
    BinOverride "override.potato.all3";
-   BinCacheDB "packages-proposed-updates.db";
+   BinCacheDB "packages-old-proposed-updates.db";
    
    PathPrefix "";
 };

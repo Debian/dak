@@ -20,13 +20,22 @@ TreeDefault
    Contents::Header "/org/non-us.debian.org/katie/Contents.top";
 };
 
+tree "dists/oldstable/non-US"
+{
+   FileList "/org/non-us.debian.org/database/dists/oldstable_non-US/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/oldstable_non-US/$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm i386 m68k powerpc sparc source";
+   BinOverride "override.potato.$(SECTION)";
+   SrcOverride "override.potato.$(SECTION).src";
+};
+
 tree "dists/stable/non-US"
 {
    FileList "/org/non-us.debian.org/database/dists/stable_non-US/$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/org/non-us.debian.org/database/dists/stable_non-US/$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "alpha arm i386 m68k powerpc sparc source";
-   BinOverride "override.potato.$(SECTION)";
-   SrcOverride "override.potato.$(SECTION).src";
-   External-Links false;
+   Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
+   BinOverride "override.woody.$(SECTION)";
+   SrcOverride "override.woody.$(SECTION).src";
 };
