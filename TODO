@@ -60,6 +60,7 @@ Urgent
      @ handle (detect at least) symlinks to another package's doc directory
      @ handle and/or fall back on source files?
      @ check only NEW packages out of a source package with some NEW, some old
+     @ check latest version if given multiples!
 
   o To incorporate from utils:
      @ unreject
