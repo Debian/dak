@@ -7,3 +7,4 @@ Usernames do not contain ",". [julia]
 Password files do not contain ":" except as a field separator. [julia]
 Version numbers do not contain "~" [logging, charisma]
 suites are case-independent in conf files, but forced lower case in use
+components are case-sensitive
