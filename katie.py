@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.2 2002-02-15 01:48:20 troup Exp $
+# $Id: katie.py,v 1.3 2002-02-15 02:54:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -162,7 +162,8 @@ class Katie:
             d_changes[i] = changes[i];
         # Optional changes fields
         for i in [ "changed-by", "changedby822", "maintainer822", "filecontents" ]:
-            d_changes[i] = changes[i];
+            if d_changes.has_key(i):
+                d_changes[i] = changes[i];
         ## dsc
         for i in [ "source", "version", "maintainer", "fingerprint" ]:
             if dsc.has_key(i):
@@ -333,6 +334,7 @@ class Katie:
         files = self.pkg.files;
 
         print "Accepting."
+        self.Logger.log(["Accepting changes",self.pkg.changes_file]);
 
         self.dump_vars(Cnf["Dir::QueueAcceptedDir"]);
 

@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.1 2002-02-12 23:08:07 troup Exp $
+# $Id: jennifer,v 1.2 2002-02-15 02:54:22 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.1 $";
+jennifer_version = "$Revision: 1.2 $";
 
 Cnf = None;
 Options = None;
@@ -971,6 +971,7 @@ def accept (summary, short_summary):
 
 def do_byhand (summary):
     print "Moving to BYHAND holding area."
+    Logger.log(["Moving to byhand", pkg.changes_file]);
 
     Katie.dump_vars(Cnf["Dir::QueueByhandDir"]);
 
@@ -998,6 +999,7 @@ def acknowledge_new (summary):
     Subst = Katie.Subst;
 
     print "Moving to NEW holding area."
+    Logger.log(["Moving to new", pkg.changes_file]);
 
     Katie.dump_vars(Cnf["Dir::QueueNewDir"]);
 
@@ -1071,7 +1073,7 @@ def process_it (changes_file):
         raise;
     except:
         print "ERROR";
-	traceback.print_exc(file=sys.stdout);
+	traceback.print_exc(file=sys.stderr);
         pass;
 
     # Restore previous WD
@@ -1142,7 +1144,7 @@ def main():
         sets = "set"
         if accept_count > 1:
             sets = "sets"
-        sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))));
+        print "Accepted %d package %s, %s." % (accept_count, sets, utils.size_type(int(accept_bytes)));
         Logger.log(["total",accept_count,accept_bytes]);
 
     if not Options["No-Action"]:
