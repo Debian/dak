@@ -36,6 +36,9 @@
       The input format of extra files can either be in this form or in the old style which is similar, but lacking the version number, i.e.:
 <literallayout>package	maintainer</literallayout>
       Charisma will auto-detect the type of layout of the extra file.  If the extra file is in the old style format the records in it are assumed to supersed any that were seen earlier (i.e. either from earlier extra files or generated from the SQL).
+    </Para>
+    <para>
+      Charisma determines the maintainer of a package by comparing suite priority (see 'Configuration') and then version number.
     </PARA>
   </REFSECT1>
 
@@ -50,6 +53,19 @@
 
     </VariableList>
   </RefSect1>
+
+  <refsect1>
+    <title>Configuration</title>
+    <para><command>charisma</command> uses katie's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
+    <variablelist>
+      <varlistentry>
+	<term>Suite::&lt;SUITE&gt;::Priority</term>
+	<listitem>
+	  <para>Suite priority overrides the version checks charisma does.  A package in higher priority suite overrides versions in lower priority suites even if the version number in the higher priority suite is older.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
 
   <refsect1>
     <title>New versus Old output format</title>
