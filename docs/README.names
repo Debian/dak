@@ -1,4 +1,4 @@
-alyson - sync's the ISC-style configuration file with the SQL DB
+alyson - syncs the ISC-style configuration file with the SQL DB
 amber - 'installer' wrapper for security team
 andrea - looks for fixable descrepancies between stable and unstable
 ashley - display the contents of a .katie file
@@ -17,15 +17,15 @@ jeri - basic dependency checking for proposed-updates
 julia - Sync PostgreSQL users with (LDAP-generated) passwd file
 katie - installs packages into the pool
 lisa - processes NEW and BYHAND packages
-madison - shows which suites a binary package is in
-melanie - archive maintenance tool; removes packages from the distribution
-natalie - manpiulates override entries
+madison - shows which suites a package is in
+melanie - removes packages from suites
+natalie - manpiulates/list override entries
 neve - populates the SQL database
-rene - check for obsolete or duplicated binary packages and duplicate source packages
-rhona - cleans old packages out of the pool and the database
+rene - check for obsolete or duplicated packages
+rhona - cleans unused/superseded packages out of the pool and the database
 saffron - stats pr0n generator
 shania - cleans cruft from incoming
-tea - sanity checks the database
+tea - various sanity checks of the database and archive
 ziyi - creates Release files
 
 With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
@@ -64,6 +64,7 @@ Billie (Piper)
 Cameron (Diaz)
 Carly (Pope)
 Carrie (Ann Moss)
+Charlize (Theron)
 Emma (Thompson)
 Elisabeth (Shue)
 Eliza (Dushku)
@@ -72,14 +73,18 @@ Gail (Porter)
 Gillian (Anderson)
 Gwyneth (Paltrow)
 Heather (Graham)
+Holly (Valance)
 Jessica (Alba)
 Jewel (Kilcher)
 Kari (Wuhrer)
+Kristin (Kreuk)
 Kelly (Brook)
 Kim (Smith)
 Kirsten (Dunst)
 Lucy (Liu)
 Michelle (Hunziker)
+Naima (Belkhiati)
+Nicole (Appleton)
 Rebecca (Romijn-Stamos)
 Reese (Witherspoon)
 Rose (McGowan)

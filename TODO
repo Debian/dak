@@ -206,6 +206,7 @@ Less Urgent
   
  * Bizzare/uncertain:
    
+    o drop rather dubious currval stuff (?)
     o rationalize os.path.join() usage
     o Rene also doesn't seem to warn about missing binary packages (??)
     o logging: hostname + pid ?
