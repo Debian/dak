@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.28 2002-07-14 15:01:51 troup Exp $
+# $Id: melanie,v 1.29 2002-07-30 18:55:19 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@
 # o OpenBSD team decide to switch to different packet filter under BSD
 #    license. Because Project Goal: Every user should be able to make
 #    changes to source tree. IPF license bad!!
-# o Darren try get back: says, NetBSD, FreeBSD allowed! MUAHAHAHAH!!! 
-# o Theo say: no care, pf much better than ipf! 
+# o Darren try get back: says, NetBSD, FreeBSD allowed! MUAHAHAHAH!!!
+# o Theo say: no care, pf much better than ipf!
 # o Darren changes mind: changes license. But OpenBSD will not change
 #    back to ipf. Darren even much more bitter.
 # o Darren so bitterbitter. Decides: I'LL GET BACK BY FORKING OPENBSD AND
@@ -166,10 +166,14 @@ def main ():
                  utils.parse_args(Options);
 
     # Additional suite checks
+    suite_ids_list = [];
     suites = string.split(Options["Suite"]);
     suites_list = utils.join_with_commas_and(suites);
     if not Options["No-Action"]:
         for suite in suites:
+            suite_id = db_access.get_suite_id(suite);
+            if suite_id != -1:
+                suite_ids_list.append(suite_id);
             if suite == "stable":
                 print "**WARNING** About to remove from the stable suite!"
                 print "This should only be done just prior to a (point) release and not at"
@@ -364,7 +368,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + string.join(bcc, ", ");
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.28 $";
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.29 $";
         if carbon_copy:
             Subst["__CC__"] = Subst["__CC__"] + "\nCc: " + string.join(carbon_copy, ", ");
         Subst["__SUITE_LIST__"] = suites_list;
