@@ -29,5 +29,5 @@ Yes, this sucks and more of it should be automated.
 
 #######################################################
 
-update suite set version = '3.0r3' where suite_name = 'stable';
-update suite set description = 'Debian 3.0r3 Released 25th October 2004' where suite_name = 'stable';
+update suite set version = '3.0r4' where suite_name = 'stable';
+update suite set description = 'Debian 3.0r4 Released 31st December 2004' where suite_name = 'stable';
