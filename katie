@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Installs Debian packages
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.79 2002-04-24 01:56:24 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: katie,v 1.80 2002-05-08 11:52:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.79 $";
+katie_version = "$Revision: 1.80 $";
 
 Cnf = None;
 Options = None;
@@ -73,7 +73,7 @@ class Urgency_Log:
         self.Cnf = Cnf;
         self.timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()));
         # Create the log directory if it doesn't exist
-        self.log_dir = Cnf["Dir::UrgencyLogDir"];
+        self.log_dir = Cnf["Dir::UrgencyLog"];
         if not os.path.exists(self.log_dir):
             umask = os.umask(00000);
             os.makedirs(self.log_dir, 02775);
@@ -226,11 +226,11 @@ def do_reject ():
     Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"];
     Subst["__REJECT_MESSAGE__"] = reject_message;
     Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
-    reject_mail_message = utils.TemplateSubst(Subst,utils.open_file(Cnf["Dir::TemplatesDir"]+"/katie.unaccept").read());
+    reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.unaccept");
 
     # Write the rejection email out as the <foo>.reason file
     reason_filename = os.path.basename(pkg.changes_file[:-8]) + ".reason";
-    reject_filename = Cnf["Dir::QueueRejectDir"] + '/' + reason_filename;
+    reject_filename = Cnf["Dir::Queue::Reject"] + '/' + reason_filename;
     # If we fail here someone is probably trying to exploit the race
     # so let's just raise an exception ...
     if os.path.exists(reject_filename):
@@ -306,7 +306,7 @@ def install ():
             source_version = files[file]["source version"];
             filename = files[file]["pool name"] + file;
 	    if not files[file].has_key("location id") or not files[file]["location id"]:
-		files[file]["location id"] = db_access.get_location_id(Cnf["Dir::PoolDir"],files[file]["component"],utils.where_am_i());
+		files[file]["location id"] = db_access.get_location_id(Cnf["Dir::Pool"],files[file]["component"],utils.where_am_i());
             if not files[file].has_key("files id") or not files[file]["files id"]:
                 files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
             source_id = db_access.get_source_id (source, source_version);
@@ -337,7 +337,7 @@ def install ():
             legacy_filename = qid["path"]+qid["filename"];
             pool_location = utils.poolify (changes["source"], files[file]["component"]);
             pool_filename = pool_location + os.path.basename(qid["filename"]);
-            destination = Cnf["Dir::PoolDir"] + pool_location
+            destination = Cnf["Dir::Pool"] + pool_location
             utils.move(legacy_filename, destination);
             # Then Update the DB's files table
             q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, dsc_location_id, qid["files_id"]));
@@ -356,13 +356,13 @@ def install ():
         new_filename = utils.poolify(changes["source"], dsc_component) + os.path.basename(old_filename);
         new_files_id = db_access.get_files_id(new_filename, file_size, file_md5sum, dsc_location_id);
         if new_files_id == None:
-            utils.copy(old_filename, Cnf["Dir::PoolDir"] + new_filename);
+            utils.copy(old_filename, Cnf["Dir::Pool"] + new_filename);
             new_files_id = db_access.set_files_id(new_filename, file_size, file_md5sum, dsc_location_id);
             projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, source_id, orig_tar_id));
 
     # Install the files into the pool
     for file in files.keys():
-        destination = Cnf["Dir::PoolDir"] + files[file]["pool name"] + file;
+        destination = Cnf["Dir::Pool"] + files[file]["pool name"] + file;
         utils.move(file, destination);
         Logger.log(["installed", file, files[file]["type"], files[file]["size"], files[file]["architecture"]]);
         install_bytes = install_bytes + float(files[file]["size"]);
@@ -370,7 +370,7 @@ def install ():
     # Copy the .changes file across for suite which need it.
     for suite in changes["distribution"].keys():
         if Cnf.has_key("Suite::%s::CopyChanges" % (suite)):
-            utils.copy(pkg.changes_file, Cnf["Dir::RootDir"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
+            utils.copy(pkg.changes_file, Cnf["Dir::Root"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
         # and the .katie file...
         if Cnf.has_key("Suite::%s::CopyKatie" % (suite)):
             utils.copy(Katie.pkg.changes_file[:-8]+".katie", Cnf["Suite::%s::CopyKatie" % (suite)]);
@@ -379,13 +379,13 @@ def install ():
 
     # Move the .changes into the 'done' directory
     try:
-        utils.move (pkg.changes_file, os.path.join(Cnf["Dir::QueueDoneDir"], os.path.basename(pkg.changes_file)));
+        utils.move (pkg.changes_file, os.path.join(Cnf["Dir::Queue::Done"], os.path.basename(pkg.changes_file)));
     except:
         utils.warn("couldn't move changes file '%s' to DONE directory. [Got %s]" % (os.path.basename(pkg.changes_file), sys.exc_type));
 
     os.unlink(Katie.pkg.changes_file[:-8]+".katie");
 
-    if changes["architecture"].has_key("source"):
+    if changes["architecture"].has_key("source") and Urgency_Logger:
         Urgency_Logger.log(dsc["source"], dsc["version"], changes["urgency"]);
 
     # Undo the work done in katie.py(accept) to help auto-building
@@ -400,7 +400,7 @@ def install ():
             projectB.query("UPDATE unstable_accepted SET in_accepted = 'f', last_used = '%s' WHERE filename = '%s'" % (now_date, dest));
             # Update the symlink to point to the new location in the pool
             pool_location = utils.poolify (changes["source"], files[file]["component"]);
-            src = os.path.join(Cnf["Dir::PoolDir"], pool_location, os.path.basename(file));
+            src = os.path.join(Cnf["Dir::Pool"], pool_location, os.path.basename(file));
             os.unlink(dest);
             os.symlink(src, dest);
         # Update last_used on any non-upload .orig.tar.gz symlink
@@ -461,8 +461,8 @@ def stable_install (summary, short_summary):
     utils.move (pkg.changes_file, Cnf["Dir::Morgue"] + '/katie/' + os.path.basename(pkg.changes_file));
 
     ## Update the Stable ChangeLog file
-    new_changelog_filename = Cnf["Dir::RootDir"] + Cnf["Suite::Stable::ChangeLogBase"] + ".ChangeLog";
-    changelog_filename = Cnf["Dir::RootDir"] + Cnf["Suite::Stable::ChangeLogBase"] + "ChangeLog";
+    new_changelog_filename = Cnf["Dir::Root"] + Cnf["Suite::Stable::ChangeLogBase"] + ".ChangeLog";
+    changelog_filename = Cnf["Dir::Root"] + Cnf["Suite::Stable::ChangeLogBase"] + "ChangeLog";
     if os.path.exists(new_changelog_filename):
         os.unlink (new_changelog_filename);
 
@@ -489,7 +489,7 @@ def stable_install (summary, short_summary):
     if not Options["No-Mail"] and changes["architecture"].has_key("source"):
         Subst["__SUITE__"] = " into stable";
         Subst["__SUMMARY__"] = summary;
-        mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.installed","r").read());
+        mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.installed");
         utils.send_mail(mail_message, "");
         Katie.announce(short_summary, 1)
 
@@ -550,7 +550,7 @@ def main():
 
     # Check that we aren't going to clash with the daily cron job
 
-    if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Options["No-Lock"]:
+    if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::Root"])) and not Options["No-Lock"]:
         utils.fubar("Archive maintenance in progress.  Try again later.");
 
     # If running from within proposed-updates; assume an install to stable
@@ -562,7 +562,7 @@ def main():
         lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT);
         fcntl.lockf(lock_fd, FCNTL.F_TLOCK);
         Logger = Katie.Logger = logging.Logger(Cnf, "katie");
-        if not installing_to_stable:
+        if not installing_to_stable and Cnf.get("Dir::UrgencyLog"):
             Urgency_Logger = Urgency_Log(Cnf);
 
     # Initialize the substitution template mapping global
@@ -571,7 +571,8 @@ def main():
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
         Subst["__BCC__"] = bcc;
-    Subst["__STABLE_REJECTOR__"] = Cnf["Dinstall::StableRejector"];
+    if Cnf.has_key("Dinstall::StableRejector"):
+        Subst["__STABLE_REJECTOR__"] = Cnf["Dinstall::StableRejector"];
 
     # Sort the .changes files so that we process sourceful ones first
     changes_files.sort(utils.changes_compare);
@@ -590,8 +591,10 @@ def main():
 
     if not Options["No-Action"]:
         Logger.close();
-        if not installing_to_stable:
+        if Urgency_Logger:
             Urgency_Logger.close();
 
+###############################################################################
+
 if __name__ == '__main__':
-    main()
+    main();

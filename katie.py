@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Utility functions for katie
-# Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.17 2002-04-29 22:00:44 troup Exp $
+# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
+# $Id: katie.py,v 1.18 2002-05-08 11:52:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ class nmu_p:
         self.group_maint = {};
         self.Cnf = Cnf;
         if Cnf.get("Dinstall::GroupOverrideFilename"):
-            filename = Cnf["Dir::OverrideDir"] + Cnf["Dinstall::GroupOverrideFilename"];
+            filename = Cnf["Dir::Override"] + Cnf["Dinstall::GroupOverrideFilename"];
             file = utils.open_file(filename);
             for line in file.readlines():
                 line = lower(string.strip(utils.re_comments.sub('', line)));
@@ -152,7 +152,8 @@ class Katie:
             for i in [ "package", "version", "architecture", "type", "size",
                        "md5sum", "component", "location id", "source package",
                        "source version", "maintainer", "dbtype", "files id",
-                       "new", "section", "priority", "oldfiles", "othercomponents" ]:
+                       "new", "section", "priority", "oldfiles", "othercomponents",
+                       "pool name" ]:
                 if files[file].has_key(i):
                     d_files[file][i] = files[file][i];
         ## changes
@@ -216,6 +217,11 @@ class Katie:
         if self.Cnf.has_key("Dinstall::TrackingServer") and changes.has_key("source"):
             Subst["__MAINTAINER_TO__"] = Subst["__MAINTAINER_TO__"] + "\nBcc: %s@%s" % (changes["source"], self.Cnf["Dinstall::TrackingServer"])
 
+        # Apply any global override of the Maintainer field
+        if self.Cnf.get("Dinstall::OverrideMaintainer"):
+            Subst["__MAINTAINER_TO__"] = self.Cnf["Dinstall::OverrideMaintainer"];
+            Subst["__MAINTAINER_FROM__"] = self.Cnf["Dinstall::OverrideMaintainer"];
+
         Subst["__REJECT_MESSAGE__"] = reject_message;
         Subst["__SOURCE__"] = changes.get("source", "Unknown");
         Subst["__VERSION__"] = changes.get("version", "Unknown");
@@ -265,6 +271,53 @@ class Katie:
 
     ###########################################################################
 
+    def close_bugs (self, summary, action):
+        changes = self.pkg.changes;
+        Subst = self.Subst;
+        Cnf = self.Cnf;
+
+        bugs = changes["closes"].keys();
+
+        if not bugs:
+            return summary;
+
+        bugs.sort();
+        if not self.nmu.is_an_nmu(self.pkg):
+            summary = summary + "Closing bugs: ";
+            for bug in bugs:
+                summary = summary + "%s " % (bug);
+                if action:
+                    Subst["__BUG_NUMBER__"] = bug;
+                    if changes["distribution"].has_key("stable"):
+                        Subst["__STABLE_WARNING__"] = """
+Note that this package is not part of the released stable Debian
+distribution.  It may have dependencies on other unreleased software,
+or other instabilities.  Please take care if you wish to install it.
+The update will eventually make its way into the next released Debian
+distribution.""";
+                    else:
+                        Subst["__STABLE_WARNING__"] = "";
+                    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-close");
+                    utils.send_mail (mail_message, "");
+            if action:
+                self.Logger.log(["closing bugs"]+bugs);
+        else:                     # NMU
+            summary = summary + "Setting bugs to severity fixed: ";
+            control_message = "";
+            for bug in bugs:
+                summary = summary + "%s " % (bug);
+                control_message = control_message + "tag %s + fixed\n" % (bug);
+            if action and control_message != "":
+                Subst["__CONTROL_MESSAGE__"] = control_message;
+                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-nmu-fixed");
+                utils.send_mail (mail_message, "");
+            if action:
+                self.Logger.log(["setting bugs to fixed"]+bugs);
+        summary = summary + "\n";
+        return summary;
+
+    ###########################################################################
+
     def announce (self, short_summary, action):
         Subst = self.Subst;
         Cnf = self.Cnf;
@@ -273,62 +326,30 @@ class Katie:
 
         # Only do announcements for source uploads with a recent dpkg-dev installed
         if float(changes.get("format", 0)) < 1.6 or not changes["architecture"].has_key("source"):
-            return ""
+            return "";
 
-        lists_done = {}
-        summary = ""
+        lists_done = {};
+        summary = "";
         Subst["__SHORT_SUMMARY__"] = short_summary;
 
         for dist in changes["distribution"].keys():
-            list = Cnf.Find("Suite::%s::Announce" % (dist))
+            list = Cnf.Find("Suite::%s::Announce" % (dist));
             if list == "" or lists_done.has_key(list):
-                continue
-            lists_done[list] = 1
-            summary = summary + "Announcing to %s\n" % (list)
+                continue;
+            lists_done[list] = 1;
+            summary = summary + "Announcing to %s\n" % (list);
 
             if action:
                 Subst["__ANNOUNCE_LIST_ADDRESS__"] = list;
                 if Cnf.get("Dinstall::TrackingServer") and changes["architecture"].has_key("source"):
-                    Subst["__ANNOUNCE_LIST_ADDRESS__"] = Subst["__ANNOUNCE_LIST_ADDRESS__"] + "\nBcc: %s@%s" % (changes["source"], Cnf["Dinstall::TrackingServer"])
-                mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/jennifer.announce","r").read());
-                utils.send_mail (mail_message, "")
+                    Subst["__ANNOUNCE_LIST_ADDRESS__"] = Subst["__ANNOUNCE_LIST_ADDRESS__"] + "\nBcc: %s@%s" % (changes["source"], Cnf["Dinstall::TrackingServer"]);
+                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.announce");
+                utils.send_mail (mail_message, "");
 
-        bugs = changes["closes"].keys()
-        bugs.sort()
-        if not self.nmu.is_an_nmu(self.pkg):
-            summary = summary + "Closing bugs: "
-            for bug in bugs:
-                summary = summary + "%s " % (bug)
-                if action:
-                    Subst["__BUG_NUMBER__"] = bug;
-                    if changes["distribution"].has_key("stable"):
-                        Subst["__STABLE_WARNING__"] = """
-    Note that this package is not part of the released stable Debian
-    distribution.  It may have dependencies on other unreleased software,
-    or other instabilities.  Please take care if you wish to install it.
-    The update will eventually make its way into the next released Debian
-    distribution."""
-                    else:
-                        Subst["__STABLE_WARNING__"] = "";
-                    mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/jennifer.bug-close","r").read());
-                    utils.send_mail (mail_message, "")
-            if action:
-                self.Logger.log(["closing bugs"]+bugs);
-        else:                     # NMU
-            summary = summary + "Setting bugs to severity fixed: "
-            control_message = ""
-            for bug in bugs:
-                summary = summary + "%s " % (bug)
-                control_message = control_message + "tag %s + fixed\n" % (bug)
-            if action and control_message != "":
-                Subst["__CONTROL_MESSAGE__"] = control_message;
-                mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/jennifer.bug-nmu-fixed","r").read());
-                utils.send_mail (mail_message, "")
-            if action:
-                self.Logger.log(["setting bugs to fixed"]+bugs);
-        summary = summary + "\n"
+        if Cnf.get("Dinstall::CloseBugs"):
+            summary = self.close_bugs(summary, action);
 
-        return summary
+        return summary;
 
     ###########################################################################
 
@@ -340,13 +361,13 @@ class Katie:
         print "Accepting."
         self.Logger.log(["Accepting changes",self.pkg.changes_file]);
 
-        self.dump_vars(Cnf["Dir::QueueAcceptedDir"]);
+        self.dump_vars(Cnf["Dir::Queue::Accepted"]);
 
         # Move all the files into the accepted directory
-        utils.move(self.pkg.changes_file, Cnf["Dir::QueueAcceptedDir"]);
+        utils.move(self.pkg.changes_file, Cnf["Dir::Queue::Accepted"]);
         file_keys = files.keys();
         for file in file_keys:
-            utils.move(file, Cnf["Dir::QueueAcceptedDir"]);
+            utils.move(file, Cnf["Dir::Queue::Accepted"]);
             self.accept_bytes = self.accept_bytes + float(files[file]["size"])
         self.accept_count = self.accept_count + 1;
 
@@ -355,16 +376,16 @@ class Katie:
         if not Cnf["Dinstall::Options::No-Mail"]:
             Subst["__SUITE__"] = "";
             Subst["__SUMMARY__"] = summary;
-            mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/jennifer.accepted","r").read());
+            mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.accepted");
             utils.send_mail(mail_message, "")
             self.announce(short_summary, 1)
 
         # Special support to enable clean auto-building of accepted packages
-        if Cnf.get("Dinstall::SpecialAcceptedAutoBuild") and \
+        if Cnf.FindB("Dinstall::SpecialAcceptedAutoBuild") and \
            self.pkg.changes["distribution"].has_key("unstable"):
             self.projectB.query("BEGIN WORK");
             for file in file_keys:
-                src = os.path.join(Cnf["Dir::QueueAcceptedDir"], file);
+                src = os.path.join(Cnf["Dir::Queue::Accepted"], file);
                 dest = os.path.join(Cnf["Dir::AcceptedAutoBuild"], file);
                 # Create a symlink to it
                 os.symlink(src, dest);
@@ -398,9 +419,15 @@ class Katie:
         Subst = self.Subst;
         changes = self.pkg.changes;
         files = self.pkg.files;
+        Cnf = self.Cnf;
 
-        # Only check section & priority on sourceful uploads
-        if not changes["architecture"].has_key("source"):
+        # Abandon the check if:
+        #  a) it's a non-sourceful upload
+        #  b) override disparity checks have been disabled
+        #  c) we're not sending mail
+        if not changes["architecture"].has_key("source") or \
+           not Cnf.FindB("Dinstall::OverrideDisparityCheck") or \
+           Cnf["Dinstall::Options::No-Mail"]:
             return;
 
         summary = "";
@@ -422,7 +449,7 @@ class Katie:
             return;
 
         Subst["__SUMMARY__"] = summary;
-        mail_message = utils.TemplateSubst(Subst,utils.open_file(self.Cnf["Dir::TemplatesDir"]+"/jennifer.override-disparity").read());
+        mail_message = utils.TemplateSubst(Subst,self.Cnf["Dir::Templates"]+"/jennifer.override-disparity");
         utils.send_mail (mail_message, "");
 
     ###########################################################################
@@ -438,13 +465,13 @@ class Katie:
             # Skip any files which don't exist or which we don't have permission to copy.
             if os.access(file,os.R_OK) == 0:
                 continue;
-            dest_file = os.path.join(Cnf["Dir::QueueRejectDir"], file);
+            dest_file = os.path.join(Cnf["Dir::Queue::Reject"], file);
             try:
                 os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
             except OSError, e:
                 # File exists?  Let's try and move it to the morgue
                 if errno.errorcode[e.errno] == 'EEXIST':
-                    morgue_file = os.path.join(Cnf["Dir::Morgue"],Cnf["Dir::MorgueRejectDir"],file);
+                    morgue_file = os.path.join(Cnf["Dir::Morgue"],Cnf["Dir::MorgueReject"],file);
                     try:
                         morgue_file = utils.find_next_free(morgue_file);
                     except utils.tried_too_hard_exc:
@@ -504,7 +531,7 @@ class Katie:
         pkg = self.pkg;
 
         reason_filename = pkg.changes_file[:-8] + ".reason";
-        reject_filename = Cnf["Dir::QueueRejectDir"] + '/' + reason_filename;
+        reject_filename = Cnf["Dir::Queue::Reject"] + '/' + reason_filename;
 
         # Move all the files into the reject directory
         reject_files = pkg.files.keys() + [pkg.changes_file];
@@ -522,7 +549,7 @@ class Katie:
             Subst["__CC__"] = "X-Katie-Rejection: automatic (moo)";
             os.write(fd, reject_message);
             os.close(fd);
-            reject_mail_message = utils.TemplateSubst(Subst,utils.open_file(Cnf["Dir::TemplatesDir"]+"/katie.rejected").read());
+            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.rejected");
         else:
             # Build up the rejection email
             user_email_address = utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"]);
@@ -530,7 +557,7 @@ class Katie:
             Subst["__REJECTOR_ADDRESS__"] = user_email_address;
             Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message;
             Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
-            reject_mail_message = utils.TemplateSubst(Subst,utils.open_file(Cnf["Dir::TemplatesDir"]+"/katie.rejected").read());
+            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.rejected");
 
             # Write the rejection email out as the <foo>.reason file
             os.write(fd, reject_mail_message);
@@ -684,7 +711,7 @@ class Katie:
                 actual_size = int(files[dsc_file]["size"]);
                 found = "%s in incoming" % (dsc_file)
                 # Check the file does not already exist in the archive
-                q = self.projectB.query("SELECT f.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
+                q = self.projectB.query("SELECT f.size, f.md5sum FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
 
                 # "It has not broken them.  It has fixed a
                 # brokenness.  Your crappy hack exploited a bug in
@@ -695,8 +722,19 @@ class Katie:
                 # the same name and version.)"
                 #                        -- ajk@ on d-devel@l.d.o
 
-                if q.getresult() != []:
-                    self.reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_file));
+                ql = q.getresult();
+                if ql:
+                    match = 0;
+                    if dsc_file[-12:] == ".orig.tar.gz":
+                        for i in ql:
+                            if int(files[dsc_file]["size"]) == int(i[0]) and \
+                               files[dsc_file]["md5sum"] == i[1]:
+                                self.reject("ignoring %s, since it's already in the archive." % (dsc_file), "Warning: ");
+                                del files[dsc_file];
+                                match = 1;
+
+                    if not match:
+                        self.reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_file));
             elif dsc_file[-12:] == ".orig.tar.gz":
                 # Check in the pool
                 q = self.projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE (f.filename ~ '/%s$' OR f.filename = '%s') AND l.id = f.location" % (utils.regex_safe(dsc_file), dsc_file));
@@ -735,13 +773,13 @@ class Katie:
                 else:
                     # Not there? Check the queue directories...
 
-                    in_unchecked = os.path.join(self.Cnf["Dir::QueueUncheckedDir"],dsc_file);
+                    in_unchecked = os.path.join(self.Cnf["Dir::Queue::Unchecked"],dsc_file);
                     # See process_it() in jennifer for explanation of this
                     if os.path.exists(in_unchecked):
                         return (self.reject_message, in_unchecked);
                     else:
                         for dir in [ "Accepted", "New", "Byhand" ]:
-                            in_otherdir = os.path.join(self.Cnf["Dir::Queue%sDir" % (dir)],dsc_file);
+                            in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (dir)],dsc_file);
                             if os.path.exists(in_otherdir):
                                 actual_md5 = apt_pkg.md5sum(utils.open_file(in_otherdir));
                                 actual_size = os.stat(in_otherdir)[stat.ST_SIZE];

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Checks Debian packages from Incoming
-# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.15 2002-04-22 11:06:57 troup Exp $
+# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
+# $Id: jennifer,v 1.16 2002-05-08 11:52:31 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@ import apt_inst, apt_pkg;
 import db_access, katie, logging, utils;
 
 from types import *;
-from string import lower;
 
 ################################################################################
 
@@ -44,7 +43,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.15 $";
+jennifer_version = "$Revision: 1.16 $";
 
 Cnf = None;
 Options = None;
@@ -295,7 +294,7 @@ def copy_to_holding(filename):
 
     base_filename = os.path.basename(filename);
 
-    dest = Cnf["Dir::QueueHoldingDir"] + '/' + base_filename;
+    dest = Cnf["Dir::Queue::Holding"] + '/' + base_filename;
     try:
         fd = os.open(dest, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0640);
         os.close(fd);
@@ -332,7 +331,7 @@ def clean_holding():
     global in_holding;
 
     cwd = os.getcwd();
-    os.chdir(Cnf["Dir::QueueHoldingDir"]);
+    os.chdir(Cnf["Dir::Queue::Holding"]);
     for file in in_holding.keys():
         if os.path.exists(file):
             if string.find(file, '/') != -1:
@@ -398,51 +397,6 @@ def check_changes():
             if katie.re_isanum.match (i) == None:
                 reject("`%s' from Closes field isn't a number." % (i));
 
-    # Ensure there is a target distribution
-    if changes["distribution"].keys() == []:
-        reject("huh? Distribution field is empty in changes file.");
-
-    # Map frozen to unstable if frozen doesn't exist
-    if changes["distribution"].has_key("frozen") and not Cnf.has_key("Suite::Frozen"):
-        del changes["distribution"]["frozen"]
-        changes["distribution"]["unstable"] = 1;
-        reject("Mapping frozen to unstable.","");
-
-    # Map testing to unstable
-    if changes["distribution"].has_key("testing"):
-        if len(changes["distribution"].keys()) > 1:
-            del changes["distribution"]["testing"];
-            reject("Ignoring testing as a target suite.", "Warning: ");
-        else:
-            reject("invalid distribution 'testing'.");
-
-    # Ensure target distributions exist
-    for i in changes["distribution"].keys():
-        if not Cnf.has_key("Suite::%s" % (i)):
-            reject("Unknown distribution `%s'." % (i));
-
-    # Map unreleased arches from stable to unstable
-    if changes["distribution"].has_key("stable"):
-        for i in changes["architecture"].keys():
-            if not Cnf.has_key("Suite::Stable::Architectures::%s" % (i)):
-                reject("Mapping stable to unstable for unreleased arch %s." % (i),"");
-                del changes["distribution"]["stable"];
-                changes["distribution"]["unstable"] = 1;
-                break;
-
-    # Map arches not being released from frozen to unstable
-    if changes["distribution"].has_key("frozen"):
-        for i in changes["architecture"].keys():
-            if not Cnf.has_key("Suite::Frozen::Architectures::%s" % (i)):
-                reject("Mapping frozen to unstable for non-releasing arch `%s'." % (i),"");
-                del changes["distribution"]["frozen"]
-                changes["distribution"]["unstable"] = 1;
-
-    # Map stable uploads to proposed-updates
-    if changes["distribution"].has_key("stable"):
-        reject("Mapping stable to updates.","");
-        del changes["distribution"]["stable"];
-        changes["distribution"]["proposed-updates"] = 1;
 
     # chopversion = no epoch; chopversion2 = no epoch and no revision (e.g. for .orig.tar.gz comparison)
     changes["chopversion"] = utils.re_no_epoch.sub('', changes["version"])
@@ -452,10 +406,50 @@ def check_changes():
     # of the queue directories.
     base_filename = os.path.basename(filename);
     for dir in [ "Accepted", "Byhand", "Done", "New" ]:
-        if os.path.exists(Cnf["Dir::Queue%sDir" % (dir) ]+'/'+base_filename):
+        if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+base_filename):
             reject("a changes file with the same name already exists in the %s directory." % (dir));
 
     return 1;
+
+################################################################################
+
+def check_distributions():
+    "Check and map the Distribution field of a .changes file."
+
+    # Handle suite mappings
+    if Cnf.has_key("SuiteMappings"):
+        for map in Cnf.ValueList("SuiteMappings"):
+            args = string.split(map);
+            type = args[0];
+            if type == "map":
+                (source, dest) = args[1:3];
+                if changes["distribution"].has_key(source):
+                    del changes["distribution"][source]
+                    changes["distribution"][dest] = 1;
+                    reject("Mapping %s to %s." % (source, dest),"");
+            elif type == "map-unreleased":
+                (source, dest) = args[1:3];
+                if changes["distribution"].has_key(source):
+                    for arch in changes["architecture"].keys():
+                        if not Cnf.has_key("Suite::%s::Architectures::%s" % (source, arch)):
+                            reject("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch),"");
+                            del changes["distribution"][source];
+                            changes["distribution"][dest] = 1;
+                            break;
+            elif type == "ignore":
+                suite = args[1];
+                if changes["distribution"].has_key(suite):
+                    del changes["distribution"][suite];
+                    reject("Ignoring %s as a target suite." % (suite), "Warning: ");
+
+    # Ensure there is (still) a target distribution
+    if changes["distribution"].keys() == []:
+        reject("no valid distribution.");
+
+    # Ensure target distributions exist
+    for suite in changes["distribution"].keys():
+        if not Cnf.has_key("Suite::%s" % (suite)):
+            reject("Unknown distribution `%s'." % (suite));
 
 ################################################################################
 
@@ -480,7 +474,7 @@ def check_files():
     for file in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
         for dir in [ "Accepted", "Byhand", "New" ]:
-            if os.path.exists(Cnf["Dir::Queue%sDir" % (dir) ]+'/'+file):
+            if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+file):
                 reject("%s file already exists in the %s directory." % (file, dir));
         if not utils.re_taint_free.match(file):
             reject("!!WARNING!! tainted filename: '%s'." % (file));
@@ -524,7 +518,8 @@ def check_files():
                 reject("%s: control file lists name as `%s', which isn't in changes file." % (file, control.Find("Package", "")));
 
             # Ensure the architecture of the .deb is one we know about.
-            if not Cnf.has_key("Suite::Unstable::Architectures::%s" % (control.Find("Architecture", ""))):
+            default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
+            if not Cnf.has_key("Suite::%s::Architectures::%s" % (default_suite, control.Find("Architecture", ""))):
                 reject("Unknown architecture '%s'." % (control.Find("Architecture", "")));
 
             # Ensure the architecture of the .deb is one of the ones
@@ -591,11 +586,11 @@ def check_files():
                     # Check in one of the other directories
                     source_epochless_version = utils.re_no_epoch.sub('', source_version);
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version);
-                    if os.path.exists(Cnf["Dir::QueueByhandDir"] + '/' + dsc_filename):
+                    if os.path.exists(Cnf["Dir::Queue::Byhand"] + '/' + dsc_filename):
                         files[file]["byhand"] = 1;
-                    elif os.path.exists(Cnf["Dir::QueueNewDir"] + '/' + dsc_filename):
+                    elif os.path.exists(Cnf["Dir::Queue::New"] + '/' + dsc_filename):
                         files[file]["new"] = 1;
-                    elif not os.path.exists(Cnf["Dir::QueueAcceptedDir"] + '/' + dsc_filename):
+                    elif not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
                         reject("no source found for %s %s (%s)." % (source_package, source_version, file));
 
         # Checks for a source package...
@@ -664,7 +659,7 @@ def check_files():
                 reject("file '%s' has invalid priority '%s' [contains '/']." % (file, files[file]["priority"]));
 
             # Determine the location
-            location = Cnf["Dir::PoolDir"];
+            location = Cnf["Dir::Pool"];
             location_id = db_access.get_location_id (location, component, archive);
             if location_id == -1:
                 reject("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive));
@@ -797,7 +792,7 @@ def check_urgency ():
         if not Cnf.has_key("Urgency::Valid::%s" % changes["urgency"]):
             reject("%s is not a valid urgency; it will be treated as %s by testing." % (changes["urgency"], Cnf["Urgency::Default"]), "Warning: ");
             changes["urgency"] = Cnf["Urgency::Default"];
-        changes["urgency"] = lower(changes["urgency"]);
+        changes["urgency"] = string.lower(changes["urgency"]);
 
 ################################################################################
 
@@ -963,10 +958,7 @@ def action ():
 
 def accept (summary, short_summary):
     Katie.accept(summary, short_summary);
-
-    # Check for override disparities
-    if not Cnf["Dinstall::Options::No-Mail"]:
-        Katie.check_override();
+    Katie.check_override();
 
     # Finally, remove the originals from the unchecked directory
     os.chdir (pkg.directory);
@@ -980,19 +972,18 @@ def do_byhand (summary):
     print "Moving to BYHAND holding area."
     Logger.log(["Moving to byhand", pkg.changes_file]);
 
-    Katie.dump_vars(Cnf["Dir::QueueByhandDir"]);
+    Katie.dump_vars(Cnf["Dir::Queue::Byhand"]);
 
     file_keys = files.keys();
 
     # Move all the files into the byhand directory
-    utils.move (pkg.changes_file, Cnf["Dir::QueueByhandDir"]);
+    utils.move (pkg.changes_file, Cnf["Dir::Queue::Byhand"]);
     for file in file_keys:
-        utils.move (file, Cnf["Dir::QueueByhandDir"], perms=0660);
+        utils.move (file, Cnf["Dir::Queue::Byhand"], perms=0660);
 
     # Check for override disparities
-    if not Cnf["Dinstall::Options::No-Mail"]:
-        Katie.Subst["__SUMMARY__"] = summary;
-        Katie.check_override();
+    Katie.Subst["__SUMMARY__"] = summary;
+    Katie.check_override();
 
     # Finally remove the originals.
     os.chdir (pkg.directory);
@@ -1008,19 +999,19 @@ def acknowledge_new (summary):
     print "Moving to NEW holding area."
     Logger.log(["Moving to new", pkg.changes_file]);
 
-    Katie.dump_vars(Cnf["Dir::QueueNewDir"]);
+    Katie.dump_vars(Cnf["Dir::Queue::New"]);
 
     file_keys = files.keys();
 
-    # Move all the files into the accepted directory
-    utils.move (pkg.changes_file, Cnf["Dir::QueueNewDir"]);
+    # Move all the files into the 'new' directory
+    utils.move (pkg.changes_file, Cnf["Dir::Queue::New"]);
     for file in file_keys:
-        utils.move (file, Cnf["Dir::QueueNewDir"], perms=0660);
+        utils.move (file, Cnf["Dir::Queue::New"], perms=0660);
 
     if not Options["No-Mail"]:
         print "Sending new ack.";
         Subst["__SUMMARY__"] = summary;
-        new_ack_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/jennifer.new","r").read());
+        new_ack_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.new");
         utils.send_mail(new_ack_message,"");
 
     # Finally remove the originals.
@@ -1060,7 +1051,7 @@ def process_it (changes_file):
         # If this is the Real Thing(tm), copy things into a private
         # holding directory first to avoid replacable file races.
         if not Options["No-Action"]:
-            os.chdir(Cnf["Dir::QueueHoldingDir"]);
+            os.chdir(Cnf["Dir::Queue::Holding"]);
             copy_to_holding(pkg.changes_file);
             # Relativize the filename so we use the copy in holding
             # rather than the original...
@@ -1069,6 +1060,7 @@ def process_it (changes_file):
         changes_valid = check_changes();
         if changes_valid:
             while reprocess:
+                check_distributions();
                 check_files();
                 check_md5sums();
                 check_dsc();
@@ -1116,7 +1108,7 @@ def main():
 
     # Check that we aren't going to clash with the daily cron job
 
-    if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Options["No-Lock"]:
+    if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::Root"])) and not Options["No-Lock"]:
         utils.fubar("Archive maintenance in progress.  Try again later.");
 
     # Obtain lock if not in no-action mode and initialize the log
