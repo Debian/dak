@@ -9,6 +9,10 @@ export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 . $SCRIPTVARS
 
 if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
+        cd $overridedir
+        denise
+        rm -f override.sid.all3
+        for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
 	cd $masterdir
 	cameron
 	apt-ftparchive -qq generate apt.conf.buildd
