@@ -2,7 +2,7 @@
 
 # Sync the ISC configuartion file and the SQL database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: alyson,v 1.4 2001-03-20 00:28:11 troup Exp $
+# $Id: alyson,v 1.5 2001-09-27 14:42:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,11 +31,17 @@ projectB = None;
 
 ################################################################################
 
+def get (c, i):
+    if c.has_key(i):
+        return "'%s'" % (c[i]);
+    else:
+        return "NULL";
+
 def main ():
     global Cnf, projectB;
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
     Arguments = [('D',"debug","Alyson::Options::Debug", "IntVal"),
@@ -46,19 +52,94 @@ def main ():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
-    # Quick hack to populate section, priority and bin_type; the rest todo later
+    # archive
+
+    projectB.query("BEGIN WORK");
+    projectB.query("DELETE FROM archive");
+    for name in Cnf.SubTree("Archive").List():
+        Archive = Cnf.SubTree("Archive::%s" % (name));
+        origin_server = get(Archive, "OriginServer");
+        description = get(Archive, "Description");
+        projectB.query("INSERT INTO archive (name, origin_server, description) VALUES ('%s', %s, %s)" % (name, origin_server, description));
+    projectB.query("COMMIT WORK");
+
+    # architecture
+
+    projectB.query("BEGIN WORK");
+    projectB.query("DELETE FROM architecture");
+    for arch in Cnf.SubTree("Architectures").List():
+        description = Cnf["Architectures::%s" % (arch)];
+        projectB.query("INSERT INTO architecture (arch_string, description) VALUES ('%s', '%s')" % (arch, description));
+    projectB.query("COMMIT WORK");
+
+    # component
+
+    projectB.query("BEGIN WORK");
+    projectB.query("DELETE FROM component");
+    for name in Cnf.SubTree("Component").List():
+        Component = Cnf.SubTree("Component::%s" % (name));
+        description = get(Component, "Description");
+        if string.lower(Component.get("MeetsDFSG")) == "true":
+            meets_dfsg = "true";
+        else:
+            meets_dfsg = "false";
+        projectB.query("INSERT INTO component (name, description, meets_dfsg) VALUES ('%s', %s, %s)" % (name, description, meets_dfsg));
+    projectB.query("COMMIT WORK");
+
+    # location
+
+    projectB.query("BEGIN WORK");
+    projectB.query("DELETE FROM location");
+    for location in Cnf.SubTree("Location").List():
+        Location = Cnf.SubTree("Location::%s" % (location));
+        archive_id = db_access.get_archive_id(Location["Archive"]);
+        type = Location.get("type");
+        if type == "legacy-mixed":
+            projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, Location["type"]));
+        elif type == "legacy" or type == "pool":
+            for component in Cnf.SubTree("Component").List():
+                component_id = db_access.get_component_id(component);
+                projectB.query("INSERT INTO location (path, component, archive, type) VALUES ('%s', %d, %d, '%s')" %
+                               (location, component_id, archive_id, type));
+        else:
+            utils.fubar("E: type '%s' not recognised in location %s." % (type, location));
+    projectB.query("COMMIT WORK");
+
+    # suite
+
+    projectB.query("BEGIN WORK");
+    projectB.query("DELETE FROM suite")
+    for suite in Cnf.SubTree("Suite").List():
+        Suite = Cnf.SubTree("Suite::%s" %(suite))
+        version = get(Suite, "Version");
+        origin = get(Suite, "Origin");
+        description = get(Suite, "Description");
+        projectB.query("INSERT INTO suite (suite_name, version, origin, description) VALUES ('%s', %s, %s, %s)"
+                       % (string.lower(suite), version, origin, description));
+        for architecture in Cnf.SubTree("Suite::%s::Architectures" % (suite)).List():
+            architecture_id = db_access.get_architecture_id (architecture);
+            if architecture_id < 0:
+                utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite));
+            projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id));
+    projectB.query("COMMIT WORK");
+
+    # override_type
 
     projectB.query("BEGIN WORK");
     projectB.query("DELETE FROM override_type");
     for type in Cnf.SubTree("OverrideType").List():
         projectB.query("INSERT INTO override_type (type) VALUES ('%s')" % (type));
     projectB.query("COMMIT WORK");
-    
+
+    # priority
+
     projectB.query("BEGIN WORK");
     projectB.query("DELETE FROM priority");
     for priority in Cnf.SubTree("Priority").List():
         projectB.query("INSERT INTO priority (priority, level) VALUES ('%s', %s)" % (priority, Cnf["Priority::%s" % (priority)]));
     projectB.query("COMMIT WORK");
+
+    # section
 
     projectB.query("BEGIN WORK");
     projectB.query("DELETE FROM section");
@@ -79,8 +160,6 @@ def main ():
         for section in Cnf.SubTree("Section").List():
             projectB.query("INSERT INTO section (section) VALUES ('%s%s%s')" % (prefix, section, suffix));
     projectB.query("COMMIT WORK");
-
-
 
 #######################################################################################
 
