@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Manually reject packages for proprosed-updates
-# Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: lauren,v 1.3 2003-11-20 02:37:25 troup Exp $
+# Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: lauren,v 1.4 2004-04-01 17:13:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,14 +20,14 @@
 
 ################################################################################
 
-import os, pg, sys, tempfile;
+import os, pg, sys;
 import db_access, katie, logging, utils;
 import apt_pkg;
 
 ################################################################################
 
 # Globals
-lauren_version = "$Revision: 1.3 $";
+lauren_version = "$Revision: 1.4 $";
 
 Cnf = None;
 Options = None;
@@ -123,9 +123,7 @@ def reject (reject_message = ""):
     # If we weren't given a manual rejection message, spawn an editor
     # so the user can add one in...
     if not reject_message:
-        temp_filename = tempfile.mktemp();
-        fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
-        os.close(fd);
+        temp_filename = utils.temp_filename();
         editor = os.environ.get("EDITOR","vi")
         answer = 'E';
         while answer == 'E':

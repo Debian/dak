@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.29 2004-03-11 00:14:32 troup Exp $
+# $Id: lisa,v 1.30 2004-04-01 17:13:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,12 +37,12 @@
 
 ################################################################################
 
-import copy, errno, os, readline, stat, sys, tempfile;
+import copy, errno, os, readline, stat, sys;
 import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.29 $";
+lisa_version = "$Revision: 1.30 $";
 
 Cnf = None;
 Options = None;
@@ -394,9 +394,7 @@ def index_range (index):
 
 def edit_new (new):
     # Write the current data to a temporary file
-    temp_filename = tempfile.mktemp();
-    fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
-    os.close(fd);
+    temp_filename = utils.temp_filename();
     temp_file = utils.open_file(temp_filename, 'w');
     print_new (new, 0, temp_file);
     temp_file.close();
@@ -542,9 +540,7 @@ def edit_overrides (new):
 
 def edit_note(note):
     # Write the current data to a temporary file
-    temp_filename = tempfile.mktemp();
-    fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
-    os.close(fd);
+    temp_filename = utils.temp_filename();
     temp_file = utils.open_file(temp_filename, 'w');
     temp_file.write(note);
     temp_file.close();
@@ -648,9 +644,7 @@ def add_overrides (new):
 
 def prod_maintainer ():
     # Here we prepare an editor and get them ready to prod...
-    temp_filename = tempfile.mktemp();
-    fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
-    os.close(fd);
+    temp_filename = utils.temp_filename();
     editor = os.environ.get("EDITOR","vi")
     answer = 'E';
     while answer == 'E':
@@ -670,7 +664,7 @@ def prod_maintainer ():
             answer = answer[:1].upper();
         os.unlink(temp_filename);
         if answer == 'A':
-            return 1;
+            return;
         elif answer == 'Q':
             sys.exit(0);
     # Otherwise, do the proding...
@@ -678,7 +672,7 @@ def prod_maintainer ():
         Cnf["Dinstall::MyAdminAddress"]);
 
     Subst = Katie.Subst;
-    
+
     Subst["__FROM_ADDRESS__"] = user_email_address;
     Subst["__PROD_MESSAGE__"] = prod_message;
     Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];

@@ -2,7 +2,7 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.64 2004-03-11 00:20:51 troup Exp $
+# $Id: utils.py,v 1.65 2004-04-01 17:13:10 troup Exp $
 
 ################################################################################
 
@@ -925,6 +925,29 @@ def clean_symlink (src, dest, root):
     dest = os.path.dirname(dest);
     new_src = '../' * len(dest.split('/'));
     return new_src + src;
+
+################################################################################
+
+def temp_filename(directory=None, dotprefix=None, perms=0700):
+    """Return a secure and unique filename by pre-creating it.
+If 'directory' is non-null, it will be the directory the file is pre-created in.
+If 'dotprefix' is non-null, the filename will be prefixed with a '.'."""
+
+    if directory:
+        old_tempdir = tempfile.tempdir;
+        tempfile.tempdir = directory;
+
+    filename = tempfile.mktemp();
+
+    if dotprefix:
+        filename = "%s/.%s" % (os.path.dirname(filename), os.path.basename(filename));
+    fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, perms);
+    os.close(fd);
+
+    if directory:
+        tempfile.tempdir = old_tempdir;
+
+    return filename;
 
 ################################################################################
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # General purpose package removal tool for ftpmaster
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.39 2003-05-02 13:53:57 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: melanie,v 1.40 2004-04-01 17:13:11 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@
 
 ################################################################################
 
-import commands, os, pg, re, sys, tempfile
-import utils, db_access
+import commands, os, pg, re, sys;
+import utils, db_access;
 import apt_pkg, apt_inst;
 
 ################################################################################
@@ -262,9 +262,7 @@ def main ():
     # If we don't have a reason; spawn an editor so the user can add one
     # Write the rejection email out as the <foo>.reason file
     if not Options["Reason"] and not Options["No-Action"]:
-        temp_filename = tempfile.mktemp();
-        fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
-        os.close(fd);
+        temp_filename = utils.temp_filename();
         editor = os.environ.get("EDITOR","vi")
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
@@ -377,7 +375,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.39 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.40 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;
