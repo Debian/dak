@@ -6,18 +6,17 @@ Urgent
 Less Urgent
 -----------
 
-  o CD building scripts need fixing
+  o Need to merge non-non-US and non-US DBs.
+  o need a poolifier that will poolify X mb a day.. (catherine)
+  o Need to vacuum daily
+
+  == 
 
   o Log files for jenna, rhona and katie.
   o Optimize all the queries by using EXAMINE and building some INDEXs.
   o enclose all the setting SQL stuff in transactions (mostly done).
-  o clear out maintainers table
   o jenna needs to use order by to keep aj from going nutzo
-
-  == 
-
-  o need a poolifier that will poolify X mb a day.. (catherine)
-  o Need to merge non-non-US and non-US DBs.
+  o remove empty directories in the pool
 
   == 
 

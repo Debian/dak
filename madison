@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+
+# 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: madison,v 1.1 2000-12-20 08:15:35 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+#   And, lo, a great and menacing voice rose from the depths, and with
+#   great wrath and vehemence it's voice boomed across the
+#   land... ``hehehehehehe... that *tickles*''
+#                                                       -- aj on IRC
+
+################################################################################
+
+import pg, sys, os, string
+import utils, db_access
+import apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+
+################################################################################
+
+def main ():
+    global Cnf, projectB;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('d',"debug","Claire::Options::Debug", "IntVal"),
+                 ('h',"help","Claire::Options::Help"),
+                 ('v',"version","Claire::Options::Version")];
+
+    packages = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    projectB = pg.connect('projectb', 'localhost');
+
+    db_access.init(Cnf, projectB);
+
+    for package in packages:
+	q = projectB.query("SELECT b.package, b.version, a.arch_string, su.suite_name FROM binaries b, architecture a, suite su, bin_associations ba WHERE b.package = '%s' AND a.id = b.architecture AND su.id = ba.suite AND b.id = ba.bin" % (package));
+        d = {};
+        for i in q.getresult():
+            package = i[0];
+            version = i[1];
+            architecture = i[2];
+            suite = i[3];
+            key = (version, suite);
+            if not d.has_key(key):
+                d[key] = [];
+            d[key].append(architecture);
+            
+        keys = d.keys();
+        keys.sort();
+        for i in keys:
+            (version, suite) = i;
+            sys.stdout.write("%10s | %10s | %13s | " % (package, version, suite));
+            count = 0;
+            for arch in d[i]:
+                if count > 0:
+                    sys.stdout.write(', ');
+                sys.stdout.write(arch);
+                count = count + 1;
+            sys.stdout.write('\n');
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+

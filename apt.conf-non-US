@@ -31,7 +31,7 @@ tree "dists/stable/non-US"
    External-Links false;
 };
 
-tree "dists/testing"
+tree "dists/testing/non-US"
 {
    FileList "/org/non-us.debian.org/database/dists/testing_non-us/$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/org/non-us.debian.org/database/dists/testing_non-us/$(SECTION)_source.list";

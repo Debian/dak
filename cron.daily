@@ -62,7 +62,8 @@ for i in proposed-updates_-_binary-*; do cat $i >> proposed-updates_-_binary.lis
 cd $masterdir
 apt-ftparchive generate apt.conf
 
-#rhona
+# Clean out old packages
+rhona
 
 mkmaintainers
 copyoverrides

@@ -85,11 +85,11 @@ Neve
 Rhona
 {
 
-  Options  // Currently don't do anything
+  Options
   {
         Debug "";
         Help "";
-	Interactive "";
+	No-Action "";
         Version "";
    };
 

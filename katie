@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.14 2000-12-19 21:06:20 troup Exp $
+# $Id: katie,v 1.15 2000-12-20 08:15:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -460,7 +460,8 @@ def check_dsc ():
             # locations of an .orig.tar.gz.
             for dsc_file in dsc_files.keys():
                 if files.has_key(dsc_file):
-                    actual_md5 = files[dsc_file]["md5sum"]
+                    actual_md5 = files[dsc_file]["md5sum"];
+                    actual_size = int(files[dsc_file]["size"]);
                     found = "%s in incoming" % (dsc_file)
                     # Check the file does not already exist in the archive
                     if not changes.has_key("stable upload"):
@@ -474,6 +475,7 @@ def check_dsc ():
                     if len(ql) > 0:
                         old_file = ql[0][0] + ql[0][1];
                         actual_md5 = apt_pkg.md5sum(utils.open_file(old_file,"r"));
+                        actual_size = os.stat(old_file)[stat.ST_SIZE];
                         found = old_file;
                         suite_type = ql[0][2];
                         dsc_files[dsc_file]["files id"] = ql[0][3]; # need this for updating dsc_files in install()
@@ -500,7 +502,9 @@ def check_dsc ():
                     reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming." % (file, dsc_file);
                     continue;
                 if actual_md5 != dsc_files[dsc_file]["md5sum"]:
-                    reject_message = reject_message + "Rejected: md5sum for %s doesn't match %s.\n" % (found, file)
+                    reject_message = reject_message + "Rejected: md5sum for %s doesn't match %s.\n" % (found, file);
+                if actual_size != int(dsc_files[dsc_file]["size"]):
+                    reject_message = reject_message + "Rejected: size for %s doesn't match %s.\n" % (found, file);
 
     if string.find(reject_message, "Rejected:") != -1:
         return 0

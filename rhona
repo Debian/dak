@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.5 2000-12-19 21:06:20 troup Exp $
+# $Id: rhona,v 1.6 2000-12-20 08:15:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -150,8 +150,9 @@ def check_sources():
                 if Cnf.Find("Suite::%s::Untouchable" % (i[0])):
                     untouchable = 1;
                 else:
-                    projectB.query("DELETE FROM src_associations WHERE source = %s" % (id));
-
+                    if not Cnf["Rhona::Options::No-Action"]:
+                        projectB.query("DELETE FROM src_associations WHERE source = %s" % (id));
+                    
             # We can't delete binary-less source-only packages if
             # they're in an untouchable suite (i.e. stable)...
             if untouchable:
@@ -171,7 +172,8 @@ def check_sources():
             # this source package's reference to it from dsc_files.
             # So just clear out all references to the source file in
             # dsc_files now.
-            projectB.query("DELETE FROM dsc_files WHERE source = %s" % (id));
+            if not Cnf["Rhona::Options::No-Action"]:
+                projectB.query("DELETE FROM dsc_files WHERE source = %s" % (id));
                     
     projectB.query("COMMIT WORK");
 
@@ -247,7 +249,11 @@ def clean_binaries():
     # source also removed (if possible).
 
     print "Cleaning binaries from the DB..."
-    projectB.query("DELETE FROM binaries WHERE file IN (SELECT id FROM files WHERE last_used < '%s')" % (delete_date));
+    if not Cnf["Rhona::Options::No-Action"]:
+        before = time.time();
+        sys.stdout.write("[Deleting from binaries table... ");
+        projectB.query("DELETE FROM binaries WHERE EXISTS (SELECT id FROM files WHERE binaries.file = files.id AND files.last_used <= '%s')" % (delete_date));
+        sys.stdout.write("done. (%d)]\n" % (int(time.time()-before)));
 
 def clean():
     global delete_date;
@@ -262,7 +268,12 @@ def clean():
         os.mkdir(dest);
         
     # Delete from source (dsc_file should already be done!)
-    projectB.query("DELETE FROM source WHERE file IN (SELECT id FROM files WHERE last_used <= '%s')" % (delete_date));
+    if not Cnf["Rhona::Options::No-Action"]:
+        before = time.time();
+        sys.stdout.write("[Deleting from source table... ");
+        projectB.query("DELETE FROM source WHERE EXISTS (SELECT id FROM files WHERE source.file = files.id AND files.last_used <= '%s')" % (delete_date));
+        sys.stdout.write("done. (%d)]\n" % (int(time.time()-before)));
+        
     # Delete files from the pool
     q = projectB.query("SELECT l.path, f.filename FROM location l, files f WHERE f.last_used <= '%s' AND l.id = f.location" % (delete_date));
     for i in q.getresult():
@@ -273,18 +284,26 @@ def clean():
         if os.path.isfile(filename):
             if os.path.islink(filename):
                 count = count + 1;
-                #print "Removing symlink %s..." % (filename);
-                os.unlink(filename);
+                if Cnf["Rhona::Options::No-Action"]:
+                    print "Removing symlink %s..." % (filename);
+                else:
+                    os.unlink(filename);
             else:
                 size = size + os.stat(filename)[stat.ST_SIZE];
                 count = count + 1;
-                #print "Cleaning %s to %s..." % (filename, dest);
-                utils.move(filename, dest);
+                if Cnf["Rhona::Options::No-Action"]:
+                    print "Cleaning %s to %s..." % (filename, dest);
+                else:
+                    utils.move(filename, dest);
         else:
             sys.stderr.write("%s is neither symlink nor file?!\n" % (filename));
             sys.exit(1);
     # delete from files
-    projectB.query("DELETE FROM files WHERE last_used <= '%s'" % (delete_date));
+    if not Cnf["Rhona::Options::No-Action"]:
+        before = time.time();
+        sys.stdout.write("[Deleting from files table... ");
+        projectB.query("DELETE FROM files WHERE last_used <= '%s'" % (delete_date));
+        sys.stdout.write("done. (%d)]\n" % (int(time.time()-before)));
     if count > 0:
         sys.stderr.write("Cleaned %d files, %s.\n" % (count, utils.size_type(size)));
 
@@ -308,7 +327,8 @@ def clean_maintainers():
     projectB.query("BEGIN WORK");
     for id in all.keys():
         if not used.has_key(id):
-            projectB.query("DELETE FROM maintainer WHERE id = %s" % (id));
+            if not Cnf["Rhona::Options::No-Action"]:
+                projectB.query("DELETE FROM maintainer WHERE id = %s" % (id));
             count = count + 1;
     projectB.query("COMMIT WORK");
 
@@ -328,7 +348,6 @@ def main():
     Arguments = [('D',"debug","Rhona::Options::Debug", "IntVal"),
                  ('h',"help","Rhona::Options::Help"),
                  ('n',"no-action","Rhona::Options::No-Action"),
-                 ('v',"verbose","Rhona::Options::Verbose"),
                  ('V',"version","Rhona::Options::Version")];
     
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
