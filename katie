@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.57 2001-08-26 00:36:12 troup Exp $
+# $Id: katie,v 1.58 2001-09-05 18:51:21 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1353,15 +1353,12 @@ def main():
         print "katie version 0.0000000000";
         usage(0);
 
-    postgresql_user = None; # Default == Connect as user running program.
-
     # -n/--dry-run invalidates some other options which would involve things happening
     if Options["No-Action"]:
         Options["Automatic"] = "";
         Options["Ack-New"] = "";
-        postgresql_user = Cnf["DB::ROUser"];
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, postgresql_user);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
 
     db_access.init(Cnf, projectB);
 
@@ -1388,7 +1385,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.57 $"
+    bcc = "X-Katie: $Revision: 1.58 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:

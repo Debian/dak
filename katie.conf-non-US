@@ -380,7 +380,6 @@ DB
   Name "projectb";
   Host "";
   Port -1;
-  ROUser "nobody";
 };
 
 Architectures

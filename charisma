@@ -2,7 +2,7 @@
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.7 2001-04-03 10:01:27 troup Exp $
+# $Id: charisma,v 1.8 2001-09-05 18:51:21 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ def main():
 
     extra_files = apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, Cnf["DB::ROUser"]);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
     for suite in Cnf.SubTree("Suite").List():
