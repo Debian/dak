@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.6 2000-12-01 17:33:29 troup Exp $
+# $Id: utils.py,v 1.7 2000-12-05 04:27:48 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ def build_file_list(changes, dsc):
         # What a mess.  FIXME
         if string.find(section, '/') != -1: 
 	    component = string.split(section, '/')[0]
-	if string.lower(component) == "non-us" and string.count(section, '/') > 1:
+	if string.lower(component) == "non-us" and string.count(section, '/') > 0:
             s = string.split(section, '/')[1]
             if s == "main" or s == "non-free" or s == "contrib": # Avoid e.g. non-US/libs
                 component = string.split(section, '/')[0]+ '/' + string.split(section, '/')[1]
@@ -196,7 +196,7 @@ def poolify (source, component):
 ######################################################################################
 
 def move (src, dest):
-    if os.path.exists(dest) and stat.S_ISDIR(os.stat(dest)[stat.ST_MODE]):
+    if os.path.exists(dest) and os.path.isdir(dest):
 	dest_dir = dest;
     else:
 	dest_dir = os.path.dirname(dest);
@@ -206,13 +206,13 @@ def move (src, dest):
 	os.umask(umask);
     #print "Moving %s to %s..." % (src, dest);
     shutil.copy2(src, dest);
-    if os.path.exists(dest) and stat.S_ISDIR(os.stat(dest)[stat.ST_MODE]):
+    if os.path.exists(dest) and os.path.isdir(dest):
 	dest = dest + '/' + os.path.basename(src);
     os.chmod(dest, 0664);
     os.unlink(src);
 
 def copy (src, dest):
-    if os.path.exists(dest) and stat.S_ISDIR(os.stat(dest)[stat.ST_MODE]):
+    if os.path.exists(dest) and os.path.isdir(dest):
 	dest_dir = dest;
     else:
 	dest_dir = os.path.dirname(dest);
@@ -222,7 +222,7 @@ def copy (src, dest):
 	os.umask(umask);
     #print "Copying %s to %s..." % (src, dest);
     shutil.copy2(src, dest);
-    if os.path.exists(dest) and stat.S_ISDIR(os.stat(dest)[stat.ST_MODE]):
+    if os.path.exists(dest) and os.path.isdir(dest):
 	dest = dest + '/' + os.path.basename(src);
     os.chmod(dest, 0664);
 

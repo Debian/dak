@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.1 2000-11-24 00:20:11 troup Exp $
+# $Id: jenna,v 1.2 2000-12-05 04:27:48 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,21 +28,21 @@
 
 import pg, string, os, sys
 import apt_pkg
-import db_access, utils
+import db_access, utils, claire
 
 projectB = None
 Cnf = None
 
-def generate_src_list(suite, component, output):
+def generate_src_list(suite, component, output, dislocated_files):
     sources = {}
 
     suite_id = db_access.get_suite_id(suite);
     
     if component == "-":
-        q = projectB.query("SELECT s.source, s.version, l.path, f.filename, s.id FROM source s, src_associations sa, location l, files f WHERE sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id"
+        q = projectB.query("SELECT s.source, s.version, l.path, f.filename, s.id, f.id FROM source s, src_associations sa, location l, files f WHERE sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id"
                            % (suite_id));
     else:
-        q = projectB.query("SELECT s.source, s.version, l.path, f.filename, s.id FROM source s, src_associations sa, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id"
+        q = projectB.query("SELECT s.source, s.version, l.path, f.filename, s.id, f.id FROM source s, src_associations sa, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id"
                            % (component, suite_id));
     entries = q.getresult();
     for entry in entries:
@@ -51,6 +51,9 @@ def generate_src_list(suite, component, output):
         filename = entry[2]+entry[3];
         id = entry[4]
         add_new = 0
+        file_id = entry[5];
+        if dislocated_files.has_key(file_id):
+            filename = dislocated_files[file_id];
         if os.path.exists(filename):
             if sources.has_key(source):
                 if apt_pkg.VersionCompare(sources[source]["version"], version) == -1:
@@ -81,15 +84,15 @@ def generate_src_list(suite, component, output):
     for source in source_keys:
         output.write(sources[source]["filename"]+'\n')
     
-def generate_bin_list(suite, component, architecture, output, type):
+def generate_bin_list(suite, component, architecture, output, type, dislocated_files):
     packages = {}
 
     suite_id = db_access.get_suite_id(suite);
     
     if component == "-":
-        q = projectB.query("SELECT b.package, b.version, l.path, f.filename, b.id FROM architecture a, binaries b, bin_associations ba, location l, files f WHERE ( a.arch_string = '%s' OR a.arch_string = 'all' ) AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s'" % (architecture, suite_id, type));
+        q = projectB.query("SELECT b.package, b.version, l.path, f.filename, b.id, f.id FROM architecture a, binaries b, bin_associations ba, location l, files f WHERE ( a.arch_string = '%s' OR a.arch_string = 'all' ) AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s'" % (architecture, suite_id, type));
     else:
-        q = projectB.query("SELECT b.package, b.version, l.path, f.filename, b.id FROM architecture a, binaries b, bin_associations ba, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND (a.arch_string = '%s' OR a.arch_string = 'all') AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s'" % (component, architecture, suite_id, type));
+        q = projectB.query("SELECT b.package, b.version, l.path, f.filename, b.id, f.id FROM architecture a, binaries b, bin_associations ba, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND (a.arch_string = '%s' OR a.arch_string = 'all') AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s'" % (component, architecture, suite_id, type));
     entries = q.getresult();
     for entry in entries:
         package = entry[0]
@@ -97,6 +100,9 @@ def generate_bin_list(suite, component, architecture, output, type):
         filename = entry[2]+entry[3];
         id = entry[4]
         add_new = 0
+        file_id = entry[5];
+        if dislocated_files.has_key(file_id):
+            filename = dislocated_files[file_id];
         
         # Hack to handle screwed up sid distro [FIXME: this may have issues, remove ASAP]
         if not os.path.exists(filename):
@@ -138,6 +144,7 @@ def generate_bin_list(suite, component, architecture, output, type):
 
 def main():
     global Cnf, projectB;
+    dislocated_files = {};
     
     projectB = pg.connect('projectb', 'localhost');
     
@@ -162,6 +169,8 @@ def main():
         Cnf["Jenna::Options::Suite"] = string.join(Cnf.SubTree("Suite").List());
     for suite in string.split(Cnf["Jenna::Options::Suite"]):
         suite = string.lower(suite);
+        if suite == 'stable':
+            dislocated_files = claire.find_dislocated_stable(Cnf, projectB);
         components = Cnf["Jenna::Options::Component"];
         if not Cnf.has_key("Suite::%s::Components" % (suite)):
             components = "-";
@@ -179,17 +188,17 @@ def main():
                 if architecture == "source":
                     print "Processing dists/%s/%s/%s..." % (suite, component, architecture);
                     output = utils.open_file("%s/%s_%s_%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w")
-                    generate_src_list(suite, component, output);
+                    generate_src_list(suite, component, output, dislocated_files);
                     output.close();
                 else:
                     print "Processing dists/%s/%s/binary-%s..." % (suite, component, architecture);
                     output = utils.open_file("%s/%s_%s_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
-                    generate_bin_list(suite, component, architecture, output, "deb");
+                    generate_bin_list(suite, component, architecture, output, "deb", dislocated_files);
                     output.close();
                     if component == "main": # FIXME: must be a cleaner way to say debian-installer is main only?
                         print "Processing dists/%s/%s/debian-installer/binary-%s..." % (suite,component, architecture);
                         output = utils.open_file("%s/%s_%s_debian-installer_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
-                        generate_bin_list(suite, component, architecture, output, "udeb");
+                        generate_bin_list(suite, component, architecture, output, "udeb", dislocated_files);
                         output.close();
 
 if __name__ == '__main__':

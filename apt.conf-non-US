@@ -17,7 +17,7 @@ Default
 
 TreeDefault
 {
-   Contents::Header "/org/non-us.debian.org/scripts/masterfiles/Contents.top";
+   Contents::Header "/org/non-us.debian.org/katie/Contents.top";
 };
 
 tree "dists/stable/non-US"

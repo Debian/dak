@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+# 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: tea,v 1.1 2000-12-05 04:27:48 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+#   And, lo, a great and menacing voice rose from the depths, and with
+#   great wrath and vehemence it's voice boomed across the
+#   land... ``hehehehehehe... that *tickles*''
+#                                                       -- aj on IRC
+
+################################################################################
+
+import pg, sys, os
+import utils, db_access
+import apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+
+################################################################################
+
+def main ():
+    global Cnf, projectB;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('d',"debug","Claire::Options::Debug", "IntVal"),
+                 ('h',"help","Claire::Options::Help"),
+                 ('v',"version","Claire::Options::Version")];
+
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    projectB = pg.connect('projectb', 'localhost');
+
+    db_access.init(Cnf, projectB);
+
+    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id")
+    ql = q.getresult();
+
+    for i in ql:
+	filename = i[0] + i[1];
+        if os.access(filename, os.R_OK) == 0:
+            print filename
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+

@@ -2,7 +2,7 @@
 
 # Manipulate suite tags
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.1 2000-11-24 00:20:11 troup Exp $
+# $Id: heidi,v 1.2 2000-12-05 04:27:48 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ def process_file (file, suite_id, action):
         if architecture == "source":
             q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
         else:
-            q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
+            q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
 
         ql = q.getresult();
         if ql == []:

@@ -2,17 +2,13 @@ Show Stopper
 ------------
 
   o finish new cron.daily file for auric
-
   o finish rhona
+  o claire needs to know about sections on non-non-US
 
   o Testing... lots of it.
 
-  o jenna needs to munge files in stable
-
 Non-Show Stopper
 ----------------
-
-  o fix heimdal at some point on non-US.
 
   o CD building scripts need fixing
 
@@ -20,9 +16,6 @@ Non-Show Stopper
  
   o Optimize all the queries by using EXAMINE and building some INDEXs.
   o enclose all the setting SQL stuff in transactions (mostly done).
-
-  o ?assumes running in incoming? [needs to be runnable in p-u too]
-  o changelog udpate stuff for point releases.
 
   == 
 
@@ -36,6 +29,11 @@ Non-Show Stopper
   o check errors on apt_pkg calls so we don't bomb out on daily runs (?)
   o check to see if mutli-component binary packages from a single component source are supported
   o need a way to sync katie.conf and the DB for things like architecture
+  o dinstall should remove != stable on stable install, not just f + u
+  o Should probably use $ in ~ compares for files.
+  o jenna needs to validate arguments!
+  o jenna's untochable flag doesn't stop adding new packages
+  o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS
 
 ===================================================================================================
 

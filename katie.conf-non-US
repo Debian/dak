@@ -135,6 +135,7 @@ Suite
 	OverrideCodeName "potato";
 	Priority "1";
 	Untouchable "1";
+	ChangeLogBase "dists/stable/non-US/";
   };
 
   Proposed-Updates

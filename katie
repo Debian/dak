@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.8 2000-12-01 22:09:14 troup Exp $
+# $Id: katie,v 1.9 2000-12-05 04:27:48 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -118,7 +118,7 @@ def check_signature (filename):
 
 def read_override_file (filename, suite, component):
     global overrides;
-    
+
     file = utils.open_file(filename, 'r');
     for line in file.readlines():
         line = string.strip(utils.re_comments.sub('', line))
@@ -229,12 +229,19 @@ def check_changes(filename):
 
     # Handle uploads to stable
     if changes["distribution"].has_key("stable"):
-        # If running from within proposed-updates kill non-stable distributions
+        # If running from within proposed-updates; assume an install to stable
         if string.find(os.getcwd(), 'proposed-updates') != -1:
+            # FIXME: should probably remove anything that != stable
             for i in ("frozen", "unstable"):
                 if changes["distribution"].has_key(i):
                     reject_message = reject_message + "Removing %s from distribution list.\n"
                     del changes["distribution"][i]
+            changes["stable upload"] = 1;
+            # If we can't find a file from the .changes; assume it's a package already in the pool and move into the pool
+            file = files.keys()[0];
+            if os.access(file, os.R_OK) == 0:
+                pool_dir = Cnf["Dir::PoolDir"] + '/' + utils.poolify(changes["source"], files[file]["component"]);
+                os.chdir(pool_dir);
         # Otherwise (normal case) map stable to updates
         else:
             reject_message = reject_message + "Mapping stable to updates.\n";
@@ -376,9 +383,10 @@ def check_files():
                             reject_message = reject_message + "Rejected"
                         reject_message = reject_message + ": %s Old version `%s' >= new version `%s'.\n" % (file, oldfile["version"], files[file]["version"])
                 # Check for existing copies of the file
-                q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
-                if q.getresult() != []:
-                    reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (file)
+                if not changes.has_key("stable upload"):
+                    q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
+                    if q.getresult() != []:
+                        reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (file)
 
             # Find any old .dsc files
             elif files[file]["type"] == "dsc":
@@ -444,23 +452,13 @@ def check_dsc ():
                     actual_md5 = files[dsc_file]["md5sum"]
                     found = "%s in incoming" % (dsc_file)
                     # Check the file does not already exist in the archive
-                    q = projectB.query("SELECT f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
-                    if q.getresult() != []:
-                        reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
+                    if not changes.has_key("stable upload"):
+                        q = projectB.query("SELECT f.id FROM files f, location l WHERE f.filename ~ '%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
+                        if q.getresult() != []:
+                            reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
                 elif dsc_file[-12:] == ".orig.tar.gz":
-                    # Check in Incoming
-                    # See comment above process_it() for explanation...
-                    if os.access(dsc_file, os.R_OK) != 0:
-                        files[dsc_file] = {};
-                        files[dsc_file]["size"] = os.stat(dsc_file)[stat.ST_SIZE];
-                        files[dsc_file]["md5sum"] = dsc_files[dsc_file]["md5sum"];
-                        files[dsc_file]["section"] = files[file]["section"];
-                        files[dsc_file]["priority"] = files[file]["priority"];
-                        files[dsc_file]["component"] = files[file]["component"];
-                        reprocess = 1;
-                        return 1;
                     # Check in the pool
-                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
+                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE f.filename ~ '%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
                     ql = q.getresult();
                     if len(ql) > 0:
                         old_file = ql[0][0] + ql[0][1];
@@ -471,8 +469,21 @@ def check_dsc ():
                         if suite_type == "legacy" or suite_type == "legacy-mixed":
                             orig_tar_id = ql[0][3];
                     else:
-                        reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming or in the pool.\n" % (file, dsc_file);
-                        continue;
+                        # Not there? Check in Incoming...
+                        # [See comment above process_it() for explanation
+                        #  of why this is necessary...]
+                        if os.access(dsc_file, os.R_OK) != 0:
+                            files[dsc_file] = {};
+                            files[dsc_file]["size"] = os.stat(dsc_file)[stat.ST_SIZE];
+                            files[dsc_file]["md5sum"] = dsc_files[dsc_file]["md5sum"];
+                            files[dsc_file]["section"] = files[file]["section"];
+                            files[dsc_file]["priority"] = files[file]["priority"];
+                            files[dsc_file]["component"] = files[file]["component"];
+                            reprocess = 1;
+                            return 1;
+                        else:
+                            reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming or in the pool.\n" % (file, dsc_file);
+                            continue;
                 else:
                     reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming." % (file, dsc_file);
                     continue;
@@ -594,6 +605,11 @@ def action (changes_filename):
 
 def install (changes_filename, summary, short_summary):
     global install_count, install_bytes
+
+    # Stable uploads are a special case
+    if changes.has_key("stable upload"):
+        stable_install (changes_filename, summary, short_summary);
+        return;
     
     print "Installing."
 
@@ -614,7 +630,6 @@ def install (changes_filename, summary, short_summary):
             dsc_location_id = files[file]["location id"];
             if not files[file]["files id"]:
                 files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
-            dsc_file_id = files[file]["files id"]
             projectB.query("INSERT INTO source (source, version, maintainer, file) VALUES ('%s', '%s', %d, %d)"
                            % (package, version, maintainer_id, files[file]["files id"]))
             
@@ -622,15 +637,17 @@ def install (changes_filename, summary, short_summary):
                 suite_id = db_access.get_suite_id(suite);
                 projectB.query("INSERT INTO src_associations (suite, source) VALUES (%d, currval('source_id_seq'))" % (suite_id))
 
-
-            # Add the .diff.gz and {.orig,}.tar.gz files to the DB (files and dsc_files)
-            for file in files.keys():
-                if files[file]["type"] == "diff.gz" or files[file]["type"] == "orig.tar.gz" or files[file]["type"] == "tar.gz":
-                    if not files[file]["files id"]:
-                        filename = files[file]["pool name"] + file;
-                        files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
-                    projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files[file]["files id"]));
-                
+            # Add the source files to the DB (files and dsc_files)
+            projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files[file]["files id"]));
+            for dsc_file in dsc_files.keys():
+                filename = files[file]["pool name"] + dsc_file;
+                files_id = db_access.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["location id"]);
+                # FIXME: needs to check for -1/-2 and or handle exception
+                if files_id == None:
+                    files_id = db_access.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["location id"]);
+                projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id));
+            
+            
     # Add the .deb files to the DB
     for file in files.keys():
         if files[file]["type"] == "deb":
@@ -723,7 +740,98 @@ Subject: %s INSTALLED
 Installing:
 %s
 
-%s""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, reject_message, summary, installed_footer)
+%s""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], os.path.basename(changes_filename), reject_message, summary, installed_footer)
+        utils.send_mail (mail_message, "")
+        announce (short_summary, 1)
+
+#####################################################################################################################
+
+def stable_install (changes_filename, summary, short_summary):
+    global install_count, install_bytes
+    
+    print "Installing to stable."
+
+    archive = utils.where_am_i();
+
+    # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
+    projectB.query("BEGIN WORK");
+
+    # Add the .dsc file to the DB
+    for file in files.keys():
+        if files[file]["type"] == "dsc":
+            package = dsc["source"]
+            version = dsc["version"]  # NB: not files[file]["version"], that has no epoch
+            q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
+            ql = q.getresult()
+            if ql == []:
+                sys.stderr.write("INTERNAL ERROR: couldn't find '%s' (%s) in source table.\n" % (package, version));
+                sys.exit(1);
+            source_id = ql[0][0];
+            suite_id = db_access.get_suite_id('proposed-updates');
+            projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id));
+            suite_id = db_access.get_suite_id('stable');
+            projectB.query("INSERT INTO src_associations (suite, source) VALUES ('%s', '%s')" % (suite_id, source_id));
+                
+    # Add the .deb files to the DB
+    for file in files.keys():
+        if files[file]["type"] == "deb":
+            package = files[file]["package"]
+            version = files[file]["version"]
+            architecture = files[file]["architecture"]
+            q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
+            ql = q.getresult()
+            if ql == []:
+                sys.stderr.write("INTERNAL ERROR: couldn't find '%s' (%s for %s architecture) in binaries table.\n" % (package, version, architecture));
+                sys.exit(1);
+            binary_id = ql[0][0];
+            suite_id = db_access.get_suite_id('proposed-updates');
+            projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
+            suite_id = db_access.get_suite_id('stable');
+            projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id));
+
+    projectB.query("COMMIT WORK");
+
+    utils.move (changes_filename, Cnf["Rhona::Morgue"] + os.path.basename(changes_filename));
+
+    # Update the Stable ChangeLog file
+
+    new_changelog_filename = Cnf["Dir::RootDir"] + Cnf["Suite::Stable::ChangeLogBase"] + ".ChangeLog";
+    changelog_filename = Cnf["Dir::RootDir"] + Cnf["Suite::Stable::ChangeLogBase"] + "ChangeLog";
+    if os.path.exists(new_changelog_filename):
+        os.unlink (new_changelog_filename);
+    
+    new_changelog = utils.open_file(new_changelog_filename, 'w');
+    for file in files.keys():
+        if files[file]["type"] == "deb":
+            new_changelog.write("stable/%s/binary-%s/%s\n" % (files[file]["component"], files[file]["architecture"], file));
+        elif re_issource.match(file) != None:
+            new_changelog.write("stable/%s/source/%s\n" % (files[file]["component"], file));
+        else:
+            new_changelog.write("%s\n" % (file));
+    chop_changes = re_fdnic.sub("\n", changes["changes"]);
+    new_changelog.write(chop_changes + '\n\n');
+    if os.access(changelog_filename, os.R_OK) != 0:
+        changelog = utils.open_file(changelog_filename, 'r');
+        new_changelog.write(changelog.read());
+    new_changelog.close();
+    if os.access(changelog_filename, os.R_OK) != 0:
+        os.unlink(changelog_filename);
+    utils.move(new_changelog_filename, changelog_filename);
+
+    install_count = install_count + 1;
+
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        mail_message = """Return-Path: %s
+From: %s
+To: %s
+Bcc: troup@auric.debian.org
+Subject: %s INSTALLED into stable
+
+%s
+Installing:
+%s
+
+%s""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], os.path.basename(changes_filename), reject_message, summary, installed_footer)
         utils.send_mail (mail_message, "")
         announce (short_summary, 1)
 
@@ -806,6 +914,8 @@ Subject: %s REJECTED
  
 def acknowledge_new (changes_filename, summary):
     global new_ack_new;
+
+    changes_filename = os.path.basename(changes_filename);
 
     new_ack_new[changes_filename] = 1;
 
@@ -944,6 +1054,14 @@ def process_it (changes_file):
     reprocess = 1;
     orig_tar_id = None;
 
+    # Absolutize the filename to avoid the requirement of being in the
+    # same directory as the .changes file.
+    changes_file = os.path.abspath(changes_file);
+
+    # And since handling of installs to stable munges with the CWD;
+    # save and restore it.
+    cwd = os.getcwd();
+
     check_signature (changes_file);
     check_changes (changes_file);
     while reprocess:
@@ -953,6 +1071,9 @@ def process_it (changes_file):
         check_dsc ();
         
     action(changes_file);
+
+    # Restore CWD
+    os.chdir(cwd);
 
 ###############################################################################
 
