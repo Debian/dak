@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.14 2002-05-19 22:33:56 troup Exp $
+# $Id: lisa,v 1.15 2002-05-22 16:55:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.14 $";
+lisa_version = "$Revision: 1.15 $";
 
 Cnf = None;
 Options = None;
@@ -92,7 +92,10 @@ def recheck():
             source_package = files[file]["source package"];
             if not Katie.pkg.changes["architecture"].has_key("source") \
                and not Katie.source_exists(source_package, source_version):
-                reject("no source found for %s %s (%s)." % (source_package, source_version, file));
+                source_epochless_version = utils.re_no_epoch.sub('', source_version);
+                dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version);
+                if not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
+                    reject("no source found for %s %s (%s)." % (source_package, source_version, file));
 
         # Version and file overwrite checks
         if files[file]["type"] == "deb":
@@ -127,7 +130,6 @@ def recheck():
     return 1;
 
 ################################################################################
-
 
 def determine_new (changes, files):
     new = {};
@@ -192,66 +194,92 @@ def determine_new (changes, files):
 
 ################################################################################
 
-# Sort by 'have note', 'have source', by ctime, by source name, by
-# source version number, and finally by filename
-
-def changes_compare (a, b):
-    try:
-        Katie.pkg.changes_file = a;
-        Katie.init_vars();
-        Katie.update_vars();
-        a_changes = copy.copy(Katie.pkg.changes);
-    except:
-        return 1;
-
-    try:
-        Katie.pkg.changes_file = b;
-        Katie.init_vars();
-        Katie.update_vars();
-        b_changes = copy.copy(Katie.pkg.changes);
-    except:
-        return -1;
-
-    # Sort by 'have note';
-    a_has_note = a_changes.get("lisa note");
-    b_has_note = b_changes.get("lisa note");
-    if a_has_note and not b_has_note:
-        return 1;
-    elif b_has_note and not a_has_note:
-        return -1;
+def indiv_sg_compare (a, b):
+    """Sort by source name, source, version, 'have source', and
+       finally by filename."""
+    # Sort by source version
+    q = apt_pkg.VersionCompare(a["version"], b["version"]);
+    if q:
+        return -q;
 
     # Sort by 'have source'
-    a_has_source = a_changes["architecture"].get("source");
-    b_has_source = b_changes["architecture"].get("source");
+    a_has_source = a["architecture"].get("source");
+    b_has_source = b["architecture"].get("source");
     if a_has_source and not b_has_source:
         return -1;
     elif b_has_source and not a_has_source:
         return 1;
 
-    # Sort by ctime-per-source
-    a_source = a_changes.get("source");
-    b_source = b_changes.get("source");
-    if a_source != b_source:
-        a_ctime = os.stat(a)[stat.ST_CTIME];
-        b_ctime = os.stat(b)[stat.ST_CTIME];
-        q = cmp (a_ctime, b_ctime);
-        if q:
-            return q;
+    return cmp(a["filename"], b["filename"]);
 
-    # Sort by source name
-    q = cmp (a_source, b_source);
-    if q:
-        return q;
+############################################################
 
-    # Sort by source version
-    a_version = a_changes.get("version");
-    b_version = b_changes.get("version");
-    q = apt_pkg.VersionCompare(a_version, b_version);
-    if q:
-        return -q;
+def sg_compare (a, b):
+    a = a[1];
+    b = b[1];
+    """Sort by have note, time of oldest upload."""
+    # Sort by have note
+    a_note_state = a["note_state"];
+    b_note_state = b["note_state"];
+    if a_note_state != b_note_state:
+        return cmp(a, b);
 
-    # Fall back to sort by filename
-    return cmp(a, b);
+    # Sort by time of oldest upload
+    return cmp(a["oldest"], b["oldest"]);
+
+def sort_changes(changes_files):
+    """Sort into source groups, then sort each source group by version,
+    have source, filename.  Finally, sort the source groups by have
+    note, time of oldest upload of each source upload."""
+    if len(changes_files) == 1:
+        return changes_files;
+
+    sorted_list = [];
+    cache = {};
+    # Read in all the .changes files
+    for filename in changes_files:
+        try:
+            Katie.pkg.changes_file = filename;
+            Katie.init_vars();
+            Katie.update_vars();
+            cache[filename] = copy.copy(Katie.pkg.changes);
+            cache[filename]["filename"] = filename;
+        except:
+            sorted_list.append(filename);
+            break;
+    # Divide the .changes into per-source groups
+    per_source = {};
+    for filename in cache.keys():
+        source = cache[filename]["source"];
+        if not per_source.has_key(source):
+            per_source[source] = {};
+            per_source[source]["list"] = [];
+        per_source[source]["list"].append(cache[filename]);
+    # Determine oldest time and have note status for each source group
+    for source in per_source.keys():
+        source_list = per_source[source]["list"];
+        first = source_list[0];
+        oldest = os.stat(first["filename"])[stat.ST_CTIME];
+        have_note = 0;
+        for d in per_source[source]["list"]:
+            ctime = os.stat(d["filename"])[stat.ST_CTIME];
+            if ctime < oldest:
+                oldest = ctime;
+            have_note = have_note + (d.has_key("lisa note"));
+        per_source[source]["oldest"] = oldest;
+        if not have_note:
+            per_source[source]["note_state"] = 0; # none
+        elif have_note < len(source_list):
+            per_source[source]["note_state"] = 1; # some
+        else:
+            per_source[source]["note_state"] = 2; # all
+        per_source[source]["list"].sort(indiv_sg_compare);
+    per_source_items =  per_source.items();
+    per_source_items.sort(sg_compare);
+    for i in per_source_items:
+        for j in  i[1]["list"]:
+            sorted_list.append(j["filename"]);
+    return sorted_list;
 
 ################################################################################
 
@@ -859,7 +887,7 @@ def main():
     changes_files = init();
     if len(changes_files) > 50:
         sys.stderr.write("Sorting changes...\n");
-    changes_files.sort(changes_compare);
+    changes_files = sort_changes(changes_files);
 
     # Kill me now? **FIXME**
     Cnf["Dinstall::Options::No-Mail"] = "";
