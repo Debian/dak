@@ -2,7 +2,7 @@
 
 # Manually reject packages for proprosed-updates
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: lauren,v 1.1 2003-02-21 19:18:05 troup Exp $
+# $Id: lauren,v 1.2 2003-03-14 19:06:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import apt_pkg;
 ################################################################################
 
 # Globals
-lauren_version = "$Revision: 1.1 $";
+lauren_version = "$Revision: 1.2 $";
 
 Cnf = None;
 Options = None;
@@ -207,7 +207,7 @@ def reject (reject_message = ""):
 
     # Send the rejection mail if appropriate
     if not Options["No-Mail"]:
-        utils.send_mail (reject_mail_message, "");
+        utils.send_mail(reject_mail_message);
 
     # Finally remove the .katie file
     katie_file = os.path.join(Cnf["Suite::Proposed-Updates::CopyKatie"], os.path.basename(changes_file[:-8]+".katie"));

@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.30 2003-02-21 19:19:07 troup Exp $
+# $Id: katie.py,v 1.31 2003-03-14 19:06:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -308,7 +308,7 @@ distribution.""";
                     else:
                         Subst["__STABLE_WARNING__"] = "";
                     mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-close");
-                    utils.send_mail (mail_message, "");
+                    utils.send_mail (mail_message);
             if action:
                 self.Logger.log(["closing bugs"]+bugs);
         else:                     # NMU
@@ -320,7 +320,7 @@ distribution.""";
             if action and control_message != "":
                 Subst["__CONTROL_MESSAGE__"] = control_message;
                 mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-nmu-fixed");
-                utils.send_mail (mail_message, "");
+                utils.send_mail (mail_message);
             if action:
                 self.Logger.log(["setting bugs to fixed"]+bugs);
         summary += "\n";
@@ -353,7 +353,7 @@ distribution.""";
                 if Cnf.get("Dinstall::TrackingServer") and changes["architecture"].has_key("source"):
                     Subst["__ANNOUNCE_LIST_ADDRESS__"] = Subst["__ANNOUNCE_LIST_ADDRESS__"] + "\nBcc: %s@%s" % (changes["source"], Cnf["Dinstall::TrackingServer"]);
                 mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.announce");
-                utils.send_mail (mail_message, "");
+                utils.send_mail (mail_message);
 
         if Cnf.FindB("Dinstall::CloseBugs"):
             summary = self.close_bugs(summary, action);
@@ -386,7 +386,7 @@ distribution.""";
             Subst["__SUITE__"] = "";
             Subst["__SUMMARY__"] = summary;
             mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.accepted");
-            utils.send_mail(mail_message, "")
+            utils.send_mail(mail_message)
             self.announce(short_summary, 1)
 
         # Special support to enable clean auto-building of accepted packages
@@ -471,7 +471,7 @@ distribution.""";
 
         Subst["__SUMMARY__"] = summary;
         mail_message = utils.TemplateSubst(Subst,self.Cnf["Dir::Templates"]+"/jennifer.override-disparity");
-        utils.send_mail (mail_message, "");
+        utils.send_mail(mail_message);
 
     ###########################################################################
 
@@ -587,7 +587,7 @@ distribution.""";
 
         # Send the rejection mail if appropriate
         if not Cnf["Dinstall::Options::No-Mail"]:
-            utils.send_mail (reject_mail_message, "");
+            utils.send_mail(reject_mail_message);
 
         self.Logger.log(["rejected", pkg.changes_file]);
         return 0;

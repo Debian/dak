@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.32 2003-02-11 18:10:37 troup Exp $
+# $Id: jennifer,v 1.33 2003-03-14 19:06:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.32 $";
+jennifer_version = "$Revision: 1.33 $";
 
 Cnf = None;
 Options = None;
@@ -912,7 +912,7 @@ def acknowledge_new (summary):
         print "Sending new ack.";
         Subst["__SUMMARY__"] = summary;
         new_ack_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.new");
-        utils.send_mail(new_ack_message,"");
+        utils.send_mail(new_ack_message);
 
     # Finally remove the originals.
     os.chdir (pkg.directory);

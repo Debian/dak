@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Wrapper for Debian Security team
-# Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: amber,v 1.7 2002-11-22 14:55:51 troup Exp $
+# Copyright (C) 2002, 2003  James Troup <james@nocrew.org>
+# $Id: amber,v 1.8 2003-03-14 19:06:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -254,7 +254,7 @@ def make_advisory(advisory_nr, changes_files):
 
     adv = utils.TemplateSubst(Subst, Cnf["Dir::Templates"]+"/amber.advisory");
     if not Options["No-Action"]:
-        utils.send_mail (adv, "");
+        utils.send_mail (adv);
     else:
         print "[<Would send template advisory mail>]";
 
