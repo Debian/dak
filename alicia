@@ -2,7 +2,7 @@
 
 # Microscopic modification and query tool for overrides in projectb
 # Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: alicia,v 1.1 2004-01-29 01:00:08 dsilvers Exp $
+# $Id: alicia,v 1.2 2004-01-29 10:40:18 dsilvers Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,8 +46,8 @@ def game_over():
 
 
 def usage (exit_code=0):
-    print """Usage: alicia [OPTIONS] package [section priority]
-Make a microscopic override change/query
+    print """Usage: alicia [OPTIONS] package [section] [priority]
+Make microchanges or microqueries of the overrides
 
   -h, --help                 show this help and exit
   -n, --no-action            don't do anything
@@ -100,7 +100,7 @@ def main ():
         elif r[0][1] == 1:
             arguments = (".",arg);
         else:
-            utils.fubar("%s is not a valid section or priority");
+            utils.fubar("%s is not a valid section or priority" % (arg));
         
 
     # Retrieve current section/priority...
