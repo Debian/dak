@@ -99,6 +99,10 @@ echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skippin
 
 ################################################################################
 
+# Send a report on NEW/BYHAND packages
+helena | mail -e -s "[non-US] NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org
+
+################################################################################
 ulimit -m 90000 -d 90000 -s 10000 -v 90000
 
 run-parts --report /org/non-us.debian.org/scripts/distmnt
