@@ -2,7 +2,7 @@
 
 # Generate file lists used by apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.18 2002-06-05 00:18:39 troup Exp $
+# $Id: jenna,v 1.19 2002-06-05 16:53:05 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -347,8 +347,8 @@ def write_filelists(packages, dislocated_files):
         else:
             components = string.split(Options["Components"]);
         udeb_components = Cnf.ValueList("Suite::%s::UdebComponents" % (suite));
-        udeb_components = map(string.lower, udeb_components);
-        for component in map(string.lower, components):
+        udeb_components = udeb_components;
+        for component in components:
             if not d[suite].has_key(component):
                 d[suite][component] = {};
             if component in udeb_components:

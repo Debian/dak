@@ -22,8 +22,8 @@ TreeDefault
 
 tree "dists/testing/non-US"
 {
-   FileList "/org/non-us.debian.org/database/dists/testing_non-us/$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/non-us.debian.org/database/dists/testing_non-us/$(SECTION)_source.list";
+   FileList "/org/non-us.debian.org/database/dists/testing_non-US/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/testing_non-US/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
    BinOverride "override.woody.$(SECTION)";
@@ -32,8 +32,8 @@ tree "dists/testing/non-US"
 
 tree "dists/woody-proposed-updates/non-US"
 {
-   FileList "/org/non-us.debian.org/database/dists/woody-proposed-updates_non-us/$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/non-us.debian.org/database/dists/woody-proposed-updates_non-us/$(SECTION)_source.list";
+   FileList "/org/non-us.debian.org/database/dists/woody-proposed-updates_non-US/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/woody-proposed-updates_non-US/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
    BinOverride "override.woody.$(SECTION)";
@@ -43,8 +43,8 @@ tree "dists/woody-proposed-updates/non-US"
 
 tree "dists/unstable/non-US"
 {
-   FileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/non-us.debian.org/database/dists/unstable_non-us/$(SECTION)_source.list";
+   FileList "/org/non-us.debian.org/database/dists/unstable_non-US/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/unstable_non-US/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa hurd-i386 i386 ia64 mips mipsel m68k powerpc s390 sh sparc source";
    BinOverride "override.sid.$(SECTION)";

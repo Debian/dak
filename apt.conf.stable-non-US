@@ -22,8 +22,8 @@ TreeDefault
 
 tree "dists/stable/non-US"
 {
-   FileList "/org/non-us.debian.org/database/dists/stable_non-us/$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/non-us.debian.org/database/dists/stable_non-us/$(SECTION)_source.list";
+   FileList "/org/non-us.debian.org/database/dists/stable_non-US/$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/non-us.debian.org/database/dists/stable_non-US/$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm i386 m68k powerpc sparc source";
    BinOverride "override.potato.$(SECTION)";
