@@ -27,11 +27,23 @@ queue/approved
 Others
 ------
 
+  o melanie will happily include packages in the Cc list that aren't
+    being removed...
+
+  o check_dsc_against_db's "delete an entry from files while you're
+    not looking" habit is Evil and Bad.
+
+  o lisa allows you to edit the section and change the component, but
+    really shouldn't.
+
+  o melanie needs to, when not sending bug close mails, promote Cc: to
+    To: and send the mail anyways.
+
   o the lockfile (Archive_Maintenance_In_Progress) should probably be in a conf file
 
   o madison should cross-check the b.source field and if it's not null
-  and s.name linked from it != the source given in
-  -S/--source-and-binary ignore.
+    and s.name linked from it != the source given in
+    -S/--source-and-binary ignore.
 
   o lauren sucks; she should a) only spam d-i for sourceful
   rejections, b) sort stuff so she rejects sourceful stuff first.  the
@@ -349,3 +361,5 @@ tea	      X
 ziyi	      X
 
 ================================================================================
+
+<mdz_> SirDibos: that sentence sounds like it wants to be a bug report when it grows up
