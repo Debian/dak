@@ -1,8 +1,36 @@
 TOFIX
 =====
+ 
+ o natalie doesn't warn when lisitng invalid components!
+
+ o new tool: why is this still here?
+
+ o run apt-ftparchive clean <conf file> weekly [culus sucks]
+
+ o when dinstall is run in install mode but not as a cron job, it
+ should probably run jenna to avoid madison originated user confusion
+
+ o purge older stuff from non-free/contrib so that testing and stuff works
+
+23:12|<aj> I will not hush!
+23:12|<elmo> :>
+23:12|<aj> Where there is injustice in the world, I shall be there!
+23:13|<aj> I shall not be silenced!
+23:13|<aj> The world shall know!
+23:13|<aj> The world *must* know!
+23:13|<elmo> oh dear, he's gone back to powerpuff girls... ;-)
+23:13|<aj> yay powerpuff girls!!
+23:13|<aj> buttercup's my favourite, who's yours?
+23:14|<aj> you're backing away from the keyboard right now aren't you?
+23:14|<aj> *AREN'T YOU*?!
+23:15|<aj> I will not be treated like this.
+23:15|<aj> I shall have my revenge.
+23:15|<aj> I SHALL!!!
 
 Urgent
 ------
+
+  o [not really urgent, but I'm too lazy to page down..] check for empty debs.
 
   o katie needs a stable_reject() which a) removes the package from
     p-u, b) doesn't remove the file from the pool, and c) (optionally, I
@@ -13,7 +41,7 @@ Urgent
 
   o experimental needs to auto clean dude
 
-  o jenna doesn't handle arch: any -> arch: all transitions
+  o jenna doesn't handle arch: any -> arch: all transitions [aj worked around; need to revisit]
 
   o direport misreports things as section 'devel'
 
