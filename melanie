@@ -2,7 +2,7 @@
 
 # General purpose archive tool for ftpmaster
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.11 2001-03-21 05:37:43 troup Exp $
+# $Id: melanie,v 1.12 2001-04-03 10:05:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,16 +79,15 @@ def main ():
 
     # Sanity check options
     if arguments == []:
-        sys.stderr.write("E: need at least one package name as an argument.\n");
-        sys.exit(1);
+        utils.fubar("need at least one package name as an argument.");
     if Options["Architecture"] and Options["Source-Only"]:
-        sys.stderr.write("E: can't use -a/--architecutre and -S/--source-only options simultaneously.\n");
-        sys.exit(1);
+        utils.fubar("can't use -a/--architecutre and -S/--source-only options simultaneously.");
     if Options["Binary-Only"] and Options["Source-Only"]:
-        sys.stderr.write("E: can't use -b/--binary-only and -S/--source-only options simultaneously.\n");
-        sys.exit(1);
+        utils.fubar("can't use -b/--binary-only and -S/--source-only options simultaneously.");
+    if Options.has_key("Carbon-Copy") and not Options.has_key("Done"):
+        utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.");
     if Options["Architecture"] and not Options["Partial"]:
-        sys.stderr.write("W: -a/--architecture implies -p/--partial.\n");
+        utils.warn("-a/--architecture implies -p/--partial.");
         Options["Partial"] = "true";
 
     # Process -C/--carbon-copy
@@ -108,8 +107,7 @@ def main ():
         elif '@' in copy_to:
             carbon_copy = carbon_copy + copy_to + ", "
         else:
-            sys.stderr.write("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address.\n" % (copy_to));
-            sys.exit(1);
+            utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to));
     # Make it a real email header
     if carbon_copy != "":
         carbon_copy = "Cc: " + carbon_copy[:-2] + '\n'
@@ -143,7 +141,7 @@ def main ():
             
         suite_id = db_access.get_suite_id(suite);
         if suite_id == -1:
-            sys.stderr.write("W: suite '%s' not recognised.\n" % (suite));
+            utils.warn("suite '%s' not recognised." % (suite));
         else:
             con_suites = con_suites + "su.id = %s OR " % (suite_id)
 
@@ -158,7 +156,7 @@ def main ():
         for component in string.split(Options["Component"]):
             component_id = db_access.get_component_id(component);
             if component_id == -1:
-                sys.stderr.write("W: component '%s' not recognised.\n" % (component));
+                utils.warn("component '%s' not recognised." % (component));
             else:
                 con_components = con_components + "c.id = %s OR " % (component_id);
                 over_con_components = over_con_components + "component = %s OR " % (component_id);
@@ -173,7 +171,7 @@ def main ():
         for architecture in string.split(Options["Architecture"]):
             architecture_id = db_access.get_architecture_id(architecture);
             if architecture_id == -1:
-                sys.stderr.write("W: architecture '%s' not recognised.\n" % (architecture));
+                utils.warn("architecture '%s' not recognised." % (architecture));
             else:
                 con_architectures = con_architectures + "a.id = %s OR " % (architecture_id)
         con_architectures = con_architectures[:-3] + ")"
@@ -184,6 +182,8 @@ def main ():
     print "Working...",
     sys.stdout.flush();
     to_remove = [];
+    maintainers = {};
+
     # We have 3 modes of package selection: binary-only, source-only
     # and source+binary.  The first two are trivial and obvious; the
     # latter is a nasty mess, but very nice from a UI perspective so
@@ -191,13 +191,13 @@ def main ():
 
     if Options["Binary-Only"]:
         # Binary-only
-        q = projectB.query("SELECT b.package, b.version, a.arch_string, b.id FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures));
+        q = projectB.query("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures));
         for i in q.getresult():
             to_remove.append(i);
     else:
         # Source-only
         source_packages = {};
-        q = projectB.query("SELECT l.path, f.filename, s.source, s.version, 'source', s.id FROM source s, src_associations sa, suite su, files f, location l, component c WHERE sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components));
+        q = projectB.query("SELECT l.path, f.filename, s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, files f, location l, component c WHERE sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components));
         for i in q.getresult():
             source_packages[i[2]] = i[:2];
             to_remove.append(i[2:]);
@@ -214,7 +214,7 @@ def main ():
                 try:
                     dsc = utils.parse_changes(filename, 0);
                 except utils.cant_open_exc:
-                    sys.stderr.write("W: couldn't open '%s'.\n" % (filename));
+                    utils.warn("couldn't open '%s'." % (filename));
                     continue;
                 for package in string.split(dsc.get("binary"), ','):
                     package = string.strip(package);
@@ -224,7 +224,7 @@ def main ():
             # source package and if so add it to the list of packages
             # to be removed.
             for package in binary_packages.keys():
-                q = projectB.query("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package));
+                q = projectB.query("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package));
                 for i in q.getresult():
                     filename = string.join(i[:2], '/');
                     control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename,"r")))
@@ -245,8 +245,7 @@ def main ():
         editor = os.environ.get("EDITOR","vi")
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
-            sys.stderr.write ("vi invocation failed for `%s'!" % (temp_filename))
-            sys.exit(result)
+            utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
         file = utils.open_file(temp_filename, 'r');
         for line in file.readlines():
             Options["Reason"] = Options["Reason"] + line;
@@ -258,11 +257,18 @@ def main ():
         package = i[0];
         version = i[1];
         architecture = i[2];
+        maintainer = i[4];
+        maintainers[maintainer] = "";
         if not d.has_key(package):
             d[package] = {};
         if not d[package].has_key(version):
             d[package][version] = [];
         d[package][version].append(architecture);
+
+    maintainer_list = "Maintainer: "
+    for maintainer_id in maintainers.keys():
+        maintainer_list = maintainer_list + db_access.get_maintainer(maintainer_id) + ", ";
+    maintainer_list = maintainer_list[:-2];
 
     summary = "";
     packages = d.keys();
@@ -279,6 +285,7 @@ def main ():
     print "Will remove the following packages from %s:" % (suites_list);
     print
     print summary
+    print maintainer_list
     if Options["Done"]:
         print "Will also close bugs: "+Options["Done"];
     if carbon_copy:
@@ -342,11 +349,17 @@ def main ():
         Subst = {};
         Subst["__MELANIE_ADDRESS__"] = Cnf["Melanie::MyEmailAddress"];
         Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
+        bcc = "";
         if Cnf.Find("Dinstall::Bcc") != "":
-            Subst["__BCC__"] = "Bcc: " + Cnf["Dinstall::Bcc"];
+            bcc = bcc + Cnf["Dinstall::Bcc"] + ", ";
+        if Cnf.Find("Melanie::Bcc") != "":
+            bcc = bcc + Cnf["Melanie::Bcc"] + ", ";
+        if bcc == "":
+            bcc = "X-Filler: 42" + ", ";
         else:
-            Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.11 $\n" + carbon_copy[:-1];
+            bcc = "Bcc: " + bcc;
+        Subst["__BCC__"] = bcc[:-2];
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.12 $\n" + carbon_copy[:-1];
         Subst["__SUITE_LIST__"] = suites_list;
         Subst["__SUMMARY__"] = summary;
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
