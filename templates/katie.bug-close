@@ -1,4 +1,4 @@
-From: __MAINTAINER_ADDRESS__
+From: __MAINTAINER_FROM__
 To: __BUG_NUMBER__-close@__BUG_SERVER__
 __BCC__
 Subject: Bug#__BUG_NUMBER__: fixed in __SOURCE__ __VERSION__
