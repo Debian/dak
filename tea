@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: tea,v 1.19 2002-05-19 02:00:03 troup Exp $
+# $Id: tea,v 1.20 2002-06-08 00:23:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,8 +62,7 @@ def process_dir (unused, dirname, filenames):
 def check_files():
     global db_files;
 
-    print "Building list of Database files...";
-
+    print "Building list of database files...";
     q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id")
     ql = q.getresult();
 
@@ -225,8 +224,14 @@ def check_timestamps():
 def check_missing_tar_gz_in_dsc():
     count = 0;
 
-    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.dsc$'")
-    for i in q.getresult():
+    print "Building list of database files...";
+    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.dsc$'");
+    ql = q.getresult();
+    if ql:
+        print "Checking %d files..." % len(ql);
+    else:
+        print "No files to check."
+    for i in ql:
         filename = os.path.abspath(i[0] + i[1]);
         try:
             # NB: don't enforce .dsc syntax
