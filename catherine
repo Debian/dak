@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.2 2001-01-31 03:36:36 troup Exp $
+# $Id: catherine,v 1.3 2001-02-04 04:27:18 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,9 +24,9 @@
 
 ################################################################################
 
-import pg
-import utils
-import apt_pkg;
+import os, pg, stat, sys
+import utils, db_access
+import apt_pkg, apt_inst;
 
 ################################################################################
 
@@ -43,17 +43,107 @@ def main ():
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
-    Arguments = [('D',"debug","Heidi::Options::Debug", "IntVal"),
-                 ('h',"help","Heidi::Options::Help"),
-                 ('V',"version","Heidi::Options::Version")];
+    Arguments = [('D',"debug","Catherine::Options::Debug", "IntVal"),
+                 ('h',"help","Catherine::Options::Help"),
+                 ('V',"version","Catherine::Options::Version"),
+                 ('l',"limit", "Catherine::Options::Limit", "HasArg"),
+                 ('n',"no-action","Catherine::Options::No-Action")];
 
     amount = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
 
     projectB = pg.connect('projectb', 'localhost');
     db_access.init(Cnf, projectB);
 
-    
-    
+    poolized_size = 0;
+    poolized_count = 0;
+    limit = int(Cnf["Catherine::Options::Limit"]) * 1024;
+
+    # Sanity check the limit argument
+    if limit != 0 and limit < 1024:
+        sys.stderr.write("-l/--limit takes an argument with a value in kilobytes.\n");
+        sys.exit(1);
+
+    # Grab a list of all files not already in the pool
+    q = projectB.query("""
+SELECT l.path, f.filename, f.id as files_id, c.name as component 
+   FROM files f, location l, component c WHERE 
+    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id) 
+    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND l.component = c.id 
+UNION SELECT l.path, f.filename, f.id as files_id, null as component
+   FROM files f, location l WHERE 
+    NOT EXISTS (SELECT * FROM location l WHERE l.type = 'pool' AND f.location = l.id) 
+    AND NOT (f.filename ~ '^potato') AND f.location = l.id AND NOT EXISTS 
+     (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);""");
+    qd = q.dictresult();
+    for qid in qd:
+        legacy_filename = qid["path"]+qid["filename"];
+        size = os.stat(legacy_filename)[stat.ST_SIZE];
+        if (poolized_size + size) > limit:
+            sys.stderr.write("Hit %s limit.\n" % (utils.size_type(limit)));
+            break;
+        poolized_size = poolized_size + size;
+        poolized_count = poolized_count + 1;
+        base_filename = os.path.basename(legacy_filename);
+        destination_filename = base_filename;
+        # Work out the source package name
+        if utils.re_isadeb.match(base_filename) != None:
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(legacy_filename,"r")))
+            package = control.Find("Package", "");
+            source = control.Find("Source", package);
+            # If it's a binary, we need to also rename the file to include the architecture
+            version = control.Find("Version", "");
+            architecture = control.Find("Architecture", "");
+            if package == "" or version == "" or architecture == "":
+                sys.stderr.write("%s: couldn't determine required information to rename .deb file.\n" % (legacy_filename));
+                sys.exit(1);
+            version = utils.re_no_epoch.sub('', version);
+            destination_filename = "%s_%s_%s.deb" % (package, version, architecture);
+        else:
+            m = utils.re_issource.match(base_filename)
+            if m != None:
+                source = m.group(1);
+            else:
+                sys.stderr.write("%s: say what?\n" % (legacy_filename));
+                sys.exit(1);
+        # Work out the component name
+        component = qid["component"];
+        if component == "":
+            q = projectB.query("SELECT DISTINCT(c.name) FROM override o, component c WHERE o.package = '%s' AND o.component = c.id;" % (source));
+            ql = q.getresult();
+            if ql == []:
+                sys.stderr.write("%s: No override match so I can't work out the component.\n" % (source));
+                sys.exit(1);
+            if len(ql) > 1:
+                sys.stderr.write("%s: multiple override matches for %s so I can't work out the component.\n" % (source));
+                sys.exit(1);
+            component = ql[0][0];
+        # Work out the new location
+        q = projectB.query("SELECT l.id FROM location l, component c WHERE c.name = '%s' AND c.id = l.component AND l.type = 'pool';" % (component));
+        ql = q.getresult();
+        if len(ql) != 1:
+            sys.stderr.write("%s: couldn't determine location ID, query returned %d matches and not 1 as expected.\n" % (source, len(ql)));
+            sys.exit(1);
+        location_id = ql[0][0];
+        # First move the files to the new location
+        pool_location = utils.poolify (source, component);
+        pool_filename = pool_location + destination_filename;
+        destination = Cnf["Dir::PoolDir"] + pool_location + destination_filename;
+        if os.path.exists(destination):
+            sys.stderr.write("%s: already exists in the pool; serious FUBARity.\n" % (legacy_filename));
+            sys.exit(1);
+        if Cnf["Catherine::Options::No-Action"]:
+            print "Moving: %s -> %s" % (legacy_filename, destination);
+        else:
+            foo = foo + 1;
+            #utils.move(legacy_filename, destination);
+        # Then Update the DB's files table
+        if Cnf["Catherine::Options::No-Action"]:
+            print "SQL: UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, location_id, qid["files_id"]);
+        else:
+            foo = foo + 1;
+            #q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, dsc_location_id, qid["files_id"]));
+
+    sys.stderr.write("Poolized %s in %s files.\n" % (utils.size_type(poolized_size), poolized_count));
 
 #######################################################################################
 
