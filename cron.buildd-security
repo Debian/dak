@@ -2,11 +2,10 @@
 #
 # Executed after jennifer (merge there??)
 
-ARCHS_oldstable="alpha arm i386 m68k powerpc sparc"
 ARCHS_stable="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
 ARCHS_testing="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
-#DISTS="oldstable stable testing"
-DISTS="oldstable stable"
+#DISTS="stable testing"
+DISTS="stable"
 
 set -e
 export SCRIPTVARS=/org/security.debian.org/katie/vars-security
@@ -17,9 +16,6 @@ if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
 	apt-ftparchive -qq generate apt.conf.buildd-security
 	for d in $DISTS; do
 		case "$d" in
-			oldstable)
-				ARCHS="$ARCHS_oldstable"
-				;;
 			stable)
 				ARCHS="$ARCHS_stable"
 				;;

@@ -32,7 +32,6 @@ rm -fr non-US
 
 for suite in $suites; do
     case $suite in
-	oldstable) override_suite=potato;;
 	stable) override_suite=woody;;
 	testing) override_suite=sarge;;
 	*) echo "Unknown suite type ($suite)"; exit 1;;
@@ -47,11 +46,6 @@ for suite in $suites; do
 	    if [ ! "$type" = "skip" ]; then
 		$masterdir/natalie -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
 		case $suite in
-		    oldstable)
-			$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.woody.$component$type
-			$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sarge.$component$type
-			$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
-			;;
 		    stable)
 			$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sarge.$component$type
 			$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type

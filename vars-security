@@ -13,7 +13,7 @@ uploadhost=ftp-master.debian.org
 uploaddir=/pub/UploadQueue/
 
 components="main non-free contrib"
-suites="oldstable stable testing"
+suites="stable testing"
 override_types="deb dsc udeb"
 
 PATH=$masterdir:$PATH
