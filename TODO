@@ -69,9 +69,6 @@ Others
   o UrgencyLog stuff should minimize it's bombing out(?)
   o Log stuff should open the log file
 
-  o [melanie] bomb out if a) no '[rene]' in the -m/--message, and b)
-    no other -d/--done or -C/--carbon-copy
-
   o helena should footnote the actual notes, and also * the versions
     with notes so we can see new versions since being noted...
 
@@ -170,8 +167,6 @@ Others
 
 Less Urgent
 -----------
-
-  o Accept "," as a seperator in -a, -s etc. args
 
   o change utils.copy to try rename() first
 
