@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.7 2002-04-20 13:13:15 troup Exp $
+# $Id: lisa,v 1.8 2002-04-21 15:38:54 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.7 $";
+lisa_version = "$Revision: 1.8 $";
 
 Cnf = None;
 Options = None;
@@ -572,9 +572,10 @@ def do_new():
         elif answer == 'E':
             new = edit_overrides (new);
         elif answer == 'M':
-            Katie.do_reject(1, Options["Manual-Reject"]);
-            os.unlink(Katie.pkg.changes_file[:-8]+".katie");
-            done = 1;
+            aborted = Katie.do_reject(1, Options["Manual-Reject"]);
+            if not aborted:
+                os.unlink(Katie.pkg.changes_file[:-8]+".katie");
+                done = 1;
         elif answer == 'S':
             done = 1;
         elif answer == 'Q':
