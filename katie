@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.1.1.1 2000-11-24 00:20:08 troup Exp $
+# $Id: katie,v 1.2 2000-11-24 00:35:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -198,7 +198,6 @@ def check_changes(filename):
         for i in changes["closes"].keys():
             if re_isanum.match (i) == None:
                 reject_message = reject_message + "Rejected: `%s' from Closes field isn't a number.\n" % (i)
-
 
     # Map frozen to unstable if frozen doesn't exist
     if changes["distribution"].has_key("frozen") and not Cnf.has_key("Suite::Frozen"):
