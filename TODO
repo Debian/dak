@@ -32,9 +32,19 @@ Less Urgent
     o Fix component handling in overrides (aj)
     o Fix lack of entires in source overrides (aj)
     o direport misreports things as section 'devel'
-  
- * Easy:
+    o vrfy check of every Maintainer+Changed-By address; valid for 3 months.
+    o binary-all should be done on a per-source, per-architecture package
+      basis to avoid, e.g. the perl-modules problem.
+    o a source-missing-diff check: if the version has a - in it, and it
+      is sourceful, it needs orig and diff, e.g. if someone uploads
+      esound_0.2.22-6, and it is sourceful, and there is no diff ->
+      REJECT (version has a dash, therefore not debian native.)
 
+ * Easy:
+ 
+    o melanie should behave better with -a and without -b; see
+      gcc-defaults removal for an example.
+    o Reject on misconfigured kernel-package uploads
     o denise abuses sys.stdout == badly  
     o utils.extract_component_from_section: main/utils -> main/utils, main rather than utils, main
     o Fix katie to remove != stable on stable install, not just f + u
@@ -138,7 +148,6 @@ Less Urgent
   o Should reject packages with bad timestamps
   o Replicate old dinstall report stuff (? needed ?)
   o Handle the case of 1:1.1 which would overwrite 1.1 (?)
-  o aj's binary-all stuff (foo-doc depending on foo) (?)
   o heidi should report suite name not ID [aj]
 
   o generic way of saying isabinary and isadsc. (?)

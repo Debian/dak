@@ -341,6 +341,7 @@ Dir
   IncomingDir "/org/non-us.debian.org/incoming/";
   OverrideDir "/org/non-us.debian.org/scripts/override/";
   ListsDir "/org/non-us.debian.org/database/dists/";
+  LogDir "/org/non-us.debian.org/log/";
   Morgue "/org/non-us.debian.org/morgue/";
 };
 
