@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+# ???
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: christina,v 1.1 2001-03-21 01:03:41 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# <Omnic> elmo wrote docs?!!?!?!?!?!?!
+# <aj> as if he wasn't scary enough before!!
+# * aj imagines a little red furry toy sitting hunched over a computer
+#   tapping furiously and giggling to himself
+# <aj> eventually he stops, and his heads slowly spins around and you
+#      see this really evil grin and then he sees you, and picks up a
+#      knife from beside the keyboard and throws it at you, and as you
+#      breathe your last breath, he starts giggling again
+# <aj> but i should be telling this to my psychiatrist, not you guys,
+#      right? :)
+
+################################################################################
+
+import pg, sys, os, string
+import utils, db_access
+import apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+
+################################################################################
+
+def main ():
+    global Cnf, projectB, db_files, waste, excluded;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('d',"debug","Christina::Options::Debug", "IntVal"),
+                 ('h',"help","Christina::Options::Help"),
+                 ('v',"version","Christina::Options::Version")];
+
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    db_access.init(Cnf, projectB);
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+
