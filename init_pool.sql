@@ -1,5 +1,5 @@
 DROP DATABASE projectb;
-CREATE DATABASE projectb;
+CREATE DATABASE projectb WITH ENCODING = 'SQL_ASCII';
 
 \c projectb
 
