@@ -1,6 +1,6 @@
 katie (0.0-0) unstable; urgency=low
 
-  * Initial non-release.
+  * Initial non-release.  [The packaging is nowhere near complete; don't bother trying to use it unaltered.]
 
  -- James Troup <james@nocrew.org>  Fri, 29 Sep 2000 01:19:17 +0100
 

@@ -10,29 +10,48 @@
 # This file may have to be extensively modified
 
 build:
+	make
 
 clean:
 	$(checkdir)
 	-rm -rf debian/tmp debian/*~ debian/files* debian/substvars
+	make clean
 
 binary-indep: checkroot
 	$(checkdir)
 	-rm -rf debian/tmp
+
 	install -d debian/tmp/DEBIAN/
 	install -m 755 debian/prerm debian/postinst debian/tmp/DEBIAN/
+
 	install -d debian/tmp/usr/bin/
 	install -m 755 katie debian/tmp/usr/bin/da_install
 	install -m 755 jenna debian/tmp/usr/bin/da_mkfilelist
 	install -m 755 heidi debian/tmp/usr/bin/da_tags
+	install -m 755 catherine debian/tmp/usr/bin/da_poolize
 	install -m 755 charisma debian/tmp/usr/bin/da_mkmaintainers
 	install -m 755 neve debian/tmp/usr/bin/da_populate
 	install -m 755 rhona debian/tmp/usr/bin/da_clean
+	install -m 755 madison debian/tmp/usr/bin/da_chkver
+	install -m 755 natalie.py debian/tmp/usr/bin/da_override
+	install -m 755 melanie debian/tmp/usr/da_remove
+
+	install -d -m 755 debian/tmp/usr/share/man/man1/	
+	install -m 644 docs/katie.1 debian/tmp/usr/share/man/man1/da_install.1
+	install -m 644 docs/natalie.1 debian/tmp/usr/share/man/man1/da_override.1
+	install -m 644 docs/melanie.1 debian/tmp/usr/share/man/man1/da_remove.1
+	install -m 644 docs/catherine.1 debian/tmp/usr/share/man/man1/da_poolize.1
+	gzip -9v debian/tmp/usr/share/man/man1/*
+
 	install -d debian/tmp/usr/share/doc/katie/
 	install -m 644 debian/changelog debian/tmp/usr/share/doc/katie/changelog.Debian
 	install -m 644 README NEWS THANKS TODO debian/tmp/usr/share/doc/katie/
+	install -m 644 docs/README* debian/tmp/usr/share/doc/katie/
 	install -m 644 ChangeLog debian/tmp/usr/share/doc/katie/changelog
 	gzip -9v debian/tmp/usr/share/doc/katie/*
 	install -m 644 debian/copyright debian/tmp/usr/share/doc/katie/
+
+	dpkg-shlibdeps sql-aptvc.o
 	dpkg-gencontrol -isp
 	chown -R root.root debian/tmp
 	chmod -R go=rX debian/tmp
