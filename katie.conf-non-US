@@ -163,7 +163,10 @@ Suite
 	  i386 "";
 	  ia64 "";
 	  m68k "";
+	  mips "";
+	  mipsel "";
 	  powerpc "";
+	  s390 "";
 	  sparc "";
 	};
 	Origin "Debian";
@@ -191,7 +194,10 @@ Suite
 	  i386 "";
 	  ia64 "";
 	  m68k "";
+	  mips "";
+	  mipsel "";
 	  powerpc "";
+	  s390 "";
 	  sparc "";
 	};
 	Origin "Debian";
