@@ -1,0 +1,9 @@
+This is a collection of patches and fixes/hacks.  The fixes/hacks are
+very specific to Debian at the time they were written.  They are
+retained here mostly for hysterical raisans and hysetiria's way of
+repeating itself, so I don't have to rewrite these disgusting hacks.
+Please don't use them, or better yet, even read them.
+
+-- 
+James
+

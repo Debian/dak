@@ -1,0 +1,9 @@
+Assumptions
+-----------
+
+[Incomplete, to be sure]
+
+Usernames do not contain ",". [aria]
+Password files do not contain ":" except as a field separator. [aria]
+Version numbers do not contain "~" [logging, charisma]
+

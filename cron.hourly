@@ -1,0 +1,10 @@
+#! /bin/sh
+#
+# Executed hourly via cron, out of troup's crontab.
+
+set -e
+export SCRIPTVARS=/org/ftp.debian.org/katie/vars
+. $SCRIPTVARS
+
+cd $masterdir
+julia /var/lib/misc/auric.debian.org/passwd
