@@ -2,7 +2,7 @@
 
 # Generate file lists used by apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.21 2002-10-16 02:47:32 troup Exp $
+# $Id: jenna,v 1.22 2002-11-22 04:06:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -417,7 +417,10 @@ def main():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
     Logger = logging.Logger(Cnf, "jenna");
-    do_da_do_da();
+    try:
+        do_da_do_da();
+    except:
+        utils.print_exc();
     Logger.close();
 
 #########################################################################################
