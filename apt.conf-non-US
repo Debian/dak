@@ -54,8 +54,7 @@ tree "dists/unstable/non-US"
 bindirectory "dists/proposed-updates"
 {
 
-   FileList "/org/non-us.debian.org/database/dists/proposed-updates_-_binary.list";
-   SourceFileList "/org/non-us.debian.org/database/proposed-updates_-_source.list";
+   FileList "/org/non-us.debian.org/database/dists/proposed-updates_-_all.list";
    Packages "dists/proposed-updates/Packages";
    Sources "dists/proposed-updates/Sources";
    Contents " ";

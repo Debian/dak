@@ -53,7 +53,8 @@ jenna
 
 # FIXME
 cd /org/ftp.debian.org/database/dists/
-for i in proposed-updates_-_binary-*; do cat $i >> proposed-updates_-_binary.list; done
+rm -f proposed-updates_-_all.list
+for i in proposed-updates_-_binary-* proposed-updates_-_source.list; do cat $i >> proposed-updates_-_all.list; done
 
 # Generate override files
 cd $overridedir

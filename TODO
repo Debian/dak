@@ -7,8 +7,6 @@ Urgent
   o Claire needs to know about sections on auric.
   o maintainers file needs overrides.
   o jenna needs to use order by to keep aj from going nutzo
-  o fix the silly rhona p-u bug
-  o have cron job symlink -dr properly
   o need to have process_it run a big try: loop so that individual
     package screws up don't kill the daily cron run.
   o Add an 'add' ability to melanie
@@ -17,6 +15,7 @@ Urgent
 Less Urgent
 -----------
 
+  o check out hardlinks [aj]
   o [Hard] Need to merge non-non-US and non-US DBs.
   o [Easy] Need to vacuum daily
   o [Easy] remove empty directories in the pool in cron.weekly or so
