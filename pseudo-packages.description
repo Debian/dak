@@ -8,7 +8,6 @@ press       Press release issues
 kernel		Problems with the Linux kernel, or that shipped with Debian
 project		Problems related to Project administration
 general		General problems (e.g., that many manpages are mode 755)
-dpkg-iwj    The dpkg branch maintained by Ian Jackson
 slink-cd	Slink CD
 potato-cd	Potato CD
 listarchives	Problems with the WWW mailing list archives
