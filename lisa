@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.26 2003-11-17 17:59:26 troup Exp $
+# $Id: lisa,v 1.27 2004-01-29 23:18:47 dsilvers Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.26 $";
+lisa_version = "$Revision: 1.27 $";
 
 Cnf = None;
 Options = None;
@@ -646,6 +646,54 @@ def add_overrides (new):
 
 ################################################################################
 
+def prod_maintainer ():
+    # Here we prepare an editor and get them ready to prod...
+    temp_filename = tempfile.mktemp();
+    fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+    os.close(fd);
+    editor = os.environ.get("EDITOR","vi")
+    answer = 'E';
+    while answer == 'E':
+        os.system("%s %s" % (editor, temp_filename))
+        file = utils.open_file(temp_filename);
+        prod_message = "".join(file.readlines());
+        file.close();
+        print "Prod message:";
+        print utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1);
+        prompt = "[P]rod, Edit, Abandon, Quit ?"
+        answer = "XXX";
+        while prompt.find(answer) == -1:
+            answer = utils.our_raw_input(prompt);
+            m = katie.re_default_answer.search(prompt);
+            if answer == "":
+                answer = m.group(1);
+            answer = answer[:1].upper();
+        os.unlink(temp_filename);
+        if answer == 'A':
+            return 1;
+        elif answer == 'Q':
+            sys.exit(0);
+    # Otherwise, do the proding...
+    user_email_address = utils.whoami() + " <%s>" % (
+        Cnf["Dinstall::MyAdminAddress"]);
+
+    Subst = Katie.Subst;
+    
+    Subst["__FROM_ADDRESS__"] = user_email_address;
+    Subst["__PROD_MESSAGE__"] = prod_message;
+    Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
+
+    prod_mail_message = utils.TemplateSubst(
+        Subst,Cnf["Dir::Templates"]+"/lisa.prod");
+
+    # Send the prod mail if appropriate
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        utils.send_mail(prod_mail_message);
+
+    print "Sent proding message";
+
+################################################################################
+
 def do_new():
     print "NEW\n";
     files = Katie.pkg.files;
@@ -690,7 +738,7 @@ def do_new():
             print "W: note must be removed before package can be processed.";
             prompt += "Remove note, ";
 
-        prompt += "Edit overrides, Check, Manual reject, Note edit, [S]kip, Quit ?";
+        prompt += "Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?";
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt);
@@ -712,6 +760,8 @@ def do_new():
                 done = 1;
         elif answer == 'N':
             edit_note(changes.get("lisa note", ""));
+        elif answer == 'P':
+            prod_maintainer();
         elif answer == 'R':
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower();
             if confirm == "y":
