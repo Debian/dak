@@ -27,6 +27,12 @@ queue/approved
 Others
 ------
 
+  o use postgres 7.2's built-in stat features to figure out how indices are used etc.
+
+  o neve shouldn't be using location, she should run down suites instead
+
+  o halle needs to know about udebs
+
   o by default hamstring katie's mail sending so that she won't send
     anything until someone edits a script; she's been used far too
     much to send spam atm :(
@@ -140,6 +146,11 @@ Others
 
   o morgue needs auto-cleaning (?)
 
+  o saffron: two modes, all included, seperate
+  o saffron: add non-US
+  o saffron: add ability to control components, architectures, archives, suites
+  o saffron: add key to expand header
+
 ================================================================================
 
 Less Urgent
@@ -159,9 +170,7 @@ Less Urgent
 
   o Logging [mostly done] (todo: rhona (hard), .. ?)
 
-  o jennifer is leaking file descriptors..
-
-  o the tar extractor class doesn't need to be redone for each package
+  o jennifer: the tar extractor class doesn't need to be redone for each package
 
   o reverse of source-must-exist; i.e. binary-for-source-must-not-exist
   o REJECT reminders in shania.
@@ -208,6 +217,11 @@ Less Urgent
      @ weekly postins to d-c (?)
      @ backup of report (?)
      @ backup of changes.tgz (?)
+
+  o --help doesn't work without /etc/katie/katie.conf (or similar) at
+    least existing.
+
+  o rename andrea (clashes with existing andrea)...
 
  * Harder:
 
@@ -290,3 +304,36 @@ Packaging
   o Fix stuff to look in sensible places for libs and config file in debian package (?)
 
 ================================================================================
+
+           --help      manpage
+-----------------------------------------------------------------------------
+alyson	      X
+amber	      X
+andrea	      X
+ashley	      X
+catherine     X		 X
+charisma      X		 X
+cindy	      X		 X
+claire	      X
+denise	      X
+fernanda      X
+halle	      X
+heidi	      X		 X
+helena        X
+jenna	      X
+jennifer      X
+jeri	      X
+julia	      X		 X
+kelly	      X		 X
+lisa	      X		 X
+madison	      X		 X
+melanie	      X		 X
+natalie	      X		 X
+neve	      X
+rene	      X
+rose	      X
+rhona	      X		 X
+saffron	      X
+shania	      X
+tea	      X
+ziyi	      X

@@ -7,23 +7,12 @@ This is unreleased alpha software; use it ENTIRELY at your own risk.
 dak is the collection of programs used to maintain the Debian
 project's archives.  It's not yet in a state where it can be easily
 used by others; if you want something to maintain a small archive and
-apt-ftparchive (from apt-utils) is insufficent, I strongly recommend
-you investigate mini-dinstall or debarchiver.
+apt-ftparchive (from the apt-utils package) is insufficient, I strongly
+recommend you investigate mini-dinstall, debarchiver or similar.
+However, if you insist on trying to try using dak, please read the
+documentation in 'doc/README.first'.
 
-If you do insist on trying to try using it, please be careful: katie
-sends out lots of emails and if not configured properly will happily
-send them to lots of people who probably didn't want those emails.
-
-Don't use katie.conf, apt.conf, cron.* etc. as starting points for
-your own configuration files, they're the configuration files for
-auric (aka ftp-master.debian.org) and are highly Debian specific.
-Start from scratch and refer to the security.debian.org config files
-(-security) as they're a better example for a private archive.
-
-NB: don't be put off by the names, see doc/README.names for a mapping
-of name -> what the script does.
-
-There are some manpages and READMEs in the doc sub-directory.  The
+There are some manual pages and READMEs in the doc sub-directory.  The
 TODO file is an incomplete list of things needing to be done.
 
 dak is developed and used on Linux but will probably work under any
@@ -37,8 +26,5 @@ version.
 
 -- 
 James Troup <james@nocrew.org>, Horsforth, Leeds
-Fri, 29 Nov 2002 15:47:49 +0000
-
-
-
+Thu, 26 Dec 2002 16:56:02 +0000
 
