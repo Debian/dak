@@ -27,6 +27,11 @@ queue/approved
 Others
 ------
 
+  o split the morgue into source and binary so binaries can be purged first!
+
+  o per-architecture priorities for things like different arch'es
+    gcc's, silly BSD libftw, palo, etc.
+
   o use postgres 7.2's built-in stat features to figure out how indices are used etc.
 
   o neve shouldn't be using location, she should run down suites instead
