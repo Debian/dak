@@ -10,6 +10,7 @@ denise - outputs the override tables to text files
 fernanda - checker script for new packages in incoming 
 halle - removes obsolete .changes files from proposed-updates
 heidi - manipulates suite tags; i.e. removes/adds packages from any given suite
+helena - produces a report on NEW and BYHAND packages
 jenna - generates lists of files in suites which are then fed to apt-ftparchive
 jennifer - processes packages in incoming
 jeri - basic dependency checking for proposed-updates
@@ -29,11 +30,11 @@ ziyi - creates Release files
 
 With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
  Judd, Catherine Zeta Jones, Charisma Carpenter, Cindy Crawford,
- Claire Forlani, Denise Van Outen, Fernanda Tervares, Halle Berry,
- Heidi Klum, Jenna Elfman, Jennifer Lopez, Jeri Ryan, Julia Roberts,
- Katie Holmes, Lisa Falkner, Madison Michele, Melanie Sykes, Natalie
- Portman, Neve Campbell, Rene O'Connor, Rhona Mitra, Saffron Burrows,
- Shania Twain, Tara Reid, Tea Leoni and Ziyi Zhang.
+ Claire Forlani, Denise Richards, Fernanda Tervares, Halle Berry,
+ Heidi Klum, Helena Christensen, Jenna Elfman, Jennifer Lopez, Jeri
+ Ryan, Julia Roberts, Katie Holmes, Lisa Falkner, Madison Michele,
+ Melanie Sykes, Natalie Portman, Neve Campbell, Rene O'Connor, Rhona
+ Mitra, Saffron Burrows, Shania Twain, Tea Leoni and Ziyi Zhang.
 
 In Use Elsewhere:
 -----------------
@@ -50,10 +51,14 @@ Michelle (Yeoh)		[joey]
 Courtney (Cox)		[neuro]
 Sandra (Bullock)	[neuro]
 
+Linda			[python lintian]
+Kate			[kde text editor]
+
 Possible Future Candidates:
 ---------------------------
 
 Alicia (Witt)
+Anastacia
 Angelina (Jolie)
 Billie (Piper)
 Cameron (Diaz)
@@ -67,7 +72,6 @@ Gail (Porter)
 Gillian (Anderson)
 Gwyneth (Paltrow)
 Heather (Graham)
-Helena (Christensen)
 Jessica (Alba)
 Jewel (Kilcher)
 Kari (Wuhrer)
@@ -86,4 +90,3 @@ Tara (Reid)
 Teri (Hatcher)
 Tiffani (Amber Thiesen)
 Virgine (Leoyden)
-
