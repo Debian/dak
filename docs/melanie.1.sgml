@@ -33,53 +33,81 @@
   <RefSect1><Title>Description</>
     <para>   
       <command>melanie</command> is the command line tool to add and remove package sets from suites with enforced logging, optional bug closing and override updates.
+    </PARA>
+  </REFSECT1>
 
   <RefSect1><Title>Options</>
     
     <VariableList>
       <VarListEntry><term><option>-a/--architecture=<replaceable>architecture</replaceable></option></>
-	<ListItem><Para>
-	    Restrict the packages being considered to the architecture(s) listed.
+	<ListItem>
+	  <Para>Restrict the packages being considered to the architecture(s) listed.</PARA>
+	</LISTITEM>
       </VarListEntry>
 
       <VarListEntry><term><option>-b/--binary</option></>
-	<ListItem><Para>
-	    Only look at binary packages.
+	<ListItem>
+	  <Para>Only look at binary packages.</PARA>
+	</LISTITEM>
       </VarListEntry>
 
       <VarListEntry><term><option>-c/--component=<replaceable>component</replaceable></option></>
-	<ListItem><Para>
-	    Restrict the packages being considered to those found in the component(s) listed.  The default is <literal>main</literal>.
+	<ListItem>
+	  <Para>Restrict the packages being considered to those found in the component(s) listed.  The default is <literal>main</literal>.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+      <VarListEntry><term><option>-C/--carbon-copy=<replaceable>[ bug number | 'package' | email address ]</replaceable></option></>
+	<ListItem>
+	  <Para>Carbon copy the bug closing mail to the address(es) given.  If the removal was not requested by the maintainer, this option should always be used to inform the maintainer of the package's removal.  3 types of address are accepted.</PARA>
+	    <itemizedlist>
+	      <listitem>
+		<para>number - assumed to be a bug number, and expanded to nnnnn@bugs.debian.org.</para>
+	      </listitem>
+	      <listitem>
+		<para>'<literal>package</literal>' - carbon copy package@package.debian.org for each package given as an argument.</para>
+	      </listitem>
+	      <listitem>
+		<para>anything containing '@' - assumed to be an email address, and carbon copied as is.</para>
+	      </listitem>
+	    </itemizedlist>
+	</LISTITEM>
       </VarListEntry>
 
       <VarListEntry><term><option>-d/--done=<replaceable>done</replaceable></option></>
-	<ListItem><Para>
-	    Close the bug(s) listed on successful completion.
+	<ListItem>
+	  <Para>Close the bug(s) listed on successful completion.</PARA>
+	</LISTITEM>
       </VarListEntry>
 
       <VarListEntry><term><option>-m/--reason=<replaceable>reason</replaceable></option></>
-	<ListItem><Para>
-	    The reason for the removal or addition of the package(s).  This is a required option; if not provided an editor will be spawned so the reason can be added there.
+	<ListItem>
+	  <Para>The reason for the removal or addition of the package(s).  This is a required option; if not provided an editor will be spawned so the reason can be added there.</PARA>
+	</LISTITEM>
       </VarListEntry>
 
       <VarListEntry><term><option>-n/--no-action</option></>
-	<ListItem><Para>
-	    Don't actually do anything; just show what would be done.
+	<ListItem>
+	  <Para>Don't actually do anything; just show what would be done.</PARA>
+	</LISTITEM>
       </VarListEntry>
 
       <VarListEntry><term><option>-p/--partial</option></>
-	<ListItem><Para>
-	    Partial removal of a package, so the package is not removed from the overrides.  This option is implied by <option>-a/--architecture</option>.
+	<ListItem>
+	  <Para>Partial removal of a package, so the package is not removed from the overrides.  This option is implied by <option>-a/--architecture</option>.</PARA>
+	</LISTITEM>
       </VarListEntry>
 
       <VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
-	<ListItem><Para>
-	    Only add/remove the packages from the suite(s) listed.  The default is <literal>unstable</literal>
+	<ListItem>
+	  <Para>Only add/remove the packages from the suite(s) listed.  The default is <literal>unstable</literal></PARA>
+	</LISTITEM>
       </VarListEntry>
 
       <VarListEntry><term><option>-S/--source-only</option></>
-	<ListItem><Para>
-	    Only look at source packages.
+	<ListItem>
+	  <Para>Only look at source packages.</PARA>
+	</LISTITEM>
       </VarListEntry>
 
     </VariableList>
@@ -173,6 +201,7 @@ troup@auric| ~ $
   <RefSect1><Title>Diagnostics</>
     <para>
       <command>melanie</command> returns zero on normal operation, non-zero on error.
+    </PARA>
   </RefSect1>
 
   &manauthor;
