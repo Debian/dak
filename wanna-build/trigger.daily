@@ -17,7 +17,7 @@ ARCHS_testing="$ARCHS_stable"
 ARCHS_unstable="$ARCHS_testing hurd-i386 sh"
 TMPDIR="/org/wanna-build/tmp"
 WGETOPT="-q -t2 -w0 -T60"
-CURLOPT="-q -s -S -f -K /org/wanna-build/trigger.curlrc"
+CURLOPT="-q -s -S -f -y 5 -K /org/wanna-build/trigger.curlrc"
 LOCKFILE="/org/wanna-build/tmp/DB_Maintenance_In_Progress"
 
 DAY=`date +%w`
