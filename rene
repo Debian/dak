@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Check for obsolete binary packages
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: rene,v 1.17 2003-01-20 19:13:21 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: rene,v 1.18 2003-02-07 14:53:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -270,9 +270,10 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
 
         print ;
 
-    print "Suggested command:"
-    print " melanie -m \"[rene] NBS\" -b %s" % (" ".join(nbs_to_remove));
-    print
+    if nbs_to_remove:
+        print "Suggested command:"
+        print " melanie -m \"[rene] NBS\" -b %s" % (" ".join(nbs_to_remove));
+        print
 
     print "="*75
     print
