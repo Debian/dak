@@ -2,7 +2,7 @@
 #
 # Executed hourly via cron, out of katie's crontab.
 
-ARCHS="alpha hppa i386 ia64 mips mipsel powerpc sparc"
+ARCHS="alpha hppa i386 ia64 mips mipsel powerpc sparc s390"
 
 set -e
 export SCRIPTVARS=/org/ftp.debian.org/katie/vars
