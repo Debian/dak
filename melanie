@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.19 2001-11-18 19:57:58 rmurray Exp $
+# $Id: melanie,v 1.20 2001-11-19 03:56:29 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ def main ():
                  ('S',"source-only", "Melanie::Options::Source-Only"),
                  ];
 
-    for i in ["help", "architecture", "binary", "component", "carbon-copy", "done", "reason", "no-action", "partial", "source-only" ]:
+    for i in ["help", "architecture", "binary-only", "component", "carbon-copy", "done", "reason", "no-action", "partial", "source-only" ]:
 	if not Cnf.has_key("Melanie::Options::%s" % (i)):
 	    Cnf["Melanie::Options::%s" % (i)] = "";
     if not Cnf.has_key("Melanie::Options::Suite"):
@@ -375,7 +375,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + string.join(bcc, ", ");
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.19 $";
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.20 $";
         if carbon_copy:
             Subst["__CC__"] = Subst["__CC__"] + "\nCc: " + string.join(carbon_copy, ", ");
         Subst["__SUITE_LIST__"] = suites_list;
