@@ -6,7 +6,8 @@
 Actually Urgent
 ---------------
 
-  o Fix lisa not to trample distirbutions (DOH)
+  o lisa doesn't do the right thing with -2 and -1 uploads, as you can
+    end up with the .orig.tar.gz not in the pool
 
 More Urgent
 -----------
