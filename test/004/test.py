@@ -2,7 +2,7 @@
 
 # Check utils.extract_component_from_section()
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.1 2001-06-10 16:35:04 troup Exp $
+# $Id: test.py,v 1.2 2002-01-19 18:58:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,6 +105,16 @@ def main ():
 
     # Validate #6 (section)
     input = "utIls"; output = ("utIls", "main");
+    test (input, output);
+
+    # Others..
+    input = "non-US/libs"; output = ("non-US/libs", "non-US/main");
+    test (input, output);
+    input = "non-US/main/libs"; output = ("non-US/main/libs", "non-US/main");
+    test (input, output);
+    input = "non-US/contrib/libs"; output = ("non-US/contrib/libs", "non-US/contrib");
+    test (input, output);
+    input = "non-US/non-free/libs"; output = ("non-US/non-free/libs", "non-US/non-free");
     test (input, output);
 
 ################################################################################

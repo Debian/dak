@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.36 2001-11-18 19:57:58 rmurray Exp $
+# $Id: utils.py,v 1.37 2002-01-19 18:58:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import commands, os, pwd, re, socket, shutil, stat, string, sys, tempfile
+import commands, os, pwd, re, socket, shutil, stat, string, sys, tempfile, traceback
 import apt_pkg
 
 re_comments = re.compile(r"\#.*")
@@ -89,9 +89,9 @@ def extract_component_from_section(section):
     if string.find(section, '/') != -1:
         component = string.split(section, '/')[0];
     if string.lower(component) == "non-us" and string.count(section, '/') > 0:
-        s = string.split(section, '/')[1];
+        s = component + '/' + string.split(section, '/')[1];
         if Cnf.has_key("Component::%s" % s): # Avoid e.g. non-US/libs
-            component = string.split(section, '/')[0]+ '/' + string.split(section, '/')[1];
+            component = s;
 
     if string.lower(section) == "non-us":
         component = "non-US/main";
