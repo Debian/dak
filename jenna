@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.9 2001-04-03 10:00:52 troup Exp $
+# $Id: jenna,v 1.10 2001-04-16 17:45:06 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ def generate_src_list(suite, component, output, dislocated_files):
         else:
             filename = path + filename;
         if sources.has_key(source):
-            sys.stderr.write("E: %s in %s / %s / source is duplicated.  Gravity wins!\n" % (package, suite, component));
+            sys.stderr.write("E: %s in %s / %s / source is duplicated.  Gravity wins!\n" % (source, suite, component));
         else:
             sources[source] = filename;
 

@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.39 2001-04-13 21:21:22 troup Exp $
+# $Id: katie,v 1.40 2001-04-16 17:45:06 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -235,7 +235,7 @@ def check_changes(filename):
             # FIXME: should probably remove anything that != stable
             for i in ("frozen", "unstable"):
                 if changes["distribution"].has_key(i):
-                    reject_message = reject_message + "Removing %s from distribution list.\n"
+                    reject_message = reject_message + "Removing %s from distribution list.\n" % (i)
                     del changes["distribution"][i]
             changes["stable upload"] = 1;
             # If we can't find a file from the .changes; assume it's a package already in the pool and move into the pool
@@ -939,7 +939,8 @@ def stable_install (changes_filename, summary, short_summary):
 
     projectB.query("COMMIT WORK");
 
-    utils.move (changes_filename, Cnf["Rhona::Morgue"] + os.path.basename(changes_filename));
+    # FIXME
+    utils.move (changes_filename, Cnf["Dir::Morgue"] + '/katie/' + os.path.basename(changes_filename));
 
     # Update the Stable ChangeLog file
 
@@ -971,6 +972,7 @@ def stable_install (changes_filename, summary, short_summary):
     if not Cnf["Dinstall::Options::No-Mail"]:
         Subst["__SUITE__"] = " into stable";
         Subst["__SUMMARY__"] = summary;
+        mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.installed","r").read());
         utils.send_mail (mail_message, "")
         announce (short_summary, 1)
 
@@ -1040,9 +1042,9 @@ def manual_reject (changes_filename):
     
     # If we weren't given one, spawn an editor so the user can add one in
     if manual_reject_message == "":
-        result = os.system("vi +6 %s" % (reject_file))
+        result = os.system("vi +6 %s" % (reject_filename))
         if result != 0:
-            sys.stderr.write ("vi invocation failed for `%s'!\n" % (reject_file))
+            sys.stderr.write ("vi invocation failed for `%s'!\n" % (reject_filename))
             sys.exit(result)
 
     # Then process it as if it were an automatic rejection
@@ -1240,7 +1242,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.39 $"
+    bcc = "X-Katie: $Revision: 1.40 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
