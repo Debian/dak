@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.32 2003-04-08 18:44:21 troup Exp $
+# $Id: katie.py,v 1.33 2003-04-08 21:38:52 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -763,13 +763,13 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 actual_size = int(files[dsc_file]["size"]);
                 found = "%s in incoming" % (dsc_file)
                 # Check the file does not already exist in the archive
-                q = self.projectB.query("SELECT f.size, f.md5sum FROM files f WHERE f.filename LIKE '%%%s%%'" % (dsc_file));
+                q = self.projectB.query("SELECT size, md5sum, filename FROM files WHERE filename LIKE '%%%s%%'" % (dsc_file));
 
                 ql = q.getresult();
                 # Strip out anything that isn't '%s' or '/%s$'
                 for i in ql:
-                    if i[0] != dsc_file and i[0][-(len(dsc_file)+1):] != '/'+dsc_file:
-                        self.Logger.log(["check_dsc_against_db",i[0],dsc_file]);
+                    if i[2] != dsc_file and i[2][-(len(dsc_file)+1):] != '/'+dsc_file:
+                        self.Logger.log(["check_dsc_against_db",i[2],dsc_file]);
                         ql.remove(i);
 
                 # "[katie] has not broken them.  [katie] has fixed a
