@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.6 2003-02-11 19:39:25 troup Exp $
+# $Id: kelly,v 1.7 2003-02-21 19:19:33 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.6 $";
+kelly_version = "$Revision: 1.7 $";
 
 Cnf = None;
 Options = None;
@@ -141,14 +141,12 @@ def init():
 
     Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
                  ('h',"help","Dinstall::Options::Help"),
-                 ('m',"manual-reject","Dinstall::Options::Manual-Reject", "HasArg"),
                  ('n',"no-action","Dinstall::Options::No-Action"),
                  ('p',"no-lock", "Dinstall::Options::No-Lock"),
                  ('s',"no-mail", "Dinstall::Options::No-Mail"),
                  ('V',"version","Dinstall::Options::Version")];
 
-    for i in ["automatic", "help", "manual-reject", "no-action",
-              "no-lock", "no-mail", "version"]:
+    for i in ["automatic", "help", "no-action", "no-lock", "no-mail", "version"]:
 	if not Cnf.has_key("Dinstall::Options::%s" % (i)):
 	    Cnf["Dinstall::Options::%s" % (i)] = "";
 
@@ -593,8 +591,6 @@ def main():
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
         Subst["__BCC__"] = bcc;
-    if Cnf.has_key("Dinstall::StableRejector"):
-        Subst["__STABLE_REJECTOR__"] = Cnf["Dinstall::StableRejector"];
 
     # Sort the .changes files so that we process sourceful ones first
     changes_files.sort(utils.changes_compare);
