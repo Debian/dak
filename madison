@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: madison,v 1.25 2003-02-10 18:24:24 troup Exp $
+# $Id: madison,v 1.26 2003-03-05 15:58:04 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 
 ################################################################################
 
-import pg, sys;
+import os, pg, sys;
 import utils, db_access;
 import apt_pkg;
 
@@ -81,6 +81,10 @@ def main ():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
+    # If cron.daily is running; warn the user that our output might seem strange
+    if os.path.exists(os.path.join(Cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
+        utils.warn("Archive maintenance is in progress; database inconsistencies are possible.");
+
     # Parse -a/--architecture, -s/--suite
     (con_suites, con_architectures, con_components, check_source) = \
                  utils.parse_args(Options);
@@ -93,7 +97,7 @@ def main ():
     if Options["Source-And-Binary"]:
         new_packages = [];
         for package in packages:
-            q = projectB.query("SELECT DISTINCT package FROM binaries JOIN source ON binaries.source = source.id WHERE source.source %s '%s'" % (comparison_operator, package));
+            q = projectB.query("SELECT DISTINCT b.package FROM binaries b, bin_associations ba, suite su, source s WHERE b.source = s.id AND su.id = ba.suite AND b.id = ba.bin AND s.source %s '%s' %s" % (comparison_operator, package, con_suites));
             new_packages.extend(map(lambda x: x[0], q.getresult()));
             if package not in new_packages:
                 new_packages.append(package);
