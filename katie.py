@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.44 2004-02-27 20:07:40 troup Exp $
+# $Id: katie.py,v 1.45 2004-04-01 17:14:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ###############################################################################
 
-import cPickle, errno, os, pg, re, stat, string, sys, tempfile, time;
+import cPickle, errno, os, pg, re, stat, string, sys, time;
 import utils, db_access;
 import apt_inst, apt_pkg;
 
@@ -117,6 +117,7 @@ class Katie:
             exec "self.pkg.%s.clear();" % (i);
         self.pkg.orig_tar_id = None;
         self.pkg.orig_tar_location = "";
+        self.pkg.orig_tar_gz = None;
 
     ###########################################################################
 
@@ -177,7 +178,8 @@ class Katie:
             if changes.has_key(i):
                 d_changes[i] = changes[i];
         ## dsc
-        for i in [ "source", "version", "maintainer", "fingerprint", "uploaders" ]:
+        for i in [ "source", "version", "maintainer", "fingerprint", "uploaders",
+                   "bts changelog" ]:
             if dsc.has_key(i):
                 d_dsc[i] = dsc[i];
         ## dsc_files
@@ -382,14 +384,17 @@ distribution.""";
         Cnf = self.Cnf;
         Subst = self.Subst;
         files = self.pkg.files;
+        changes = self.pkg.changes;
+        changes_file = self.pkg.changes_file;
+        dsc = self.pkg.dsc;
 
         print "Accepting."
-        self.Logger.log(["Accepting changes",self.pkg.changes_file]);
+        self.Logger.log(["Accepting changes",changes_file]);
 
         self.dump_vars(Cnf["Dir::Queue::Accepted"]);
 
         # Move all the files into the accepted directory
-        utils.move(self.pkg.changes_file, Cnf["Dir::Queue::Accepted"]);
+        utils.move(changes_file, Cnf["Dir::Queue::Accepted"]);
         file_keys = files.keys();
         for file in file_keys:
             utils.move(file, Cnf["Dir::Queue::Accepted"]);
@@ -405,9 +410,45 @@ distribution.""";
             utils.send_mail(mail_message)
             self.announce(short_summary, 1)
 
-        # Special support to enable clean auto-building of accepted packages
+
+        ## Helper stuff for DebBugs Version Tracking
+        if Cnf.Find("Dir::Queue::BTSVersionTrack"):
+            # ??? once queue/* is cleared on *.d.o and/or reprocessed
+            # the conditionalization on dsc["bts changelog"] should be
+            # dropped.
+
+            # Write out the version history from the changelog
+            if changes["architecture"].has_key("source") and \
+               dsc.has_key("bts changelog"):
+
+                temp_filename = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"],
+                                                    dotprefix=1, perms=0644);
+                version_history = utils.open_file(temp_filename, 'w');
+                version_history.write(dsc["bts changelog"]);
+                version_history.close();
+                filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
+                                      changes_file[:-8]+".versions");
+                os.rename(temp_filename, filename);
+
+            # Write out the binary -> source mapping.
+            temp_filename = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"],
+                                                dotprefix=1, perms=0644);
+            debinfo = utils.open_file(temp_filename, 'w');
+            for file in file_keys:
+                f = files[file];
+                if f["type"] == "deb":
+                    line = " ".join([f["package"], f["version"],
+                                     f["architecture"], f["source package"],
+                                     f["source version"]]);
+                    debinfo.write(line+"\n");
+            debinfo.close();
+            filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
+                                  changes_file[:-8]+".debinfo");
+            os.rename(temp_filename, filename);
+
+        ## Special support to enable clean auto-building of accepted packages
         self.projectB.query("BEGIN WORK");
-        for suite in self.pkg.changes["distribution"].keys():
+        for suite in changes["distribution"].keys():
             if suite not in Cnf.ValueList("Dinstall::AcceptedAutoBuildSuites"):
                 continue;
             suite_id = db_access.get_suite_id(suite);
@@ -538,9 +579,7 @@ distribution.""";
         # If we weren't given a manual rejection message, spawn an
         # editor so the user can add one in...
         if manual and not reject_message:
-            temp_filename = tempfile.mktemp();
-            fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
-            os.close(fd);
+            temp_filename = utils.temp_filename();
             editor = os.environ.get("EDITOR","vi")
             answer = 'E';
             while answer == 'E':
@@ -631,13 +670,13 @@ distribution.""";
 		maps = self.Cnf.ValueList("SuiteMappings")[:]
 		maps.reverse()
 		maps = [ m.split() for m in maps ]
-		maps = [ (x[1], x[2]) for x in maps 
+		maps = [ (x[1], x[2]) for x in maps
 				if x[0] == "map" or x[0] == "silent-map" ]
 		s = [suite]
 		for x in maps:
 			if x[1] in s and x[0] not in s:
 				s.append(x[0])
-		
+
 		que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) JOIN suite su ON (sa.suite = su.id) WHERE s.source = '%s' AND (%s)" % (package, string.join(["su.suite_name = '%s'" % a for a in s], " OR "));
             q = self.projectB.query(que)
 
@@ -797,7 +836,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
         files = self.pkg.files;
         dsc_files = self.pkg.dsc_files;
         legacy_source_untouchable = self.pkg.legacy_source_untouchable;
-        orig_tar_gz = None;
+        self.pkg.orig_tar_gz = None;
 
         # Try and find all files mentioned in the .dsc.  This has
         # to work harder to cope with the multiple possible
@@ -815,7 +854,6 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 # Strip out anything that isn't '%s' or '/%s$'
                 for i in ql:
                     if i[2] != dsc_file and i[2][-(len(dsc_file)+1):] != '/'+dsc_file:
-                        self.Logger.log(["check_dsc_against_db",i[2],dsc_file]);
                         ql.remove(i);
 
                 # "[katie] has not broken them.  [katie] has fixed a
@@ -848,14 +886,12 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 # Strip out anything that isn't '%s' or '/%s$'
                 for i in ql:
                     if i[1] != dsc_file and i[1][-(len(dsc_file)+1):] != '/'+dsc_file:
-                        self.Logger.log(["check_dsc_against_db",i[1],dsc_file]);
                         ql.remove(i);
 
                 if ql:
-                    # Unfortunately, we make get more than one
-                    # match here if, for example, the package was
-                    # in potato but had a -sa upload in woody.  So
-                    # we need to choose the right one.
+                    # Unfortunately, we may get more than one match here if,
+                    # for example, the package was in potato but had an -sa
+                    # upload in woody.  So we need to choose the right one.
 
                     x = ql[0]; # default to something sane in case we don't match any or have only one
 
@@ -877,6 +913,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     dsc_files[dsc_file]["files id"] = x[3]; # need this for updating dsc_files in install()
                     # See install() in katie...
                     self.pkg.orig_tar_id = x[3];
+                    self.pkg.orig_tar_gz = old_file;
                     if suite_type == "legacy" or suite_type == "legacy-mixed":
                         self.pkg.orig_tar_location = "legacy";
                     else:
@@ -895,9 +932,11 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                                 actual_md5 = apt_pkg.md5sum(utils.open_file(in_otherdir));
                                 actual_size = os.stat(in_otherdir)[stat.ST_SIZE];
                                 found = in_otherdir;
+                                self.pkg.orig_tar_gz = in_otherdir;
 
                     if not found:
                         self.reject("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_file));
+                        self.pkg.orig_tar_gz = -1;
                         continue;
             else:
                 self.reject("%s refers to %s, but I can't find it in the queue." % (file, dsc_file));
@@ -907,7 +946,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
             if actual_size != int(dsc_files[dsc_file]["size"]):
                 self.reject("size for %s doesn't match %s." % (found, file));
 
-        return (self.reject_message, orig_tar_gz);
+        return (self.reject_message, None);
 
     def do_query(self, q):
         sys.stderr.write("query: \"%s\" ... " % (q));

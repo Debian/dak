@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.45 2004-03-11 00:20:51 troup Exp $
+# $Id: jennifer,v 1.46 2004-04-01 17:14:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 
 ################################################################################
 
-import errno, fcntl, gzip, os, re, shutil, stat, sys, time, traceback;
+import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceback;
 import apt_inst, apt_pkg;
 import db_access, katie, logging, utils;
 
@@ -41,11 +41,13 @@ re_bad_diff = re.compile("^[\-\+][\-\+][\-\+] /dev/null");
 re_is_changes = re.compile(r"(.+?)_(.+?)_(.+?)\.changes$");
 re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:]+$");
 re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
+re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)");
+re_strip_revision = re.compile(r"-([^-]+)$");
 
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.45 $";
+jennifer_version = "$Revision: 1.46 $";
 
 Cnf = None;
 Options = None;
@@ -563,8 +565,12 @@ SELECT c.name FROM binaries b, bin_associations ba, suite s, location l,
 
 ###############################################################################
 
-def check_dsc ():
+def check_dsc():
     global reprocess;
+
+    # Ensure there is source to check
+    if not changes["architecture"].has_key("source"):
+        return;
 
     # Find the .dsc
     dsc_filename = None;
@@ -576,7 +582,7 @@ def check_dsc ():
             else:
                 dsc_filename = file;
 
-    # If there isn't one, we have nothing to do...
+    # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
     if not dsc_filename:
         return;
 
@@ -670,17 +676,105 @@ def check_dsc ():
 
 ################################################################################
 
-# dpkg-source broke .diff.gz generation in dpkg 1.8.x; detect the
-# resulting bad source packages and reject them.
+def get_changelog_versions(source_dir):
+    """Extracts a the source package and (optionally) grabs the
+    version history out of debian/changelog for the BTS."""
 
-def check_diff ():
-    for filename in files.keys():
-        if files[filename]["type"] == "diff.gz":
-            file = gzip.GzipFile(filename, 'r');
-            for line in file.readlines():
-                if re_bad_diff.search(line):
-                    reject("%s: invalid .diff.gz produced by a broken version of dpkg-dev 1.8.x." % (filename));
-                    break;
+    # Find the .dsc (again)
+    dsc_filename = None;
+    for file in files.keys():
+        if files[file]["type"] == "dsc":
+            dsc_filename = file;
+
+    # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
+    if not dsc_filename:
+        return;
+
+    # Create a symlink mirror of the source files in our temporary directory
+    for f in files.keys():
+        m = utils.re_issource.match(f);
+        if m:
+            src = os.path.join(source_dir, f);
+            # If a file is missing for whatever reason, give up.
+            if not os.path.exists(src):
+                return;
+            type = m.group(3);
+            if type == "orig.tar.gz" and pkg.orig_tar_gz:
+                continue;
+            else:
+                dest = os.path.join(os.getcwd(), f);
+            os.symlink(src, dest);
+
+    # If the orig.tar.gz is not a part of the upload, create a symlink to the
+    # existing copy.
+    if pkg.orig_tar_gz:
+        dest = os.path.join(os.getcwd(), os.path.basename(pkg.orig_tar_gz));
+        os.symlink(pkg.orig_tar_gz, dest);
+
+    # Extract the source
+    cmd = "dpkg-source -sn -x %s" % (dsc_filename);
+    (result, output) = commands.getstatusoutput(cmd);
+    if (result != 0):
+        reject("'dpkg-source -x' failed for %s [return code: %s]." % (dsc_filename, result));
+        reject(utils.prefix_multi_line_string(output, " [dpkg-source output:] "), "");
+        return;
+
+    if not Cnf.Find("Dir::Queue::BTSVersionTrack"):
+        return;
+
+    # Get the upstream version
+    upstr_version = utils.re_no_epoch.sub('', dsc["version"]);
+    if re_strip_revision.search(upstr_version):
+        upstr_version = re_strip_revision.sub('', upstr_version);
+
+    # Ensure the changelog file exists
+    changelog_filename = "%s-%s/debian/changelog" % (dsc["source"], upstr_version);
+    if not os.path.exists(changelog_filename):
+        reject("%s: debian/changelog not found in extracted source." % (dsc_filename));
+        return;
+
+    # Parse the changelog
+    dsc["bts changelog"] = "";
+    changelog_file = utils.open_file(changelog_filename);
+    for line in changelog_file.readlines():
+        m = re_changelog_versions.match(line);
+        if m:
+            dsc["bts changelog"] += line;
+    changelog_file.close();
+
+    # Check we found at least one revision in the changelog
+    if not dsc["bts changelog"]:
+        reject("%s: changelog format not recognised (empty version tree)." % (dsc_filename));
+
+########################################
+
+def check_source():
+    # Bail out if:
+    #    a) there's no source 
+    # or b) reprocess is 2 - we will do this check next time when orig.tar.gz is in 'files'
+    # or c) the orig.tar.gz is MIA
+    if not changes["architecture"].has_key("source") or reprocess == 2 \
+       or pkg.orig_tar_gz == -1:
+        return;
+
+    # Create a temporary directory to extract the source into
+    if Options["No-Action"]:
+        tmpdir = tempfile.mktemp();
+    else:
+        # We're in queue/holding and can create a random directory.
+        tmpdir = "%s" % (os.getpid());
+    os.mkdir(tmpdir);
+
+    # Move into the temporary directory
+    cwd = os.getcwd();
+    os.chdir(tmpdir);
+
+    # Get the changelog version history
+    get_changelog_versions(cwd);
+
+    # Move back and cleanup the temporary tree
+    os.chdir(cwd);
+    shutil.rmtree(tmpdir);
 
 ################################################################################
 
@@ -988,7 +1082,7 @@ def process_it (changes_file):
                 check_distributions();
                 check_files();
                 check_dsc();
-                check_diff();
+                check_source();
                 check_md5sums();
                 check_urgency();
                 check_timestamps();
@@ -1067,7 +1161,7 @@ def main():
     if accept_count:
         sets = "set"
         if accept_count > 1:
-            sets = "sets"
+            sets = "sets";
         print "Accepted %d package %s, %s." % (accept_count, sets, utils.size_type(int(accept_bytes)));
         Logger.log(["total",accept_count,accept_bytes]);
 
