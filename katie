@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.76 2002-03-31 16:14:48 troup Exp $
+# $Id: katie,v 1.77 2002-04-02 01:03:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.76 $";
+katie_version = "$Revision: 1.77 $";
 
 Cnf = None;
 Options = None;
@@ -58,6 +58,8 @@ Subst = None;
 
 install_count = 0;
 install_bytes = 0.0;
+
+installing_to_stable = 0;
 
 ###############################################################################
 
@@ -121,12 +123,13 @@ def check():
             if not Katie.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
                 reject("%s is NEW for %s." % (file, suite));
 
-            if files[file]["type"] == "deb":
-                reject(Katie.check_binaries_against_db(file, suite));
-            elif files[file]["type"] == "dsc":
-                reject(Katie.check_source_against_db(file));
-                (reject_msg, is_in_incoming) = Katie.check_dsc_against_db(file);
-                reject(reject_msg);
+            if not installing_to_stable:
+                if files[file]["type"] == "deb":
+                    reject(Katie.check_binaries_against_db(file, suite));
+                elif files[file]["type"] == "dsc":
+                    reject(Katie.check_source_against_db(file));
+                    (reject_msg, is_in_incoming) = Katie.check_dsc_against_db(file);
+                    reject(reject_msg);
 
 ###############################################################################
 
@@ -205,7 +208,10 @@ def action ():
     if answer == 'R':
         do_reject ();
     elif answer == 'I':
-        install ();
+        if not installing_to_stable:
+            install();
+        else:
+            stable_install(summary, short_summary);
     elif answer == 'Q':
         sys.exit(0)
 
@@ -386,6 +392,89 @@ def install ():
 
 ################################################################################
 
+def stable_install (summary, short_summary):
+    global install_count;
+
+    print "Installing to stable.";
+
+    # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
+    projectB.query("BEGIN WORK");
+
+    # Add the source to stable (and remove it from proposed-updates)
+    for file in files.keys():
+        if files[file]["type"] == "dsc":
+            package = dsc["source"];
+            version = dsc["version"];  # NB: not files[file]["version"], that has no epoch
+            q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
+            ql = q.getresult();
+            if not ql:
+                utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version));
+            source_id = ql[0][0];
+            suite_id = db_access.get_suite_id('proposed-updates');
+            projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id));
+            suite_id = db_access.get_suite_id('stable');
+            projectB.query("INSERT INTO src_associations (suite, source) VALUES ('%s', '%s')" % (suite_id, source_id));
+
+    # Add the binaries to stable (and remove it/them from proposed-updates)
+    for file in files.keys():
+        if files[file]["type"] == "deb":
+            package = files[file]["package"];
+            version = files[file]["version"];
+            architecture = files[file]["architecture"];
+            q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture));
+            ql = q.getresult();
+            if not ql:
+                utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture));
+            binary_id = ql[0][0];
+            suite_id = db_access.get_suite_id('proposed-updates');
+            projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
+            suite_id = db_access.get_suite_id('stable');
+            projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id));
+
+    projectB.query("COMMIT WORK");
+
+    utils.move (pkg.changes_file, Cnf["Dir::Morgue"] + '/katie/' + os.path.basename(pkg.changes_file));
+
+    ## Update the Stable ChangeLog file
+    new_changelog_filename = Cnf["Dir::RootDir"] + Cnf["Suite::Stable::ChangeLogBase"] + ".ChangeLog";
+    changelog_filename = Cnf["Dir::RootDir"] + Cnf["Suite::Stable::ChangeLogBase"] + "ChangeLog";
+    if os.path.exists(new_changelog_filename):
+        os.unlink (new_changelog_filename);
+
+    new_changelog = utils.open_file(new_changelog_filename, 'w');
+    for file in files.keys():
+        if files[file]["type"] == "deb":
+            new_changelog.write("stable/%s/binary-%s/%s\n" % (files[file]["component"], files[file]["architecture"], file));
+        elif utils.re_issource.match(file) != None:
+            new_changelog.write("stable/%s/source/%s\n" % (files[file]["component"], file));
+        else:
+            new_changelog.write("%s\n" % (file));
+    chop_changes = katie.re_fdnic.sub("\n", changes["changes"]);
+    new_changelog.write(chop_changes + '\n\n');
+    if os.access(changelog_filename, os.R_OK) != 0:
+        changelog = utils.open_file(changelog_filename);
+        new_changelog.write(changelog.read());
+    new_changelog.close();
+    if os.access(changelog_filename, os.R_OK) != 0:
+        os.unlink(changelog_filename);
+    utils.move(new_changelog_filename, changelog_filename);
+
+    install_count = install_count + 1;
+
+    if not Options["No-Mail"] and changes["architecture"].has_key("source"):
+        Subst["__SUITE__"] = " into stable";
+        Subst["__SUMMARY__"] = summary;
+        mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.installed","r").read());
+        utils.send_mail(mail_message, "");
+        Katie.announce(short_summary, 1)
+
+
+    # Finally remove the .katie file
+    katie_file = os.path.join(Cnf["Suite::Proposed-Updates::CopyKatie"], os.path.basename(Katie.pkg.changes_file[:-8]+".katie"));
+    os.unlink(katie_file);
+
+################################################################################
+
 def process_it (changes_file):
     global reject_message;
 
@@ -399,9 +488,18 @@ def process_it (changes_file):
     # save and restore it.
     pkg.directory = os.getcwd();
 
+    if installing_to_stable:
+        old = Katie.pkg.changes_file;
+        Katie.pkg.changes_file = os.path.basename(old);
+        os.chdir(Cnf["Suite::Proposed-Updates::CopyKatie"]);
+
     Katie.init_vars();
     Katie.update_vars();
     Katie.update_subst();
+
+    if installing_to_stable:
+        Katie.pkg.changes_file = old;
+
     check();
     action();
 
@@ -411,7 +509,7 @@ def process_it (changes_file):
 ###############################################################################
 
 def main():
-    global projectB, Logger, Urgency_Logger;
+    global projectB, Logger, Urgency_Logger, installing_to_stable;
 
     changes_files = init();
 
@@ -431,13 +529,17 @@ def main():
     if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Options["No-Lock"]:
         utils.fubar("Archive maintenance in progress.  Try again later.");
 
-    # Obtain lock if not in no-action mode and initialize the log
+    # If running from within proposed-updates; assume an install to stable
+    if string.find(os.getcwd(), 'proposed-updates') != -1:
+        installing_to_stable = 1;
 
+    # Obtain lock if not in no-action mode and initialize the log
     if not Options["No-Action"]:
         lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT);
         fcntl.lockf(lock_fd, FCNTL.F_TLOCK);
         Logger = Katie.Logger = logging.Logger(Cnf, "katie");
-        Urgency_Logger = Urgency_Log(Cnf);
+        if not installing_to_stable:
+            Urgency_Logger = Urgency_Log(Cnf);
 
     # Initialize the substitution template mapping global
     bcc = "X-Katie: %s" % (katie_version);
@@ -464,8 +566,8 @@ def main():
 
     if not Options["No-Action"]:
         Logger.close();
-        Urgency_Logger.close();
+        if not installing_to_stable:
+            Urgency_Logger.close();
 
 if __name__ == '__main__':
     main()
-
