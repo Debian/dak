@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.19 2001-01-18 04:51:10 troup Exp $
+# $Id: katie,v 1.20 2001-01-21 18:12:50 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,7 +105,7 @@ def check_signature (filename):
 
     (result, output) = commands.getstatusoutput("gpg --emulate-md-encode-bug --batch --no-options --no-default-keyring --always-trust --keyring=%s --keyring=%s < %s >/dev/null" % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename))
     if (result != 0):
-        reject_message = "Rejected: GPG signature check failed on `%s'.\n%s\n" % (filename, output)
+        reject_message = "Rejected: GPG signature check failed on `%s'.\n%s\n" % (os.path.basename(filename), output)
         return 0
     return 1
 
@@ -281,7 +281,10 @@ def check_files():
         # Checks for a binary package...
         elif re_isadeb.match(file) != None:
             # Extract package information using dpkg-deb
-            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file,"r")))
+            try:
+                control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file,"r")))
+            except:
+                reject_message = reject_message + "Rejected: %s: debExtractControl() raised %s.\n" % (file, sys.exc_type);
 
             # Check for mandatory fields
             if control.Find("Package") == None:
