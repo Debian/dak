@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Installs Debian packaes
-# Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.29 2001-02-09 22:15:45 troup Exp $
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: katie,v 1.30 2001-03-02 02:36:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -464,13 +464,13 @@ def check_dsc ():
             try:
                 dsc = utils.parse_changes(file, 1)
             except utils.cant_open_exc:
-                reject_message = reject_message + "Rejected: can't read changes file '%s'.\n" % (filename)
+                reject_message = reject_message + "Rejected: can't read changes file '%s'.\n" % (file)
                 return 0;
             except utils.changes_parse_error_exc, line:
-                reject_message = reject_message + "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line)
+                reject_message = reject_message + "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (file, line)
                 return 0;
             except utils.invalid_dsc_format_exc, line:
-                reject_message = reject_message + "Rejected: syntax error in .dsc file '%s', line %s.\n" % (filename, line)
+                reject_message = reject_message + "Rejected: syntax error in .dsc file '%s', line %s.\n" % (file, line)
                 return 0;
             try:
                 dsc_files = utils.build_file_list(dsc, 1)
@@ -478,7 +478,7 @@ def check_dsc ():
                 reject_message = reject_message + "Rejected: no Files: field in .dsc file.\n";
                 continue;
             except utils.changes_parse_error_exc, line:
-                reject_message = "Rejected: error parsing .dsc file '%s', can't grok: %s.\n" % (filename, line);
+                reject_message = "Rejected: error parsing .dsc file '%s', can't grok: %s.\n" % (file, line);
                 continue;
 
             # Try and find all files mentioned in the .dsc.  This has
@@ -864,7 +864,10 @@ def install (changes_filename, summary, short_summary):
 
     projectB.query("COMMIT WORK");
 
-    utils.move (changes_filename, Cnf["Dir::IncomingDir"] + 'DONE/' + os.path.basename(changes_filename))
+    try:
+        utils.move (changes_filename, Cnf["Dir::IncomingDir"] + 'DONE/' + os.path.basename(changes_filename))
+    except:
+        sys.stderr.write("W: couldn't move changes file '%s' to DONE directory [Got %s].\n" % (os.path.basename(changes_filename), sys.exc_type));
 
     install_count = install_count + 1;
 
@@ -988,7 +991,7 @@ def reject (changes_filename, manual_reject_mail_filename):
     try:
         utils.move (changes_filename, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], base_changes_filename));
     except:
-        sys.stderr.write("W: couldn't reject changes file '%s' [Got %s]" % (base_changes_filename, sys.exc_type));
+        sys.stderr.write("W: couldn't reject changes file '%s' [Got %s].\n" % (base_changes_filename, sys.exc_type));
         pass;
     for file in files.keys():
         if os.path.exists(file):
@@ -1052,7 +1055,7 @@ Subject: %s REJECTED
     if manual_reject_message == "":
         result = os.system("vi +6 %s" % (reject_file))
         if result != 0:
-            sys.stderr.write ("vi invocation failed for `%s'!" % (reject_file))
+            sys.stderr.write ("vi invocation failed for `%s'!\n" % (reject_file))
             sys.exit(result)
 
     # Then process it as if it were an automatic rejection
