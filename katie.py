@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.16 2002-04-24 01:56:24 troup Exp $
+# $Id: katie.py,v 1.17 2002-04-29 22:00:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -288,6 +288,8 @@ class Katie:
 
             if action:
                 Subst["__ANNOUNCE_LIST_ADDRESS__"] = list;
+                if Cnf.get("Dinstall::TrackingServer") and changes["architecture"].has_key("source"):
+                    Subst["__ANNOUNCE_LIST_ADDRESS__"] = Subst["__ANNOUNCE_LIST_ADDRESS__"] + "\nBcc: %s@%s" % (changes["source"], Cnf["Dinstall::TrackingServer"])
                 mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/jennifer.announce","r").read());
                 utils.send_mail (mail_message, "")
 
