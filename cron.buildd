@@ -11,7 +11,7 @@ export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 LOCKFILE="/org/wanna-build/tmp/DB_Maintenance_In_Progress"
 
 if [ ! -e "$ftpdir/Archive_Maintenance_In_Progress" ]; then
-	if lockfile -! -r3 $LOCKFILE; then
+	if lockfile -r3 $LOCKFILE; then
 	cleanup() {
 		rm -f "$LOCKFILE"
 	}
