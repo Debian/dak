@@ -14,9 +14,6 @@ More Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
-  o katie's version check should include arch: all packages; see
-    #104087.
-
 Less Urgent
 -----------
 

@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.53 2001-07-13 15:54:59 troup Exp $
+# $Id: katie,v 1.54 2001-07-13 16:01:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -475,7 +475,7 @@ def check_files():
                 
             if files[file]["type"] == "deb":
                 # Find any old binary packages
-                q = projectB.query("SELECT b.id, b.version, f.filename, l.path, c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f WHERE b.package = '%s' AND s.suite_name = '%s' AND a.arch_string = '%s' AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id AND f.location = l.id AND l.component = c.id AND b.file = f.id"
+                q = projectB.query("SELECT b.id, b.version, f.filename, l.path, c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f WHERE b.package = '%s' AND s.suite_name = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id AND f.location = l.id AND l.component = c.id AND b.file = f.id"
                                    % (files[file]["package"], suite, files[file]["architecture"]))
                 oldfiles = q.dictresult()
                 for oldfile in oldfiles:
@@ -1366,7 +1366,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.53 $"
+    bcc = "X-Katie: $Revision: 1.54 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
