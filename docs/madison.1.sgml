@@ -40,9 +40,15 @@
     <VariableList>
       <VarListEntry><term><option>-a/--architecture=<replaceable>architecture</replaceable></option></>
 	<ListItem>
-	  <Para>Restrict the packages being considered to the architecture(s) listed.</PARA>
+	  <Para>Only list package information for the listed architecture(s).</PARA>
 	</LISTITEM>
       </VarListEntry>
+
+      <varlistentry><term><option>-c/--component=<replaceable>component</replaceable></option></term>
+	<listitem>
+	  <para>Only list package information for the listed component(s).</para>
+	</listitem>
+      </varlistentry>
 
       <varlistentry>
 	<term><option>-r/--regex</option></term>
