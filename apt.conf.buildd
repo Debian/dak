@@ -16,16 +16,22 @@ Default
 bindirectory "incoming"
 {
    Packages "Packages";
-   Sources "Sources";
    Contents " ";
 
    BinOverride "override.sid.all3";
-   SrcOverride "override.sid.all3.src";
    BinCacheDB "packages-accepted.db";
    
-   FileList "/org/ftp.debian.org/database/dists/unstable_accepted_binary.list";
-   SourceFileList "/org/ftp.debian.org/database/dists/unstable_accepted_source.list";
+   FileList "/org/ftp.debian.org/database/dists/unstable_accepted.list";
 
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
 };
+
+bindirectory "incoming/"
+{
+   Sources "Sources";
+   BinOverride "override.sid.all3";
+   SrcOverride "override.sid.all3.src";
+   SourceFileList "/org/ftp.debian.org/database/dists/unstable_accepted.list";
+};
+

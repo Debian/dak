@@ -16,9 +16,7 @@ if [ ! -e "$ftpdir/Archive_Maintenance_In_Progress" ]; then
 		rm -f "$LOCKFILE"
 	}
 	trap cleanup 0
-	psql projectb -A -t -q -c 'SELECT filename FROM accepted_autobuild WHERE suite = 5' > $dbdir/dists/unstable_accepted.list
-	grep 'dsc$' $dbdir/dists/unstable_accepted.list > $dbdir/dists/unstable_accepted_source.list
-	grep 'deb$' $dbdir/dists/unstable_accepted.list > $dbdir/dists/unstable_accepted_binary.list
+	psql projectb -A -t -q -c "SELECT filename FROM accepted_autobuild WHERE suite = 5 AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
         cd $overridedir
         denise &>/dev/null
         rm -f override.sid.all3 override.sid.all3.src
