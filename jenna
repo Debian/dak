@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.7 2001-03-20 00:28:11 troup Exp $
+# $Id: jenna,v 1.8 2001-03-22 04:28:21 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,102 +39,131 @@ def generate_src_list(suite, component, output, dislocated_files):
     suite_id = db_access.get_suite_id(suite);
     
     if component == "-":
-        q = projectB.query("SELECT s.source, s.version, l.path, f.filename, s.id, f.id FROM source s, src_associations sa, location l, files f WHERE sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id ORDER BY s.source, s.version"
+        q = projectB.query("SELECT s.source, l.path, f.filename, f.id FROM source s, src_associations sa, location l, files f WHERE sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id ORDER BY s.source, s.version"
                            % (suite_id));
     else:
-        q = projectB.query("SELECT s.source, s.version, l.path, f.filename, s.id, f.id FROM source s, src_associations sa, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id ORDER BY s.source, s.version"
+        q = projectB.query("SELECT s.source, l.path, f.filename, f.id FROM source s, src_associations sa, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND sa.source = s.id AND sa.suite = '%d' AND l.id = f.location AND s.file = f.id ORDER BY s.source, s.version"
                            % (component, suite_id));
     entries = q.getresult();
     for entry in entries:
-        source = entry[0]
-        version = entry[1]
-        filename = entry[2]+entry[3];
-        id = entry[4]
-        add_new = 0
-        file_id = entry[5];
+        (source, path, filename, file_id) = entry;
         if dislocated_files.has_key(file_id):
             filename = dislocated_files[file_id];
-        if os.path.exists(filename):
-            if sources.has_key(source):
-                if apt_pkg.VersionCompare(sources[source]["version"], version) == -1:
-                    if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
-                        print "deleting %s (%s) in favour of newer version %s..." % (source, sources[source]["version"], version)
-                        projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %d" % (sources[source]["id"], suite_id))
-                    else:
-                        if Cnf.Find("Jenna::Options::Verbose"):
-                            print "[untouchable] would delete %s (%s) in favour of newer version %s..." % (source, sources[source]["version"], version)
-                    sources[source] = { "id": id, "version": version, "filename": filename }
-                else:
-                    if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
-                        print "deleting %s (%s) in favour of newer version %s..." % (source, version, sources[source]["version"])
-                        projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %d" % (id, suite_id))
-                    else:
-                        if Cnf.Find("Jenna::Options::Verbose"):
-                            print "[untouchable] would delete %s (%s) in favour of newer version %s..." % (source, version, sources[source]["version"])
-            else:
-                sources[source] = { "id": id, "version": version, "filename": filename }
         else:
-            if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
-                sys.stderr.write("WARNING: deleting %s because it doesn't exist.\n" % (filename));
-                projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %d" % (id, suite_id))
+            filename = path + filename;
+        if sources.has_key(source):
+            sys.stderr.write("E: %s in %s / %s / source is duplicated.  Gravity wins!" % (package, suite, component));
+        else:
+            sources[source] = filename;
 
     # Write the list of files out
     source_keys = sources.keys();
     source_keys.sort();
     for source in source_keys:
-        output.write(sources[source]["filename"]+'\n')
+        output.write(sources[source]+'\n')
     
+#########################################################################################
+
 def generate_bin_list(suite, component, architecture, output, type, dislocated_files):
     packages = {}
 
     suite_id = db_access.get_suite_id(suite);
     
     if component == "-":
-        q = projectB.query("SELECT b.package, b.version, l.path, f.filename, b.id, f.id FROM architecture a, binaries b, bin_associations ba, location l, files f WHERE ( a.arch_string = '%s' OR a.arch_string = 'all' ) AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s' ORDER BY b.package, b.version, a.arch_string" % (architecture, suite_id, type));
+        q = projectB.query("SELECT b.package, l.path, f.filename, f.id FROM architecture a, binaries b, bin_associations ba, location l, files f WHERE ( a.arch_string = '%s' OR a.arch_string = 'all' ) AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s' ORDER BY b.package, b.version, a.arch_string" % (architecture, suite_id, type));
     else:
-        q = projectB.query("SELECT b.package, b.version, l.path, f.filename, b.id, f.id FROM architecture a, binaries b, bin_associations ba, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND (a.arch_string = '%s' OR a.arch_string = 'all') AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s' ORDER BY b.package, b.version, a.arch_string" % (component, architecture, suite_id, type));
+        q = projectB.query("SELECT b.package, l.path, f.filename, f.id FROM architecture a, binaries b, bin_associations ba, location l, component c, files f WHERE lower(c.name) = '%s' AND (c.id = l.component OR l.component = NULL) AND (a.arch_string = '%s' OR a.arch_string = 'all') AND a.id = b.architecture AND ba.bin = b.id AND ba.suite = '%d' AND l.id = f.location AND b.file = f.id AND b.type = '%s' ORDER BY b.package, b.version, a.arch_string" % (component, architecture, suite_id, type));
     entries = q.getresult();
     for entry in entries:
-        package = entry[0]
-        version = entry[1]
-        filename = entry[2]+entry[3];
-        id = entry[4]
-        add_new = 0
-        file_id = entry[5];
+        (package, path, filename, file_id) = entry;
         if dislocated_files.has_key(file_id):
             filename = dislocated_files[file_id];
-        
-        if os.path.exists(filename):
-            if packages.has_key(package):
-                if apt_pkg.VersionCompare(packages[package]["version"], version) == -1:
-                    if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
-                        print "deleting %s (%s) in favour of newer version %s..." % (package, packages[package]["version"], version)
-                        projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %d" % (packages[package]["id"], suite_id))
-                    else:
-                        if Cnf.Find("Jenna::Options::Verbose"):
-                            print "[untouchable] would delete %s (%s) in favour of newer version %s..." % (package, packages[package]["version"], version)
-                    packages[package] = { "id": id, "version": version, "filename": filename }
-                else:
-                    if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
-                        print "deleting %s (%s) in favour of newer version %s..." % (package, version, packages[package]["version"])
-                        projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %d" % (id, suite_id))
-                    else:
-                        if Cnf.Find("Jenna::Options::Verbose"):
-                            print "[untochable] would delete %s (%s) in favour of newer version %s..." % (package, version, packages[package]["version"])
-            else:
-                packages[package] = { "id": id, "version": version, "filename": filename }
         else:
-            if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
-                sys.stderr.write("WARNING: deleting %s because it doesn't exist.\n" % (filename));
-                projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %d" % (id, suite_id))
-
+            filename = path + filename;
+        if packages.has_key(package):
+            sys.stderr.write("E: %s in %s / %s / %s / %s is duplicated.  Gravity wins!" % (package, suite, component, architecture, type));
+        else:
+            packages[package] = filename;
+        
     # Write the list of files out
     package_keys = packages.keys();
     package_keys.sort();
     for package in package_keys:
-        output.write(packages[package]["filename"]+'\n')
+        output.write(packages[package]+'\n')
+
+#########################################################################################
+
+##########
+# <elmo> I'm doing it in python btw.. nothing against your monster
+#        SQL, but the python wins in terms of speed and readiblity
+# <aj> bah
+# <aj> you suck!!!!!
+# <elmo> sorry :(
+# <aj> you are not!!!
+# <aj> you mock my SQL!!!!
+# <elmo> you want have contest of skillz??????
+# <aj> all your skillz are belong to my sql!!!!
+# <elmo> yo momma are belong to my python!!!!
+# <aj> yo momma was SQLin' like a pig last night!
+##########
+
+# If something has moved from one component to another we need to
+# clean out the old versions here.  The rest of jenna won't do this
+# because it works on a per-component level for flexibility.
+
+def clean_suite (suite):
+    print "Cleaning out packages for %s..." % (suite)
     
-    
+    suite_id = db_access.get_suite_id(suite);
+    q = projectB.query("""
+SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name
+  FROM binaries b, bin_associations ba, files f, location l, architecture a, component c
+  WHERE ba.suite = %s AND ba.bin = b.id AND b.file = f.id AND
+        f.location = l.id AND l.component = c.id AND b.architecture = a.id
+UNION
+SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name
+  FROM source s, src_associations sa, files f, location l, component c
+  WHERE sa.suite = %s AND sa.source = s.id AND s.file = f.id AND
+        f.location = l.id AND l.component = c.id;""" % (suite_id, suite_id));
+    ql = q.getresult();
+    d = {};
+    for i in ql:
+        (id, package, architecture, version, path, filename, component) = i;
+        filename = path + filename;
+        if architecture == "source":
+            delete_table = "src_associations";
+            delete_col = "source";
+        else:
+            delete_table = "bin_associations";
+            delete_col = "bin";
+        key = "%s~%s" % (package, architecture);
+        if os.path.exists(filename):
+            if d.has_key(key):
+                (other_version, other_component, other_id) = d[key];
+                if apt_pkg.VersionCompare(version, other_version) != 1:
+                    (keep_version, keep_component) = (other_version, other_component)
+                    (delete_id, delete_version, delete_component) = (id, version, component)
+                else:
+                    (keep_version, keep_component) = (version, component)
+                    (delete_id, delete_version, delete_component) = (other_id, other_version, other_component)
+                    d[key] = (version, component, id);
+                if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+                    print "deleting %s on %s (%s [%s]) in favour of newer version %s [%s]..." \
+                          % (package, architecture, delete_version, delete_component, keep_version, keep_component);
+                    projectB.query("DELETE FROM %s WHERE suite = %s AND %s = %s" % (delete_table, suite_id, delete_col, delete_id));
+                else:
+                    print "[untouchable] would delete %s on %s (%s [%s]) in favour of newer version %s [%s]..." \
+                          % (package, architecture, delete_version, delete_component, keep_version, keep_component);
+            else:
+                d[key] = (version, component, id);
+        else:
+            if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+                sys.stderr.write("WARNING: deleting %s because it doesn't exist.\n" % (filename));
+                projectB.query("DELETE FROM %s WHERE suite = %s AND %s = %s" % (delete_table, suite_id, delete_col, delete_id));
+            else:
+                sys.stderr.write("WARNING: [untouchable] would delete %s because it doesn't exist.\n" % (filename));
+
+#########################################################################################
 
 def main():
     global Cnf, projectB;
@@ -163,7 +192,11 @@ def main():
     for suite in string.split(Cnf["Jenna::Options::Suite"]):
         suite = string.lower(suite);
         if suite == 'stable':
+            print "Undoing dislocation..."
             dislocated_files = claire.find_dislocated_stable(Cnf, projectB);
+        else:
+            dislocated_files = {};
+        clean_suite(suite);
         components = Cnf["Jenna::Options::Component"];
         if not Cnf.has_key("Suite::%s::Components" % (suite)):
             components = "-";
@@ -194,6 +227,7 @@ def main():
                         generate_bin_list(suite, component, architecture, output, "udeb", dislocated_files);
                         output.close();
 
+#########################################################################################
+
 if __name__ == '__main__':
     main()
-
