@@ -184,13 +184,13 @@ Suite
 	  "sparc" "";
 	};
 	Announce "debian-devel-changes@lists.debian.org";
-	Version "xx";
 	Origin "Debian";
 	Description "Experimental packages - not released; use at your own risk.";
 	CodeName "experimental";
 	OverrideCodeName "experimental";
 	SingleOverrideFile "true";
 	Priority "0";
+        Tree "project/experimental";
   };
 
   Stable
@@ -266,9 +266,8 @@ Suite
 	  "powerpc" "";
 	  "sparc" "";
 	};
-	Version "2.3-testing";
 	Origin "Debian";
-	Description "Debian 2.3 Testing distribution - Not Released";
+	Description "Debian Testing distribution - Not Released";
 	OverrideCodeName "woody";
 	Priority "3";
   };
@@ -300,9 +299,8 @@ Suite
 	  "sparc" "";
 	};
 	Announce "debian-devel-changes@lists.debian.org";
-	Version "2.3";
 	Origin "Debian";
-	Description "Debian 2.3 Unstable - Not Released";
+	Description "Debian Unstable - Not Released";
 	CodeName "sid";
 	OverrideCodeName "sid";
 	Priority "4";
