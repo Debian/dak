@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.15 2002-06-05 00:18:32 troup Exp $
+# $Id: claire.py,v 1.16 2002-06-05 19:21:18 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ projectB = None;
 
 def usage (exit_code=0):
     print """Usage: claire [OPTIONS]
-Create compatability symlinks from legacy locations to the pool.
+Create compatibility symlinks from legacy locations to the pool.
 
   -v, --verbose              explain what is being done
   -h, --help                 show this help and exit"""
@@ -56,10 +56,8 @@ def clean_symlink (src, dest, root):
     src = string.replace(src, root, '', 1);
     dest = string.replace(dest, root, '', 1);
     dest = os.path.dirname(dest);
-    new_src = '';
-    for i in xrange(len(string.split(dest, '/'))):
-        new_src = new_src + '../';
-    return new_src + src
+    new_src = '../' * len(string.split(dest, '/'));
+    return new_src + src;
 
 ################################################################################
 
@@ -103,11 +101,11 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
 #        AND sec.id = o.section AND NOT (f.filename ~ '^potato/') AND o.suite = su.id
 #        AND NOT EXISTS (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
     for i in q.getresult():
-        src = i[2]+i[3]
         (component, section) = fix_component_section(i[0], i[1]);
         dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], Cnf.get("Suite::Stable::CodeName", "stable"), component, section, os.path.basename(i[3]));
-        src = clean_symlink(src, dest, Cnf["Dir::Root"]);
         if not os.path.exists(dest):
+	    src = i[2]+i[3];
+	    src = clean_symlink(src, dest, Cnf["Dir::Root"]);
             if Cnf.Find("Claire::Options::Verbose"):
                 print src+' -> '+dest
             os.symlink(src, dest);
@@ -140,15 +138,15 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
     for i in q.getresult():
         (component, section) = fix_component_section(i[0], i[2]);
         architecture = i[1];
-        package = i[3]
+        package = i[3];
         version = utils.re_no_epoch.sub('', i[4]);
-        src = i[5]+i[6]
+        src = i[5]+i[6];
 
         dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], Cnf.get("Suite::Stable::CodeName", "stable"), component, architecture, section, package, version);
         src = clean_symlink(src, dest, Cnf["Dir::Root"]);
         if not os.path.exists(dest):
             if Cnf.Find("Claire::Options::Verbose"):
-                print src+' -> '+dest
+                print src+' -> '+dest;
             os.symlink(src, dest);
         dislocated_files[i[7]] = dest;
         # Add per-arch symlinks for arch: all debs
@@ -190,5 +188,5 @@ def main ():
 #######################################################################################
 
 if __name__ == '__main__':
-    main()
+    main();
 
