@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: neve,v 1.11 2002-05-18 23:55:15 troup Exp $
+# $Id: neve,v 1.12 2002-06-08 00:23:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -171,7 +171,7 @@ def check_signature (filename):
             internal_error = internal_error + "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg);
             continue;
         args = split[2:];
-        if keywords.has_key(keyword) and keyword != "NODATA":
+        if keywords.has_key(keyword) and keyword != "NODATA" and keyword != "SIGEXPIRED":
             internal_error = internal_error + "found duplicate status token ('%s')." % (keyword);
             continue;
         else:
@@ -186,8 +186,7 @@ def check_signature (filename):
 
     # Now check for obviously bad things in the processed output
     if keywords.has_key("SIGEXPIRED"):
-        reject("key used to sign %s has expired." % (filename));
-        bad = 1;
+        utils.warn("%s: signing key has expired." % (filename));
     if keywords.has_key("KEYREVOKED"):
         reject("key used to sign %s has been revoked." % (filename));
         bad = 1;
@@ -312,6 +311,20 @@ def update_suites ():
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
             architecture_id = db_access.get_architecture_id (architecture);
             projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id));
+
+def update_override_type():
+    projectB.query("BEGIN WORK");
+    projectB.query("DELETE FROM override_type");
+    for type in Cnf.ValueList("OverrideType"):
+        projectB.query("INSERT INTO override_type (type) VALUES ('%s')" % (type));
+    projectB.query("COMMIT WORK");
+
+def update_priority():
+    projectB.query("BEGIN WORK");
+    projectB.query("DELETE FROM priority");
+    for priority in Cnf.SubTree("Priority").List():
+        projectB.query("INSERT INTO priority (priority, level) VALUES ('%s', %s)" % (priority, Cnf["Priority::%s" % (priority)]));
+    projectB.query("COMMIT WORK");
 
 ###############################################################################
 
@@ -522,6 +535,8 @@ def main ():
     update_archives();
     update_locations();
     update_suites();
+    update_override_type();
+    update_priority();
     projectB.query("COMMIT WORK");
 
     files_query_cache = utils.open_file(Cnf["Neve::ExportDir"]+"files","w");
@@ -542,9 +557,9 @@ def main ():
             suite = Cnf.Find("Location::%s::Suite" % (location));
             do_sources(location, prefix, suite, "",  server);
         elif type == "legacy":
-            for suite in Cnf.SubTree("Location::%s::Suites" % (location)).List():
+            for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
                 for component in Cnf.SubTree("Component").List():
-                    prefix = Cnf.Find("Suite::%s::CodeName" % (suite)) + '/' + component + '/source/'
+                    prefix = Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/source/'
                     do_sources(location, prefix, suite, component, server);
         elif type == "pool":
             continue;
@@ -568,10 +583,10 @@ def main ():
         elif type == "legacy":
             for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
                 for component in Cnf.SubTree("Component").List():
-                    for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
-                        if architecture == "source" or architecture == "all":
-                            continue;
-                        packages = location + Cnf.Find("Suite::%s::CodeName" % (suite)) + '/' + component + '/binary-' + architecture + '/Packages'
+                    architectures = filter(utils.real_arch,
+                                           Cnf.ValueList("Suite::%s::Architectures" % (suite)));
+                    for architecture in architectures:
+                        packages = location + Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/binary-' + architecture + '/Packages'
                         print 'Processing '+packages+'...';
                         process_packages (location, packages, suite, component, server);
         elif type == "pool":
