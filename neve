@@ -2,7 +2,7 @@
 
 # Populate the DB
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: neve,v 1.15 2002-11-22 04:07:16 troup Exp $
+# $Id: neve,v 1.16 2002-11-26 15:49:50 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -323,6 +323,25 @@ def update_priority():
     for priority in Cnf.SubTree("Priority").List():
         projectB.query("INSERT INTO priority (priority, level) VALUES ('%s', %s)" % (priority, Cnf["Priority::%s" % (priority)]));
 
+def update_section():
+    projectB.query("DELETE FROM section");
+    for component in Cnf.SubTree("Component").List():
+        if Cnf["Natalie::ComponentPosition"] == "prefix":
+            suffix = "";
+            if component != 'main':
+                prefix = component + '/';
+            else:
+                prefix = "";
+        else:
+            prefix = "";
+            component = component.replace("non-US/", "");
+            if component != 'main':
+                suffix = '/' + component;
+            else:
+                suffix = "";
+        for section in Cnf.ValueList("Section"):
+            projectB.query("INSERT INTO section (section) VALUES ('%s%s%s')" % (prefix, section, suffix));
+
 def get_location_path(directory):
     global location_path_cache;
 
@@ -368,6 +387,13 @@ def process_sources (filename, suite, component, archive):
         version = Scanner.Section["version"];
         directory = Scanner.Section["directory"];
         dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)));
+        # Sometimes the Directory path is a lie; check in the pool
+        if not os.path.exists(dsc_file):
+            if directory.split('/')[0] == "dists":
+                directory = Cnf["Dir::PoolRoot"] + utils.poolify(package, component);
+                dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)));
+        if not os.path.exists(dsc_file):
+            utils.fubar("%s not found." % (dsc_file));
         install_date = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(dsc_file)));
         fingerprint = check_signature(dsc_file);
         fingerprint_id = db_access.get_or_set_fingerprint_id(fingerprint);
@@ -472,7 +498,7 @@ def process_packages (filename, suite, component, archive):
         md5sum = Scanner.Section["md5sum"];
         files_id = get_or_set_files_id (filename, size, md5sum, location_id);
         type = "deb"; # FIXME
-        cache_key = "%s~%s~%s~%d~%d~%d" % (package, version, repr(source_id), architecture_id, location_id, files_id);
+        cache_key = "%s~%s~%s~%d~%d~%d~%d" % (package, version, repr(source_id), architecture_id, location_id, files_id, suite_id);
         if not arch_all_cache.has_key(cache_key):
             arch_all_cache[cache_key] = 1;
             cache_key = "%s~%s~%s~%d" % (package, version, repr(source_id), architecture_id);
@@ -538,6 +564,7 @@ def do_da_do_da ():
     update_suites();
     update_override_type();
     update_priority();
+    update_section();
     projectB.query("COMMIT WORK");
 
     files_query_cache = utils.open_file(Cnf["Neve::ExportDir"]+"files","w");
@@ -621,10 +648,7 @@ def do_da_do_da ():
 ################################################################################
 
 def main():
-    try:
-        do_da_do_da();
-    except:
-        utils.print_exc();
+    utils.try_with_debug(do_da_do_da);
 
 ################################################################################
 
