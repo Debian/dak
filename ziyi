@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.5 2001-04-24 05:16:22 ajt Exp $
+# $Id: ziyi,v 1.6 2001-05-05 07:20:57 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -116,6 +116,12 @@ def main ():
 	label = SuiteBlock.get("Label", origin)
 	version = SuiteBlock.get("Version", "")
 	codename = SuiteBlock.get("CodeName", "")
+
+	if SuiteBlock.has_key("NotAutomatic"):
+	    notautomatic = "yes"
+	else:
+	    notautomatic = ""
+
 	if SuiteBlock.has_key("Components"):
 	    components = SuiteBlock.SubTree("Components").List()
 	else:
@@ -146,6 +152,8 @@ def main ():
 	if codename != "":
 	    out.write("Codename: %s\n" % (codename))
 	out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
+	if notautomatic != "":
+	    out.write("NotAutomatic: %s\n" % (notautomatic))
 	out.write("Architectures: %s\n" % (string.join(filter(real_arch, SuiteBlock.SubTree("Architectures").List()))))
 	if components != []:
             out.write("Components: %s\n" % (string.join(components)))
@@ -179,6 +187,8 @@ def main ():
 				    release.write("Component: %s\n" % (sec))
 				release.write("Origin: %s\n" % (origin))
 				release.write("Label: %s\n" % (label))
+				if notautomatic != "":
+				    release.write("NotAutomatic: %s\n" % (notautomatic))
 				release.write("Architecture: %s\n" % (arch))
 				release.close()
 			    files.append("%s/binary-%s/Release" % (sec,arch))
