@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.4 2001-02-09 22:15:27 troup Exp $
+# $Id: catherine,v 1.5 2001-02-12 03:30:09 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ def main ():
                  ('n',"no-action","Catherine::Options::No-Action"),
                  ('v',"verbose","Catherine::Options::Verbose")];
 
-    amount = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
 
     projectB = pg.connect('projectb', 'localhost');
     db_access.init(Cnf, projectB);
