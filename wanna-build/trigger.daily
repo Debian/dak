@@ -4,7 +4,7 @@
 # finishes
 #
 PATH="/bin:/usr/bin"
-DISTS="oldstable-security stable stable-security testing testing-security unstable"
+DISTS="unstable oldstable-security stable stable-security testing testing-security"
 SECTIONS="main contrib non-free"
 ARCHS_oldstable="m68k arm sparc alpha powerpc i386"
 ARCHS_stable="mips mipsel ia64 hppa s390 $ARCHS_oldstable"
@@ -17,19 +17,24 @@ LOCKFILE="/org/wanna-build/tmp/DB_Maintenance_In_Progress"
 
 DAY=`date +%w`
 
+if lockfile -! -l 3600 $LOCKFILE; then
+	echo "Cannot lock $LOCKFILE"
+	exit 1
+fi
+
+cleanup() {
+	rm -f "$LOCKFILE"
+}
+trap cleanup 0
+
 echo Updating wanna-build databases...
-umask 022
+umask 027
 
 if [ "$DAY" = "0" ]; then
 	savelog -c 26 -p /org/wanna-build/db/merge.log
 fi
 
 exec >> /org/wanna-build/db/merge.log 2>&1
-lockfile -l 3600 $LOCKFILE
-cleanup() {
-	rm -f "$LOCKFILE"
-}
-trap cleanup 0
 
 echo -------------------------------------------------------------------------
 echo "merge triggered `date`"
@@ -66,7 +71,6 @@ for d in $DISTS ; do
 			gzip -dc /org/incoming.debian.org/buildd/Packages.gz >> Packages.$d.$a
 		fi
 	done
-
 
 	for s in $SECTIONS ; do
 		if echo $d | grep -qv -- -security; then
@@ -120,7 +124,7 @@ for d in $DISTS ; do
 				fi
 				gzip -dc Sources-$d.accepted.gz >> Sources.$d
 				if curl $CURLOPT http://security.debian.org/buildd/$dist/Packages.gz -o Packages.gz; then
-					mv Packages.gz Packages-$d.accepted.gz
+					mv Packages.gz Packages.$d.accepted.gz
 				fi
 			fi
 			rm -f Packages.gz
@@ -156,7 +160,11 @@ for d in $DISTS ; do
 		done
 	fi
 	for a in $ARCHS ; do
-		quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a >> quinn-$d.$a
+		if [ "$d" = "unstable" ]; then
+			quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a >> quinn-$d.$a
+		else
+			quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a | fgrep -v -f quinn-unstable.$a >> quinn-$d.$a
+		fi
 	done
 done
 
@@ -167,6 +175,11 @@ for a in $ARCHS_unstable ; do
 	for d in $DISTS ; do
 		dist=`echo $d | sed s/-.*$//`
 		case "$dist" in
+			oldstable)
+				if echo $ARCHS_oldstable | grep -q -v "\b$a\b"; then
+					continue
+				fi
+				;;
 			stable)
 				if echo $ARCHS_stable | grep -q -v "\b$a\b"; then
 					continue
@@ -201,8 +214,8 @@ for d in $DISTS; do
 done
 
 echo "merge ended `date`"
-rm -f "$LOCKFILE"
-trap -
 /org/wanna-build/bin/wb-graph >> /org/wanna-build/etc/graph-data
 /org/wanna-build/bin/wb-graph -p >> /org/wanna-build/etc/graph2-data
+rm -f "$LOCKFILE"
+trap -
 /org/buildd.debian.org/bin/makegraph
