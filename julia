@@ -2,7 +2,7 @@
 
 # Sync PostgreSQL users with system users
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: julia,v 1.8 2002-10-16 02:47:32 troup Exp $
+# $Id: julia,v 1.9 2003-01-02 18:12:50 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,13 +41,13 @@ projectB = None;
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: julia [OPTION]... PASSWD_FILE
-Sync PostgreSQL's pg_user with PASSWD_FILE.
+    print """Usage: julia [OPTION]...
+Sync PostgreSQL's users with system users.
 
+  -h, --help                 show this help and exit
   -n, --no-action            don't do anything
   -q, --quiet                be quiet about what is being done
-  -v, --verbose              explain what is being done
-  -h, --help                 show this help and exit"""
+  -v, --verbose              explain what is being done"""
     sys.exit(exit_code)
 
 ################################################################################
