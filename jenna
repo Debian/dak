@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.4 2001-01-25 06:00:07 troup Exp $
+# $Id: jenna,v 1.5 2001-02-09 22:17:10 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -189,7 +189,7 @@ def main():
                     output = utils.open_file("%s/%s_%s_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
                     generate_bin_list(suite, component, architecture, output, "deb", dislocated_files);
                     output.close();
-                    if component == "main": # FIXME: must be a cleaner way to say debian-installer is main only?
+                    if component == "main" and (suite == "unstable" or suite == "testing"): # FIXME: must be a cleaner way to say debian-installer is main only?
                         print "Processing dists/%s/%s/debian-installer/binary-%s..." % (suite,component, architecture);
                         output = utils.open_file("%s/%s_%s_debian-installer_binary-%s.list" % (Cnf["Dir::ListsDir"], suite, component, architecture), "w");
                         generate_bin_list(suite, component, architecture, output, "udeb", dislocated_files);
