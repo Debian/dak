@@ -14,6 +14,9 @@ More Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
+  o katie's version check should include arch: all packages; see
+    #104087.
+
 Less Urgent
 -----------
 
@@ -56,6 +59,7 @@ Less Urgent
     o cron.daily* should change umask (aj sucks)
     o Rene doesn't look at debian-installer but should.
     o Rene needs to check for binary-less source packages.
+    o Rene could accept a suite argument
   
  * Bizzare/uncertain:
    

@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.28 2001-07-07 03:10:51 troup Exp $
+# $Id: utils.py,v 1.29 2001-07-13 15:54:59 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -216,7 +216,7 @@ def build_file_list(changes, dsc):
     if format != "":
 	format = float(format)
     if dsc == "" and (format < 1.5 or format > 2.0):
-	raise nk_format_exc, changes["format"];
+	raise nk_format_exc, format;
 
     # No really, this has happened.  Think 0 length .dsc file.
     if not changes.has_key("files"):
@@ -456,12 +456,12 @@ def cc_fix_changes (changes):
 def changes_compare (a, b):
     try:
         a_changes = parse_changes(a, 0)
-    except changes_parse_error_exc, line:
+    except:
         return -1;
 
     try:
         b_changes = parse_changes(b, 0)
-    except changes_parse_error_exc, line:
+    except:
         return 1;
     
     cc_fix_changes (a_changes);

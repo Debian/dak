@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.52 2001-07-07 21:25:52 troup Exp $
+# $Id: katie,v 1.53 2001-07-13 15:54:59 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@
 import FCNTL, commands, fcntl, getopt, gzip, os, pg, pwd, re, shutil, stat, string, sys, tempfile, time, traceback
 import apt_inst, apt_pkg
 import utils, db_access, logging
+
+from types import *;
 
 ###############################################################################
 
@@ -232,6 +234,9 @@ def check_changes(filename):
         files = utils.build_file_list(changes, "");
     except utils.changes_parse_error_exc, line:
         reject_message = reject_message + "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line);
+    except utils.nk_format_exc, format:
+        reject_message = reject_message + "Rejected: unknown format '%s' of changes file '%s'.\n" % (format, filename);
+        return 0;
 
     # Check for mandatory fields
     for i in ("source", "binary", "architecture", "version", "distribution","maintainer", "files"):
@@ -265,6 +270,10 @@ def check_changes(filename):
             if re_isanum.match (i) == None:
                 reject_message = reject_message + "Rejected: `%s' from Closes field isn't a number.\n" % (i)
 
+    # Ensure there _is_ a target distribution
+    if changes["distribution"].keys() == []:
+        reject_message = reject_message + "Rejected: huh? Distribution field is empty in changes file.\n";
+            
     # Map frozen to unstable if frozen doesn't exist
     if changes["distribution"].has_key("frozen") and not Cnf.has_key("Suite::Frozen"):
         del changes["distribution"]["frozen"]
@@ -273,19 +282,17 @@ def check_changes(filename):
 
     # Map testing to unstable
     if changes["distribution"].has_key("testing"):
-        del changes["distribution"]["testing"]
-        changes["distribution"]["unstable"] = 1;
-        reject_message = reject_message + "Mapping testing to unstable.\n"
+        if len(changes["distribution"].keys()) > 1:
+            del changes["distribution"]["testing"];
+            reject_message = reject_message + "Warning: Ignoring testing as a target suite.\n";
+        else:
+            reject_message = reject_message + "Rejected: invalid distribution 'testing'.\n";
 
     # Ensure target distributions exist
     for i in changes["distribution"].keys():
         if not Cnf.has_key("Suite::%s" % (i)):
             reject_message = reject_message + "Rejected: Unknown distribution `%s'.\n" % (i)
 
-    # Ensure there _is_ a target distribution
-    if changes["distribution"].keys() == []:
-        reject_message = reject_message + "Rejected: huh? Distribution field is empty in changes file.\n";
-            
     # Map unreleased arches from stable to unstable
     if changes["distribution"].has_key("stable"):
         for i in changes["architecture"].keys():
@@ -733,10 +740,14 @@ def check_override ():
 def update_subst (changes_filename):
     global Subst;
 
-    if changes.has_key("architecture"):
-        Subst["__ARCHITECTURE__"] = string.join(changes["architecture"].keys(), ' ' );
-    else:
-        Subst["__ARCHITECTURE__"] = "Unknown";
+    # If katie crashed out in the right place, architecture may still be a string.
+    if not changes.has_key("architecture") or not isinstance(changes["architecture"], DictType):
+        changes["architecture"] = { "Unknown" : "" };
+    # and maintainer822 may not exist.
+    if not changes.has_key("maintainer822"):
+        changes["maintainer822"] = Cnf["Dinstall::MyEmailAddress"];
+
+    Subst["__ARCHITECTURE__"] = string.join(changes["architecture"].keys(), ' ' );
     Subst["__CHANGES_FILENAME__"] = os.path.basename(changes_filename);
     Subst["__FILE_CONTENTS__"] = changes.get("filecontents", "");
 
@@ -761,7 +772,7 @@ def action (changes_filename):
 
     # changes["distribution"] may not exist in corner cases
     # (e.g. unreadable changes files)
-    if not changes.has_key("distribution"):
+    if not changes.has_key("distribution") or not isinstance(changes["distribution"], DictType):
         changes["distribution"] = {};
     
     for suite in changes["distribution"].keys():
@@ -1355,7 +1366,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.52 $"
+    bcc = "X-Katie: $Revision: 1.53 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
