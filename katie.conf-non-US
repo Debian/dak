@@ -22,6 +22,7 @@ Dinstall
    PastCutoffYear "1984";
    SkipTime 300;
    CloseBugs "true";
+   SuiteSuffix "non-US";
    OverrideDisparityCheck "true";
    StableDislocationSupport "true";
 };
