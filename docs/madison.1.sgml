@@ -50,6 +50,12 @@
 	</LISTITEM>
       </VarListEntry>
 
+      <VarListEntry><term><option>-S/--source-and-binary</option></>
+	<ListItem>
+	  <Para>For each package which is a source package, also show information about the binary packages it produces.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
       <VarListEntry><term><option>-h/--help</option></>
 	<ListItem>
 	  <Para>Show help and then exit.</PARA>

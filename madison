@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: madison,v 1.13 2001-11-18 19:57:58 rmurray Exp $
+# $Id: madison,v 1.14 2002-01-19 18:57:06 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,8 +52,9 @@ def usage (exit_code=0):
     print """Usage: madison [OPTION] PACKAGE[...]
 Display information about PACKAGE(s).
 
-  -a, --architecture=ARCH    only show information for this architecture
-  -s, --suite=SUITE          only show information for this suite
+  -a, --architecture=ARCH    only show info for this architecture
+  -s, --suite=SUITE          only show info for this suite
+  -S, --source-and-binary    show info for the binary children of source pkgs
   -h, --help                 show this help and exit
 
 Both ARCH and SUITE can be space seperated lists, e.g.
@@ -67,10 +68,11 @@ def main ():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('a',"architecture","Madison::Options::Architecture", "HasArg"),
-                 ('s',"suite","Madison::Options::Suite", "HasArg"),
-                 ('h',"help","Madison::Options::Help")];
-    for i in ["architecture", "suite", "help" ]:
+    Arguments = [('a', "architecture", "Madison::Options::Architecture", "HasArg"),
+                 ('s', "suite", "Madison::Options::Suite", "HasArg"),
+                 ('S', "source-and-binary", "Madison::Options::Source-And-Binary"),
+                 ('h', "help", "Madison::Options::Help")];
+    for i in ["architecture", "suite", "source-and-binary", "help" ]:
 	if not Cnf.has_key("Madison::Options::%s" % (i)):
 	    Cnf["Madison::Options::%s" % (i)] = "";
 
@@ -85,7 +87,7 @@ def main ():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
-    if Options.get("Suite"):
+    if Options["Suite"]:
         suite_ids_list = [];
         for suite in string.split(Options["Suite"]):
             suite_id = db_access.get_suite_id(suite);
@@ -100,7 +102,7 @@ def main ():
     else:
         con_suites = "";
 
-    if Options.get("Architecture"):
+    if Options["Architecture"]:
         arch_ids_list = [];
         check_source = 0;
         for architecture in string.split(Options["Architecture"]):
@@ -119,9 +121,17 @@ def main ():
         con_architectures = "";
         check_source = 1;
 
+    if Options["Source-And-Binary"]:
+        new_packages = [];
+        for package in packages:
+            q = projectB.query("SELECT DISTINCT package FROM binaries WHERE EXISTS (SELECT s.source FROM source s WHERE binaries.source = s.id AND s.source = '%s')" % (package));
+            new_packages.extend(map(lambda x: x[0], q.getresult()));
+            new_packages.append(package);
+        packages = new_packages;
+
     results = 0;
     for package in packages:
-	q = projectB.query("SELECT b.package, b.version, a.arch_string, su.suite_name, m.name FROM binaries b, architecture a, suite su, bin_associations ba, maintainer m WHERE b.package = '%s' AND a.id = b.architecture AND su.id = ba.suite AND b.id = ba.bin AND b.maintainer = m.id %s %s" % (package, con_suites, con_architectures));
+        q = projectB.query("SELECT b.package, b.version, a.arch_string, su.suite_name, m.name FROM binaries b, architecture a, suite su, bin_associations ba, maintainer m WHERE b.package = '%s' AND a.id = b.architecture AND su.id = ba.suite AND b.id = ba.bin AND b.maintainer = m.id %s %s" % (package, con_suites, con_architectures));
         ql = q.getresult();
         if check_source:
             q = projectB.query("SELECT s.source, s.version, 'source', su.suite_name, m.name FROM source s, suite su, src_associations sa, maintainer m WHERE s.source = '%s' AND su.id = sa.suite AND s.id = sa.source AND s.maintainer = m.id %s" % (package, con_suites));
