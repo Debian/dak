@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.39 2003-10-14 19:16:16 troup Exp $
+# $Id: jennifer,v 1.40 2003-10-14 19:24:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.39 $";
+jennifer_version = "$Revision: 1.40 $";
 
 Cnf = None;
 Options = None;
@@ -242,6 +242,11 @@ def check_changes():
     for dir in [ "Accepted", "Byhand", "Done", "New" ]:
         if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+base_filename):
             reject("%s: a file with this name already exists in the %s directory." % (base_filename, dir));
+
+    # Check the .changes is non-empty
+    if not files:
+        reject("%s: nothing to do (Files field is empty)." % (base_filename))
+        return 0;
 
     return 1;
 
