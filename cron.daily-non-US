@@ -60,6 +60,8 @@ for i in main contrib non-free; do cat override.potato.$i >> override.potato.all
 # Generate Packages and Sources files
 cd $masterdir
 apt-ftparchive generate apt.conf-non-US
+# Generate Release files
+ziyi
 
 # Clean out old packages
 rhona
