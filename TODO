@@ -19,7 +19,13 @@ Actually Urgent
 More Urgent
 -----------
 
+   * Something fucked up. Not sure why the .diff.gz size didn't match the
+     .changes/.dsc. Not sure why katie didn't reject the upload when it found
+     that out aswell.
+
  <drow> Can't read file.: /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.katie.  You assume that the filenames are relative to accepted/, might want to doc or fix that.
+
+<neuro> the orig was in NEW, the changes that caused it to be NEW were pulled out in -2, and we end up with no orig in the archive :(
 
   o SecurityAcceptedAutoBuild doesn't handle the case of foo_3.3woody1
   with a new .orig.tar.gz followed by a foo_3.3potato1 with the same
@@ -32,6 +38,8 @@ More Urgent
   o amber doesn't include .orig.tar.gz but it should
 
   o permissions (paranoia, group write, etc.) configurability and overhaul
+
+  o remember duplicate copyrights in lisaand skip them, per package
 
   o <M>ove option for lisa byhand proecessing
 
