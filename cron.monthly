@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Run at the beginning of the month via cron, out of katie's crontab.
+
+set -e
+export SCRIPTVARS=/org/ftp.debian.org/katie/vars
+. $SCRIPTVARS
+
+################################################################################
+
+DATE=`date -d yesterday +%y%m`
+
+cd /org/ftp.debian.org/mail/archive
+if [ -f mail ]; then
+    mv mail mail-$DATE
+    sleep 20
+    gzip -9 mail-$DATE
+    chgrp debadmin mail-$DATE.gz
+    chmod 660 mail-$DATE.gz
+fi;
+
+################################################################################
