@@ -2,7 +2,7 @@
 
 # Dependency check proposed-updates
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jeri,v 1.5 2002-05-08 11:13:02 troup Exp $
+# $Id: jeri,v 1.6 2002-05-14 15:34:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -253,8 +253,8 @@ def parse_packages():
     # Parse the Packages files (since it's a sub-second operation on auric)
     suite = "stable";
     stable = {};
-    components = Cnf.SubTree("Suite::%s::Components" % (suite)).List();
-    architectures = Cnf.SubTree("Suite::%s::Architectures" % (suite)).List();
+    components = Cnf.ValueList("Suite::%s::Components" % (suite));
+    architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite));
     for arch in [ "source", "all" ]:
         if architectures.count(arch):
             architectures.remove(arch);

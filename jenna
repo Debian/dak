@@ -2,7 +2,7 @@
 
 # Generate file list which is then fed to apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.16 2002-05-08 11:13:02 troup Exp $
+# $Id: jenna,v 1.17 2002-05-14 15:34:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -252,12 +252,12 @@ def main():
         if not Cnf.has_key("Suite::%s::Components" % (suite)):
             components = "-";
         if components == "":
-            components = string.join(Cnf.SubTree("Suite::%s::Components" % (suite)).List());
+            components = string.join(Cnf.ValueList("Suite::%s::Components" % (suite)));
         for component in string.split(components):
             component = string.lower(component)
             architectures = Options["Architecture"];
             if architectures == "":
-                architectures = string.join(Cnf.SubTree("Suite::%s::Architectures" % (suite)).List());
+                architectures = string.join(Cnf.ValueList("Suite::%s::Architectures" % (suite)));
             for architecture in string.split(architectures):
                 architecture = string.lower(architecture)
                 if architecture == "all":
