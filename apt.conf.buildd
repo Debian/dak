@@ -24,4 +24,5 @@ bindirectory "incoming"
    BinCacheDB "packages-accepted.db";
    
    PathPrefix "";
+   Packages::Extensions ".deb .udeb";
 };
