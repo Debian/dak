@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.46 2002-05-23 12:36:15 troup Exp $
+# $Id: utils.py,v 1.47 2002-06-08 00:18:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -527,6 +527,11 @@ def validate_changes_file_arg(file, fatal=1):
             return None;
     else:
         return file;
+
+################################################################################
+
+def real_arch(arch):
+    return (arch != "source" and arch != "all");
 
 ################################################################################
 
