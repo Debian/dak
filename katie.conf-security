@@ -356,17 +356,18 @@ Location
   /org/security.debian.org/ftp/dists/
     {
       Archive "security";
-      Suites 
-	{
-	  Stable;
-	  Testing;
-        };
       Type "legacy";
     };
 
   /org/security.debian.org/ftp/pool/
     {
       Archive "security";
+      Suites 
+	{
+	  OldStable;
+	  Stable;
+	  Testing;
+        };
       Type "pool";
     };
 };
