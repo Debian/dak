@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Output override files for apt-ftparchive and indices/
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: denise,v 1.15 2003-01-02 18:10:02 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2004  James Troup <james@nocrew.org>
+# $Id: denise,v 1.16 2004-01-21 03:19:52 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -131,26 +131,36 @@ def main ():
             continue;
         component_id = db_access.get_component_id(component);
         for type in Cnf.ValueList("OverrideType"):
-            if type == "deb":
-                override_type = "";
-                q = projectB.query("SELECT DISTINCT b.package FROM bin_associations ba, binaries b, files f, location l WHERE ba.suite = %s AND l.component = %s AND ba.bin = b.id AND b.file = f.id AND f.location = l.id" % (suite_id, component_id));
+            if type == "deb" or type == "udeb":
+                if type == "deb":
+                    override_type = "";
+                elif type == "udeb":
+                    if component != "main":
+                        continue;
+                    override_type = ".debian-installer";
+                q = projectB.query("SELECT DISTINCT b.package FROM bin_associations ba, binaries b, files f, location l WHERE ba.suite = %s AND l.component = %s AND b.type = '%s' AND ba.bin = b.id AND b.file = f.id AND f.location = l.id" % (suite_id, component_id, type));
             elif type == "dsc":
                 q = projectB.query("SELECT DISTINCT s.source FROM src_associations sa, source s, files f, location l WHERE sa.suite = %s AND l.component = %s AND sa.source = s.id AND s.file = f.id AND f.location = l.id" % (suite_id, component_id));
                 override_type = ".src";
-            elif type == "udeb":
-                continue;
             filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, component.replace("non-US/", ""), override_type);
             file = utils.open_file(filename, 'w');
             for i in q.getresult():
                 package = i[0];
-                if override["unstable"][component][type].has_key(package):
-                    file.write(utils.result_join(override["unstable"][component][type][package])+'\n');
-                elif override["stable"][component][type].has_key(package):
-                    file.write(utils.result_join(override["stable"][component][type][package])+'\n');
-                else:
-                    if type == "dsc" and (override["unstable"][component]["deb"].has_key(package) or override["stable"][component]["deb"].has_key(package)):
-                        continue; # source falls back on binary; so accept silently
-                    utils.warn("Can't find override entry for testing package '%s' (component %s, type %s)." % (package, component, type));
+                if type == "deb" or type == "dsc":
+                    if override["unstable"][component][type].has_key(package):
+                        file.write(utils.result_join(override["unstable"][component][type][package])+'\n');
+                    elif override["stable"][component][type].has_key(package):
+                        file.write(utils.result_join(override["stable"][component][type][package])+'\n');
+                    else:
+                        if type == "dsc" and (override["unstable"][component]["deb"].has_key(package) or override["stable"][component]["deb"].has_key(package)):
+                            continue; # source falls back on binary; so accept silently
+                        utils.warn("Can't find override entry for testing package '%s' (component %s, type %s)." % (package, component, type));
+                elif type == "udeb":
+                    if component == "main" and override["unstable"][component][type].has_key(package):
+                        file.write(utils.result_join(override["unstable"][component][type][package])+'\n');
+                    else:
+                        utils.warn("Can't find override entry for testing package '%s' (component %s, type %s)." % (package, component, type));
+
             file.close();
 
 #######################################################################################
