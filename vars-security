@@ -4,6 +4,7 @@ base=/org/security.debian.org
 masterdir=$base/katie/
 overridedir=$base/override
 queuedir=$base/queue/
+unchecked=$queuedir/unchecked/
 accepted=$queuedir/accepted/
 done=$queuedir/done/
 
