@@ -2,7 +2,7 @@
 
 # Manually reject packages for proprosed-updates
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: lauren,v 1.2 2003-03-14 19:06:02 troup Exp $
+# $Id: lauren,v 1.3 2003-11-20 02:37:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import apt_pkg;
 ################################################################################
 
 # Globals
-lauren_version = "$Revision: 1.2 $";
+lauren_version = "$Revision: 1.3 $";
 
 Cnf = None;
 Options = None;
@@ -199,10 +199,17 @@ def reject (reject_message = ""):
             architecture = files[file]["architecture"];
             q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture));
             ql = q.getresult();
+
+            # Horrible hack to work around partial replacement of
+            # packages with newer versions (from different source
+            # packages).  This, obviously, should instead check for a
+            # newer version of the package and only do the
+            # warn&continue thing if it finds one.
             if not ql:
-                utils.fubar("reject: Couldn't find %s_%s_%s in binaries table." % (package, version, architecture));
-            binary_id = ql[0][0];
-            projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
+                utils.warn("reject: Couldn't find %s_%s_%s in binaries table." % (package, version, architecture));
+            else:
+                binary_id = ql[0][0];
+                projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
     projectB.query("COMMIT WORK");
 
     # Send the rejection mail if appropriate
