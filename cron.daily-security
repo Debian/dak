@@ -45,6 +45,16 @@ for suite in $suites; do
 	    esac
 	    if [ ! "$type" = "skip" ]; then
 		$masterdir/natalie -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
+		case $suite in
+		    stable)
+			$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.woody.$component$type
+			$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
+			;;
+		    testing)
+			$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
+			;;
+		    *) echo "Unknown suite type"; exit 1;;
+		esac
 	    fi
 	done
     done
