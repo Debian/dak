@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: madison,v 1.22 2002-12-08 17:25:17 troup Exp $
+# $Id: madison,v 1.23 2003-01-02 18:11:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,10 +43,10 @@ def usage (exit_code=0):
 Display information about PACKAGE(s).
 
   -a, --architecture=ARCH    only show info for this architecture
+  -h, --help                 show this help and exit
   -r, --regex                treat PACKAGE as a regex
   -s, --suite=SUITE          only show info for this suite
   -S, --source-and-binary    show info for the binary children of source pkgs
-  -h, --help                 show this help and exit
 
 Both ARCH and SUITE can be space seperated lists, e.g.
     --architecture=\"m68k i386\""""
