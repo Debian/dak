@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.29 2003-02-07 14:51:48 troup Exp $
+# $Id: katie.py,v 1.30 2003-02-21 19:19:07 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -475,10 +475,11 @@ distribution.""";
 
     ###########################################################################
 
-    def force_move (self, files):
-        """Forcefully move files from the current directory to the reject
-           directory.  If any file already exists it will be moved to the
-           morgue to make way for the new file."""
+    def force_reject (self, files):
+        """Forcefully move files from the current directory to the
+           reject directory.  If any file already exists in the reject
+           directory it will be moved to the morgue to make way for
+           the new file."""
 
         Cnf = self.Cnf
 
@@ -527,10 +528,10 @@ distribution.""";
             while answer == 'E':
                 os.system("%s %s" % (editor, temp_filename))
                 file = utils.open_file(temp_filename);
-                reject_message = " ".join(file.readlines());
+                reject_message = "".join(file.readlines());
                 file.close();
                 print "Reject message:";
-                print utils.prefix_multi_line_string(reject_message,"  ");
+                print utils.prefix_multi_line_string(reject_message,"  ",include_blank_lines=1);
                 prompt = "[R]eject, Edit, Abandon, Quit ?"
                 answer = "XXX";
                 while prompt.find(answer) == -1:
@@ -556,7 +557,7 @@ distribution.""";
 
         # Move all the files into the reject directory
         reject_files = pkg.files.keys() + [pkg.changes_file];
-        self.force_move(reject_files);
+        self.force_reject(reject_files);
 
         # If we fail here someone is probably trying to exploit the race
         # so let's just raise an exception ...
