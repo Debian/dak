@@ -13,7 +13,7 @@ convert () {
 	src=$1; dst=$2
 	rm -f .new-$dst
 	echo Generating $dst from http://www.debian.org/Bugs/$src ...
-	lynx -nolist -dump $urlbase$src | sed -e 's/^ *$//' | perl -00 -ne 'exit if /Back to the Debian Project homepage/; print unless ($.==1 || /^\s*Other pages:$/m)' >.new-$dst
+	lynx -nolist -dump $urlbase$src | sed -e 's/^ *$//' | perl -00 -ne 'exit if /Back to the Debian Project homepage/; print unless ($.==1 || $.==2 || $.==3 || /^\s*Other pages:$/m)' >.new-$dst
 	if cmp -s .new-$dst $dst ; then rm -f .new-$dst
 	else mv -f .new-$dst $dst
 	fi
