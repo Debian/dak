@@ -11,6 +11,9 @@
 Others
 ------
 
+  o cindy should remove the src-only override when a binary+source override
+    exists
+
   o reject on > or < in a version constraint
 
 23:07 < aba> elmo: and, how about enhancing rene to spot half-dropped
