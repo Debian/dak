@@ -2,7 +2,7 @@
 
 # Generate file lists used by apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.27 2004-02-27 20:07:40 troup Exp $
+# $Id: jenna,v 1.28 2004-06-17 15:02:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -117,7 +117,7 @@ def resolve_arch_all_vs_any(versions, packages):
     delete_table = "bin_associations";
     delete_col = "bin";
 
-    if apt_pkg.VersionCompare(highest_arch_any_version, arch_all_version) != 1:
+    if apt_pkg.VersionCompare(highest_arch_any_version, arch_all_version) < 1:
         # arch: all dominates
         delete_packages(arch_any_versions, pkg, "all", suite,
                         arch_all_version, delete_table, delete_col, packages);

@@ -2,7 +2,7 @@
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.17 2004-03-11 00:20:51 troup Exp $
+# $Id: charisma,v 1.18 2004-06-17 15:02:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ def main():
             maintainer = fix_maintainer(source[2]);
             if packages.has_key(package):
                 if packages[package]["priority"] <= suite_priority:
-                    if apt_pkg.VersionCompare(packages[package]["version"], version) == -1:
+                    if apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
                         packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version };
             else:
                 packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version };
@@ -123,7 +123,7 @@ def main():
                 maintainer = get_maintainer(binary[2]);
             if packages.has_key(package):
                 if packages[package]["priority"] <= suite_priority:
-                    if apt_pkg.VersionCompare(packages[package]["version"], version) == -1:
+                    if apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
                         packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version };
             else:
                 packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version };
@@ -145,7 +145,7 @@ def main():
                 version = '*';
             # A version of '*' overwhelms all real version numbers
             if not packages.has_key(package) or version == '*' \
-               or apt_pkg.VersionCompare(packages[package]["version"], version) == -1:
+               or apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
                 packages[package] = { "maintainer": maintainer, "version": version };
         file.close();
 

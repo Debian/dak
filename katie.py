@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.47 2004-04-07 00:12:13 troup Exp $
+# $Id: katie.py,v 1.48 2004-06-17 15:02:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -775,10 +775,10 @@ distribution.""";
                 existent_version = entry[0];
                 suite = entry[1];
                 if suite in must_be_newer_than and \
-                   apt_pkg.VersionCompare(new_version, existent_version) != 1:
+                   apt_pkg.VersionCompare(new_version, existent_version) < 1:
                     self.reject("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite));
                 if suite in must_be_older_than and \
-                   apt_pkg.VersionCompare(new_version, existent_version) != -1:
+                   apt_pkg.VersionCompare(new_version, existent_version) > -1:
                     self.reject("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite));
 
     ################################################################################
