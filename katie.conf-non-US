@@ -13,7 +13,6 @@ Dinstall
    BugServer "bugs.debian.org";
    PackagesServer "packages.debian.org";
    TrackingServer "packages.qa.debian.org";
-   NewAckList "/org/non-us.debian.org/katie/log";
    LockFile "/org/non-us.debian.org/katie/lock";
    Bcc "archive@ftp-master.debian.org";
    GroupOverrideFilename "override.group-maint";
