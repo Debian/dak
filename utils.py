@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.48 2002-06-22 22:34:35 troup Exp $
+# $Id: utils.py,v 1.49 2002-07-12 15:09:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -144,6 +144,7 @@ def parse_changes(filename, dsc_whitespace_rules=0):
 
     indices = indexed_lines.keys()
     index = 0;
+    first = -1;
     while index < max(indices):
         index = index + 1;
         line = indexed_lines[index];
@@ -177,6 +178,8 @@ def parse_changes(filename, dsc_whitespace_rules=0):
             continue;
         mlf = re_multi_line_field.match(line);
         if mlf:
+            if first == -1:
+                raise changes_parse_error_exc, "'%s'\n [Multi-line field continuing on from nothing?]" % (line);
             if first == 1 and changes[field] != "":
                 changes[field] = changes[field] + '\n';
             first = 0;
