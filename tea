@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: tea,v 1.18 2002-05-08 11:13:02 troup Exp $
+# $Id: tea,v 1.19 2002-05-19 02:00:03 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -100,7 +100,7 @@ def check_dscs():
         for line in list_file.readlines():
             file = line[:-1];
             try:
-                utils.parse_changes(file, 1);
+                utils.parse_changes(file, dsc_whitespace_rules=1);
             except utils.invalid_dsc_format_exc, line:
                 utils.warn("syntax error in .dsc file '%s', line %s." % (file, line));
                 count = count + 1;
@@ -230,10 +230,10 @@ def check_missing_tar_gz_in_dsc():
         filename = os.path.abspath(i[0] + i[1]);
         try:
             # NB: don't enforce .dsc syntax
-            dsc = utils.parse_changes(filename, 0);
+            dsc = utils.parse_changes(filename);
         except:
             utils.fubar("error parsing .dsc file '%s'." % (filename));
-        dsc_files = utils.build_file_list(dsc, 1);
+        dsc_files = utils.build_file_list(dsc, is_a_dsc=1);
         has_tar = 0;
         for file in dsc_files.keys():
             m = utils.re_issource.match(file);
