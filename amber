@@ -2,7 +2,7 @@
 
 # Wrapper for Debian Security team
 # Copyright (C) 2002  James Troup <james@nocrew.org>
-# $Id: amber,v 1.6 2002-10-16 02:47:32 troup Exp $
+# $Id: amber,v 1.7 2002-11-22 14:55:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -195,7 +195,7 @@ def make_advisory(advisory_nr, changes_files):
                     "poolname": dscpoolname };
 
     if os.environ.has_key("SUDO_UID"):
-        whoami = os.environ["SUDO_UID"].atol();
+        whoami = long(os.environ["SUDO_UID"]);
     else:
         whoami = os.getuid();
     whoamifull = pwd.getpwuid(whoami);
