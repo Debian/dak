@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.35 2003-02-11 18:10:40 troup Exp $
+# $Id: melanie,v 1.36 2003-02-21 19:18:24 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -291,7 +291,7 @@ def main ():
     packages.sort();
     for package in packages:
         versions = d[package].keys();
-        versions.sort();
+        versions.sort(apt_pkg.VersionCompare);
         for version in versions:
             d[package][version].sort(utils.arch_compare_sw);
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]));
@@ -371,7 +371,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.35 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.36 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;
