@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.26 2002-05-18 23:54:51 troup Exp $
+# $Id: melanie,v 1.27 2002-05-23 12:36:44 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -156,16 +156,11 @@ def main ():
         else:
             utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to));
 
-    packages = {};
     if Options["Binary-Only"]:
         field = "b.package";
     else:
         field = "s.source";
-    quoted_packages_list = []
-    for package in arguments:
-        quoted_packages_list.append("'%s'" % package)
-        packages[package] = "";
-    con_packages = "AND %s IN (%s)" % (field, string.join(quoted_packages_list, ", "));
+    con_packages = "AND %s IN (%s)" % (field, string.join(map(repr, arguments), ", "));
     suites = [];
     suite_ids_list = [];
     for suite in string.split(Options["Suite"]):
@@ -394,7 +389,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + string.join(bcc, ", ");
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.26 $";
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.27 $";
         if carbon_copy:
             Subst["__CC__"] = Subst["__CC__"] + "\nCc: " + string.join(carbon_copy, ", ");
         Subst["__SUITE_LIST__"] = suites_list;
