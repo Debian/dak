@@ -2,7 +2,7 @@
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.12 2001-11-18 19:57:58 rmurray Exp $
+# $Id: charisma,v 1.13 2002-02-12 22:14:38 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,9 +26,9 @@
 
 ################################################################################
 
-import os, pg, re, string, sys
-import db_access, utils
-import apt_pkg
+import pg, string, sys;
+import db_access, utils;
+import apt_pkg;
 
 ################################################################################
 

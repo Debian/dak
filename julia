@@ -2,7 +2,7 @@
 
 # Sync PostgreSQL with (LDAP-generated) passwd file
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: julia,v 1.4 2001-11-18 19:57:58 rmurray Exp $
+# $Id: julia,v 1.5 2002-02-12 22:14:38 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 
 ################################################################################
 
-import os, pg, string, sys;
+import pg, string, sys;
 import utils;
 import apt_pkg;
 

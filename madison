@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: madison,v 1.14 2002-01-19 18:57:06 troup Exp $
+# $Id: madison,v 1.15 2002-02-12 22:14:38 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@
 
 ################################################################################
 
-import pg, sys, os, string
-import utils, db_access
+import pg, string, sys;
+import utils, db_access;
 import apt_pkg;
 
 ################################################################################

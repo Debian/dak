@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.16 2002-01-12 16:33:23 ajt Exp $
+# $Id: ziyi,v 1.17 2002-02-12 22:14:38 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@
 
 ################################################################################
 
-import pg, sys, os, popen2, tempfile, stat, string, time
-import utils, db_access
+import sys, os, popen2, tempfile, stat, string, time
+import utils
 import apt_pkg
 
 ################################################################################
@@ -90,7 +90,7 @@ def print_md5sha_files (tree, files, hashop):
 		j = string.index(name, "/")
 		k = string.index(name, ">")
 		(cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
-		(size, file_handle) = create_temp_file("%s %s%s%s" % 
+		(size, file_handle) = create_temp_file("%s %s%s%s" %
 		    (cat, path, name, ext))
 	    else:
         	size = os.stat(path + name)[stat.ST_SIZE]
@@ -292,7 +292,7 @@ def main ():
 	    for keyid in signkeyids:
 		if keyid != "": defkeyid = "--default-key %s" % keyid
 		else: defkeyid = ""
-		os.system("gpg %s %s %s --detach-sign <%s >>%s" % 
+		os.system("gpg %s %s %s --detach-sign <%s >>%s" %
 			(keyring, defkeyid, arguments,
 			Cnf["Dir::RootDir"] + tree + "/Release", dest))
 

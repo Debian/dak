@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.14 2001-11-19 22:19:46 rmurray Exp $
+# $Id: natalie.py,v 1.15 2002-02-12 22:14:38 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import errno, os, pg, pwd, string, sys, time;
+import pg, string, sys, time;
 import utils, db_access, logging;
 import apt_pkg;
 
