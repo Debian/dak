@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.54 2004-11-27 19:24:22 troup Exp $
+# $Id: jennifer,v 1.55 2005-01-14 14:07:17 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.54 $";
+jennifer_version = "$Revision: 1.55 $";
 
 Cnf = None;
 Options = None;
@@ -274,6 +274,9 @@ def check_distributions():
                 changes["distribution"][dest] = 1;
                 if type != "silent-map":
                     reject("Mapping %s to %s." % (source, dest),"");
+            if changes.has_key("distribution-version"):
+                if changes["distribution-version"].has_key(source):
+                    changes["distribution-version"][source]=dest
         elif type == "map-unreleased":
             (source, dest) = args[1:3];
             if changes["distribution"].has_key(source):
@@ -292,6 +295,13 @@ def check_distributions():
             suite = args[1];
             if changes["distribution"].has_key(suite):
                 reject("Uploads to %s are not accepted." % (suite));
+        elif type == "propup-version":
+            # give these as "uploaded-to(non-mapped) suites-to-add-when-upload-obsoletes"
+            #
+            # changes["distribution-version"] looks like: {'testing': 'testing-proposed-updates'}
+            if args[1] in changes["distribution"]:
+                changes.setdefault("distribution-version", {})
+                for suite in args[2:]: changes["distribution-version"][suite]=suite
 
     # Ensure there is (still) a target distribution
     if changes["distribution"].keys() == []:

@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.51 2004-11-27 18:02:22 troup Exp $
+# $Id: katie.py,v 1.52 2005-01-14 14:07:17 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -176,7 +176,7 @@ class Katie:
                    "closes", "changes" ]:
             d_changes[i] = changes[i];
         # Optional changes fields
-        for i in [ "changed-by", "filecontents", "format", "lisa note" ]:
+        for i in [ "changed-by", "filecontents", "format", "lisa note", "distribution-version" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i];
         ## dsc
@@ -759,6 +759,17 @@ distribution.""";
 
     ################################################################################
 
+    def get_anyversion(self, query_result, suite):
+        anyversion=None
+        anysuite = [suite] + self.Cnf.ValueList("Suite::%s::VersionChecks::Enhances" % (suite))
+        for (v, s) in query_result:
+            if s in [ string.lower(x) for x in anysuite ]:
+                if not anyversion or apt_pkg.VersionCompare(anyversion, v) <= 0:
+                    anyversion=v
+        return anyversion
+
+    ################################################################################
+
     def cross_suite_version_check(self, query_result, file, new_version):
         """Ensure versions are newer than existing packages in target
         suites and that cross-suite version checking rules as
@@ -779,7 +790,46 @@ distribution.""";
                     self.reject("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite));
                 if suite in must_be_older_than and \
                    apt_pkg.VersionCompare(new_version, existent_version) > -1:
-                    self.reject("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite));
+                    ch = self.pkg.changes
+                    cansave = 0
+                    if ch.get('distribution-version', {}).has_key(suite):
+                        # we really use the other suite, ignoring the conflicting one ...
+                        addsuite = ch["distribution-version"][suite]
+                    
+                        add_version = self.get_anyversion(query_result, addsuite)
+                        target_version = self.get_anyversion(query_result, target_suite)
+                    
+                        if not add_version:
+                            # not add_version can only happen if we map to a suite
+                            # that doesn't enhance the suite we're propup'ing from.
+                            # so "propup-ver x a b c; map a d" is a problem only if
+                            # d doesn't enhance a.
+                            #
+                            # i think we could always propagate in this case, rather
+                            # than complaining. either way, this isn't a REJECT issue
+                            #
+                            # And - we really should complain to the dorks who configured dak
+                            self.reject("%s is mapped to, but not enhanced by %s - adding anyways" % (suite, addsuite), "Warning: ")
+                            self.pkg.changes["distribution"][addsuite] = 1
+                            cansave = 1
+                        elif not target_version:
+                            # not targets_version is true when the package is NEW
+                            # we could just stick with the "...old version..." REJECT
+                            # for this, I think.
+                            self.reject("Won't propogate NEW packages.")
+                        elif apt_pkg.VersionCompare(new_version, add_version) < 0:
+                            # propogation would be redundant. no need to reject though.
+                            #self.reject("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite), "Warning: ");
+                            self.reject("foo", "Warning: ")
+                            cansave = 1
+                        elif apt_pkg.VersionCompare(new_version, add_version) > 0 and \
+                             apt_pkg.VersionCompare(add_version, target_version) == 0:
+                            # propogate!!
+                            self.pkg.changes["distribution"][addsuite] = 1
+                            cansave = 1
+                
+                    if not cansave:
+                        self.reject("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite));
 
     ################################################################################
 
