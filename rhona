@@ -1,0 +1,164 @@
+#!/usr/bin/env python
+
+# rhona, cleans up unassociated binary (and source) packages
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: rhona,v 1.1.1.1 2000-11-24 00:20:10 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# 07:05|<elmo> well.. *shrug*.. no, probably not.. but to fix it,
+#      |       we're going to have to implement reference counting
+#      |       through dependencies.. do we really want to go down
+#      |       that road?
+#
+# 07:05|<Culus> elmo: Augh! <brain jumps out of skull>
+
+import pg, string, os, sys, time
+import apt_pkg
+import utils
+
+projectB = None
+Cnf = None
+
+def check_binaries():
+
+    # A nicer way to do this would be `SELECT bin FROM
+    # bin_associations EXCEPT SELECT id from binaries WHERE
+    # last_update IS NULL', but it seems postgresql can't handle that
+    # query as it hadn't return after I left it running for 20 minutes
+    # on auric.
+
+    linked_binaries = {};
+    q = projectB.query("SELECT bin FROM bin_associations");
+    ql = q.getresult();
+    for i in ql:
+        linked_binaries[i[0]] = "";
+    
+    all_binaries = {};
+    q = projectB.query("SELECT b.id, b.file FROM binaries b, files f WHERE f.last_used IS NULL AND f.id = b.file")
+    ql = q.getresult();
+    for i in ql:
+        all_binaries[i[0]] = i[1];
+
+    projectB.query("BEGIN WORK");
+    for id in all_binaries.keys():
+        if not linked_binaries.has_key(id):
+            date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-(4*(24*60*60))))
+            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (date, all_binaries[id]))
+    projectB.query("COMMIT WORK");
+
+    # Check for any binaries which are marked for eventual deletion but are now used again.
+
+    all_marked_binaries = {};
+    q = projectB.query("SELECT b.id, b.file FROM binaries b, files f WHERE f.last_used IS NOT NULL AND f.id = b.file")
+    ql = q.getresult();
+    for i in ql:
+        all_marked_binaries[i[0]] = i[1];
+    projectB.query("BEGIN WORK");
+    for id in all_marked_binaries.keys():
+        if linked_binaries.has_key(id):
+            # Can't imagine why this would happen, so warn about it for now.
+            print "W: %s has released %s from the target list." % (id, all_marked_binaries[id]);
+            projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (all_marked_binaries[id]));
+    projectB.query("COMMIT WORK");
+
+def check_sources():
+
+    # A nicer way to do this would be using `EXCEPT', but see the
+    # commeint in process_binary.
+
+    linked_sources = {};
+    q = projectB.query("SELECT source FROM binaries WHERE source is not null");
+    ql = q.getresult();
+    for i in ql:
+        linked_sources[i[0]] = "";
+    
+    all_sources = {};
+    q = projectB.query("SELECT s.id, s.file FROM source s, files f WHERE f.last_used IS NULL AND f.id = s.file")
+    ql = q.getresult();
+    for i in ql:
+        all_sources[i[0]] = i[1];
+
+    projectB.query("BEGIN WORK");
+    for id in all_sources.keys():
+        if not linked_sources.has_key(id):
+            date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-(4*(24*60*60))))
+            projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (date, all_sources[id]))
+            # Delete all other files references by .dsc too if they're not used by anyone else
+            q = projectB.query("SELECT f.id FROM files f, dsc_files d WHERE d.source = %d AND d.file = f.id" % (id));
+            ql = q.getresult();
+            for i in ql:
+                q_others = projectB.query("SELECT id FROM dsc_files d WHERE file = %s" % (i[0]));
+                ql_others = q.getresult();
+                if len(ql) == 1:
+                    projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (date, i[0]));
+    projectB.query("COMMIT WORK");
+
+    # Check for any sources which are marked for eventual deletion but are now used again.
+    # Need to check versus dsc_files too!
+
+    all_marked_sources = {};
+    q = projectB.query("SELECT s.id, s.file FROM source s, files f WHERE f.last_used IS NOT NULL AND f.id = s.file");
+    ql = q.getresult();
+    for i in ql:
+        all_marked_sources[i[0]] = i[1];
+    projectB.query("BEGIN WORK");
+    for id in all_marked_sources.keys():
+        if linked_sources.has_key(id):
+            # Can't imagine why this would happen, so warn about it for now.
+            print "W: %s has released %s from the target list." % (id, all_marked_sources[id]);
+            projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (all_marked_sources[id]));
+            # Unmark all other files references by .dsc too
+            q = projectB.query("SELECT id FROM dsc_files WHERE source = %d" % (id));
+            ql = q.getresult();
+            for i in ql:
+                    projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (i[0]));
+    projectB.query("COMMIT WORK");
+
+def clean():
+    date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::StayOfExecution"])));
+    q = projectB.query("SELECT l.path, f.filename FROM location l, files f WHERE f.last_used < '%s' AND l.id = f.location" % (date))
+    ql = q.getresult();
+    for i in ql:
+        filename = i[0] + i[1];
+        dest = Cnf["Rhona::Morgue"]+os.path.basename(filename);
+        if not os.path.exists(filename):
+            sys.stderr.write("E: can not find %s.\n" % (filename));
+            continue;
+        print "Cleaning %s to %s..." % (filename, dest)
+        #utils.move(filename, dest);
+        #projectB.query("DELETE FROM binaries WHERE id = %s" % (i[0]));
+        #FIXME: need to remove from "or source" + files + dsc_files.. etc.
+
+def main():
+    global Cnf, projectB;
+    
+    projectB = pg.connect('projectb', 'localhost');
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    print "Checking for orphaned binary packages..."
+    check_binaries();
+    print "Checking for orphaned source packages..."
+    check_sources();
+    print "Cleaning orphaned packages..."
+    clean();
+
+if __name__ == '__main__':
+    main()
+

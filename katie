@@ -1,0 +1,1037 @@
+#!/usr/bin/env python
+
+# Installs Debian packaes
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: katie,v 1.1.1.1 2000-11-24 00:20:08 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Based (almost entirely) on dinstall by Guy Maor <maor@debian.org>
+
+#########################################################################################
+
+#    Cartman: "I'm trying to make the best of a bad situation, I don't
+#              need to hear crap from a bunch of hippy freaks living in
+#              denial.  Screw you guys, I'm going home."
+#
+#    Kyle: "But Cartman, we're trying to..."
+#
+#    Cartman: "uhh.. screw you guys... home."
+
+#########################################################################################
+
+import FCNTL, commands, fcntl, getopt, os, pg, pwd, re, shutil, stat, string, sys, tempfile, time
+import apt_inst, apt_pkg
+import utils, db_access
+
+###############################################################################
+
+re_isanum = re.compile (r'^\d+$');
+re_isadeb = re.compile (r'.*\.u?deb$');
+re_issource = re.compile (r'(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)');
+re_dpackage = re.compile (r'^package:\s*(.*)', re.IGNORECASE);
+re_darchitecture = re.compile (r'^architecture:\s*(.*)', re.IGNORECASE);
+re_dversion = re.compile (r'^version:\s*(.*)', re.IGNORECASE);
+re_dsection = re.compile (r'^section:\s*(.*)', re.IGNORECASE);
+re_dpriority = re.compile (r'^priority:\s*(.*)', re.IGNORECASE);
+re_changes = re.compile (r'changes$');
+re_override_package = re.compile(r'(\S*)\s+.*');
+re_default_answer = re.compile(r"\[(.*)\]");
+re_fdnic = re.compile("\n\n");
+
+###############################################################################
+
+#
+reject_footer = """If you don't understand why your files were rejected, or if the
+override file requires editing, reply to this email.
+
+Your rejected files are in incoming/REJECT/.  (Some may also be in
+incoming/ if your .changes file was unparsable.)  If only some of the
+files need to repaired, you may move any good files back to incoming/.
+Please remove any bad files from incoming/REJECT/."""
+#
+new_ack_footer = """Your package contains new components which requires manual editing of
+the override file.  It is ok otherwise, so please be patient.  New
+packages are usually added to the override file about once a week.
+
+You may have gotten the distribution wrong.  You'll get warnings above
+if files already exist in other distributions."""
+#
+installed_footer = """If the override file requires editing, file a bug on ftp.debian.org.
+
+Thank you for your contribution to Debian GNU."""
+
+#########################################################################################
+
+# Globals
+Cnf = None;
+reject_message = "";
+changes = {};
+dsc = {};
+dsc_files = {};
+files = {};
+projectB = None;
+new_ack_new = {};
+new_ack_old = {};
+overrides = {};
+install_count = 0;
+install_bytes = 0.0;
+reprocess = 0;
+orig_tar_id = None;
+
+#########################################################################################
+
+def usage (exit_code):
+    print """Usage: dinstall [OPTION]... [CHANGES]...
+  -a, --automatic           automatic run
+  -d, --debug=VALUE         debug
+  -k, --ack-new             acknowledge new packages
+  -m, --manual-reject=MSG   manual reject with `msg'
+  -n, --dry-run             don't do anything
+  -p, --no-lock             don't check lockfile !! for cron.daily only !!
+  -r, --no-version-check    override version check
+  -u, --distribution=DIST   override distribution to `dist'"""
+    sys.exit(exit_code)
+
+def check_signature (filename):
+    global reject_message
+
+    (result, output) = commands.getstatusoutput("gpg --emulate-md-encode-bug --batch --no-options --no-default-keyring --always-trust --load-extension rsaref --keyring=%s --keyring=%s < %s >/dev/null" % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename))
+    if (result != 0):
+        reject_message = "Rejected: GPG signature check failed on `%s'.\n%s\n" % (filename, output)
+        return 0
+    return 1
+
+#####################################################################################################################
+
+def read_override_file (filename, suite, component):
+    global overrides;
+    
+    file = utils.open_file(filename, 'r');
+    for line in file.readlines():
+        line = string.strip(utils.re_comments.sub('', line))
+        override_package = re_override_package.sub(r'\1', line)
+        if override_package != "":
+            overrides[suite][component][override_package] = 1
+    file.close()
+
+
+# See if a given package is in the override file.  Caches and only loads override files on demand.
+
+def in_override_p (package, component, suite):
+    global overrides;
+
+    # FIXME: nasty non-US speficic hack
+    if string.lower(component[:7]) == "non-us/":
+        component = component[7:];
+    if not overrides.has_key(suite) or not overrides[suite].has_key(component):
+        if not overrides.has_key(suite):
+            overrides[suite] = {}
+        if not overrides[suite].has_key(component):
+            overrides[suite][component] = {}
+        if Cnf.has_key("Suite::%s::SingleOverrideFile" % (suite)): # legacy mixed suite (i.e. experimental)
+            override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)];
+            read_override_file (override_filename, suite, component);
+        else: # all others.
+            for src in ("", ".src"):
+                override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)] + '.' + component + src;
+                read_override_file (override_filename, suite, component);
+
+    return overrides[suite][component].get(package, None);
+
+#####################################################################################################################
+
+def check_changes(filename):
+    global reject_message, changes, files
+
+    # Parse the .changes field into a dictionary [FIXME - need to trap errors, pass on to reject_message etc.]
+    try:
+        changes = utils.parse_changes(filename)
+    except utils.cant_open_exc:
+        reject_message = "Rejected: can't read changes file '%s'.\n" % (filename)
+        return 0;
+    except utils.changes_parse_error_exc, line:
+        reject_message = "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line)
+        changes["maintainer822"] = Cnf["Dinstall::MyEmailAddress"];
+        return 0;
+
+    # Parse the Files field from the .changes into another dictionary [FIXME need to trap errors as above]
+    files = utils.build_file_list(changes, "")
+
+    # Check for mandatory fields
+    for i in ("source", "binary", "architecture", "version", "distribution","maintainer", "files"):
+        if not changes.has_key(i):
+            reject_message = "Rejected: Missing field `%s' in changes file." % (i)
+            return 0    # Avoid <undef> errors during later tests
+
+    # Fix the Maintainer: field to be RFC822 compatible
+    (changes["maintainer822"], changes["maintainername"], changes["maintaineremail"]) = utils.fix_maintainer (changes["maintainer"])
+
+    # Override the Distribution: field if appropriate
+    if Cnf["Dinstall::Options::Override-Distribution"] != "":
+        reject_message = reject_message + "Warning: Distribution was overriden from %s to %s.\n" % (changes["distribution"], Cnf["Dinstall::Options::Override-Distribution"])
+        changes["distribution"] = Cnf["Dinstall::Options::Override-Distribution"]
+
+    # Split multi-value fields into a lower-level dictionary
+    for i in ("architecture", "distribution", "binary", "closes"):
+        o = changes.get(i, "")
+        if o != "":
+            del changes[i]
+        changes[i] = {}
+        for j in string.split(o):
+            changes[i][j] = 1
+
+    # Ensure all the values in Closes: are numbers
+    if changes.has_key("closes"):
+        for i in changes["closes"].keys():
+            if re_isanum.match (i) == None:
+                reject_message = reject_message + "Rejected: `%s' from Closes field isn't a number.\n" % (i)
+
+
+    # Map frozen to unstable if frozen doesn't exist
+    if changes["distribution"].has_key("frozen") and not Cnf.has_key("Suite::Frozen"):
+        del changes["distribution"]["frozen"]
+        reject_message = reject_message + "Mapping frozen to unstable.\n"
+
+    # Ensure target distributions exist
+    for i in changes["distribution"].keys():
+        if not Cnf.has_key("Suite::%s" % (i)):
+            reject_message = reject_message + "Rejected: Unknown distribution `%s'.\n" % (i)
+
+    # Map unreleased arches from stable to unstable
+    if changes["distribution"].has_key("stable"):
+        for i in changes["architecture"].keys():
+            if not Cnf.has_key("Suite::Stable::Architectures::%s" % (i)):
+                reject_message = reject_message + "Mapping stable to unstable for unreleased arch `%s'.\n" % (i)
+                del changes["distribution"]["stable"]
+    
+    # Map arches not being released from frozen to unstable
+    if changes["distribution"].has_key("frozen"):
+        for i in changes["architecture"].keys():
+            if not Cnf.has_key("Suite::Frozen::Architectures::%s" % (i)):
+                reject_message = reject_message + "Mapping frozen to unstable for non-releasing arch `%s'.\n" % (i)
+                del changes["distribution"]["frozen"]
+
+    # Handle uploads to stable
+    if changes["distribution"].has_key("stable"):
+        # If running from within proposed-updates kill non-stable distributions
+        if string.find(os.getcwd(), 'proposed-updates') != -1:
+            for i in ("frozen", "unstable"):
+                if changes["distributions"].has_key(i):
+                    reject_message = reject_message + "Removing %s from distribution list.\n"
+                    del changes["distribution"][i]
+        # Otherwise (normal case) map stable to updates
+        else:
+            reject_message = reject_message + "Mapping stable to updates.\n";
+            del changes["distribution"]["stable"];
+            changes["distribution"]["proposed-updates"] = 1;
+
+    # chopversion = no epoch; chopversion2 = no epoch and no revision (e.g. for .orig.tar.gz comparison)
+    changes["chopversion"] = utils.re_no_epoch.sub('', changes["version"])
+    changes["chopversion2"] = utils.re_no_revision.sub('', changes["chopversion"])
+    
+    if string.find(reject_message, "Rejected:") != -1:
+        return 0
+    else: 
+        return 1
+
+def check_files():
+    global reject_message
+    
+    archive = utils.where_am_i();
+
+    for file in files.keys():
+        # Check the file is readable
+        if os.access(file,os.R_OK) == 0:
+            reject_message = reject_message + "Rejected: Can't read `%s'.\n" % (file)
+            files[file]["type"] = "unreadable";
+            continue
+        # If it's byhand skip remaining checks
+        if files[file]["section"] == "byhand":
+            files[file]["byhand"] = 1;
+            files[file]["type"] = "byhand";
+        # Checks for a binary package...
+        elif re_isadeb.match(file) != None:
+            # Extract package information using dpkg-deb
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file,"r")))
+
+            # Check for mandatory fields
+            if control.Find("Package") == None:
+                reject_message = reject_message + "Rejected: %s: No package field in control.\n" % (file)
+            if control.Find("Architecture") == None:
+                reject_message = reject_message + "Rejected: %s: No architecture field in control.\n" % (file)
+            if control.Find("Version") == None:
+                reject_message = reject_message + "Rejected: %s: No version field in control.\n" % (file)
+                
+            # Ensure the package name matches the one give in the .changes
+            if not changes["binary"].has_key(control.Find("Package", "")):
+                reject_message = reject_message + "Rejected: %s: control file lists name as `%s', which isn't in changes file.\n" % (file, control.Find("Package", ""))
+
+            # Validate the architecture
+            if not Cnf.has_key("Suite::Unstable::Architectures::%s" % (control.Find("Architecture", ""))):
+                reject_message = reject_message + "Rejected: Unknown architecture '%s'.\n" % (control.Find("Architecture", ""))
+
+            # Check the architecture matches the one given in the .changes
+            if not changes["architecture"].has_key(control.Find("Architecture", "")):
+                reject_message = reject_message + "Rejected: %s: control file lists arch as `%s', which isn't in changes file.\n" % (file, control.Find("Architecture", ""))
+            # Check the section & priority match those given in the .changes (non-fatal)
+            if control.Find("Section") != None and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
+                reject_message = reject_message + "Warning: %s control file lists section as `%s', but changes file has `%s'.\n" % (file, control.Find("Section", ""), files[file]["section"])
+            if control.Find("Priority") != None and files[file]["priority"] != "" and files[file]["priority"] != control.Find("Priority"):
+                reject_message = reject_message + "Warning: %s control file lists priority as `%s', but changes file has `%s'.\n" % (file, control.Find("Priority", ""), files[file]["priority"])
+
+            epochless_version = utils.re_no_epoch.sub('', control.Find("Version", ""))
+
+            files[file]["package"] = control.Find("Package");
+            files[file]["architecture"] = control.Find("Architecture");
+            files[file]["version"] = control.Find("Version");
+            files[file]["maintainer"] = control.Find("Maintainer", "");
+            if file[-5:] == ".udeb":
+                files[file]["dbtype"] = "udeb";
+            elif file[-4:] == ".deb":
+                files[file]["dbtype"] = "deb";
+            else:
+                reject_message = reject_message + "Rejected: %s is neither a .deb or a .udeb.\n " % (file);
+            files[file]["type"] = "deb";
+            files[file]["fullname"] = "%s_%s_%s.deb" % (control.Find("Package", ""), epochless_version, control.Find("Architecture", ""))
+            files[file]["source"] = control.Find("Source", "");
+            if files[file]["source"] == "":
+                files[file]["source"] = files[file]["package"];
+        # Checks for a source package...
+        else:
+            m = re_issource.match(file)
+            if m != None:
+                files[file]["package"] = m.group(1)
+                files[file]["version"] = m.group(2)
+                files[file]["type"] = m.group(3)
+                
+                # Ensure the source package name matches the Source filed in the .changes
+                if changes["source"] != files[file]["package"]:
+                    reject_message = reject_message + "Rejected: %s: changes file doesn't say %s for Source\n" % (file, files[file]["package"])
+
+                # Ensure the source version matches the version in the .changes file
+                if files[file]["type"] == "orig.tar.gz":
+                    changes_version = changes["chopversion2"]
+                else:
+                    changes_version = changes["chopversion"]
+                if changes_version != files[file]["version"]:
+                    reject_message = reject_message + "Rejected: %s: should be %s according to changes file.\n" % (file, changes_version)
+
+                # Ensure the .changes lists source in the Architecture field
+                if not changes["architecture"].has_key("source"):
+                    reject_message = reject_message + "Rejected: %s: changes file doesn't list `source' in Architecture field.\n" % (file)
+
+                # Check the signature of a .dsc file
+                if files[file]["type"] == "dsc":
+                    check_signature(file)
+
+                files[file]["fullname"] = file
+
+            # Not a binary or source package?  Assume byhand...
+            else:
+                files[file]["byhand"] = 1;
+                files[file]["type"] = "byhand";
+                
+        files[file]["oldfiles"] = {}
+        for suite in changes["distribution"].keys():
+            # Skip byhand
+            if files[file].has_key("byhand"):
+                continue
+
+            if Cnf.has_key("Suite:%s::Components" % (suite)) and not Cnf.has_key("Suite::%s::Components::%s" % (suite, files[file]["component"])):
+                reject_message = reject_message + "Rejected: unknown component `%s' for suite `%s'.\n" % (files[file]["component"], suite)
+                continue
+
+            # See if the package is NEW
+            if not in_override_p(files[file]["package"], files[file]["component"], suite):
+                files[file]["new"] = 1
+                
+            # Find any old binary packages
+            if files[file]["type"] == "deb":
+                q = projectB.query("SELECT b.id, b.version, f.filename, l.path, c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f WHERE b.package = '%s' AND s.suite_name = '%s' AND a.arch_string = '%s' AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id AND f.location = l.id AND l.component = c.id AND b.file = f.id"
+                                   % (files[file]["package"], suite, files[file]["architecture"]))
+                oldfiles = q.dictresult()
+                for oldfile in oldfiles:
+                    files[file]["oldfiles"][suite] = oldfile
+                    # Check versions [NB: per-suite only; no cross-suite checking done (yet)]
+                    if apt_pkg.VersionCompare(files[file]["version"], oldfile["version"]) != 1:
+                        if Cnf["Dinstall::Options::No-Version-Check"]:
+                            reject_message = reject_message + "Overriden rejection"
+                        else:
+                            reject_message = reject_message + "Rejected"
+                        reject_message = reject_message + ": %s Old version `%s' >= new version `%s'.\n" % (file, oldfile["version"], files[file]["version"])
+            # Find any old .dsc files
+            elif files[file]["type"] == "dsc":
+                q = projectB.query("SELECT s.id, s.version, f.filename, l.path, c.name FROM source s, src_associations sa, suite su, location l, component c, files f WHERE s.source = '%s' AND su.suite_name = '%s' AND sa.source = s.id AND sa.suite = su.id AND f.location = l.id AND l.component = c.id AND f.id = s.file"
+                                   % (files[file]["package"], suite))
+                oldfiles = q.dictresult()
+                if len(oldfiles) >= 1:
+                    files[file]["oldfiles"][suite] = oldfiles[0]
+
+            # Validate the component
+            component = files[file]["component"];
+            component_id = db_access.get_component_id(component);
+            if component_id == -1:
+                reject_message = reject_message + "Rejected: file '%s' has unknown component '%s'.\n" % (file, component);
+                continue;
+            
+            # Check the md5sum & size against existing files (if any)
+            location = Cnf["Dir::PoolDir"];
+            files[file]["location id"] = db_access.get_location_id (location, component, archive);
+            files_id = db_access.get_files_id(component + '/' + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"]);
+            if files_id == -1:
+                reject_message = reject_message + "Rejected: INTERNAL ERROR, get_files_id() returned multiple matches for %s.\n" % (file)
+            elif files_id == -2:
+                reject_message = reject_message + "Rejected: md5sum and/or size mismatch on existing copy of %s.\n" % (file)
+            files[file]["files id"] = files_id
+
+            # Check for packages that have moved from one component to another
+            if files[file]["oldfiles"].has_key(suite) and files[file]["oldfiles"][suite]["name"] != files[file]["component"]:
+                files[file]["othercomponents"] = files[file]["oldfiles"][suite]["name"];
+
+                
+    if string.find(reject_message, "Rejected:") != -1:
+        return 0
+    else: 
+        return 1
+
+###############################################################################
+
+def check_dsc ():
+    global dsc, dsc_files, reject_message, reprocess, orig_tar_id;
+    
+    for file in files.keys():
+        if files[file]["type"] == "dsc":
+            try:
+                dsc = utils.parse_changes(file)
+            except utils.cant_open_exc:
+                reject_message = reject_message + "Rejected: can't read changes file '%s'.\n" % (filename)
+                return 0;
+            except utils.changes_parse_error_exc, line:
+                reject_message = reject_message + "Rejected: error parsing changes file '%s', can't grok: %s.\n" % (filename, line)
+                return 0;
+            try:
+                dsc_files = utils.build_file_list(dsc, 1)
+            except utils.no_files_exc:
+                reject_message = reject_message + "Rejected: no Files: field in .dsc file.\n";
+                continue;
+
+            # Try and find all files mentioned in the .dsc.  This has
+            # to work harder to cope with the multiple possible
+            # locations of an .orig.tar.gz.
+            for dsc_file in dsc_files.keys():
+                if files.has_key(dsc_file):
+                    actual_md5 = files[dsc_file]["md5sum"]
+                    found = "%s in incoming" % (dsc_file)
+                elif dsc_file[-12:] == ".orig.tar.gz":
+                    # Check in Incoming
+                    # See comment above process_it() for explanation...
+                    if os.access(dsc_file, os.R_OK) != 0:
+                        files[dsc_file] = {};
+                        files[dsc_file]["size"] = os.stat(dsc_file)[stat.ST_SIZE];
+                        files[dsc_file]["md5sum"] = dsc_files[dsc_file]["md5sum"];
+                        files[dsc_file]["section"] = files[file]["section"];
+                        files[dsc_file]["priority"] = files[file]["priority"];
+                        files[dsc_file]["component"] = files[file]["component"];
+                        reprocess = 1;
+                        return 1;
+                    # Check in the pool
+                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (dsc_file));
+                    ql = q.getresult();
+                    if len(ql) > 0:
+                        old_file = ql[0][0] + ql[0][1];
+                        actual_md5 = apt_pkg.md5sum(utils.open_file(old_file,"r"));
+                        found = old_file;
+                        suite_type = ql[0][2];
+                        # See install()...
+                        if suite_type == "legacy" or suite_type == "legacy-mixed":
+                            orig_tar_id = ql[0][3];
+                    else:
+                        reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming or in the pool.\n" % (file, dsc_file);
+                        continue;
+                else:
+                    reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming." % (file, dsc_file);
+                    continue;
+                if actual_md5 != dsc_files[dsc_file]["md5sum"]:
+                    reject_message = reject_message + "Rejected: md5sum for %s doesn't match %s.\n" % (found, file)
+                
+    if string.find(reject_message, "Rejected:") != -1:
+        return 0
+    else: 
+        return 1
+
+###############################################################################
+
+def check_md5sums ():
+    global reject_message;
+
+    for file in files.keys():
+        try:
+            file_handle = utils.open_file(file,"r");
+        except utils.cant_open_exc:
+            pass;
+        else:
+            if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
+                reject_message = reject_message + "Rejected: md5sum check failed for %s.\n" % (file);
+
+#####################################################################################################################
+
+def action (changes_filename):
+    byhand = confirm = suites = summary = new = "";
+
+    # changes["distribution"] may not exist in corner cases
+    # (e.g. unreadable changes files)
+    if not changes.has_key("distribution"):
+        changes["distribution"] = {};
+    
+    for suite in changes["distribution"].keys():
+        if Cnf.has_key("Suite::%s::Confirm"):
+            confirm = confirm + suite + ", "
+        suites = suites + suite + ", "
+    confirm = confirm[:-2]
+    suites = suites[:-2]
+
+    for file in files.keys():
+        if files[file].has_key("byhand"):
+            byhand = 1
+            summary = summary + file + " byhand\n"
+        elif files[file].has_key("new"):
+            new = 1
+            summary = summary + "(new) %s %s %s\n" % (file, files[file]["priority"], files[file]["section"])
+            if files[file].has_key("othercomponents"):
+                summary = summary + "WARNING: Already present in %s distribution.\n" % (files[file]["othercomponents"])
+            if files[file]["type"] == "deb":
+                summary = summary + apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file,"r")))["Description"] + '\n';
+        else:
+            files[file]["pool name"] = utils.poolify (changes["source"], files[file]["component"])
+            destination = Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
+            summary = summary + file + "\n  to " + destination + "\n"
+
+    short_summary = summary;
+
+    # This is for direport's benefit...
+    f = re_fdnic.sub("\n .\n", changes.get("changes",""));
+
+    if confirm or byhand or new:
+        summary = summary + "Changes: " + f;
+
+    summary = summary + announce (short_summary, 0)
+    
+    (prompt, answer) = ("", "XXX")
+    if Cnf["Dinstall::Options::No-Action"] or Cnf["Dinstall::Options::Automatic"]:
+        answer = 'S'
+
+    if string.find(reject_message, "Rejected") != -1:
+        if time.time()-os.path.getmtime(changes_filename) < 86400:
+            print "SKIP (too new)\n" + reject_message,;
+            prompt = "[S]kip, Manual reject, Quit ?";
+        else:
+            print "REJECT\n" + reject_message,;
+            prompt = "[R]eject, Manual reject, Skip, Quit ?";
+            if Cnf["Dinstall::Options::Automatic"]:
+                answer = 'R';
+    elif new:
+        print "NEW to %s\n%s%s" % (suites, reject_message, summary),;
+        prompt = "[S]kip, New ack, Manual reject, Quit ?";
+        if Cnf["Dinstall::Options::Automatic"] and Cnf["Dinstall::Options::Ack-New"]:
+            answer = 'N';
+    elif byhand:
+        print "BYHAND\n" + reject_message + summary,;
+        prompt = "[I]nstall, Manual reject, Skip, Quit ?";
+    elif confirm:
+        print "CONFIRM to %s\n%s%s" % (confirm, reject_message, summary),
+        prompt = "[I]nstall, Manual reject, Skip, Quit ?";
+    else:
+        print "INSTALL\n" + reject_message + summary,;
+        prompt = "[I]nstall, Manual reject, Skip, Quit ?";
+        if Cnf["Dinstall::Options::Automatic"]:
+            answer = 'I';
+
+    while string.find(prompt, answer) == -1:
+        print prompt,;
+        answer = utils.our_raw_input()
+        m = re_default_answer.match(prompt)
+        if answer == "":
+            answer = m.group(1)
+        answer = string.upper(answer[:1])
+
+    if answer == 'R':
+        reject (changes_filename, "");
+    elif answer == 'M':
+        manual_reject (changes_filename);
+    elif answer == 'I':
+        install (changes_filename, summary, short_summary);
+    elif answer == 'N':
+        acknowledge_new (changes_filename, summary);
+    elif answer == 'Q':
+        sys.exit(0)
+
+#####################################################################################################################
+
+def install (changes_filename, summary, short_summary):
+    global install_count, install_bytes
+    
+    print "Installing."
+
+    archive = utils.where_am_i();
+
+    # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
+    projectB.query("BEGIN WORK");
+
+    # Add the .dsc file to the DB
+    for file in files.keys():
+        if files[file]["type"] == "dsc":
+            package = dsc["source"]
+            version = dsc["version"]  # NB: not files[file]["version"], that has no epoch
+            maintainer = dsc["maintainer"]
+            maintainer = string.replace(maintainer, "'", "\\'")
+            maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
+            filename = files[file]["pool name"] + file;
+            dsc_location_id = files[file]["location id"];
+            if not files[file]["files id"]:
+                files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
+            dsc_file_id = files[file]["files id"]
+            projectB.query("INSERT INTO source (source, version, maintainer, file) VALUES ('%s', '%s', %d, %d)"
+                           % (package, version, maintainer_id, files[file]["files id"]))
+            
+            for suite in changes["distribution"].keys():
+                suite_id = db_access.get_suite_id(suite);
+                projectB.query("INSERT INTO src_associations (suite, source) VALUES (%d, currval('source_id_seq'))" % (suite_id))
+
+
+            # Add the .diff.gz and {.orig,}.tar.gz files to the DB (files and dsc_files)
+            for file in files.keys():
+                if files[file]["type"] == "diff.gz" or files[file]["type"] == "orig.tar.gz" or files[file]["type"] == "tar.gz":
+                    if not files[file]["files id"]:
+                        filename = files[file]["pool name"] + file;
+                        files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
+                    projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files[file]["files id"]));
+                
+    # Add the .deb files to the DB
+    for file in files.keys():
+        if files[file]["type"] == "deb":
+            package = files[file]["package"]
+            version = files[file]["version"]
+            maintainer = files[file]["maintainer"]
+            maintainer = string.replace(maintainer, "'", "\\'")
+            maintainer_id = db_access.get_or_set_maintainer_id(maintainer);
+            architecture = files[file]["architecture"]
+            architecture_id = db_access.get_architecture_id (architecture);
+            type = files[file]["dbtype"];
+            component = files[file]["component"]
+            source = files[file]["source"]
+            source_version = ""
+            if string.find(source, "(") != -1:
+                m = utils.re_extract_src_version.match(source)
+                source = m.group(1)
+                source_version = m.group(2)
+            if not source_version:
+                source_version = version
+            filename = files[file]["pool name"] + file;
+            if not files[file]["files id"]:
+                files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
+            source_id = db_access.get_source_id (source, source_version);
+            if source_id:
+                projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type) VALUES ('%s', '%s', %d, %d, %d, %d, '%s')"
+                               % (package, version, maintainer_id, source_id, architecture_id, files[file]["files id"], type));
+            else:
+                projectB.query("INSERT INTO binaries (package, version, maintainer, architecture, file, type) VALUES ('%s', '%s', %d, %d, %d, '%s')"
+                               % (package, version, maintainer_id, architecture_id, files[file]["files id"], type));
+            for suite in changes["distribution"].keys():
+                suite_id = db_access.get_suite_id(suite);
+                projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id));
+
+    # Install the files into the pool
+    for file in files.keys():
+        if files[file].has_key("byhand"):
+            continue
+        destination = Cnf["Dir::PoolDir"] + files[file]["pool name"] + file
+        destdir = os.path.dirname(destination)
+        utils.move (file, destination)
+        install_bytes = install_bytes + float(files[file]["size"])
+
+    # Copy the .changes file across for suite which need it.
+    for suite in changes["distribution"].keys():
+        if Cnf.has_key("Suties::%s::CopyChanges" % (suite)):
+            destination = Cnf["Dir::RootDir"] + Cnf["Suite::%s::CopyChanges" % (suite)] + os.path.basename(changes_filename)
+            copy_file (changes_filename, destination)
+
+    # If the .orig.tar.gz is in a legacy directory we need to poolify
+    # it, so that apt-get source (and anything else that goes by the
+    # "Directory:" field in the Sources.gz file) works.
+    if orig_tar_id != None:
+        q = projectB.query("SELECT l.path, f.filename, f.id as files_id, df.source, df.id as dsc_files_id, f.size, f.md5sum FROM files f, dsc_files df, location l WHERE df.source IN (SELECT source FROM dsc_files WHERE file = %s) AND f.id = df.file AND l.id = f.location" % (orig_tar_id));
+        qd = q.dictresult();
+        for qid in qd:
+            # First move the files to the new location
+            legacy_filename = qid["path"]+qid["filename"];
+            pool_location = utils.poolify (files[file]["package"], files[file]["component"]);
+            pool_filename = pool_location + os.path.basename(qid["filename"]);
+            destination = Cnf["Dir::PoolDir"] + pool_location
+            utils.move(legacy_filename, destination);
+            # Update the DB: files table
+            new_files_id = db_access.set_files_id(pool_filename, qid["size"], qid["md5sum"], dsc_location_id);
+            # Update the DB: dsc_files table
+            projectB.query("INSERT INTO dsc_files (source, file) VALUES (%s, %s)" % (qid["source"], new_files_id));
+            # Update the DB: source table
+            if legacy_filename[-4:] == ".dsc":
+                projectB.query("UPDATE source SET file = %s WHERE id = %d" % (new_files_id, qid["source"]));
+
+        for qid in qd:
+            # Remove old data from the DB: dsc_files table
+            projectB.query("DELETE FROM dsc_files WHERE id = %s" % (qid["dsc_files_id"]));
+            # Remove old data from the DB: files table
+            projectB.query("DELETE FROM files WHERE id = %s" % (qid["files_id"]));
+
+    utils.move (changes_filename, Cnf["Dir::IncomingDir"] + 'DONE/' + os.path.basename(changes_filename))
+
+    projectB.query("COMMIT WORK");
+
+    install_count = install_count + 1;
+
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        mail_message = """Return-Path: %s
+From: %s
+To: %s
+Bcc: troup@auric.debian.org
+Subject: %s INSTALLED
+
+%s
+Installing:
+%s
+
+%s""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, reject_message, summary, installed_footer)
+        utils.send_mail (mail_message, "")
+        announce (short_summary, 1)
+
+#####################################################################################################################
+
+def reject (changes_filename, manual_reject_mail_filename):
+    print "Rejecting.\n"
+
+    base_changes_filename = os.path.basename(changes_filename);
+    reason_filename = re_changes.sub("reason", base_changes_filename);
+    reject_filename = "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], reason_filename);
+
+    # Move the .changes files and it's contents into REJECT/
+    utils.move (changes_filename, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], base_changes_filename));
+    for file in files.keys():
+        if os.access(file,os.R_OK) == 0:
+            utils.move (file, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
+
+    # If this is not a manual rejection generate the .reason file and rejection mail message
+    if manual_reject_mail_filename == "":
+        if os.path.exists(reject_filename):
+            os.unlink(reject_filename);
+        fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
+        os.write(fd, reject_message);
+        os.close(fd);
+        reject_mail_message = """From: %s
+To: %s
+Bcc: troup@auric.debian.org
+Subject: %s REJECTED
+
+%s
+===
+%s""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, reject_message, reject_footer);
+    else: # Have a manual rejection file to use
+        reject_mail_message = ""; # avoid <undef>'s
+        
+    # Send the rejection mail if appropriate
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        utils.send_mail (reject_mail_message, manual_reject_mail_filename);
+
+##################################################################
+
+def manual_reject (changes_filename):
+    # Build up the rejection email 
+    user_email_address = string.replace(string.split(pwd.getpwuid(os.getuid())[4],',')[0], '.', '')
+    user_email_address = user_email_address + " <%s@%s>" % (pwd.getpwuid(os.getuid())[0], Cnf["Dinstall::MyHost"])
+    manual_reject_message = Cnf.get("Dinstall::Options::Manual-Reject", "")
+
+    reject_mail_message = """From: %s
+Cc: %s
+To: %s
+Bcc: troup@auric.debian.org
+Subject: %s REJECTED
+
+%s
+%s
+===
+%s""" % (user_email_address, Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, manual_reject_message, reject_message, reject_footer)
+    
+    # Write the rejection email out as the <foo>.reason file
+    reason_filename = re_changes.sub("reason", os.path.basename(changes_filename));
+    reject_filename = "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], reason_filename)
+    if os.path.exists(reject_filename):
+        os.unlink(reject_filename);
+    fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
+    os.write(fd, reject_mail_message);
+    os.close(fd);
+    
+    # If we weren't given one, spawn an editor so the user can add one in
+    if manual_reject_message == "":
+        result = os.system("vi +6 %s" % (reject_file))
+        if result != 0:
+            sys.stderr.write ("vi invocation failed for `%s'!" % (reject_file))
+            sys.exit(result)
+
+    # Then process it as if it were an automatic rejection
+    reject (changes_filename, reject_filename)
+
+#####################################################################################################################
+ 
+def acknowledge_new (changes_filename, summary):
+    global new_ack_new;
+
+    new_ack_new[changes_filename] = 1;
+
+    if new_ack_old.has_key(changes_filename):
+        print "Ack already sent.";
+        return;
+
+    print "Sending new ack.";
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        new_ack_message = """Return-Path: %s
+From: %s
+To: %s
+Bcc: troup@auric.debian.org
+Subject: %s is NEW
+
+%s
+%s""" % (Cnf["Dinstall::MyEmailAddress"], Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes_filename, summary, new_ack_footer);
+        utils.send_mail(new_ack_message,"");
+
+#####################################################################################################################
+
+def announce (short_summary, action):
+    # Only do announcements for source uploads with a recent dpkg-dev installed
+    if float(changes.get("format", 0)) < 1.6 or not changes["architecture"].has_key("source"):
+        return ""
+
+    lists_done = {}
+    summary = ""
+
+    for dist in changes["distribution"].keys():
+        list = Cnf["Suite::%s::Announce" % (dist)]
+        if lists_done.has_key(list):
+            continue
+        lists_done[list] = 1
+        summary = summary + "Announcing to %s\n" % (list)
+
+        if action:
+            mail_message = """Return-Path: %s
+From: %s
+To: %s
+Bcc: troup@auric.debian.org
+Subject: Installed %s %s (%s)
+
+%s
+
+Installed:
+%s
+""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], list, changes["source"], changes["version"], string.join(changes["architecture"].keys(), ' ' ),
+       changes["filecontents"], short_summary)
+            utils.send_mail (mail_message, "")
+
+    (dsc_rfc822, dsc_name, dsc_email) = utils.fix_maintainer (dsc.get("maintainer",Cnf["Dinstall::MyEmailAddress"]));
+    bugs = changes["closes"].keys()
+    bugs.sort()
+    if dsc_name == changes["maintainername"]:
+        summary = summary + "Closing bugs: "
+        for bug in bugs:
+            summary = summary + "%s " % (bug)
+            if action:
+                mail_message = """Return-Path: %s
+From: %s
+To: %s-close@bugs.debian.org
+Bcc: troup@auric.debian.org
+Subject: Bug#%s: fixed in %s %s
+
+We believe that the bug you reported is fixed in the latest version of
+%s, which has been installed in the Debian FTP archive:
+
+%s""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], bug, bug, changes["source"], changes["version"], changes["source"], short_summary)
+
+                if changes["distribution"].has_key("stable"):
+                    mail_message = mail_message + """Note that this package is not part of the released stable Debian
+distribution.  It may have dependencies on other unreleased software,
+or other instabilities.  Please take care if you wish to install it.
+The update will eventually make its way into the next released Debian
+distribution."""
+
+                mail_message = mail_message + """A summary of the changes between this version and the previous one is
+attached.
+
+Thank you for reporting the bug, which will now be closed.  If you
+have further comments please address them to %s@bugs.debian.org,
+and the maintainer will reopen the bug report if appropriate.
+
+Debian distribution maintenance software
+pp.
+%s (supplier of updated %s package)
+
+(This message was generated automatically at their request; if you
+believe that there is a problem with it please contact the archive
+administrators by mailing ftpmaster@debian.org)
+
+
+%s""" % (bug, changes["maintainer"], changes["source"], changes["filecontents"])
+
+                utils.send_mail (mail_message, "")
+    else:                     # NMU
+        summary = summary + "Setting bugs to severity fixed: "
+        control_message = ""
+        for bug in bugs:
+            summary = summary + "%s " % (bug)
+            control_message = control_message + "severity %s fixed\n" % (bug)
+        if action and control_message != "":
+            mail_message = """Return-Path: %s
+From: %s
+To: control@bugs.debian.org
+Bcc: troup@auric.debian.org, %s
+Subject: Fixed in NMU of %s %s
+
+%s
+quit
+
+This message was generated automatically in response to a
+non-maintainer upload.  The .changes file follows.
+
+%s
+""" % (Cnf["Dinstall::MyEmailAddress"], changes["maintainer822"], changes["maintainer822"], changes["source"], changes["version"], control_message, changes["filecontents"])
+            utils.send_mail (mail_message, "")
+    summary = summary + "\n"
+
+    return summary
+
+###############################################################################
+
+# reprocess is necessary for the case of foo_1.2-1 and foo_1.2-2 in
+# Incoming. -1 will reference the .orig.tar.gz, but -2 will not.
+# dsccheckdistrib() can find the .orig.tar.gz but it will not have
+# processed it during it's checks of -2.  If -1 has been deleted or
+# otherwise not checked by da-install, the .orig.tar.gz will not have
+# been checked at all.  To get round this, we force the .orig.tar.gz
+# into the .changes structure and reprocess the .changes file.
+
+def process_it (changes_file):
+    global reprocess, orig_tar_id;
+
+    reprocess = 1;
+    orig_tar_id = None;
+
+    check_signature (changes_file);
+    check_changes (changes_file);
+    while reprocess:
+        reprocess = 0;
+        check_files ();
+        check_md5sums ();
+        check_dsc ();
+        
+    action(changes_file);
+
+###############################################################################
+
+def main():
+    global Cnf, projectB, reject_message, install_bytes, new_ack_old
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
+                 ('d',"debug","Dinstall::Options::Debug", "IntVal"),
+                 ('h',"help","Dinstall::Options::Help"),
+                 ('k',"ack-new","Dinstall::Options::Ack-New"),
+                 ('m',"manual-reject","Dinstall::Options::Manual-Reject", "HasArg"),
+                 ('n',"no-action","Dinstall::Options::No-Action"),
+                 ('p',"no-lock", "Dinstall::Options::No-Lock"),
+                 ('r',"no-version-check", "Dinstall::Options::No-Version-Check"),
+                 ('s',"no-mail", "Dinstall::Options::No-Mail"),
+                 ('u',"override-distribution", "Dinstall::Options::Override-Distribution", "HasArg"),
+                 ('v',"version","Dinstall::Options::Version")];
+    
+    changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    if Cnf["Dinstall::Options::Help"]:
+        usage(0);
+        
+    if Cnf["Dinstall::Options::Version"]:
+        print "katie version 0.0000000000";
+        usage(0);
+
+    postgresql_user = None; # Default == Connect as user running program.
+
+    # -n/--dry-run invalidates some other options which would involve things happening
+    if Cnf["Dinstall::Options::No-Action"]:
+        Cnf["Dinstall::Options::Automatic"] = ""
+        Cnf["Dinstall::Options::Ack-New"] = ""
+        postgresql_user = Cnf["DB::ROUser"];
+
+    projectB = pg.connect('projectb', Cnf["DB::Host"], int(Cnf["DB::Port"]), None, None, postgresql_user);
+
+    db_access.init(Cnf, projectB);
+
+    # Check that we aren't going to clash with the daily cron job
+
+    if os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Cnf["Dinstall::Options::No-Lock"]:
+        sys.stderr.write("Archive maintenance in progress.  Try again later.\n");
+        sys.exit(2);
+    
+    # Obtain lock if not in no-action mode
+
+    if not Cnf["Dinstall::Options::No-Action"]:
+        lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR);
+        fcntl.lockf(lock_fd, FCNTL.F_TLOCK);
+
+    # Read in the list of already-acknowledged NEW packages
+    new_ack_list = utils.open_file(Cnf["Dinstall::NewAckList"],'r');
+    new_ack_old = {};
+    for line in new_ack_list.readlines():
+        new_ack_old[line[:-1]] = 1;
+    new_ack_list.close();
+
+    # Process the changes files
+    for changes_file in changes_files:
+        reject_message = ""
+        print "\n" + changes_file;
+        process_it (changes_file);
+
+    install_mag = " b";
+    if install_bytes > 10000:
+        install_bytes = install_bytes / 1000;
+        install_mag = " Kb";
+    if install_bytes > 10000:
+        install_bytes = install_bytes / 1000;
+        install_mag = " Mb";
+    if install_count:
+        sets = "set"
+        if install_count > 1:
+            sets = "sets"
+        sys.stderr.write("Installed %d package %s, %d%s.\n" % (install_count, sets, int(install_bytes), install_mag))
+
+    # Write out the list of already-acknowledged NEW packages
+    if Cnf["Dinstall::Options::Ack-New"]:
+        new_ack_list = utils.open_file(Cnf["Dinstall::NewAckList"],'w')
+        for i in new_ack_new.keys():
+            new_ack_list.write(i+'\n')
+        new_ack_list.close()
+    
+            
+if __name__ == '__main__':
+    main()
+

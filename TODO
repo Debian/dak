@@ -1,0 +1,74 @@
+Show Stopper
+------------
+
+  o finish new cron.daily file
+  o pg_dump & friends.
+
+  o finish rhona
+
+  o Testing... lots of it.
+
+  o jenna needs to munge files in stable
+  o need to handle (i.e. not crash, but reject) -sa builds.
+
+Non-Show Stopper
+----------------
+
+  o CD building scripts need fixing
+
+  o need a way to sync katie.conf and the DB for things like architecture
+  o need a poolifier that will poolify X mb a day.. (catherine)
+
+  o Optimize all the queries by using EXAMINE and building some INDEXs
+  o Need CIPE tunnel for pandora<->auric setup. [Culus] (?)
+
+  o enclose all the setting SQL stuff in transactions 
+
+  o ?assumes running in incoming? ?problem?
+
+  o project/orphaned should be a timed dist so that things only stay
+    in there temporarily (say 3 months) [aj]
+
+  == 
+
+  o jenna: fix the misfeature of handling sid's binary-hurd-i386 brokeness (? still exist ?)
+  o ability to rebuild all other tables from dists _or_ pools (in the event of disaster) (?)
+  o check errors on apt_pkg calls so we don't bomb out on daily runs (?)
+  o check to see if mutli-component binary packages from a single component source are supported
+
+===================================================================================================
+
+Packaging TODO
+--------------
+
+  o Install python libraries (db_access and utils)
+  o Install config file
+  o Fix stuff to look in sensible places for libs and config file in debian package (?)
+  o man pages and/or documentation
+
+Future Enhancements
+-------------------
+
+  o make the --help and --version options do stuff for all scripts
+  o check for .dsc when source is mentioneD?
+  o fix parse_changes()/build_file_list() to sanity check filenames
+  o saftey check and/or rename debs so they match what they should be
+  o charisma can't handle whitespace-only lines (for the moment, this is feature)
+  o Fix problems with bad .sig .changes having no Maintainer field to REJECT to
+  o Dep checking
+  o Should use $EDITOR, not hardcode vi
+  o should reject timestamp fucked debs
+  o dpkg 1.7 Changed-By field support
+  o Secure incoming handling
+  o revamp NEW package handling so we odn't have to read in the override file
+  o make mkmaintainers obey override changes
+  o Report stuff (? needed ?)
+  o handle the case of 1:1.1 which would overwrite 1.1
+  o aj's binary-all stuff (foo-doc depending on foo) (?)
+  o heidi should report suite name not ID [aj]
+
+  o fubar and warn/error wrappers like in C
+  o generic way of saying isabinary and isadsc.
+  o substitution stuff (cf. userdir-ldap) for announce, reject etc.
+
+  o s/distribution/suite/g
