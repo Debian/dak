@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.11 2002-02-12 23:13:49 troup Exp $
+# $Id: db_access.py,v 1.12 2002-02-22 22:49:19 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 ############################################################################################
 
-import string
+import string, sys, time;
 
 ############################################################################################
 
@@ -45,6 +45,15 @@ def init (config, sql):
 
     Cnf = config;
     projectB = sql;
+
+
+def do_query(q):
+    sys.stderr.write("query: \"%s\" ... " % (q));
+    before = time.time();
+    r = projectB.query(q);
+    time_diff = time.time()-before;
+    sys.stderr.write("took %.3f seconds.\n" % (time_diff));
+    return r;
 
 ############################################################################################
 
@@ -270,15 +279,19 @@ def get_files_id (filename, size, md5sum, location_id):
 def set_files_id (filename, size, md5sum, location_id):
     global files_id_cache
 
-    cache_key = "%s~%d" % (filename, location_id);
-
-    #print "INSERT INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id);
     projectB.query("INSERT INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id));
-    q = projectB.query("SELECT id FROM files WHERE id = currval('files_id_seq')");
-    ql = q.getresult()[0];
-    files_id_cache[cache_key] = ql[0]
 
-    return files_id_cache[cache_key]
+    return get_files_id (filename, size, md5sum, location_id);
+
+    ### currval has issues with postgresql 7.1.3 when the table is big;
+    ### it was taking ~3 seconds to return on auric which is very Not
+    ### Cool(tm).
+    ##
+    ##q = projectB.query("SELECT id FROM files WHERE id = currval('files_id_seq')");
+    ##ql = q.getresult()[0];
+    ##cache_key = "%s~%d" % (filename, location_id);
+    ##files_id_cache[cache_key] = ql[0]
+    ##return files_id_cache[cache_key];
 
 ##########################################################################################
 
