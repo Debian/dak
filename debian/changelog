@@ -1,9 +1,7 @@
-katie (0.0-0) unstable; urgency=low
+katie (0notforuse0-0) unstable; urgency=low
 
   * Initial non-release.  [The packaging is nowhere near complete; don't bother trying to use it unaltered.]
 
- -- James Troup <james@nocrew.org>  Fri, 29 Sep 2000 01:19:17 +0100
+ -- James Troup <james@nocrew.org>  Tue, 25 Sep 2001 22:59:17 +0100
 
-Local variables:
-mode: debian-changelog
-End:
+

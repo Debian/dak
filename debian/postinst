@@ -7,4 +7,7 @@ if [ "$1" = "configure" ]; then
           -a -d /usr/share/doc/katie ]; then
               ln -sf ../share/doc/katie /usr/doc/katie
       fi
+      # Default (blank) files so that programs at least run --help and stuff
+      touch /etc/katie/katie.conf
+      touch /etc/katie/apt.conf
 fi
