@@ -60,6 +60,7 @@ o tea - various sanity checks of the database and archive
 o natalie - manpiulates/list override entries
 o heidi - removes/adds/lists package(s) from/to/for a suite
 o saffron - produces various statistics
+o rosamund - checks for users with no packages in the archive
 
 Semi-generic
 ------------
