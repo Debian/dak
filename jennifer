@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.37 2003-09-22 01:28:08 troup Exp $
+# $Id: jennifer,v 1.38 2003-10-13 00:39:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.37 $";
+jennifer_version = "$Revision: 1.38 $";
 
 Cnf = None;
 Options = None;
@@ -304,6 +304,8 @@ def check_files():
         os.chdir(cwd);
 
     reprocess = 0;
+    has_binaries = 0;
+    has_source = 0;
 
     for file in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
@@ -329,6 +331,7 @@ def check_files():
             files[file]["type"] = "byhand";
         # Checks for a binary package...
         elif utils.re_isadeb.match(file) != None:
+            has_binaries = 1;
             files[file]["type"] = "deb";
 
             # Extract package control information
@@ -449,6 +452,7 @@ def check_files():
         else:
             m = utils.re_issource.match(file);
             if m != None:
+                has_source = 1;
                 files[file]["package"] = m.group(1);
                 files[file]["version"] = m.group(2);
                 files[file]["type"] = m.group(3);
@@ -497,7 +501,7 @@ def check_files():
             if Cnf.has_key("Suite:%s::Components" % (suite)) and \
                files[file]["component"] not in Cnf.ValueList("Suite::%s::Components" % (suite)):
                 reject("unknown component `%s' for suite `%s'." % (files[file]["component"], suite));
-                continue
+                continue;
 
             # See if the package is NEW
             if not Katie.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
@@ -546,12 +550,11 @@ SELECT c.name FROM binaries b, bin_associations ba, suite s, location l,
 
     # If the .changes file says it has source, it must have source.
     if changes["architecture"].has_key("source"):
-        has_source = 0;
-        for file in file_keys:
-            if files[file]["type"] == "dsc":
-                has_source = 1;
         if not has_source:
             reject("no source found and Architecture line in changes mention source.");
+
+        if not has_binaries and Cnf.FindB("Dinstall::Reject::NoSourceOnly"):
+            reject("source only uploads are not supported.");
 
 ###############################################################################
 

@@ -23,6 +23,10 @@ Dinstall
    SuiteSuffix "non-US";
    OverrideDisparityCheck "true";
    StableDislocationSupport "false";
+   Reject
+   {
+     NoSourceOnly "true";
+   };
 };
 
 Lauren
