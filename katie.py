@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Utility functions for katie
-# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.28 2003-01-20 19:13:23 troup Exp $
+# Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: katie.py,v 1.29 2003-02-07 14:51:48 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
