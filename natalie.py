@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.6 2001-06-22 22:53:14 troup Exp $
+# $Id: natalie.py,v 1.7 2001-07-25 16:01:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,14 +20,15 @@
 
 ################################################################################
 
-import errno, os, pg, pwd, string, sys, time
-import utils, db_access
+import errno, os, pg, pwd, string, sys, time;
+import utils, db_access, logging;
 import apt_pkg;
 
 ################################################################################
 
 Cnf = None;
 projectB = None;
+Logger = None;
 
 ################################################################################
 
@@ -56,7 +57,7 @@ def init ():
     projectB = pg.connect('projectb', None);
     db_access.init(Cnf, projectB);
 
-def process_file (file, suite, component, type, action):
+def process_file (file, suite, component, type):
     suite_id = db_access.get_suite_id(suite);
     if suite_id == -1:
         utils.fubar("Suite '%s' not recognised." % (suite));
@@ -81,7 +82,7 @@ def process_file (file, suite, component, type, action):
     c_removed = 0;
     c_error = 0;
     
-    q = projectB.query("SELECT package, priority, section, maintainer FROM override WHERE suite = %s AND component = %s AND type = %s"
+    q = projectB.query("SELECT o.package, o.priority, o.section, o.maintainer, p.priority, s.section FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s and o.priority = p.id and o.section = s.id"
                        % (suite_id, component_id, type_id));
     for i in q.getresult():
         original[i[0]] = i[1:];
@@ -133,7 +134,7 @@ def process_file (file, suite, component, type, action):
             continue;
         new[package] = "";
         if original.has_key(package):
-            (old_priority_id, old_section_id, old_maintainer_override) = original[package];
+            (old_priority_id, old_section_id, old_maintainer_override, old_priority, old_section) = original[package];
             if old_priority_id == priority_id and old_section_id == section_id and old_maintainer_override == maintainer_override:
                 # Same?  Ignore it
                 c_skipped = c_skipped + 1;
@@ -143,8 +144,17 @@ def process_file (file, suite, component, type, action):
                 c_updated = c_updated + 1;
                 projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
                                % (suite_id, component_id, package, type_id));
+                # Log changes
+                if old_priority_id != priority_id:
+                    Logger.log(["changed priority",package,old_priority,priority]);
+                if old_section_id != section_id:
+                    Logger.log(["changed section",package,old_section,section]);
+                if old_maintainer_override != maintainer_override:
+                    Logger.log(["changed maintainer override",package,old_maintainer_override,maintainer_override]);
+                update_p = 1;
         else:
             c_added = c_added + 1;
+            update_p = 0;
             
         if maintainer_override:
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '%s')"
@@ -153,6 +163,8 @@ def process_file (file, suite, component, type, action):
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section) VALUES (%s, %s, %s, '%s', %s, %s)"
                            % (suite_id, component_id, type_id, package, priority_id, section_id));
 
+        if not update_p:
+            Logger.log(["new override",suite,component,type,package,priority,section,maintainer_override]);
 
     # Delete any packages which were removed
     for package in original.keys():
@@ -160,9 +172,11 @@ def process_file (file, suite, component, type, action):
             projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
                            % (suite_id, component_id, package, type_id));
             c_removed = c_removed + 1;
+            Logger.log(["removed override",suite,component,type,package]);
 
     projectB.query("COMMIT WORK");
     print "Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time()-start_time), c_updated, c_added, c_removed, c_skipped, c_error);
+    Logger.log(["set complete",c_updated, c_added, c_removed, c_skipped, c_error]);
 
 ################################################################################
 
@@ -191,7 +205,7 @@ def list(suite, component, type):
 ################################################################################
 
 def main ():
-    global Cnf, projectB;
+    global Cnf, projectB, Logger;
 
     apt_pkg.init();
     
@@ -224,11 +238,13 @@ def main ():
     if action == "list":
         list(suite, component, type);
     else:
+        Logger = logging.Logger(Cnf, "natalie");
         if file_list != []:
             for file in file_list:
-                process_file(utils.open_file(file,'r'), suite, component, type, action);
+                process_file(utils.open_file(file,'r'), suite, component, type);
         else:
-            process_file(sys.stdin, suite, component, type, action);
+            process_file(sys.stdin, suite, component, type);
+        Logger.close();
 
 #######################################################################################
 
