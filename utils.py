@@ -2,7 +2,9 @@
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.57 2003-03-14 19:05:13 troup Exp $
+# $Id: utils.py,v 1.58 2003-09-07 13:54:20 troup Exp $
+
+################################################################################
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,23 +50,22 @@ cant_open_exc = "Can't read file.";
 unknown_hostname_exc = "Unknown hostname";
 cant_overwrite_exc = "Permission denied; can't overwrite existent file."
 file_exists_exc = "Destination file exists";
-send_mail_invalid_args_exc = "Both arguments are non-null.";
 sendmail_failed_exc = "Sendmail invocation failed";
 tried_too_hard_exc = "Tried too hard to find a free filename.";
 
 default_config = "/etc/katie/katie.conf";
 default_apt_config = "/etc/katie/apt.conf";
 
-######################################################################################
+################################################################################
 
 def open_file(filename, mode='r'):
     try:
 	f = open(filename, mode);
     except IOError:
-        raise cant_open_exc, filename
+        raise cant_open_exc, filename;
     return f
 
-######################################################################################
+################################################################################
 
 def our_raw_input(prompt=""):
     if prompt:
@@ -72,12 +73,12 @@ def our_raw_input(prompt=""):
     sys.stdout.flush();
     try:
         ret = raw_input();
-        return ret
+        return ret;
     except EOFError:
-        sys.stderr.write('\nUser interrupt (^D).\n');
+        sys.stderr.write("\nUser interrupt (^D).\n");
         raise SystemExit;
 
-######################################################################################
+################################################################################
 
 def str_isnum (s):
     for c in s:
@@ -85,7 +86,7 @@ def str_isnum (s):
             return 0;
     return 1;
 
-######################################################################################
+################################################################################
 
 def extract_component_from_section(section):
     component = "";
@@ -115,25 +116,30 @@ def extract_component_from_section(section):
 
     return (section, component);
 
-######################################################################################
+################################################################################
 
-# dsc_whitespace_rules turns on strict format checking to avoid
+# Parses a changes file and returns a dictionary where each field is a
+# key.  The mandatory first argument is the filename of the .changes
+# file.
+
+# dsc_whitespace_rules is an optional boolean argument which defaults
+# to off.  If true, it turns on strict format checking to avoid
 # allowing in source packages which are unextracable by the
 # inappropriately fragile dpkg-source.
 #
 # The rules are:
 #
+#   o The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
+#     followed by any PGP header data and must end with a blank line.
 #
-# o The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
-#   followed by any PGP header data and must end with a blank line.
-#
-# o The data section must end with a blank line and must be followed by
-#   "-----BEGIN PGP SIGNATURE-----".
+#   o The data section must end with a blank line and must be followed by
+#     "-----BEGIN PGP SIGNATURE-----".
 
 def parse_changes(filename, dsc_whitespace_rules=0):
-    changes_in = open_file(filename);
     error = "";
     changes = {};
+
+    changes_in = open_file(filename);
     lines = changes_in.readlines();
 
     if not lines:
@@ -165,6 +171,8 @@ def parse_changes(filename, dsc_whitespace_rules=0):
                     raise invalid_dsc_format_exc, index;
                 inside_signature = 0;
                 break;
+            else:
+                continue;
         if line.startswith("-----BEGIN PGP SIGNATURE"):
             break;
         if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
@@ -200,54 +208,56 @@ def parse_changes(filename, dsc_whitespace_rules=0):
     changes_in.close();
     changes["filecontents"] = "".join(lines);
 
-    if error != "":
+    if error:
 	raise changes_parse_error_exc, error;
 
     return changes;
 
-######################################################################################
+################################################################################
 
 # Dropped support for 1.4 and ``buggy dchanges 3.4'' (?!) compared to di.pl
 
 def build_file_list(changes, is_a_dsc=0):
-    files = {}
-    format = changes.get("format", "")
+    files = {};
+
+    # Make sure we have a Files: field to parse...
+    if not changes.has_key("files"):
+	raise no_files_exc;
+
+    # Make sure we recognise the format of the Files: field
+    format = changes.get("format", "");
     if format != "":
-	format = float(format)
+	format = float(format);
     if not is_a_dsc and (format < 1.5 or format > 2.0):
 	raise nk_format_exc, format;
 
-    # No really, this has happened.  Think 0 length .dsc file.
-    if not changes.has_key("files"):
-	raise no_files_exc
-
-    for i in changes["files"].split("\n"):
-        if i == "":
-            break
+    # Parse each entry/line:
+    for i in changes["files"].split('\n'):
+        if not i:
+            break;
         s = i.split();
         section = priority = "";
         try:
             if is_a_dsc:
-                (md5, size, name) = s
+                (md5, size, name) = s;
             else:
-                (md5, size, section, priority, name) = s
+                (md5, size, section, priority, name) = s;
         except ValueError:
-            raise changes_parse_error_exc, i
+            raise changes_parse_error_exc, i;
 
-        if section == "": section = "-"
-        if priority == "": priority = "-"
+        if section == "":
+            section = "-";
+        if priority == "":
+            priority = "-";
 
         (section, component) = extract_component_from_section(section);
 
-        files[name] = { "md5sum" : md5,
-                        "size" : size,
-                        "section": section,
-                        "priority": priority,
-                        "component": component }
+        files[name] = Dict(md5sum=md5, size=size, section=section,
+                           priority=priority, component=component);
 
     return files
 
-######################################################################################
+################################################################################
 
 # Fix the `Maintainer:' field to be an RFC822 compatible address.
 # cf. Debian Policy Manual (D.2.4)
@@ -268,16 +278,12 @@ def fix_maintainer (maintainer):
             rfc822 = "%s (%s)" % (email, name);
     return (rfc822, name, email)
 
-######################################################################################
+################################################################################
 
 # sendmail wrapper, takes _either_ a message string or a file as arguments
 def send_mail (message, filename=""):
-	# Sanity check arguments
-	if message != "" and filename != "":
-            raise send_mail_invalid_args_exc;
-
 	# If we've been passed a string dump it into a temporary file
-	if message != "":
+	if message:
             filename = tempfile.mktemp();
             fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
             os.write (fd, message);
@@ -289,22 +295,22 @@ def send_mail (message, filename=""):
             raise sendmail_failed_exc, output;
 
 	# Clean up any temporary files
-	if message !="":
+	if message:
             os.unlink (filename);
 
-######################################################################################
+################################################################################
 
 def poolify (source, component):
-    if component != "":
+    if component:
 	component += '/';
     # FIXME: this is nasty
-    component = component.lower().replace('non-us/', 'non-US/');
+    component = component.lower().replace("non-us/", "non-US/");
     if source[:3] == "lib":
 	return component + source[:4] + '/' + source + '/'
     else:
 	return component + source[:1] + '/' + source + '/'
 
-######################################################################################
+################################################################################
 
 def move (src, dest, overwrite = 0, perms = 0664):
     if os.path.exists(dest) and os.path.isdir(dest):
@@ -351,7 +357,7 @@ def copy (src, dest, overwrite = 0, perms = 0664):
     shutil.copy2(src, dest);
     os.chmod(dest, perms);
 
-######################################################################################
+################################################################################
 
 def where_am_i ():
     res = socket.gethostbyaddr(socket.gethostname());
@@ -375,7 +381,7 @@ def which_apt_conf_file ():
     else:
 	return default_apt_config;
 
-######################################################################################
+################################################################################
 
 # Escape characters which have meaning to SQL's regex comparison operator ('~')
 # (woefully incomplete)
@@ -385,7 +391,7 @@ def regex_safe (s):
     s = s.replace('.', '\\\\.');
     return s
 
-######################################################################################
+################################################################################
 
 # Perform a substition of template
 def TemplateSubst(map, filename):
@@ -396,7 +402,7 @@ def TemplateSubst(map, filename):
     file.close();
     return template;
 
-######################################################################################
+################################################################################
 
 def fubar(msg, exit_code=1):
     sys.stderr.write("E: %s\n" % (msg));
@@ -405,14 +411,14 @@ def fubar(msg, exit_code=1):
 def warn(msg):
     sys.stderr.write("W: %s\n" % (msg));
 
-######################################################################################
+################################################################################
 
 # Returns the user name with a laughable attempt at rfc822 conformancy
 # (read: removing stray periods).
 def whoami ():
     return pwd.getpwuid(os.getuid())[4].split(',')[0].replace('.', '');
 
-######################################################################################
+################################################################################
 
 def size_type (c):
     t  = " b";
@@ -427,12 +433,12 @@ def size_type (c):
 ################################################################################
 
 def cc_fix_changes (changes):
-    o = changes.get("architecture", "")
-    if o != "":
-        del changes["architecture"]
-    changes["architecture"] = {}
+    o = changes.get("architecture", "");
+    if o:
+        del changes["architecture"];
+    changes["architecture"] = {};
     for j in o.split():
-        changes["architecture"][j] = 1
+        changes["architecture"][j] = 1;
 
 # Sort by source name, source version, 'have source', and then by filename
 def changes_compare (a, b):
@@ -715,7 +721,7 @@ def gpgv_get_status_output(cmd, status_read, status_write):
         finally:
             os._exit(1);
 
-    # parent
+    # Parent
     os.close(p2cread)
     os.dup2(c2pread, c2pwrite);
     os.dup2(errout, errin);
@@ -759,8 +765,8 @@ signature is valid or 'None' if it's not.  The first argument is the
 filename whose signature should be checked.  The second argument is a
 reject function and is called when an error is found.  The reject()
 function must allow for two arguments: the first is the error message,
-the second is an optional prefix string.  It is possible that reject()
-is called more than once during an invocation of check_signature()."""
+the second is an optional prefix string.  It's possible for reject()
+to be called more than once during an invocation of check_signature()."""
 
     # Ensure the filename contains no shell meta-characters or other badness
     if not re_taint_free.match(os.path.basename(filename)):
@@ -804,10 +810,10 @@ is called more than once during an invocation of check_signature()."""
 
     # Now check for obviously bad things in the processed output
     if keywords.has_key("SIGEXPIRED"):
-        reject("key used to sign %s has expired." % (filename));
+        reject("The key used to sign %s has expired." % (filename));
         bad = 1;
     if keywords.has_key("KEYREVOKED"):
-        reject("key used to sign %s has been revoked." % (filename));
+        reject("The key used to sign %s has been revoked." % (filename));
         bad = 1;
     if keywords.has_key("BADSIG"):
         reject("bad signature on %s." % (filename));
@@ -816,10 +822,13 @@ is called more than once during an invocation of check_signature()."""
         reject("failed to check signature on %s." % (filename));
         bad = 1;
     if keywords.has_key("NO_PUBKEY"):
-        reject("key used to sign %s not found in keyring." % (filename));
+        args = keywords["NO_PUBKEY"];
+        if len(args) >= 1:
+            key = args[0];
+        reject("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, filename));
         bad = 1;
     if keywords.has_key("BADARMOR"):
-        reject("ascii armour of signature was corrupt in %s." % (filename));
+        reject("ASCII armour of signature was corrupt in %s." % (filename));
         bad = 1;
     if keywords.has_key("NODATA"):
         reject("no signature found in %s." % (filename));
@@ -872,12 +881,56 @@ is called more than once during an invocation of check_signature()."""
 
 ################################################################################
 
-apt_pkg.init()
+# Inspired(tm) by http://www.zopelabs.com/cookbook/1022242603
+
+def wrap(paragraph, max_length, prefix=""):
+    line = "";
+    s = "";
+    have_started = 0;
+    words = paragraph.split();
+
+    for word in words:
+        word_size = len(word);
+        if word_size > max_length:
+            if have_started:
+                s += line + '\n' + prefix;
+            s += word + '\n' + prefix;
+        else:
+            if have_started:
+                new_length = len(line) + word_size + 1;
+                if new_length > max_length:
+                    s += line + '\n' + prefix;
+                    line = word;
+                else:
+                    line += ' ' + word;
+            else:
+                line = word;
+        have_started = 1;
+
+    if have_started:
+        s += line;
+
+    return s;
+
+################################################################################
+
+# Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
+# Returns fixed 'src'
+def clean_symlink (src, dest, root):
+    src = src.replace(root, '', 1);
+    dest = dest.replace(root, '', 1);
+    dest = os.path.dirname(dest);
+    new_src = '../' * len(dest.split('/'));
+    return new_src + src;
+
+################################################################################
+
+apt_pkg.init();
 
 Cnf = apt_pkg.newConfiguration();
 apt_pkg.ReadConfigFileISC(Cnf,default_config);
 
 if which_conf_file() != default_config:
-	apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
+	apt_pkg.ReadConfigFileISC(Cnf,which_conf_file());
 
 ################################################################################
