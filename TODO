@@ -1,75 +1,85 @@
+TOFIX
+=====
+
 Urgent
 ------
 
   o Claire needs to know about sections on auric.
+  o maintainers file needs overrides.
+  o jenna needs to use order by to keep aj from going nutzo
+  o fix the silly rhona p-u bug
+  o have cron job symlink -dr properly
+  o need to have process_it run a big try: loop so that individual
+    package screws up don't kill the daily cron run.
+  o Add an 'add' ability to melanie
+  o Make experimental work
 
 Less Urgent
 -----------
 
-  o Need to merge non-non-US and non-US DBs.
-  o need a poolifier that will poolify X mb a day.. (catherine)
-  o Need to vacuum daily
+  o [Hard] Need to merge non-non-US and non-US DBs.
+  o [Easy] Need to vacuum daily
+  o [Easy] remove empty directories in the pool in cron.weekly or so
 
-  == 
-
-  o Log files for jenna, rhona and katie.
-  o Optimize all the queries by using EXAMINE and building some INDEXs.
-  o enclose all the setting SQL stuff in transactions (mostly done).
-  o jenna needs to use order by to keep aj from going nutzo
-  o remove empty directories in the pool in cron.weekly or so
-
-  == 
-
-  o ability to rebuild all other tables from dists _or_ pools (in the event of disaster) (?)
-  o check errors on apt_pkg calls so we don't bomb out on daily runs (?)
-  o Need to finish alyson (a way to sync katie.conf and the DB)
-  o dinstall should remove != stable on stable install, not just f + u
-  o jenna needs to validate arguments
-  o jenna's untochable flag doesn't stop adding new packages
-  o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
+  o Fix dinstall to remove != stable on stable install, not just f + u
   o Fix 'mixed' component handling
   o Fix component handling in overrides (aj)
   o Fix lack of entires in source overrides (aj)
-  o Fix potato files to not regen and sort by in jenna
   o Fix rhona to unconditionally read override file on startup
   o Fix dinstall to warn if not in incoming or p-u
+  o db_access' get_files needs to use exceptions not this None, > 0, < 0 return val BS (?)
+  o check errors on apt_pkg calls (?)
+  o The untouchable flag doesn't stop adding new packages
+  o jenna needs to validate arguments (?)
 
 ===================================================================================================
 
-Packaging TODO
---------------
+TODO
+====
+
+Packaging
+---------
 
   o Install python libraries (db_access and utils)
   o Install config file
   o Fix stuff to look in sensible places for libs and config file in debian package (?)
   o man pages and/or documentation
 
-Future Enhancements
--------------------
+Urgent
+------
 
-  o possibly disallow binary versions >> source except for bin-only NMUs (Branden Robinson)
-  o project/orphaned should be a timed dist so that things only stay
-    in there temporarily (say 3 months) [aj]
-  o make the --help and --version options do stuff for all scripts
-  o check for .dsc when source is mentioneD?
+  o Secure incoming handling
+  o [Hard] dependency checking
+  o dpkg 1.7 Changed-By field support
+  o Overrides for Maintainers
+  o Possibly disallow binary versions >> source except for bin-only NMUs (Branden Robinson, IWJ & others)
+  o Kill orphaned
+
+Less Urgent
+-----------
+
+  o Need a poolifier that will poolify X mb a day.. (catherine)
+  o Need to optimize all the queries by using EXAMINE and building some INDEXs.
+  o Need to enclose all the setting SQL stuff in transactions (mostly done).
+  o Need to finish alyson (a way to sync katie.conf and the DB)
+  o Need log files for jenna, rhona and katie.
+  o Need the ability to rebuild all other tables from dists _or_ pools (in the event of disaster) (?)
+  o Make the --help and --version options do stuff for all scripts
+  o Need to check for .dsc when source is mentioned
+
   o fix parse_changes()/build_file_list() to sanity check filenames
   o saftey check and/or rename debs so they match what they should be
+
   o charisma can't handle whitespace-only lines (for the moment, this is feature)
-  o Fix problems with bad .sig .changes having no Maintainer field to REJECT to
-  o Dep checking
   o Should use $EDITOR, not hardcode vi
-  o should reject timestamp fucked debs
-  o dpkg 1.7 Changed-By field support
-  o Secure incoming handling
-  o revamp NEW package handling so we odn't have to read in the override file
-  o make mkmaintainers obey override changes
-  o Report stuff (? needed ?)
-  o handle the case of 1:1.1 which would overwrite 1.1
+  o Should reject packages with bad timestamps
+  o Replicate old dinstall report stuff (? needed ?)
+  o Handle the case of 1:1.1 which would overwrite 1.1 (?)
   o aj's binary-all stuff (foo-doc depending on foo) (?)
   o heidi should report suite name not ID [aj]
 
-  o fubar and warn/error wrappers like in C
-  o generic way of saying isabinary and isadsc.
+  o fubar and warn/error wrappers like in C (?)
+  o generic way of saying isabinary and isadsc. (?)
   o substitution stuff (cf. userdir-ldap) for announce, reject etc.
 
   o s/distribution/suite/g

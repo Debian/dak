@@ -32,7 +32,7 @@
   
   <RefSect1><Title>Description</>
     <para>   
-      <command>melanie</command> is the command line tool to add and remove packages from suites.
+      <command>melanie</command> is the command line tool to add and remove package sets from suites with enforced logging, optional bug closing and override updates.
 
   <RefSect1><Title>Options</>
     
@@ -90,12 +90,13 @@
       <para>There are 3 methods for selecting packages.</para>
       <itemizedlist>
 	<listitem>
-	  <para>Source + Binary. (default)</para>
+	  <para>Source + Binaries. (default)</para>
 	  <para>In this mode <command>melanie</command> will assume each of the package(s) passed as arguments are source packages and will also remove any binary packages built from these source packages.</para>
 	</listitem>
 	<listitem>
 	  <para>Binary only.</para>
 	  <para>Only binary packages are searched; source packages are ignored.  This mode is chosen by use of the <option>-b/--binary</option> switch.</para>
+	  <para>This should <emphasis>only</emphasis> be used for orphaned binary packages (i.e. those no longer built by source packages); otherwise, in any system (e.g. Debian) which has auto-building, pointless (and uninstallable) recompiles will be triggered.</para>
 	</listitem>
 	<listitem>
 	  <para>Source only.</para>
@@ -104,14 +105,70 @@
       </itemizedlist>
     </refsect1>
 
+    <refsect1>
+      <title>Configuration</title>
+      <para><command>melanie</command> uses katie's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
+      <variablelist>
+	<varlistentry>
+	  <term>Melanie::MyEmailAddress</term>
+	  <listitem>
+	    <para>This is used as the From: line for bug closing mails as per the -d/--done command line switch.  It, obviously, must be a RFC-822 valid email address.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Melanie::LogFile</term>
+	  <listitem>
+	    <para>This is the (absolute) file name of the logfile that melanie unconditionally writes too.  This can not be empty or an invalid file.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect1>
+
   <refsect1>
     <title>Examples</title>
-    <para></para>
-  </refsect1>
+      <para>The first example is of a source+binaries package removal.</para>
+      <informalexample>
+	<literallayout>
+troup@auric| ~ $melanie -d 68136 -m "Requested by tbm@; confirmed with maintainer.  Superseded by libgmp2" gmp1   
+Working... done.
+Will remove the following packages from unstable:
 
-  <RefSect1><Title>Description</>
-    <para>   
-      <command>melanie</command> is the command line tool to add and remove packages from suites.
+      gmp1 |  1.3.2-8.2 | source, alpha, hppa, arm, i386, m68k, powerpc, sparc
+  gmp1-dev |  1.3.2-8.2 | alpha, hppa, arm, i386, m68k, powerpc, sparc
+
+
+------------------- Reason -------------------
+Requested by tbm@; confirmed with maintainer.  Superseded by libgmp2
+----------------------------------------------
+
+Continue (y/N)? y
+ Deleting... done.
+troup@auric| ~ $
+	  </literallayout>
+      </informalexample>
+      <para>The second example is of a binary-only multi-package removal.</para>
+      <informalexample>
+	<literallayout>
+troup@auric| ~ $melanie -d 82562 -m "Requested by paul@; NBS." -b libgtkextra{5,9,10}
+Working... done.
+Will remove the following packages from unstable:
+
+libgtkextra10 |  0.99.10-2 | alpha, i386, m68k, powerpc, sparc
+libgtkextra5 |   0.99.5-1 | alpha, i386, m68k, powerpc, sparc
+libgtkextra9 |   0.99.9-1 | alpha, i386, m68k, powerpc, sparc
+
+Will also close bugs: 82562
+
+------------------- Reason -------------------
+Requested by paul@; NBS.
+----------------------------------------------
+
+Continue (y/N)? y
+ Deleting... done.
+troup@auric| ~ $
+	</literallayout>
+      </informalexample>
+  </refsect1>
 
   <RefSect1><Title>Diagnostics</>
     <para>

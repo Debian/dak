@@ -276,10 +276,12 @@ Suite
 	  "hppa" "";
 	  "hurd-i386" "";
 	  "i386" "";
+	  "ia64" "";
 	  "m68k" "";
 	  "mips" "";
 	  "mipsel" "";
 	  "powerpc" "";
+	  "s390" "";
 	  "sh" "";
 	  "sparc" "";
 	};
@@ -322,10 +324,12 @@ Architectures
   hppa "HP PA RISC";
   arm "Arm";
   i386 "Intel ia32";
+  ia64 "Intel ia64";
   m68k "Motorola Mc680x0";
   mips "SGI MIPS";
   mipsel "SGI MIPS (Little Endian)";
   powerpc "PowerPC";
+  s390 "IBM S/390";
   sh "Hitatchi SuperH";
   sparc "Sun SPARC/UltraSPARC";
 
