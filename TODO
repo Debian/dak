@@ -195,7 +195,6 @@ Less Urgent
     o melanie should behave better with -a and without -b; see
       gcc-defaults removal for an example.
     o Reject on misconfigured kernel-package uploads
-    o denise evily abuses sys.stdout by reassigning it
     o utils.extract_component_from_section: main/utils -> main/utils, main rather than utils, main
     o Fix jennier to warn if run when not in incoming or p-u
     o katie should validate multi-suite uploads; only possible valid one
