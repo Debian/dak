@@ -39,9 +39,6 @@ More Urgent
 
   o lisa doesn't trap signals from fernanda properly
 
-  o jenna sucks; should be rewritten to use python arrays rather than
-    multiple selects, similar to heidi/natalie rewrites.
-
   o queued and/or perl on sparc stable sucks - reimplement it.
 
   o aj's bin nmu changes
