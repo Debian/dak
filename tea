@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.6 2001-03-02 02:30:12 troup Exp $
+# $Id: tea,v 1.7 2001-03-15 00:35:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,6 +54,7 @@ def process_dir (arg, dirname, filenames):
 ################################################################################
 
 def check_files():
+    global db_files;
 
     print "Building list of Database files...";
 
