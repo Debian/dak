@@ -138,9 +138,7 @@ Less Urgent
   o aj's binary-all stuff (foo-doc depending on foo) (?)
   o heidi should report suite name not ID [aj]
 
-  o fubar and warn/error wrappers like in C (?)
   o generic way of saying isabinary and isadsc. (?)
-  o substitution stuff (cf. userdir-ldap) for announce, reject etc.
 
   o s/distribution/suite/g
 
