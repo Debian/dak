@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.12 2002-04-16 17:08:15 troup Exp $
+# $Id: jennifer,v 1.13 2002-04-16 17:35:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.12 $";
+jennifer_version = "$Revision: 1.13 $";
 
 Cnf = None;
 Options = None;
@@ -878,6 +878,10 @@ def check_timestamps():
 # the file is still being uploaded.
 
 def upload_too_new():
+    too_new = 0;
+    # Move back to the original directory to get accurate time stamps
+    cwd = os.getcwd();
+    os.chdir(pkg.directory);
     file_list = pkg.files.keys();
     file_list.extend(pkg.dsc_files.keys());
     file_list.append(pkg.changes_file);
@@ -885,10 +889,14 @@ def upload_too_new():
         try:
             last_modified = time.time()-os.path.getmtime(file);
             if last_modified < int(Cnf["Dinstall::SkipTime"]):
-                return 1;
+                too_new = 1;
+                break;
         except:
             pass;
-    return 0;
+    os.chdir(cwd);
+    return too_new;
+
+################################################################################
 
 def action ():
     # changes["distribution"] may not exist in corner cases
