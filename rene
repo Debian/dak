@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+
+# Check for obsolete binary packages
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: rene,v 1.1 2001-02-12 03:29:52 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# "Welcome to where time stands still,
+#  No one leaves and no one will."
+#   - Sanitarium - Metallica / Master of the puppets
+
+################################################################################
+
+import commands, os, string, sys, tempfile;
+import utils;
+import apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+
+################################################################################
+
+def main ():
+    global Cnf, projectB;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('D',"debug","Catherine::Options::Debug", "IntVal"),
+                 ('h',"help","Catherine::Options::Help"),
+                 ('V',"version","Catherine::Options::Version"),
+                 ('l',"limit", "Catherine::Options::Limit", "HasArg"),
+                 ('n',"no-action","Catherine::Options::No-Action"),
+                 ('v',"verbose","Catherine::Options::Verbose")];
+
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    bin_pkgs = {};
+    miss_src = {};
+    src_pkgs = {};
+    source_binaries = {};
+
+    suite = "unstable";
+
+    components = Cnf.SubTree("Suite::%s::Components" % (suite)).List();
+    for component in components:
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::RootDir"], suite, component);
+        print "Processing %s..." % (filename);
+        # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+        temp_filename = tempfile.mktemp();
+        fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+        os.close(fd);
+        (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+        if (result != 0):
+            sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
+            sys.exit(result);
+        sources = utils.open_file(temp_filename, 'r');
+        Sources = apt_pkg.ParseTagFile(sources);
+        while Sources.Step():
+            source = Sources.Section.Find('Package');
+            source_index = component + '/' + source;
+            if src_pkgs.has_key(source):
+                print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source]);
+            src_pkgs[source] = source_index;
+            binaries = Sources.Section.Find('Binary');
+            for binary in string.split(binaries, ','):
+                binary = string.strip(binary);
+                if bin_pkgs.has_key(binary):
+                    print " %s is duplicated in %s and %s" % (binary, source, bin_pkgs[binary]);
+                bin_pkgs[binary] = source;
+            source_binaries[source] = binaries;
+        sources.close();
+        os.unlink(temp_filename);
+
+    for component in components:
+        architectures = Cnf.SubTree("Suite::%s::Architectures" % (suite)).List();
+        for architecture in architectures:
+            if [ "source", "all" ].count(architecture) != 0:
+                continue;
+            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::RootDir"], suite, component, architecture);
+            print "Processing %s..." % (filename);
+            packages = utils.open_file(filename, 'r');
+            Packages = apt_pkg.ParseTagFile(packages);
+            while Packages.Step():
+                package = Packages.Section.Find('Package');
+                source = Packages.Section.Find('Source', "");
+                if source == "":
+                    source = package;
+                if string.find(source, "(") != -1:
+                    m = utils.re_extract_src_version.match(source)
+                    source = m.group(1)
+                if not bin_pkgs.has_key(package) and not miss_src.has_key(package):
+                    miss_src[package] = 1;
+                    print " %s has no source [%s: %s]" % (package, source, source_binaries.get(source, "(source does not exist)"));
+            packages.close();
+
+    return;
+
+####################################################################################################
+
+if __name__ == '__main__':
+    main()
