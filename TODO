@@ -1,11 +1,3 @@
-<aj> ARRRGGGHHH
-<aj> what's wrong with me!?!?!?
-<aj> i was just nice to some mormon doorknockers!!!
-<Omnic> AJ?!?!
-<aj> i know!!!!!
-<Omnic> I'm gonna have to kick your ass when you come over
-<Culus> aj: GET THE HELL OUT OF THE CABAL! :P
-
 To fix
 ======
 
@@ -21,6 +13,8 @@ More Urgent
       override.maintainer-to and have them reference the maintainers
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
+
+  o katie can loop on rejects if target's exist in REJECT... 
 
 Less Urgent
 -----------
@@ -57,12 +51,10 @@ Less Urgent
     o Reject on misconfigured kernel-package uploads
     o denise abuses sys.stdout == badly  
     o utils.extract_component_from_section: main/utils -> main/utils, main rather than utils, main
-    o Fix katie to remove != stable on stable install, not just f + u
     o Fix katie to warn if run when not in incoming or p-u
     o check for empty debs; check for empty (or small (<1k ?)) .tar.gz's.
     o katie should validate multi-suite uploads; only possible valid one
       is "stable unstable"
-    o Don't do override checks for stable only uploads
     o cron.daily* should change umask (aj sucks)
     o Rene doesn't look at debian-installer but should.
     o Rene needs to check for binary-less source packages.
@@ -83,6 +75,14 @@ Less Urgent
     o jenna doesn't handle arch: any -> arch: all transitions 
       [aj worked around; need to revisit]
 
+ * Stable:
+
+<neuro> well, there's one other thing that doesn't work so well
+<neuro> you probably should have stable_install ignore Closes:
+<neuro> or it might be unique to the case of stable unstable uploads
+
+
+
 ===================================================================================================
 
 TODO
@@ -94,10 +94,6 @@ More Urgent
   o testing-updates suite: if binary-only and version << version in
     unstable and source-ver ~= source-ver in testing; then map
     unstable -> testing-updates ?
-
-  o katie needs a stable_reject() which a) removes the package from
-    p-u, b) doesn't remove the file from the pool, and c) (optionally, I
-    guess) uses a template mail.
 
   o [Complexish] Secure incoming handling
   o [Hard] dependency checking (esp. stable)
@@ -112,6 +108,7 @@ Packaging
   o Install config file
   o Fix stuff to look in sensible places for libs and config file in debian package (?)
   o man pages and/or documentation
+  o debian/* assumes arch: all but sql-aptvc.o isn't arch: all.
 
 Less Urgent
 -----------
@@ -172,3 +169,5 @@ Less Urgent
      @ weekly postins to d-c (?)
      @ backup of report (?)
      @ backup of changes.tgz (?)
+
+------------------------------------------------

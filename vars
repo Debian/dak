@@ -14,7 +14,7 @@ incoming=/org/ftp.debian.org/incoming
 
 ftpgroup=debadmin
 
-copyoverrides="potato.contrib potato.contrib.src potato.main potato.main.src potato.non-free potato.non-free.src sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src woody.contrib woody.contrib.src woody.main woody.main.src woody.non-free woody.non-free.src"
+copyoverrides="potato.contrib potato.contrib.src potato.main potato.main.src potato.non-free potato.non-free.src sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src woody.contrib woody.contrib.src woody.main woody.main.src woody.non-free woody.non-free.src sid.extra.contrib sid.extra.main sid.extra.non-free woody.extra.contrib woody.extra.main woody.extra.non-free"
 
 PATH=$masterdir:$PATH
 umask 022

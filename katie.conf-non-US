@@ -14,8 +14,8 @@ Dinstall
    LockFile "/org/non-us.debian.org/katie/lock";
    Bcc "archive@ftp-master.debian.org";
    GroupOverrideFilename "override.group-maint";
+   StableRejector "Martin (Joey) Schulze <joey@debian.org>";
 };
-
 
 Shania
 {
