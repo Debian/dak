@@ -27,6 +27,9 @@ queue/approved
 Others
 ------
 
+<elmo_home> [<random>maybe I should reject debian packages with a non-Debian origin or bugs field</>]
+<Kamion> [<random>agreed; dunno what origin does but non-Debian bugs fields would be bad]
+
   o rhona should make use of select..except select, temporary tables
   etc. rather than looping and calling SQL every time so we can do
   suite removal sanely (see potato-removal document)
