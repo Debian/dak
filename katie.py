@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.40 2003-09-17 23:36:17 troup Exp $
+# $Id: katie.py,v 1.41 2003-10-14 21:52:46 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -570,7 +570,7 @@ distribution.""";
         pkg = self.pkg;
 
         reason_filename = pkg.changes_file[:-8] + ".reason";
-        reject_filename = Cnf["Dir::Queue::Reject"] + '/' + reason_filename;
+        reason_filename = Cnf["Dir::Queue::Reject"] + '/' + reason_filename;
 
         # Move all the files into the reject directory
         reject_files = pkg.files.keys() + [pkg.changes_file];
@@ -578,16 +578,15 @@ distribution.""";
 
         # If we fail here someone is probably trying to exploit the race
         # so let's just raise an exception ...
-        if os.path.exists(reject_filename):
-            os.unlink(reject_filename);
-        fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
+        if os.path.exists(reason_filename):
+            os.unlink(reason_filename);
+        reason_file = os.open(reason_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
 
         if not manual:
             Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"];
             Subst["__MANUAL_REJECT_MESSAGE__"] = "";
             Subst["__CC__"] = "X-Katie-Rejection: automatic (moo)";
-            os.write(fd, reject_message);
-            os.close(fd);
+            os.write(reason_file, reject_message);
             reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.rejected");
         else:
             # Build up the rejection email
@@ -597,10 +596,10 @@ distribution.""";
             Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message;
             Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
             reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.rejected");
-
             # Write the rejection email out as the <foo>.reason file
-            os.write(fd, reject_mail_message);
-            os.close(fd);
+            os.write(reason_file, reject_mail_message);
+
+        os.close(reason_file);
 
         # Send the rejection mail if appropriate
         if not Cnf["Dinstall::Options::No-Mail"]:
