@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: madison,v 1.27 2003-03-14 19:04:07 troup Exp $
+# $Id: madison,v 1.28 2003-05-02 13:54:08 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,13 +42,14 @@ def usage (exit_code=0):
     print """Usage: madison [OPTION] PACKAGE[...]
 Display information about PACKAGE(s).
 
-  -a, --architecture=ARCH    only show info for this architecture
+  -a, --architecture=ARCH    only show info for ARCH(s)
+  -c, --component=COMPONENT  only show info for COMPONENT(s)
   -h, --help                 show this help and exit
   -r, --regex                treat PACKAGE as a regex
   -s, --suite=SUITE          only show info for this suite
   -S, --source-and-binary    show info for the binary children of source pkgs
 
-Both ARCH and SUITE can be comma (or space) seperated lists, e.g.
+ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
     --architecture=m68k,i386"""
     sys.exit(exit_code)
 
@@ -61,11 +62,12 @@ def main ():
 
     Arguments = [('a', "architecture", "Madison::Options::Architecture", "HasArg"),
                  ('c', "component", "Madison::Options::Component", "HasArg"),
+                 ('f', "format", "Madison::Options::Format", "HasArg"),
                  ('r', "regex", "Madison::Options::Regex"),
                  ('s', "suite", "Madison::Options::Suite", "HasArg"),
                  ('S', "source-and-binary", "Madison::Options::Source-And-Binary"),
                  ('h', "help", "Madison::Options::Help")];
-    for i in [ "architecture", "component", "regex", "suite",
+    for i in [ "architecture", "component", "format", "regex", "suite",
                "source-and-binary", "help" ]:
 	if not Cnf.has_key("Madison::Options::%s" % (i)):
 	    Cnf["Madison::Options::%s" % (i)] = "";
@@ -134,11 +136,15 @@ def main ():
                 suites = d[pkg][version].keys();
                 suites.sort();
                 for suite in suites:
-                    sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite));
                     arches = d[pkg][version][suite];
                     arches.sort(utils.arch_compare_sw);
-                    sys.stdout.write(", ".join(arches));
-                    sys.stdout.write('\n');
+                    if Options["Format"] == "": #normal
+                        sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite));
+                        sys.stdout.write(", ".join(arches));
+                        sys.stdout.write('\n');
+                    elif Options["Format"] == "heidi":
+                        for arch in arches:
+                            sys.stdout.write("%s %s %s\n" % (pkg, version, arch));
 
     if not results:
         sys.exit(1);
