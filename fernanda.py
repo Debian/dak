@@ -2,7 +2,7 @@
 
 # Script to automate some parts of checking NEW packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: fernanda.py,v 1.5 2002-11-19 03:15:05 troup Exp $
+# $Id: fernanda.py,v 1.6 2002-11-26 02:21:46 anonymous Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,15 +35,60 @@
 
 import errno, os, re, sys
 import utils
-import apt_pkg
+import apt_pkg, apt_inst
+import pg, string, db_access
+
+################################################################################
+
+
+re_package = re.compile(r"^(.+?)_.*");
+re_doc_directory = re.compile(r".*/doc/([^/]*).*");
+
+
+re_contrib = re.compile('^contrib/')
+re_nonfree = re.compile('^non\-free/')
+
+re_arch = re.compile("Architecture: .*")
+re_builddep = re.compile("Build-Depends: .*")
+re_builddepind = re.compile("Build-Depends-Indep: .*")
+
+re_localhost = re.compile("localhost\.localdomain") 
+re_version = re.compile('^(.*)\((.*)\)')
+
+re_newlinespace = re.compile('\n')
+re_spacestrip = re.compile('(\s)')
+
+##############################################################################################################
+
+# Colour definitions
+
+# Main
+main_colour = "\033[36m"
+# Contrib
+contrib_colour = "\033[33m"
+# Non-Free
+nonfree_colour = "\033[31m"
+# Arch
+arch_colour = "\033[32m"
+# End
+end_colour = "\033[0m"
+# Bold 
+bold_colour = "\033[1m"
+# Bad maintainer
+maintainer_colour = arch_colour
+
+
 
 ################################################################################
 
 Cnf = None;
 projectB = None;
 
-re_package = re.compile(r"^(.+?)_.*");
-re_doc_directory = re.compile(r".*/doc/([^/]*).*");
+Cnf = utils.get_conf()
+projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+db_access.init(Cnf, projectB);
+
+
 
 ################################################################################
 
@@ -58,6 +103,233 @@ PACKAGE can be a .changes, .dsc, .deb or .udeb filename."""
     sys.exit(exit_code)
 
 ################################################################################
+
+def get_depends_parts(depend) :
+    v_match = re_version.match(depend)
+    if v_match:
+	d_parts = { 'name' : v_match.group(1), 'version' : v_match.group(2) }
+    else :
+	d_parts = { 'name' : depend , 'version' : '' }
+    return d_parts
+				
+def get_or_list(depend) :
+    or_list = string.split(depend, "|")
+    return or_list
+					
+def get_comma_list(depend) :
+    dep_list = string.split(depend, ",")
+    return dep_list
+						
+						
+def split_depends (d_str) :
+    # creates a list of lists of dictionaries of depends (package,version relation)
+    
+    d_str = re_spacestrip.sub('',d_str)
+    depends_tree = []
+    # first split depends string up amongs comma delimiter
+    dep_list = get_comma_list(d_str)
+    d = 0
+    while d < len(dep_list):
+	# put depends into their own list
+	depends_tree.append([dep_list[d]])
+	d = d + 1
+    d = 0
+    while d < len(depends_tree) :
+	k = 0
+	# split up Or'd depends into a multi-item list
+	depends_tree[d] = get_or_list(depends_tree[d][0])
+	while k < len(depends_tree[d]) :
+	    # split depends into {package, version relation}
+	    depends_tree[d][k] = get_depends_parts(depends_tree[d][k])
+	    k = k + 1
+	d = d +1
+    return depends_tree
+																						
+def read_control (filename) :
+    
+    recommends = []
+    depends = []
+    section = ''
+    maintainer = ''
+    arch = ''
+
+
+
+    
+    deb_file = utils.open_file(filename);
+    try:
+	extracts = apt_inst.debExtractControl(deb_file)
+	control = apt_pkg.ParseSection(extracts)
+    except:
+
+	print "can't parse control info"
+	control = ''	
+
+	
+    deb_file.close();
+    
+    control_keys = control.keys()
+    
+    
+   
+
+	
+	
+	
+    if control.has_key("Depends"):
+	depends_str = control.Find("Depends")
+	# create list of dependancy lists
+	depends = split_depends(depends_str)
+    
+	
+    if control.has_key("Recommends"):
+	recommends_str = control.Find("Recommends")
+	recommends = split_depends(recommends_str)
+    
+    if control.has_key("Section"):
+	section_str = control.Find("Section")
+   
+	c_match = re_contrib.search(section_str)
+	nf_match = re_nonfree.search(section_str)
+	if c_match :
+	    # contrib colour
+	    section = contrib_colour + section_str + end_colour
+	elif nf_match :
+	    
+	    # non-free colour
+	    section = nonfree_colour + section_str + end_colour
+	else :
+	    # main
+	    section = main_colour +  section_str + end_colour
+    if control.has_key("Achitecture"):
+	arch_str = control.Find("Architecture")
+   	arch = arch_colour + arch_str + end_colour
+    
+    if control.has_key("Maintainer"):
+	maintainer = control.Find("Maintainer") 
+   	localhost = re_localhost.search(maintainer) 
+	if localhost :
+	    #highlight bad email
+	    maintainer = maintainer_colour + maintainer + end_colour 
+    
+
+    return (control, control_keys, section, depends, recommends, arch, maintainer)
+    
+    
+def read_dsc (dsc_filename) :
+    buf = []
+    header = ''
+    footer = ''
+    dsc = {}
+    dsc_files = {}
+    
+    dsc_file = utils.open_file(dsc_filename)		    
+    try:
+	dsc.update(utils.parse_changes(dsc_filename, dsc_whitespace_rules=0))
+	dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1))
+    except:
+    
+	print "can't parse control info"
+	
+   
+						
+    dsc_file.close();
+
+    filecontents = dsc["filecontents"]
+
+    if dsc.has_key("build-depends"):
+	
+	builddep = split_depends(dsc["build-depends"])
+	builddepstr = create_depends_string(builddep)
+	filecontents = re_builddep.sub("Build-Depends: "+builddepstr, filecontents)
+    
+    
+    if dsc.has_key("build-depends-indep") :
+	builddepindstr = create_depends_string(split_depends(dsc["build-depends-indep"]))
+	filecontents = re_builddepind.sub("Build-Depends-Indep: "+builddepindstr, filecontents)
+
+    
+
+    
+    if dsc.has_key("architecture") :
+
+	if (dsc["architecture"] != "any") : 
+	    newarch = arch_colour + dsc["architecture"] + end_colour 
+	    filecontents = re_arch.sub("Architecture: "+newarch, filecontents)
+    
+    return (filecontents)
+
+def create_depends_string(depends_tree) :
+    # just look up unstable for now. possibly pull from .changes later
+    suite = "unstable"
+    result = ""
+    comma_count = 1
+    for l in depends_tree:
+	if (comma_count >= 2) :
+	    result = result + ", "
+	or_count = 1
+	for d in l :
+	    if (or_count >= 2 ) :
+		result = result + " | "
+	    # doesn't do version lookup yet.
+
+	    q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name='%s' ORDER BY b.version desc" % (d['name'], suite))
+	    ql = q.getresult();
+	    if ql:
+		i = ql[0]
+		#for i in ql:
+		
+		if i[2] == "contrib" :
+		    result = result + contrib_colour + d['name']
+		elif i[2] == "non-free" :
+		    result = result + nonfree_colour + d['name']
+		else :
+		    result = result + main_colour + d['name']
+		    
+		if d['version'] != '' :
+		    result = result +  " (" + d['version'] + ")"
+		result = result +end_colour
+	    else :
+		result = result + bold_colour + d['name']
+		if d['version'] != '' :
+		    result = result + " ("  + d['version'] + ")"
+		result = result  + end_colour
+	    or_count = or_count + 1
+	comma_count = comma_count + 1
+    return result
+
+
+def output_deb_info(filename):
+    
+
+    (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
+
+    if control == '' :
+	print "no control info" 
+    else :
+
+	
+	for key in control_keys :
+
+	    output = " " + key + ": "
+	    if key == 'Depends' :
+		output = output + create_depends_string(depends)
+	    elif key == 'Recommends' :
+		output = output + create_depends_string(recommends)	    
+	    elif key == 'Section' :
+		output = output + section
+	    elif key == 'Architecture' :
+		output = output + arch
+	    elif key == 'Maintainer' :
+		output = output + maintainer
+	    elif key == 'Description' :
+		desc = control.Find(key)
+		desc = re_newlinespace.sub('\n ', desc)
+		output = output + desc
+	    else :
+		output = output + control.Find(key)
+	    print output
+	
 
 def do_command (command, filename):
     o = os.popen("%s %s" % (command, filename));
@@ -82,10 +354,12 @@ def print_copyright (deb_filename):
 
 def check_dsc (dsc_filename):
     print "---- .dsc file for %s ----" % (dsc_filename);
-    dsc_file = utils.open_file(dsc_filename);
-    for line in dsc_file.readlines():
-        print line[:-1];
-    print;
+    (dsc) = read_dsc(dsc_filename)
+    
+    print dsc
+
+    
+
 
 def check_deb (deb_filename):
     filename = os.path.basename(deb_filename);
@@ -96,8 +370,9 @@ def check_deb (deb_filename):
 	is_a_udeb = 0;
 
     print "---- control file for %s ----" % (filename);
-    do_command ("dpkg -I", deb_filename);
-
+    #do_command ("dpkg -I", deb_filename);
+    output_deb_info(deb_filename)
+    
     if is_a_udeb:
 	print "---- skipping lintian check for µdeb ----";
 	print ;
@@ -142,7 +417,7 @@ def check_changes (changes_filename):
 def main ():
     global Cnf, projectB, db_files, waste, excluded;
 
-    Cnf = utils.get_conf()
+#    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Fernanda::Options::Help")];
     for i in [ "help" ]:
@@ -160,7 +435,8 @@ def main ():
     for file in args:
         try:
             # Pipe output for each argument through less
-            less_fd = os.popen("less -", 'w', 0);
+            less_fd = os.popen("less -R -", 'w', 0);  
+	    # -R added to display raw control chars for colour
             sys.stdout = less_fd;
 
             try:
