@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.9 2003-07-15 17:29:22 troup Exp $
+# $Id: kelly,v 1.10 2003-07-29 14:00:39 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.9 $";
+kelly_version = "$Revision: 1.10 $";
 
 Cnf = None;
 Options = None;
@@ -119,7 +119,7 @@ def check():
             source_version = files[file]["source version"];
             source_package = files[file]["source package"];
             if not changes["architecture"].has_key("source") \
-               and not Katie.source_exists(source_package, source_version):
+               and not Katie.source_exists(source_package, source_version,  changes["distribution"].keys()):
                 reject("no source found for %s %s (%s)." % (source_package, source_version, file));
 
         # Version and file overwrite checks

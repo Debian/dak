@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.34 2003-07-15 17:29:19 troup Exp $
+# $Id: katie.py,v 1.35 2003-07-29 14:00:39 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -601,28 +601,36 @@ distribution.""";
     # (2) Bin-only NMU of an MU            => 1.0-3.0.1
     # (3) Bin-only NMU of a sourceful-NMU  => 1.0-3.1.1
 
-    def source_exists (self, package, source_version):
-        q = self.projectB.query("SELECT s.version FROM source s WHERE s.source = '%s'" % (package));
+    def source_exists (self, package, source_version, suites = ["any"]):
+	okay = 1
+	for suite in suites:
+	    if suites == "any":
+	    	que = "SELECT s.version FROM source s WHERE s.source = '%s'" % \
+		    (package)
+	    else:
+        	suite_id = db_access.get_suite_id(suite);
+		que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE sa.suite = %d AND s.source = '%s'" % (suite_id, package)
+            q = self.projectB.query(que)
 
-        # Reduce the query results to a list of version numbers
-        ql = map(lambda x: x[0], q.getresult());
+            # Reduce the query results to a list of version numbers
+            ql = map(lambda x: x[0], q.getresult());
 
-        # Try (1)
-        if ql.count(source_version):
-            return 1;
+            # Try (1)
+            if ql.count(source_version):
+                continue
 
-        # Try (2)
-        orig_source_version = re_bin_only_nmu_of_mu.sub('', source_version);
-        if ql.count(orig_source_version):
-            return 1;
+            # Try (2)
+            orig_source_version = re_bin_only_nmu_of_mu.sub('', source_version)
+            if ql.count(orig_source_version):
+                continue
 
-        # Try (3)
-        orig_source_version = re_bin_only_nmu_of_nmu.sub('', source_version);
-        if ql.count(orig_source_version):
-            return 1;
+            # Try (3)
+            orig_source_version = re_bin_only_nmu_of_nmu.sub('', source_version)
+            if ql.count(orig_source_version):
+                continue
 
-        # No source found...
-        return 0;
+            # No source found...
+            okay = 0
 
     ################################################################################
 

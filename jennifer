@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.34 2003-05-02 13:54:52 troup Exp $
+# $Id: jennifer,v 1.35 2003-07-29 14:00:39 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.34 $";
+jennifer_version = "$Revision: 1.35 $";
 
 Cnf = None;
 Options = None;
@@ -432,7 +432,7 @@ def check_files():
                     reject("source version (%s) for %s doesn't match changes version %s." % (source_version, file, changes["version"]));
             else:
                 # Check in the SQL database
-                if not Katie.source_exists(source_package, source_version):
+                if not Katie.source_exists(source_package, source_version, changes["distribution"].keys()):
                     # Check in one of the other directories
                     source_epochless_version = utils.re_no_epoch.sub('', source_version);
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version);
