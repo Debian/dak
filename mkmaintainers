@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: mkmaintainers,v 1.2 2001-09-26 03:47:15 troup Exp $
+# $Id: mkmaintainers,v 1.3 2004-02-27 20:09:51 troup Exp $
 
 echo
 echo -n 'Creating Maintainers index ... '
@@ -11,7 +11,7 @@ cd $masterdir
 nonusmaint="$masterdir/Maintainers_Versions-non-US"
 
 
-if wget -q -O Maintainers_Versions-non-US.gz http://non-us.debian.org/indices-non-US/Maintainers_Versions.gz; then
+if wget -T15 -q -O Maintainers_Versions-non-US.gz http://non-us.debian.org/indices-non-US/Maintainers_Versions.gz; then
 	rm -f $nonusmaint
 	gunzip -c ${nonusmaint}.gz > $nonusmaint
 	rm -f ${nonusmaint}.gz
