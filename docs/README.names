@@ -2,7 +2,6 @@ alyson - sync's the ISC-style configuration file with the SQL DB
 amber - 'installer' wrapper for security team
 andrea - looks for fixable descrepancies between stable and unstable
 ashley - display the contents of a .katie file
-cameron - generate file list for unstable_accepted
 catherine - poolifies packages; i.e. moves them from legacy dists/ locations into the pool
 charisma - generates Maintainers files used by e.g. the Debian BTS
 cindy - override cruft checker
@@ -29,12 +28,12 @@ tea - sanity checks the database
 ziyi - creates Release files
 
 With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
- Judd, Catherine Zeta Jones, Cameron Diaz, Charisma Carpenter, Cindy
- Crawford, Claire Forlani, Denise Van Outen, Fernanda Tervares, Halle
- Berry, Heidi Klum, Jenna Elfman, Jennifer Lopez, Jeri Ryan, Julia
- Roberts, Katie Holmes, Lisa Falkner, Madison Michele, Melanie Sykes,
- Natalie Portman, Neve Campbell, Rene O'Connor, Rhona Mitra, Saffron
- Burrows, Shania Twain, Tara Reid, Tea Leoni and Ziyi Zhang.
+ Judd, Catherine Zeta Jones, Charisma Carpenter, Cindy Crawford,
+ Claire Forlani, Denise Van Outen, Fernanda Tervares, Halle Berry,
+ Heidi Klum, Jenna Elfman, Jennifer Lopez, Jeri Ryan, Julia Roberts,
+ Katie Holmes, Lisa Falkner, Madison Michele, Melanie Sykes, Natalie
+ Portman, Neve Campbell, Rene O'Connor, Rhona Mitra, Saffron Burrows,
+ Shania Twain, Tara Reid, Tea Leoni and Ziyi Zhang.
 
 In Use Elsewhere:
 -----------------
@@ -57,6 +56,7 @@ Possible Future Candidates:
 Alicia (Witt)
 Angelina (Jolie)
 Billie (Piper)
+Cameron (Diaz)
 Carly (Pope)
 Carrie (Ann Moss)
 Emma (Thompson)
