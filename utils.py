@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.44 2002-05-18 23:54:51 troup Exp $
+# $Id: utils.py,v 1.45 2002-05-19 00:47:27 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import os, pwd, re, socket, shutil, string, sys, tempfile
+import commands, os, pwd, re, socket, shutil, string, sys, tempfile
 import apt_pkg
 
 re_comments = re.compile(r"\#.*")
