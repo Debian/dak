@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.21 2002-05-19 00:47:16 troup Exp $
+# $Id: jennifer,v 1.22 2002-06-08 00:17:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.21 $";
+jennifer_version = "$Revision: 1.22 $";
 
 Cnf = None;
 Options = None;
@@ -419,30 +419,30 @@ def check_distributions():
     "Check and map the Distribution field of a .changes file."
 
     # Handle suite mappings
-    if Cnf.has_key("SuiteMappings"):
-        for map in Cnf.ValueList("SuiteMappings"):
-            args = string.split(map);
-            type = args[0];
-            if type == "map":
-                (source, dest) = args[1:3];
-                if changes["distribution"].has_key(source):
-                    del changes["distribution"][source]
-                    changes["distribution"][dest] = 1;
+    for map in Cnf.ValueList("SuiteMappings"):
+        args = string.split(map);
+        type = args[0];
+        if type == "map" or type == "silent-map":
+            (source, dest) = args[1:3];
+            if changes["distribution"].has_key(source):
+                del changes["distribution"][source]
+                changes["distribution"][dest] = 1;
+                if type != "silent-map":
                     reject("Mapping %s to %s." % (source, dest),"");
-            elif type == "map-unreleased":
-                (source, dest) = args[1:3];
-                if changes["distribution"].has_key(source):
-                    for arch in changes["architecture"].keys():
-                        if arch not in Cnf.ValueList("Suite::%s::Architectures" % (source)):
-                            reject("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch),"");
-                            del changes["distribution"][source];
-                            changes["distribution"][dest] = 1;
-                            break;
-            elif type == "ignore":
-                suite = args[1];
-                if changes["distribution"].has_key(suite):
-                    del changes["distribution"][suite];
-                    reject("Ignoring %s as a target suite." % (suite), "Warning: ");
+        elif type == "map-unreleased":
+            (source, dest) = args[1:3];
+            if changes["distribution"].has_key(source):
+                for arch in changes["architecture"].keys():
+                    if arch not in Cnf.ValueList("Suite::%s::Architectures" % (source)):
+                        reject("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch),"");
+                        del changes["distribution"][source];
+                        changes["distribution"][dest] = 1;
+                        break;
+        elif type == "ignore":
+            suite = args[1];
+            if changes["distribution"].has_key(suite):
+                del changes["distribution"][suite];
+                reject("Ignoring %s as a target suite." % (suite), "Warning: ");
 
     # Ensure there is (still) a target distribution
     if changes["distribution"].keys() == []:
@@ -638,8 +638,14 @@ def check_files():
         for suite in changes["distribution"].keys():
             # Skip byhand
             if files[file].has_key("byhand"):
-                continue
+                continue;
 
+            # Handle component mappings
+            for map in Cnf.ValueList("ComponentMappings"):
+                (source, dest) = string.split(map);
+                if files[file]["component"] == source:
+                    files[file]["original component"] = source;
+                    files[file]["component"] = dest;
             # Ensure the component is valid for the target suite
             if Cnf.has_key("Suite:%s::Components" % (suite)) and \
                files[file]["component"] not in Cnf.ValueList("Suite::%s::Components" % (suite)):
