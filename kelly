@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.5 2003-02-11 18:10:37 troup Exp $
+# $Id: kelly,v 1.6 2003-02-11 19:39:25 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.5 $";
+kelly_version = "$Revision: 1.6 $";
 
 Cnf = None;
 Options = None;
@@ -444,7 +444,8 @@ def stable_install (summary, short_summary):
 
     print "Installing to stable.";
 
-    # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
+    # Begin a transaction; if we bomb out anywhere between here and
+    # the COMMIT WORK below, the DB won't be changed.
     projectB.query("BEGIN WORK");
 
     # Add the source to stable (and remove it from proposed-updates)
