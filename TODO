@@ -36,6 +36,8 @@ Less Urgent
 
   o validate email addresses ?  harsh to reject tho [errge]
 
+  o validate source consistency, i.e. .dsc and .tar.gz as minimum
+
   o Rene doesn't look at debian-installer but should.
 
   o Rene also doesn't seem to warn about missing binary packages?

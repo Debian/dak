@@ -234,9 +234,9 @@ Suite
 	  "sparc" "";
 	};
 	Announce "debian-changes@lists.debian.org";
-	Version "2.2r2";
+	Version "2.2r3";
 	Origin "Debian";
-	Description "Debian 2.2r2 Released 5th December 2000";
+	Description "Debian 2.2r3 Released 16th April 2001";
 	CodeName "potato";
 	OverrideCodeName "potato";
 	Priority "1";
@@ -259,9 +259,9 @@ Suite
 	};
 	Announce "debian-changes@lists.debian.org";
 	CopyChanges "dists/proposed-updates/";
-	Version "2.2r3";
+	Version "2.2r4";
 	Origin "Debian";
-	Description "Proposed Updates for Debian 2.2r3 - Not Released";
+	Description "Proposed Updates for Debian 2.2r4 - Not Released";
 	CodeName "proposed-updates";
 	OverrideCodeName "potato";
 	OverrideSuite "stable";
