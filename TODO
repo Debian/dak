@@ -18,6 +18,12 @@ Actually Urgent
 
 More Urgent
 -----------
+
+  o permissions (paranoia, group write, etc.) configurability and overhaul
+
+  o <M>ove option for lisa byhand proecessing
+
+  o rene could do with overrides
  
   o db_access.get_location_id should handle the lack of archive_id properly
 
@@ -50,10 +56,10 @@ More Urgent
     o trap fernanda exiting
     o distinguish binary only versus others (neuro)
 
-  o change utils.copy to try rename() first
-
   o cache changes parsed from ordering (careful tho: would be caching
-    .changes from world writable incoming, not holding)
+    .changes from world writable incoming, not holding); katie should
+    certainly be using .katie files, not parsing changes, that's just
+    silly.
 
   o katie doesn't recognise binonlyNMUs correctly in terms of telling
     who their source is; source-must-exist does, but the info is not
@@ -89,6 +95,8 @@ More Urgent
 Less Urgent
 -----------
 
+  o change utils.copy to try rename() first
+
   o [hard, long term] unchecked -> accepted should go into the db, not
   a suite, but similar.  this would allow katie to get even faster,
   make madison more useful, decomplexify specialacceptedautobuild and
@@ -102,8 +110,6 @@ Less Urgent
   o jennifer is leaking file descriptors..
 
   o the tar extractor class doesn't need to be redone for each package
-
-  o interrupting of stracing jennifer causes exceptions errors from apt_inst calls 
 
   o reverse of source-must-exist; i.e. binary-for-source-must-not-exist
   o REJECT reminders in shania.
@@ -154,6 +160,7 @@ Less Urgent
 
  * Harder:
 
+    o interrupting of stracing jennifer causes exceptions errors from apt_inst calls 
     o dependency checking (esp. stable) (partially done)
     o override checks sucks; it needs to track changes made by the
       maintainer and pass them onto ftpmaster instead of warning the

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# Output override files for apt-ftparchive and indices/
+# Cruft checker for overrides
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: cindy,v 1.9 2002-05-14 15:28:53 troup Exp $
+# $Id: cindy,v 1.10 2002-05-23 09:54:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,13 @@
 
 ################################################################################
 
-# X-Listening-To: Sanitarium / Master of the Puppets - Metallica
+######################################################################
+# NB: cindy is not a good idea with New Incoming as she doesn't take #
+# into account accepted.  You can minimize the impact of this by     #
+# running her immediately after katie but that's still racy because  #
+# lisa doesn't lock with katie.  A better long term fix is the evil  #
+# plan for accepted to be in the DB.                                 #
+######################################################################
 
 ################################################################################
 

@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: shania,v 1.15 2002-05-18 23:54:51 troup Exp $
+# $Id: shania,v 1.16 2002-05-23 09:54:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,23 +23,6 @@
 import os, stat, sys, time;
 import utils;
 import apt_pkg;
-
-################################################################################
-
-# 23:12|<aj> I will not hush!
-# 23:12|<elmo> :>
-# 23:12|<aj> Where there is injustice in the world, I shall be there!
-# 23:13|<aj> I shall not be silenced!
-# 23:13|<aj> The world shall know!
-# 23:13|<aj> The world *must* know!
-# 23:13|<elmo> oh dear, he's gone back to powerpuff girls... ;-)
-# 23:13|<aj> yay powerpuff girls!!
-# 23:13|<aj> buttercup's my favourite, who's yours?
-# 23:14|<aj> you're backing away from the keyboard right now aren't you?
-# 23:14|<aj> *AREN'T YOU*?!
-# 23:15|<aj> I will not be treated like this.
-# 23:15|<aj> I shall have my revenge.
-# 23:15|<aj> I SHALL!!!
 
 ################################################################################
 
@@ -194,7 +177,7 @@ def main ():
     if Options["Help"]:
 	usage();
 
-    init ();
+    init();
 
     if Options["Verbose"]:
         print "Processing incoming..."
@@ -209,4 +192,4 @@ def main ():
 #######################################################################################
 
 if __name__ == '__main__':
-    main()
+    main();

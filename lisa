@@ -2,7 +2,7 @@
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.15 2002-05-22 16:55:13 troup Exp $
+# $Id: lisa,v 1.16 2002-05-23 09:54:23 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,28 +37,12 @@
 
 ################################################################################
 
-# TODO
-# ----
-
-# We don't check error codes very thoroughly; the old 'trust jennifer'
-# chess nut... db_access calls in particular
-
-# Possible TODO
-# -------------
-
-# Handle multiple different section/priorities (?)
-# hardcoded debianness (debian-installer, source priority etc.) (?)
-# Slang/ncurses interface (?)
-# write changed sections/priority back to katie for later processing (?)
-
-################################################################################
-
 import copy, errno, os, readline, string, stat, sys, tempfile;
 import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.15 $";
+lisa_version = "$Revision: 1.16 $";
 
 Cnf = None;
 Options = None;
