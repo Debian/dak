@@ -4,14 +4,10 @@ TOFIX
 Urgent
 ------
 
-  o Rene doesn't look at debian-installer but should.
+  o jenna doesn't handle arch: any -> arch: all transitions
 
-  o Rene also doesn't seem to warn about missing binary packages?
-
-  o cron.daily* should change umask (aj sucks)
+  o direport misreports things as section 'devel'
  
-  o Fix the source-not-in-one-dir stuff
-
   o Fix rhona to obey StayOfExecution
 
   o rewrite shania to a) be sane, b) clean REJECT properly
@@ -38,6 +34,12 @@ Urgent
 Less Urgent
 -----------
 
+  o Rene doesn't look at debian-installer but should.
+
+  o Rene also doesn't seem to warn about missing binary packages?
+
+  o cron.daily* should change umask (aj sucks)
+ 
   o override checks sucks; it needs to track changes made by the
     maintainer and pass them onto ftpmaster instead of warning the
     maintainer.
