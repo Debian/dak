@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.17 2001-03-02 02:46:57 troup Exp $
+# $Id: utils.py,v 1.18 2001-03-21 01:02:04 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -357,6 +357,14 @@ def which_apt_conf_file ():
 def regex_safe (s):
     s = string.replace(s, '+', '\\\\+');
     return s
+
+######################################################################################
+
+# Perform a substition of template 
+def TemplateSubst(Map,Template):
+   for x in Map.keys():
+      Template = string.replace(Template,x,Map[x]);
+   return Template;
 
 ######################################################################################
 
