@@ -1,0 +1,155 @@
+#!/usr/bin/env python
+
+# Output override files for apt-ftparchive and indices/
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: denise,v 1.1 2001-01-10 05:58:26 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# This is seperate because it's horribly Debian specific and I don't
+# want that kind of horribleness in the otherwise generic natalie.  It
+# does duplicate code tho.
+
+################################################################################
+
+import pg, sys, string
+import utils, db_access, natalie
+import apt_pkg;
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+override = {}
+
+################################################################################
+
+def list(suite, component, type):
+    global override;
+    
+    suite_id = db_access.get_suite_id(suite);
+    if suite_id == -1:
+        sys.stderr.write("Suite '%s' not recognised.\n" % (suite));
+        sys.exit(2);
+
+    component_id = db_access.get_component_id(component);
+    if component_id == -1:
+        sys.stderr.write("Component '%s' not recognised.\n" % (component));
+        sys.exit(2);
+
+    type_id = db_access.get_override_type_id(type);
+    if type_id == -1:
+        sys.stderr.write("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)\n" % (type));
+        sys.exit(2);
+
+    if not override.has_key(suite):
+        override[suite] = {};
+    if not override[suite].has_key(component):
+        override[suite][component] = {};
+    if not override[suite][component].has_key(type):
+        override[suite][component][type] = {};
+
+    if type == "dsc":
+        q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, type_id));
+        for i in q.getresult():
+            override[suite][component][type][i[0]] = i;
+            print string.join(i, '\t');
+    else:
+        q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, type_id));
+        for i in q.getresult():
+            i = i[:-1]; # Strip the priority level
+            override[suite][component][type][i[0]] = i;
+            print string.join(i, '\t');
+
+################################################################################
+
+def main ():
+    global Cnf, projectB, override;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+    Arguments = [('D',"debug","Denise::Options::Debug", "IntVal"),
+                 ('h',"help","Denise::Options::Help"),
+                 ('V',"version","Denise::Options::Version")];
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    projectB = pg.connect('projectb', 'localhost');
+    db_access.init(Cnf, projectB);
+
+    natalie.init();
+
+    for suite in [ "stable", "unstable" ]:
+        sys.stderr.write("Processing %s...\n" % (suite));
+        override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
+        for component in Cnf.SubTree("Component").List():
+            if component == "mixed":
+                continue; # Ick
+            for type in Cnf.SubTree("OverrideType").List():
+                if type == "deb":
+                    override_type = "";
+                elif type == "udeb":
+                    if suite != "unstable" or component != "main":
+                        continue; # Ick2
+                    override_type = ".debian-installer";
+                elif type == "dsc":
+                    override_type = ".src";
+                filename = "override.%s.%s%s" % (override_suite, component, override_type);
+                file = utils.open_file(filename, 'w');
+                sys.stdout = file;
+                list(suite, component, type);
+                sys.stdout.close();
+
+    # Munge the override file for testing by using unstable's where
+    # possible and falling back on stable's where it's not.
+
+    sys.stderr.write("Processing testing...\n");
+    suite = "testing";
+    suite_id = db_access.get_suite_id(suite);
+    for component in Cnf.SubTree("Component").List():
+        if component == "mixed":
+            continue;
+        component_id = db_access.get_component_id(component);
+        for type in Cnf.SubTree("OverrideType").List():
+            if type == "deb":
+                override_type = "";
+                q = projectB.query("SELECT DISTINCT b.package FROM bin_associations ba, binaries b, files f, location l WHERE ba.suite = %s AND l.component = %s AND ba.bin = b.id AND b.file = f.id AND f.location = l.id" % (suite_id, component_id));
+            elif type == "dsc":
+                q = projectB.query("SELECT DISTINCT s.source FROM src_associations sa, source s, files f, location l WHERE sa.suite = %s AND l.component = %s AND sa.source = s.id AND s.file = f.id AND f.location = l.id" % (suite_id, component_id));
+                override_type = ".src";
+            elif type == "udeb":
+                continue;
+            filename = "override.testing.%s%s" % (component, override_type);
+            file = utils.open_file(filename, 'w');
+            sys.stdout = file;
+            for i in q.getresult():
+                package = i[0];
+                if override["unstable"][component][type].has_key(package):
+                    print string.join(override["unstable"][component][type][package], '\t');
+                elif override["stable"][component][type].has_key(package):
+                    print string.join(override["stable"][component][type][package], '\t');
+                else:
+                    if type == "dsc" and (override["unstable"][component]["deb"].has_key(package) or override["stable"][component]["deb"].has_key(package)):
+                        continue; # source falls back on binary; so accept silently
+                    sys.stderr.write("W: Can't find override entry for testing package '%s' (component %s, type %s).\n" % (package, component, type));
+            sys.stdout.close();
+    
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+

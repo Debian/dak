@@ -1,0 +1,352 @@
+#!/usr/bin/env python
+
+# General purpose archive tool for ftpmaster
+# Copyright (C) 2000  James Troup <james@nocrew.org>
+# $Id: melanie,v 1.1 2001-01-10 05:58:26 troup Exp $
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# X-Listening-To: Astronomy, Metallica - Garage Inc.
+
+################################################################################
+
+import commands, os, pg, pwd, re, string, sys, tempfile
+import utils, db_access
+import apt_pkg, apt_inst;
+
+################################################################################
+
+re_strip_source_version = re.compile (r'\s+.*$');
+
+################################################################################
+
+Cnf = None;
+projectB = None;
+
+################################################################################
+
+def game_over():
+    print "Continue (y/N)? ",
+    answer = string.lower(utils.our_raw_input());
+    if answer != "y":
+        print "Aborted."
+        sys.exit(1);
+
+################################################################################
+
+def main ():
+    global Cnf, projectB;
+
+    apt_pkg.init();
+    
+    Cnf = apt_pkg.newConfiguration();
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+
+    Arguments = [('D',"debug","Melanie::Options::Debug", "IntVal"),
+                 ('h',"help","Melanie::Options::Help"),
+                 ('V',"version","Melanie::Options::Version"),
+                 ('a',"architecture","Melanie::Options::Architecture", "HasArg"),
+                 ('b',"binary", "Melanie::Options::Binary-Only"),
+                 ('c',"component", "Melanie::Options::Component", "HasArg"),
+                 ('d',"done","Melanie::Options::Done", "HasArg"), # Bugs fixed
+                 ('m',"reason", "Melanie::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
+                 ('n',"no-action","Melanie::Options::No-Action"),
+                 ('o',"orphan", "Melanie::Options::Orphan"),
+                 ('p',"partial", "Melanie::Options::Partial"),
+                 ('s',"suite","Melanie::Options::Suite", "HasArg"),
+                 ('S',"source-only", "Melanie::Options::Source-Only"),
+                 ];
+
+    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    projectB = pg.connect('projectb', 'localhost');
+    db_access.init(Cnf, projectB);
+
+    # Sanity check options
+    if arguments == []:
+        sys.stderr.write("E: need at least one package name as an argument.\n");
+        sys.exit(1);
+    if Cnf["Melanie::Options::Architecture"] and Cnf["Melanie::Options::Source-Only"]:
+        sys.stderr.write("E: can't use -a/--architecutre and -S/--source-only options simultaneously.\n");
+        sys.exit(1);
+    if Cnf["Melanie::Options::Binary-Only"] and Cnf["Melanie::Options::Source-Only"]:
+        sys.stderr.write("E: can't use -b/--binary-only and -S/--source-only options simultaneously.\n");
+        sys.exit(1);
+    if Cnf["Melanie::Options::Architecture"] and not Cnf["Melanie::Options::Partial"]:
+        sys.stderr.write("W: -a/--architecture implies -p/--partial.\n");
+        Cnf["Melanie::Options::Partial"] = "true";
+
+    packages = {};
+    if Cnf["Melanie::Options::Binary-Only"]:
+        field = "b.package";
+    else:
+        field = "s.source";
+    con_packages = "AND (";
+    for package in arguments:
+        con_packages = con_packages + "%s = '%s' OR " % (field, package)
+        packages[package] = "";
+    con_packages = con_packages[:-3] + ")"
+
+    suites_list = "";
+    suite_ids_list = [];
+    con_suites = "AND (";
+    for suite in string.split(Cnf["Melanie::Options::Suite"]):
+        
+        if suite == "stable":
+            print "**WARNING** About to remove from the stable suite!"
+            print "This should only be done just prior to a (point) release and not at"
+            print "any other time."
+            game_over();
+        elif suite == "testing":
+            print "**WARNING About to remove from the testing suite!"
+            print "There's no need to do this normally as removals from unstable will"
+            print "propogate to testing automagically."
+            game_over();
+            
+        suite_id = db_access.get_suite_id(suite);
+        if suite_id == -1:
+            sys.stderr.write("W: suite '%s' not recognised.\n" % (suite));
+        else:
+            con_suites = con_suites + "su.id = %s OR " % (suite_id)
+
+        suites_list = suites_list + suite + ", "
+        suite_ids_list.append(suite_id);
+    con_suites = con_suites[:-3] + ")"
+    suites_list = suites_list[:-2];
+
+    if Cnf["Melanie::Options::Component"]:
+        con_components = "AND (";
+        over_con_components = "AND (";
+        for component in string.split(Cnf["Melanie::Options::Component"]):
+            component_id = db_access.get_component_id(component);
+            if component_id == -1:
+                sys.stderr.write("W: component '%s' not recognised.\n" % (component));
+            else:
+                con_components = con_components + "c.id = %s OR " % (component_id);
+                over_con_components = over_con_components + "component = %s OR " % (component_id);
+        con_components = con_components[:-3] + ")"
+        over_con_components = over_con_components[:-3] + ")";
+    else:
+        con_components = "";    
+        over_con_components = "";
+
+    if Cnf["Melanie::Options::Architecture"]:
+        con_architectures = "AND (";
+        for architecture in string.split(Cnf["Melanie::Options::Architecture"]):
+            architecture_id = db_access.get_architecture_id(architecture);
+            if architecture_id == -1:
+                sys.stderr.write("W: architecture '%s' not recognised.\n" % (architecture));
+            else:
+                con_architectures = con_architectures + "a.id = %s OR " % (architecture_id)
+        con_architectures = con_architectures[:-3] + ")"
+    else:
+        con_architectures = "";
+
+
+    print "Working...",
+    sys.stdout.flush();
+    to_remove = [];
+    # We have 3 modes of package selection: binary-only, source-only
+    # and source+binary.  The first two are trivial and obvious; the
+    # latter is a nasty mess, but very nice from a UI perspective so
+    # we try to support it.
+
+    if Cnf["Melanie::Options::Binary-Only"]:
+        # Binary-only
+        q = projectB.query("SELECT b.package, b.version, a.arch_string, b.id FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures));
+        for i in q.getresult():
+            to_remove.append(i);
+    else:
+        # Source-only
+        source_packages = {};
+        q = projectB.query("SELECT l.path, f.filename, s.source, s.version, 'source', s.id FROM source s, src_associations sa, suite su, files f, location l, component c WHERE sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components));
+        for i in q.getresult():
+            source_packages[i[2]] = i[:2];
+            to_remove.append(i[2:]);
+        if not Cnf["Melanie::Options::Source-Only"]:
+            # Source + Binary
+            binary_packages = {};
+            # First get a list of binary package names we suspect are linked to the source
+            q = projectB.query("SELECT DISTINCT package FROM binaries WHERE EXISTS (SELECT s.source, s.version, l.path, f.filename FROM source s, src_associations sa, suite su, files f, location l, component c WHERE binaries.source = s.id AND sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s)" % (con_packages, con_suites, con_components));
+            for i in q.getresult():
+                binary_packages[i[0]] = "";
+            # Then parse each .dsc that we found earlier to see what binary packages it thinks it produces
+            for i in source_packages.keys():
+                filename = string.join(source_packages[i], '/');
+                try:
+                    dsc = utils.parse_changes(filename);
+                except utils.cant_open_exc:
+                    sys.stderr.write("W: couldn't open '%s'.\n" % (filename));
+                    continue;
+                for package in string.split(dsc.get("binary"), ','):
+                    package = string.strip(package);
+                    binary_packages[package] = "";
+            # Then for each binary package: find any version in
+            # unstable, check the Source: field in the deb matches our
+            # source package and if so add it to the list of packages
+            # to be removed.
+            for package in binary_packages.keys():
+                q = projectB.query("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package));
+                for i in q.getresult():
+                    filename = string.join(i[:2], '/');
+                    control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename,"r")))
+                    source = control.Find("Source", control.Find("Package"));
+                    source = re_strip_source_version.sub('', source);
+                    if source_packages.has_key(source):
+                        to_remove.append(i[2:]);
+                    #else:
+                        #sys.stderr.write("W: skipping '%s' as it's source ('%s') isn't one of the source packages.\n" % (filename, source));
+    print "done."
+
+    # If we don't have a reason; spawn an editor so the user can add one
+    # Write the rejection email out as the <foo>.reason file
+    if not Cnf["Melanie::Options::Reason"]:
+        temp_filename = tempfile.mktemp();
+        fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
+        os.close(fd);
+        result = os.system("vi %s" % (temp_filename))
+        if result != 0:
+            sys.stderr.write ("vi invocation failed for `%s'!" % (temp_filename))
+            sys.exit(result)
+        file = utils.open_file(temp_filename, 'r');
+        for line in file.readlines():
+            Cnf["Melanie::Options::Reason"] = Cnf["Melanie::Options::Reason"] + line;
+        os.unlink(temp_filename);
+
+    # Generate the summary of what's to be removed
+    d = {};
+    for i in to_remove:
+        package = i[0];
+        version = i[1];
+        architecture = i[2];
+        if not d.has_key(package):
+            d[package] = {};
+        if not d[package].has_key(version):
+            d[package][version] = [];
+        d[package][version].append(architecture);
+
+    summary = "";
+    packages = d.keys();
+    packages.sort();
+    for package in packages:
+        versions = d[package].keys();
+        versions.sort();
+        for version in versions:
+            summary = summary + "%10s | %10s | " % (package, version);
+            for architecture in d[package][version]:
+                summary = "%s%s, " % (summary, architecture);
+            summary = summary[:-2] + '\n';
+
+    print "Will remove the following packages from %s:" % (suites_list);
+    print
+    print summary
+    if Cnf["Melanie::Options::Done"]:
+        print "Will also close bugs: "+Cnf["Melanie::Options::Done"];
+    print
+    print "------------------- Reason -------------------"
+    print Cnf["Melanie::Options::Reason"];
+    print "----------------------------------------------"
+    print
+
+    # If -n/--no-action, drop out here
+    if Cnf["Melanie::Options::No-Action"]:
+        sys.exit(0);
+        
+    game_over();
+
+    whoami = string.replace(string.split(pwd.getpwuid(os.getuid())[4],',')[0], '.', '');
+    date = commands.getoutput('date -R');
+
+    # Log first; if it all falls apart I want a record that we at least tried.
+    logfile = utils.open_file(Cnf["Melanie::LogFile"], 'a');
+    logfile.write("=========================================================================\n");
+    logfile.write("[Date: %s] [ftpmaster: %s]\n" % (date, whoami));
+    logfile.write("Removed the following packages from %s:\n\n%s" % (suites_list, summary));
+    if Cnf["Melanie::Options::Done"]:
+        logfile.write("Closed bugs: %s\n" % (Cnf["Melanie::Options::Done"]));
+    logfile.write("\n------------------- Reason -------------------\n%s\n" % (Cnf["Melanie::Options::Reason"]));
+    logfile.write("----------------------------------------------\n");
+    logfile.flush();
+        
+    dsc_type_id = db_access.get_override_type_id('dsc');
+    deb_type_id = db_access.get_override_type_id('deb');
+    
+    # Do the actual deletion
+    print "Deleting...",
+    sys.stdout.flush();
+    projectB.query("BEGIN WORK");
+    for i in to_remove:
+        package = i[0];
+        architecture = i[2];
+        package_id = i[3];
+        for suite_id in suite_ids_list:
+            if architecture == "source":
+                projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id));
+                #print "DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id);
+            else:
+                projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id));
+                #print "DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id);
+            # Delete from the override file
+            if not Cnf["Melanie::Options::Partial"]:
+                if architecture == "source":
+                    type_id = dsc_type_id;
+                else:
+                    type_id = deb_type_id;
+                projectB.query("DELETE FROM override WHERE package = '%s' AND type = %s AND suite = %s %s" % (package, type_id, suite_id, over_con_components));
+    projectB.query("COMMIT WORK");
+    print "done."
+
+    # Send the bug closing messages
+    if Cnf["Melanie::Options::Done"]:
+        for bug in string.split(Cnf["Melanie::Options::Done"]):
+            mail_message = """Return-Path: %s
+From: %s
+To: %s-close@bugs.debian.org
+Bcc: troup@auric.debian.org
+Subject: Bug#%s: fixed
+
+We believe that the bug you reported is now fixed; the following
+package(s) have been removed from %s:
+
+%s
+Note that the package(s) have simply been removed from the tag
+database and may (or may not) still be in the pool; this is not a bug.
+The package(s) will be physically removed automatically when no suite
+references them (and in the case of source, when no binary references
+it).  Please also remember that the changes have been done on the
+master archive (ftp-master.debian.org) and will not propagate to any
+mirrors (ftp.debian.org included) until the next cron.daily run at the
+earliest.
+
+Thank you for reporting the bug, which will now be closed.  If you
+have further comments please address them to %s@bugs.debian.org.
+
+This message was generated automatically; if you believe that there is
+a problem with it please contact the archive administrators by mailing
+ftpmaster@debian.org.
+
+Debian distribution maintenance software
+pp.
+%s (the ftpmaster behind the curtain)
+""" % (Cnf["Melanie::MyEmailAddress"], Cnf["Melanie::MyEmailAddress"], bug, bug, suites_list, summary, bug, whoami);
+            utils.send_mail (mail_message, "")
+            
+    logfile.write("=========================================================================\n");
+    logfile.close();
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
+

@@ -1,0 +1,19 @@
+alyson - sync's the ISC-style configuration file with the SQL DB
+catherine - poolifies packages; i.e. moves them from legacy dists/ locations into the pool
+charisma - generates Maintainers files used by e.g. the Debian BTS
+claire - generates compatability symlink tree for legacy dists/ locations
+heidi - manipulates suite tags; i.e. removes/adds packages from any given suite
+jenna - generates lists of files in suites which are then fed to apt-ftparchive
+katie - installs packages into the pool
+madison - shows which suites a binary package is in
+melanie - archive maintenance tool; removes packages from the distribution
+natalie - manpiulates override entries
+neve - populates the SQL database
+rhona - cleans old packages out of the pool and the database
+shania - cleans cruft from incoming
+tea - sanity checks the database
+
+With apologies to Alyson Hannigan, Catherine Zeta Jones, Charisma
+Carpenter, Claire Daines, Heidi Klum, Jenna Elfman, Katie Holmes,
+Madison Michele, Melanie Sykes, Natalie Portman, Neve Campbell, Rhona
+Mitre, Shania Twain and Tea Leoni.
