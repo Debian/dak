@@ -32,6 +32,9 @@ Urgent
 Less Urgent
 -----------
 
+  o katie should validate multi-suite uploads; only possible valid one
+    is "stable unstable" [but see d-policy@l.d.o]
+
   o melanie should warn/error on -C without -d
 
   o ziyi shouldn't really do stable (?)
@@ -45,7 +48,7 @@ Less Urgent
   o [Easy] remove empty directories in the pool in cron.weekly or so
 
   o Fix dinstall to remove != stable on stable install, not just f + u
-  o Fix 'mixed' component handling
+  o Fix 'mixed' component handling (?)
   o Fix component handling in overrides (aj)
   o Fix lack of entires in source overrides (aj)
   o Fix rhona to unconditionally read override file on startup
@@ -54,6 +57,7 @@ Less Urgent
   o check errors on apt_pkg calls (?)
   o The untouchable flag doesn't stop adding new packages
   o jenna needs to validate arguments (?)
+  o jenna is too damn slow
 
 ===================================================================================================
 
@@ -74,26 +78,23 @@ Urgent
   o Secure incoming handling
   o [Hard] dependency checking
   o dpkg 1.7 Changed-By field support
-  o Overrides for Maintainers
-  o Kill orphaned
+  o Need log files for jenna, rhona and katie.
 
 Less Urgent
 -----------
 
+  o Do a checkpc(1)-a-like which sanitizes a config files.
+  o fix parse_changes()/build_file_list() to sanity check filenames
+  o saftey check and/or rename debs so they match what they should be
+
   o Enable catherine (when daily mirror hit drops down below 300Mb maybe..)
   o Improve andrea.
-  o Need a poolifier that will poolify X mb a day.. (catherine)
   o Need to optimize all the queries by using EXAMINE and building some INDEXs.
   o Need to enclose all the setting SQL stuff in transactions (mostly done).
   o Need to finish alyson (a way to sync katie.conf and the DB)
-  o Need log files for jenna, rhona and katie.
   o Need the ability to rebuild all other tables from dists _or_ pools (in the event of disaster) (?)
   o Make the --help and --version options do stuff for all scripts
   o Need to check for .dsc when source is mentioned
-  o Do a checkpc(1)-a-like which sanitizes a config files.
-
-  o fix parse_changes()/build_file_list() to sanity check filenames
-  o saftey check and/or rename debs so they match what they should be
 
   o charisma can't handle whitespace-only lines (for the moment, this is feature)
   o Should use $EDITOR, not hardcode vi

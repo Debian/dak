@@ -1,3 +1,9 @@
+***** WARNING ****** ***** WARNING ***** ****** WARNING ******
+
+This is unreleased alpha software; use it ENTIRELY at your own risk.
+
+***** WARNING ****** ***** WARNING ****** ***** WARNING ******
+
 This is the README file for dak version -1.
 
 dak is the collection of programs used to maintain the Debian GNU
@@ -22,5 +28,6 @@ version.
 
 -- 
 James Troup <james@nocrew.org>, Horsforth, Leeds
-Sat, 25 Nov 2000 04:06:18 +0000
+Wed, 21 Mar 2001 06:35:18 +0000
+
 
