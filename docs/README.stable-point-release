@@ -1,13 +1,10 @@
 Rough Guide to doing Stable Point Releases in Debian
 ----------------------------------------------------
 
-o Install, reject and remove packages as directed by the SRM 
+o Install, reject and remove packages as directed by the SRM using lauren
 
-  NB1: !! you must run kelly from within dists/proposed-updates; kelly
-  takes it's "I'm doing a point release" cue from the CWD. !!
-
-  NB2: removing packages are not logged to the changelog; you need to
-       do that byhand.
+  NB: removing packages are not logged to the stable ChangeLog; you
+       need to do that byhand.
 
 o Do anything in proposed-updates/TODO
 o Close any applicable woody bugs
