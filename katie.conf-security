@@ -162,8 +162,8 @@ Suite
 
 SuiteMappings
 {
- "map stable-sec potato";
- "map testing-sec woody";
+ "map stable-security potato";
+ "map testing-security woody";
 };
 
 Dir
@@ -179,6 +179,7 @@ Dir
   Morgue "/org/security.debian.org/morgue/";
   MorgueReject "reject";
   Override "/org/security.debian.org/scripts/override/";
+  AcceptedAutoBuild "/org/security.debian.org/buildd/";
   Queue
   {
     Root "/org/security.debian.org/queue/";
@@ -189,7 +190,6 @@ Dir
     New "/org/security.debian.org/queue/new/";
     Reject "/org/security.debian.org/queue/reject/";
     Unchecked "/org/security.debian.org/queue/unchecked/";
-    AcceptedAutoBuild "/org/security.debian.org/buildd/";
   };
 };
 

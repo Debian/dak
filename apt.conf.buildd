@@ -20,8 +20,6 @@ bindirectory "incoming"
    Sources "Sources";
    Contents " ";
 
-   FileList "/org/ftp.debian.org/database/dists/unstable_accepted.list";
-
    BinOverride "override.sid.all3";
    BinCacheDB "packages-accepted.db";
    PathPrefix "";
