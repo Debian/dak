@@ -283,7 +283,9 @@ SuiteMappings
  "map stable proposed-updates";
  "map-unreleased stable unstable";
  "map-unreleased proposed-updates unstable";
- "ignore testing";
+ "map testing woody-proposed-updates";
+ "map-unreleased testing unstable-";
+ "map-unreleased woody-proposed-updates unstable";
 };
 
 Dir
