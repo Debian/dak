@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: tea,v 1.8 2001-03-20 00:28:11 troup Exp $
+# $Id: tea,v 1.9 2001-03-21 05:37:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -135,20 +135,26 @@ def check_source_in_one_dir():
     for i in q.getresult():
         source_id = i[0];
         q2 = projectB.query("""
-SELECT f.filename FROM files f, dsc_files df WHERE df.source = %s AND f.id = df.file"""
+SELECT l.path, f.filename FROM files f, dsc_files df, location l WHERE df.source = %s AND f.id = df.file AND l.id = f.location"""
                             % (source_id));
         first_path = "";
+        first_filename = "";
         broken = 0;
         for j in q2.getresult():
-            path = os.path.dirname(j[0]);
+            filename = j[0]+j[1];
+            path = os.path.dirname(filename);
             if first_path == "":
                 first_path = path;
+                first_filename = filename;
             elif first_path != path:
-                broken = 1;
-                #print "Woah, we got a live one here... %s" % (source_id);
+                symlink = path + '/' + os.path.basename(first_filename);
+                if os.path.exists(symlink):
+                    print "Not live, exists... %s[%s] {%s}" % (filename, source_id, symlink);
+                else:
+                    broken = 1;
+                    print "WOAH, we got a live one here... %s [%s] {%s}" % (filename, source_id, symlink);
         if broken:
             broken_count = broken_count + 1;
-            print q2
     print "Found %d source packages where the source is not all in one directory." % (broken_count);
 
 ################################################################################
@@ -194,9 +200,9 @@ def main ():
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
-
-    check_md5sums();
-    #check_source_in_one_dir();
+    
+    #check_md5sums();
+    check_source_in_one_dir();
     #check_override();
     #check_dscs();
     #check_files();
