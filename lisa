@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Handles NEW and BYHAND packages
-# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.20 2002-11-26 16:15:56 troup Exp $
+# Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
+# $Id: lisa,v 1.21 2003-02-11 19:39:28 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.20 $";
+lisa_version = "$Revision: 1.21 $";
 
 Cnf = None;
 Options = None;
@@ -512,13 +512,14 @@ def edit_overrides (new):
         got_answer = 0
         while not got_answer:
             answer = utils.our_raw_input(prompt);
-            answer = answer[:1].upper();
+            if not utils.str_isnum(answer):
+                answer = answer[:1].upper();
             if answer == "E" or answer == "D":
                 got_answer = 1;
             elif katie.re_isanum.match (answer):
                 answer = int(answer);
                 if (answer < 1) or (answer > index):
-                    print "%s is not a valid index (%s).  Please retry." % (index_range(index), answer);
+                    print "%s is not a valid index (%s).  Please retry." % (answer, index_range(index));
                 else:
                     got_answer = 1;
 
