@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Utility functions
-# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.72 2004-11-27 18:12:57 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
+# $Id: utils.py,v 1.73 2005-03-18 05:24:38 troup Exp $
 
 ################################################################################
 
@@ -22,9 +22,8 @@
 
 ################################################################################
 
-import commands, encodings.ascii, encodings.utf_8, encodings.latin_1, \
-       email.Header, os, pwd, re, select, socket, shutil, string, sys, \
-       tempfile, traceback;
+import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
+       string, sys, tempfile, traceback;
 import apt_pkg;
 import db_access;
 
@@ -298,12 +297,12 @@ def rfc2047_encode(s):
     """Encodes a (header) string per RFC2047 if necessary.  If the
 string is neither ASCII nor UTF-8, it's assumed to be ISO-8859-1."""
     try:
-        encodings.ascii.Codec().decode(s);
+        codecs.lookup('ascii')[1](s)
         return s;
     except UnicodeError:
         pass;
     try:
-        encodings.utf_8.Codec().decode(s);
+        codecs.lookup('utf-8')[1](s)
         h = email.Header.Header(s, 'utf-8', 998);
         return str(h);
     except UnicodeError:
