@@ -32,7 +32,7 @@ binary-indep: checkroot build
 	install -d debian/tmp/usr/bin/
 
 	install -m 755 andrea catherine charisma denise fernanda \
-		heidi jenna julia katie madison melanie natalie.py neve \
+		heidi jenna julia katie madison melanie natalie neve \
 		rene rhona shania tea ziyi debian/tmp/usr/bin/
 
 	# Compatability symlinks for people using old debs
@@ -45,7 +45,7 @@ binary-indep: checkroot build
 	ln -s neve debian/tmp/usr/bin/da_populate
 	ln -s rhona debian/tmp/usr/bin/da_clean
 	ln -s madison debian/tmp/usr/bin/da_chkver
-	ln -s natalie.py debian/tmp/usr/bin/da_override
+	ln -s natalie debian/tmp/usr/bin/da_override
 	ln -s melanie debian/tmp/usr/bin/da_remove
 	ln -s ziyi debian/tmp/usr/bin/da_mkrelease
 
