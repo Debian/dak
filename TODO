@@ -19,10 +19,6 @@ Actually Urgent
 More Urgent
 -----------
 
-   * Something fucked up. Not sure why the .diff.gz size didn't match the
-     .changes/.dsc. Not sure why katie didn't reject the upload when it found
-     that out aswell.
-
  <drow> Can't read file.: /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.katie.  You assume that the filenames are relative to accepted/, might want to doc or fix that.
 
 <neuro> the orig was in NEW, the changes that caused it to be NEW were pulled out in -2, and we end up with no orig in the archive :(
@@ -236,6 +232,8 @@ Less Urgent
     o Handle the case of 1:1.1 which would overwrite 1.1 (?)
     o maybe drop -r/--regex in madison, make it the default and
       implement -e/--exact (a la joey's "elmo")
+    o dsc files are not checked for existence/perms (only an issue if
+      they're in the .dsc, but not the .changes.. possible?)
   
  * Cleanups & misc: 
    

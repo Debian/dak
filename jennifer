@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.24 2002-06-22 22:34:35 troup Exp $
+# $Id: jennifer,v 1.25 2002-07-14 17:07:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.24 $";
+jennifer_version = "$Revision: 1.25 $";
 
 Cnf = None;
 Options = None;
@@ -837,16 +837,28 @@ def check_urgency ():
 
 ################################################################################
 
+def md5sum_size_check(file, orig_file):
+    try:
+        file_handle = utils.open_file(file);
+    except utils.cant_open_exc:
+        return;
+
+    # Check md5sum
+    if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
+        reject("%s: md5sum check failed." % (file));
+    file_handle.close();
+    # Check size
+    actual_size = os.stat(file)[stat.ST_SIZE];
+    size = int(files[file]["size"]);
+    if size != actual_size:
+        reject("%s: actual file size (%s) does not match size (%s) in %s"
+               % (file, actual_size, size, orig_file));
+
 def check_md5sums ():
     for file in files.keys():
-        try:
-            file_handle = utils.open_file(file);
-        except utils.cant_open_exc:
-            pass;
-        else:
-            if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
-                reject("md5sum check failed for %s." % (file));
-            file_handle.close();
+        md5sum_size_check(file, ".changes");
+    for file in dsc_files.keys():
+        md5sum_size_check(file, ".dsc");
 
 ################################################################################
 
@@ -1103,9 +1115,9 @@ def process_it (changes_file):
             while reprocess:
                 check_distributions();
                 check_files();
-                check_md5sums();
                 check_dsc();
                 check_diff();
+                check_md5sums();
                 check_urgency();
                 check_timestamps();
         Katie.update_subst(reject_message);
