@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.29 2002-12-10 21:48:30 troup Exp $
+# $Id: jennifer,v 1.30 2003-01-02 18:11:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.29 $";
+jennifer_version = "$Revision: 1.30 $";
 
 Cnf = None;
 Options = None;
@@ -87,6 +87,12 @@ def init():
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Dinstall::Options")
 
+    if Options["Help"]:
+        usage();
+    elif Options["Version"]:
+        print "jennifer %s" % (jennifer_version);
+        sys.exit(0);
+
     Katie = katie.Katie(Cnf);
 
     changes = Katie.pkg.changes;
@@ -97,7 +103,7 @@ def init():
 
     return changes_files;
 
-#########################################################################################
+################################################################################
 
 def usage (exit_code=0):
     print """Usage: dinstall [OPTION]... [CHANGES]...
@@ -109,7 +115,7 @@ def usage (exit_code=0):
   -V, --version             display the version number and exit"""
     sys.exit(exit_code)
 
-#########################################################################################
+################################################################################
 
 # Our very own version of commands.getouputstatus(), hacked to support
 # gpgv's status fd.
@@ -173,7 +179,7 @@ def get_status_output(cmd, status_read, status_write):
 
     return output, status, exit_status;
 
-#########################################################################################
+################################################################################
 
 def Dict(**dict): return dict
 
@@ -182,7 +188,7 @@ def reject (str, prefix="Rejected: "):
     if str:
         reject_message += prefix + str + "\n";
 
-#########################################################################################
+################################################################################
 
 def check_signature (filename):
     if not utils.re_taint_free.match(os.path.basename(filename)):
@@ -1154,13 +1160,6 @@ def main():
     global Cnf, Options, Logger, nmu;
 
     changes_files = init();
-
-    if Options["Help"]:
-        usage();
-
-    if Options["Version"]:
-        print "jennifer %s" % (jennifer_version);
-        sys.exit(0);
 
     # -n/--dry-run invalidates some other options which would involve things happening
     if Options["No-Action"]:
