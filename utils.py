@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.26 2001-06-10 16:35:03 troup Exp $
+# $Id: utils.py,v 1.27 2001-06-22 23:30:21 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ cant_overwrite_exc = "Permission denied; can't overwrite existent file."
 file_exists_exc = "Destination file exists";
 send_mail_invalid_args_exc = "Both arguments are non-null.";
 sendmail_failed_exc = "Sendmail invocation failed";
+tried_too_hard_exc = "Tried too hard to find a free filename.";
 
 # Valid components; used by extract_component_from_section() because
 # it doesn't know about Conf from it's caller.  FIXME
@@ -495,4 +496,16 @@ def changes_compare (a, b):
 
     return cmp(a, b);
 
+################################################################################
+
+def find_next_free (dest, too_many=100):
+    extra = 0;
+    orig_dest = dest;
+    while os.path.exists(dest) and extra < too_many:
+        dest = orig_dest + '.' + repr(extra);
+        extra = extra + 1;
+    if extra >= too_many:
+        raise tried_too_hard_exc;
+    return dest;
+    
 ################################################################################
