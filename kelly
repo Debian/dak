@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# Installs Debian packages
+# Installs Debian packages from queue/accepted into the pool
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.12 2003-09-24 00:13:43 troup Exp $
+# $Id: kelly,v 1.13 2003-11-07 01:48:38 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# Originally based on dinstall by Guy Maor <maor@debian.org>
-
 ###############################################################################
 
 #    Cartman: "I'm trying to make the best of a bad situation, I don't
@@ -32,14 +30,14 @@
 
 ###############################################################################
 
-import fcntl, os, sys, time;
+import errno, fcntl, os, sys, time;
 import apt_pkg;
 import db_access, katie, logging, utils;
 
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.12 $";
+kelly_version = "$Revision: 1.13 $";
 
 Cnf = None;
 Options = None;
@@ -275,6 +273,7 @@ def install ():
             fingerprint_id = db_access.get_or_set_fingerprint_id(dsc["fingerprint"]);
             install_date = time.strftime("%Y-%m-%d");
             filename = files[file]["pool name"] + file;
+            dsc_component = files[file]["component"];
             dsc_location_id = files[file]["location id"];
             if not files[file].has_key("files id") or not files[file]["files id"]:
                 files[file]["files id"] = db_access.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
@@ -311,7 +310,6 @@ def install ():
             architecture = files[file]["architecture"]
             architecture_id = db_access.get_architecture_id (architecture);
             type = files[file]["dbtype"];
-            dsc_component = files[file]["component"]
             source = files[file]["source package"]
             source_version = files[file]["source version"];
             filename = files[file]["pool name"] + file;
