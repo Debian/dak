@@ -20,8 +20,9 @@ Dinstall
    StableRejector "Martin (Joey) Schulze <joey@debian.org>";
    FutureTimeTravelGrace 28800; // 6 hours
    PastCutoffYear "1984";
-   BXANotify "false";
    SkipTime 300;
+   BXANotify "false";
+   SpecialAcceptedAutoBuild "false";
    CloseBugs "true";
    OverrideDisparityCheck "true";
 };
@@ -141,6 +142,18 @@ Suite
 	OverrideCodeName "potato";
 	OverrideSuite "stable";
 	Priority "2";
+	VersionChecks
+	{
+	  MustBeNewerThan
+	  {
+	    Stable;
+	  };
+	  MustBeOlderThan
+	  {
+	    Unstable;
+	    Experimental;
+	  };
+	};
   };
 
   Testing
@@ -203,6 +216,20 @@ Suite
 	CodeName "woody-proposed-updates";
 	OverrideCodeName "woody";
 	Priority "4";
+	VersionChecks
+	{
+	  MustBeNewerThan
+	  {
+	    Stable;
+	    Proposed-Updates;
+	    Testing;
+	  };
+	  MustBeOlderThan
+	  {
+	    Unstable;
+	    Experimental;
+	  };
+	};
   };
 
   Unstable
@@ -237,6 +264,16 @@ Suite
 	CodeName "sid";
 	OverrideCodeName "sid";
 	Priority "5";
+	VersionChecks
+	{
+	  MustBeNewerThan
+	  {
+	    Stable;
+	    Proposed-Updates;
+	    Testing;
+	    Woody-Proposed-Updates;
+	  };
+	};
   };
 
 };
