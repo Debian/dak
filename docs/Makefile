@@ -2,7 +2,7 @@
 
 # TODO: alyson andrea claire fernanda jenna neve rene shania tea ziyi
 
-SGMLMANPAGES	= catherine.1.sgml charisma.1.sgml heidi.1.sgml julia.1.sgml katie.1.sgml madison.1.sgml melanie.1.sgml natalie.1.sgml rhona.1.sgml
+SGMLMANPAGES	= catherine.1.sgml charisma.1.sgml heidi.1.sgml julia.1.sgml kelly.1.sgml madison.1.sgml melanie.1.sgml natalie.1.sgml rhona.1.sgml
 
 MANPAGES	= $(patsubst %.sgml, %, $(SGMLMANPAGES))
 
