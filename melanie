@@ -2,7 +2,7 @@
 
 # General purpose archive tool for ftpmaster
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.5 2001-02-04 04:28:16 troup Exp $
+# $Id: melanie,v 1.6 2001-02-25 02:41:44 mjb Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -214,7 +214,8 @@ def main ():
         temp_filename = tempfile.mktemp();
         fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
         os.close(fd);
-        result = os.system("vi %s" % (temp_filename))
+        editor = os.environ.get("EDITOR","vi")
+        result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
             sys.stderr.write ("vi invocation failed for `%s'!" % (temp_filename))
             sys.exit(result)
