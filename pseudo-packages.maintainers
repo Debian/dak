@@ -22,3 +22,5 @@ wnpp			wnpp@debian.org
 cdimage.debian.org	Debian CD-ROM Team <debian-cd@lists.debian.org>
 tech-ctte		Technical Committee <debian-ctte@lists.debian.org>  
 security.debian.org	Debian Security Team <debian-security-private@lists.debian.org>
+installation-reports    Debian Testing Group <debian-testing@lists.debian.org>
+upgrade-reports         Debian Testing Group <debian-testing@lists.debian.org>
