@@ -2,7 +2,7 @@
 
 # Sanity check the database
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: tea,v 1.21 2002-10-16 02:47:32 troup Exp $
+# $Id: tea,v 1.22 2003-01-02 18:14:02 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
 
 #   And, lo, a great and menacing voice rose from the depths, and with
 #   great wrath and vehemence it's voice boomed across the
@@ -39,6 +41,26 @@ excluded = {};
 current_file = None;
 future_files = {};
 current_time = time.time();
+
+################################################################################
+
+def usage(exit_code=0):
+    print """Usage: tea MODE
+Run various sanity checks of the archive and/or database.
+
+  -h, --help                show this help and exit.
+
+The following MODEs are available:
+
+  md5sums            - validate the md5sums stored in the database
+  files              - check files in the database against what's in the archive
+  dsc-syntax         - validate the syntax of .dsc files in the archive
+  missing-overrides  - check for missing overrides
+  source-in-one-dir  - ensure the source for each package is in one directory
+  timestamps         - check for future timestamps in .deb's
+  tar-gz-in-dsc      - ensure each .dsc lists a .tar.gz file
+"""
+    sys.exit(exit_code)
 
 ################################################################################
 
@@ -259,21 +281,48 @@ def check_missing_tar_gz_in_dsc():
 def main ():
     global Cnf, projectB, db_files, waste, excluded;
 
-    Cnf = utils.get_conf()
+    Cnf = utils.get_conf();
+    Arguments = [('h',"help","Tea::Options::Help")];
+    for i in [ "help" ]:
+	if not Cnf.has_key("Tea::Options::%s" % (i)):
+	    Cnf["Tea::Options::%s" % (i)] = "";
 
-    apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
+    args = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+
+    Options = Cnf.SubTree("Tea::Options")
+    if Options["Help"]:
+	usage();
+
+    if len(args) < 1:
+        utils.warn("tea requires at least one argument");
+        usage(1);
+    elif len(args) > 1:
+        utils.warn("tea accepts only one argument");
+        usage(1);
+    mode = args[0].lower();
+
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
-    #check_md5sums();
-    #check_source_in_one_dir();
-    #check_override();
-    #check_dscs();
-    #check_files();
-    #check_timestamps();
-    check_missing_tar_gz_in_dsc();
+    if mode == "md5sums":
+        check_md5sums();
+    elif mode == "files":
+        check_files();
+    elif mode == "dsc-syntax":
+        check_dscs();
+    elif mode == "missing-overrides":
+        check_override();
+    elif mode == "source-in-one-dir":
+        check_source_in_one_dir();
+    elif mode == "timestamps":
+        check_timestamps();
+    elif mode == "tar-gz-in-dsc":
+        check_missing_tar_gz_in_dsc();
+    else:
+        utils.warn("unknown mode '%s'" % (mode));
+        usage(1);
 
-#######################################################################################
+################################################################################
 
 if __name__ == '__main__':
     main();
