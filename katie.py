@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.36 2003-07-29 14:57:03 ajt Exp $
+# $Id: katie.py,v 1.37 2003-08-09 02:49:35 rdonald Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -293,25 +293,42 @@ class Katie:
 
         bugs.sort();
         if not self.nmu.is_an_nmu(self.pkg):
-            summary += "Closing bugs: ";
-            for bug in bugs:
-                summary += "%s " % (bug);
-                if action:
-                    Subst["__BUG_NUMBER__"] = bug;
-                    if changes["distribution"].has_key("stable"):
-                        Subst["__STABLE_WARNING__"] = """
+            if changes["distribution"].has_key("experimental"):
+		# tag bugs as fixed-in-experimental for uploads to experimental
+		summary += "Setting bugs to severity fixed: ";
+		control_message = "";
+		for bug in bugs:
+		    summary += "%s " % (bug);
+		    control_message += "tag %s + fixed-in-experimental\n" % (bug);
+		if action and control_message != "":
+		    Subst["__CONTROL_MESSAGE__"] = control_message;
+		    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-experimental-fixed");
+		    utils.send_mail (mail_message);
+		if action:
+		    self.Logger.log(["setting bugs to fixed"]+bugs);
+
+
+	    else:
+		summary += "Closing bugs: ";
+		for bug in bugs:
+		    summary += "%s " % (bug);
+		    if action:
+			Subst["__BUG_NUMBER__"] = bug;
+			if changes["distribution"].has_key("stable"):
+			    Subst["__STABLE_WARNING__"] = """
 Note that this package is not part of the released stable Debian
 distribution.  It may have dependencies on other unreleased software,
 or other instabilities.  Please take care if you wish to install it.
 The update will eventually make its way into the next released Debian
 distribution.""";
-                    else:
-                        Subst["__STABLE_WARNING__"] = "";
-                    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-close");
-                    utils.send_mail (mail_message);
-            if action:
-                self.Logger.log(["closing bugs"]+bugs);
-        else:                     # NMU
+		        else:
+			    Subst["__STABLE_WARNING__"] = "";
+			    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-close");
+			    utils.send_mail (mail_message);
+			if action:
+			    self.Logger.log(["closing bugs"]+bugs);
+
+	else:                     # NMU
             summary += "Setting bugs to severity fixed: ";
             control_message = "";
             for bug in bugs:

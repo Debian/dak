@@ -1,0 +1,13 @@
+From: __MAINTAINER_FROM__
+To: control@__BUG_SERVER__
+Cc: __MAINTAINER_TO__
+__BCC__
+Subject: Fixed in upload of __SOURCE__ __VERSION__ to experimental
+
+__CONTROL_MESSAGE__
+quit
+
+This message was generated automatically in response to a
+upload to experimental distribution.  The .changes file follows.
+
+__FILE_CONTENTS__
