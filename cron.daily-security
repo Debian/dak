@@ -74,6 +74,9 @@ cd $masterdir
 shania
 rhona
 apt-ftparchive -q clean apt.conf-security
+apt-ftparchive -q clean apt.conf.buildd-security
+
+symlinks -d -r $ftpdir
 
 pg_dump obscurity > /org/security.debian.org/katie-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
