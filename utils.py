@@ -1,6 +1,6 @@
 # Utility functions
-# Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.27 2001-06-22 23:30:21 troup Exp $
+# Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
+# $Id: utils.py,v 1.28 2001-07-07 03:10:51 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
