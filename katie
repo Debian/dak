@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.36 2001-04-03 10:01:08 troup Exp $
+# $Id: katie,v 1.37 2001-04-03 21:28:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -687,7 +687,11 @@ def action (changes_filename):
         answer = 'S'
 
     if string.find(reject_message, "Rejected") != -1:
-        if time.time()-os.path.getmtime(changes_filename) < 86400:
+        try:
+            modified_time = time.time()-os.path.getmtime(changes_filename);
+        except: # i.e. ignore errors like 'file does not exist';
+            modified_time = 0;
+        if modified_time < 86400:
             print "SKIP (too new)\n" + reject_message,;
             prompt = "[S]kip, Manual reject, Quit ?";
         else:
@@ -1230,7 +1234,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.36 $"
+    bcc = "X-Katie: $Revision: 1.37 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
