@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.9 2002-03-14 14:12:04 ajt Exp $
+# $Id: jennifer,v 1.10 2002-03-15 15:51:20 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.9 $";
+jennifer_version = "$Revision: 1.10 $";
 
 Cnf = None;
 Options = None;
@@ -858,7 +858,6 @@ def check_timestamps():
                               time.ctime(ancient_date)));
             except:
                 reject("%s: timestamp check failed; caught %s" % (filename, sys.exc_type));
-                raise;
 
 ################################################################################
 ################################################################################
