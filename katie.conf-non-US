@@ -158,6 +158,7 @@ Suite
 	};
 	Announce "debian-changes@lists.debian.org";
 	CopyChanges "dists/proposed-updates/";
+	CopyKatie "/org/non-us.debian.org/queue/proposed-updates/";
 	Version "2.2r5";
 	Origin "Debian";
 	Description "Proposed Updates for Debian 2.2r5 - Not Released";

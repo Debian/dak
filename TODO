@@ -163,6 +163,7 @@ Less Urgent
  * Easy:
 
     o Rationalize config stuff.. Dir::Foo not Dir::FooDir [breaks other people??] 
+      Also Dir::Queue::Foo, not Dir::QueueFooDir
     o melanie should behave better with -a and without -b; see
       gcc-defaults removal for an example.
     o Reject on misconfigured kernel-package uploads
