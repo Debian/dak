@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.7 2001-07-25 16:01:02 troup Exp $
+# $Id: natalie.py,v 1.8 2001-08-21 15:40:10 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ def usage (exit_code):
   -V, --version            retrieve version
   -c, --component=CMPT     list/set overrides by component
                                   (contrib,*main,non-free)
-  -s, --suite=SUITE        list/set overrides by suite 
+  -s, --suite=SUITE        list/set overrides by suite
                                   (experimental,stable,testing,*unstable)
   -t, --type=TYPE          list/set overrides by type
                                   (*deb,dsc,udeb)
@@ -53,7 +53,7 @@ def usage (exit_code):
 
 def init ():
     global projectB;
-    
+
     projectB = pg.connect('projectb', None);
     db_access.init(Cnf, projectB);
 
@@ -73,7 +73,7 @@ def process_file (file, suite, component, type):
     # --set is done mostly internal for performance reasons; most
     # invocations of --set will be updates and making people wait 2-3
     # minutes while 6000 select+inserts are run needlessly isn't cool.
-    
+
     original = {};
     new = {};
     c_skipped = 0;
@@ -81,7 +81,7 @@ def process_file (file, suite, component, type):
     c_updated = 0;
     c_removed = 0;
     c_error = 0;
-    
+
     q = projectB.query("SELECT o.package, o.priority, o.section, o.maintainer, p.priority, s.section FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s and o.priority = p.id and o.section = s.id"
                        % (suite_id, component_id, type_id));
     for i in q.getresult():
@@ -93,7 +93,7 @@ def process_file (file, suite, component, type):
         line = string.strip(utils.re_comments.sub('', line[:-1]))
         if line == "":
             continue;
-        
+
         maintainer_override = "";
         if type == "dsc":
             split_line = string.split(line, None, 2);
@@ -138,7 +138,7 @@ def process_file (file, suite, component, type):
             if old_priority_id == priority_id and old_section_id == section_id and old_maintainer_override == maintainer_override:
                 # Same?  Ignore it
                 c_skipped = c_skipped + 1;
-                continue; 
+                continue;
             else:
                 # Changed?  Delete the old one so we can reinsert it with the new information
                 c_updated = c_updated + 1;
@@ -155,7 +155,7 @@ def process_file (file, suite, component, type):
         else:
             c_added = c_added + 1;
             update_p = 0;
-            
+
         if maintainer_override:
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '%s')"
                            % (suite_id, component_id, type_id, package, priority_id, section_id, maintainer_override));
@@ -208,7 +208,7 @@ def main ():
     global Cnf, projectB, Logger;
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
     Arguments = [('D',"debug","Natalie::Options::Debug", "IntVal"),

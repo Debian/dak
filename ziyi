@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.6 2001-05-05 07:20:57 ajt Exp $
+# $Id: ziyi,v 1.7 2001-08-21 15:40:10 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,13 +82,12 @@ def main ():
 
 
     apt_pkg.init()
-    
+
     Cnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file())
 
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
-    print "APT.CONF IS: " + utils.which_apt_conf_file()
 
     Arguments = [('d',"debug","Ziyi::Options::Debug", "IntVal"),
                  ('h',"help","Ziyi::Options::Help"),
@@ -231,7 +230,7 @@ def main ():
 	    dest = Cnf["Dir::RootDir"] + tree + "/Release.gpg"
 	    if os.path.exists(dest):
 		 os.unlink(dest)
-	    os.system("gpg --secret-keyring \"%s\" --no-options --batch --no-tty --armour --detach-sign <%s --output=%s" % (Cnf["Dinstall::SigningKeyring"], 
+	    os.system("gpg --secret-keyring \"%s\" --no-options --batch --no-tty --armour --detach-sign <%s --output=%s" % (Cnf["Dinstall::SigningKeyring"],
 		Cnf["Dir::RootDir"] + tree + "/Release", dest))
 
 #######################################################################################
