@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.16 2002-05-08 11:52:31 troup Exp $
+# $Id: jennifer,v 1.17 2002-05-10 00:24:33 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.16 $";
+jennifer_version = "$Revision: 1.17 $";
 
 Cnf = None;
 Options = None;
@@ -693,6 +693,10 @@ def check_dsc ():
     global reprocess;
 
     for file in files.keys():
+        # The .orig.tar.gz can disappear out from under us is it's a
+        # duplicate of one in the archive.
+        if not files.has_key(file):
+            continue;
         if files[file]["type"] == "dsc":
             # Parse the .dsc file
             try:

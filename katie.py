@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.18 2002-05-08 11:52:31 troup Exp $
+# $Id: katie.py,v 1.19 2002-05-10 00:24:33 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -724,10 +724,12 @@ distribution.""";
 
                 ql = q.getresult();
                 if ql:
+                    # Ignore exact matches for .orig.tar.gz
                     match = 0;
                     if dsc_file[-12:] == ".orig.tar.gz":
                         for i in ql:
-                            if int(files[dsc_file]["size"]) == int(i[0]) and \
+                            if files.has_key(dsc_file) and \
+                               int(files[dsc_file]["size"]) == int(i[0]) and \
                                files[dsc_file]["md5sum"] == i[1]:
                                 self.reject("ignoring %s, since it's already in the archive." % (dsc_file), "Warning: ");
                                 del files[dsc_file];
