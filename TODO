@@ -27,6 +27,8 @@ Urgent
   o need to have process_it run a big try: loop so that individual
     package screws up don't kill the daily cron run.
 
+  o Add urgency to DB for testing
+
 Less Urgent
 -----------
 
