@@ -1,6 +1,6 @@
 # DB access fucntions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.10 2001-11-24 18:42:05 troup Exp $
+# $Id: db_access.py,v 1.11 2002-02-12 23:13:49 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import pg, string
+############################################################################################
+
+import string
 
 ############################################################################################
 
@@ -33,7 +35,8 @@ location_id_cache = {};
 maintainer_id_cache = {};
 source_id_cache = {};
 files_id_cache = {};
-maintainer_cache = {}
+maintainer_cache = {};
+fingerprint_id_cache = {};
 
 ############################################################################################
 
@@ -217,6 +220,23 @@ def get_or_set_maintainer_id (maintainer):
     maintainer_id_cache[maintainer] = maintainer_id
 
     return maintainer_id
+
+##########################################################################################
+
+def get_or_set_fingerprint_id (fingerprint):
+    global fingerprint_id_cache
+
+    if fingerprint_id_cache.has_key(fingerprint):
+        return fingerprint_id_cache[fingerprint]
+
+    q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint))
+    if not q.getresult():
+        projectB.query("INSERT INTO fingerprint (fingerprint) VALUES ('%s')" % (fingerprint))
+        q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint))
+    fingerprint_id = q.getresult()[0][0]
+    fingerprint_id_cache[fingerprint] = fingerprint_id
+
+    return fingerprint_id
 
 ##########################################################################################
 
