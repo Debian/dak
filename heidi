@@ -2,7 +2,7 @@
 
 # Manipulate suite tags
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.5 2001-03-20 00:28:11 troup Exp $
+# $Id: heidi,v 1.6 2001-06-20 18:47:37 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,12 +55,16 @@ projectB = None;
 
 def process_file (file, suite_id, action):
 
+    lines = file.readlines();
+
+    projectB.query("BEGIN WORK");
+
     if action == "set":
         projectB.query("DELETE FROM bin_associations WHERE suite = %s" % (suite_id));
         projectB.query("DELETE FROM src_associations WHERE suite = %s" % (suite_id));
         action = "add";
         
-    for line in file.readlines():
+    for line in lines:
         split_line = string.split(string.strip(line[:-1]));
         if len(split_line) != 3:
             sys.stderr.write("W: '%s' does not break into 'package version architecture'.\n" % (line[:-1]));
@@ -124,7 +128,9 @@ def process_file (file, suite_id, action):
                     continue;
                 else:
                     q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (assoication_id));
-              
+
+    projectB.query("COMMIT WORK");
+
 #######################################################################################
 
 def get_list (suite_id):
