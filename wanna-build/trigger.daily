@@ -1,0 +1,208 @@
+#!/bin/sh
+#
+# Updates wanna-build databases after the archive maintenance
+# finishes
+#
+PATH="/bin:/usr/bin"
+DISTS="oldstable-security stable stable-security testing testing-security unstable"
+SECTIONS="main contrib non-free"
+ARCHS_oldstable="m68k arm sparc alpha powerpc i386"
+ARCHS_stable="mips mipsel ia64 hppa s390 $ARCHS_oldstable"
+ARCHS_testing="$ARCHS_stable"
+ARCHS_unstable="$ARCHS_testing hurd-i386 sh"
+TMPDIR="/org/wanna-build/tmp"
+WGETOPT="-q -t2 -w0 -T60"
+CURLOPT="-q -s -S -f -K /org/wanna-build/trigger.curlrc"
+LOCKFILE="/org/wanna-build/tmp/DB_Maintenance_In_Progress"
+
+DAY=`date +%w`
+
+echo Updating wanna-build databases...
+umask 022
+
+if [ "$DAY" = "0" ]; then
+	savelog -c 26 -p /org/wanna-build/db/merge.log
+fi
+
+exec >> /org/wanna-build/db/merge.log 2>&1
+lockfile -l 3600 $LOCKFILE
+cleanup() {
+	rm -f "$LOCKFILE"
+}
+trap cleanup 0
+
+echo -------------------------------------------------------------------------
+echo "merge triggered `date`"
+
+cd $TMPDIR
+
+#
+# Make one big Packages and Sources file.
+#
+for d in $DISTS ; do
+	dist=`echo $d | sed s/-.*$//`
+	case "$dist" in
+		oldstable)
+			ARCHS="$ARCHS_oldstable"
+			;;
+		stable)
+			ARCHS="$ARCHS_stable"
+			;;
+		testing)
+			ARCHS="$ARCHS_testing"
+			;;
+		*)
+			ARCHS="$ARCHS_unstable"
+			;;
+	esac
+	NON_US="false" # this is changed below if sources can be found
+	rm -f Sources.$d
+	if [ "$d" = "unstable" ]; then
+		gzip -dc /org/incoming.debian.org/buildd/Sources.gz >> Sources.$d
+	fi
+	for a in $ARCHS ; do
+		rm -f Packages.$d.$a quinn-$d.$a
+		if [ "$d" = "unstable" ]; then
+			gzip -dc /org/incoming.debian.org/buildd/Packages.gz >> Packages.$d.$a
+		fi
+	done
+
+
+	for s in $SECTIONS ; do
+		if echo $d | grep -qv -- -security; then
+			rm -f Sources.gz
+			if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/$d/non-US/$s/source/Sources.gz; then
+				mv Sources.gz Sources-non-us.$d.$s.gz
+				NON_US="true"
+			fi
+			gzip -dc Sources-non-us.$d.$s.gz >> Sources.$d
+			gzip -dc /org/ftp.debian.org/ftp/dists/$d/$s/source/Sources.gz >> Sources.$d
+			if [ "$d" = "testing" -o "$d" = "stable" ]; then
+				if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/$d-proposed-updates/non-US/$s/source/Sources.gz; then
+					mv Sources.gz Sources-non-us.$d-p-u.$s.gz
+				fi
+				gzip -dc Sources-non-us.$d-p-u.$s.gz >> Sources.$d
+				gzip -dc /org/ftp.debian.org/ftp/dists/$d-proposed-updates/$s/source/Sources.gz >> Sources.$d
+			fi
+
+			rm -f Packages.gz
+			for a in $ARCHS ; do
+				if [ "$NON_US" = "true" ]; then
+					if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/$d/non-US/$s/binary-$a/Packages.gz; then
+						mv Packages.gz Packages-non-us.$d.$s.$a.gz
+					fi
+				fi
+				gzip -dc Packages-non-us.$d.$s.$a.gz >> Packages.$d.$a
+
+				gzip -dc /org/ftp.debian.org/ftp/dists/$d/$s/binary-$a/Packages.gz >> Packages.$d.$a
+				if [ "$d" = "testing" -o "$d" = "stable" ]; then
+					if [ "$NON_US" = "true" ]; then
+						if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/$d-proposed-updates/non-US/$s/binary-$a/Packages.gz; then
+							mv Packages.gz Packages-non-us.$d-p-u.$s.$a.gz
+						fi
+					fi
+					gzip -dc Packages-non-us.$d-p-u.$s.$a.gz >> Packages.$d.$a
+					gzip -dc /org/ftp.debian.org/ftp/dists/$d-proposed-updates/$s/binary-$a/Packages.gz >> Packages.$d.$a
+				fi
+				if [ "$d" = "unstable" -a "$s" = "main" ]; then
+					gzip -dc /org/ftp.debian.org/ftp/dists/$d/$s/debian-installer/binary-$a/Packages.gz >> Packages.$d.$a
+				fi
+			done
+		else
+			rm -f Sources.gz
+			if wget $WGETOPT http://security.debian.org/debian-security/dists/$dist/updates/$s/source/Sources.gz; then
+				mv Sources.gz Sources-$d.$s.gz
+			fi
+			gzip -dc Sources-$d.$s.gz >> Sources.$d
+			if [ "$s" = "main" ]; then
+				if curl $CURLOPT http://security.debian.org/buildd/$dist/Sources.gz -o Sources.gz; then
+					mv Sources.gz Sources-$d.accepted.gz
+				fi
+				gzip -dc Sources-$d.accepted.gz >> Sources.$d
+				if curl $CURLOPT http://security.debian.org/buildd/$dist/Packages.gz -o Packages.gz; then
+					mv Packages.gz Packages-$d.accepted.gz
+				fi
+			fi
+			rm -f Packages.gz
+			for a in $ARCHS ; do
+				if wget $WGETOPT http://security.debian.org/debian-security/dists/$dist/updates/$s/binary-$a/Packages.gz; then
+					mv Packages.gz Packages.$d.$s.$a.gz
+				fi
+				gzip -dc Packages.$d.$s.$a.gz >> Packages.$d.$a
+				if [ "$s" = "main" ]; then
+					gzip -dc Packages.$d.accepted.gz >> Packages.$d.$a
+				fi
+			done
+		fi
+	done
+
+	if [ "$d" = "oldstable" ]; then
+		gzip -dc /org/ftp.debian.org/ftp/dists/old-proposed-updates/Sources.gz >> Sources.$d
+		if "$NON_US" = "true" ]; then
+			rm -f Sources.gz
+			if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/old-proposed-updates/Sources.gz; then
+				mv Sources.gz Sources-non-us.p-u.gz
+			fi
+			gzip -dc Sources-non-us.p-u.gz >> Sources.$d
+			rm -f Packages.gz
+			if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/old-proposed-updates/Packages.gz; then
+				mv Packages.gz Packages-non-us.p-u.gz
+			fi
+		fi
+			
+		for a in $ARCHS ; do
+			gzip -dc /org/ftp.debian.org/ftp/dists/old-proposed-updates/Packages.gz >> Packages.$d.$a
+			gzip -dc Packages-non-us.p-u.gz >> Packages.$d.$a
+		done
+	fi
+	for a in $ARCHS ; do
+		quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a >> quinn-$d.$a
+	done
+done
+
+umask 002
+for a in $ARCHS_unstable ; do
+	wanna-build --create-maintenance-lock --database=$a/build-db
+
+	for d in $DISTS ; do
+		dist=`echo $d | sed s/-.*$//`
+		case "$dist" in
+			stable)
+				if echo $ARCHS_stable | grep -q -v "\b$a\b"; then
+					continue
+				fi
+				;;
+			testing)
+				if echo $ARCHS_testing | grep -q -v "\b$a\b"; then
+					continue
+				fi
+				;;
+			*)
+				if echo $ARCHS_unstable | grep -q -v "\b$a\b"; then
+					continue
+				fi
+				;;
+		esac
+		wanna-build --merge-packages --arch=$a --dist=$d --database=$a/build-db Packages.$d.$a
+		perl -pi -e 's#^(non-US/)?(non-free)/.*$##msg' quinn-$d.$a
+		wanna-build --merge-quinn --dist=$d --database=$a/build-db quinn-$d.$a
+		wanna-build --merge-sources --dist=$d --database=$a/build-db Sources.$d
+		mv Packages.$d.$a Packages.$d.$a-old
+		mv quinn-$d.$a quinn-$d.$a-old
+		if [ "$DAY" = "0" -a "$d" = "unstable" ]; then
+			savelog -p -c 26 /org/wanna-build/db/$a/transactions.log
+		fi
+	done
+	wanna-build --remove-maintenance-lock --database=$a/build-db
+done
+umask 022
+for d in $DISTS; do
+	mv Sources.$d Sources.$d-old
+done
+
+echo "merge ended `date`"
+rm -f "$LOCKFILE"
+trap -
+/org/wanna-build/bin/wb-graph >> /org/wanna-build/etc/graph-data
+/org/wanna-build/bin/wb-graph -p >> /org/wanna-build/etc/graph2-data
+/org/buildd.debian.org/bin/makegraph

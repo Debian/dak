@@ -8,7 +8,13 @@ set -e
 export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 . $SCRIPTVARS
 
-if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
+LOCKFILE="/org/wanna-build/tmp/DB_Maintenance_In_Progress"
+
+if [ ! -e "$ftpdir/Archive_Maintenance_In_Progress" -a lockfile -! -r3 $LOCKFILE ]; then
+	cleanup() {
+		rm -f "$LOCKFILE"
+	}
+	trap cleanup 0
         cd $overridedir
         denise &>/dev/null
         rm -f override.sid.all3
