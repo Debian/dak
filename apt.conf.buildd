@@ -7,8 +7,8 @@ Dir
 
 Default
 {
-   Packages::Compress ". gzip"; // both created for quinn-diff ease
-   Sources::Compress ". gzip";
+   Packages::Compress "gzip";
+   Sources::Compress "gzip";
    DeLinkLimit 0;
    FileMode 0664;
 }
@@ -24,5 +24,4 @@ bindirectory "incoming"
    BinCacheDB "packages-accepted.db";
    
    PathPrefix "";
-   Packages::Extensions ".deb .udeb";
 };
