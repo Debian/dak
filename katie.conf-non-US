@@ -9,7 +9,6 @@ Dinstall
         Manual-Reject "";
         No-Action "";
         No-Lock "";
-        No-Version-Check "";
         No-Mail "";
         Override-Distribution "";
         Version "";

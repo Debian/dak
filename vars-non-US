@@ -14,7 +14,7 @@ packagesfiles=packagesfiles-non-US
 sourcesfiles=sourcesfiles-non-US
 contentsfiles=contentsfiles-non-US
 
-copyoverrides="potato.contrib potato.contrib.src potato.main potato.main.src potato.non-free potato.non-free.src sid.contrib sid.contrib.src sid.main sid.main.src sid.non-free sid.non-free.src testing.contrib testing.contrib.src testing.main testing.main.src testing.non-free testing.non-free.src"
+copyoverrides="potato.contrib potato.contrib.src potato.main potato.main.src potato.non-free potato.non-free.src sid.contrib sid.contrib.src sid.main sid.main.src sid.non-free sid.non-free.src woody.contrib woody.contrib.src woody.main woody.main.src woody.non-free woody.non-free.src"
 
 PATH=$masterdir:$PATH
 umask 022

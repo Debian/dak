@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.22 2001-01-23 20:27:35 troup Exp $
+# $Id: katie,v 1.23 2001-01-27 00:09:36 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -91,13 +91,14 @@ legacy_source_untouchable = {};
 def usage (exit_code):
     print """Usage: dinstall [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
-  -d, --debug=VALUE         debug
-  -k, --ack-new             acknowledge new packages
+  -D, --debug=VALUE         turn on debugging
+  -h, --help                show this help and exit.
+  -k, --ack-new             acknowledge new packages !! for cron.daily only !!
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
   -p, --no-lock             don't check lockfile !! for cron.daily only !!
-  -r, --no-version-check    override version check
-  -u, --distribution=DIST   override distribution to `dist'"""
+  -u, --distribution=DIST   override distribution to `dist'
+  -v, --version             display the version number and exit"""
     sys.exit(exit_code)
 
 def check_signature (filename):
@@ -178,7 +179,7 @@ def check_changes(filename):
     # Check for mandatory fields
     for i in ("source", "binary", "architecture", "version", "distribution","maintainer", "files"):
         if not changes.has_key(i):
-            reject_message = "Rejected: Missing field `%s' in changes file." % (i)
+            reject_message = "Rejected: Missing field `%s' in changes file.\n" % (i)
             return 0    # Avoid <undef> errors during later tests
 
     # Fix the Maintainer: field to be RFC822 compatible
@@ -397,11 +398,7 @@ def check_files():
                     files[file]["oldfiles"][suite] = oldfile
                     # Check versions [NB: per-suite only; no cross-suite checking done (yet)]
                     if apt_pkg.VersionCompare(files[file]["version"], oldfile["version"]) != 1:
-                        if Cnf["Dinstall::Options::No-Version-Check"]:
-                            reject_message = reject_message + "Overriden rejection"
-                        else:
-                            reject_message = reject_message + "Rejected"
-                        reject_message = reject_message + ": %s Old version `%s' >= new version `%s'.\n" % (file, oldfile["version"], files[file]["version"])
+                        reject_message = reject_message + "Rejected: %s Old version `%s' >= new version `%s'.\n" % (file, oldfile["version"], files[file]["version"])
                 # Check for existing copies of the file
                 if not changes.has_key("stable upload"):
                     q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s' AND a.id = b.architecture" % (files[file]["package"], files[file]["version"], files[file]["architecture"]))
@@ -545,7 +542,7 @@ def check_dsc ():
                             reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming or in the pool.\n" % (file, dsc_file);
                             continue;
                 else:
-                    reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming." % (file, dsc_file);
+                    reject_message = reject_message + "Rejected: %s refers to %s, but I can't find it in Incoming.\n" % (file, dsc_file);
                     continue;
                 if actual_md5 != dsc_files[dsc_file]["md5sum"]:
                     reject_message = reject_message + "Rejected: md5sum for %s doesn't match %s.\n" % (found, file);
@@ -606,6 +603,9 @@ def check_override ():
             section = files[file]["section"];
             override_section = files[file]["override section"];
             if section != override_section and section != "-":
+                # Ignore this; it's a common mistake and not worth whining about
+                if section == "non-US/main" and override_section == "non-US":
+                    continue;
                 summary = summary + "%s: section is overridden from %s to %s.\n" % (file, section, override_section);
             if files[file]["type"] == "deb": # don't do priority for source
                 priority = files[file]["priority"];
@@ -981,8 +981,8 @@ def reject (changes_filename, manual_reject_mail_filename):
         if os.path.exists(file):
             try:
                 utils.move (file, "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
-            except utils.cant_overwrite_exc:
-                sys.stderr.write("W: couldn't overwrite existing file '%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], file));
+            except:
+                sys.stderr.write("W: couldn't reject file '%s' [Got %s].\n" % (file, sys.exc_type);
                 pass;
 
     # If this is not a manual rejection generate the .reason file and rejection mail message
@@ -1186,15 +1186,16 @@ non-maintainer upload.  The .changes file follows.
 def process_it (changes_file):
     global reprocess, orig_tar_id, changes, dsc, dsc_files, files;
 
-    reprocess = 1;
-    orig_tar_id = None;
     # Reset some globals
+    reprocess = 1;
     changes = {};
     dsc = {};
     dsc_files = {};
     files = {};
     orig_tar_id = None;
     legacy_source_untouchable = {};
+    reject_message = "";
+    orig_tar_id = None;
 
     # Absolutize the filename to avoid the requirement of being in the
     # same directory as the .changes file.
@@ -1235,7 +1236,6 @@ def main():
                  ('m',"manual-reject","Dinstall::Options::Manual-Reject", "HasArg"),
                  ('n',"no-action","Dinstall::Options::No-Action"),
                  ('p',"no-lock", "Dinstall::Options::No-Lock"),
-                 ('r',"no-version-check", "Dinstall::Options::No-Version-Check"),
                  ('s',"no-mail", "Dinstall::Options::No-Mail"),
                  ('u',"override-distribution", "Dinstall::Options::Override-Distribution", "HasArg"),
                  ('v',"version","Dinstall::Options::Version")];
@@ -1282,7 +1282,6 @@ def main():
 
     # Process the changes files
     for changes_file in changes_files:
-        reject_message = ""
         print "\n" + changes_file;
         process_it (changes_file);
 

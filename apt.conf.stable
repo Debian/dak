@@ -1,0 +1,31 @@
+Dir 
+{
+   ArchiveDir "/org/ftp.debian.org/ftp/";
+   OverrideDir "/org/ftp.debian.org/scripts/override/";
+   CacheDir "/org/ftp.debian.org/database/";
+};
+
+Default
+{
+   Packages::Compress ". gzip";
+   Sources::Compress "gzip";
+   Contents::Compress "gzip";
+   DeLinkLimit 0;
+   MaxContentsChange 6000;
+   FileMode 0664;
+}
+
+TreeDefault
+{
+   Contents::Header "/org/ftp.debian.org/katie/Contents.top";
+};
+
+tree "dists/stable"
+{
+   FileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "alpha arm i386 m68k powerpc sparc source";
+   BinOverride "override.potato.$(SECTION)";
+   SrcOverride "override.potato.$(SECTION).src";
+};

@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.1 2001-01-10 05:58:26 troup Exp $
+# $Id: natalie.py,v 1.2 2001-01-27 00:09:36 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,25 @@ import apt_pkg;
 
 Cnf = None;
 projectB = None;
+
+################################################################################
+
+def usage (exit_code):
+    print """Usage: natalie.py [OPTIONS]
+  -D, --debug=VALUE        debug
+  -h, --help               this help
+  -V, --version            retrieve version
+  -c, --component=CMPT     list/set overrides by component
+                                  (contrib,*main,non-free)
+  -s, --suite=SUITE        list/set overrides by suite 
+                                  (experimental,stable,testing,*unstable)
+  -t, --type=TYPE          list/set overrides by type
+                                  (*deb,dsc,udeb)
+  -S, --set                set overrides from stdin
+  -l, --list               list overrides on stdout
+
+ starred (*) values are default"""
+    sys.exit(exit_code)
 
 ################################################################################
 
@@ -193,6 +212,9 @@ def main ():
                  ('S',"set","Natalie::Options::Set"),
                  ('t',"type","Natalie::Options::Type", "HasArg")];
     file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+
+    if Cnf["Natalie::Options::Help"]:
+        usage(0);
 
     init();
 

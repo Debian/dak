@@ -1,0 +1,74 @@
+<!-- -*- mode: sgml; mode: fold -*- -->
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!ENTITY % katieent SYSTEM "katie.ent">
+%katieent;
+
+]>
+
+<refentry>
+  &katie-docinfo;
+  
+  <refmeta>
+    <refentrytitle>natalie</>
+    <manvolnum>1</>
+  </refmeta>
+  
+  <!-- Man page title -->
+  <refnamediv>
+    <refname>natalie</>
+    <refpurpose>Override Utility to remove/add packages from suites</>
+  </refnamediv>
+
+  <!-- Arguments -->
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>natalie</>
+      <arg><option><replaceable>options</replaceable></></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  
+  <RefSect1><Title>Description</>
+    <para>   
+      <command>natalie</command> is the command line tool to handle override files.  Override files can be listed to stdout or updated from stdin.
+
+  <RefSect1><Title>Options</>
+    
+      <VariableList>
+	<VarListEntry><term><option>-c/--component=<replaceable>component</replaceable></option></>
+	  <ListItem><Para>Uses the override DB for the component listed.  The default is <literal>main</literal>.</PARA></LISTITEM>
+	</VarListEntry>
+	
+	<varlistentry>
+	  <term><option>-l/--list</option></term>
+	  <listitem>
+	    <para>Lists the override DB to stdout.</para>
+	  </listitem>
+	</varlistentry>
+
+	<VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
+	  <ListItem><Para>Uses the override DB for the suite listed.  The default is <literal>unstable</literal>.</PARA></LISTITEM>
+	</VarListEntry>
+	
+	<VarListEntry><term><option>-S/--set</option></term>
+	  <ListItem><Para>Update the override DB based on the contents of stdin.  Information on the results of the update are printed to stdout.</PARA></LISTITEM>
+	</VarListEntry>
+	
+	<varlistentry>
+	  <term><option>-t/--type=<replaceable>type</replaceable></option></term>
+	  <listitem>
+	    <para>Uses the override DB for the type listed.  The default is <literal>deb</literal>.  Possible values are: <literal>deb</literal>, <literal>udeb</literal> and <literal>dsc</literal>.</para>
+	  </listitem>
+	</varlistentry>
+
+    </VariableList>
+  </RefSect1>
+
+  <RefSect1><Title>Diagnostics</>
+    <para>
+      <command>natalie</command> returns zero on normal operation, non-zero on error.
+  </RefSect1>
+
+  &manauthor;
+  
+</refentry>
