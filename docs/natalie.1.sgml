@@ -8,12 +8,12 @@
 
 <refentry>
   &katie-docinfo;
-  
+
   <refmeta>
     <refentrytitle>natalie</>
     <manvolnum>1</>
   </refmeta>
-  
+
   <!-- Man page title -->
   <refnamediv>
     <refname>natalie</>
@@ -27,18 +27,25 @@
       <arg><option><replaceable>options</replaceable></></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
-  
+
   <RefSect1><Title>Description</>
-    <para>   
+    <para>
       <command>natalie</command> is the command line tool to handle override files.  Override files can be listed to stdout or updated from stdin.
 
   <RefSect1><Title>Options</>
-    
+
       <VariableList>
 	<VarListEntry><term><option>-c/--component=<replaceable>component</replaceable></option></>
 	  <ListItem><Para>Uses the override DB for the component listed.  The default is <literal>main</literal>.</PARA></LISTITEM>
 	</VarListEntry>
-	
+
+      <varlistentry>
+	<term><option>-h/--help</option></term>
+	<listitem>
+	  <para>Display usage help and then exit.</para>
+	</listitem>
+      </varlistentry>
+
 	<varlistentry>
 	  <term><option>-l/--list</option></term>
 	  <listitem>
@@ -46,14 +53,21 @@
 	  </listitem>
 	</varlistentry>
 
+      <varlistentry>
+	<term><option>-q/--quiet</option></term>
+	<listitem>
+	  <para>Be less verbose about what has been done.</para>
+	</listitem>
+      </varlistentry>
+
 	<VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
 	  <ListItem><Para>Uses the override DB for the suite listed.  The default is <literal>unstable</literal>.</PARA></LISTITEM>
 	</VarListEntry>
-	
+
 	<VarListEntry><term><option>-S/--set</option></term>
 	  <ListItem><Para>Update the override DB based on the contents of stdin.  Information on the results of the update are printed to stdout.</PARA></LISTITEM>
 	</VarListEntry>
-	
+
 	<varlistentry>
 	  <term><option>-t/--type=<replaceable>type</replaceable></option></term>
 	  <listitem>
@@ -70,5 +84,5 @@
   </RefSect1>
 
   &manauthor;
-  
+
 </refentry>

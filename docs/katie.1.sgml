@@ -17,7 +17,7 @@
   <!-- Man page title -->
   <refnamediv>
     <refname>katie</>
-    <refpurpose>Installs packages from incoming</>
+    <refpurpose>Installs packages from accepted</>
   </refnamediv>
 
   <!-- Arguments -->
@@ -25,14 +25,14 @@
     <cmdsynopsis>
       <command>katie</>
       <arg><option><replaceable>options</replaceable></></arg>
-      <arg choice="plain"><replaceable>package</replaceable></arg>
+      <arg choice="plain"><replaceable>changes_file</replaceable></arg>
       <arg><option><replaceable>...</replaceable></option></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
   
   <RefSect1><Title>Description</>
     <para>   
-      <command>katie</command> is the program which installs packages from incoming into the distribution.
+      <command>katie</command> is the program which installs packages from the accepted directory into the distribution.
     </PARA></REFSECT1>
 
   <RefSect1><Title>Options</>
@@ -54,13 +54,6 @@
       </varlistentry>
 
       <varlistentry>
-	<term><option>-k/--ack-new</option></term>
-	<listitem>
-	  <para>Acknowledge new packages.  <emphasis>WARNING:</emphasis> due to the sub-optimal implementation of new packages, this option should only be used when processing *all* packages (e.g. in cron jobs).</para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
 	<term><option>-m/--manual-reject=<replaceable>message</replaceable></option></term>
 	<listitem>
 	  <para>Perform a manual rejection of the package.  The <replaceable>message</replaceable> is included in the rejection notice sent to the uploader.  If no <replaceable>message</replaceable> is given, an editor will be spawned so one can be added to the rejection notice.
@@ -78,13 +71,6 @@
 	<term><option>-p/--no-lock</option></term>
 	<listitem>
 	  <para>Don't check the lockfile.  Obviously dangerous and should only be used for cron jobs (if at all).</para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-	<term><option>-u/--distribution=<replaceable>distribution</replaceable></option></term>
-	<listitem>
-	  <para>Override the <literal>Distribution</Literal> field.  Should only be used for binary packages otherwise if used on a source package, all binary recompiles of that source will require a similar manual override.</para>
 	</listitem>
       </varlistentry>
 
