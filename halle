@@ -2,7 +2,7 @@
 
 # Remove obsolete .changes files from proposed-updates
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: halle,v 1.7 2002-05-18 23:54:51 troup Exp $
+# $Id: halle,v 1.8 2002-06-08 00:17:53 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -111,15 +111,15 @@ def check_joey (filename):
     os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]));
 
     for line in file.readlines():
-        line = line[:-1];
+        line = string.rstrip(line)
         if string.find(line, 'install') != -1:
             split_line = string.split(line);
+            if len(split_line) != 2:
+                utils.fubar("Parse error (not exactly 2 elements): %s" % (line));
             install_type = split_line[0];
             if [ "install", "install-u", "sync-install" ].count(install_type) == 0:
                 utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line));
             changes_filename = split_line[1]
-            if len(split_line) != 2:
-                utils.fubar("Parse error (more than 2 elements): %s" % (line));
             if Options["debug"]:
                 print "Processing %s..." % (changes_filename);
             check_changes(changes_filename);
