@@ -18,7 +18,7 @@ Dinstall
    Bcc "archive@ftp-master.debian.org";
    GroupOverrideFilename "override.group-maint";
    StableRejector "Martin (Joey) Schulze <joey@debian.org>";
-   FutureTimeTravelGrace "8640"; // 6 hours
+   FutureTimeTravelGrace 28800; // 6 hours
    PastCutoffYear "1984";
    BXANotify 0;
 };
