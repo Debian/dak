@@ -2,7 +2,7 @@
 
 # Microscopic modification and query tool for overrides in projectb
 # Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: alicia,v 1.5 2004-03-11 00:36:08 troup Exp $
+# $Id: alicia,v 1.6 2004-11-27 17:58:13 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 ## That Alisha Rules The World
 ################################################################################
 
-import pg, pwd, sys;
+import pg, sys;
 import utils, db_access;
 import apt_pkg, logging;
 
@@ -220,7 +220,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: alicia $Revision: 1.5 $";
+        Subst["__CC__"] = "X-Katie: alicia $Revision: 1.6 $";
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"];
         Subst["__WHOAMI__"] = utils.whoami();
