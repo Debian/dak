@@ -1,0 +1,69 @@
+<!-- -*- mode: sgml; mode: fold -*- -->
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!ENTITY % katieent SYSTEM "katie.ent">
+%katieent;
+
+]>
+
+<refentry>
+  &katie-docinfo;
+
+  <refmeta>
+    <refentrytitle>charisma</>
+    <manvolnum>1</>
+  </refmeta>
+
+  <!-- Man page title -->
+  <refnamediv>
+    <refname>charisma</>
+    <refpurpose>Utility to generate an index of package's maintainers</>
+  </refnamediv>
+
+  <!-- Arguments -->
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>charisma</>
+      <arg><option><replaceable>options</replaceable></></arg>
+      <arg choice="plain"><replaceable>extra file...</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <RefSect1><Title>Description</>
+    <para>
+      <command>charisma</command> is a utility to generate an index of package's maintainers.  The output format is:
+<literallayout>package~version	maintainer</literallayout>
+      The input format of extra files can either be in this form or in the old style which is similar, but lacking the version number, i.e.:
+<literallayout>package	maintainer</literallayout>
+      Charisma will auto-detect the type of layout of the extra file.  If the extra file is in the old style format the records in it are assumed to supersed any that were seen earlier (i.e. either from earlier extra files or generated from the SQL).
+    </PARA>
+  </REFSECT1>
+
+  <RefSect1><Title>Options</>
+
+    <variablelist>
+      <VarListEntry><term><option>-h/--help</option></>
+	<ListItem>
+	  <Para>Show help and then exit.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+    </VariableList>
+  </RefSect1>
+
+  <refsect1>
+    <title>New versus Old output format</title>
+    <para>Converting the new output format to the old output format is easy with some simple sed + awk, e.g.
+<literallayout>sed -e "s/~[^  ]*\([   ]\)/\1/"  | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}'</literallayout>
+</para>
+  </refsect1>
+
+  <RefSect1><Title>Diagnostics</>
+    <para>
+      <command>charisma</command> returns zero on normal operation, non-zero on error.
+    </PARA>
+  </RefSect1>
+
+  &manauthor;
+
+</refentry>
