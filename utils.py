@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.47 2002-06-08 00:18:02 troup Exp $
+# $Id: utils.py,v 1.48 2002-06-22 22:34:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)$");
 
 re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)");
 re_multi_line_field = re.compile(r"^\s(.*)");
-re_taint_free = re.compile(r"^[-+\.\w]+$");
+re_taint_free = re.compile(r"^[-+~\.\w]+$");
 
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\> \t]+)\>");
 

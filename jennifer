@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.23 2002-06-09 17:32:31 troup Exp $
+# $Id: jennifer,v 1.24 2002-06-22 22:34:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,12 +38,14 @@ from types import *;
 ################################################################################
 
 re_bad_diff = re.compile("^[\-\+][\-\+][\-\+] /dev/null");
-re_is_changes = re.compile (r"(.+?)_(.+?)_(.+?)\.changes$");
+re_is_changes = re.compile(r"(.+?)_(.+?)_(.+?)\.changes$");
+re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:]+$");
+re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$");
 
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.23 $";
+jennifer_version = "$Revision: 1.24 $";
 
 Cnf = None;
 Options = None;
@@ -514,14 +516,26 @@ def check_files():
             for field in [ "Package", "Architecture", "Version" ]:
                 if control.Find(field) == None:
                     reject("%s: No %s field in control." % (file, field));
+                    # Can't continue
+                    continue;
 
             # Ensure the package name matches the one give in the .changes
             if not changes["binary"].has_key(control.Find("Package", "")):
                 reject("%s: control file lists name as `%s', which isn't in changes file." % (file, control.Find("Package", "")));
 
+            # Validate the package field
+            package = control.Find("Package");
+            if not re_valid_pkg_name.match(package):
+                reject("%s: invalid package name '%s'." % (file, package));
+
+            # Validate the version field
+            version = control.Find("Version");
+            if not re_valid_version.match(version):
+                reject("%s: invalid version number '%s'." % (file, version));
+
             # Ensure the architecture of the .deb is one we know about.
             default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
-            architecture = control.Find("Architecture", "");
+            architecture = control.Find("Architecture");
             if architecture not in Cnf.ValueList("Suite::%s::Architectures" % (default_suite)):
                 reject("Unknown architecture '%s'." % (architecture));
 
@@ -536,9 +550,9 @@ def check_files():
             if control.Find("Priority") != None and files[file]["priority"] != "" and files[file]["priority"] != control.Find("Priority"):
                 reject("%s control file lists priority as `%s', but changes file has `%s'." % (file, control.Find("Priority", ""), files[file]["priority"]),"Warning: ");
 
-            files[file]["package"] = control.Find("Package");
+            files[file]["package"] = package;
             files[file]["architecture"] = architecture;
-            files[file]["version"] = control.Find("Version");
+            files[file]["version"] = version;
             files[file]["maintainer"] = control.Find("Maintainer", "");
             if file[-5:] == ".udeb":
                 files[file]["dbtype"] = "udeb";
@@ -565,7 +579,7 @@ def check_files():
             file_package = m.group(1);
             if files[file]["package"] != file_package:
                 reject("%s: package part of filename (%s) does not match package name in the %s (%s)." % (file, file_package, files[file]["dbtype"], files[file]["package"]));
-            epochless_version = utils.re_no_epoch.sub('', control.Find("Version", ""))
+            epochless_version = utils.re_no_epoch.sub('', control.Find("Version"));
             #  version
             file_version = m.group(2);
             if epochless_version != file_version:
@@ -740,6 +754,12 @@ def check_dsc ():
             for i in ("format", "source", "version", "binary", "maintainer", "architecture", "files"):
                 if not dsc.has_key(i):
                     reject("Missing field `%s' in dsc file." % (i));
+
+            # Validate the source and version fields
+            if dsc.has_key("source") and not re_valid_pkg_name.match(dsc["source"]):
+                reject("%s: invalid source name '%s'." % (file, dsc["source"]));
+            if dsc.has_key("version") and not re_valid_version.match(dsc["version"]):
+                reject("%s: invalid version number '%s'." % (file, dsc["version"]));
 
             # The dpkg maintainer from hell strikes again! Bumping the
             # version number of the .dsc breaks extraction by stable's
