@@ -1,0 +1,17 @@
+base		General bugs in the base system
+spam		Spam (reassign spam to here so we can complain about it)
+press       Press release issues
+kernel		Problems with the Linux kernel, or that shipped with Debian
+project		Problems related to Project administration
+general		General problems (e.g., that many manpages are mode 755)
+dpkg-iwj    The dpkg branch maintained by Ian Jackson
+slink-cd	Slink CD
+listarchives	Problems with the WWW mailing list archives
+qa.debian.org	The qa group
+ftp.debian.org	Problems with the FTP site
+www.debian.org	Problems with the WWW site
+bugs.debian.org	The bug tracking system, @bugs.debian.org
+nonus.debian.org Problems with the non-US FTP site
+lists.debian.org The mailing lists, debian-*@lists.debian.org.
+wnpp		Work-Needing and Prospective Packages list
+cdimage.debian.org CD Image issues.

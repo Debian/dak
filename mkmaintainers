@@ -1,0 +1,36 @@
+#! /bin/sh
+# $Id: mkmaintainers,v 1.1 2000-12-15 00:15:30 troup Exp $
+
+echo
+echo -n 'Creating Maintainers index ... '
+
+set -e
+. $SCRIPTVARS
+cd $masterdir
+
+nonusmaint="$masterdir/Maintainers"
+if lftp -e 'set net:timeout 600; set net:max-retries 1; get /debian-non-US/indices-non-US/Maintainers.gz; exit' nonus.debian.org >/dev/null ; then
+	rm -f $nonusmaint
+	gunzip -c ${nonusmaint}.gz > $nonusmaint
+	rm -f ${nonusmaint}.gz
+fi
+
+cd $indices
+$masterdir/charisma $nonusmaint $masterdir/pseudo-packages.maintainers >.new-maintainers
+
+set +e
+cmp .new-maintainers Maintainers >/dev/null
+rc=$?
+set -e
+if [ $rc = 1 ] || [ ! -f Maintainers ] ; then
+	echo -n "installing Maintainers ... "
+	mv -f .new-maintainers Maintainers
+	gzip -9v <Maintainers >.new-maintainers.gz
+	mv -f .new-maintainers.gz Maintainers.gz
+elif [ $rc = 0 ] ; then
+	echo '(same as before)'
+	rm -f .new-maintainers
+else
+	echo cmp returned $rc
+	false
+fi

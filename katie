@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: katie,v 1.10 2000-12-13 03:18:50 troup Exp $
+# $Id: katie,v 1.11 2000-12-15 00:15:30 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -116,7 +116,7 @@ def check_signature (filename):
 
 #####################################################################################################################
 
-def read_override_file (filename, suite, component):
+def read_override_file (filename, suite, component, binary_type):
     global overrides;
 
     file = utils.open_file(filename, 'r');
@@ -124,7 +124,7 @@ def read_override_file (filename, suite, component):
         line = string.strip(utils.re_comments.sub('', line))
         override_package = re_override_package.sub(r'\1', line)
         if override_package != "":
-            overrides[suite][component][override_package] = 1
+            overrides[suite][component][binary_type][override_package] = 1
     file.close()
 
 
@@ -133,6 +133,9 @@ def read_override_file (filename, suite, component):
 def in_override_p (package, component, suite, binary_type):
     global overrides;
 
+    if binary_type == "" or binary_type == "deb":
+        binary_type = "-";
+
     # Avoid <undef> on unknown distributions
     if db_access.get_suite_id(suite) == -1:
         return None;
@@ -140,24 +143,26 @@ def in_override_p (package, component, suite, binary_type):
     # FIXME: nasty non-US speficic hack
     if string.lower(component[:7]) == "non-us/":
         component = component[7:];
-    if not overrides.has_key(suite) or not overrides[suite].has_key(component):
+    if not overrides.has_key(suite) or not overrides[suite].has_key(component) or not overrides[suite][component].has_key(binary_type):
         if not overrides.has_key(suite):
             overrides[suite] = {}
         if not overrides[suite].has_key(component):
             overrides[suite][component] = {}
+        if not overrides[suite][component].has_key(binary_type):
+            overrides[suite][component][binary_type] = {}
         if Cnf.has_key("Suite::%s::SingleOverrideFile" % (suite)): # legacy mixed suite (i.e. experimental)
             override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)];
-            read_override_file (override_filename, suite, component);
+            read_override_file (override_filename, suite, component, binary_type);
         else: # all others.
             if binary_type == "udeb":
                 override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)] + '.debian-installer.' + component;
-                read_override_file (override_filename, suite, component);
+                read_override_file (override_filename, suite, component, binary_type);
             else:
                 for src in ("", ".src"):
                     override_filename = Cnf["Dir::OverrideDir"] + 'override.' + Cnf["Suite::%s::OverrideCodeName" % (suite)] + '.' + component + src;
-                    read_override_file (override_filename, suite, component);
+                    read_override_file (override_filename, suite, component, binary_type);
 
-    return overrides[suite][component].get(package, None);
+    return overrides[suite][component][binary_type].get(package, None);
 
 #####################################################################################################################
 
@@ -410,7 +415,9 @@ def check_files():
             # Check the md5sum & size against existing files (if any)
             location = Cnf["Dir::PoolDir"];
             files[file]["location id"] = db_access.get_location_id (location, component, archive);
-            files_id = db_access.get_files_id(component + '/' + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"]);
+            
+            files[file]["pool name"] = utils.poolify (changes["source"], files[file]["component"]);
+            files_id = db_access.get_files_id(files[file]["pool name"] + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"]);
             if files_id == -1:
                 reject_message = reject_message + "Rejected: INTERNAL ERROR, get_files_id() returned multiple matches for %s.\n" % (file)
             elif files_id == -2:
@@ -457,19 +464,19 @@ def check_dsc ():
                     found = "%s in incoming" % (dsc_file)
                     # Check the file does not already exist in the archive
                     if not changes.has_key("stable upload"):
-                        q = projectB.query("SELECT f.id FROM files f, location l WHERE f.filename ~ '%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
+                        q = projectB.query("SELECT f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
                         if q.getresult() != []:
                             reject_message = reject_message + "Rejected: can not overwrite existing copy of '%s' already in the archive.\n" % (dsc_file)
                 elif dsc_file[-12:] == ".orig.tar.gz":
                     # Check in the pool
-                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE f.filename ~ '%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
+                    q = projectB.query("SELECT l.path, f.filename, l.type, f.id FROM files f, location l WHERE f.filename ~ '/%s' AND l.id = f.location" % (utils.regex_safe(dsc_file)));
                     ql = q.getresult();
                     if len(ql) > 0:
                         old_file = ql[0][0] + ql[0][1];
                         actual_md5 = apt_pkg.md5sum(utils.open_file(old_file,"r"));
                         found = old_file;
                         suite_type = ql[0][2];
-                        dsc_files[dsc_file]["location id"] = ql[0][4]; # need this for updating dsc_files in install()
+                        dsc_files[dsc_file]["files id"] = ql[0][3]; # need this for updating dsc_files in install()
                         # See install()...
                         if suite_type == "legacy" or suite_type == "legacy-mixed":
                             orig_tar_id = ql[0][3];
@@ -646,15 +653,14 @@ def install (changes_filename, summary, short_summary):
             projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files[file]["files id"]));
             for dsc_file in dsc_files.keys():
                 filename = files[file]["pool name"] + dsc_file;
-                # use location id from dsc_files first if it exists as
-                # the .orig.tar.gz may still be in a legacy location
-                location_id = dsc_files[dsc_file].get("location id", None);
-                if location_id == None:
-                    location_id = files[file]["location id"];
-                files_id = db_access.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], location_id);
+                # If the .orig.tar.gz is already in the pool, it's
+                # files id is stored in dsc_files by check_dsc().
+                files_id = dsc_files[dsc_file].get("files id", None);
+                if files_id == None:
+                    files_id = db_access.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id);
                 # FIXME: needs to check for -1/-2 and or handle exception
                 if files_id == None:
-                    files_id = db_access.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], location_id);
+                    files_id = db_access.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id);
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id));
             
     # Add the .deb files to the DB
@@ -695,7 +701,7 @@ def install (changes_filename, summary, short_summary):
     # it, so that apt-get source (and anything else that goes by the
     # "Directory:" field in the Sources.gz file) works.
     if orig_tar_id != None:
-        q = projectB.query("SELECT l.path, f.filename, f.id as files_id, df.source, df.id as dsc_files_id, f.size, f.md5sum FROM files f, dsc_files df, location l WHERE df.source IN (SELECT source FROM dsc_files WHERE file = %s) AND f.id = df.file AND l.id = f.location" % (orig_tar_id));
+        q = projectB.query("SELECT DISTINCT ON (f.id) l.path, f.filename, f.id as files_id, df.source, df.id as dsc_files_id, f.size, f.md5sum FROM files f, dsc_files df, location l WHERE df.source IN (SELECT source FROM dsc_files WHERE file = %s) AND f.id = df.file AND l.id = f.location AND (l.type = 'legacy' OR l.type = 'legacy-mixed')" % (orig_tar_id));
         qd = q.dictresult();
         for qid in qd:
             # First move the files to the new location
@@ -704,19 +710,8 @@ def install (changes_filename, summary, short_summary):
             pool_filename = pool_location + os.path.basename(qid["filename"]);
             destination = Cnf["Dir::PoolDir"] + pool_location
             utils.move(legacy_filename, destination);
-            # Update the DB: files table
-            new_files_id = db_access.set_files_id(pool_filename, qid["size"], qid["md5sum"], dsc_location_id);
-            # Update the DB: dsc_files table
-            projectB.query("INSERT INTO dsc_files (source, file) VALUES (%s, %s)" % (qid["source"], new_files_id));
-            # Update the DB: source table
-            if legacy_filename[-4:] == ".dsc":
-                projectB.query("UPDATE source SET file = %s WHERE id = %d" % (new_files_id, qid["source"]));
-
-        for qid in qd:
-            # Remove old data from the DB: dsc_files table
-            projectB.query("DELETE FROM dsc_files WHERE id = %s" % (qid["dsc_files_id"]));
-            # Remove old data from the DB: files table
-            projectB.query("DELETE FROM files WHERE id = %s" % (qid["files_id"]));
+            # Then Update the DB's files table
+            q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, dsc_location_id, qid["files_id"]));
 
     # Install the files into the pool
     for file in files.keys():
@@ -1058,9 +1053,15 @@ non-maintainer upload.  The .changes file follows.
 # into the .changes structure and reprocess the .changes file.
 
 def process_it (changes_file):
-    global reprocess, orig_tar_id;
+    global reprocess, orig_tar_id, changes, dsc, dsc_files, files;
 
     reprocess = 1;
+    orig_tar_id = None;
+    # Reset some globals
+    changes = {};
+    dsc = {};
+    dsc_files = {};
+    files = {};
     orig_tar_id = None;
 
     # Absolutize the filename to avoid the requirement of being in the
@@ -1070,7 +1071,7 @@ def process_it (changes_file):
     # And since handling of installs to stable munges with the CWD;
     # save and restore it.
     cwd = os.getcwd();
-
+    
     check_signature (changes_file);
     check_changes (changes_file);
     while reprocess:

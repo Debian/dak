@@ -1,0 +1,17 @@
+base			Enrique Zanardi <sr1-boot-floppies@debian.org>
+press			press@debian.org
+bugs.debian.org		Darren O. Benham and others <owner@bugs.debian.org>
+ftp.debian.org		James Troup and others <ftpmaster@debian.org>
+qa.debian.org		debian-qa@lists.debian.org
+nonus.debian.org	James Troup and others <ftpmaster@debian.org>
+www.debian.org		James Treacy and others <debian-www@lists.debian.org>
+listarchives		Cesar Mendoza and others <debian-www@lists.debian.org>
+project			debian-devel@lists.debian.org
+general			debian-devel@lists.debian.org
+kernel			Herbert Xu <herbert@debian.org>
+lists.debian.org	Martin Schulze and others <listmaster@lists.debian.org>
+spam			spam@debian.org
+slink-cd		Steve McIntyre <stevem@chiark.greenend.org.uk>
+dpkg-iwj		Ian Jackson <dpkg-maint@chiark.greenend.org.uk>
+wnpp			wnpp@debian.org
+cdimage.debian.org	debian-cd@lists.debian.org
