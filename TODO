@@ -33,8 +33,6 @@ Urgent
 Less Urgent
 -----------
 
-  o configurize all the hardcoded Bcc's in mail templates
-  o melanie (and possibly others) hardcode @*debian.org all over the shop
   o melanie should warn/error on -C without -d
 
   o ziyi shouldn't really do stable

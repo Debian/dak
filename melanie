@@ -2,7 +2,7 @@
 
 # General purpose archive tool for ftpmaster
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.9 2001-03-21 01:05:07 troup Exp $
+# $Id: melanie,v 1.10 2001-03-21 01:25:59 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,10 +101,10 @@ def main ():
     carbon_copy = ""
     for copy_to in string.split(Options.get("Carbon-Copy")):
         if utils.str_isnum(copy_to):
-            carbon_copy = carbon_copy + copy_to + "@bugs.debian.org, "
+            carbon_copy = carbon_copy + copy_to + "@" + Cnf["Dinstall::BugServer"] + ", "
         elif copy_to == 'package':
             for package in arguments:
-                carbon_copy = carbon_copy + package + "@packages.debian.org, "
+                carbon_copy = carbon_copy + package + "@" + Cnf["Dinstall::PackagesServer"] + ", "
         elif '@' in copy_to:
             carbon_copy = carbon_copy + copy_to + ", "
         else:
@@ -346,7 +346,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + Cnf["Dinstall::Bcc"];
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Melanie: $Id: melanie,v 1.9 2001-03-21 01:05:07 troup Exp $\n" + carbon_copy[:-1];
+        Subst["__CC__"] = "X-Melanie: $Id: melanie,v 1.10 2001-03-21 01:25:59 troup Exp $\n" + carbon_copy[:-1];
         Subst["__SUITE_LIST__"] = suites_list;
         Subst["__SUMMARY__"] = summary;
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];

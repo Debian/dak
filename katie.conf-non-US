@@ -22,6 +22,7 @@ Dinstall
    MyHost "debian.org";  // used for generating user@my_host addresses in e.g. manual_reject()
    MyDistribution "Debian"; // Used in emails
    BugServer "bugs.debian.org";
+   PackagesServer "packages.debian.org";
    NewAckList "/org/non-us.debian.org/katie/log";
    LockFile "/org/non-us.debian.org/katie/lock";
    Bcc "troup@auric.debian.org";
