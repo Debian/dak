@@ -2,7 +2,7 @@
 
 # Installs Debian packaes
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.58 2001-09-05 18:51:21 rmurray Exp $
+# $Id: katie,v 1.59 2001-09-13 23:56:29 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -111,13 +111,13 @@ class nmu_p:
                 if line != "":
                     self.group_maint[line] = 1;
             file.close();
-        
+
     def is_an_nmu (self, changes, dsc):
         (dsc_rfc822, dsc_name, dsc_email) = utils.fix_maintainer (dsc.get("maintainer",Cnf["Dinstall::MyEmailAddress"]));
         # changes["changedbyname"] == dsc_name is probably never true, but better safe than sorry
         if dsc_name == changes["maintainername"] and (changes["changedby822"] == "" or changes["changedbyname"] == dsc_name):
             return 0;
-        
+
         if dsc.has_key("uploaders"):
             uploaders = string.split(dsc["uploaders"], ",");
             uploadernames = {};
@@ -132,11 +132,11 @@ class nmu_p:
             return 0;
 
         return 1;
-    
+
 ######################################################################################################
 
 # Ensure that source exists somewhere in the archive for the binary
-# upload being processed.  
+# upload being processed.
 #
 # (1) exact match                      => 1.0-3
 # (2) Bin-only NMU of an MU            => 1.0-3.0.1
@@ -171,7 +171,7 @@ def source_exists (package, source_version):
 
 def in_override_p (package, component, suite, binary_type, file):
     global files;
-    
+
     if binary_type == "": # must be source
         type = "dsc";
     else:
@@ -206,7 +206,7 @@ def in_override_p (package, component, suite, binary_type, file):
     if result != []:
         files[file]["override section"] = result[0][0];
         files[file]["override priority"] = result[0][1];
-        
+
     return result;
 
 #####################################################################################################################
@@ -218,7 +218,7 @@ def check_changes(filename):
     changes["maintainer822"] = Cnf["Dinstall::MyEmailAddress"];
     changes["changedby822"] = Cnf["Dinstall::MyEmailAddress"];
     changes["architecture"] = {};
-    
+
     # Parse the .changes field into a dictionary
     try:
         changes = utils.parse_changes(filename, 0)
@@ -273,7 +273,7 @@ def check_changes(filename):
     # Ensure there _is_ a target distribution
     if changes["distribution"].keys() == []:
         reject_message = reject_message + "Rejected: huh? Distribution field is empty in changes file.\n";
-            
+
     # Map frozen to unstable if frozen doesn't exist
     if changes["distribution"].has_key("frozen") and not Cnf.has_key("Suite::Frozen"):
         del changes["distribution"]["frozen"]
@@ -333,7 +333,7 @@ def check_changes(filename):
     # chopversion = no epoch; chopversion2 = no epoch and no revision (e.g. for .orig.tar.gz comparison)
     changes["chopversion"] = utils.re_no_epoch.sub('', changes["version"])
     changes["chopversion2"] = utils.re_no_revision.sub('', changes["chopversion"])
-    
+
     if string.find(reject_message, "Rejected:") != -1:
         return 0
     else: 
@@ -341,7 +341,7 @@ def check_changes(filename):
 
 def check_files():
     global reject_message
-    
+
     archive = utils.where_am_i();
 
     for file in files.keys():
@@ -377,7 +377,7 @@ def check_files():
                 reject_message = reject_message + "Rejected: %s: No architecture field in control.\n" % (file)
             if control.Find("Version") == None:
                 reject_message = reject_message + "Rejected: %s: No version field in control.\n" % (file)
-                
+
             # Ensure the package name matches the one give in the .changes
             if not changes["binary"].has_key(control.Find("Package", "")):
                 reject_message = reject_message + "Rejected: %s: control file lists name as `%s', which isn't in changes file.\n" % (file, control.Find("Package", ""))
@@ -422,7 +422,7 @@ def check_files():
                 source_version = files[file]["version"];
             files[file]["source package"] = source;
             files[file]["source version"] = source_version;
-                
+
         # Checks for a source package...
         else:
             m = utils.re_issource.match(file)
@@ -472,7 +472,7 @@ def check_files():
             # See if the package is NEW
             if not in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
                 files[file]["new"] = 1
-                
+
             if files[file]["type"] == "deb":
                 # Find any old binary packages
                 q = projectB.query("SELECT b.id, b.version, f.filename, l.path, c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f WHERE b.package = '%s' AND s.suite_name = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id AND f.location = l.id AND l.component = c.id AND b.file = f.id"
@@ -517,7 +517,7 @@ def check_files():
             # Validate the priority
             if string.find(files[file]["priority"],'/') != -1:
                 reject_message = reject_message + "Rejected: file '%s' has invalid priority '%s' [contains '/'].\n" % (file, files[file]["priority"]);
-            
+
             # Check the md5sum & size against existing files (if any)
             location = Cnf["Dir::PoolDir"];
             files[file]["location id"] = db_access.get_location_id (location, component, archive);
@@ -534,10 +534,10 @@ def check_files():
             if files[file]["oldfiles"].has_key(suite) and files[file]["oldfiles"][suite]["name"] != files[file]["component"]:
                 files[file]["othercomponents"] = files[file]["oldfiles"][suite]["name"];
 
-                
+
     if string.find(reject_message, "Rejected:") != -1:
         return 0
-    else: 
+    else:
         return 1
 
 ###############################################################################
@@ -685,7 +685,7 @@ def check_dsc ():
 
     if string.find(reject_message, "Rejected:") != -1:
         return 0
-    else: 
+    else:
         return 1
 
 ###############################################################################
@@ -709,7 +709,7 @@ def check_diff ():
 
     if string.find(reject_message, "Rejected:") != -1:
         return 0
-    else: 
+    else:
         return 1
 
 ###############################################################################
@@ -728,7 +728,7 @@ def check_md5sums ():
 
 def check_override ():
     global Subst;
-    
+
     # Only check section & priority on sourceful uploads
     if not changes["architecture"].has_key("source"):
         return;
@@ -796,7 +796,7 @@ def action (changes_filename):
     # (e.g. unreadable changes files)
     if not changes.has_key("distribution") or not isinstance(changes["distribution"], DictType):
         changes["distribution"] = {};
-    
+
     for suite in changes["distribution"].keys():
         if Cnf.has_key("Suite::%s::Confirm"):
             confirm = confirm + suite + ", "
@@ -829,7 +829,7 @@ def action (changes_filename):
         summary = summary + "Changes: " + f;
 
     summary = summary + announce (short_summary, 0)
-    
+
     (prompt, answer) = ("", "XXX")
     if Options["No-Action"] or Options["Automatic"]:
         answer = 'S'
@@ -892,7 +892,7 @@ def install (changes_filename, summary, short_summary):
     if changes.has_key("stable upload"):
         stable_install (changes_filename, summary, short_summary);
         return;
-    
+
     print "Installing."
 
     Logger.log(["installing changes",changes_filename]);
@@ -934,7 +934,7 @@ def install (changes_filename, summary, short_summary):
                 if files_id == None:
                     files_id = db_access.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id);
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id));
-            
+
     # Add the .deb files to the DB
     for file in files.keys():
         if files[file]["type"] == "deb":
@@ -1036,7 +1036,7 @@ def install (changes_filename, summary, short_summary):
 
 def stable_install (changes_filename, summary, short_summary):
     global install_count, install_bytes, Subst;
-    
+
     print "Installing to stable."
 
     archive = utils.where_am_i();
@@ -1058,7 +1058,7 @@ def stable_install (changes_filename, summary, short_summary):
             projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id));
             suite_id = db_access.get_suite_id('stable');
             projectB.query("INSERT INTO src_associations (suite, source) VALUES ('%s', '%s')" % (suite_id, source_id));
-                
+
     # Add the .deb files to the DB
     for file in files.keys():
         if files[file]["type"] == "deb":
@@ -1086,7 +1086,7 @@ def stable_install (changes_filename, summary, short_summary):
     changelog_filename = Cnf["Dir::RootDir"] + Cnf["Suite::Stable::ChangeLogBase"] + "ChangeLog";
     if os.path.exists(new_changelog_filename):
         os.unlink (new_changelog_filename);
-    
+
     new_changelog = utils.open_file(new_changelog_filename, 'w');
     for file in files.keys():
         if files[file]["type"] == "deb":
@@ -1118,7 +1118,7 @@ def stable_install (changes_filename, summary, short_summary):
 
 def reject (changes_filename, manual_reject_mail_filename):
     global Subst;
-    
+
     print "Rejecting.\n"
 
     base_changes_filename = os.path.basename(changes_filename);
@@ -1151,7 +1151,7 @@ def reject (changes_filename, manual_reject_mail_filename):
         reject_mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.rejected","r").read());
     else: # Have a manual rejection file to use
         reject_mail_message = ""; # avoid <undef>'s
-        
+
     # Send the rejection mail if appropriate
     if not Options["No-Mail"]:
         utils.send_mail (reject_mail_message, manual_reject_mail_filename);
@@ -1162,15 +1162,15 @@ def reject (changes_filename, manual_reject_mail_filename):
 
 def manual_reject (changes_filename):
     global Subst;
-    
-    # Build up the rejection email 
+
+    # Build up the rejection email
     user_email_address = utils.whoami() + " <%s@%s>" % (pwd.getpwuid(os.getuid())[0], Cnf["Dinstall::MyHost"])
     manual_reject_message = Cnf.get("Dinstall::Options::Manual-Reject", "")
 
     Subst["__MANUAL_REJECT_MESSAGE__"] = manual_reject_message;
     Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"];
     reject_mail_message = utils.TemplateSubst(Subst,open(Cnf["Dir::TemplatesDir"]+"/katie.rejected","r").read());
-    
+
     # Write the rejection email out as the <foo>.reason file
     reason_filename = re_changes.sub("reason", os.path.basename(changes_filename));
     reject_filename = "%s/REJECT/%s" % (Cnf["Dir::IncomingDir"], reason_filename)
@@ -1179,7 +1179,7 @@ def manual_reject (changes_filename):
     fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644);
     os.write(fd, reject_mail_message);
     os.close(fd);
-    
+
     # If we weren't given one, spawn an editor so the user can add one in
     if manual_reject_message == "":
         result = os.system("vi +6 %s" % (reject_filename))
@@ -1190,7 +1190,7 @@ def manual_reject (changes_filename):
     reject (changes_filename, reject_filename)
 
 #####################################################################################################################
- 
+
 def acknowledge_new (changes_filename, summary):
     global new_ack_new, Subst;
 
@@ -1212,7 +1212,7 @@ def acknowledge_new (changes_filename, summary):
 
 def announce (short_summary, action):
     global Subst;
-    
+
     # Only do announcements for source uploads with a recent dpkg-dev installed
     if float(changes.get("format", 0)) < 1.6 or not changes["architecture"].has_key("source"):
         return ""
@@ -1301,7 +1301,7 @@ def process_it (changes_file):
     # And since handling of installs to stable munges with the CWD;
     # save and restore it.
     cwd = os.getcwd();
-    
+
     try:
         check_signature (changes_file);
         check_changes (changes_file);
@@ -1315,7 +1315,7 @@ def process_it (changes_file):
         print "ERROR";
 	traceback.print_exc(file=sys.stdout);
         pass;
-        
+
     update_subst(changes_file);
     action(changes_file);
 
@@ -1328,7 +1328,7 @@ def main():
     global Cnf, Options, projectB, install_bytes, new_ack_old, Subst, nmu, Logger
 
     apt_pkg.init();
-    
+
     Cnf = apt_pkg.newConfiguration();
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
@@ -1342,13 +1342,13 @@ def main():
                  ('s',"no-mail", "Dinstall::Options::No-Mail"),
                  ('u',"override-distribution", "Dinstall::Options::Override-Distribution", "HasArg"),
                  ('v',"version","Dinstall::Options::Version")];
-    
+
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Dinstall::Options")
 
     if Options["Help"]:
         usage(0);
-        
+
     if Options["Version"]:
         print "katie version 0.0000000000";
         usage(0);
@@ -1366,7 +1366,7 @@ def main():
 
     if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::RootDir"])) and not Options["No-Lock"]:
         utils.fubar("Archive maintenance in progress.  Try again later.");
-    
+
     # Obtain lock if not in no-action mode and initialize the log
 
     if not Options["No-Action"]:
@@ -1385,7 +1385,7 @@ def main():
     Subst = {}
     Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
     Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-    bcc = "X-Katie: $Revision: 1.58 $"
+    bcc = "X-Katie: $Revision: 1.59 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"]);
     else:
@@ -1417,10 +1417,10 @@ def main():
         for i in new_ack_new.keys():
             new_ack_list.write(i+'\n')
         new_ack_list.close()
-    
+
     if not Options["No-Action"]:
         Logger.close();
-            
+
 if __name__ == '__main__':
     main()
 
