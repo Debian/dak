@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.16 2002-06-05 19:21:18 troup Exp $
+# $Id: claire.py,v 1.17 2002-06-08 00:15:57 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,6 +80,8 @@ def fix_component_section (component, section):
 def find_dislocated_stable(Cnf, projectB):
     dislocated_files = {}
 
+    codename = Cnf["Suite::Stable::Codename"];
+
     # Source
     q = projectB.query("""
 SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
@@ -88,9 +90,9 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
     WHERE su.suite_name = 'stable' AND sa.suite = su.id AND sa.source = s.id
       AND f2.id = s.file AND f2.location = l2.id AND df.source = s.id
       AND f.id = df.file AND f.location = l.id AND o.package = s.source
-      AND sec.id = o.section AND NOT (f.filename ~ '^potato/')
+      AND sec.id = o.section AND NOT (f.filename ~ '^%s/')
       AND l.component = c.id AND o.suite = su.id
-""");
+""" % (codename));
 # Only needed if you have files in legacy-mixed locations
 #  UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
 #      FROM component c, override o, section sec, source s, files f, location l,
@@ -98,11 +100,13 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
 #      WHERE su.suite_name = 'stable' AND sa.suite = su.id AND sa.source = s.id
 #        AND f2.id = s.file AND f2.location = l2.id AND df.source = s.id
 #        AND f.id = df.file AND f.location = l.id AND o.package = s.source
-#        AND sec.id = o.section AND NOT (f.filename ~ '^potato/') AND o.suite = su.id
+#        AND sec.id = o.section AND NOT (f.filename ~ '^%s/') AND o.suite = su.id
 #        AND NOT EXISTS (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
     for i in q.getresult():
         (component, section) = fix_component_section(i[0], i[1]);
-        dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], Cnf.get("Suite::Stable::CodeName", "stable"), component, section, os.path.basename(i[3]));
+        if Cnf.FindB("Dinstall::LegacyStableHasNoSections"):
+            section="";
+        dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], codename, component, section, os.path.basename(i[3]));
         if not os.path.exists(dest):
 	    src = i[2]+i[3];
 	    src = clean_symlink(src, dest, Cnf["Dir::Root"]);
@@ -112,10 +116,7 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
         dislocated_files[i[4]] = dest;
 
     # Binary
-    architectures = Cnf.ValueList("Suite::Stable::Architectures");
-    for arch in [ "source", "all" ]:
-        if architectures.count(arch):
-            architectures.remove(arch);
+    architectures = filter(utils.real_arch, Cnf.ValueList("Suite::Stable::Architectures"));
     q = projectB.query("""
 SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
                           b.version, l.path, f.filename, f.id
@@ -123,26 +124,29 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
          location l, override o, section sec, suite su
     WHERE su.suite_name = 'stable' AND ba.suite = su.id AND ba.bin = b.id
       AND f.id = b.file AND f.location = l.id AND o.package = b.package
-      AND sec.id = o.section AND NOT (f.filename ~ '^potato/')
-      AND b.architecture = a.id AND l.component = c.id AND o.suite = su.id
-UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
-                          b.version, l.path, f.filename, f.id
-    FROM architecture a, bin_associations ba, binaries b, component c, files f,
-         location l, override o, section sec, suite su
-    WHERE su.suite_name = 'stable' AND ba.suite = su.id AND ba.bin = b.id
-      AND f.id = b.file AND f.location = l.id AND o.package = b.package
-      AND sec.id = o.section AND NOT (f.filename ~ '^potato/')
-      AND b.architecture = a.id AND o.suite = su.id AND NOT EXISTS
-        (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
-""");
+      AND sec.id = o.section AND NOT (f.filename ~ '^%s/')
+      AND b.architecture = a.id AND l.component = c.id AND o.suite = su.id""" %
+                       (codename));
+# Only needed if you have files in legacy-mixed locations
+#  UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
+#                            b.version, l.path, f.filename, f.id
+#      FROM architecture a, bin_associations ba, binaries b, component c, files f,
+#           location l, override o, section sec, suite su
+#      WHERE su.suite_name = 'stable' AND ba.suite = su.id AND ba.bin = b.id
+#        AND f.id = b.file AND f.location = l.id AND o.package = b.package
+#        AND sec.id = o.section AND NOT (f.filename ~ '^%s/')
+#        AND b.architecture = a.id AND o.suite = su.id AND NOT EXISTS
+#          (SELECT l.path FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
     for i in q.getresult():
         (component, section) = fix_component_section(i[0], i[2]);
+        if Cnf.FindB("Dinstall::LegacyStableHasNoSections"):
+            section="";
         architecture = i[1];
         package = i[3];
         version = utils.re_no_epoch.sub('', i[4]);
         src = i[5]+i[6];
 
-        dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], Cnf.get("Suite::Stable::CodeName", "stable"), component, architecture, section, package, version);
+        dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, architecture, section, package, version);
         src = clean_symlink(src, dest, Cnf["Dir::Root"]);
         if not os.path.exists(dest):
             if Cnf.Find("Claire::Options::Verbose"):
@@ -152,7 +156,7 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
         # Add per-arch symlinks for arch: all debs
         if architecture == "all":
             for arch in architectures:
-                dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], Cnf.get("Suite::Stable::CodeName", "stable"), component, arch, section, package, version);
+                dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, arch, section, package, version);
                 if not os.path.exists(dest):
                     if Cnf.Find("Claire::Options::Verbose"):
                         print src+' -> '+dest
