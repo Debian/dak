@@ -29,7 +29,7 @@ if [ ! -e "$ftpdir/Archive_Maintenance_In_Progress" ]; then
 	apt-ftparchive -qq generate apt.conf.buildd
 	cd /org/incoming.debian.org/buildd
 	for a in $ARCHS; do
-		quinn-diff -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -A $a 2>/dev/null | grep -v ^non-free | wanna-build -b $a/build-db --merge-partial-quinn 2> /dev/null
+		quinn-diff -i -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -A $a 2>/dev/null | grep -v ^non-free | wanna-build -b $a/build-db --merge-partial-quinn 2> /dev/null
 		wanna-build -A $a -b $a/build-db --merge-packages Packages 2>/dev/null
 	done
 	fi
