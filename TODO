@@ -1,4 +1,15 @@
-approved:
+				 TODO
+				 ====
+
+[NB: I use this as a thought record/scribble, not everything on here
+     makes sense and/or is actually ever going to get done, so IIWY I
+     wouldn't use it as gospel for the future of katie or as a TODO
+     list for random hacking.]
+
+================================================================================
+
+approved
+--------
 
  o What to do with multi-suite uploads?  Presumably hold in unapproved
    and warn?  Or what?  Can't accept just for unstable or reject just
@@ -12,15 +23,9 @@ approved:
 
  o security uploads on auric should be pre-approved.
 
-				 TODO
-				 ====
 
-[NB: I use this as a thought record/scribble, not everything on here
-     makes sense and/or is actually ever going to get done, so IIWY I
-     wouldn't use it as gospel for the future of katie or as a TODO
-     list for random hacking.]
-
-================================================================================
+Others
+------
 
 [minor] kelly's copychanges, copykatie handling sucks, the per-suite
         thing is static for all packages, so work out in advance dummy.
@@ -28,17 +33,11 @@ approved:
 [madison] # filenames ?
 [madison] # maintainer, component, install date (source only?), fingerprint?
 
-Actually Urgent
----------------
-
   o UrgencyLog stuff should minimize it's bombing out(?)
-  o Log stuff should open the log file g+w lamer
+  o Log stuff should open the log file
 
-More Urgent
------------
-
-  o [melanie] I was thinking, bomb out if a) no '[rene]' in the
-    -m/--message, and b) no other -d/--done or -C/--carbon-copy
+  o [melanie] bomb out if a) no '[rene]' in the -m/--message, and b)
+    no other -d/--done or -C/--carbon-copy
 
   o helena should footnote the actual notes, and also * the versions
     with notes so we can see new versions since being noted...
@@ -46,17 +45,22 @@ More Urgent
   o helena should have alternative sorting options, including reverse
     and without or without differentiaion.
 
-  o julia should sync debadmin and ftpmaster
+  o julia should sync debadmin and ftpmaster (?)
 
- <drow> Can't read file.: /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.katie.  You assume that the filenames are relative to accepted/, might want to doc or fix that.
+  o <drow> Can't read file.:
+  /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.katie.
+  You assume that the filenames are relative to accepted/, might want
+  to doc or fix that.
 
-<neuro> the orig was in NEW, the changes that caused it to be NEW were pulled out in -2, and we end up with no orig in the archive :(
-
+  o <neuro> the orig was in NEW, the changes that caused it to be NEW
+    were pulled out in -2, and we end up with no orig in the archive
+    :(
+  
   o SecurityAcceptedAutoBuild doesn't handle the case of foo_3.3woody1
-  with a new .orig.tar.gz followed by a foo_3.3potato1 with the same
-  .orig.tar.gz; jennifer sees it and copes, but the AA code doesn't
-  and can't really easily know so the potato AA dir is left with no
-  .orig.tar.gz copy.  doh.
+    with a new .orig.tar.gz followed by a foo_3.3potato1 with the same
+    .orig.tar.gz; jennifer sees it and copes, but the AA code doesn't
+    and can't really easily know so the potato AA dir is left with no
+    .orig.tar.gz copy.  doh.
 
   o orig.tar.gz in accepted not handled properly (?)
 
@@ -96,9 +100,7 @@ More Urgent
     o distinguish binary only versus others (neuro)
 
   o cache changes parsed from ordering (careful tho: would be caching
-    .changes from world writable incoming, not holding); katie should
-    certainly be using .katie files, not parsing changes, that's just
-    silly.
+    .changes from world writable incoming, not holding)
 
   o katie doesn't recognise binonlyNMUs correctly in terms of telling
     who their source is; source-must-exist does, but the info is not
@@ -117,7 +119,7 @@ More Urgent
       table.  Then fix charisma to use them and write some scripting
       to handle the Santiago situation. ]
 
-  o (Depends) <aj> elmo: it should match  \(\s*(<<|<|<=|=|>=|>|>>)\s*<VERSIONREGEXP>\) fwiw
+  o Validate Depends (et al.) [it should match  \(\s*(<<|<|<=|=|>=|>|>>)\s*<VERSIONREGEXP>\)]
 
   o Clean up DONE; archive to tar file every 2 weeks, update tar tvzf INDEX file.
 
@@ -139,12 +141,12 @@ Less Urgent
   o change utils.copy to try rename() first
 
   o [hard, long term] unchecked -> accepted should go into the db, not
-  a suite, but similar.  this would allow katie to get even faster,
-  make madison more useful, decomplexify specialacceptedautobuild and
-  generally be more sane.  may even be helpful to have e.g. new in the
-  DB, so that we avoid corner cases like the .orig.tar.gz disappearing
-  'cos the package has been entirely removed but was still on
-  stayofexecution when it entered new.
+    a suite, but similar.  this would allow katie to get even faster,
+    make madison more useful, decomplexify specialacceptedautobuild
+    and generally be more sane.  may even be helpful to have e.g. new
+    in the DB, so that we avoid corner cases like the .orig.tar.gz
+    disappearing 'cos the package has been entirely removed but was
+    still on stayofexecution when it entered new.
 
   o Logging [mostly done] (todo: rhona (hard), .. ?)
 

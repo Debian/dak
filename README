@@ -6,19 +6,17 @@ This is unreleased alpha software; use it ENTIRELY at your own risk.
 
 This is the README file for dak version -1.
 
-dak is the collection of programs used to maintain the Debian GNU
-project archive.
+dak is the collection of programs used to maintain the Debian
+project's archives.  It's not yet in a state where it can be easily
+used by others; if you want something to maintain a small archive and
+apt-ftparchive (from apt-utils) is insufficent, I recommend you
+investigate mini-dinstall or debarchiver.
 
-See TODO for an incomplete list of things needing to be done.
+There are some manpages and READMEs in the doc sub-directory.  The
+TODO file is an incomplete list of things needing to be done.
 
-See the file NEWS for user-visible changes since the last version.
-
-See the file INSTALL for installation instructions.
-
-dak is used on the following platforms :-
-
-Linux/i386 2.2
-Linux/Sparc 2.4
+dak is developed and used on Linux but will probably work under any
+UNIX since it's almost entirely python and shell scripts.
 
 dak is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
@@ -28,7 +26,8 @@ version.
 
 -- 
 James Troup <james@nocrew.org>, Horsforth, Leeds
-Wed, 26 Sep 2001 06:34:50 +0100
+Fri, 29 Nov 2002 15:47:49 +0000
+
 
 
 
