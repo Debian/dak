@@ -23,6 +23,9 @@ bindirectory "incoming"
    SrcOverride "override.sid.all3.src";
    BinCacheDB "packages-accepted.db";
    
+   FileList "/org/ftp.debian.org/database/dists/unstable_accepted_binary.list";
+   SourceFileList "/org/ftp.debian.org/database/dists/unstable_accepted_source.list";
+
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
 };
