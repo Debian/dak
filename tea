@@ -2,7 +2,7 @@
 
 # Various different sanity checks
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: tea,v 1.27 2004-04-01 17:13:11 troup Exp $
+# $Id: tea,v 1.28 2004-06-17 14:57:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,10 +98,12 @@ def check_files():
         if os.access(filename, os.R_OK) == 0:
             utils.warn("'%s' doesn't exist." % (filename));
 
-    file = utils.open_file(Cnf["Dir::Override"]+'override.unreferenced');
-    for filename in file.readlines():
-        filename = filename[:-1];
-        excluded[filename] = "";
+    filename = Cnf["Dir::Override"]+'override.unreferenced';
+    if os.path.exists(filename):
+        file = utils.open_file(filename);
+        for filename in file.readlines():
+            filename = filename[:-1];
+            excluded[filename] = "";
 
     print "Checking against existent files...";
 
@@ -313,6 +315,7 @@ def validate_sources(suite, component):
                         src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"]);
                         print "Symlinking: %s -> %s" % (filename, src);
                         #os.symlink(src, filename);
+    sources.close();
     os.unlink(temp_filename);
 
 ########################################
