@@ -7,6 +7,7 @@ charisma - generates Maintainers files used by e.g. the Debian BTS
 cindy - override cruft checker
 claire - generates compatability symlink tree for legacy dists/ locations
 denise - outputs the override tables to text files
+emilie - syncs fingerprint and uid tables with a Debian LDAP DB
 fernanda - checker script for new packages in incoming 
 halle - removes obsolete .changes files from proposed-updates
 heidi - manipulates suite tags; i.e. removes/adds packages from any given suite
@@ -32,12 +33,12 @@ ziyi - creates Release files
 
 With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
  Judd, Catherine Zeta Jones, Charisma Carpenter, Cindy Crawford,
- Claire Forlani, Denise Richards, Fernanda Tavares, Halle Berry, Heidi
- Klum, Helena Christensen, Jenna Elfman, Jennifer Lopez, Jeri Ryan,
- Julia Roberts, Katie Holmes, Kelly Brook, Lisa Falkner, Madison
- Michele, Melanie Sykes, Natalie Portman, Neve Campbell, Rene
- O'Connor, Rose McGowan, Rhona Mitra, Saffron Burrows, Shania Twain,
- Tea Leoni and Ziyi Zhang.
+ Claire Forlani, Denise Richards, Emilie de Ravin, Fernanda Tavares,
+ Halle Berry, Heidi Klum, Helena Christensen, Jenna Elfman, Jennifer
+ Lopez, Jeri Ryan, Julia Roberts, Katie Holmes, Kelly Brook, Lisa
+ Falkner, Madison Michele, Melanie Sykes, Natalie Portman, Neve
+ Campbell, Rene O'Connor, Rose McGowan, Rhona Mitra, Saffron Burrows,
+ Shania Twain, Tea Leoni and Ziyi Zhang.
 
 In Use Elsewhere:
 -----------------
@@ -83,7 +84,7 @@ Gillian (Anderson)
 Gina (Gershon)
 Gwyneth (Paltrow)
 Heather (Graham)
-Holly (Valance)
+Holly (Marie Combs)
 Janel (Moloney)
 Jessica (Alba)
 Jewel (Kilcher)
