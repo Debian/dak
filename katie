@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.75 2002-03-08 03:59:50 rmurray Exp $
+# $Id: katie,v 1.76 2002-03-31 16:14:48 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.75 $";
+katie_version = "$Revision: 1.76 $";
 
 Cnf = None;
 Options = None;
@@ -347,7 +347,7 @@ def install ():
         old_filename = ql[0] + ql[1];
         file_size = ql[2];
         file_md5sum = ql[3];
-        new_filename = utils.poolify (changes["source"], dsc_component) + os.path.basename(old_filename);
+        new_filename = utils.poolify(changes["source"], dsc_component) + os.path.basename(old_filename);
         new_files_id = db_access.get_files_id(new_filename, file_size, file_md5sum, dsc_location_id);
         if new_files_id == None:
             utils.copy(old_filename, Cnf["Dir::PoolDir"] + new_filename);
@@ -356,15 +356,18 @@ def install ():
 
     # Install the files into the pool
     for file in files.keys():
-        destination = Cnf["Dir::PoolDir"] + files[file]["pool name"] + file
-        utils.move (file, destination)
+        destination = Cnf["Dir::PoolDir"] + files[file]["pool name"] + file;
+        utils.move(file, destination);
         Logger.log(["installed", file, files[file]["type"], files[file]["size"], files[file]["architecture"]]);
-        install_bytes = install_bytes + float(files[file]["size"])
+        install_bytes = install_bytes + float(files[file]["size"]);
 
     # Copy the .changes file across for suite which need it.
     for suite in changes["distribution"].keys():
         if Cnf.has_key("Suite::%s::CopyChanges" % (suite)):
-            utils.copy (pkg.changes_file, Cnf["Dir::RootDir"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
+            utils.copy(pkg.changes_file, Cnf["Dir::RootDir"] + Cnf["Suite::%s::CopyChanges" % (suite)]);
+        # and the .katie file...
+        if Cnf.has_key("Suite::%s::CopyKatie" % (suite)):
+            utils.copy(Katie.pkg.changes_file[:-8]+".katie", Cnf["Suite::%s::CopyKatie" % (suite)]);
 
     projectB.query("COMMIT WORK");
 
