@@ -2,7 +2,7 @@
 
 # Generate file lists used by apt-ftparchive to generate Packages and Sources files
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.28 2004-06-17 15:02:02 troup Exp $
+# $Id: jenna,v 1.29 2004-11-27 17:58:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -160,12 +160,9 @@ def cleanup(packages):
         pkg = packages[unique_id]["pkg"];
         arch = packages[unique_id]["arch"];
         version = packages[unique_id]["version"];
-        if not d.has_key(suite):
-            d[suite] = {};
-        if not d[suite].has_key(pkg):
-            d[suite][pkg] = {};
-        if not d[suite][pkg].has_key(arch):
-            d[suite][pkg][arch] = [];
+        d.setdefault(suite, {});
+        d[suite].setdefault(pkg, {});
+        d[suite][pkg].setdefault(arch, []);
         d[suite][pkg][arch].append([version, unique_id]);
     # Clean up old versions
     for suite in d.keys():
@@ -266,34 +263,26 @@ def write_filelists(packages, dislocated_files):
         component = packages[unique_id]["component"];
         arch = packages[unique_id]["arch"];
         type = packages[unique_id]["type"];
-        if not d.has_key(suite):
-            d[suite] = {};
-        if not d[suite].has_key(component):
-            d[suite][component] = {};
-        if not d[suite][component].has_key(arch):
-            d[suite][component][arch] = {};
-        if not d[suite][component].has_key(arch):
-            d[suite][component][arch] = {};
-        if not d[suite][component][arch].has_key(type):
-            d[suite][component][arch][type] = [];
+        d.setdefault(suite, {});
+        d[suite].setdefault(component, {});
+        d[suite][component].setdefault(arch, {});
+        d[suite][component][arch].setdefault(type, []);
         d[suite][component][arch][type].append(unique_id);
     # Flesh out the index
     if not Options["Suite"]:
         suites = Cnf.SubTree("Suite").List();
     else:
-        suites = Options["Suite"].split();
+        suites = utils.split_args(Options["Suite"]);
     for suite in map(string.lower, suites):
-        if not d.has_key(suite):
-            d[suite] = {};
+        d.setdefault(suite, {});
         if not Options["Component"]:
             components = Cnf.ValueList("Suite::%s::Components" % (suite));
         else:
-            components = Options["Component"].split();
+            components = utils.split_args(Options["Component"]);
         udeb_components = Cnf.ValueList("Suite::%s::UdebComponents" % (suite));
         udeb_components = udeb_components;
         for component in components:
-            if not d[suite].has_key(component):
-                d[suite][component] = {};
+            d[suite].setdefault(component, {});
             if component in udeb_components:
                 binary_types = [ "deb", "udeb" ];
             else:
@@ -301,17 +290,15 @@ def write_filelists(packages, dislocated_files):
             if not Options["Architecture"]:
                 architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite));
             else:
-                architectures = Options["Architectures"].split();
+                architectures = utils.split_args(Options["Architectures"]);
             for arch in map(string.lower, architectures):
-                if not d[suite][component].has_key(arch):
-                    d[suite][component][arch] = {};
+                d[suite][component].setdefault(arch, {});
                 if arch == "source":
                     types = [ "dsc" ];
                 else:
                     types = binary_types;
                 for type in types:
-                    if not d[suite][component][arch].has_key(type):
-                        d[suite][component][arch][type] = [];
+                    d[suite][component][arch].setdefault(type, []);
     # Then walk it
     for suite in d.keys():
         if Cnf.has_key("Suite::%s::Components" % (suite)):
@@ -322,9 +309,13 @@ def write_filelists(packages, dislocated_files):
                     for type in d[suite][component][arch].keys():
                         list = d[suite][component][arch][type];
                         # If it's a binary, we need to add in the arch: all debs too
-                        if arch != "source" and d[suite][component].has_key("all") \
-                           and d[suite][component]["all"].has_key(type):
-                            list.extend(d[suite][component]["all"][type]);
+                        if arch != "source":
+                            archall_suite = Cnf.get("Jenna::ArchAllMap::%s" % (suite));
+                            if archall_suite:
+                                list.extend(d[archall_suite][component]["all"][type]);
+                            elif d[suite][component].has_key("all") and \
+                                     d[suite][component]["all"].has_key(type):
+                                list.extend(d[suite][component]["all"][type]);
                         write_filelist(suite, component, arch, type, list,
                                        packages, dislocated_files);
         else: # legacy-mixed suite
@@ -349,7 +340,7 @@ def stable_dislocation_p():
     if not Options["Suite"]:
         return 1;
     # Otherwise, look in what suites the user specified
-    suites = Options["Suite"].split();
+    suites = utils.split_args(Options["Suite"]);
 
     if "stable" in suites:
         return 1;
@@ -359,6 +350,17 @@ def stable_dislocation_p():
 ################################################################################
 
 def do_da_do_da():
+    # If we're only doing a subset of suites, ensure we do enough to
+    # be able to do arch: all mapping.
+    if Options["Suite"]:
+        suites = utils.split_args(Options["Suite"]);
+        for suite in suites:
+            archall_suite = Cnf.get("Jenna::ArchAllMap::%s" % (suite));
+            if archall_suite and archall_suite not in suites:
+                utils.warn("Adding %s as %s maps Arch: all from it." % (archall_suite, suite));
+                suites.append(archall_suite);
+        Options["Suite"] = ",".join(suites);
+    
     (con_suites, con_architectures, con_components, check_source) = \
                  utils.parse_args(Options);
 
