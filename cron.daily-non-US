@@ -69,6 +69,7 @@ ziyi
 
 # Clean out old packages
 rhona
+shania
 
 # Generate the Maintainers file
 cd $indices
