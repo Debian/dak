@@ -2,7 +2,6 @@ alyson - sync's the ISC-style configuration file with the SQL DB
 andrea - looks for fixable descrepancies between stable and unstable
 catherine - poolifies packages; i.e. moves them from legacy dists/ locations into the pool
 charisma - generates Maintainers files used by e.g. the Debian BTS
-christina - ???
 claire - generates compatability symlink tree for legacy dists/ locations
 fernanda - checker script for new packages in incoming 
 heidi - manipulates suite tags; i.e. removes/adds packages from any given suite
