@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.8 2002-02-22 22:49:14 troup Exp $
+# $Id: katie.py,v 1.9 2002-02-25 15:12:01 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -615,12 +615,12 @@ class Katie:
         dsc_files = self.pkg.dsc_files;
         legacy_source_untouchable = self.pkg.legacy_source_untouchable;
         orig_tar_gz = None;
-        found = None;
 
         # Try and find all files mentioned in the .dsc.  This has
         # to work harder to cope with the multiple possible
         # locations of an .orig.tar.gz.
         for dsc_file in dsc_files.keys():
+            found = None;
             if files.has_key(dsc_file):
                 actual_md5 = files[dsc_file]["md5sum"];
                 actual_size = int(files[dsc_file]["size"]);
