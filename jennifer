@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.52 2004-11-27 13:32:16 troup Exp $
+# $Id: jennifer,v 1.53 2004-11-27 17:59:47 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.52 $";
+jennifer_version = "$Revision: 1.53 $";
 
 Cnf = None;
 Options = None;
@@ -179,11 +179,6 @@ def clean_holding():
 
 def check_changes():
     filename = pkg.changes_file;
-
-    # Defaults in case we bail out
-    changes["maintainer2047"] = Cnf["Dinstall::MyEmailAddress"];
-    changes["changedby2047"] = Cnf["Dinstall::MyEmailAddress"];
-    changes["architecture"] = {};
 
     # Parse the .changes field into a dictionary
     try:
@@ -659,7 +654,7 @@ def check_dsc():
         utils.fix_maintainer (dsc["maintainer"]);
     except utils.ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
-               % (dsc_filename, changes["changed-by"], msg));
+               % (dsc_filename, dsc["maintainer"], msg));
 
     # Validate the build-depends field(s)
     for field_name in [ "build-depends", "build-depends-indep" ]:
@@ -1110,6 +1105,9 @@ def process_it (changes_file):
     # Reset some globals
     reprocess = 1;
     Katie.init_vars();
+    # Some defaults in case we can't fully process the .changes file
+    changes["maintainer2047"] = Cnf["Dinstall::MyEmailAddress"];
+    changes["changedby2047"] = Cnf["Dinstall::MyEmailAddress"];
     reject_message = "";
 
     # Absolutize the filename to avoid the requirement of being in the
@@ -1130,7 +1128,10 @@ def process_it (changes_file):
             # rather than the original...
             pkg.changes_file = os.path.basename(pkg.changes_file);
         changes["fingerprint"] = utils.check_signature(pkg.changes_file, reject);
-        valid_changes_p = check_changes();
+        if changes["fingerprint"]:
+            valid_changes_p = check_changes();
+        else:
+            valid_changes_p = 0;
         if valid_changes_p:
             while reprocess:
                 check_distributions();
