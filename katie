@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie,v 1.82 2002-05-14 22:28:45 troup Exp $
+# $Id: katie,v 1.83 2002-05-19 19:55:29 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.82 $";
+katie_version = "$Revision: 1.83 $";
 
 Cnf = None;
 Options = None;
@@ -402,7 +402,8 @@ def install ():
             # Update the symlink to point to the new location in the pool
             pool_location = utils.poolify (changes["source"], files[file]["component"]);
             src = os.path.join(Cnf["Dir::Pool"], pool_location, os.path.basename(file));
-            os.unlink(dest);
+            if os.path.islink(dest):
+                os.unlink(dest);
             os.symlink(src, dest);
         # Update last_used on any non-upload .orig.tar.gz symlink
         if orig_tar_id:
