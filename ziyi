@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.20 2002-05-15 05:43:34 ajt Exp $
+# $Id: ziyi,v 1.21 2002-05-18 23:54:59 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@ import apt_pkg
 
 Cnf = None
 projectB = None
+out = None
+AptCnf = None
 
 ################################################################################
 
