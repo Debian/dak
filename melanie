@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.33 2002-11-19 03:14:59 troup Exp $
+# $Id: melanie,v 1.34 2003-01-02 18:14:52 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,12 +64,12 @@ Remove PACKAGE(s) from suite(s).
   -c, --component=COMPONENT  act on this component
   -C, --carbon-copy=EMAIL    send a CC of removal message to EMAIL
   -d, --done=BUG#            send removal message as closure to bug#
+  -h, --help                 show this help and exit
   -m, --reason=MSG           reason for removal
   -n, --no-action            don't do anything
   -p, --partial              don't affect override files
   -s, --suite=SUITE          act on this suite
   -S, --source-only          remove source only
-  -h, --help                 show this help and exit
 
 ARCH, BUG#, COMPONENT and SUITE can be space seperated lists, e.g.
     --architecture=\"m68k i386\""""
@@ -291,6 +291,7 @@ def main ():
         versions = d[package].keys();
         versions.sort();
         for version in versions:
+            d[package][version].sort(utils.arch_compare_sw);
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]));
     print "Will remove the following packages from %s:" % (suites_list);
     print
@@ -368,7 +369,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.33 $";
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.34 $";
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
         Subst["__SUITE_LIST__"] = suites_list;
