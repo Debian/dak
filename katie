@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie,v 1.81 2002-05-14 15:35:22 troup Exp $
+# $Id: katie,v 1.82 2002-05-14 22:28:45 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-katie_version = "$Revision: 1.81 $";
+katie_version = "$Revision: 1.82 $";
 
 Cnf = None;
 Options = None;
@@ -391,7 +391,7 @@ def install ():
 
     # Undo the work done in katie.py(accept) to help auto-building
     # from accepted.
-    if Cnf.get("Dinstall::SpecialAcceptedAutoBuild") and \
+    if Cnf.FindB("Dinstall::SpecialAcceptedAutoBuild") and \
        changes["distribution"].has_key("unstable"):
         now_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()));
         projectB.query("BEGIN WORK");
