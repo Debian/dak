@@ -21,7 +21,12 @@ Dinstall
    CloseBugs "false";
    OverrideDisparityCheck "false";
    BXANotify "false";
-   SpecialAcceptedAutoBuild "true";
+   AcceptedAutoBuildSuites
+   {
+     potato;
+     woody;
+   };
+   SecurityAcceptedAutoBuild "true";     
    DefaultSuite "Woody";
    OverrideMaintainer "katie@security.debian.org";
 };
@@ -184,6 +189,7 @@ Dir
     New "/org/security.debian.org/queue/new/";
     Reject "/org/security.debian.org/queue/reject/";
     Unchecked "/org/security.debian.org/queue/unchecked/";
+    AcceptedAutoBuild "/org/security.debian.org/buildd/";
   };
 };
 

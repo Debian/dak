@@ -128,7 +128,6 @@ Less Urgent
 
   o auto-purge out-of-date stuff from non-free/contrib so that testing and stuff works
   o doogie's binary -> source index
-  o Add urgency + installed date to the DB for aj/testing (? still needed ?)
   o jt's web stuff, matt's changelog stuff (overlap)
 
   o [Hard] Need to merge non-non-US and non-US DBs.
@@ -169,7 +168,7 @@ Less Urgent
     o Revisit linking of binary->source in install() in katie.
     o Fix component handling in overrides (aj)
     o Fix lack of entires in source overrides (aj)
-    o direport misreports things as section 'devel'
+    o direport misreports things as section 'devel' (? we don't use direport)
     o vrfy check of every Maintainer+Changed-By address; valid for 3 months.
     o binary-all should be done on a per-source, per-architecture package
       basis to avoid, e.g. the perl-modules problem.
@@ -183,7 +182,7 @@ Less Urgent
     o katie/jenna/rhona/whatever needs to clear out .changes
       files from p-u when removing stuff superseded by newer versions.
       [but for now we have halle]
-    o test sig checking stuff in test/ (stupid thing is not modularized)
+    o test sig checking stuff in test/ (stupid thing is not modularized due to global abuse)
     o when encountering suspicous things (e.g. file tainting) do something more drastic
 
  * Easy:
@@ -196,7 +195,7 @@ Less Urgent
     o melanie should behave better with -a and without -b; see
       gcc-defaults removal for an example.
     o Reject on misconfigured kernel-package uploads
-    o denise abuses sys.stdout == badly  
+    o denise evily abuses sys.stdout by reassigning it
     o utils.extract_component_from_section: main/utils -> main/utils, main rather than utils, main
     o Fix jennier to warn if run when not in incoming or p-u
     o katie should validate multi-suite uploads; only possible valid one
