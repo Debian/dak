@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.42 2002-05-08 11:13:44 troup Exp $
+# $Id: utils.py,v 1.43 2002-05-10 00:24:14 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -379,7 +379,7 @@ def regex_safe (s):
 ######################################################################################
 
 # Perform a substition of template
-def TemplateSubst(map,filename):
+def TemplateSubst(map, filename):
     file = open_file(filename);
     template = file.read();
     for x in map.keys():
@@ -425,8 +425,7 @@ def cc_fix_changes (changes):
     for j in string.split(o):
         changes["architecture"][j] = 1
 
-# Sort by 'have source', by source name, by source version number, by filename
-
+# Sort by source name, source version, 'have source', and then by filename
 def changes_compare (a, b):
     try:
         a_changes = parse_changes(a, 0)
@@ -441,17 +440,7 @@ def changes_compare (a, b):
     cc_fix_changes (a_changes);
     cc_fix_changes (b_changes);
 
-    # Sort by 'have source'
-
-    a_has_source = a_changes["architecture"].get("source")
-    b_has_source = b_changes["architecture"].get("source")
-    if a_has_source and not b_has_source:
-        return -1;
-    elif b_has_source and not a_has_source:
-        return 1;
-
     # Sort by source name
-
     a_source = a_changes.get("source");
     b_source = b_changes.get("source");
     q = cmp (a_source, b_source);
@@ -459,15 +448,21 @@ def changes_compare (a, b):
         return q;
 
     # Sort by source version
-
     a_version = a_changes.get("version");
     b_version = b_changes.get("version");
     q = apt_pkg.VersionCompare(a_version, b_version);
     if q:
         return q
 
-    # Fall back to sort by filename
+    # Sort by 'have source'
+    a_has_source = a_changes["architecture"].get("source")
+    b_has_source = b_changes["architecture"].get("source")
+    if a_has_source and not b_has_source:
+        return -1;
+    elif b_has_source and not a_has_source:
+        return 1;
 
+    # Fall back to sort by filename
     return cmp(a, b);
 
 ################################################################################
@@ -505,6 +500,32 @@ def prefix_multi_line_string(str, prefix):
     if out:
         out = out[:-1];
     return out;
+
+################################################################################
+
+def validate_changes_file_arg(file, fatal=1):
+    error = None;
+
+    if file[-6:] == ".katie":
+        file = file[:-6]+".changes";
+
+    if file[-8:] != ".changes":
+        error = "invalid file type; not a changes file";
+    else:
+        if not os.access(file,os.R_OK):
+            if os.path.exists(file):
+                error = "permission denied";
+            else:
+                error = "file not found";
+
+    if error:
+        if fatal:
+            fubar("%s: %s." % (file, error));
+        else:
+            warn("Skipping %s - %s" % (file, error));
+            return None;
+    else:
+        return file;
 
 ################################################################################
 
