@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.25 2002-07-12 14:59:08 troup Exp $
+# $Id: katie.py,v 1.26 2002-08-26 18:07:24 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -654,9 +654,10 @@ distribution.""";
         result = q.getresult();
         # If checking for a source package fall back on the binary override type
         if type == "dsc" and not result:
-            type_id = db_access.get_override_type_id("deb");
-            q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND type = %s AND o.section = s.id AND o.priority = p.id"
-                               % (package, suite_id, component_id, type_id));
+            deb_type_id = db_access.get_override_type_id("deb");
+            udeb_type_id = db_access.get_override_type_id("udeb");
+            q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND (type = %s OR type = %s) AND o.section = s.id AND o.priority = p.id"
+                               % (package, suite_id, component_id, deb_type_id, udeb_type_id));
             result = q.getresult();
 
         # Remember the section and priority so we can check them later if appropriate
