@@ -6,6 +6,16 @@
 Actually Urgent
 ---------------
 
+  o lisa doesn't do the right thing with -2 and -1 uploads, as you can
+    end up with the .orig.tar.gz not in the pool
+
+  o lisa exits if you check twice (aj)
+
+  o lisa doesn't trap signals from fernanda properly
+
+More Urgent
+-----------
+
   o cross-suite version checking
 
      Priority based; stable == 1, proposed-update == 2, etc.
@@ -18,16 +28,6 @@ Actually Urgent
       version will fail thanks to the file overwrite errors (at least
       ignoring potato) and multi-suite uploads (e.g. "stable
       unstable") need to work.
-
-  o lisa doesn't do the right thing with -2 and -1 uploads, as you can
-    end up with the .orig.tar.gz not in the pool
-
-  o lisa doesn't handle :q! from rejections well at all
-
-  o lisa exits if you check twice (aj)
-
-More Urgent
------------
 
   o jenna sucks
 
@@ -48,7 +48,7 @@ More Urgent
   o change utils.copy to try rename() first
 
   o cache changes parsed from ordering (careful tho: would be caching
-  .changes from world writable incoming, not holding)
+    .changes from world writable incoming, not holding)
 
   o katie doesn't recognise binonlyNMUs correctly in terms of telling
     who their source is; source-must-exist does, but the info is not
@@ -56,9 +56,7 @@ More Urgent
 
   o DONE
 
-  o stable installs are FUBAR
   o clean fingerprint
-  o fix up cron.weekly and/or shania
 
   o Fix BTS vs. katie sync issues by queueing(via BSMTP) BTS mail so
     that it can be released on deman (e.g. ETRN to exim).
@@ -97,6 +95,12 @@ More Urgent
 
 Less Urgent
 -----------
+
+  o jennifer is leaking file descriptors..
+
+  o the tar extractor class doesn't need to be redone for each package
+
+  o interrupting of stracing jennifer causes exceptions errors from apt_inst calls 
 
   o reverse of source-must-exist; i.e. binary-for-source-must-not-exist
   o REJECT reminders in shania.
