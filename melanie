@@ -2,7 +2,7 @@
 
 # General purpose package removal tool for ftpmaster
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.18 2001-11-04 22:35:11 troup Exp $
+# $Id: melanie,v 1.19 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,10 +75,7 @@ def game_over():
 def main ():
     global Cnf, projectB;
 
-    apt_pkg.init();
-
-    Cnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Melanie::Options::Help"),
                  ('a',"architecture","Melanie::Options::Architecture", "HasArg"),
@@ -94,8 +91,10 @@ def main ():
                  ];
 
     for i in ["help", "architecture", "binary", "component", "carbon-copy", "done", "reason", "no-action", "partial", "source-only" ]:
-        Cnf["Melanie::Options::%s" % (i)] = "";
-    Cnf["Melanie::Options::Suite"] = "unstable";
+	if not Cnf.has_key("Melanie::Options::%s" % (i)):
+	    Cnf["Melanie::Options::%s" % (i)] = "";
+    if not Cnf.has_key("Melanie::Options::Suite"):
+	Cnf["Melanie::Options::Suite"] = "unstable";
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Melanie::Options")
@@ -376,7 +375,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + string.join(bcc, ", ");
         else:
             Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Melanie: $Revision: 1.18 $";
+        Subst["__CC__"] = "X-Melanie: $Revision: 1.19 $";
         if carbon_copy:
             Subst["__CC__"] = Subst["__CC__"] + "\nCc: " + string.join(carbon_copy, ", ");
         Subst["__SUITE_LIST__"] = suites_list;

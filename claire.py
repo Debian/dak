@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.10 2001-11-04 20:41:37 troup Exp $
+# $Id: claire.py,v 1.11 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -166,15 +166,14 @@ UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
 def main ():
     global Cnf, projectB;
 
-    apt_pkg.init();
-
-    Cnf = apt_pkg.newConfiguration();
+    Cnf = utils.get_conf()
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
     Arguments = [('h',"help","Claire::Options::Help"),
                  ('v',"verbose","Claire::Options::Verbose")];
     for i in ["help", "verbose" ]:
-        Cnf["Claire::Options::%s" % (i)] = "";
+	if not Cnf.has_key("Claire::Options::%s" % (i)):
+	    Cnf["Claire::Options::%s" % (i)] = "";
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Claire::Options")

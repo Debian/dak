@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: natalie.py,v 1.12 2001-11-04 22:28:44 troup Exp $
+# $Id: natalie.py,v 1.13 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -205,10 +205,7 @@ def list(suite, component, type):
 def main ():
     global Cnf, projectB, Logger;
 
-    apt_pkg.init();
-
-    Cnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Natalie::Options::Help"),
                  ('c',"component", "Natalie::Options::Component", "HasArg"),
                  ('l',"list", "Natalie::Options::List"),
@@ -218,10 +215,14 @@ def main ():
 
     # Default arguments
     for i in ["help", "list", "set" ]:
-        Cnf["Natalie::Options::%s" % (i)] = "";
-    Cnf["Natalie::Options::Component"] = "main";
-    Cnf["Natalie::Options::Suite"] = "unstable";
-    Cnf["Natalie::Options::Type"] = "deb";
+	if not Cnf.has_key("Natalie::Options::%s" (i)):
+	    Cnf["Natalie::Options::%s" % (i)] = "";
+    if not Cnf.has_key("Natalie::Options::Component"):
+	Cnf["Natalie::Options::Component"] = "main";
+    if not Cnf.has_key("Natalie::Options::Suite"):
+	Cnf["Natalie::Options::Suite"] = "unstable";
+    if not Cnf.has_key("Natalie::Options::Type"):
+	Cnf["Natalie::Options::Type"] = "deb";
 
     file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
 

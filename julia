@@ -2,7 +2,7 @@
 
 # Sync PostgreSQL with (LDAP-generated) passwd file
 # Copyright (C) 2001  James Troup <james@nocrew.org>
-# $Id: julia,v 1.3 2001-11-04 22:28:44 troup Exp $
+# $Id: julia,v 1.4 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,16 +54,14 @@ Sync PostgreSQL's pg_user with PASSWD_FILE.
 def main ():
     global Cnf, projectB;
 
-    apt_pkg.init();
-
-    Cnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+    Cnf = utils.get_conf()
 
     Arguments = [('q',"quiet","Julia::Options::Quiet"),
                  ('v',"verbose","Julia::Options::Verbose"),
                  ('h',"help","Julia::Options::Help")];
     for i in ["quiet", "verbose", "help" ]:
-        Cnf["Julia::Options::%s" % (i)] = "";
+	if not Cnf.has_key("Julia::Options::%s" % (i)):
+	    Cnf["Julia::Options::%s" % (i)] = "";
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Julia::Options")

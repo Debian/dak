@@ -2,7 +2,7 @@
 
 # Check for fixable discrepancies between stable and unstable
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: andrea,v 1.4 2001-09-27 01:23:41 troup Exp $
+# $Id: andrea,v 1.5 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,10 +35,7 @@ projectB = None;
 def main ():
     global Cnf, projectB;
 
-    apt_pkg.init();
-
-    Cnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+    Cnf = utils.get_conf()
 
     apt_pkg.ParseCommandLine(Cnf,[],sys.argv);
 

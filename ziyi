@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.9 2001-11-04 22:33:22 troup Exp $
+# $Id: ziyi,v 1.10 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -90,18 +90,15 @@ def main ():
     global Cnf, AptCnf, projectB, out
     out = sys.stdout;
 
-
-    apt_pkg.init()
-
-    Cnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file())
+    Cnf = utils.get_conf()
 
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
 
     Arguments = [('h',"help","Ziyi::Options::Help")];
     for i in [ "help" ]:
-        Cnf["Ziyi::Options::%s" % (i)] = "";
+	if not Cnf.has_key("Ziyi::Options::%s" % (i)):
+	    Cnf["Ziyi::Options::%s" % (i)] = "";
 
     suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Ziyi::Options")

@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: shania,v 1.8 2001-11-16 21:35:56 rmurray Exp $
+# $Id: shania,v 1.9 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -131,7 +131,7 @@ def flush_orphans ():
             changes = utils.parse_changes(changes_filename, 0)
             files = utils.build_file_list(changes, "");
         except:
-            utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type));
+            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type));
             continue;
 
         dsc_files = {};
@@ -173,13 +173,13 @@ def flush_orphans ():
 def main ():
     global Cnf, Options;
 
-    apt_pkg.init();
-
-    Cnf = apt_pkg.newConfiguration();
+    Cnf = utils.get_conf()
 
     for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
-        Cnf["Shania::Options::%s" % (i)] = "";
-    Cnf["Shania::Options::Days"] = "14";
+	if not Cnf.has_key("Shania::Options::%s" % (i)):
+	    Cnf["Shania::Options::%s" % (i)] = "";
+    if not Cnf.has_key("Shania::Options::Days"):
+	Cnf["Shania::Options::Days"] = "14";
 
     apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 

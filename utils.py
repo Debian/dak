@@ -1,6 +1,6 @@
 # Utility functions
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: utils.py,v 1.35 2001-11-04 22:33:22 troup Exp $
+# $Id: utils.py,v 1.36 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,19 +45,8 @@ send_mail_invalid_args_exc = "Both arguments are non-null.";
 sendmail_failed_exc = "Sendmail invocation failed";
 tried_too_hard_exc = "Tried too hard to find a free filename.";
 
-# Valid components; used by extract_component_from_section() because
-# it doesn't know about Conf from it's caller.  FIXME
-
-valid_components = {
-    "main": "",
-    "contrib": "",
-    "non-free": ""
-    };
-
 default_config = "/etc/katie/katie.conf";
 default_apt_config = "/etc/katie/apt.conf";
-DefaultCnf = apt_pkg.newConfiguration();
-apt_pkg.ReadConfigFileISC(DefaultCnf,default_config);
 
 ######################################################################################
 
@@ -94,9 +83,6 @@ def str_isnum (s):
 
 ######################################################################################
 
-# Prefix and components hardcoded into this like a good'un; need to unhardcod at some
-# stage. [FIXME]
-
 def extract_component_from_section(section):
     component = "";
 
@@ -104,7 +90,7 @@ def extract_component_from_section(section):
         component = string.split(section, '/')[0];
     if string.lower(component) == "non-us" and string.count(section, '/') > 0:
         s = string.split(section, '/')[1];
-        if valid_components.has_key(s): # Avoid e.g. non-US/libs
+        if Cnf.has_key("Component::%s" % s): # Avoid e.g. non-US/libs
             component = string.split(section, '/')[0]+ '/' + string.split(section, '/')[1];
 
     if string.lower(section) == "non-us":
@@ -116,7 +102,7 @@ def extract_component_from_section(section):
 
     # Expand default component
     if component == "":
-        if valid_components.has_key(section):
+        if Cnf.has_key("Component::%s" % section):
             component = section;
         else:
             component = "main";
@@ -279,9 +265,6 @@ def fix_maintainer (maintainer):
 
 # sendmail wrapper, takes _either_ a message string or a file as arguments
 def send_mail (message, filename):
-	#### FIXME, how do I get this out of Cnf in katie?
-	sendmail_command = "/usr/sbin/sendmail -odq -oi -t";
-
 	# Sanity check arguments
 	if message != "" and filename != "":
             raise send_mail_invalid_args_exc;
@@ -294,7 +277,7 @@ def send_mail (message, filename):
             os.close (fd);
 
 	# Invoke sendmail
-	(result, output) = commands.getstatusoutput("%s < %s" % (sendmail_command, filename));
+	(result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename));
 	if (result != 0):
             raise sendmail_failed_exc, output;
 
@@ -366,7 +349,7 @@ def copy (src, dest, overwrite = 0):
 
 def where_am_i ():
     res = socket.gethostbyaddr(socket.gethostname());
-    database_hostname = DefaultCnf.get("Config::" + res[0] + "::DatabaseHostname");
+    database_hostname = Cnf.get("Config::" + res[0] + "::DatabaseHostname");
     if database_hostname:
 	return database_hostname;
     else:
@@ -374,15 +357,15 @@ def where_am_i ():
 
 def which_conf_file ():
     res = socket.gethostbyaddr(socket.gethostname());
-    if DefaultCnf.get("Config::" + res[0] + "::KatieConfig"):
-	return DefaultCnf["Config::" + res[0] + "::KatieConfig"]
+    if Cnf.get("Config::" + res[0] + "::KatieConfig"):
+	return Cnf["Config::" + res[0] + "::KatieConfig"]
     else:
 	return default_config;
 
 def which_apt_conf_file ():
     res = socket.gethostbyaddr(socket.gethostname());
-    if DefaultCnf.get("Config::" + res[0] + "::AptConfig"):
-	return DefaultCnf["Config::" + res[0] + "::AptConfig"]
+    if Cnf.get("Config::" + res[0] + "::AptConfig"):
+	return Cnf["Config::" + res[0] + "::AptConfig"]
     else:
 	return default_apt_config;
 
@@ -509,5 +492,20 @@ def result_join (original, sep = '\t'):
         else:
             list.append(original[i]);
     return string.join(list, sep);
+
+################################################################################
+
+def get_conf():
+	return Cnf;
+
+################################################################################
+
+apt_pkg.init()
+
+Cnf = apt_pkg.newConfiguration();
+apt_pkg.ReadConfigFileISC(Cnf,default_config);
+
+if which_conf_file() != default_config:
+	apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
 
 ################################################################################

@@ -2,7 +2,7 @@
 
 # Poolify (move packages from "legacy" type locations to pool locations)
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: catherine,v 1.12 2001-11-04 22:28:44 troup Exp $
+# $Id: catherine,v 1.13 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -134,17 +134,17 @@ def poolize (q, limit, verbose, no_action):
 def main ():
     global Cnf, projectB;
 
-    apt_pkg.init();
+    Cnf = utils.get_conf()
 
-    Cnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+    for i in ["help", "limit", "no-action", "verose" ]:
+	if not Cnf.has_key("Catherine::Options::%s" % (i)):
+	    Cnf["Catherine::Options::%s" % (i)] = "";
+
 
     Arguments = [('h',"help","Catherine::Options::Help"),
                  ('l',"limit", "Catherine::Options::Limit", "HasArg"),
                  ('n',"no-action","Catherine::Options::No-Action"),
                  ('v',"verbose","Catherine::Options::Verbose")];
-    for i in ["help", "limit", "no-action", "verose" ]:
-        Cnf["Catherine::Options::%s" % (i)] = "";
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Catherine::Options")

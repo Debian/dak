@@ -2,7 +2,7 @@
 
 # Installs Debian packages
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: katie,v 1.62 2001-11-04 22:41:31 troup Exp $
+# $Id: katie,v 1.63 2001-11-18 19:57:58 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,17 +70,14 @@ orig_tar_location = "";
 legacy_source_untouchable = {};
 Subst = {};
 nmu = None;
-katie_version = "$Revision: 1.62 $";
+katie_version = "$Revision: 1.63 $";
 
 ###############################################################################
 
 def init():
     global Cnf, Options;
 
-    apt_pkg.init();
-
-    Cnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
+    Cnf = utils.get_conf()
 
     Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
                  ('h',"help","Dinstall::Options::Help"),
@@ -94,7 +91,8 @@ def init():
 
     for i in ["automatic", "help", "ack-new", "manual-reject", "no-action",
               "no-lock", "no-mail", "override-distribution", "version"]:
-        Cnf["Dinstall::Options::%s" % (i)] = "";
+	if not Cnf.has_key("Dinstall::Options::%s" % (i)):
+	    Cnf["Dinstall::Options::%s" % (i)] = "";
 
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
     Options = Cnf.SubTree("Dinstall::Options")
