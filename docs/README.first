@@ -1,0 +1,105 @@
+				Notes
+				=====
+
+o Please be careful: katie sends out lots of emails and if not
+  configured properly will happily send them to lots of people who
+  probably didn't want those emails.
+
+o Don't use katie.conf, apt.conf, cron.* etc. as starting points for
+  your own configuration files, they're the configuration files for
+  auric (aka ftp-master.debian.org) and are highly Debian specific.
+  Start from scratch and refer to the security.debian.org config files
+  (-security) as they're a better example for a private archive.
+
+o Don't be put off by the names, see doc/README.names for a mapping of
+  name -> what the script does.
+
+		    What do all these scripts do?
+		    =============================
+
+Generic and generally useful
+----------------------------
+
+o To process queue/:
+
+  * jennifer - processes queue/unchecked
+  * kelly - processes queue/accepted
+  * lisa - processes queue/new and queue/byhand
+
+o To generate indices files:
+
+  * jenna - generates file lists for apt-ftparchive and removes
+            obsolete packages from suites
+  * ziyi  - generates Release
+
+o To clean things up:
+
+  * rhona - to remove obsolete files from the pool
+  * shania - to remove obsolete/stray files from the queue
+  * melanie - to remove package(s) from suite(s)
+
+o Information display:
+
+  * madison - shows information about package(s)
+  * helena - shows information about package(s) in queue/
+
+Generic and useful, but only for those with existing archives
+-------------------------------------------------------------
+
+o catherine - migrates packages from legacy locations to the pool
+o neve - initializes a projectb database from an exisiting archive
+
+Generic but not overly useful (in normal use)
+---------------------------------------------
+
+o ashley - dumps info in .katie files
+o julia - sync PostgreSQL users with system users
+o rene - check for obsolete or duplicated packages
+o rose - directory creation in the initial setup of an archive
+o tea - various sanity checks of the database and archive
+o natalie - manpiulates/list override entries
+o heidi - removes/adds/lists package(s) from/to/for a suite
+o saffron - produces various statistics
+
+Semi-generic
+------------
+
+To generate less-used indices files:
+
+o charisma - generates Maintainers file
+o denise  - generates override.<foo> files
+
+Mostly Debian(.org) specific
+----------------------------
+
+o amber - wrapper for Debian security team
+o halle - removes obsolete .changes files from proposed-updates
+o jeri - basic dependency checking for proposed-updates
+
+Very Incomplete or otherwise not generally useful
+-------------------------------------------------
+
+o alyson - currently only initializes a DB from a katie.conf config file
+o andrea - looks for version descrepancies that shouldn't exist in many
+           archives
+o cindy - override cruft checker that doesn't work well with New Incoming
+
+Scripts invoked by other scripts
+--------------------------------
+
+o fernanda - invoked by lisa to "check" NEW packages
+o claire - invoked by catherine to determine packages still in legacy locations
+o katie - common code used by lisa, jennifer, kelly and others
+
+			How do I get started?
+			=====================
+
+[Very incomplete - FIXME]
+
+o Write your own katie.conf and apt.conf files
+o Run rose
+o If you have an existing archive:
+   * Run neve
+  otherwise:
+   * Run alyson
+

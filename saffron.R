@@ -1,0 +1,6 @@
+x <- read.table("x.1",row.names=1,col.names=c("Packages", "Sizes"))
+y <- t(x)
+postscript(file="x4.png")
+barplot(y, beside=TRUE, col = c("red", "green"), main="Daily dinstall run size", legend = colnames(x), xlab="Date", ylab="Packages/Size (Mb)")
+axis(4)
+dev.off()

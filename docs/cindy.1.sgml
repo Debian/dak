@@ -1,0 +1,61 @@
+<!-- -*- mode: sgml; mode: fold -*- -->
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!ENTITY % katieent SYSTEM "katie.ent">
+%katieent;
+
+]>
+
+<refentry>
+  &katie-docinfo;
+
+  <refmeta>
+    <refentrytitle>cindy</>
+    <manvolnum>1</>
+  </refmeta>
+
+  <!-- Man page title -->
+  <refnamediv>
+    <refname>cindy</>
+    <refpurpose>Utility to alter or display the contents of a suite</>
+  </refnamediv>
+
+  <!-- Arguments -->
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>cindy</>
+      <arg><option><replaceable>options</replaceable></></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <RefSect1><Title>Description</>
+    <para>
+      <command>cindy</command> is a cruft checker for overrides.
+    </PARA>
+  </REFSECT1>
+
+  <RefSect1><Title>Options</>
+
+    <VariableList>
+      <VarListEntry><term><option>-h/--help</option></>
+	<ListItem>
+	  <Para>Show help and then exit.</PARA>
+	</LISTITEM>
+      </VarListEntry>
+
+    </VariableList>
+  </RefSect1>
+
+  <RefSect1><Title>Notes</>
+
+  <Para>cindy is not a good idea with New Incoming as she doesn't take into account queue/accepted.  You can minimize the impact of this by running her immediately after kelly but that's still racy because lisa doesn't lock with elly.  A better long term fix is the evil plan for accepted to be in the DB.</>
+
+  <RefSect1><Title>Diagnostics</>
+    <para>
+      <command>cindy</command> returns zero on normal operation, non-zero on error.
+    </PARA>
+  </RefSect1>
+
+  &manauthor;
+
+</refentry>
