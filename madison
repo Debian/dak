@@ -2,7 +2,7 @@
 
 # Display information about package(s) (suite, version, etc.)
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: madison,v 1.30 2004-04-19 15:59:12 troup Exp $
+# $Id: madison,v 1.31 2004-11-27 18:00:16 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -131,19 +131,32 @@ def main ():
 
     results = 0;
     for package in packages:
-        q = projectB.query("SELECT b.package, b.version, a.arch_string, su.suite_name, m.name FROM binaries b, architecture a, suite su, bin_associations ba, maintainer m WHERE b.package %s '%s' AND a.id = b.architecture AND su.id = ba.suite AND b.id = ba.bin AND b.maintainer = m.id %s %s %s" % (comparison_operator, package, con_suites, con_architectures, con_bintype));
+        q = projectB.query("""
+SELECT b.package, b.version, a.arch_string, su.suite_name, c.name, m.name
+  FROM binaries b, architecture a, suite su, bin_associations ba,
+       files f, location l, component c, maintainer m
+ WHERE b.package %s '%s' AND a.id = b.architecture AND su.id = ba.suite
+   AND b.id = ba.bin AND b.file = f.id AND f.location = l.id
+   AND l.component = c.id AND b.maintainer = m.id %s %s %s
+""" % (comparison_operator, package, con_suites, con_architectures, con_bintype));
         ql = q.getresult();
         if check_source:
-            q = projectB.query("SELECT s.source, s.version, 'source', su.suite_name, m.name FROM source s, suite su, src_associations sa, maintainer m WHERE s.source %s '%s' AND su.id = sa.suite AND s.id = sa.source AND s.maintainer = m.id %s" % (comparison_operator, package, con_suites));
+            q = projectB.query("""
+SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
+  FROM source s, suite su, src_associations sa, files f, location l,
+       component c, maintainer m
+ WHERE s.source %s '%s' AND su.id = sa.suite AND s.id = sa.source
+   AND s.file = f.id AND f.location = l.id AND l.component = c.id
+   AND s.maintainer = m.id %s
+""" % (comparison_operator, package, con_suites));
             ql.extend(q.getresult());
         d = {};
         highver = {};
         for i in ql:
             results += 1;
-            pkg = i[0];
-            version = i[1];
-            architecture = i[2];
-            suite = i[3];
+            (pkg, version, architecture, suite, component, maintainer) = i;
+            if component != "main":
+                suite = "%s/%s" % (suite, component);
             if not d.has_key(pkg):
                 d[pkg] = {};
             highver.setdefault(pkg,"");
