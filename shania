@@ -2,7 +2,7 @@
 
 # Clean incoming of old unused files
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: shania,v 1.9 2001-11-18 19:57:58 rmurray Exp $
+# $Id: shania,v 1.10 2001-11-19 20:42:40 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -180,8 +180,6 @@ def main ():
 	    Cnf["Shania::Options::%s" % (i)] = "";
     if not Cnf.has_key("Shania::Options::Days"):
 	Cnf["Shania::Options::Days"] = "14";
-
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
     Arguments = [('h',"help","Shania::Options::Help"),
                  ('d',"days","Shania::Options::Days", "IntVal"),

@@ -2,7 +2,7 @@
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
 # Copyright (C) 2000, 2001  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.11 2001-11-18 19:57:58 rmurray Exp $
+# $Id: claire.py,v 1.12 2001-11-19 20:42:40 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -167,7 +167,6 @@ def main ():
     global Cnf, projectB;
 
     Cnf = utils.get_conf()
-    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file());
 
     Arguments = [('h',"help","Claire::Options::Help"),
                  ('v',"verbose","Claire::Options::Verbose")];
