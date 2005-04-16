@@ -1,7 +1,9 @@
+alicia - make microchanges or microqueries of the overrides
 alyson - syncs the ISC-style configuration file with the SQL DB
 amber - 'installer' wrapper for security team
 andrea - looks for fixable descrepancies between stable and unstable
 ashley - display the contents of a .katie file
+billie - split a pool/ftp-site/whatever by architecture groups
 catherine - poolifies packages; i.e. moves them from legacy dists/ locations into the pool
 charisma - generates Maintainers files used by e.g. the Debian BTS
 cindy - override cruft checker
@@ -24,6 +26,7 @@ madison - shows which suites a package is in
 melanie - removes packages from suites
 natalie - manpiulates/list override entries
 neve - populates the SQL database
+nina - split queue/done into a date-based directory structure
 rene - check for obsolete or duplicated packages
 rose - initial setup of an archive
 rosamund - check for users with no packages in the archive
@@ -33,17 +36,18 @@ shania - cleans cruft from incoming
 tea - various sanity checks of the database and archive
 ziyi - creates Release files
 
-With apologies to Alyson Hannigan, Amber Benson, Andrea Corr, Ashley
- Judd, Catherine Zeta Jones, Charisma Carpenter, Cindy Crawford,
- Claire Forlani, Denise Richards, Emilie de Ravin, Fernanda Tavares,
- Halle Berry, Heidi Klum, Helena Christensen, Jenna Elfman, Jennifer
- Lopez, Jeri Ryan, Julia Roberts, Katie Holmes, Kelly Brook, Lauren
- Lee Smith, Lisa Falkner, Madison Michele, Melanie Sykes, Natalie
- Portman, Neve Campbell, Rene O'Connor, Rosamund Pike, Rose McGowan,
- Rhona Mitra, Saffron Burrows, Shania Twain, Tea Leoni and Ziyi Zhang.
+With apologies to Alicia Silverstone, Alyson Hannigan, Amber Benson,
+ Andrea Corr, Ashley Judd, Catherine Zeta Jones, Charisma Carpenter,
+ Cindy Crawford, Claire Forlani, Denise Richards, Emilie de Ravin,
+ Fernanda Tavares, Halle Berry, Heidi Klum, Helena Christensen, Jenna
+ Elfman, Jennifer Lopez, Jeri Ryan, Julia Roberts, Katie Holmes, Kelly
+ Brook, Lauren Lee Smith, Lisa Falkner, Madison Michele, Melanie Sykes,
+ Natalie Portman, Neve Campbell, Nina Garbiras, Rene Russo, Rosamund Pike, Rose
+ McGowan, Rhona Mitra, Saffron Burrows, Shania Twain, Tea Leoni and
+ Ziyi Zhang.
 
-In Use Elsewhere:
------------------
+			   In Use Elsewhere
+			   ================
 
 Christina (Aguilera)	[lene]
 Emily (Mortimer)	[lene]
@@ -65,23 +69,35 @@ Kate (Hudson, Beckinsale, Winslet)   [kde text editor]
 
 Amanda (Peet)		[Backup software]
 
-Possible Future Candidates:
----------------------------
+Canonical Names
+---------------
+
+Anastacia
+Bridget (Hall)
+Geri (Haliwell)
+Kari (Wuhrer)
+Heather (Graham)
+Hilarie (Burton)
+Lorraine (Van Wyk)
+Poppy (Montgomery)
+Teri (Hatcher)
+
+		      Possible Future Candidates
+		      ==========================
 
 Alessandra (Ambrosia)
-Alicia (Witt)
 Alyssa (Milliano)
 Amy (Brenneman)
-Anastacia
 Angelina (Jolie)
+Bethany (Joy Lenz)
 Billie (Piper)
-Bridget (Hall)
 Cameron (Diaz)
 Carly (Pope)
 Carrie (Ann Moss)
 Charlize (Theron)
 Daniela (Pestova)
 Dannii (Minogue)
+Dido
 Donna (Air)
 Elisabeth (Shue)
 Elisha (Cuthbert)
@@ -93,14 +109,12 @@ Gail (Porter)
 Gillian (Anderson)
 Gina (Gershon)
 Gwyneth (Paltrow)
-Heather (Graham)
 Holly (Marie Combs)
 Janel (Moloney)
 Jessica (Alba, Biel)
 Jewel (Kilcher)
 Jill (Hennessy)
 Josie (Maran)
-Kari (Wuhrer)
 Katherine (Heigl)
 Kim (Smith)
 Kirsten (Dunst)
@@ -115,20 +129,21 @@ Mira (Sorvino)
 Monica (Belluci)
 Naima (Belkhiati)
 Nicole (Appleton)
-Nina (Garbiras)
 Rebecca (Romijn-Stamos)
 Reese (Witherspoon)
 Salma (Hayek)
 Sarah (Whatmore)
 Shannen (Doherty)
 Shiri (Appleby)
+Sophia (Bush)
 Sophie (Marceau)
 Stephanie (March)
 Suzanne (Cryer)
 Tara (Reid)
-Teri (Hatcher)
+Tasha (Tilberg)
 Tiffani (Amber Thiesen)
+Tricia (Helfer)
 Uma (Thurman)
 Veronica (Varekova)
-Virgine (Leoyden)
+Virginie (Leoyden)
 Yamila (Diaz)
