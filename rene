@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Check for obsolete binary packages
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: rene,v 1.22 2003-10-03 16:39:20 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
+# $Id: rene,v 1.23 2005-04-16 09:19:20 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 
 ################################################################################
 
-import commands, pg, os, string, sys, tempfile, time;
+import commands, pg, os, string, sys, time;
 import utils, db_access;
 import apt_pkg;
 
@@ -49,13 +49,14 @@ def usage(exit_code=0):
 Check for obsolete or duplicated packages.
 
   -h, --help                show this help and exit.
-  -m, --mode=MODE           chose the MODE to run in (full or daily)."""
+  -m, --mode=MODE           chose the MODE to run in (full or daily).
+  -s, --suite=SUITE         check suite SUITE."""
     sys.exit(exit_code)
 
 ################################################################################
 
 def add_nbs(nbs_d, source, version, package):
-    # Ensure the package is still unstable (someone may have already removed it)
+    # Ensure the package is still in the suite (someone may have already removed it)
     if no_longer_in_suite.has_key(package):
         return;
     else:
@@ -64,10 +65,8 @@ def add_nbs(nbs_d, source, version, package):
             no_longer_in_suite[package] = "";
             return;
 
-    if not nbs_d.has_key(source):
-        nbs_d[source] = {};
-    if not nbs_d[source].has_key(version):
-        nbs_d[source][version] = {};
+    nbs_d.setdefault(source, {})
+    nbs_d[source].setdefault(version, {})
     nbs_d[source][version][package] = "";
 
 ################################################################################
@@ -101,8 +100,7 @@ def do_anais(architecture, binaries_list, source):
             arch = i[0];
             version = i[1];
             if not architectures.has_key(arch):
-                if not versions_d.has_key(version):
-                    versions_d[version] = [];
+                versions_d.setdefault(version, [])
                 versions_d[version].append(arch)
 
         if versions_d != {}:
@@ -147,8 +145,7 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
 ################################################################################
 
 def do_nbs(real_nbs):
-    output = "";
-    output += "Not Built from Source\n";
+    output = "Not Built from Source\n";
     output += "---------------------\n\n";
 
     nbs_to_remove = [];
@@ -165,9 +162,7 @@ def do_nbs(real_nbs):
             packages = real_nbs[source][version].keys();
             packages.sort();
             for pkg in packages:
-                # *cough* FIXME
-                if pkg.find("pcmcia") == -1:
-                    nbs_to_remove.append(pkg);
+                nbs_to_remove.append(pkg);
             output += "        o %s: %s\n" % (version, ", ".join(packages));
 
         output += "\n";
@@ -204,16 +199,63 @@ def do_dubious_nbs(dubious_nbs):
 
 ################################################################################
 
+def do_obsolete_source(duplicate_bins, bin2source):
+    obsolete = {}
+    for key in duplicate_bins.keys():
+        (source_a, source_b) = key.split('~')
+        for source in [ source_a, source_b ]:
+            if not obsolete.has_key(source):
+                if not source_binaries.has_key(source):
+                    # Source has already been removed
+                    continue;
+                else:
+                    obsolete[source] = map(string.strip,
+                                           source_binaries[source].split(','))
+            for binary in duplicate_bins[key]:
+                if bin2source.has_key(binary) and bin2source[binary]["source"] == source:
+                    continue
+                if binary in obsolete[source]:
+                    obsolete[source].remove(binary)
+
+    to_remove = []
+    output = "Obsolete source package\n"
+    output += "-----------------------\n\n"
+    obsolete_keys = obsolete.keys()
+    obsolete_keys.sort()
+    for source in obsolete_keys:
+        if not obsolete[source]:
+            to_remove.append(source)
+            output += " * %s (%s)\n" % (source, source_versions[source])
+            for binary in map(string.strip, source_binaries[source].split(',')):
+                if bin2source.has_key(binary):
+                    output += "    o %s (%s) is built by %s.\n" \
+                          % (binary, bin2source[binary]["version"],
+                             bin2source[binary]["source"])
+                else:
+                    output += "    o %s is not built.\n" % binary
+            output += "\n"
+
+    if to_remove:
+        print output;
+
+        print "Suggested command:"
+        print " melanie -S -p -m \"[rene] obsolete source package\" %s" % (" ".join(to_remove));
+        print
+
+################################################################################
+
 def main ():
     global Cnf, projectB, suite_id, source_binaries, source_versions;
 
     Cnf = utils.get_conf();
 
     Arguments = [('h',"help","Rene::Options::Help"),
-                 ('m',"mode","Rene::Options::Mode", "HasArg")];
+                 ('m',"mode","Rene::Options::Mode", "HasArg"),
+                 ('s',"suite","Rene::Options::Suite","HasArg")];
     for i in [ "help" ]:
 	if not Cnf.has_key("Rene::Options::%s" % (i)):
 	    Cnf["Rene::Options::%s" % (i)] = "";
+    Cnf["Rene::Options::Suite"] = Cnf["Dinstall::DefaultSuite"];
 
     if not Cnf.has_key("Rene::Options::Mode"):
         Cnf["Rene::Options::Mode"] = "daily";
@@ -226,9 +268,9 @@ def main ():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = [ "nbs", "nviu" ];
+        checks = [ "nbs", "nviu", "obsolete source" ];
     elif Options["Mode"] == "full":
-        checks = [ "nbs", "nviu", "dubious nbs", "bnb", "bms", "anais" ];
+        checks = [ "nbs", "nviu", "obsolete source", "dubious nbs", "bnb", "bms", "anais" ];
     else:
         utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]));
         usage(1);
@@ -238,6 +280,7 @@ def main ():
 
     bin_pkgs = {};
     src_pkgs = {};
+    bin2source = {}
     bins_in_suite = {};
     nbs = {};
     source_versions = {};
@@ -245,7 +288,7 @@ def main ():
     anais_output = "";
     duplicate_bins = {};
 
-    suite = "unstable";
+    suite = Options["Suite"]
     suite_id = db_access.get_suite_id(suite);
 
     bin_not_built = {};
@@ -265,9 +308,7 @@ def main ():
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component);
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = tempfile.mktemp();
-        fd = os.open(temp_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700);
-        os.close(fd);
+        temp_filename = utils.temp_filename();
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
         if (result != 0):
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
@@ -285,8 +326,7 @@ def main ():
                 # Check for binaries not built on any architecture.
                 for binary in binaries_list:
                     if not bins_in_suite.has_key(binary):
-                        if not bin_not_built.has_key(source):
-                            bin_not_built[source] = {};
+                        bin_not_built.setdefault(source, {})
                         bin_not_built[source][binary] = "";
 
             if "anais" in checks:
@@ -299,9 +339,10 @@ def main ():
             src_pkgs[source] = source_index;
             for binary in binaries_list:
                 if bin_pkgs.has_key(binary):
-                    key = "%s~%s" % (source, bin_pkgs[binary]);
-                    if not duplicate_bins.has_key(key):
-                        duplicate_bins[key] = [];
+                    key_list = [ source, bin_pkgs[binary] ]
+                    key_list.sort()
+                    key = '~'.join(key_list)
+                    duplicate_bins.setdefault(key, [])
                     duplicate_bins[key].append(binary);
                 bin_pkgs[binary] = source;
             source_binaries[source] = binaries;
@@ -314,8 +355,14 @@ def main ():
     for component in components + ['main/debian-installer']:
         architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)));
         for architecture in architectures:
-            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suite, component, architecture);
-            packages = utils.open_file(filename);
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture);
+            # apt_pkg.ParseTagFile needs a real file handle
+            temp_filename = utils.temp_filename();
+            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+            if (result != 0):
+                sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
+                sys.exit(result);
+            packages = utils.open_file(temp_filename);
             Packages = apt_pkg.ParseTagFile(packages);
             while Packages.Step():
                 package = Packages.Section.Find('Package');
@@ -323,18 +370,38 @@ def main ():
                 version = Packages.Section.Find('Version');
                 if source == "":
                     source = package;
+                if bin2source.has_key(package) and \
+                       apt_pkg.VersionCompare(version, bin2source[package]["version"]) > 0:
+                    bin2source[package]["version"] = version
+                    bin2source[package]["source"] = source
+                else:
+                    bin2source[package] = {}
+                    bin2source[package]["version"] = version
+                    bin2source[package]["source"] = source
                 if source.find("(") != -1:
                     m = utils.re_extract_src_version.match(source);
                     source = m.group(1);
                     version = m.group(2);
                 if not bin_pkgs.has_key(package):
-                    if not nbs.has_key(source):
-                        nbs[source] = {};
-                    if not nbs[source].has_key(package):
-                        nbs[source][package] = {};
+                    nbs.setdefault(source,{})
+                    nbs[source].setdefault(package, {})
                     nbs[source][package][version] = "";
+                else:
+                    previous_source = bin_pkgs[package]
+                    if previous_source != source:
+                        key_list = [ source, previous_source ]
+                        key_list.sort()
+                        key = '~'.join(key_list)
+                        duplicate_bins.setdefault(key, [])
+                        if package not in duplicate_bins[key]:
+                            duplicate_bins[key].append(package)
             packages.close();
+            os.unlink(temp_filename);
+    
+    if "obsolete source" in checks:
+        do_obsolete_source(duplicate_bins, bin2source)
 
+    # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
     dubious_nbs = {};
     real_nbs = {};
     for source in nbs.keys():
@@ -343,8 +410,7 @@ def main ():
             versions.sort(apt_pkg.VersionCompare);
             latest_version = versions.pop();
             source_version = source_versions.get(source,"0");
-            # *cough* FIXME
-            if apt_pkg.VersionCompare(latest_version, source_version) == 0 or source == "pcmcia-cs":
+            if apt_pkg.VersionCompare(latest_version, source_version) == 0:
                 add_nbs(dubious_nbs, source, latest_version, package);
             else:
                 add_nbs(real_nbs, source, latest_version, package);
