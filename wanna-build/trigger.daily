@@ -65,7 +65,6 @@ for d in $DISTS ; do
 			ARCHS="$ARCHS_unstable"
 			;;
 	esac
-	NON_US="false" # this is changed below if sources can be found
 	rm -f Sources.$d
 	if [ "$d" = "unstable" ]; then
 		gzip -dc /org/incoming.debian.org/buildd/Sources.gz >> Sources.$d
@@ -80,36 +79,15 @@ for d in $DISTS ; do
 	for s in $SECTIONS ; do
 		if echo $d | grep -qv -- -security; then
 			rm -f Sources.gz
-			if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/$d/non-US/$s/source/Sources.gz; then
-				mv Sources.gz Sources-non-us.$d.$s.gz
-				NON_US="true"
-			fi
-			gzip -dc Sources-non-us.$d.$s.gz >> Sources.$d
 			gzip -dc /org/ftp.debian.org/ftp/dists/$d/$s/source/Sources.gz >> Sources.$d
 			if [ "$d" = "testing" -o "$d" = "stable" ]; then
-				if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/$d-proposed-updates/non-US/$s/source/Sources.gz; then
-					mv Sources.gz Sources-non-us.$d-p-u.$s.gz
-				fi
-				gzip -dc Sources-non-us.$d-p-u.$s.gz >> Sources.$d
 				gzip -dc /org/ftp.debian.org/ftp/dists/$d-proposed-updates/$s/source/Sources.gz >> Sources.$d
 			fi
 
 			rm -f Packages.gz
 			for a in $ARCHS ; do
-				if [ "$NON_US" = "true" ]; then
-					if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/$d/non-US/$s/binary-$a/Packages.gz; then
-						mv Packages.gz Packages-non-us.$d.$s.$a.gz
-					fi
-				fi
-				gzip -dc Packages-non-us.$d.$s.$a.gz >> Packages.$d.$a
-
 				gzip -dc /org/ftp.debian.org/ftp/dists/$d/$s/binary-$a/Packages.gz >> Packages.$d.$a
 				if [ "$d" = "testing" -o "$d" = "stable" ]; then
-					if [ "$NON_US" = "true" ]; then
-						if wget $WGETOPT http://non-us.debian.org/debian-non-US/dists/$d-proposed-updates/non-US/$s/binary-$a/Packages.gz; then
-							mv Packages.gz Packages-non-us.$d-p-u.$s.$a.gz
-						fi
-					fi
 					gzip -dc Packages-non-us.$d-p-u.$s.$a.gz >> Packages.$d.$a
 					gzip -dc /org/ftp.debian.org/ftp/dists/$d-proposed-updates/$s/binary-$a/Packages.gz >> Packages.$d.$a
 				fi
@@ -187,7 +165,7 @@ for a in $ARCHS_unstable ; do
 				;;
 		esac
 		wanna-build --merge-packages --arch=$a --dist=$d --database=$a/build-db Packages.$d.$a
-		perl -pi -e 's#^(non-US/)?(non-free)/.*$##msg' quinn-$d.$a
+		perl -pi -e 's#^(non-free)/.*$##msg' quinn-$d.$a
 		wanna-build --merge-quinn --dist=$d --database=$a/build-db quinn-$d.$a
 		wanna-build --merge-sources --dist=$d --database=$a/build-db Sources.$d
 		wanna-build --clean-db --dist=$d --database=$a/build-db
