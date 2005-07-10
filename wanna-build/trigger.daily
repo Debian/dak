@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Updates wanna-build databases after the archive maintenance
 # finishes
@@ -14,7 +14,7 @@ SECTIONS="main contrib non-free"
 ARCHS_oldstable="m68k arm sparc alpha powerpc i386 mips mipsel ia64 hppa s390"
 ARCHS_stable="$ARCHS_oldstable"
 ARCHS_testing="$ARCHS_stable"
-ARCHS_unstable="$ARCHS_testing hurd-i386 sh"
+ARCHS_unstable="$ARCHS_testing hurd-i386"
 TMPDIR="/org/wanna-build/tmp"
 WGETOPT="-q -t2 -w0 -T10"
 CURLOPT="-q -s -S -f -y 5 -K /org/wanna-build/trigger.curlrc"
@@ -88,7 +88,6 @@ for d in $DISTS ; do
 			for a in $ARCHS ; do
 				gzip -dc /org/ftp.debian.org/ftp/dists/$d/$s/binary-$a/Packages.gz >> Packages.$d.$a
 				if [ "$d" = "testing" -o "$d" = "stable" ]; then
-					gzip -dc Packages-non-us.$d-p-u.$s.$a.gz >> Packages.$d.$a
 					gzip -dc /org/ftp.debian.org/ftp/dists/$d-proposed-updates/$s/binary-$a/Packages.gz >> Packages.$d.$a
 				fi
 				if [ "$d" = "unstable" -a "$s" = "main" ]; then
@@ -129,6 +128,10 @@ for d in $DISTS ; do
 		else
 			if echo $d | grep -qv -- -security; then
 				quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a | fgrep -v -f quinn-unstable.$a-old | grep ":out-of-date\]$" >> quinn-$d.$a
+				sed -e 's/\[\w*:\w*]$//' quinn-$d-security.$a > quinn-$d-security.$a.grep
+				grep -vf quinn-$d-security.$a quinn-$d.$a > quinn-$d.$a.grep
+				mv quinn-$d.$a.grep quinn-$d.$a
+				rm quinn-$d-security.$a.grep
 			else
 				quinn-diff -A $a -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -s Sources.$d -p Packages.$d.$a >> quinn-$d.$a
 			fi
@@ -164,11 +167,8 @@ for a in $ARCHS_unstable ; do
 				fi
 				;;
 		esac
-		wanna-build --merge-packages --arch=$a --dist=$d --database=$a/build-db Packages.$d.$a
 		perl -pi -e 's#^(non-free)/.*$##msg' quinn-$d.$a
-		wanna-build --merge-quinn --dist=$d --database=$a/build-db quinn-$d.$a
-		wanna-build --merge-sources --dist=$d --database=$a/build-db Sources.$d
-		wanna-build --clean-db --dist=$d --database=$a/build-db
+		wanna-build --merge-all --arch=$a --dist=$d --database=$a/build-db Packages.$d.$a quinn-$d.$a Sources.$d
 		mv Packages.$d.$a Packages.$d.$a-old
 		mv quinn-$d.$a quinn-$d.$a-old
 	done
