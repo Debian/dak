@@ -8,11 +8,11 @@
 #     Sources.* == uncompressed, concat'd version
 PATH="/bin:/usr/bin"
 #testing must be before unstable so late upld don't build for testing needlessly
-#DISTS="stable stable-security testing testing-security unstable"
-DISTS="stable stable-security testing unstable"
+DISTS="oldstable-security stable-security testing-security stable testing unstable"
 STATS_DISTS="unstable testing stable"
 SECTIONS="main contrib non-free"
-ARCHS_stable="m68k arm sparc alpha powerpc i386 mips mipsel ia64 hppa s390"
+ARCHS_oldstable="m68k arm sparc alpha powerpc i386 mips mipsel ia64 hppa s390"
+ARCHS_stable="$ARCHS_oldstable"
 ARCHS_testing="$ARCHS_stable"
 ARCHS_unstable="$ARCHS_testing hurd-i386 sh"
 TMPDIR="/org/wanna-build/tmp"
@@ -52,6 +52,9 @@ cd $TMPDIR
 for d in $DISTS ; do
 	dist=`echo $d | sed s/-.*$//`
 	case "$dist" in
+		oldstable)
+			ARCHS="$ARCHS_oldstable"
+			;;
 		stable)
 			ARCHS="$ARCHS_stable"
 			;;
@@ -162,6 +165,11 @@ for a in $ARCHS_unstable ; do
 	for d in $DISTS ; do
 		dist=`echo $d | sed s/-.*$//`
 		case "$dist" in
+			oldstable)
+				if echo $ARCHS_oldstable | grep -q -v "\b$a\b"; then
+					continue
+				fi
+				;;
 			stable)
 				if echo $ARCHS_stable | grep -q -v "\b$a\b"; then
 					continue
