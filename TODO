@@ -227,7 +227,7 @@ Others
     * arch != {any,all}
     * build-depends wrong (via andrea)
     * suid
-    * conficlits
+    * conflicts
     * notification/stats to admin daily
     o trap fernanda exiting
     o distinguish binary only versus others (neuro)

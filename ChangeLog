@@ -1,3 +1,64 @@
+2005-11-15  Anthony Towns  <aj@erisian.com.au>
+
+	* Merge of changes from spohr, by various people.
+
+	* tiffani: new script to do patches to Packages, Sources and Contents
+	files for quicker downloads.
+	* ziyi: update to authenticate tiffani generated files
+
+	* dak: new script to provide a single binary with less arbitrary names
+	for access to dak functionality.
+
+	* cindy: script implemented
+
+	* saffron: cope with suites that don't have a Priority specified
+	* heidi: use get_suite_id()
+	* denise: don't hardcode stable and unstable, or limit udebs to unstable
+	* denise: remove override munging for testing (now done by cindy)
+	* helena: expanded help, added new, sort and age options, and fancy headers
+	* jennifer: require description, add a reject for missing dsc file
+	* jennifer: change lock file
+	* kelly: propogation support
+	* lisa: honour accepted lock, use mtime not ctime, add override type_id
+	* madison: don't say "dep-retry"
+	* melanie: bug fix in output (missing %)
+	* natalie: cope with maintainer_override == None; add type_id for overrides
+	* nina: use mtime, not ctime
+
+	* katie.py: propogation bug fixes
+	* logging.py: add debugging support, use | as the logfile separator
+
+	* katie.conf: updated signing key (4F368D5D)
+	* katie.conf: changed lockfile to dinstall.lock
+	* katie.conf: added Lisa::AcceptedLockFile, Dir::Lock
+	* katie.conf: added tiffani, cindy support
+	* katie.conf: updated to match 3.0r6 release
+	* katie.conf: updated to match sarge's release
+
+	* apt.conf: update for sarge's release
+	* apt.conf.stable: update for sarge's release
+	* apt.conf: bump daily max Contents change to 25MB from 12MB
+
+	* cron.daily: add accepted lock and invoke cindy  
+	* cron.daily: add daily.lock
+	* cron.daily: invoke tiffani
+	* cron.daily: rebuild accepted buildd stuff
+	* cron.daily: save rene-daily output on the web site
+	* cron.daily: disable billie
+	* cron.daily: add stats pr0n
+
+	* cron.hourly: invoke helena
+
+	* pseudo-packages.maintainers,.descriptions: miscellaneous updates
+	* vars: add lockdir, add etch to copyoverrides
+	* Makefile: add -Ipostgresql/server to CXXFLAGS
+
+	* docs/: added README.quotes
+	* docs/: added manpages for alicia, catherine, charisma, cindy, heidi,
+	julia, katie, kelly, lisa, madison, melanie, natalie, rhona.
+
+	* TODO: correct spelling of "conflicts"
+
 2005-05-28  James Troup  <james@nocrew.org>
 
 	* helena (process_changes_files): use MTIME rather than CTIME (the

@@ -2,7 +2,7 @@
 
 # Output override files for apt-ftparchive and indices/
 # Copyright (C) 2000, 2001, 2002, 2004  James Troup <james@nocrew.org>
-# $Id: denise,v 1.17 2004-11-27 17:56:42 troup Exp $
+# $Id: denise,v 1.18 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -96,7 +96,11 @@ def main ():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
     db_access.init(Cnf, projectB);
 
-    for suite in [ "stable", "unstable" ]:
+    for suite in Cnf.SubTree("Cindy::OverrideSuites").List():
+        if Cnf.has_key("Suite::%s::Untouchable" % suite) and Cnf["Suite::%s::Untouchable" % suite] != 0:
+            continue
+        suite = suite.lower()
+
         sys.stderr.write("Processing %s...\n" % (suite));
         override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
         for component in Cnf.SubTree("Component").List():
@@ -106,7 +110,7 @@ def main ():
                 if otype == "deb":
                     suffix = "";
                 elif otype == "udeb":
-                    if suite != "unstable" or component != "main":
+                    if component != "main":
                         continue; # Ick2
                     suffix = ".debian-installer";
                 elif otype == "dsc":
@@ -115,50 +119,6 @@ def main ():
                 output_file = utils.open_file(filename, 'w');
                 do_list(output_file, suite, component, otype);
                 output_file.close();
-
-    # Munge the override file for testing by using unstable's where
-    # possible and falling back on stable's where it's not.
-
-    sys.stderr.write("Processing testing...\n");
-    suite = "testing";
-    suite_id = db_access.get_suite_id(suite);
-    override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)];
-    for component in Cnf.SubTree("Component").List():
-        if component == "mixed":
-            continue;
-        component_id = db_access.get_component_id(component);
-        for otype in Cnf.ValueList("OverrideType"):
-            if otype == "deb" or otype == "udeb":
-                if otype == "deb":
-                    suffix = "";
-                elif otype == "udeb":
-                    if component != "main":
-                        continue;
-                    suffix = ".debian-installer";
-                q = projectB.query("SELECT DISTINCT b.package FROM bin_associations ba, binaries b, files f, location l WHERE ba.suite = %s AND l.component = %s AND b.type = '%s' AND ba.bin = b.id AND b.file = f.id AND f.location = l.id" % (suite_id, component_id, otype));
-            elif otype == "dsc":
-                q = projectB.query("SELECT DISTINCT s.source FROM src_associations sa, source s, files f, location l WHERE sa.suite = %s AND l.component = %s AND sa.source = s.id AND s.file = f.id AND f.location = l.id" % (suite_id, component_id));
-                suffix = ".src";
-            filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, component.replace("non-US/", ""), suffix);
-            output_file = utils.open_file(filename, 'w');
-            for i in q.getresult():
-                package = i[0];
-                if otype == "deb" or otype == "dsc":
-                    if override["unstable"][component][otype].has_key(package):
-                        output_file.write(utils.result_join(override["unstable"][component][otype][package])+'\n');
-                    elif override["stable"][component][otype].has_key(package):
-                        output_file.write(utils.result_join(override["stable"][component][otype][package])+'\n');
-                    else:
-                        if otype == "dsc" and (override["unstable"][component]["deb"].has_key(package) or override["stable"][component]["deb"].has_key(package)):
-                            continue; # source falls back on binary; so accept silently
-                        utils.warn("Can't find override entry for testing package '%s' (component %s, type %s)." % (package, component, otype));
-                elif otype == "udeb":
-                    if component == "main" and override["unstable"][component][otype].has_key(package):
-                        output_file.write(utils.result_join(override["unstable"][component][otype][package])+'\n');
-                    else:
-                        utils.warn("Can't find override entry for testing package '%s' (component %s, type %s)." % (package, component, otype));
-
-            output_file.close();
 
 ################################################################################
 

@@ -9,6 +9,7 @@ archs="alpha arm hppa hurd-i386 i386 ia64 m68k mips mipsel powerpc s390 sh sparc
 scriptdir=$base/scripts
 masterdir=$base/katie/
 dbdir=$base/database/
+lockdir=$base/lock/
 overridedir=$scriptdir/override
 extoverridedir=$scriptdir/external-overrides
 
@@ -19,7 +20,7 @@ incoming=$base/incoming
 
 ftpgroup=debadmin
 
-copyoverrides="potato.contrib potato.contrib.src potato.main potato.main.src potato.non-free potato.non-free.src woody.contrib woody.contrib.src woody.main woody.main.src woody.non-free woody.non-free.src sarge.contrib sarge.contrib.src sarge.main sarge.main.src sarge.non-free sarge.non-free.src sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src sid.extra.contrib sid.extra.main sid.extra.non-free woody.extra.contrib woody.extra.main woody.extra.non-free sarge.extra.contrib sarge.extra.main sarge.extra.non-free"
+copyoverrides="etch.contrib etch.contrib.src etch.main etch.main.src etch.non-free etch.non-free.src etch.extra.main etch.extra.non-free etch.extra.contrib etch.main.debian-installer woody.contrib woody.contrib.src woody.main woody.main.src woody.non-free woody.non-free.src sarge.contrib sarge.contrib.src sarge.main sarge.main.src sarge.non-free sarge.non-free.src sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src sid.extra.contrib sid.extra.main sid.extra.non-free woody.extra.contrib woody.extra.main woody.extra.non-free sarge.extra.contrib sarge.extra.main sarge.extra.non-free"
 
 PATH=$masterdir:$PATH
 umask 022

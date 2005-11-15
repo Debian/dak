@@ -2,7 +2,7 @@
 
 # Logging functions
 # Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: logging.py,v 1.3 2002-10-16 02:47:32 troup Exp $
+# $Id: logging.py,v 1.4 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-import os, pwd, time;
+import os, pwd, time, sys;
 import utils;
 
 ################################################################################
@@ -31,7 +31,7 @@ class Logger:
     logfile = None;
     program = None;
 
-    def __init__ (self, Cnf, program):
+    def __init__ (self, Cnf, program, debug=0):
         "Initialize a new Logger object"
         self.Cnf = Cnf;
         self.program = program;
@@ -42,9 +42,11 @@ class Logger:
             os.makedirs(logdir, 02775);
         # Open the logfile
         logfilename = "%s/%s" % (logdir, time.strftime("%Y-%m"));
-        logfile = utils.open_file(logfilename, 'a');
-        # Seek to the end of the logfile
-        logfile.seek(0,2);
+	logfile = None
+	if debug:
+	    logfile = sys.stderr
+	else:
+	    logfile = utils.open_file(logfilename, 'a');
         self.logfile = logfile;
         # Log the start of the program
         user = pwd.getpwuid(os.getuid())[0];
@@ -59,7 +61,7 @@ class Logger:
         # Force the contents of the list to be string.join-able
         details = map(str, details);
         # Write out the log in TSV
-        self.logfile.write("~".join(details)+'\n');
+        self.logfile.write("|".join(details)+'\n');
         # Flush the output to enable tail-ing
         self.logfile.flush();
 

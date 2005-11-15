@@ -3,7 +3,7 @@
 # Create all the Release files
 
 # Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.26 2003-07-15 09:43:18 ajt Exp $
+# $Id: ziyi,v 1.27 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,6 +47,13 @@ If no SUITE is given Release files are generated for all suites."""
     sys.exit(exit_code)
 
 ################################################################################
+
+def add_tiffani (files, path, indexstem):
+    index = "%s.diff/Index" % (indexstem)
+    filepath = "%s/%s" % (path, index)
+    if os.path.exists(filepath):
+        #print "ALERT: there was a tiffani file %s" % (filepath)
+        files.append(index)
 
 def compressnames (tree,type,file):
     compress = AptCnf.get("%s::%s::Compress" % (tree,type), AptCnf.get("Default::%s::Compress" % (type), ". gzip"))
@@ -204,8 +211,10 @@ def main ():
 	    for sec in AptCnf["tree::%s::Sections" % (tree)].split():
 		for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
 		    if arch == "source":
-			for file in compressnames("tree::%s" % (tree), "Sources", "%s/%s/Sources" % (sec, arch)):
+		        filepath = "%s/%s/Sources" % (sec, arch)
+			for file in compressnames("tree::%s" % (tree), "Sources", filepath):
 			    files.append(file)
+			add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
 		    else:
 			disks = "%s/disks-%s" % (sec, arch)
 			diskspath = Cnf["Dir::Root"]+tree+"/"+disks
@@ -214,8 +223,10 @@ def main ():
 				if os.path.exists("%s/%s/md5sum.txt" % (diskspath, dir)):
 				    files.append("%s/%s/md5sum.txt" % (disks, dir))
 
-			for file in compressnames("tree::%s" % (tree), "Packages", "%s/binary-%s/Packages" % (sec, arch)):
+			filepath = "%s/binary-%s/Packages" % (sec, arch)
+			for file in compressnames("tree::%s" % (tree), "Packages", filepath):
 			    files.append(file)
+			add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
 
 		    if arch == "source":
 			rel = "%s/%s/Release" % (sec, arch)

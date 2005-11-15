@@ -8,3 +8,4 @@ export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 
 cd $masterdir
 julia
+helena -n > $webdir/new.html

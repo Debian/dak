@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Display information about package(s) (suite, version, etc.)
-# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: madison,v 1.32 2005-02-08 22:43:45 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
+# $Id: madison,v 1.33 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -187,9 +187,9 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
                         for arch in arches:
                             sys.stdout.write("%s %s %s\n" % (pkg, version, arch));
             if Options["GreaterOrEqual"]:
-                print "\ndep-retry %s (>= %s)" % (pkg, highver[pkg])
+                print "\n%s (>= %s)" % (pkg, highver[pkg])
             if Options["GreaterThan"]:
-                print "\ndep-retry %s (>> %s)" % (pkg, highver[pkg])
+                print "\n%s (>> %s)" % (pkg, highver[pkg])
 
     if not results:
         sys.exit(1);

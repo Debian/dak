@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Executed daily via cron, out of troup's crontab.
+# Executed daily via cron, out of katie's crontab.
 
 set -e
 export SCRIPTVARS=/org/ftp.debian.org/katie/vars
@@ -11,13 +11,17 @@ export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 echo Archive maintenance started at $(date +%X)
 
 NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
+LOCKCU="$lockdir/daily.lock"
+LOCKAC="$lockdir/unchecked.lock"
 
 cleanup() {
   rm -f "$NOTICE"
+  rm -f "$LOCKCU"
 }
 trap cleanup 0
 
 rm -f "$NOTICE"
+lockfile -l 3600 $LOCKCU
 cat > "$NOTICE" <<EOF
 Packages are currently being installed and indices rebuilt.
 Maintenance is automatic, starting at 13:52 US Central time, and
@@ -39,6 +43,7 @@ update-mailingliststxt
 
 ################################################################################
 
+lockfile $LOCKAC
 cd $accepted
 rm -f REPORT
 kelly -pa *.changes | tee REPORT | \
@@ -47,6 +52,9 @@ chgrp debadmin REPORT
 chmod 664 REPORT
 
 cd $masterdir
+cindy
+rm -f $LOCKAC
+
 symlinks -d -r $ftpdir
 
 cd $masterdir
@@ -69,6 +77,8 @@ for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> 
 # Generate Packages and Sources files
 cd $masterdir
 apt-ftparchive generate apt.conf
+# Generate *.diff/ incremental updates
+tiffani
 # Generate Release files
 ziyi
 
@@ -76,12 +86,19 @@ ziyi
 rhona
 shania
 
+# Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
+# update this before wanna-build is updated.
+psql projectb -A -t -q -c "SELECT filename FROM accepted_autobuild WHERE suite = 5 AND in_accepted = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+apt-ftparchive generate apt.conf.buildd
+
 mkmaintainers
 copyoverrides
 mklslar
 mkchecksums
-
 rm -f $NOTICE
+sudo -u archvsync /home/archvsync/pushmerkel
+
+rm -f $LOCKCU
 echo Archive maintenance finished at $(date +%X)
 
 ################################################################################
@@ -101,13 +118,13 @@ echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skippin
 # Send a report on NEW/BYHAND packages
 helena | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org
 # and one on crufty packages
-rene | mail -e -s "rene run for $(date +%D)" ftpmaster@ftp-master.debian.org
+rene | tee $webdir/rene-daily.txt | mail -e -s "rene run for $(date +%D)" ftpmaster@ftp-master.debian.org
 
 ################################################################################
 
 # Run billie
 
-time billie
+#time billie
 
 ################################################################################
 
@@ -116,3 +133,8 @@ ulimit -m 90000 -d 90000 -s 10000 -v 90000
 run-parts --report /org/ftp.debian.org/scripts/distmnt
 
 echo Daily cron scripts successful.
+# Stats pr0n
+
+cd $masterdir
+update-ftpstats $base/log/* > $base/misc/ftpstats.data
+R --slave --vanilla < $base/misc/ftpstats.R

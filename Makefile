@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-CXXFLAGS	= -I/usr/include/postgresql/ -fPIC -Wall
+CXXFLAGS	= -I/usr/include/postgresql/ -I/usr/include/postgresql/server/ -fPIC -Wall
 CFLAGS		= -fPIC -Wall
 LDFLAGS		= -fPIC
 LIBS		= -lapt-pkg

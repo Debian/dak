@@ -2,7 +2,7 @@
 
 # Manipulate override files
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: natalie,v 1.6 2003-04-15 16:03:31 troup Exp $
+# $Id: natalie,v 1.7 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -164,7 +164,8 @@ def process_file (file, suite, component, type, action):
             (old_priority_id, old_section_id, old_maintainer_override, old_priority, old_section) = original[package];
             if action == "add" or old_priority_id == priority_id and \
                old_section_id == section_id and \
-               old_maintainer_override == maintainer_override:
+               ((old_maintainer_override == maintainer_override) or \
+		(old_maintainer_override == "" and maintainer_override == None)):
                 # If it's unchanged or we're in 'add only' mode, ignore it
                 c_skipped += 1;
                 continue;
@@ -190,7 +191,7 @@ def process_file (file, suite, component, type, action):
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '%s')"
                            % (suite_id, component_id, type_id, package, priority_id, section_id, maintainer_override));
         else:
-            projectB.query("INSERT INTO override (suite, component, type, package, priority, section) VALUES (%s, %s, %s, '%s', %s, %s)"
+            projectB.query("INSERT INTO override (suite, component, type, package, priority, section,maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')"
                            % (suite_id, component_id, type_id, package, priority_id, section_id));
 
         if not update_p:

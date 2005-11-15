@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Handles NEW and BYHAND packages
-# Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.30 2004-04-01 17:13:11 troup Exp $
+# Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
+# $Id: lisa,v 1.31 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,12 +37,12 @@
 
 ################################################################################
 
-import copy, errno, os, readline, stat, sys;
+import copy, errno, os, readline, stat, sys, time;
 import apt_pkg, apt_inst;
 import db_access, fernanda, katie, logging, utils;
 
 # Globals
-lisa_version = "$Revision: 1.30 $";
+lisa_version = "$Revision: 1.31 $";
 
 Cnf = None;
 Options = None;
@@ -253,12 +253,12 @@ def sort_changes(changes_files):
     for source in per_source.keys():
         source_list = per_source[source]["list"];
         first = source_list[0];
-        oldest = os.stat(first["filename"])[stat.ST_CTIME];
+        oldest = os.stat(first["filename"])[stat.ST_MTIME];
         have_note = 0;
         for d in per_source[source]["list"]:
-            ctime = os.stat(d["filename"])[stat.ST_CTIME];
-            if ctime < oldest:
-                oldest = ctime;
+            mtime = os.stat(d["filename"])[stat.ST_MTIME];
+            if mtime < oldest:
+                oldest = mtime;
             have_note += (d.has_key("lisa note"));
         per_source[source]["oldest"] = oldest;
         if not have_note:
@@ -629,7 +629,7 @@ def add_overrides (new):
             type_id = db_access.get_override_type_id(new[pkg]["type"]);
             priority_id = new[pkg]["priority id"];
             section_id = new[pkg]["section id"];
-            projectB.query("INSERT INTO override (suite, component, type, package, priority, section) VALUES (%s, %s, %s, '%s', %s, %s)" % (suite_id, component_id, type_id, pkg, priority_id, section_id));
+            projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')" % (suite_id, component_id, type_id, pkg, priority_id, section_id));
             for file in new[pkg]["files"]:
                 if files[file].has_key("new"):
                     del files[file]["new"];
@@ -870,9 +870,25 @@ def do_byhand():
 def do_accept():
     print "ACCEPT";
     if not Options["No-Action"]:
+        retry = 0;
+	while retry < 10:
+	    try:
+		lock_fd = os.open(Cnf["Lisa::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL);
+                retry = 10;
+	    except OSError, e:
+		if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
+		    retry += 1;
+		    if (retry >= 10):
+			utils.fubar("Couldn't obtain lock; assuming jennifer is already running.");
+		    else:
+			print("Unable to get accepted lock (try %d of 10)" % retry);
+		    time.sleep(60);
+		else:
+		    raise;
         (summary, short_summary) = Katie.build_summaries();
         Katie.accept(summary, short_summary);
         os.unlink(Katie.pkg.changes_file[:-8]+".katie");
+	os.unlink(Cnf["Lisa::AcceptedLockFile"]);
 
 def check_status(files):
     new = byhand = 0;

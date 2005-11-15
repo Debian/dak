@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2004  James Troup <james@nocrew.org>
-# $Id: nina,v 1.1 2004-11-27 19:25:59 troup Exp $
+# Copyright (C) 2004, 2005  James Troup <james@nocrew.org>
+# $Id: nina,v 1.2 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ def main():
     files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]));
     for filename in files:
         if os.path.isfile(filename):
-            ctime = time.gmtime(os.stat(filename)[stat.ST_CTIME]);
-            dirname = time.strftime("%Y/%m/%d", ctime);
+            mtime = time.gmtime(os.stat(filename)[stat.ST_MTIME]);
+            dirname = time.strftime("%Y/%m/%d", mtime);
             if not os.path.exists(dirname):
                 print "Creating: %s" % (dirname);
                 os.makedirs(dirname);

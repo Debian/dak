@@ -2,7 +2,7 @@
 
 # Various statistical pr0nography fun and games
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: saffron,v 1.2 2003-02-07 14:53:47 troup Exp $
+# $Id: saffron,v 1.3 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -109,8 +109,14 @@ def longest(list):
     return longest;
 
 def suite_sort(a, b):
-    a_priority = int(Cnf["Suite::%s::Priority" % (a)]);
-    b_priority = int(Cnf["Suite::%s::Priority" % (b)]);
+    if Cnf.has_key("Suite::%s::Priority" % (a)):
+        a_priority = int(Cnf["Suite::%s::Priority" % (a)]);
+    else:
+        a_priority = 0;
+    if Cnf.has_key("Suite::%s::Priority" % (b)):
+        b_priority = int(Cnf["Suite::%s::Priority" % (b)]);
+    else:
+        b_priority = 0;
     return cmp(a_priority, b_priority);
 
 def output_format(suite):

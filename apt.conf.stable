@@ -25,7 +25,21 @@ tree "dists/stable"
    SourceFileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
-   BinOverride "override.woody.$(SECTION)";
-   ExtraOverride "override.woody.extra.$(SECTION)";
-   SrcOverride "override.woody.$(SECTION).src";
+   BinOverride "override.sarge.$(SECTION)";
+   ExtraOverride "override.sarge.extra.$(SECTION)";
+   SrcOverride "override.sarge.$(SECTION).src";
+};
+
+// debian-installer
+
+tree "dists/stable/main"
+{
+   FileList "/org/ftp.debian.org/database/dists/stable_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc";
+   BinOverride "override.sarge.main.$(SECTION)";
+   SrcOverride "override.sarge.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents " ";
 };

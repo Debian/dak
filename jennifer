@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.56 2005-01-18 22:18:31 troup Exp $
+# $Id: jennifer,v 1.57 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.56 $";
+jennifer_version = "$Revision: 1.57 $";
 
 Cnf = None;
 Options = None;
@@ -201,7 +201,7 @@ def check_changes():
 
     # Check for mandatory fields
     for i in ("source", "binary", "architecture", "version", "distribution",
-              "maintainer", "files", "changes"):
+              "maintainer", "files", "changes", "description"):
         if not changes.has_key(i):
             reject("%s: Missing mandatory field `%s'." % (filename, i));
             return 0    # Avoid <undef> errors during later tests
@@ -299,7 +299,7 @@ def check_distributions():
             # give these as "uploaded-to(non-mapped) suites-to-add-when-upload-obsoletes"
             #
             # changes["distribution-version"] looks like: {'testing': 'testing-proposed-updates'}
-            if args[1] in changes["distribution"]:
+            if changes["distribution"].has_key(args[1]):
                 changes.setdefault("distribution-version", {})
                 for suite in args[2:]: changes["distribution-version"][suite]=suite
 
@@ -535,7 +535,8 @@ def check_files():
             # Check the version and for file overwrites
             reject(Katie.check_binary_against_db(file),"");
 
-            check_deb_ar(file, control)
+	    # [JT - 2005/05/31; disabled for now, will go back on post-sarge]
+            #check_deb_ar(file, control)
 
         # Checks for a source package...
         else:
@@ -667,6 +668,7 @@ def check_dsc():
 
     # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
     if not dsc_filename:
+        reject("source uploads must contain a dsc file");
         return 0;
 
     # Parse the .dsc file
@@ -1241,7 +1243,7 @@ def main():
 
     # Check that we aren't going to clash with the daily cron job
 
-    if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::Root"])) and not Options["No-Lock"]:
+    if not Options["No-Action"] and os.path.exists("%s/daily.lock" % (Cnf["Dir::Lock"])) and not Options["No-Lock"]:
         utils.fubar("Archive maintenance in progress.  Try again later.");
 
     # Obtain lock if not in no-action mode and initialize the log

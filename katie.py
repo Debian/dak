@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.53 2005-01-18 22:18:55 troup Exp $
+# $Id: katie.py,v 1.54 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -813,7 +813,8 @@ distribution.""";
                             #
                             # And - we really should complain to the dorks who configured dak
                             self.reject("%s is mapped to, but not enhanced by %s - adding anyways" % (suite, addsuite), "Warning: ")
-                            self.pkg.changes["distribution"][addsuite] = 1
+                            self.pkg.changes.setdefault("propdistribution", {})
+                            self.pkg.changes["propdistribution"][addsuite] = 1
                             cansave = 1
                         elif not target_version:
                             # not targets_version is true when the package is NEW
@@ -822,17 +823,18 @@ distribution.""";
                             self.reject("Won't propogate NEW packages.")
                         elif apt_pkg.VersionCompare(new_version, add_version) < 0:
                             # propogation would be redundant. no need to reject though.
-                            #self.reject("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite), "Warning: ");
-                            self.reject("foo", "Warning: ")
+                            self.reject("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite), "Warning: ")
                             cansave = 1
                         elif apt_pkg.VersionCompare(new_version, add_version) > 0 and \
-                             apt_pkg.VersionCompare(add_version, target_version) == 0:
+                             apt_pkg.VersionCompare(add_version, target_version) >= 0:
                             # propogate!!
-                            self.pkg.changes["distribution"][addsuite] = 1
+                            self.reject("Propogating upload to %s" % (addsuite), "Warning: ")
+                            self.pkg.changes.setdefault("propdistribution", {})
+                            self.pkg.changes["propdistribution"][addsuite] = 1
                             cansave = 1
                 
                     if not cansave:
-                        self.reject("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite));
+                        self.reject("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
 
     ################################################################################
 
