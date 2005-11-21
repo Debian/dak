@@ -63,6 +63,9 @@ CREATE FUNCTION priority_id_max() RETURNS INT4
 CREATE FUNCTION override_type_id_max() RETURNS INT4
     AS 'SELECT max(id) FROM override_type'
     LANGUAGE 'sql';
+CREATE FUNCTION maintainer_id_max() RETURNS INT4
+    AS 'SELECT max(id) FROM maintainer'
+    LANGUAGE 'sql';
 
 SELECT setval('files_id_seq', files_id_max());
 SELECT setval('source_id_seq', source_id_max());
@@ -73,6 +76,7 @@ SELECT setval('bin_associations_id_seq', bin_associations_id_max());
 SELECT setval('section_id_seq', section_id_max());
 SELECT setval('priority_id_seq', priority_id_max());
 SELECT setval('override_type_id_seq', override_type_id_max());
+SELECT setval('maintainer_id_seq', maintainer_id_max());
 
 -- Vacuum the tables for efficency
 
