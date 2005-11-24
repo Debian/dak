@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.57 2005-11-15 09:50:32 ajt Exp $
+# $Id: jennifer,v 1.58 2005-11-24 15:40:16 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.57 $";
+jennifer_version = "$Revision: 1.58 $";
 
 Cnf = None;
 Options = None;
@@ -230,6 +230,9 @@ def check_changes():
          changes["changedbyname"], changes["changedbyemail"]) = \
          utils.fix_maintainer (changes.get("changed-by", ""));
     except utils.ParseMaintError, msg:
+        (changes["changedby822"], changes["changedby2047"],
+         changes["changedbyname"], changes["changedbyemail"]) = \
+	 ("", "", "", "")
         reject("%s: Changed-By field ('%s') failed to parse: %s" \
                % (filename, changes["changed-by"], msg));
 
@@ -535,8 +538,7 @@ def check_files():
             # Check the version and for file overwrites
             reject(Katie.check_binary_against_db(file),"");
 
-	    # [JT - 2005/05/31; disabled for now, will go back on post-sarge]
-            #check_deb_ar(file, control)
+            check_deb_ar(file, control)
 
         # Checks for a source package...
         else:
