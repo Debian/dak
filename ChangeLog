@@ -3,6 +3,7 @@
 	* jennifer: If changed-by parsing fails, set variables to "" so REJECT
 	works
 	* jennifer: Re-enable .deb ar format checking
+	* katie.py: Convert to +bX binNMU special casing
 
 2005-11-15  Anthony Towns  <aj@erisian.com.au>
 

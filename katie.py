@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.54 2005-11-15 09:50:32 ajt Exp $
+# $Id: katie.py,v 1.55 2005-11-25 04:40:14 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,8 +31,7 @@ from types import *;
 re_isanum = re.compile (r"^\d+$");
 re_default_answer = re.compile(r"\[(.*)\]");
 re_fdnic = re.compile(r"\n\n");
-re_bin_only_nmu_of_mu = re.compile(r"\.\d+\.\d+$");
-re_bin_only_nmu_of_nmu = re.compile(r"\.\d+$");
+re_bin_only_nmu = re.compile(r"\+b\d+$");
 
 ###############################################################################
 
@@ -694,12 +693,7 @@ distribution.""";
                 continue
 
             # Try (2)
-            orig_source_version = re_bin_only_nmu_of_mu.sub('', source_version)
-            if orig_source_version in ql:
-                continue
-
-            # Try (3)
-            orig_source_version = re_bin_only_nmu_of_nmu.sub('', source_version)
+            orig_source_version = re_bin_only_nmu.sub('', source_version)
             if orig_source_version in ql:
                 continue
 
