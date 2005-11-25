@@ -60,6 +60,9 @@ symlinks -d -r $ftpdir
 cd $masterdir
 jenna
 
+# Update fingerprints
+emilie
+
 # Generate override files
 cd $overridedir
 denise
