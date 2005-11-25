@@ -4,29 +4,48 @@ set -e
 export SCRIPTVARS=/org/ftp.debian.org/katie/vars
 . $SCRIPTVARS
 
-cd $unchecked
+LOCKFILE="$lockdir/unchecked.lock"
+NOTICE="$lockdir/daily.lock"
 
-changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
-report=$queuedir/REPORT
-timestamp=$(date "+%Y-%m-%d %H:%M")
+cleanup() {
+  rm -f "$LOCKFILE"
+  if [ ! -z "$LOCKDAILY" ]; then
+	  rm -f "$NOTICE"
+  fi
+}
 
-if [ ! -z "$changes" ]; then
-  echo "$timestamp": "$changes"  >> $report
-  jennifer -a $changes >> $report
-  echo "--" >> $report
-else
-  echo "$timestamp": Nothing to do >> $report
+# only run one cron.unchecked
+if lockfile -r3 $LOCKFILE; then
+	trap cleanup 0
+	cd $unchecked
+
+	changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+	report=$queuedir/REPORT
+	timestamp=$(date "+%Y-%m-%d %H:%M")
+
+	if [ ! -z "$changes" ]; then
+		echo "$timestamp": "$changes"  >> $report
+		jennifer -a $changes >> $report
+		echo "--" >> $report
+
+		if lockfile -r3 $NOTICE; then
+			LOCKDAILY="YES"
+			psql projectb -A -t -q -c "SELECT filename FROM accepted_autobuild WHERE suite = 5 AND in_accepted = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+			cd $overridedir
+			denise &>/dev/null
+			rm -f override.sid.all3 override.sid.all3.src
+			for i in main contrib non-free main.debian-installer; do
+				cat override.sid.$i >> override.sid.all3
+				if [ "$i" != "main.debian-installer" ]; then
+					cat override.sid.$i.src >> override.sid.all3.src
+				fi
+			done
+			cd $masterdir
+			apt-ftparchive -qq generate apt.conf.buildd
+			. $masterdir/cron.buildd
+		fi
+	else
+		echo "$timestamp": Nothing to do >> $report
+	fi
 fi
 
-psql projectb -A -t -q -c "SELECT filename FROM accepted_autobuild WHERE suite = 5 AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
-cd $overridedir
-denise &>/dev/null
-rm -f override.sid.all3 override.sid.all3.src
-for i in main contrib non-free main.debian-installer; do
-  cat override.sid.$i >> override.sid.all3
-  if [ "$i" != "main.debian-installer" ]; then
-    cat override.sid.$i.src >> override.sid.all3.src
-  fi
-done
-cd $masterdir
-apt-ftparchive -qq generate apt.conf.buildd &>/dev/null
