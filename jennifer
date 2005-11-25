@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.59 2005-11-25 09:29:54 ajt Exp $
+# $Id: jennifer,v 1.60 2005-11-25 09:35:09 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.59 $";
+jennifer_version = "$Revision: 1.60 $";
 
 Cnf = None;
 Options = None;
@@ -1046,6 +1046,8 @@ def action ():
     (prompt, answer) = ("", "XXX")
     if Options["No-Action"] or Options["Automatic"]:
         answer = 'S'
+
+    queuekey = ''
 
     if reject_message.find("Rejected") != -1:
         if upload_too_new():
