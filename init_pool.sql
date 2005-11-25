@@ -103,7 +103,7 @@ CREATE TABLE suite (
 
 CREATE TABLE queue (
        id SERIAL PRIMARY KEY,
-       suite_name TEXT NOT NULL
+       queue_name TEXT NOT NULL
 );
 
 CREATE TABLE suite_architectures (
