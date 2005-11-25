@@ -4,6 +4,9 @@
 	* Add a queue table.
 	* Add a "queue" field in the queue_build table (currently always 0)
 
+	* jennifer: Restructure to make it easier to support special
+	purpose queues between unchecked and accepted.
+
 2005-11-25  Anthony Towns  <aj@erisian.com.au>
 
 	* Finishing merge of changes from spohr, by various people still
