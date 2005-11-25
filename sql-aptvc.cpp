@@ -25,7 +25,7 @@
 extern "C"
 {
 
-#include <server/postgres.h>
+#include <postgres.h>
 
   int versioncmp(text *A, text *B);
 

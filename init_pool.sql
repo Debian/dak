@@ -101,6 +101,11 @@ CREATE TABLE suite (
        description TEXT
 );
 
+CREATE TABLE queue (
+       id SERIAL PRIMARY KEY,
+       suite_name TEXT NOT NULL
+);
+
 CREATE TABLE suite_architectures (
        suite INT4 NOT NULL, -- REFERENCES suite
        architecture INT4 NOT NULL, -- REFERENCES architecture
@@ -148,10 +153,11 @@ CREATE TABLE override (
        unique (suite, component, package, type)
 );
 
-CREATE TABLE accepted_autobuild (
+CREATE TABLE queue_build (
        suite INT4 NOT NULL, -- references suite
+       queue INT4 NOT NULL, -- references queue
        filename TEXT NOT NULL,
-       in_accepted BOOLEAN NOT NULL,
+       in_queue BOOLEAN NOT NULL,
        last_used TIMESTAMP
 );
 

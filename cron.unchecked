@@ -30,7 +30,7 @@ if lockfile -r3 $LOCKFILE; then
 
 		if lockfile -r3 $NOTICE; then
 			LOCKDAILY="YES"
-			psql projectb -A -t -q -c "SELECT filename FROM accepted_autobuild WHERE suite = 5 AND in_accepted = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+			psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
 			cd $overridedir
 			denise &>/dev/null
 			rm -f override.sid.all3 override.sid.all3.src

@@ -21,12 +21,12 @@ Dinstall
    CloseBugs "false";
    OverrideDisparityCheck "false";
    BXANotify "false";
-   AcceptedAutoBuildSuites
+   QueueBuildSuites
    {
      stable;
      testing;
    };
-   SecurityAcceptedAutoBuild "true";     
+   SecurityQueueBuild "true";     
    DefaultSuite "Testing";
    SuiteSuffix "updates";
    OverrideMaintainer "katie@security.debian.org";
@@ -80,7 +80,7 @@ Rhona
 {
   // How long (in seconds) dead packages are left before being killed
   StayOfExecution 129600; // 1.5 days
-  AcceptedAutoBuildStayOfExecution 86400; // 24 hours
+  QueueBuildStayOfExecution 86400; // 24 hours
   MorgueSubDir "rhona";
   OverrideFilename "override.source-only";
 };
@@ -194,7 +194,7 @@ Dir
   Morgue "/org/security.debian.org/morgue/";
   MorgueReject "reject";
   Override "/org/security.debian.org/scripts/override/";
-  AcceptedAutoBuild "/org/security.debian.org/buildd/";
+  QueueBuild "/org/security.debian.org/buildd/";
   Queue
   {
     Accepted "/org/security.debian.org/queue/accepted/";

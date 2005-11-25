@@ -2,7 +2,7 @@
 
 # rhona, cleans up unassociated binary and source packages
 # Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.28 2005-11-25 04:42:59 ajt Exp $
+# $Id: rhona,v 1.29 2005-11-25 06:59:45 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -291,31 +291,31 @@ SELECT f.id FROM fingerprint f
 
 ################################################################################
 
-def clean_accepted_autobuild():
+def clean_queue_build():
     global now_date;
 
-    if not Cnf.ValueList("Dinstall::AcceptedAutoBuildSuites") or Options["No-Action"]:
+    if not Cnf.ValueList("Dinstall::QueueBuildSuites") or Options["No-Action"]:
         return;
 
-    print "Cleaning out accepted autobuild symlinks..."
+    print "Cleaning out queue build symlinks..."
 
-    our_delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::AcceptedAutoBuildStayOfExecution"])));
+    our_delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::QueueBuildStayOfExecution"])));
     count = 0;
 
-    q = projectB.query("SELECT filename FROM accepted_autobuild WHERE last_used <= '%s'" % (our_delete_date));
+    q = projectB.query("SELECT filename FROM queue_build WHERE last_used <= '%s'" % (our_delete_date));
     for i in q.getresult():
         filename = i[0];
         if not os.path.exists(filename):
-            utils.warn("%s (from accepted_autobuild) doesn't exist." % (filename));
+            utils.warn("%s (from queue_build) doesn't exist." % (filename));
             continue;
-        if not Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild") and not os.path.islink(filename):
-            utils.fubar("%s (from accepted_autobuild) should be a symlink but isn't." % (filename));
+        if not Cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(filename):
+            utils.fubar("%s (from queue_build) should be a symlink but isn't." % (filename));
         os.unlink(filename);
         count += 1;
-    projectB.query("DELETE FROM accepted_autobuild WHERE last_used <= '%s'" % (our_delete_date));
+    projectB.query("DELETE FROM queue_build WHERE last_used <= '%s'" % (our_delete_date));
 
     if count:
-        sys.stderr.write("Cleaned %d accepted-autobuild files.\n" % (count));
+        sys.stderr.write("Cleaned %d queue_build files.\n" % (count));
 
 ################################################################################
 
@@ -348,7 +348,7 @@ def main():
     clean();
     clean_maintainers();
     clean_fingerprints();
-    clean_accepted_autobuild();
+    clean_queue_build();
 
 ################################################################################
 

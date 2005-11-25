@@ -2,7 +2,7 @@
 
 # Installs Debian packages from queue/accepted into the pool
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.16 2005-11-15 09:50:32 ajt Exp $
+# $Id: kelly,v 1.17 2005-11-25 06:59:45 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ import db_access, katie, logging, utils;
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.16 $";
+kelly_version = "$Revision: 1.17 $";
 
 Cnf = None;
 Options = None;
@@ -421,18 +421,18 @@ def install ():
     # from accepted.
     projectB.query("BEGIN WORK");
     for suite in changes["distribution"].keys():
-        if suite not in Cnf.ValueList("Dinstall::AcceptedAutoBuildSuites"):
+        if suite not in Cnf.ValueList("Dinstall::QueueBuildSuites"):
             continue;
         now_date = time.strftime("%Y-%m-%d %H:%M");
         suite_id = db_access.get_suite_id(suite);
-        dest_dir = Cnf["Dir::AcceptedAutoBuild"];
-        if Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
+        dest_dir = Cnf["Dir::QueueBuild"];
+        if Cnf.FindB("Dinstall::SecurityQueueBuild"):
             dest_dir = os.path.join(dest_dir, suite);
         for file in files.keys():
             dest = os.path.join(dest_dir, file);
             # Remove it from the list of packages for later processing by apt-ftparchive
-            projectB.query("UPDATE accepted_autobuild SET in_accepted = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, dest, suite_id));
-            if not Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
+            projectB.query("UPDATE queue_build SET in_queue = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, dest, suite_id));
+            if not Cnf.FindB("Dinstall::SecurityQueueBuild"):
                 # Update the symlink to point to the new location in the pool
                 pool_location = utils.poolify (changes["source"], files[file]["component"]);
                 src = os.path.join(Cnf["Dir::Pool"], pool_location, os.path.basename(file));
@@ -446,7 +446,7 @@ def install ():
                 if dsc_file.endswith(".orig.tar.gz"):
                     orig_tar_gz = os.path.join(dest_dir, dsc_file);
             # Remove it from the list of packages for later processing by apt-ftparchive
-            projectB.query("UPDATE accepted_autobuild SET in_accepted = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, orig_tar_gz, suite_id));
+            projectB.query("UPDATE queue_build SET in_queue = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, orig_tar_gz, suite_id));
     projectB.query("COMMIT WORK");
 
     # Finally...

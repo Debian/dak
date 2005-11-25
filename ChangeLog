@@ -1,5 +1,11 @@
 2005-11-25  Anthony Towns  <aj@erisian.com.au>
 
+	* Changed accepted_autobuild to queue_build everywhere.
+	* Add a queue table.
+	* Add a "queue" field in the queue_build table (currently always 0)
+
+2005-11-25  Anthony Towns  <aj@erisian.com.au>
+
 	* Finishing merge of changes from spohr, by various people still
 
 	* jennifer: If changed-by parsing fails, set variables to "" so REJECT

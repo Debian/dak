@@ -91,7 +91,7 @@ shania
 
 # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
 # update this before wanna-build is updated.
-psql projectb -A -t -q -c "SELECT filename FROM accepted_autobuild WHERE suite = 5 AND in_accepted = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE suite = 5 AND queue = 0 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
 apt-ftparchive generate apt.conf.buildd
 
 mkmaintainers

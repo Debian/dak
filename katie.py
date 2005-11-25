@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.55 2005-11-25 04:40:14 ajt Exp $
+# $Id: katie.py,v 1.56 2005-11-25 06:59:45 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -453,23 +453,23 @@ distribution.""";
         ## Special support to enable clean auto-building of accepted packages
         self.projectB.query("BEGIN WORK");
         for suite in changes["distribution"].keys():
-            if suite not in Cnf.ValueList("Dinstall::AcceptedAutoBuildSuites"):
+            if suite not in Cnf.ValueList("Dinstall::QueueBuildSuites"):
                 continue;
             suite_id = db_access.get_suite_id(suite);
-            dest_dir = Cnf["Dir::AcceptedAutoBuild"];
-            if Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
+            dest_dir = Cnf["Dir::QueueBuild"];
+            if Cnf.FindB("Dinstall::SecurityQueueBuild"):
                 dest_dir = os.path.join(dest_dir, suite);
             for file in file_keys:
                 src = os.path.join(Cnf["Dir::Queue::Accepted"], file);
                 dest = os.path.join(dest_dir, file);
-                if Cnf.FindB("Dinstall::SecurityAcceptedAutoBuild"):
+                if Cnf.FindB("Dinstall::SecurityQueueBuild"):
                     # Copy it since the original won't be readable by www-data
                     utils.copy(src, dest);
                 else:
                     # Create a symlink to it
                     os.symlink(src, dest);
                 # Add it to the list of packages for later processing by apt-ftparchive
-                self.projectB.query("INSERT INTO accepted_autobuild (suite, filename, in_accepted) VALUES (%s, '%s', 't')" % (suite_id, dest));
+                self.projectB.query("INSERT INTO queue_build (suite, queue, filename, in_queue) VALUES (%s, 0, '%s', 't')" % (suite_id, dest));
             # If the .orig.tar.gz is in the pool, create a symlink to
             # it (if one doesn't already exist)
             if self.pkg.orig_tar_id:
@@ -488,10 +488,10 @@ distribution.""";
                     src = os.path.join(ql[0][0], ql[0][1]);
                     os.symlink(src, dest);
                     # Add it to the list of packages for later processing by apt-ftparchive
-                    self.projectB.query("INSERT INTO accepted_autobuild (suite, filename, in_accepted) VALUES (%s, '%s', 't')" % (suite_id, dest));
+                    self.projectB.query("INSERT INTO queue_build (suite, queue, filename, in_queue) VALUES (%s, 0, '%s', 't')" % (suite_id, dest));
                 # if it does, update things to ensure it's not removed prematurely
                 else:
-                    self.projectB.query("UPDATE accepted_autobuild SET in_accepted = 't', last_used = NULL WHERE filename = '%s' AND suite = %s" % (dest, suite_id));
+                    self.projectB.query("UPDATE queue_build SET in_queue = 't', last_used = NULL WHERE filename = '%s' AND suite = %s" % (dest, suite_id));
 
         self.projectB.query("COMMIT WORK");
 

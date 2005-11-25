@@ -32,7 +32,8 @@ ALTER TABLE override ADD CONSTRAINT override_priority FOREIGN KEY (priority) REF
 ALTER TABLE override ADD CONSTRAINT override_section FOREIGN KEY (section) REFERENCES section(id) MATCH FULL;
 ALTER TABLE override ADD CONSTRAINT override_type FOREIGN KEY (type) REFERENCES override_type(id) MATCH FULL;
 
-ALTER TABLE accepted_autobuild ADD CONSTRAINT accepted_autobuild_suite FOREIGN KEY (suite) REFERENCES suite(id) MATCH FULL;
+ALTER TABLE queue_build ADD CONSTRAINT queue_build_suite FOREIGN KEY (suite) REFERENCES suite(id) MATCH FULL;
+ALTER TABLE queue_build ADD CONSTRAINT queue_build_queue FOREIGN KEY (queue) REFERENCES queue(id) MATCH FULL;
 
 -- Then correct all the id SERIAL PRIMARY KEY columns...
 
@@ -107,7 +108,7 @@ GRANT ALL ON architecture, architecture_id_seq, archive,
   maintainer_id_seq, override, override_type, override_type_id_seq,
   priority, priority_id_seq, section, section_id_seq, source,
   source_id_seq, src_associations, src_associations_id_seq, suite,
-  suite_architectures, suite_id_seq, accepted_autobuild, uid,
+  suite_architectures, suite_id_seq, queue_build, uid,
   uid_id_seq TO GROUP ftpmaster;
 
 -- Read only access to user 'nobody'
@@ -119,5 +120,5 @@ GRANT SELECT ON architecture, architecture_id_seq, archive,
   maintainer_id_seq, override, override_type, override_type_id_seq,
   priority, priority_id_seq, section, section_id_seq, source,
   source_id_seq, src_associations, src_associations_id_seq, suite,
-  suite_architectures, suite_id_seq, accepted_autobuild, uid,
+  suite_architectures, suite_id_seq, queue_build, uid,
   uid_id_seq TO PUBLIC;

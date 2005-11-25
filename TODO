@@ -189,7 +189,7 @@ Others
     were pulled out in -2, and we end up with no orig in the archive
     :(
 
-  o SecurityAcceptedAutoBuild doesn't handle the case of foo_3.3woody1
+  o SecurityQueueBuild doesn't handle the case of foo_3.3woody1
     with a new .orig.tar.gz followed by a foo_3.3potato1 with the same
     .orig.tar.gz; jennifer sees it and copes, but the AA code doesn't
     and can't really easily know so the potato AA dir is left with no
