@@ -313,3 +313,15 @@ Canadians: This is a lighthouse. Your call.
 <elmo>   File "/org/ftp.debian.org/katie/kelly", line 608, in main
 <elmo>     sys.stderr.write("Installed %d package %s, %s.\n" % (install_count, sets, utils.size_type(int(install_bytes))));
 <elmo> OverflowError: float too large to convert
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+"The Hurd's design is so secure that it makes firewalls immoral IMHO." -- Jeroen Dekkers
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<helix> I bought some foam soap for kids the other day and only
+        realized it had an elmo picture on it when I got home
+<helix> now I can't use it because I feel perverted
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

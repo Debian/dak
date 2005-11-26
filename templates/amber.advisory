@@ -11,9 +11,12 @@ __DATE__
 
 Package        : __PACKAGE__
 Vulnerability  : XXX
-Problem type   : XXX
+Problem type   : local/remote XXX
 Debian-specific: XXX
 CVE Id(s)      : XXX
+CERT advisory  : XXX
+BugTraq ID     : XXX
+Debian Bug     : XXX
 
 ...
 
@@ -36,31 +39,30 @@ We recommend that you upgrade your __PACKAGE__ package.
 Upgrade instructions
 --------------------
 
-  To perform automated upgrades using apt:
+wget url
+        will fetch the file for you
+dpkg -i file.deb
+        will install the referenced file.
 
-    deb http://security.debian.org/ woody/updates main
-        added to /etc/apt/sources.list will give you access to woody updates.
+If you are using the apt-get package manager, use the line for
+sources.list as given below:
 
-    deb http://security.debian.org/ potato/updates main
-        added to /etc/apt/sources.list will give you access to potato updates.
-
-    apt-get update
-        will update apt's package database of packages and versions
-
-    apt-get upgrade
+apt-get update
+        will update the internal database
+apt-get upgrade
         will install corrected packages
 
-  Alternatively, to obtain and install packages by hand:
-
-    wget URL
-        will fetch the file for you.
-    dpkg -i FILENAME.deb
-        will install the fetched file.
-
+You may use an automated update by adding the resources from the
+footer to the proper configuration.
 
 __ADVISORY_TEXT__
 
--------------------------------------------------------------------------------
-Mailing list: http://lists.debian.org/debian-security-announce/
-Package info: 'apt-cache show <pkg>' and http://packages.debian.org/<pkg>
 
+  These files will probably be moved into the stable distribution on
+  its next update.
+
+---------------------------------------------------------------------------------
+For apt-get: deb http://security.debian.org/ stable/updates main
+For dpkg-ftp: ftp://security.debian.org/debian-security dists/stable/updates/main
+Mailing list: debian-security-announce@lists.debian.org
+Package info: `apt-cache show <pkg>' and http://packages.debian.org/<pkg>

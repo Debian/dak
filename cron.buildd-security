@@ -1,11 +1,12 @@
-#! /bin/sh
+#! /bin/bash
 #
 # Executed after jennifer (merge there??)
 
-ARCHS_stable="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
-ARCHS_testing="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
-#DISTS="stable testing"
-DISTS="stable"
+ARCHS_oldstable="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
+ARCHS_stable="$ARCHS_oldstable"
+ARCHS_testing="$ARCHS_stable"
+DISTS="oldstable stable testing"
+SSH_SOCKET=~/.ssh/buildd.debian.org.socket
 
 set -e
 export SCRIPTVARS=/org/security.debian.org/katie/vars-security
@@ -13,24 +14,54 @@ export SCRIPTVARS=/org/security.debian.org/katie/vars-security
 
 if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
 	cd $masterdir
-	apt-ftparchive -qq generate apt.conf.buildd-security
 	for d in $DISTS; do
-		case "$d" in
-			stable)
-				ARCHS="$ARCHS_stable"
-				;;
-			testing)
-				ARCHS="$ARCHS_testing"
-				;;
-			*)
-				echo "unknown value in dists: $d"
-				exit 1
-				;;
-		esac
-		cd /org/security.debian.org/buildd/$d
-		for a in $ARCHS; do
-			quinn-diff -a /org/security.debian.org/buildd/Packages-arch-specific -A $a 2>/dev/null | ssh buildd@buildd wanna-build -d $d-security -b $a/build-db --merge-partial-quinn
-			ssh buildd@buildd wanna-build -d $d-security -A $a -b $a/build-db --merge-packages < Packages
-		done
+		eval SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
+		eval PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
 	done
+	apt-ftparchive -qq generate apt.conf.buildd-security
+	dists=
+	for d in $DISTS; do
+		eval NEW_SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
+		eval NEW_PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
+		old=SOURCES_$d
+                new=NEW_$old
+                if [ ${!new} -gt ${!old} ]; then
+			if [ -z "$dists" ]; then
+				dists="$d"
+			else
+				dists="$dists $d"
+			fi
+			continue
+		fi
+		old=PACKAGES_$d
+		new=NEW_$old
+                if [ ${!new} -gt ${!old} ]; then
+			if [ -z "$dists" ]; then
+				dists="$d"
+			else
+				dists="$dists $d"
+			fi
+			continue
+		fi
+	done
+	if [ ! -z "$dists" ]; then
+		# setup ssh master process
+		ssh buildd@buildd -S $SSH_SOCKET -MN 2> /dev/null &
+		SSH_PID=$!
+		while [ ! -S $SSH_SOCKET ]; do
+			sleep 1
+		done
+		trap 'kill -TERM $SSH_PID' 0
+		for d in $dists; do
+			archs=ARCHS_$d
+			ARCHS=${!archs}
+			cd /org/security.debian.org/buildd/$d
+			for a in $ARCHS; do
+				quinn-diff -a /org/security.debian.org/buildd/Packages-arch-specific -A $a 2>/dev/null | ssh buildd@buildd -S $SSH_SOCKET wanna-build -d $d-security -b $a/build-db --merge-partial-quinn
+				ssh buildd@buildd -S $SSH_SOCKET wanna-build -d $d-security -A $a -b $a/build-db --merge-packages < Packages
+			done
+		done
+	fi
 fi
+
+ssh buildd@bester.farm.ftbfs.de -i ~/.ssh/id_bester sleep 1

@@ -13,14 +13,14 @@ Default
    FileMode 0664;
 }
 
-bindirectory "potato"
+bindirectory "etch"
 {
-   Packages "potato/Packages";
-   Sources "potato/Sources";
+   Packages "etch/Packages";
+   Sources "etch/Sources";
    Contents " ";
 
-   BinOverride "override.potato.all3";
-   BinCacheDB "packages-accepted-potato.db";
+   BinOverride "override.etch.all3";
+   BinCacheDB "packages-accepted-etch.db";
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
 };

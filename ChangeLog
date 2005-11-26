@@ -1,3 +1,20 @@
+2005-11-26  Anthony Towns  <aj@erisian.com.au>
+
+	* Merge of changes from klecker, by various people
+
+	* amber: special casing for not passing on amd64 and oldstable updates
+	* amber: security mirror triggering
+	* templates/amber.advisory: updated advisory structure
+	* apt.conf.buildd-security: update for sarge's release
+	* apt.conf-security: update for sarge's release
+	* cron.buildd-security: generalise suite support, update for sarge's release
+	* cron.daily-security: update for sarge's release, add udeb support
+	* vars-security: update for sarge's release
+	* katie.conf-security: update for sarge's release, add amd64 support,
+	update signing key
+
+	* docs/README.names, docs/README.quotes: include the additions
+
 2005-11-25  Anthony Towns  <aj@erisian.com.au>
 
 	* Changed accepted_autobuild to queue_build everywhere.

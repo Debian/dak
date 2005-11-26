@@ -2,7 +2,7 @@
 
 # Wrapper for Debian Security team
 # Copyright (C) 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: amber,v 1.10 2004-11-27 19:23:40 troup Exp $
+# $Id: amber,v 1.11 2005-11-26 07:52:06 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@ def do_upload(changes_files):
     for component in Cnf.SubTree("Amber::ComponentMappings").List():
         component_mapping[component] = Cnf["Amber::ComponentMappings::%s" % (component)];
     uploads = {}; # uploads[uri] = file_list;
+    changesfiles = {}; # changesfiles[uri] = file_list;
     package_list = {} # package_list[source_name][version];
     changes_files.sort(utils.changes_compare);
     for changes_file in changes_files:
@@ -79,6 +80,13 @@ def do_upload(changes_files):
         files = Katie.pkg.files;
         changes = Katie.pkg.changes;
         dsc = Katie.pkg.dsc;
+        # We have the changes, now return if its amd64, to not upload them to ftp-master
+        if changes["architecture"].has_key("amd64"):
+            print "Not uploading amd64 part to ftp-master\n";
+            continue
+        if changes["distribution"].has_key("oldstable-security"):
+            print "Not uploading oldstable-security changes to ftp-master\n";
+            continue
         # Build the file list for this .changes file
         for file in files.keys():
             poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
@@ -87,7 +95,6 @@ def do_upload(changes_files):
             file_list.append(poolname);
             orig_component = files[file].get("original component", files[file]["component"]);
             components[orig_component] = "";
-        file_list.append(changes_file);
         # Determine the upload uri for this .changes file
         for component in components.keys():
             upload_uri = component_mapping.get(component);
@@ -106,6 +113,10 @@ def do_upload(changes_files):
         if not uploads.has_key(upload_uri):
             uploads[upload_uri] = [];
         uploads[upload_uri].extend(file_list);
+        # Update the changes list for the upload uri
+        if not changes.has_key(upload_uri):
+            changesfiles[upload_uri] = [];
+        changesfiles[upload_uri].append(changes_file);
         # Remember the suites and source name/version
         for suite in changes["distribution"].keys():
             suites[suite] = "";
@@ -116,16 +127,13 @@ def do_upload(changes_files):
                 package_list[dsc["source"]] = {};
             package_list[dsc["source"]][dsc["version"]] = "";
 
-    if len(suites.keys()) == 1 and suites.has_key("oldstable"):
-        print "Advisory only for 'oldstable'; not uploading elsewhere.";
-        return;
-
     if not Options["No-Action"]:
         answer = yes_no("Upload to files to main archive (Y/n)?");
         if answer != "y":
             return;
 
     for uri in uploads.keys():
+        uploads[uri].extend(changesfiles[uri]);
         (host, path) = uri.split(":");
         file_list = " ".join(uploads[uri]);
         print "Uploading files to %s..." % (host);
@@ -347,6 +355,9 @@ def main():
         os.chdir(Cnf["Dir::Queue::Accepted"]);
     print "Generating template advisory...";
     make_advisory(advisory_number, changes_files);
+
+    # Trigger security mirrors
+    spawn("sudo -u archvsync /home/archvsync/signal_security");
 
     do_upload(changes_files);
 
