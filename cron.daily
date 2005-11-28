@@ -61,7 +61,8 @@ cd $masterdir
 jenna
 
 # Update fingerprints
-emilie
+# [JT - disabled, emilie currently can ask questions]
+#emilie
 
 # Generate override files
 cd $overridedir
@@ -98,6 +99,9 @@ mkmaintainers
 copyoverrides
 mklslar
 mkchecksums
+#
+# Fetch bugs information before unchecked processing is allowed again.
+/org/ftp.debian.org/testing/britney bugs
 rm -f $NOTICE
 sudo -u archvsync /home/archvsync/pushmerkel
 
