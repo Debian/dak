@@ -11,7 +11,9 @@
 	functions.
 
 	* katie.conf-security: Include embargo options
+	* katie.conf-security: Add Lock dir
 	* init_pool.sql-security: Create disembargo table
+	* init_pool.sql-security: Add constraints for disembargo table
 
 2005-11-26  Anthony Towns  <aj@erisian.com.au>
 

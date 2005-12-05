@@ -4,3 +4,5 @@ CREATE TABLE disembargo (
        version TEXT NOT NULL,
 );
 
+GRANT ALL ON disembargo TO GROUP ftpmaster;
+GRENT SELECT ON disembargo TO PUBLIC;

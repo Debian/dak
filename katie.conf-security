@@ -228,6 +228,7 @@ Dir
   Templates "/org/security.debian.org/katie/templates/";
   PoolRoot "pool/";
   Override "/org/security.debian.org/override/";
+  Lock "/org/security.debian.org/lock/";
   Lists "/org/security.debian.org/katie-database/dists/";
   Log "/org/security.debian.org/katie-log/";
   Morgue "/org/security.debian.org/morgue/";
