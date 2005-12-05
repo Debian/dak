@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.61 2005-12-05 03:45:12 ajt Exp $
+# $Id: jennifer,v 1.62 2005-12-05 04:54:29 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.61 $";
+jennifer_version = "$Revision: 1.62 $";
 
 Cnf = None;
 Options = None;
@@ -1131,11 +1131,11 @@ def is_unembargo ():
         if changes["architecture"].has_key("source"):
             if Options["No-Action"]: return 1
 
-            projectB.query(
+            Katie.projectB.query(
               "INSERT INTO disembargo (package, version) VALUES ('%s', '%s')" % 
               (changes["package"], changes["version"]))
 
-    q = projectB.query(
+    q = Katie.projectB.query(
       "SELECT package FROM disembargo WHERE package = '%s' AND version = '%s'" % 
       (changes["package"], changes["version"]))
     ql = q.getresult()
