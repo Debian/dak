@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.64 2005-12-05 05:31:48 ajt Exp $
+# $Id: jennifer,v 1.65 2005-12-05 05:35:47 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.64 $";
+jennifer_version = "$Revision: 1.65 $";
 
 Cnf = None;
 Options = None;
@@ -1135,7 +1135,7 @@ def is_unembargo ():
     if ql:
         return 1
 
-    if pkg.directory == Cnf["Dir::Queue::Disembargo"]:
+    if pkg.directory == Cnf["Dir::Queue::Disembargo"].rstrip("/"):
         if changes["architecture"].has_key("source"):
             if Options["No-Action"]: return 1
 
@@ -1209,9 +1209,6 @@ def acknowledge_new (summary):
     Logger.log(["Moving to new", pkg.changes_file]);
 
     Katie.dump_vars(Cnf["Dir::Queue::New"]);
-
-    file_keys = files.keys();
-
     move_to_dir(Cnf["Dir::Queue::New"])
 
     if not Options["No-Mail"]:
