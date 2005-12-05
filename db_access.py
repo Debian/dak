@@ -2,7 +2,7 @@
 
 # DB access fucntions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.17 2005-12-05 03:45:12 ajt Exp $
+# $Id: db_access.py,v 1.18 2005-12-05 05:08:10 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -304,6 +304,7 @@ def get_files_id (filename, size, md5sum, location_id):
 
 def get_or_set_queue_id (queue):
     global queue_id_cache
+
     if queue_id_cache.has_key(queue):
         return queue_id_cache[queue]
 
