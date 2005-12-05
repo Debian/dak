@@ -1,8 +1,8 @@
 
 CREATE TABLE disembargo (
        package TEXT NOT NULL,
-       version TEXT NOT NULL,
+       version TEXT NOT NULL
 );
 
 GRANT ALL ON disembargo TO GROUP ftpmaster;
-GRENT SELECT ON disembargo TO PUBLIC;
+GRANT SELECT ON disembargo TO PUBLIC;
