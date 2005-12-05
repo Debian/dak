@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.63 2005-12-05 05:08:10 ajt Exp $
+# $Id: jennifer,v 1.64 2005-12-05 05:31:48 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.63 $";
+jennifer_version = "$Revision: 1.64 $";
 
 Cnf = None;
 Options = None;
@@ -1121,26 +1121,29 @@ def accept (summary, short_summary):
 
 def move_to_dir (dest, perms=0660, changesperms=0664):
     utils.move (pkg.changes_file, dest, perms=changesperms);
+    file_keys = files.keys();
     for file in file_keys:
         utils.move (file, dest, perms=perms);
 
 ################################################################################
 
 def is_unembargo ():
+    q = Katie.projectB.query(
+      "SELECT package FROM disembargo WHERE package = '%s' AND version = '%s'" % 
+      (changes["source"], changes["version"]))
+    ql = q.getresult()
+    if ql:
+        return 1
+
     if pkg.directory == Cnf["Dir::Queue::Disembargo"]:
         if changes["architecture"].has_key("source"):
             if Options["No-Action"]: return 1
 
             Katie.projectB.query(
               "INSERT INTO disembargo (package, version) VALUES ('%s', '%s')" % 
-              (changes["package"], changes["version"]))
+              (changes["source"], changes["version"]))
+            return 1
 
-    q = Katie.projectB.query(
-      "SELECT package FROM disembargo WHERE package = '%s' AND version = '%s'" % 
-      (changes["package"], changes["version"]))
-    ql = q.getresult()
-    if ql:
-        return 1
     return 0
 
 def queue_unembargo (summary):
@@ -1148,9 +1151,6 @@ def queue_unembargo (summary):
     Logger.log(["Moving to unembargoed", pkg.changes_file]);
 
     Katie.dump_vars(Cnf["Dir::Queue::Unembargoed"]);
-
-    file_keys = files.keys();
-
     move_to_dir(Cnf["Dir::Queue::Unembargoed"])
     Katie.queue_build("unembargoed", Cnf["Dir::Queue::Unembargoed"])
 
@@ -1168,9 +1168,6 @@ def queue_embargo (summary):
     Logger.log(["Moving to embargoed", pkg.changes_file]);
 
     Katie.dump_vars(Cnf["Dir::Queue::Embargoed"]);
-
-    file_keys = files.keys();
-
     move_to_dir(Cnf["Dir::Queue::Embargoed"])
     Katie.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
 
@@ -1191,9 +1188,6 @@ def do_byhand (summary):
     Logger.log(["Moving to byhand", pkg.changes_file]);
 
     Katie.dump_vars(Cnf["Dir::Queue::Byhand"]);
-
-    file_keys = files.keys();
-
     move_to_dir(Cnf["Dir::Queue::Byhand"])
 
     # Check for override disparities

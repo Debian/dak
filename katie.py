@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.57 2005-12-05 03:45:12 ajt Exp $
+# $Id: katie.py,v 1.58 2005-12-05 05:31:48 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -455,8 +455,16 @@ distribution.""";
     ###########################################################################
 
     def queue_build (self, queue, path):
+        Cnf = self.Cnf
+        Subst = self.Subst
+        files = self.pkg.files
+        changes = self.pkg.changes
+        changes_file = self.pkg.changes_file
+        dsc = self.pkg.dsc
+        file_keys = files.keys()
+
         ## Special support to enable clean auto-building of queued packages
-        queue_id = get_or_set_queue_id(queue)
+        queue_id = db_access.get_or_set_queue_id(queue)
 
         self.projectB.query("BEGIN WORK");
         for suite in changes["distribution"].keys():
@@ -476,7 +484,7 @@ distribution.""";
                     # Create a symlink to it
                     os.symlink(src, dest);
                 # Add it to the list of packages for later processing by apt-ftparchive
-                self.projectB.query("INSERT INTO queue_build (suite, queue, filename, in_queue) VALUES (%s, queue_id, '%s', 't')" % (suite_id, dest));
+                self.projectB.query("INSERT INTO queue_build (suite, queue, filename, in_queue) VALUES (%s, %s, '%s', 't')" % (suite_id, queue_id, dest));
             # If the .orig.tar.gz is in the pool, create a symlink to
             # it (if one doesn't already exist)
             if self.pkg.orig_tar_id:
@@ -495,7 +503,7 @@ distribution.""";
                     src = os.path.join(ql[0][0], ql[0][1]);
                     os.symlink(src, dest);
                     # Add it to the list of packages for later processing by apt-ftparchive
-                    self.projectB.query("INSERT INTO queue_build (suite, queue, filename, in_queue) VALUES (%s, queue_id, '%s', 't')" % (suite_id, dest));
+                    self.projectB.query("INSERT INTO queue_build (suite, queue, filename, in_queue) VALUES (%s, %s, '%s', 't')" % (suite_id, queue_id, dest));
                 # if it does, update things to ensure it's not removed prematurely
                 else:
                     self.projectB.query("UPDATE queue_build SET in_queue = 't', last_used = NULL WHERE filename = '%s' AND suite = %s" % (dest, suite_id));

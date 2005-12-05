@@ -247,7 +247,7 @@ Dir
 
     Embargoed "/org/security.debian.org/queue/embargoed/";
     Unembargoed "/org/security.debian.org/queue/unembargoed/";
-    Disembargo "/org/security.debian.org/queue/uncheckecked-disembargo/";
+    Disembargo "/org/security.debian.org/queue/unchecked-disembargo/";
   };
 };
 
