@@ -27,6 +27,7 @@ Dinstall
      stable;
      testing;
    };
+   SecurityQueueHandling "true";     
    SecurityQueueBuild "true";     
    DefaultSuite "Testing";
    SuiteSuffix "updates";
@@ -242,6 +243,10 @@ Dir
     New "/org/security.debian.org/queue/new/";
     Reject "/org/security.debian.org/queue/reject/";
     Unchecked "/org/security.debian.org/queue/unchecked/";
+
+    Embargoed "/org/security.debian.org/queue/embargoed/";
+    Unembargoed "/org/security.debian.org/queue/unembargoed/";
+    Disembargo "/org/security.debian.org/queue/uncheckecked-disembargo/";
   };
 };
 

@@ -2,7 +2,7 @@
 
 # DB access fucntions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.16 2004-06-17 15:00:41 troup Exp $
+# $Id: db_access.py,v 1.17 2005-12-05 03:45:12 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ source_id_cache = {};
 files_id_cache = {};
 maintainer_cache = {};
 fingerprint_id_cache = {};
+queue_id_cache = {};
 uid_id_cache = {};
 
 ################################################################################
@@ -299,6 +300,21 @@ def get_files_id (filename, size, md5sum, location_id):
     else:
         return None
 
+################################################################################
+
+def get_or_set_queue_id (queue):
+    global queue_id_cache
+    if queue_id_cache.has_key(queue):
+        return queue_id_cache[queue]
+
+    q = projectB.query("SELECT id FROM queue WHERE queue_name = '%s'" % (queue))
+    if not q.getresult():
+        projectB.query("INSERT INTO queue (queue_name) VALUES ('%s')" % (queue))
+        q = projectB.query("SELECT id FROM queue WHERE queue_name = '%s'" % (queue))
+    queue_id = q.getresult()[0][0]
+    queue_id_cache[queue] = queue_id
+
+    return queue_id
 
 ################################################################################
 

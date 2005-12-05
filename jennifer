@@ -2,7 +2,7 @@
 
 # Checks Debian packages from Incoming
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: jennifer,v 1.60 2005-11-25 09:35:09 ajt Exp $
+# $Id: jennifer,v 1.61 2005-12-05 03:45:12 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ re_strip_revision = re.compile(r"-([^-]+)$");
 ################################################################################
 
 # Globals
-jennifer_version = "$Revision: 1.60 $";
+jennifer_version = "$Revision: 1.61 $";
 
 Cnf = None;
 Options = None;
@@ -1037,11 +1037,15 @@ def action ():
     (summary, short_summary) = Katie.build_summaries();
 
     # q-unapproved hax0ring
-    queues = [ "New", "Byhand" ]
     queue_info = {
          "New": { "is": is_new, "process": acknowledge_new },
          "Byhand" : { "is": is_byhand, "process": do_byhand },
+         "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
+         "Embargo" : { "is": is_embargo, "process": queue_embargo },
     }
+    queues = [ "New", "Byhand" ]
+    if Cnf.FindB("Dinstall::SecurityQueueHandling"):
+        queues += [ "Unembargo", "Embargo" ]
 
     (prompt, answer) = ("", "XXX")
     if Options["No-Action"] or Options["Automatic"]:
@@ -1094,10 +1098,18 @@ def action ():
         Katie.do_reject(0, reject_message);
     elif answer == 'A':
         accept(summary, short_summary);
+        remove_from_unchecked()
     elif answer == queuekey:
         queue_info[queue]["process"](summary)
+        remove_from_unchecked()
     elif answer == 'Q':
         sys.exit(0)
+
+def remove_from_unchecked():
+    os.chdir (pkg.directory);
+    for file in files.keys():
+        os.unlink(file);
+    os.unlink(pkg.changes_file);
 
 ################################################################################
 
@@ -1105,11 +1117,66 @@ def accept (summary, short_summary):
     Katie.accept(summary, short_summary);
     Katie.check_override();
 
-    # Finally, remove the originals from the unchecked directory
-    os.chdir (pkg.directory);
-    for file in files.keys():
-        os.unlink(file);
-    os.unlink(pkg.changes_file);
+################################################################################
+
+def move_to_dir (dest, perms=0660, changesperms=0664):
+    utils.move (pkg.changes_file, dest, perms=changesperms);
+    for file in file_keys:
+        utils.move (file, dest, perms=perms);
+
+################################################################################
+
+def is_unembargo ():
+    if os.getcwd() == Cnf["Dir::Queue::Disembargo"]:
+        if changes["architecture"].has_key("source"):
+            if Options["No-Action"]: return 1
+
+            projectB.query(
+              "INSERT INTO disembargo (package, version) VALUES ('%s', '%s')" % 
+              (changes["package"], changes["version"]))
+
+    q = projectB.query(
+      "SELECT package FROM disembargo WHERE package = '%s' AND version = '%s'" % 
+      (changes["package"], changes["version"]))
+    ql = q.getresult()
+    if ql:
+        return 1
+    return 0
+
+def queue_unembargo (summary):
+    print "Moving to UNEMBARGOED holding area."
+    Logger.log(["Moving to unembargoed", pkg.changes_file]);
+
+    Katie.dump_vars(Cnf["Dir::Queue::Unembargoed"]);
+
+    file_keys = files.keys();
+
+    move_to_dir(Cnf["Dir::Queue::Unembargoed"])
+    Katie.queue_build("unembargoed", Cnf["Dir::Queue::Unembargoed"])
+
+    # Check for override disparities
+    Katie.Subst["__SUMMARY__"] = summary;
+    Katie.check_override();
+
+################################################################################
+
+def is_embargo ():
+    return 0
+
+def queue_embargo (summary):
+    print "Moving to EMBARGOED holding area."
+    Logger.log(["Moving to embargoed", pkg.changes_file]);
+
+    Katie.dump_vars(Cnf["Dir::Queue::Embargoed"]);
+
+    file_keys = files.keys();
+
+    move_to_dir(Cnf["Dir::Queue::Embargoed"])
+    Katie.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
+
+    # Check for override disparities
+    Katie.Subst["__SUMMARY__"] = summary;
+    Katie.check_override();
 
 ################################################################################
 
@@ -1127,20 +1194,11 @@ def do_byhand (summary):
 
     file_keys = files.keys();
 
-    # Move all the files into the byhand directory
-    utils.move (pkg.changes_file, Cnf["Dir::Queue::Byhand"]);
-    for file in file_keys:
-        utils.move (file, Cnf["Dir::Queue::Byhand"], perms=0660);
+    move_to_dir(Cnf["Dir::Queue::Byhand"])
 
     # Check for override disparities
     Katie.Subst["__SUMMARY__"] = summary;
     Katie.check_override();
-
-    # Finally remove the originals.
-    os.chdir (pkg.directory);
-    for file in file_keys:
-        os.unlink(file);
-    os.unlink(pkg.changes_file);
 
 ################################################################################
 
@@ -1160,22 +1218,13 @@ def acknowledge_new (summary):
 
     file_keys = files.keys();
 
-    # Move all the files into the 'new' directory
-    utils.move (pkg.changes_file, Cnf["Dir::Queue::New"]);
-    for file in file_keys:
-        utils.move (file, Cnf["Dir::Queue::New"], perms=0660);
+    move_to_dir(Cnf["Dir::Queue::New"])
 
     if not Options["No-Mail"]:
         print "Sending new ack.";
         Subst["__SUMMARY__"] = summary;
         new_ack_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.new");
         utils.send_mail(new_ack_message);
-
-    # Finally remove the originals.
-    os.chdir (pkg.directory);
-    for file in file_keys:
-        os.unlink(file);
-    os.unlink(pkg.changes_file);
 
 ################################################################################
 
