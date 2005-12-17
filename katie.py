@@ -2,7 +2,7 @@
 
 # Utility functions for katie
 # Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.58 2005-12-05 05:31:48 ajt Exp $
+# $Id: katie.py,v 1.59 2005-12-17 10:57:03 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@ re_isanum = re.compile (r"^\d+$");
 re_default_answer = re.compile(r"\[(.*)\]");
 re_fdnic = re.compile(r"\n\n");
 re_bin_only_nmu = re.compile(r"\+b\d+$");
-
 ###############################################################################
 
 # Convenience wrapper to carry around all the package information in
@@ -674,8 +673,7 @@ distribution.""";
     # upload being processed.
     #
     # (1) exact match                      => 1.0-3
-    # (2) Bin-only NMU of an MU            => 1.0-3.0.1
-    # (3) Bin-only NMU of a sourceful-NMU  => 1.0-3.1.1
+    # (2) Bin-only NMU                     => 1.0-3+b1 , 1.0-3.1+b1
 
     def source_exists (self, package, source_version, suites = ["any"]):
 	okay = 1
@@ -714,6 +712,7 @@ distribution.""";
 
             # No source found...
             okay = 0
+	    break
 	return okay
 
     ################################################################################

@@ -2,7 +2,7 @@
 
 # Installs Debian packages from queue/accepted into the pool
 # Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: kelly,v 1.17 2005-11-25 06:59:45 ajt Exp $
+# $Id: kelly,v 1.18 2005-12-17 10:57:03 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,14 +30,14 @@
 
 ###############################################################################
 
-import errno, fcntl, os, sys, time;
+import errno, fcntl, os, sys, time, re;
 import apt_pkg;
 import db_access, katie, logging, utils;
 
 ###############################################################################
 
 # Globals
-kelly_version = "$Revision: 1.17 $";
+kelly_version = "$Revision: 1.18 $";
 
 Cnf = None;
 Options = None;
@@ -217,7 +217,8 @@ def action ():
         if Options["Automatic"]:
             answer = 'R';
     else:
-        print "INSTALL\n" + reject_message + summary,;
+        print "INSTALL to " + ", ".join(changes["distribution"].keys()) 
+	print reject_message + summary,;
         prompt = "[I]nstall, Skip, Quit ?";
         if Options["Automatic"]:
             answer = 'I';
@@ -481,18 +482,34 @@ def stable_install (summary, short_summary):
     # Add the binaries to stable (and remove it/them from proposed-updates)
     for file in files.keys():
         if files[file]["type"] == "deb":
+	    binNMU = 0
             package = files[file]["package"];
             version = files[file]["version"];
             architecture = files[file]["architecture"];
             q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture));
             ql = q.getresult();
             if not ql:
-                utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture));
-            binary_id = ql[0][0];
-            suite_id = db_access.get_suite_id('proposed-updates');
-            projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
-            suite_id = db_access.get_suite_id('stable');
-            projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id));
+		suite_id = db_access.get_suite_id('proposed-updates');
+		que = "SELECT b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN suite su ON (ba.suite = su.id) WHERE b.package = '%s' AND (ba.suite = '%s')" % (package, suite_id);
+		q = projectB.query(que)
+
+		# Reduce the query results to a list of version numbers
+		ql = map(lambda x: x[0], q.getresult());
+		if not ql:
+		    utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture));
+		else:
+		    for x in ql:
+			if re.match(re.compile(r"%s((\.0)?\.)|(\+b)\d+$" % re.escape(version)),x):
+			    binNMU = 1
+			    break
+	    if not binNMU:
+		binary_id = ql[0][0];
+		suite_id = db_access.get_suite_id('proposed-updates');
+		projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id));
+		suite_id = db_access.get_suite_id('stable');
+		projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id));
+	    else:
+                del files[file]
 
     projectB.query("COMMIT WORK");
 

@@ -2,7 +2,7 @@
 
 # Remove obsolete .changes files from proposed-updates
 # Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: halle,v 1.12 2004-03-11 00:20:51 troup Exp $
+# $Id: halle,v 1.13 2005-12-17 10:57:03 rmurray Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ projectB = None;
 Options = None;
 pu = {};
 
-re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).deb$");
+re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).u?deb$");
 
 ################################################################################
 

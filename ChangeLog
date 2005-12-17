@@ -1,3 +1,8 @@
+2005-12-16  Ryan Murray  <rmurray@debian.org>
+
+	* halle: add support for udebs
+	* kelly: stable_install: add support for binNMU versions
+
 2005-12-05  Anthony Towns  <aj@erisian.com.au>
 
 	* katie.py: Move accept() autobuilding support into separate function 
