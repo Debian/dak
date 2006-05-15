@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Prepare and maintain partial trees by architecture
-# Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
+# Copyright (C) 2004, 2006  Daniel Silverstone <dsilvers@digital-scurf.org>
 # $Id: billie,v 1.4 2004-11-27 16:06:42 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
@@ -24,9 +24,9 @@
 ## <tbm> Make something damned stupid up and attribute it to me, that's okay
 ###############################################################################
 
-import pg, pwd, sys
-import utils, db_access
-import apt_pkg, logging
+import sys
+import utils
+import apt_pkg
 
 from stat import S_ISDIR, S_ISLNK, S_ISREG
 import os
@@ -39,6 +39,8 @@ MASTER_PATH = "***Configure Billie::FTPPath Please***"
 TREE_ROOT = "***Configure Billie::TreeRootPath Please***"
 TREE_DB_ROOT = "***Configure Billie::TreeDatabasePath Please***"
 trees = []
+
+Cnf = None
 
 ###############################################################################
 # A BillieTarget is a representation of a target. It is a set of archs, a path
@@ -165,7 +167,7 @@ class BillieDB:
             elif S_ISREG(lnl[0]):
                 bdir.files[ln] = lnl[1]
             else:
-                util.fubar( "Confused by %s/%s -- not a dir, link or file" %
+                utils.fubar( "Confused by %s/%s -- not a dir, link or file" %
                             ( path, ln ) )
         for d in dirs:
             bdir.dirs[d] = self._internal_recurse( "%s/%s" % (path,d) )

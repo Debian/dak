@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Sync fingerprint and uid tables with a debian.org LDAP DB
-# Copyright (C) 2003, 2004  James Troup <james@nocrew.org>
+# Copyright (C) 2003, 2004, 2006  James Troup <james@nocrew.org>
 # $Id: emilie,v 1.3 2004-11-27 13:25:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@
 
 ################################################################################
 
-import commands, ldap, pg, re, sys, time
+import commands, ldap, pg, re, sys
 import apt_pkg
 import db_access, utils
 
@@ -94,8 +94,6 @@ def main():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     db_access.init(Cnf, projectB)
 
-    #before = time.time()
-    #sys.stderr.write("[Getting info from the LDAP server...")
     LDAPDn = Cnf["Emilie::LDAPDn"]
     LDAPServer = Cnf["Emilie::LDAPServer"]
     l = ldap.open(LDAPServer)
@@ -103,7 +101,6 @@ def main():
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Julia::ValidGID"]),
                        ["uid", "keyfingerprint"])
-    #sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
 
 
     projectB.query("BEGIN WORK")

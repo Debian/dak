@@ -1,3 +1,14 @@
+2006-05-15  James Troup  <james@nocrew.org>
+
+	* queue_report.py: remove unused encodings imports.
+
+	* mirror_split.py: drop unused pg, pwd, db_access and logging
+	imports.  Initalize 'Cnf' as a global.
+	(BillieDB._internal_recurse): fix 'util.' typo.
+
+	* import_ldap_fingerprints.py (main): drop unused time import and
+	commented out time check for LDAP search.
+
 2005-12-16  Ryan Murray  <rmurray@debian.org>
 
 	* halle: add support for udebs

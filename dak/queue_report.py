@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Produces a report on NEW and BYHAND packages
-# Copyright (C) 2001, 2002, 2003, 2005  James Troup <james@nocrew.org>
+# Copyright (C) 2001, 2002, 2003, 2005, 2006  James Troup <james@nocrew.org>
 # $Id: helena,v 1.6 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,6 @@
 import copy, glob, os, stat, sys, time
 import apt_pkg
 import katie, utils
-import encodings.utf_8, encodings.latin_1, string
 
 Cnf = None
 Katie = None
