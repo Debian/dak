@@ -47,14 +47,14 @@
 
 ################################################################################
 
-import pg, sys, os;
-import utils, db_access, logging;
-import apt_pkg;
+import pg, sys, os
+import utils, db_access, logging
+import apt_pkg
 
 ################################################################################
 
-Options = None;
-projectB = None;
+Options = None
+projectB = None
 Logger = None
 sections = {}
 priorities = {}
@@ -79,58 +79,58 @@ def gen_blacklist(dir):
         blacklist[entry] = 1
 
 def process(osuite, affected_suites, originosuite, component, type):
-    global Logger, Options, projectB, sections, priorities;
+    global Logger, Options, projectB, sections, priorities
 
-    osuite_id = db_access.get_suite_id(osuite);
+    osuite_id = db_access.get_suite_id(osuite)
     if osuite_id == -1:
-        utils.fubar("Suite '%s' not recognised." % (osuite));
+        utils.fubar("Suite '%s' not recognised." % (osuite))
     originosuite_id = None
     if originosuite:
-        originosuite_id = db_access.get_suite_id(originosuite);
+        originosuite_id = db_access.get_suite_id(originosuite)
         if originosuite_id == -1:
-            utils.fubar("Suite '%s' not recognised." % (originosuite));
+            utils.fubar("Suite '%s' not recognised." % (originosuite))
 
-    component_id = db_access.get_component_id(component);
+    component_id = db_access.get_component_id(component)
     if component_id == -1:
-        utils.fubar("Component '%s' not recognised." % (component));
+        utils.fubar("Component '%s' not recognised." % (component))
 
-    type_id = db_access.get_override_type_id(type);
+    type_id = db_access.get_override_type_id(type)
     if type_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type));
-    dsc_type_id = db_access.get_override_type_id("dsc");
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type))
+    dsc_type_id = db_access.get_override_type_id("dsc")
     deb_type_id = db_access.get_override_type_id("deb")
 
     source_priority_id = db_access.get_priority_id("source")
 
     if type == "deb" or type == "udeb":
-        packages = {};
+        packages = {}
         q = projectB.query("""
 SELECT b.package FROM binaries b, bin_associations ba, files f,
                               location l, component c
  WHERE b.type = '%s' AND b.id = ba.bin AND f.id = b.file AND l.id = f.location
    AND c.id = l.component AND ba.suite IN (%s) AND c.id = %s
-""" % (type, ",".join(map(str,affected_suites)), component_id));
+""" % (type, ",".join(map(str,affected_suites)), component_id))
         for i in q.getresult():
-            packages[i[0]] = 0;
+            packages[i[0]] = 0
 
-    src_packages = {};
+    src_packages = {}
     q = projectB.query("""
 SELECT s.source FROM source s, src_associations sa, files f, location l,
                      component c
  WHERE s.id = sa.source AND f.id = s.file AND l.id = f.location
    AND c.id = l.component AND sa.suite IN (%s) AND c.id = %s
-""" % (",".join(map(str,affected_suites)), component_id));
+""" % (",".join(map(str,affected_suites)), component_id))
     for i in q.getresult():
-        src_packages[i[0]] = 0;
+        src_packages[i[0]] = 0
 
     # -----------
     # Drop unused overrides
 
-    q = projectB.query("SELECT package, priority, section, maintainer FROM override WHERE suite = %s AND component = %s AND type = %s" % (osuite_id, component_id, type_id));
-    projectB.query("BEGIN WORK");
+    q = projectB.query("SELECT package, priority, section, maintainer FROM override WHERE suite = %s AND component = %s AND type = %s" % (osuite_id, component_id, type_id))
+    projectB.query("BEGIN WORK")
     if type == "dsc":
         for i in q.getresult():
-            package = i[0];
+            package = i[0]
             if src_packages.has_key(package):
                 src_packages[package] = 1
             else:
@@ -142,12 +142,12 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 if not Options["No-Action"]:
                     projectB.query("""DELETE FROM override WHERE package =
                         '%s' AND suite = %s AND component = %s AND type =
-                        %s""" % (package, osuite_id, component_id, type_id));
+                        %s""" % (package, osuite_id, component_id, type_id))
         # create source overrides based on binary overrides, as source
         # overrides not always get created
         q = projectB.query(""" SELECT package, priority, section,
             maintainer FROM override WHERE suite = %s AND component = %s
-            """ % (osuite_id, component_id));
+            """ % (osuite_id, component_id))
         for i in q.getresult():
             package = i[0]
             if not src_packages.has_key(package) or src_packages[package]:
@@ -161,7 +161,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                     component, priority, section, type, maintainer) VALUES
                     ('%s', %s, %s, %s, %s, %s, '%s')""" % (package,
                     osuite_id, component_id, source_priority_id, i[2],
-                    dsc_type_id, i[3]));
+                    dsc_type_id, i[3]))
         # Check whether originosuite has an override for us we can
         # copy
         if originosuite:
@@ -172,7 +172,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 target.suite=%s AND origin.component = target.component AND origin.type =
                 target.type) WHERE origin.suite = %s AND origin.component = %s
                 AND origin.type = %s""" %
-                (osuite_id, originosuite_id, component_id, type_id));
+                (osuite_id, originosuite_id, component_id, type_id))
             for i in q.getresult():
                 package = i[0]
                 if not src_packages.has_key(package) or src_packages[package]:
@@ -184,7 +184,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                                 maintainer='%s' WHERE package='%s' AND
                                 suite=%s AND component=%s AND type=%s""" %
                                 (i[2], i[3], package, osuite_id, component_id,
-                                dsc_type_id));
+                                dsc_type_id))
                     continue
                 # we can copy
                 src_packages[package] = 1
@@ -195,7 +195,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                         component, priority, section, type, maintainer) VALUES
                         ('%s', %s, %s, %s, %s, %s, '%s')""" % (package,
                         osuite_id, component_id, source_priority_id, i[2],
-                        dsc_type_id, i[3]));
+                        dsc_type_id, i[3]))
 
         for package, hasoverride in src_packages.items():
             if not hasoverride:
@@ -203,7 +203,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
 
     else: # binary override
         for i in q.getresult():
-            package = i[0];
+            package = i[0]
             if packages.has_key(package):
                 packages[package] = 1
             else:
@@ -215,7 +215,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 if not Options["No-Action"]:
                     projectB.query("""DELETE FROM override WHERE package =
                         '%s' AND suite = %s AND component = %s AND type =
-                        %s""" % (package, osuite_id, component_id, type_id));
+                        %s""" % (package, osuite_id, component_id, type_id))
 
         # Check whether originosuite has an override for us we can
         # copy
@@ -227,7 +227,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 target.suite=%s AND origin.component = target.component AND
                 origin.type = target.type) WHERE origin.suite = %s AND
                 origin.component = %s AND origin.type = %s""" % (osuite_id,
-                originosuite_id, component_id, type_id));
+                originosuite_id, component_id, type_id))
             for i in q.getresult():
                 package = i[0]
                 if not packages.has_key(package) or packages[package]:
@@ -240,7 +240,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                                 maintainer='%s' WHERE package='%s' AND
                                 suite=%s AND component=%s AND type=%s""" %
                                 (i[1], i[2], i[3], package, osuite_id,
-                                component_id, type_id));
+                                component_id, type_id))
                     continue
                 # we can copy
                 packages[package] = 1
@@ -249,36 +249,36 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 if not Options["No-Action"]:
                     projectB.query("""INSERT INTO override (package, suite,
                         component, priority, section, type, maintainer) VALUES
-                        ('%s', %s, %s, %s, %s, %s, '%s')""" % (package, osuite_id, component_id, i[1], i[2], type_id, i[3]));
+                        ('%s', %s, %s, %s, %s, %s, '%s')""" % (package, osuite_id, component_id, i[1], i[2], type_id, i[3]))
 
         for package, hasoverride in packages.items():
             if not hasoverride:
                 utils.warn("%s has no override!" % package)
 
-    projectB.query("COMMIT WORK");
+    projectB.query("COMMIT WORK")
     sys.stdout.flush()
 
 
 ################################################################################
 
 def main ():
-    global Logger, Options, projectB, sections, priorities;
+    global Logger, Options, projectB, sections, priorities
 
     Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Cindy::Options::Help"),
-                 ('n',"no-action", "Cindy::Options::No-Action")];
+                 ('n',"no-action", "Cindy::Options::No-Action")]
     for i in [ "help", "no-action" ]:
         if not Cnf.has_key("Cindy::Options::%s" % (i)):
-            Cnf["Cindy::Options::%s" % (i)] = "";
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+            Cnf["Cindy::Options::%s" % (i)] = ""
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
     Options = Cnf.SubTree("Cindy::Options")
 
     if Options["Help"]:
-        usage();
+        usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
     # init sections, priorities:
     q = projectB.query("SELECT id, section FROM section")
@@ -304,13 +304,13 @@ def main ():
         originosuite = None
         originremark = ""
         try:
-            originosuite = Cnf["Cindy::OverrideSuites::%s::OriginSuite" % osuite];
+            originosuite = Cnf["Cindy::OverrideSuites::%s::OriginSuite" % osuite]
             originosuite = originosuite.lower()
             originremark = " taking missing from %s" % originosuite
         except KeyError:
             pass
 
-        print "Processing %s%s..." % (osuite, originremark);
+        print "Processing %s%s..." % (osuite, originremark)
         # Get a list of all suites that use the override file of 'osuite'
         ocodename = Cnf["Suite::%s::codename" % osuite]
         suites = []
@@ -338,9 +338,9 @@ def main ():
             otypes = ["dsc"] + otypes
             for otype in otypes:
                 print "Processing %s [%s - %s] using %s..." \
-                    % (osuite, component, otype, suites);
+                    % (osuite, component, otype, suites)
                 sys.stdout.flush()
-                process(osuite, suiteids, originosuite, component, otype);
+                process(osuite, suiteids, originosuite, component, otype)
 
     Logger.close()
 

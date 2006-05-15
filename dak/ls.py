@@ -27,14 +27,14 @@
 
 ################################################################################
 
-import os, pg, sys;
-import utils, db_access;
-import apt_pkg;
+import os, pg, sys
+import utils, db_access
+import apt_pkg
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
+Cnf = None
+projectB = None
 
 ################################################################################
 
@@ -59,7 +59,7 @@ ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 ################################################################################
 
 def main ():
-    global Cnf, projectB;
+    global Cnf, projectB
 
     Cnf = utils.get_conf()
 
@@ -72,64 +72,64 @@ def main ():
                  ('r', "regex", "Madison::Options::Regex"),
                  ('s', "suite", "Madison::Options::Suite", "HasArg"),
                  ('S', "source-and-binary", "Madison::Options::Source-And-Binary"),
-                 ('h', "help", "Madison::Options::Help")];
+                 ('h', "help", "Madison::Options::Help")]
     for i in [ "architecture", "binarytype", "component", "format",
                "greaterorequal", "greaterthan", "regex", "suite",
                "source-and-binary", "help" ]:
 	if not Cnf.has_key("Madison::Options::%s" % (i)):
-	    Cnf["Madison::Options::%s" % (i)] = "";
+	    Cnf["Madison::Options::%s" % (i)] = ""
 
-    packages = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    packages = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Madison::Options")
 
     if Options["Help"]:
-        usage();
+        usage()
     if not packages:
-        utils.fubar("need at least one package name as an argument.");
+        utils.fubar("need at least one package name as an argument.")
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
     # If cron.daily is running; warn the user that our output might seem strange
     if os.path.exists(os.path.join(Cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
-        utils.warn("Archive maintenance is in progress; database inconsistencies are possible.");
+        utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
 
     # Handle buildd maintenance helper options
     if Options["GreaterOrEqual"] or Options["GreaterThan"]:
         if Options["GreaterOrEqual"] and Options["GreaterThan"]:
-            utils.fubar("-g/--greaterorequal and -G/--greaterthan are mutually exclusive.");
+            utils.fubar("-g/--greaterorequal and -G/--greaterthan are mutually exclusive.")
         if not Options["Suite"]:
-            Options["Suite"] = "unstable";
+            Options["Suite"] = "unstable"
 
     # Parse -a/--architecture, -c/--component and -s/--suite
     (con_suites, con_architectures, con_components, check_source) = \
-                 utils.parse_args(Options);
+                 utils.parse_args(Options)
 
     if Options["BinaryType"]:
         if Options["BinaryType"] != "udeb" and Options["BinaryType"] != "deb":
-            utils.fubar("Invalid binary type.  'udeb' and 'deb' recognised.");
-        con_bintype = "AND b.type = '%s'" % (Options["BinaryType"]);
+            utils.fubar("Invalid binary type.  'udeb' and 'deb' recognised.")
+        con_bintype = "AND b.type = '%s'" % (Options["BinaryType"])
         # REMOVE ME TRAMP
         if Options["BinaryType"] == "udeb":
-            check_source = 0;
+            check_source = 0
     else:
-        con_bintype = "";
+        con_bintype = ""
 
     if Options["Regex"]:
-        comparison_operator = "~";
+        comparison_operator = "~"
     else:
-        comparison_operator = "=";
+        comparison_operator = "="
 
     if Options["Source-And-Binary"]:
-        new_packages = [];
+        new_packages = []
         for package in packages:
-            q = projectB.query("SELECT DISTINCT b.package FROM binaries b, bin_associations ba, suite su, source s WHERE b.source = s.id AND su.id = ba.suite AND b.id = ba.bin AND s.source %s '%s' %s" % (comparison_operator, package, con_suites));
-            new_packages.extend(map(lambda x: x[0], q.getresult()));
+            q = projectB.query("SELECT DISTINCT b.package FROM binaries b, bin_associations ba, suite su, source s WHERE b.source = s.id AND su.id = ba.suite AND b.id = ba.bin AND s.source %s '%s' %s" % (comparison_operator, package, con_suites))
+            new_packages.extend(map(lambda x: x[0], q.getresult()))
             if package not in new_packages:
-                new_packages.append(package);
-        packages = new_packages;
+                new_packages.append(package)
+        packages = new_packages
 
-    results = 0;
+    results = 0
     for package in packages:
         q = projectB.query("""
 SELECT b.package, b.version, a.arch_string, su.suite_name, c.name, m.name
@@ -138,8 +138,8 @@ SELECT b.package, b.version, a.arch_string, su.suite_name, c.name, m.name
  WHERE b.package %s '%s' AND a.id = b.architecture AND su.id = ba.suite
    AND b.id = ba.bin AND b.file = f.id AND f.location = l.id
    AND l.component = c.id AND b.maintainer = m.id %s %s %s
-""" % (comparison_operator, package, con_suites, con_architectures, con_bintype));
-        ql = q.getresult();
+""" % (comparison_operator, package, con_suites, con_architectures, con_bintype))
+        ql = q.getresult()
         if check_source:
             q = projectB.query("""
 SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
@@ -148,51 +148,51 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
  WHERE s.source %s '%s' AND su.id = sa.suite AND s.id = sa.source
    AND s.file = f.id AND f.location = l.id AND l.component = c.id
    AND s.maintainer = m.id %s
-""" % (comparison_operator, package, con_suites));
-            ql.extend(q.getresult());
-        d = {};
-        highver = {};
+""" % (comparison_operator, package, con_suites))
+            ql.extend(q.getresult())
+        d = {}
+        highver = {}
         for i in ql:
-            results += 1;
-            (pkg, version, architecture, suite, component, maintainer) = i;
+            results += 1
+            (pkg, version, architecture, suite, component, maintainer) = i
             if component != "main":
-                suite = "%s/%s" % (suite, component);
+                suite = "%s/%s" % (suite, component)
             if not d.has_key(pkg):
-                d[pkg] = {};
-            highver.setdefault(pkg,"");
+                d[pkg] = {}
+            highver.setdefault(pkg,"")
             if not d[pkg].has_key(version):
-                d[pkg][version] = {};
+                d[pkg][version] = {}
                 if apt_pkg.VersionCompare(version, highver[pkg]) > 0:
-                    highver[pkg] = version;
+                    highver[pkg] = version
             if not d[pkg][version].has_key(suite):
-                d[pkg][version][suite] = [];
-            d[pkg][version][suite].append(architecture);
+                d[pkg][version][suite] = []
+            d[pkg][version][suite].append(architecture)
 
-        packages = d.keys();
-        packages.sort();
+        packages = d.keys()
+        packages.sort()
         for pkg in packages:
-            versions = d[pkg].keys();
-            versions.sort(apt_pkg.VersionCompare);
+            versions = d[pkg].keys()
+            versions.sort(apt_pkg.VersionCompare)
             for version in versions:
-                suites = d[pkg][version].keys();
-                suites.sort();
+                suites = d[pkg][version].keys()
+                suites.sort()
                 for suite in suites:
-                    arches = d[pkg][version][suite];
-                    arches.sort(utils.arch_compare_sw);
+                    arches = d[pkg][version][suite]
+                    arches.sort(utils.arch_compare_sw)
                     if Options["Format"] == "": #normal
-                        sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite));
-                        sys.stdout.write(", ".join(arches));
-                        sys.stdout.write('\n');
+                        sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite))
+                        sys.stdout.write(", ".join(arches))
+                        sys.stdout.write('\n')
                     elif Options["Format"] == "heidi":
                         for arch in arches:
-                            sys.stdout.write("%s %s %s\n" % (pkg, version, arch));
+                            sys.stdout.write("%s %s %s\n" % (pkg, version, arch))
             if Options["GreaterOrEqual"]:
                 print "\n%s (>= %s)" % (pkg, highver[pkg])
             if Options["GreaterThan"]:
                 print "\n%s (>> %s)" % (pkg, highver[pkg])
 
     if not results:
-        sys.exit(1);
+        sys.exit(1)
 
 #######################################################################################
 

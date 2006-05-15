@@ -24,20 +24,20 @@
 ## <tbm> Make something damned stupid up and attribute it to me, that's okay
 ###############################################################################
 
-import pg, pwd, sys;
-import utils, db_access;
-import apt_pkg, logging;
+import pg, pwd, sys
+import utils, db_access
+import apt_pkg, logging
 
-from stat import S_ISDIR, S_ISLNK, S_ISREG;
-import os;
-import cPickle;
+from stat import S_ISDIR, S_ISLNK, S_ISREG
+import os
+import cPickle
 
 ## Master path is the main repository
-#MASTER_PATH = "/org/ftp.debian.org/scratch/dsilvers/master";
+#MASTER_PATH = "/org/ftp.debian.org/scratch/dsilvers/master"
 
-MASTER_PATH = "***Configure Billie::FTPPath Please***";
-TREE_ROOT = "***Configure Billie::TreeRootPath Please***";
-TREE_DB_ROOT = "***Configure Billie::TreeDatabasePath Please***";
+MASTER_PATH = "***Configure Billie::FTPPath Please***"
+TREE_ROOT = "***Configure Billie::TreeRootPath Please***"
+TREE_DB_ROOT = "***Configure Billie::TreeDatabasePath Please***"
 trees = []
 
 ###############################################################################
@@ -47,54 +47,54 @@ trees = []
 
 class BillieTarget:
     def __init__(self, name, archs, source):
-        self.name = name;
-        self.root = "%s/%s" % (TREE_ROOT,name);
-        self.archs = archs.split(",");
-        self.source = source;
-        self.dbpath = "%s/%s.db" % (TREE_DB_ROOT,name);
-        self.db = BillieDB();
+        self.name = name
+        self.root = "%s/%s" % (TREE_ROOT,name)
+        self.archs = archs.split(",")
+        self.source = source
+        self.dbpath = "%s/%s.db" % (TREE_DB_ROOT,name)
+        self.db = BillieDB()
         if os.path.exists( self.dbpath ):
-            self.db.load_from_file( self.dbpath );
+            self.db.load_from_file( self.dbpath )
 
     ## Save the db back to disk
     def save_db(self):
-        self.db.save_to_file( self.dbpath );
+        self.db.save_to_file( self.dbpath )
 
     ## Returns true if it's a poolish match
     def poolish_match(self, path):
         for a in self.archs:
             if path.endswith( "_%s.deb" % (a) ):
-                return 1;
+                return 1
             if path.endswith( "_%s.udeb" % (a) ):
-                return 1;
+                return 1
         if self.source:
             if (path.endswith( ".tar.gz" ) or
                 path.endswith( ".diff.gz" ) or
                 path.endswith( ".dsc" )):
-                return 1;
-        return 0;
+                return 1
+        return 0
 
     ## Returns false if it's a badmatch distswise
     def distish_match(self,path):
         for a in self.archs:
             if path.endswith("/Contents-%s.gz" % (a)):
-                return 1;
+                return 1
             if path.find("/binary-%s/" % (a)) != -1:
-                return 1;
+                return 1
             if path.find("/installer-%s/" % (a)) != -1:
-                return 1;
+                return 1
         if path.find("/source/") != -1:
             if self.source:
-                return 1;
+                return 1
             else:
-                return 0;
+                return 0
         if path.find("/Contents-") != -1:
-            return 0;
+            return 0
         if path.find("/binary-") != -1:
-            return 0;
+            return 0
         if path.find("/installer-") != -1:
-            return 0;
-        return 1;
+            return 0
+        return 1
     
 ##############################################################################
 # The applicable function is basically a predicate. Given a path and a
@@ -106,26 +106,26 @@ class BillieTarget:
 ##################
 
 verbatim = [
-    ];
+    ]
 
 verbprefix = [
     "/tools/",
     "/README",
     "/doc/"
-    ];
+    ]
 
 def applicable(path, target):
     if path.startswith("/pool/"):
-        return target.poolish_match(path);
+        return target.poolish_match(path)
     if (path.startswith("/dists/") or
         path.startswith("/project/experimental/")):
-        return target.distish_match(path);
+        return target.distish_match(path)
     if path in verbatim:
-        return 1;
+        return 1
     for prefix in verbprefix:
         if path.startswith(prefix):
-            return 1;
-    return 0;
+            return 1
+    return 0
 
 
 ##############################################################################
@@ -138,9 +138,9 @@ def applicable(path, target):
 
 class BillieDir:
     def __init__(self):
-        self.dirs = {};
-        self.files = {};
-        self.links = {};
+        self.dirs = {}
+        self.files = {}
+        self.links = {}
 
 ##############################################################################
 # A BillieDB is a container for a BillieDir...
@@ -149,44 +149,44 @@ class BillieDir:
 class BillieDB:
     ## Initialise a BillieDB as containing nothing
     def __init__(self):
-        self.root = BillieDir();
+        self.root = BillieDir()
 
     def _internal_recurse(self, path):
-        bdir = BillieDir();
-        dl = os.listdir( path );
-        dl.sort();
-        dirs = [];
+        bdir = BillieDir()
+        dl = os.listdir( path )
+        dl.sort()
+        dirs = []
         for ln in dl:
-            lnl = os.lstat( "%s/%s" % (path, ln) );
+            lnl = os.lstat( "%s/%s" % (path, ln) )
             if S_ISDIR(lnl[0]):
-                dirs.append(ln);
+                dirs.append(ln)
             elif S_ISLNK(lnl[0]):
-                bdir.links[ln] = os.readlink( "%s/%s" % (path, ln) );
+                bdir.links[ln] = os.readlink( "%s/%s" % (path, ln) )
             elif S_ISREG(lnl[0]):
-                bdir.files[ln] = lnl[1];
+                bdir.files[ln] = lnl[1]
             else:
                 util.fubar( "Confused by %s/%s -- not a dir, link or file" %
-                            ( path, ln ) );
+                            ( path, ln ) )
         for d in dirs:
-            bdir.dirs[d] = self._internal_recurse( "%s/%s" % (path,d) );
+            bdir.dirs[d] = self._internal_recurse( "%s/%s" % (path,d) )
 
-        return bdir;
+        return bdir
 
     ## Recurse through a given path, setting the sequence accordingly
     def init_from_dir(self, dirp):
-        self.root = self._internal_recurse( dirp );
+        self.root = self._internal_recurse( dirp )
 
     ## Load this BillieDB from file
     def load_from_file(self, fname):
-        f = open(fname, "r");
-        self.root = cPickle.load(f);
-        f.close();
+        f = open(fname, "r")
+        self.root = cPickle.load(f)
+        f.close()
 
     ## Save this BillieDB to a file
     def save_to_file(self, fname):
-        f = open(fname, "w");
-        cPickle.dump( self.root, f, 1 );
-        f.close();
+        f = open(fname, "w")
+        cPickle.dump( self.root, f, 1 )
+        f.close()
 
         
 ##############################################################################
@@ -194,29 +194,29 @@ class BillieDB:
 ##################
 
 def _pth(a,b):
-    return "%s/%s" % (a,b);
+    return "%s/%s" % (a,b)
 
 def do_mkdir(targ,path):
     if not os.path.exists( _pth(targ.root, path) ):
-        os.makedirs( _pth(targ.root, path) );
+        os.makedirs( _pth(targ.root, path) )
 
 def do_mkdir_f(targ,path):
-    do_mkdir(targ, os.path.dirname(path));
+    do_mkdir(targ, os.path.dirname(path))
 
 def do_link(targ,path):
-    do_mkdir_f(targ,path);
+    do_mkdir_f(targ,path)
     os.link( _pth(MASTER_PATH, path),
-             _pth(targ.root, path));
+             _pth(targ.root, path))
 
 def do_symlink(targ,path,link):
-    do_mkdir_f(targ,path);
-    os.symlink( link, _pth(targ.root, path) );
+    do_mkdir_f(targ,path)
+    os.symlink( link, _pth(targ.root, path) )
 
 def do_unlink(targ,path):
-    os.unlink( _pth(targ.root, path) );
+    os.unlink( _pth(targ.root, path) )
 
 def do_unlink_dir(targ,path):
-    os.system( "rm -Rf '%s'" % _pth(targ.root, path) );
+    os.system( "rm -Rf '%s'" % _pth(targ.root, path) )
 
 ##############################################################################
 # Reconciling a target with the sourcedb
@@ -229,13 +229,13 @@ def _internal_reconcile( path, srcdir, targdir, targ ):
     for k in targdir.links.keys():
         if applicable( _pth(path, k), targ ):
             if not srcdir.links.has_key(k):
-                rm.append(k);
+                rm.append(k)
         else:
-            rm.append(k);
+            rm.append(k)
     for k in rm:
         #print "-L-", _pth(path,k)
         do_unlink(targ, _pth(path,k))
-        del targdir.links[k];
+        del targdir.links[k]
     
     # Remove any files in targdir which aren't in srcdir
     # Or which aren't applicable
@@ -243,37 +243,37 @@ def _internal_reconcile( path, srcdir, targdir, targ ):
     for k in targdir.files.keys():
         if applicable( _pth(path, k), targ ):
             if not srcdir.files.has_key(k):
-                rm.append(k);
+                rm.append(k)
         else:
-            rm.append(k);
+            rm.append(k)
     for k in rm:
         #print "-F-", _pth(path,k)
         do_unlink(targ, _pth(path,k))
-        del targdir.files[k];
+        del targdir.files[k]
 
     # Remove any dirs in targdir which aren't in srcdir
     rm = []
     for k in targdir.dirs.keys():
         if not srcdir.dirs.has_key(k):
-            rm.append(k);
+            rm.append(k)
     for k in rm:
         #print "-D-", _pth(path,k)
         do_unlink_dir(targ, _pth(path,k))
-        del targdir.dirs[k];
+        del targdir.dirs[k]
 
     # Add/update files
     for k in srcdir.files.keys():
         if applicable( _pth(path,k), targ ):
             if not targdir.files.has_key(k):
                 #print "+F+", _pth(path,k)
-                do_link( targ, _pth(path,k) );
-                targdir.files[k] = srcdir.files[k];
+                do_link( targ, _pth(path,k) )
+                targdir.files[k] = srcdir.files[k]
             else:
                 if targdir.files[k] != srcdir.files[k]:
-                    #print "*F*", _pth(path,k);
-                    do_unlink( targ, _pth(path,k) );
-                    do_link( targ, _pth(path,k) );
-                    targdir.files[k] = srcdir.files[k];
+                    #print "*F*", _pth(path,k)
+                    do_unlink( targ, _pth(path,k) )
+                    do_link( targ, _pth(path,k) )
+                    targdir.files[k] = srcdir.files[k]
 
     # Add/update links
     for k in srcdir.links.keys():
@@ -281,25 +281,25 @@ def _internal_reconcile( path, srcdir, targdir, targ ):
             if not targdir.links.has_key(k):
                 targdir.links[k] = srcdir.links[k]; 
                 #print "+L+",_pth(path,k), "->", srcdir.links[k]
-                do_symlink( targ, _pth(path,k), targdir.links[k] );
+                do_symlink( targ, _pth(path,k), targdir.links[k] )
             else:
                 if targdir.links[k] != srcdir.links[k]:
-                    do_unlink( targ, _pth(path,k) );
-                    targdir.links[k] = srcdir.links[k];
+                    do_unlink( targ, _pth(path,k) )
+                    targdir.links[k] = srcdir.links[k]
                     #print "*L*", _pth(path,k), "to ->", srcdir.links[k]
-                    do_symlink( targ, _pth(path,k), targdir.links[k] );
+                    do_symlink( targ, _pth(path,k), targdir.links[k] )
 
     # Do dirs
     for k in srcdir.dirs.keys():
         if not targdir.dirs.has_key(k):
-            targdir.dirs[k] = BillieDir();
+            targdir.dirs[k] = BillieDir()
             #print "+D+", _pth(path,k)
         _internal_reconcile( _pth(path,k), srcdir.dirs[k],
-                             targdir.dirs[k], targ );
+                             targdir.dirs[k], targ )
 
 
 def reconcile_target_db( src, targ ):
-    _internal_reconcile( "", src.root, targ.db.root, targ );
+    _internal_reconcile( "", src.root, targ.db.root, targ )
 
 ###############################################################################
 
@@ -309,9 +309,9 @@ def load_config():
     global TREE_DB_ROOT
     global trees
 
-    MASTER_PATH = Cnf["Billie::FTPPath"];
-    TREE_ROOT = Cnf["Billie::TreeRootPath"];
-    TREE_DB_ROOT = Cnf["Billie::TreeDatabasePath"];
+    MASTER_PATH = Cnf["Billie::FTPPath"]
+    TREE_ROOT = Cnf["Billie::TreeRootPath"]
+    TREE_DB_ROOT = Cnf["Billie::TreeDatabasePath"]
     
     for a in Cnf.ValueList("Billie::BasicTrees"):
         trees.append( BillieTarget( a, "%s,all" % a, 1 ) )
@@ -323,7 +323,7 @@ def load_config():
             source = 1
             archs.remove("source")
         archs = ",".join(archs)
-        trees.append( BillieTarget( n, archs, source ) );
+        trees.append( BillieTarget( n, archs, source ) )
 
 def do_list ():
     print "Master path",MASTER_PATH
@@ -353,22 +353,22 @@ def main ():
 
     Arguments = [('h',"help","Billie::Options::Help"),
                  ('l',"list","Billie::Options::List"),
-                 ];
+                 ]
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
-    Cnf["Billie::Options::cake"] = "";
+    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    Cnf["Billie::Options::cake"] = ""
     Options = Cnf.SubTree("Billie::Options")
 
     print "Loading configuration..."
-    load_config();
+    load_config()
     print "Loaded."
 
     if Options.has_key("Help"):
-        do_help();
-        return;
+        do_help()
+        return
     if Options.has_key("List"):
-        do_list();
-        return;
+        do_list()
+        return
     
 
     src = BillieDB()
@@ -378,9 +378,9 @@ def main ():
 
     for tree in trees:
         print "Reconciling tree:",tree.name
-        reconcile_target_db( src, tree );
+        reconcile_target_db( src, tree )
         print "Saving updated DB...",
-        tree.save_db();
+        tree.save_db()
         print "Done"
     
 ##############################################################################

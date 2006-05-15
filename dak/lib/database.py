@@ -20,50 +20,50 @@
 
 ################################################################################
 
-import sys, time, types;
+import sys, time, types
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
-suite_id_cache = {};
-section_id_cache = {};
-priority_id_cache = {};
-override_type_id_cache = {};
-architecture_id_cache = {};
-archive_id_cache = {};
-component_id_cache = {};
-location_id_cache = {};
-maintainer_id_cache = {};
-source_id_cache = {};
-files_id_cache = {};
-maintainer_cache = {};
-fingerprint_id_cache = {};
-queue_id_cache = {};
-uid_id_cache = {};
+Cnf = None
+projectB = None
+suite_id_cache = {}
+section_id_cache = {}
+priority_id_cache = {}
+override_type_id_cache = {}
+architecture_id_cache = {}
+archive_id_cache = {}
+component_id_cache = {}
+location_id_cache = {}
+maintainer_id_cache = {}
+source_id_cache = {}
+files_id_cache = {}
+maintainer_cache = {}
+fingerprint_id_cache = {}
+queue_id_cache = {}
+uid_id_cache = {}
 
 ################################################################################
 
 def init (config, sql):
     global Cnf, projectB
 
-    Cnf = config;
-    projectB = sql;
+    Cnf = config
+    projectB = sql
 
 
 def do_query(q):
-    sys.stderr.write("query: \"%s\" ... " % (q));
-    before = time.time();
-    r = projectB.query(q);
-    time_diff = time.time()-before;
-    sys.stderr.write("took %.3f seconds.\n" % (time_diff));
+    sys.stderr.write("query: \"%s\" ... " % (q))
+    before = time.time()
+    r = projectB.query(q)
+    time_diff = time.time()-before
+    sys.stderr.write("took %.3f seconds.\n" % (time_diff))
     if type(r) is int:
-        sys.stderr.write("int result: %s\n" % (r));
+        sys.stderr.write("int result: %s\n" % (r))
     elif type(r) is types.NoneType:
-        sys.stderr.write("result: None\n");
+        sys.stderr.write("result: None\n")
     else:
-        sys.stderr.write("pgresult: %s\n" % (r.getresult()));
-    return r;
+        sys.stderr.write("pgresult: %s\n" % (r.getresult()))
+    return r
 
 ################################################################################
 
@@ -74,11 +74,11 @@ def get_suite_id (suite):
         return suite_id_cache[suite]
 
     q = projectB.query("SELECT id FROM suite WHERE suite_name = '%s'" % (suite))
-    ql = q.getresult();
+    ql = q.getresult()
     if not ql:
-        return -1;
+        return -1
 
-    suite_id = ql[0][0];
+    suite_id = ql[0][0]
     suite_id_cache[suite] = suite_id
 
     return suite_id
@@ -90,11 +90,11 @@ def get_section_id (section):
         return section_id_cache[section]
 
     q = projectB.query("SELECT id FROM section WHERE section = '%s'" % (section))
-    ql = q.getresult();
+    ql = q.getresult()
     if not ql:
-        return -1;
+        return -1
 
-    section_id = ql[0][0];
+    section_id = ql[0][0]
     section_id_cache[section] = section_id
 
     return section_id
@@ -106,59 +106,59 @@ def get_priority_id (priority):
         return priority_id_cache[priority]
 
     q = projectB.query("SELECT id FROM priority WHERE priority = '%s'" % (priority))
-    ql = q.getresult();
+    ql = q.getresult()
     if not ql:
-        return -1;
+        return -1
 
-    priority_id = ql[0][0];
+    priority_id = ql[0][0]
     priority_id_cache[priority] = priority_id
 
     return priority_id
 
 def get_override_type_id (type):
-    global override_type_id_cache;
+    global override_type_id_cache
 
     if override_type_id_cache.has_key(type):
-        return override_type_id_cache[type];
+        return override_type_id_cache[type]
 
-    q = projectB.query("SELECT id FROM override_type WHERE type = '%s'" % (type));
-    ql = q.getresult();
+    q = projectB.query("SELECT id FROM override_type WHERE type = '%s'" % (type))
+    ql = q.getresult()
     if not ql:
-        return -1;
+        return -1
 
-    override_type_id = ql[0][0];
-    override_type_id_cache[type] = override_type_id;
+    override_type_id = ql[0][0]
+    override_type_id_cache[type] = override_type_id
 
-    return override_type_id;
+    return override_type_id
 
 def get_architecture_id (architecture):
-    global architecture_id_cache;
+    global architecture_id_cache
 
     if architecture_id_cache.has_key(architecture):
-        return architecture_id_cache[architecture];
+        return architecture_id_cache[architecture]
 
     q = projectB.query("SELECT id FROM architecture WHERE arch_string = '%s'" % (architecture))
-    ql = q.getresult();
+    ql = q.getresult()
     if not ql:
-        return -1;
+        return -1
 
-    architecture_id = ql[0][0];
-    architecture_id_cache[architecture] = architecture_id;
+    architecture_id = ql[0][0]
+    architecture_id_cache[architecture] = architecture_id
 
-    return architecture_id;
+    return architecture_id
 
 def get_archive_id (archive):
     global archive_id_cache
 
-    archive = archive.lower();
+    archive = archive.lower()
 
     if archive_id_cache.has_key(archive):
         return archive_id_cache[archive]
 
-    q = projectB.query("SELECT id FROM archive WHERE lower(name) = '%s'" % (archive));
-    ql = q.getresult();
+    q = projectB.query("SELECT id FROM archive WHERE lower(name) = '%s'" % (archive))
+    ql = q.getresult()
     if not ql:
-        return -1;
+        return -1
 
     archive_id = ql[0][0]
     archive_id_cache[archive] = archive_id
@@ -168,17 +168,17 @@ def get_archive_id (archive):
 def get_component_id (component):
     global component_id_cache
 
-    component = component.lower();
+    component = component.lower()
 
     if component_id_cache.has_key(component):
         return component_id_cache[component]
 
     q = projectB.query("SELECT id FROM component WHERE lower(name) = '%s'" % (component))
-    ql = q.getresult();
+    ql = q.getresult()
     if not ql:
-        return -1;
+        return -1
 
-    component_id = ql[0][0];
+    component_id = ql[0][0]
     component_id_cache[component] = component_id
 
     return component_id
@@ -197,9 +197,9 @@ def get_location_id (location, component, archive):
             q = projectB.query("SELECT id FROM location WHERE path = '%s' AND component = %d AND archive = %d" % (location, component_id, archive_id))
     else:
         q = projectB.query("SELECT id FROM location WHERE path = '%s' AND archive = %d" % (location, archive_id))
-    ql = q.getresult();
+    ql = q.getresult()
     if not ql:
-        return -1;
+        return -1
 
     location_id = ql[0][0]
     location_id_cache[cache_key] = location_id
@@ -243,59 +243,59 @@ def get_or_set_maintainer_id (maintainer):
 ################################################################################
 
 def get_or_set_uid_id (uid):
-    global uid_id_cache;
+    global uid_id_cache
 
     if uid_id_cache.has_key(uid):
-        return uid_id_cache[uid];
+        return uid_id_cache[uid]
 
     q = projectB.query("SELECT id FROM uid WHERE uid = '%s'" % (uid))
     if not q.getresult():
-        projectB.query("INSERT INTO uid (uid) VALUES ('%s')" % (uid));
-        q = projectB.query("SELECT id FROM uid WHERE uid = '%s'" % (uid));
-    uid_id = q.getresult()[0][0];
-    uid_id_cache[uid] = uid_id;
+        projectB.query("INSERT INTO uid (uid) VALUES ('%s')" % (uid))
+        q = projectB.query("SELECT id FROM uid WHERE uid = '%s'" % (uid))
+    uid_id = q.getresult()[0][0]
+    uid_id_cache[uid] = uid_id
 
-    return uid_id;
+    return uid_id
 
 ################################################################################
 
 def get_or_set_fingerprint_id (fingerprint):
-    global fingerprint_id_cache;
+    global fingerprint_id_cache
 
     if fingerprint_id_cache.has_key(fingerprint):
         return fingerprint_id_cache[fingerprint]
 
-    q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint));
+    q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint))
     if not q.getresult():
-        projectB.query("INSERT INTO fingerprint (fingerprint) VALUES ('%s')" % (fingerprint));
-        q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint));
-    fingerprint_id = q.getresult()[0][0];
-    fingerprint_id_cache[fingerprint] = fingerprint_id;
+        projectB.query("INSERT INTO fingerprint (fingerprint) VALUES ('%s')" % (fingerprint))
+        q = projectB.query("SELECT id FROM fingerprint WHERE fingerprint = '%s'" % (fingerprint))
+    fingerprint_id = q.getresult()[0][0]
+    fingerprint_id_cache[fingerprint] = fingerprint_id
 
-    return fingerprint_id;
+    return fingerprint_id
 
 ################################################################################
 
 def get_files_id (filename, size, md5sum, location_id):
     global files_id_cache
 
-    cache_key = "%s~%d" % (filename, location_id);
+    cache_key = "%s~%d" % (filename, location_id)
 
     if files_id_cache.has_key(cache_key):
         return files_id_cache[cache_key]
 
-    size = int(size);
-    q = projectB.query("SELECT id, size, md5sum FROM files WHERE filename = '%s' AND location = %d" % (filename, location_id));
-    ql = q.getresult();
+    size = int(size)
+    q = projectB.query("SELECT id, size, md5sum FROM files WHERE filename = '%s' AND location = %d" % (filename, location_id))
+    ql = q.getresult()
     if ql:
         if len(ql) != 1:
-            return -1;
-        ql = ql[0];
-        orig_size = int(ql[1]);
-        orig_md5sum = ql[2];
+            return -1
+        ql = ql[0]
+        orig_size = int(ql[1])
+        orig_md5sum = ql[2]
         if orig_size != size or orig_md5sum != md5sum:
-            return -2;
-        files_id_cache[cache_key] = ql[0];
+            return -2
+        files_id_cache[cache_key] = ql[0]
         return files_id_cache[cache_key]
     else:
         return None
@@ -322,29 +322,29 @@ def get_or_set_queue_id (queue):
 def set_files_id (filename, size, md5sum, location_id):
     global files_id_cache
 
-    projectB.query("INSERT INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id));
+    projectB.query("INSERT INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id))
 
-    return get_files_id (filename, size, md5sum, location_id);
+    return get_files_id (filename, size, md5sum, location_id)
 
-    ### currval has issues with postgresql 7.1.3 when the table is big;
+    ### currval has issues with postgresql 7.1.3 when the table is big
     ### it was taking ~3 seconds to return on auric which is very Not
     ### Cool(tm).
     ##
-    ##q = projectB.query("SELECT id FROM files WHERE id = currval('files_id_seq')");
-    ##ql = q.getresult()[0];
-    ##cache_key = "%s~%d" % (filename, location_id);
+    ##q = projectB.query("SELECT id FROM files WHERE id = currval('files_id_seq')")
+    ##ql = q.getresult()[0]
+    ##cache_key = "%s~%d" % (filename, location_id)
     ##files_id_cache[cache_key] = ql[0]
-    ##return files_id_cache[cache_key];
+    ##return files_id_cache[cache_key]
 
 ################################################################################
 
 def get_maintainer (maintainer_id):
-    global maintainer_cache;
+    global maintainer_cache
 
     if not maintainer_cache.has_key(maintainer_id):
-        q = projectB.query("SELECT name FROM maintainer WHERE id = %s" % (maintainer_id));
-        maintainer_cache[maintainer_id] = q.getresult()[0][0];
+        q = projectB.query("SELECT name FROM maintainer WHERE id = %s" % (maintainer_id))
+        maintainer_cache[maintainer_id] = q.getresult()[0][0]
 
-    return maintainer_cache[maintainer_id];
+    return maintainer_cache[maintainer_id]
 
 ################################################################################

@@ -29,16 +29,16 @@
 
 ################################################################################
 
-import os, pg, re, sys;
-import utils, db_access;
-import apt_pkg;
+import os, pg, re, sys
+import utils, db_access
+import apt_pkg
 
 ################################################################################
 
-re_strip_section_prefix = re.compile(r'.*/');
+re_strip_section_prefix = re.compile(r'.*/')
 
-Cnf = None;
-projectB = None;
+Cnf = None
+projectB = None
 
 ################################################################################
 
@@ -55,24 +55,24 @@ Create compatibility symlinks from legacy locations to the pool.
 
 def fix_component_section (component, section):
     if component == "":
-        component = utils.extract_component_from_section(section)[1];
+        component = utils.extract_component_from_section(section)[1]
 
     # FIXME: ugly hacks to work around override brain damage
-    section = re_strip_section_prefix.sub('', section);
-    section = section.lower().replace('non-us', '');
+    section = re_strip_section_prefix.sub('', section)
+    section = section.lower().replace('non-us', '')
     if section == "main" or section == "contrib" or section == "non-free":
-        section = '';
+        section = ''
     if section != '':
-        section += '/';
+        section += '/'
 
-    return (component, section);
+    return (component, section)
 
 ################################################################################
 
 def find_dislocated_stable(Cnf, projectB):
     dislocated_files = {}
 
-    codename = Cnf["Suite::Stable::Codename"];
+    codename = Cnf["Suite::Stable::Codename"]
 
     # Source
     q = projectB.query("""
@@ -84,7 +84,7 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
       AND f.id = df.file AND f.location = l.id AND o.package = s.source
       AND sec.id = o.section AND NOT (f.filename ~ '^%s/')
       AND l.component = c.id AND o.suite = su.id
-""" % (codename));
+""" % (codename))
 # Only needed if you have files in legacy-mixed locations
 #  UNION SELECT DISTINCT ON (f.id) null, sec.section, l.path, f.filename, f.id
 #      FROM component c, override o, section sec, source s, files f, location l,
@@ -93,22 +93,22 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
 #        AND f2.id = s.file AND f2.location = l2.id AND df.source = s.id
 #        AND f.id = df.file AND f.location = l.id AND o.package = s.source
 #        AND sec.id = o.section AND NOT (f.filename ~ '^%s/') AND o.suite = su.id
-#        AND NOT EXISTS (SELECT 1 FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
+#        AND NOT EXISTS (SELECT 1 FROM location l WHERE l.component IS NOT NULL AND f.location = l.id)
     for i in q.getresult():
-        (component, section) = fix_component_section(i[0], i[1]);
+        (component, section) = fix_component_section(i[0], i[1])
         if Cnf.FindB("Dinstall::LegacyStableHasNoSections"):
-            section="";
-        dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], codename, component, section, os.path.basename(i[3]));
+            section=""
+        dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], codename, component, section, os.path.basename(i[3]))
         if not os.path.exists(dest):
-	    src = i[2]+i[3];
-	    src = utils.clean_symlink(src, dest, Cnf["Dir::Root"]);
+	    src = i[2]+i[3]
+	    src = utils.clean_symlink(src, dest, Cnf["Dir::Root"])
             if Cnf.Find("Claire::Options::Verbose"):
                 print src+' -> '+dest
-            os.symlink(src, dest);
-        dislocated_files[i[4]] = dest;
+            os.symlink(src, dest)
+        dislocated_files[i[4]] = dest
 
     # Binary
-    architectures = filter(utils.real_arch, Cnf.ValueList("Suite::Stable::Architectures"));
+    architectures = filter(utils.real_arch, Cnf.ValueList("Suite::Stable::Architectures"))
     q = projectB.query("""
 SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
                           b.version, l.path, f.filename, f.id
@@ -118,7 +118,7 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
       AND f.id = b.file AND f.location = l.id AND o.package = b.package
       AND sec.id = o.section AND NOT (f.filename ~ '^%s/')
       AND b.architecture = a.id AND l.component = c.id AND o.suite = su.id""" %
-                       (codename));
+                       (codename))
 # Only needed if you have files in legacy-mixed locations
 #  UNION SELECT DISTINCT ON (f.id) null, a.arch_string, sec.section, b.package,
 #                            b.version, l.path, f.filename, f.id
@@ -128,61 +128,61 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
 #        AND f.id = b.file AND f.location = l.id AND o.package = b.package
 #        AND sec.id = o.section AND NOT (f.filename ~ '^%s/')
 #        AND b.architecture = a.id AND o.suite = su.id AND NOT EXISTS
-#          (SELECT 1 FROM location l WHERE l.component IS NOT NULL AND f.location = l.id);
+#          (SELECT 1 FROM location l WHERE l.component IS NOT NULL AND f.location = l.id)
     for i in q.getresult():
-        (component, section) = fix_component_section(i[0], i[2]);
+        (component, section) = fix_component_section(i[0], i[2])
         if Cnf.FindB("Dinstall::LegacyStableHasNoSections"):
-            section="";
-        architecture = i[1];
-        package = i[3];
-        version = utils.re_no_epoch.sub('', i[4]);
-        src = i[5]+i[6];
+            section=""
+        architecture = i[1]
+        package = i[3]
+        version = utils.re_no_epoch.sub('', i[4])
+        src = i[5]+i[6]
 
-        dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, architecture, section, package, version);
-        src = utils.clean_symlink(src, dest, Cnf["Dir::Root"]);
+        dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, architecture, section, package, version)
+        src = utils.clean_symlink(src, dest, Cnf["Dir::Root"])
         if not os.path.exists(dest):
             if Cnf.Find("Claire::Options::Verbose"):
-                print src+' -> '+dest;
-            os.symlink(src, dest);
-        dislocated_files[i[7]] = dest;
+                print src+' -> '+dest
+            os.symlink(src, dest)
+        dislocated_files[i[7]] = dest
         # Add per-arch symlinks for arch: all debs
         if architecture == "all":
             for arch in architectures:
-                dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, arch, section, package, version);
+                dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, arch, section, package, version)
                 if not os.path.exists(dest):
                     if Cnf.Find("Claire::Options::Verbose"):
                         print src+' -> '+dest
-                    os.symlink(src, dest);
+                    os.symlink(src, dest)
 
     return dislocated_files
 
 ################################################################################
 
 def main ():
-    global Cnf, projectB;
+    global Cnf, projectB
 
     Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Claire::Options::Help"),
-                 ('v',"verbose","Claire::Options::Verbose")];
+                 ('v',"verbose","Claire::Options::Verbose")]
     for i in ["help", "verbose" ]:
 	if not Cnf.has_key("Claire::Options::%s" % (i)):
-	    Cnf["Claire::Options::%s" % (i)] = "";
+	    Cnf["Claire::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Claire::Options")
 
     if Options["Help"]:
-	usage();
+	usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
-    db_access.init(Cnf, projectB);
+    db_access.init(Cnf, projectB)
 
-    find_dislocated_stable(Cnf, projectB);
+    find_dislocated_stable(Cnf, projectB)
 
 #######################################################################################
 
 if __name__ == '__main__':
-    main();
+    main()
 

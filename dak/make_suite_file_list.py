@@ -34,16 +34,16 @@
 
 ################################################################################
 
-import copy, os, pg, string, sys;
-import apt_pkg;
-import claire, db_access, logging, utils;
+import copy, os, pg, string, sys
+import apt_pkg
+import claire, db_access, logging, utils
 
 ################################################################################
 
-projectB = None;
-Cnf = None;
-Logger = None;
-Options = None;
+projectB = None
+Cnf = None
+Logger = None
+Options = None
 
 ################################################################################
 
@@ -62,162 +62,162 @@ Write out file lists suitable for use with apt-ftparchive.
   -s, --suite=SUITE         only write file lists for this suite
 
 ARCH, COMPONENT and SUITE can be space separated lists, e.g.
-    --architecture=\"m68k i386\"""";
-    sys.exit(exit_code);
+    --architecture=\"m68k i386\""""
+    sys.exit(exit_code)
 
 ################################################################################
 
 def version_cmp(a, b):
-    return -apt_pkg.VersionCompare(a[0], b[0]);
+    return -apt_pkg.VersionCompare(a[0], b[0])
 
 #####################################################
 
 def delete_packages(delete_versions, pkg, dominant_arch, suite,
                     dominant_version, delete_table, delete_col, packages):
-    suite_id = db_access.get_suite_id(suite);
+    suite_id = db_access.get_suite_id(suite)
     for version in delete_versions:
-        delete_unique_id = version[1];
+        delete_unique_id = version[1]
         if not packages.has_key(delete_unique_id):
-            continue;
-        delete_version = version[0];
-        delete_id = packages[delete_unique_id]["id"];
-        delete_arch = packages[delete_unique_id]["arch"];
+            continue
+        delete_version = version[0]
+        delete_id = packages[delete_unique_id]["id"]
+        delete_arch = packages[delete_unique_id]["arch"]
         if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
             if Options["No-Delete"]:
-                print "Would delete %s_%s_%s in %s in favour of %s_%s" % (pkg, delete_arch, delete_version, suite, dominant_version, dominant_arch);
+                print "Would delete %s_%s_%s in %s in favour of %s_%s" % (pkg, delete_arch, delete_version, suite, dominant_version, dominant_arch)
             else:
-                Logger.log(["dominated", pkg, delete_arch, delete_version, dominant_version, dominant_arch]);
-                projectB.query("DELETE FROM %s WHERE suite = %s AND %s = %s" % (delete_table, suite_id, delete_col, delete_id));
-            del packages[delete_unique_id];
+                Logger.log(["dominated", pkg, delete_arch, delete_version, dominant_version, dominant_arch])
+                projectB.query("DELETE FROM %s WHERE suite = %s AND %s = %s" % (delete_table, suite_id, delete_col, delete_id))
+            del packages[delete_unique_id]
         else:
             if Options["No-Delete"]:
-                print "Would delete %s_%s_%s in favour of %s_%s, but %s is untouchable" % (pkg, delete_arch, delete_version, dominant_version, dominant_arch, suite);
+                print "Would delete %s_%s_%s in favour of %s_%s, but %s is untouchable" % (pkg, delete_arch, delete_version, dominant_version, dominant_arch, suite)
             else:
-                Logger.log(["dominated but untouchable", pkg, delete_arch, delete_version, dominant_version, dominant_arch]);
+                Logger.log(["dominated but untouchable", pkg, delete_arch, delete_version, dominant_version, dominant_arch])
 
 #####################################################
 
 # Per-suite&pkg: resolve arch-all, vs. arch-any, assumes only one arch-all
 def resolve_arch_all_vs_any(versions, packages):
-    arch_all_version = None;
-    arch_any_versions = copy.copy(versions);
+    arch_all_version = None
+    arch_any_versions = copy.copy(versions)
     for i in arch_any_versions:
-        unique_id = i[1];
-        arch = packages[unique_id]["arch"];
+        unique_id = i[1]
+        arch = packages[unique_id]["arch"]
         if arch == "all":
-            arch_all_versions = [i];
-            arch_all_version = i[0];
-            arch_any_versions.remove(i);
+            arch_all_versions = [i]
+            arch_all_version = i[0]
+            arch_any_versions.remove(i)
     # Sort arch: any versions into descending order
-    arch_any_versions.sort(version_cmp);
-    highest_arch_any_version = arch_any_versions[0][0];
+    arch_any_versions.sort(version_cmp)
+    highest_arch_any_version = arch_any_versions[0][0]
 
-    pkg = packages[unique_id]["pkg"];
-    suite = packages[unique_id]["suite"];
-    delete_table = "bin_associations";
-    delete_col = "bin";
+    pkg = packages[unique_id]["pkg"]
+    suite = packages[unique_id]["suite"]
+    delete_table = "bin_associations"
+    delete_col = "bin"
 
     if apt_pkg.VersionCompare(highest_arch_any_version, arch_all_version) < 1:
         # arch: all dominates
         delete_packages(arch_any_versions, pkg, "all", suite,
-                        arch_all_version, delete_table, delete_col, packages);
+                        arch_all_version, delete_table, delete_col, packages)
     else:
         # arch: any dominates
         delete_packages(arch_all_versions, pkg, "any", suite,
                         highest_arch_any_version, delete_table, delete_col,
-                        packages);
+                        packages)
 
 #####################################################
 
 # Per-suite&pkg&arch: resolve duplicate versions
 def remove_duplicate_versions(versions, packages):
     # Sort versions into descending order
-    versions.sort(version_cmp);
-    dominant_versions = versions[0];
-    dominated_versions = versions[1:];
-    (dominant_version, dominant_unqiue_id) = dominant_versions;
-    pkg = packages[dominant_unqiue_id]["pkg"];
-    arch = packages[dominant_unqiue_id]["arch"];
-    suite = packages[dominant_unqiue_id]["suite"];
+    versions.sort(version_cmp)
+    dominant_versions = versions[0]
+    dominated_versions = versions[1:]
+    (dominant_version, dominant_unqiue_id) = dominant_versions
+    pkg = packages[dominant_unqiue_id]["pkg"]
+    arch = packages[dominant_unqiue_id]["arch"]
+    suite = packages[dominant_unqiue_id]["suite"]
     if arch == "source":
-        delete_table = "src_associations";
-        delete_col = "source";
+        delete_table = "src_associations"
+        delete_col = "source"
     else: # !source
-        delete_table = "bin_associations";
-        delete_col = "bin";
+        delete_table = "bin_associations"
+        delete_col = "bin"
     # Remove all but the highest
     delete_packages(dominated_versions, pkg, arch, suite,
-                    dominant_version, delete_table, delete_col, packages);
-    return [dominant_versions];
+                    dominant_version, delete_table, delete_col, packages)
+    return [dominant_versions]
 
 ################################################################################
 
 def cleanup(packages):
     # Build up the index used by the clean up functions
-    d = {};
+    d = {}
     for unique_id in packages.keys():
-        suite = packages[unique_id]["suite"];
-        pkg = packages[unique_id]["pkg"];
-        arch = packages[unique_id]["arch"];
-        version = packages[unique_id]["version"];
-        d.setdefault(suite, {});
-        d[suite].setdefault(pkg, {});
-        d[suite][pkg].setdefault(arch, []);
-        d[suite][pkg][arch].append([version, unique_id]);
+        suite = packages[unique_id]["suite"]
+        pkg = packages[unique_id]["pkg"]
+        arch = packages[unique_id]["arch"]
+        version = packages[unique_id]["version"]
+        d.setdefault(suite, {})
+        d[suite].setdefault(pkg, {})
+        d[suite][pkg].setdefault(arch, [])
+        d[suite][pkg][arch].append([version, unique_id])
     # Clean up old versions
     for suite in d.keys():
         for pkg in d[suite].keys():
             for arch in d[suite][pkg].keys():
-                versions = d[suite][pkg][arch];
+                versions = d[suite][pkg][arch]
                 if len(versions) > 1:
-                    d[suite][pkg][arch] = remove_duplicate_versions(versions, packages);
+                    d[suite][pkg][arch] = remove_duplicate_versions(versions, packages)
 
     # Arch: all -> any and vice versa
     for suite in d.keys():
         for pkg in d[suite].keys():
-            arches = d[suite][pkg];
+            arches = d[suite][pkg]
             # If we don't have any arch: all; we've nothing to do
             if not arches.has_key("all"):
-                continue;
+                continue
             # Check to see if we have arch: all and arch: !all (ignoring source)
-            num_arches = len(arches.keys());
+            num_arches = len(arches.keys())
             if arches.has_key("source"):
-                num_arches -= 1;
+                num_arches -= 1
             # If we do, remove the duplicates
             if num_arches > 1:
-                versions = [];
+                versions = []
                 for arch in arches.keys():
                     if arch != "source":
-                        versions.extend(d[suite][pkg][arch]);
-                resolve_arch_all_vs_any(versions, packages);
+                        versions.extend(d[suite][pkg][arch])
+                resolve_arch_all_vs_any(versions, packages)
 
 ################################################################################
 
 def write_legacy_mixed_filelist(suite, list, packages, dislocated_files):
     # Work out the filename
-    filename = os.path.join(Cnf["Dir::Lists"], "%s_-_all.list" % (suite));
-    output = utils.open_file(filename, "w");
+    filename = os.path.join(Cnf["Dir::Lists"], "%s_-_all.list" % (suite))
+    output = utils.open_file(filename, "w")
     # Generate the final list of files
-    files = {};
+    files = {}
     for id in list:
-        path = packages[id]["path"];
-        filename = packages[id]["filename"];
-        file_id = packages[id]["file_id"];
+        path = packages[id]["path"]
+        filename = packages[id]["filename"]
+        file_id = packages[id]["file_id"]
         if suite == "stable" and dislocated_files.has_key(file_id):
-            filename = dislocated_files[file_id];
+            filename = dislocated_files[file_id]
         else:
-            filename = path + filename;
+            filename = path + filename
         if files.has_key(filename):
-            utils.warn("%s (in %s) is duplicated." % (filename, suite));
+            utils.warn("%s (in %s) is duplicated." % (filename, suite))
         else:
-            files[filename] = "";
+            files[filename] = ""
     # Sort the files since apt-ftparchive doesn't
-    keys = files.keys();
-    keys.sort();
+    keys = files.keys()
+    keys.sort()
     # Write the list of files out
     for file in keys:
         output.write(file+'\n')
-    output.close();
+    output.close()
 
 ############################################################
 
@@ -225,106 +225,106 @@ def write_filelist(suite, component, arch, type, list, packages, dislocated_file
     # Work out the filename
     if arch != "source":
         if type == "udeb":
-            arch = "debian-installer_binary-%s" % (arch);
+            arch = "debian-installer_binary-%s" % (arch)
         elif type == "deb":
-            arch = "binary-%s" % (arch);
-    filename = os.path.join(Cnf["Dir::Lists"], "%s_%s_%s.list" % (suite, component, arch));
-    output = utils.open_file(filename, "w");
+            arch = "binary-%s" % (arch)
+    filename = os.path.join(Cnf["Dir::Lists"], "%s_%s_%s.list" % (suite, component, arch))
+    output = utils.open_file(filename, "w")
     # Generate the final list of files
-    files = {};
+    files = {}
     for id in list:
-        path = packages[id]["path"];
-        filename = packages[id]["filename"];
-        file_id = packages[id]["file_id"];
-        pkg = packages[id]["pkg"];
+        path = packages[id]["path"]
+        filename = packages[id]["filename"]
+        file_id = packages[id]["file_id"]
+        pkg = packages[id]["pkg"]
         if suite == "stable" and dislocated_files.has_key(file_id):
-            filename = dislocated_files[file_id];
+            filename = dislocated_files[file_id]
         else:
-            filename = path + filename;
+            filename = path + filename
         if files.has_key(pkg):
-            utils.warn("%s (in %s/%s, %s) is duplicated." % (pkg, suite, component, filename));
+            utils.warn("%s (in %s/%s, %s) is duplicated." % (pkg, suite, component, filename))
         else:
-            files[pkg] = filename;
+            files[pkg] = filename
     # Sort the files since apt-ftparchive doesn't
-    pkgs = files.keys();
-    pkgs.sort();
+    pkgs = files.keys()
+    pkgs.sort()
     # Write the list of files out
     for pkg in pkgs:
         output.write(files[pkg]+'\n')
-    output.close();
+    output.close()
 
 ################################################################################
 
 def write_filelists(packages, dislocated_files):
     # Build up the index to iterate over
-    d = {};
+    d = {}
     for unique_id in packages.keys():
-        suite = packages[unique_id]["suite"];
-        component = packages[unique_id]["component"];
-        arch = packages[unique_id]["arch"];
-        type = packages[unique_id]["type"];
-        d.setdefault(suite, {});
-        d[suite].setdefault(component, {});
-        d[suite][component].setdefault(arch, {});
-        d[suite][component][arch].setdefault(type, []);
-        d[suite][component][arch][type].append(unique_id);
+        suite = packages[unique_id]["suite"]
+        component = packages[unique_id]["component"]
+        arch = packages[unique_id]["arch"]
+        type = packages[unique_id]["type"]
+        d.setdefault(suite, {})
+        d[suite].setdefault(component, {})
+        d[suite][component].setdefault(arch, {})
+        d[suite][component][arch].setdefault(type, [])
+        d[suite][component][arch][type].append(unique_id)
     # Flesh out the index
     if not Options["Suite"]:
-        suites = Cnf.SubTree("Suite").List();
+        suites = Cnf.SubTree("Suite").List()
     else:
-        suites = utils.split_args(Options["Suite"]);
+        suites = utils.split_args(Options["Suite"])
     for suite in map(string.lower, suites):
-        d.setdefault(suite, {});
+        d.setdefault(suite, {})
         if not Options["Component"]:
-            components = Cnf.ValueList("Suite::%s::Components" % (suite));
+            components = Cnf.ValueList("Suite::%s::Components" % (suite))
         else:
-            components = utils.split_args(Options["Component"]);
-        udeb_components = Cnf.ValueList("Suite::%s::UdebComponents" % (suite));
-        udeb_components = udeb_components;
+            components = utils.split_args(Options["Component"])
+        udeb_components = Cnf.ValueList("Suite::%s::UdebComponents" % (suite))
+        udeb_components = udeb_components
         for component in components:
-            d[suite].setdefault(component, {});
+            d[suite].setdefault(component, {})
             if component in udeb_components:
-                binary_types = [ "deb", "udeb" ];
+                binary_types = [ "deb", "udeb" ]
             else:
-                binary_types = [ "deb" ];
+                binary_types = [ "deb" ]
             if not Options["Architecture"]:
-                architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite));
+                architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
             else:
-                architectures = utils.split_args(Options["Architectures"]);
+                architectures = utils.split_args(Options["Architectures"])
             for arch in map(string.lower, architectures):
-                d[suite][component].setdefault(arch, {});
+                d[suite][component].setdefault(arch, {})
                 if arch == "source":
-                    types = [ "dsc" ];
+                    types = [ "dsc" ]
                 else:
-                    types = binary_types;
+                    types = binary_types
                 for type in types:
-                    d[suite][component][arch].setdefault(type, []);
+                    d[suite][component][arch].setdefault(type, [])
     # Then walk it
     for suite in d.keys():
         if Cnf.has_key("Suite::%s::Components" % (suite)):
             for component in d[suite].keys():
                 for arch in d[suite][component].keys():
                     if arch == "all":
-                        continue;
+                        continue
                     for type in d[suite][component][arch].keys():
-                        list = d[suite][component][arch][type];
+                        list = d[suite][component][arch][type]
                         # If it's a binary, we need to add in the arch: all debs too
                         if arch != "source":
-                            archall_suite = Cnf.get("Jenna::ArchAllMap::%s" % (suite));
+                            archall_suite = Cnf.get("Jenna::ArchAllMap::%s" % (suite))
                             if archall_suite:
-                                list.extend(d[archall_suite][component]["all"][type]);
+                                list.extend(d[archall_suite][component]["all"][type])
                             elif d[suite][component].has_key("all") and \
                                      d[suite][component]["all"].has_key(type):
-                                list.extend(d[suite][component]["all"][type]);
+                                list.extend(d[suite][component]["all"][type])
                         write_filelist(suite, component, arch, type, list,
-                                       packages, dislocated_files);
+                                       packages, dislocated_files)
         else: # legacy-mixed suite
-            list = [];
+            list = []
             for component in d[suite].keys():
                 for arch in d[suite][component].keys():
                     for type in d[suite][component][arch].keys():
-                        list.extend(d[suite][component][arch][type]);
-            write_legacy_mixed_filelist(suite, list, packages, dislocated_files);
+                        list.extend(d[suite][component][arch][type])
+            write_legacy_mixed_filelist(suite, list, packages, dislocated_files)
 
 ################################################################################
 
@@ -332,20 +332,20 @@ def write_filelists(packages, dislocated_files):
 def stable_dislocation_p():
     # If the support is not explicitly enabled, assume it's disabled
     if not Cnf.FindB("Dinstall::StableDislocationSupport"):
-        return 0;
+        return 0
     # If we don't have a stable suite, obviously a no-op
     if not Cnf.has_key("Suite::Stable"):
-        return 0;
+        return 0
     # If the suite(s) weren't explicitly listed, all suites are done
     if not Options["Suite"]:
-        return 1;
+        return 1
     # Otherwise, look in what suites the user specified
-    suites = utils.split_args(Options["Suite"]);
+    suites = utils.split_args(Options["Suite"])
 
     if "stable" in suites:
-        return 1;
+        return 1
     else:
-        return 0;
+        return 0
 
 ################################################################################
 
@@ -353,21 +353,21 @@ def do_da_do_da():
     # If we're only doing a subset of suites, ensure we do enough to
     # be able to do arch: all mapping.
     if Options["Suite"]:
-        suites = utils.split_args(Options["Suite"]);
+        suites = utils.split_args(Options["Suite"])
         for suite in suites:
-            archall_suite = Cnf.get("Jenna::ArchAllMap::%s" % (suite));
+            archall_suite = Cnf.get("Jenna::ArchAllMap::%s" % (suite))
             if archall_suite and archall_suite not in suites:
-                utils.warn("Adding %s as %s maps Arch: all from it." % (archall_suite, suite));
-                suites.append(archall_suite);
-        Options["Suite"] = ",".join(suites);
+                utils.warn("Adding %s as %s maps Arch: all from it." % (archall_suite, suite))
+                suites.append(archall_suite)
+        Options["Suite"] = ",".join(suites)
     
     (con_suites, con_architectures, con_components, check_source) = \
-                 utils.parse_args(Options);
+                 utils.parse_args(Options)
 
     if stable_dislocation_p():
-        dislocated_files = claire.find_dislocated_stable(Cnf, projectB);
+        dislocated_files = claire.find_dislocated_stable(Cnf, projectB)
     else:
-        dislocated_files = {};
+        dislocated_files = {}
 
     query = """
 SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name,
@@ -376,7 +376,7 @@ SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name,
        component c, suite su
   WHERE b.id = ba.bin AND b.file = f.id AND b.architecture = a.id
     AND f.location = l.id AND l.component = c.id AND ba.suite = su.id
-    %s %s %s""" % (con_suites, con_architectures, con_components);
+    %s %s %s""" % (con_suites, con_architectures, con_components)
     if check_source:
         query += """
 UNION
@@ -384,49 +384,49 @@ SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name, f.id,
        su.suite_name, 'dsc'
   FROM source s, src_associations sa, files f, location l, component c, suite su
   WHERE s.id = sa.source AND s.file = f.id AND f.location = l.id
-    AND l.component = c.id AND sa.suite = su.id %s %s""" % (con_suites, con_components);
-    q = projectB.query(query);
-    ql = q.getresult();
+    AND l.component = c.id AND sa.suite = su.id %s %s""" % (con_suites, con_components)
+    q = projectB.query(query)
+    ql = q.getresult()
     # Build up the main index of packages
-    packages = {};
-    unique_id = 0;
+    packages = {}
+    unique_id = 0
     for i in ql:
-        (id, pkg, arch, version, path, filename, component, file_id, suite, type) = i;
+        (id, pkg, arch, version, path, filename, component, file_id, suite, type) = i
         # 'id' comes from either 'binaries' or 'source', so it's not unique
-        unique_id += 1;
+        unique_id += 1
         packages[unique_id] = Dict(id=id, pkg=pkg, arch=arch, version=version,
                                    path=path, filename=filename,
                                    component=component, file_id=file_id,
-                                   suite=suite, type = type);
-    cleanup(packages);
-    write_filelists(packages, dislocated_files);
+                                   suite=suite, type = type)
+    cleanup(packages)
+    write_filelists(packages, dislocated_files)
 
 ################################################################################
 
 def main():
-    global Cnf, projectB, Options, Logger;
+    global Cnf, projectB, Options, Logger
 
-    Cnf = utils.get_conf();
+    Cnf = utils.get_conf()
     Arguments = [('a', "architecture", "Jenna::Options::Architecture", "HasArg"),
                  ('c', "component", "Jenna::Options::Component", "HasArg"),
                  ('h', "help", "Jenna::Options::Help"),
                  ('n', "no-delete", "Jenna::Options::No-Delete"),
-                 ('s', "suite", "Jenna::Options::Suite", "HasArg")];
+                 ('s', "suite", "Jenna::Options::Suite", "HasArg")]
     for i in ["architecture", "component", "help", "no-delete", "suite" ]:
 	if not Cnf.has_key("Jenna::Options::%s" % (i)):
-	    Cnf["Jenna::Options::%s" % (i)] = "";
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
-    Options = Cnf.SubTree("Jenna::Options");
+	    Cnf["Jenna::Options::%s" % (i)] = ""
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    Options = Cnf.SubTree("Jenna::Options")
     if Options["Help"]:
-        usage();
+        usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
-    Logger = logging.Logger(Cnf, "jenna");
-    do_da_do_da();
-    Logger.close();
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
+    Logger = logging.Logger(Cnf, "jenna")
+    do_da_do_da()
+    Logger.close()
 
 #########################################################################################
 
 if __name__ == '__main__':
-    main();
+    main()

@@ -40,20 +40,20 @@
 
 ################################################################################
 
-import commands, os, pg, re, sys;
-import utils, db_access;
-import apt_pkg, apt_inst;
+import commands, os, pg, re, sys
+import utils, db_access
+import apt_pkg, apt_inst
 
 ################################################################################
 
-re_strip_source_version = re.compile (r'\s+.*$');
-re_build_dep_arch = re.compile(r"\[[^]]+\]");
+re_strip_source_version = re.compile (r'\s+.*$')
+re_build_dep_arch = re.compile(r"\[[^]]+\]")
 
 ################################################################################
 
-Cnf = None;
-Options = None;
-projectB = None;
+Cnf = None
+Options = None
+projectB = None
 
 ################################################################################
 
@@ -87,10 +87,10 @@ ARCH, BUG#, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 #  the fuck are we gonna do now? What are we gonna do?"
 
 def game_over():
-    answer = utils.our_raw_input("Continue (y/N)? ").lower();
+    answer = utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
         print "Aborted."
-        sys.exit(1);
+        sys.exit(1)
 
 ################################################################################
 
@@ -98,20 +98,20 @@ def reverse_depends_check(removals, suites):
     print "Checking reverse dependencies..."
     components = Cnf.ValueList("Suite::%s::Components" % suites[0])
     dep_problem = 0
-    p2c = {};
+    p2c = {}
     for architecture in Cnf.ValueList("Suite::%s::Architectures" % suites[0]):
         if architecture in ["source", "all"]:
             continue
-        deps = {};
-        virtual_packages = {};
+        deps = {}
+        virtual_packages = {}
         for component in components:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suites[0], component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-            temp_filename = utils.temp_filename();
-            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+            temp_filename = utils.temp_filename()
+            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
-                utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result);
-            packages = utils.open_file(temp_filename);
+                utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
+            packages = utils.open_file(temp_filename)
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find("Package")
@@ -133,9 +133,9 @@ def reverse_depends_check(removals, suites):
                             virtual_packages[virtual_pkg] = 0
                         if package not in removals:
                             virtual_packages[virtual_pkg] += 1
-                p2c[package] = component;
+                p2c[package] = component
             packages.close()
-            os.unlink(temp_filename);
+            os.unlink(temp_filename)
 
         # If a virtual package is only provided by the to-be-removed
         # packages, treat the virtual package as to-be-removed too.
@@ -160,19 +160,19 @@ def reverse_depends_check(removals, suites):
                     if dep_package in removals:
                             unsat += 1
                 if unsat == len(dep):
-                    component = p2c[package];
+                    component = p2c[package]
                     if component != "main":
-                        what = "%s/%s" % (package, component);
+                        what = "%s/%s" % (package, component)
                     else:
-                        what = "** %s" % (package);
-                    print "%s has an unsatisfied dependency on %s: %s" % (what, architecture, utils.pp_deps(dep));
+                        what = "** %s" % (package)
+                    print "%s has an unsatisfied dependency on %s: %s" % (what, architecture, utils.pp_deps(dep))
                     dep_problem = 1
 
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suites[0], component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = utils.temp_filename();
+        temp_filename = utils.temp_filename()
         result, output = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if result != 0:
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
@@ -199,9 +199,9 @@ def reverse_depends_check(removals, suites):
                             unsat += 1
                 if unsat == len(dep):
                     if component != "main":
-                        source = "%s/%s" % (source, component);
+                        source = "%s/%s" % (source, component)
                     else:
-                        source = "** %s" % (source);
+                        source = "** %s" % (source)
                     print "%s has an unsatisfied build-dependency: %s" % (source, utils.pp_deps(dep))
                     dep_problem = 1
         sources.close()
@@ -218,7 +218,7 @@ def reverse_depends_check(removals, suites):
 ################################################################################
 
 def main ():
-    global Cnf, Options, projectB;
+    global Cnf, Options, projectB
 
     Cnf = utils.get_conf()
 
@@ -234,43 +234,43 @@ def main ():
                  ('p',"partial", "Melanie::Options::Partial"),
                  ('s',"suite","Melanie::Options::Suite", "HasArg"),
                  ('S',"source-only", "Melanie::Options::Source-Only"),
-                 ];
+                 ]
 
     for i in [ "architecture", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
                "source-only" ]:
 	if not Cnf.has_key("Melanie::Options::%s" % (i)):
-	    Cnf["Melanie::Options::%s" % (i)] = "";
+	    Cnf["Melanie::Options::%s" % (i)] = ""
     if not Cnf.has_key("Melanie::Options::Suite"):
-	Cnf["Melanie::Options::Suite"] = "unstable";
+	Cnf["Melanie::Options::Suite"] = "unstable"
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Melanie::Options")
 
     if Options["Help"]:
-	usage();
+	usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
     # Sanity check options
     if not arguments:
-        utils.fubar("need at least one package name as an argument.");
+        utils.fubar("need at least one package name as an argument.")
     if Options["Architecture"] and Options["Source-Only"]:
-        utils.fubar("can't use -a/--architecutre and -S/--source-only options simultaneously.");
+        utils.fubar("can't use -a/--architecutre and -S/--source-only options simultaneously.")
     if Options["Binary-Only"] and Options["Source-Only"]:
-        utils.fubar("can't use -b/--binary-only and -S/--source-only options simultaneously.");
+        utils.fubar("can't use -b/--binary-only and -S/--source-only options simultaneously.")
     if Options.has_key("Carbon-Copy") and not Options.has_key("Done"):
-        utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.");
+        utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.")
     if Options["Architecture"] and not Options["Partial"]:
-        utils.warn("-a/--architecture implies -p/--partial.");
-        Options["Partial"] = "true";
+        utils.warn("-a/--architecture implies -p/--partial.")
+        Options["Partial"] = "true"
 
     # Force the admin to tell someone if we're not doing a rene-led removal
     # (or closing a bug, which counts as telling someone).
     if not Options["No-Action"] and not Options["Carbon-Copy"] \
            and not Options["Done"] and Options["Reason"].find("[rene]") == -1:
-        utils.fubar("Need a -C/--carbon-copy if not closing a bug and not doing a rene-led removal.");
+        utils.fubar("Need a -C/--carbon-copy if not closing a bug and not doing a rene-led removal.")
 
     # Process -C/--carbon-copy
     #
@@ -279,60 +279,60 @@ def main ():
     #  2) the keyword 'package' - cc's $package@packages.debian.org for every argument
     #  3) contains a '@' - assumed to be an email address, used unmofidied
     #
-    carbon_copy = [];
+    carbon_copy = []
     for copy_to in utils.split_args(Options.get("Carbon-Copy")):
         if utils.str_isnum(copy_to):
-            carbon_copy.append(copy_to + "@" + Cnf["Dinstall::BugServer"]);
+            carbon_copy.append(copy_to + "@" + Cnf["Dinstall::BugServer"])
         elif copy_to == 'package':
             for package in arguments:
-                carbon_copy.append(package + "@" + Cnf["Dinstall::PackagesServer"]);
+                carbon_copy.append(package + "@" + Cnf["Dinstall::PackagesServer"])
                 if Cnf.has_key("Dinstall::TrackingServer"):
-                    carbon_copy.append(package + "@" + Cnf["Dinstall::TrackingServer"]);
+                    carbon_copy.append(package + "@" + Cnf["Dinstall::TrackingServer"])
         elif '@' in copy_to:
-            carbon_copy.append(copy_to);
+            carbon_copy.append(copy_to)
         else:
-            utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to));
+            utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to))
 
     if Options["Binary-Only"]:
-        field = "b.package";
+        field = "b.package"
     else:
-        field = "s.source";
-    con_packages = "AND %s IN (%s)" % (field, ", ".join(map(repr, arguments)));
+        field = "s.source"
+    con_packages = "AND %s IN (%s)" % (field, ", ".join(map(repr, arguments)))
 
     (con_suites, con_architectures, con_components, check_source) = \
-                 utils.parse_args(Options);
+                 utils.parse_args(Options)
 
     # Additional suite checks
-    suite_ids_list = [];
-    suites = utils.split_args(Options["Suite"]);
-    suites_list = utils.join_with_commas_and(suites);
+    suite_ids_list = []
+    suites = utils.split_args(Options["Suite"])
+    suites_list = utils.join_with_commas_and(suites)
     if not Options["No-Action"]:
         for suite in suites:
-            suite_id = db_access.get_suite_id(suite);
+            suite_id = db_access.get_suite_id(suite)
             if suite_id != -1:
-                suite_ids_list.append(suite_id);
+                suite_ids_list.append(suite_id)
             if suite == "stable":
                 print "**WARNING** About to remove from the stable suite!"
                 print "This should only be done just prior to a (point) release and not at"
                 print "any other time."
-                game_over();
+                game_over()
             elif suite == "testing":
                 print "**WARNING About to remove from the testing suite!"
                 print "There's no need to do this normally as removals from unstable will"
                 print "propogate to testing automagically."
-                game_over();
+                game_over()
 
     # Additional architecture checks
     if Options["Architecture"] and check_source:
-        utils.warn("'source' in -a/--argument makes no sense and is ignored.");
+        utils.warn("'source' in -a/--argument makes no sense and is ignored.")
 
     # Additional component processing
-    over_con_components = con_components.replace("c.id", "component");
+    over_con_components = con_components.replace("c.id", "component")
 
     print "Working...",
-    sys.stdout.flush();
-    to_remove = [];
-    maintainers = {};
+    sys.stdout.flush()
+    to_remove = []
+    maintainers = {}
 
     # We have 3 modes of package selection: binary-only, source-only
     # and source+binary.  The first two are trivial and obvious; the
@@ -341,193 +341,193 @@ def main ():
 
     if Options["Binary-Only"]:
         # Binary-only
-        q = projectB.query("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures));
+        q = projectB.query("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures))
         for i in q.getresult():
-            to_remove.append(i);
+            to_remove.append(i)
     else:
         # Source-only
-        source_packages = {};
-        q = projectB.query("SELECT l.path, f.filename, s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, files f, location l, component c WHERE sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components));
+        source_packages = {}
+        q = projectB.query("SELECT l.path, f.filename, s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, files f, location l, component c WHERE sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components))
         for i in q.getresult():
-            source_packages[i[2]] = i[:2];
-            to_remove.append(i[2:]);
+            source_packages[i[2]] = i[:2]
+            to_remove.append(i[2:])
         if not Options["Source-Only"]:
             # Source + Binary
-            binary_packages = {};
+            binary_packages = {}
             # First get a list of binary package names we suspect are linked to the source
-            q = projectB.query("SELECT DISTINCT b.package FROM binaries b, source s, src_associations sa, suite su, files f, location l, component c WHERE b.source = s.id AND sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components));
+            q = projectB.query("SELECT DISTINCT b.package FROM binaries b, source s, src_associations sa, suite su, files f, location l, component c WHERE b.source = s.id AND sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components))
             for i in q.getresult():
-                binary_packages[i[0]] = "";
+                binary_packages[i[0]] = ""
             # Then parse each .dsc that we found earlier to see what binary packages it thinks it produces
             for i in source_packages.keys():
-                filename = "/".join(source_packages[i]);
+                filename = "/".join(source_packages[i])
                 try:
-                    dsc = utils.parse_changes(filename);
+                    dsc = utils.parse_changes(filename)
                 except utils.cant_open_exc:
-                    utils.warn("couldn't open '%s'." % (filename));
-                    continue;
+                    utils.warn("couldn't open '%s'." % (filename))
+                    continue
                 for package in dsc.get("binary").split(','):
-                    package = package.strip();
-                    binary_packages[package] = "";
+                    package = package.strip()
+                    binary_packages[package] = ""
             # Then for each binary package: find any version in
             # unstable, check the Source: field in the deb matches our
             # source package and if so add it to the list of packages
             # to be removed.
             for package in binary_packages.keys():
-                q = projectB.query("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package));
+                q = projectB.query("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package))
                 for i in q.getresult():
-                    filename = "/".join(i[:2]);
+                    filename = "/".join(i[:2])
                     control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename)))
-                    source = control.Find("Source", control.Find("Package"));
-                    source = re_strip_source_version.sub('', source);
+                    source = control.Find("Source", control.Find("Package"))
+                    source = re_strip_source_version.sub('', source)
                     if source_packages.has_key(source):
-                        to_remove.append(i[2:]);
+                        to_remove.append(i[2:])
     print "done."
 
     if not to_remove:
         print "Nothing to do."
-        sys.exit(0);
+        sys.exit(0)
 
     # If we don't have a reason; spawn an editor so the user can add one
     # Write the rejection email out as the <foo>.reason file
     if not Options["Reason"] and not Options["No-Action"]:
-        temp_filename = utils.temp_filename();
+        temp_filename = utils.temp_filename()
         editor = os.environ.get("EDITOR","vi")
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
             utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
-        temp_file = utils.open_file(temp_filename);
+        temp_file = utils.open_file(temp_filename)
         for line in temp_file.readlines():
-            Options["Reason"] += line;
-        temp_file.close();
-        os.unlink(temp_filename);
+            Options["Reason"] += line
+        temp_file.close()
+        os.unlink(temp_filename)
 
     # Generate the summary of what's to be removed
-    d = {};
+    d = {}
     for i in to_remove:
-        package = i[0];
-        version = i[1];
-        architecture = i[2];
-        maintainer = i[4];
-        maintainers[maintainer] = "";
+        package = i[0]
+        version = i[1]
+        architecture = i[2]
+        maintainer = i[4]
+        maintainers[maintainer] = ""
         if not d.has_key(package):
-            d[package] = {};
+            d[package] = {}
         if not d[package].has_key(version):
-            d[package][version] = [];
+            d[package][version] = []
         if architecture not in d[package][version]:
-            d[package][version].append(architecture);
+            d[package][version].append(architecture)
 
-    maintainer_list = [];
+    maintainer_list = []
     for maintainer_id in maintainers.keys():
-        maintainer_list.append(db_access.get_maintainer(maintainer_id));
-    summary = "";
-    removals = d.keys();
-    removals.sort();
+        maintainer_list.append(db_access.get_maintainer(maintainer_id))
+    summary = ""
+    removals = d.keys()
+    removals.sort()
     for package in removals:
-        versions = d[package].keys();
-        versions.sort(apt_pkg.VersionCompare);
+        versions = d[package].keys()
+        versions.sort(apt_pkg.VersionCompare)
         for version in versions:
-            d[package][version].sort(utils.arch_compare_sw);
-            summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]));
-    print "Will remove the following packages from %s:" % (suites_list);
+            d[package][version].sort(utils.arch_compare_sw)
+            summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))
+    print "Will remove the following packages from %s:" % (suites_list)
     print
     print summary
     print "Maintainer: %s" % ", ".join(maintainer_list)
     if Options["Done"]:
-        print "Will also close bugs: "+Options["Done"];
+        print "Will also close bugs: "+Options["Done"]
     if carbon_copy:
         print "Will also send CCs to: " + ", ".join(carbon_copy)
     print
     print "------------------- Reason -------------------"
-    print Options["Reason"];
+    print Options["Reason"]
     print "----------------------------------------------"
     print
 
     if Options["Rdep-Check"]:
-        reverse_depends_check(removals, suites);
+        reverse_depends_check(removals, suites)
 
     # If -n/--no-action, drop out here
     if Options["No-Action"]:
-        sys.exit(0);
+        sys.exit(0)
 
     print "Going to remove the packages now."
-    game_over();
+    game_over()
 
-    whoami = utils.whoami();
-    date = commands.getoutput('date -R');
+    whoami = utils.whoami()
+    date = commands.getoutput('date -R')
 
     # Log first; if it all falls apart I want a record that we at least tried.
-    logfile = utils.open_file(Cnf["Melanie::LogFile"], 'a');
-    logfile.write("=========================================================================\n");
-    logfile.write("[Date: %s] [ftpmaster: %s]\n" % (date, whoami));
-    logfile.write("Removed the following packages from %s:\n\n%s" % (suites_list, summary));
+    logfile = utils.open_file(Cnf["Melanie::LogFile"], 'a')
+    logfile.write("=========================================================================\n")
+    logfile.write("[Date: %s] [ftpmaster: %s]\n" % (date, whoami))
+    logfile.write("Removed the following packages from %s:\n\n%s" % (suites_list, summary))
     if Options["Done"]:
-        logfile.write("Closed bugs: %s\n" % (Options["Done"]));
-    logfile.write("\n------------------- Reason -------------------\n%s\n" % (Options["Reason"]));
-    logfile.write("----------------------------------------------\n");
-    logfile.flush();
+        logfile.write("Closed bugs: %s\n" % (Options["Done"]))
+    logfile.write("\n------------------- Reason -------------------\n%s\n" % (Options["Reason"]))
+    logfile.write("----------------------------------------------\n")
+    logfile.flush()
 
-    dsc_type_id = db_access.get_override_type_id('dsc');
-    deb_type_id = db_access.get_override_type_id('deb');
+    dsc_type_id = db_access.get_override_type_id('dsc')
+    deb_type_id = db_access.get_override_type_id('deb')
 
     # Do the actual deletion
     print "Deleting...",
-    sys.stdout.flush();
-    projectB.query("BEGIN WORK");
+    sys.stdout.flush()
+    projectB.query("BEGIN WORK")
     for i in to_remove:
-        package = i[0];
-        architecture = i[2];
-        package_id = i[3];
+        package = i[0]
+        architecture = i[2]
+        package_id = i[3]
         for suite_id in suite_ids_list:
             if architecture == "source":
-                projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id));
-                #print "DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id);
+                projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id))
+                #print "DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id)
             else:
-                projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id));
-                #print "DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id);
+                projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id))
+                #print "DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id)
             # Delete from the override file
             if not Options["Partial"]:
                 if architecture == "source":
-                    type_id = dsc_type_id;
+                    type_id = dsc_type_id
                 else:
-                    type_id = deb_type_id;
-                projectB.query("DELETE FROM override WHERE package = '%s' AND type = %s AND suite = %s %s" % (package, type_id, suite_id, over_con_components));
-    projectB.query("COMMIT WORK");
+                    type_id = deb_type_id
+                projectB.query("DELETE FROM override WHERE package = '%s' AND type = %s AND suite = %s %s" % (package, type_id, suite_id, over_con_components))
+    projectB.query("COMMIT WORK")
     print "done."
 
     # Send the bug closing messages
     if Options["Done"]:
-        Subst = {};
-        Subst["__MELANIE_ADDRESS__"] = Cnf["Melanie::MyEmailAddress"];
-        Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"];
-        bcc = [];
+        Subst = {}
+        Subst["__MELANIE_ADDRESS__"] = Cnf["Melanie::MyEmailAddress"]
+        Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"]
+        bcc = []
         if Cnf.Find("Dinstall::Bcc") != "":
-            bcc.append(Cnf["Dinstall::Bcc"]);
+            bcc.append(Cnf["Dinstall::Bcc"])
         if Cnf.Find("Melanie::Bcc") != "":
-            bcc.append(Cnf["Melanie::Bcc"]);
+            bcc.append(Cnf["Melanie::Bcc"])
         if bcc:
-            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc);
+            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
-            Subst["__BCC__"] = "X-Filler: 42";
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.44 $";
+            Subst["__BCC__"] = "X-Filler: 42"
+        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.44 $"
         if carbon_copy:
-            Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy);
-        Subst["__SUITE_LIST__"] = suites_list;
-        Subst["__SUMMARY__"] = summary;
-        Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"];
-        Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"];
-        Subst["__WHOAMI__"] = whoami;
-        whereami = utils.where_am_i();
-        Archive = Cnf.SubTree("Archive::%s" % (whereami));
-        Subst["__MASTER_ARCHIVE__"] = Archive["OriginServer"];
-        Subst["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"];
+            Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
+        Subst["__SUITE_LIST__"] = suites_list
+        Subst["__SUMMARY__"] = summary
+        Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
+        Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
+        Subst["__WHOAMI__"] = whoami
+        whereami = utils.where_am_i()
+        Archive = Cnf.SubTree("Archive::%s" % (whereami))
+        Subst["__MASTER_ARCHIVE__"] = Archive["OriginServer"]
+        Subst["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"]
         for bug in utils.split_args(Options["Done"]):
-            Subst["__BUG_NUMBER__"] = bug;
-            mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/melanie.bug-close");
-            utils.send_mail(mail_message);
+            Subst["__BUG_NUMBER__"] = bug
+            mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/melanie.bug-close")
+            utils.send_mail(mail_message)
 
-    logfile.write("=========================================================================\n");
-    logfile.close();
+    logfile.write("=========================================================================\n")
+    logfile.close()
 
 #######################################################################################
 

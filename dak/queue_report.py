@@ -35,15 +35,15 @@
 
 ################################################################################
 
-import copy, glob, os, stat, sys, time;
-import apt_pkg;
-import katie, utils;
-import encodings.utf_8, encodings.latin_1, string;
+import copy, glob, os, stat, sys, time
+import apt_pkg
+import katie, utils
+import encodings.utf_8, encodings.latin_1, string
 
-Cnf = None;
-Katie = None;
-direction = [];
-row_number = 0;
+Cnf = None
+Katie = None
+direction = []
+row_number = 0
 
 ################################################################################
 
@@ -70,58 +70,58 @@ Prints a report of packages in queue directories (usually new and byhand).
 
 def plural(x):
     if x > 1:
-        return "s";
+        return "s"
     else:
-        return "";
+        return ""
 
 ################################################################################
 
 def time_pp(x):
     if x < 60:
-        unit="second";
+        unit="second"
     elif x < 3600:
-        x /= 60;
-        unit="minute";
+        x /= 60
+        unit="minute"
     elif x < 86400:
-        x /= 3600;
-        unit="hour";
+        x /= 3600
+        unit="hour"
     elif x < 604800:
-        x /= 86400;
-        unit="day";
+        x /= 86400
+        unit="day"
     elif x < 2419200:
-        x /= 604800;
-        unit="week";
+        x /= 604800
+        unit="week"
     elif x < 29030400:
-        x /= 2419200;
-        unit="month";
+        x /= 2419200
+        unit="month"
     else:
-        x /= 29030400;
-        unit="year";
-    x = int(x);
-    return "%s %s%s" % (x, unit, plural(x));
+        x /= 29030400
+        unit="year"
+    x = int(x)
+    return "%s %s%s" % (x, unit, plural(x))
 
 ################################################################################
 
 def sg_compare (a, b):
-    a = a[1];
-    b = b[1];
+    a = a[1]
+    b = b[1]
     """Sort by have note, time of oldest upload."""
     # Sort by have note
-    a_note_state = a["note_state"];
-    b_note_state = b["note_state"];
+    a_note_state = a["note_state"]
+    b_note_state = b["note_state"]
     if a_note_state < b_note_state:
-        return -1;
+        return -1
     elif a_note_state > b_note_state:
-        return 1;
+        return 1
 
     # Sort by time of oldest upload
-    return cmp(a["oldest"], b["oldest"]);
+    return cmp(a["oldest"], b["oldest"])
 
 ############################################################
 
 def sortfunc(a,b):
      for sorting in direction:
-         (sortkey, way, time) = sorting;
+         (sortkey, way, time) = sorting
          ret = 0
          if time == "m":
              x=int(a[sortkey]/60)
@@ -225,13 +225,13 @@ def table_footer(type, source_count, total_count):
 
 def force_to_latin(s):
     """Forces a string to Latin-1."""
-    latin1_s = unicode(s,'utf-8');
-    return latin1_s.encode('iso8859-1', 'replace');
+    latin1_s = unicode(s,'utf-8')
+    return latin1_s.encode('iso8859-1', 'replace')
 
 
 def table_row(source, version, arch, last_mod, maint, distribution, closes):
 
-    global row_number;
+    global row_number
 
     if row_number % 2 != 0:
         print "<tr class=\"even\">"
@@ -241,119 +241,119 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes):
     tdclass = "sid"
     for dist in distribution:
         if dist == "experimental":
-            tdclass = "exp";
-    print "<td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, source);
+            tdclass = "exp"
+    print "<td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, source)
     print "<td valign=\"top\" class=\"%s\">" % (tdclass)
     for vers in version.split():
-        print "%s<br>" % (vers);
-    print "</td><td valign=\"top\" class=\"%s\">%s</td><td valign=\"top\" class=\"%s\">" % (tdclass, arch, tdclass);
+        print "%s<br>" % (vers)
+    print "</td><td valign=\"top\" class=\"%s\">%s</td><td valign=\"top\" class=\"%s\">" % (tdclass, arch, tdclass)
     for dist in distribution:
-        print "%s<br>" % (dist);
-    print "</td><td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, last_mod);
-    (name, mail) = maint.split(":");
-    name = force_to_latin(name);
+        print "%s<br>" % (dist)
+    print "</td><td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, last_mod)
+    (name, mail) = maint.split(":")
+    name = force_to_latin(name)
 
-    print "<td valign=\"top\" class=\"%s\"><a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></td>" % (tdclass, mail, name);
+    print "<td valign=\"top\" class=\"%s\"><a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></td>" % (tdclass, mail, name)
     print "<td valign=\"top\" class=\"%s\">" % (tdclass)
     for close in closes:
-        print "<a href=\"http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br>" % (close, close);
-    print "</td></tr>";
-    row_number+=1;
+        print "<a href=\"http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br>" % (close, close)
+    print "</td></tr>"
+    row_number+=1
     
 ############################################################
 
 def process_changes_files(changes_files, type):
-    msg = "";
-    cache = {};
+    msg = ""
+    cache = {}
     # Read in all the .changes files
     for filename in changes_files:
         try:
-            Katie.pkg.changes_file = filename;
-            Katie.init_vars();
-            Katie.update_vars();
-            cache[filename] = copy.copy(Katie.pkg.changes);
-            cache[filename]["filename"] = filename;
+            Katie.pkg.changes_file = filename
+            Katie.init_vars()
+            Katie.update_vars()
+            cache[filename] = copy.copy(Katie.pkg.changes)
+            cache[filename]["filename"] = filename
         except:
-            break;
+            break
     # Divide the .changes into per-source groups
-    per_source = {};
+    per_source = {}
     for filename in cache.keys():
-        source = cache[filename]["source"];
+        source = cache[filename]["source"]
         if not per_source.has_key(source):
-            per_source[source] = {};
-            per_source[source]["list"] = [];
-        per_source[source]["list"].append(cache[filename]);
+            per_source[source] = {}
+            per_source[source]["list"] = []
+        per_source[source]["list"].append(cache[filename])
     # Determine oldest time and have note status for each source group
     for source in per_source.keys():
-        source_list = per_source[source]["list"];
-        first = source_list[0];
-        oldest = os.stat(first["filename"])[stat.ST_MTIME];
-        have_note = 0;
+        source_list = per_source[source]["list"]
+        first = source_list[0]
+        oldest = os.stat(first["filename"])[stat.ST_MTIME]
+        have_note = 0
         for d in per_source[source]["list"]:
-            mtime = os.stat(d["filename"])[stat.ST_MTIME];
+            mtime = os.stat(d["filename"])[stat.ST_MTIME]
             if Cnf.has_key("Helena::Options::New"):
                 if mtime > oldest:
-                    oldest = mtime;
+                    oldest = mtime
             else:
                 if mtime < oldest:
-                    oldest = mtime;
-            have_note += (d.has_key("lisa note"));
-        per_source[source]["oldest"] = oldest;
+                    oldest = mtime
+            have_note += (d.has_key("lisa note"))
+        per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
         elif have_note < len(source_list):
             per_source[source]["note_state"] = 1; # some
         else:
             per_source[source]["note_state"] = 2; # all
-    per_source_items = per_source.items();
-    per_source_items.sort(sg_compare);
+    per_source_items = per_source.items()
+    per_source_items.sort(sg_compare)
 
-    entries = [];
-    max_source_len = 0;
-    max_version_len = 0;
-    max_arch_len = 0;
-    maintainer = {};
-    maint="";
-    distribution="";
-    closes="";
-    source_exists="";
+    entries = []
+    max_source_len = 0
+    max_version_len = 0
+    max_arch_len = 0
+    maintainer = {}
+    maint=""
+    distribution=""
+    closes=""
+    source_exists=""
     for i in per_source_items:
-        last_modified = time.time()-i[1]["oldest"];
-        source = i[1]["list"][0]["source"];
+        last_modified = time.time()-i[1]["oldest"]
+        source = i[1]["list"][0]["source"]
         if len(source) > max_source_len:
-            max_source_len = len(source);
-        arches = {};
-        versions = {};
+            max_source_len = len(source)
+        arches = {}
+        versions = {}
         for j in i[1]["list"]:
             if Cnf.has_key("Helena::Options::New"):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
-                    utils.fix_maintainer (j["maintainer"]);
+                    utils.fix_maintainer (j["maintainer"])
                 except utils.ParseMaintError, msg:
-                    print "Problems while parsing maintainer address\n";
-                    maintainer["maintainername"] = "Unknown";
-                    maintainer["maintaineremail"] = "Unknown";
-                maint="%s:%s" % (maintainer["maintainername"], maintainer["maintaineremail"]);
-                distribution=j["distribution"].keys();
-                closes=j["closes"].keys();
+                    print "Problems while parsing maintainer address\n"
+                    maintainer["maintainername"] = "Unknown"
+                    maintainer["maintaineremail"] = "Unknown"
+                maint="%s:%s" % (maintainer["maintainername"], maintainer["maintaineremail"])
+                distribution=j["distribution"].keys()
+                closes=j["closes"].keys()
             for arch in j["architecture"].keys():
-                arches[arch] = "";
-            version = j["version"];
-            versions[version] = "";
-        arches_list = arches.keys();
-        arches_list.sort(utils.arch_compare_sw);
-        arch_list = " ".join(arches_list);
-        version_list = " ".join(versions.keys());
+                arches[arch] = ""
+            version = j["version"]
+            versions[version] = ""
+        arches_list = arches.keys()
+        arches_list.sort(utils.arch_compare_sw)
+        arch_list = " ".join(arches_list)
+        version_list = " ".join(versions.keys())
         if len(version_list) > max_version_len:
-            max_version_len = len(version_list);
+            max_version_len = len(version_list)
         if len(arch_list) > max_arch_len:
-            max_arch_len = len(arch_list);
+            max_arch_len = len(arch_list)
         if i[1]["note_state"]:
-            note = " | [N]";
+            note = " | [N]"
         else:
-            note = "";
-        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes]);
+            note = ""
+        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes])
 
     # direction entry consists of "Which field, which direction, time-consider" where
     # time-consider says how we should treat last_modified. Thats all.
@@ -364,28 +364,28 @@ def process_changes_files(changes_files, type):
         age =  Cnf["Helena::Options::Age"]
     if Cnf.has_key("Helena::Options::New"):
     # If we produce html we always have oldest first.
-        direction.append([4,-1,"ao"]);
+        direction.append([4,-1,"ao"])
     else:
 		if Cnf.has_key("Helena::Options::Sort"):
 			for i in Cnf["Helena::Options::Sort"].split(","):
 			  if i == "ao":
 				  # Age, oldest first.
-				  direction.append([4,-1,age]);
+				  direction.append([4,-1,age])
 			  elif i == "an":
 				  # Age, newest first.
-				  direction.append([4,1,age]);
+				  direction.append([4,1,age])
 			  elif i == "na":
 				  # Name, Ascending.
-				  direction.append([0,1,0]);
+				  direction.append([0,1,0])
 			  elif i == "nd":
 				  # Name, Descending.
-				  direction.append([0,-1,0]);
+				  direction.append([0,-1,0])
 			  elif i == "nl":
 				  # Notes last.
-				  direction.append([3,1,0]);
+				  direction.append([3,1,0])
 			  elif i == "nf":
 				  # Notes first.
-				  direction.append([3,-1,0]);
+				  direction.append([3,-1,0])
     entries.sort(lambda x, y: sortfunc(x, y))
     # Yes, in theory you can add several sort options at the commandline with. But my mind is to small
     # at the moment to come up with a real good sorting function that considers all the sidesteps you
@@ -393,75 +393,75 @@ def process_changes_files(changes_files, type):
     # Will be enhanced in the future.
 
     if Cnf.has_key("Helena::Options::New"):
-        direction.append([4,1,"ao"]);
+        direction.append([4,1,"ao"])
         entries.sort(lambda x, y: sortfunc(x, y))
     # Output for a html file. First table header. then table_footer.
     # Any line between them is then a <tr> printed from subroutine table_row.
         if len(entries) > 0:
-            table_header(type.upper());
+            table_header(type.upper())
             for entry in entries:
-                (source, version_list, arch_list, note, last_modified, maint, distribution, closes) = entry;
-                table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes);
-            total_count = len(changes_files);
-            source_count = len(per_source_items);
-            table_footer(type.upper(), source_count, total_count);
+                (source, version_list, arch_list, note, last_modified, maint, distribution, closes) = entry
+                table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes)
+            total_count = len(changes_files)
+            source_count = len(per_source_items)
+            table_footer(type.upper(), source_count, total_count)
     else:
     # The "normal" output without any formatting.
         format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old\n" % (max_source_len, max_version_len, max_arch_len)
 
-        msg = "";
+        msg = ""
         for entry in entries:
-            (source, version_list, arch_list, note, last_modified, undef, undef, undef) = entry;
-            msg += format % (source, version_list, arch_list, note, time_pp(last_modified));
+            (source, version_list, arch_list, note, last_modified, undef, undef, undef) = entry
+            msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
-            total_count = len(changes_files);
-            source_count = len(per_source_items);
-            print type.upper();
-            print "-"*len(type);
+            total_count = len(changes_files)
+            source_count = len(per_source_items)
+            print type.upper()
+            print "-"*len(type)
             print
-            print msg;
-            print "%s %s source package%s / %s %s package%s in total." % (source_count, type, plural(source_count), total_count, type, plural(total_count));
+            print msg
+            print "%s %s source package%s / %s %s package%s in total." % (source_count, type, plural(source_count), total_count, type, plural(total_count))
             print
 
 
 ################################################################################
 
 def main():
-    global Cnf, Katie;
+    global Cnf, Katie
 
-    Cnf = utils.get_conf();
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Helena::Options::Help"),
 				 ('n',"new","Helena::Options::New"),
                  ('s',"sort","Helena::Options::Sort", "HasArg"),
-                 ('a',"age","Helena::Options::Age", "HasArg")];
+                 ('a',"age","Helena::Options::Age", "HasArg")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Helena::Options::%s" % (i)):
-	    Cnf["Helena::Options::%s" % (i)] = "";
+	    Cnf["Helena::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Helena::Options")
     if Options["Help"]:
-	usage();
+	usage()
 
-    Katie = katie.Katie(Cnf);
+    Katie = katie.Katie(Cnf)
 
     if Cnf.has_key("Helena::Options::New"):
-        header();
+        header()
 
-    directories = Cnf.ValueList("Helena::Directories");
+    directories = Cnf.ValueList("Helena::Directories")
     if not directories:
-        directories = [ "byhand", "new" ];
+        directories = [ "byhand", "new" ]
 
     for directory in directories:
-        changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::%s" % (directory)]));
-        process_changes_files(changes_files, directory);
+        changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::%s" % (directory)]))
+        process_changes_files(changes_files, directory)
 
     if Cnf.has_key("Helena::Options::New"):
-        footer();
+        footer()
 
 ################################################################################
 
 if __name__ == '__main__':
-    main();
+    main()

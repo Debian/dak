@@ -22,15 +22,15 @@
 
 import os, sys
 
-sys.path.append(os.path.abspath('../../'));
+sys.path.append(os.path.abspath('../../'))
 
 import utils
 
 ################################################################################
 
 def fail(message):
-    sys.stderr.write("%s\n" % (message));
-    sys.exit(1);
+    sys.stderr.write("%s\n" % (message))
+    sys.exit(1)
     
 ################################################################################
 
@@ -40,9 +40,9 @@ def main ():
         utils.parse_changes('empty.changes', 0)
     except utils.changes_parse_error_exc, line:
         if line != "[Empty changes file]":
-            fail("Returned exception with unexcpected error message `%s'." % (line));
+            fail("Returned exception with unexcpected error message `%s'." % (line))
     else:
-        fail("Didn't raise a 'parse error' exception for a zero-length .changes file.");
+        fail("Didn't raise a 'parse error' exception for a zero-length .changes file.")
 
 ################################################################################
 

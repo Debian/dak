@@ -40,8 +40,8 @@ import pg, db_access
 
 ################################################################################
 
-re_package = re.compile(r"^(.+?)_.*");
-re_doc_directory = re.compile(r".*/doc/([^/]*).*");
+re_package = re.compile(r"^(.+?)_.*")
+re_doc_directory = re.compile(r".*/doc/([^/]*).*")
 
 re_contrib = re.compile('^contrib/')
 re_nonfree = re.compile('^non\-free/')
@@ -61,28 +61,28 @@ re_spacestrip = re.compile('(\s)')
 # Colour definitions
 
 # Main
-main_colour = "\033[36m";
+main_colour = "\033[36m"
 # Contrib
-contrib_colour = "\033[33m";
+contrib_colour = "\033[33m"
 # Non-Free
-nonfree_colour = "\033[31m";
+nonfree_colour = "\033[31m"
 # Arch
-arch_colour = "\033[32m";
+arch_colour = "\033[32m"
 # End
-end_colour = "\033[0m";
+end_colour = "\033[0m"
 # Bold
-bold_colour = "\033[1m";
+bold_colour = "\033[1m"
 # Bad maintainer
-maintainer_colour = arch_colour;
+maintainer_colour = arch_colour
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
+Cnf = None
+projectB = None
 
 Cnf = utils.get_conf()
 projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-db_access.init(Cnf, projectB);
+db_access.init(Cnf, projectB)
 
 ################################################################################
 
@@ -107,67 +107,67 @@ def get_depends_parts(depend) :
     return d_parts
 
 def get_or_list(depend) :
-    or_list = depend.split("|");
+    or_list = depend.split("|")
     return or_list
 
 def get_comma_list(depend) :
-    dep_list = depend.split(",");
+    dep_list = depend.split(",")
     return dep_list
 
 def split_depends (d_str) :
     # creates a list of lists of dictionaries of depends (package,version relation)
 
-    d_str = re_spacestrip.sub('',d_str);
-    depends_tree = [];
+    d_str = re_spacestrip.sub('',d_str)
+    depends_tree = []
     # first split depends string up amongs comma delimiter
-    dep_list = get_comma_list(d_str);
-    d = 0;
+    dep_list = get_comma_list(d_str)
+    d = 0
     while d < len(dep_list):
 	# put depends into their own list
-	depends_tree.append([dep_list[d]]);
-	d += 1;
-    d = 0;
+	depends_tree.append([dep_list[d]])
+	d += 1
+    d = 0
     while d < len(depends_tree):
-	k = 0;
+	k = 0
 	# split up Or'd depends into a multi-item list
-	depends_tree[d] = get_or_list(depends_tree[d][0]);
+	depends_tree[d] = get_or_list(depends_tree[d][0])
 	while k < len(depends_tree[d]):
 	    # split depends into {package, version relation}
-	    depends_tree[d][k] = get_depends_parts(depends_tree[d][k]);
-	    k += 1;
-	d += 1;
-    return depends_tree;
+	    depends_tree[d][k] = get_depends_parts(depends_tree[d][k])
+	    k += 1
+	d += 1
+    return depends_tree
 
 def read_control (filename):
-    recommends = [];
-    depends = [];
-    section = '';
-    maintainer = '';
-    arch = '';
+    recommends = []
+    depends = []
+    section = ''
+    maintainer = ''
+    arch = ''
 
-    deb_file = utils.open_file(filename);
+    deb_file = utils.open_file(filename)
     try:
-	extracts = apt_inst.debExtractControl(deb_file);
-	control = apt_pkg.ParseSection(extracts);
+	extracts = apt_inst.debExtractControl(deb_file)
+	control = apt_pkg.ParseSection(extracts)
     except:
-	print "can't parse control info";
-	control = '';
+	print "can't parse control info"
+	control = ''
 
-    deb_file.close();
+    deb_file.close()
 
-    control_keys = control.keys();
+    control_keys = control.keys()
 
     if control.has_key("Depends"):
-	depends_str = control.Find("Depends");
+	depends_str = control.Find("Depends")
 	# create list of dependancy lists
-	depends = split_depends(depends_str);
+	depends = split_depends(depends_str)
 
     if control.has_key("Recommends"):
-	recommends_str = control.Find("Recommends");
-	recommends = split_depends(recommends_str);
+	recommends_str = control.Find("Recommends")
+	recommends = split_depends(recommends_str)
 
     if control.has_key("Section"):
-	section_str = control.Find("Section");
+	section_str = control.Find("Section")
 
 	c_match = re_contrib.search(section_str)
 	nf_match = re_nonfree.search(section_str)
@@ -189,78 +189,78 @@ def read_control (filename):
    	localhost = re_localhost.search(maintainer)
 	if localhost:
 	    #highlight bad email
-	    maintainer = maintainer_colour + maintainer + end_colour;
+	    maintainer = maintainer_colour + maintainer + end_colour
 
     return (control, control_keys, section, depends, recommends, arch, maintainer)
 
 def read_dsc (dsc_filename):
-    dsc = {};
+    dsc = {}
 
-    dsc_file = utils.open_file(dsc_filename);
+    dsc_file = utils.open_file(dsc_filename)
     try:
-	dsc = utils.parse_changes(dsc_filename);
+	dsc = utils.parse_changes(dsc_filename)
     except:
 	print "can't parse control info"
-    dsc_file.close();
+    dsc_file.close()
 
-    filecontents = strip_pgp_signature(dsc_filename);
+    filecontents = strip_pgp_signature(dsc_filename)
 
     if dsc.has_key("build-depends"):
-	builddep = split_depends(dsc["build-depends"]);
-	builddepstr = create_depends_string(builddep);
-	filecontents = re_builddep.sub("Build-Depends: "+builddepstr, filecontents);
+	builddep = split_depends(dsc["build-depends"])
+	builddepstr = create_depends_string(builddep)
+	filecontents = re_builddep.sub("Build-Depends: "+builddepstr, filecontents)
 
     if dsc.has_key("build-depends-indep"):
-	builddepindstr = create_depends_string(split_depends(dsc["build-depends-indep"]));
-	filecontents = re_builddepind.sub("Build-Depends-Indep: "+builddepindstr, filecontents);
+	builddepindstr = create_depends_string(split_depends(dsc["build-depends-indep"]))
+	filecontents = re_builddepind.sub("Build-Depends-Indep: "+builddepindstr, filecontents)
 
     if dsc.has_key("architecture") :
 	if (dsc["architecture"] != "any"):
-	    newarch = arch_colour + dsc["architecture"] + end_colour;
-	    filecontents = re_arch.sub("Architecture: " + newarch, filecontents);
+	    newarch = arch_colour + dsc["architecture"] + end_colour
+	    filecontents = re_arch.sub("Architecture: " + newarch, filecontents)
 
-    return filecontents;
+    return filecontents
 
 def create_depends_string (depends_tree):
     # just look up unstable for now. possibly pull from .changes later
-    suite = "unstable";
-    result = "";
-    comma_count = 1;
+    suite = "unstable"
+    result = ""
+    comma_count = 1
     for l in depends_tree:
 	if (comma_count >= 2):
-	    result += ", ";
+	    result += ", "
 	or_count = 1
 	for d in l:
 	    if (or_count >= 2 ):
 		result += " | "
 	    # doesn't do version lookup yet.
 
-	    q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name='%s' ORDER BY b.version desc" % (d['name'], suite));
-	    ql = q.getresult();
+	    q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name='%s' ORDER BY b.version desc" % (d['name'], suite))
+	    ql = q.getresult()
 	    if ql:
-		i = ql[0];
+		i = ql[0]
 
 		if i[2] == "contrib":
-		    result += contrib_colour + d['name'];
+		    result += contrib_colour + d['name']
 		elif i[2] == "non-free":
-		    result += nonfree_colour + d['name'];
+		    result += nonfree_colour + d['name']
 		else :
-		    result += main_colour + d['name'];
+		    result += main_colour + d['name']
 
 		if d['version'] != '' :
-		    result += " (%s)" % (d['version']);
-		result += end_colour;
+		    result += " (%s)" % (d['version'])
+		result += end_colour
 	    else:
-		result += bold_colour + d['name'];
+		result += bold_colour + d['name']
 		if d['version'] != '' :
-		    result += " (%s)" % (d['version']);
-		result += end_colour;
-	    or_count += 1;
-	comma_count += 1;
-    return result;
+		    result += " (%s)" % (d['version'])
+		result += end_colour
+	    or_count += 1
+	comma_count += 1
+    return result
 
 def output_deb_info(filename):
-    (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename);
+    (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
 	print "no control info"
@@ -268,174 +268,174 @@ def output_deb_info(filename):
 	for key in control_keys :
 	    output = " " + key + ": "
 	    if key == 'Depends':
-		output += create_depends_string(depends);
+		output += create_depends_string(depends)
 	    elif key == 'Recommends':
-		output += create_depends_string(recommends);
+		output += create_depends_string(recommends)
 	    elif key == 'Section':
-		output += section;
+		output += section
 	    elif key == 'Architecture':
-		output += arch;
+		output += arch
 	    elif key == 'Maintainer':
-		output += maintainer;
+		output += maintainer
 	    elif key == 'Description':
-		desc = control.Find(key);
-		desc = re_newlinespace.sub('\n ', desc);
-		output += desc;
+		desc = control.Find(key)
+		desc = re_newlinespace.sub('\n ', desc)
+		output += desc
 	    else:
-		output += control.Find(key);
-	    print output;
+		output += control.Find(key)
+	    print output
 
 def do_command (command, filename):
-    o = os.popen("%s %s" % (command, filename));
-    print o.read();
+    o = os.popen("%s %s" % (command, filename))
+    print o.read()
 
 def print_copyright (deb_filename):
-    package = re_package.sub(r'\1', deb_filename);
-    o = os.popen("ar p %s data.tar.gz | tar tzvf - | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{ print $6 }' | head -n 1" % (deb_filename));
-    copyright = o.read()[:-1];
+    package = re_package.sub(r'\1', deb_filename)
+    o = os.popen("ar p %s data.tar.gz | tar tzvf - | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{ print $6 }' | head -n 1" % (deb_filename))
+    copyright = o.read()[:-1]
 
     if copyright == "":
         print "WARNING: No copyright found, please check package manually."
-        return;
+        return
 
-    doc_directory = re_doc_directory.sub(r'\1', copyright);
+    doc_directory = re_doc_directory.sub(r'\1', copyright)
     if package != doc_directory:
-        print "WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory);
-        return;
+        print "WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory)
+        return
 
-    o = os.popen("ar p %s data.tar.gz | tar xzOf - %s" % (deb_filename, copyright));
-    print o.read();
+    o = os.popen("ar p %s data.tar.gz | tar xzOf - %s" % (deb_filename, copyright))
+    print o.read()
 
 def check_dsc (dsc_filename):
-    print "---- .dsc file for %s ----" % (dsc_filename);
+    print "---- .dsc file for %s ----" % (dsc_filename)
     (dsc) = read_dsc(dsc_filename)
     print dsc
 
 def check_deb (deb_filename):
-    filename = os.path.basename(deb_filename);
+    filename = os.path.basename(deb_filename)
 
     if filename.endswith(".udeb"):
-	is_a_udeb = 1;
+	is_a_udeb = 1
     else:
-	is_a_udeb = 0;
+	is_a_udeb = 0
 
-    print "---- control file for %s ----" % (filename);
-    #do_command ("dpkg -I", deb_filename);
+    print "---- control file for %s ----" % (filename)
+    #do_command ("dpkg -I", deb_filename)
     output_deb_info(deb_filename)
 
     if is_a_udeb:
-	print "---- skipping lintian check for 킺eb ----";
-	print ;
+	print "---- skipping lintian check for 킺eb ----"
+	print 
     else:
-	print "---- lintian check for %s ----" % (filename);
-        do_command ("lintian", deb_filename);
-	print "---- linda check for %s ----" % (filename);
-        do_command ("linda", deb_filename);
+	print "---- lintian check for %s ----" % (filename)
+        do_command ("lintian", deb_filename)
+	print "---- linda check for %s ----" % (filename)
+        do_command ("linda", deb_filename)
 
-    print "---- contents of %s ----" % (filename);
-    do_command ("dpkg -c", deb_filename);
+    print "---- contents of %s ----" % (filename)
+    do_command ("dpkg -c", deb_filename)
 
     if is_a_udeb:
-	print "---- skipping copyright for 킺eb ----";
+	print "---- skipping copyright for 킺eb ----"
     else:
-	print "---- copyright of %s ----" % (filename);
-        print_copyright(deb_filename);
+	print "---- copyright of %s ----" % (filename)
+        print_copyright(deb_filename)
 
-    print "---- file listing of %s ----" % (filename);
-    do_command ("ls -l", deb_filename);
+    print "---- file listing of %s ----" % (filename)
+    do_command ("ls -l", deb_filename)
 
 # Read a file, strip the signature and return the modified contents as
 # a string.
 def strip_pgp_signature (filename):
-    file = utils.open_file (filename);
-    contents = "";
-    inside_signature = 0;
-    skip_next = 0;
+    file = utils.open_file (filename)
+    contents = ""
+    inside_signature = 0
+    skip_next = 0
     for line in file.readlines():
         if line[:-1] == "":
-            continue;
+            continue
         if inside_signature:
-            continue;
+            continue
         if skip_next:
-            skip_next = 0;
-            continue;
+            skip_next = 0
+            continue
         if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
-            skip_next = 1;
-            continue;
+            skip_next = 1
+            continue
         if line.startswith("-----BEGIN PGP SIGNATURE"):
-            inside_signature = 1;
-            continue;
+            inside_signature = 1
+            continue
         if line.startswith("-----END PGP SIGNATURE"):
-            inside_signature = 0;
-            continue;
-	contents += line;
-    file.close();
-    return contents;
+            inside_signature = 0
+            continue
+	contents += line
+    file.close()
+    return contents
 
 # Display the .changes [without the signature]
 def display_changes (changes_filename):
-    print "---- .changes file for %s ----" % (changes_filename);
-    print strip_pgp_signature(changes_filename);
+    print "---- .changes file for %s ----" % (changes_filename)
+    print strip_pgp_signature(changes_filename)
 
 def check_changes (changes_filename):
-    display_changes(changes_filename);
+    display_changes(changes_filename)
 
-    changes = utils.parse_changes (changes_filename);
-    files = utils.build_file_list(changes);
+    changes = utils.parse_changes (changes_filename)
+    files = utils.build_file_list(changes)
     for file in files.keys():
 	if file.endswith(".deb") or file.endswith(".udeb"):
-	    check_deb(file);
+	    check_deb(file)
         if file.endswith(".dsc"):
-            check_dsc(file);
+            check_dsc(file)
         # else: => byhand
 
 def main ():
-    global Cnf, projectB, db_files, waste, excluded;
+    global Cnf, projectB, db_files, waste, excluded
 
 #    Cnf = utils.get_conf()
 
-    Arguments = [('h',"help","Fernanda::Options::Help")];
+    Arguments = [('h',"help","Fernanda::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Frenanda::Options::%s" % (i)):
-	    Cnf["Fernanda::Options::%s" % (i)] = "";
+	    Cnf["Fernanda::Options::%s" % (i)] = ""
 
-    args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Fernanda::Options")
 
     if Options["Help"]:
-	usage();
+	usage()
 
-    stdout_fd = sys.stdout;
+    stdout_fd = sys.stdout
 
     for file in args:
         try:
             # Pipe output for each argument through less
-            less_fd = os.popen("less -R -", 'w', 0);
+            less_fd = os.popen("less -R -", 'w', 0)
 	    # -R added to display raw control chars for colour
-            sys.stdout = less_fd;
+            sys.stdout = less_fd
 
             try:
                 if file.endswith(".changes"):
-                    check_changes(file);
+                    check_changes(file)
                 elif file.endswith(".deb") or file.endswith(".udeb"):
-                    check_deb(file);
+                    check_deb(file)
                 elif file.endswith(".dsc"):
-                    check_dsc(file);
+                    check_dsc(file)
                 else:
-                    utils.fubar("Unrecognised file type: '%s'." % (file));
+                    utils.fubar("Unrecognised file type: '%s'." % (file))
             finally:
                 # Reset stdout here so future less invocations aren't FUBAR
-                less_fd.close();
-                sys.stdout = stdout_fd;
+                less_fd.close()
+                sys.stdout = stdout_fd
         except IOError, e:
             if errno.errorcode[e.errno] == 'EPIPE':
-                utils.warn("[fernanda] Caught EPIPE; skipping.");
-                pass;
+                utils.warn("[fernanda] Caught EPIPE; skipping.")
+                pass
             else:
-                raise;
+                raise
         except KeyboardInterrupt:
-            utils.warn("[fernanda] Caught C-c; skipping.");
-            pass;
+            utils.warn("[fernanda] Caught C-c; skipping.")
+            pass
 
 #######################################################################################
 

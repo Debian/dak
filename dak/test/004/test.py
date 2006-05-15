@@ -20,17 +20,17 @@
 
 ################################################################################
 
-import os, sys;
+import os, sys
 
-sys.path.append(os.path.abspath('../../'));
+sys.path.append(os.path.abspath('../../'))
 
 import utils
 
 ################################################################################
 
 def fail(message):
-    sys.stderr.write("%s\n" % (message));
-    sys.exit(1);
+    sys.stderr.write("%s\n" % (message))
+    sys.exit(1)
 
 ################################################################################
 
@@ -47,75 +47,75 @@ def fail(message):
 # [6] Everything else is case sensitive.
 
 def test(input, output):
-    result = utils.extract_component_from_section(input);
+    result = utils.extract_component_from_section(input)
     if result != output:
-        fail ("%s -> %r [should have been %r]" % (input, result, output));
+        fail ("%s -> %r [should have been %r]" % (input, result, output))
 
 def main ():
     # Err, whoops?  should probably be "utils", "main"...
-    input = "main/utils"; output = ("main/utils", "main");
-    test (input, output);
+    input = "main/utils"; output = ("main/utils", "main")
+    test (input, output)
 
 
     # Validate #3
-    input = "utils"; output = ("utils", "main");
-    test (input, output);
+    input = "utils"; output = ("utils", "main")
+    test (input, output)
 
-    input = "non-free/libs"; output = ("non-free/libs", "non-free");
-    test (input, output);
+    input = "non-free/libs"; output = ("non-free/libs", "non-free")
+    test (input, output)
 
-    input = "contrib/net"; output = ("contrib/net", "contrib");
-    test (input, output);
+    input = "contrib/net"; output = ("contrib/net", "contrib")
+    test (input, output)
 
 
     # Validate #3 with a prefix
-    input = "non-US"; output = ("non-US", "non-US/main");
-    test (input, output);
+    input = "non-US"; output = ("non-US", "non-US/main")
+    test (input, output)
 
 
     # Validate #4
-    input = "main"; output = ("main", "main");
-    test (input, output);
+    input = "main"; output = ("main", "main")
+    test (input, output)
 
-    input = "contrib"; output = ("contrib", "contrib");
-    test (input, output);
+    input = "contrib"; output = ("contrib", "contrib")
+    test (input, output)
 
-    input = "non-free"; output = ("non-free", "non-free");
-    test (input, output);
+    input = "non-free"; output = ("non-free", "non-free")
+    test (input, output)
 
 
     # Validate #4 with a prefix
-    input = "non-US/main"; output = ("non-US/main", "non-US/main");
-    test (input, output);
+    input = "non-US/main"; output = ("non-US/main", "non-US/main")
+    test (input, output)
 
-    input = "non-US/contrib"; output = ("non-US/contrib", "non-US/contrib");
-    test (input, output);
+    input = "non-US/contrib"; output = ("non-US/contrib", "non-US/contrib")
+    test (input, output)
 
-    input = "non-US/non-free"; output = ("non-US/non-free", "non-US/non-free");
-    test (input, output);
+    input = "non-US/non-free"; output = ("non-US/non-free", "non-US/non-free")
+    test (input, output)
 
 
     # Validate #5
-    input = "non-us"; output = ("non-us", "non-US/main");
-    test (input, output);
+    input = "non-us"; output = ("non-us", "non-US/main")
+    test (input, output)
 
-    input = "non-us/contrib"; output = ("non-us/contrib", "non-US/contrib");
-    test (input, output);
+    input = "non-us/contrib"; output = ("non-us/contrib", "non-US/contrib")
+    test (input, output)
 
 
     # Validate #6 (section)
-    input = "utIls"; output = ("utIls", "main");
-    test (input, output);
+    input = "utIls"; output = ("utIls", "main")
+    test (input, output)
 
     # Others..
-    input = "non-US/libs"; output = ("non-US/libs", "non-US/main");
-    test (input, output);
-    input = "non-US/main/libs"; output = ("non-US/main/libs", "non-US/main");
-    test (input, output);
-    input = "non-US/contrib/libs"; output = ("non-US/contrib/libs", "non-US/contrib");
-    test (input, output);
-    input = "non-US/non-free/libs"; output = ("non-US/non-free/libs", "non-US/non-free");
-    test (input, output);
+    input = "non-US/libs"; output = ("non-US/libs", "non-US/main")
+    test (input, output)
+    input = "non-US/main/libs"; output = ("non-US/main/libs", "non-US/main")
+    test (input, output)
+    input = "non-US/contrib/libs"; output = ("non-US/contrib/libs", "non-US/contrib")
+    test (input, output)
+    input = "non-US/non-free/libs"; output = ("non-US/non-free/libs", "non-US/non-free")
+    test (input, output)
 
 ################################################################################
 

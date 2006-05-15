@@ -34,15 +34,15 @@
 
 import os, sys
 
-sys.path.append(os.path.abspath('../../'));
+sys.path.append(os.path.abspath('../../'))
 
 import utils
 
 ################################################################################
 
 def fail(message):
-    sys.stderr.write("%s\n" % (message));
-    sys.exit(1);
+    sys.stderr.write("%s\n" % (message))
+    sys.exit(1)
 
 ################################################################################
 
@@ -51,7 +51,7 @@ def main ():
     try:
         changes = utils.parse_changes('krb5_1.2.2-4_m68k.changes', 0)
     except utils.changes_parse_error_exc, line:
-        fail("parse_changes() returned an exception with error message `%s'." % (line));
+        fail("parse_changes() returned an exception with error message `%s'." % (line))
 
     o = changes.get("binary", "")
     if o != "":
@@ -61,7 +61,7 @@ def main ():
         changes["binary"][j] = 1
 
     if not changes["binary"].has_key("krb5-ftpd"):
-        fail("parse_changes() is broken; 'krb5-ftpd' is not in the Binary: dictionary.");
+        fail("parse_changes() is broken; 'krb5-ftpd' is not in the Binary: dictionary.")
 
 ################################################################################
 

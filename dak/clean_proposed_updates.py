@@ -20,18 +20,18 @@
 
 ################################################################################
 
-import os, pg, re, sys;
-import utils, db_access;
-import apt_pkg;
+import os, pg, re, sys
+import utils, db_access
+import apt_pkg
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
-Options = None;
-pu = {};
+Cnf = None
+projectB = None
+Options = None
+pu = {}
 
-re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).u?deb$");
+re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).u?deb$")
 
 ################################################################################
 
@@ -49,91 +49,91 @@ Need either changes files or an admin.txt file with a '.joey' suffix."""
 
 def check_changes (filename):
     try:
-        changes = utils.parse_changes(filename);
-        files = utils.build_file_list(changes);
+        changes = utils.parse_changes(filename)
+        files = utils.build_file_list(changes)
     except:
-        utils.warn("Couldn't read changes file '%s'." % (filename));
-        return;
-    num_files = len(files.keys());
+        utils.warn("Couldn't read changes file '%s'." % (filename))
+        return
+    num_files = len(files.keys())
     for file in files.keys():
         if utils.re_isadeb.match(file):
-            m = re_isdeb.match(file);
-            pkg = m.group(1);
-            version = m.group(2);
-            arch = m.group(3);
+            m = re_isdeb.match(file)
+            pkg = m.group(1)
+            version = m.group(2)
+            arch = m.group(3)
             if Options["debug"]:
-                print "BINARY: %s ==> %s_%s_%s" % (file, pkg, version, arch);
+                print "BINARY: %s ==> %s_%s_%s" % (file, pkg, version, arch)
         else:
             m = utils.re_issource.match(file)
             if m:
-                pkg = m.group(1);
-                version = m.group(2);
-                type = m.group(3);
+                pkg = m.group(1)
+                version = m.group(2)
+                type = m.group(3)
                 if type != "dsc":
-                    del files[file];
-                    num_files -= 1;
-                    continue;
-                arch = "source";
+                    del files[file]
+                    num_files -= 1
+                    continue
+                arch = "source"
                 if Options["debug"]:
-                    print "SOURCE: %s ==> %s_%s_%s" % (file, pkg, version, arch);
+                    print "SOURCE: %s ==> %s_%s_%s" % (file, pkg, version, arch)
             else:
-                utils.fubar("unknown type, fix me");
+                utils.fubar("unknown type, fix me")
         if not pu.has_key(pkg):
             # FIXME
-            utils.warn("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename));
-            continue;
+            utils.warn("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename))
+            continue
         if not pu[pkg].has_key(arch):
             # FIXME
-            utils.warn("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename));
-            continue;
-        pu_version = utils.re_no_epoch.sub('', pu[pkg][arch]);
+            utils.warn("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename))
+            continue
+        pu_version = utils.re_no_epoch.sub('', pu[pkg][arch])
         if pu_version == version:
             if Options["verbose"]:
-                print "%s: ok" % (file);
+                print "%s: ok" % (file)
         else:
             if Options["verbose"]:
-                print "%s: superseded, removing. [%s]" % (file, pu_version);
-            del files[file];
+                print "%s: superseded, removing. [%s]" % (file, pu_version)
+            del files[file]
 
-    new_num_files = len(files.keys());
+    new_num_files = len(files.keys())
     if new_num_files == 0:
-        print "%s: no files left, superseded by %s" % (filename, pu_version);
-        dest = Cnf["Dir::Morgue"] + "/misc/";
-        utils.move(filename, dest);
+        print "%s: no files left, superseded by %s" % (filename, pu_version)
+        dest = Cnf["Dir::Morgue"] + "/misc/"
+        utils.move(filename, dest)
     elif new_num_files < num_files:
-        print "%s: lost files, MWAAP." % (filename);
+        print "%s: lost files, MWAAP." % (filename)
     else:
         if Options["verbose"]:
-            print "%s: ok" % (filename);
+            print "%s: ok" % (filename)
 
 ################################################################################
 
 def check_joey (filename):
-    file = utils.open_file(filename);
+    file = utils.open_file(filename)
 
-    cwd = os.getcwd();
-    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]));
+    cwd = os.getcwd()
+    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]))
 
     for line in file.readlines():
-        line = line.rstrip();
+        line = line.rstrip()
         if line.find('install') != -1:
-            split_line = line.split();
+            split_line = line.split()
             if len(split_line) != 2:
-                utils.fubar("Parse error (not exactly 2 elements): %s" % (line));
-            install_type = split_line[0];
+                utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
+            install_type = split_line[0]
             if install_type not in [ "install", "install-u", "sync-install" ]:
-                utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line));
+                utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
             changes_filename = split_line[1]
             if Options["debug"]:
-                print "Processing %s..." % (changes_filename);
-            check_changes(changes_filename);
+                print "Processing %s..." % (changes_filename)
+            check_changes(changes_filename)
 
-    os.chdir(cwd);
+    os.chdir(cwd)
 
 ################################################################################
 
 def init_pu ():
-    global pu;
+    global pu
 
     q = projectB.query("""
 SELECT b.package, b.version, a.arch_string
@@ -144,49 +144,49 @@ UNION SELECT s.source, s.version, 'source'
   FROM src_associations sa, source s, suite su
   WHERE s.id = sa.source AND sa.suite = su.id
     AND su.suite_name = 'proposed-updates'
-ORDER BY package, version, arch_string;
-""");
-    ql = q.getresult();
+ORDER BY package, version, arch_string
+""")
+    ql = q.getresult()
     for i in ql:
-        pkg = i[0];
-        version = i[1];
-        arch = i[2];
+        pkg = i[0]
+        version = i[1]
+        arch = i[2]
         if not pu.has_key(pkg):
-            pu[pkg] = {};
-        pu[pkg][arch] = version;
+            pu[pkg] = {}
+        pu[pkg][arch] = version
 
 def main ():
-    global Cnf, projectB, Options;
+    global Cnf, projectB, Options
 
     Cnf = utils.get_conf()
 
     Arguments = [('d', "debug", "Halle::Options::Debug"),
                  ('v',"verbose","Halle::Options::Verbose"),
-                 ('h',"help","Halle::Options::Help")];
+                 ('h',"help","Halle::Options::Help")]
     for i in [ "debug", "verbose", "help" ]:
 	if not Cnf.has_key("Halle::Options::%s" % (i)):
-	    Cnf["Halle::Options::%s" % (i)] = "";
+	    Cnf["Halle::Options::%s" % (i)] = ""
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Halle::Options")
 
     if Options["Help"]:
-        usage(0);
+        usage(0)
     if not arguments:
-        utils.fubar("need at least one package name as an argument.");
+        utils.fubar("need at least one package name as an argument.")
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
-    init_pu();
+    init_pu()
 
     for file in arguments:
         if file.endswith(".changes"):
-            check_changes(file);
+            check_changes(file)
         elif file.endswith(".joey"):
-            check_joey(file);
+            check_joey(file)
         else:
-            utils.fubar("Unrecognised file type: '%s'." % (file));
+            utils.fubar("Unrecognised file type: '%s'." % (file))
 
 #######################################################################################
 

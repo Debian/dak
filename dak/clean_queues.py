@@ -34,16 +34,16 @@
 
 ################################################################################
 
-import os, stat, sys, time;
-import utils;
-import apt_pkg;
+import os, stat, sys, time
+import utils
+import apt_pkg
 
 ################################################################################
 
-Cnf = None;
-Options = None;
-del_dir = None;
-delete_date = None;
+Cnf = None
+Options = None
+del_dir = None
+delete_date = None
 
 ################################################################################
 
@@ -62,35 +62,35 @@ Clean out incoming directories.
 ################################################################################
 
 def init ():
-    global delete_date, del_dir;
+    global delete_date, del_dir
 
-    delete_date = int(time.time())-(int(Options["Days"])*84600);
+    delete_date = int(time.time())-(int(Options["Days"])*84600)
 
     # Ensure a directory exists to remove files to
     if not Options["No-Action"]:
-        date = time.strftime("%Y-%m-%d");
-        del_dir = Cnf["Dir::Morgue"] + '/' + Cnf["Shania::MorgueSubDir"] + '/' + date;
+        date = time.strftime("%Y-%m-%d")
+        del_dir = Cnf["Dir::Morgue"] + '/' + Cnf["Shania::MorgueSubDir"] + '/' + date
         if not os.path.exists(del_dir):
-            os.makedirs(del_dir, 02775);
+            os.makedirs(del_dir, 02775)
         if not os.path.isdir(del_dir):
-            utils.fubar("%s must be a directory." % (del_dir));
+            utils.fubar("%s must be a directory." % (del_dir))
 
     # Move to the directory to clean
-    incoming = Options["Incoming"];
+    incoming = Options["Incoming"]
     if incoming == "":
-        incoming = Cnf["Dir::Queue::Unchecked"];
-    os.chdir(incoming);
+        incoming = Cnf["Dir::Queue::Unchecked"]
+    os.chdir(incoming)
 
 # Remove a file to the morgue
 def remove (file):
     if os.access(file, os.R_OK):
-        dest_filename = del_dir + '/' + os.path.basename(file);
+        dest_filename = del_dir + '/' + os.path.basename(file)
         # If the destination file exists; try to find another filename to use
         if os.path.exists(dest_filename):
-            dest_filename = utils.find_next_free(dest_filename, 10);
-        utils.move(file, dest_filename, 0660);
+            dest_filename = utils.find_next_free(dest_filename, 10)
+        utils.move(file, dest_filename, 0660)
     else:
-        utils.warn("skipping '%s', permission denied." % (os.path.basename(file)));
+        utils.warn("skipping '%s', permission denied." % (os.path.basename(file)))
 
 # Removes any old files.
 # [Used for Incoming/REJECT]
@@ -100,111 +100,111 @@ def flush_old ():
         if os.path.isfile(file):
             if os.stat(file)[stat.ST_MTIME] < delete_date:
                 if Options["No-Action"]:
-                    print "I: Would delete '%s'." % (os.path.basename(file));
+                    print "I: Would delete '%s'." % (os.path.basename(file))
                 else:
                     if Options["Verbose"]:
-                        print "Removing '%s' (to '%s')."  % (os.path.basename(file), del_dir);
-                    remove(file);
+                        print "Removing '%s' (to '%s')."  % (os.path.basename(file), del_dir)
+                    remove(file)
             else:
                 if Options["Verbose"]:
-                    print "Skipping, too new, '%s'." % (os.path.basename(file));
+                    print "Skipping, too new, '%s'." % (os.path.basename(file))
 
 # Removes any files which are old orphans (not associated with a valid .changes file).
 # [Used for Incoming]
 #
 def flush_orphans ():
-    all_files = {};
-    changes_files = [];
+    all_files = {}
+    changes_files = []
 
     # Build up the list of all files in the directory
     for i in os.listdir('.'):
         if os.path.isfile(i):
-            all_files[i] = 1;
+            all_files[i] = 1
             if i.endswith(".changes"):
-                changes_files.append(i);
+                changes_files.append(i)
 
     # Proces all .changes and .dsc files.
     for changes_filename in changes_files:
         try:
-            changes = utils.parse_changes(changes_filename);
-            files = utils.build_file_list(changes);
+            changes = utils.parse_changes(changes_filename)
+            files = utils.build_file_list(changes)
         except:
-            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type));
-            continue;
+            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
+            continue
 
-        dsc_files = {};
+        dsc_files = {}
         for file in files.keys():
             if file.endswith(".dsc"):
                 try:
-                    dsc = utils.parse_changes(file);
-                    dsc_files = utils.build_file_list(dsc, is_a_dsc=1);
+                    dsc = utils.parse_changes(file)
+                    dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
                 except:
-                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type));
-                    continue;
+                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type))
+                    continue
 
         # Ensure all the files we've seen aren't deleted
-        keys = [];
+        keys = []
         for i in (files.keys(), dsc_files.keys(), [changes_filename]):
-            keys.extend(i);
+            keys.extend(i)
         for key in keys:
             if all_files.has_key(key):
                 if Options["Verbose"]:
-                    print "Skipping, has parents, '%s'." % (key);
-                del all_files[key];
+                    print "Skipping, has parents, '%s'." % (key)
+                del all_files[key]
 
     # Anthing left at this stage is not referenced by a .changes (or
     # a .dsc) and should be deleted if old enough.
     for file in all_files.keys():
         if os.stat(file)[stat.ST_MTIME] < delete_date:
             if Options["No-Action"]:
-                print "I: Would delete '%s'." % (os.path.basename(file));
+                print "I: Would delete '%s'." % (os.path.basename(file))
             else:
                 if Options["Verbose"]:
-                    print "Removing '%s' (to '%s')."  % (os.path.basename(file), del_dir);
-                remove(file);
+                    print "Removing '%s' (to '%s')."  % (os.path.basename(file), del_dir)
+                remove(file)
         else:
             if Options["Verbose"]:
-                print "Skipping, too new, '%s'." % (os.path.basename(file));
+                print "Skipping, too new, '%s'." % (os.path.basename(file))
 
 ################################################################################
 
 def main ():
-    global Cnf, Options;
+    global Cnf, Options
 
     Cnf = utils.get_conf()
 
     for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
 	if not Cnf.has_key("Shania::Options::%s" % (i)):
-	    Cnf["Shania::Options::%s" % (i)] = "";
+	    Cnf["Shania::Options::%s" % (i)] = ""
     if not Cnf.has_key("Shania::Options::Days"):
-	Cnf["Shania::Options::Days"] = "14";
+	Cnf["Shania::Options::Days"] = "14"
 
     Arguments = [('h',"help","Shania::Options::Help"),
                  ('d',"days","Shania::Options::Days", "IntLevel"),
                  ('i',"incoming","Shania::Options::Incoming", "HasArg"),
                  ('n',"no-action","Shania::Options::No-Action"),
-                 ('v',"verbose","Shania::Options::Verbose")];
+                 ('v',"verbose","Shania::Options::Verbose")]
 
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Shania::Options")
 
     if Options["Help"]:
-	usage();
+	usage()
 
-    init();
+    init()
 
     if Options["Verbose"]:
         print "Processing incoming..."
-    flush_orphans();
+    flush_orphans()
 
     reject = Cnf["Dir::Queue::Reject"]
     if os.path.exists(reject) and os.path.isdir(reject):
         if Options["Verbose"]:
             print "Processing incoming/REJECT..."
-        os.chdir(reject);
-        flush_old();
+        os.chdir(reject)
+        flush_old()
 
 #######################################################################################
 
 if __name__ == '__main__':
-    main();
+    main()

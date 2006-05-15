@@ -26,9 +26,9 @@
 
 ################################################################################
 
-import pg, sys;
-import db_access, utils;
-import apt_pkg;
+import pg, sys
+import db_access, utils
+import apt_pkg
 
 ################################################################################
 
@@ -51,7 +51,7 @@ Generate an index of packages <=> Maintainers.
 ################################################################################
 
 def fix_maintainer (maintainer):
-    global fixed_maintainer_cache;
+    global fixed_maintainer_cache
 
     if not fixed_maintainer_cache.has_key(maintainer):
         fixed_maintainer_cache[maintainer] = utils.fix_maintainer(maintainer)[0]
@@ -59,13 +59,13 @@ def fix_maintainer (maintainer):
     return fixed_maintainer_cache[maintainer]
 
 def get_maintainer (maintainer):
-    return fix_maintainer(db_access.get_maintainer(maintainer));
+    return fix_maintainer(db_access.get_maintainer(maintainer))
 
 def get_maintainer_from_source (source_id):
     global maintainer_from_source_cache
 
     if not maintainer_from_source_cache.has_key(source_id):
-        q = projectB.query("SELECT m.name FROM maintainer m, source s WHERE s.id = %s and s.maintainer = m.id" % (source_id));
+        q = projectB.query("SELECT m.name FROM maintainer m, source s WHERE s.id = %s and s.maintainer = m.id" % (source_id))
         maintainer = q.getresult()[0][0]
         maintainer_from_source_cache[source_id] = fix_maintainer(maintainer)
 
@@ -74,86 +74,86 @@ def get_maintainer_from_source (source_id):
 ################################################################################
 
 def main():
-    global Cnf, projectB;
+    global Cnf, projectB
 
     Cnf = utils.get_conf()
 
-    Arguments = [('h',"help","Charisma::Options::Help")];
+    Arguments = [('h',"help","Charisma::Options::Help")]
     if not Cnf.has_key("Charisma::Options::Help"):
-	Cnf["Charisma::Options::Help"] = "";
+	Cnf["Charisma::Options::Help"] = ""
 
-    extra_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
-    Options = Cnf.SubTree("Charisma::Options");
+    extra_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    Options = Cnf.SubTree("Charisma::Options")
 
     if Options["Help"]:
-        usage();
+        usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
     for suite in Cnf.SubTree("Suite").List():
-        suite = suite.lower();
-        suite_priority = int(Cnf["Suite::%s::Priority" % (suite)]);
+        suite = suite.lower()
+        suite_priority = int(Cnf["Suite::%s::Priority" % (suite)])
 
         # Source packages
         q = projectB.query("SELECT s.source, s.version, m.name FROM src_associations sa, source s, suite su, maintainer m WHERE su.suite_name = '%s' AND sa.suite = su.id AND sa.source = s.id AND m.id = s.maintainer" % (suite))
-        sources = q.getresult();
+        sources = q.getresult()
         for source in sources:
-            package = source[0];
-            version = source[1];
-            maintainer = fix_maintainer(source[2]);
+            package = source[0]
+            version = source[1]
+            maintainer = fix_maintainer(source[2])
             if packages.has_key(package):
                 if packages[package]["priority"] <= suite_priority:
                     if apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
-                        packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version };
+                        packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
             else:
-                packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version };
+                packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
 
         # Binary packages
-        q = projectB.query("SELECT b.package, b.source, b.maintainer, b.version FROM bin_associations ba, binaries b, suite s WHERE s.suite_name = '%s' AND ba.suite = s.id AND ba.bin = b.id" % (suite));
-        binaries = q.getresult();
+        q = projectB.query("SELECT b.package, b.source, b.maintainer, b.version FROM bin_associations ba, binaries b, suite s WHERE s.suite_name = '%s' AND ba.suite = s.id AND ba.bin = b.id" % (suite))
+        binaries = q.getresult()
         for binary in binaries:
-            package = binary[0];
-            source_id = binary[1];
-            version = binary[3];
+            package = binary[0]
+            source_id = binary[1]
+            version = binary[3]
             # Use the source maintainer first; falling back on the binary maintainer as a last resort only
             if source_id:
-                maintainer = get_maintainer_from_source(source_id);
+                maintainer = get_maintainer_from_source(source_id)
             else:
-                maintainer = get_maintainer(binary[2]);
+                maintainer = get_maintainer(binary[2])
             if packages.has_key(package):
                 if packages[package]["priority"] <= suite_priority:
                     if apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
-                        packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version };
+                        packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
             else:
-                packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version };
+                packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
 
     # Process any additional Maintainer files (e.g. from non-US or pseudo packages)
     for filename in extra_files:
-        file = utils.open_file(filename);
+        file = utils.open_file(filename)
         for line in file.readlines():
-            line = utils.re_comments.sub('', line).strip();
+            line = utils.re_comments.sub('', line).strip()
             if line == "":
-                continue;
-            split = line.split();
-            lhs = split[0];
-            maintainer = fix_maintainer(" ".join(split[1:]));
+                continue
+            split = line.split()
+            lhs = split[0]
+            maintainer = fix_maintainer(" ".join(split[1:]))
             if lhs.find('~') != -1:
-                (package, version) = lhs.split('~');
+                (package, version) = lhs.split('~')
             else:
-                package = lhs;
-                version = '*';
+                package = lhs
+                version = '*'
             # A version of '*' overwhelms all real version numbers
             if not packages.has_key(package) or version == '*' \
                or apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
-                packages[package] = { "maintainer": maintainer, "version": version };
-        file.close();
+                packages[package] = { "maintainer": maintainer, "version": version }
+        file.close()
 
     package_keys = packages.keys()
     package_keys.sort()
     for package in package_keys:
-        lhs = "~".join([package, packages[package]["version"]]);
-        print "%-30s %s" % (lhs, packages[package]["maintainer"]);
+        lhs = "~".join([package, packages[package]["version"]])
+        print "%-30s %s" % (lhs, packages[package]["maintainer"])
 
 ################################################################################
 

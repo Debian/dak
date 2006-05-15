@@ -121,12 +121,12 @@ for f in functionality:
 def main():
     if len(sys.argv) == 0:
         print "err, argc == 0? how is that possible?"
-        sys.exit(1);
+        sys.exit(1)
     elif len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] == "--help"):
         print "Sub commands:"
         for f in functionality:
 	    print "  %-23s %s" % (f[0], f[1])
-        sys.exit(0);
+        sys.exit(0)
     else:
         # should set PATH based on sys.argv[0] maybe
         # possibly should set names based on sys.argv[0] too
@@ -148,10 +148,10 @@ def main():
 		    cmdname = match[0]
                 elif len(match) > 1:
 		    print "ambiguous command: %s" % ", ".join(match)
-                    sys.exit(1);
+                    sys.exit(1)
 		else:
                     print "unknown command \"%s\"" % (cmdname)
-                    sys.exit(1);
+                    sys.exit(1)
 
         func = names[cmdname]
         x = __import__(func[0])

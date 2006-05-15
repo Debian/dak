@@ -21,14 +21,14 @@
 
 ################################################################################
 
-import pg, sys;
-import utils, db_access;
-import apt_pkg;
+import pg, sys
+import utils, db_access
+import apt_pkg
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
+Cnf = None
+projectB = None
 
 ################################################################################
 
@@ -42,42 +42,42 @@ Looks for fixable descrepancies between stable and unstable.
 ################################################################################
 
 def main ():
-    global Cnf, projectB;
+    global Cnf, projectB
 
-    Cnf = utils.get_conf();
-    Arguments = [('h',"help","Andrea::Options::Help")];
+    Cnf = utils.get_conf()
+    Arguments = [('h',"help","Andrea::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Andrea::Options::%s" % (i)):
-	    Cnf["Andrea::Options::%s" % (i)] = "";
+	    Cnf["Andrea::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Andrea::Options")
     if Options["Help"]:
-	usage();
+	usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
-    src_suite = "stable";
-    dst_suite = "unstable";
+    src_suite = "stable"
+    dst_suite = "unstable"
 
-    src_suite_id = db_access.get_suite_id(src_suite);
-    dst_suite_id = db_access.get_suite_id(dst_suite);
-    arch_all_id = db_access.get_architecture_id("all");
-    dsc_type_id = db_access.get_override_type_id("dsc");
+    src_suite_id = db_access.get_suite_id(src_suite)
+    dst_suite_id = db_access.get_suite_id(dst_suite)
+    arch_all_id = db_access.get_architecture_id("all")
+    dsc_type_id = db_access.get_override_type_id("dsc")
 
     for arch in Cnf.ValueList("Suite::%s::Architectures" % (src_suite)):
         if arch == "source":
-            continue;
+            continue
 
         # Arch: all doesn't work; consider packages which go from
         # arch: all to arch: any, e.g. debconf... needs more checks
         # and thought later.
 
         if arch == "all":
-            continue;
-        arch_id = db_access.get_architecture_id(arch);
+            continue
+        arch_id = db_access.get_architecture_id(arch)
         q = projectB.query("""
 SELECT b_src.package, b_src.version, a.arch_string
   FROM binaries b_src, bin_associations ba, override o, architecture a
@@ -91,9 +91,9 @@ SELECT b_src.package, b_src.version, a.arch_string
                (SELECT 1 FROM bin_associations ba3, binaries b2
                   WHERE ba3.bin = b2.id AND ba3.suite = %s AND b2.package = b_dst.package))
 ORDER BY b_src.package;"""
-                           % (src_suite_id, arch_id, dst_suite_id, dsc_type_id, arch_id, arch_all_id, dst_suite_id, dst_suite_id));
+                           % (src_suite_id, arch_id, dst_suite_id, dsc_type_id, arch_id, arch_all_id, dst_suite_id, dst_suite_id))
         for i in q.getresult():
-            print " ".join(i);
+            print " ".join(i)
 
 #######################################################################################
 

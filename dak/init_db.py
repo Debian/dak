@@ -20,14 +20,14 @@
 
 ################################################################################
 
-import pg, sys;
-import utils, db_access;
-import apt_pkg;
+import pg, sys
+import utils, db_access
+import apt_pkg
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
+Cnf = None
+projectB = None
 
 ################################################################################
 
@@ -42,136 +42,136 @@ Initalizes some tables in the projectB database based on the config file.
 
 def get (c, i):
     if c.has_key(i):
-        return "'%s'" % (c[i]);
+        return "'%s'" % (c[i])
     else:
-        return "NULL";
+        return "NULL"
 
 def main ():
-    global Cnf, projectB;
+    global Cnf, projectB
 
     Cnf = utils.get_conf()
-    Arguments = [('h',"help","Alyson::Options::Help")];
+    Arguments = [('h',"help","Alyson::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Alyson::Options::%s" % (i)):
-	    Cnf["Alyson::Options::%s" % (i)] = "";
+	    Cnf["Alyson::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Alyson::Options")
     if Options["Help"]:
-	usage();
+	usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
     # archive
 
-    projectB.query("BEGIN WORK");
-    projectB.query("DELETE FROM archive");
+    projectB.query("BEGIN WORK")
+    projectB.query("DELETE FROM archive")
     for name in Cnf.SubTree("Archive").List():
-        Archive = Cnf.SubTree("Archive::%s" % (name));
-        origin_server = get(Archive, "OriginServer");
-        description = get(Archive, "Description");
-        projectB.query("INSERT INTO archive (name, origin_server, description) VALUES ('%s', %s, %s)" % (name, origin_server, description));
-    projectB.query("COMMIT WORK");
+        Archive = Cnf.SubTree("Archive::%s" % (name))
+        origin_server = get(Archive, "OriginServer")
+        description = get(Archive, "Description")
+        projectB.query("INSERT INTO archive (name, origin_server, description) VALUES ('%s', %s, %s)" % (name, origin_server, description))
+    projectB.query("COMMIT WORK")
 
     # architecture
 
-    projectB.query("BEGIN WORK");
-    projectB.query("DELETE FROM architecture");
+    projectB.query("BEGIN WORK")
+    projectB.query("DELETE FROM architecture")
     for arch in Cnf.SubTree("Architectures").List():
-        description = Cnf["Architectures::%s" % (arch)];
-        projectB.query("INSERT INTO architecture (arch_string, description) VALUES ('%s', '%s')" % (arch, description));
-    projectB.query("COMMIT WORK");
+        description = Cnf["Architectures::%s" % (arch)]
+        projectB.query("INSERT INTO architecture (arch_string, description) VALUES ('%s', '%s')" % (arch, description))
+    projectB.query("COMMIT WORK")
 
     # component
 
-    projectB.query("BEGIN WORK");
-    projectB.query("DELETE FROM component");
+    projectB.query("BEGIN WORK")
+    projectB.query("DELETE FROM component")
     for name in Cnf.SubTree("Component").List():
-        Component = Cnf.SubTree("Component::%s" % (name));
-        description = get(Component, "Description");
+        Component = Cnf.SubTree("Component::%s" % (name))
+        description = get(Component, "Description")
         if Component.get("MeetsDFSG").lower() == "true":
-            meets_dfsg = "true";
+            meets_dfsg = "true"
         else:
-            meets_dfsg = "false";
-        projectB.query("INSERT INTO component (name, description, meets_dfsg) VALUES ('%s', %s, %s)" % (name, description, meets_dfsg));
-    projectB.query("COMMIT WORK");
+            meets_dfsg = "false"
+        projectB.query("INSERT INTO component (name, description, meets_dfsg) VALUES ('%s', %s, %s)" % (name, description, meets_dfsg))
+    projectB.query("COMMIT WORK")
 
     # location
 
-    projectB.query("BEGIN WORK");
-    projectB.query("DELETE FROM location");
+    projectB.query("BEGIN WORK")
+    projectB.query("DELETE FROM location")
     for location in Cnf.SubTree("Location").List():
-        Location = Cnf.SubTree("Location::%s" % (location));
-        archive_id = db_access.get_archive_id(Location["Archive"]);
-        type = Location.get("type");
+        Location = Cnf.SubTree("Location::%s" % (location))
+        archive_id = db_access.get_archive_id(Location["Archive"])
+        type = Location.get("type")
         if type == "legacy-mixed":
-            projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, Location["type"]));
+            projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, Location["type"]))
         elif type == "legacy" or type == "pool":
             for component in Cnf.SubTree("Component").List():
-                component_id = db_access.get_component_id(component);
+                component_id = db_access.get_component_id(component)
                 projectB.query("INSERT INTO location (path, component, archive, type) VALUES ('%s', %d, %d, '%s')" %
-                               (location, component_id, archive_id, type));
+                               (location, component_id, archive_id, type))
         else:
-            utils.fubar("E: type '%s' not recognised in location %s." % (type, location));
-    projectB.query("COMMIT WORK");
+            utils.fubar("E: type '%s' not recognised in location %s." % (type, location))
+    projectB.query("COMMIT WORK")
 
     # suite
 
-    projectB.query("BEGIN WORK");
+    projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM suite")
     for suite in Cnf.SubTree("Suite").List():
         Suite = Cnf.SubTree("Suite::%s" %(suite))
-        version = get(Suite, "Version");
-        origin = get(Suite, "Origin");
-        description = get(Suite, "Description");
+        version = get(Suite, "Version")
+        origin = get(Suite, "Origin")
+        description = get(Suite, "Description")
         projectB.query("INSERT INTO suite (suite_name, version, origin, description) VALUES ('%s', %s, %s, %s)"
-                       % (suite.lower(), version, origin, description));
+                       % (suite.lower(), version, origin, description))
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
-            architecture_id = db_access.get_architecture_id (architecture);
+            architecture_id = db_access.get_architecture_id (architecture)
             if architecture_id < 0:
-                utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite));
-            projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id));
-    projectB.query("COMMIT WORK");
+                utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite))
+            projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id))
+    projectB.query("COMMIT WORK")
 
     # override_type
 
-    projectB.query("BEGIN WORK");
-    projectB.query("DELETE FROM override_type");
+    projectB.query("BEGIN WORK")
+    projectB.query("DELETE FROM override_type")
     for type in Cnf.ValueList("OverrideType"):
-        projectB.query("INSERT INTO override_type (type) VALUES ('%s')" % (type));
-    projectB.query("COMMIT WORK");
+        projectB.query("INSERT INTO override_type (type) VALUES ('%s')" % (type))
+    projectB.query("COMMIT WORK")
 
     # priority
 
-    projectB.query("BEGIN WORK");
-    projectB.query("DELETE FROM priority");
+    projectB.query("BEGIN WORK")
+    projectB.query("DELETE FROM priority")
     for priority in Cnf.SubTree("Priority").List():
-        projectB.query("INSERT INTO priority (priority, level) VALUES ('%s', %s)" % (priority, Cnf["Priority::%s" % (priority)]));
-    projectB.query("COMMIT WORK");
+        projectB.query("INSERT INTO priority (priority, level) VALUES ('%s', %s)" % (priority, Cnf["Priority::%s" % (priority)]))
+    projectB.query("COMMIT WORK")
 
     # section
 
-    projectB.query("BEGIN WORK");
-    projectB.query("DELETE FROM section");
+    projectB.query("BEGIN WORK")
+    projectB.query("DELETE FROM section")
     for component in Cnf.SubTree("Component").List():
         if Cnf["Natalie::ComponentPosition"] == "prefix":
-            suffix = "";
+            suffix = ""
             if component != "main":
-                prefix = component + '/';
+                prefix = component + '/'
             else:
-                prefix = "";
+                prefix = ""
         else:
-            prefix = "";
-            component = component.replace("non-US/", "");
+            prefix = ""
+            component = component.replace("non-US/", "")
             if component != "main":
-                suffix = '/' + component;
+                suffix = '/' + component
             else:
-                suffix = "";
+                suffix = ""
         for section in Cnf.ValueList("Section"):
-            projectB.query("INSERT INTO section (section) VALUES ('%s%s%s')" % (prefix, section, suffix));
-    projectB.query("COMMIT WORK");
+            projectB.query("INSERT INTO section (section) VALUES ('%s%s%s')" % (prefix, section, suffix))
+    projectB.query("COMMIT WORK")
 
 ################################################################################
 

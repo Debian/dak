@@ -28,19 +28,19 @@
 
 ################################################################################
 
-import commands, pg, os, string, sys, time;
-import utils, db_access;
-import apt_pkg;
+import commands, pg, os, string, sys, time
+import utils, db_access
+import apt_pkg
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
-suite_id = None;
+Cnf = None
+projectB = None
+suite_id = None
 no_longer_in_suite = {}; # Really should be static to add_nbs, but I'm lazy
 
-source_binaries = {};
-source_versions = {};
+source_binaries = {}
+source_versions = {}
 
 ################################################################################
 
@@ -58,67 +58,67 @@ Check for obsolete or duplicated packages.
 def add_nbs(nbs_d, source, version, package):
     # Ensure the package is still in the suite (someone may have already removed it)
     if no_longer_in_suite.has_key(package):
-        return;
+        return
     else:
-        q = projectB.query("SELECT b.id FROM binaries b, bin_associations ba WHERE ba.bin = b.id AND ba.suite = %s AND b.package = '%s' LIMIT 1" % (suite_id, package));
+        q = projectB.query("SELECT b.id FROM binaries b, bin_associations ba WHERE ba.bin = b.id AND ba.suite = %s AND b.package = '%s' LIMIT 1" % (suite_id, package))
         if not q.getresult():
-            no_longer_in_suite[package] = "";
-            return;
+            no_longer_in_suite[package] = ""
+            return
 
     nbs_d.setdefault(source, {})
     nbs_d[source].setdefault(version, {})
-    nbs_d[source][version][package] = "";
+    nbs_d[source][version][package] = ""
 
 ################################################################################
 
 # Check for packages built on architectures they shouldn't be.
 def do_anais(architecture, binaries_list, source):
     if architecture == "any" or architecture == "all":
-        return "";
+        return ""
 
-    anais_output = "";
-    architectures = {};
+    anais_output = ""
+    architectures = {}
     for arch in architecture.split():
-        architectures[arch.strip()] = "";
+        architectures[arch.strip()] = ""
     for binary in binaries_list:
-        q = projectB.query("SELECT a.arch_string, b.version FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id AND b.package = '%s'" % (suite_id, binary));
-        ql = q.getresult();
-        versions = [];
+        q = projectB.query("SELECT a.arch_string, b.version FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id AND b.package = '%s'" % (suite_id, binary))
+        ql = q.getresult()
+        versions = []
         for i in ql:
-            arch = i[0];
-            version = i[1];
+            arch = i[0]
+            version = i[1]
             if architectures.has_key(arch):
-                versions.append(version);
-        versions.sort(apt_pkg.VersionCompare);
+                versions.append(version)
+        versions.sort(apt_pkg.VersionCompare)
         if versions:
             latest_version = versions.pop()
         else:
-            latest_version = None;
+            latest_version = None
         # Check for 'invalid' architectures
         versions_d = {}
         for i in ql:
-            arch = i[0];
-            version = i[1];
+            arch = i[0]
+            version = i[1]
             if not architectures.has_key(arch):
                 versions_d.setdefault(version, [])
                 versions_d[version].append(arch)
 
         if versions_d != {}:
-            anais_output += "\n (*) %s_%s [%s]: %s\n" % (binary, latest_version, source, architecture);
-            versions = versions_d.keys();
-            versions.sort(apt_pkg.VersionCompare);
+            anais_output += "\n (*) %s_%s [%s]: %s\n" % (binary, latest_version, source, architecture)
+            versions = versions_d.keys()
+            versions.sort(apt_pkg.VersionCompare)
             for version in versions:
-                arches = versions_d[version];
-                arches.sort();
-                anais_output += "    o %s: %s\n" % (version, ", ".join(arches));
-    return anais_output;
+                arches = versions_d[version]
+                arches.sort()
+                anais_output += "    o %s: %s\n" % (version, ", ".join(arches))
+    return anais_output
 
 ################################################################################
 
 def do_nviu():
-    experimental_id = db_access.get_suite_id("experimental");
+    experimental_id = db_access.get_suite_id("experimental")
     if experimental_id == -1:
-        return;
+        return
     # Check for packages in experimental obsoleted by versions in unstable
     q = projectB.query("""
 SELECT s.source, s.version AS experimental, s2.version AS unstable
@@ -126,76 +126,76 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
   WHERE sa.suite = %s AND sa2.suite = %d AND sa.source = s.id
    AND sa2.source = s2.id AND s.source = s2.source
    AND versioncmp(s.version, s2.version) < 0""" % (experimental_id,
-                                                   db_access.get_suite_id("unstable")));
-    ql = q.getresult();
+                                                   db_access.get_suite_id("unstable")))
+    ql = q.getresult()
     if ql:
-        nviu_to_remove = [];
-        print "Newer version in unstable";
-        print "-------------------------";
-        print ;
+        nviu_to_remove = []
+        print "Newer version in unstable"
+        print "-------------------------"
+        print 
         for i in ql:
-            (source, experimental_version, unstable_version) = i;
-            print " o %s (%s, %s)" % (source, experimental_version, unstable_version);
-            nviu_to_remove.append(source);
+            (source, experimental_version, unstable_version) = i
+            print " o %s (%s, %s)" % (source, experimental_version, unstable_version)
+            nviu_to_remove.append(source)
         print
         print "Suggested command:"
-        print " melanie -m \"[rene] NVIU\" -s experimental %s" % (" ".join(nviu_to_remove));
+        print " melanie -m \"[rene] NVIU\" -s experimental %s" % (" ".join(nviu_to_remove))
         print
 
 ################################################################################
 
 def do_nbs(real_nbs):
-    output = "Not Built from Source\n";
-    output += "---------------------\n\n";
+    output = "Not Built from Source\n"
+    output += "---------------------\n\n"
 
-    nbs_to_remove = [];
-    nbs_keys = real_nbs.keys();
-    nbs_keys.sort();
+    nbs_to_remove = []
+    nbs_keys = real_nbs.keys()
+    nbs_keys.sort()
     for source in nbs_keys:
         output += " * %s_%s builds: %s\n" % (source,
                                        source_versions.get(source, "??"),
-                                       source_binaries.get(source, "(source does not exist)"));
+                                       source_binaries.get(source, "(source does not exist)"))
         output += "      but no longer builds:\n"
-        versions = real_nbs[source].keys();
-        versions.sort(apt_pkg.VersionCompare);
+        versions = real_nbs[source].keys()
+        versions.sort(apt_pkg.VersionCompare)
         for version in versions:
-            packages = real_nbs[source][version].keys();
-            packages.sort();
+            packages = real_nbs[source][version].keys()
+            packages.sort()
             for pkg in packages:
-                nbs_to_remove.append(pkg);
-            output += "        o %s: %s\n" % (version, ", ".join(packages));
+                nbs_to_remove.append(pkg)
+            output += "        o %s: %s\n" % (version, ", ".join(packages))
 
-        output += "\n";
+        output += "\n"
 
     if nbs_to_remove:
-        print output;
+        print output
 
         print "Suggested command:"
-        print " melanie -m \"[rene] NBS\" -b %s" % (" ".join(nbs_to_remove));
+        print " melanie -m \"[rene] NBS\" -b %s" % (" ".join(nbs_to_remove))
         print
 
 ################################################################################
 
 def do_dubious_nbs(dubious_nbs):
-    print "Dubious NBS";
-    print "-----------";
-    print ;
+    print "Dubious NBS"
+    print "-----------"
+    print 
 
-    dubious_nbs_keys = dubious_nbs.keys();
-    dubious_nbs_keys.sort();
+    dubious_nbs_keys = dubious_nbs.keys()
+    dubious_nbs_keys.sort()
     for source in dubious_nbs_keys:
         print " * %s_%s builds: %s" % (source,
                                        source_versions.get(source, "??"),
-                                       source_binaries.get(source, "(source does not exist)"));
+                                       source_binaries.get(source, "(source does not exist)"))
         print "      won't admit to building:"
-        versions = dubious_nbs[source].keys();
-        versions.sort(apt_pkg.VersionCompare);
+        versions = dubious_nbs[source].keys()
+        versions.sort(apt_pkg.VersionCompare)
         for version in versions:
-            packages = dubious_nbs[source][version].keys();
-            packages.sort();
-            print "        o %s: %s" % (version, ", ".join(packages));
+            packages = dubious_nbs[source][version].keys()
+            packages.sort()
+            print "        o %s: %s" % (version, ", ".join(packages))
 
-        print ;
+        print 
 
 ################################################################################
 
@@ -207,7 +207,7 @@ def do_obsolete_source(duplicate_bins, bin2source):
             if not obsolete.has_key(source):
                 if not source_binaries.has_key(source):
                     # Source has already been removed
-                    continue;
+                    continue
                 else:
                     obsolete[source] = map(string.strip,
                                            source_binaries[source].split(','))
@@ -236,140 +236,140 @@ def do_obsolete_source(duplicate_bins, bin2source):
             output += "\n"
 
     if to_remove:
-        print output;
+        print output
 
         print "Suggested command:"
-        print " melanie -S -p -m \"[rene] obsolete source package\" %s" % (" ".join(to_remove));
+        print " melanie -S -p -m \"[rene] obsolete source package\" %s" % (" ".join(to_remove))
         print
 
 ################################################################################
 
 def main ():
-    global Cnf, projectB, suite_id, source_binaries, source_versions;
+    global Cnf, projectB, suite_id, source_binaries, source_versions
 
-    Cnf = utils.get_conf();
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Rene::Options::Help"),
                  ('m',"mode","Rene::Options::Mode", "HasArg"),
-                 ('s',"suite","Rene::Options::Suite","HasArg")];
+                 ('s',"suite","Rene::Options::Suite","HasArg")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Rene::Options::%s" % (i)):
-	    Cnf["Rene::Options::%s" % (i)] = "";
-    Cnf["Rene::Options::Suite"] = Cnf["Dinstall::DefaultSuite"];
+	    Cnf["Rene::Options::%s" % (i)] = ""
+    Cnf["Rene::Options::Suite"] = Cnf["Dinstall::DefaultSuite"]
 
     if not Cnf.has_key("Rene::Options::Mode"):
-        Cnf["Rene::Options::Mode"] = "daily";
+        Cnf["Rene::Options::Mode"] = "daily"
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Rene::Options")
     if Options["Help"]:
-	usage();
+	usage()
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = [ "nbs", "nviu", "obsolete source" ];
+        checks = [ "nbs", "nviu", "obsolete source" ]
     elif Options["Mode"] == "full":
-        checks = [ "nbs", "nviu", "obsolete source", "dubious nbs", "bnb", "bms", "anais" ];
+        checks = [ "nbs", "nviu", "obsolete source", "dubious nbs", "bnb", "bms", "anais" ]
     else:
-        utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]));
-        usage(1);
+        utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
+        usage(1)
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
-    bin_pkgs = {};
-    src_pkgs = {};
+    bin_pkgs = {}
+    src_pkgs = {}
     bin2source = {}
-    bins_in_suite = {};
-    nbs = {};
-    source_versions = {};
+    bins_in_suite = {}
+    nbs = {}
+    source_versions = {}
 
-    anais_output = "";
-    duplicate_bins = {};
+    anais_output = ""
+    duplicate_bins = {}
 
     suite = Options["Suite"]
-    suite_id = db_access.get_suite_id(suite);
+    suite_id = db_access.get_suite_id(suite)
 
-    bin_not_built = {};
+    bin_not_built = {}
 
     if "bnb" in checks:
         # Initalize a large hash table of all binary packages
-        before = time.time();
-        sys.stderr.write("[Getting a list of binary packages in %s..." % (suite));
-        q = projectB.query("SELECT distinct b.package FROM binaries b, bin_associations ba WHERE ba.suite = %s AND ba.bin = b.id" % (suite_id));
-        ql = q.getresult();
-        sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)));
+        before = time.time()
+        sys.stderr.write("[Getting a list of binary packages in %s..." % (suite))
+        q = projectB.query("SELECT distinct b.package FROM binaries b, bin_associations ba WHERE ba.suite = %s AND ba.bin = b.id" % (suite_id))
+        ql = q.getresult()
+        sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
         for i in ql:
-            bins_in_suite[i[0]] = "";
+            bins_in_suite[i[0]] = ""
 
     # Checks based on the Sources files
-    components = Cnf.ValueList("Suite::%s::Components" % (suite));
+    components = Cnf.ValueList("Suite::%s::Components" % (suite))
     for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component);
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = utils.temp_filename();
-        (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+        temp_filename = utils.temp_filename()
+        (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if (result != 0):
-            sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
-            sys.exit(result);
-        sources = utils.open_file(temp_filename);
-        Sources = apt_pkg.ParseTagFile(sources);
+            sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
+            sys.exit(result)
+        sources = utils.open_file(temp_filename)
+        Sources = apt_pkg.ParseTagFile(sources)
         while Sources.Step():
-            source = Sources.Section.Find('Package');
-            source_version = Sources.Section.Find('Version');
-            architecture = Sources.Section.Find('Architecture');
-            binaries = Sources.Section.Find('Binary');
-            binaries_list = map(string.strip, binaries.split(','));
+            source = Sources.Section.Find('Package')
+            source_version = Sources.Section.Find('Version')
+            architecture = Sources.Section.Find('Architecture')
+            binaries = Sources.Section.Find('Binary')
+            binaries_list = map(string.strip, binaries.split(','))
 
             if "bnb" in checks:
                 # Check for binaries not built on any architecture.
                 for binary in binaries_list:
                     if not bins_in_suite.has_key(binary):
                         bin_not_built.setdefault(source, {})
-                        bin_not_built[source][binary] = "";
+                        bin_not_built[source][binary] = ""
 
             if "anais" in checks:
-                anais_output += do_anais(architecture, binaries_list, source);
+                anais_output += do_anais(architecture, binaries_list, source)
 
             # Check for duplicated packages and build indices for checking "no source" later
-            source_index = component + '/' + source;
+            source_index = component + '/' + source
             if src_pkgs.has_key(source):
-                print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source]);
-            src_pkgs[source] = source_index;
+                print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
+            src_pkgs[source] = source_index
             for binary in binaries_list:
                 if bin_pkgs.has_key(binary):
                     key_list = [ source, bin_pkgs[binary] ]
                     key_list.sort()
                     key = '~'.join(key_list)
                     duplicate_bins.setdefault(key, [])
-                    duplicate_bins[key].append(binary);
-                bin_pkgs[binary] = source;
-            source_binaries[source] = binaries;
-            source_versions[source] = source_version;
+                    duplicate_bins[key].append(binary)
+                bin_pkgs[binary] = source
+            source_binaries[source] = binaries
+            source_versions[source] = source_version
 
-        sources.close();
-        os.unlink(temp_filename);
+        sources.close()
+        os.unlink(temp_filename)
 
     # Checks based on the Packages files
     for component in components + ['main/debian-installer']:
-        architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)));
+        architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
         for architecture in architectures:
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture);
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
-            temp_filename = utils.temp_filename();
-            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+            temp_filename = utils.temp_filename()
+            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
-                sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
-                sys.exit(result);
-            packages = utils.open_file(temp_filename);
-            Packages = apt_pkg.ParseTagFile(packages);
+                sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
+                sys.exit(result)
+            packages = utils.open_file(temp_filename)
+            Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
-                package = Packages.Section.Find('Package');
-                source = Packages.Section.Find('Source', "");
-                version = Packages.Section.Find('Version');
+                package = Packages.Section.Find('Package')
+                source = Packages.Section.Find('Source', "")
+                version = Packages.Section.Find('Version')
                 if source == "":
-                    source = package;
+                    source = package
                 if bin2source.has_key(package) and \
                        apt_pkg.VersionCompare(version, bin2source[package]["version"]) > 0:
                     bin2source[package]["version"] = version
@@ -379,13 +379,13 @@ def main ():
                     bin2source[package]["version"] = version
                     bin2source[package]["source"] = source
                 if source.find("(") != -1:
-                    m = utils.re_extract_src_version.match(source);
-                    source = m.group(1);
-                    version = m.group(2);
+                    m = utils.re_extract_src_version.match(source)
+                    source = m.group(1)
+                    version = m.group(2)
                 if not bin_pkgs.has_key(package):
                     nbs.setdefault(source,{})
                     nbs[source].setdefault(package, {})
-                    nbs[source][package][version] = "";
+                    nbs[source][package][version] = ""
                 else:
                     previous_source = bin_pkgs[package]
                     if previous_source != source:
@@ -395,31 +395,31 @@ def main ():
                         duplicate_bins.setdefault(key, [])
                         if package not in duplicate_bins[key]:
                             duplicate_bins[key].append(package)
-            packages.close();
-            os.unlink(temp_filename);
+            packages.close()
+            os.unlink(temp_filename)
     
     if "obsolete source" in checks:
         do_obsolete_source(duplicate_bins, bin2source)
 
     # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
-    dubious_nbs = {};
-    real_nbs = {};
+    dubious_nbs = {}
+    real_nbs = {}
     for source in nbs.keys():
         for package in nbs[source].keys():
-            versions = nbs[source][package].keys();
-            versions.sort(apt_pkg.VersionCompare);
-            latest_version = versions.pop();
-            source_version = source_versions.get(source,"0");
+            versions = nbs[source][package].keys()
+            versions.sort(apt_pkg.VersionCompare)
+            latest_version = versions.pop()
+            source_version = source_versions.get(source,"0")
             if apt_pkg.VersionCompare(latest_version, source_version) == 0:
-                add_nbs(dubious_nbs, source, latest_version, package);
+                add_nbs(dubious_nbs, source, latest_version, package)
             else:
-                add_nbs(real_nbs, source, latest_version, package);
+                add_nbs(real_nbs, source, latest_version, package)
 
     if "nviu" in checks:
-        do_nviu();
+        do_nviu()
 
     if "nbs" in checks:
-        do_nbs(real_nbs);
+        do_nbs(real_nbs)
 
     ###
 
@@ -428,36 +428,36 @@ def main ():
         print
 
     if "bnb" in checks:
-        print "Unbuilt binary packages";
-        print "-----------------------";
+        print "Unbuilt binary packages"
+        print "-----------------------"
         print
-        keys = bin_not_built.keys();
-        keys.sort();
+        keys = bin_not_built.keys()
+        keys.sort()
         for source in keys:
-            binaries = bin_not_built[source].keys();
-            binaries.sort();
-            print " o %s: %s" % (source, ", ".join(binaries));
-        print ;
+            binaries = bin_not_built[source].keys()
+            binaries.sort()
+            print " o %s: %s" % (source, ", ".join(binaries))
+        print 
 
     if "bms" in checks:
-        print "Built from multiple source packages";
-        print "-----------------------------------";
-        print ;
-        keys = duplicate_bins.keys();
-        keys.sort();
+        print "Built from multiple source packages"
+        print "-----------------------------------"
+        print 
+        keys = duplicate_bins.keys()
+        keys.sort()
         for key in keys:
-            (source_a, source_b) = key.split("~");
-            print " o %s & %s => %s" % (source_a, source_b, ", ".join(duplicate_bins[key]));
-        print ;
+            (source_a, source_b) = key.split("~")
+            print " o %s & %s => %s" % (source_a, source_b, ", ".join(duplicate_bins[key]))
+        print 
 
     if "anais" in checks:
-        print "Architecture Not Allowed In Source";
-        print "----------------------------------";
-        print anais_output;
-        print ;
+        print "Architecture Not Allowed In Source"
+        print "----------------------------------"
+        print anais_output
+        print 
 
     if "dubious nbs" in checks:
-        do_dubious_nbs(dubious_nbs);
+        do_dubious_nbs(dubious_nbs)
 
 
 ################################################################################

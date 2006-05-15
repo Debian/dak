@@ -19,30 +19,30 @@
 
 ################################################################################
 
-import glob, os, stat, time;
-import utils;
+import glob, os, stat, time
+import utils
 
 ################################################################################
 
 def main():
     Cnf = utils.get_conf()
-    count = 0;
+    count = 0
     os.chdir(Cnf["Dir::Queue::Done"])
-    files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]));
+    files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]))
     for filename in files:
         if os.path.isfile(filename):
-            mtime = time.gmtime(os.stat(filename)[stat.ST_MTIME]);
-            dirname = time.strftime("%Y/%m/%d", mtime);
+            mtime = time.gmtime(os.stat(filename)[stat.ST_MTIME])
+            dirname = time.strftime("%Y/%m/%d", mtime)
             if not os.path.exists(dirname):
-                print "Creating: %s" % (dirname);
-                os.makedirs(dirname);
-            dest = dirname + '/' + os.path.basename(filename);
+                print "Creating: %s" % (dirname)
+                os.makedirs(dirname)
+            dest = dirname + '/' + os.path.basename(filename)
             if os.path.exists(dest):
-                utils.fubar("%s already exists." % (dest));
-            print "Move: %s -> %s" % (filename, dest) ;
-            os.rename(filename, dest);
-            count = count + 1;
-    print "Moved %d files." % (count);
+                utils.fubar("%s already exists." % (dest))
+            print "Move: %s -> %s" % (filename, dest) 
+            os.rename(filename, dest)
+            count = count + 1
+    print "Moved %d files." % (count)
 
 ############################################################
 

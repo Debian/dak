@@ -27,20 +27,20 @@
 
 ################################################################################
 
-import commands, os, pg, stat, string, sys, time;
-import db_access, utils;
-import apt_pkg, apt_inst;
+import commands, os, pg, stat, string, sys, time
+import db_access, utils
+import apt_pkg, apt_inst
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
-db_files = {};
-waste = 0.0;
-excluded = {};
-current_file = None;
-future_files = {};
-current_time = time.time();
+Cnf = None
+projectB = None
+db_files = {}
+waste = 0.0
+excluded = {}
+current_file = None
+future_files = {}
+current_time = time.time()
 
 ################################################################################
 
@@ -68,71 +68,71 @@ The following MODEs are available:
 ################################################################################
 
 def process_dir (unused, dirname, filenames):
-    global waste, db_files, excluded;
+    global waste, db_files, excluded
 
     if dirname.find('/disks-') != -1 or dirname.find('upgrade-') != -1:
-        return;
+        return
     # hack; can't handle .changes files
     if dirname.find('proposed-updates') != -1:
-        return;
+        return
     for name in filenames:
-        filename = os.path.abspath(dirname+'/'+name);
-        filename = filename.replace('potato-proposed-updates', 'proposed-updates');
+        filename = os.path.abspath(dirname+'/'+name)
+        filename = filename.replace('potato-proposed-updates', 'proposed-updates')
         if os.path.isfile(filename) and not os.path.islink(filename) and not db_files.has_key(filename) and not excluded.has_key(filename):
-            waste += os.stat(filename)[stat.ST_SIZE];
+            waste += os.stat(filename)[stat.ST_SIZE]
             print filename
 
 ################################################################################
 
 def check_files():
-    global db_files;
+    global db_files
 
-    print "Building list of database files...";
+    print "Building list of database files..."
     q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id")
-    ql = q.getresult();
+    ql = q.getresult()
 
-    db_files.clear();
+    db_files.clear()
     for i in ql:
-	filename = os.path.abspath(i[0] + i[1]);
-        db_files[filename] = "";
+	filename = os.path.abspath(i[0] + i[1])
+        db_files[filename] = ""
         if os.access(filename, os.R_OK) == 0:
-            utils.warn("'%s' doesn't exist." % (filename));
+            utils.warn("'%s' doesn't exist." % (filename))
 
-    filename = Cnf["Dir::Override"]+'override.unreferenced';
+    filename = Cnf["Dir::Override"]+'override.unreferenced'
     if os.path.exists(filename):
-        file = utils.open_file(filename);
+        file = utils.open_file(filename)
         for filename in file.readlines():
-            filename = filename[:-1];
-            excluded[filename] = "";
+            filename = filename[:-1]
+            excluded[filename] = ""
 
-    print "Checking against existent files...";
+    print "Checking against existent files..."
 
-    os.path.walk(Cnf["Dir::Root"]+'pool/', process_dir, None);
+    os.path.walk(Cnf["Dir::Root"]+'pool/', process_dir, None)
 
     print
-    print "%s wasted..." % (utils.size_type(waste));
+    print "%s wasted..." % (utils.size_type(waste))
 
 ################################################################################
 
 def check_dscs():
-    count = 0;
-    suite = 'unstable';
+    count = 0
+    suite = 'unstable'
     for component in Cnf.SubTree("Component").List():
         if component == "mixed":
-            continue;
-        component = component.lower();
-        list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component);
-        list_file = utils.open_file(list_filename);
+            continue
+        component = component.lower()
+        list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component)
+        list_file = utils.open_file(list_filename)
         for line in list_file.readlines():
-            file = line[:-1];
+            file = line[:-1]
             try:
-                utils.parse_changes(file, signing_rules=1);
+                utils.parse_changes(file, signing_rules=1)
             except utils.invalid_dsc_format_exc, line:
-                utils.warn("syntax error in .dsc file '%s', line %s." % (file, line));
-                count += 1;
+                utils.warn("syntax error in .dsc file '%s', line %s." % (file, line))
+                count += 1
 
     if count:
-        utils.warn("Found %s invalid .dsc files." % (count));
+        utils.warn("Found %s invalid .dsc files." % (count))
 
 ################################################################################
 
@@ -141,18 +141,18 @@ def check_override():
         print suite
         print "-"*len(suite)
         print
-        suite_id = db_access.get_suite_id(suite);
+        suite_id = db_access.get_suite_id(suite)
         q = projectB.query("""
 SELECT DISTINCT b.package FROM binaries b, bin_associations ba
  WHERE b.id = ba.bin AND ba.suite = %s AND NOT EXISTS
        (SELECT 1 FROM override o WHERE o.suite = %s AND o.package = b.package)"""
-                           % (suite_id, suite_id));
+                           % (suite_id, suite_id))
         print q
         q = projectB.query("""
 SELECT DISTINCT s.source FROM source s, src_associations sa
   WHERE s.id = sa.source AND sa.suite = %s AND NOT EXISTS
        (SELECT 1 FROM override o WHERE o.suite = %s and o.package = s.source)"""
-                           % (suite_id, suite_id));
+                           % (suite_id, suite_id))
         print q
 
 ################################################################################
@@ -162,54 +162,54 @@ SELECT DISTINCT s.source FROM source s, src_associations sa
 
 def check_source_in_one_dir():
     # Not the most enterprising method, but hey...
-    broken_count = 0;
-    q = projectB.query("SELECT id FROM source;");
+    broken_count = 0
+    q = projectB.query("SELECT id FROM source;")
     for i in q.getresult():
-        source_id = i[0];
+        source_id = i[0]
         q2 = projectB.query("""
 SELECT l.path, f.filename FROM files f, dsc_files df, location l WHERE df.source = %s AND f.id = df.file AND l.id = f.location"""
-                            % (source_id));
-        first_path = "";
-        first_filename = "";
-        broken = 0;
+                            % (source_id))
+        first_path = ""
+        first_filename = ""
+        broken = 0
         for j in q2.getresult():
-            filename = j[0] + j[1];
-            path = os.path.dirname(filename);
+            filename = j[0] + j[1]
+            path = os.path.dirname(filename)
             if first_path == "":
-                first_path = path;
-                first_filename = filename;
+                first_path = path
+                first_filename = filename
             elif first_path != path:
-                symlink = path + '/' + os.path.basename(first_filename);
+                symlink = path + '/' + os.path.basename(first_filename)
                 if not os.path.exists(symlink):
-                    broken = 1;
-                    print "WOAH, we got a live one here... %s [%s] {%s}" % (filename, source_id, symlink);
+                    broken = 1
+                    print "WOAH, we got a live one here... %s [%s] {%s}" % (filename, source_id, symlink)
         if broken:
-            broken_count += 1;
-    print "Found %d source packages where the source is not all in one directory." % (broken_count);
+            broken_count += 1
+    print "Found %d source packages where the source is not all in one directory." % (broken_count)
 
 ################################################################################
 
 def check_md5sums():
-    print "Getting file information from database...";
+    print "Getting file information from database..."
     q = projectB.query("SELECT l.path, f.filename, f.md5sum, f.size FROM files f, location l WHERE f.location = l.id")
-    ql = q.getresult();
+    ql = q.getresult()
 
-    print "Checking file md5sums & sizes...";
+    print "Checking file md5sums & sizes..."
     for i in ql:
-	filename = os.path.abspath(i[0] + i[1]);
-        db_md5sum = i[2];
-        db_size = int(i[3]);
+	filename = os.path.abspath(i[0] + i[1])
+        db_md5sum = i[2]
+        db_size = int(i[3])
         try:
-            file = utils.open_file(filename);
+            file = utils.open_file(filename)
         except:
-            utils.warn("can't open '%s'." % (filename));
-            continue;
-        md5sum = apt_pkg.md5sum(file);
-        size = os.stat(filename)[stat.ST_SIZE];
+            utils.warn("can't open '%s'." % (filename))
+            continue
+        md5sum = apt_pkg.md5sum(file)
+        size = os.stat(filename)[stat.ST_SIZE]
         if md5sum != db_md5sum:
-            utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum));
+            utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
         if size != db_size:
-            utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size));
+            utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
 
     print "Done."
 
@@ -219,259 +219,259 @@ def check_md5sums():
 # (e.g. alpha) which have far-future dates as their default dates.
 
 def Ent(Kind,Name,Link,Mode,UID,GID,Size,MTime,Major,Minor):
-    global future_files;
+    global future_files
 
     if MTime > current_time:
-        future_files[current_file] = MTime;
-        print "%s: %s '%s','%s',%u,%u,%u,%u,%u,%u,%u" % (current_file, Kind,Name,Link,Mode,UID,GID,Size, MTime, Major, Minor);
+        future_files[current_file] = MTime
+        print "%s: %s '%s','%s',%u,%u,%u,%u,%u,%u,%u" % (current_file, Kind,Name,Link,Mode,UID,GID,Size, MTime, Major, Minor)
 
 def check_timestamps():
-    global current_file;
+    global current_file
 
     q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.deb$'")
-    ql = q.getresult();
-    db_files.clear();
-    count = 0;
+    ql = q.getresult()
+    db_files.clear()
+    count = 0
     for i in ql:
-	filename = os.path.abspath(i[0] + i[1]);
+	filename = os.path.abspath(i[0] + i[1])
         if os.access(filename, os.R_OK):
-            file = utils.open_file(filename);
-            current_file = filename;
-            sys.stderr.write("Processing %s.\n" % (filename));
-            apt_inst.debExtract(file,Ent,"control.tar.gz");
-            file.seek(0);
-            apt_inst.debExtract(file,Ent,"data.tar.gz");
-            count += 1;
-    print "Checked %d files (out of %d)." % (count, len(db_files.keys()));
+            file = utils.open_file(filename)
+            current_file = filename
+            sys.stderr.write("Processing %s.\n" % (filename))
+            apt_inst.debExtract(file,Ent,"control.tar.gz")
+            file.seek(0)
+            apt_inst.debExtract(file,Ent,"data.tar.gz")
+            count += 1
+    print "Checked %d files (out of %d)." % (count, len(db_files.keys()))
 
 ################################################################################
 
 def check_missing_tar_gz_in_dsc():
-    count = 0;
+    count = 0
 
-    print "Building list of database files...";
-    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.dsc$'");
-    ql = q.getresult();
+    print "Building list of database files..."
+    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.dsc$'")
+    ql = q.getresult()
     if ql:
-        print "Checking %d files..." % len(ql);
+        print "Checking %d files..." % len(ql)
     else:
         print "No files to check."
     for i in ql:
-        filename = os.path.abspath(i[0] + i[1]);
+        filename = os.path.abspath(i[0] + i[1])
         try:
             # NB: don't enforce .dsc syntax
-            dsc = utils.parse_changes(filename);
+            dsc = utils.parse_changes(filename)
         except:
-            utils.fubar("error parsing .dsc file '%s'." % (filename));
-        dsc_files = utils.build_file_list(dsc, is_a_dsc=1);
-        has_tar = 0;
+            utils.fubar("error parsing .dsc file '%s'." % (filename))
+        dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
+        has_tar = 0
         for file in dsc_files.keys():
-            m = utils.re_issource.match(file);
+            m = utils.re_issource.match(file)
             if not m:
-                utils.fubar("%s not recognised as source." % (file));
-            type = m.group(3);
+                utils.fubar("%s not recognised as source." % (file))
+            type = m.group(3)
             if type == "orig.tar.gz" or type == "tar.gz":
-                has_tar = 1;
+                has_tar = 1
         if not has_tar:
-            utils.warn("%s has no .tar.gz in the .dsc file." % (file));
-            count += 1;
+            utils.warn("%s has no .tar.gz in the .dsc file." % (file))
+            count += 1
 
     if count:
-        utils.warn("Found %s invalid .dsc files." % (count));
+        utils.warn("Found %s invalid .dsc files." % (count))
 
 
 ################################################################################
 
 def validate_sources(suite, component):
-    filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component);
-    print "Processing %s..." % (filename);
+    filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
+    print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-    temp_filename = utils.temp_filename();
-    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+    temp_filename = utils.temp_filename()
+    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
-        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
-        sys.exit(result);
-    sources = utils.open_file(temp_filename);
-    Sources = apt_pkg.ParseTagFile(sources);
+        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
+        sys.exit(result)
+    sources = utils.open_file(temp_filename)
+    Sources = apt_pkg.ParseTagFile(sources)
     while Sources.Step():
-        source = Sources.Section.Find('Package');
-        directory = Sources.Section.Find('Directory');
-        files = Sources.Section.Find('Files');
+        source = Sources.Section.Find('Package')
+        directory = Sources.Section.Find('Directory')
+        files = Sources.Section.Find('Files')
         for i in files.split('\n'):
-            (md5, size, name) = i.split();
-            filename = "%s/%s/%s" % (Cnf["Dir::Root"], directory, name);
+            (md5, size, name) = i.split()
+            filename = "%s/%s/%s" % (Cnf["Dir::Root"], directory, name)
             if not os.path.exists(filename):
                 if directory.find("potato") == -1:
-                    print "W: %s missing." % (filename);
+                    print "W: %s missing." % (filename)
                 else:
-                    pool_location = utils.poolify (source, component);
-                    pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name);
+                    pool_location = utils.poolify (source, component)
+                    pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name)
                     if not os.path.exists(pool_filename):
-                        print "E: %s missing (%s)." % (filename, pool_filename);
+                        print "E: %s missing (%s)." % (filename, pool_filename)
                     else:
                         # Create symlink
-                        pool_filename = os.path.normpath(pool_filename);
-                        filename = os.path.normpath(filename);
-                        src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"]);
-                        print "Symlinking: %s -> %s" % (filename, src);
-                        #os.symlink(src, filename);
-    sources.close();
-    os.unlink(temp_filename);
+                        pool_filename = os.path.normpath(pool_filename)
+                        filename = os.path.normpath(filename)
+                        src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
+                        print "Symlinking: %s -> %s" % (filename, src)
+                        #os.symlink(src, filename)
+    sources.close()
+    os.unlink(temp_filename)
 
 ########################################
 
 def validate_packages(suite, component, architecture):
     filename = "%s/dists/%s/%s/binary-%s/Packages.gz" \
-               % (Cnf["Dir::Root"], suite, component, architecture);
-    print "Processing %s..." % (filename);
+               % (Cnf["Dir::Root"], suite, component, architecture)
+    print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-    temp_filename = utils.temp_filename();
-    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename));
+    temp_filename = utils.temp_filename()
+    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
-        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output));
-        sys.exit(result);
-    packages = utils.open_file(temp_filename);
-    Packages = apt_pkg.ParseTagFile(packages);
+        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
+        sys.exit(result)
+    packages = utils.open_file(temp_filename)
+    Packages = apt_pkg.ParseTagFile(packages)
     while Packages.Step():
-        filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'));
+        filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'))
         if not os.path.exists(filename):
-            print "W: %s missing." % (filename);
-    packages.close();
-    os.unlink(temp_filename);
+            print "W: %s missing." % (filename)
+    packages.close()
+    os.unlink(temp_filename)
 
 ########################################
 
 def check_indices_files_exist():
     for suite in [ "stable", "testing", "unstable" ]:
         for component in Cnf.ValueList("Suite::%s::Components" % (suite)):
-            architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite));
+            architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
             for arch in map(string.lower, architectures):
                 if arch == "source":
-                    validate_sources(suite, component);
+                    validate_sources(suite, component)
                 elif arch == "all":
-                    continue;
+                    continue
                 else:
-                    validate_packages(suite, component, arch);
+                    validate_packages(suite, component, arch)
 
 ################################################################################
 
 def check_files_not_symlinks():
-    print "Building list of database files... ",;
-    before = time.time();
+    print "Building list of database files... ",
+    before = time.time()
     q = projectB.query("SELECT l.path, f.filename, f.id FROM files f, location l WHERE f.location = l.id")
-    print "done. (%d seconds)" % (int(time.time()-before));
-    q_files = q.getresult();
+    print "done. (%d seconds)" % (int(time.time()-before))
+    q_files = q.getresult()
 
-#      locations = {};
-#      q = projectB.query("SELECT l.path, c.name, l.id FROM location l, component c WHERE l.component = c.id");
+#      locations = {}
+#      q = projectB.query("SELECT l.path, c.name, l.id FROM location l, component c WHERE l.component = c.id")
 #      for i in q.getresult():
-#          path = os.path.normpath(i[0] + i[1]);
-#          locations[path] = (i[0], i[2]);
+#          path = os.path.normpath(i[0] + i[1])
+#          locations[path] = (i[0], i[2])
 
-#      q = projectB.query("BEGIN WORK");
+#      q = projectB.query("BEGIN WORK")
     for i in q_files:
-	filename = os.path.normpath(i[0] + i[1]);
-#        file_id = i[2];
+	filename = os.path.normpath(i[0] + i[1])
+#        file_id = i[2]
         if os.access(filename, os.R_OK) == 0:
-            utils.warn("%s: doesn't exist." % (filename));
+            utils.warn("%s: doesn't exist." % (filename))
         else:
             if os.path.islink(filename):
-                utils.warn("%s: is a symlink." % (filename));
+                utils.warn("%s: is a symlink." % (filename))
                 # You probably don't want to use the rest of this...
-#                  print "%s: is a symlink." % (filename);
-#                  dest = os.readlink(filename);
+#                  print "%s: is a symlink." % (filename)
+#                  dest = os.readlink(filename)
 #                  if not os.path.isabs(dest):
-#                      dest = os.path.normpath(os.path.join(os.path.dirname(filename), dest));
-#                  print "--> %s" % (dest);
+#                      dest = os.path.normpath(os.path.join(os.path.dirname(filename), dest))
+#                  print "--> %s" % (dest)
 #                  # Determine suitable location ID
 #                  # [in what must be the suckiest way possible?]
-#                  location_id = None;
+#                  location_id = None
 #                  for path in locations.keys():
 #                      if dest.find(path) == 0:
-#                          (location, location_id) = locations[path];
-#                          break;
+#                          (location, location_id) = locations[path]
+#                          break
 #                  if not location_id:
-#                      utils.fubar("Can't find location for %s (%s)." % (dest, filename));
-#                  new_filename = dest.replace(location, "");
-#                  q = projectB.query("UPDATE files SET filename = '%s', location = %s WHERE id = %s" % (new_filename, location_id, file_id));
-#      q = projectB.query("COMMIT WORK");
+#                      utils.fubar("Can't find location for %s (%s)." % (dest, filename))
+#                  new_filename = dest.replace(location, "")
+#                  q = projectB.query("UPDATE files SET filename = '%s', location = %s WHERE id = %s" % (new_filename, location_id, file_id))
+#      q = projectB.query("COMMIT WORK")
 
 ################################################################################
 
 def chk_bd_process_dir (unused, dirname, filenames):
     for name in filenames:
         if not name.endswith(".dsc"):
-            continue;
-        filename = os.path.abspath(dirname+'/'+name);
-        dsc = utils.parse_changes(filename);
+            continue
+        filename = os.path.abspath(dirname+'/'+name)
+        dsc = utils.parse_changes(filename)
         for field_name in [ "build-depends", "build-depends-indep" ]:
-            field = dsc.get(field_name);
+            field = dsc.get(field_name)
             if field:
                 try:
-                    apt_pkg.ParseSrcDepends(field);
+                    apt_pkg.ParseSrcDepends(field)
                 except:
-                    print "E: [%s] %s: %s" % (filename, field_name, field);
-                    pass;
+                    print "E: [%s] %s: %s" % (filename, field_name, field)
+                    pass
 
 ################################################################################
 
 def check_build_depends():
-    os.path.walk(Cnf["Dir::Root"], chk_bd_process_dir, None);
+    os.path.walk(Cnf["Dir::Root"], chk_bd_process_dir, None)
 
 ################################################################################
 
 def main ():
-    global Cnf, projectB, db_files, waste, excluded;
+    global Cnf, projectB, db_files, waste, excluded
 
-    Cnf = utils.get_conf();
-    Arguments = [('h',"help","Tea::Options::Help")];
+    Cnf = utils.get_conf()
+    Arguments = [('h',"help","Tea::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Tea::Options::%s" % (i)):
-	    Cnf["Tea::Options::%s" % (i)] = "";
+	    Cnf["Tea::Options::%s" % (i)] = ""
 
-    args = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+    args = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Tea::Options")
     if Options["Help"]:
-	usage();
+	usage()
 
     if len(args) < 1:
-        utils.warn("tea requires at least one argument");
-        usage(1);
+        utils.warn("tea requires at least one argument")
+        usage(1)
     elif len(args) > 1:
-        utils.warn("tea accepts only one argument");
-        usage(1);
-    mode = args[0].lower();
+        utils.warn("tea accepts only one argument")
+        usage(1)
+    mode = args[0].lower()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    db_access.init(Cnf, projectB);
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    db_access.init(Cnf, projectB)
 
     if mode == "md5sums":
-        check_md5sums();
+        check_md5sums()
     elif mode == "files":
-        check_files();
+        check_files()
     elif mode == "dsc-syntax":
-        check_dscs();
+        check_dscs()
     elif mode == "missing-overrides":
-        check_override();
+        check_override()
     elif mode == "source-in-one-dir":
-        check_source_in_one_dir();
+        check_source_in_one_dir()
     elif mode == "timestamps":
-        check_timestamps();
+        check_timestamps()
     elif mode == "tar-gz-in-dsc":
-        check_missing_tar_gz_in_dsc();
+        check_missing_tar_gz_in_dsc()
     elif mode == "validate-indices":
-        check_indices_files_exist();
+        check_indices_files_exist()
     elif mode == "files-not-symlinks":
-        check_files_not_symlinks();
+        check_files_not_symlinks()
     elif mode == "validate-builddeps":
-        check_build_depends();
+        check_build_depends()
     else:
-        utils.warn("unknown mode '%s'" % (mode));
-        usage(1);
+        utils.warn("unknown mode '%s'" % (mode))
+        usage(1)
 
 ################################################################################
 
 if __name__ == '__main__':
-    main();
+    main()
 

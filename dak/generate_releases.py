@@ -123,20 +123,20 @@ def print_sha1_files (tree, files):
 
 def main ():
     global Cnf, AptCnf, projectB, out
-    out = sys.stdout;
+    out = sys.stdout
 
     Cnf = utils.get_conf()
 
-    Arguments = [('h',"help","Ziyi::Options::Help")];
+    Arguments = [('h',"help","Ziyi::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Ziyi::Options::%s" % (i)):
-	    Cnf["Ziyi::Options::%s" % (i)] = "";
+	    Cnf["Ziyi::Options::%s" % (i)] = ""
 
     suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Ziyi::Options")
 
     if Options["Help"]:
-	usage();
+	usage()
 
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
@@ -169,11 +169,11 @@ def main ():
 	else:
 	    components = []
 
-        suite_suffix = Cnf.Find("Dinstall::SuiteSuffix");
+        suite_suffix = Cnf.Find("Dinstall::SuiteSuffix")
         if components and suite_suffix:
-            longsuite = suite + "/" + suite_suffix;
+            longsuite = suite + "/" + suite_suffix
         else:
-            longsuite = suite;
+            longsuite = suite
 
 	tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
 
@@ -182,8 +182,8 @@ def main ():
 	elif AptCnf.has_key("bindirectory::%s" % (tree)):
 	    pass
 	else:
-            aptcnf_filename = os.path.basename(utils.which_apt_conf_file());
-	    print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename);
+            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
+	    print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
 	    continue
 
 	print Cnf["Dir::Root"] + tree + "/Release"
@@ -238,15 +238,15 @@ def main ():
                         release = open(relpath, "w")
                         #release = open(longsuite.replace("/","_") + "_" + arch + "_" + sec + "_Release", "w")
                     except IOError:
-                        utils.fubar("Couldn't write to " + relpath);
+                        utils.fubar("Couldn't write to " + relpath)
 
                     release.write("Archive: %s\n" % (suite))
                     if version != "":
                         release.write("Version: %s\n" % (version))
                     if suite_suffix:
-                        release.write("Component: %s/%s\n" % (suite_suffix,sec));
+                        release.write("Component: %s/%s\n" % (suite_suffix,sec))
                     else:
-                        release.write("Component: %s\n" % (sec));
+                        release.write("Component: %s\n" % (sec))
                     release.write("Origin: %s\n" % (origin))
                     release.write("Label: %s\n" % (label))
                     if notautomatic != "":

@@ -20,14 +20,14 @@
 
 ################################################################################
 
-import os, sys;
-import utils;
-import apt_pkg;
+import os, sys
+import utils
+import apt_pkg
 
 ################################################################################
 
-Cnf = None;
-AptCnf = None;
+Cnf = None
+AptCnf = None
 
 ################################################################################
 
@@ -43,80 +43,80 @@ Creates directories for an archive based on katie.conf configuration file.
 def do_dir(target, config_name):
     if os.path.exists(target):
         if not os.path.isdir(target):
-            utils.fubar("%s (%s) is not a directory." % (target, config_name));
+            utils.fubar("%s (%s) is not a directory." % (target, config_name))
     else:
-        print "Creating %s ..." % (target);
-        os.makedirs(target);
+        print "Creating %s ..." % (target)
+        os.makedirs(target)
 
 def process_file(config, config_name):
     if config.has_key(config_name):
-        target = os.path.dirname(config[config_name]);
-        do_dir(target, config_name);
+        target = os.path.dirname(config[config_name])
+        do_dir(target, config_name)
 
 def process_tree(config, tree):
     for entry in config.SubTree(tree).List():
-        entry = entry.lower();
+        entry = entry.lower()
         if tree == "Dir":
             if entry in [ "poolroot", "queue" , "morguereject" ]:
-                continue;
-        config_name = "%s::%s" % (tree, entry);
-        target = config[config_name];
-        do_dir(target, config_name);
+                continue
+        config_name = "%s::%s" % (tree, entry)
+        target = config[config_name]
+        do_dir(target, config_name)
 
 def process_morguesubdir(subdir):
-    config_name = "%s::MorgueSubDir" % (subdir);
+    config_name = "%s::MorgueSubDir" % (subdir)
     if Cnf.has_key(config_name):
-        target = os.path.join(Cnf["Dir::Morgue"], Cnf[config_name]);
-        do_dir(target, config_name);
+        target = os.path.join(Cnf["Dir::Morgue"], Cnf[config_name])
+        do_dir(target, config_name)
 
 ######################################################################
 
 def create_directories():
     # Process directories from apt.conf
-    process_tree(Cnf, "Dir");
-    process_tree(Cnf, "Dir::Queue");
+    process_tree(Cnf, "Dir")
+    process_tree(Cnf, "Dir::Queue")
     for file in [ "Dinstall::LockFile", "Melanie::LogFile", "Neve::ExportDir" ]:
-        process_file(Cnf, file);
+        process_file(Cnf, file)
     for subdir in [ "Shania", "Rhona" ]:
-        process_morguesubdir(subdir);
+        process_morguesubdir(subdir)
 
     # Process directories from apt.conf
-    process_tree(AptCnf, "Dir");
+    process_tree(AptCnf, "Dir")
     for tree in AptCnf.SubTree("Tree").List():
-        config_name = "Tree::%s" % (tree);
-        tree_dir = os.path.join(Cnf["Dir::Root"], tree);
-        do_dir(tree_dir, tree);
+        config_name = "Tree::%s" % (tree)
+        tree_dir = os.path.join(Cnf["Dir::Root"], tree)
+        do_dir(tree_dir, tree)
         for file in [ "FileList", "SourceFileList" ]:
-            process_file(AptCnf, "%s::%s" % (config_name, file));
+            process_file(AptCnf, "%s::%s" % (config_name, file))
         for component in AptCnf["%s::Sections" % (config_name)].split():
             for architecture in AptCnf["%s::Architectures" % (config_name)].split():
                 if architecture != "source":
-                    architecture = "binary-"+architecture;
-                target = os.path.join(tree_dir,component,architecture);
-                do_dir(target, "%s, %s, %s" % (tree, component, architecture));
+                    architecture = "binary-"+architecture
+                target = os.path.join(tree_dir,component,architecture)
+                do_dir(target, "%s, %s, %s" % (tree, component, architecture))
 
 
 ################################################################################
 
 def main ():
-    global AptCnf, Cnf, projectB;
+    global AptCnf, Cnf, projectB
 
     Cnf = utils.get_conf()
-    Arguments = [('h',"help","Rose::Options::Help")];
+    Arguments = [('h',"help","Rose::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Rose::Options::%s" % (i)):
-	    Cnf["Rose::Options::%s" % (i)] = "";
+	    Cnf["Rose::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv);
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Rose::Options")
     if Options["Help"]:
-	usage();
+	usage()
 
-    AptCnf = apt_pkg.newConfiguration();
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file());
+    AptCnf = apt_pkg.newConfiguration()
+    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
 
-    create_directories();
+    create_directories()
 
 ################################################################################
 

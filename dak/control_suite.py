@@ -42,15 +42,15 @@
 
 #######################################################################################
 
-import pg, sys;
-import apt_pkg;
-import utils, db_access, logging;
+import pg, sys
+import apt_pkg
+import utils, db_access, logging
 
 #######################################################################################
 
-Cnf = None;
-projectB = None;
-Logger = None;
+Cnf = None
+projectB = None
+Logger = None
 
 ################################################################################
 
@@ -74,163 +74,163 @@ def get_id (package, version, architecture):
     else:
         q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
 
-    ql = q.getresult();
+    ql = q.getresult()
     if not ql:
-        utils.warn("Couldn't find '%s~%s~%s'." % (package, version, architecture));
-        return None;
+        utils.warn("Couldn't find '%s~%s~%s'." % (package, version, architecture))
+        return None
     if len(ql) > 1:
-        utils.warn("Found more than one match for '%s~%s~%s'." % (package, version, architecture));
-        return None;
-    id = ql[0][0];
-    return id;
+        utils.warn("Found more than one match for '%s~%s~%s'." % (package, version, architecture))
+        return None
+    id = ql[0][0]
+    return id
 
 #######################################################################################
 
 def set_suite (file, suite_id):
-    lines = file.readlines();
+    lines = file.readlines()
 
-    projectB.query("BEGIN WORK");
+    projectB.query("BEGIN WORK")
 
     # Build up a dictionary of what is currently in the suite
-    current = {};
-    q = projectB.query("SELECT b.package, b.version, a.arch_string, ba.id FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id));
-    ql = q.getresult();
+    current = {}
+    q = projectB.query("SELECT b.package, b.version, a.arch_string, ba.id FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id))
+    ql = q.getresult()
     for i in ql:
-        key = " ".join(i[:3]);
-        current[key] = i[3];
-    q = projectB.query("SELECT s.source, s.version, sa.id FROM source s, src_associations sa WHERE sa.suite = %s AND sa.source = s.id" % (suite_id));
-    ql = q.getresult();
+        key = " ".join(i[:3])
+        current[key] = i[3]
+    q = projectB.query("SELECT s.source, s.version, sa.id FROM source s, src_associations sa WHERE sa.suite = %s AND sa.source = s.id" % (suite_id))
+    ql = q.getresult()
     for i in ql:
-        key = " ".join(i[:2]) + " source";
-        current[key] = i[2];
+        key = " ".join(i[:2]) + " source"
+        current[key] = i[2]
 
     # Build up a dictionary of what should be in the suite
-    desired = {};
+    desired = {}
     for line in lines:
-        split_line = line.strip().split();
+        split_line = line.strip().split()
         if len(split_line) != 3:
-            utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]));
-            continue;
-        key = " ".join(split_line);
-        desired[key] = "";
+            utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
+            continue
+        key = " ".join(split_line)
+        desired[key] = ""
 
     # Check to see which packages need removed and remove them
     for key in current.keys():
         if not desired.has_key(key):
-            (package, version, architecture) = key.split();
-            id = current[key];
+            (package, version, architecture) = key.split()
+            id = current[key]
             if architecture == "source":
-                q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (id));
+                q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (id))
             else:
-                q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (id));
-            Logger.log(["removed",key,id]);
+                q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (id))
+            Logger.log(["removed",key,id])
 
     # Check to see which packages need added and add them
     for key in desired.keys():
         if not current.has_key(key):
-            (package, version, architecture) = key.split();
-            id = get_id (package, version, architecture);
+            (package, version, architecture) = key.split()
+            id = get_id (package, version, architecture)
             if not id:
-                continue;
+                continue
             if architecture == "source":
-                q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id));
+                q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id))
             else:
-                q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id));
-            Logger.log(["added",key,id]);
+                q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id))
+            Logger.log(["added",key,id])
 
-    projectB.query("COMMIT WORK");
+    projectB.query("COMMIT WORK")
 
 #######################################################################################
 
 def process_file (file, suite, action):
 
-    suite_id = db_access.get_suite_id(suite);
+    suite_id = db_access.get_suite_id(suite)
 
     if action == "set":
-        set_suite (file, suite_id);
-        return;
+        set_suite (file, suite_id)
+        return
 
-    lines = file.readlines();
+    lines = file.readlines()
 
-    projectB.query("BEGIN WORK");
+    projectB.query("BEGIN WORK")
 
     for line in lines:
-        split_line = line.strip().split();
+        split_line = line.strip().split()
         if len(split_line) != 3:
-            utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]));
-            continue;
+            utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
+            continue
 
-        (package, version, architecture) = split_line;
+        (package, version, architecture) = split_line
 
-        id = get_id(package, version, architecture);
+        id = get_id(package, version, architecture)
         if not id:
-            continue;
+            continue
 
         if architecture == "source":
             # Find the existing assoications ID, if any
-            q = projectB.query("SELECT id FROM src_associations WHERE suite = %s and source = %s" % (suite_id, id));
-            ql = q.getresult();
+            q = projectB.query("SELECT id FROM src_associations WHERE suite = %s and source = %s" % (suite_id, id))
+            ql = q.getresult()
             if not ql:
-                assoication_id = None;
+                assoication_id = None
             else:
-                assoication_id = ql[0][0];
+                assoication_id = ql[0][0]
             # Take action
             if action == "add":
                 if assoication_id:
-                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite));
-                    continue;
+                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite))
+                    continue
                 else:
-                    q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id));
+                    q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id))
             elif action == "remove":
                 if assoication_id == None:
-                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite));
-                    continue;
+                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    continue
                 else:
-                    q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (assoication_id));
+                    q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (assoication_id))
         else:
             # Find the existing assoications ID, if any
-            q = projectB.query("SELECT id FROM bin_associations WHERE suite = %s and bin = %s" % (suite_id, id));
-            ql = q.getresult();
+            q = projectB.query("SELECT id FROM bin_associations WHERE suite = %s and bin = %s" % (suite_id, id))
+            ql = q.getresult()
             if not ql:
-                assoication_id = None;
+                assoication_id = None
             else:
-                assoication_id = ql[0][0];
+                assoication_id = ql[0][0]
             # Take action
             if action == "add":
                 if assoication_id:
-                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite));
-                    continue;
+                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite))
+                    continue
                 else:
-                    q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id));
+                    q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id))
             elif action == "remove":
                 if assoication_id == None:
-                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite));
-                    continue;
+                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    continue
                 else:
-                    q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (assoication_id));
+                    q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (assoication_id))
 
-    projectB.query("COMMIT WORK");
+    projectB.query("COMMIT WORK")
 
 #######################################################################################
 
 def get_list (suite):
-    suite_id = db_access.get_suite_id(suite);
+    suite_id = db_access.get_suite_id(suite)
     # List binaries
-    q = projectB.query("SELECT b.package, b.version, a.arch_string FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id));
-    ql = q.getresult();
+    q = projectB.query("SELECT b.package, b.version, a.arch_string FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id))
+    ql = q.getresult()
     for i in ql:
-        print " ".join(i);
+        print " ".join(i)
 
     # List source
-    q = projectB.query("SELECT s.source, s.version FROM source s, src_associations sa WHERE sa.suite = %s AND sa.source = s.id" % (suite_id));
-    ql = q.getresult();
+    q = projectB.query("SELECT s.source, s.version FROM source s, src_associations sa WHERE sa.suite = %s AND sa.source = s.id" % (suite_id))
+    ql = q.getresult()
     for i in ql:
-        print " ".join(i) + " source";
+        print " ".join(i) + " source"
 
 #######################################################################################
 
 def main ():
-    global Cnf, projectB, Logger;
+    global Cnf, projectB, Logger
 
     Cnf = utils.get_conf()
 
@@ -238,52 +238,52 @@ def main ():
                  ('h',"help","Heidi::Options::Help"),
                  ('l',"list","Heidi::Options::List","HasArg"),
                  ('r',"remove", "Heidi::Options::Remove", "HasArg"),
-                 ('s',"set", "Heidi::Options::Set", "HasArg")];
+                 ('s',"set", "Heidi::Options::Set", "HasArg")]
 
     for i in ["add", "help", "list", "remove", "set", "version" ]:
 	if not Cnf.has_key("Heidi::Options::%s" % (i)):
-	    Cnf["Heidi::Options::%s" % (i)] = "";
+	    Cnf["Heidi::Options::%s" % (i)] = ""
 
-    file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Heidi::Options")
 
     if Options["Help"]:
-	usage();
+	usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],int(Cnf["DB::Port"]));
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],int(Cnf["DB::Port"]))
 
-    db_access.init(Cnf, projectB);
+    db_access.init(Cnf, projectB)
 
-    action = None;
+    action = None
 
     for i in ("add", "list", "remove", "set"):
         if Cnf["Heidi::Options::%s" % (i)] != "":
-            suite = Cnf["Heidi::Options::%s" % (i)];
+            suite = Cnf["Heidi::Options::%s" % (i)]
             if db_access.get_suite_id(suite) == -1:
-                utils.fubar("Unknown suite '%s'." %(suite));
+                utils.fubar("Unknown suite '%s'." %(suite))
             else:
                 if action:
-                    utils.fubar("Can only perform one action at a time.");
-                action = i;
+                    utils.fubar("Can only perform one action at a time.")
+                action = i
 
     # Need an action...
     if action == None:
-        utils.fubar("No action specified.");
+        utils.fubar("No action specified.")
 
     # Safety/Sanity check
     if action == "set" and suite != "testing":
-        utils.fubar("Will not reset a suite other than testing.");
+        utils.fubar("Will not reset a suite other than testing.")
 
     if action == "list":
-        get_list(suite);
+        get_list(suite)
     else:
-        Logger = logging.Logger(Cnf, "heidi");
+        Logger = logging.Logger(Cnf, "heidi")
         if file_list:
             for file in file_list:
-                process_file(utils.open_file(file), suite, action);
+                process_file(utils.open_file(file), suite, action)
         else:
-            process_file(sys.stdin, suite, action);
-        Logger.close();
+            process_file(sys.stdin, suite, action)
+        Logger.close()
 
 #######################################################################################
 

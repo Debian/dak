@@ -22,72 +22,72 @@
 
 import os, sys
 
-sys.path.append(os.path.abspath('../../'));
+sys.path.append(os.path.abspath('../../'))
 
 import utils
 
 ################################################################################
 
 def fail(message):
-    sys.stderr.write("%s\n" % (message));
-    sys.exit(1);
+    sys.stderr.write("%s\n" % (message))
+    sys.exit(1)
     
 ################################################################################
 
 def main ():
     # Valid .dsc
-    utils.parse_changes('1.dsc',1);
+    utils.parse_changes('1.dsc',1)
 
     # Missing blank line before signature body
     try:
-        utils.parse_changes('2.dsc',1);
+        utils.parse_changes('2.dsc',1)
     except utils.invalid_dsc_format_exc, line:
         if line != 14:
-            fail("Incorrect line number ('%s') for test #2." % (line));
+            fail("Incorrect line number ('%s') for test #2." % (line))
     else:
-        fail("Test #2 wasn't recognised as invalid.");
+        fail("Test #2 wasn't recognised as invalid.")
 
     # Missing blank line after signature header
     try:
-        utils.parse_changes('3.dsc',1);
+        utils.parse_changes('3.dsc',1)
     except utils.invalid_dsc_format_exc, line:
         if line != 14:
-            fail("Incorrect line number ('%s') for test #3." % (line));
+            fail("Incorrect line number ('%s') for test #3." % (line))
     else:
-        fail("Test #3 wasn't recognised as invalid.");
+        fail("Test #3 wasn't recognised as invalid.")
 
     # No blank lines at all
     try:
-        utils.parse_changes('4.dsc',1);
+        utils.parse_changes('4.dsc',1)
     except utils.invalid_dsc_format_exc, line:
         if line != 19:
-            fail("Incorrect line number ('%s') for test #4." % (line));
+            fail("Incorrect line number ('%s') for test #4." % (line))
     else:
-        fail("Test #4 wasn't recognised as invalid.");
+        fail("Test #4 wasn't recognised as invalid.")
 
     # Extra blank line before signature body
     try:
-        utils.parse_changes('5.dsc',1);
+        utils.parse_changes('5.dsc',1)
     except utils.invalid_dsc_format_exc, line:
         if line != 15:
-            fail("Incorrect line number ('%s') for test #5." % (line));
+            fail("Incorrect line number ('%s') for test #5." % (line))
     else:
-        fail("Test #5 wasn't recognised as invalid.");
+        fail("Test #5 wasn't recognised as invalid.")
 
     # Extra blank line after signature header
     try:
-        utils.parse_changes('6.dsc',1);
+        utils.parse_changes('6.dsc',1)
     except utils.invalid_dsc_format_exc, line:
         if line != 5:
-            fail("Incorrect line number ('%s') for test #6." % (line));
+            fail("Incorrect line number ('%s') for test #6." % (line))
     else:
-        fail("Test #6 wasn't recognised as invalid.");
+        fail("Test #6 wasn't recognised as invalid.")
 
     # Valid .dsc ; ignoring errors
-    utils.parse_changes('1.dsc', 0);
+    utils.parse_changes('1.dsc', 0)
 
     # Invalid .dsc ; ignoring errors
-    utils.parse_changes('2.dsc', 0);
+    utils.parse_changes('2.dsc', 0)
 
 ################################################################################
 

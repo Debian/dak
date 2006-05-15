@@ -22,15 +22,15 @@
 
 import os, sys
 
-sys.path.append(os.path.abspath('../../'));
+sys.path.append(os.path.abspath('../../'))
 
 import utils
 
 ################################################################################
 
 def fail(message):
-    sys.stderr.write("%s\n" % (message));
-    sys.exit(1);
+    sys.stderr.write("%s\n" % (message))
+    sys.exit(1)
 
 ################################################################################
 
@@ -40,10 +40,10 @@ def main ():
             try:
                 changes = utils.parse_changes("%s.changes" % (file), strict_whitespace)
             except utils.changes_parse_error_exc, line:
-                fail("%s[%s]: parse_changes() returned an exception with error message `%s'." % (file, strict_whitespace, line));
-            oh_dear = changes.get("you");
+                fail("%s[%s]: parse_changes() returned an exception with error message `%s'." % (file, strict_whitespace, line))
+            oh_dear = changes.get("you")
             if oh_dear:
-                fail("%s[%s]: parsed and accepted unsigned data!" % (file, strict_whitespace));
+                fail("%s[%s]: parsed and accepted unsigned data!" % (file, strict_whitespace))
 
 ################################################################################
 

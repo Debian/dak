@@ -20,53 +20,53 @@
 
 ################################################################################
 
-import os, pwd, time, sys;
-import utils;
+import os, pwd, time, sys
+import utils
 
 ################################################################################
 
 class Logger:
     "Logger object"
-    Cnf = None;
-    logfile = None;
-    program = None;
+    Cnf = None
+    logfile = None
+    program = None
 
     def __init__ (self, Cnf, program, debug=0):
         "Initialize a new Logger object"
-        self.Cnf = Cnf;
-        self.program = program;
+        self.Cnf = Cnf
+        self.program = program
         # Create the log directory if it doesn't exist
-        logdir = Cnf["Dir::Log"];
+        logdir = Cnf["Dir::Log"]
         if not os.path.exists(logdir):
-            umask = os.umask(00000);
-            os.makedirs(logdir, 02775);
+            umask = os.umask(00000)
+            os.makedirs(logdir, 02775)
         # Open the logfile
-        logfilename = "%s/%s" % (logdir, time.strftime("%Y-%m"));
+        logfilename = "%s/%s" % (logdir, time.strftime("%Y-%m"))
 	logfile = None
 	if debug:
 	    logfile = sys.stderr
 	else:
-	    logfile = utils.open_file(logfilename, 'a');
-        self.logfile = logfile;
+	    logfile = utils.open_file(logfilename, 'a')
+        self.logfile = logfile
         # Log the start of the program
-        user = pwd.getpwuid(os.getuid())[0];
-        self.log(["program start", user]);
+        user = pwd.getpwuid(os.getuid())[0]
+        self.log(["program start", user])
 
     def log (self, details):
         "Log an event"
         # Prepend the timestamp and program name
-        details.insert(0, self.program);
-        timestamp = time.strftime("%Y%m%d%H%M%S");
-        details.insert(0, timestamp);
+        details.insert(0, self.program)
+        timestamp = time.strftime("%Y%m%d%H%M%S")
+        details.insert(0, timestamp)
         # Force the contents of the list to be string.join-able
-        details = map(str, details);
+        details = map(str, details)
         # Write out the log in TSV
-        self.logfile.write("|".join(details)+'\n');
+        self.logfile.write("|".join(details)+'\n')
         # Flush the output to enable tail-ing
-        self.logfile.flush();
+        self.logfile.flush()
 
     def close (self):
         "Close a Logger object"
-        self.log(["program end"]);
-        self.logfile.flush();
-        self.logfile.close();
+        self.log(["program end"])
+        self.logfile.flush()
+        self.logfile.close()

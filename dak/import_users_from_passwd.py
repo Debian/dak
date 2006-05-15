@@ -30,14 +30,14 @@
 
 ################################################################################
 
-import pg, pwd, sys;
-import utils;
-import apt_pkg;
+import pg, pwd, sys
+import utils
+import apt_pkg
 
 ################################################################################
 
-Cnf = None;
-projectB = None;
+Cnf = None
+projectB = None
 ################################################################################
 
 def usage (exit_code=0):
@@ -53,66 +53,66 @@ Sync PostgreSQL's users with system users.
 ################################################################################
 
 def main ():
-    global Cnf, projectB;
+    global Cnf, projectB
 
     Cnf = utils.get_conf()
 
     Arguments = [('n', "no-action", "Julia::Options::No-Action"),
                  ('q', "quiet", "Julia::Options::Quiet"),
                  ('v', "verbose", "Julia::Options::Verbose"),
-                 ('h', "help", "Julia::Options::Help")];
+                 ('h', "help", "Julia::Options::Help")]
     for i in [ "no-action", "quiet", "verbose", "help" ]:
 	if not Cnf.has_key("Julia::Options::%s" % (i)):
-	    Cnf["Julia::Options::%s" % (i)] = "";
+	    Cnf["Julia::Options::%s" % (i)] = ""
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Julia::Options")
 
     if Options["Help"]:
-        usage();
+        usage()
     elif arguments:
-        utils.warn("julia takes no non-option arguments.");
-        usage(1);
+        utils.warn("julia takes no non-option arguments.")
+        usage(1)
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]));
-    valid_gid = int(Cnf.get("Julia::ValidGID",""));
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    valid_gid = int(Cnf.get("Julia::ValidGID",""))
 
-    passwd_unames = {};
+    passwd_unames = {}
     for entry in pwd.getpwall():
-        uname = entry[0];
-        gid = entry[3];
+        uname = entry[0]
+        gid = entry[3]
         if valid_gid and gid != valid_gid:
             if Options["Verbose"]:
-                print "Skipping %s (GID %s != Valid GID %s)." % (uname, gid, valid_gid);
-            continue;
-        passwd_unames[uname] = "";
+                print "Skipping %s (GID %s != Valid GID %s)." % (uname, gid, valid_gid)
+            continue
+        passwd_unames[uname] = ""
 
-    postgres_unames = {};
-    q = projectB.query("SELECT usename FROM pg_user");
-    ql = q.getresult();
+    postgres_unames = {}
+    q = projectB.query("SELECT usename FROM pg_user")
+    ql = q.getresult()
     for i in ql:
-        uname = i[0];
-        postgres_unames[uname] = "";
+        uname = i[0]
+        postgres_unames[uname] = ""
 
-    known_postgres_unames = {};
+    known_postgres_unames = {}
     for i in Cnf.get("Julia::KnownPostgres","").split(","):
-        uname = i.strip();
-        known_postgres_unames[uname] = "";
+        uname = i.strip()
+        known_postgres_unames[uname] = ""
 
     keys = postgres_unames.keys()
-    keys.sort();
+    keys.sort()
     for uname in keys:
         if not passwd_unames.has_key(uname)and not known_postgres_unames.has_key(uname):
-            print "W: %s is in Postgres but not the passwd file or list of known Postgres users." % (uname);
+            print "W: %s is in Postgres but not the passwd file or list of known Postgres users." % (uname)
 
     keys = passwd_unames.keys()
-    keys.sort();
+    keys.sort()
     for uname in keys:
         if not postgres_unames.has_key(uname):
             if not Options["Quiet"]:
-                print "Creating %s user in Postgres." % (uname);
+                print "Creating %s user in Postgres." % (uname)
             if not Options["No-Action"]:
-                q = projectB.query('CREATE USER "%s"' % (uname));
+                q = projectB.query('CREATE USER "%s"' % (uname))
 
 #######################################################################################
 

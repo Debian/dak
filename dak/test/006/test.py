@@ -23,35 +23,35 @@
 
 import os, sys
 
-sys.path.append(os.path.abspath('../../'));
+sys.path.append(os.path.abspath('../../'))
 
 import utils
 
 ################################################################################
 
 def fail(message):
-    sys.stderr.write("%s\n" % (message));
-    sys.exit(1);
+    sys.stderr.write("%s\n" % (message))
+    sys.exit(1)
 
 ################################################################################
 
 def check_valid(s, xa, xb, xc, xd):
     (a, b, c, d) = utils.fix_maintainer(s)
     if a != xa:
-        fail("rfc822_maint: %s (returned) != %s (expected [From: '%s']" % (a, xa, s));
+        fail("rfc822_maint: %s (returned) != %s (expected [From: '%s']" % (a, xa, s))
     if b != xb:
-        fail("rfc2047_maint: %s (returned) != %s (expected [From: '%s']" % (b, xb, s));
+        fail("rfc2047_maint: %s (returned) != %s (expected [From: '%s']" % (b, xb, s))
     if c != xc:
-        fail("name: %s (returned) != %s (expected [From: '%s']" % (c, xc, s));
+        fail("name: %s (returned) != %s (expected [From: '%s']" % (c, xc, s))
     if d != xd:
-        fail("email: %s (returned) != %s (expected [From: '%s']" % (d, xd, s));
+        fail("email: %s (returned) != %s (expected [From: '%s']" % (d, xd, s))
 
 def check_invalid(s):
     try:
-        utils.fix_maintainer(s);
-        fail("%s was parsed successfully but is expected to be invalid." % (s));
+        utils.fix_maintainer(s)
+        fail("%s was parsed successfully but is expected to be invalid." % (s))
     except utils.ParseMaintError, unused:
-        pass;
+        pass
 
 def main ():
     # Check Valid UTF-8 maintainer field
@@ -60,7 +60,7 @@ def main ():
     xb = "=?utf-8?b?Tm/DqGwgS8O2dGhl?= <noel@debian.org>"
     xc = "Noèl Köthe"
     xd = "noel@debian.org"
-    check_valid(s, xa, xb, xc, xd);
+    check_valid(s, xa, xb, xc, xd)
 
     # Check valid ISO-8859-1 maintainer field
     s = "No�l K�the <noel@debian.org>"
@@ -68,7 +68,7 @@ def main ():
     xb = "=?iso-8859-1?q?No=E8l_K=F6the?= <noel@debian.org>"
     xc = "Noèl Köthe"
     xd = "noel@debian.org"
-    check_valid(s, xa, xb, xc, xd);
+    check_valid(s, xa, xb, xc, xd)
 
     # Check valid ASCII maintainer field
     s = "James Troup <james@nocrew.org>"
@@ -76,7 +76,7 @@ def main ():
     xb = "James Troup <james@nocrew.org>"
     xc = "James Troup"
     xd = "james@nocrew.org"
-    check_valid(s, xa, xb, xc, xd);
+    check_valid(s, xa, xb, xc, xd)
 
     # Check "Debian vs RFC822" fixup of names with '.' or ',' in them
     s = "James J. Troup <james@nocrew.org>"
@@ -84,13 +84,13 @@ def main ():
     xb = "james@nocrew.org (James J. Troup)"
     xc = "James J. Troup"
     xd = "james@nocrew.org"
-    check_valid(s, xa, xb, xc, xd);
+    check_valid(s, xa, xb, xc, xd)
     s = "James J, Troup <james@nocrew.org>"
     xa = "james@nocrew.org (James J, Troup)"
     xb = "james@nocrew.org (James J, Troup)"
     xc = "James J, Troup"
     xd = "james@nocrew.org"
-    check_valid(s, xa, xb, xc, xd);
+    check_valid(s, xa, xb, xc, xd)
 
     # Check just-email form
     s = "james@nocrew.org"
@@ -98,7 +98,7 @@ def main ():
     xb = " <james@nocrew.org>"
     xc = ""
     xd = "james@nocrew.org"
-    check_valid(s, xa, xb, xc, xd);
+    check_valid(s, xa, xb, xc, xd)
 
     # Check bracketed just-email form
     s = "<james@nocrew.org>"
@@ -106,7 +106,7 @@ def main ():
     xb = " <james@nocrew.org>"
     xc = ""
     xd = "james@nocrew.org"
-    check_valid(s, xa, xb, xc, xd);
+    check_valid(s, xa, xb, xc, xd)
 
     # Check Krazy quoted-string local part email address
     s = "Cris van Pelt <\"Cris van Pelt\"@tribe.eu.org>"
@@ -114,16 +114,16 @@ def main ():
     xb = "Cris van Pelt <\"Cris van Pelt\"@tribe.eu.org>"
     xc = "Cris van Pelt"
     xd = "\"Cris van Pelt\"@tribe.eu.org"
-    check_valid(s, xa, xb, xc, xd);
+    check_valid(s, xa, xb, xc, xd)
 
     # Check empty string
-    s = xa = xb = xc = xd = "";
-    check_valid(s, xa, xb, xc, xd);
+    s = xa = xb = xc = xd = ""
+    check_valid(s, xa, xb, xc, xd)
 
     # Check for missing email address
-    check_invalid("James Troup");
+    check_invalid("James Troup")
     # Check for invalid email address
-    check_invalid("James Troup <james@nocrew.org");
+    check_invalid("James Troup <james@nocrew.org")
 
 ################################################################################
 

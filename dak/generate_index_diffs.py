@@ -36,10 +36,10 @@ import utils
 
 ################################################################################
 
-projectB = None;
-Cnf = None;
-Logger = None;
-Options = None;
+projectB = None
+Cnf = None
+Logger = None
+Options = None
 
 ################################################################################
 
@@ -52,7 +52,7 @@ Write out ed-style diffs to Packages/Source lists
   -p                    name for the patch (defaults to current time)
   -n                    take no action
     """
-    sys.exit(exit_code);
+    sys.exit(exit_code)
 
 
 def tryunlink(file):
@@ -286,9 +286,9 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 def main():
     global Cnf, Options, Logger
 
-    os.umask(0002);
+    os.umask(0002)
 
-    Cnf = utils.get_conf();
+    Cnf = utils.get_conf()
     Arguments = [ ('h', "help", "Tiffani::Options::Help"),
                   ('c', None, "Tiffani::Options::CanonicalPath", "hasArg"),
                   ('p', "patchname", "Tiffani::Options::PatchName", "hasArg"),
@@ -296,10 +296,10 @@ def main():
                   ('d', "tmpdir", "Tiffani::Options::TempDir", "hasArg"),
                   ('m', "maxdiffs", "Tiffani::Options::MaxDiffs", "hasArg"),
 		  ('n', "n-act", "Tiffani::Options::NoAct"),
-                ];
-    suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
-    Options = Cnf.SubTree("Tiffani::Options");
-    if Options.has_key("Help"): usage();
+                ]
+    suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    Options = Cnf.SubTree("Tiffani::Options")
+    if Options.has_key("Help"): usage()
 
     maxdiffs = Options.get("MaxDiffs::Default", "14")
     maxpackages = Options.get("MaxDiffs::Packages", maxdiffs)
@@ -340,11 +340,11 @@ def main():
         else:
             components = []
 
-        suite_suffix = Cnf.Find("Dinstall::SuiteSuffix");
+        suite_suffix = Cnf.Find("Dinstall::SuiteSuffix")
         if components and suite_suffix:
-            longsuite = suite + "/" + suite_suffix;
+            longsuite = suite + "/" + suite_suffix
         else:
-            longsuite = suite;
+            longsuite = suite
 
         tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
 
@@ -353,8 +353,8 @@ def main():
         elif AptCnf.has_key("bindirectory::%s" % (tree)):
             sections = AptCnf["bindirectory::%s::Sections" % (tree)].split()
         else:
-            aptcnf_filename = os.path.basename(utils.which_apt_conf_file());
-            print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename);
+            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
+            print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
             continue
 
         for architecture in architectures:
