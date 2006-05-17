@@ -95,7 +95,7 @@ What breaks:
 ================================================================================
 
 [1] For versions of dependents meaning: binaries compiled from the
-    source of BYHAND or NEW uploads.  Due to katie's fascist
+    source of BYHAND or NEW uploads.  Due to dak's fascist
     source-must-exist checking, these binaries must be held back until
     the BYHAND/NEW uploads are processed.
 

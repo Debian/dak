@@ -310,7 +310,7 @@ Canadians: This is a lighthouse. Your call.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 <neuro> i didn't slam today's dinstall too badly, did I?
-<elmo>   File "/org/ftp.debian.org/katie/kelly", line 608, in main
+<elmo>   File "/org/ftp.debian.org/dak/process_accepted.py", line 608, in main
 <elmo>     sys.stderr.write("Installed %d package %s, %s.\n" % (install_count, sets, utils.size_type(int(install_bytes))));
 <elmo> OverflowError: float too large to convert
 

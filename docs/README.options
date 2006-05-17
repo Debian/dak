@@ -9,5 +9,5 @@ Standard options
 -V/--version
 
 Exceptions:
-  katie - backwardly compatible options with dinstall
-  heidi - ? hysterical raisins and testing compatibility
+  dak process-unchecked - backwardly compatible options with dinstall
+  dak control-suite - ? hysterical raisins and testing compatibility
