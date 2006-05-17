@@ -1,5 +1,5 @@
-Currently used substitutions in katie:
-======================================
+Currently used substitutions in dak
+===================================
 
 Global
 ------
@@ -8,7 +8,7 @@ Global
  o __BCC__ [*]
  o __BUG_SERVER__
  o __DISTRO__
- o __KATIE_ADDRESS__
+ o __DAK_ADDRESS__
 
 Per package
 -----------
@@ -24,6 +24,7 @@ Per package
 
 Misc
 ----
+
  o __ANNOUNCE_LIST_ADDRESS__
  o __BUG_NUMBER__
  o __CONTROL_MESSAGE__
