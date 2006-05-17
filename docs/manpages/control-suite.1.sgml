@@ -1,29 +1,29 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
 
   <refmeta>
-    <refentrytitle>heidi</>
+    <refentrytitle>dak_control-suite</>
     <manvolnum>1</>
   </refmeta>
 
   <!-- Man page title -->
   <refnamediv>
-    <refname>heidi</>
+    <refname>dak control-suite</>
     <refpurpose>Utility to alter or display the contents of a suite</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>heidi</>
+      <command>dak control-suite</>
       <arg><option><replaceable>options</replaceable></></arg>
       <arg choice="plain"><replaceable>file...</replaceable></arg>
     </cmdsynopsis>
@@ -31,7 +31,7 @@
 
   <RefSect1><Title>Description</>
     <para>
-      <command>heidi</command> is a utility to alter or display the contents of a suite.  Input for alterations is taken either from filename(s) supplied or stdin.  The format for both input and output is lines each with a whitespace separated list of: <literal>package</literal>, <literal>version</literal> and <literal>architecture</literal>.
+      <command>dak control-suite</command> is a utility to alter or display the contents of a suite.  Input for alterations is taken either from filename(s) supplied or stdin.  The format for both input and output is lines each with a whitespace separated list of: <literal>package</literal>, <literal>version</literal> and <literal>architecture</literal>.
     </PARA>
   </REFSECT1>
 
@@ -73,7 +73,7 @@
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>heidi</command> returns zero on normal operation, non-zero on error.
+      <command>dak control-suite</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
 

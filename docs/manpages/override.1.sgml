@@ -1,29 +1,29 @@
 <!-- -*- mode: sgml -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
 
   <refmeta>
-    <refentrytitle>alicia</>
+    <refentrytitle>dak_override</>
     <manvolnum>1</>
   </refmeta>
 
   <!-- Man page title -->
   <refnamediv>
-    <refname>alicia</>
+    <refname>dak override</>
     <refpurpose>Make micromodifications or queries to the overrides table</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>alicia</>
+      <command>dak override</>
       <arg><option><replaceable>options</replaceable></></arg>
       <arg choice="plain"><replaceable>package</replaceable></arg>
       <arg><option><replaceable>section</replaceable></></arg>
@@ -33,7 +33,7 @@
 
   <RefSect1><Title>Description</>
     <para>
-      <command>alicia</command> makes micromodifications and queries the overrides.
+      <command>dak override</command> makes micromodifications and queries the overrides.
     </PARA>
   </REFSECT1>
 
@@ -52,7 +52,7 @@
       </VarListEntry>
       <VarListEntry><term><option>-n/--no-action</option></>
 	<ListItem>
-	  <Para>Show what alicia would do but make no changes</PARA>
+	  <Para>Show what dak override would do but make no changes</PARA>
 	</LISTITEM>
       </VarListEntry>
       <VarListEntry><term><option>-s/--suite=<replaceable>suite</replaceable></option></>
@@ -66,19 +66,19 @@
 
   <RefSect1><Title>Common use</>
     <para>
-      <command>alicia</command> when invoked with only a package name will tell you what section and priority the given package has.
+      <command>dak override</command> when invoked with only a package name will tell you what section and priority the given package has.
     </PARA>
     <para>
-      <command>alicia</command> when invoked with a package and one or two other values will set the section and/or priority to the values given. You may use a single period ('.') to represent "do not change" or you can ommit the value you do not want to change.
+      <command>dak override</command> when invoked with a package and one or two other values will set the section and/or priority to the values given. You may use a single period ('.') to represent "do not change" or you can ommit the value you do not want to change.
     </PARA>
   </RefSect1>
   <RefSect1><Title>Notes</>
 
-  <Para>alicia essentially lets you do what natalie does only on the microscopic scale rather than the macroscopic scale of natalie. Use with care.</>
+  <Para><command>dak override</command> essentially lets you do what <command>dak control-overrides</command> does only on the microscopic scale rather than the macroscopic scale of <command>dak control-overrides</command>. Use with care.</>
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>alicia</command> returns zero on normal operation, non-zero on error.
+      <command>dak override</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
 

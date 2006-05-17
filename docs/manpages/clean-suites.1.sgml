@@ -1,36 +1,36 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
 
   <refmeta>
-    <refentrytitle>rhona</>
+    <refentrytitle>dak_clean-suites</>
     <manvolnum>1</>
   </refmeta>
 
   <!-- Man page title -->
   <refnamediv>
-    <refname>rhona</>
+    <refname>dak clean-suites</>
     <refpurpose>Utility to clean out old packages</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>rhona</>
+      <command>dak clean-suites</>
       <arg><option><replaceable>options</replaceable></></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
   <RefSect1><Title>Description</>
     <para>
-      <command>rhona</command> is a utility clean out old packages. It will clean out any binary packages not referenced by a suite and any source packages not referenced by a suite and not referenced by any binary packages.  Cleaning is not actual deletion, but rather, removal of packages from the pool to a 'morgue' directory.  The 'morgue' directory is split into dated sub-directories to keep things sane in big archives.
+      <command>dak clean-suites</command> is a utility clean out old packages. It will clean out any binary packages not referenced by a suite and any source packages not referenced by a suite and not referenced by any binary packages.  Cleaning is not actual deletion, but rather, removal of packages from the pool to a 'morgue' directory.  The 'morgue' directory is split into dated sub-directories to keep things sane in big archives.
     </PARA>
   </REFSECT1>
 
@@ -54,16 +54,16 @@
 
   <refsect1>
     <title>Configuration</title>
-    <para><command>rhona</command> uses katie's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
+    <para><command>dak clean-suites</command> uses dak's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
     <variablelist>
       <varlistentry>
-	<term>Rhona::StayOfExecution</term>
+	<term>Clean-Suites::StayOfExecution</term>
 	<listitem>
 	  <para>This is the number of seconds unreferenced packages are left before being cleaned.</para>
 	</listitem>
       </varlistentry>
       <varlistentry>
-	<term>Rhona::MorgueSubDir</term>
+	<term>Clean-Suites::MorgueSubDir</term>
 	<listitem>
 	  <para>If not blank, this is the subdirectory in the morgue used to hold removed packages.</para>
 	</listitem>
@@ -73,7 +73,7 @@
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>rhona</command> returns zero on normal operation, non-zero on error.
+      <command>dak clean-suites</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
 

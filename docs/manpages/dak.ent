@@ -1,7 +1,7 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 
 <!-- Boiler plate docinfo section -->
-<!ENTITY katie-docinfo "
+<!ENTITY dak-docinfo "
  <docinfo>
    <address><email>james@nocrew.org</email></address>
    <author><firstname>James</firstname> <surname>Troup</surname></author>
@@ -14,7 +14,7 @@
 <!ENTITY manauthor "
  <RefSect1><Title>Author</title>
    <para>
-   katie was written by James Troup <email>james@nocrew.org</email>.
+   dak was written by James Troup <email>james@nocrew.org</email>.
    </para>
  </RefSect1>
 ">

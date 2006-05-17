@@ -1,36 +1,36 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
 
   <refmeta>
-    <refentrytitle>natalie</>
+    <refentrytitle>dak_control-overrides</>
     <manvolnum>1</>
   </refmeta>
 
   <!-- Man page title -->
   <refnamediv>
-    <refname>natalie</>
+    <refname>dak control-overrides</>
     <refpurpose>Utility to manipulate the packages overrides</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>natalie</>
+      <command>dak control-overrides</>
       <arg><option><replaceable>options</replaceable></option></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
   <RefSect1><Title>Description</>
     <para>
-      <command>natalie</command> is the command line tool to handle override files.  Override files can be listed or updated.
+      <command>dak control-overrides</command> is the command line tool to handle override files.  Override files can be listed or updated.
     </para>
   </refsect1>
   <RefSect1><Title>Options</>
@@ -89,7 +89,7 @@
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>natalie</command> returns zero on normal operation, non-zero on error.
+      <command>dak control-overrides</command> returns zero on normal operation, non-zero on error.
     </para>
   </RefSect1>
 

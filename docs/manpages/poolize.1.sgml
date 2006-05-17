@@ -1,36 +1,36 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
   
   <refmeta>
-    <refentrytitle>catherine</>
+    <refentrytitle>dak_poolize</>
     <manvolnum>1</>
   </refmeta>
   
   <!-- Man page title -->
   <refnamediv>
-    <refname>catherine</>
+    <refname>dak poolize</>
     <refpurpose>Utility to poolize files (move them from legacy to pool location)</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>catherine</>
+      <command>dak poolize</>
       <arg><option><replaceable>options</replaceable></></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
   
   <RefSect1><Title>Description</>
     <para>   
-      <command>catherine</command> is the command line tool to poolize files; i.e. move files from legacy locations to their corresponding pool locations.
+      <command>dak poolize</command> is the command line tool to poolize files; i.e. move files from legacy locations to their corresponding pool locations.
       </PARA>
   </REFSECT1>
 
@@ -54,7 +54,7 @@
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>catherine</command> returns zero on normal operation, non-zero on error.
+      <command>dak poolize</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
 

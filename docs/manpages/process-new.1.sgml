@@ -1,29 +1,29 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
 
   <refmeta>
-    <refentrytitle>kelly</>
+    <refentrytitle>dak_process-new</>
     <manvolnum>1</>
   </refmeta>
 
   <!-- Man page title -->
   <refnamediv>
-    <refname>kelly</>
-    <refpurpose>Installs packages from accepted</>
+    <refname>dak process-new</>
+    <refpurpose>Processes BYHAND and NEW packages</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>kelly</>
+      <command>dak process-new</>
       <arg><option><replaceable>options</replaceable></></arg>
       <arg choice="plain"><replaceable>changes_file</replaceable></arg>
       <arg><option><replaceable>...</replaceable></option></arg>
@@ -32,7 +32,7 @@
 
   <RefSect1><Title>Description</>
     <para>
-      <command>kelly</command> is the program which installs packages from the accepted directory into the distribution.
+      <command>dak process-new</command> is the program which installs packages from the accepted directory into the distribution.
     </PARA></REFSECT1>
 
   <RefSect1><Title>Options</>
@@ -86,14 +86,9 @@
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>kelly</command> returns zero on normal operation, non-zero on error.
+      <command>dak process-new</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
-
-  <refsect1>
-    <title>Acknowledgements</title>
-    <para>kelly is based very heavily on dinstall, written by Guy Maor <email>maor@debian.org</email>; in fact it started out life as a dinstall clone.</para>
-  </refsect1>
 
   &manauthor;
 

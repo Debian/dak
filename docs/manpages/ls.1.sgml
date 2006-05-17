@@ -1,29 +1,29 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
 
   <refmeta>
-    <refentrytitle>madison</>
+    <refentrytitle>dak_ls</>
     <manvolnum>1</>
   </refmeta>
 
   <!-- Man page title -->
   <refnamediv>
-    <refname>madison</>
+    <refname>dak ls</>
     <refpurpose>Utility to display information about packages</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>madison</>
+      <command>dak ls</>
       <arg><option><replaceable>options</replaceable></></arg>
       <arg choice="plain"><replaceable>package</replaceable></arg>
     </cmdsynopsis>
@@ -31,7 +31,7 @@
 
   <RefSect1><Title>Description</>
     <para>
-      <command>madison</command> is a utility to display information about packages, specificaly what suites they are in and for which architectures.
+      <command>dak ls</command> is a utility to display information about packages, specificaly what suites they are in and for which architectures.
     </PARA>
   </REFSECT1>
 
@@ -95,7 +95,7 @@
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>madison</command> returns zero on normal operation, non-zero on error.
+      <command>dak ls</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
 

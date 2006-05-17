@@ -1,29 +1,29 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
   
   <refmeta>
-    <refentrytitle>melanie</>
+    <refentrytitle>dak_rm</>
     <manvolnum>1</>
   </refmeta>
   
   <!-- Man page title -->
   <refnamediv>
-    <refname>melanie</>
+    <refname>dak rm</>
     <refpurpose>Utility to remove/add packages from suites</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>melanie</>
+      <command>dak rm</>
       <arg><option><replaceable>options</replaceable></></arg>
       <arg choice="plain"><replaceable>package</replaceable></arg>
       <arg><option><replaceable>...</replaceable></option></arg>
@@ -32,7 +32,7 @@
   
   <RefSect1><Title>Description</>
     <para>   
-      <command>melanie</command> is the command line tool to add and remove package sets from suites with enforced logging, optional bug closing and override updates.
+      <command>dak rm</command> is the command line tool to add and remove package sets from suites with enforced logging, optional bug closing and override updates.
     </PARA>
   </REFSECT1>
 
@@ -100,7 +100,7 @@
 
       <VarListEntry><term><option>-R/--rdep-check</option></>
 	<ListItem>
-	  <Para>Check the reverse dependencies (and build-dependencies) of the packages that are to be removed and warn if anything will break.</literal></PARA>
+	  <Para>Check the reverse dependencies (and build-dependencies) of the packages that are to be removed and warn if anything will break.</PARA>
 	</LISTITEM>
       </VarListEntry>
 
@@ -125,7 +125,7 @@
       <itemizedlist>
 	<listitem>
 	  <para>Source + Binaries. (default)</para>
-	  <para>In this mode <command>melanie</command> will assume each of the package(s) passed as arguments are source packages and will also remove any binary packages built from these source packages.</para>
+	  <para>In this mode <command>dak rm</command> will assume each of the package(s) passed as arguments are source packages and will also remove any binary packages built from these source packages.</para>
 	</listitem>
 	<listitem>
 	  <para>Binary only.</para>
@@ -141,18 +141,18 @@
 
     <refsect1>
       <title>Configuration</title>
-      <para><command>melanie</command> uses katie's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
+      <para><command>dak rm</command> uses dak's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
       <variablelist>
 	<varlistentry>
-	  <term>Melanie::MyEmailAddress</term>
+	  <term>Rm::MyEmailAddress</term>
 	  <listitem>
 	    <para>This is used as the From: line for bug closing mails as per the -d/--done command line switch.  It, obviously, must be a RFC-822 valid email address.</para>
 	  </listitem>
 	</varlistentry>
 	<varlistentry>
-	  <term>Melanie::LogFile</term>
+	  <term>Rm::LogFile</term>
 	  <listitem>
-	    <para>This is the (absolute) file name of the logfile that melanie unconditionally writes too.  This can not be empty or an invalid file.</para>
+	    <para>This is the (absolute) file name of the logfile that dak rm unconditionally writes too.  This can not be empty or an invalid file.</para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
@@ -163,7 +163,7 @@
       <para>The first example is of a source+binaries package removal.</para>
       <informalexample>
 	<literallayout>
-troup@auric| ~ $melanie -d 68136 -m "Requested by tbm@; confirmed with maintainer.  Superseded by libgmp2" gmp1   
+$ dak rm -d 68136 -m "Requested by tbm@; confirmed with maintainer.  Superseded by libgmp2" gmp1   
 Working... done.
 Will remove the following packages from unstable:
 
@@ -177,13 +177,13 @@ Requested by tbm@; confirmed with maintainer.  Superseded by libgmp2
 
 Continue (y/N)? y
  Deleting... done.
-troup@auric| ~ $
+$
 	  </literallayout>
       </informalexample>
       <para>The second example is of a binary-only multi-package removal.</para>
       <informalexample>
 	<literallayout>
-troup@auric| ~ $melanie -d 82562 -m "Requested by paul@; NBS." -b libgtkextra{5,9,10}
+$ dak rm -d 82562 -m "Requested by paul@; NBS." -b libgtkextra{5,9,10}
 Working... done.
 Will remove the following packages from unstable:
 
@@ -199,14 +199,14 @@ Requested by paul@; NBS.
 
 Continue (y/N)? y
  Deleting... done.
-troup@auric| ~ $
+$
 	</literallayout>
       </informalexample>
   </refsect1>
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>melanie</command> returns zero on normal operation, non-zero on error.
+      <command>dak rm</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
 

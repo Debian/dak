@@ -1,29 +1,29 @@
 <!-- -*- mode: sgml; mode: fold -*- -->
 <!doctype refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 
-<!ENTITY % katieent SYSTEM "katie.ent">
-%katieent;
+<!ENTITY % dakent SYSTEM "dak.ent">
+%dakent;
 
 ]>
 
 <refentry>
-  &katie-docinfo;
+  &dak-docinfo;
 
   <refmeta>
-    <refentrytitle>charisma</>
+    <refentrytitle>dak_make-maintainers</>
     <manvolnum>1</>
   </refmeta>
 
   <!-- Man page title -->
   <refnamediv>
-    <refname>charisma</>
+    <refname>dak make-maintainers</>
     <refpurpose>Utility to generate an index of package's maintainers</>
   </refnamediv>
 
   <!-- Arguments -->
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>charisma</>
+      <command>dak make-maintainers</>
       <arg><option><replaceable>options</replaceable></></arg>
       <arg choice="plain"><replaceable>extra file...</replaceable></arg>
     </cmdsynopsis>
@@ -31,14 +31,14 @@
 
   <RefSect1><Title>Description</>
     <para>
-      <command>charisma</command> is a utility to generate an index of package's maintainers.  The output format is:
+      <command>dak make-maintainers</command> is a utility to generate an index of package's maintainers.  The output format is:
 <literallayout>package~version	maintainer</literallayout>
       The input format of extra files can either be in this form or in the old style which is similar, but lacking the version number, i.e.:
 <literallayout>package	maintainer</literallayout>
-      Charisma will auto-detect the type of layout of the extra file.  If the extra file is in the old style format the records in it are assumed to supersed any that were seen earlier (i.e. either from earlier extra files or generated from the SQL).
+      dak Make-Maintainers will auto-detect the type of layout of the extra file.  If the extra file is in the old style format the records in it are assumed to supersed any that were seen earlier (i.e. either from earlier extra files or generated from the SQL).
     </Para>
     <para>
-      Charisma determines the maintainer of a package by comparing suite priority (see 'Configuration') and then version number.
+      dak Make-Maintainers determines the maintainer of a package by comparing suite priority (see 'Configuration') and then version number.
     </PARA>
   </REFSECT1>
 
@@ -56,12 +56,12 @@
 
   <refsect1>
     <title>Configuration</title>
-    <para><command>charisma</command> uses katie's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
+    <para><command>dak make-maintainers</command> uses dak's configuration file. It follows the typical ISC configuration format as seen in ISC tools like bind 8 and dhcpd.  Apart from being able to alter the defaults for command line options, the following configuration items are used:</para>
     <variablelist>
       <varlistentry>
 	<term>Suite::&lt;SUITE&gt;::Priority</term>
 	<listitem>
-	  <para>Suite priority overrides the version checks charisma does.  A package in higher priority suite overrides versions in lower priority suites even if the version number in the higher priority suite is older.</para>
+	  <para>Suite priority overrides the version checks dak make-maintainers does.  A package in higher priority suite overrides versions in lower priority suites even if the version number in the higher priority suite is older.</para>
 	</listitem>
       </varlistentry>
     </variablelist>
@@ -76,7 +76,7 @@
 
   <RefSect1><Title>Diagnostics</>
     <para>
-      <command>charisma</command> returns zero on normal operation, non-zero on error.
+      <command>dak make-maintainers</command> returns zero on normal operation, non-zero on error.
     </PARA>
   </RefSect1>
 
