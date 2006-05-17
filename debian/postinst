@@ -3,11 +3,7 @@
 set -e
 
 if [ "$1" = "configure" ]; then
-      if [ -d /usr/doc -a ! -e /usr/doc/katie \
-          -a -d /usr/share/doc/katie ]; then
-              ln -sf ../share/doc/katie /usr/doc/katie
-      fi
       # Default (blank) files so that programs at least run --help and stuff
-      touch /etc/katie/katie.conf
-      touch /etc/katie/apt.conf
+      touch /etc/dak/dak.conf
+      touch /etc/dak/apt.conf
 fi
