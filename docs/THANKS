@@ -1,12 +1,13 @@
-The katie software is based in large part on 'dinstall' by Guy Maor.
-The original 'katie' script was pretty much a line by line
-reimplementation of the perl 'dinstall' in python.
+The dak software is based in large part on 'dinstall' by Guy Maor.
+The original 'dak process-unchecked' script was pretty much a line by
+line reimplementation of the perl 'dinstall' in python.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [Alphabetical Order]
 
 Adam Heath		       <doogie@debian.org>
+Andreas Barth		       <aba@not.so.argh.org>
 Anthony Towns		       <ajt@debian.org>
 Antti-Juhani Kaijanaho	       <ajk@debian.org>
 Ben Collins		       <bcollins@debian.org>
@@ -16,11 +17,15 @@ Daniel Silverstone	       <dsilvers@debian.org>
 Drake Diedrich		       <dld@debian.org>
 Guy Maor		       <maor@debian.org>
 Jason Gunthorpe		       <jgg@debian.org>
+Jeroen van Wolffelaar	       <jeroen@wolffelaar.nl>
 Joey Hess		       <joeyh@debian.org>
+Joerg Jaspert		       <ganneff@debian.org>
 Mark Brown		       <broonie@debian.org>
 Martin Michlmayr	       <tbm@debian.org>
+Matt Kraai		       <kraai@alumni.cmu.edu>
 Michael Beattie		       <mjb@debian.org>
 Randall Donald		       <rdonald@debian.org>
+Raphael Hertzog		       <hertzog@debian.org>
 Ryan Murray		       <rmurray@debian.org>
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
