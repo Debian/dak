@@ -20,8 +20,9 @@
 ################################################################################
 
 import os, pg, re, sys
-import dak.lib.utils, dak.lib.database
 import apt_pkg
+import dak.lib.database as database
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -48,14 +49,14 @@ Need either changes files or an admin.txt file with a '.joey' suffix."""
 
 def check_changes (filename):
     try:
-        changes = dak.lib.utils.parse_changes(filename)
-        files = dak.lib.utils.build_file_list(changes)
+        changes = utils.parse_changes(filename)
+        files = utils.build_file_list(changes)
     except:
-        dak.lib.utils.warn("Couldn't read changes file '%s'." % (filename))
+        utils.warn("Couldn't read changes file '%s'." % (filename))
         return
     num_files = len(files.keys())
     for file in files.keys():
-        if dak.lib.utils.re_isadeb.match(file):
+        if utils.re_isadeb.match(file):
             m = re_isdeb.match(file)
             pkg = m.group(1)
             version = m.group(2)
@@ -63,7 +64,7 @@ def check_changes (filename):
             if Options["debug"]:
                 print "BINARY: %s ==> %s_%s_%s" % (file, pkg, version, arch)
         else:
-            m = dak.lib.utils.re_issource.match(file)
+            m = utils.re_issource.match(file)
             if m:
                 pkg = m.group(1)
                 version = m.group(2)
@@ -76,16 +77,16 @@ def check_changes (filename):
                 if Options["debug"]:
                     print "SOURCE: %s ==> %s_%s_%s" % (file, pkg, version, arch)
             else:
-                dak.lib.utils.fubar("unknown type, fix me")
+                utils.fubar("unknown type, fix me")
         if not pu.has_key(pkg):
             # FIXME
-            dak.lib.utils.warn("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename))
+            utils.warn("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename))
             continue
         if not pu[pkg].has_key(arch):
             # FIXME
-            dak.lib.utils.warn("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename))
+            utils.warn("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename))
             continue
-        pu_version = dak.lib.utils.re_no_epoch.sub('', pu[pkg][arch])
+        pu_version = utils.re_no_epoch.sub('', pu[pkg][arch])
         if pu_version == version:
             if Options["verbose"]:
                 print "%s: ok" % (file)
@@ -98,7 +99,7 @@ def check_changes (filename):
     if new_num_files == 0:
         print "%s: no files left, superseded by %s" % (filename, pu_version)
         dest = Cnf["Dir::Morgue"] + "/misc/"
-        dak.lib.utils.move(filename, dest)
+        utils.move(filename, dest)
     elif new_num_files < num_files:
         print "%s: lost files, MWAAP." % (filename)
     else:
@@ -108,7 +109,7 @@ def check_changes (filename):
 ################################################################################
 
 def check_joey (filename):
-    file = dak.lib.utils.open_file(filename)
+    file = utils.open_file(filename)
 
     cwd = os.getcwd()
     os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]))
@@ -118,10 +119,10 @@ def check_joey (filename):
         if line.find('install') != -1:
             split_line = line.split()
             if len(split_line) != 2:
-                dak.lib.utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
+                utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
             install_type = split_line[0]
             if install_type not in [ "install", "install-u", "sync-install" ]:
-                dak.lib.utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
+                utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
             changes_filename = split_line[1]
             if Options["debug"]:
                 print "Processing %s..." % (changes_filename)
@@ -157,7 +158,7 @@ ORDER BY package, version, arch_string
 def main ():
     global Cnf, projectB, Options
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('d', "debug", "Clean-Proposed-Updates::Options::Debug"),
                  ('v',"verbose","Clean-Proposed-Updates::Options::Verbose"),
@@ -172,10 +173,10 @@ def main ():
     if Options["Help"]:
         usage(0)
     if not arguments:
-        dak.lib.utils.fubar("need at least one package name as an argument.")
+        utils.fubar("need at least one package name as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    dak.lib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     init_pu()
 
@@ -185,7 +186,7 @@ def main ():
         elif file.endswith(".joey"):
             check_joey(file)
         else:
-            dak.lib.utils.fubar("Unrecognised file type: '%s'." % (file))
+            utils.fubar("Unrecognised file type: '%s'." % (file))
 
 #######################################################################################
 

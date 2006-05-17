@@ -26,8 +26,9 @@
 ################################################################################
 
 import pg, sys
-import dak.lib.utils, dak.lib.database
 import apt_pkg
+import dak.lib.database as database
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -49,17 +50,17 @@ Outputs the override tables to text files.
 def do_list(output_file, suite, component, otype):
     global override
 
-    suite_id = dak.lib.database.get_suite_id(suite)
+    suite_id = database.get_suite_id(suite)
     if suite_id == -1:
-        dak.lib.utils.fubar("Suite '%s' not recognised." % (suite))
+        utils.fubar("Suite '%s' not recognised." % (suite))
 
-    component_id = dak.lib.database.get_component_id(component)
+    component_id = database.get_component_id(component)
     if component_id == -1:
-        dak.lib.utils.fubar("Component '%s' not recognised." % (component))
+        utils.fubar("Component '%s' not recognised." % (component))
 
-    otype_id = dak.lib.database.get_override_type_id(otype)
+    otype_id = database.get_override_type_id(otype)
     if otype_id == -1:
-        dak.lib.utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (otype))
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (otype))
 
     override.setdefault(suite, {})
     override[suite].setdefault(component, {})
@@ -69,20 +70,20 @@ def do_list(output_file, suite, component, otype):
         q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, otype_id))
         for i in q.getresult():
             override[suite][component][otype][i[0]] = i
-            output_file.write(dak.lib.utils.result_join(i)+'\n')
+            output_file.write(utils.result_join(i)+'\n')
     else:
         q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, otype_id))
         for i in q.getresult():
             i = i[:-1]; # Strip the priority level
             override[suite][component][otype][i[0]] = i
-            output_file.write(dak.lib.utils.result_join(i)+'\n')
+            output_file.write(utils.result_join(i)+'\n')
 
 ################################################################################
 
 def main ():
     global Cnf, projectB, override
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Make-Overrides::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Make-Overrides::Options::%s" % (i)):
@@ -93,7 +94,7 @@ def main ():
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    dak.lib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     for suite in Cnf.SubTree("Check-Overrides::OverrideSuites").List():
         if Cnf.has_key("Suite::%s::Untouchable" % suite) and Cnf["Suite::%s::Untouchable" % suite] != 0:
@@ -115,7 +116,7 @@ def main ():
                 elif otype == "dsc":
                     suffix = ".src"
                 filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, component.replace("non-US/", ""), suffix)
-                output_file = dak.lib.utils.open_file(filename, 'w')
+                output_file = utils.open_file(filename, 'w')
                 do_list(output_file, suite, component, otype)
                 output_file.close()
 

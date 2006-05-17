@@ -33,9 +33,9 @@
 ################################################################################
 
 import errno, os, re, sys
-import dak.lib.utils
+import utils
 import apt_pkg, apt_inst
-import pg, dak.lib.database
+import pg, database
 
 ################################################################################
 
@@ -79,9 +79,9 @@ maintainer_colour = arch_colour
 Cnf = None
 projectB = None
 
-Cnf = dak.lib.utils.get_conf()
+Cnf = utils.get_conf()
 projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-dak.lib.database.init(Cnf, projectB)
+database.init(Cnf, projectB)
 
 ################################################################################
 
@@ -144,7 +144,7 @@ def read_control (filename):
     maintainer = ''
     arch = ''
 
-    deb_file = dak.lib.utils.open_file(filename)
+    deb_file = utils.open_file(filename)
     try:
 	extracts = apt_inst.debExtractControl(deb_file)
 	control = apt_pkg.ParseSection(extracts)
@@ -195,9 +195,9 @@ def read_control (filename):
 def read_dsc (dsc_filename):
     dsc = {}
 
-    dsc_file = dak.lib.utils.open_file(dsc_filename)
+    dsc_file = utils.open_file(dsc_filename)
     try:
-	dsc = dak.lib.utils.parse_changes(dsc_filename)
+	dsc = utils.parse_changes(dsc_filename)
     except:
 	print "can't parse control info"
     dsc_file.close()
@@ -346,7 +346,7 @@ def check_deb (deb_filename):
 # Read a file, strip the signature and return the modified contents as
 # a string.
 def strip_pgp_signature (filename):
-    file = dak.lib.utils.open_file (filename)
+    file = utils.open_file (filename)
     contents = ""
     inside_signature = 0
     skip_next = 0
@@ -379,8 +379,8 @@ def display_changes (changes_filename):
 def check_changes (changes_filename):
     display_changes(changes_filename)
 
-    changes = dak.lib.utils.parse_changes (changes_filename)
-    files = dak.lib.utils.build_file_list(changes)
+    changes = utils.parse_changes (changes_filename)
+    files = utils.build_file_list(changes)
     for file in files.keys():
 	if file.endswith(".deb") or file.endswith(".udeb"):
 	    check_deb(file)
@@ -391,7 +391,7 @@ def check_changes (changes_filename):
 def main ():
     global Cnf, projectB, db_files, waste, excluded
 
-#    Cnf = dak.lib.utils.get_conf()
+#    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Examine-Package::Options::Help")]
     for i in [ "help" ]:
@@ -421,19 +421,19 @@ def main ():
                 elif file.endswith(".dsc"):
                     check_dsc(file)
                 else:
-                    dak.lib.utils.fubar("Unrecognised file type: '%s'." % (file))
+                    utils.fubar("Unrecognised file type: '%s'." % (file))
             finally:
                 # Reset stdout here so future less invocations aren't FUBAR
                 less_fd.close()
                 sys.stdout = stdout_fd
         except IOError, e:
             if errno.errorcode[e.errno] == 'EPIPE':
-                dak.lib.utils.warn("[examine-package] Caught EPIPE; skipping.")
+                utils.warn("[examine-package] Caught EPIPE; skipping.")
                 pass
             else:
                 raise
         except KeyboardInterrupt:
-            dak.lib.utils.warn("[examine-package] Caught C-c; skipping.")
+            utils.warn("[examine-package] Caught C-c; skipping.")
             pass
 
 #######################################################################################

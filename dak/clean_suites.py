@@ -30,7 +30,7 @@
 
 import os, pg, stat, sys, time
 import apt_pkg
-import dak.lib.utils
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -208,7 +208,7 @@ def clean():
     for i in q.getresult():
         filename = i[0] + i[1]
         if not os.path.exists(filename):
-            dak.lib.utils.warn("can not find '%s'." % (filename))
+            utils.warn("can not find '%s'." % (filename))
             continue
         if os.path.isfile(filename):
             if os.path.islink(filename):
@@ -224,14 +224,14 @@ def clean():
                 dest_filename = dest + '/' + os.path.basename(filename)
                 # If the destination file exists; try to find another filename to use
                 if os.path.exists(dest_filename):
-                    dest_filename = dak.lib.utils.find_next_free(dest_filename)
+                    dest_filename = utils.find_next_free(dest_filename)
 
                 if Options["No-Action"]:
                     print "Cleaning %s -> %s ..." % (filename, dest_filename)
                 else:
-                    dak.lib.utils.move(filename, dest_filename)
+                    utils.move(filename, dest_filename)
         else:
-            dak.lib.utils.fubar("%s is neither symlink nor file?!" % (filename))
+            utils.fubar("%s is neither symlink nor file?!" % (filename))
 
     # Delete from the 'files' table
     if not Options["No-Action"]:
@@ -240,7 +240,7 @@ def clean():
         projectB.query("DELETE FROM files WHERE last_used <= '%s'" % (delete_date))
         sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
     if count > 0:
-        sys.stderr.write("Cleaned %d files, %s.\n" % (count, dak.lib.utils.size_type(size)))
+        sys.stderr.write("Cleaned %d files, %s.\n" % (count, utils.size_type(size)))
 
 ################################################################################
 
@@ -305,10 +305,10 @@ def clean_queue_build():
     for i in q.getresult():
         filename = i[0]
         if not os.path.exists(filename):
-            dak.lib.utils.warn("%s (from queue_build) doesn't exist." % (filename))
+            utils.warn("%s (from queue_build) doesn't exist." % (filename))
             continue
         if not Cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(filename):
-            dak.lib.utils.fubar("%s (from queue_build) should be a symlink but isn't." % (filename))
+            utils.fubar("%s (from queue_build) should be a symlink but isn't." % (filename))
         os.unlink(filename)
         count += 1
     projectB.query("DELETE FROM queue_build WHERE last_used <= '%s'" % (our_delete_date))
@@ -321,7 +321,7 @@ def clean_queue_build():
 def main():
     global Cnf, Options, projectB, delete_date, now_date
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
     for i in ["Help", "No-Action" ]:
 	if not Cnf.has_key("Clean-Suites::Options::%s" % (i)):
 	    Cnf["Clean-Suites::Options::%s" % (i)] = ""

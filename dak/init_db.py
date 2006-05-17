@@ -20,8 +20,9 @@
 ################################################################################
 
 import pg, sys
-import dak.lib.utils, dak.lib.database
 import apt_pkg
+import dak.lib.database as database
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -48,7 +49,7 @@ def get (c, i):
 def main ():
     global Cnf, projectB
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Init-DB::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Init-DB::Options::%s" % (i)):
@@ -61,7 +62,7 @@ def main ():
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    dak.lib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     # archive
 
@@ -103,17 +104,17 @@ def main ():
     projectB.query("DELETE FROM location")
     for location in Cnf.SubTree("Location").List():
         Location = Cnf.SubTree("Location::%s" % (location))
-        archive_id = dak.lib.database.get_archive_id(Location["Archive"])
+        archive_id = database.get_archive_id(Location["Archive"])
         type = Location.get("type")
         if type == "legacy-mixed":
             projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, Location["type"]))
         elif type == "legacy" or type == "pool":
             for component in Cnf.SubTree("Component").List():
-                component_id = dak.lib.database.get_component_id(component)
+                component_id = database.get_component_id(component)
                 projectB.query("INSERT INTO location (path, component, archive, type) VALUES ('%s', %d, %d, '%s')" %
                                (location, component_id, archive_id, type))
         else:
-            dak.lib.utils.fubar("E: type '%s' not recognised in location %s." % (type, location))
+            utils.fubar("E: type '%s' not recognised in location %s." % (type, location))
     projectB.query("COMMIT WORK")
 
     # suite
@@ -128,9 +129,9 @@ def main ():
         projectB.query("INSERT INTO suite (suite_name, version, origin, description) VALUES ('%s', %s, %s, %s)"
                        % (suite.lower(), version, origin, description))
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
-            architecture_id = dak.lib.database.get_architecture_id (architecture)
+            architecture_id = database.get_architecture_id (architecture)
             if architecture_id < 0:
-                dak.lib.utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite))
+                utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite))
             projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id))
     projectB.query("COMMIT WORK")
 

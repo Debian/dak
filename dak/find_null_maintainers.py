@@ -21,7 +21,7 @@
 
 import ldap, pg, sys, time
 import apt_pkg
-import dak.lib.utils
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -50,7 +50,7 @@ def get_ldap_value(entry, value):
 def main():
     global Cnf, projectB
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Find-Null-Maintainers::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Find-Null-Maintainers::Options::%s" % (i)):

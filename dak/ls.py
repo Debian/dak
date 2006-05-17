@@ -27,8 +27,9 @@
 ################################################################################
 
 import os, pg, sys
-import dak.lib.utils, dak.lib.database
 import apt_pkg
+import dak.lib.database as database
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -60,7 +61,7 @@ ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 def main ():
     global Cnf, projectB
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('a', "architecture", "Ls::Options::Architecture", "HasArg"),
                  ('b', "binarytype", "Ls::Options::BinaryType", "HasArg"),
@@ -84,29 +85,29 @@ def main ():
     if Options["Help"]:
         usage()
     if not packages:
-        dak.lib.utils.fubar("need at least one package name as an argument.")
+        utils.fubar("need at least one package name as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    dak.lib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     # If cron.daily is running; warn the user that our output might seem strange
     if os.path.exists(os.path.join(Cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
-        dak.lib.utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
+        utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
 
     # Handle buildd maintenance helper options
     if Options["GreaterOrEqual"] or Options["GreaterThan"]:
         if Options["GreaterOrEqual"] and Options["GreaterThan"]:
-            dak.lib.utils.fubar("-g/--greaterorequal and -G/--greaterthan are mutually exclusive.")
+            utils.fubar("-g/--greaterorequal and -G/--greaterthan are mutually exclusive.")
         if not Options["Suite"]:
             Options["Suite"] = "unstable"
 
     # Parse -a/--architecture, -c/--component and -s/--suite
     (con_suites, con_architectures, con_components, check_source) = \
-                 dak.lib.utils.parse_args(Options)
+                 utils.parse_args(Options)
 
     if Options["BinaryType"]:
         if Options["BinaryType"] != "udeb" and Options["BinaryType"] != "deb":
-            dak.lib.utils.fubar("Invalid binary type.  'udeb' and 'deb' recognised.")
+            utils.fubar("Invalid binary type.  'udeb' and 'deb' recognised.")
         con_bintype = "AND b.type = '%s'" % (Options["BinaryType"])
         # REMOVE ME TRAMP
         if Options["BinaryType"] == "udeb":
@@ -177,7 +178,7 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
                 suites.sort()
                 for suite in suites:
                     arches = d[pkg][version][suite]
-                    arches.sort(dak.lib.utils.arch_compare_sw)
+                    arches.sort(utils.arch_compare_sw)
                     if Options["Format"] == "": #normal
                         sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite))
                         sys.stdout.write(", ".join(arches))

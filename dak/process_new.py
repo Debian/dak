@@ -38,7 +38,11 @@
 
 import copy, errno, os, readline, stat, sys, time
 import apt_pkg, apt_inst
-import dak.lib.database, examine_package, dak.lib.queue, dak.lib.logging, dak.lib.utils
+import examine_package
+import dak.lib.database as database
+import dak.lib.logging as logging
+import dak.lib.queue as queue
+import dak.lib.utils as utils
 
 # Globals
 Cnf = None
@@ -77,7 +81,7 @@ def recheck():
             source_package = files[file]["source package"]
             if not Upload.pkg.changes["architecture"].has_key("source") \
                and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
-                source_epochless_version = dak.lib.utils.re_no_epoch.sub('', source_version)
+                source_epochless_version = utils.re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                 if not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
                     reject("no source found for %s %s (%s)." % (source_package, source_version, file))
@@ -99,8 +103,8 @@ def recheck():
         prompt = "[R]eject, Skip, Quit ?"
 
         while prompt.find(answer) == -1:
-            answer = dak.lib.utils.our_raw_input(prompt)
-            m = dak.lib.queue.re_default_answer.match(prompt)
+            answer = utils.our_raw_input(prompt)
+            m = queue.re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -159,10 +163,10 @@ def determine_new (changes, files):
             new[pkg]["othercomponents"] = f["othercomponents"]
 
     for suite in changes["suite"].keys():
-        suite_id = dak.lib.database.get_suite_id(suite)
+        suite_id = database.get_suite_id(suite)
         for pkg in new.keys():
-            component_id = dak.lib.database.get_component_id(new[pkg]["component"])
-            type_id = dak.lib.database.get_override_type_id(new[pkg]["type"])
+            component_id = database.get_component_id(new[pkg]["component"])
+            type_id = database.get_override_type_id(new[pkg]["type"])
             q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id))
             ql = q.getresult()
             if ql:
@@ -321,8 +325,8 @@ def check_valid (new):
         section = new[pkg]["section"]
         priority = new[pkg]["priority"]
         type = new[pkg]["type"]
-        new[pkg]["section id"] = dak.lib.database.get_section_id(section)
-        new[pkg]["priority id"] = dak.lib.database.get_priority_id(new[pkg]["priority"])
+        new[pkg]["section id"] = database.get_section_id(section)
+        new[pkg]["priority id"] = database.get_priority_id(new[pkg]["priority"])
         # Sanity checks
         if (section == "debian-installer" and type != "udeb") or \
            (section != "debian-installer" and type == "udeb"):
@@ -369,12 +373,12 @@ def get_type (f):
     elif f["type"] == "orig.tar.gz" or f["type"] == "tar.gz" or f["type"] == "diff.gz" or f["type"] == "dsc":
         type = "dsc"
     else:
-        dak.lib.utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
+        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
 
     # Validate the override type
-    type_id = dak.lib.database.get_override_type_id(type)
+    type_id = database.get_override_type_id(type)
     if type_id == -1:
-        dak.lib.utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
+        utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
 
     return type
 
@@ -391,17 +395,17 @@ def index_range (index):
 
 def edit_new (new):
     # Write the current data to a temporary file
-    temp_filename = dak.lib.utils.temp_filename()
-    temp_file = dak.lib.utils.open_file(temp_filename, 'w')
+    temp_filename = utils.temp_filename()
+    temp_file = utils.open_file(temp_filename, 'w')
     print_new (new, 0, temp_file)
     temp_file.close()
     # Spawn an editor on that file
     editor = os.environ.get("EDITOR","vi")
     result = os.system("%s %s" % (editor, temp_filename))
     if result != 0:
-        dak.lib.utils.fubar ("%s invocation failed for %s." % (editor, temp_filename), result)
+        utils.fubar ("%s invocation failed for %s." % (editor, temp_filename), result)
     # Read the edited data back in
-    temp_file = dak.lib.utils.open_file(temp_filename)
+    temp_file = utils.open_file(temp_filename)
     lines = temp_file.readlines()
     temp_file.close()
     os.unlink(temp_filename)
@@ -415,7 +419,7 @@ def edit_new (new):
         s[len(s):3] = [None] * (3-len(s))
         (pkg, priority, section) = s[:3]
         if not new.has_key(pkg):
-            dak.lib.utils.warn("Ignoring unknown package '%s'" % (pkg))
+            utils.warn("Ignoring unknown package '%s'" % (pkg))
         else:
             # Strip off any invalid markers, print_new will readd them.
             if section.endswith("[!]"):
@@ -446,8 +450,8 @@ def edit_index (new, index):
         edit_priority = edit_section = 0
 
         while prompt.find(answer) == -1:
-            answer = dak.lib.utils.our_raw_input(prompt)
-            m = dak.lib.queue.re_default_answer.match(prompt)
+            answer = utils.our_raw_input(prompt)
+            m = queue.re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -466,7 +470,7 @@ def edit_index (new, index):
             readline.set_completer(Priorities.complete)
             got_priority = 0
             while not got_priority:
-                new_priority = dak.lib.utils.our_raw_input("New priority: ").strip()
+                new_priority = utils.our_raw_input("New priority: ").strip()
                 if new_priority not in Priorities.priorities:
                     print "E: '%s' is not a valid priority, try again." % (new_priority)
                 else:
@@ -478,7 +482,7 @@ def edit_index (new, index):
             readline.set_completer(Sections.complete)
             got_section = 0
             while not got_section:
-                new_section = dak.lib.utils.our_raw_input("New section: ").strip()
+                new_section = utils.our_raw_input("New section: ").strip()
                 if new_section not in Sections.sections:
                     print "E: '%s' is not a valid section, try again." % (new_section)
                 else:
@@ -512,12 +516,12 @@ def edit_overrides (new):
 
         got_answer = 0
         while not got_answer:
-            answer = dak.lib.utils.our_raw_input(prompt)
-            if not dak.lib.utils.str_isnum(answer):
+            answer = utils.our_raw_input(prompt)
+            if not utils.str_isnum(answer):
                 answer = answer[:1].upper()
             if answer == "E" or answer == "D":
                 got_answer = 1
-            elif dak.lib.queue.re_isanum.match (answer):
+            elif queue.re_isanum.match (answer):
                 answer = int(answer)
                 if (answer < 1) or (answer > index):
                     print "%s is not a valid index (%s).  Please retry." % (answer, index_range(index))
@@ -537,24 +541,24 @@ def edit_overrides (new):
 
 def edit_note(note):
     # Write the current data to a temporary file
-    temp_filename = dak.lib.utils.temp_filename()
-    temp_file = dak.lib.utils.open_file(temp_filename, 'w')
+    temp_filename = utils.temp_filename()
+    temp_file = utils.open_file(temp_filename, 'w')
     temp_file.write(note)
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        temp_file = dak.lib.utils.open_file(temp_filename)
+        temp_file = utils.open_file(temp_filename)
         note = temp_file.read().rstrip()
         temp_file.close()
         print "Note:"
-        print dak.lib.utils.prefix_multi_line_string(note,"  ")
+        print utils.prefix_multi_line_string(note,"  ")
         prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = dak.lib.utils.our_raw_input(prompt)
-            m = dak.lib.queue.re_default_answer.search(prompt)
+            answer = utils.our_raw_input(prompt)
+            m = queue.re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -587,12 +591,12 @@ def check_pkg ():
             sys.stdout = stdout_fd
     except IOError, e:
         if errno.errorcode[e.errno] == 'EPIPE':
-            dak.lib.utils.warn("[examine_package] Caught EPIPE; skipping.")
+            utils.warn("[examine_package] Caught EPIPE; skipping.")
             pass
         else:
             raise
     except KeyboardInterrupt:
-        dak.lib.utils.warn("[examine_package] Caught C-c; skipping.")
+        utils.warn("[examine_package] Caught C-c; skipping.")
         pass
 
 ################################################################################
@@ -604,13 +608,13 @@ def do_bxa_notification():
     summary = ""
     for file in files.keys():
         if files[file]["type"] == "deb":
-            control = apt_pkg.ParseSection(apt_inst.debExtractControl(dak.lib.utils.open_file(file)))
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)))
             summary += "\n"
             summary += "Package: %s\n" % (control.Find("Package"))
             summary += "Description: %s\n" % (control.Find("Description"))
     Upload.Subst["__BINARY_DESCRIPTIONS__"] = summary
-    bxa_mail = dak.lib.utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/process-new.bxa_notification")
-    dak.lib.utils.send_mail(bxa_mail)
+    bxa_mail = utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/process-new.bxa_notification")
+    utils.send_mail(bxa_mail)
 
 ################################################################################
 
@@ -620,10 +624,10 @@ def add_overrides (new):
 
     projectB.query("BEGIN WORK")
     for suite in changes["suite"].keys():
-        suite_id = dak.lib.database.get_suite_id(suite)
+        suite_id = database.get_suite_id(suite)
         for pkg in new.keys():
-            component_id = dak.lib.database.get_component_id(new[pkg]["component"])
-            type_id = dak.lib.database.get_override_type_id(new[pkg]["type"])
+            component_id = database.get_component_id(new[pkg]["component"])
+            type_id = database.get_override_type_id(new[pkg]["type"])
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')" % (suite_id, component_id, type_id, pkg, priority_id, section_id))
@@ -641,21 +645,21 @@ def add_overrides (new):
 
 def prod_maintainer ():
     # Here we prepare an editor and get them ready to prod...
-    temp_filename = dak.lib.utils.temp_filename()
+    temp_filename = utils.temp_filename()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        file = dak.lib.utils.open_file(temp_filename)
+        file = utils.open_file(temp_filename)
         prod_message = "".join(file.readlines())
         file.close()
         print "Prod message:"
-        print dak.lib.utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
+        print utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
         prompt = "[P]rod, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = dak.lib.utils.our_raw_input(prompt)
-            m = dak.lib.queue.re_default_answer.search(prompt)
+            answer = utils.our_raw_input(prompt)
+            m = queue.re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -665,7 +669,7 @@ def prod_maintainer ():
         elif answer == 'Q':
             sys.exit(0)
     # Otherwise, do the proding...
-    user_email_address = dak.lib.utils.whoami() + " <%s>" % (
+    user_email_address = utils.whoami() + " <%s>" % (
         Cnf["Dinstall::MyAdminAddress"])
 
     Subst = Upload.Subst
@@ -674,12 +678,12 @@ def prod_maintainer ():
     Subst["__PROD_MESSAGE__"] = prod_message
     Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
 
-    prod_mail_message = dak.lib.utils.TemplateSubst(
+    prod_mail_message = utils.TemplateSubst(
         Subst,Cnf["Dir::Templates"]+"/process-new.prod")
 
     # Send the prod mail if appropriate
     if not Cnf["Dinstall::Options::No-Mail"]:
-        dak.lib.utils.send_mail(prod_mail_message)
+        utils.send_mail(prod_mail_message)
 
     print "Sent proding message"
 
@@ -701,9 +705,9 @@ def do_new():
             changes["suite"][override] = 1
     # Validate suites
     for suite in changes["suite"].keys():
-        suite_id = dak.lib.database.get_suite_id(suite)
+        suite_id = database.get_suite_id(suite)
         if suite_id == -1:
-            dak.lib.utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite))
+            utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite))
 
     # The main NEW processing loop
     done = 0
@@ -732,8 +736,8 @@ def do_new():
         prompt += "Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?"
 
         while prompt.find(answer) == -1:
-            answer = dak.lib.utils.our_raw_input(prompt)
-            m = dak.lib.queue.re_default_answer.search(prompt)
+            answer = utils.our_raw_input(prompt)
+            m = queue.re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -754,7 +758,7 @@ def do_new():
         elif answer == 'P':
             prod_maintainer()
         elif answer == 'R':
-            confirm = dak.lib.utils.our_raw_input("Really clear note (y/N)? ").lower()
+            confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
                 del changes["process-new note"]
         elif answer == 'S':
@@ -780,7 +784,7 @@ def usage (exit_code=0):
 def init():
     global Cnf, Options, Logger, Upload, projectB, Sections, Priorities
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
                  ('h',"help","Process-New::Options::Help"),
@@ -797,10 +801,10 @@ def init():
     if Options["Help"]:
         usage()
 
-    Upload = dak.lib.queue.Upload(Cnf)
+    Upload = queue.Upload(Cnf)
 
     if not Options["No-Action"]:
-        Logger = Upload.Logger = dak.lib.logging.Logger(Cnf, "process-new")
+        Logger = Upload.Logger = logging.Logger(Cnf, "process-new")
 
     projectB = Upload.projectB
 
@@ -838,8 +842,8 @@ def do_byhand():
             prompt = "Manual reject, [S]kip, Quit ?"
 
         while prompt.find(answer) == -1:
-            answer = dak.lib.utils.our_raw_input(prompt)
-            m = dak.lib.queue.re_default_answer.search(prompt)
+            answer = utils.our_raw_input(prompt)
+            m = queue.re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -871,7 +875,7 @@ def do_accept():
 		if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
 		    retry += 1
 		    if (retry >= 10):
-			dak.lib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
+			utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
 		    else:
 			print("Unable to get accepted lock (try %d of 10)" % retry)
 		    time.sleep(60)
@@ -922,7 +926,7 @@ def end():
         sets = "set"
         if accept_count > 1:
             sets = "sets"
-        sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, dak.lib.utils.size_type(int(accept_bytes))))
+        sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))))
         Logger.log(["total",accept_count,accept_bytes])
 
     if not Options["No-Action"]:
@@ -945,7 +949,7 @@ def main():
         Upload.Subst["__BCC__"] = bcc
 
     for changes_file in changes_files:
-        changes_file = dak.lib.utils.validate_changes_file_arg(changes_file, 0)
+        changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
             continue
         print "\n" + changes_file

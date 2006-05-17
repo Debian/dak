@@ -6,8 +6,8 @@
 # idea and basic implementation by Anthony, some changes by Andreas
 # parts are stolen from 'dak generate-releases'
 #
-# Copyright (C) 2004-6, 6  Anthony Towns <aj@azure.humbug.org.au>
-# Copyright (C) 2004-5  Andreas Barth <aba@not.so.argh.org>
+# Copyright (C) 2004, 2005, 2006  Anthony Towns <aj@azure.humbug.org.au>
+# Copyright (C) 2004, 2005  Andreas Barth <aba@not.so.argh.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 
 import sys, os, tempfile
 import apt_pkg
-import dak.lib.utils
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -288,7 +288,7 @@ def main():
 
     os.umask(0002)
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [ ('h', "help", "Generate-Index-Diffs::Options::Help"),
                   ('c', None, "Generate-Index-Diffs::Options::CanonicalPath", "hasArg"),
                   ('p', "patchname", "Generate-Index-Diffs::Options::PatchName", "hasArg"),
@@ -314,7 +314,7 @@ def main():
         o.close()
 
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,dak.lib.utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
 
     if Options.has_key("RootDir"): Cnf["Dir::Root"] = Options["RootDir"]
 
@@ -353,7 +353,7 @@ def main():
         elif AptCnf.has_key("bindirectory::%s" % (tree)):
             sections = AptCnf["bindirectory::%s::Sections" % (tree)].split()
         else:
-            aptcnf_filename = os.path.basename(dak.lib.utils.which_apt_conf_file())
+            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
             print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
             continue
 

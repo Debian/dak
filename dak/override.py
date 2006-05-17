@@ -26,8 +26,9 @@
 ################################################################################
 
 import pg, sys
-import dak.lib.utils, dak.lib.database
-import apt_pkg, dak.lib.logging
+import apt_pkg, logging
+import dak.lib.database as database
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -36,9 +37,9 @@ projectB = None
 
 ################################################################################
 
-# Shamelessly stolen from 'dak rm'. Should probably end up in dak.lib.utils.py
+# Shamelessly stolen from 'dak rm'. Should probably end up in utils.py
 def game_over():
-    answer = dak.lib.utils.our_raw_input("Continue (y/N)? ").lower()
+    answer = utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
         print "Aborted."
         sys.exit(1)
@@ -58,7 +59,7 @@ Make microchanges or microqueries of the overrides
 def main ():
     global Cnf, projectB
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Override::Options::Help"),
                  ('d',"done","Override::Options::Done", "HasArg"),
@@ -78,15 +79,15 @@ def main ():
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    dak.lib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     if not arguments:
-        dak.lib.utils.fubar("package name is a required argument.")
+        utils.fubar("package name is a required argument.")
 
     package = arguments.pop(0)
     suite = Options["Suite"]
     if arguments and len(arguments) > 2:
-        dak.lib.utils.fubar("Too many arguments")
+        utils.fubar("Too many arguments")
 
     if arguments and len(arguments) == 1:
         # Determine if the argument is a priority or a section...
@@ -101,7 +102,7 @@ def main ():
         elif r[0][1] == 1:
             arguments = (".",arg)
         else:
-            dak.lib.utils.fubar("%s is not a valid section or priority" % (arg))
+            utils.fubar("%s is not a valid section or priority" % (arg))
 
 
     # Retrieve current section/priority...
@@ -116,9 +117,9 @@ def main ():
     """ % (pg._quote(package,"str"), pg._quote(suite,"str")))
 
     if q.ntuples() == 0:
-        dak.lib.utils.fubar("Unable to find package %s" % (package))
+        utils.fubar("Unable to find package %s" % (package))
     if q.ntuples() > 1:
-        dak.lib.utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
+        utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
 
     r = q.getresult()
     oldsection = r[0][1]
@@ -141,14 +142,14 @@ def main ():
         pg._quote(newsection,"str")))
 
     if q.ntuples() == 0:
-        dak.lib.utils.fubar("Supplied section %s is invalid" % (newsection))
+        utils.fubar("Supplied section %s is invalid" % (newsection))
     newsecid = q.getresult()[0][0]
 
     q = projectB.query("SELECT id FROM priority WHERE priority=%s" % (
         pg._quote(newpriority,"str")))
 
     if q.ntuples() == 0:
-        dak.lib.utils.fubar("Supplied priority %s is invalid" % (newpriority))
+        utils.fubar("Supplied priority %s is invalid" % (newpriority))
     newprioid = q.getresult()[0][0]
 
     if newpriority == oldpriority and newsection == oldsection:
@@ -173,13 +174,13 @@ def main ():
 
     if not Options.has_key("Done"):
         pass
-        #dak.lib.utils.warn("No bugs to close have been specified. Noone will know you have done this.")
+        #utils.warn("No bugs to close have been specified. Noone will know you have done this.")
     else:
         print "I: Will close bug(s): %s" % (Options["Done"])
 
     game_over()
 
-    Logger = dak.lib.logging.Logger(Cnf, "override")
+    Logger = logging.Logger(Cnf, "override")
 
     projectB.query("BEGIN WORK")
     # We're in "do it" mode, we have something to do... do it
@@ -222,7 +223,7 @@ def main ():
         Subst["__CC__"] = "X-DAK: dak override"
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
-        Subst["__WHOAMI__"] = dak.lib.utils.whoami()
+        Subst["__WHOAMI__"] = utils.whoami()
 
         summary = "Concerning package %s...\n" % (package)
         summary += "Operating on the %s suite\n" % (suite)
@@ -232,11 +233,11 @@ def main ():
             summary += "Changed section from %s to %s\n" % (oldsection,newsection)
         Subst["__SUMMARY__"] = summary
 
-        for bug in dak.lib.utils.split_args(Options["Done"]):
+        for bug in utils.split_args(Options["Done"]):
             Subst["__BUG_NUMBER__"] = bug
-            mail_message = dak.lib.utils.TemplateSubst(
+            mail_message = utils.TemplateSubst(
                 Subst,Cnf["Dir::Templates"]+"/override.bug-close")
-            dak.lib.utils.send_mail(mail_message)
+            utils.send_mail(mail_message)
             Logger.log(["closed bug",bug])
 
     Logger.close()

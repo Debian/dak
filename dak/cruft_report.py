@@ -28,8 +28,9 @@
 ################################################################################
 
 import commands, pg, os, string, sys, time
-import dak.lib.utils, dak.lib.database
 import apt_pkg
+import dak.lib.database as database
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -115,7 +116,7 @@ def do_anais(architecture, binaries_list, source):
 ################################################################################
 
 def do_nviu():
-    experimental_id = dak.lib.database.get_suite_id("experimental")
+    experimental_id = database.get_suite_id("experimental")
     if experimental_id == -1:
         return
     # Check for packages in experimental obsoleted by versions in unstable
@@ -125,7 +126,7 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
   WHERE sa.suite = %s AND sa2.suite = %d AND sa.source = s.id
    AND sa2.source = s2.id AND s.source = s2.source
    AND versioncmp(s.version, s2.version) < 0""" % (experimental_id,
-                                                   dak.lib.database.get_suite_id("unstable")))
+                                                   database.get_suite_id("unstable")))
     ql = q.getresult()
     if ql:
         nviu_to_remove = []
@@ -246,7 +247,7 @@ def do_obsolete_source(duplicate_bins, bin2source):
 def main ():
     global Cnf, projectB, suite_id, source_binaries, source_versions
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Cruft-Report::Options::Help"),
                  ('m',"mode","Cruft-Report::Options::Mode", "HasArg"),
@@ -271,11 +272,11 @@ def main ():
     elif Options["Mode"] == "full":
         checks = [ "nbs", "nviu", "obsolete source", "dubious nbs", "bnb", "bms", "anais" ]
     else:
-        dak.lib.utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
+        utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
         usage(1)
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    dak.lib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     bin_pkgs = {}
     src_pkgs = {}
@@ -288,7 +289,7 @@ def main ():
     duplicate_bins = {}
 
     suite = Options["Suite"]
-    suite_id = dak.lib.database.get_suite_id(suite)
+    suite_id = database.get_suite_id(suite)
 
     bin_not_built = {}
 
@@ -307,12 +308,12 @@ def main ():
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = dak.lib.utils.temp_filename()
+        temp_filename = utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if (result != 0):
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
             sys.exit(result)
-        sources = dak.lib.utils.open_file(temp_filename)
+        sources = utils.open_file(temp_filename)
         Sources = apt_pkg.ParseTagFile(sources)
         while Sources.Step():
             source = Sources.Section.Find('Package')
@@ -352,16 +353,16 @@ def main ():
 
     # Checks based on the Packages files
     for component in components + ['main/debian-installer']:
-        architectures = filter(dak.lib.utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
+        architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
-            temp_filename = dak.lib.utils.temp_filename()
+            temp_filename = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
                 sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
                 sys.exit(result)
-            packages = dak.lib.utils.open_file(temp_filename)
+            packages = utils.open_file(temp_filename)
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find('Package')
@@ -378,7 +379,7 @@ def main ():
                     bin2source[package]["version"] = version
                     bin2source[package]["source"] = source
                 if source.find("(") != -1:
-                    m = dak.lib.utils.re_extract_src_version.match(source)
+                    m = utils.re_extract_src_version.match(source)
                     source = m.group(1)
                     version = m.group(2)
                 if not bin_pkgs.has_key(package):

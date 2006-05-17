@@ -29,8 +29,9 @@
 ################################################################################
 
 import os, pg, re, sys
-import dak.lib.utils, dak.lib.database
 import apt_pkg
+import dak.lib.database as database
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -54,7 +55,7 @@ Create compatibility symlinks from legacy locations to the pool.
 
 def fix_component_section (component, section):
     if component == "":
-        component = dak.lib.utils.extract_component_from_section(section)[1]
+        component = utils.extract_component_from_section(section)[1]
 
     # FIXME: ugly hacks to work around override brain damage
     section = re_strip_section_prefix.sub('', section)
@@ -100,14 +101,14 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
         dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], codename, component, section, os.path.basename(i[3]))
         if not os.path.exists(dest):
 	    src = i[2]+i[3]
-	    src = dak.lib.utils.clean_symlink(src, dest, Cnf["Dir::Root"])
+	    src = utils.clean_symlink(src, dest, Cnf["Dir::Root"])
             if Cnf.Find("Symlink-Dists::Options::Verbose"):
                 print src+' -> '+dest
             os.symlink(src, dest)
         dislocated_files[i[4]] = dest
 
     # Binary
-    architectures = filter(dak.lib.utils.real_arch, Cnf.ValueList("Suite::Stable::Architectures"))
+    architectures = filter(utils.real_arch, Cnf.ValueList("Suite::Stable::Architectures"))
     q = projectB.query("""
 SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
                           b.version, l.path, f.filename, f.id
@@ -134,11 +135,11 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
             section=""
         architecture = i[1]
         package = i[3]
-        version = dak.lib.utils.re_no_epoch.sub('', i[4])
+        version = utils.re_no_epoch.sub('', i[4])
         src = i[5]+i[6]
 
         dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, architecture, section, package, version)
-        src = dak.lib.utils.clean_symlink(src, dest, Cnf["Dir::Root"])
+        src = utils.clean_symlink(src, dest, Cnf["Dir::Root"])
         if not os.path.exists(dest):
             if Cnf.Find("Symlink-Dists::Options::Verbose"):
                 print src+' -> '+dest
@@ -160,7 +161,7 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
 def main ():
     global Cnf, projectB
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Symlink-Dists::Options::Help"),
                  ('v',"verbose","Symlink-Dists::Options::Verbose")]
@@ -176,7 +177,7 @@ def main ():
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
-    dak.lib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     find_dislocated_stable(Cnf, projectB)
 

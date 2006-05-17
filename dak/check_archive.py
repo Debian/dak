@@ -27,8 +27,9 @@
 ################################################################################
 
 import commands, os, pg, stat, string, sys, time
-import dak.lib.database, dak.lib.utils
 import apt_pkg, apt_inst
+import dak.lib.database as database
+import dak.lib.utils as utils
 
 ################################################################################
 
@@ -95,11 +96,11 @@ def check_files():
 	filename = os.path.abspath(i[0] + i[1])
         db_files[filename] = ""
         if os.access(filename, os.R_OK) == 0:
-            dak.lib.utils.warn("'%s' doesn't exist." % (filename))
+            utils.warn("'%s' doesn't exist." % (filename))
 
     filename = Cnf["Dir::Override"]+'override.unreferenced'
     if os.path.exists(filename):
-        file = dak.lib.utils.open_file(filename)
+        file = utils.open_file(filename)
         for filename in file.readlines():
             filename = filename[:-1]
             excluded[filename] = ""
@@ -109,7 +110,7 @@ def check_files():
     os.path.walk(Cnf["Dir::Root"]+'pool/', process_dir, None)
 
     print
-    print "%s wasted..." % (dak.lib.utils.size_type(waste))
+    print "%s wasted..." % (utils.size_type(waste))
 
 ################################################################################
 
@@ -121,17 +122,17 @@ def check_dscs():
             continue
         component = component.lower()
         list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component)
-        list_file = dak.lib.utils.open_file(list_filename)
+        list_file = utils.open_file(list_filename)
         for line in list_file.readlines():
             file = line[:-1]
             try:
-                dak.lib.utils.parse_changes(file, signing_rules=1)
-            except dak.lib.utils.invalid_dsc_format_exc, line:
-                dak.lib.utils.warn("syntax error in .dsc file '%s', line %s." % (file, line))
+                utils.parse_changes(file, signing_rules=1)
+            except utils.invalid_dsc_format_exc, line:
+                utils.warn("syntax error in .dsc file '%s', line %s." % (file, line))
                 count += 1
 
     if count:
-        dak.lib.utils.warn("Found %s invalid .dsc files." % (count))
+        utils.warn("Found %s invalid .dsc files." % (count))
 
 ################################################################################
 
@@ -140,7 +141,7 @@ def check_override():
         print suite
         print "-"*len(suite)
         print
-        suite_id = dak.lib.database.get_suite_id(suite)
+        suite_id = database.get_suite_id(suite)
         q = projectB.query("""
 SELECT DISTINCT b.package FROM binaries b, bin_associations ba
  WHERE b.id = ba.bin AND ba.suite = %s AND NOT EXISTS
@@ -199,16 +200,16 @@ def check_md5sums():
         db_md5sum = i[2]
         db_size = int(i[3])
         try:
-            file = dak.lib.utils.open_file(filename)
+            file = utils.open_file(filename)
         except:
-            dak.lib.utils.warn("can't open '%s'." % (filename))
+            utils.warn("can't open '%s'." % (filename))
             continue
         md5sum = apt_pkg.md5sum(file)
         size = os.stat(filename)[stat.ST_SIZE]
         if md5sum != db_md5sum:
-            dak.lib.utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
+            utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
         if size != db_size:
-            dak.lib.utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
+            utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
 
     print "Done."
 
@@ -234,7 +235,7 @@ def check_timestamps():
     for i in ql:
 	filename = os.path.abspath(i[0] + i[1])
         if os.access(filename, os.R_OK):
-            file = dak.lib.utils.open_file(filename)
+            file = utils.open_file(filename)
             current_file = filename
             sys.stderr.write("Processing %s.\n" % (filename))
             apt_inst.debExtract(file,Ent,"control.tar.gz")
@@ -259,24 +260,24 @@ def check_missing_tar_gz_in_dsc():
         filename = os.path.abspath(i[0] + i[1])
         try:
             # NB: don't enforce .dsc syntax
-            dsc = dak.lib.utils.parse_changes(filename)
+            dsc = utils.parse_changes(filename)
         except:
-            dak.lib.utils.fubar("error parsing .dsc file '%s'." % (filename))
-        dsc_files = dak.lib.utils.build_file_list(dsc, is_a_dsc=1)
+            utils.fubar("error parsing .dsc file '%s'." % (filename))
+        dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
         has_tar = 0
         for file in dsc_files.keys():
-            m = dak.lib.utils.re_issource.match(file)
+            m = utils.re_issource.match(file)
             if not m:
-                dak.lib.utils.fubar("%s not recognised as source." % (file))
+                utils.fubar("%s not recognised as source." % (file))
             type = m.group(3)
             if type == "orig.tar.gz" or type == "tar.gz":
                 has_tar = 1
         if not has_tar:
-            dak.lib.utils.warn("%s has no .tar.gz in the .dsc file." % (file))
+            utils.warn("%s has no .tar.gz in the .dsc file." % (file))
             count += 1
 
     if count:
-        dak.lib.utils.warn("Found %s invalid .dsc files." % (count))
+        utils.warn("Found %s invalid .dsc files." % (count))
 
 
 ################################################################################
@@ -285,12 +286,12 @@ def validate_sources(suite, component):
     filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
     print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-    temp_filename = dak.lib.utils.temp_filename()
+    temp_filename = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
-    sources = dak.lib.utils.open_file(temp_filename)
+    sources = utils.open_file(temp_filename)
     Sources = apt_pkg.ParseTagFile(sources)
     while Sources.Step():
         source = Sources.Section.Find('Package')
@@ -303,7 +304,7 @@ def validate_sources(suite, component):
                 if directory.find("potato") == -1:
                     print "W: %s missing." % (filename)
                 else:
-                    pool_location = dak.lib.utils.poolify (source, component)
+                    pool_location = utils.poolify (source, component)
                     pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name)
                     if not os.path.exists(pool_filename):
                         print "E: %s missing (%s)." % (filename, pool_filename)
@@ -311,7 +312,7 @@ def validate_sources(suite, component):
                         # Create symlink
                         pool_filename = os.path.normpath(pool_filename)
                         filename = os.path.normpath(filename)
-                        src = dak.lib.utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
+                        src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
                         print "Symlinking: %s -> %s" % (filename, src)
                         #os.symlink(src, filename)
     sources.close()
@@ -324,12 +325,12 @@ def validate_packages(suite, component, architecture):
                % (Cnf["Dir::Root"], suite, component, architecture)
     print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-    temp_filename = dak.lib.utils.temp_filename()
+    temp_filename = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
-    packages = dak.lib.utils.open_file(temp_filename)
+    packages = utils.open_file(temp_filename)
     Packages = apt_pkg.ParseTagFile(packages)
     while Packages.Step():
         filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'))
@@ -372,10 +373,10 @@ def check_files_not_symlinks():
 	filename = os.path.normpath(i[0] + i[1])
 #        file_id = i[2]
         if os.access(filename, os.R_OK) == 0:
-            dak.lib.utils.warn("%s: doesn't exist." % (filename))
+            utils.warn("%s: doesn't exist." % (filename))
         else:
             if os.path.islink(filename):
-                dak.lib.utils.warn("%s: is a symlink." % (filename))
+                utils.warn("%s: is a symlink." % (filename))
                 # You probably don't want to use the rest of this...
 #                  print "%s: is a symlink." % (filename)
 #                  dest = os.readlink(filename)
@@ -390,7 +391,7 @@ def check_files_not_symlinks():
 #                          (location, location_id) = locations[path]
 #                          break
 #                  if not location_id:
-#                      dak.lib.utils.fubar("Can't find location for %s (%s)." % (dest, filename))
+#                      utils.fubar("Can't find location for %s (%s)." % (dest, filename))
 #                  new_filename = dest.replace(location, "")
 #                  q = projectB.query("UPDATE files SET filename = '%s', location = %s WHERE id = %s" % (new_filename, location_id, file_id))
 #      q = projectB.query("COMMIT WORK")
@@ -402,7 +403,7 @@ def chk_bd_process_dir (unused, dirname, filenames):
         if not name.endswith(".dsc"):
             continue
         filename = os.path.abspath(dirname+'/'+name)
-        dsc = dak.lib.utils.parse_changes(filename)
+        dsc = utils.parse_changes(filename)
         for field_name in [ "build-depends", "build-depends-indep" ]:
             field = dsc.get(field_name)
             if field:
@@ -422,7 +423,7 @@ def check_build_depends():
 def main ():
     global Cnf, projectB, db_files, waste, excluded
 
-    Cnf = dak.lib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Check-Archive::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Check-Archive::Options::%s" % (i)):
@@ -435,15 +436,15 @@ def main ():
 	usage()
 
     if len(args) < 1:
-        dak.lib.utils.warn("dak check-archive requires at least one argument")
+        utils.warn("dak check-archive requires at least one argument")
         usage(1)
     elif len(args) > 1:
-        dak.lib.utils.warn("dak check-archive accepts only one argument")
+        utils.warn("dak check-archive accepts only one argument")
         usage(1)
     mode = args[0].lower()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    dak.lib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     if mode == "md5sums":
         check_md5sums()
@@ -466,7 +467,7 @@ def main ():
     elif mode == "validate-builddeps":
         check_build_depends()
     else:
-        dak.lib.utils.warn("unknown mode '%s'" % (mode))
+        utils.warn("unknown mode '%s'" % (mode))
         usage(1)
 
 ################################################################################
