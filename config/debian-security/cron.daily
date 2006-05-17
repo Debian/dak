@@ -1,9 +1,9 @@
-#! /bin/sh
+#!/bin/sh
 #
-# Executed daily via cron, out of katie's crontab.
+# Executed daily via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/katie/vars-security
+export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 ################################################################################
@@ -50,23 +50,23 @@ for suite in $suites; do
 	         continue;
 	       fi
 	       if [ "$suite" = "unstable" ]; then
-	         $masterdir/natalie -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
+	         dak control-overrides -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
 	       fi
 	    else
-	       $masterdir/natalie -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
+	       dak control-overrides -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
 	    fi
 	    case $suite in
 	      oldstable)
 	        if [ ! "$override_type" = "udeb" ]; then
-		   $masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sarge.$component$type
+		   dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.sarge.$component$type
                 fi
-		$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
+		dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
 		;;
 	      stable)
-		$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
+		dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
 		;;
 	      testing)
-		$masterdir/natalie -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
+		dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
 		;;
 	      *) echo "Unknown suite type ($suite)"; exit 1;;
 	    esac
@@ -95,14 +95,14 @@ wget -qN http://buildd.debian.org/quinn-diff/Packages-arch-specific -O $base/bui
 ################################################################################
 
 cd $masterdir
-shania
-rhona
-apt-ftparchive -q clean apt.conf-security
-apt-ftparchive -q clean apt.conf.buildd-security
+dak clean-queues
+dak clean-suites
+apt-ftparchive -q clean apt.conf
+apt-ftparchive -q clean apt.conf.buildd
 
 symlinks -d -r $ftpdir
 
-pg_dump obscurity > /org/security.debian.org/katie-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+pg_dump obscurity > /org/security.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 # Vacuum the database
 set +e

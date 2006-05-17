@@ -2,7 +2,7 @@ Dir
 {
    ArchiveDir "/org/security.debian.org/buildd/";
    OverrideDir "/org/security.debian.org/override/";
-   CacheDir "/org/security.debian.org/katie-database/";
+   CacheDir "/org/security.debian.org/dak-database/";
 };
 
 Default

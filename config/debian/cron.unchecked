@@ -1,7 +1,7 @@
 #! /bin/sh
 
 set -e
-export SCRIPTVARS=/org/ftp.debian.org/katie/vars
+export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 LOCKFILE="$lockdir/unchecked.lock"
@@ -25,14 +25,14 @@ if lockfile -r3 $LOCKFILE; then
 
 	if [ ! -z "$changes" ]; then
 		echo "$timestamp": "$changes"  >> $report
-		jennifer -a $changes >> $report
+		dak process-unchecked -a $changes >> $report
 		echo "--" >> $report
 
 		if lockfile -r3 $NOTICE; then
 			LOCKDAILY="YES"
 			psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
 			cd $overridedir
-			denise &>/dev/null
+			dak make-overrides &>/dev/null
 			rm -f override.sid.all3 override.sid.all3.src
 			for i in main contrib non-free main.debian-installer; do
 				cat override.sid.$i >> override.sid.all3
@@ -48,4 +48,3 @@ if lockfile -r3 $LOCKFILE; then
 		echo "$timestamp": Nothing to do >> $report
 	fi
 fi
-

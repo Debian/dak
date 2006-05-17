@@ -5,7 +5,7 @@ ftpdir=$nonushome/ftp
 indices=$ftpdir/indices-non-US
 archs="alpha arm hppa hurd-i386 i386 ia64 m68k mips mipsel powerpc s390 sh sparc"
 
-masterdir=$nonushome/katie
+masterdir=$nonushome/dak/config/debian-non-US
 overridedir=$nonushome/scripts/override
 dbdir=$nonushome/database/
 queuedir=$nonushome/queue/

@@ -1,7 +1,7 @@
 #! /bin/sh
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/katie/vars-security
+export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 cd $unchecked
@@ -16,7 +16,7 @@ if [ -z "$changes" ]; then
 fi;
 
 echo "$timestamp": "$changes"  >> $report
-jennifer -a $changes >> $report
+dak process-unchecked -a $changes >> $report
 echo "--" >> $report
 
 sh $masterdir/cron.buildd-security

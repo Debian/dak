@@ -1,7 +1,7 @@
 #! /bin/sh
 
 set -e
-export SCRIPTVARS=/org/non-us.debian.org/katie/vars-non-US
+export SCRIPTVARS=/org/non-us.debian.org/dak/config/debian-non-US/vars
 . $SCRIPTVARS
 
 cd $unchecked
@@ -12,7 +12,7 @@ timestamp=$(date "+%Y-%m-%d %H:%M")
 
 if [ ! -z "$changes" ]; then
   echo "$timestamp": "$changes"  >> $report
-  jennifer -a $changes >> $report
+  dak process-unchecked -a $changes >> $report
   echo "--" >> $report
 else
   echo "$timestamp": Nothing to do >> $report

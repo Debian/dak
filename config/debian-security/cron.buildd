@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# Executed after jennifer (merge there??)
+# Executed after cron.unchecked
 
 ARCHS_oldstable="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
 ARCHS_stable="$ARCHS_oldstable"
@@ -9,7 +9,7 @@ DISTS="oldstable stable testing"
 SSH_SOCKET=~/.ssh/buildd.debian.org.socket
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/katie/vars-security
+export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then

@@ -1,9 +1,9 @@
 #! /bin/sh
 #
-# Executed daily via cron, out of troup's crontab.
+# Executed daily via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/non-us.debian.org/katie/vars-non-US
+export SCRIPTVARS=/org/non-us.debian.org/dak/config/debian-non-US/vars
 . $SCRIPTVARS
 
 ################################################################################
@@ -40,40 +40,40 @@ update-readmenonus
 if [ ! -z "$(find "$accepted" -name \*.changes -maxdepth 1 -mindepth 1)" ]; then
   cd $accepted
   rm -f REPORT
-  kelly -pa *.changes | tee REPORT | \
+  dak process-accepted -pa *.changes | tee REPORT | \
      mail -s "Non-US Install for $(date +%D)" ftpmaster@ftp-master.debian.org
   chgrp debadmin REPORT
   chmod 664 REPORT
 else
-  echo "kelly: Nothing to install."
+  echo "dak process-accepted: Nothing to install."
 fi
 
 cd $masterdir
 symlinks -d -r $ftpdir
 
 cd $masterdir
-jenna
+dak make-suite-file-list
 
 # Generate override files
 cd $overridedir
-denise
+dak make-overrides
 # FIXME
 rm -f override.potato.all3
 for i in main contrib non-free; do cat override.potato.$i >> override.potato.all3; done
 
 # Generate Packages and Sources files
 cd $masterdir
-apt-ftparchive generate apt.conf-non-US
+apt-ftparchive generate apt.conf
 # Generate Release files
-ziyi
+dak generate-releases
 
 # Clean out old packages
-rhona
-shania
+dak clean-suites
+dak clean-queues
 
 # Generate the Maintainers file
 cd $indices
-charisma > .new-maintainers_versions
+dak make-maintainers > .new-maintainers_versions
 mv -f .new-maintainers_versions Maintainers_Versions
 sed -e "s/~[^  ]*\([   ]\)/\1/" < Maintainers_Versions | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
 mv -f .new-maintainers Maintainers
@@ -104,9 +104,9 @@ echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skippin
 ################################################################################
 
 # Send a report on NEW/BYHAND packages
-helena | mail -e -s "[non-US] NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org
+dak queue-report | mail -e -s "[non-US] NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org
 # and one on crufty packages
-rene | mail -e -s "[non-US] rene run for $(date +%D)" ftpmaster@ftp-master.debian.org
+dak cruft-report | mail -e -s "Debian non-US cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
 
 ################################################################################
 ulimit -m 90000 -d 90000 -s 10000 -v 90000

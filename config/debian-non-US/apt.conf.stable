@@ -16,7 +16,7 @@ Default
 
 TreeDefault
 {
-   Contents::Header "/org/non-us.debian.org/katie/Contents.top";
+   Contents::Header "/org/non-us.debian.org/dak/config/debian/Contents.top";
 };
 
 tree "dists/stable/non-US"

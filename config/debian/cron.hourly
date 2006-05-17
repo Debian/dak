@@ -3,9 +3,9 @@
 # Executed hourly via cron, out of troup's crontab.
 
 set -e
-export SCRIPTVARS=/org/ftp.debian.org/katie/vars
+export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 cd $masterdir
-julia
-helena -n > $webdir/new.html
+dak import-users-from-passwd
+dak queue-report -n > $webdir/new.html

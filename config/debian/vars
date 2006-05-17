@@ -7,7 +7,7 @@ indices=$ftpdir/indices
 archs="alpha arm hppa hurd-i386 i386 ia64 m68k mips mipsel powerpc s390 sh sparc"
 
 scriptdir=$base/scripts
-masterdir=$base/katie/
+masterdir=$base/dak/
 dbdir=$base/database/
 lockdir=$base/lock/
 overridedir=$scriptdir/override
