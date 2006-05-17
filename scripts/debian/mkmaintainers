@@ -18,7 +18,7 @@ if wget -T15 -q -O Maintainers_Versions-non-US.gz http://non-us.debian.org/indic
 fi
 
 cd $indices
-$masterdir/charisma $nonusmaint $masterdir/pseudo-packages.maintainers | sed -e "s/~[^  ]*\([   ]\)/\1/"  | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
+dak make-maintainers $nonusmaint $masterdir/pseudo-packages.maintainers | sed -e "s/~[^  ]*\([   ]\)/\1/"  | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
 
 set +e
 cmp .new-maintainers Maintainers >/dev/null
