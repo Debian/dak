@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Check for obsolete binary packages
-# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: rene,v 1.23 2005-04-16 09:19:20 rmurray Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +28,7 @@
 ################################################################################
 
 import commands, pg, os, string, sys, time
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg
 
 ################################################################################
@@ -45,7 +44,7 @@ source_versions = {}
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: rene
+    print """Usage: dak cruft-report
 Check for obsolete or duplicated packages.
 
   -h, --help                show this help and exit.
@@ -116,7 +115,7 @@ def do_anais(architecture, binaries_list, source):
 ################################################################################
 
 def do_nviu():
-    experimental_id = db_access.get_suite_id("experimental")
+    experimental_id = dak.lib.database.get_suite_id("experimental")
     if experimental_id == -1:
         return
     # Check for packages in experimental obsoleted by versions in unstable
@@ -126,7 +125,7 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
   WHERE sa.suite = %s AND sa2.suite = %d AND sa.source = s.id
    AND sa2.source = s2.id AND s.source = s2.source
    AND versioncmp(s.version, s2.version) < 0""" % (experimental_id,
-                                                   db_access.get_suite_id("unstable")))
+                                                   dak.lib.database.get_suite_id("unstable")))
     ql = q.getresult()
     if ql:
         nviu_to_remove = []
@@ -139,7 +138,7 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
             nviu_to_remove.append(source)
         print
         print "Suggested command:"
-        print " melanie -m \"[rene] NVIU\" -s experimental %s" % (" ".join(nviu_to_remove))
+        print " dak rm -m \"[auto-cruft] NVIU\" -s experimental %s" % (" ".join(nviu_to_remove))
         print
 
 ################################################################################
@@ -171,7 +170,7 @@ def do_nbs(real_nbs):
         print output
 
         print "Suggested command:"
-        print " melanie -m \"[rene] NBS\" -b %s" % (" ".join(nbs_to_remove))
+        print " dak rm -m \"[auto-cruft] NBS\" -b %s" % (" ".join(nbs_to_remove))
         print
 
 ################################################################################
@@ -239,7 +238,7 @@ def do_obsolete_source(duplicate_bins, bin2source):
         print output
 
         print "Suggested command:"
-        print " melanie -S -p -m \"[rene] obsolete source package\" %s" % (" ".join(to_remove))
+        print " dak rm -S -p -m \"[auto-cruft] obsolete source package\" %s" % (" ".join(to_remove))
         print
 
 ################################################################################
@@ -247,22 +246,22 @@ def do_obsolete_source(duplicate_bins, bin2source):
 def main ():
     global Cnf, projectB, suite_id, source_binaries, source_versions
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('h',"help","Rene::Options::Help"),
-                 ('m',"mode","Rene::Options::Mode", "HasArg"),
-                 ('s',"suite","Rene::Options::Suite","HasArg")]
+    Arguments = [('h',"help","Cruft-Report::Options::Help"),
+                 ('m',"mode","Cruft-Report::Options::Mode", "HasArg"),
+                 ('s',"suite","Cruft-Report::Options::Suite","HasArg")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Rene::Options::%s" % (i)):
-	    Cnf["Rene::Options::%s" % (i)] = ""
-    Cnf["Rene::Options::Suite"] = Cnf["Dinstall::DefaultSuite"]
+	if not Cnf.has_key("Cruft-Report::Options::%s" % (i)):
+	    Cnf["Cruft-Report::Options::%s" % (i)] = ""
+    Cnf["Cruft-Report::Options::Suite"] = Cnf["Dinstall::DefaultSuite"]
 
-    if not Cnf.has_key("Rene::Options::Mode"):
-        Cnf["Rene::Options::Mode"] = "daily"
+    if not Cnf.has_key("Cruft-Report::Options::Mode"):
+        Cnf["Cruft-Report::Options::Mode"] = "daily"
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Rene::Options")
+    Options = Cnf.SubTree("Cruft-Report::Options")
     if Options["Help"]:
 	usage()
 
@@ -272,11 +271,11 @@ def main ():
     elif Options["Mode"] == "full":
         checks = [ "nbs", "nviu", "obsolete source", "dubious nbs", "bnb", "bms", "anais" ]
     else:
-        utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
+        dak.lib.utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
         usage(1)
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     bin_pkgs = {}
     src_pkgs = {}
@@ -289,7 +288,7 @@ def main ():
     duplicate_bins = {}
 
     suite = Options["Suite"]
-    suite_id = db_access.get_suite_id(suite)
+    suite_id = dak.lib.database.get_suite_id(suite)
 
     bin_not_built = {}
 
@@ -308,12 +307,12 @@ def main ():
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = utils.temp_filename()
+        temp_filename = dak.lib.utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if (result != 0):
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
             sys.exit(result)
-        sources = utils.open_file(temp_filename)
+        sources = dak.lib.utils.open_file(temp_filename)
         Sources = apt_pkg.ParseTagFile(sources)
         while Sources.Step():
             source = Sources.Section.Find('Package')
@@ -353,16 +352,16 @@ def main ():
 
     # Checks based on the Packages files
     for component in components + ['main/debian-installer']:
-        architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
+        architectures = filter(dak.lib.utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
-            temp_filename = utils.temp_filename()
+            temp_filename = dak.lib.utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
                 sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
                 sys.exit(result)
-            packages = utils.open_file(temp_filename)
+            packages = dak.lib.utils.open_file(temp_filename)
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find('Package')
@@ -379,7 +378,7 @@ def main ():
                     bin2source[package]["version"] = version
                     bin2source[package]["source"] = source
                 if source.find("(") != -1:
-                    m = utils.re_extract_src_version.match(source)
+                    m = dak.lib.utils.re_extract_src_version.match(source)
                     source = m.group(1)
                     version = m.group(2)
                 if not bin_pkgs.has_key(package):

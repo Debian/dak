@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Check for fixable discrepancies between stable and unstable
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: andrea,v 1.10 2003-09-07 13:52:13 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +21,7 @@
 ################################################################################
 
 import pg, sys
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg
 
 ################################################################################
@@ -33,7 +32,7 @@ projectB = None
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: andrea
+    print """Usage: dak compare-suites
 Looks for fixable descrepancies between stable and unstable.
 
   -h, --help                show this help and exit."""
@@ -44,28 +43,28 @@ Looks for fixable descrepancies between stable and unstable.
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Andrea::Options::Help")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Compare-Suites::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Andrea::Options::%s" % (i)):
-	    Cnf["Andrea::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Compare-Suites::Options::%s" % (i)):
+	    Cnf["Compare-Suites::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Andrea::Options")
+    Options = Cnf.SubTree("Compare-Suites::Options")
     if Options["Help"]:
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     src_suite = "stable"
     dst_suite = "unstable"
 
-    src_suite_id = db_access.get_suite_id(src_suite)
-    dst_suite_id = db_access.get_suite_id(dst_suite)
-    arch_all_id = db_access.get_architecture_id("all")
-    dsc_type_id = db_access.get_override_type_id("dsc")
+    src_suite_id = dak.lib.database.get_suite_id(src_suite)
+    dst_suite_id = dak.lib.database.get_suite_id(dst_suite)
+    arch_all_id = dak.lib.database.get_architecture_id("all")
+    dsc_type_id = dak.lib.database.get_override_type_id("dsc")
 
     for arch in Cnf.ValueList("Suite::%s::Architectures" % (src_suite)):
         if arch == "source":
@@ -77,7 +76,7 @@ def main ():
 
         if arch == "all":
             continue
-        arch_id = db_access.get_architecture_id(arch)
+        arch_id = dak.lib.database.get_architecture_id(arch)
         q = projectB.query("""
 SELECT b_src.package, b_src.version, a.arch_string
   FROM binaries b_src, bin_associations ba, override o, architecture a

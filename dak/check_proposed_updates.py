@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Dependency check proposed-updates
-# Copyright (C) 2001, 2002, 2004  James Troup <james@nocrew.org>
-# $Id: jeri,v 1.15 2005-02-08 22:43:45 troup Exp $
+# Copyright (C) 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +29,7 @@
 ################################################################################
 
 import pg, sys, os
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg, apt_inst
 
 ################################################################################
@@ -45,7 +44,7 @@ architectures = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: jeri [OPTION] <CHANGES FILE | DEB FILE | ADMIN FILE>[...]
+    print """Usage: dak check-proposed-updates [OPTION] <CHANGES FILE | DEB FILE | ADMIN FILE>[...]
 (Very) Basic dependency checking for proposed-updates.
 
   -q, --quiet                be quieter about what is being done
@@ -79,7 +78,7 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                     if stable[dep].has_key(arch):
                         if apt_pkg.CheckDep(stable[dep][arch], constraint, version):
                             if Options["debug"]:
-                                print "Found %s as a real package." % (utils.pp_deps(parsed_dep))
+                                print "Found %s as a real package." % (dak.lib.utils.pp_deps(parsed_dep))
                             unsat = 0
                             break
                 # As a virtual?
@@ -87,20 +86,20 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                     if stable_virtual[dep].has_key(arch):
                         if not constraint and not version:
                             if Options["debug"]:
-                                print "Found %s as a virtual package." % (utils.pp_deps(parsed_dep))
+                                print "Found %s as a virtual package." % (dak.lib.utils.pp_deps(parsed_dep))
                             unsat = 0
                             break
                 # As part of the same .changes?
-                epochless_version = utils.re_no_epoch.sub('', version)
+                epochless_version = dak.lib.utils.re_no_epoch.sub('', version)
                 dep_filename = "%s_%s_%s.deb" % (dep, epochless_version, arch)
                 if files.has_key(dep_filename):
                     if Options["debug"]:
-                        print "Found %s in the same upload." % (utils.pp_deps(parsed_dep))
+                        print "Found %s in the same upload." % (dak.lib.utils.pp_deps(parsed_dep))
                     unsat = 0
                     break
                 # Not found...
                 # [FIXME: must be a better way ... ]
-                error = "%s not found. [Real: " % (utils.pp_deps(parsed_dep))
+                error = "%s not found. [Real: " % (dak.lib.utils.pp_deps(parsed_dep))
                 if stable.has_key(dep):
                     if stable[dep].has_key(arch):
                         error += "%s:%s:%s" % (dep, arch, stable[dep][arch])
@@ -125,7 +124,7 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                 unsat.append(error)
 
             if unsat:
-                sys.stderr.write("MWAAP! %s: '%s' %s can not be satisifed:\n" % (filename, utils.pp_deps(parsed_dep), dep_type))
+                sys.stderr.write("MWAAP! %s: '%s' %s can not be satisifed:\n" % (filename, dak.lib.utils.pp_deps(parsed_dep), dep_type))
                 for error in unsat:
                     sys.stderr.write("  %s\n" % (error))
                 pkg_unsat = 1
@@ -134,9 +133,9 @@ def check_dep (depends, dep_type, check_archs, filename, files):
 
 def check_package(filename, files):
     try:
-        control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename)))
+        control = apt_pkg.ParseSection(apt_inst.debExtractControl(dak.lib.utils.open_file(filename)))
     except:
-        utils.warn("%s: debExtractControl() raised %s." % (filename, sys.exc_type))
+        dak.lib.utils.warn("%s: debExtractControl() raised %s." % (filename, sys.exc_type))
         return 1
     Depends = control.Find("Depends")
     Pre_Depends = control.Find("Pre-Depends")
@@ -173,10 +172,10 @@ def pass_fail (filename, result):
 
 def check_changes (filename):
     try:
-        changes = utils.parse_changes(filename)
-        files = utils.build_file_list(changes)
+        changes = dak.lib.utils.parse_changes(filename)
+        files = dak.lib.utils.build_file_list(changes)
     except:
-        utils.warn("Error parsing changes file '%s'" % (filename))
+        dak.lib.utils.warn("Error parsing changes file '%s'" % (filename))
         return
 
     result = 0
@@ -184,7 +183,7 @@ def check_changes (filename):
     # Move to the pool directory
     cwd = os.getcwd()
     file = files.keys()[0]
-    pool_dir = Cnf["Dir::Pool"] + '/' + utils.poolify(changes["source"], files[file]["component"])
+    pool_dir = Cnf["Dir::Pool"] + '/' + dak.lib.utils.poolify(changes["source"], files[file]["component"])
     os.chdir(pool_dir)
 
     changes_result = 0
@@ -210,7 +209,7 @@ def check_deb (filename):
 ################################################################################
 
 def check_joey (filename):
-    file = utils.open_file(filename)
+    file = dak.lib.utils.open_file(filename)
 
     cwd = os.getcwd()
     os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]))
@@ -220,10 +219,10 @@ def check_joey (filename):
         if line.find('install') != -1:
             split_line = line.split()
             if len(split_line) != 2:
-                utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
+                dak.lib.utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
             install_type = split_line[0]
             if install_type not in [ "install", "install-u", "sync-install" ]:
-                utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
+                dak.lib.utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
             changes_filename = split_line[1]
             if Options["debug"]:
                 print "Processing %s..." % (changes_filename)
@@ -241,11 +240,11 @@ def parse_packages():
     suite = "stable"
     stable = {}
     components = Cnf.ValueList("Suite::%s::Components" % (suite))
-    architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
+    architectures = filter(dak.lib.utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
     for component in components:
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suite, component, architecture)
-            packages = utils.open_file(filename, 'r')
+            packages = dak.lib.utils.open_file(filename, 'r')
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find('Package')
@@ -267,26 +266,26 @@ def parse_packages():
 def main ():
     global Cnf, projectB, Options
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('d', "debug", "Jeri::Options::Debug"),
-                 ('q',"quiet","Jeri::Options::Quiet"),
-                 ('v',"verbose","Jeri::Options::Verbose"),
-                 ('h',"help","Jeri::Options::Help")]
+    Arguments = [('d', "debug", "Check-Proposed-Updates::Options::Debug"),
+                 ('q',"quiet","Check-Proposed-Updates::Options::Quiet"),
+                 ('v',"verbose","Check-Proposed-Updates::Options::Verbose"),
+                 ('h',"help","Check-Proposed-Updates::Options::Help")]
     for i in [ "debug", "quiet", "verbose", "help" ]:
-	if not Cnf.has_key("Jeri::Options::%s" % (i)):
-	    Cnf["Jeri::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Check-Proposed-Updates::Options::%s" % (i)):
+	    Cnf["Check-Proposed-Updates::Options::%s" % (i)] = ""
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Jeri::Options")
+    Options = Cnf.SubTree("Check-Proposed-Updates::Options")
 
     if Options["Help"]:
         usage(0)
     if not arguments:
-        utils.fubar("need at least one package name as an argument.")
+        dak.lib.utils.fubar("need at least one package name as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     print "Parsing packages files...",
     parse_packages()
@@ -300,7 +299,7 @@ def main ():
         elif file.endswith(".joey"):
             check_joey(file)
         else:
-            utils.fubar("Unrecognised file type: '%s'." % (file))
+            dak.lib.utils.fubar("Unrecognised file type: '%s'." % (file))
 
 #######################################################################################
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-# Utility functions for katie
-# Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: katie.py,v 1.59 2005-12-17 10:57:03 rmurray Exp $
+# Queue utility functions for dak
+# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +20,8 @@
 ###############################################################################
 
 import cPickle, errno, os, pg, re, stat, string, sys, time
-import utils, db_access
 import apt_inst, apt_pkg
+import utils, database
 
 from types import *
 
@@ -89,7 +88,7 @@ class nmu_p:
 
 ###############################################################################
 
-class Katie:
+class Upload:
 
     def __init__(self, Cnf):
         self.Cnf = Cnf
@@ -105,10 +104,10 @@ class Katie:
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
         Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"]
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
-        Subst["__KATIE_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
+        Subst["__DAK_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
 
         self.projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-        db_access.init(Cnf, self.projectB)
+        database.init(Cnf, self.projectB)
 
     ###########################################################################
 
@@ -122,7 +121,7 @@ class Katie:
     ###########################################################################
 
     def update_vars (self):
-        dump_filename = self.pkg.changes_file[:-8]+".katie"
+        dump_filename = self.pkg.changes_file[:-8]+".dak"
         dump_file = utils.open_file(dump_filename)
         p = cPickle.Unpickler(dump_file)
         for i in [ "changes", "dsc", "files", "dsc_files", "legacy_source_untouchable" ]:
@@ -133,14 +132,15 @@ class Katie:
 
     ###########################################################################
 
-    # This could just dump the dictionaries as is, but I'd like to avoid
-    # this so there's some idea of what katie & lisa use from jennifer
+    # This could just dump the dictionaries as is, but I'd like to
+    # avoid this so there's some idea of what process-accepted &
+    # process-new use from process-unchecked
 
     def dump_vars(self, dest_dir):
         for i in [ "changes", "dsc", "files", "dsc_files",
                    "legacy_source_untouchable", "orig_tar_id", "orig_tar_location" ]:
             exec "%s = self.pkg.%s;" % (i,i)
-        dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".katie")
+        dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".dak")
         dump_file = utils.open_file(dump_filename, 'w')
         try:
             os.chmod(dump_filename, 0660)
@@ -174,7 +174,7 @@ class Katie:
                    "closes", "changes" ]:
             d_changes[i] = changes[i]
         # Optional changes fields
-        for i in [ "changed-by", "filecontents", "format", "lisa note", "distribution-version" ]:
+        for i in [ "changed-by", "filecontents", "format", "process-new note", "distribution-version" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i]
         ## dsc
@@ -205,7 +205,7 @@ class Katie:
     def update_subst (self, reject_message = ""):
         Subst = self.Subst
         changes = self.pkg.changes
-        # If jennifer crashed out in the right place, architecture may still be a string.
+        # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
         if not changes.has_key("architecture") or not isinstance(changes["architecture"], DictType):
             changes["architecture"] = { "Unknown" : "" }
         # and maintainer2047 may not exist.
@@ -306,7 +306,7 @@ class Katie:
 		    control_message += "tag %s + fixed-in-experimental\n" % (bug)
 		if action and control_message != "":
 		    Subst["__CONTROL_MESSAGE__"] = control_message
-		    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-experimental-fixed")
+		    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-experimental-fixed")
 		    utils.send_mail (mail_message)
 		if action:
 		    self.Logger.log(["setting bugs to fixed"]+bugs)
@@ -327,7 +327,7 @@ The update will eventually make its way into the next released Debian
 distribution."""
 		        else:
 			    Subst["__STABLE_WARNING__"] = ""
-			    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-close")
+			    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-close")
 			    utils.send_mail (mail_message)
                 if action:
                     self.Logger.log(["closing bugs"]+bugs)
@@ -340,7 +340,7 @@ distribution."""
                 control_message += "tag %s + fixed\n" % (bug)
             if action and control_message != "":
                 Subst["__CONTROL_MESSAGE__"] = control_message
-                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.bug-nmu-fixed")
+                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-nmu-fixed")
                 utils.send_mail (mail_message)
             if action:
                 self.Logger.log(["setting bugs to fixed"]+bugs)
@@ -373,7 +373,7 @@ distribution."""
                 Subst["__ANNOUNCE_LIST_ADDRESS__"] = list
                 if Cnf.get("Dinstall::TrackingServer") and changes["architecture"].has_key("source"):
                     Subst["__ANNOUNCE_LIST_ADDRESS__"] = Subst["__ANNOUNCE_LIST_ADDRESS__"] + "\nBcc: %s@%s" % (changes["source"], Cnf["Dinstall::TrackingServer"])
-                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.announce")
+                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.announce")
                 utils.send_mail (mail_message)
 
         if Cnf.FindB("Dinstall::CloseBugs"):
@@ -409,7 +409,7 @@ distribution."""
         if not Cnf["Dinstall::Options::No-Mail"]:
             Subst["__SUITE__"] = ""
             Subst["__SUMMARY__"] = summary
-            mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/jennifer.accepted")
+            mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.accepted")
             utils.send_mail(mail_message)
             self.announce(short_summary, 1)
 
@@ -463,13 +463,13 @@ distribution."""
         file_keys = files.keys()
 
         ## Special support to enable clean auto-building of queued packages
-        queue_id = db_access.get_or_set_queue_id(queue)
+        queue_id = database.get_or_set_queue_id(queue)
 
         self.projectB.query("BEGIN WORK")
         for suite in changes["distribution"].keys():
             if suite not in Cnf.ValueList("Dinstall::QueueBuildSuites"):
                 continue
-            suite_id = db_access.get_suite_id(suite)
+            suite_id = database.get_suite_id(suite)
             dest_dir = Cnf["Dir::QueueBuild"]
             if Cnf.FindB("Dinstall::SecurityQueueBuild"):
                 dest_dir = os.path.join(dest_dir, suite)
@@ -547,7 +547,7 @@ distribution."""
             return
 
         Subst["__SUMMARY__"] = summary
-        mail_message = utils.TemplateSubst(Subst,self.Cnf["Dir::Templates"]+"/jennifer.override-disparity")
+        mail_message = utils.TemplateSubst(Subst,self.Cnf["Dir::Templates"]+"/process-unchecked.override-disparity")
         utils.send_mail(mail_message)
 
     ###########################################################################
@@ -644,9 +644,9 @@ distribution."""
         if not manual:
             Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
             Subst["__MANUAL_REJECT_MESSAGE__"] = ""
-            Subst["__CC__"] = "X-Katie-Rejection: automatic (moo)"
+            Subst["__CC__"] = "X-DAK-Rejection: automatic (moo)"
             os.write(reason_fd, reject_message)
-            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.rejected")
+            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/dak.rejected")
         else:
             # Build up the rejection email
             user_email_address = utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"])
@@ -654,7 +654,7 @@ distribution."""
             Subst["__REJECTOR_ADDRESS__"] = user_email_address
             Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
             Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
-            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/katie.rejected")
+            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/dak.rejected")
             # Write the rejection email out as the <foo>.reason file
             os.write(reason_fd, reject_mail_message)
 
@@ -730,11 +730,11 @@ distribution."""
             suite = self.Cnf["Suite::%s::OverrideSuite" % (suite)]
 
         # Avoid <undef> on unknown distributions
-        suite_id = db_access.get_suite_id(suite)
+        suite_id = database.get_suite_id(suite)
         if suite_id == -1:
             return None
-        component_id = db_access.get_component_id(component)
-        type_id = db_access.get_override_type_id(type)
+        component_id = database.get_component_id(component)
+        type_id = database.get_override_type_id(type)
 
         # FIXME: nasty non-US speficic hack
         if component.lower().startswith("non-us/"):
@@ -745,8 +745,8 @@ distribution."""
         result = q.getresult()
         # If checking for a source package fall back on the binary override type
         if type == "dsc" and not result:
-            deb_type_id = db_access.get_override_type_id("deb")
-            udeb_type_id = db_access.get_override_type_id("udeb")
+            deb_type_id = database.get_override_type_id("deb")
+            udeb_type_id = database.get_override_type_id("udeb")
             q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND (type = %s OR type = %s) AND o.section = s.id AND o.priority = p.id"
                                % (package, suite_id, component_id, deb_type_id, udeb_type_id))
             result = q.getresult()
@@ -921,7 +921,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     if i[3] != dsc_file and i[3][-(len(dsc_file)+1):] != '/'+dsc_file:
                         ql.remove(i)
 
-                # "[katie] has not broken them.  [katie] has fixed a
+                # "[dak] has not broken them.  [dak] has fixed a
                 # brokenness.  Your crappy hack exploited a bug in
                 # the old dinstall.
                 #
@@ -981,7 +981,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     found = old_file
                     suite_type = x[2]
                     dsc_files[dsc_file]["files id"] = x[3]; # need this for updating dsc_files in install()
-                    # See install() in katie...
+                    # See install() in process-accepted...
                     self.pkg.orig_tar_id = x[3]
                     self.pkg.orig_tar_gz = old_file
                     if suite_type == "legacy" or suite_type == "legacy-mixed":
@@ -992,7 +992,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     # Not there? Check the queue directories...
 
                     in_unchecked = os.path.join(self.Cnf["Dir::Queue::Unchecked"],dsc_file)
-                    # See process_it() in jennifer for explanation of this
+                    # See process_it() in 'dak process-unchecked' for explanation of this
                     if os.path.exists(in_unchecked):
                         return (self.reject_message, in_unchecked)
                     else:

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # General purpose package removal tool for ftpmaster
-# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: melanie,v 1.44 2005-11-15 09:50:32 ajt Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +40,7 @@
 ################################################################################
 
 import commands, os, pg, re, sys
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg, apt_inst
 
 ################################################################################
@@ -58,7 +57,7 @@ projectB = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: melanie [OPTIONS] PACKAGE[...]
+    print """Usage: dak rm [OPTIONS] PACKAGE[...]
 Remove PACKAGE(s) from suite(s).
 
   -a, --architecture=ARCH    only act on this architecture
@@ -87,7 +86,7 @@ ARCH, BUG#, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 #  the fuck are we gonna do now? What are we gonna do?"
 
 def game_over():
-    answer = utils.our_raw_input("Continue (y/N)? ").lower()
+    answer = dak.lib.utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
         print "Aborted."
         sys.exit(1)
@@ -107,11 +106,11 @@ def reverse_depends_check(removals, suites):
         for component in components:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suites[0], component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-            temp_filename = utils.temp_filename()
+            temp_filename = dak.lib.utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
-                utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
-            packages = utils.open_file(temp_filename)
+                dak.lib.utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
+            packages = dak.lib.utils.open_file(temp_filename)
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find("Package")
@@ -165,19 +164,19 @@ def reverse_depends_check(removals, suites):
                         what = "%s/%s" % (package, component)
                     else:
                         what = "** %s" % (package)
-                    print "%s has an unsatisfied dependency on %s: %s" % (what, architecture, utils.pp_deps(dep))
+                    print "%s has an unsatisfied dependency on %s: %s" % (what, architecture, dak.lib.utils.pp_deps(dep))
                     dep_problem = 1
 
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suites[0], component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = utils.temp_filename()
+        temp_filename = dak.lib.utils.temp_filename()
         result, output = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if result != 0:
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
             sys.exit(result)
-        sources = utils.open_file(temp_filename, "r")
+        sources = dak.lib.utils.open_file(temp_filename, "r")
         Sources = apt_pkg.ParseTagFile(sources)
         while Sources.Step():
             source = Sources.Section.Find("Package")
@@ -202,7 +201,7 @@ def reverse_depends_check(removals, suites):
                         source = "%s/%s" % (source, component)
                     else:
                         source = "** %s" % (source)
-                    print "%s has an unsatisfied build-dependency: %s" % (source, utils.pp_deps(dep))
+                    print "%s has an unsatisfied build-dependency: %s" % (source, dak.lib.utils.pp_deps(dep))
                     dep_problem = 1
         sources.close()
         os.unlink(temp_filename)
@@ -220,57 +219,58 @@ def reverse_depends_check(removals, suites):
 def main ():
     global Cnf, Options, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('h',"help","Melanie::Options::Help"),
-                 ('a',"architecture","Melanie::Options::Architecture", "HasArg"),
-                 ('b',"binary", "Melanie::Options::Binary-Only"),
-                 ('c',"component", "Melanie::Options::Component", "HasArg"),
-                 ('C',"carbon-copy", "Melanie::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
-                 ('d',"done","Melanie::Options::Done", "HasArg"), # Bugs fixed
-                 ('R',"rdep-check", "Melanie::Options::Rdep-Check"),
-                 ('m',"reason", "Melanie::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
-                 ('n',"no-action","Melanie::Options::No-Action"),
-                 ('p',"partial", "Melanie::Options::Partial"),
-                 ('s',"suite","Melanie::Options::Suite", "HasArg"),
-                 ('S',"source-only", "Melanie::Options::Source-Only"),
+    Arguments = [('h',"help","Rm::Options::Help"),
+                 ('a',"architecture","Rm::Options::Architecture", "HasArg"),
+                 ('b',"binary", "Rm::Options::Binary-Only"),
+                 ('c',"component", "Rm::Options::Component", "HasArg"),
+                 ('C',"carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
+                 ('d',"done","Rm::Options::Done", "HasArg"), # Bugs fixed
+                 ('R',"rdep-check", "Rm::Options::Rdep-Check"),
+                 ('m',"reason", "Rm::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
+                 ('n',"no-action","Rm::Options::No-Action"),
+                 ('p',"partial", "Rm::Options::Partial"),
+                 ('s',"suite","Rm::Options::Suite", "HasArg"),
+                 ('S',"source-only", "Rm::Options::Source-Only"),
                  ]
 
     for i in [ "architecture", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
                "source-only" ]:
-	if not Cnf.has_key("Melanie::Options::%s" % (i)):
-	    Cnf["Melanie::Options::%s" % (i)] = ""
-    if not Cnf.has_key("Melanie::Options::Suite"):
-	Cnf["Melanie::Options::Suite"] = "unstable"
+	if not Cnf.has_key("Rm::Options::%s" % (i)):
+	    Cnf["Rm::Options::%s" % (i)] = ""
+    if not Cnf.has_key("Rm::Options::Suite"):
+	Cnf["Rm::Options::Suite"] = "unstable"
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Melanie::Options")
+    Options = Cnf.SubTree("Rm::Options")
 
     if Options["Help"]:
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     # Sanity check options
     if not arguments:
-        utils.fubar("need at least one package name as an argument.")
+        dak.lib.utils.fubar("need at least one package name as an argument.")
     if Options["Architecture"] and Options["Source-Only"]:
-        utils.fubar("can't use -a/--architecutre and -S/--source-only options simultaneously.")
+        dak.lib.utils.fubar("can't use -a/--architecutre and -S/--source-only options simultaneously.")
     if Options["Binary-Only"] and Options["Source-Only"]:
-        utils.fubar("can't use -b/--binary-only and -S/--source-only options simultaneously.")
+        dak.lib.utils.fubar("can't use -b/--binary-only and -S/--source-only options simultaneously.")
     if Options.has_key("Carbon-Copy") and not Options.has_key("Done"):
-        utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.")
+        dak.lib.utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.")
     if Options["Architecture"] and not Options["Partial"]:
-        utils.warn("-a/--architecture implies -p/--partial.")
+        dak.lib.utils.warn("-a/--architecture implies -p/--partial.")
         Options["Partial"] = "true"
 
-    # Force the admin to tell someone if we're not doing a rene-led removal
-    # (or closing a bug, which counts as telling someone).
+    # Force the admin to tell someone if we're not doing a 'dak
+    # cruft-report' inspired removal (or closing a bug, which counts
+    # as telling someone).
     if not Options["No-Action"] and not Options["Carbon-Copy"] \
-           and not Options["Done"] and Options["Reason"].find("[rene]") == -1:
-        utils.fubar("Need a -C/--carbon-copy if not closing a bug and not doing a rene-led removal.")
+           and not Options["Done"] and Options["Reason"].find("[auto-cruft]") == -1:
+        dak.lib.utils.fubar("Need a -C/--carbon-copy if not closing a bug and not doing a cruft removal.")
 
     # Process -C/--carbon-copy
     #
@@ -280,8 +280,8 @@ def main ():
     #  3) contains a '@' - assumed to be an email address, used unmofidied
     #
     carbon_copy = []
-    for copy_to in utils.split_args(Options.get("Carbon-Copy")):
-        if utils.str_isnum(copy_to):
+    for copy_to in dak.lib.utils.split_args(Options.get("Carbon-Copy")):
+        if dak.lib.utils.str_isnum(copy_to):
             carbon_copy.append(copy_to + "@" + Cnf["Dinstall::BugServer"])
         elif copy_to == 'package':
             for package in arguments:
@@ -291,7 +291,7 @@ def main ():
         elif '@' in copy_to:
             carbon_copy.append(copy_to)
         else:
-            utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to))
+            dak.lib.utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to))
 
     if Options["Binary-Only"]:
         field = "b.package"
@@ -300,15 +300,15 @@ def main ():
     con_packages = "AND %s IN (%s)" % (field, ", ".join(map(repr, arguments)))
 
     (con_suites, con_architectures, con_components, check_source) = \
-                 utils.parse_args(Options)
+                 dak.lib.utils.parse_args(Options)
 
     # Additional suite checks
     suite_ids_list = []
-    suites = utils.split_args(Options["Suite"])
-    suites_list = utils.join_with_commas_and(suites)
+    suites = dak.lib.utils.split_args(Options["Suite"])
+    suites_list = dak.lib.utils.join_with_commas_and(suites)
     if not Options["No-Action"]:
         for suite in suites:
-            suite_id = db_access.get_suite_id(suite)
+            suite_id = dak.lib.database.get_suite_id(suite)
             if suite_id != -1:
                 suite_ids_list.append(suite_id)
             if suite == "stable":
@@ -324,7 +324,7 @@ def main ():
 
     # Additional architecture checks
     if Options["Architecture"] and check_source:
-        utils.warn("'source' in -a/--argument makes no sense and is ignored.")
+        dak.lib.utils.warn("'source' in -a/--argument makes no sense and is ignored.")
 
     # Additional component processing
     over_con_components = con_components.replace("c.id", "component")
@@ -362,9 +362,9 @@ def main ():
             for i in source_packages.keys():
                 filename = "/".join(source_packages[i])
                 try:
-                    dsc = utils.parse_changes(filename)
-                except utils.cant_open_exc:
-                    utils.warn("couldn't open '%s'." % (filename))
+                    dsc = dak.lib.utils.parse_changes(filename)
+                except dak.lib.utils.cant_open_exc:
+                    dak.lib.utils.warn("couldn't open '%s'." % (filename))
                     continue
                 for package in dsc.get("binary").split(','):
                     package = package.strip()
@@ -377,7 +377,7 @@ def main ():
                 q = projectB.query("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package))
                 for i in q.getresult():
                     filename = "/".join(i[:2])
-                    control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename)))
+                    control = apt_pkg.ParseSection(apt_inst.debExtractControl(dak.lib.utils.open_file(filename)))
                     source = control.Find("Source", control.Find("Package"))
                     source = re_strip_source_version.sub('', source)
                     if source_packages.has_key(source):
@@ -391,12 +391,12 @@ def main ():
     # If we don't have a reason; spawn an editor so the user can add one
     # Write the rejection email out as the <foo>.reason file
     if not Options["Reason"] and not Options["No-Action"]:
-        temp_filename = utils.temp_filename()
+        temp_filename = dak.lib.utils.temp_filename()
         editor = os.environ.get("EDITOR","vi")
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
-            utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
-        temp_file = utils.open_file(temp_filename)
+            dak.lib.utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
+        temp_file = dak.lib.utils.open_file(temp_filename)
         for line in temp_file.readlines():
             Options["Reason"] += line
         temp_file.close()
@@ -419,7 +419,7 @@ def main ():
 
     maintainer_list = []
     for maintainer_id in maintainers.keys():
-        maintainer_list.append(db_access.get_maintainer(maintainer_id))
+        maintainer_list.append(dak.lib.database.get_maintainer(maintainer_id))
     summary = ""
     removals = d.keys()
     removals.sort()
@@ -427,7 +427,7 @@ def main ():
         versions = d[package].keys()
         versions.sort(apt_pkg.VersionCompare)
         for version in versions:
-            d[package][version].sort(utils.arch_compare_sw)
+            d[package][version].sort(dak.lib.utils.arch_compare_sw)
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))
     print "Will remove the following packages from %s:" % (suites_list)
     print
@@ -453,11 +453,11 @@ def main ():
     print "Going to remove the packages now."
     game_over()
 
-    whoami = utils.whoami()
+    whoami = dak.lib.utils.whoami()
     date = commands.getoutput('date -R')
 
     # Log first; if it all falls apart I want a record that we at least tried.
-    logfile = utils.open_file(Cnf["Melanie::LogFile"], 'a')
+    logfile = dak.lib.utils.open_file(Cnf["Rm::LogFile"], 'a')
     logfile.write("=========================================================================\n")
     logfile.write("[Date: %s] [ftpmaster: %s]\n" % (date, whoami))
     logfile.write("Removed the following packages from %s:\n\n%s" % (suites_list, summary))
@@ -467,8 +467,8 @@ def main ():
     logfile.write("----------------------------------------------\n")
     logfile.flush()
 
-    dsc_type_id = db_access.get_override_type_id('dsc')
-    deb_type_id = db_access.get_override_type_id('deb')
+    dsc_type_id = dak.lib.database.get_override_type_id('dsc')
+    deb_type_id = dak.lib.database.get_override_type_id('deb')
 
     # Do the actual deletion
     print "Deleting...",
@@ -498,18 +498,18 @@ def main ():
     # Send the bug closing messages
     if Options["Done"]:
         Subst = {}
-        Subst["__MELANIE_ADDRESS__"] = Cnf["Melanie::MyEmailAddress"]
+        Subst["__RM_ADDRESS__"] = Cnf["Rm::MyEmailAddress"]
         Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"]
         bcc = []
         if Cnf.Find("Dinstall::Bcc") != "":
             bcc.append(Cnf["Dinstall::Bcc"])
-        if Cnf.Find("Melanie::Bcc") != "":
-            bcc.append(Cnf["Melanie::Bcc"])
+        if Cnf.Find("Rm::Bcc") != "":
+            bcc.append(Cnf["Rm::Bcc"])
         if bcc:
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-Katie: melanie $Revision: 1.44 $"
+        Subst["__CC__"] = "X-DAK: dak rm\nX-Katie: this header is obsolete"
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
         Subst["__SUITE_LIST__"] = suites_list
@@ -517,14 +517,14 @@ def main ():
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = whoami
-        whereami = utils.where_am_i()
+        whereami = dak.lib.utils.where_am_i()
         Archive = Cnf.SubTree("Archive::%s" % (whereami))
         Subst["__MASTER_ARCHIVE__"] = Archive["OriginServer"]
         Subst["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"]
-        for bug in utils.split_args(Options["Done"]):
+        for bug in dak.lib.utils.split_args(Options["Done"]):
             Subst["__BUG_NUMBER__"] = bug
-            mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/melanie.bug-close")
-            utils.send_mail(mail_message)
+            mail_message = dak.lib.utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/rm.bug-close")
+            dak.lib.utils.send_mail(mail_message)
 
     logfile.write("=========================================================================\n")
     logfile.close()

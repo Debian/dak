@@ -2,7 +2,6 @@
 
 # Produces a report on NEW and BYHAND packages
 # Copyright (C) 2001, 2002, 2003, 2005, 2006  James Troup <james@nocrew.org>
-# $Id: helena,v 1.6 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,17 +36,17 @@
 
 import copy, glob, os, stat, sys, time
 import apt_pkg
-import katie, utils
+import dak.lib.queue, dak.lib.utils
 
 Cnf = None
-Katie = None
+Upload = None
 direction = []
 row_number = 0
 
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: helena
+    print """Usage: dak queue-report
 Prints a report of packages in queue directories (usually new and byhand).
 
   -h, --help                show this help and exit.
@@ -267,10 +266,10 @@ def process_changes_files(changes_files, type):
     # Read in all the .changes files
     for filename in changes_files:
         try:
-            Katie.pkg.changes_file = filename
-            Katie.init_vars()
-            Katie.update_vars()
-            cache[filename] = copy.copy(Katie.pkg.changes)
+            Upload.pkg.changes_file = filename
+            Upload.init_vars()
+            Upload.update_vars()
+            cache[filename] = copy.copy(Upload.pkg.changes)
             cache[filename]["filename"] = filename
         except:
             break
@@ -290,13 +289,13 @@ def process_changes_files(changes_files, type):
         have_note = 0
         for d in per_source[source]["list"]:
             mtime = os.stat(d["filename"])[stat.ST_MTIME]
-            if Cnf.has_key("Helena::Options::New"):
+            if Cnf.has_key("Queue-Report::Options::New"):
                 if mtime > oldest:
                     oldest = mtime
             else:
                 if mtime < oldest:
                     oldest = mtime
-            have_note += (d.has_key("lisa note"))
+            have_note += (d.has_key("process-new note"))
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -324,12 +323,12 @@ def process_changes_files(changes_files, type):
         arches = {}
         versions = {}
         for j in i[1]["list"]:
-            if Cnf.has_key("Helena::Options::New"):
+            if Cnf.has_key("Queue-Report::Options::New"):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
-                    utils.fix_maintainer (j["maintainer"])
-                except utils.ParseMaintError, msg:
+                    dak.lib.utils.fix_maintainer (j["maintainer"])
+                except dak.lib.utils.ParseMaintError, msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
                     maintainer["maintaineremail"] = "Unknown"
@@ -341,7 +340,7 @@ def process_changes_files(changes_files, type):
             version = j["version"]
             versions[version] = ""
         arches_list = arches.keys()
-        arches_list.sort(utils.arch_compare_sw)
+        arches_list.sort(dak.lib.utils.arch_compare_sw)
         arch_list = " ".join(arches_list)
         version_list = " ".join(versions.keys())
         if len(version_list) > max_version_len:
@@ -359,14 +358,14 @@ def process_changes_files(changes_files, type):
 
     # Look for the options for sort and then do the sort.
     age = "h"
-    if Cnf.has_key("Helena::Options::Age"):
-        age =  Cnf["Helena::Options::Age"]
-    if Cnf.has_key("Helena::Options::New"):
+    if Cnf.has_key("Queue-Report::Options::Age"):
+        age =  Cnf["Queue-Report::Options::Age"]
+    if Cnf.has_key("Queue-Report::Options::New"):
     # If we produce html we always have oldest first.
         direction.append([4,-1,"ao"])
     else:
-		if Cnf.has_key("Helena::Options::Sort"):
-			for i in Cnf["Helena::Options::Sort"].split(","):
+		if Cnf.has_key("Queue-Report::Options::Sort"):
+			for i in Cnf["Queue-Report::Options::Sort"].split(","):
 			  if i == "ao":
 				  # Age, oldest first.
 				  direction.append([4,-1,age])
@@ -391,7 +390,7 @@ def process_changes_files(changes_files, type):
     # have with it. (If you combine options it will simply take the last one at the moment).
     # Will be enhanced in the future.
 
-    if Cnf.has_key("Helena::Options::New"):
+    if Cnf.has_key("Queue-Report::Options::New"):
         direction.append([4,1,"ao"])
         entries.sort(lambda x, y: sortfunc(x, y))
     # Output for a html file. First table header. then table_footer.
@@ -427,29 +426,29 @@ def process_changes_files(changes_files, type):
 ################################################################################
 
 def main():
-    global Cnf, Katie
+    global Cnf, Upload
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Helena::Options::Help"),
-				 ('n',"new","Helena::Options::New"),
-                 ('s',"sort","Helena::Options::Sort", "HasArg"),
-                 ('a',"age","Helena::Options::Age", "HasArg")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Queue-Report::Options::Help"),
+                 ('n',"new","Queue-Report::Options::New"),
+                 ('s',"sort","Queue-Report::Options::Sort", "HasArg"),
+                 ('a',"age","Queue-Report::Options::Age", "HasArg")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Helena::Options::%s" % (i)):
-	    Cnf["Helena::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Queue-Report::Options::%s" % (i)):
+	    Cnf["Queue-Report::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Helena::Options")
+    Options = Cnf.SubTree("Queue-Report::Options")
     if Options["Help"]:
 	usage()
 
-    Katie = katie.Katie(Cnf)
+    Upload = dak.lib.queue.Upload(Cnf)
 
-    if Cnf.has_key("Helena::Options::New"):
+    if Cnf.has_key("Queue-Report::Options::New"):
         header()
 
-    directories = Cnf.ValueList("Helena::Directories")
+    directories = Cnf.ValueList("Queue-Report::Directories")
     if not directories:
         directories = [ "byhand", "new" ]
 
@@ -457,7 +456,7 @@ def main():
         changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::%s" % (directory)]))
         process_changes_files(changes_files, directory)
 
-    if Cnf.has_key("Helena::Options::New"):
+    if Cnf.has_key("Queue-Report::Options::New"):
         footer()
 
 ################################################################################

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Initial setup of an archive
-# Copyright (C) 2002, 2004  James Troup <james@nocrew.org>
-# $Id: rose,v 1.4 2004-03-11 00:20:51 troup Exp $
+# Copyright (C) 2002, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +20,7 @@
 ################################################################################
 
 import os, sys
-import utils
+import dak.lib.utils
 import apt_pkg
 
 ################################################################################
@@ -32,8 +31,8 @@ AptCnf = None
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: rose
-Creates directories for an archive based on katie.conf configuration file.
+    print """Usage: dak init-dirs
+Creates directories for an archive based on dak.conf configuration file.
 
   -h, --help                show this help and exit."""
     sys.exit(exit_code)
@@ -43,7 +42,7 @@ Creates directories for an archive based on katie.conf configuration file.
 def do_dir(target, config_name):
     if os.path.exists(target):
         if not os.path.isdir(target):
-            utils.fubar("%s (%s) is not a directory." % (target, config_name))
+            dak.lib.utils.fubar("%s (%s) is not a directory." % (target, config_name))
     else:
         print "Creating %s ..." % (target)
         os.makedirs(target)
@@ -75,9 +74,9 @@ def create_directories():
     # Process directories from apt.conf
     process_tree(Cnf, "Dir")
     process_tree(Cnf, "Dir::Queue")
-    for file in [ "Dinstall::LockFile", "Melanie::LogFile", "Neve::ExportDir" ]:
+    for file in [ "Dinstall::LockFile", "Rm::LogFile", "Import-Archive::ExportDir" ]:
         process_file(Cnf, file)
-    for subdir in [ "Shania", "Rhona" ]:
+    for subdir in [ "Clean-Queues", "Clean-Suites" ]:
         process_morguesubdir(subdir)
 
     # Process directories from apt.conf
@@ -101,20 +100,20 @@ def create_directories():
 def main ():
     global AptCnf, Cnf, projectB
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Rose::Options::Help")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Init-Dirs::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Rose::Options::%s" % (i)):
-	    Cnf["Rose::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Init-Dirs::Options::%s" % (i)):
+	    Cnf["Init-Dirs::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Rose::Options")
+    Options = Cnf.SubTree("Init-Dirs::Options")
     if Options["Help"]:
 	usage()
 
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf,dak.lib.utils.which_apt_conf_file())
 
     create_directories()
 

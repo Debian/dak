@@ -2,7 +2,6 @@
 
 # Prepare and maintain partial trees by architecture
 # Copyright (C) 2004, 2006  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: billie,v 1.4 2004-11-27 16:06:42 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +24,7 @@
 ###############################################################################
 
 import sys
-import utils
+import dak.lib.utils
 import apt_pkg
 
 from stat import S_ISDIR, S_ISLNK, S_ISREG
@@ -35,26 +34,26 @@ import cPickle
 ## Master path is the main repository
 #MASTER_PATH = "/org/ftp.debian.org/scratch/dsilvers/master"
 
-MASTER_PATH = "***Configure Billie::FTPPath Please***"
-TREE_ROOT = "***Configure Billie::TreeRootPath Please***"
-TREE_DB_ROOT = "***Configure Billie::TreeDatabasePath Please***"
+MASTER_PATH = "***Configure Mirror-Split::FTPPath Please***"
+TREE_ROOT = "***Configure Mirror-Split::TreeRootPath Please***"
+TREE_DB_ROOT = "***Configure Mirror-Split::TreeDatabasePath Please***"
 trees = []
 
 Cnf = None
 
 ###############################################################################
-# A BillieTarget is a representation of a target. It is a set of archs, a path
+# A MirrorSplitTarget is a representation of a target. It is a set of archs, a path
 # and whether or not the target includes source.
 ##################
 
-class BillieTarget:
+class MirrorSplitTarget:
     def __init__(self, name, archs, source):
         self.name = name
         self.root = "%s/%s" % (TREE_ROOT,name)
         self.archs = archs.split(",")
         self.source = source
         self.dbpath = "%s/%s.db" % (TREE_DB_ROOT,name)
-        self.db = BillieDB()
+        self.db = MirrorSplitDB()
         if os.path.exists( self.dbpath ):
             self.db.load_from_file( self.dbpath )
 
@@ -131,30 +130,30 @@ def applicable(path, target):
 
 
 ##############################################################################
-# A BillieDir is a representation of a tree.
+# A MirrorSplitDir is a representation of a tree.
 #   It distinguishes files dirs and links
-# Dirs are dicts of (name, BillieDir)
+# Dirs are dicts of (name, MirrorSplitDir)
 # Files are dicts of (name, inode)
 # Links are dicts of (name, target)
 ##############
 
-class BillieDir:
+class MirrorSplitDir:
     def __init__(self):
         self.dirs = {}
         self.files = {}
         self.links = {}
 
 ##############################################################################
-# A BillieDB is a container for a BillieDir...
+# A MirrorSplitDB is a container for a MirrorSplitDir...
 ##############
 
-class BillieDB:
-    ## Initialise a BillieDB as containing nothing
+class MirrorSplitDB:
+    ## Initialise a MirrorSplitDB as containing nothing
     def __init__(self):
-        self.root = BillieDir()
+        self.root = MirrorSplitDir()
 
     def _internal_recurse(self, path):
-        bdir = BillieDir()
+        bdir = MirrorSplitDir()
         dl = os.listdir( path )
         dl.sort()
         dirs = []
@@ -167,7 +166,7 @@ class BillieDB:
             elif S_ISREG(lnl[0]):
                 bdir.files[ln] = lnl[1]
             else:
-                utils.fubar( "Confused by %s/%s -- not a dir, link or file" %
+                dak.lib.utils.fubar( "Confused by %s/%s -- not a dir, link or file" %
                             ( path, ln ) )
         for d in dirs:
             bdir.dirs[d] = self._internal_recurse( "%s/%s" % (path,d) )
@@ -178,13 +177,13 @@ class BillieDB:
     def init_from_dir(self, dirp):
         self.root = self._internal_recurse( dirp )
 
-    ## Load this BillieDB from file
+    ## Load this MirrorSplitDB from file
     def load_from_file(self, fname):
         f = open(fname, "r")
         self.root = cPickle.load(f)
         f.close()
 
-    ## Save this BillieDB to a file
+    ## Save this MirrorSplitDB to a file
     def save_to_file(self, fname):
         f = open(fname, "w")
         cPickle.dump( self.root, f, 1 )
@@ -294,7 +293,7 @@ def _internal_reconcile( path, srcdir, targdir, targ ):
     # Do dirs
     for k in srcdir.dirs.keys():
         if not targdir.dirs.has_key(k):
-            targdir.dirs[k] = BillieDir()
+            targdir.dirs[k] = MirrorSplitDir()
             #print "+D+", _pth(path,k)
         _internal_reconcile( _pth(path,k), srcdir.dirs[k],
                              targdir.dirs[k], targ )
@@ -311,21 +310,21 @@ def load_config():
     global TREE_DB_ROOT
     global trees
 
-    MASTER_PATH = Cnf["Billie::FTPPath"]
-    TREE_ROOT = Cnf["Billie::TreeRootPath"]
-    TREE_DB_ROOT = Cnf["Billie::TreeDatabasePath"]
+    MASTER_PATH = Cnf["Mirror-Split::FTPPath"]
+    TREE_ROOT = Cnf["Mirror-Split::TreeRootPath"]
+    TREE_DB_ROOT = Cnf["Mirror-Split::TreeDatabasePath"]
     
-    for a in Cnf.ValueList("Billie::BasicTrees"):
-        trees.append( BillieTarget( a, "%s,all" % a, 1 ) )
+    for a in Cnf.ValueList("Mirror-Split::BasicTrees"):
+        trees.append( MirrorSplitTarget( a, "%s,all" % a, 1 ) )
 
-    for n in Cnf.SubTree("Billie::CombinationTrees").List():
-        archs = Cnf.ValueList("Billie::CombinationTrees::%s" % n)
+    for n in Cnf.SubTree("Mirror-Split::CombinationTrees").List():
+        archs = Cnf.ValueList("Mirror-Split::CombinationTrees::%s" % n)
         source = 0
         if "source" in archs:
             source = 1
             archs.remove("source")
         archs = ",".join(archs)
-        trees.append( BillieTarget( n, archs, source ) )
+        trees.append( MirrorSplitTarget( n, archs, source ) )
 
 def do_list ():
     print "Master path",MASTER_PATH
@@ -340,7 +339,7 @@ def do_list ():
             print ""
         
 def do_help ():
-    print """Usage: billie [OPTIONS]
+    print """Usage: dak mirror-split [OPTIONS]
 Generate hardlink trees of certain architectures
 
   -h, --help                 show this help and exit
@@ -351,15 +350,15 @@ Generate hardlink trees of certain architectures
 def main ():
     global Cnf
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('h',"help","Billie::Options::Help"),
-                 ('l',"list","Billie::Options::List"),
+    Arguments = [('h',"help","Mirror-Split::Options::Help"),
+                 ('l',"list","Mirror-Split::Options::List"),
                  ]
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Cnf["Billie::Options::cake"] = ""
-    Options = Cnf.SubTree("Billie::Options")
+    Cnf["Mirror-Split::Options::cake"] = ""
+    Options = Cnf.SubTree("Mirror-Split::Options")
 
     print "Loading configuration..."
     load_config()
@@ -373,7 +372,7 @@ def main ():
         return
     
 
-    src = BillieDB()
+    src = MirrorSplitDB()
     print "Scanning", MASTER_PATH
     src.init_from_dir(MASTER_PATH)
     print "Scanned"

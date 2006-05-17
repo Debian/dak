@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Manipulate suite tags
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: heidi,v 1.19 2005-11-15 09:50:32 ajt Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +43,7 @@
 
 import pg, sys
 import apt_pkg
-import utils, db_access, logging
+import dak.lib.utils, dak.lib.database, dak.lib.logging
 
 #######################################################################################
 
@@ -55,7 +54,7 @@ Logger = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: heidi [OPTIONS] [FILE]
+    print """Usage: dak control-suite [OPTIONS] [FILE]
 Display or alter the contents of a suite using FILE(s), or stdin.
 
   -a, --add=SUITE            add to SUITE
@@ -76,10 +75,10 @@ def get_id (package, version, architecture):
 
     ql = q.getresult()
     if not ql:
-        utils.warn("Couldn't find '%s~%s~%s'." % (package, version, architecture))
+        dak.lib.utils.warn("Couldn't find '%s~%s~%s'." % (package, version, architecture))
         return None
     if len(ql) > 1:
-        utils.warn("Found more than one match for '%s~%s~%s'." % (package, version, architecture))
+        dak.lib.utils.warn("Found more than one match for '%s~%s~%s'." % (package, version, architecture))
         return None
     id = ql[0][0]
     return id
@@ -109,7 +108,7 @@ def set_suite (file, suite_id):
     for line in lines:
         split_line = line.strip().split()
         if len(split_line) != 3:
-            utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
+            dak.lib.utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
             continue
         key = " ".join(split_line)
         desired[key] = ""
@@ -144,7 +143,7 @@ def set_suite (file, suite_id):
 
 def process_file (file, suite, action):
 
-    suite_id = db_access.get_suite_id(suite)
+    suite_id = dak.lib.database.get_suite_id(suite)
 
     if action == "set":
         set_suite (file, suite_id)
@@ -157,7 +156,7 @@ def process_file (file, suite, action):
     for line in lines:
         split_line = line.strip().split()
         if len(split_line) != 3:
-            utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
+            dak.lib.utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
             continue
 
         (package, version, architecture) = split_line
@@ -177,13 +176,13 @@ def process_file (file, suite, action):
             # Take action
             if action == "add":
                 if assoication_id:
-                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite))
+                    dak.lib.utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id))
             elif action == "remove":
                 if assoication_id == None:
-                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    dak.lib.utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (assoication_id))
@@ -198,13 +197,13 @@ def process_file (file, suite, action):
             # Take action
             if action == "add":
                 if assoication_id:
-                    utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite))
+                    dak.lib.utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id))
             elif action == "remove":
                 if assoication_id == None:
-                    utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    dak.lib.utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (assoication_id))
@@ -214,7 +213,7 @@ def process_file (file, suite, action):
 #######################################################################################
 
 def get_list (suite):
-    suite_id = db_access.get_suite_id(suite)
+    suite_id = dak.lib.database.get_suite_id(suite)
     # List binaries
     q = projectB.query("SELECT b.package, b.version, a.arch_string FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id))
     ql = q.getresult()
@@ -232,55 +231,55 @@ def get_list (suite):
 def main ():
     global Cnf, projectB, Logger
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('a',"add","Heidi::Options::Add", "HasArg"),
-                 ('h',"help","Heidi::Options::Help"),
-                 ('l',"list","Heidi::Options::List","HasArg"),
-                 ('r',"remove", "Heidi::Options::Remove", "HasArg"),
-                 ('s',"set", "Heidi::Options::Set", "HasArg")]
+    Arguments = [('a',"add","Control-Suite::Options::Add", "HasArg"),
+                 ('h',"help","Control-Suite::Options::Help"),
+                 ('l',"list","Control-Suite::Options::List","HasArg"),
+                 ('r',"remove", "Control-Suite::Options::Remove", "HasArg"),
+                 ('s',"set", "Control-Suite::Options::Set", "HasArg")]
 
     for i in ["add", "help", "list", "remove", "set", "version" ]:
-	if not Cnf.has_key("Heidi::Options::%s" % (i)):
-	    Cnf["Heidi::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Control-Suite::Options::%s" % (i)):
+	    Cnf["Control-Suite::Options::%s" % (i)] = ""
 
     file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Heidi::Options")
+    Options = Cnf.SubTree("Control-Suite::Options")
 
     if Options["Help"]:
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],int(Cnf["DB::Port"]))
 
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     action = None
 
     for i in ("add", "list", "remove", "set"):
-        if Cnf["Heidi::Options::%s" % (i)] != "":
-            suite = Cnf["Heidi::Options::%s" % (i)]
-            if db_access.get_suite_id(suite) == -1:
-                utils.fubar("Unknown suite '%s'." %(suite))
+        if Cnf["Control-Suite::Options::%s" % (i)] != "":
+            suite = Cnf["Control-Suite::Options::%s" % (i)]
+            if dak.lib.database.get_suite_id(suite) == -1:
+                dak.lib.utils.fubar("Unknown suite '%s'." %(suite))
             else:
                 if action:
-                    utils.fubar("Can only perform one action at a time.")
+                    dak.lib.utils.fubar("Can only perform one action at a time.")
                 action = i
 
     # Need an action...
     if action == None:
-        utils.fubar("No action specified.")
+        dak.lib.utils.fubar("No action specified.")
 
     # Safety/Sanity check
     if action == "set" and suite != "testing":
-        utils.fubar("Will not reset a suite other than testing.")
+        dak.lib.utils.fubar("Will not reset a suite other than testing.")
 
     if action == "list":
         get_list(suite)
     else:
-        Logger = logging.Logger(Cnf, "heidi")
+        Logger = dak.lib.logging.Logger(Cnf, "control-suite")
         if file_list:
             for file in file_list:
-                process_file(utils.open_file(file), suite, action)
+                process_file(dak.lib.utils.open_file(file), suite, action)
         else:
             process_file(sys.stdin, suite, action)
         Logger.close()

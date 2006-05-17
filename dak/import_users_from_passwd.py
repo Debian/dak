@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Sync PostgreSQL users with system users
-# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
-# $Id: julia,v 1.9 2003-01-02 18:12:50 troup Exp $
+# Copyright (C) 2001, 2002, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +30,7 @@
 ################################################################################
 
 import pg, pwd, sys
-import utils
+import dak.lib.utils
 import apt_pkg
 
 ################################################################################
@@ -41,7 +40,7 @@ projectB = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: julia [OPTION]...
+    print """Usage: dak import-users-from-passwd [OPTION]...
 Sync PostgreSQL's users with system users.
 
   -h, --help                 show this help and exit
@@ -55,27 +54,27 @@ Sync PostgreSQL's users with system users.
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('n', "no-action", "Julia::Options::No-Action"),
-                 ('q', "quiet", "Julia::Options::Quiet"),
-                 ('v', "verbose", "Julia::Options::Verbose"),
-                 ('h', "help", "Julia::Options::Help")]
+    Arguments = [('n', "no-action", "Import-Users-From-Passwd::Options::No-Action"),
+                 ('q', "quiet", "Import-Users-From-Passwd::Options::Quiet"),
+                 ('v', "verbose", "Import-Users-From-Passwd::Options::Verbose"),
+                 ('h', "help", "Import-Users-From-Passwd::Options::Help")]
     for i in [ "no-action", "quiet", "verbose", "help" ]:
-	if not Cnf.has_key("Julia::Options::%s" % (i)):
-	    Cnf["Julia::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Import-Users-From-Passwd::Options::%s" % (i)):
+	    Cnf["Import-Users-From-Passwd::Options::%s" % (i)] = ""
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Julia::Options")
+    Options = Cnf.SubTree("Import-Users-From-Passwd::Options")
 
     if Options["Help"]:
         usage()
     elif arguments:
-        utils.warn("julia takes no non-option arguments.")
+        dak.lib.utils.warn("dak import-users-from-passwd takes no non-option arguments.")
         usage(1)
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    valid_gid = int(Cnf.get("Julia::ValidGID",""))
+    valid_gid = int(Cnf.get("Import-Users-From-Passwd::ValidGID",""))
 
     passwd_unames = {}
     for entry in pwd.getpwall():
@@ -95,7 +94,7 @@ def main ():
         postgres_unames[uname] = ""
 
     known_postgres_unames = {}
-    for i in Cnf.get("Julia::KnownPostgres","").split(","):
+    for i in Cnf.get("Import-Users-From-Passwd::KnownPostgres","").split(","):
         uname = i.strip()
         known_postgres_unames[uname] = ""
 

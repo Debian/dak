@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Generate Maintainers file used by e.g. the Debian Bug Tracking System
-# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: charisma,v 1.18 2004-06-17 15:02:02 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +26,7 @@
 ################################################################################
 
 import pg, sys
-import db_access, utils
+import dak.lib.database, dak.lib.utils
 import apt_pkg
 
 ################################################################################
@@ -41,7 +40,7 @@ fixed_maintainer_cache = {}
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: charisma [OPTION] EXTRA_FILE[...]
+    print """Usage: dak make-maintainers [OPTION] EXTRA_FILE[...]
 Generate an index of packages <=> Maintainers.
 
   -h, --help                 show this help and exit
@@ -54,12 +53,12 @@ def fix_maintainer (maintainer):
     global fixed_maintainer_cache
 
     if not fixed_maintainer_cache.has_key(maintainer):
-        fixed_maintainer_cache[maintainer] = utils.fix_maintainer(maintainer)[0]
+        fixed_maintainer_cache[maintainer] = dak.lib.utils.fix_maintainer(maintainer)[0]
 
     return fixed_maintainer_cache[maintainer]
 
 def get_maintainer (maintainer):
-    return fix_maintainer(db_access.get_maintainer(maintainer))
+    return fix_maintainer(dak.lib.database.get_maintainer(maintainer))
 
 def get_maintainer_from_source (source_id):
     global maintainer_from_source_cache
@@ -76,20 +75,20 @@ def get_maintainer_from_source (source_id):
 def main():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('h',"help","Charisma::Options::Help")]
-    if not Cnf.has_key("Charisma::Options::Help"):
-	Cnf["Charisma::Options::Help"] = ""
+    Arguments = [('h',"help","Make-Maintainers::Options::Help")]
+    if not Cnf.has_key("Make-Maintainers::Options::Help"):
+	Cnf["Make-Maintainers::Options::Help"] = ""
 
     extra_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Charisma::Options")
+    Options = Cnf.SubTree("Make-Maintainers::Options")
 
     if Options["Help"]:
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     for suite in Cnf.SubTree("Suite").List():
         suite = suite.lower()
@@ -130,9 +129,9 @@ def main():
 
     # Process any additional Maintainer files (e.g. from non-US or pseudo packages)
     for filename in extra_files:
-        file = utils.open_file(filename)
+        file = dak.lib.utils.open_file(filename)
         for line in file.readlines():
-            line = utils.re_comments.sub('', line).strip()
+            line = dak.lib.utils.re_comments.sub('', line).strip()
             if line == "":
                 continue
             split = line.split()

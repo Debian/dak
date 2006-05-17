@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Utility functions
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 # $Id: utils.py,v 1.73 2005-03-18 05:24:38 troup Exp $
 
 ################################################################################
@@ -25,7 +25,7 @@
 import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
        string, sys, tempfile, traceback
 import apt_pkg
-import db_access
+import dak.lib.database
 
 ################################################################################
 
@@ -54,8 +54,8 @@ file_exists_exc = "Destination file exists"
 sendmail_failed_exc = "Sendmail invocation failed"
 tried_too_hard_exc = "Tried too hard to find a free filename."
 
-default_config = "/etc/katie/katie.conf"
-default_apt_config = "/etc/katie/apt.conf"
+default_config = "/etc/dak/dak.conf"
+default_apt_config = "/etc/dak/apt.conf"
 
 ################################################################################
 
@@ -451,8 +451,8 @@ def where_am_i ():
 
 def which_conf_file ():
     res = socket.gethostbyaddr(socket.gethostname())
-    if Cnf.get("Config::" + res[0] + "::KatieConfig"):
-	return Cnf["Config::" + res[0] + "::KatieConfig"]
+    if Cnf.get("Config::" + res[0] + "::DakConfig"):
+	return Cnf["Config::" + res[0] + "::DakConfig"]
     else:
 	return default_config
 
@@ -601,8 +601,8 @@ def prefix_multi_line_string(str, prefix, include_blank_lines=0):
 ################################################################################
 
 def validate_changes_file_arg(filename, require_changes=1):
-    """'filename' is either a .changes or .katie file.  If 'filename' is a
-.katie file, it's changed to be the corresponding .changes file.  The
+    """'filename' is either a .changes or .dak file.  If 'filename' is a
+.dak file, it's changed to be the corresponding .changes file.  The
 function then checks if the .changes file a) exists and b) is
 readable and returns the .changes filename if so.  If there's a
 problem, the next action depends on the option 'require_changes'
@@ -616,7 +616,7 @@ argument:
     error = None
 
     orig_filename = filename
-    if filename.endswith(".katie"):
+    if filename.endswith(".dak"):
         filename = filename[:-6]+".changes"
 
     if not filename.endswith(".changes"):
@@ -634,7 +634,7 @@ argument:
         elif require_changes == 0:
             warn("Skipping %s - %s" % (orig_filename, error))
             return None
-        else: # We only care about the .katie file
+        else: # We only care about the .dak file
             return filename
     else:
         return filename
@@ -677,7 +677,7 @@ def parse_args(Options):
     if Options["Suite"]:
         suite_ids_list = []
         for suite in split_args(Options["Suite"]):
-            suite_id = db_access.get_suite_id(suite)
+            suite_id = dak.lib.database.get_suite_id(suite)
             if suite_id == -1:
                 warn("suite '%s' not recognised." % (suite))
             else:
@@ -693,7 +693,7 @@ def parse_args(Options):
     if Options["Component"]:
         component_ids_list = []
         for component in split_args(Options["Component"]):
-            component_id = db_access.get_component_id(component)
+            component_id = dak.lib.database.get_component_id(component)
             if component_id == -1:
                 warn("component '%s' not recognised." % (component))
             else:
@@ -714,7 +714,7 @@ def parse_args(Options):
             if architecture == "source":
                 check_source = 1
             else:
-                architecture_id = db_access.get_architecture_id(architecture)
+                architecture_id = dak.lib.database.get_architecture_id(architecture)
                 if architecture_id == -1:
                     warn("architecture '%s' not recognised." % (architecture))
                 else:
@@ -785,7 +785,7 @@ def arch_compare_sw (a, b):
 
 # Split command line arguments which can be separated by either commas
 # or whitespace.  If dwim is set, it will complain about string ending
-# in comma since this usually means someone did 'madison -a i386, m68k
+# in comma since this usually means someone did 'dak ls -a i386, m68k
 # foo' or something and the inevitable confusion resulting from 'm68k'
 # being treated as an argument is undesirable.
 

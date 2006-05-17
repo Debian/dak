@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Remove obsolete .changes files from proposed-updates
-# Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: halle,v 1.13 2005-12-17 10:57:03 rmurray Exp $
+# Copyright (C) 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +20,7 @@
 ################################################################################
 
 import os, pg, re, sys
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg
 
 ################################################################################
@@ -36,7 +35,7 @@ re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).u?deb$")
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: halle [OPTION] <CHANGES FILE | ADMIN FILE>[...]
+    print """Usage: dak clean-proposed-updates [OPTION] <CHANGES FILE | ADMIN FILE>[...]
 Remove obsolete changes files from proposed-updates.
 
   -v, --verbose              be more verbose about what is being done
@@ -49,14 +48,14 @@ Need either changes files or an admin.txt file with a '.joey' suffix."""
 
 def check_changes (filename):
     try:
-        changes = utils.parse_changes(filename)
-        files = utils.build_file_list(changes)
+        changes = dak.lib.utils.parse_changes(filename)
+        files = dak.lib.utils.build_file_list(changes)
     except:
-        utils.warn("Couldn't read changes file '%s'." % (filename))
+        dak.lib.utils.warn("Couldn't read changes file '%s'." % (filename))
         return
     num_files = len(files.keys())
     for file in files.keys():
-        if utils.re_isadeb.match(file):
+        if dak.lib.utils.re_isadeb.match(file):
             m = re_isdeb.match(file)
             pkg = m.group(1)
             version = m.group(2)
@@ -64,7 +63,7 @@ def check_changes (filename):
             if Options["debug"]:
                 print "BINARY: %s ==> %s_%s_%s" % (file, pkg, version, arch)
         else:
-            m = utils.re_issource.match(file)
+            m = dak.lib.utils.re_issource.match(file)
             if m:
                 pkg = m.group(1)
                 version = m.group(2)
@@ -77,16 +76,16 @@ def check_changes (filename):
                 if Options["debug"]:
                     print "SOURCE: %s ==> %s_%s_%s" % (file, pkg, version, arch)
             else:
-                utils.fubar("unknown type, fix me")
+                dak.lib.utils.fubar("unknown type, fix me")
         if not pu.has_key(pkg):
             # FIXME
-            utils.warn("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename))
+            dak.lib.utils.warn("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename))
             continue
         if not pu[pkg].has_key(arch):
             # FIXME
-            utils.warn("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename))
+            dak.lib.utils.warn("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename))
             continue
-        pu_version = utils.re_no_epoch.sub('', pu[pkg][arch])
+        pu_version = dak.lib.utils.re_no_epoch.sub('', pu[pkg][arch])
         if pu_version == version:
             if Options["verbose"]:
                 print "%s: ok" % (file)
@@ -99,7 +98,7 @@ def check_changes (filename):
     if new_num_files == 0:
         print "%s: no files left, superseded by %s" % (filename, pu_version)
         dest = Cnf["Dir::Morgue"] + "/misc/"
-        utils.move(filename, dest)
+        dak.lib.utils.move(filename, dest)
     elif new_num_files < num_files:
         print "%s: lost files, MWAAP." % (filename)
     else:
@@ -109,7 +108,7 @@ def check_changes (filename):
 ################################################################################
 
 def check_joey (filename):
-    file = utils.open_file(filename)
+    file = dak.lib.utils.open_file(filename)
 
     cwd = os.getcwd()
     os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]))
@@ -119,10 +118,10 @@ def check_joey (filename):
         if line.find('install') != -1:
             split_line = line.split()
             if len(split_line) != 2:
-                utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
+                dak.lib.utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
             install_type = split_line[0]
             if install_type not in [ "install", "install-u", "sync-install" ]:
-                utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
+                dak.lib.utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
             changes_filename = split_line[1]
             if Options["debug"]:
                 print "Processing %s..." % (changes_filename)
@@ -158,25 +157,25 @@ ORDER BY package, version, arch_string
 def main ():
     global Cnf, projectB, Options
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('d', "debug", "Halle::Options::Debug"),
-                 ('v',"verbose","Halle::Options::Verbose"),
-                 ('h',"help","Halle::Options::Help")]
+    Arguments = [('d', "debug", "Clean-Proposed-Updates::Options::Debug"),
+                 ('v',"verbose","Clean-Proposed-Updates::Options::Verbose"),
+                 ('h',"help","Clean-Proposed-Updates::Options::Help")]
     for i in [ "debug", "verbose", "help" ]:
-	if not Cnf.has_key("Halle::Options::%s" % (i)):
-	    Cnf["Halle::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Clean-Proposed-Updates::Options::%s" % (i)):
+	    Cnf["Clean-Proposed-Updates::Options::%s" % (i)] = ""
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Halle::Options")
+    Options = Cnf.SubTree("Clean-Proposed-Updates::Options")
 
     if Options["Help"]:
         usage(0)
     if not arguments:
-        utils.fubar("need at least one package name as an argument.")
+        dak.lib.utils.fubar("need at least one package name as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     init_pu()
 
@@ -186,7 +185,7 @@ def main ():
         elif file.endswith(".joey"):
             check_joey(file)
         else:
-            utils.fubar("Unrecognised file type: '%s'." % (file))
+            dak.lib.utils.fubar("Unrecognised file type: '%s'." % (file))
 
 #######################################################################################
 

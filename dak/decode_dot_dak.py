@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-# Dump variables from a .katie file to stdout
-# Copyright (C) 2001, 2002, 2004  James Troup <james@nocrew.org>
-# $Id: ashley,v 1.11 2004-11-27 16:05:12 troup Exp $
+# Dump variables from a .dak file to stdout
+# Copyright (C) 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,15 +27,15 @@
 ################################################################################
 
 import sys
-import katie, utils
+import dak.lib.queue, dak.lib.utils
 import apt_pkg
 
 
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: ashley FILE...
-Dumps the info in .katie FILE(s).
+    print """Usage: dak decode-dot-dak FILE...
+Dumps the info in .dak FILE(s).
 
   -h, --help                show this help and exit."""
     sys.exit(exit_code)
@@ -44,21 +43,21 @@ Dumps the info in .katie FILE(s).
 ################################################################################
 
 def main():
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Ashley::Options::Help")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Decode-Dot-Dak::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Ashley::Options::%s" % (i)):
-	    Cnf["Ashley::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Decode-Dot-Dak::Options::%s" % (i)):
+	    Cnf["Decode-Dot-Dak::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Ashley::Options")
+    Options = Cnf.SubTree("Decode-Dot-Dak::Options")
     if Options["Help"]:
 	usage()
 
-    k = katie.Katie(Cnf)
+    k = dak.lib.queue.Upload(Cnf)
     for arg in sys.argv[1:]:
-        arg = utils.validate_changes_file_arg(arg,require_changes=-1)
+        arg = dak.lib.utils.validate_changes_file_arg(arg,require_changes=-1)
         k.pkg.changes_file = arg
         print "%s:" % (arg)
 	k.init_vars()
@@ -84,7 +83,7 @@ def main():
                 del changes[i]
         print
         if changes:
-            utils.warn("changes still has following unrecognised keys: %s" % (changes.keys()))
+            dak.lib.utils.warn("changes still has following unrecognised keys: %s" % (changes.keys()))
 
         dsc = k.pkg.dsc
         print " Dsc:"
@@ -95,7 +94,7 @@ def main():
                 del dsc[i]
         print
         if dsc:
-            utils.warn("dsc still has following unrecognised keys: %s" % (dsc.keys()))
+            dak.lib.utils.warn("dsc still has following unrecognised keys: %s" % (dsc.keys()))
 
         files = k.pkg.files
         print " Files:"
@@ -109,7 +108,7 @@ def main():
                     print "   %s: %s" % (i.capitalize(), files[file][i])
                     del files[file][i]
             if files[file]:
-                utils.warn("files[%s] still has following unrecognised keys: %s" % (file, files[file].keys()))
+                dak.lib.utils.warn("files[%s] still has following unrecognised keys: %s" % (file, files[file].keys()))
         print
 
         dsc_files = k.pkg.dsc_files
@@ -126,7 +125,7 @@ def main():
                     print "   %s: %s" % (i.capitalize(), dsc_files[file][i])
                     del dsc_files[file][i]
             if dsc_files[file]:
-                utils.warn("dsc_files[%s] still has following unrecognised keys: %s" % (file, dsc_files[file].keys()))
+                dak.lib.utils.warn("dsc_files[%s] still has following unrecognised keys: %s" % (file, dsc_files[file].keys()))
 
 ################################################################################
 

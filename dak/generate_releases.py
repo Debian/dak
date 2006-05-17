@@ -2,8 +2,7 @@
 
 # Create all the Release files
 
-# Copyright (C) 2001, 2002  Anthony Towns <ajt@debian.org>
-# $Id: ziyi,v 1.27 2005-11-15 09:50:32 ajt Exp $
+# Copyright (C) 2001, 2002, 2006  Anthony Towns <ajt@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +23,7 @@
 ################################################################################
 
 import sys, os, popen2, tempfile, stat, time
-import utils
+import dak.lib.utils
 import apt_pkg
 
 ################################################################################
@@ -37,7 +36,7 @@ AptCnf = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: ziyi [OPTION]... [SUITE]...
+    print """Usage: dak generate-releases [OPTION]... [SUITE]...
 Generate Release files (for SUITE).
 
   -h, --help                 show this help and exit
@@ -105,8 +104,8 @@ def print_md5sha_files (tree, files, hashop):
 		    (cat, path, name, ext))
 	    else:
         	size = os.stat(path + name)[stat.ST_SIZE]
-       	        file_handle = utils.open_file(path + name)
-        except utils.cant_open_exc:
+       	        file_handle = dak.lib.utils.open_file(path + name)
+        except dak.lib.utils.cant_open_exc:
             print "ALERT: Couldn't open " + path + name
         else:
 	    hash = hashop(file_handle)
@@ -125,21 +124,21 @@ def main ():
     global Cnf, AptCnf, projectB, out
     out = sys.stdout
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('h',"help","Ziyi::Options::Help")]
+    Arguments = [('h',"help","Generate-Releases::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Ziyi::Options::%s" % (i)):
-	    Cnf["Ziyi::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Generate-Releases::Options::%s" % (i)):
+	    Cnf["Generate-Releases::Options::%s" % (i)] = ""
 
     suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Ziyi::Options")
+    Options = Cnf.SubTree("Generate-Releases::Options")
 
     if Options["Help"]:
 	usage()
 
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf,dak.lib.utils.which_apt_conf_file())
 
     if not suites:
         suites = Cnf.SubTree("Suite").List()
@@ -182,7 +181,7 @@ def main ():
 	elif AptCnf.has_key("bindirectory::%s" % (tree)):
 	    pass
 	else:
-            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
+            aptcnf_filename = os.path.basename(dak.lib.utils.which_apt_conf_file())
 	    print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
 	    continue
 
@@ -199,7 +198,7 @@ def main ():
 	out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
 	if notautomatic != "":
 	    out.write("NotAutomatic: %s\n" % (notautomatic))
-	out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, SuiteBlock.ValueList("Architectures")))))
+	out.write("Architectures: %s\n" % (" ".join(filter(dak.lib.utils.real_arch, SuiteBlock.ValueList("Architectures")))))
 	if components:
             out.write("Components: %s\n" % (" ".join(components)))
 
@@ -238,7 +237,7 @@ def main ():
                         release = open(relpath, "w")
                         #release = open(longsuite.replace("/","_") + "_" + arch + "_" + sec + "_Release", "w")
                     except IOError:
-                        utils.fubar("Couldn't write to " + relpath)
+                        dak.lib.utils.fubar("Couldn't write to " + relpath)
 
                     release.write("Archive: %s\n" % (suite))
                     if version != "":

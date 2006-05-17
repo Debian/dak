@@ -2,7 +2,6 @@
 
 # Sync fingerprint and uid tables with a debian.org LDAP DB
 # Copyright (C) 2003, 2004, 2006  James Troup <james@nocrew.org>
-# $Id: emilie,v 1.3 2004-11-27 13:25:35 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +46,7 @@
 
 import commands, ldap, pg, re, sys
 import apt_pkg
-import db_access, utils
+import dak.lib.database, dak.lib.utils
 
 ################################################################################
 
@@ -60,7 +59,7 @@ re_debian_address = re.compile(r"^.*<(.*)@debian\.org>$", re.MULTILINE)
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: emilie
+    print """Usage: dak import-ldap-fingerprints
 Syncs fingerprint and uid tables with a debian.org LDAP DB
 
   -h, --help                show this help and exit."""
@@ -79,27 +78,27 @@ def get_ldap_value(entry, value):
 def main():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Emilie::Options::Help")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Import-LDAP-Fingerprints::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Emilie::Options::%s" % (i)):
-	    Cnf["Emilie::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Import-LDAP-Fingerprints::Options::%s" % (i)):
+	    Cnf["Import-LDAP-Fingerprints::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Emilie::Options")
+    Options = Cnf.SubTree("Import-LDAP-Fingerprints::Options")
     if Options["Help"]:
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
-    LDAPDn = Cnf["Emilie::LDAPDn"]
-    LDAPServer = Cnf["Emilie::LDAPServer"]
+    LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
+    LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
     l = ldap.open(LDAPServer)
     l.simple_bind_s("","")
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
-                       "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Julia::ValidGID"]),
+                       "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Import-Users-From-Passwd::ValidGID"]),
                        ["uid", "keyfingerprint"])
 
 
@@ -120,7 +119,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
         entry = i[1]
         fingerprints = entry["keyFingerPrint"]
         uid = entry["uid"][0]
-        uid_id = db_access.get_or_set_uid_id(uid)
+        uid_id = dak.lib.database.get_or_set_uid_id(uid)
         for fingerprint in fingerprints:
             ldap_fin_uid_id[fingerprint] = (uid, uid_id)
             if db_fin_uid.has_key(fingerprint):
@@ -130,7 +129,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                     print "Assigning %s to 0x%s." % (uid, fingerprint)
                 else:
                     if existing_uid != uid:
-                        utils.fubar("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
+                        dak.lib.utils.fubar("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
 
     # Try to update people who sign with non-primary key
     q = projectB.query("SELECT fingerprint, id FROM fingerprint WHERE uid is null")
@@ -144,24 +143,24 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             m = re_gpg_fingerprint.search(output)
             if not m:
                 print output
-                utils.fubar("0x%s: No fingerprint found in gpg output but it returned 0?\n%s" % (fingerprint, utils.prefix_multi_line_string(output, " [GPG output:] ")))
+                dak.lib.utils.fubar("0x%s: No fingerprint found in gpg output but it returned 0?\n%s" % (fingerprint, dak.lib.utils.prefix_multi_line_string(output, " [GPG output:] ")))
             primary_key = m.group(1)
             primary_key = primary_key.replace(" ","")
             if not ldap_fin_uid_id.has_key(primary_key):
-                utils.fubar("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
+                dak.lib.utils.fubar("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
             (uid, uid_id) = ldap_fin_uid_id[primary_key]
             q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
             print "Assigning %s to 0x%s." % (uid, fingerprint)
         else:
             extra_keyrings = ""
-            for keyring in Cnf.ValueList("Emilie::ExtraKeyrings"):
+            for keyring in Cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):
                 extra_keyrings += " --keyring=%s" % (keyring)
             cmd = "gpg --keyring=%s --keyring=%s %s --list-key %s" \
                   % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"],
                      extra_keyrings, fingerprint)
             (result, output) = commands.getstatusoutput(cmd)
             if result != 0:
-                cmd = "gpg --keyserver=%s --allow-non-selfsigned-uid --recv-key %s" % (Cnf["Emilie::KeyServer"], fingerprint)
+                cmd = "gpg --keyserver=%s --allow-non-selfsigned-uid --recv-key %s" % (Cnf["Import-LDAP-Fingerprints::KeyServer"], fingerprint)
                 (result, output) = commands.getstatusoutput(cmd)
                 if result != 0:
                     print "0x%s: NOT found on keyserver." % (fingerprint)
@@ -189,7 +188,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             # FIXME: default to the guessed ID
             uid = None
             while not uid:
-                uid = utils.our_raw_input("Map to which UID ? ")
+                uid = dak.lib.utils.our_raw_input("Map to which UID ? ")
                 Attrs = l.search_s(LDAPDn,ldap.SCOPE_ONELEVEL,"(uid=%s)" % (uid), ["cn","mn","sn"])
                 if not Attrs:
                     print "That UID doesn't exist in LDAP!"
@@ -200,9 +199,9 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                                      get_ldap_value(entry, "mn"),
                                      get_ldap_value(entry, "sn")])
                     prompt = "Map to %s - %s (y/N) ? " % (uid, name.replace("  "," "))
-                    yn = utils.our_raw_input(prompt).lower()
+                    yn = dak.lib.utils.our_raw_input(prompt).lower()
                     if yn == "y":
-                        uid_id = db_access.get_or_set_uid_id(uid)
+                        uid_id = dak.lib.database.get_or_set_uid_id(uid)
                         projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                         print "Assigning %s to 0x%s." % (uid, fingerprint)
                     else:

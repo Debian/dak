@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Display information about package(s) (suite, version, etc.)
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: madison,v 1.33 2005-11-15 09:50:32 ajt Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +27,7 @@
 ################################################################################
 
 import os, pg, sys
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg
 
 ################################################################################
@@ -39,7 +38,7 @@ projectB = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: madison [OPTION] PACKAGE[...]
+    print """Usage: dak ls [OPTION] PACKAGE[...]
 Display information about PACKAGE(s).
 
   -a, --architecture=ARCH    only show info for ARCH(s)
@@ -61,53 +60,53 @@ ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('a', "architecture", "Madison::Options::Architecture", "HasArg"),
-                 ('b', "binarytype", "Madison::Options::BinaryType", "HasArg"),
-                 ('c', "component", "Madison::Options::Component", "HasArg"),
-                 ('f', "format", "Madison::Options::Format", "HasArg"),
-                 ('g', "greaterorequal", "Madison::Options::GreaterOrEqual"),
-                 ('G', "greaterthan", "Madison::Options::GreaterThan"),
-                 ('r', "regex", "Madison::Options::Regex"),
-                 ('s', "suite", "Madison::Options::Suite", "HasArg"),
-                 ('S', "source-and-binary", "Madison::Options::Source-And-Binary"),
-                 ('h', "help", "Madison::Options::Help")]
+    Arguments = [('a', "architecture", "Ls::Options::Architecture", "HasArg"),
+                 ('b', "binarytype", "Ls::Options::BinaryType", "HasArg"),
+                 ('c', "component", "Ls::Options::Component", "HasArg"),
+                 ('f', "format", "Ls::Options::Format", "HasArg"),
+                 ('g', "greaterorequal", "Ls::Options::GreaterOrEqual"),
+                 ('G', "greaterthan", "Ls::Options::GreaterThan"),
+                 ('r', "regex", "Ls::Options::Regex"),
+                 ('s', "suite", "Ls::Options::Suite", "HasArg"),
+                 ('S', "source-and-binary", "Ls::Options::Source-And-Binary"),
+                 ('h', "help", "Ls::Options::Help")]
     for i in [ "architecture", "binarytype", "component", "format",
                "greaterorequal", "greaterthan", "regex", "suite",
                "source-and-binary", "help" ]:
-	if not Cnf.has_key("Madison::Options::%s" % (i)):
-	    Cnf["Madison::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Ls::Options::%s" % (i)):
+	    Cnf["Ls::Options::%s" % (i)] = ""
 
     packages = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Madison::Options")
+    Options = Cnf.SubTree("Ls::Options")
 
     if Options["Help"]:
         usage()
     if not packages:
-        utils.fubar("need at least one package name as an argument.")
+        dak.lib.utils.fubar("need at least one package name as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     # If cron.daily is running; warn the user that our output might seem strange
     if os.path.exists(os.path.join(Cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
-        utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
+        dak.lib.utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
 
     # Handle buildd maintenance helper options
     if Options["GreaterOrEqual"] or Options["GreaterThan"]:
         if Options["GreaterOrEqual"] and Options["GreaterThan"]:
-            utils.fubar("-g/--greaterorequal and -G/--greaterthan are mutually exclusive.")
+            dak.lib.utils.fubar("-g/--greaterorequal and -G/--greaterthan are mutually exclusive.")
         if not Options["Suite"]:
             Options["Suite"] = "unstable"
 
     # Parse -a/--architecture, -c/--component and -s/--suite
     (con_suites, con_architectures, con_components, check_source) = \
-                 utils.parse_args(Options)
+                 dak.lib.utils.parse_args(Options)
 
     if Options["BinaryType"]:
         if Options["BinaryType"] != "udeb" and Options["BinaryType"] != "deb":
-            utils.fubar("Invalid binary type.  'udeb' and 'deb' recognised.")
+            dak.lib.utils.fubar("Invalid binary type.  'udeb' and 'deb' recognised.")
         con_bintype = "AND b.type = '%s'" % (Options["BinaryType"])
         # REMOVE ME TRAMP
         if Options["BinaryType"] == "udeb":
@@ -178,12 +177,12 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
                 suites.sort()
                 for suite in suites:
                     arches = d[pkg][version][suite]
-                    arches.sort(utils.arch_compare_sw)
+                    arches.sort(dak.lib.utils.arch_compare_sw)
                     if Options["Format"] == "": #normal
                         sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite))
                         sys.stdout.write(", ".join(arches))
                         sys.stdout.write('\n')
-                    elif Options["Format"] == "heidi":
+                    elif Options["Format"] == "control-suite":
                         for arch in arches:
                             sys.stdout.write("%s %s %s\n" % (pkg, version, arch))
             if Options["GreaterOrEqual"]:

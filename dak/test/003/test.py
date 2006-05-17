@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Check utils.parse_changes()'s for handling of multi-line fields
-# Copyright (C) 2000  James Troup <james@nocrew.org>
+# Copyright (C) 2000, 2006  James Troup <james@nocrew.org>
 # $Id: test.py,v 1.2 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 ################################################################################
 
-# The deal here is that for the first 6 months of katie's
+# The deal here is that for the first 6 months of dak's
 # implementation it has been misparsing multi-line fields in .changes
 # files; specifically multi-line fields where there _is_ data on the
 # first line. So, for example:

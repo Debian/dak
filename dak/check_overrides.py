@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 # Cruft checker and hole filler for overrides
-# Copyright (C) 2000, 2001, 2002, 2004  James Troup <james@nocrew.org>
+# Copyright (C) 2000, 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
 # Copyright (C) 2005  Jeroen van Wolffelaar <jeroen@wolffelaar.nl>
-# $Id: cindy,v 1.14 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,17 +21,19 @@
 ################################################################################
 
 ######################################################################
-# NB: cindy is not a good idea with New Incoming as she doesn't take #
-# into account accepted.  You can minimize the impact of this by     #
-# running her immediately after kelly but that's still racy because  #
-# lisa doesn't lock with kelly.  A better long term fix is the evil  #
-# plan for accepted to be in the DB.                                 #
+# NB: dak check-overrides is not a good idea with New Incoming as it #
+# doesn't take into account accepted.  You can minimize the impact   #
+# of this by running it immediately after dak process-accepted but   #
+# that's still racy because 'dak process-new' doesn't lock with 'dak #
+# process-accepted'.  A better long term fix is the evil plan for    #
+# accepted to be in the DB.                                          #
 ######################################################################
 
-# cindy should now work fine being done during cron.daily, for example just
-# before denise (after kelly and jenna). At that point, queue/accepted should
-# be empty and installed, so... Cindy does now take into account suites
-# sharing overrides
+# dak check-overrides should now work fine being done during
+# cron.daily, for example just before 'dak make-overrides' (after 'dak
+# process-accepted' and 'dak make-suite-file-list'). At that point,
+# queue/accepted should be empty and installed, so... dak
+# check-overrides does now take into account suites sharing overrides
 
 # TODO:
 # * Only update out-of-sync overrides when corresponding versions are equal to
@@ -48,7 +49,7 @@
 ################################################################################
 
 import pg, sys, os
-import utils, db_access, logging
+import dak.lib.utils, dak.lib.database, dak.lib.logging
 import apt_pkg
 
 ################################################################################
@@ -63,7 +64,7 @@ blacklist = {}
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: cindy
+    print """Usage: dak check-overrides
 Check for cruft in overrides.
 
   -n, --no-action            don't do anything
@@ -81,26 +82,26 @@ def gen_blacklist(dir):
 def process(osuite, affected_suites, originosuite, component, type):
     global Logger, Options, projectB, sections, priorities
 
-    osuite_id = db_access.get_suite_id(osuite)
+    osuite_id = dak.lib.database.get_suite_id(osuite)
     if osuite_id == -1:
-        utils.fubar("Suite '%s' not recognised." % (osuite))
+        dak.lib.utils.fubar("Suite '%s' not recognised." % (osuite))
     originosuite_id = None
     if originosuite:
-        originosuite_id = db_access.get_suite_id(originosuite)
+        originosuite_id = dak.lib.database.get_suite_id(originosuite)
         if originosuite_id == -1:
-            utils.fubar("Suite '%s' not recognised." % (originosuite))
+            dak.lib.utils.fubar("Suite '%s' not recognised." % (originosuite))
 
-    component_id = db_access.get_component_id(component)
+    component_id = dak.lib.database.get_component_id(component)
     if component_id == -1:
-        utils.fubar("Component '%s' not recognised." % (component))
+        dak.lib.utils.fubar("Component '%s' not recognised." % (component))
 
-    type_id = db_access.get_override_type_id(type)
+    type_id = dak.lib.database.get_override_type_id(type)
     if type_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type))
-    dsc_type_id = db_access.get_override_type_id("dsc")
-    deb_type_id = db_access.get_override_type_id("deb")
+        dak.lib.utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type))
+    dsc_type_id = dak.lib.database.get_override_type_id("dsc")
+    deb_type_id = dak.lib.database.get_override_type_id("deb")
 
-    source_priority_id = db_access.get_priority_id("source")
+    source_priority_id = dak.lib.database.get_priority_id("source")
 
     if type == "deb" or type == "udeb":
         packages = {}
@@ -135,7 +136,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 src_packages[package] = 1
             else:
                 if blacklist.has_key(package):
-                    utils.warn("%s in incoming, not touching" % package)
+                    dak.lib.utils.warn("%s in incoming, not touching" % package)
                     continue
                 Logger.log(["removing unused override", osuite, component,
                     type, package, priorities[i[1]], sections[i[2]], i[3]])
@@ -199,7 +200,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
 
         for package, hasoverride in src_packages.items():
             if not hasoverride:
-                utils.warn("%s has no override!" % package)
+                dak.lib.utils.warn("%s has no override!" % package)
 
     else: # binary override
         for i in q.getresult():
@@ -208,7 +209,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 packages[package] = 1
             else:
                 if blacklist.has_key(package):
-                    utils.warn("%s in incoming, not touching" % package)
+                    dak.lib.utils.warn("%s in incoming, not touching" % package)
                     continue
                 Logger.log(["removing unused override", osuite, component,
                     type, package, priorities[i[1]], sections[i[2]], i[3]])
@@ -253,7 +254,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
 
         for package, hasoverride in packages.items():
             if not hasoverride:
-                utils.warn("%s has no override!" % package)
+                dak.lib.utils.warn("%s has no override!" % package)
 
     projectB.query("COMMIT WORK")
     sys.stdout.flush()
@@ -264,21 +265,21 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
 def main ():
     global Logger, Options, projectB, sections, priorities
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('h',"help","Cindy::Options::Help"),
-                 ('n',"no-action", "Cindy::Options::No-Action")]
+    Arguments = [('h',"help","Check-Overrides::Options::Help"),
+                 ('n',"no-action", "Check-Overrides::Options::No-Action")]
     for i in [ "help", "no-action" ]:
-        if not Cnf.has_key("Cindy::Options::%s" % (i)):
-            Cnf["Cindy::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Check-Overrides::Options::%s" % (i)):
+            Cnf["Check-Overrides::Options::%s" % (i)] = ""
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
-    Options = Cnf.SubTree("Cindy::Options")
+    Options = Cnf.SubTree("Check-Overrides::Options")
 
     if Options["Help"]:
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     # init sections, priorities:
     q = projectB.query("SELECT id, section FROM section")
@@ -289,14 +290,14 @@ def main ():
         priorities[i[0]] = i[1]
 
     if not Options["No-Action"]:
-        Logger = logging.Logger(Cnf, "cindy")
+        Logger = dak.lib.logging.Logger(Cnf, "check-overrides")
     else:
-        Logger = logging.Logger(Cnf, "cindy", 1)
+        Logger = dak.lib.logging.Logger(Cnf, "check-overrides", 1)
 
     gen_blacklist(Cnf["Dir::Queue::Accepted"])
 
-    for osuite in Cnf.SubTree("Cindy::OverrideSuites").List():
-        if "1" != Cnf["Cindy::OverrideSuites::%s::Process" % osuite]:
+    for osuite in Cnf.SubTree("Check-Overrides::OverrideSuites").List():
+        if "1" != Cnf["Check-Overrides::OverrideSuites::%s::Process" % osuite]:
             continue
 
         osuite = osuite.lower()
@@ -304,7 +305,7 @@ def main ():
         originosuite = None
         originremark = ""
         try:
-            originosuite = Cnf["Cindy::OverrideSuites::%s::OriginSuite" % osuite]
+            originosuite = Cnf["Check-Overrides::OverrideSuites::%s::OriginSuite" % osuite]
             originosuite = originosuite.lower()
             originremark = " taking missing from %s" % originosuite
         except KeyError:
@@ -326,7 +327,7 @@ def main ():
             suiteids.append(i[0])
             
         if len(suiteids) != len(suites) or len(suiteids) < 1:
-            utils.fubar("Couldn't find id's of all suites: %s" % suites)
+            dak.lib.utils.fubar("Couldn't find id's of all suites: %s" % suites)
 
         for component in Cnf.SubTree("Component").List():
             if component == "mixed":

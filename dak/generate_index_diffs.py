@@ -4,9 +4,9 @@
 # generates partial package updates list
 
 # idea and basic implementation by Anthony, some changes by Andreas
-# parts are stolen from ziyi
+# parts are stolen from 'dak generate-releases'
 #
-# Copyright (C) 2004-5  Anthony Towns <aj@azure.humbug.org.au>
+# Copyright (C) 2004-6, 6  Anthony Towns <aj@azure.humbug.org.au>
 # Copyright (C) 2004-5  Andreas Barth <aba@not.so.argh.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 
 import sys, os, tempfile
 import apt_pkg
-import utils
+import dak.lib.utils
 
 ################################################################################
 
@@ -44,7 +44,7 @@ Options = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: tiffani [OPTIONS] [suites]
+    print """Usage: dak generate-index-diffs [OPTIONS] [suites]
 Write out ed-style diffs to Packages/Source lists
 
   -h, --help            show this help and exit
@@ -288,17 +288,17 @@ def main():
 
     os.umask(0002)
 
-    Cnf = utils.get_conf()
-    Arguments = [ ('h', "help", "Tiffani::Options::Help"),
-                  ('c', None, "Tiffani::Options::CanonicalPath", "hasArg"),
-                  ('p', "patchname", "Tiffani::Options::PatchName", "hasArg"),
-                  ('r', "rootdir", "Tiffani::Options::RootDir", "hasArg"),
-                  ('d', "tmpdir", "Tiffani::Options::TempDir", "hasArg"),
-                  ('m', "maxdiffs", "Tiffani::Options::MaxDiffs", "hasArg"),
-		  ('n', "n-act", "Tiffani::Options::NoAct"),
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [ ('h', "help", "Generate-Index-Diffs::Options::Help"),
+                  ('c', None, "Generate-Index-Diffs::Options::CanonicalPath", "hasArg"),
+                  ('p', "patchname", "Generate-Index-Diffs::Options::PatchName", "hasArg"),
+                  ('r', "rootdir", "Generate-Index-Diffs::Options::RootDir", "hasArg"),
+                  ('d', "tmpdir", "Generate-Index-Diffs::Options::TempDir", "hasArg"),
+                  ('m', "maxdiffs", "Generate-Index-Diffs::Options::MaxDiffs", "hasArg"),
+		  ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
                 ]
     suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Tiffani::Options")
+    Options = Cnf.SubTree("Generate-Index-Diffs::Options")
     if Options.has_key("Help"): usage()
 
     maxdiffs = Options.get("MaxDiffs::Default", "14")
@@ -314,7 +314,7 @@ def main():
         o.close()
 
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf,dak.lib.utils.which_apt_conf_file())
 
     if Options.has_key("RootDir"): Cnf["Dir::Root"] = Options["RootDir"]
 
@@ -353,7 +353,7 @@ def main():
         elif AptCnf.has_key("bindirectory::%s" % (tree)):
             sections = AptCnf["bindirectory::%s::Sections" % (tree)].split()
         else:
-            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
+            aptcnf_filename = os.path.basename(dak.lib.utils.which_apt_conf_file())
             print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
             continue
 
@@ -368,9 +368,9 @@ def main():
                 storename = "%s/%s_contents_%s" % (Options["TempDir"], suite, architecture)
                 print "running contents for %s %s : " % (suite, architecture),
                 genchanges(Options, file + ".diff", storename, file, \
-                  Cnf.get("Suite::%s::Tiffani::MaxDiffs::Contents" % (suite), maxcontents))
+                  Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::Contents" % (suite), maxcontents))
 
-            # use sections instead of components since katie.conf
+            # use sections instead of components since dak.conf
             # treats "foo/bar main" as suite "foo", suitesuffix "bar" and
             # component "bar/main". suck.
 
@@ -389,7 +389,7 @@ def main():
                 storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, architecture)
                 print "running for %s %s %s : " % (suite, component, architecture),
                 genchanges(Options, file + ".diff", storename, file, \
-                  Cnf.get("Suite::%s::Tiffani::MaxDiffs::%s" % (suite, packages), maxsuite))
+                  Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::%s" % (suite, packages), maxsuite))
 
 ################################################################################
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Handles NEW and BYHAND packages
-# Copyright (C) 2001, 2002, 2003, 2004, 2005  James Troup <james@nocrew.org>
-# $Id: lisa,v 1.31 2005-11-15 09:50:32 ajt Exp $
+# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,14 +38,12 @@
 
 import copy, errno, os, readline, stat, sys, time
 import apt_pkg, apt_inst
-import db_access, fernanda, katie, logging, utils
+import dak.lib.database, examine_package, dak.lib.queue, dak.lib.logging, dak.lib.utils
 
 # Globals
-lisa_version = "$Revision: 1.31 $"
-
 Cnf = None
 Options = None
-Katie = None
+Upload = None
 projectB = None
 Logger = None
 
@@ -66,7 +63,7 @@ def reject (str, prefix="Rejected: "):
 
 def recheck():
     global reject_message
-    files = Katie.pkg.files
+    files = Upload.pkg.files
     reject_message = ""
 
     for file in files.keys():
@@ -78,19 +75,19 @@ def recheck():
         if files[file]["type"] == "deb":
             source_version = files[file]["source version"]
             source_package = files[file]["source package"]
-            if not Katie.pkg.changes["architecture"].has_key("source") \
-               and not Katie.source_exists(source_package, source_version, Katie.pkg.changes["distribution"].keys()):
-                source_epochless_version = utils.re_no_epoch.sub('', source_version)
+            if not Upload.pkg.changes["architecture"].has_key("source") \
+               and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
+                source_epochless_version = dak.lib.utils.re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                 if not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
                     reject("no source found for %s %s (%s)." % (source_package, source_version, file))
 
         # Version and file overwrite checks
         if files[file]["type"] == "deb":
-            reject(Katie.check_binary_against_db(file))
+            reject(Upload.check_binary_against_db(file))
         elif files[file]["type"] == "dsc":
-            reject(Katie.check_source_against_db(file))
-            (reject_msg, is_in_incoming) = Katie.check_dsc_against_db(file)
+            reject(Upload.check_source_against_db(file))
+            (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(file)
             reject(reject_msg)
 
     if reject_message:
@@ -102,15 +99,15 @@ def recheck():
         prompt = "[R]eject, Skip, Quit ?"
 
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
-            m = katie.re_default_answer.match(prompt)
+            answer = dak.lib.utils.our_raw_input(prompt)
+            m = dak.lib.queue.re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
 
         if answer == 'R':
-            Katie.do_reject(0, reject_message)
-            os.unlink(Katie.pkg.changes_file[:-8]+".katie")
+            Upload.do_reject(0, reject_message)
+            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
             return 0
         elif answer == 'S':
             return 0
@@ -162,10 +159,10 @@ def determine_new (changes, files):
             new[pkg]["othercomponents"] = f["othercomponents"]
 
     for suite in changes["suite"].keys():
-        suite_id = db_access.get_suite_id(suite)
+        suite_id = dak.lib.database.get_suite_id(suite)
         for pkg in new.keys():
-            component_id = db_access.get_component_id(new[pkg]["component"])
-            type_id = db_access.get_override_type_id(new[pkg]["type"])
+            component_id = dak.lib.database.get_component_id(new[pkg]["component"])
+            type_id = dak.lib.database.get_override_type_id(new[pkg]["type"])
             q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id))
             ql = q.getresult()
             if ql:
@@ -233,10 +230,10 @@ def sort_changes(changes_files):
     # Read in all the .changes files
     for filename in changes_files:
         try:
-            Katie.pkg.changes_file = filename
-            Katie.init_vars()
-            Katie.update_vars()
-            cache[filename] = copy.copy(Katie.pkg.changes)
+            Upload.pkg.changes_file = filename
+            Upload.init_vars()
+            Upload.update_vars()
+            cache[filename] = copy.copy(Upload.pkg.changes)
             cache[filename]["filename"] = filename
         except:
             sorted_list.append(filename)
@@ -259,7 +256,7 @@ def sort_changes(changes_files):
             mtime = os.stat(d["filename"])[stat.ST_MTIME]
             if mtime < oldest:
                 oldest = mtime
-            have_note += (d.has_key("lisa note"))
+            have_note += (d.has_key("process-new note"))
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -324,8 +321,8 @@ def check_valid (new):
         section = new[pkg]["section"]
         priority = new[pkg]["priority"]
         type = new[pkg]["type"]
-        new[pkg]["section id"] = db_access.get_section_id(section)
-        new[pkg]["priority id"] = db_access.get_priority_id(new[pkg]["priority"])
+        new[pkg]["section id"] = dak.lib.database.get_section_id(section)
+        new[pkg]["priority id"] = dak.lib.database.get_priority_id(new[pkg]["priority"])
         # Sanity checks
         if (section == "debian-installer" and type != "udeb") or \
            (section != "debian-installer" and type == "udeb"):
@@ -356,7 +353,7 @@ def print_new (new, indexed, file=sys.stdout):
             line = "%-20s %-20s %-20s" % (pkg, priority, section)
         line = line.strip()+'\n'
         file.write(line)
-    note = Katie.pkg.changes.get("lisa note")
+    note = Upload.pkg.changes.get("process-new note")
     if note:
         print "*"*75
         print note
@@ -372,12 +369,12 @@ def get_type (f):
     elif f["type"] == "orig.tar.gz" or f["type"] == "tar.gz" or f["type"] == "diff.gz" or f["type"] == "dsc":
         type = "dsc"
     else:
-        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
+        dak.lib.utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
 
     # Validate the override type
-    type_id = db_access.get_override_type_id(type)
+    type_id = dak.lib.database.get_override_type_id(type)
     if type_id == -1:
-        utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
+        dak.lib.utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
 
     return type
 
@@ -394,17 +391,17 @@ def index_range (index):
 
 def edit_new (new):
     # Write the current data to a temporary file
-    temp_filename = utils.temp_filename()
-    temp_file = utils.open_file(temp_filename, 'w')
+    temp_filename = dak.lib.utils.temp_filename()
+    temp_file = dak.lib.utils.open_file(temp_filename, 'w')
     print_new (new, 0, temp_file)
     temp_file.close()
     # Spawn an editor on that file
     editor = os.environ.get("EDITOR","vi")
     result = os.system("%s %s" % (editor, temp_filename))
     if result != 0:
-        utils.fubar ("%s invocation failed for %s." % (editor, temp_filename), result)
+        dak.lib.utils.fubar ("%s invocation failed for %s." % (editor, temp_filename), result)
     # Read the edited data back in
-    temp_file = utils.open_file(temp_filename)
+    temp_file = dak.lib.utils.open_file(temp_filename)
     lines = temp_file.readlines()
     temp_file.close()
     os.unlink(temp_filename)
@@ -418,7 +415,7 @@ def edit_new (new):
         s[len(s):3] = [None] * (3-len(s))
         (pkg, priority, section) = s[:3]
         if not new.has_key(pkg):
-            utils.warn("Ignoring unknown package '%s'" % (pkg))
+            dak.lib.utils.warn("Ignoring unknown package '%s'" % (pkg))
         else:
             # Strip off any invalid markers, print_new will readd them.
             if section.endswith("[!]"):
@@ -426,8 +423,8 @@ def edit_new (new):
             if priority.endswith("[!]"):
                 priority = priority[:-3]
             for file in new[pkg]["files"]:
-                Katie.pkg.files[file]["section"] = section
-                Katie.pkg.files[file]["priority"] = priority
+                Upload.pkg.files[file]["section"] = section
+                Upload.pkg.files[file]["priority"] = priority
             new[pkg]["section"] = section
             new[pkg]["priority"] = priority
 
@@ -449,8 +446,8 @@ def edit_index (new, index):
         edit_priority = edit_section = 0
 
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
-            m = katie.re_default_answer.match(prompt)
+            answer = dak.lib.utils.our_raw_input(prompt)
+            m = dak.lib.queue.re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -469,7 +466,7 @@ def edit_index (new, index):
             readline.set_completer(Priorities.complete)
             got_priority = 0
             while not got_priority:
-                new_priority = utils.our_raw_input("New priority: ").strip()
+                new_priority = dak.lib.utils.our_raw_input("New priority: ").strip()
                 if new_priority not in Priorities.priorities:
                     print "E: '%s' is not a valid priority, try again." % (new_priority)
                 else:
@@ -481,7 +478,7 @@ def edit_index (new, index):
             readline.set_completer(Sections.complete)
             got_section = 0
             while not got_section:
-                new_section = utils.our_raw_input("New section: ").strip()
+                new_section = dak.lib.utils.our_raw_input("New section: ").strip()
                 if new_section not in Sections.sections:
                     print "E: '%s' is not a valid section, try again." % (new_section)
                 else:
@@ -492,8 +489,8 @@ def edit_index (new, index):
         readline.set_completer(None)
 
     for file in new[index]["files"]:
-        Katie.pkg.files[file]["section"] = section
-        Katie.pkg.files[file]["priority"] = priority
+        Upload.pkg.files[file]["section"] = section
+        Upload.pkg.files[file]["priority"] = priority
     new[index]["priority"] = priority
     new[index]["section"] = section
     return new
@@ -515,12 +512,12 @@ def edit_overrides (new):
 
         got_answer = 0
         while not got_answer:
-            answer = utils.our_raw_input(prompt)
-            if not utils.str_isnum(answer):
+            answer = dak.lib.utils.our_raw_input(prompt)
+            if not dak.lib.utils.str_isnum(answer):
                 answer = answer[:1].upper()
             if answer == "E" or answer == "D":
                 got_answer = 1
-            elif katie.re_isanum.match (answer):
+            elif dak.lib.queue.re_isanum.match (answer):
                 answer = int(answer)
                 if (answer < 1) or (answer > index):
                     print "%s is not a valid index (%s).  Please retry." % (answer, index_range(index))
@@ -540,24 +537,24 @@ def edit_overrides (new):
 
 def edit_note(note):
     # Write the current data to a temporary file
-    temp_filename = utils.temp_filename()
-    temp_file = utils.open_file(temp_filename, 'w')
+    temp_filename = dak.lib.utils.temp_filename()
+    temp_file = dak.lib.utils.open_file(temp_filename, 'w')
     temp_file.write(note)
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        temp_file = utils.open_file(temp_filename)
+        temp_file = dak.lib.utils.open_file(temp_filename)
         note = temp_file.read().rstrip()
         temp_file.close()
         print "Note:"
-        print utils.prefix_multi_line_string(note,"  ")
+        print dak.lib.utils.prefix_multi_line_string(note,"  ")
         prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
-            m = katie.re_default_answer.search(prompt)
+            answer = dak.lib.utils.our_raw_input(prompt)
+            m = dak.lib.queue.re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -566,8 +563,8 @@ def edit_note(note):
         return
     elif answer == 'Q':
         sys.exit(0)
-    Katie.pkg.changes["lisa note"] = note
-    Katie.dump_vars(Cnf["Dir::Queue::New"])
+    Upload.pkg.changes["process-new note"] = note
+    Upload.dump_vars(Cnf["Dir::Queue::New"])
 
 ################################################################################
 
@@ -577,25 +574,25 @@ def check_pkg ():
         stdout_fd = sys.stdout
         try:
             sys.stdout = less_fd
-            fernanda.display_changes(Katie.pkg.changes_file)
-            files = Katie.pkg.files
+            examine_package.display_changes(Upload.pkg.changes_file)
+            files = Upload.pkg.files
             for file in files.keys():
                 if files[file].has_key("new"):
                     type = files[file]["type"]
                     if type == "deb":
-                        fernanda.check_deb(file)
+                        examine_package.check_deb(file)
                     elif type == "dsc":
-                        fernanda.check_dsc(file)
+                        examine_package.check_dsc(file)
         finally:
             sys.stdout = stdout_fd
     except IOError, e:
         if errno.errorcode[e.errno] == 'EPIPE':
-            utils.warn("[fernanda] Caught EPIPE; skipping.")
+            dak.lib.utils.warn("[examine_package] Caught EPIPE; skipping.")
             pass
         else:
             raise
     except KeyboardInterrupt:
-        utils.warn("[fernanda] Caught C-c; skipping.")
+        dak.lib.utils.warn("[examine_package] Caught C-c; skipping.")
         pass
 
 ################################################################################
@@ -603,30 +600,30 @@ def check_pkg ():
 ## FIXME: horribly Debian specific
 
 def do_bxa_notification():
-    files = Katie.pkg.files
+    files = Upload.pkg.files
     summary = ""
     for file in files.keys():
         if files[file]["type"] == "deb":
-            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(file)))
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(dak.lib.utils.open_file(file)))
             summary += "\n"
             summary += "Package: %s\n" % (control.Find("Package"))
             summary += "Description: %s\n" % (control.Find("Description"))
-    Katie.Subst["__BINARY_DESCRIPTIONS__"] = summary
-    bxa_mail = utils.TemplateSubst(Katie.Subst,Cnf["Dir::Templates"]+"/lisa.bxa_notification")
-    utils.send_mail(bxa_mail)
+    Upload.Subst["__BINARY_DESCRIPTIONS__"] = summary
+    bxa_mail = dak.lib.utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/process-new.bxa_notification")
+    dak.lib.utils.send_mail(bxa_mail)
 
 ################################################################################
 
 def add_overrides (new):
-    changes = Katie.pkg.changes
-    files = Katie.pkg.files
+    changes = Upload.pkg.changes
+    files = Upload.pkg.files
 
     projectB.query("BEGIN WORK")
     for suite in changes["suite"].keys():
-        suite_id = db_access.get_suite_id(suite)
+        suite_id = dak.lib.database.get_suite_id(suite)
         for pkg in new.keys():
-            component_id = db_access.get_component_id(new[pkg]["component"])
-            type_id = db_access.get_override_type_id(new[pkg]["type"])
+            component_id = dak.lib.database.get_component_id(new[pkg]["component"])
+            type_id = dak.lib.database.get_override_type_id(new[pkg]["type"])
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')" % (suite_id, component_id, type_id, pkg, priority_id, section_id))
@@ -644,21 +641,21 @@ def add_overrides (new):
 
 def prod_maintainer ():
     # Here we prepare an editor and get them ready to prod...
-    temp_filename = utils.temp_filename()
+    temp_filename = dak.lib.utils.temp_filename()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        file = utils.open_file(temp_filename)
+        file = dak.lib.utils.open_file(temp_filename)
         prod_message = "".join(file.readlines())
         file.close()
         print "Prod message:"
-        print utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
+        print dak.lib.utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
         prompt = "[P]rod, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
-            m = katie.re_default_answer.search(prompt)
+            answer = dak.lib.utils.our_raw_input(prompt)
+            m = dak.lib.queue.re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -668,21 +665,21 @@ def prod_maintainer ():
         elif answer == 'Q':
             sys.exit(0)
     # Otherwise, do the proding...
-    user_email_address = utils.whoami() + " <%s>" % (
+    user_email_address = dak.lib.utils.whoami() + " <%s>" % (
         Cnf["Dinstall::MyAdminAddress"])
 
-    Subst = Katie.Subst
+    Subst = Upload.Subst
 
     Subst["__FROM_ADDRESS__"] = user_email_address
     Subst["__PROD_MESSAGE__"] = prod_message
     Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
 
-    prod_mail_message = utils.TemplateSubst(
-        Subst,Cnf["Dir::Templates"]+"/lisa.prod")
+    prod_mail_message = dak.lib.utils.TemplateSubst(
+        Subst,Cnf["Dir::Templates"]+"/process-new.prod")
 
     # Send the prod mail if appropriate
     if not Cnf["Dinstall::Options::No-Mail"]:
-        utils.send_mail(prod_mail_message)
+        dak.lib.utils.send_mail(prod_mail_message)
 
     print "Sent proding message"
 
@@ -690,8 +687,8 @@ def prod_maintainer ():
 
 def do_new():
     print "NEW\n"
-    files = Katie.pkg.files
-    changes = Katie.pkg.changes
+    files = Upload.pkg.files
+    changes = Upload.pkg.changes
 
     # Make a copy of distribution we can happily trample on
     changes["suite"] = copy.copy(changes["distribution"])
@@ -704,9 +701,9 @@ def do_new():
             changes["suite"][override] = 1
     # Validate suites
     for suite in changes["suite"].keys():
-        suite_id = db_access.get_suite_id(suite)
+        suite_id = dak.lib.database.get_suite_id(suite)
         if suite_id == -1:
-            utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite))
+            dak.lib.utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite))
 
     # The main NEW processing loop
     done = 0
@@ -735,8 +732,8 @@ def do_new():
         prompt += "Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?"
 
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
-            m = katie.re_default_answer.search(prompt)
+            answer = dak.lib.utils.our_raw_input(prompt)
+            m = dak.lib.queue.re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -748,18 +745,18 @@ def do_new():
         elif answer == 'E':
             new = edit_overrides (new)
         elif answer == 'M':
-            aborted = Katie.do_reject(1, Options["Manual-Reject"])
+            aborted = Upload.do_reject(1, Options["Manual-Reject"])
             if not aborted:
-                os.unlink(Katie.pkg.changes_file[:-8]+".katie")
+                os.unlink(Upload.pkg.changes_file[:-8]+".dak")
                 done = 1
         elif answer == 'N':
-            edit_note(changes.get("lisa note", ""))
+            edit_note(changes.get("process-new note", ""))
         elif answer == 'P':
             prod_maintainer()
         elif answer == 'R':
-            confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
+            confirm = dak.lib.utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
-                del changes["lisa note"]
+                del changes["process-new note"]
         elif answer == 'S':
             done = 1
         elif answer == 'Q':
@@ -770,7 +767,7 @@ def do_new():
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: lisa [OPTION]... [CHANGES]...
+    print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -h, --help                show this help and exit.
   -m, --manual-reject=MSG   manual reject with `msg'
@@ -781,36 +778,31 @@ def usage (exit_code=0):
 ################################################################################
 
 def init():
-    global Cnf, Options, Logger, Katie, projectB, Sections, Priorities
+    global Cnf, Options, Logger, Upload, projectB, Sections, Priorities
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('a',"automatic","Lisa::Options::Automatic"),
-                 ('h',"help","Lisa::Options::Help"),
-                 ('m',"manual-reject","Lisa::Options::Manual-Reject", "HasArg"),
-                 ('n',"no-action","Lisa::Options::No-Action"),
-                 ('V',"version","Lisa::Options::Version")]
+    Arguments = [('a',"automatic","Process-New::Options::Automatic"),
+                 ('h',"help","Process-New::Options::Help"),
+                 ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
+                 ('n',"no-action","Process-New::Options::No-Action")]
 
     for i in ["automatic", "help", "manual-reject", "no-action", "version"]:
-        if not Cnf.has_key("Lisa::Options::%s" % (i)):
-            Cnf["Lisa::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Process-New::Options::%s" % (i)):
+            Cnf["Process-New::Options::%s" % (i)] = ""
 
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Lisa::Options")
+    Options = Cnf.SubTree("Process-New::Options")
 
     if Options["Help"]:
         usage()
 
-    if Options["Version"]:
-        print "lisa %s" % (lisa_version)
-        sys.exit(0)
-
-    Katie = katie.Katie(Cnf)
+    Upload = dak.lib.queue.Upload(Cnf)
 
     if not Options["No-Action"]:
-        Logger = Katie.Logger = logging.Logger(Cnf, "lisa")
+        Logger = Upload.Logger = dak.lib.logging.Logger(Cnf, "process-new")
 
-    projectB = Katie.projectB
+    projectB = Upload.projectB
 
     Sections = Section_Completer()
     Priorities = Priority_Completer()
@@ -823,7 +815,7 @@ def init():
 def do_byhand():
     done = 0
     while not done:
-        files = Katie.pkg.files
+        files = Upload.pkg.files
         will_install = 1
         byhand = []
 
@@ -846,8 +838,8 @@ def do_byhand():
             prompt = "Manual reject, [S]kip, Quit ?"
 
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
-            m = katie.re_default_answer.search(prompt)
+            answer = dak.lib.utils.our_raw_input(prompt)
+            m = dak.lib.queue.re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -857,8 +849,8 @@ def do_byhand():
             for file in byhand:
                 del files[file]
         elif answer == 'M':
-            Katie.do_reject(1, Options["Manual-Reject"])
-            os.unlink(Katie.pkg.changes_file[:-8]+".katie")
+            Upload.do_reject(1, Options["Manual-Reject"])
+            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
             done = 1
         elif answer == 'S':
             done = 1
@@ -873,22 +865,22 @@ def do_accept():
         retry = 0
 	while retry < 10:
 	    try:
-		lock_fd = os.open(Cnf["Lisa::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
+		lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
                 retry = 10
 	    except OSError, e:
 		if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
 		    retry += 1
 		    if (retry >= 10):
-			utils.fubar("Couldn't obtain lock; assuming jennifer is already running.")
+			dak.lib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
 		    else:
 			print("Unable to get accepted lock (try %d of 10)" % retry)
 		    time.sleep(60)
 		else:
 		    raise
-        (summary, short_summary) = Katie.build_summaries()
-        Katie.accept(summary, short_summary)
-        os.unlink(Katie.pkg.changes_file[:-8]+".katie")
-	os.unlink(Cnf["Lisa::AcceptedLockFile"])
+        (summary, short_summary) = Upload.build_summaries()
+        Upload.accept(summary, short_summary)
+        os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+	os.unlink(Cnf["Process-New::AcceptedLockFile"])
 
 def check_status(files):
     new = byhand = 0
@@ -900,11 +892,11 @@ def check_status(files):
     return (new, byhand)
 
 def do_pkg(changes_file):
-    Katie.pkg.changes_file = changes_file
-    Katie.init_vars()
-    Katie.update_vars()
-    Katie.update_subst()
-    files = Katie.pkg.files
+    Upload.pkg.changes_file = changes_file
+    Upload.init_vars()
+    Upload.update_vars()
+    Upload.update_subst()
+    files = Upload.pkg.files
 
     if not recheck():
         return
@@ -923,14 +915,14 @@ def do_pkg(changes_file):
 ################################################################################
 
 def end():
-    accept_count = Katie.accept_count
-    accept_bytes = Katie.accept_bytes
+    accept_count = Upload.accept_count
+    accept_bytes = Upload.accept_bytes
 
     if accept_count:
         sets = "set"
         if accept_count > 1:
             sets = "sets"
-        sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))))
+        sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, dak.lib.utils.size_type(int(accept_bytes))))
         Logger.log(["total",accept_count,accept_bytes])
 
     if not Options["No-Action"]:
@@ -946,14 +938,14 @@ def main():
 
     # Kill me now? **FIXME**
     Cnf["Dinstall::Options::No-Mail"] = ""
-    bcc = "X-Katie: lisa %s" % (lisa_version)
+    bcc = "X-DAK: dak process-new\nX-Katie: this header is obsolete"
     if Cnf.has_key("Dinstall::Bcc"):
-        Katie.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
+        Upload.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
     else:
-        Katie.Subst["__BCC__"] = bcc
+        Upload.Subst["__BCC__"] = bcc
 
     for changes_file in changes_files:
-        changes_file = utils.validate_changes_file_arg(changes_file, 0)
+        changes_file = dak.lib.utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
             continue
         print "\n" + changes_file

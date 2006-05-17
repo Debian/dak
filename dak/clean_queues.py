@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Clean incoming of old unused files
-# Copyright (C) 2000, 2001, 2002  James Troup <james@nocrew.org>
-# $Id: shania,v 1.18 2005-03-06 21:51:51 rmurray Exp $
+# Copyright (C) 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +34,7 @@
 ################################################################################
 
 import os, stat, sys, time
-import utils
+import dak.lib.utils
 import apt_pkg
 
 ################################################################################
@@ -48,7 +47,7 @@ delete_date = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: shania [OPTIONS]
+    print """Usage: dak clean-queues [OPTIONS]
 Clean out incoming directories.
 
   -d, --days=DAYS            remove anything older than DAYS old
@@ -69,11 +68,11 @@ def init ():
     # Ensure a directory exists to remove files to
     if not Options["No-Action"]:
         date = time.strftime("%Y-%m-%d")
-        del_dir = Cnf["Dir::Morgue"] + '/' + Cnf["Shania::MorgueSubDir"] + '/' + date
+        del_dir = Cnf["Dir::Morgue"] + '/' + Cnf["Clean-Queues::MorgueSubDir"] + '/' + date
         if not os.path.exists(del_dir):
             os.makedirs(del_dir, 02775)
         if not os.path.isdir(del_dir):
-            utils.fubar("%s must be a directory." % (del_dir))
+            dak.lib.utils.fubar("%s must be a directory." % (del_dir))
 
     # Move to the directory to clean
     incoming = Options["Incoming"]
@@ -87,10 +86,10 @@ def remove (file):
         dest_filename = del_dir + '/' + os.path.basename(file)
         # If the destination file exists; try to find another filename to use
         if os.path.exists(dest_filename):
-            dest_filename = utils.find_next_free(dest_filename, 10)
-        utils.move(file, dest_filename, 0660)
+            dest_filename = dak.lib.utils.find_next_free(dest_filename, 10)
+        dak.lib.utils.move(file, dest_filename, 0660)
     else:
-        utils.warn("skipping '%s', permission denied." % (os.path.basename(file)))
+        dak.lib.utils.warn("skipping '%s', permission denied." % (os.path.basename(file)))
 
 # Removes any old files.
 # [Used for Incoming/REJECT]
@@ -126,20 +125,20 @@ def flush_orphans ():
     # Proces all .changes and .dsc files.
     for changes_filename in changes_files:
         try:
-            changes = utils.parse_changes(changes_filename)
-            files = utils.build_file_list(changes)
+            changes = dak.lib.utils.parse_changes(changes_filename)
+            files = dak.lib.utils.build_file_list(changes)
         except:
-            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
+            dak.lib.utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
             continue
 
         dsc_files = {}
         for file in files.keys():
             if file.endswith(".dsc"):
                 try:
-                    dsc = utils.parse_changes(file)
-                    dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
+                    dsc = dak.lib.utils.parse_changes(file)
+                    dsc_files = dak.lib.utils.build_file_list(dsc, is_a_dsc=1)
                 except:
-                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type))
+                    dak.lib.utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type))
                     continue
 
         # Ensure all the files we've seen aren't deleted
@@ -171,22 +170,22 @@ def flush_orphans ():
 def main ():
     global Cnf, Options
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
     for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
-	if not Cnf.has_key("Shania::Options::%s" % (i)):
-	    Cnf["Shania::Options::%s" % (i)] = ""
-    if not Cnf.has_key("Shania::Options::Days"):
-	Cnf["Shania::Options::Days"] = "14"
+	if not Cnf.has_key("Clean-Queues::Options::%s" % (i)):
+	    Cnf["Clean-Queues::Options::%s" % (i)] = ""
+    if not Cnf.has_key("Clean-Queues::Options::Days"):
+	Cnf["Clean-Queues::Options::Days"] = "14"
 
-    Arguments = [('h',"help","Shania::Options::Help"),
-                 ('d',"days","Shania::Options::Days", "IntLevel"),
-                 ('i',"incoming","Shania::Options::Incoming", "HasArg"),
-                 ('n',"no-action","Shania::Options::No-Action"),
-                 ('v',"verbose","Shania::Options::Verbose")]
+    Arguments = [('h',"help","Clean-Queues::Options::Help"),
+                 ('d',"days","Clean-Queues::Options::Days", "IntLevel"),
+                 ('i',"incoming","Clean-Queues::Options::Incoming", "HasArg"),
+                 ('n',"no-action","Clean-Queues::Options::No-Action"),
+                 ('v',"verbose","Clean-Queues::Options::Verbose")]
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Shania::Options")
+    Options = Cnf.SubTree("Clean-Queues::Options")
 
     if Options["Help"]:
 	usage()

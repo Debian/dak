@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Manually reject packages for proprosed-updates
-# Copyright (C) 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: lauren,v 1.4 2004-04-01 17:13:11 troup Exp $
+# Copyright (C) 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,24 +20,22 @@
 ################################################################################
 
 import os, pg, sys
-import db_access, katie, logging, utils
+import dak.lib.database, dak.lib.queue, dak.lib.logging, dak.lib.utils
 import apt_pkg
 
 ################################################################################
 
 # Globals
-lauren_version = "$Revision: 1.4 $"
-
 Cnf = None
 Options = None
 projectB = None
-Katie = None
+Upload = None
 Logger = None
 
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: lauren .CHANGES[...]
+    print """Usage: dak reject-proposed-updates .CHANGES[...]
 Manually reject the .CHANGES file(s).
 
   -h, --help                show this help and exit.
@@ -49,45 +46,45 @@ Manually reject the .CHANGES file(s).
 ################################################################################
 
 def main():
-    global Cnf, Logger, Options, projectB, Katie
+    global Cnf, Logger, Options, projectB, Upload
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Lauren::Options::Help"),
-                 ('m',"manual-reject","Lauren::Options::Manual-Reject", "HasArg"),
-                 ('s',"no-mail", "Lauren::Options::No-Mail")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Reject-Proposed-Updates::Options::Help"),
+                 ('m',"manual-reject","Reject-Proposed-Updates::Options::Manual-Reject", "HasArg"),
+                 ('s',"no-mail", "Reject-Proposed-Updates::Options::No-Mail")]
     for i in [ "help", "manual-reject", "no-mail" ]:
-	if not Cnf.has_key("Lauren::Options::%s" % (i)):
-	    Cnf["Lauren::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Reject-Proposed-Updates::Options::%s" % (i)):
+	    Cnf["Reject-Proposed-Updates::Options::%s" % (i)] = ""
 
     arguments = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Lauren::Options")
+    Options = Cnf.SubTree("Reject-Proposed-Updates::Options")
     if Options["Help"]:
 	usage()
     if not arguments:
-        utils.fubar("need at least one .changes filename as an argument.")
+        dak.lib.utils.fubar("need at least one .changes filename as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
-    Katie = katie.Katie(Cnf)
-    Logger = Katie.Logger = logging.Logger(Cnf, "lauren")
+    Upload = dak.lib.queue.Upload(Cnf)
+    Logger = Upload.Logger = dak.lib.logging.Logger(Cnf, "reject-proposed-updates")
 
-    bcc = "X-Katie: lauren %s" % (lauren_version)
+    bcc = "X-DAK: dak rejected-proposed-updates\nX-Katie: this header is obsolete"
     if Cnf.has_key("Dinstall::Bcc"):
-        Katie.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
+        Upload.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
     else:
-        Katie.Subst["__BCC__"] = bcc
+        Upload.Subst["__BCC__"] = bcc
 
     for arg in arguments:
-        arg = utils.validate_changes_file_arg(arg)
-        Katie.pkg.changes_file = arg
-	Katie.init_vars()
+        arg = dak.lib.utils.validate_changes_file_arg(arg)
+        Upload.pkg.changes_file = arg
+	Upload.init_vars()
         cwd = os.getcwd()
-        os.chdir(Cnf["Suite::Proposed-Updates::CopyKatie"])
-        Katie.update_vars()
+        os.chdir(Cnf["Suite::Proposed-Updates::CopyDotDak"])
+        Upload.update_vars()
         os.chdir(cwd)
-        Katie.update_subst()
+        Upload.update_subst()
 
         print arg
         done = 0
@@ -96,8 +93,8 @@ def main():
             answer = "XXX"
 
             while prompt.find(answer) == -1:
-                answer = utils.our_raw_input(prompt)
-                m = katie.re_default_answer.search(prompt)
+                answer = dak.lib.utils.our_raw_input(prompt)
+                m = dak.lib.queue.re_default_answer.search(prompt)
                 if answer == "":
                     answer = m.group(1)
                 answer = answer[:1].upper()
@@ -116,28 +113,28 @@ def main():
 ################################################################################
 
 def reject (reject_message = ""):
-    files = Katie.pkg.files
-    dsc = Katie.pkg.dsc
-    changes_file = Katie.pkg.changes_file
+    files = Upload.pkg.files
+    dsc = Upload.pkg.dsc
+    changes_file = Upload.pkg.changes_file
 
     # If we weren't given a manual rejection message, spawn an editor
     # so the user can add one in...
     if not reject_message:
-        temp_filename = utils.temp_filename()
+        temp_filename = dak.lib.utils.temp_filename()
         editor = os.environ.get("EDITOR","vi")
         answer = 'E'
         while answer == 'E':
             os.system("%s %s" % (editor, temp_filename))
-            file = utils.open_file(temp_filename)
+            file = dak.lib.utils.open_file(temp_filename)
             reject_message = "".join(file.readlines())
             file.close()
             print "Reject message:"
-            print utils.prefix_multi_line_string(reject_message,"  ", include_blank_lines=1)
+            print dak.lib.utils.prefix_multi_line_string(reject_message,"  ", include_blank_lines=1)
             prompt = "[R]eject, Edit, Abandon, Quit ?"
             answer = "XXX"
             while prompt.find(answer) == -1:
-                answer = utils.our_raw_input(prompt)
-                m = katie.re_default_answer.search(prompt)
+                answer = dak.lib.utils.our_raw_input(prompt)
+                m = dak.lib.queue.re_default_answer.search(prompt)
                 if answer == "":
                     answer = m.group(1)
                 answer = answer[:1].upper()
@@ -150,7 +147,7 @@ def reject (reject_message = ""):
     print "Rejecting.\n"
 
     # Reject the .changes file
-    Katie.force_reject([changes_file])
+    Upload.force_reject([changes_file])
 
     # Setup the .reason file
     reason_filename = changes_file[:-8] + ".reason"
@@ -163,21 +160,21 @@ def reject (reject_message = ""):
     reject_fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
 
     # Build up the rejection email
-    user_email_address = utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"])
+    user_email_address = dak.lib.utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"])
 
-    Katie.Subst["__REJECTOR_ADDRESS__"] = user_email_address
-    Katie.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
-    Katie.Subst["__STABLE_REJECTOR__"] = Cnf["Lauren::StableRejector"]
-    Katie.Subst["__MORE_INFO_URL__"] = Cnf["Lauren::MoreInfoURL"]
-    Katie.Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
-    reject_mail_message = utils.TemplateSubst(Katie.Subst,Cnf["Dir::Templates"]+"/lauren.stable-rejected")
+    Upload.Subst["__REJECTOR_ADDRESS__"] = user_email_address
+    Upload.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
+    Upload.Subst["__STABLE_REJECTOR__"] = Cnf["Reject-Proposed-Updates::StableRejector"]
+    Upload.Subst["__MORE_INFO_URL__"] = Cnf["Reject-Proposed-Updates::MoreInfoURL"]
+    Upload.Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
+    reject_mail_message = dak.lib.utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/reject-proposed-updates.rejected")
 
     # Write the rejection email out as the <foo>.reason file
     os.write(reject_fd, reject_mail_message)
     os.close(reject_fd)
 
     # Remove the packages from proposed-updates
-    suite_id = db_access.get_suite_id('proposed-updates')
+    suite_id = dak.lib.database.get_suite_id('proposed-updates')
 
     projectB.query("BEGIN WORK")
     # Remove files from proposed-updates suite
@@ -188,7 +185,7 @@ def reject (reject_message = ""):
             q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
             ql = q.getresult()
             if not ql:
-                utils.fubar("reject: Couldn't find %s_%s in source table." % (package, version))
+                dak.lib.utils.fubar("reject: Couldn't find %s_%s in source table." % (package, version))
             source_id = ql[0][0]
             projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id))
         elif files[file]["type"] == "deb":
@@ -204,7 +201,7 @@ def reject (reject_message = ""):
             # newer version of the package and only do the
             # warn&continue thing if it finds one.
             if not ql:
-                utils.warn("reject: Couldn't find %s_%s_%s in binaries table." % (package, version, architecture))
+                dak.lib.utils.warn("reject: Couldn't find %s_%s_%s in binaries table." % (package, version, architecture))
             else:
                 binary_id = ql[0][0]
                 projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id))
@@ -212,11 +209,11 @@ def reject (reject_message = ""):
 
     # Send the rejection mail if appropriate
     if not Options["No-Mail"]:
-        utils.send_mail(reject_mail_message)
+        dak.lib.utils.send_mail(reject_mail_message)
 
-    # Finally remove the .katie file
-    katie_file = os.path.join(Cnf["Suite::Proposed-Updates::CopyKatie"], os.path.basename(changes_file[:-8]+".katie"))
-    os.unlink(katie_file)
+    # Finally remove the .dak file
+    dot_dak_file = os.path.join(Cnf["Suite::Proposed-Updates::CopyDotDak"], os.path.basename(changes_file[:-8]+".dak"))
+    os.unlink(dot_dak_file)
 
     Logger.log(["rejected", changes_file])
     return 0

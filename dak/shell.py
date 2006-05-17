@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Launch dak functionality
-# Copyright (c) 2005 Anthony Towns <ajt@debian.org>
+# Copyright (c) 2005, 2006 Anthony Towns <ajt@debian.org>
 # $Id: dak,v 1.1 2005-11-17 08:47:31 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@ functionality = [
 				 ("madison", "main"), ["madison"]),
     ("rm",                       "Remove packages from suites", "melanie"),
                                  
-    ("decode-dot-dak",           "Display contents of a .katie file", "ashley"),
+    ("decode-dot-dak",           "Display contents of a .dak file", "ashley"),
     ("override",                 "Query/change the overrides", "alicia"),
 
     ("install",                  "Install a package from accepted (security only)",

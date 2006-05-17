@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # 'Fix' stable to make debian-cd and dpkg -BORGiE users happy
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: claire.py,v 1.19 2003-09-07 13:52:11 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +29,7 @@
 ################################################################################
 
 import os, pg, re, sys
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg
 
 ################################################################################
@@ -43,7 +42,7 @@ projectB = None
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: claire [OPTIONS]
+    print """Usage: dak symlink-dists [OPTIONS]
 Create compatibility symlinks from legacy locations to the pool.
 
   -v, --verbose              explain what is being done
@@ -55,7 +54,7 @@ Create compatibility symlinks from legacy locations to the pool.
 
 def fix_component_section (component, section):
     if component == "":
-        component = utils.extract_component_from_section(section)[1]
+        component = dak.lib.utils.extract_component_from_section(section)[1]
 
     # FIXME: ugly hacks to work around override brain damage
     section = re_strip_section_prefix.sub('', section)
@@ -101,14 +100,14 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
         dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], codename, component, section, os.path.basename(i[3]))
         if not os.path.exists(dest):
 	    src = i[2]+i[3]
-	    src = utils.clean_symlink(src, dest, Cnf["Dir::Root"])
-            if Cnf.Find("Claire::Options::Verbose"):
+	    src = dak.lib.utils.clean_symlink(src, dest, Cnf["Dir::Root"])
+            if Cnf.Find("Symlink-Dists::Options::Verbose"):
                 print src+' -> '+dest
             os.symlink(src, dest)
         dislocated_files[i[4]] = dest
 
     # Binary
-    architectures = filter(utils.real_arch, Cnf.ValueList("Suite::Stable::Architectures"))
+    architectures = filter(dak.lib.utils.real_arch, Cnf.ValueList("Suite::Stable::Architectures"))
     q = projectB.query("""
 SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
                           b.version, l.path, f.filename, f.id
@@ -135,13 +134,13 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
             section=""
         architecture = i[1]
         package = i[3]
-        version = utils.re_no_epoch.sub('', i[4])
+        version = dak.lib.utils.re_no_epoch.sub('', i[4])
         src = i[5]+i[6]
 
         dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, architecture, section, package, version)
-        src = utils.clean_symlink(src, dest, Cnf["Dir::Root"])
+        src = dak.lib.utils.clean_symlink(src, dest, Cnf["Dir::Root"])
         if not os.path.exists(dest):
-            if Cnf.Find("Claire::Options::Verbose"):
+            if Cnf.Find("Symlink-Dists::Options::Verbose"):
                 print src+' -> '+dest
             os.symlink(src, dest)
         dislocated_files[i[7]] = dest
@@ -150,7 +149,7 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
             for arch in architectures:
                 dest = "%sdists/%s/%s/binary-%s/%s%s_%s.deb" % (Cnf["Dir::Root"], codename, component, arch, section, package, version)
                 if not os.path.exists(dest):
-                    if Cnf.Find("Claire::Options::Verbose"):
+                    if Cnf.Find("Symlink-Dists::Options::Verbose"):
                         print src+' -> '+dest
                     os.symlink(src, dest)
 
@@ -161,23 +160,23 @@ SELECT DISTINCT ON (f.id) c.name, a.arch_string, sec.section, b.package,
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('h',"help","Claire::Options::Help"),
-                 ('v',"verbose","Claire::Options::Verbose")]
+    Arguments = [('h',"help","Symlink-Dists::Options::Help"),
+                 ('v',"verbose","Symlink-Dists::Options::Verbose")]
     for i in ["help", "verbose" ]:
-	if not Cnf.has_key("Claire::Options::%s" % (i)):
-	    Cnf["Claire::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Symlink-Dists::Options::%s" % (i)):
+	    Cnf["Symlink-Dists::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Claire::Options")
+    Options = Cnf.SubTree("Symlink-Dists::Options")
 
     if Options["Help"]:
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     find_dislocated_stable(Cnf, projectB)
 

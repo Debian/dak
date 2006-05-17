@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2004, 2005  James Troup <james@nocrew.org>
-# $Id: nina,v 1.2 2005-11-15 09:50:32 ajt Exp $
+# Copyright (C) 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +19,12 @@
 ################################################################################
 
 import glob, os, stat, time
-import utils
+import dak.lib.utils
 
 ################################################################################
 
 def main():
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
     count = 0
     os.chdir(Cnf["Dir::Queue::Done"])
     files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]))
@@ -38,7 +37,7 @@ def main():
                 os.makedirs(dirname)
             dest = dirname + '/' + os.path.basename(filename)
             if os.path.exists(dest):
-                utils.fubar("%s already exists." % (dest))
+                dak.lib.utils.fubar("%s already exists." % (dest))
             print "Move: %s -> %s" % (filename, dest) 
             os.rename(filename, dest)
             count = count + 1

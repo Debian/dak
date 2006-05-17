@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Generate file lists used by apt-ftparchive to generate Packages and Sources files
-# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: jenna,v 1.29 2004-11-27 17:58:47 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +35,7 @@
 
 import copy, os, pg, string, sys
 import apt_pkg
-import claire, db_access, logging, utils
+import poolize, dak.lib.database, dak.lib.logging, dak.lib.utils
 
 ################################################################################
 
@@ -52,7 +51,7 @@ def Dict(**dict): return dict
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: jenna [OPTION]
+    print """Usage: dak make-suite-file-list [OPTION]
 Write out file lists suitable for use with apt-ftparchive.
 
   -a, --architecture=ARCH   only write file lists for this architecture
@@ -74,7 +73,7 @@ def version_cmp(a, b):
 
 def delete_packages(delete_versions, pkg, dominant_arch, suite,
                     dominant_version, delete_table, delete_col, packages):
-    suite_id = db_access.get_suite_id(suite)
+    suite_id = dak.lib.database.get_suite_id(suite)
     for version in delete_versions:
         delete_unique_id = version[1]
         if not packages.has_key(delete_unique_id):
@@ -196,7 +195,7 @@ def cleanup(packages):
 def write_legacy_mixed_filelist(suite, list, packages, dislocated_files):
     # Work out the filename
     filename = os.path.join(Cnf["Dir::Lists"], "%s_-_all.list" % (suite))
-    output = utils.open_file(filename, "w")
+    output = dak.lib.utils.open_file(filename, "w")
     # Generate the final list of files
     files = {}
     for id in list:
@@ -208,7 +207,7 @@ def write_legacy_mixed_filelist(suite, list, packages, dislocated_files):
         else:
             filename = path + filename
         if files.has_key(filename):
-            utils.warn("%s (in %s) is duplicated." % (filename, suite))
+            dak.lib.utils.warn("%s (in %s) is duplicated." % (filename, suite))
         else:
             files[filename] = ""
     # Sort the files since apt-ftparchive doesn't
@@ -229,7 +228,7 @@ def write_filelist(suite, component, arch, type, list, packages, dislocated_file
         elif type == "deb":
             arch = "binary-%s" % (arch)
     filename = os.path.join(Cnf["Dir::Lists"], "%s_%s_%s.list" % (suite, component, arch))
-    output = utils.open_file(filename, "w")
+    output = dak.lib.utils.open_file(filename, "w")
     # Generate the final list of files
     files = {}
     for id in list:
@@ -242,7 +241,7 @@ def write_filelist(suite, component, arch, type, list, packages, dislocated_file
         else:
             filename = path + filename
         if files.has_key(pkg):
-            utils.warn("%s (in %s/%s, %s) is duplicated." % (pkg, suite, component, filename))
+            dak.lib.utils.warn("%s (in %s/%s, %s) is duplicated." % (pkg, suite, component, filename))
         else:
             files[pkg] = filename
     # Sort the files since apt-ftparchive doesn't
@@ -272,13 +271,13 @@ def write_filelists(packages, dislocated_files):
     if not Options["Suite"]:
         suites = Cnf.SubTree("Suite").List()
     else:
-        suites = utils.split_args(Options["Suite"])
+        suites = dak.lib.utils.split_args(Options["Suite"])
     for suite in map(string.lower, suites):
         d.setdefault(suite, {})
         if not Options["Component"]:
             components = Cnf.ValueList("Suite::%s::Components" % (suite))
         else:
-            components = utils.split_args(Options["Component"])
+            components = dak.lib.utils.split_args(Options["Component"])
         udeb_components = Cnf.ValueList("Suite::%s::UdebComponents" % (suite))
         udeb_components = udeb_components
         for component in components:
@@ -290,7 +289,7 @@ def write_filelists(packages, dislocated_files):
             if not Options["Architecture"]:
                 architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
             else:
-                architectures = utils.split_args(Options["Architectures"])
+                architectures = dak.lib.utils.split_args(Options["Architectures"])
             for arch in map(string.lower, architectures):
                 d[suite][component].setdefault(arch, {})
                 if arch == "source":
@@ -310,7 +309,7 @@ def write_filelists(packages, dislocated_files):
                         list = d[suite][component][arch][type]
                         # If it's a binary, we need to add in the arch: all debs too
                         if arch != "source":
-                            archall_suite = Cnf.get("Jenna::ArchAllMap::%s" % (suite))
+                            archall_suite = Cnf.get("Make-Suite-File-List::ArchAllMap::%s" % (suite))
                             if archall_suite:
                                 list.extend(d[archall_suite][component]["all"][type])
                             elif d[suite][component].has_key("all") and \
@@ -340,7 +339,7 @@ def stable_dislocation_p():
     if not Options["Suite"]:
         return 1
     # Otherwise, look in what suites the user specified
-    suites = utils.split_args(Options["Suite"])
+    suites = dak.lib.utils.split_args(Options["Suite"])
 
     if "stable" in suites:
         return 1
@@ -353,19 +352,19 @@ def do_da_do_da():
     # If we're only doing a subset of suites, ensure we do enough to
     # be able to do arch: all mapping.
     if Options["Suite"]:
-        suites = utils.split_args(Options["Suite"])
+        suites = dak.lib.utils.split_args(Options["Suite"])
         for suite in suites:
-            archall_suite = Cnf.get("Jenna::ArchAllMap::%s" % (suite))
+            archall_suite = Cnf.get("Make-Suite-File-List::ArchAllMap::%s" % (suite))
             if archall_suite and archall_suite not in suites:
-                utils.warn("Adding %s as %s maps Arch: all from it." % (archall_suite, suite))
+                dak.lib.utils.warn("Adding %s as %s maps Arch: all from it." % (archall_suite, suite))
                 suites.append(archall_suite)
         Options["Suite"] = ",".join(suites)
     
     (con_suites, con_architectures, con_components, check_source) = \
-                 utils.parse_args(Options)
+                 dak.lib.utils.parse_args(Options)
 
     if stable_dislocation_p():
-        dislocated_files = claire.find_dislocated_stable(Cnf, projectB)
+        dislocated_files = symlink_dists.find_dislocated_stable(Cnf, projectB)
     else:
         dislocated_files = {}
 
@@ -406,23 +405,23 @@ SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name, f.id,
 def main():
     global Cnf, projectB, Options, Logger
 
-    Cnf = utils.get_conf()
-    Arguments = [('a', "architecture", "Jenna::Options::Architecture", "HasArg"),
-                 ('c', "component", "Jenna::Options::Component", "HasArg"),
-                 ('h', "help", "Jenna::Options::Help"),
-                 ('n', "no-delete", "Jenna::Options::No-Delete"),
-                 ('s', "suite", "Jenna::Options::Suite", "HasArg")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('a', "architecture", "Make-Suite-File-List::Options::Architecture", "HasArg"),
+                 ('c', "component", "Make-Suite-File-List::Options::Component", "HasArg"),
+                 ('h', "help", "Make-Suite-File-List::Options::Help"),
+                 ('n', "no-delete", "Make-Suite-File-List::Options::No-Delete"),
+                 ('s', "suite", "Make-Suite-File-List::Options::Suite", "HasArg")]
     for i in ["architecture", "component", "help", "no-delete", "suite" ]:
-	if not Cnf.has_key("Jenna::Options::%s" % (i)):
-	    Cnf["Jenna::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Make-Suite-File-List::Options::%s" % (i)):
+	    Cnf["Make-Suite-File-List::Options::%s" % (i)] = ""
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Jenna::Options")
+    Options = Cnf.SubTree("Make-Suite-File-List::Options")
     if Options["Help"]:
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
-    Logger = logging.Logger(Cnf, "jenna")
+    dak.lib.database.init(Cnf, projectB)
+    Logger = dak.lib.logging.Logger(Cnf, "make-suite-file-list")
     do_da_do_da()
     Logger.close()
 

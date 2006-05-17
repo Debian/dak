@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Sync the ISC configuartion file and the SQL database
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: alyson,v 1.12 2003-09-07 13:52:07 troup Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +20,7 @@
 ################################################################################
 
 import pg, sys
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg
 
 ################################################################################
@@ -32,7 +31,7 @@ projectB = None
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: alyson
+    print """Usage: dak init-db
 Initalizes some tables in the projectB database based on the config file.
 
   -h, --help                show this help and exit."""
@@ -49,20 +48,20 @@ def get (c, i):
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Alyson::Options::Help")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Init-DB::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Alyson::Options::%s" % (i)):
-	    Cnf["Alyson::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Init-DB::Options::%s" % (i)):
+	    Cnf["Init-DB::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Alyson::Options")
+    Options = Cnf.SubTree("Init-DB::Options")
     if Options["Help"]:
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     # archive
 
@@ -104,17 +103,17 @@ def main ():
     projectB.query("DELETE FROM location")
     for location in Cnf.SubTree("Location").List():
         Location = Cnf.SubTree("Location::%s" % (location))
-        archive_id = db_access.get_archive_id(Location["Archive"])
+        archive_id = dak.lib.database.get_archive_id(Location["Archive"])
         type = Location.get("type")
         if type == "legacy-mixed":
             projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, Location["type"]))
         elif type == "legacy" or type == "pool":
             for component in Cnf.SubTree("Component").List():
-                component_id = db_access.get_component_id(component)
+                component_id = dak.lib.database.get_component_id(component)
                 projectB.query("INSERT INTO location (path, component, archive, type) VALUES ('%s', %d, %d, '%s')" %
                                (location, component_id, archive_id, type))
         else:
-            utils.fubar("E: type '%s' not recognised in location %s." % (type, location))
+            dak.lib.utils.fubar("E: type '%s' not recognised in location %s." % (type, location))
     projectB.query("COMMIT WORK")
 
     # suite
@@ -129,9 +128,9 @@ def main ():
         projectB.query("INSERT INTO suite (suite_name, version, origin, description) VALUES ('%s', %s, %s, %s)"
                        % (suite.lower(), version, origin, description))
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
-            architecture_id = db_access.get_architecture_id (architecture)
+            architecture_id = dak.lib.database.get_architecture_id (architecture)
             if architecture_id < 0:
-                utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite))
+                dak.lib.utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite))
             projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id))
     projectB.query("COMMIT WORK")
 
@@ -156,7 +155,7 @@ def main ():
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM section")
     for component in Cnf.SubTree("Component").List():
-        if Cnf["Natalie::ComponentPosition"] == "prefix":
+        if Cnf["Control-Overrides::ComponentPosition"] == "prefix":
             suffix = ""
             if component != "main":
                 prefix = component + '/'

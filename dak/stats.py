@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Various statistical pr0nography fun and games
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: saffron,v 1.3 2005-11-15 09:50:32 ajt Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +31,7 @@
 ################################################################################
 
 import pg, sys
-import utils
+import dak.lib.utils
 import apt_pkg
 
 ################################################################################
@@ -43,12 +42,12 @@ projectB = None
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: saffron STAT
+    print """Usage: dak stats MODE
 Print various stats.
 
   -h, --help                show this help and exit.
 
-The following STAT modes are available:
+The following MODEs are available:
 
   arch-space    - displays space used by each architecture
   pkg-nums      - displays the number of packages by suite/architecture
@@ -72,11 +71,11 @@ SELECT a.arch_string as Architecture, sum(f.size)
 
 def daily_install_stats():
     stats = {}
-    file = utils.open_file("2001-11")
+    file = dak.lib.utils.open_file("2001-11")
     for line in file.readlines():
         split = line.strip().split('~')
         program = split[1]
-        if program != "katie":
+        if program != "katie" and program != "process-accepted":
             continue
         action = split[2]
         if action != "installing changes" and action != "installed":
@@ -214,23 +213,23 @@ SELECT suite, count(suite) FROM src_associations GROUP BY suite;""")
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Saffron::Options::Help")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Stats::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Saffron::Options::%s" % (i)):
-	    Cnf["Saffron::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Stats::Options::%s" % (i)):
+	    Cnf["Stats::Options::%s" % (i)] = ""
 
     args = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Saffron::Options")
+    Options = Cnf.SubTree("Stats::Options")
     if Options["Help"]:
 	usage()
 
     if len(args) < 1:
-        utils.warn("saffron requires at least one argument")
+        dak.lib.utils.warn("dak stats requires a MODE argument")
         usage(1)
     elif len(args) > 1:
-        utils.warn("saffron accepts only one argument")
+        dak.lib.utils.warn("dak stats accepts only one MODE argument")
         usage(1)
     mode = args[0].lower()
 
@@ -243,7 +242,7 @@ def main ():
     elif mode == "daily-install":
         daily_install_stats()
     else:
-        utils.warn("unknown mode '%s'" % (mode))
+        dak.lib.utils.warn("unknown mode '%s'" % (mode))
         usage(1)
 
 ################################################################################

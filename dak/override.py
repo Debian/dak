@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Microscopic modification and query tool for overrides in projectb
-# Copyright (C) 2004  Daniel Silverstone <dsilvers@digital-scurf.org>
-# $Id: alicia,v 1.6 2004-11-27 17:58:13 troup Exp $
+# Copyright (C) 2004, 2006  Daniel Silverstone <dsilvers@digital-scurf.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +26,8 @@
 ################################################################################
 
 import pg, sys
-import utils, db_access
-import apt_pkg, logging
+import dak.lib.utils, dak.lib.database
+import apt_pkg, dak.lib.logging
 
 ################################################################################
 
@@ -37,16 +36,16 @@ projectB = None
 
 ################################################################################
 
-# Shamelessly stolen from melanie. Should probably end up in utils.py
+# Shamelessly stolen from 'dak rm'. Should probably end up in dak.lib.utils.py
 def game_over():
-    answer = utils.our_raw_input("Continue (y/N)? ").lower()
+    answer = dak.lib.utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
         print "Aborted."
         sys.exit(1)
 
 
 def usage (exit_code=0):
-    print """Usage: alicia [OPTIONS] package [section] [priority]
+    print """Usage: dak override [OPTIONS] package [section] [priority]
 Make microchanges or microqueries of the overrides
 
   -h, --help                 show this help and exit
@@ -59,35 +58,35 @@ Make microchanges or microqueries of the overrides
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
 
-    Arguments = [('h',"help","Alicia::Options::Help"),
-                 ('d',"done","Alicia::Options::Done", "HasArg"),
-                 ('n',"no-action","Alicia::Options::No-Action"),
-                 ('s',"suite","Alicia::Options::Suite", "HasArg"),
+    Arguments = [('h',"help","Override::Options::Help"),
+                 ('d',"done","Override::Options::Done", "HasArg"),
+                 ('n',"no-action","Override::Options::No-Action"),
+                 ('s',"suite","Override::Options::Suite", "HasArg"),
                  ]
     for i in ["help", "no-action"]:
-	if not Cnf.has_key("Alicia::Options::%s" % (i)):
-	    Cnf["Alicia::Options::%s" % (i)] = ""
-    if not Cnf.has_key("Alicia::Options::Suite"):
-	Cnf["Alicia::Options::Suite"] = "unstable"
+	if not Cnf.has_key("Override::Options::%s" % (i)):
+	    Cnf["Override::Options::%s" % (i)] = ""
+    if not Cnf.has_key("Override::Options::Suite"):
+	Cnf["Override::Options::Suite"] = "unstable"
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Alicia::Options")
+    Options = Cnf.SubTree("Override::Options")
 
     if Options["Help"]:
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
     if not arguments:
-        utils.fubar("package name is a required argument.")
+        dak.lib.utils.fubar("package name is a required argument.")
 
     package = arguments.pop(0)
     suite = Options["Suite"]
     if arguments and len(arguments) > 2:
-        utils.fubar("Too many arguments")
+        dak.lib.utils.fubar("Too many arguments")
 
     if arguments and len(arguments) == 1:
         # Determine if the argument is a priority or a section...
@@ -102,7 +101,7 @@ def main ():
         elif r[0][1] == 1:
             arguments = (".",arg)
         else:
-            utils.fubar("%s is not a valid section or priority" % (arg))
+            dak.lib.utils.fubar("%s is not a valid section or priority" % (arg))
 
 
     # Retrieve current section/priority...
@@ -117,9 +116,9 @@ def main ():
     """ % (pg._quote(package,"str"), pg._quote(suite,"str")))
 
     if q.ntuples() == 0:
-        utils.fubar("Unable to find package %s" % (package))
+        dak.lib.utils.fubar("Unable to find package %s" % (package))
     if q.ntuples() > 1:
-        utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
+        dak.lib.utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
 
     r = q.getresult()
     oldsection = r[0][1]
@@ -142,14 +141,14 @@ def main ():
         pg._quote(newsection,"str")))
 
     if q.ntuples() == 0:
-        utils.fubar("Supplied section %s is invalid" % (newsection))
+        dak.lib.utils.fubar("Supplied section %s is invalid" % (newsection))
     newsecid = q.getresult()[0][0]
 
     q = projectB.query("SELECT id FROM priority WHERE priority=%s" % (
         pg._quote(newpriority,"str")))
 
     if q.ntuples() == 0:
-        utils.fubar("Supplied priority %s is invalid" % (newpriority))
+        dak.lib.utils.fubar("Supplied priority %s is invalid" % (newpriority))
     newprioid = q.getresult()[0][0]
 
     if newpriority == oldpriority and newsection == oldsection:
@@ -174,13 +173,13 @@ def main ():
 
     if not Options.has_key("Done"):
         pass
-        #utils.warn("No bugs to close have been specified. Noone will know you have done this.")
+        #dak.lib.utils.warn("No bugs to close have been specified. Noone will know you have done this.")
     else:
         print "I: Will close bug(s): %s" % (Options["Done"])
 
     game_over()
 
-    Logger = logging.Logger(Cnf, "alicia")
+    Logger = dak.lib.logging.Logger(Cnf, "override")
 
     projectB.query("BEGIN WORK")
     # We're in "do it" mode, we have something to do... do it
@@ -209,21 +208,21 @@ def main ():
 
     if Options.has_key("Done"):
         Subst = {}
-        Subst["__ALICIA_ADDRESS__"] = Cnf["Alicia::MyEmailAddress"]
+        Subst["__OVERRIDE_ADDRESS__"] = Cnf["Override::MyEmailAddress"]
         Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"]
         bcc = []
         if Cnf.Find("Dinstall::Bcc") != "":
             bcc.append(Cnf["Dinstall::Bcc"])
-        if Cnf.Find("Alicia::Bcc") != "":
-            bcc.append(Cnf["Alicia::Bcc"])
+        if Cnf.Find("Override::Bcc") != "":
+            bcc.append(Cnf["Override::Bcc"])
         if bcc:
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-Katie: alicia $Revision: 1.6 $"
+        Subst["__CC__"] = "X-DAK: dak override"
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
-        Subst["__WHOAMI__"] = utils.whoami()
+        Subst["__WHOAMI__"] = dak.lib.utils.whoami()
 
         summary = "Concerning package %s...\n" % (package)
         summary += "Operating on the %s suite\n" % (suite)
@@ -233,11 +232,11 @@ def main ():
             summary += "Changed section from %s to %s\n" % (oldsection,newsection)
         Subst["__SUMMARY__"] = summary
 
-        for bug in utils.split_args(Options["Done"]):
+        for bug in dak.lib.utils.split_args(Options["Done"]):
             Subst["__BUG_NUMBER__"] = bug
-            mail_message = utils.TemplateSubst(
-                Subst,Cnf["Dir::Templates"]+"/alicia.bug-close")
-            utils.send_mail(mail_message)
+            mail_message = dak.lib.utils.TemplateSubst(
+                Subst,Cnf["Dir::Templates"]+"/override.bug-close")
+            dak.lib.utils.send_mail(mail_message)
             Logger.log(["closed bug",bug])
 
     Logger.close()

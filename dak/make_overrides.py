@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Output override files for apt-ftparchive and indices/
-# Copyright (C) 2000, 2001, 2002, 2004  James Troup <james@nocrew.org>
-# $Id: denise,v 1.18 2005-11-15 09:50:32 ajt Exp $
+# Copyright (C) 2000, 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,13 +20,13 @@
 ################################################################################
 
 # This is seperate because it's horribly Debian specific and I don't
-# want that kind of horribleness in the otherwise generic natalie.  It
-# does duplicate code tho.
+# want that kind of horribleness in the otherwise generic 'dak
+# make-overrides'.  It does duplicate code tho.
 
 ################################################################################
 
 import pg, sys
-import utils, db_access
+import dak.lib.utils, dak.lib.database
 import apt_pkg
 
 ################################################################################
@@ -39,7 +38,7 @@ override = {}
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: denise
+    print """Usage: dak make-overrides
 Outputs the override tables to text files.
 
   -h, --help                show this help and exit."""
@@ -50,17 +49,17 @@ Outputs the override tables to text files.
 def do_list(output_file, suite, component, otype):
     global override
 
-    suite_id = db_access.get_suite_id(suite)
+    suite_id = dak.lib.database.get_suite_id(suite)
     if suite_id == -1:
-        utils.fubar("Suite '%s' not recognised." % (suite))
+        dak.lib.utils.fubar("Suite '%s' not recognised." % (suite))
 
-    component_id = db_access.get_component_id(component)
+    component_id = dak.lib.database.get_component_id(component)
     if component_id == -1:
-        utils.fubar("Component '%s' not recognised." % (component))
+        dak.lib.utils.fubar("Component '%s' not recognised." % (component))
 
-    otype_id = db_access.get_override_type_id(otype)
+    otype_id = dak.lib.database.get_override_type_id(otype)
     if otype_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (otype))
+        dak.lib.utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (otype))
 
     override.setdefault(suite, {})
     override[suite].setdefault(component, {})
@@ -70,33 +69,33 @@ def do_list(output_file, suite, component, otype):
         q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, otype_id))
         for i in q.getresult():
             override[suite][component][otype][i[0]] = i
-            output_file.write(utils.result_join(i)+'\n')
+            output_file.write(dak.lib.utils.result_join(i)+'\n')
     else:
         q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, otype_id))
         for i in q.getresult():
             i = i[:-1]; # Strip the priority level
             override[suite][component][otype][i[0]] = i
-            output_file.write(utils.result_join(i)+'\n')
+            output_file.write(dak.lib.utils.result_join(i)+'\n')
 
 ################################################################################
 
 def main ():
     global Cnf, projectB, override
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Denise::Options::Help")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Make-Overrides::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Denise::Options::%s" % (i)):
-	    Cnf["Denise::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Make-Overrides::Options::%s" % (i)):
+	    Cnf["Make-Overrides::Options::%s" % (i)] = ""
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Denise::Options")
+    Options = Cnf.SubTree("Make-Overrides::Options")
     if Options["Help"]:
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    db_access.init(Cnf, projectB)
+    dak.lib.database.init(Cnf, projectB)
 
-    for suite in Cnf.SubTree("Cindy::OverrideSuites").List():
+    for suite in Cnf.SubTree("Check-Overrides::OverrideSuites").List():
         if Cnf.has_key("Suite::%s::Untouchable" % suite) and Cnf["Suite::%s::Untouchable" % suite] != 0:
             continue
         suite = suite.lower()
@@ -116,7 +115,7 @@ def main ():
                 elif otype == "dsc":
                     suffix = ".src"
                 filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, component.replace("non-US/", ""), suffix)
-                output_file = utils.open_file(filename, 'w')
+                output_file = dak.lib.utils.open_file(filename, 'w')
                 do_list(output_file, suite, component, otype)
                 output_file.close()
 

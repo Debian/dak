@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-# rhona, cleans up unassociated binary and source packages
-# Copyright (C) 2000, 2001, 2002, 2003  James Troup <james@nocrew.org>
-# $Id: rhona,v 1.29 2005-11-25 06:59:45 ajt Exp $
+# Cleans up unassociated binary and source packages
+# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +30,7 @@
 
 import os, pg, stat, sys, time
 import apt_pkg
-import utils
+import dak.lib.utils
 
 ################################################################################
 
@@ -44,7 +43,7 @@ delete_date = None;  # delete things marked "deleted" earler than this
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: rhona [OPTIONS]
+    print """Usage: dak clean-suites [OPTIONS]
 Clean old packages from suites.
 
   -n, --no-action            don't do anything
@@ -192,7 +191,7 @@ def clean():
     print "Cleaning out packages..."
 
     date = time.strftime("%Y-%m-%d")
-    dest = Cnf["Dir::Morgue"] + '/' + Cnf["Rhona::MorgueSubDir"] + '/' + date
+    dest = Cnf["Dir::Morgue"] + '/' + Cnf["Clean-Suites::MorgueSubDir"] + '/' + date
     if not os.path.exists(dest):
         os.mkdir(dest)
 
@@ -209,7 +208,7 @@ def clean():
     for i in q.getresult():
         filename = i[0] + i[1]
         if not os.path.exists(filename):
-            utils.warn("can not find '%s'." % (filename))
+            dak.lib.utils.warn("can not find '%s'." % (filename))
             continue
         if os.path.isfile(filename):
             if os.path.islink(filename):
@@ -225,14 +224,14 @@ def clean():
                 dest_filename = dest + '/' + os.path.basename(filename)
                 # If the destination file exists; try to find another filename to use
                 if os.path.exists(dest_filename):
-                    dest_filename = utils.find_next_free(dest_filename)
+                    dest_filename = dak.lib.utils.find_next_free(dest_filename)
 
                 if Options["No-Action"]:
                     print "Cleaning %s -> %s ..." % (filename, dest_filename)
                 else:
-                    utils.move(filename, dest_filename)
+                    dak.lib.utils.move(filename, dest_filename)
         else:
-            utils.fubar("%s is neither symlink nor file?!" % (filename))
+            dak.lib.utils.fubar("%s is neither symlink nor file?!" % (filename))
 
     # Delete from the 'files' table
     if not Options["No-Action"]:
@@ -241,7 +240,7 @@ def clean():
         projectB.query("DELETE FROM files WHERE last_used <= '%s'" % (delete_date))
         sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
     if count > 0:
-        sys.stderr.write("Cleaned %d files, %s.\n" % (count, utils.size_type(size)))
+        sys.stderr.write("Cleaned %d files, %s.\n" % (count, dak.lib.utils.size_type(size)))
 
 ################################################################################
 
@@ -299,17 +298,17 @@ def clean_queue_build():
 
     print "Cleaning out queue build symlinks..."
 
-    our_delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::QueueBuildStayOfExecution"])))
+    our_delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Clean-Suites::QueueBuildStayOfExecution"])))
     count = 0
 
     q = projectB.query("SELECT filename FROM queue_build WHERE last_used <= '%s'" % (our_delete_date))
     for i in q.getresult():
         filename = i[0]
         if not os.path.exists(filename):
-            utils.warn("%s (from queue_build) doesn't exist." % (filename))
+            dak.lib.utils.warn("%s (from queue_build) doesn't exist." % (filename))
             continue
         if not Cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(filename):
-            utils.fubar("%s (from queue_build) should be a symlink but isn't." % (filename))
+            dak.lib.utils.fubar("%s (from queue_build) should be a symlink but isn't." % (filename))
         os.unlink(filename)
         count += 1
     projectB.query("DELETE FROM queue_build WHERE last_used <= '%s'" % (our_delete_date))
@@ -322,16 +321,16 @@ def clean_queue_build():
 def main():
     global Cnf, Options, projectB, delete_date, now_date
 
-    Cnf = utils.get_conf()
+    Cnf = dak.lib.utils.get_conf()
     for i in ["Help", "No-Action" ]:
-	if not Cnf.has_key("Rhona::Options::%s" % (i)):
-	    Cnf["Rhona::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Clean-Suites::Options::%s" % (i)):
+	    Cnf["Clean-Suites::Options::%s" % (i)] = ""
 
-    Arguments = [('h',"help","Rhona::Options::Help"),
-                 ('n',"no-action","Rhona::Options::No-Action")]
+    Arguments = [('h',"help","Clean-Suites::Options::Help"),
+                 ('n',"no-action","Clean-Suites::Options::No-Action")]
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Rhona::Options")
+    Options = Cnf.SubTree("Clean-Suites::Options")
 
     if Options["Help"]:
         usage()
@@ -339,7 +338,7 @@ def main():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
     now_date = time.strftime("%Y-%m-%d %H:%M")
-    delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Rhona::StayOfExecution"])))
+    delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Clean-Suites::StayOfExecution"])))
 
     check_binaries()
     clean_binaries()

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # DB access fucntions
-# Copyright (C) 2000, 2001, 2002, 2003, 2004  James Troup <james@nocrew.org>
-# $Id: db_access.py,v 1.18 2005-12-05 05:08:10 ajt Exp $
+# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

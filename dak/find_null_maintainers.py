@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Check for users with no packages in the archive
-# Copyright (C) 2003  James Troup <james@nocrew.org>
-# $Id: rosamund,v 1.1 2003-09-07 13:48:51 troup Exp $
+# Copyright (C) 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +21,7 @@
 
 import ldap, pg, sys, time
 import apt_pkg
-import utils
+import dak.lib.utils
 
 ################################################################################
 
@@ -32,7 +31,7 @@ projectB = None
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: rosamund
+    print """Usage: dak find-null-maintainers
 Checks for users with no packages in the archive
 
   -h, --help                show this help and exit."""
@@ -51,15 +50,15 @@ def get_ldap_value(entry, value):
 def main():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
-    Arguments = [('h',"help","Rosamund::Options::Help")]
+    Cnf = dak.lib.utils.get_conf()
+    Arguments = [('h',"help","Find-Null-Maintainers::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Rosamund::Options::%s" % (i)):
-	    Cnf["Rosamund::Options::%s" % (i)] = ""
+	if not Cnf.has_key("Find-Null-Maintainers::Options::%s" % (i)):
+	    Cnf["Find-Null-Maintainers::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Rosamund::Options")
+    Options = Cnf.SubTree("Find-Null-Maintainers::Options")
     if Options["Help"]:
 	usage()
 
@@ -67,12 +66,12 @@ def main():
 
     before = time.time()
     sys.stderr.write("[Getting info from the LDAP server...")
-    LDAPDn = Cnf["Emilie::LDAPDn"]
-    LDAPServer = Cnf["Emilie::LDAPServer"]
+    LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
+    LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
     l = ldap.open(LDAPServer)
     l.simple_bind_s("","")
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
-                       "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Julia::ValidGID"]),
+                       "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Import-Users-From-Passwd::ValidGID"]),
                        ["uid", "cn", "mn", "sn", "createtimestamp"])
     sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
 
