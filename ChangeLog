@@ -1,6 +1,11 @@
 2006-05-18  James Troup  <james@nocrew.org>
 
-	* dak/dak.py: renamed from shell.py.  Update to support new layout
+	* dak/dak.py: renamed from shell.py.  Update to support new source
+	layout.  Created init() and usage() functions.  Various
+	pylint-inspired cleanups.  Use daklib utils.warn() and
+	utils.fubar().  Change 'functionality' variable to only have
+	(command, description) and always invoke main() when running the
+	module.  Also support -h.
 
 2006-05-17  James Troup  <james@nocrew.org>
 
