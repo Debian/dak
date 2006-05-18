@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Sync the ISC configuartion file and the SQL database
+"""Sync dak.conf configuartion file and the SQL database"""
 # Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,8 @@ projectB = None
 ################################################################################
 
 def usage(exit_code=0):
+    """Print a usage message and exit with 'exit_code'."""
+
     print """Usage: dak init-db
 Initalizes some tables in the projectB database based on the config file.
 
@@ -40,122 +42,133 @@ Initalizes some tables in the projectB database based on the config file.
 
 ################################################################################
 
-def get (c, i):
-    if c.has_key(i):
-        return "'%s'" % (c[i])
+def sql_get (config, key):
+    """Return the value of config[key] in quotes or NULL if it doesn't exist."""
+
+    if config.has_key(key):
+        return "'%s'" % (config[key])
     else:
         return "NULL"
 
-def main ():
-    global Cnf, projectB
+################################################################################
 
-    Cnf = daklib.utils.get_conf()
-    Arguments = [('h',"help","Init-DB::Options::Help")]
-    for i in [ "help" ]:
-	if not Cnf.has_key("Init-DB::Options::%s" % (i)):
-	    Cnf["Init-DB::Options::%s" % (i)] = ""
-
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
-
-    Options = Cnf.SubTree("Init-DB::Options")
-    if Options["Help"]:
-	usage()
-
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
-
-    # archive
+def do_archive():
+    """Initalize the archive table."""
 
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM archive")
     for name in Cnf.SubTree("Archive").List():
-        Archive = Cnf.SubTree("Archive::%s" % (name))
-        origin_server = get(Archive, "OriginServer")
-        description = get(Archive, "Description")
-        projectB.query("INSERT INTO archive (name, origin_server, description) VALUES ('%s', %s, %s)" % (name, origin_server, description))
+        archive_config = Cnf.SubTree("Archive::%s" % (name))
+        origin_server = sql_get(archive_config, "OriginServer")
+        description = sql_get(archive_config, "Description")
+        projectB.query("INSERT INTO archive (name, origin_server, description) "
+                       "VALUES ('%s', %s, %s)"
+                       % (name, origin_server, description))
     projectB.query("COMMIT WORK")
 
-    # architecture
+def do_architecture():
+    """Initalize the architecture table."""
 
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM architecture")
     for arch in Cnf.SubTree("Architectures").List():
         description = Cnf["Architectures::%s" % (arch)]
-        projectB.query("INSERT INTO architecture (arch_string, description) VALUES ('%s', '%s')" % (arch, description))
+        projectB.query("INSERT INTO architecture (arch_string, description) "
+                       "VALUES ('%s', '%s')" % (arch, description))
     projectB.query("COMMIT WORK")
 
-    # component
+def do_component():
+    """Initalize the component table."""
 
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM component")
     for name in Cnf.SubTree("Component").List():
-        Component = Cnf.SubTree("Component::%s" % (name))
-        description = get(Component, "Description")
-        if Component.get("MeetsDFSG").lower() == "true":
+        component_config = Cnf.SubTree("Component::%s" % (name))
+        description = sql_get(component_config, "Description")
+        if component_config.get("MeetsDFSG").lower() == "true":
             meets_dfsg = "true"
         else:
             meets_dfsg = "false"
-        projectB.query("INSERT INTO component (name, description, meets_dfsg) VALUES ('%s', %s, %s)" % (name, description, meets_dfsg))
+        projectB.query("INSERT INTO component (name, description, meets_dfsg) "
+                       "VALUES ('%s', %s, %s)"
+                       % (name, description, meets_dfsg))
     projectB.query("COMMIT WORK")
 
-    # location
+def do_location():
+    """Initalize the location table."""
 
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM location")
     for location in Cnf.SubTree("Location").List():
-        Location = Cnf.SubTree("Location::%s" % (location))
-        archive_id = daklib.database.get_archive_id(Location["Archive"])
+        location_config = Cnf.SubTree("Location::%s" % (location))
+        archive_id = daklib.database.get_archive_id(location_config["Archive"])
         if archive_id == -1:
             daklib.utils.fubar("Archive '%s' for location '%s' not found."
-                               % (Location["Archive"], location))
-        type = Location.get("type")
-        if type == "legacy-mixed":
-            projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, Location["type"]))
-        elif type == "legacy" or type == "pool":
+                               % (location_config["Archive"], location))
+        location_type = location_config.get("type")
+        if location_type == "legacy-mixed":
+            projectB.query("INSERT INTO location (path, archive, type) VALUES "
+                           "('%s', %d, '%s')"
+                           % (location, archive_id, location_config["type"]))
+        elif location_type == "legacy" or location_type == "pool":
             for component in Cnf.SubTree("Component").List():
                 component_id = daklib.database.get_component_id(component)
-                projectB.query("INSERT INTO location (path, component, archive, type) VALUES ('%s', %d, %d, '%s')" %
-                               (location, component_id, archive_id, type))
+                projectB.query("INSERT INTO location (path, component, "
+                               "archive, type) VALUES ('%s', %d, %d, '%s')"
+                               % (location, component_id, archive_id,
+                                  location_type))
         else:
-            daklib.utils.fubar("E: type '%s' not recognised in location %s." % (type, location))
+            daklib.utils.fubar("E: type '%s' not recognised in location %s."
+                               % (location_type, location))
     projectB.query("COMMIT WORK")
 
-    # suite
+def do_suite():
+    """Initalize the suite table."""
 
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM suite")
     for suite in Cnf.SubTree("Suite").List():
-        Suite = Cnf.SubTree("Suite::%s" %(suite))
-        version = get(Suite, "Version")
-        origin = get(Suite, "Origin")
-        description = get(Suite, "Description")
-        projectB.query("INSERT INTO suite (suite_name, version, origin, description) VALUES ('%s', %s, %s, %s)"
+        suite_config = Cnf.SubTree("Suite::%s" %(suite))
+        version = sql_get(suite_config, "Version")
+        origin = sql_get(suite_config, "Origin")
+        description = sql_get(suite_config, "Description")
+        projectB.query("INSERT INTO suite (suite_name, version, origin, "
+                       "description) VALUES ('%s', %s, %s, %s)"
                        % (suite.lower(), version, origin, description))
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
             architecture_id = daklib.database.get_architecture_id (architecture)
             if architecture_id < 0:
-                daklib.utils.fubar("architecture '%s' not found in architecture table for suite %s." % (architecture, suite))
-            projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id))
+                daklib.utils.fubar("architecture '%s' not found in architecture"
+                                   " table for suite %s."
+                                   % (architecture, suite))
+            projectB.query("INSERT INTO suite_architectures (suite, "
+                           "architecture) VALUES (currval('suite_id_seq'), %d)"
+                           % (architecture_id))
     projectB.query("COMMIT WORK")
 
-    # override_type
+def do_override_type():
+    """Initalize the override_type table."""
 
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM override_type")
-    for type in Cnf.ValueList("OverrideType"):
-        projectB.query("INSERT INTO override_type (type) VALUES ('%s')" % (type))
+    for override_type in Cnf.ValueList("OverrideType"):
+        projectB.query("INSERT INTO override_type (type) VALUES ('%s')"
+                       % (override_type))
     projectB.query("COMMIT WORK")
 
-    # priority
+def do_priority():
+    """Initialize the priority table."""
 
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM priority")
     for priority in Cnf.SubTree("Priority").List():
-        projectB.query("INSERT INTO priority (priority, level) VALUES ('%s', %s)" % (priority, Cnf["Priority::%s" % (priority)]))
+        projectB.query("INSERT INTO priority (priority, level) VALUES "
+                       "('%s', %s)"
+                       % (priority, Cnf["Priority::%s" % (priority)]))
     projectB.query("COMMIT WORK")
 
-    # section
-
+def do_section():
+    """Initalize the section table."""
     projectB.query("BEGIN WORK")
     projectB.query("DELETE FROM section")
     for component in Cnf.SubTree("Component").List():
@@ -173,11 +186,46 @@ def main ():
             else:
                 suffix = ""
         for section in Cnf.ValueList("Section"):
-            projectB.query("INSERT INTO section (section) VALUES ('%s%s%s')" % (prefix, section, suffix))
+            projectB.query("INSERT INTO section (section) VALUES "
+                           "('%s%s%s')" % (prefix, section, suffix))
     projectB.query("COMMIT WORK")
+
+################################################################################
+    
+def main ():
+    """Sync dak.conf configuartion file and the SQL database"""
+
+    global Cnf, projectB
+
+    Cnf = daklib.utils.get_conf()
+    arguments = [('h', "help", "Init-DB::Options::Help")]
+    for i in [ "help" ]:
+        if not Cnf.has_key("Init-DB::Options::%s" % (i)):
+            Cnf["Init-DB::Options::%s" % (i)] = ""
+
+    arguments = apt_pkg.ParseCommandLine(Cnf, arguments, sys.argv)
+
+    options = Cnf.SubTree("Init-DB::Options")
+    if options["Help"]:
+        usage()
+    elif arguments:
+        daklib.utils.warn("dak init-db takes no arguments.")
+        usage(exit_code=1)
+
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],
+                          int(Cnf["DB::Port"]))
+    daklib.database.init(Cnf, projectB)
+
+    do_archive()
+    do_architecture()
+    do_component()
+    do_location()
+    do_suite()
+    do_override_type()
+    do_priority()
+    do_section()
 
 ################################################################################
 
 if __name__ == '__main__':
     main()
-
