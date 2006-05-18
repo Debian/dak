@@ -54,7 +54,7 @@ Sync PostgreSQL's users with system users.
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
 
     Arguments = [('n', "no-action", "Import-Users-From-Passwd::Options::No-Action"),
                  ('q', "quiet", "Import-Users-From-Passwd::Options::Quiet"),
@@ -70,7 +70,7 @@ def main ():
     if Options["Help"]:
         usage()
     elif arguments:
-        utils.warn("dak import-users-from-passwd takes no non-option arguments.")
+        daklib.utils.warn("dak import-users-from-passwd takes no non-option arguments.")
         usage(1)
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))

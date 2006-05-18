@@ -30,7 +30,7 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG
 import os
 import cPickle
 
-import dak.lib.utils as utils
+import daklib.utils
 
 ## Master path is the main repository
 #MASTER_PATH = "/org/ftp.debian.org/scratch/dsilvers/master"
@@ -167,7 +167,7 @@ class MirrorSplitDB:
             elif S_ISREG(lnl[0]):
                 bdir.files[ln] = lnl[1]
             else:
-                utils.fubar( "Confused by %s/%s -- not a dir, link or file" %
+                daklib.utils.fubar( "Confused by %s/%s -- not a dir, link or file" %
                             ( path, ln ) )
         for d in dirs:
             bdir.dirs[d] = self._internal_recurse( "%s/%s" % (path,d) )
@@ -351,7 +351,7 @@ Generate hardlink trees of certain architectures
 def main ():
     global Cnf
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
 
     Arguments = [('h',"help","Mirror-Split::Options::Help"),
                  ('l',"list","Mirror-Split::Options::List"),

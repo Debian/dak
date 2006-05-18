@@ -38,8 +38,8 @@
 
 import commands, os, pg, re, sys, time
 import apt_pkg
-import dak.lib.database as database
-import dak.lib.utils as utils
+import daklib.database
+import daklib.utils
 
 ###############################################################################
 
@@ -93,14 +93,14 @@ def reject (str, prefix="Rejected: "):
 ###############################################################################
 
 def check_signature (filename):
-    if not utils.re_taint_free.match(os.path.basename(filename)):
+    if not daklib.utils.re_taint_free.match(os.path.basename(filename)):
         reject("!!WARNING!! tainted filename: '%s'." % (filename))
         return None
 
     status_read, status_write = os.pipe()
     cmd = "gpgv --status-fd %s --keyring %s --keyring %s %s" \
           % (status_write, Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename)
-    (output, status, exit_status) = utils.gpgv_get_status_output(cmd, status_read, status_write)
+    (output, status, exit_status) = daklib.utils.gpgv_get_status_output(cmd, status_read, status_write)
 
     # Process the status-fd output
     keywords = {}
@@ -133,7 +133,7 @@ def check_signature (filename):
 
     # Now check for obviously bad things in the processed output
     if keywords.has_key("SIGEXPIRED"):
-        utils.warn("%s: signing key has expired." % (filename))
+        daklib.utils.warn("%s: signing key has expired." % (filename))
     if keywords.has_key("KEYREVOKED"):
         reject("key used to sign %s has been revoked." % (filename))
         bad = 1
@@ -154,7 +154,7 @@ def check_signature (filename):
         reject("ascii armour of signature was corrupt in %s." % (filename))
         bad = 1
     if keywords.has_key("NODATA"):
-        utils.warn("no signature found for %s." % (filename))
+        daklib.utils.warn("no signature found for %s." % (filename))
         return "NOSIG"
         #reject("no signature found in %s." % (filename))
         #bad = 1
@@ -166,9 +166,9 @@ def check_signature (filename):
     if exit_status and not keywords.has_key("NO_PUBKEY"):
         reject("gpgv failed while checking %s." % (filename))
         if status.strip():
-            reject(utils.prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
+            reject(daklib.utils.prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
         else:
-            reject(utils.prefix_multi_line_string(output, " [GPG output:] "), "")
+            reject(daklib.utils.prefix_multi_line_string(output, " [GPG output:] "), "")
         return None
 
     # Sanity check the good stuff we expect
@@ -191,7 +191,7 @@ def check_signature (filename):
         bad = 1
 
     # Finally ensure there's not something we don't recognise
-    known_keywords = utils.Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+    known_keywords = daklib.utils.Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
                                 SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
                                 NODATA="")
 
@@ -232,13 +232,13 @@ def update_locations ():
     projectB.query("DELETE FROM location")
     for location in Cnf.SubTree("Location").List():
         SubSec = Cnf.SubTree("Location::%s" % (location))
-        archive_id = database.get_archive_id(SubSec["archive"])
+        archive_id = daklib.database.get_archive_id(SubSec["archive"])
         type = SubSec.Find("type")
         if type == "legacy-mixed":
             projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, SubSec["type"]))
         else:
             for component in Cnf.SubTree("Component").List():
-                component_id = database.get_component_id(component)
+                component_id = daklib.database.get_component_id(component)
                 projectB.query("INSERT INTO location (path, component, archive, type) VALUES ('%s', %d, %d, '%s')" %
                                (location, component_id, archive_id, SubSec["type"]))
 
@@ -256,7 +256,7 @@ def update_suites ():
             if SubSec.has_key(i):
                 projectB.query("UPDATE suite SET %s = '%s' WHERE suite_name = '%s'" % (i.lower(), SubSec[i], suite.lower()))
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
-            architecture_id = database.get_architecture_id (architecture)
+            architecture_id = daklib.database.get_architecture_id (architecture)
             projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id))
 
 def update_override_type():
@@ -298,7 +298,7 @@ def get_location_path(directory):
     try:
         path = q.getresult()[0][0]
     except:
-        utils.fubar("[import-archive] get_location_path(): Couldn't get path for %s" % (directory))
+        daklib.utils.fubar("[import-archive] get_location_path(): Couldn't get path for %s" % (directory))
     location_path_cache[directory] = path
     return path
 
@@ -321,41 +321,41 @@ def process_sources (filename, suite, component, archive):
     global source_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, source_id_serial, src_associations_id_serial, dsc_files_id_serial, source_cache_for_binaries, orig_tar_gz_cache, reject_message
 
     suite = suite.lower()
-    suite_id = database.get_suite_id(suite)
+    suite_id = daklib.database.get_suite_id(suite)
     try:
-        file = utils.open_file (filename)
-    except utils.cant_open_exc:
-        utils.warn("can't open '%s'" % (filename))
+        file = daklib.utils.open_file (filename)
+    except daklib.utils.cant_open_exc:
+        daklib.utils.warn("can't open '%s'" % (filename))
         return
     Scanner = apt_pkg.ParseTagFile(file)
     while Scanner.Step() != 0:
         package = Scanner.Section["package"]
         version = Scanner.Section["version"]
         directory = Scanner.Section["directory"]
-        dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)))
+        dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, daklib.utils.re_no_epoch.sub('', version)))
         # Sometimes the Directory path is a lie; check in the pool
         if not os.path.exists(dsc_file):
             if directory.split('/')[0] == "dists":
-                directory = Cnf["Dir::PoolRoot"] + utils.poolify(package, component)
-                dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)))
+                directory = Cnf["Dir::PoolRoot"] + daklib.utils.poolify(package, component)
+                dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, daklib.utils.re_no_epoch.sub('', version)))
         if not os.path.exists(dsc_file):
-            utils.fubar("%s not found." % (dsc_file))
+            daklib.utils.fubar("%s not found." % (dsc_file))
         install_date = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(dsc_file)))
         fingerprint = check_signature(dsc_file)
-        fingerprint_id = database.get_or_set_fingerprint_id(fingerprint)
+        fingerprint_id = daklib.database.get_or_set_fingerprint_id(fingerprint)
         if reject_message:
-            utils.fubar("%s: %s" % (dsc_file, reject_message))
+            daklib.utils.fubar("%s: %s" % (dsc_file, reject_message))
         maintainer = Scanner.Section["maintainer"]
         maintainer = maintainer.replace("'", "\\'")
-        maintainer_id = database.get_or_set_maintainer_id(maintainer)
+        maintainer_id = daklib.database.get_or_set_maintainer_id(maintainer)
         location = get_location_path(directory.split('/')[0])
-        location_id = database.get_location_id (location, component, archive)
+        location_id = daklib.database.get_location_id (location, component, archive)
         if not directory.endswith("/"):
             directory += '/'
         directory = poolify (directory, location)
         if directory != "" and not directory.endswith("/"):
             directory += '/'
-        no_epoch_version = utils.re_no_epoch.sub('', version)
+        no_epoch_version = daklib.utils.re_no_epoch.sub('', version)
         # Add all files referenced by the .dsc to the files table
         ids = []
         for line in Scanner.Section["files"].split('\n'):
@@ -404,11 +404,11 @@ def process_packages (filename, suite, component, archive):
     count_total = 0
     count_bad = 0
     suite = suite.lower()
-    suite_id = database.get_suite_id(suite)
+    suite_id = daklib.database.get_suite_id(suite)
     try:
-        file = utils.open_file (filename)
-    except utils.cant_open_exc:
-        utils.warn("can't open '%s'" % (filename))
+        file = daklib.utils.open_file (filename)
+    except daklib.utils.cant_open_exc:
+        daklib.utils.warn("can't open '%s'" % (filename))
         return
     Scanner = apt_pkg.ParseTagFile(file)
     while Scanner.Step() != 0:
@@ -416,25 +416,25 @@ def process_packages (filename, suite, component, archive):
         version = Scanner.Section["version"]
         maintainer = Scanner.Section["maintainer"]
         maintainer = maintainer.replace("'", "\\'")
-        maintainer_id = database.get_or_set_maintainer_id(maintainer)
+        maintainer_id = daklib.database.get_or_set_maintainer_id(maintainer)
         architecture = Scanner.Section["architecture"]
-        architecture_id = database.get_architecture_id (architecture)
+        architecture_id = daklib.database.get_architecture_id (architecture)
         fingerprint = "NOSIG"
-        fingerprint_id = database.get_or_set_fingerprint_id(fingerprint)
+        fingerprint_id = daklib.database.get_or_set_fingerprint_id(fingerprint)
         if not Scanner.Section.has_key("source"):
             source = package
         else:
             source = Scanner.Section["source"]
         source_version = ""
         if source.find("(") != -1:
-            m = utils.re_extract_src_version.match(source)
+            m = daklib.utils.re_extract_src_version.match(source)
             source = m.group(1)
             source_version = m.group(2)
         if not source_version:
             source_version = version
         filename = Scanner.Section["filename"]
         location = get_location_path(filename.split('/')[0])
-        location_id = database.get_location_id (location, component, archive)
+        location_id = daklib.database.get_location_id (location, component, archive)
         filename = poolify (filename, location)
         if architecture == "all":
             filename = re_arch_from_filename.sub("binary-all", filename)
@@ -474,10 +474,10 @@ def process_packages (filename, suite, component, archive):
 ###############################################################################
 
 def do_sources(sources, suite, component, server):
-    temp_filename = utils.temp_filename()
+    temp_filename = daklib.utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (sources, temp_filename))
     if (result != 0):
-        utils.fubar("Gunzip invocation failed!\n%s" % (output), result)
+        daklib.utils.fubar("Gunzip invocation failed!\n%s" % (output), result)
     print 'Processing '+sources+'...'
     process_sources (temp_filename, suite, component, server)
     os.unlink(temp_filename)
@@ -487,7 +487,7 @@ def do_sources(sources, suite, component, server):
 def do_da_do_da ():
     global Cnf, projectB, query_cache, files_query_cache, source_query_cache, src_associations_query_cache, dsc_files_query_cache, bin_associations_query_cache, binaries_query_cache
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     Arguments = [('a', "action", "Import-Archive::Options::Action"),
                  ('h', "help", "Import-Archive::Options::Help")]
     for i in [ "action", "help" ]:
@@ -501,7 +501,7 @@ def do_da_do_da ():
 	usage()
 
     if not Options["Action"]:
-        utils.warn("""no -a/--action given; not doing anything.
+        daklib.utils.warn("""no -a/--action given; not doing anything.
 Please read the documentation before running this script.
 """)
         usage(1)
@@ -509,12 +509,12 @@ Please read the documentation before running this script.
     print "Re-Creating DB..."
     (result, output) = commands.getstatusoutput("psql -f init_pool.sql template1")
     if (result != 0):
-        utils.fubar("psql invocation failed!\n", result)
+        daklib.utils.fubar("psql invocation failed!\n", result)
     print output
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
-    database.init (Cnf, projectB)
+    daklib.database.init (Cnf, projectB)
 
     print "Adding static tables from conf file..."
     projectB.query("BEGIN WORK")
@@ -528,12 +528,12 @@ Please read the documentation before running this script.
     update_section()
     projectB.query("COMMIT WORK")
 
-    files_query_cache = utils.open_file(Cnf["Import-Archive::ExportDir"]+"files","w")
-    source_query_cache = utils.open_file(Cnf["Import-Archive::ExportDir"]+"source","w")
-    src_associations_query_cache = utils.open_file(Cnf["Import-Archive::ExportDir"]+"src_associations","w")
-    dsc_files_query_cache = utils.open_file(Cnf["Import-Archive::ExportDir"]+"dsc_files","w")
-    binaries_query_cache = utils.open_file(Cnf["Import-Archive::ExportDir"]+"binaries","w")
-    bin_associations_query_cache = utils.open_file(Cnf["Import-Archive::ExportDir"]+"bin_associations","w")
+    files_query_cache = daklib.utils.open_file(Cnf["Import-Archive::ExportDir"]+"files","w")
+    source_query_cache = daklib.utils.open_file(Cnf["Import-Archive::ExportDir"]+"source","w")
+    src_associations_query_cache = daklib.utils.open_file(Cnf["Import-Archive::ExportDir"]+"src_associations","w")
+    dsc_files_query_cache = daklib.utils.open_file(Cnf["Import-Archive::ExportDir"]+"dsc_files","w")
+    binaries_query_cache = daklib.utils.open_file(Cnf["Import-Archive::ExportDir"]+"binaries","w")
+    bin_associations_query_cache = daklib.utils.open_file(Cnf["Import-Archive::ExportDir"]+"bin_associations","w")
 
     projectB.query("BEGIN WORK")
     # Process Sources files to popoulate `source' and friends
@@ -551,7 +551,7 @@ Please read the documentation before running this script.
                     sources = Cnf["Dir::Root"] + "dists/" + Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/source/' + 'Sources.gz'
                     do_sources(sources, suite, component, server)
         else:
-            utils.fubar("Unknown location type ('%s')." % (type))
+            daklib.utils.fubar("Unknown location type ('%s')." % (type))
 
     # Process Packages files to populate `binaries' and friends
 
@@ -567,7 +567,7 @@ Please read the documentation before running this script.
         elif type == "legacy" or type == "pool":
             for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
                 for component in Cnf.SubTree("Component").List():
-                    architectures = filter(utils.real_arch,
+                    architectures = filter(daklib.utils.real_arch,
                                            Cnf.ValueList("Suite::%s::Architectures" % (suite)))
                     for architecture in architectures:
                         packages = Cnf["Dir::Root"] + "dists/" + Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/binary-' + architecture + '/Packages'
@@ -602,14 +602,14 @@ Please read the documentation before running this script.
     (result, output) = commands.getstatusoutput("psql %s < add_constraints.sql" % (Cnf["DB::Name"]))
     print output
     if (result != 0):
-        utils.fubar("psql invocation failed!\n%s" % (output), result)
+        daklib.utils.fubar("psql invocation failed!\n%s" % (output), result)
 
     return
 
 ################################################################################
 
 def main():
-    utils.try_with_debug(do_da_do_da)
+    daklib.utils.try_with_debug(do_da_do_da)
 
 ################################################################################
 

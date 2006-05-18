@@ -22,8 +22,8 @@
 
 import pg, sys
 import apt_pkg
-import dak.lib.database as database
-import dak.lib.utils as utils
+import daklib.database
+import daklib.utils
 
 ################################################################################
 
@@ -44,7 +44,7 @@ Looks for fixable descrepancies between stable and unstable.
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Compare-Suites::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Compare-Suites::Options::%s" % (i)):
@@ -57,15 +57,15 @@ def main ():
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    daklib.database.init(Cnf, projectB)
 
     src_suite = "stable"
     dst_suite = "unstable"
 
-    src_suite_id = database.get_suite_id(src_suite)
-    dst_suite_id = database.get_suite_id(dst_suite)
-    arch_all_id = database.get_architecture_id("all")
-    dsc_type_id = database.get_override_type_id("dsc")
+    src_suite_id = daklib.database.get_suite_id(src_suite)
+    dst_suite_id = daklib.database.get_suite_id(dst_suite)
+    arch_all_id = daklib.database.get_architecture_id("all")
+    dsc_type_id = daklib.database.get_override_type_id("dsc")
 
     for arch in Cnf.ValueList("Suite::%s::Architectures" % (src_suite)):
         if arch == "source":
@@ -77,7 +77,7 @@ def main ():
 
         if arch == "all":
             continue
-        arch_id = database.get_architecture_id(arch)
+        arch_id = daklib.database.get_architecture_id(arch)
         q = projectB.query("""
 SELECT b_src.package, b_src.version, a.arch_string
   FROM binaries b_src, bin_associations ba, override o, architecture a

@@ -31,10 +31,10 @@
 
 import errno, fcntl, os, sys, time, re
 import apt_pkg
-import dak.lib.database as database
-import dak.lib.logging as logging
-import dak.lib.queue as queue
-import dak.lib.utils as utils
+import daklib.database
+import daklib.logging
+import daklib.queue 
+import daklib.utils
 
 ###############################################################################
 
@@ -76,7 +76,7 @@ class Urgency_Log:
             os.makedirs(self.log_dir, 02775)
         # Open the logfile
         self.log_filename = "%s/.install-urgencies-%s.new" % (self.log_dir, self.timestamp)
-        self.log_file = utils.open_file(self.log_filename, 'w')
+        self.log_file = daklib.utils.open_file(self.log_filename, 'w')
         self.writes = 0
 
     def log (self, source, version, urgency):
@@ -91,7 +91,7 @@ class Urgency_Log:
         self.log_file.close()
         if self.writes:
             new_filename = "%s/install-urgencies-%s" % (self.log_dir, self.timestamp)
-            utils.move(self.log_filename, new_filename)
+            daklib.utils.move(self.log_filename, new_filename)
         else:
             os.unlink(self.log_filename)
 
@@ -154,7 +154,7 @@ def check():
 def init():
     global Cnf, Options, Upload, projectB, changes, dsc, dsc_files, files, pkg, Subst
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
 
     Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
                  ('h',"help","Dinstall::Options::Help"),
@@ -172,7 +172,7 @@ def init():
     if Options["Help"]:
         usage()
 
-    Upload = queue.Upload(Cnf)
+    Upload = daklib.queue.Upload(Cnf)
     projectB = Upload.projectB
 
     changes = Upload.pkg.changes
@@ -218,8 +218,8 @@ def action ():
             answer = 'I'
 
     while prompt.find(answer) == -1:
-        answer = utils.our_raw_input(prompt)
-        m = queue.re_default_answer.match(prompt)
+        answer = daklib.utils.our_raw_input(prompt)
+        m = daklib.queue.re_default_answer.match(prompt)
         if answer == "":
             answer = m.group(1)
         answer = answer[:1].upper()
@@ -245,7 +245,7 @@ def do_reject ():
     Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
     Subst["__REJECT_MESSAGE__"] = reject_message
     Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
-    reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-accepted.unaccept")
+    reject_mail_message = daklib.utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-accepted.unaccept")
 
     # Write the rejection email out as the <foo>.reason file
     reason_filename = os.path.basename(pkg.changes_file[:-8]) + ".reason"
@@ -258,7 +258,7 @@ def do_reject ():
     os.write(fd, reject_mail_message)
     os.close(fd)
 
-    utils.send_mail(reject_mail_message)
+    daklib.utils.send_mail(reject_mail_message)
     Logger.log(["unaccepted", pkg.changes_file])
 
 ###############################################################################
@@ -280,19 +280,19 @@ def install ():
             version = dsc["version"]  # NB: not files[file]["version"], that has no epoch
             maintainer = dsc["maintainer"]
             maintainer = maintainer.replace("'", "\\'")
-            maintainer_id = database.get_or_set_maintainer_id(maintainer)
-            fingerprint_id = database.get_or_set_fingerprint_id(dsc["fingerprint"])
+            maintainer_id = daklib.database.get_or_set_maintainer_id(maintainer)
+            fingerprint_id = daklib.database.get_or_set_fingerprint_id(dsc["fingerprint"])
             install_date = time.strftime("%Y-%m-%d")
             filename = files[file]["pool name"] + file
             dsc_component = files[file]["component"]
             dsc_location_id = files[file]["location id"]
             if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
+                files[file]["files id"] = daklib.database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
             projectB.query("INSERT INTO source (source, version, maintainer, file, install_date, sig_fpr) VALUES ('%s', '%s', %d, %d, '%s', %s)"
                            % (package, version, maintainer_id, files[file]["files id"], install_date, fingerprint_id))
 
             for suite in changes["distribution"].keys():
-                suite_id = database.get_suite_id(suite)
+                suite_id = daklib.database.get_suite_id(suite)
                 projectB.query("INSERT INTO src_associations (suite, source) VALUES (%d, currval('source_id_seq'))" % (suite_id))
 
             # Add the source files to the DB (files and dsc_files)
@@ -303,10 +303,10 @@ def install ():
                 # files id is stored in dsc_files by check_dsc().
                 files_id = dsc_files[dsc_file].get("files id", None)
                 if files_id == None:
-                    files_id = database.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
+                    files_id = daklib.database.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
                 # FIXME: needs to check for -1/-2 and or handle exception
                 if files_id == None:
-                    files_id = database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
+                    files_id = daklib.database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id))
 
     # Add the .deb files to the DB
@@ -316,19 +316,19 @@ def install ():
             version = files[file]["version"]
             maintainer = files[file]["maintainer"]
             maintainer = maintainer.replace("'", "\\'")
-            maintainer_id = database.get_or_set_maintainer_id(maintainer)
-            fingerprint_id = database.get_or_set_fingerprint_id(changes["fingerprint"])
+            maintainer_id = daklib.database.get_or_set_maintainer_id(maintainer)
+            fingerprint_id = daklib.database.get_or_set_fingerprint_id(changes["fingerprint"])
             architecture = files[file]["architecture"]
-            architecture_id = database.get_architecture_id (architecture)
+            architecture_id = daklib.database.get_architecture_id (architecture)
             type = files[file]["dbtype"]
             source = files[file]["source package"]
             source_version = files[file]["source version"]
             filename = files[file]["pool name"] + file
 	    if not files[file].has_key("location id") or not files[file]["location id"]:
-		files[file]["location id"] = database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],utils.where_am_i())
+		files[file]["location id"] = daklib.database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],daklib.utils.where_am_i())
             if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
-            source_id = database.get_source_id (source, source_version)
+                files[file]["files id"] = daklib.database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
+            source_id = daklib.database.get_source_id (source, source_version)
             if source_id:
                 projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, %d, '%s', %d)"
                                % (package, version, maintainer_id, source_id, architecture_id, files[file]["files id"], type, fingerprint_id))
@@ -336,7 +336,7 @@ def install ():
                 projectB.query("INSERT INTO binaries (package, version, maintainer, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, '%s', %d)"
                                % (package, version, maintainer_id, architecture_id, files[file]["files id"], type, fingerprint_id))
             for suite in changes["distribution"].keys():
-                suite_id = database.get_suite_id(suite)
+                suite_id = daklib.database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
     # If the .orig.tar.gz is in a legacy directory we need to poolify
@@ -354,10 +354,10 @@ def install ():
                 continue
             # First move the files to the new location
             legacy_filename = qid["path"] + qid["filename"]
-            pool_location = utils.poolify (changes["source"], files[file]["component"])
+            pool_location = daklib.utils.poolify (changes["source"], files[file]["component"])
             pool_filename = pool_location + os.path.basename(qid["filename"])
             destination = Cnf["Dir::Pool"] + pool_location
-            utils.move(legacy_filename, destination)
+            daklib.utils.move(legacy_filename, destination)
             # Then Update the DB's files table
             q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, dsc_location_id, qid["files_id"]))
 
@@ -372,17 +372,17 @@ def install ():
         old_filename = ql[0] + ql[1]
         file_size = ql[2]
         file_md5sum = ql[3]
-        new_filename = utils.poolify(changes["source"], dsc_component) + os.path.basename(old_filename)
-        new_files_id = database.get_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
+        new_filename = daklib.utils.poolify(changes["source"], dsc_component) + os.path.basename(old_filename)
+        new_files_id = daklib.database.get_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
         if new_files_id == None:
-            utils.copy(old_filename, Cnf["Dir::Pool"] + new_filename)
+            daklib.utils.copy(old_filename, Cnf["Dir::Pool"] + new_filename)
             new_files_id = database.set_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
             projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, source_id, orig_tar_id))
 
     # Install the files into the pool
     for file in files.keys():
         destination = Cnf["Dir::Pool"] + files[file]["pool name"] + file
-        utils.move(file, destination)
+        daklib.utils.move(file, destination)
         Logger.log(["installed", file, files[file]["type"], files[file]["size"], files[file]["architecture"]])
         install_bytes += float(files[file]["size"])
 
@@ -396,14 +396,14 @@ def install ():
         if Cnf.has_key("Suite::%s::CopyDotDak" % (suite)):
             copy_dot_dak[Cnf["Suite::%s::CopyDotDak" % (suite)]] = ""
     for dest in copy_changes.keys():
-        utils.copy(pkg.changes_file, Cnf["Dir::Root"] + dest)
+        daklib.utils.copy(pkg.changes_file, Cnf["Dir::Root"] + dest)
     for dest in copy_dot_dak.keys():
-        utils.copy(Upload.pkg.changes_file[:-8]+".dak", dest)
+        daklib.utils.copy(Upload.pkg.changes_file[:-8]+".dak", dest)
 
     projectB.query("COMMIT WORK")
 
     # Move the .changes into the 'done' directory
-    utils.move (pkg.changes_file,
+    daklib.utils.move (pkg.changes_file,
                 os.path.join(Cnf["Dir::Queue::Done"], os.path.basename(pkg.changes_file)))
 
     # Remove the .dak file
@@ -429,7 +429,7 @@ def install ():
             projectB.query("UPDATE queue_build SET in_queue = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, dest, suite_id))
             if not Cnf.FindB("Dinstall::SecurityQueueBuild"):
                 # Update the symlink to point to the new location in the pool
-                pool_location = utils.poolify (changes["source"], files[file]["component"])
+                pool_location = daklib.utils.poolify (changes["source"], files[file]["component"])
                 src = os.path.join(Cnf["Dir::Pool"], pool_location, os.path.basename(file))
                 if os.path.islink(dest):
                     os.unlink(dest)
@@ -466,7 +466,7 @@ def stable_install (summary, short_summary):
             q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
             ql = q.getresult()
             if not ql:
-                utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version))
+                daklib.utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version))
             source_id = ql[0][0]
             suite_id = database.get_suite_id('proposed-updates')
             projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id))
@@ -490,7 +490,7 @@ def stable_install (summary, short_summary):
 		# Reduce the query results to a list of version numbers
 		ql = map(lambda x: x[0], q.getresult())
 		if not ql:
-		    utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture))
+		    daklib.utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture))
 		else:
 		    for x in ql:
 			if re.match(re.compile(r"%s((\.0)?\.)|(\+b)\d+$" % re.escape(version)),x):
@@ -507,7 +507,7 @@ def stable_install (summary, short_summary):
 
     projectB.query("COMMIT WORK")
 
-    utils.move (pkg.changes_file, Cnf["Dir::Morgue"] + '/process-accepted/' + os.path.basename(pkg.changes_file))
+    daklib.utils.move (pkg.changes_file, Cnf["Dir::Morgue"] + '/process-accepted/' + os.path.basename(pkg.changes_file))
 
     ## Update the Stable ChangeLog file
     new_changelog_filename = Cnf["Dir::Root"] + Cnf["Suite::Stable::ChangeLogBase"] + ".ChangeLog"
@@ -515,31 +515,31 @@ def stable_install (summary, short_summary):
     if os.path.exists(new_changelog_filename):
         os.unlink (new_changelog_filename)
 
-    new_changelog = utils.open_file(new_changelog_filename, 'w')
+    new_changelog = daklib.utils.open_file(new_changelog_filename, 'w')
     for file in files.keys():
         if files[file]["type"] == "deb":
             new_changelog.write("stable/%s/binary-%s/%s\n" % (files[file]["component"], files[file]["architecture"], file))
-        elif utils.re_issource.match(file):
+        elif daklib.utils.re_issource.match(file):
             new_changelog.write("stable/%s/source/%s\n" % (files[file]["component"], file))
         else:
             new_changelog.write("%s\n" % (file))
-    chop_changes = queue.re_fdnic.sub("\n", changes["changes"])
+    chop_changes = daklib.queue.re_fdnic.sub("\n", changes["changes"])
     new_changelog.write(chop_changes + '\n\n')
     if os.access(changelog_filename, os.R_OK) != 0:
-        changelog = utils.open_file(changelog_filename)
+        changelog = daklib.utils.open_file(changelog_filename)
         new_changelog.write(changelog.read())
     new_changelog.close()
     if os.access(changelog_filename, os.R_OK) != 0:
         os.unlink(changelog_filename)
-    utils.move(new_changelog_filename, changelog_filename)
+    daklib.utils.move(new_changelog_filename, changelog_filename)
 
     install_count += 1
 
     if not Options["No-Mail"] and changes["architecture"].has_key("source"):
         Subst["__SUITE__"] = " into stable"
         Subst["__SUMMARY__"] = summary
-        mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-accepted.installed")
-        utils.send_mail(mail_message)
+        mail_message = daklib.utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-accepted.installed")
+        daklib.utils.send_mail(mail_message)
         Upload.announce(short_summary, 1)
 
     # Finally remove the .dak file
@@ -593,7 +593,7 @@ def main():
     # Check that we aren't going to clash with the daily cron job
 
     if not Options["No-Action"] and os.path.exists("%s/Archive_Maintenance_In_Progress" % (Cnf["Dir::Root"])) and not Options["No-Lock"]:
-        utils.fubar("Archive maintenance in progress.  Try again later.")
+        daklib.utils.fubar("Archive maintenance in progress.  Try again later.")
 
     # If running from within proposed-updates; assume an install to stable
     if os.getcwd().find('proposed-updates') != -1:
@@ -606,10 +606,10 @@ def main():
             fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError, e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
-                utils.fubar("Couldn't obtain lock; assuming another 'dak process-accepted' is already running.")
+                daklib.utils.fubar("Couldn't obtain lock; assuming another 'dak process-accepted' is already running.")
             else:
                 raise
-        Logger = Upload.Logger = logging.Logger(Cnf, "process-accepted")
+        Logger = Upload.Logger = daklib.logging.Logger(Cnf, "process-accepted")
         if not installing_to_stable and Cnf.get("Dir::UrgencyLog"):
             Urgency_Logger = Urgency_Log(Cnf)
 
@@ -621,7 +621,7 @@ def main():
         Subst["__BCC__"] = bcc
 
     # Sort the .changes files so that we process sourceful ones first
-    changes_files.sort(utils.changes_compare)
+    changes_files.sort(daklib.utils.changes_compare)
 
     # Process the changes files
     for changes_file in changes_files:
@@ -632,7 +632,7 @@ def main():
         sets = "set"
         if install_count > 1:
             sets = "sets"
-        sys.stderr.write("Installed %d package %s, %s.\n" % (install_count, sets, utils.size_type(int(install_bytes))))
+        sys.stderr.write("Installed %d package %s, %s.\n" % (install_count, sets, daklib.utils.size_type(int(install_bytes))))
         Logger.log(["total",install_count,install_bytes])
 
     if not Options["No-Action"]:

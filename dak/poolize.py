@@ -27,8 +27,8 @@
 
 import os, pg, re, stat, sys
 import apt_pkg, apt_inst
-import dak.lib.database as database
-import dak.lib.utils as utils
+import daklib.database
+import daklib.utils
 
 ################################################################################
 
@@ -72,7 +72,7 @@ def poolize (q, limit, verbose, no_action):
         legacy_filename = qid["path"]+qid["filename"]
         size = os.stat(legacy_filename)[stat.ST_SIZE]
         if (poolized_size + size) > limit and limit >= 0:
-            utils.warn("Hit %s limit." % (utils.size_type(limit)))
+            daklib.utils.warn("Hit %s limit." % (daklib.utils.size_type(limit)))
             break
         poolized_size += size
         poolized_count += 1
@@ -80,65 +80,65 @@ def poolize (q, limit, verbose, no_action):
         destination_filename = base_filename
         # Work out the source package name
         if re_isadeb.match(base_filename):
-            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(legacy_filename)))
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(daklib.utils.open_file(legacy_filename)))
             package = control.Find("Package", "")
             source = control.Find("Source", package)
             if source.find("(") != -1:
-                m = utils.re_extract_src_version.match(source)
+                m = daklib.utils.re_extract_src_version.match(source)
                 source = m.group(1)
             # If it's a binary, we need to also rename the file to include the architecture
             version = control.Find("Version", "")
             architecture = control.Find("Architecture", "")
             if package == "" or version == "" or architecture == "":
-                utils.fubar("%s: couldn't determine required information to rename .deb file." % (legacy_filename))
-            version = utils.re_no_epoch.sub('', version)
+                daklib.utils.fubar("%s: couldn't determine required information to rename .deb file." % (legacy_filename))
+            version = daklib.utils.re_no_epoch.sub('', version)
             destination_filename = "%s_%s_%s.deb" % (package, version, architecture)
         else:
-            m = utils.re_issource.match(base_filename)
+            m = daklib.utils.re_issource.match(base_filename)
             if m:
                 source = m.group(1)
             else:
-                utils.fubar("expansion of source filename '%s' failed." % (legacy_filename))
+                daklib.utils.fubar("expansion of source filename '%s' failed." % (legacy_filename))
         # Work out the component name
         component = qid["component"]
         if component == "":
             q = projectB.query("SELECT DISTINCT(c.name) FROM override o, component c WHERE o.package = '%s' AND o.component = c.id;" % (source))
             ql = q.getresult()
             if not ql:
-                utils.fubar("No override match for '%s' so I can't work out the component." % (source))
+                daklib.utils.fubar("No override match for '%s' so I can't work out the component." % (source))
             if len(ql) > 1:
-                utils.fubar("Multiple override matches for '%s' so I can't work out the component." % (source))
+                daklib.utils.fubar("Multiple override matches for '%s' so I can't work out the component." % (source))
             component = ql[0][0]
         # Work out the new location
         q = projectB.query("SELECT l.id FROM location l, component c WHERE c.name = '%s' AND c.id = l.component AND l.type = 'pool';" % (component))
         ql = q.getresult()
         if len(ql) != 1:
-            utils.fubar("couldn't determine location ID for '%s'. [query returned %d matches, not 1 as expected]" % (source, len(ql)))
+            daklib.utils.fubar("couldn't determine location ID for '%s'. [query returned %d matches, not 1 as expected]" % (source, len(ql)))
         location_id = ql[0][0]
         # First move the files to the new location
-        pool_location = utils.poolify (source, component)
+        pool_location = daklib.utils.poolify (source, component)
         pool_filename = pool_location + destination_filename
         destination = Cnf["Dir::Pool"] + pool_location + destination_filename
         if os.path.exists(destination):
-            utils.fubar("'%s' already exists in the pool; serious FUBARity." % (legacy_filename))
+            daklib.utils.fubar("'%s' already exists in the pool; serious FUBARity." % (legacy_filename))
         if verbose:
             print "Moving: %s -> %s" % (legacy_filename, destination)
         if not no_action:
-            utils.move(legacy_filename, destination)
+            daklib.utils.move(legacy_filename, destination)
         # Then Update the DB's files table
         if verbose:
             print "SQL: UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, location_id, qid["files_id"])
         if not no_action:
             q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, location_id, qid["files_id"]))
 
-    sys.stderr.write("Poolized %s in %s files.\n" % (utils.size_type(poolized_size), poolized_count))
+    sys.stderr.write("Poolized %s in %s files.\n" % (daklib.utils.size_type(poolized_size), poolized_count))
 
 ################################################################################
 
 def main ():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
 
     for i in ["help", "limit", "no-action", "verbose" ]:
 	if not Cnf.has_key("Poolize::Options::%s" % (i)):
@@ -157,7 +157,7 @@ def main ():
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    daklib.database.init(Cnf, projectB)
 
     if not Options["Limit"]:
         limit = -1
@@ -170,7 +170,7 @@ def main ():
 
     # Sanity check the limit argument
     if limit > 0 and limit < 1024:
-        utils.fubar("-l/--limit takes an argument with a value in kilobytes.")
+        daklib.utils.fubar("-l/--limit takes an argument with a value in kilobytes.")
 
     # Grab a list of all files not already in the pool
     q = projectB.query("""

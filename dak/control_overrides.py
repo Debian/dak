@@ -84,17 +84,17 @@ def usage (exit_code=0):
 ################################################################################
 
 def process_file (file, suite, component, type, action):
-    suite_id = database.get_suite_id(suite)
+    suite_id = daklib.database.get_suite_id(suite)
     if suite_id == -1:
-        utils.fubar("Suite '%s' not recognised." % (suite))
+        daklib.utils.fubar("Suite '%s' not recognised." % (suite))
 
-    component_id = database.get_component_id(component)
+    component_id = daklib.database.get_component_id(component)
     if component_id == -1:
-        utils.fubar("Component '%s' not recognised." % (component))
+        daklib.utils.fubar("Component '%s' not recognised." % (component))
 
-    type_id = database.get_override_type_id(type)
+    type_id = daklib.database.get_override_type_id(type)
     if type_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)" % (type))
+        daklib.utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)" % (type))
 
     # --set is done mostly internal for performance reasons; most
     # invocations of --set will be updates and making people wait 2-3
@@ -116,7 +116,7 @@ def process_file (file, suite, component, type, action):
     start_time = time.time()
     projectB.query("BEGIN WORK")
     for line in file.readlines():
-        line = utils.re_comments.sub('', line).strip()
+        line = daklib.utils.re_comments.sub('', line).strip()
         if line == "":
             continue
 
@@ -128,7 +128,7 @@ def process_file (file, suite, component, type, action):
             elif len(split_line) == 3:
                 (package, section, maintainer_override) = split_line
             else:
-                utils.warn("'%s' does not break into 'package section [maintainer-override]'." % (line))
+                daklib.utils.warn("'%s' does not break into 'package section [maintainer-override]'." % (line))
                 c_error += 1
                 continue
             priority = "source"
@@ -139,23 +139,23 @@ def process_file (file, suite, component, type, action):
             elif len(split_line) == 4:
                 (package, priority, section, maintainer_override) = split_line
             else:
-                utils.warn("'%s' does not break into 'package priority section [maintainer-override]'." % (line))
+                daklib.utils.warn("'%s' does not break into 'package priority section [maintainer-override]'." % (line))
                 c_error += 1
                 continue
 
-        section_id = database.get_section_id(section)
+        section_id = daklib.database.get_section_id(section)
         if section_id == -1:
-            utils.warn("'%s' is not a valid section. ['%s' in suite %s, component %s]." % (section, package, suite, component))
+            daklib.utils.warn("'%s' is not a valid section. ['%s' in suite %s, component %s]." % (section, package, suite, component))
             c_error += 1
             continue
-        priority_id = database.get_priority_id(priority)
+        priority_id = daklib.database.get_priority_id(priority)
         if priority_id == -1:
-            utils.warn("'%s' is not a valid priority. ['%s' in suite %s, component %s]." % (priority, package, suite, component))
+            daklib.utils.warn("'%s' is not a valid priority. ['%s' in suite %s, component %s]." % (priority, package, suite, component))
             c_error += 1
             continue
 
         if new.has_key(package):
-            utils.warn("Can't insert duplicate entry for '%s'; ignoring all but the first. [suite %s, component %s]" % (package, suite, component))
+            daklib.utils.warn("Can't insert duplicate entry for '%s'; ignoring all but the first. [suite %s, component %s]" % (package, suite, component))
             c_error += 1
             continue
         new[package] = ""
@@ -213,33 +213,33 @@ def process_file (file, suite, component, type, action):
 ################################################################################
 
 def list(suite, component, type):
-    suite_id = database.get_suite_id(suite)
+    suite_id = daklib.database.get_suite_id(suite)
     if suite_id == -1:
-        utils.fubar("Suite '%s' not recognised." % (suite))
+        daklib.utils.fubar("Suite '%s' not recognised." % (suite))
 
-    component_id = database.get_component_id(component)
+    component_id = daklib.database.get_component_id(component)
     if component_id == -1:
-        utils.fubar("Component '%s' not recognised." % (component))
+        daklib.utils.fubar("Component '%s' not recognised." % (component))
 
-    type_id = database.get_override_type_id(type)
+    type_id = daklib.database.get_override_type_id(type)
     if type_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type))
+        daklib.utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type))
 
     if type == "dsc":
         q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, type_id))
         for i in q.getresult():
-            print utils.result_join(i)
+            print daklib.utils.result_join(i)
     else:
         q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, type_id))
         for i in q.getresult():
-            print utils.result_join(i[:-1])
+            print daklib.utils.result_join(i[:-1])
 
 ################################################################################
 
 def main ():
     global Cnf, projectB, Logger
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     Arguments = [('a', "add", "Control-Overrides::Options::Add"),
                  ('c', "component", "Control-Overrides::Options::Component", "HasArg"),
                  ('h', "help", "Control-Overrides::Options::Help"),
@@ -266,13 +266,13 @@ def main ():
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    daklib.database.init(Cnf, projectB)
 
     action = None
     for i in [ "add", "list", "set" ]:
         if Cnf["Control-Overrides::Options::%s" % (i)]:
             if action:
-                utils.fubar("Can not perform more than one action at once.")
+                daklib.utils.fubar("Can not perform more than one action at once.")
             action = i
 
     (suite, component, type) = (Cnf["Control-Overrides::Options::Suite"],
@@ -282,10 +282,10 @@ def main ():
     if action == "list":
         list(suite, component, type)
     else:
-        Logger = logging.Logger(Cnf, "control-overrides")
+        Logger = daklib.logging.Logger(Cnf, "control-overrides")
         if file_list:
             for file in file_list:
-                process_file(utils.open_file(file), suite, component, type, action)
+                process_file(daklib.utils.open_file(file), suite, component, type, action)
         else:
             process_file(sys.stdin, suite, component, type, action)
         Logger.close()

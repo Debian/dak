@@ -32,7 +32,7 @@
 
 import sys, os, tempfile
 import apt_pkg
-import dak.lib.utils as utils
+import daklib.utils
 
 ################################################################################
 
@@ -288,7 +288,7 @@ def main():
 
     os.umask(0002)
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     Arguments = [ ('h', "help", "Generate-Index-Diffs::Options::Help"),
                   ('c', None, "Generate-Index-Diffs::Options::CanonicalPath", "hasArg"),
                   ('p', "patchname", "Generate-Index-Diffs::Options::PatchName", "hasArg"),
@@ -314,7 +314,7 @@ def main():
         o.close()
 
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf,daklib.utils.which_apt_conf_file())
 
     if Options.has_key("RootDir"): Cnf["Dir::Root"] = Options["RootDir"]
 
@@ -353,7 +353,7 @@ def main():
         elif AptCnf.has_key("bindirectory::%s" % (tree)):
             sections = AptCnf["bindirectory::%s::Sections" % (tree)].split()
         else:
-            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
+            aptcnf_filename = os.path.basename(daklib.utils.which_apt_conf_file())
             print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
             continue
 

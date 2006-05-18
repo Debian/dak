@@ -19,12 +19,12 @@
 ################################################################################
 
 import glob, os, stat, time
-import dak.lib.utils as utils
+import daklib.utils
 
 ################################################################################
 
 def main():
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     count = 0
     os.chdir(Cnf["Dir::Queue::Done"])
     files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]))
@@ -37,7 +37,7 @@ def main():
                 os.makedirs(dirname)
             dest = dirname + '/' + os.path.basename(filename)
             if os.path.exists(dest):
-                utils.fubar("%s already exists." % (dest))
+                daklib.utils.fubar("%s already exists." % (dest))
             print "Move: %s -> %s" % (filename, dest) 
             os.rename(filename, dest)
             count = count + 1

@@ -21,7 +21,7 @@
 
 import os, sys
 import apt_pkg
-import dak.lib.utils as utils
+import daklib.utils
 
 ################################################################################
 
@@ -42,7 +42,7 @@ Creates directories for an archive based on dak.conf configuration file.
 def do_dir(target, config_name):
     if os.path.exists(target):
         if not os.path.isdir(target):
-            utils.fubar("%s (%s) is not a directory." % (target, config_name))
+            daklib.utils.fubar("%s (%s) is not a directory." % (target, config_name))
     else:
         print "Creating %s ..." % (target)
         os.makedirs(target)
@@ -100,7 +100,7 @@ def create_directories():
 def main ():
     global AptCnf, Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Init-Dirs::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Init-Dirs::Options::%s" % (i)):
@@ -113,7 +113,7 @@ def main ():
 	usage()
 
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf,daklib.utils.which_apt_conf_file())
 
     create_directories()
 

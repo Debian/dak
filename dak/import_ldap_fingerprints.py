@@ -46,8 +46,8 @@
 
 import commands, ldap, pg, re, sys
 import apt_pkg
-import dak.lib.database as database
-import dak.lib.utils as utils
+import daklib.database
+import daklib.utils
 
 ################################################################################
 
@@ -79,7 +79,7 @@ def get_ldap_value(entry, value):
 def main():
     global Cnf, projectB
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Import-LDAP-Fingerprints::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Import-LDAP-Fingerprints::Options::%s" % (i)):
@@ -92,7 +92,7 @@ def main():
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    daklib.database.init(Cnf, projectB)
 
     LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
     LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
@@ -120,7 +120,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
         entry = i[1]
         fingerprints = entry["keyFingerPrint"]
         uid = entry["uid"][0]
-        uid_id = database.get_or_set_uid_id(uid)
+        uid_id = daklib.database.get_or_set_uid_id(uid)
         for fingerprint in fingerprints:
             ldap_fin_uid_id[fingerprint] = (uid, uid_id)
             if db_fin_uid.has_key(fingerprint):
@@ -130,7 +130,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                     print "Assigning %s to 0x%s." % (uid, fingerprint)
                 else:
                     if existing_uid != uid:
-                        utils.fubar("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
+                        daklib.utils.fubar("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
 
     # Try to update people who sign with non-primary key
     q = projectB.query("SELECT fingerprint, id FROM fingerprint WHERE uid is null")
@@ -144,11 +144,11 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             m = re_gpg_fingerprint.search(output)
             if not m:
                 print output
-                utils.fubar("0x%s: No fingerprint found in gpg output but it returned 0?\n%s" % (fingerprint, utils.prefix_multi_line_string(output, " [GPG output:] ")))
+                daklib.utils.fubar("0x%s: No fingerprint found in gpg output but it returned 0?\n%s" % (fingerprint, daklib.utils.prefix_multi_line_string(output, " [GPG output:] ")))
             primary_key = m.group(1)
             primary_key = primary_key.replace(" ","")
             if not ldap_fin_uid_id.has_key(primary_key):
-                utils.fubar("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
+                daklib.utils.fubar("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
             (uid, uid_id) = ldap_fin_uid_id[primary_key]
             q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
             print "Assigning %s to 0x%s." % (uid, fingerprint)
@@ -189,7 +189,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             # FIXME: default to the guessed ID
             uid = None
             while not uid:
-                uid = utils.our_raw_input("Map to which UID ? ")
+                uid = daklib.utils.our_raw_input("Map to which UID ? ")
                 Attrs = l.search_s(LDAPDn,ldap.SCOPE_ONELEVEL,"(uid=%s)" % (uid), ["cn","mn","sn"])
                 if not Attrs:
                     print "That UID doesn't exist in LDAP!"
@@ -200,9 +200,9 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                                      get_ldap_value(entry, "mn"),
                                      get_ldap_value(entry, "sn")])
                     prompt = "Map to %s - %s (y/N) ? " % (uid, name.replace("  "," "))
-                    yn = utils.our_raw_input(prompt).lower()
+                    yn = daklib.utils.our_raw_input(prompt).lower()
                     if yn == "y":
-                        uid_id = database.get_or_set_uid_id(uid)
+                        uid_id = daklib.database.get_or_set_uid_id(uid)
                         projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                         print "Assigning %s to 0x%s." % (uid, fingerprint)
                     else:

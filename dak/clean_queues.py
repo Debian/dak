@@ -35,7 +35,7 @@
 
 import os, stat, sys, time
 import apt_pkg
-import dak.lib.utils as utils
+import daklib.utils
 
 ################################################################################
 
@@ -72,7 +72,7 @@ def init ():
         if not os.path.exists(del_dir):
             os.makedirs(del_dir, 02775)
         if not os.path.isdir(del_dir):
-            utils.fubar("%s must be a directory." % (del_dir))
+            daklib.utils.fubar("%s must be a directory." % (del_dir))
 
     # Move to the directory to clean
     incoming = Options["Incoming"]
@@ -86,10 +86,10 @@ def remove (file):
         dest_filename = del_dir + '/' + os.path.basename(file)
         # If the destination file exists; try to find another filename to use
         if os.path.exists(dest_filename):
-            dest_filename = utils.find_next_free(dest_filename, 10)
-        utils.move(file, dest_filename, 0660)
+            dest_filename = daklib.utils.find_next_free(dest_filename, 10)
+        daklib.utils.move(file, dest_filename, 0660)
     else:
-        utils.warn("skipping '%s', permission denied." % (os.path.basename(file)))
+        daklib.utils.warn("skipping '%s', permission denied." % (os.path.basename(file)))
 
 # Removes any old files.
 # [Used for Incoming/REJECT]
@@ -125,20 +125,20 @@ def flush_orphans ():
     # Proces all .changes and .dsc files.
     for changes_filename in changes_files:
         try:
-            changes = utils.parse_changes(changes_filename)
-            files = utils.build_file_list(changes)
+            changes = daklib.utils.parse_changes(changes_filename)
+            files = daklib.utils.build_file_list(changes)
         except:
-            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
+            daklib.utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
             continue
 
         dsc_files = {}
         for file in files.keys():
             if file.endswith(".dsc"):
                 try:
-                    dsc = utils.parse_changes(file)
-                    dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
+                    dsc = daklib.utils.parse_changes(file)
+                    dsc_files = daklib.utils.build_file_list(dsc, is_a_dsc=1)
                 except:
-                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type))
+                    daklib.utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type))
                     continue
 
         # Ensure all the files we've seen aren't deleted
@@ -170,7 +170,7 @@ def flush_orphans ():
 def main ():
     global Cnf, Options
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
 
     for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
 	if not Cnf.has_key("Clean-Queues::Options::%s" % (i)):

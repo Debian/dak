@@ -36,8 +36,8 @@
 
 import copy, glob, os, stat, sys, time
 import apt_pkg
-import dak.lib.queue as queue
-import dak.lib.utils as utils
+import daklib.queue 
+import daklib.utils
 
 Cnf = None
 Upload = None
@@ -328,8 +328,8 @@ def process_changes_files(changes_files, type):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
-                    utils.fix_maintainer (j["maintainer"])
-                except utils.ParseMaintError, msg:
+                    daklib.utils.fix_maintainer (j["maintainer"])
+                except daklib.utils.ParseMaintError, msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
                     maintainer["maintaineremail"] = "Unknown"
@@ -341,7 +341,7 @@ def process_changes_files(changes_files, type):
             version = j["version"]
             versions[version] = ""
         arches_list = arches.keys()
-        arches_list.sort(utils.arch_compare_sw)
+        arches_list.sort(daklib.utils.arch_compare_sw)
         arch_list = " ".join(arches_list)
         version_list = " ".join(versions.keys())
         if len(version_list) > max_version_len:
@@ -429,7 +429,7 @@ def process_changes_files(changes_files, type):
 def main():
     global Cnf, Upload
 
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Queue-Report::Options::Help"),
                  ('n',"new","Queue-Report::Options::New"),
                  ('s',"sort","Queue-Report::Options::Sort", "HasArg"),
@@ -444,7 +444,7 @@ def main():
     if Options["Help"]:
 	usage()
 
-    Upload = queue.Upload(Cnf)
+    Upload = daklib.queue.Upload(Cnf)
 
     if Cnf.has_key("Queue-Report::Options::New"):
         header()

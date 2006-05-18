@@ -28,8 +28,8 @@
 
 import sys
 import apt_pkg
-import dak.lib.queue as queue
-import dak.lib.utils as utils
+import daklib.queue 
+import daklib.utils
 
 ################################################################################
 
@@ -43,7 +43,7 @@ Dumps the info in .dak FILE(s).
 ################################################################################
 
 def main():
-    Cnf = utils.get_conf()
+    Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Decode-Dot-Dak::Options::Help")]
     for i in [ "help" ]:
 	if not Cnf.has_key("Decode-Dot-Dak::Options::%s" % (i)):
@@ -55,9 +55,9 @@ def main():
     if Options["Help"]:
 	usage()
 
-    k = queue.Upload(Cnf)
+    k = daklib.queue.Upload(Cnf)
     for arg in sys.argv[1:]:
-        arg = utils.validate_changes_file_arg(arg,require_changes=-1)
+        arg = daklib.utils.validate_changes_file_arg(arg,require_changes=-1)
         k.pkg.changes_file = arg
         print "%s:" % (arg)
 	k.init_vars()
@@ -83,7 +83,7 @@ def main():
                 del changes[i]
         print
         if changes:
-            utils.warn("changes still has following unrecognised keys: %s" % (changes.keys()))
+            daklib.utils.warn("changes still has following unrecognised keys: %s" % (changes.keys()))
 
         dsc = k.pkg.dsc
         print " Dsc:"
@@ -94,7 +94,7 @@ def main():
                 del dsc[i]
         print
         if dsc:
-            utils.warn("dsc still has following unrecognised keys: %s" % (dsc.keys()))
+            daklib.utils.warn("dsc still has following unrecognised keys: %s" % (dsc.keys()))
 
         files = k.pkg.files
         print " Files:"
@@ -108,7 +108,7 @@ def main():
                     print "   %s: %s" % (i.capitalize(), files[file][i])
                     del files[file][i]
             if files[file]:
-                utils.warn("files[%s] still has following unrecognised keys: %s" % (file, files[file].keys()))
+                daklib.utils.warn("files[%s] still has following unrecognised keys: %s" % (file, files[file].keys()))
         print
 
         dsc_files = k.pkg.dsc_files
@@ -125,7 +125,7 @@ def main():
                     print "   %s: %s" % (i.capitalize(), dsc_files[file][i])
                     del dsc_files[file][i]
             if dsc_files[file]:
-                utils.warn("dsc_files[%s] still has following unrecognised keys: %s" % (file, dsc_files[file].keys()))
+                daklib.utils.warn("dsc_files[%s] still has following unrecognised keys: %s" % (file, dsc_files[file].keys()))
 
 ################################################################################
 
