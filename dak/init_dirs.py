@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Initial setup of an archive
+"""Initial setup of an archive."""
 # Copyright (C) 2002, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -31,6 +31,8 @@ AptCnf = None
 ################################################################################
 
 def usage(exit_code=0):
+    """Print a usage message and exit with 'exit_code'."""
+
     print """Usage: dak init-dirs
 Creates directories for an archive based on dak.conf configuration file.
 
@@ -40,19 +42,27 @@ Creates directories for an archive based on dak.conf configuration file.
 ################################################################################
 
 def do_dir(target, config_name):
+    """If 'target' exists, make sure it is a directory.  If it doesn't, create
+it."""
+
     if os.path.exists(target):
         if not os.path.isdir(target):
-            daklib.utils.fubar("%s (%s) is not a directory." % (target, config_name))
+            daklib.utils.fubar("%s (%s) is not a directory."
+                               % (target, config_name))
     else:
         print "Creating %s ..." % (target)
         os.makedirs(target)
 
 def process_file(config, config_name):
+    """Create directories for a config entry that's a filename."""
+    
     if config.has_key(config_name):
         target = os.path.dirname(config[config_name])
         do_dir(target, config_name)
 
 def process_tree(config, tree):
+    """Create directories for a config tree."""
+    
     for entry in config.SubTree(tree).List():
         entry = entry.lower()
         if tree == "Dir":
@@ -63,6 +73,8 @@ def process_tree(config, tree):
         do_dir(target, config_name)
 
 def process_morguesubdir(subdir):
+    """Create directories for morgue sub directories."""
+    
     config_name = "%s::MorgueSubDir" % (subdir)
     if Cnf.has_key(config_name):
         target = os.path.join(Cnf["Dir::Morgue"], Cnf[config_name])
@@ -71,11 +83,14 @@ def process_morguesubdir(subdir):
 ######################################################################
 
 def create_directories():
-    # Process directories from apt.conf
+    """Create directories referenced in dak.conf and apt.conf."""
+
+    # Process directories from dak.conf
     process_tree(Cnf, "Dir")
     process_tree(Cnf, "Dir::Queue")
-    for file in [ "Dinstall::LockFile", "Rm::LogFile", "Import-Archive::ExportDir" ]:
-        process_file(Cnf, file)
+    for config_name in [ "Dinstall::LockFile", "Rm::LogFile",
+                         "Import-Archive::ExportDir" ]:
+        process_file(Cnf, config_name)
     for subdir in [ "Clean-Queues", "Clean-Suites" ]:
         process_morguesubdir(subdir)
 
@@ -85,35 +100,41 @@ def create_directories():
         config_name = "Tree::%s" % (tree)
         tree_dir = os.path.join(Cnf["Dir::Root"], tree)
         do_dir(tree_dir, tree)
-        for file in [ "FileList", "SourceFileList" ]:
-            process_file(AptCnf, "%s::%s" % (config_name, file))
+        for filename in [ "FileList", "SourceFileList" ]:
+            process_file(AptCnf, "%s::%s" % (config_name, filename))
         for component in AptCnf["%s::Sections" % (config_name)].split():
-            for architecture in AptCnf["%s::Architectures" % (config_name)].split():
+            for architecture in AptCnf["%s::Architectures" \
+                                       % (config_name)].split():
                 if architecture != "source":
                     architecture = "binary-"+architecture
-                target = os.path.join(tree_dir,component,architecture)
+                target = os.path.join(tree_dir, component, architecture)
                 do_dir(target, "%s, %s, %s" % (tree, component, architecture))
 
 
 ################################################################################
 
 def main ():
-    global AptCnf, Cnf, projectB
+    """Initial setup of an archive."""
+
+    global AptCnf, Cnf
 
     Cnf = daklib.utils.get_conf()
-    Arguments = [('h',"help","Init-Dirs::Options::Help")]
+    arguments = [('h', "help", "Init-Dirs::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Init-Dirs::Options::%s" % (i)):
-	    Cnf["Init-Dirs::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Init-Dirs::Options::%s" % (i)):
+            Cnf["Init-Dirs::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    arguments = apt_pkg.ParseCommandLine(Cnf, arguments, sys.argv)
 
-    Options = Cnf.SubTree("Init-Dirs::Options")
-    if Options["Help"]:
-	usage()
+    options = Cnf.SubTree("Init-Dirs::Options")
+    if options["Help"]:
+        usage()
+    elif arguments:
+        daklib.utils.warn("dak init-dirs takes no arguments.")
+        usage(exit_code=1)
 
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,daklib.utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf, daklib.utils.which_apt_conf_file())
 
     create_directories()
 

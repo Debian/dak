@@ -1,5 +1,10 @@
 2006-05-18  James Troup  <james@nocrew.org>
 
+	* dak/init_dirs.py: pylint cleanups - long lines, unused globals,
+	docstrings, untabify, don't shadow builtins, lowercase non-global
+	variable names, spaces after commas.  Also bail if given any
+	arguments since we don't accept any.
+
 	* dak/init_db.py (main): check returned value from
 	database.get_archive_id().
 
