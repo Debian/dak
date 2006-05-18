@@ -25,7 +25,7 @@
 import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
        string, sys, tempfile, traceback
 import apt_pkg
-import dak.lib.database
+import database
 
 ################################################################################
 
