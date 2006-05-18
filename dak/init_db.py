@@ -105,6 +105,9 @@ def main ():
     for location in Cnf.SubTree("Location").List():
         Location = Cnf.SubTree("Location::%s" % (location))
         archive_id = daklib.database.get_archive_id(Location["Archive"])
+        if archive_id == -1:
+            daklib.utils.fubar("Archive '%s' for location '%s' not found."
+                               % (Location["Archive"], location))
         type = Location.get("type")
         if type == "legacy-mixed":
             projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, Location["type"]))
