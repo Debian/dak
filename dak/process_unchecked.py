@@ -89,7 +89,7 @@ def init():
     if Options["Help"]:
         usage()
 
-    Upload = daklib.queue.Queue(Cnf)
+    Upload = daklib.queue.Upload(Cnf)
 
     changes = Upload.pkg.changes
     dsc = Upload.pkg.dsc
@@ -594,7 +594,7 @@ def check_files():
 
             # Validate the component
             component = files[file]["component"]
-            component_id = database.get_component_id(component)
+            component_id = daklib.database.get_component_id(component)
             if component_id == -1:
                 reject("file '%s' has unknown component '%s'." % (file, component))
                 continue
@@ -609,14 +609,14 @@ def check_files():
 
             # Determine the location
             location = Cnf["Dir::Pool"]
-            location_id = database.get_location_id (location, component, archive)
+            location_id = daklib.database.get_location_id (location, component, archive)
             if location_id == -1:
                 reject("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive))
             files[file]["location id"] = location_id
 
             # Check the md5sum & size against existing files (if any)
             files[file]["pool name"] = daklib.utils.poolify (changes["source"], files[file]["component"])
-            files_id = database.get_files_id(files[file]["pool name"] + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
+            files_id = daklib.database.get_files_id(files[file]["pool name"] + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
             if files_id == -1:
                 reject("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (file))
             elif files_id == -2:
