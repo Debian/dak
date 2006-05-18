@@ -1066,7 +1066,7 @@ def action ():
                 break
         if queue:
             print "%s for %s\n%s%s" % (
-                daklib.queue.upper(), ", ".join(changes["distribution"].keys()), 
+                queue.upper(), ", ".join(changes["distribution"].keys()), 
                 reject_message, summary),
             queuekey = queue[0].upper()
             if queuekey in "RQSA":

@@ -163,10 +163,10 @@ def determine_new (changes, files):
             new[pkg]["othercomponents"] = f["othercomponents"]
 
     for suite in changes["suite"].keys():
-        suite_id = database.get_suite_id(suite)
+        suite_id = daklib.database.get_suite_id(suite)
         for pkg in new.keys():
-            component_id = database.get_component_id(new[pkg]["component"])
-            type_id = database.get_override_type_id(new[pkg]["type"])
+            component_id = daklib.database.get_component_id(new[pkg]["component"])
+            type_id = daklib.database.get_override_type_id(new[pkg]["type"])
             q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id))
             ql = q.getresult()
             if ql:
@@ -325,8 +325,8 @@ def check_valid (new):
         section = new[pkg]["section"]
         priority = new[pkg]["priority"]
         type = new[pkg]["type"]
-        new[pkg]["section id"] = database.get_section_id(section)
-        new[pkg]["priority id"] = database.get_priority_id(new[pkg]["priority"])
+        new[pkg]["section id"] = daklib.database.get_section_id(section)
+        new[pkg]["priority id"] = daklib.database.get_priority_id(new[pkg]["priority"])
         # Sanity checks
         if (section == "debian-installer" and type != "udeb") or \
            (section != "debian-installer" and type == "udeb"):
@@ -376,7 +376,7 @@ def get_type (f):
         daklib.utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
 
     # Validate the override type
-    type_id = database.get_override_type_id(type)
+    type_id = daklib.database.get_override_type_id(type)
     if type_id == -1:
         daklib.utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
 
@@ -624,10 +624,10 @@ def add_overrides (new):
 
     projectB.query("BEGIN WORK")
     for suite in changes["suite"].keys():
-        suite_id = database.get_suite_id(suite)
+        suite_id = daklib.database.get_suite_id(suite)
         for pkg in new.keys():
-            component_id = database.get_component_id(new[pkg]["component"])
-            type_id = database.get_override_type_id(new[pkg]["type"])
+            component_id = daklib.database.get_component_id(new[pkg]["component"])
+            type_id = daklib.database.get_override_type_id(new[pkg]["type"])
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')" % (suite_id, component_id, type_id, pkg, priority_id, section_id))
@@ -705,7 +705,7 @@ def do_new():
             changes["suite"][override] = 1
     # Validate suites
     for suite in changes["suite"].keys():
-        suite_id = database.get_suite_id(suite)
+        suite_id = daklib.database.get_suite_id(suite)
         if suite_id == -1:
             daklib.utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite))
 

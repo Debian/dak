@@ -50,8 +50,8 @@
 ################################################################################
 
 import pg, sys, time
-import utils, database, logging
 import apt_pkg
+import daklib.utils, daklib.database, daklib.logging
 
 ################################################################################
 

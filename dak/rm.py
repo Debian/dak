@@ -251,7 +251,7 @@ def main ():
 	usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    daklib.database.init(Cnf, projectB)
 
     # Sanity check options
     if not arguments:
@@ -309,7 +309,7 @@ def main ():
     suites_list = daklib.utils.join_with_commas_and(suites)
     if not Options["No-Action"]:
         for suite in suites:
-            suite_id = database.get_suite_id(suite)
+            suite_id = daklib.database.get_suite_id(suite)
             if suite_id != -1:
                 suite_ids_list.append(suite_id)
             if suite == "stable":
@@ -420,7 +420,7 @@ def main ():
 
     maintainer_list = []
     for maintainer_id in maintainers.keys():
-        maintainer_list.append(database.get_maintainer(maintainer_id))
+        maintainer_list.append(daklib.database.get_maintainer(maintainer_id))
     summary = ""
     removals = d.keys()
     removals.sort()
@@ -468,8 +468,8 @@ def main ():
     logfile.write("----------------------------------------------\n")
     logfile.flush()
 
-    dsc_type_id = database.get_override_type_id('dsc')
-    deb_type_id = database.get_override_type_id('deb')
+    dsc_type_id = daklib.database.get_override_type_id('dsc')
+    deb_type_id = daklib.database.get_override_type_id('deb')
 
     # Do the actual deletion
     print "Deleting...",

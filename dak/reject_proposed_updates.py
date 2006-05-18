@@ -68,7 +68,7 @@ def main():
         daklib.utils.fubar("need at least one .changes filename as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    daklib.database.init(Cnf, projectB)
 
     Upload = daklib.queue.Upload(Cnf)
     Logger = Upload.Logger = daklib.logging.Logger(Cnf, "reject-proposed-updates")
@@ -177,7 +177,7 @@ def reject (reject_message = ""):
     os.close(reject_fd)
 
     # Remove the packages from proposed-updates
-    suite_id = database.get_suite_id('proposed-updates')
+    suite_id = daklib.database.get_suite_id('proposed-updates')
 
     projectB.query("BEGIN WORK")
     # Remove files from proposed-updates suite

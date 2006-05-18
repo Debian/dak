@@ -177,7 +177,7 @@ def main ():
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
-    database.init(Cnf, projectB)
+    daklib.database.init(Cnf, projectB)
 
     find_dislocated_stable(Cnf, projectB)
 

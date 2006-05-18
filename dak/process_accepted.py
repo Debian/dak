@@ -376,7 +376,7 @@ def install ():
         new_files_id = daklib.database.get_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
         if new_files_id == None:
             daklib.utils.copy(old_filename, Cnf["Dir::Pool"] + new_filename)
-            new_files_id = database.set_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
+            new_files_id = daklib.database.set_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
             projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, source_id, orig_tar_id))
 
     # Install the files into the pool
@@ -419,7 +419,7 @@ def install ():
         if suite not in Cnf.ValueList("Dinstall::QueueBuildSuites"):
             continue
         now_date = time.strftime("%Y-%m-%d %H:%M")
-        suite_id = database.get_suite_id(suite)
+        suite_id = daklib.database.get_suite_id(suite)
         dest_dir = Cnf["Dir::QueueBuild"]
         if Cnf.FindB("Dinstall::SecurityQueueBuild"):
             dest_dir = os.path.join(dest_dir, suite)
@@ -468,9 +468,9 @@ def stable_install (summary, short_summary):
             if not ql:
                 daklib.utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version))
             source_id = ql[0][0]
-            suite_id = database.get_suite_id('proposed-updates')
+            suite_id = daklib.database.get_suite_id('proposed-updates')
             projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id))
-            suite_id = database.get_suite_id('stable')
+            suite_id = daklib.database.get_suite_id('stable')
             projectB.query("INSERT INTO src_associations (suite, source) VALUES ('%s', '%s')" % (suite_id, source_id))
 
     # Add the binaries to stable (and remove it/them from proposed-updates)
@@ -483,7 +483,7 @@ def stable_install (summary, short_summary):
             q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
             ql = q.getresult()
             if not ql:
-		suite_id = database.get_suite_id('proposed-updates')
+		suite_id = daklib.database.get_suite_id('proposed-updates')
 		que = "SELECT b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN suite su ON (ba.suite = su.id) WHERE b.package = '%s' AND (ba.suite = '%s')" % (package, suite_id)
 		q = projectB.query(que)
 
@@ -498,9 +498,9 @@ def stable_install (summary, short_summary):
 			    break
 	    if not binNMU:
 		binary_id = ql[0][0]
-		suite_id = database.get_suite_id('proposed-updates')
+		suite_id = daklib.database.get_suite_id('proposed-updates')
 		projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id))
-		suite_id = database.get_suite_id('stable')
+		suite_id = daklib.database.get_suite_id('stable')
 		projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id))
 	    else:
                 del files[file]

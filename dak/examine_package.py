@@ -32,10 +32,9 @@
 
 ################################################################################
 
-import errno, os, re, sys
-import utils
+import errno, os, pg, re, sys
 import apt_pkg, apt_inst
-import pg, database
+import daklib.database, daklib.utils
 
 ################################################################################
 
