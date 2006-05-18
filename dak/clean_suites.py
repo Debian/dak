@@ -177,7 +177,6 @@ def clean_binaries():
     if not Options["No-Action"]:
         before = time.time()
         sys.stdout.write("[Deleting from binaries table... ")
-        sys.stderr.write("DELETE FROM binaries WHERE EXISTS (SELECT 1 FROM files WHERE binaries.file = files.id AND files.last_used <= '%s')\n" % (delete_date))
         projectB.query("DELETE FROM binaries WHERE EXISTS (SELECT 1 FROM files WHERE binaries.file = files.id AND files.last_used <= '%s')" % (delete_date))
         sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
 

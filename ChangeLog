@@ -1,5 +1,8 @@
 2006-05-18  James Troup  <james@nocrew.org>
 
+	* dak/clean_suites.py (clean_binaries): remove debug print of SQL
+	query.
+
 	* dak/init_dirs.py: pylint cleanups - long lines, unused globals,
 	docstrings, untabify, don't shadow builtins, lowercase non-global
 	variable names, spaces after commas.  Also bail if given any
