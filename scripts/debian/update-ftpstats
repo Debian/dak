@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+my %data;
+my %data2;
+my @archs = ("source", "all", "amd64", "i386", "alpha", "arm", "hppa",
+	"hurd-i386", "ia64", "m68k", "mips", "mipsel", "powerpc", "s390",
+	"sparc");
+
+while (<>) {
+	if (/^(\d{8})\d{6}\|k(?:atie|elly)\|installed\|[^|]+\|[^|]+\|(\d+)\|([-\w]+)$/) {
+		if (not defined $data{$1}) {
+			foreach $a (@archs) {
+				$data{$1}{$a} = 0;
+			}
+		}
+		$data{$1}{$3} += $2;
+		$data2{$1}{$3}++;
+	}
+}
+
+foreach $p (sort keys %data) {
+	print "$p";
+	foreach $a (@archs) {
+		print ", $data{$p}{$a}";
+	}
+	print "\n";
+}
