@@ -1,0 +1,89 @@
+#!/bin/sh -e
+
+umask 002
+
+cd /org/ftp.debian.org/ftp/indices/files/components
+
+ARCHLIST=$(tempfile)
+
+echo "Querying projectb..."
+
+echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s/|all$/|/;s,^/org/ftp.debian.org/ftp,.,' | sort >$ARCHLIST
+
+includedirs () {
+    perl -ne 'print; while (m,/[^/]+$,) { $_=$`; print $_ . "\n" unless $d{$_}++; }'
+}
+
+poolfirst () {
+    perl -e '@nonpool=(); while (<>) { if (m,^\./pool/,) { print; } else { push @nonpool, $_; } } print for (@nonpool);'
+}
+
+echo "Generating sources list..."
+
+(
+  sed -n 's/|$//p' $ARCHLIST
+  cd /org/ftp.debian.org/ftp
+  find ./dists -maxdepth 1 \! -type d
+  find ./dists \! -type d | grep "/source/"
+) | sort -u | gzip -9 > source.list.gz
+
+echo "Generating arch lists..."
+
+ARCHES=$( (<$ARCHLIST sed -n 's/^.*|//p'; echo amd64) | grep . | sort -u)
+for a in $ARCHES; do
+  (sed -n "s/|$a$//p" $ARCHLIST
+
+   cd /org/ftp.debian.org/ftp;
+   find ./dists -maxdepth 1 \! -type d
+   find ./dists \! -type d | grep -E "(proposed-updates.*_$a.changes$|/main/disks-$a/|/main/installer-$a/|/Contents-$a|/binary-$a/)"
+   if echo X sparc mips mipsel hppa X | grep -q " $a "; then
+     find ./dists/sarge/main/upgrade-kernel \! -type d
+   fi
+  ) | sort -u | gzip -9 > arch-$a.list.gz
+done
+
+echo "Generating suite lists..."
+
+suite_list () {
+    printf 'SELECT DISTINCT l.path, f.filename FROM (SELECT sa.source AS source FROM src_associations sa WHERE sa.suite = %d UNION SELECT b.source AS source FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) WHERE ba.suite = %d) s JOIN dsc_files df ON (s.source = df.source) JOIN files f ON (df.file = f.id) JOIN location l ON (f.location = l.id)\n' $1 $1 | psql -F' ' -A -t projectb
+
+    printf 'SELECT l.path, f.filename FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) JOIN files f ON (b.file = f.id) JOIN location l ON (f.location = l.id) WHERE ba.suite = %d\n' $1 | psql -F' ' -A -t projectb
+}
+
+printf 'SELECT id, suite_name FROM suite\n' | psql -F' ' -At projectb |
+  while read id suite; do
+    [ -e /org/ftp.debian.org/ftp/dists/$suite ] || continue
+    (
+     (cd /org/ftp.debian.org/ftp;
+      distname=$(cd dists; readlink $suite || echo $suite)
+      find ./dists/$distname \! -type d
+      for distdir in ./dists/*; do 
+        [ "$(readlink $distdir)" != "$distname" ] || echo $distdir
+      done
+     )
+     suite_list $id | tr -d ' ' | sed 's,^/org/ftp.debian.org/ftp,.,'
+    ) | sort -u | gzip -9 > suite-${suite}.list.gz
+  done
+
+echo "Finding everything on the ftp site to generate sundries $(date +"%X")..."
+
+(cd /org/ftp.debian.org/ftp; find . \! -type d \! -name 'Archive_Maintenance_In_Progress' | sort) >$ARCHLIST
+
+rm -f sundries.list
+zcat *.list.gz | cat - *.list | sort -u | 
+  diff - $ARCHLIST | sed -n 's/^> //p' > sundries.list
+
+echo "Generating files list $(date +"%X")..."
+
+for a in $ARCHES; do
+  (echo ./project/trace; zcat arch-$a.list.gz source.list.gz) | 
+    cat - sundries.list dists.list project.list docs.list indices.list |
+    sort -u | poolfirst > ../arch-$a.files
+done
+
+(cat ../arch-i386.files ../arch-amd64.files; zcat suite-stable.list.gz) |
+   sort -u | poolfirst > ../typical.files
+
+rm -f $ARCHLIST
+
+echo "Done!"
