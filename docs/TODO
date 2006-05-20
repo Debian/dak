@@ -16,6 +16,10 @@ Others
 
   o reject on > or < in a version constraint
 
+  o 'dak reject-proposed-updates' should only start an editor once to
+    capture a message; it will usually be the same message for all
+    files on the same command line.
+
 23:07 < aba> elmo: and, how about enhancing 'dak cruft-report' to spot half-dropped
    binaries on one arch (i.e. package used to build A and B, but B is
    no longer built on some archs)?
