@@ -23,14 +23,15 @@ echo "Creating recursive directory listing ... "
 rm -f .$filename.new
 TZ=UTC ls -lR | grep -v Archive_Maintenance_In_Progress > .$filename.new
 
-if [ -r $filename ] ; then
-  mv -f $filename $filename.old
+if [ -r ${filename}.gz ] ; then
+  mv -f ${filename}.gz $filename.old.gz
   mv -f .$filename.new $filename
   rm -f $filename.patch.gz
-  diff -u $filename.old $filename | gzip -9cfn - >$filename.patch.gz
-  rm -f $filename.old
+  zcat $filename.old.gz | diff -u - $filename | gzip -9cfn - >$filename.patch.gz
+  rm -f $filename.old.gz
 else
   mv -f .$filename.new $filename
 fi
 
 gzip -9cfN $filename >$filename.gz
+rm -f $filename
