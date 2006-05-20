@@ -72,7 +72,7 @@ def main():
     l.simple_bind_s("","")
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Import-Users-From-Passwd::ValidGID"]),
-                       ["uid", "cn", "mn", "sn", "createtimestamp"])
+                       ["uid", "cn", "mn", "sn", "createTimestamp"])
     sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
 
 
@@ -105,7 +105,7 @@ SELECT DISTINCT u.uid FROM suite su, bin_associations ba, binaries b, fingerprin
     for i in Attrs:
         entry = i[1]
         uid = entry["uid"][0]
-        created = time.mktime(time.strptime(entry["createtimestamp"][0][:8], '%Y%m%d'))
+        created = time.mktime(time.strptime(entry["createTimestamp"][0][:8], '%Y%m%d'))
         diff = now - created
         # 31536000 is 1 year in seconds, i.e. 60 * 60 * 24 * 365
         if diff < 31536000 / 2:
