@@ -26,7 +26,8 @@
 ################################################################################
 
 import pg, sys
-import apt_pkg, logging
+import apt_pkg
+import daklib.logging
 import daklib.database
 import daklib.utils
 
