@@ -677,7 +677,7 @@ def parse_args(Options):
     if Options["Suite"]:
         suite_ids_list = []
         for suite in split_args(Options["Suite"]):
-            suite_id = dak.lib.database.get_suite_id(suite)
+            suite_id = database.get_suite_id(suite)
             if suite_id == -1:
                 warn("suite '%s' not recognised." % (suite))
             else:
@@ -693,7 +693,7 @@ def parse_args(Options):
     if Options["Component"]:
         component_ids_list = []
         for component in split_args(Options["Component"]):
-            component_id = dak.lib.database.get_component_id(component)
+            component_id = database.get_component_id(component)
             if component_id == -1:
                 warn("component '%s' not recognised." % (component))
             else:
@@ -714,7 +714,7 @@ def parse_args(Options):
             if architecture == "source":
                 check_source = 1
             else:
-                architecture_id = dak.lib.database.get_architecture_id(architecture)
+                architecture_id = database.get_architecture_id(architecture)
                 if architecture_id == -1:
                     warn("architecture '%s' not recognised." % (architecture))
                 else:
