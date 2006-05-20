@@ -4,6 +4,8 @@ Rough Guide to doing Stable Point Releases in Debian
 o run 'dak clean-proposed-updates' to get rid of obsolete .changes
   from p-u ['dak clean-proposed-updates *.changes' from within p-u]
 o [also check for obsolete .changes caused by 'dak rm'-ing from p-u]
+o Update dak.conf (at least the section for Reject-Proposed-Updates,
+  before using 'dak reject-proposed-updates')
 o Install, reject and remove packages as directed by the SRM using
   'dak process-accepted' (installs), 'dak reject-proposed-updates'
   (rejects) and 'dak rm' (removals)
@@ -12,9 +14,9 @@ o Install, reject and remove packages as directed by the SRM using
       need to do that byhand.
 
 o Do anything in proposed-updates/TODO
-o Close any applicable woody bugs
+o Close any applicable stable bugs
   (hint: http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=ftp.debian.org&include=woody)
-o Update version number in README and dists/README (ftp-master only)
+o Update version number in README, README.html and dists/README (ftp-master only)
 o Update the 'Debian<n>.<n>r<n>' symlink in dists/
 o Clean up dists/ChangeLog (add header, basically)
 o Update version fields in dak.conf[-non-US]
