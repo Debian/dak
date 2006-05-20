@@ -701,6 +701,14 @@ def do_new():
     for suite in changes["suite"].keys():
         override = Cnf.Find("Suite::%s::OverrideSuite" % (suite))
         if override:
+	    (olderr, newerr) = (daklib.database.get_suite_id(suite) == -1,
+	      daklib.database.get_suite_id(override) == -1)
+	    if olderr or newerr:
+	        (oinv, newinv) = ("", "")
+		if olderr: oinv = "invalid "
+		if newerr: ninv = "invalid "
+	        print "warning: overriding %ssuite %s to %ssuite %s" % (
+			oinv, suite, ninv, override)
             del changes["suite"][suite]
             changes["suite"][override] = 1
     # Validate suites
