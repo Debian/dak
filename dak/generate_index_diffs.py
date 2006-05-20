@@ -193,7 +193,6 @@ def sizesha1(f):
 
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
     if Options.has_key("NoAct"): 
-        print "not doing anything"
         return
 
     patchname = Options["PatchName"]
@@ -213,15 +212,15 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
     (oldext, oldstat) = smartstat(oldfile)
     (origext, origstat) = smartstat(origfile)
     if not origstat:
-        print "%s doesn't exist" % (origfile)
+        print "%s: doesn't exist" % (origfile)
         return
     if not oldstat:
-        print "initial run"
+        print "%s: initial run" % (origfile)
         os.link(origfile + origext, oldfile + origext)
         return
 
     if oldstat[1:3] == origstat[1:3]:
-        print "hardlink unbroken, assuming unchanged"
+        print "%s: hardlink unbroken, assuming unchanged" % (origfile)
         return
 
     oldf = smartopen(oldfile)
@@ -232,7 +231,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 
     if upd.filesizesha1:
         if upd.filesizesha1 != oldsizesha1:
-            print "old file seems to have changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
+            print "warning: old file seems to have changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
 
     # XXX this should be usable now
     #
@@ -256,10 +255,9 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
     if newsizesha1 == oldsizesha1:
         os.unlink(newfile)
         oldf.close()
-        print "file unchanged, not generating diff"
+        print "%s: unchanged" % (origfile)
     else:
         if not os.path.isdir(outdir): os.mkdir(outdir)
-        print "generating diff"
         w = os.popen("diff --ed - %s | gzip -c -9 > %s.gz" % 
                          (newfile, difffile), "w")
         pipe_file(oldf, w)
@@ -322,8 +320,6 @@ def main():
         suites = Cnf.SubTree("Suite").List()
 
     for suite in suites:
-        if suite == "Experimental": continue
-
         print "Processing: " + suite
         SuiteBlock = Cnf.SubTree("Suite::" + suite)
 
@@ -366,7 +362,6 @@ def main():
                 file = "%s/Contents-%s" % (Cnf["Dir::Root"] + tree,
                         architecture)
                 storename = "%s/%s_contents_%s" % (Options["TempDir"], suite, architecture)
-                print "running contents for %s %s : " % (suite, architecture),
                 genchanges(Options, file + ".diff", storename, file, \
                   Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::Contents" % (suite), maxcontents))
 
@@ -387,7 +382,6 @@ def main():
                 file = "%s/%s/%s/%s" % (Cnf["Dir::Root"] + tree,
                            component, longarch, packages)
                 storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, architecture)
-                print "running for %s %s %s : " % (suite, component, architecture),
                 genchanges(Options, file + ".diff", storename, file, \
                   Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::%s" % (suite, packages), maxsuite))
 
