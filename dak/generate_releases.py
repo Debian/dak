@@ -110,7 +110,7 @@ def print_md5sha_files (tree, files, hashop):
         else:
 	    hash = hashop(file_handle)
 	    file_handle.close()
-	    out.write(" %s         %8d %s\n" % (hash, size, name))
+	    out.write(" %s %8d %s\n" % (hash, size, name))
 
 def print_md5_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.md5sum)
