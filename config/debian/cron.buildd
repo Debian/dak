@@ -1,6 +1,14 @@
 #! /bin/sh
 #
-# Executed as part of cron.unchecked
+# Called from cron.unchecked to update wanna-build, each time it runs.
+#
+ssh buildd@buildd /org/wanna-build/trigger.often
+exit 0
+
+cleanup() {
+	rm -f "$LOCKFILE"
+	kill -TERM $SSH_PID
+}
 
 ARCHS="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
 
@@ -12,19 +20,16 @@ LOCKFILE="/org/wanna-build/tmp/DB_Maintenance_In_Progress"
 
 if [ ! -e "$ftpdir/Archive_Maintenance_In_Progress" ]; then
 	if lockfile -r3 $LOCKFILE; then
-	cleanup() {
-		rm -f "$LOCKFILE"
-	}
-	trap cleanup 0
-	cd /org/incoming.debian.org/buildd
-	cp /org/wanna-build/tmp/Sources.unstable-old Sources
-	gzip -cd Sources.gz >> Sources
-	for a in $ARCHS; do
-	        cp /org/wanna-build/tmp/Packages.unstable.$a-old Packages
-		gzip -cd /org/incoming.debian.org/buildd/Packages.gz >> Packages
-		quinn-diff -i -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -A $a 2>/dev/null | perl -pi -e 's#^(non-US/)?(non-free)/.*$##msg' | wanna-build -b $a/build-db --merge-partial-quinn 2> /dev/null
-		wanna-build -A $a -b $a/build-db --merge-packages Packages 2>/dev/null
-	done
-	rm -f Sources Packages
+		trap cleanup 0
+		cd /org/incoming.debian.org/buildd
+		cp /org/wanna-build/tmp/Sources.unstable-old Sources
+		gzip -cd Sources.gz >> Sources
+		for a in $ARCHS; do
+			cp /org/wanna-build/tmp/Packages.unstable.$a-old Packages
+			gzip -cd /org/incoming.debian.org/buildd/Packages.gz >> Packages
+			quinn-diff -i -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -A $a 2>/dev/null | perl -pi -e 's#^(non-US/)?(non-free)/.*$##msg' | wanna-build -b $a/build-db --merge-partial-quinn 2> /dev/null
+			wanna-build -A $a -b $a/build-db --merge-packages Packages 2>/dev/null
+		done
+		rm -f Sources Packages
 	fi
 fi
