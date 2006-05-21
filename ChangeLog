@@ -1,3 +1,75 @@
+2006-05-20  James Troup  <james@nocrew.org>
+
+	* dak/find_null_maintainers.py (main):
+	s/createtimestamp/createTimestamp/ to make things work with modern
+	slapd.
+
+	* config/debian/dak.conf: Update StableRejector, MoreInfoURL,
+	Stable::Version and Stable::Description for 3.1r2.
+
+	* config/debian-non-US/dak.conf: sync with klecker - update
+	version number of 3.0 and MoreInfoURL.
+
+	* docs/README.stable-point-release: Add notes about updating
+	dak.conf and Reject-Proposed-Updates section in particular.
+	s/woody/stable/.  Also need to update README.html.
+
+	* scripts/debian/mklslar: drop support for uncompressed ls-lR file.
+
+	* config/debian/apt.conf: Add udeb tree for proposed-updates.
+
+2006-05-20  Ryan Murray  <rmurray@debian.org>
+
+	* scripts/debian/update-ftpstats: new script to update daily
+	architecture size graph data.
+
+	* config/debian/cron.buildd: sync with spohr - due to ftp-master /
+	buildd split, simply ssh to buildd.d.o and call 'trigger.often'
+	there.
+
+	* config/debian/cron.daily: ssh to buildd and run 'trigger.daily'
+	before we finish.  Don't push to merkel.
+
+	* dak/process_unchecked.py (check_changes): Also look in
+	ProposedUpdates queue dir.
+	(check_files): likewise.
+
+2006-05-20  Anthony Towns  <ajt@debian.org>
+
+	* scripts/debian/mkfilesindices: new script to generate file
+	indices used for partial mirroring.
+
+	* config/debian/cron.daily: add progress timestamps.
+
+	* config/debian/dak.conf: update Dinstall::SigningKeyIds. Add
+	amd64 to testing, unstable and experimental.  Drop sh from
+	experimental.  Move Experimental to dists/experimental.  Add
+	Dir::ProposedUpdates.  Add Architectures::amd64.
+
+	* config/debian/apt.conf: add amd64 to testing, unstable and
+	experimental.  Drop uncompressed Packages files from testing. Drop
+	sh from experimental.  Move experimental to dists/experimental/.
+
+	* config/debian/vars (archs): add amd64.
+
+	* dak/process_unchecked.py (action): Add support for
+	proposed-updates approval queue.
+	(is_stableupdate): new function - checks if the upload is targeted
+	at proposed-updates.
+	(do_stableupdate): likewise - moves upload to proposed-updates
+	holding area.
+
+	* dak/process_new.py (do_new): warn if original or new target
+	suite are invalid.
+
+	* dak/generate_releases.py (print_md5sha_files): less whitespace
+	between the hash and size.
+
+	* dak/generate_index_diffs.py (genchanges): don't say we're not
+	doing anything.  Better formatting of other messages.
+	(main): don't skip experimental and remove some 'doing stuff'
+	prints.
+
 2006-05-18  James Troup  <james@nocrew.org>
 
 	* dak/clean_suites.py (clean_binaries): remove debug print of SQL
