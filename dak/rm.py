@@ -298,7 +298,7 @@ def main ():
         field = "b.package"
     else:
         field = "s.source"
-    con_packages = "AND %s IN (%s)" % (field, ", ".join(map(repr, arguments)))
+    con_packages = "AND %s IN (%s)" % (field, ", ".join([ repr(i) for i in arguments ]))
 
     (con_suites, con_architectures, con_components, check_source) = \
                  daklib.utils.parse_args(Options)

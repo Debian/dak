@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Logging functions
-# Copyright (C) 2001, 2002  James Troup <james@nocrew.org>
+# Copyright (C) 2001, 2002, 2006  James Troup <james@nocrew.org>
 # $Id: logging.py,v 1.4 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
@@ -59,7 +59,7 @@ class Logger:
         timestamp = time.strftime("%Y%m%d%H%M%S")
         details.insert(0, timestamp)
         # Force the contents of the list to be string.join-able
-        details = map(str, details)
+        details = [ str(i) for i in details ]
         # Write out the log in TSV
         self.logfile.write("|".join(details)+'\n')
         # Flush the output to enable tail-ing

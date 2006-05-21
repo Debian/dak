@@ -26,7 +26,7 @@
 
 ################################################################################
 
-import commands, os, pg, stat, string, sys, time
+import commands, os, pg, stat, sys, time
 import apt_pkg, apt_inst
 import daklib.database
 import daklib.utils
@@ -345,7 +345,7 @@ def check_indices_files_exist():
     for suite in [ "stable", "testing", "unstable" ]:
         for component in Cnf.ValueList("Suite::%s::Components" % (suite)):
             architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
-            for arch in map(string.lower, architectures):
+            for arch in [ i.lower() for i in architectures ]:
                 if arch == "source":
                     validate_sources(suite, component)
                 elif arch == "all":

@@ -27,7 +27,7 @@
 
 ################################################################################
 
-import commands, pg, os, string, sys, time
+import commands, pg, os, sys, time
 import apt_pkg
 import daklib.database
 import daklib.utils
@@ -209,8 +209,7 @@ def do_obsolete_source(duplicate_bins, bin2source):
                     # Source has already been removed
                     continue
                 else:
-                    obsolete[source] = map(string.strip,
-                                           source_binaries[source].split(','))
+                    obsolete[source] = [ i.strip() for i in source_binaries[source].split(',') ]
             for binary in duplicate_bins[key]:
                 if bin2source.has_key(binary) and bin2source[binary]["source"] == source:
                     continue
@@ -226,7 +225,7 @@ def do_obsolete_source(duplicate_bins, bin2source):
         if not obsolete[source]:
             to_remove.append(source)
             output += " * %s (%s)\n" % (source, source_versions[source])
-            for binary in map(string.strip, source_binaries[source].split(',')):
+            for binary in [ i.strip() for i in source_binaries[source].split(',') ]:
                 if bin2source.has_key(binary):
                     output += "    o %s (%s) is built by %s.\n" \
                           % (binary, bin2source[binary]["version"],
@@ -320,7 +319,7 @@ def main ():
             source_version = Sources.Section.Find('Version')
             architecture = Sources.Section.Find('Architecture')
             binaries = Sources.Section.Find('Binary')
-            binaries_list = map(string.strip, binaries.split(','))
+            binaries_list = [ i.strip() for i in  binaries.split(',') ]
 
             if "bnb" in checks:
                 # Check for binaries not built on any architecture.

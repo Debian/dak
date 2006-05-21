@@ -33,7 +33,7 @@
 
 ################################################################################
 
-import copy, os, pg, string, sys
+import copy, os, pg, sys
 import apt_pkg
 import symlink_dists
 import daklib.database
@@ -275,7 +275,7 @@ def write_filelists(packages, dislocated_files):
         suites = Cnf.SubTree("Suite").List()
     else:
         suites = daklib.utils.split_args(Options["Suite"])
-    for suite in map(string.lower, suites):
+    for suite in [ i.lower() for i in suites ]:
         d.setdefault(suite, {})
         if not Options["Component"]:
             components = Cnf.ValueList("Suite::%s::Components" % (suite))
@@ -293,7 +293,7 @@ def write_filelists(packages, dislocated_files):
                 architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
             else:
                 architectures = daklib.utils.split_args(Options["Architectures"])
-            for arch in map(string.lower, architectures):
+            for arch in [ i.lower() for i in architectures ]:
                 d[suite][component].setdefault(arch, {})
                 if arch == "source":
                     types = [ "dsc" ]

@@ -1,3 +1,22 @@
+2006-05-21  James Troup  <james@nocrew.org>
+
+	* dak/check_archive.py (check_indices_files_exist): use list
+	comprehension instead of map().  No longer need to import
+	deprecated string module as a side-effect.
+	* dak/check_overrides.py (process): likewise.
+	(main): likewise.
+	* dak/cruft_report.py (do_obsolete_source): likewise.
+	(main): likewise.
+	* dak/ls.py (main): likewise.
+	* dak/make_suite_file_list.py (write_filelists): likewise.
+	* dak/process_accepted.py (stable_install): likewise.
+	* dak/rm.py (main): likewise.
+	* dak/stats.py (number_of_packages): likewise.
+	* daklib/logging.py (Logger.log): likewise.
+	* daklib/queue.py (Upload.source_exists): likewise.
+	(Upload.cross_suite_version_check): likewise.
+	* daklib/utils.py (parse_args): likewise.
+
 2006-05-20  James Troup  <james@nocrew.org>
 
 	* dak/find_null_maintainers.py (main):

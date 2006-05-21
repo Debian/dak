@@ -683,7 +683,7 @@ def parse_args(Options):
             else:
                 suite_ids_list.append(suite_id)
         if suite_ids_list:
-            con_suites = "AND su.id IN (%s)" % ", ".join(map(str, suite_ids_list))
+            con_suites = "AND su.id IN (%s)" % ", ".join([ str(i) for i in suite_ids_list ])
         else:
             fubar("No valid suite given.")
     else:
@@ -699,7 +699,7 @@ def parse_args(Options):
             else:
                 component_ids_list.append(component_id)
         if component_ids_list:
-            con_components = "AND c.id IN (%s)" % ", ".join(map(str, component_ids_list))
+            con_components = "AND c.id IN (%s)" % ", ".join([ str(i) for i in component_ids_list ])
         else:
             fubar("No valid component given.")
     else:
@@ -720,7 +720,7 @@ def parse_args(Options):
                 else:
                     arch_ids_list.append(architecture_id)
         if arch_ids_list:
-            con_architectures = "AND a.id IN (%s)" % ", ".join(map(str, arch_ids_list))
+            con_architectures = "AND a.id IN (%s)" % ", ".join([ str(i) for i in arch_ids_list ])
         else:
             if not check_source:
                 fubar("No valid architecture given.")
