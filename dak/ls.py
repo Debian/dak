@@ -124,7 +124,7 @@ def main ():
         new_packages = []
         for package in packages:
             q = projectB.query("SELECT DISTINCT b.package FROM binaries b, bin_associations ba, suite su, source s WHERE b.source = s.id AND su.id = ba.suite AND b.id = ba.bin AND s.source %s '%s' %s" % (comparison_operator, package, con_suites))
-            new_packages.extend(map(lambda x: x[0], q.getresult()))
+            new_packages.extend([ i[0] for i in q.getresult() ])
             if package not in new_packages:
                 new_packages.append(package)
         packages = new_packages

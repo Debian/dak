@@ -112,7 +112,7 @@ SELECT b.package FROM binaries b, bin_associations ba, files f,
                               location l, component c
  WHERE b.type = '%s' AND b.id = ba.bin AND f.id = b.file AND l.id = f.location
    AND c.id = l.component AND ba.suite IN (%s) AND c.id = %s
-""" % (type, ",".join(map(str,affected_suites)), component_id))
+""" % (type, ",".join([ str(i) for i in affected_suites ]), component_id))
         for i in q.getresult():
             packages[i[0]] = 0
 
@@ -122,7 +122,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                      component c
  WHERE s.id = sa.source AND f.id = s.file AND l.id = f.location
    AND c.id = l.component AND sa.suite IN (%s) AND c.id = %s
-""" % (",".join(map(str,affected_suites)), component_id))
+""" % (",".join([ str(i) for i in affected_suites]), component_id))
     for i in q.getresult():
         src_packages[i[0]] = 0
 
@@ -322,7 +322,7 @@ def main ():
                 suites.append(suite)
 
         q = projectB.query("SELECT id FROM suite WHERE suite_name in (%s)" \
-            % ", ".join(map(repr, suites)).lower())
+            % ", ".join([ repr(i) for i in suites ]).lower())
 
         suiteids = []
         for i in q.getresult():

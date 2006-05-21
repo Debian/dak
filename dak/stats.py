@@ -182,7 +182,7 @@ SELECT suite, count(suite) FROM src_associations GROUP BY suite;""")
         for arch in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
             suite_arches[suite_id][arch] = ""
         suite_id_list.append(suite_id)
-    output_list = map(lambda x: output_format(x), suite_list)
+    output_list = [ output_format(i) for i in suite_list ]
     longest_suite = longest(output_list)
     arch_list = arches.values()
     arch_list.sort()

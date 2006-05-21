@@ -488,7 +488,7 @@ def stable_install (summary, short_summary):
 		q = projectB.query(que)
 
 		# Reduce the query results to a list of version numbers
-		ql = map(lambda x: x[0], q.getresult())
+		ql = [ i[0] for i in q.getresult() ]
 		if not ql:
 		    daklib.utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture))
 		else:
