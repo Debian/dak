@@ -246,7 +246,7 @@ def check_changes():
     # Check there isn't already a changes file of the same name in one
     # of the queue directories.
     base_filename = os.path.basename(filename)
-    for dir in [ "Accepted", "Byhand", "Done", "New" ]:
+    for dir in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates" ]:
         if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+base_filename):
             reject("%s: a file with this name already exists in the %s directory." % (base_filename, dir))
 
@@ -395,7 +395,7 @@ def check_files():
 
     for file in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
-        for dir in [ "Accepted", "Byhand", "New" ]:
+        for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates" ]:
             if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+file):
                 reject("%s file already exists in the %s directory." % (file, dir))
         if not daklib.utils.re_taint_free.match(file):
@@ -1036,12 +1036,15 @@ def action ():
     queue_info = {
          "New": { "is": is_new, "process": acknowledge_new },
          "Byhand" : { "is": is_byhand, "process": do_byhand },
+         "StableUpdate" : { "is": is_stableupdate, "process": do_stableupdate },
          "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
          "Embargo" : { "is": is_embargo, "process": queue_embargo },
     }
     queues = [ "New", "Byhand" ]
     if Cnf.FindB("Dinstall::SecurityQueueHandling"):
         queues += [ "Unembargo", "Embargo" ]
+    else:
+        queues += [ "StableUpdate" ]
 
     (prompt, answer) = ("", "XXX")
     if Options["No-Action"] or Options["Automatic"]:
@@ -1170,6 +1173,24 @@ def queue_embargo (summary):
     # Check for override disparities
     Upload.Subst["__SUMMARY__"] = summary
     Upload.check_override()
+
+################################################################################
+
+def is_stableupdate ():
+    if changes["distribution"].has_key("proposed-updates"):
+	return 1
+    return 0
+
+def do_stableupdate (summary):
+    print "Moving to PROPOSED-UPDATES holding area."
+    Logger.log(["Moving to proposed-updates", pkg.changes_file]);
+
+    Upload.dump_vars(Cnf["Dir::Queue::ProposedUpdates"]);
+    move_to_dir(Cnf["Dir::Queue::ProposedUpdates"])
+
+    # Check for override disparities
+    Upload.Subst["__SUMMARY__"] = summary;
+    Upload.check_override();
 
 ################################################################################
 
