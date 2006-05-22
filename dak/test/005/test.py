@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Check utils.parse_changes() correctly ignores data outside the signed area
-# Copyright (C) 2004  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.3 2004-03-11 00:22:19 troup Exp $
+# Copyright (C) 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

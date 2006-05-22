@@ -1,5 +1,4 @@
 #! /bin/sh
-# $Id: mkmaintainers,v 1.3 2004-02-27 20:09:51 troup Exp $
 
 echo
 echo -n 'Creating Maintainers index ... '

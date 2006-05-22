@@ -2,7 +2,6 @@
 
 # Check utils.parse_changes()'s for handling of multi-line fields
 # Copyright (C) 2000, 2006  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.2 2002-10-16 02:47:32 troup Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

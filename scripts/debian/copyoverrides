@@ -1,5 +1,4 @@
 #! /bin/sh
-# $Id: copyoverrides,v 1.2 2001-01-10 06:01:07 troup Exp $
 
 set -e
 . $SCRIPTVARS

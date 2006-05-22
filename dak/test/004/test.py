@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Check utils.extract_component_from_section()
-# Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.3 2002-10-16 02:47:32 troup Exp $
+# Copyright (C) 2000, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

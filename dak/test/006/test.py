@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Test utils.fix_maintainer()
-# Copyright (C) 2004  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.2 2004-06-23 23:11:51 troup Exp $
+# Copyright (C) 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

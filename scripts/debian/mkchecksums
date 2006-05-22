@@ -1,6 +1,5 @@
 #!/bin/sh
 # Update the md5sums file
-# $Id: mkchecksums,v 1.2 2000-12-20 08:15:35 troup Exp $
 
 set -e
 . $SCRIPTVARS

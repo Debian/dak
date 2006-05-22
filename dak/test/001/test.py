@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Check utils.parse_changes()'s .dsc file validation
-# Copyright (C) 2000  James Troup <james@nocrew.org>
-# $Id: test.py,v 1.1 2001-01-28 09:06:44 troup Exp $
+# Copyright (C) 2000, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -2,7 +2,6 @@
 
 # Logging functions
 # Copyright (C) 2001, 2002, 2006  James Troup <james@nocrew.org>
-# $Id: logging.py,v 1.4 2005-11-15 09:50:32 ajt Exp $
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
