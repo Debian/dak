@@ -22,7 +22,7 @@
 ################################################################################
 
 import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
-       string, sys, tempfile, traceback
+       sys, tempfile, traceback
 import apt_pkg
 import database
 
@@ -94,14 +94,6 @@ def our_raw_input(prompt=""):
     except EOFError:
         sys.stderr.write("\nUser interrupt (^D).\n")
         raise SystemExit
-
-################################################################################
-
-def str_isnum (s):
-    for c in s:
-        if c not in string.digits:
-            return 0
-    return 1
 
 ################################################################################
 

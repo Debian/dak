@@ -282,7 +282,7 @@ def main ():
     #
     carbon_copy = []
     for copy_to in daklib.utils.split_args(Options.get("Carbon-Copy")):
-        if daklib.utils.str_isnum(copy_to):
+        if copy_to.isdigit():
             carbon_copy.append(copy_to + "@" + Cnf["Dinstall::BugServer"])
         elif copy_to == 'package':
             for package in arguments:

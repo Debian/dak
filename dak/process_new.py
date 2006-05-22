@@ -517,7 +517,7 @@ def edit_overrides (new):
         got_answer = 0
         while not got_answer:
             answer = daklib.utils.our_raw_input(prompt)
-            if not daklib.utils.str_isnum(answer):
+            if not answer.isdigit():
                 answer = answer[:1].upper()
             if answer == "E" or answer == "D":
                 got_answer = 1
