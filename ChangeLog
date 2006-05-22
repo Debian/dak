@@ -17,6 +17,20 @@
 	(Upload.cross_suite_version_check): likewise.
 	* daklib/utils.py (parse_args): likewise.
 
+2006-05-21  James Troup  <james@nocrew.org>
+
+	* daklib/utils.py (process_gpgv_output): new function, split out
+	of check_signature().
+	(check_signature): adapt accordingly.
+	(retrieve_key): new function that will try to retrieve the key
+	that signed a given file from a keyserver.
+	(check_signature): add 'autofetch' argument that if not set
+	defaults to the value of Dinstall::KeyAutoFetch (if that exists).
+	If 'autofetch' is true, invoke retrieve_key().  
+
+	* docs/README.config: document Dinstall::KeyAutoFetch and
+	Dinstall:KeyServer.
+
 2006-05-20  James Troup  <james@nocrew.org>
 
 	* dak/find_null_maintainers.py (main):
