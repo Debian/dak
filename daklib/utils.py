@@ -865,46 +865,12 @@ def gpgv_get_status_output(cmd, status_read, status_write):
 
     return output, status, exit_status
 
-############################################################
+################################################################################
 
-
-def check_signature (sig_filename, reject, data_filename="", keyrings=None):
-    """Check the signature of a file and return the fingerprint if the
-signature is valid or 'None' if it's not.  The first argument is the
-filename whose signature should be checked.  The second argument is a
-reject function and is called when an error is found.  The reject()
-function must allow for two arguments: the first is the error message,
-the second is an optional prefix string.  It's possible for reject()
-to be called more than once during an invocation of check_signature().
-The third argument is optional and is the name of the files the
-detached signature applies to.  The fourth argument is optional and is
-a *list* of keyrings to use.
-"""
-
-    # Ensure the filename contains no shell meta-characters or other badness
-    if not re_taint_free.match(sig_filename):
-        reject("!!WARNING!! tainted signature filename: '%s'." % (sig_filename))
-        return None
-
-    if data_filename and not re_taint_free.match(data_filename):
-        reject("!!WARNING!! tainted data filename: '%s'." % (data_filename))
-        return None
-
-    if not keyrings:
-        keyrings = (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"])
-
-    # Build the command line
-    status_read, status_write = os.pipe(); 
-    cmd = "gpgv --status-fd %s" % (status_write)
-    for keyring in keyrings:
-        cmd += " --keyring %s" % (keyring)
-    cmd += " %s %s" % (sig_filename, data_filename)
-    # Invoke gpgv on the file
-    (output, status, exit_status) = gpgv_get_status_output(cmd, status_read, status_write)
-
+def process_gpgv_output(status):
     # Process the status-fd output
     keywords = {}
-    bad = internal_error = ""
+    internal_error = ""
     for line in status.split('\n'):
         line = line.strip()
         if line == "":
@@ -924,6 +890,101 @@ a *list* of keyrings to use.
         else:
             keywords[keyword] = args
 
+    return (keywords, internal_error)
+
+################################################################################
+
+def retrieve_key (filename, keyserver=None, keyring=None):
+    """Retrieve the key that signed 'filename' from 'keyserver' and
+add it to 'keyring'.  Returns nothing on success, or an error message
+on error."""
+
+    # Defaults for keyserver and keyring
+    if not keyserver:
+        keyserver = Cnf["Dinstall::KeyServer"]
+    if not keyring:
+        keyring = Cnf["Dinstall::GPGKeyring"]
+
+    # Ensure the filename contains no shell meta-characters or other badness
+    if not re_taint_free.match(filename):
+        return "%s: tainted filename" % (filename)
+
+    # Invoke gpgv on the file
+    status_read, status_write = os.pipe(); 
+    cmd = "gpgv --status-fd %s --keyring /dev/null %s" % (status_write, filename)
+    (_, status, _) = gpgv_get_status_output(cmd, status_read, status_write)
+
+    # Process the status-fd output
+    (keywords, internal_error) = process_gpgv_output(status)
+    if internal_error:
+        return internal_error
+
+    if not keywords.has_key("NO_PUBKEY"):
+        return "didn't find expected NO_PUBKEY in gpgv status-fd output"
+
+    fingerprint = keywords["NO_PUBKEY"][0]
+    # XXX - gpg sucks.  You can't use --secret-keyring=/dev/null as
+    # it'll try to create a lockfile in /dev.  A better solution might
+    # be a tempfile or something.
+    cmd = "gpg --no-default-keyring --secret-keyring=%s --no-options" \
+          % (Cnf["Dinstall::SigningKeyring"])
+    cmd += " --keyring %s --keyserver %s --recv-key %s" \
+           % (keyring, keyserver, fingerprint)
+    (result, output) = commands.getstatusoutput(cmd)
+    if (result != 0):
+        return "'%s' failed with exit code %s" % (cmd, result)
+
+    return ""
+
+################################################################################
+
+def check_signature (sig_filename, reject, data_filename="", keyrings=None, autofetch=None):
+    """Check the signature of a file and return the fingerprint if the
+signature is valid or 'None' if it's not.  The first argument is the
+filename whose signature should be checked.  The second argument is a
+reject function and is called when an error is found.  The reject()
+function must allow for two arguments: the first is the error message,
+the second is an optional prefix string.  It's possible for reject()
+to be called more than once during an invocation of check_signature().
+The third argument is optional and is the name of the files the
+detached signature applies to.  The fourth argument is optional and is
+a *list* of keyrings to use.  'autofetch' can either be None, True or
+False.  If None, the default behaviour specified in the config will be
+used."""
+
+    # Ensure the filename contains no shell meta-characters or other badness
+    if not re_taint_free.match(sig_filename):
+        reject("!!WARNING!! tainted signature filename: '%s'." % (sig_filename))
+        return None
+
+    if data_filename and not re_taint_free.match(data_filename):
+        reject("!!WARNING!! tainted data filename: '%s'." % (data_filename))
+        return None
+
+    if not keyrings:
+        keyrings = (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"])
+
+    # Autofetch the signing key if that's enabled
+    if autofetch == None:
+        autofetch = Cnf.get("Dinstall::KeyAutoFetch")
+    if autofetch:
+        error_msg = retrieve_key(sig_filename)
+        if error_msg:
+            reject(error_msg)
+            return None
+
+    # Build the command line
+    status_read, status_write = os.pipe(); 
+    cmd = "gpgv --status-fd %s" % (status_write)
+    for keyring in keyrings:
+        cmd += " --keyring %s" % (keyring)
+    cmd += " %s %s" % (sig_filename, data_filename)
+    # Invoke gpgv on the file
+    (output, status, exit_status) = gpgv_get_status_output(cmd, status_read, status_write)
+
+    # Process the status-fd output
+    (keywords, internal_error) = process_gpgv_output(status)
+
     # If we failed to parse the status-fd output, let's just whine and bail now
     if internal_error:
         reject("internal error while performing signature check on %s." % (sig_filename))
@@ -931,6 +992,7 @@ a *list* of keyrings to use.
         reject("Please report the above errors to the Archive maintainers by replying to this mail.", "")
         return None
 
+    bad = ""
     # Now check for obviously bad things in the processed output
     if keywords.has_key("SIGEXPIRED"):
         reject("The key used to sign %s has expired." % (sig_filename))
