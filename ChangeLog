@@ -1,3 +1,9 @@
+2006-06-11  James Troup  <james@nocrew.org>
+
+	* dak/ls.py (main): add back 'heidi' as a valid argument for
+	-f/--format as people are using it in scripts and breaking that
+	without warning seems rude.
+
 2006-05-21  James Troup  <james@nocrew.org>
 
 	* dak/rm.py (main): use string .isdigit() rather than
