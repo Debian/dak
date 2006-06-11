@@ -614,7 +614,7 @@ def main():
             Urgency_Logger = Urgency_Log(Cnf)
 
     # Initialize the substitution template mapping global
-    bcc = "X-DAK: dak process-accepted\nX-Katie: this header is obsolete"
+    bcc = "X-DAK: dak process-accepted\nX-Katie: $Revision: 1.18 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
     else:

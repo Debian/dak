@@ -644,7 +644,7 @@ distribution."""
         if not manual:
             Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
             Subst["__MANUAL_REJECT_MESSAGE__"] = ""
-            Subst["__CC__"] = "X-DAK-Rejection: automatic (moo)"
+            Subst["__CC__"] = "X-DAK-Rejection: automatic (moo)\nX-Katie-Rejection: automatic (moo)"
             os.write(reason_fd, reject_message)
             reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/dak.rejected")
         else:

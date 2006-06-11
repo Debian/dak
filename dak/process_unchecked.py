@@ -1339,7 +1339,7 @@ def main():
         Logger = Upload.Logger = daklib.logging.Logger(Cnf, "process-unchecked")
 
     # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
-    bcc = "X-DAK: dak process-unchecked\nX-Katie: this header is obsolete"
+    bcc = "X-DAK: dak process-unchecked\nX-Katie: $Revision: 1.65 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Upload.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
     else:

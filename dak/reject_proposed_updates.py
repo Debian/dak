@@ -73,7 +73,7 @@ def main():
     Upload = daklib.queue.Upload(Cnf)
     Logger = Upload.Logger = daklib.logging.Logger(Cnf, "reject-proposed-updates")
 
-    bcc = "X-DAK: dak rejected-proposed-updates\nX-Katie: this header is obsolete"
+    bcc = "X-DAK: dak rejected-proposed-updates\nX-Katie: lauren $Revision: 1.4 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Upload.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
     else:

@@ -950,7 +950,7 @@ def main():
 
     # Kill me now? **FIXME**
     Cnf["Dinstall::Options::No-Mail"] = ""
-    bcc = "X-DAK: dak process-new\nX-Katie: this header is obsolete"
+    bcc = "X-DAK: dak process-new\nX-Katie: lisa $Revision: 1.31 $"
     if Cnf.has_key("Dinstall::Bcc"):
         Upload.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
     else:
