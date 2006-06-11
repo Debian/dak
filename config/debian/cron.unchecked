@@ -1,9 +1,11 @@
 #! /bin/sh
 
 set -e
+set -u
 export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
+LOCKDAILY=""
 LOCKFILE="$lockdir/unchecked.lock"
 NOTICE="$lockdir/daily.lock"
 
@@ -40,9 +42,9 @@ if lockfile -r3 $LOCKFILE; then
 					cat override.sid.$i.src >> override.sid.all3.src
 				fi
 			done
-			cd $masterdir
+			cd $configdir
 			apt-ftparchive -qq generate apt.conf.buildd
-			. $masterdir/cron.buildd
+			. $configdir/cron.buildd
 		fi
 	else
 		echo "$timestamp": Nothing to do >> $report

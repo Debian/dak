@@ -608,7 +608,7 @@ argument:
 
     orig_filename = filename
     if filename.endswith(".dak"):
-        filename = filename[:-6]+".changes"
+        filename = filename[:-4]+".changes"
 
     if not filename.endswith(".changes"):
         error = "invalid file type; not a changes file"

@@ -183,7 +183,7 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
                         sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite))
                         sys.stdout.write(", ".join(arches))
                         sys.stdout.write('\n')
-                    elif Options["Format"] == "control-suite":
+                    elif Options["Format"] in [ "control-suite", "heidi" ]:
                         for arch in arches:
                             sys.stdout.write("%s %s %s\n" % (pkg, version, arch))
             if Options["GreaterOrEqual"]:

@@ -1,3 +1,37 @@
+2006-06-11  James Troup  <james@nocrew.org>
+
+	* config/debian/cron.unchecked: set -u to error out on undefined
+	variables.  Preset LOCKDAILY to "" accordingly.
+	* config/debian/cron.hourly: likewise.
+	* config/debian/cron.monthly: likewise.
+	* config/debian/cron.weekly: likewise.
+
+	* config/debian/vars (configdir): add new variable pointing to
+	this directory.
+
+	* config/debian/cron.daily: use $configdir inplace of $masterdir
+	when that's what we mean, and don't cd into $masterdir just to run
+	dak scripts as we don't need to do that anymore.
+	* config/debian/cron.hourly: likewise.
+	* config/debian/cron.unchecked: likewise.
+	* config/debian/cron.weekly: likewise.
+
+	* config/debian/dak.conf
+	(Import-Users-From-Passwd::KnownPostgres): temporarily add 'katie'
+	user back to list of known users as it's non-trivial to entirely
+	change the owner of a database with postgresql 7.4.
+
+	* dak/daklib/queue.py (Upload.source_exists): use string object
+	methods rather than string module.
+	(Upload.get_anyversion): likewise.
+
+	* dak/daklib/utils.py (validate_changes_file_arg): update filename
+	slicing to cope with new .dak filenames.
+
+	* dak/ls.py (main): add back 'heidi' as a valid argument for
+	-f/--format as people are using it in scripts and breaking that
+	without warning seems rude.
+
 2006-05-21  James Troup  <james@nocrew.org>
 
 	* dak/rm.py (main): use string .isdigit() rather than

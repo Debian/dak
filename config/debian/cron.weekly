@@ -3,6 +3,7 @@
 # Run once a week via cron, out of dak's crontab.
 
 set -e
+set -u
 export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
@@ -16,7 +17,7 @@ fi
 
 # Clean up apt-ftparchive's databases
 
-cd $masterdir
+cd $configdir
 apt-ftparchive -q clean apt.conf
 apt-ftparchive -q clean apt.conf.buildd
 
