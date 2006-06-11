@@ -3,6 +3,7 @@
 # Run once a week via cron, out of dak's crontab.
 
 set -e
+set -u
 export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 

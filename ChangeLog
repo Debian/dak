@@ -1,5 +1,11 @@
 2006-06-11  James Troup  <james@nocrew.org>
 
+	* config/debian/cron.unchecked: set -u to error out on undefined
+	variables.  Preset LOCKDAILY to "" accordingly.
+	* config/debian/cron.hourly: likewise.
+	* config/debian/cron.monthly: likewise.
+	* config/debian/cron.weekly: likewise.
+
 	* config/debian/vars (configdir): add new variable pointing to
 	this directory.
 

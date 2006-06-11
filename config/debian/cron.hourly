@@ -3,6 +3,7 @@
 # Executed hourly via cron, out of troup's crontab.
 
 set -e
+set -u
 export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
