@@ -1,5 +1,10 @@
 2006-06-11  James Troup  <james@nocrew.org>
 
+	* config/debian/dak.conf
+	(Import-Users-From-Passwd::KnownPostgres): temporarily add 'katie'
+	user back to list of known users as it's non-trivial to entirely
+	change the owner of a database with postgresql 7.4.
+
 	* dak/daklib/queue.py (Upload.source_exists): use string object
 	methods rather than string module.
 	(Upload.get_anyversion): likewise.
