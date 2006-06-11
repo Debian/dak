@@ -695,7 +695,7 @@ distribution."""
 			if x[1] in s and x[0] not in s:
 				s.append(x[0])
 
-		que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) JOIN suite su ON (sa.suite = su.id) WHERE s.source = '%s' AND (%s)" % (package, string.join(["su.suite_name = '%s'" % a for a in s], " OR "))
+		que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) JOIN suite su ON (sa.suite = su.id) WHERE s.source = '%s' AND (%s)" % (package, " OR ".join(["su.suite_name = '%s'" % a for a in s]))
             q = self.projectB.query(que)
 
             # Reduce the query results to a list of version numbers
@@ -774,7 +774,7 @@ distribution."""
         anyversion=None
         anysuite = [suite] + self.Cnf.ValueList("Suite::%s::VersionChecks::Enhances" % (suite))
         for (v, s) in query_result:
-            if s in [ string.lower(x) for x in anysuite ]:
+            if s in [ x.lower() for x in anysuite ]:
                 if not anyversion or apt_pkg.VersionCompare(anyversion, v) <= 0:
                     anyversion=v
         return anyversion
