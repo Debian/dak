@@ -1,5 +1,15 @@
 2006-06-11  James Troup  <james@nocrew.org>
 
+	* config/debian/vars (configdir): add new variable pointing to
+	this directory.
+
+	* config/debian/cron.daily: use $configdir inplace of $masterdir
+	when that's what we mean, and don't cd into $masterdir just to run
+	dak scripts as we don't need to do that anymore.
+	* config/debian/cron.hourly: likewise.
+	* config/debian/cron.unchecked: likewise.
+	* config/debian/cron.weekly: likewise.
+
 	* config/debian/dak.conf
 	(Import-Users-From-Passwd::KnownPostgres): temporarily add 'katie'
 	user back to list of known users as it's non-trivial to entirely

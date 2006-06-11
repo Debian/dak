@@ -6,6 +6,5 @@ set -e
 export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-cd $masterdir
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html

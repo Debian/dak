@@ -56,7 +56,6 @@ chmod 664 REPORT
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
-cd $masterdir
 dak check-overrides
 rm -f $LOCKAC
 
@@ -64,7 +63,6 @@ symlinks -d -r $ftpdir
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
-cd $masterdir
 dak make-suite-file-list
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
@@ -90,7 +88,7 @@ for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Generate Packages and Sources files
-cd $masterdir
+cd $configdir
 apt-ftparchive generate apt.conf
 # Generate *.diff/ incremental updates
 dak generate-index-diffs
@@ -168,7 +166,6 @@ echo Daily cron scripts successful.
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Stats pr0n
-cd $masterdir
 update-ftpstats $base/log/* > $base/misc/ftpstats.data
 R --slave --vanilla < $base/misc/ftpstats.R
 
