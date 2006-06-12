@@ -646,7 +646,7 @@ distribution."""
             Subst["__MANUAL_REJECT_MESSAGE__"] = ""
             Subst["__CC__"] = "X-DAK-Rejection: automatic (moo)\nX-Katie-Rejection: automatic (moo)"
             os.write(reason_fd, reject_message)
-            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/dak.rejected")
+            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/queue.rejected")
         else:
             # Build up the rejection email
             user_email_address = utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"])
@@ -654,7 +654,7 @@ distribution."""
             Subst["__REJECTOR_ADDRESS__"] = user_email_address
             Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
             Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
-            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/dak.rejected")
+            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/queue.rejected")
             # Write the rejection email out as the <foo>.reason file
             os.write(reason_fd, reject_mail_message)
 
