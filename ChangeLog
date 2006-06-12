@@ -1,3 +1,19 @@
+2006-06-11  James Troup  <troup@spohr.debian.org>
+
+	* config/debian/cron.daily: invoke process-accepted not
+	process-unchecked.
+
+	* config/debian/vars (scriptsdir): new variable.
+	* config/debian/cron.daily: use it.
+
+	* scripts/debian/mkmaintainers: put Maintainers_Versions-non-US in
+	$base/misc/ instead of versioned $masterdir.  Correct 'dak
+	make-maintainers' invocation to look in $configdir for
+	pseudo-packages.maintainers.
+
+	* daklib/queue.py (Upload.do_reject): use correct name for
+	rejection template.
+
 2006-06-11  James Troup  <james@nocrew.org>
 
 	* dak/override.py (main): temporarily add content of old X-Katie
