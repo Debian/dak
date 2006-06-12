@@ -50,7 +50,7 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 lockfile $LOCKAC
 cd $accepted
 rm -f REPORT
-dak process-unchecked -pa *.changes | tee REPORT | \
+dak process-accepted -pa *.changes | tee REPORT | \
      mail -s "Install for $(date +%D)" ftpmaster@ftp-master.debian.org
 chgrp debadmin REPORT
 chmod 664 REPORT

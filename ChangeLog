@@ -1,5 +1,8 @@
 2006-06-11  James Troup  <troup@spohr.debian.org>
 
+	* config/debian/cron.daily: invoke process-accepted not
+	process-unchecked.
+
 	* config/debian/vars (scriptsdir): new variable.
 	* config/debian/cron.daily: use it.
 
