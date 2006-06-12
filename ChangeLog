@@ -1,5 +1,8 @@
 2006-06-11  James Troup  <troup@spohr.debian.org>
 
+	* config/debian/vars (scriptsdir): new variable.
+	* config/debian/cron.daily: use it.
+
 	* scripts/debian/mkmaintainers: put Maintainers_Versions-non-US in
 	$base/misc/ instead of versioned $masterdir.  Correct 'dak
 	make-maintainers' invocation to look in $configdir for

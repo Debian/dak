@@ -9,6 +9,7 @@ archs="alpha amd64 arm hppa hurd-i386 i386 ia64 m68k mips mipsel powerpc s390 sp
 scriptdir=$base/scripts
 masterdir=$base/dak/
 configdir=$base/dak/config/debian/
+scriptsdir=$base/dak/scripts/debian/
 dbdir=$base/database/
 lockdir=$base/lock/
 overridedir=$scriptdir/override
