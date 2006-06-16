@@ -1,3 +1,35 @@
+2006-06-16  James Troup  <james@nocrew.org>
+
+	[Merged changes from klecker - original author unknown.]
+
+	* daklib/queue.py (Upload.dump_vars): also save changes["adv id"].
+
+	* dak/security_install.py (do_upload): fix check for oldstable and
+	upload file list handling.
+
+	* dak/process_unchecked.py (check_files): update "check for
+	source" code to also look in Embargoed and Unembargoed queues.
+	(is_unembargo): fix handling of Dir::Queue::Disembargo.
+
+	* dak/decode_dot_dak.py (main): add support for changes["adv id"].
+
+	* config/debian-security/vars (disembargo): add.
+
+	* config/debian-security/dak.conf (Dinstall::SigningKeyIds):
+	update.
+	(Process-Unchecked::AcceptedLockFile): add.
+	(Suite::Testing): clean up Version and Description.
+	(SuiteMappings): add silent map from etch-secure to testing.
+
+	* config/debian-security/cron.unchecked: add support for
+	disembargoed queues.
+
+	* config/debian-security/apt.conf.buildd: add bzip2ed Packages
+	files too.
+
+	* config/debian-security/apt.conf: add amd64 to architectures for
+	testing-security.
+
 2006-06-11  James Troup  <troup@spohr.debian.org>
 
 	* config/debian/cron.daily: invoke process-accepted not
