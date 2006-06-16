@@ -529,8 +529,14 @@ def check_files():
                         files[file]["byhand"] = 1
                     elif os.path.exists(Cnf["Dir::Queue::New"] + '/' + dsc_filename):
                         files[file]["new"] = 1
-                    elif not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
-                        reject("no source found for %s %s (%s)." % (source_package, source_version, file))
+                    else:
+		        dsc_file_exists = 0
+                        for myq in ["Accepted", "Embargoed", "Unembargoed"]:
+                            if os.path.exists(Cnf["Dir::Queue::"+myq] + '/' + dsc_filename):
+			        dsc_file_exists = 1
+				break
+			if not dsc_file_exists:
+                            reject("no source found for %s %s (%s)." % (source_package, source_version, file))
             # Check the version and for file overwrites
             reject(Upload.check_binary_against_db(file),"")
 
@@ -1134,7 +1140,12 @@ def is_unembargo ():
     if ql:
         return 1
 
-    if pkg.directory == Cnf["Dir::Queue::Disembargo"].rstrip("/"):
+    oldcwd = os.getcwd()
+    os.chdir(Cnf["Dir::Queue::Disembargo"])
+    disdir = os.getcwd()
+    os.chdir(oldcwd)
+
+    if pkg.directory == disdir:
         if changes["architecture"].has_key("source"):
             if Options["No-Action"]: return 1
 

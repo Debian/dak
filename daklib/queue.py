@@ -31,6 +31,7 @@ re_isanum = re.compile (r"^\d+$")
 re_default_answer = re.compile(r"\[(.*)\]")
 re_fdnic = re.compile(r"\n\n")
 re_bin_only_nmu = re.compile(r"\+b\d+$")
+
 ###############################################################################
 
 # Convenience wrapper to carry around all the package information in
@@ -174,7 +175,7 @@ class Upload:
                    "closes", "changes" ]:
             d_changes[i] = changes[i]
         # Optional changes fields
-        for i in [ "changed-by", "filecontents", "format", "process-new note", "distribution-version" ]:
+        for i in [ "changed-by", "filecontents", "format", "process-new note", "adv id", "distribution-version" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i]
         ## dsc

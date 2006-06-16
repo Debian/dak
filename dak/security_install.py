@@ -84,7 +84,7 @@ def do_upload(changes_files):
         if changes["architecture"].has_key("amd64"):
             print "Not uploading amd64 part to ftp-master\n"
             continue
-        if changes["distribution"].has_key("oldstable-security"):
+        if changes["distribution"].has_key("oldstable"):
             print "Not uploading oldstable-security changes to ftp-master\n"
             continue
         # Build the file list for this .changes file
@@ -114,7 +114,7 @@ def do_upload(changes_files):
             uploads[upload_uri] = []
         uploads[upload_uri].extend(file_list)
         # Update the changes list for the upload uri
-        if not changes.has_key(upload_uri):
+        if not changesfiles.has_key(upload_uri):
             changesfiles[upload_uri] = []
         changesfiles[upload_uri].append(changes_file)
         # Remember the suites and source name/version

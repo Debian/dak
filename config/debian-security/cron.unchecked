@@ -4,19 +4,33 @@ set -e
 export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
-cd $unchecked
-
-changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
 report=$queuedir/REPORT
+reportdis=$queuedir/REPORT.disembargo
 timestamp=$(date "+%Y-%m-%d %H:%M")
+doanything=false
 
-if [ -z "$changes" ]; then
+cd $unchecked
+changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+if [ -n "$changes" ]; then
+  doanything=true
+  echo "$timestamp": "$changes"  >> $report
+  dak process-unchecked -a $changes >> $report
+  echo "--" >> $report
+fi
+
+cd $disembargo
+changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+
+if [ -n "$changes" ]; then
+  doanything=true
+  echo "$timestamp": "$changes"  >> $reportdis
+  dak process-unchecked -a $changes >> $reportdis
+  echo "--" >> $reportdis
+fi
+
+if ! $doanything; then
   echo "$timestamp": Nothing to do >> $report
-  exit 0;
-fi;
-
-echo "$timestamp": "$changes"  >> $report
-dak process-unchecked -a $changes >> $report
-echo "--" >> $report
+  exit 0
+fi
 
 sh $masterdir/cron.buildd-security

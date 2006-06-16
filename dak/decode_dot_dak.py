@@ -77,7 +77,7 @@ def main():
             print "  %s: %s" % (i.capitalize(), " ".join(changes[i].keys()))
             del changes[i]
         # Optional changes fields
-        for i in [ "changed-by", "filecontents", "format" ]:
+        for i in [ "changed-by", "filecontents", "format", "adv id" ]:
             if changes.has_key(i):
                 print "  %s: %s" % (i.capitalize(), changes[i])
                 del changes[i]

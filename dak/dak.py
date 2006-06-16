@@ -110,6 +110,8 @@ def init():
          "Manually reject from proposed-updates"),
         ("security-install",
          "Install a security upload into the archive"),
+        ("new-security-install",
+         "New way to install a security upload into the archive"),
         ("split-done",
          "Split queue/done into a date-based hierarchy"),
         ("stats",
