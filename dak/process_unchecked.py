@@ -1140,7 +1140,12 @@ def is_unembargo ():
     if ql:
         return 1
 
-    if pkg.directory == Cnf["Dir::Queue::Disembargo"].rstrip("/"):
+    oldcwd = os.getcwd()
+    os.chdir(Cnf["Dir::Queue::Disembargo"])
+    disdir = os.getcwd()
+    os.chdir(oldcwd)
+
+    if pkg.directory == disdir:
         if changes["architecture"].has_key("source"):
             if Options["No-Action"]: return 1
 
