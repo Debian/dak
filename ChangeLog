@@ -1,5 +1,17 @@
 2006-06-16  James Troup  <james@nocrew.org>
 
+	* dak/dak.py (init): add new-security-install.
+
+	* dak/new_security_install.py: cleanups and adapt for new naming
+	scheme and other changes.
+
+2006-06-16  Anthony Towns  <ajt@debian.org>
+
+	* dak/new_security_install.py: initial version imported from
+	klecker.
+
+2006-06-16  James Troup  <james@nocrew.org>
+
 	[Merged changes from klecker - original author unknown.]
 
 	* daklib/queue.py (Upload.dump_vars): also save changes["adv id"].
