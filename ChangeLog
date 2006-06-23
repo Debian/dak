@@ -1,3 +1,19 @@
+2006-06-23  Ryan Murray  <rmurray@debian.org>
+
+	* dak/process_unchecked.py (check_files): also check ProposedUpdates
+	queue for source.
+
+2006-06-18  Ryan Murray  <rmurray@debian.org>
+
+	* dak/scripts/debian/update-ftpstats: look for dak named processes in
+	the log, too.
+
+	* dak/process_unchecked.py (check_files): only check embargoed and
+	unembargoed queues if the keys are set.
+
+	* dak/config/debian-security/apt.conf: set Packages::Compress to gzip
+	and bzip2 for etch.
+
 2006-06-16  James Troup  <james@nocrew.org>
 
 	* dak/dak.py (init): add new-security-install.

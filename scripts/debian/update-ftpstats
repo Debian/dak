@@ -7,7 +7,7 @@ my @archs = ("source", "all", "amd64", "i386", "alpha", "arm", "hppa",
 	"sparc");
 
 while (<>) {
-	if (/^(\d{8})\d{6}\|k(?:atie|elly)\|installed\|[^|]+\|[^|]+\|(\d+)\|([-\w]+)$/) {
+	if (/^(\d{8})\d{6}\|(?:k(?:atie|elly)|process-accepted)\|installed\|[^|]+\|[^|]+\|(\d+)\|([-\w]+)$/) {
 		if (not defined $data{$1}) {
 			foreach $a (@archs) {
 				$data{$1}{$a} = 0;

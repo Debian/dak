@@ -531,10 +531,11 @@ def check_files():
                         files[file]["new"] = 1
                     else:
 		        dsc_file_exists = 0
-                        for myq in ["Accepted", "Embargoed", "Unembargoed"]:
-                            if os.path.exists(Cnf["Dir::Queue::"+myq] + '/' + dsc_filename):
-			        dsc_file_exists = 1
-				break
+                        for myq in ["Accepted", "Embargoed", "Unembargoed", "ProposedUpdates"]:
+			    if Cnf.has_key("Dir::Queue::%s" % (myq)):
+				if os.path.exists(Cnf["Dir::Queue::"+myq] + '/' + dsc_filename):
+				    dsc_file_exists = 1
+				    break
 			if not dsc_file_exists:
                             reject("no source found for %s %s (%s)." % (source_package, source_version, file))
             # Check the version and for file overwrites
