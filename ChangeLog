@@ -1,3 +1,9 @@
+2006-06-26  Ryan Murray  <rmurray@debian.org>
+
+	* dak/process_unchecked.py (check_files): strip optional source version
+	from Source: field in changes file, and ensure what is left is a valid
+	package name.
+
 2006-06-23  Ryan Murray  <rmurray@debian.org>
 
 	* dak/process_unchecked.py (check_files): also check ProposedUpdates

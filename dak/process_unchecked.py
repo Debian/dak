@@ -43,6 +43,7 @@ re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:]+$")
 re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$")
 re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
 re_strip_revision = re.compile(r"-([^-]+)$")
+re_strip_srcver = re.compile(r"\s+\(\S+\)$")
 
 ################################################################################
 
@@ -201,6 +202,14 @@ def check_changes():
         if not changes.has_key(i):
             reject("%s: Missing mandatory field `%s'." % (filename, i))
             return 0    # Avoid <undef> errors during later tests
+
+    # Strip a source version in brackets from the source field
+    if re_strip_srcver.search(changes["source"]):
+	changes["source"] = re_strip_srcver.sub('', changes["source"])
+
+    # Ensure the source field is a valid package name.
+    if not re_valid_pkg_name.match(changes["source"]):
+        reject("%s: invalid source name '%s'." % (filename, changes["source"]))
 
     # Split multi-value fields into a lower-level dictionary
     for i in ("architecture", "distribution", "binary", "closes"):
