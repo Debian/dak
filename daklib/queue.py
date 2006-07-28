@@ -252,6 +252,7 @@ class Upload:
         if not changes.has_key("distribution") or not isinstance(changes["distribution"], DictType):
             changes["distribution"] = {}
 
+        override_summary ="";
         file_keys = files.keys()
         file_keys.sort()
         for file in file_keys:
@@ -271,6 +272,8 @@ class Upload:
                 files[file]["pool name"] = utils.poolify (changes.get("source",""), files[file]["component"])
                 destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
                 summary += file + "\n  to " + destination + "\n"
+                if files[file]["type"] in ["deb", "udeb", "dsc"]:
+                    override_summary += "%s - %s %s\n" % (file, files[file]["priority"], files[file]["section"])
 
         short_summary = summary
 
@@ -279,6 +282,8 @@ class Upload:
 
         if byhand or new:
             summary += "Changes: " + f
+
+        summary += "\n\nOverride entries for your package:\n" + override_summary + "\n"
 
         summary += self.announce(short_summary, 0)
 
