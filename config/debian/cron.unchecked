@@ -43,7 +43,7 @@ if lockfile -r3 $LOCKFILE; then
 				fi
 			done
 			cd $configdir
-			apt-ftparchive -qq generate apt.conf.buildd
+			apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
 			. $configdir/cron.buildd
 		fi
 	else
