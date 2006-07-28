@@ -328,8 +328,8 @@ def check_valid (new):
         new[pkg]["section id"] = daklib.database.get_section_id(section)
         new[pkg]["priority id"] = daklib.database.get_priority_id(new[pkg]["priority"])
         # Sanity checks
-        if (section == "debian-installer" and type != "udeb") or \
-           (section != "debian-installer" and type == "udeb"):
+        di = section.find("debian-installer") != -1
+        if (di and type != "udeb") or (not di and type == "udeb"):
             new[pkg]["section id"] = -1
         if (priority == "source" and type != "dsc") or \
            (priority != "source" and type == "dsc"):
