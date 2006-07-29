@@ -273,7 +273,11 @@ class Upload:
                 destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
                 summary += file + "\n  to " + destination + "\n"
                 if files[file]["type"] in ["deb", "udeb", "dsc"]:
-                    override_summary += "%s - %s %s\n" % (file, files[file]["priority"], files[file]["section"])
+                    # (queue/unchecked), there we have override entries already, use them
+                    # (process-new), there we dont have override entries, use the newly generated ones.
+                    override_prio = files[file].get("override priority", files[file]["priority"])
+                    override_sect = files[file].get("override section", files[file]["section"])
+                    override_summary += "%s - %s %s\n" % (file, override_prio, override_sect)
 
         short_summary = summary
 
