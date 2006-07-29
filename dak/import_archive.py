@@ -307,7 +307,7 @@ def get_location_path(directory):
 def get_or_set_files_id (filename, size, md5sum, location_id):
     global files_id_cache, files_id_serial, files_query_cache
 
-    cache_key = "~".join((filename, size, md5sum, repr(location_id)))
+    cache_key = "_".join((filename, size, md5sum, repr(location_id)))
     if not files_id_cache.has_key(cache_key):
         files_id_serial += 1
         files_query_cache.write("%d\t%s\t%s\t%s\t%d\t\\N\n" % (files_id_serial, filename, size, md5sum, location_id))
@@ -363,7 +363,7 @@ def process_sources (filename, suite, component, archive):
             (md5sum, size, filename) = line.strip().split()
             # Don't duplicate .orig.tar.gz's
             if filename.endswith(".orig.tar.gz"):
-                cache_key = "%s~%s~%s" % (filename, size, md5sum)
+                cache_key = "%s_%s_%s" % (filename, size, md5sum)
                 if orig_tar_gz_cache.has_key(cache_key):
                     id = orig_tar_gz_cache[cache_key]
                 else:
@@ -376,9 +376,9 @@ def process_sources (filename, suite, component, archive):
             if filename.endswith(".dsc"):
                 files_id = id
         filename = directory + package + '_' + no_epoch_version + '.dsc'
-        cache_key = "%s~%s" % (package, version)
+        cache_key = "%s_%s" % (package, version)
         if not source_cache.has_key(cache_key):
-            nasty_key = "%s~%s" % (package, version)
+            nasty_key = "%s_%s" % (package, version)
             source_id_serial += 1
             if not source_cache_for_binaries.has_key(nasty_key):
                 source_cache_for_binaries[nasty_key] = source_id_serial
@@ -438,16 +438,16 @@ def process_packages (filename, suite, component, archive):
         filename = poolify (filename, location)
         if architecture == "all":
             filename = re_arch_from_filename.sub("binary-all", filename)
-        cache_key = "%s~%s" % (source, source_version)
+        cache_key = "%s_%s" % (source, source_version)
         source_id = source_cache_for_binaries.get(cache_key, None)
         size = Scanner.Section["size"]
         md5sum = Scanner.Section["md5sum"]
         files_id = get_or_set_files_id (filename, size, md5sum, location_id)
         type = "deb"; # FIXME
-        cache_key = "%s~%s~%s~%d~%d~%d~%d" % (package, version, repr(source_id), architecture_id, location_id, files_id, suite_id)
+        cache_key = "%s_%s_%s_%d_%d_%d_%d" % (package, version, repr(source_id), architecture_id, location_id, files_id, suite_id)
         if not arch_all_cache.has_key(cache_key):
             arch_all_cache[cache_key] = 1
-            cache_key = "%s~%s~%s~%d" % (package, version, repr(source_id), architecture_id)
+            cache_key = "%s_%s_%s_%d" % (package, version, repr(source_id), architecture_id)
             if not binary_cache.has_key(cache_key):
                 if not source_id:
                     source_id = "\N"
