@@ -77,10 +77,10 @@ def get_id (package, version, architecture):
 
     ql = q.getresult()
     if not ql:
-        daklib.utils.warn("Couldn't find '%s~%s~%s'." % (package, version, architecture))
+        daklib.utils.warn("Couldn't find '%s_%s_%s'." % (package, version, architecture))
         return None
     if len(ql) > 1:
-        daklib.utils.warn("Found more than one match for '%s~%s~%s'." % (package, version, architecture))
+        daklib.utils.warn("Found more than one match for '%s_%s_%s'." % (package, version, architecture))
         return None
     id = ql[0][0]
     return id
@@ -178,13 +178,13 @@ def process_file (file, suite, action):
             # Take action
             if action == "add":
                 if assoication_id:
-                    daklib.utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite))
+                    daklib.utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id))
             elif action == "remove":
                 if assoication_id == None:
-                    daklib.utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    daklib.utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (assoication_id))
@@ -199,13 +199,13 @@ def process_file (file, suite, action):
             # Take action
             if action == "add":
                 if assoication_id:
-                    daklib.utils.warn("'%s~%s~%s' already exists in suite %s." % (package, version, architecture, suite))
+                    daklib.utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id))
             elif action == "remove":
                 if assoication_id == None:
-                    daklib.utils.warn("'%s~%s~%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    daklib.utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (assoication_id))

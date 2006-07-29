@@ -139,7 +139,7 @@ def main():
             lhs = split[0]
             maintainer = fix_maintainer(" ".join(split[1:]))
             if lhs.find('~') != -1:
-                (package, version) = lhs.split('~')
+                (package, version) = lhs.split('~', 1)
             else:
                 package = lhs
                 version = '*'

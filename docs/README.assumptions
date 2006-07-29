@@ -2,7 +2,7 @@ Assumptions
 -----------
 
 o Usernames do not contain ",". [dak import-users-from-passwd]
-o Package names do not contain "~" [dak cruft-report]
+o Package names and versions do not contain "_" [dak cruft-report]
 o Suites are case-independent in conf files, but forced lower case in use. [dak make-suite-file-list]
 o Components are case-sensitive. [dak make-suite-file-list]
 o There's always source of some sort

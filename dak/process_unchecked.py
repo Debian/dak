@@ -39,7 +39,7 @@ from types import *
 
 ################################################################################
 
-re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:]+$")
+re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:~]+$")
 re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$")
 re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
 re_strip_revision = re.compile(r"-([^-]+)$")

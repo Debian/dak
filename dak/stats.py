@@ -73,7 +73,7 @@ def daily_install_stats():
     stats = {}
     file = daklib.utils.open_file("2001-11")
     for line in file.readlines():
-        split = line.strip().split('~')
+        split = line.strip().split('|')
         program = split[1]
         if program != "katie" and program != "process-accepted":
             continue
