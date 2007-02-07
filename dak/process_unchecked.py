@@ -1198,9 +1198,20 @@ def queue_embargo (summary):
 ################################################################################
 
 def is_stableupdate ():
-    if changes["distribution"].has_key("proposed-updates"):
-	return 1
-    return 0
+    if not changes["distribution"].has_key("proposed-updates"):
+	return 0
+
+    if not changes["architecture"].has_key("source"):
+        pusuite = database.get_suite_id("proposed-updates")
+        q = Upload.projectB.query(
+          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" % 
+          (changes["source"], changes["version"], pusuite))
+        ql = q.getresult()
+        if ql:
+            # source is already in proposed-updates
+            return 0
+
+    return 1
 
 def do_stableupdate (summary):
     print "Moving to PROPOSED-UPDATES holding area."
