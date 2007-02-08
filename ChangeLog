@@ -1,3 +1,11 @@
+2007-02-08  Ryan Murray  <rmurray@debian.org>
+
+	* config/debian/cron.daily: use $base instead of hardcoding path
+	name.
+
+	* scripts/debian/mkfilesindices: source 'vars' file and use it's
+	variables instead of hardcoding path names.
+
 2007-02-08  James Troup  <james@nocrew.org>
 
 	* dak/process_unchecked.py (check_signed_by_key): new function to

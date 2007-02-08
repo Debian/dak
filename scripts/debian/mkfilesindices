@@ -1,8 +1,10 @@
 #!/bin/sh -e
 
+export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
 umask 002
 
-cd /org/ftp.debian.org/ftp/indices/files/components
+cd $base/ftp/indices/files/components
 
 ARCHLIST=$(tempfile)
 
@@ -22,7 +24,7 @@ echo "Generating sources list..."
 
 (
   sed -n 's/|$//p' $ARCHLIST
-  cd /org/ftp.debian.org/ftp
+  cd $base/ftp
   find ./dists -maxdepth 1 \! -type d
   find ./dists \! -type d | grep "/source/"
 ) | sort -u | gzip -9 > source.list.gz
@@ -33,7 +35,7 @@ ARCHES=$( (<$ARCHLIST sed -n 's/^.*|//p'; echo amd64) | grep . | sort -u)
 for a in $ARCHES; do
   (sed -n "s/|$a$//p" $ARCHLIST
 
-   cd /org/ftp.debian.org/ftp;
+   cd $base/ftp
    find ./dists -maxdepth 1 \! -type d
    find ./dists \! -type d | grep -E "(proposed-updates.*_$a.changes$|/main/disks-$a/|/main/installer-$a/|/Contents-$a|/binary-$a/)"
    if echo X sparc mips mipsel hppa X | grep -q " $a "; then
@@ -52,9 +54,9 @@ suite_list () {
 
 printf 'SELECT id, suite_name FROM suite\n' | psql -F' ' -At projectb |
   while read id suite; do
-    [ -e /org/ftp.debian.org/ftp/dists/$suite ] || continue
+    [ -e $base/ftp/dists/$suite ] || continue
     (
-     (cd /org/ftp.debian.org/ftp;
+     (cd $base/ftp
       distname=$(cd dists; readlink $suite || echo $suite)
       find ./dists/$distname \! -type d
       for distdir in ./dists/*; do 
@@ -67,7 +69,7 @@ printf 'SELECT id, suite_name FROM suite\n' | psql -F' ' -At projectb |
 
 echo "Finding everything on the ftp site to generate sundries $(date +"%X")..."
 
-(cd /org/ftp.debian.org/ftp; find . \! -type d \! -name 'Archive_Maintenance_In_Progress' | sort) >$ARCHLIST
+(cd $base/ftp; find . \! -type d \! -name 'Archive_Maintenance_In_Progress' | sort) >$ARCHLIST
 
 rm -f sundries.list
 zcat *.list.gz | cat - *.list | sort -u | 

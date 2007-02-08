@@ -34,7 +34,7 @@ EOF
 ################################################################################
 
 echo "Creating pre-daily-cron-job backup of projectb database..."
-pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
@@ -119,7 +119,7 @@ cd $scriptsdir
 ./mkchecksums
 #
 # Fetch bugs information before unchecked processing is allowed again.
-/org/ftp.debian.org/testing/britney bugs
+$base/testing/britney allowdaklock bugs || true
 rm -f $NOTICE
 ssh buildd@buildd /org/wanna-build/trigger.daily
 
@@ -129,9 +129,9 @@ echo Archive maintenance finished at $(date +%X)
 ################################################################################
 
 echo "Creating post-daily-cron-job backup of projectb database..."
-POSTDUMP=/org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+POSTDUMP=$base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 pg_dump projectb > $POSTDUMP
-(cd /org/ftp.debian.org/backup; ln -sf $POSTDUMP current)
+(cd $base/backup; ln -sf $POSTDUMP current)
 
 ################################################################################
 
@@ -161,7 +161,7 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 ulimit -m 90000 -d 90000 -s 10000 -v 90000
 
-run-parts --report /org/ftp.debian.org/scripts/distmnt
+run-parts --report $base/scripts/distmnt
 
 echo Daily cron scripts successful.
 
