@@ -1,3 +1,13 @@
+2007-02-08  James Troup  <james@nocrew.org>
+
+	* dak/process_unchecked.py (check_signed_by_key): new function to
+	ensure .changes files are signed by an authorized uploader.
+	(process_it): use it.
+
+	* config/debian/dak.conf (Binary-Upload-Restrictions): new stanza
+	to configure per suite/component/architecture binary upload
+	restrictions.
+
 2006-06-26  Ryan Murray  <rmurray@debian.org>
 
 	* dak/process_unchecked.py (check_files): strip optional source version
