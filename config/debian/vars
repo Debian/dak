@@ -1,6 +1,6 @@
 # locations used by many scripts
 
-base=/org/ftp.debian.org
+base=/srv/ftp.debian.org
 ftpdir=$base/ftp
 webdir=$base/web
 indices=$ftpdir/indices

@@ -1,8 +1,8 @@
 Dir 
 {
-   ArchiveDir "/org/ftp.debian.org/ftp/";
-   OverrideDir "/org/ftp.debian.org/scripts/override/";
-   CacheDir "/org/ftp.debian.org/database/";
+   ArchiveDir "/srv/ftp.debian.org/ftp/";
+   OverrideDir "/srv/ftp.debian.org/scripts/override/";
+   CacheDir "/srv/ftp.debian.org/database/";
 };
 
 Default
@@ -16,13 +16,13 @@ Default
 
 TreeDefault
 {
-   Contents::Header "/org/ftp.debian.org/dak/config/debian/Contents.top";
+   Contents::Header "/srv/ftp.debian.org/dak/config/debian/Contents.top";
 };
 
 tree "dists/stable"
 {
-   FileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_source.list";
+   FileList "/srv/ftp.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp.debian.org/database/dists/stable_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
    BinOverride "override.sarge.$(SECTION)";
@@ -34,7 +34,7 @@ tree "dists/stable"
 
 tree "dists/stable/main"
 {
-   FileList "/org/ftp.debian.org/database/dists/stable_main_$(SECTION)_binary-$(ARCH).list";
+   FileList "/srv/ftp.debian.org/database/dists/stable_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc";
    BinOverride "override.sarge.main.$(SECTION)";

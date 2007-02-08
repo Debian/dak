@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 umask 002
 
@@ -10,7 +10,7 @@ ARCHLIST=$(tempfile)
 
 echo "Querying projectb..."
 
-echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s/|all$/|/;s,^/org/ftp.debian.org/ftp,.,' | sort >$ARCHLIST
+echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s/|all$/|/;s,^/srv/ftp.debian.org/ftp,.,' | sort >$ARCHLIST
 
 includedirs () {
     perl -ne 'print; while (m,/[^/]+$,) { $_=$`; print $_ . "\n" unless $d{$_}++; }'
@@ -63,7 +63,7 @@ printf 'SELECT id, suite_name FROM suite\n' | psql -F' ' -At projectb |
         [ "$(readlink $distdir)" != "$distname" ] || echo $distdir
       done
      )
-     suite_list $id | tr -d ' ' | sed 's,^/org/ftp.debian.org/ftp,.,'
+     suite_list $id | tr -d ' ' | sed 's,^/srv/ftp.debian.org/ftp,.,'
     ) | sort -u | gzip -9 > suite-${suite}.list.gz
   done
 

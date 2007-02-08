@@ -2,7 +2,7 @@
 
 set -e
 set -u
-export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 LOCKDAILY=""

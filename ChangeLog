@@ -6,6 +6,18 @@
 	* scripts/debian/mkfilesindices: source 'vars' file and use it's
 	variables instead of hardcoding path names.
 
+	* config/debian/apt.conf: switch from /org to /srv.
+	* config/debian/apt.conf.buildd: likewise.
+	* config/debian/apt.conf.stable: likewise.
+	* config/debian/cron.daily: likewise.
+	* config/debian/cron.hourly: likewise.
+	* config/debian/cron.monthly: likewise.
+	* config/debian/cron.unchecked: likewise.
+	* config/debian/cron.weekly: likewise.
+	* config/debian/dak.conf: likewise.
+	* config/debian/vars: likewise.
+	* scripts/debian/mkfilesindices: likewise.
+	
 2007-02-08  James Troup  <james@nocrew.org>
 
 	* dak/process_unchecked.py (check_signed_by_key): new function to
