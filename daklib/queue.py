@@ -272,6 +272,8 @@ class Upload:
                 files[file]["pool name"] = utils.poolify (changes.get("source",""), files[file]["component"])
                 destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
                 summary += file + "\n  to " + destination + "\n"
+		if not files[file].has_key("type"):
+		    files[file]["type"] = "unknown"
                 if files[file]["type"] in ["deb", "udeb", "dsc"]:
                     # (queue/unchecked), there we have override entries already, use them
                     # (process-new), there we dont have override entries, use the newly generated ones.

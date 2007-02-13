@@ -1,5 +1,8 @@
 2007-02-08  Anthony Towns  <ajt@debian.org>
 
+	* daklib/queue.py (Upload.build_summaries): handle files without a
+	'type' gracefully.
+
 	* dak/generate_releases.py (print_sha256_files): new function.
 	(main): use it.
 
