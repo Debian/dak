@@ -538,7 +538,7 @@ def stable_install (summary, short_summary):
     if not Options["No-Mail"] and changes["architecture"].has_key("source"):
         Subst["__SUITE__"] = " into stable"
         Subst["__SUMMARY__"] = summary
-        mail_message = daklib.utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-accepted.installed")
+        mail_message = daklib.utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-accepted.install")
         daklib.utils.send_mail(mail_message)
         Upload.announce(short_summary, 1)
 

@@ -1,3 +1,8 @@
+2007-02-08  Anthony Towns  <ajt@debian.org>
+
+	* dak/process_accepted.py (stable_install): fix name of template
+	mail.
+
 2007-02-08  Ryan Murray  <rmurray@debian.org>
 
 	* config/debian/cron.daily: track when we have the accepted lock
