@@ -987,7 +987,7 @@ def check_timestamps():
                     apt_inst.debExtract(deb_file,tar.callback,"data.tar.gz")
                 except SystemError, e:
                     # If we can't find a data.tar.gz, look for data.tar.bz2 instead.
-                    if not re.match(r"Cannot f[ui]nd chunk data.tar.gz$", str(e)):
+                    if not re.search(r"Cannot f[ui]nd chunk data.tar.gz$", str(e)):
                         raise
                     deb_file.seek(0)
                     apt_inst.debExtract(deb_file,tar.callback,"data.tar.bz2")

@@ -56,6 +56,11 @@
 	to configure per suite/component/architecture binary upload
 	restrictions.
 
+2006-10-09  James Troup  <james.troup@canonical.com>
+
+	* dak/process_unchecked.py (check_timestamps): change match to
+	search as recent versions of python-apt prefix the string with 'E: '.
+
 2006-06-26  Ryan Murray  <rmurray@debian.org>
 
 	* dak/process_unchecked.py (check_files): strip optional source version
