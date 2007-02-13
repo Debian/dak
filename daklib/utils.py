@@ -42,6 +42,8 @@ re_taint_free = re.compile(r"^[-+~/\.\w]+$")
 
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>")
 
+re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
+
 changes_parse_error_exc = "Can't parse line in .changes file"
 invalid_dsc_format_exc = "Invalid .dsc file"
 nk_format_exc = "Unknown Format: in .changes file"
@@ -222,6 +224,14 @@ The rules for (signing_rules == 1)-mode are:
 
     changes_in.close()
     changes["filecontents"] = "".join(lines)
+
+    if changes.has_key("source"):
+        # Strip the source version in brackets from the source field,
+	# put it in the "source-version" field instead.
+        srcver = re_srchasver.search(changes["source"])
+	if srcver:
+            changes["source"] = srcver.group(1)
+	    changes["source-version"] = srcver.group(2)
 
     if error:
 	raise changes_parse_error_exc, error
