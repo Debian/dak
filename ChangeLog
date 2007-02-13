@@ -19,6 +19,9 @@
 
 2007-02-08  Ryan Murray  <rmurray@debian.org>
 
+	* daklib/queue.py (Upload.check_dsc_against_db): handle multiple
+	orig.tar.gz's by picking the first one by file id.
+
 	* dak/override.py (main): limit to binary overrides only for now.
 	(usage): update to match.
 

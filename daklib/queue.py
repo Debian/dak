@@ -919,6 +919,8 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
         # Try and find all files mentioned in the .dsc.  This has
         # to work harder to cope with the multiple possible
         # locations of an .orig.tar.gz.
+        # The ordering on the select is needed to pick the newest orig
+        # when it exists in multiple places.
         for dsc_file in dsc_files.keys():
             found = None
             if files.has_key(dsc_file):
@@ -926,7 +928,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 actual_size = int(files[dsc_file]["size"])
                 found = "%s in incoming" % (dsc_file)
                 # Check the file does not already exist in the archive
-                q = self.projectB.query("SELECT f.size, f.md5sum, l.path, f.filename FROM files f, location l WHERE f.filename LIKE '%%%s%%' AND l.id = f.location" % (dsc_file))
+                q = self.projectB.query("SELECT f.size, f.md5sum, l.path, f.filename FROM files f, location l WHERE f.filename LIKE '%%%s%%' AND l.id = f.location ORDER BY f.id DESC" % (dsc_file))
                 ql = q.getresult()
                 # Strip out anything that isn't '%s' or '/%s$'
                 for i in ql:
