@@ -118,6 +118,9 @@ def print_md5_files (tree, files):
 def print_sha1_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.sha1sum)
 
+def print_sha256_files (tree, files):
+    print_md5sha_files (tree, files, apt_pkg.sha256sum)
+
 ################################################################################
 
 def main ():
@@ -286,6 +289,8 @@ def main ():
 	print_md5_files(tree, files)
 	out.write("SHA1:\n")
 	print_sha1_files(tree, files)
+	out.write("SHA256:\n")
+	print_sha256_files(tree, files)
 
 	out.close()
 	if Cnf.has_key("Dinstall::SigningKeyring"):

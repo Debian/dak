@@ -1,5 +1,8 @@
 2007-02-08  Anthony Towns  <ajt@debian.org>
 
+	* dak/generate_releases.py (print_sha256_files): new function.
+	(main): use it.
+
 	* dak/process_accepted.py (stable_install): fix name of template
 	mail.
 
