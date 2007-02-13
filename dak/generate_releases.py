@@ -258,14 +258,18 @@ def main ():
                     files.append(rel)
 
 	    if AptCnf.has_key("tree::%s/main" % (tree)):
-	        sec = AptCnf["tree::%s/main::Sections" % (tree)].split()[0]
-		if sec != "debian-installer":
-	    	    print "ALERT: weird non debian-installer section in %s" % (tree)
+	        for dis in ["main", "contrib", "non-free"]:
+		    if not AptCnf.has_key("tree::%s/%s" % (tree, dis)): continue
+	            sec = AptCnf["tree::%s/%s::Sections" % (tree,dis)].split()[0]
+		    if sec != "debian-installer":
+	    	        print "ALERT: weird non debian-installer section in %s" % (tree)
 
-		for arch in AptCnf["tree::%s/main::Architectures" % (tree)].split():
-		    if arch != "source":  # always true
-			for file in compressnames("tree::%s/main" % (tree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
-			    files.append(file)
+		    for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
+		        if arch != "source":  # always true
+			    for file in compressnames("tree::%s/%s" % (tree,dis),
+			    	"Packages", 
+				"%s/%s/binary-%s/Packages" % (dis, sec, arch)):
+			        files.append(file)
 	    elif AptCnf.has_key("tree::%s::FakeDI" % (tree)):
 		usetree = AptCnf["tree::%s::FakeDI" % (tree)]
 		sec = AptCnf["tree::%s/main::Sections" % (usetree)].split()[0]
