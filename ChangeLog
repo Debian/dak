@@ -6,6 +6,9 @@
 	* dak/process_unchecked.py (is_stableupdate): fix invocation of
 	database.get_suite_id().
 
+	* templates/process-new.bxa_notification: Update on request
+	of/after discussion with BIS staff.
+
 2007-02-08  Ryan Murray  <rmurray@debian.org>
 
 	* config/debian/cron.daily: track when we have the accepted lock

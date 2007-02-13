@@ -1,19 +1,34 @@
 From: Ben Collins <bxa@ftp-master.debian.org>
-To: crypt@bxa.doc.gov
-Cc: bxa@ftp-master.debian.org
+X-Not-Really-To: crypt@bis.doc.gov, enc@nsa.gov, web_site@bis.doc.gov
+To: bxa@ftp-master.debian.org
 __BCC__
 Precedence: junk
-Subject: Addition to __DISTRO__ Source Code
+Subject: TSU Notification - Addition to __DISTRO__ Source Code
 
-				                      Department of Commerce
-				             Bureau of Export Administration
-		       Office of Strategic Trade and Foreign Policy Controls
-                                     14th Street and Pennsylvania Ave., N.W.
-                                                                   Room 2705
-                                                        Washington, DC 20230
+SUBMISSION TYPE: TSU
+SUBMITTED FOR: Software in the Public Interest (Debian)
+POINT OF CONTACT: Ben Collins
+PHONE and/or FAX: (804) 695-9730
+PRODUCT NAME/MODEL #: Debian Source Code
+ECCN: 5D002
 
-Re:  Unrestricted Encryption Source Code Notification
+NOTIFICATION: http://ftp.debian.org/debian/
+
+Re: Unrestricted Encryption Source Code Notification
 Commodity: Addition to Debian Source Code
+
+Attn: "TSU Notification"
+U.S. Department of Commerce
+Bureau of Industry and Security
+Office of National Security and Technology Transfer Controls (NSTTC)
+14th Street and Pennsylvania Avenue, NW
+Room 2705
+Washington, D.C. 20230
+Fax: (202) 219-9179
+
+Attn: ENC Encryption Request Coordinator
+9800 Savage Road, Suite 6940
+Ft. Meade, MD 20755-6000
 
 Dear Sir/Madam,
 
