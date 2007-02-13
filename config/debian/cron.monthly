@@ -17,7 +17,7 @@ for m in mail bxamail; do
         mv $m ${m}-$DATE
         sleep 20
         gzip -9 ${m}-$DATE
-        chgrp debadmin ${m}-$DATE.gz
+        chgrp $ftpgroup ${m}-$DATE.gz
         chmod 660 ${m}-$DATE.gz
     fi;
 done
