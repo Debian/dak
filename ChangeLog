@@ -1,5 +1,8 @@
 2007-02-08  Ryan Murray  <rmurray@debian.org>
 
+	* dak/control_overrides.py (main): refuse to operate on
+	untouchable suites.
+
 	* config/debian/pseudo-packages.maintainers: drop install,
 	installation, boot-floppy, slink-cd, potato-cd and
 	nonus.debian.org.  Update base.
