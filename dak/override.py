@@ -48,7 +48,7 @@ def game_over():
 
 def usage (exit_code=0):
     print """Usage: dak override [OPTIONS] package [section] [priority]
-Make microchanges or microqueries of the overrides
+Make microchanges or microqueries of the binary overrides
 
   -h, --help                 show this help and exit
   -d, --done=BUG#            send priority/section change as closure to bug#
@@ -105,12 +105,14 @@ def main ():
         else:
             daklib.utils.fubar("%s is not a valid section or priority" % (arg))
 
-
     # Retrieve current section/priority...
+    # TODO: fetch dsc records and update them too, if needed.
     q = projectB.query("""
-    SELECT priority.priority AS prio, section.section AS sect
-      FROM override, priority, section, suite
+    SELECT priority.priority AS prio, section.section AS sect, override_type.type AS type
+      FROM override, priority, section, suite, override_type
      WHERE override.priority = priority.id
+       AND override.type = override_type.id
+       AND override_type.type != 'dsc'
        AND override.section = section.id
        AND override.package = %s
        AND override.suite = suite.id
