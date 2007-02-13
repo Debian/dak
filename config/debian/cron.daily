@@ -14,15 +14,19 @@ TS=0
 NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
 LOCKCU="$lockdir/daily.lock"
 LOCKAC="$lockdir/unchecked.lock"
+lockac=0
 
 cleanup() {
   rm -f "$NOTICE"
   rm -f "$LOCKCU"
+  if [ "$lockac" -eq "1" ]; then
+    rm -f "$LOCKAC"
+  fi
 }
+lockfile -l 3600 $LOCKCU
 trap cleanup 0
 
 rm -f "$NOTICE"
-lockfile -l 3600 $LOCKCU
 cat > "$NOTICE" <<EOF
 Packages are currently being installed and indices rebuilt.
 Maintenance is automatic, starting at 13:52 US Central time, and
@@ -48,6 +52,7 @@ $scriptsdir/update-mailingliststxt
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 lockfile $LOCKAC
+lockac=1
 cd $accepted
 rm -f REPORT
 dak process-accepted -pa *.changes | tee REPORT | \
@@ -59,6 +64,7 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 dak check-overrides
 rm -f $LOCKAC
+lockac=0
 
 symlinks -d -r $ftpdir
 
@@ -82,8 +88,7 @@ dak make-overrides
 #cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sid.extra.main
 
 # FIXME
-rm -f override.potato.all3 override.sid.all3
-for i in main contrib non-free; do cat override.potato.$i >> override.potato.all3; done
+rm -f override.sid.all3
 for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
@@ -107,6 +112,7 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
 # update this before wanna-build is updated.
 psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE suite = 5 AND queue = 0 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+symlinks -d /srv/incoming.debian.org/buildd > /dev/null
 apt-ftparchive generate apt.conf.buildd
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
@@ -173,3 +179,10 @@ $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
 R --slave --vanilla < $base/misc/ftpstats.R
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
+# Clean up apt-ftparchive's databases
+
+cd $configdir
+apt-ftparchive -q clean apt.conf
+
+################################################################################

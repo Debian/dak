@@ -1,5 +1,11 @@
 2007-02-08  Ryan Murray  <rmurray@debian.org>
 
+	* config/debian/cron.daily: track when we have the accepted lock
+	and clean it up on exit if we have it.  Take/check the
+	cron.unchecked lock just before traping to cleanup on exit.
+	Remove potato override handling.  Remove any dangling symlinks in
+	/srv/incoming.d.o/buildd.  Clean up apt-ftparchive's databases.
+
 	* config/debian/apt.conf: change default compression scheme for
 	both Sources and Packages to gzip and bzip2 rather than
 	uncompressed and gzip (Packages) and gzip (Sources).  Use old
