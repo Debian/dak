@@ -1,13 +1,9 @@
-base			Anthony Towns <debootstrap@packages.debian.org>
-install			Debian Install Team <debian-boot@lists.debian.org>
-installation		Debian Install Team <debian-boot@lists.debian.org>
+base			Base Maintainers <virtual-pkg-base-maintainers@lists.alioth.debian.org>
 cdrom			Debian CD-ROM Team <debian-cd@lists.debian.org>
-boot-floppy		Debian Install Team <debian-boot@lists.debian.org>
 press			press@debian.org
 bugs.debian.org		Debian Bug Tracking Team <owner@bugs.debian.org>
 ftp.debian.org		James Troup and others <ftpmaster@ftp-master.debian.org>
 qa.debian.org		debian-qa@lists.debian.org
-nonus.debian.org	Michael Beattie and others <ftpmaster@debian.org>
 www.debian.org		Debian WWW Team <debian-www@lists.debian.org>
 mirrors			Debian Mirrors Team <mirrors@debian.org>
 listarchives		Debian List Archive Team <listarchives@debian.org>
@@ -16,8 +12,6 @@ general			debian-devel@lists.debian.org
 kernel			Debian Kernel Team <debian-kernel@lists.debian.org>
 lists.debian.org	Debian Listmaster Team <listmaster@lists.debian.org>
 spam			spam@debian.org
-slink-cd		Steve McIntyre <stevem@chiark.greenend.org.uk>
-potato-cd		Steve McIntyre <stevem@chiark.greenend.org.uk>
 wnpp			wnpp@debian.org
 cdimage.debian.org	Debian CD-ROM Team <debian-cd@lists.debian.org>
 tech-ctte		Technical Committee <debian-ctte@lists.debian.org>  

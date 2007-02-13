@@ -1,5 +1,10 @@
 2007-02-08  Ryan Murray  <rmurray@debian.org>
 
+	* config/debian/pseudo-packages.maintainers: drop install,
+	installation, boot-floppy, slink-cd, potato-cd and
+	nonus.debian.org.  Update base.
+	* config/debian/pseudo-packages.description: likewise.
+
 	* daklib/utils.py (re_srchasver): new regex.
 	(parse_changes): use regex to split 'Source (Version)' style
 	Source fields into 'source' and 'source-version'.
