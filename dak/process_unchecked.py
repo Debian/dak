@@ -1244,7 +1244,7 @@ def is_stableupdate ():
 	return 0
 
     if not changes["architecture"].has_key("source"):
-        pusuite = database.get_suite_id("proposed-updates")
+        pusuite = daklib.database.get_suite_id("proposed-updates")
         q = Upload.projectB.query(
           "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" % 
           (changes["source"], changes["version"], pusuite))

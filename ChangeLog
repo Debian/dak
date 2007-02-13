@@ -3,6 +3,9 @@
 	* dak/process_accepted.py (stable_install): fix name of template
 	mail.
 
+	* dak/process_unchecked.py (is_stableupdate): fix invocation of
+	database.get_suite_id().
+
 2007-02-08  Ryan Murray  <rmurray@debian.org>
 
 	* config/debian/cron.daily: track when we have the accepted lock
