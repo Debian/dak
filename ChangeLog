@@ -1,5 +1,9 @@
 2007-02-08  Anthony Towns  <ajt@debian.org>
 
+	* config/debian/apt.conf: add udeb support for non-free (testing,
+	unstable) and experimental.
+	* config/debian/dak.conf: likewise.
+
 	* dak/generate_releases.py (main): handle udebs in any component.
 
 	* daklib/queue.py (Upload.build_summaries): handle files without a
