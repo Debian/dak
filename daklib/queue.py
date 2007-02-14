@@ -45,56 +45,10 @@ class Pkg:
 
 ###############################################################################
 
-class nmu_p:
-    # Read in the group maintainer override file
-    def __init__ (self, Cnf):
-        self.group_maint = {}
-        self.Cnf = Cnf
-        if Cnf.get("Dinstall::GroupOverrideFilename"):
-            filename = Cnf["Dir::Override"] + Cnf["Dinstall::GroupOverrideFilename"]
-            file = utils.open_file(filename)
-            for line in file.readlines():
-                line = utils.re_comments.sub('', line).lower().strip()
-                if line != "":
-                    self.group_maint[line] = 1
-            file.close()
-
-    def is_an_nmu (self, pkg):
-        Cnf = self.Cnf
-        changes = pkg.changes
-        dsc = pkg.dsc
-
-        i = utils.fix_maintainer (dsc.get("maintainer",
-                                          Cnf["Dinstall::MyEmailAddress"]).lower())
-        (dsc_rfc822, dsc_rfc2047, dsc_name, dsc_email) = i
-        # changes["changedbyname"] == dsc_name is probably never true, but better safe than sorry
-        if dsc_name == changes["maintainername"].lower() and \
-           (changes["changedby822"] == "" or changes["changedbyname"].lower() == dsc_name):
-            return 0
-
-        if dsc.has_key("uploaders"):
-            uploaders = dsc["uploaders"].lower().split(",")
-            uploadernames = {}
-            for i in uploaders:
-                (rfc822, rfc2047, name, email) = utils.fix_maintainer (i.strip())
-                uploadernames[name] = ""
-            if uploadernames.has_key(changes["changedbyname"].lower()):
-                return 0
-
-        # Some group maintained packages (e.g. Debian QA) are never NMU's
-        if self.group_maint.has_key(changes["maintaineremail"].lower()):
-            return 0
-
-        return 1
-
-###############################################################################
-
 class Upload:
 
     def __init__(self, Cnf):
         self.Cnf = Cnf
-        # Read in the group-maint override file
-        self.nmu = nmu_p(Cnf)
         self.accept_count = 0
         self.accept_bytes = 0L
         self.pkg = Pkg(changes = {}, dsc = {}, dsc_files = {}, files = {},
@@ -308,55 +262,26 @@ class Upload:
             return summary
 
         bugs.sort()
-        if not self.nmu.is_an_nmu(self.pkg):
-            if changes["distribution"].has_key("experimental"):
-		# tag bugs as fixed-in-experimental for uploads to experimental
-		summary += "Setting bugs to severity fixed: "
-		control_message = ""
-		for bug in bugs:
-		    summary += "%s " % (bug)
-		    control_message += "tag %s + fixed-in-experimental\n" % (bug)
-		if action and control_message != "":
-		    Subst["__CONTROL_MESSAGE__"] = control_message
-		    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-experimental-fixed")
-		    utils.send_mail (mail_message)
-		if action:
-		    self.Logger.log(["setting bugs to fixed"]+bugs)
-
-
-	    else:
-		summary += "Closing bugs: "
-		for bug in bugs:
-		    summary += "%s " % (bug)
-		    if action:
-			Subst["__BUG_NUMBER__"] = bug
-			if changes["distribution"].has_key("stable"):
-			    Subst["__STABLE_WARNING__"] = """
+        summary += "Closing bugs: "
+        for bug in bugs:
+            summary += "%s " % (bug)
+            if action:
+                Subst["__BUG_NUMBER__"] = bug
+                if changes["distribution"].has_key("stable"):
+                    Subst["__STABLE_WARNING__"] = """
 Note that this package is not part of the released stable Debian
 distribution.  It may have dependencies on other unreleased software,
 or other instabilities.  Please take care if you wish to install it.
 The update will eventually make its way into the next released Debian
 distribution."""
-		        else:
-			    Subst["__STABLE_WARNING__"] = ""
-			    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-close")
-			    utils.send_mail (mail_message)
-                if action:
-                    self.Logger.log(["closing bugs"]+bugs)
-
-	else:                     # NMU
-            summary += "Setting bugs to severity fixed: "
-            control_message = ""
-            for bug in bugs:
-                summary += "%s " % (bug)
-                control_message += "tag %s + fixed\n" % (bug)
-            if action and control_message != "":
-                Subst["__CONTROL_MESSAGE__"] = control_message
-                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-nmu-fixed")
-                utils.send_mail (mail_message)
-            if action:
-                self.Logger.log(["setting bugs to fixed"]+bugs)
+                else:
+                    Subst["__STABLE_WARNING__"] = ""
+                    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-close")
+                    utils.send_mail (mail_message)
+        if action:
+            self.Logger.log(["closing bugs"]+bugs)
         summary += "\n"
+
         return summary
 
     ###########################################################################

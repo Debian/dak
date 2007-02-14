@@ -1,3 +1,16 @@
+2007-02-14  James Troup  <troup@ries.debian.org>
+
+	* docs/README.config: remove Dinstall::GroupOverrideFilename.
+	* config/debian/dak.conf: likewise.
+	* config/debian-non-US/dak.conf: likewise.
+	* config/debian-security/dak.conf: likewise.
+
+	* daklib/queue.py (Upload.close_bugs): no longer handle NMUs or
+	experimental differently, just close the bugs and let version
+	tracking sort it out.
+	 (nmu_p): remove entire class - now unused.
+	 (Upload.__init__): don't use nmu_p.
+
 2007-02-08  Anthony Towns  <ajt@debian.org>
 
 	* config/debian/dak.conf: update for 3.1r4.  Use new 'etch'
