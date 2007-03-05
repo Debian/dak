@@ -30,6 +30,9 @@ if lockfile -r3 $LOCKFILE; then
 		dak process-unchecked -a $changes >> $report
 		echo "--" >> $report
 
+		# sync with debbugs
+		$scriptsdir/ssh-move --server --ssh-identity /srv/ftp.debian.org/s3kr1t/id_debbugs-vt --ssh-move-path /home/debbugs/ssh-move --from-directory $queuedir/bts_version_track --to-directory /org/bugs.debian.org/versions/queue/ftp-master debbugs@bugs.debian.org \*.debinfo \*.versions
+
 		if lockfile -r3 $NOTICE; then
 			LOCKDAILY="YES"
 			psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
