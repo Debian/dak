@@ -1,3 +1,10 @@
+2007-03-05  Anthony Towns  <ajt@debian.org>
+
+	* config/debian/dak.conf: update for 3.1r5.
+	* scripts/debian/ssh-move: add ssh-move script from debbugs
+	* config/debian/cron.unchecked: push version info to debbugs using
+	ssh-move.
+
 2007-02-14  James Troup  <troup@ries.debian.org>
 
 	* docs/README.config: remove Dinstall::GroupOverrideFilename.
