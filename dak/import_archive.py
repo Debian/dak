@@ -98,8 +98,8 @@ def check_signature (filename):
         return None
 
     status_read, status_write = os.pipe()
-    cmd = "gpgv --status-fd %s --keyring %s --keyring %s %s" \
-          % (status_write, Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"], filename)
+    cmd = "gpgv --status-fd %s %s %s" \
+          % (status_write, daklib.utils.gpg_keyring_args(), filename)
     (output, status, exit_status) = daklib.utils.gpgv_get_status_output(cmd, status_read, status_write)
 
     # Process the status-fd output

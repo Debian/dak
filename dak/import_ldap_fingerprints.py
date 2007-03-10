@@ -136,9 +136,8 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
     q = projectB.query("SELECT fingerprint, id FROM fingerprint WHERE uid is null")
     for i in q.getresult():
         (fingerprint, fingerprint_id) = i
-        cmd = "gpg --no-default-keyring --keyring=%s --keyring=%s --fingerprint %s" \
-              % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"],
-                 fingerprint)
+        cmd = "gpg --no-default-keyring %s --fingerprint %s" \
+              % (gpg_keyring_args(), fingerprint)
         (result, output) = commands.getstatusoutput(cmd)
         if result == 0:
             m = re_gpg_fingerprint.search(output)
@@ -156,9 +155,8 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             extra_keyrings = ""
             for keyring in Cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):
                 extra_keyrings += " --keyring=%s" % (keyring)
-            cmd = "gpg --keyring=%s --keyring=%s %s --list-key %s" \
-                  % (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"],
-                     extra_keyrings, fingerprint)
+            cmd = "gpg %s %s --list-key %s" \
+                  % (gpg_keyring_args(), extra_keyrings, fingerprint)
             (result, output) = commands.getstatusoutput(cmd)
             if result != 0:
                 cmd = "gpg --keyserver=%s --allow-non-selfsigned-uid --recv-key %s" % (Cnf["Import-LDAP-Fingerprints::KeyServer"], fingerprint)

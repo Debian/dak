@@ -904,7 +904,7 @@ on error."""
     if not keyserver:
         keyserver = Cnf["Dinstall::KeyServer"]
     if not keyring:
-        keyring = Cnf["Dinstall::GPGKeyring"]
+        keyring = Cnf.ValueList("Dinstall::GPGKeyring")[0]
 
     # Ensure the filename contains no shell meta-characters or other badness
     if not re_taint_free.match(filename):
@@ -939,6 +939,14 @@ on error."""
 
 ################################################################################
 
+def gpg_keyring_args(keyrings=None)
+    if not keyrings:
+        keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
+
+    return " ".join(["--keyring %s" % x for x in keyrings])
+
+################################################################################
+
 def check_signature (sig_filename, reject, data_filename="", keyrings=None, autofetch=None):
     """Check the signature of a file and return the fingerprint if the
 signature is valid or 'None' if it's not.  The first argument is the
@@ -963,7 +971,7 @@ used."""
         return None
 
     if not keyrings:
-        keyrings = (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"])
+        keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
 
     # Autofetch the signing key if that's enabled
     if autofetch == None:
@@ -976,10 +984,9 @@ used."""
 
     # Build the command line
     status_read, status_write = os.pipe(); 
-    cmd = "gpgv --status-fd %s" % (status_write)
-    for keyring in keyrings:
-        cmd += " --keyring %s" % (keyring)
-    cmd += " %s %s" % (sig_filename, data_filename)
+    cmd = "gpgv --status-fd %s %s %s %s" % (
+        status_write, gpg_keyring_args(keyrings), sig_filename, data_filename)
+
     # Invoke gpgv on the file
     (output, status, exit_status) = gpgv_get_status_output(cmd, status_read, status_write)
 
