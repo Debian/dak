@@ -70,11 +70,20 @@ Syncs fingerprint and uid tables with a debian.org LDAP DB
 
 def get_ldap_value(entry, value):
     ret = entry.get(value)
-    if not ret:
+    if not ret or ret[0] == "" or ret[0] == "-":
         return ""
     else:
         # FIXME: what about > 0 ?
-        return ret[0]
+        return ret[0] + " "
+
+def get_ldap_name(entry):
+    name = get_ldap_value(entry, "cn")
+    name += get_ldap_value(entry, "mn")
+    name += get_ldap_value(entry, "sn")
+    return name.rstrip()
+
+def escape_string(str):
+    return str.replace("'", "\\'")
 
 def main():
     global Cnf, projectB
@@ -100,7 +109,7 @@ def main():
     l.simple_bind_s("","")
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Import-Users-From-Passwd::ValidGID"]),
-                       ["uid", "keyfingerprint"])
+                       ["uid", "keyfingerprint", "cn", "mn", "sn"])
 
 
     projectB.query("BEGIN WORK")
@@ -108,6 +117,7 @@ def main():
 
     # Sync LDAP with DB
     db_fin_uid = {}
+    db_uid_name = {}
     ldap_fin_uid_id = {}
     q = projectB.query("""
 SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
@@ -116,11 +126,22 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
         (fingerprint, fingerprint_id, uid) = i
         db_fin_uid[fingerprint] = (uid, fingerprint_id)
 
+    q = projectB.query("SELECT id, name FROM uid")
+    for i in q.getresult():
+        (uid, name) = i
+        db_uid_name[uid] = name
+
     for i in Attrs:
         entry = i[1]
         fingerprints = entry["keyFingerPrint"]
         uid = entry["uid"][0]
+        name = get_ldap_name(entry)
         uid_id = daklib.database.get_or_set_uid_id(uid)
+
+        if not db_uid_name.has_key(uid_id) or db_uid_name[uid_id] != name:
+	    q = projectB.query("UPDATE uid SET name = '%s' WHERE id = %d" % (escape_string(name), uid_id))
+	    print "Assigning name of %s as %s" % (uid, name)
+
         for fingerprint in fingerprints:
             ldap_fin_uid_id[fingerprint] = (uid, uid_id)
             if db_fin_uid.has_key(fingerprint):
@@ -194,9 +215,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                     uid = None
                 else:
                     entry = Attrs[0][1]
-                    name = " ".join([get_ldap_value(entry, "cn"),
-                                     get_ldap_value(entry, "mn"),
-                                     get_ldap_value(entry, "sn")])
+                    name = get_ldap_name(entry)
                     prompt = "Map to %s - %s (y/N) ? " % (uid, name.replace("  "," "))
                     yn = daklib.utils.our_raw_input(prompt).lower()
                     if yn == "y":

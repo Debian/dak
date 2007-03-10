@@ -30,7 +30,8 @@ CREATE TABLE maintainer (
 
 CREATE TABLE uid (
        id SERIAL PRIMARY KEY,
-       uid TEXT UNIQUE NOT NULL
+       uid TEXT UNIQUE NOT NULL,
+       name TEXT
 );
 
 CREATE TABLE fingerprint (
