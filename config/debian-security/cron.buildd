@@ -2,8 +2,8 @@
 #
 # Executed after cron.unchecked
 
-ARCHS_oldstable="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390"
-ARCHS_stable="$ARCHS_oldstable"
+ARCHS_oldstable="alpha arm hppa i386 ia64 m68k mips mipsel powerpc sparc s390 amd64"
+ARCHS_stable="alpha amd64 arm hppa i386 ia64 mips mipsel powerpc sparc s390"
 ARCHS_testing="$ARCHS_stable"
 DISTS="oldstable stable testing"
 SSH_SOCKET=~/.ssh/buildd.debian.org.socket
@@ -18,7 +18,7 @@ if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
 		eval SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
 		eval PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
 	done
-	apt-ftparchive -qq generate apt.conf.buildd-security
+	apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
 	dists=
 	for d in $DISTS; do
 		eval NEW_SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
@@ -60,8 +60,10 @@ if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
 				quinn-diff -a /org/security.debian.org/buildd/Packages-arch-specific -A $a 2>/dev/null | ssh buildd@buildd -S $SSH_SOCKET wanna-build -d $d-security -b $a/build-db --merge-partial-quinn
 				ssh buildd@buildd -S $SSH_SOCKET wanna-build -d $d-security -A $a -b $a/build-db --merge-packages < Packages
 			done
+			if [ "$d" = "oldstable" ]; then
+				ssh buildd@bester.farm.ftbfs.de -i ~/.ssh/id_bester sleep 1
+			fi
 		done
 	fi
 fi
 
-ssh buildd@bester.farm.ftbfs.de -i ~/.ssh/id_bester sleep 1

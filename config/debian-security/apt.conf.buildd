@@ -1,8 +1,10 @@
+APT::FTPArchive::Contents off;
+
 Dir 
 {
-   ArchiveDir "/org/security.debian.org/buildd/";
-   OverrideDir "/org/security.debian.org/override/";
-   CacheDir "/org/security.debian.org/dak-database/";
+   ArchiveDir "/srv/security.debian.org/buildd/";
+   OverrideDir "/srv/security.debian.org/override/";
+   CacheDir "/srv/security.debian.org/dak-database/";
 };
 
 Default
@@ -20,19 +22,21 @@ bindirectory "etch"
    Contents " ";
 
    BinOverride "override.etch.all3";
+   SrcOverride "override.etch.all3.src";
    BinCacheDB "packages-accepted-etch.db";
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
 };
 
-bindirectory "woody"
+bindirectory "lenny"
 {
-   Packages "woody/Packages";
-   Sources "woody/Sources";
+   Packages "lenny/Packages";
+   Sources "lenny/Sources";
    Contents " ";
 
-   BinOverride "override.woody.all3";
-   BinCacheDB "packages-accepted-woody.db";
+   BinOverride "override.lenny.all3";
+   SrcOverride "override.lenny.all3.src";
+   BinCacheDB "packages-accepted-lenny.db";
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
 };
@@ -44,6 +48,7 @@ bindirectory "sarge"
    Contents " ";
 
    BinOverride "override.sarge.all3";
+   SrcOverride "override.sarge.all3.src";
    BinCacheDB "packages-accepted-sarge.db";
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
