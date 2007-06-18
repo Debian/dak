@@ -7,8 +7,8 @@ Dir
 
 Default
 {
-   Packages::Compress "gzip";
-   Sources::Compress "gzip";
+   Packages::Compress "bzip2 gzip";
+   Sources::Compress "bzip2 gzip";
    DeLinkLimit 0;
    FileMode 0664;
 }

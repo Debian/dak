@@ -255,7 +255,7 @@ def check_changes():
     # Check there isn't already a changes file of the same name in one
     # of the queue directories.
     base_filename = os.path.basename(filename)
-    for dir in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates" ]:
+    for dir in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
         if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+base_filename):
             reject("%s: a file with this name already exists in the %s directory." % (base_filename, dir))
 
@@ -404,7 +404,7 @@ def check_files():
 
     for file in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
-        for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates" ]:
+        for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates" ]:
             if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+file):
                 reject("%s file already exists in the %s directory." % (file, dir))
         if not daklib.utils.re_taint_free.match(file):
@@ -540,7 +540,7 @@ def check_files():
                         files[file]["new"] = 1
                     else:
 		        dsc_file_exists = 0
-                        for myq in ["Accepted", "Embargoed", "Unembargoed", "ProposedUpdates"]:
+                        for myq in ["Accepted", "Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
 			    if Cnf.has_key("Dir::Queue::%s" % (myq)):
 				if os.path.exists(Cnf["Dir::Queue::"+myq] + '/' + dsc_filename):
 				    dsc_file_exists = 1
@@ -1094,6 +1094,8 @@ def action ():
     queue_info = {
          "New": { "is": is_new, "process": acknowledge_new },
          "Byhand" : { "is": is_byhand, "process": do_byhand },
+         "OldStableUpdate" : { "is": is_oldstableupdate, 
+	 			"process": do_oldstableupdate },
          "StableUpdate" : { "is": is_stableupdate, "process": do_stableupdate },
          "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
          "Embargo" : { "is": is_embargo, "process": queue_embargo },
@@ -1102,7 +1104,7 @@ def action ():
     if Cnf.FindB("Dinstall::SecurityQueueHandling"):
         queues += [ "Unembargo", "Embargo" ]
     else:
-        queues += [ "StableUpdate" ]
+        queues += [ "OldStableUpdate", "StableUpdate" ]
 
     (prompt, answer) = ("", "XXX")
     if Options["No-Action"] or Options["Automatic"]:
@@ -1250,7 +1252,7 @@ def is_stableupdate ():
           (changes["source"], changes["version"], pusuite))
         ql = q.getresult()
         if ql:
-            # source is already in proposed-updates
+            # source is already in proposed-updates so no need to hold
             return 0
 
     return 1
@@ -1261,6 +1263,35 @@ def do_stableupdate (summary):
 
     Upload.dump_vars(Cnf["Dir::Queue::ProposedUpdates"]);
     move_to_dir(Cnf["Dir::Queue::ProposedUpdates"])
+
+    # Check for override disparities
+    Upload.Subst["__SUMMARY__"] = summary;
+    Upload.check_override();
+
+################################################################################
+
+def is_oldstableupdate ():
+    if not changes["distribution"].has_key("oldstable-proposed-updates"):
+	return 0
+
+    if not changes["architecture"].has_key("source"):
+        pusuite = daklib.database.get_suite_id("oldstable-proposed-updates")
+        q = Upload.projectB.query(
+          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" % 
+          (changes["source"], changes["version"], pusuite))
+        ql = q.getresult()
+        if ql:
+            # source is already in oldstable-proposed-updates so no need to hold
+            return 0
+
+    return 1
+
+def do_oldstableupdate (summary):
+    print "Moving to OLDSTABLE-PROPOSED-UPDATES holding area."
+    Logger.log(["Moving to oldstable-proposed-updates", pkg.changes_file]);
+
+    Upload.dump_vars(Cnf["Dir::Queue::OldProposedUpdates"]);
+    move_to_dir(Cnf["Dir::Queue::OldProposedUpdates"])
 
     # Check for override disparities
     Upload.Subst["__SUMMARY__"] = summary;

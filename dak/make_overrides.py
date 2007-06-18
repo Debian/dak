@@ -110,7 +110,7 @@ def main ():
                 if otype == "deb":
                     suffix = ""
                 elif otype == "udeb":
-                    if component != "main":
+                    if component == "contrib":
                         continue; # Ick2
                     suffix = ".debian-installer"
                 elif otype == "dsc":

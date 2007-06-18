@@ -18,16 +18,16 @@ o Close any applicable stable bugs
   (hint: http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=ftp.debian.org&include=woody)
 o Update version number in README, README.html and dists/README (ftp-master only)
 o Update the 'Debian<n>.<n>r<n>' symlink in dists/
-o Clean up dists/ChangeLog (add header, basically)
-o Update version fields in dak.conf[-non-US]
+o Clean up dists/stable/ChangeLog (add header, basically)
+o Update version fields in dak.conf
 o Update fields in suite table in postgresql (see below)
 
-o Comment out "Untouchable" in dak.conf[-non-US]
+o Comment out "Untouchable" in dak.conf
 o Run 'dak make-suite-file-list -s stable'
-o Run apt-ftparchive generate apt.conf.stable[-non-US]
+o Run apt-ftparchive generate apt.conf.stable
 o Run 'dak generate-releases stable'  ** FIXME: requires apt.conf.stable stanza for stable in apt.conf
 		     ** FIXME: must be run as dak
-o Uncomment "Untouchable" in dak.conf[-non-US]
+o Uncomment "Untouchable" in dak.conf
 
 Yes, this sucks and more of it should be automated.
 

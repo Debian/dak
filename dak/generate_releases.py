@@ -142,6 +142,8 @@ def main ():
 
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf,daklib.utils.which_apt_conf_file())
+    #apt_pkg.ReadConfigFileISC(AptCnf,"/org/ftp.debian.org/dak/config/debian/apt.conf.stable")
+    #apt_pkg.ReadConfigFileISC(AptCnf,"/org/ftp.debian.org/dak/config/debian/apt.conf.oldstable")
 
     if not suites:
         suites = Cnf.SubTree("Suite").List()
@@ -237,6 +239,9 @@ def main ():
 		    relpath = Cnf["Dir::Root"]+tree+"/"+rel
 
                     try:
+		    	if os.access(relpath, os.F_OK):
+			    if os.stat(relpath).st_nlink > 1:
+			        os.unlink(relpath)
                         release = open(relpath, "w")
                         #release = open(longsuite.replace("/","_") + "_" + arch + "_" + sec + "_Release", "w")
                     except IOError:

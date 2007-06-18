@@ -272,7 +272,7 @@ def main ():
         daklib.utils.fubar("No action specified.")
 
     # Safety/Sanity check
-    if action == "set" and suite != "testing":
+    if action == "set" and suite not in ["testing", "etch-m68k"]:
         daklib.utils.fubar("Will not reset a suite other than testing.")
 
     if action == "list":

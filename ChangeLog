@@ -1,3 +1,37 @@
+2007-06-18  Anthony Towns  <ajt@debian.org>
+
+	* config/debian/apt.conf, config/debian/apt.conf.stable,
+	config/debian/dak.conf: update for 4.0r0 (etch), and 3.1r6
+	(sarge), support for oldstable-proposed-updates, dropping m68k
+	from etch, creating etch-m68k suite, creating lenny.
+
+	* config/debian/vars: update for lenny
+
+	* config/debian/dak.conf: typo fix for Dinstall::GPGKeyring,
+	drop upload limitations, add release postgres user
+	
+	* dak/process_new.py: support for automatically accepting and rejecting
+	packages from proposed-updates holding queues via COMMENTS directory
+	* cron.daily: automatically process COMMENTS-based approvals
+	and rejections for proposed-updates holding queues
+
+	* dak/process_unchecked.py: add support for oldproposedupdates
+	holding queue
+
+	* dak/control_suite.py: allow control-suite to work with etch-m68k
+
+	* dak/generate_releases.py: unlink old Release files before updating
+	them if nlinks > 1 (ie, if two files used to be the same, maybe they
+	shouldn't be when generate-releases is run)
+
+	* dak/generate_releases.py: add a couple of commented lines to make
+	it easier to deal with point releases
+
+	* dak/make_overrides.py: generate overrides for !contrib udebs
+
+	* docs/README.stable-point-release: update docs for doing a
+	point release
+
 2007-03-05  Anthony Towns  <ajt@debian.org>
 
 	* config/debian/dak.conf: update for 3.1r5.

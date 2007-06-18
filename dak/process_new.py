@@ -796,10 +796,11 @@ def init():
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
                  ('h',"help","Process-New::Options::Help"),
+		 ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
                  ('n',"no-action","Process-New::Options::No-Action")]
 
-    for i in ["automatic", "help", "manual-reject", "no-action", "version"]:
+    for i in ["automatic", "help", "manual-reject", "no-action", "version", "comments-dir"]:
         if not Cnf.has_key("Process-New::Options::%s" % (i)):
             Cnf["Process-New::Options::%s" % (i)] = ""
 
@@ -942,6 +943,59 @@ def end():
 
 ################################################################################
 
+def do_comments(dir, opref, npref, line, fn):
+    for comm in [ x for x in os.listdir(dir) if x.startswith(opref) ]:
+        lines = open("%s/%s" % (dir, comm)).readlines()
+        if len(lines) == 0 or lines[0] != line + "\n": continue
+        changes_files = [ x for x in os.listdir(".") if x.startswith(comm[7:]+"_")
+                                and x.endswith(".changes") ]
+	changes_files = sort_changes(changes_files)
+        for f in changes_files:
+                f = daklib.utils.validate_changes_file_arg(f, 0)
+                if not f: continue
+                print "\n" + f
+                fn(f, "".join(lines[1:]))
+
+        if opref != npref and not Options["No-Action"]:
+                newcomm = npref + comm[len(opref):]
+                os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
+
+################################################################################
+
+def comment_accept(changes_file, comments):
+    Upload.pkg.changes_file = changes_file
+    Upload.init_vars()
+    Upload.update_vars()
+    Upload.update_subst()
+    files = Upload.pkg.files
+
+    if not recheck():
+        return
+
+    (new, byhand) = check_status(files)
+    if not new and not byhand:
+        do_accept()
+
+################################################################################
+
+def comment_reject(changes_file, comments):
+    Upload.pkg.changes_file = changes_file
+    Upload.init_vars()
+    Upload.update_vars()
+    Upload.update_subst()
+    files = Upload.pkg.files
+
+    if not recheck():
+        return
+
+    reject(comments)
+    print "REJECT\n" + reject_message,
+    if not Options["No-Action"]:
+        Upload.do_reject(0, reject_message)
+        os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+
+################################################################################
+
 def main():
     changes_files = init()
     if len(changes_files) > 50:
@@ -956,12 +1010,20 @@ def main():
     else:
         Upload.Subst["__BCC__"] = bcc
 
-    for changes_file in changes_files:
-        changes_file = daklib.utils.validate_changes_file_arg(changes_file, 0)
-        if not changes_file:
-            continue
-        print "\n" + changes_file
-        do_pkg (changes_file)
+    commentsdir = Cnf.get("Process-New::Options::Comments-Dir","")
+    if commentsdir:
+	if changes_files != []:
+		sys.stderr.write("Can't specify any changes files if working with comments-dir")
+		sys.exit(1)
+	do_comments(commentsdir, "ACCEPT.", "ACCEPTED.", "OK", comment_accept)
+	do_comments(commentsdir, "REJECT.", "REJECTED.", "NOTOK", comment_reject)
+    else:
+        for changes_file in changes_files:
+            changes_file = daklib.utils.validate_changes_file_arg(changes_file, 0)
+            if not changes_file:
+                continue
+            print "\n" + changes_file
+            do_pkg (changes_file)
 
     end()
 
