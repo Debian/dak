@@ -158,7 +158,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
     for i in q.getresult():
         (fingerprint, fingerprint_id) = i
         cmd = "gpg --no-default-keyring %s --fingerprint %s" \
-              % (gpg_keyring_args(), fingerprint)
+              % (daklib.utils.gpg_keyring_args(), fingerprint)
         (result, output) = commands.getstatusoutput(cmd)
         if result == 0:
             m = re_gpg_fingerprint.search(output)
@@ -177,7 +177,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             for keyring in Cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):
                 extra_keyrings += " --keyring=%s" % (keyring)
             cmd = "gpg %s %s --list-key %s" \
-                  % (gpg_keyring_args(), extra_keyrings, fingerprint)
+                  % (daklib.utils.gpg_keyring_args(), extra_keyrings, fingerprint)
             (result, output) = commands.getstatusoutput(cmd)
             if result != 0:
                 cmd = "gpg --keyserver=%s --allow-non-selfsigned-uid --recv-key %s" % (Cnf["Import-LDAP-Fingerprints::KeyServer"], fingerprint)
