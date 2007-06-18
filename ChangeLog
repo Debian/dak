@@ -1,5 +1,11 @@
 2007-06-18  Anthony Towns  <ajt@debian.org>
 
+	* daklib/logging.py: Set umask to not exclude group-writability
+	so we don't get reminded at the start of each month. Thanks to
+	Random J.
+
+2007-06-18  Anthony Towns  <ajt@debian.org>
+
 	* config/debian/apt.conf, config/debian/apt.conf.stable,
 	config/debian/dak.conf: update for 4.0r0 (etch), and 3.1r6
 	(sarge), support for oldstable-proposed-updates, dropping m68k
