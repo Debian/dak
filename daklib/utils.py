@@ -939,7 +939,7 @@ on error."""
 
 ################################################################################
 
-def gpg_keyring_args(keyrings=None)
+def gpg_keyring_args(keyrings=None):
     if not keyrings:
         keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
 
