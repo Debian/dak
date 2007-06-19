@@ -218,7 +218,7 @@ def main ():
            AND override.type != %d
            AND suite = (SELECT id FROM suite WHERE suite_name=%s)""" % (
             newprioid,
-            pg._quote(package,"str"), get_override_type_id("dsc"),
+            pg._quote(package,"str"), daklib.database.get_override_type_id("dsc"),
             pg._quote(suite,"str") ))
         Logger.log(["changed priority",package,oldpriority,newpriority])
 
