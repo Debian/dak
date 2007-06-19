@@ -9,6 +9,7 @@
 	priority of a source override; never set priority of source
 	overrides; correct typo in logging (s/priority/section/ at
 	one place)
+	* config/debian/apt.conf.oldstable: Added for oldstable point releases.
 
 2007-06-18  Anthony Towns  <ajt@debian.org>
 
