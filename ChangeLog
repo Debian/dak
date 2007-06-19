@@ -1,3 +1,7 @@
+2007-06-19  Anthony Towns  <ajt@debian.org>
+
+	* Add nm.debian.org pseudopackage
+
 2007-06-18  Anthony Towns  <ajt@debian.org>
 
 	* daklib/logging.py: Set umask to not exclude group-writability
