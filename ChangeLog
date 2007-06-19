@@ -9,7 +9,10 @@
 	priority of a source override; never set priority of source
 	overrides; correct typo in logging (s/priority/section/ at
 	one place)
+
 	* config/debian/apt.conf.oldstable: Added for oldstable point releases.
+	* config/debian/cron.daily: auotmatically accept/reject
+	oldstable-proposed-updates based on COMMENTS directory
 
 2007-06-18  Anthony Towns  <ajt@debian.org>
 

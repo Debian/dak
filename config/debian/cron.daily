@@ -56,6 +56,12 @@ date -u -R >> REPORT
 dak process-new -a -C COMMENTS >> REPORT
 echo >> REPORT
 
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+cd $queuedir/o-p-u-new
+date -u -R >> REPORT
+dak process-new -a -C COMMENTS >> REPORT
+echo >> REPORT
+
 ################################################################################
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
