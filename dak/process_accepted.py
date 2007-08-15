@@ -476,34 +476,19 @@ def stable_install (summary, short_summary):
     # Add the binaries to stable (and remove it/them from proposed-updates)
     for file in files.keys():
         if files[file]["type"] == "deb":
-	    binNMU = 0
             package = files[file]["package"]
             version = files[file]["version"]
             architecture = files[file]["architecture"]
             q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
             ql = q.getresult()
             if not ql:
-		suite_id = daklib.database.get_suite_id('proposed-updates')
-		que = "SELECT b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN suite su ON (ba.suite = su.id) WHERE b.package = '%s' AND (ba.suite = '%s')" % (package, suite_id)
-		q = projectB.query(que)
+                daklib.utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture))
 
-		# Reduce the query results to a list of version numbers
-		ql = [ i[0] for i in q.getresult() ]
-		if not ql:
-		    daklib.utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture))
-		else:
-		    for x in ql:
-			if re.match(re.compile(r"%s((\.0)?\.)|(\+b)\d+$" % re.escape(version)),x):
-			    binNMU = 1
-			    break
-	    if not binNMU:
-		binary_id = ql[0][0]
-		suite_id = daklib.database.get_suite_id('proposed-updates')
-		projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id))
-		suite_id = daklib.database.get_suite_id('stable')
-		projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id))
-	    else:
-                del files[file]
+            binary_id = ql[0][0]
+            suite_id = daklib.database.get_suite_id('proposed-updates')
+            projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id))
+            suite_id = daklib.database.get_suite_id('stable')
+            projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id))
 
     projectB.query("COMMIT WORK")
 
