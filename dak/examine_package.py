@@ -32,7 +32,7 @@
 
 ################################################################################
 
-import errno, os, pg, re, sys
+import errno, os, pg, re, sys, md5
 import apt_pkg, apt_inst
 import daklib.database, daklib.utils
 
@@ -81,6 +81,8 @@ projectB = None
 Cnf = daklib.utils.get_conf()
 projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 daklib.database.init(Cnf, projectB)
+
+printed_copyrights = {}
 
 ################################################################################
 
@@ -302,7 +304,15 @@ def print_copyright (deb_filename):
         return
 
     o = os.popen("ar p %s data.tar.gz | tar xzOf - %s" % (deb_filename, copyright))
-    print o.read()
+    copyright = o.read()
+    copyrightmd5 = md5.md5(copyright).hexdigest()
+
+    if printed_copyrights.has_key(copyrightmd5):
+        print "Copyright is the same as %s.\n" % \
+		(printed_copyrights[copyrightmd5])
+    else:
+    	print copyright
+	printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
 
 def check_dsc (dsc_filename):
     print "---- .dsc file for %s ----" % (dsc_filename)

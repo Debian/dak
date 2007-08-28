@@ -4,6 +4,9 @@
 	processing.
 	* config/debian/dak.conf, scripts/debian/byhand-tag: Automatic
 	processing of tag-overrides.
+	* examine_package.py: Summarise duplicate copyright file entries
+	(same md5sum) with a reference to the previous instance, rather
+	than repeating them.
 
 2007-06-19  Anthony Towns  <ajt@debian.org>
 
