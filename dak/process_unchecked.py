@@ -1093,6 +1093,7 @@ def action ():
     # q-unapproved hax0ring
     queue_info = {
          "New": { "is": is_new, "process": acknowledge_new },
+	 "Autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
          "Byhand" : { "is": is_byhand, "process": do_byhand },
          "OldStableUpdate" : { "is": is_oldstableupdate, 
 	 			"process": do_oldstableupdate },
@@ -1100,7 +1101,7 @@ def action ():
          "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
          "Embargo" : { "is": is_embargo, "process": queue_embargo },
     }
-    queues = [ "New", "Byhand" ]
+    queues = [ "New", "Autobyhand", "Byhand" ]
     if Cnf.FindB("Dinstall::SecurityQueueHandling"):
         queues += [ "Unembargo", "Embargo" ]
     else:
@@ -1159,7 +1160,7 @@ def action ():
         accept(summary, short_summary)
         remove_from_unchecked()
     elif answer == queuekey:
-        queue_info[queue]["process"](summary)
+        queue_info[queue]["process"](summary, short_summary)
         remove_from_unchecked()
     elif answer == 'Q':
         sys.exit(0)
@@ -1210,7 +1211,7 @@ def is_unembargo ():
 
     return 0
 
-def queue_unembargo (summary):
+def queue_unembargo (summary, short_summary):
     print "Moving to UNEMBARGOED holding area."
     Logger.log(["Moving to unembargoed", pkg.changes_file])
 
@@ -1227,7 +1228,7 @@ def queue_unembargo (summary):
 def is_embargo ():
     return 0
 
-def queue_embargo (summary):
+def queue_embargo (summary, short_summary):
     print "Moving to EMBARGOED holding area."
     Logger.log(["Moving to embargoed", pkg.changes_file])
 
@@ -1257,7 +1258,7 @@ def is_stableupdate ():
 
     return 1
 
-def do_stableupdate (summary):
+def do_stableupdate (summary, short_summary):
     print "Moving to PROPOSED-UPDATES holding area."
     Logger.log(["Moving to proposed-updates", pkg.changes_file]);
 
@@ -1286,7 +1287,7 @@ def is_oldstableupdate ():
 
     return 1
 
-def do_oldstableupdate (summary):
+def do_oldstableupdate (summary, short_summary):
     print "Moving to OLDSTABLE-PROPOSED-UPDATES holding area."
     Logger.log(["Moving to oldstable-proposed-updates", pkg.changes_file]);
 
@@ -1299,13 +1300,71 @@ def do_oldstableupdate (summary):
 
 ################################################################################
 
+def is_autobyhand ():
+    all_auto = 1
+    any_auto = 0
+    for file in files.keys():
+        if files[file].has_key("byhand"):
+	    any_auto = 1
+
+	    # filename is of form "PKG_VER_ARCH.EXT" where PKG, VER and ARCH
+	    # don't contain underscores, and ARCH doesn't contain dots.
+	    # further VER matches the .changes Version:, and ARCH should be in
+	    # the .changes Architecture: list.
+	    if file.count("_") < 2:
+	    	all_auto = 0
+		continue
+	
+	    (pkg, ver, archext) = file.split("_", 2)
+	    if archext.count(".") < 1 or changes["version"] != ver:
+	    	all_auto = 0
+		continue
+
+	    ABH = Cnf.SubTree("AutomaticByHandPackages")
+	    if not ABH.has_key(pkg) or \
+	      ABH["%s::Source" % (pkg)] != changes["source"]:
+	        print "not match %s %s" % (pkg, changes["source"])
+	        all_auto = 0
+		continue
+
+	    (arch, ext) = archext.split(".", 1)
+	    if arch not in changes["architecture"]:
+	        all_auto = 0
+		continue
+
+	    files[file]["byhand-arch"] = arch
+	    files[file]["byhand-script"] = ABH["%s::Script" % (pkg)]
+
+    return any_auto and all_auto
+
+def do_autobyhand (summary, short_summary):
+    print "Accepting AUTOBYHAND."
+    for file in files.keys():
+	byhandfile = file
+        if not files[file].has_key("byhand-script"):
+	    # problem!
+	    pass
+	else:
+	    os.system("ls -l %s" % byhandfile)
+            result = os.system("%s %s %s %s" % (
+	    	files[file]["byhand-script"], byhandfile, 
+		changes["version"], files[file]["byhand-arch"]))
+	    if result != 0:
+	        print "error?"
+	os.unlink(byhandfile)
+	del files[file]
+
+    accept(summary, short_summary)
+
+################################################################################
+
 def is_byhand ():
     for file in files.keys():
         if files[file].has_key("byhand"):
             return 1
     return 0
 
-def do_byhand (summary):
+def do_byhand (summary, short_summary):
     print "Moving to BYHAND holding area."
     Logger.log(["Moving to byhand", pkg.changes_file])
 
@@ -1324,7 +1383,7 @@ def is_new ():
             return 1
     return 0
 
-def acknowledge_new (summary):
+def acknowledge_new (summary, short_summary):
     Subst = Upload.Subst
 
     print "Moving to NEW holding area."

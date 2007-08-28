@@ -1,3 +1,10 @@
+2007-08-28  Anthony Towns  <ajt@debian.org>
+
+	* process_unchecked.py: Add support for automatic BYHAND
+	processing.
+	* config/debian/dak.conf, scripts/debian/byhand-tag: Automatic
+	processing of tag-overrides.
+
 2007-06-19  Anthony Towns  <ajt@debian.org>
 
 	* Add nm.debian.org pseudopackage
