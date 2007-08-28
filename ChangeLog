@@ -7,6 +7,9 @@
 	* examine_package.py: Summarise duplicate copyright file entries
 	(same md5sum) with a reference to the previous instance, rather
 	than repeating them.
+	* process_new.py: When rejecting from the p-u-new or o-p-u-new
+	holding queues, don't worry if dak has its own reasons for
+	rejecting the package as well as the SRMs.
 
 2007-06-19  Anthony Towns  <ajt@debian.org>
 

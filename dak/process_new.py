@@ -970,7 +970,7 @@ def comment_accept(changes_file, comments):
     files = Upload.pkg.files
 
     if not recheck():
-        return
+        return # dak wants to REJECT, crap
 
     (new, byhand) = check_status(files)
     if not new and not byhand:
@@ -986,7 +986,7 @@ def comment_reject(changes_file, comments):
     files = Upload.pkg.files
 
     if not recheck():
-        return
+        pass # dak has its own reasons to reject as well, which is fine
 
     reject(comments)
     print "REJECT\n" + reject_message,
