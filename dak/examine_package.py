@@ -307,12 +307,13 @@ def print_copyright (deb_filename):
     copyright = o.read()
     copyrightmd5 = md5.md5(copyright).hexdigest()
 
-    if printed_copyrights.has_key(copyrightmd5):
-        print "Copyright is the same as %s.\n" % \
+    if printed_copyrights.has_key(copyrightmd5) and printed_copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
+        print "NOTE: Copyright is the same as %s.\n" % \
 		(printed_copyrights[copyrightmd5])
     else:
-    	print copyright
 	printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
+
+    print copyright
 
 def check_dsc (dsc_filename):
     print "---- .dsc file for %s ----" % (dsc_filename)
@@ -332,11 +333,11 @@ def check_deb (deb_filename):
     output_deb_info(deb_filename)
 
     if is_a_udeb:
-	print "---- skipping lintian check for µdeb ----"
+	print "---- skipping lintian check for udeb ----"
 	print 
     else:
 	print "---- lintian check for %s ----" % (filename)
-        do_command ("lintian", deb_filename)
+        do_command ("lintian --show-overrides --color always", deb_filename)
 	print "---- linda check for %s ----" % (filename)
         do_command ("linda", deb_filename)
 
@@ -344,7 +345,7 @@ def check_deb (deb_filename):
     do_command ("dpkg -c", deb_filename)
 
     if is_a_udeb:
-	print "---- skipping copyright for µdeb ----"
+	print "---- skipping copyright for udeb ----"
     else:
 	print "---- copyright of %s ----" % (filename)
         print_copyright(deb_filename)
