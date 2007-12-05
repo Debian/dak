@@ -885,7 +885,7 @@ def process_gpgv_output(status):
             internal_error += "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg)
             continue
         args = split[2:]
-        if keywords.has_key(keyword) and (keyword != "NODATA" and keyword != "SIGEXPIRED"):
+        if keywords.has_key(keyword) and keyword not in [ "NODATA", "SIGEXPIRED", "KEYEXPIRED" ]:
             internal_error += "found duplicate status token ('%s').\n" % (keyword)
             continue
         else:
@@ -1002,9 +1002,6 @@ used."""
 
     bad = ""
     # Now check for obviously bad things in the processed output
-    if keywords.has_key("SIGEXPIRED"):
-        reject("The key used to sign %s has expired." % (sig_filename))
-        bad = 1
     if keywords.has_key("KEYREVOKED"):
         reject("The key used to sign %s has been revoked." % (sig_filename))
         bad = 1
@@ -1025,6 +1022,9 @@ used."""
         bad = 1
     if keywords.has_key("NODATA"):
         reject("no signature found in %s." % (sig_filename))
+        bad = 1
+    if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
+        reject("The key (0x%s) used to sign %s has expired." % (key, sig_filename))
         bad = 1
 
     if bad:
