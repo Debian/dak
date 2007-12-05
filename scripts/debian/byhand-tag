@@ -4,7 +4,7 @@
 INPUT="${1:?"Usage: $0 filename"}"
 
 # Regular expression used to validate tag lines
-CHECKRE='^[a-z0-9A-Z.+-]+[[:space:]]+Tag[[:space:]]+[a-z0-9:. ,+-]+$'
+CHECKRE='^[a-z0-9A-Z.+-]+[[:space:]]+Tag[[:space:]]+[a-z0-9:. ,{}+-]+$'
 
 # This must end with /
 TARGET=/srv/ftp.debian.org/scripts/external-overrides/
@@ -37,6 +37,8 @@ mv "$OUTCONTRIB"        "$TARGET"tag.contrib
 mv "$OUTNONFREE"        "$TARGET"tag.non-free
 
 chmod 644 "$TARGET"tag "$TARGET"tag.contrib "$TARGET"tag.non-free
+
+(cd $TARGET && ./mk-extra-overrides.sh)
 
 trap - EXIT
 
