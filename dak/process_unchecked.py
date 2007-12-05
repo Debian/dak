@@ -421,7 +421,7 @@ def check_files():
             files[file]["type"] = "unreadable"
             continue
         # If it's byhand skip remaining checks
-        if files[file]["section"] == "byhand" or files[file]["section"] == "raw-installer":
+        if files[file]["section"] == "byhand" or files[file]["section"][4:] == "raw-":
             files[file]["byhand"] = 1
             files[file]["type"] = "byhand"
         # Checks for a binary package...
@@ -1339,23 +1339,32 @@ def is_autobyhand ():
     return any_auto and all_auto
 
 def do_autobyhand (summary, short_summary):
-    print "Accepting AUTOBYHAND."
+    print "Attempting AUTOBYHAND."
+    byhandleft = 0
     for file in files.keys():
-	byhandfile = file
+        byhandfile = file
+        if not files[file].has_key("byhand"):
+            continue
         if not files[file].has_key("byhand-script"):
-	    # problem!
-	    pass
-	else:
-	    os.system("ls -l %s" % byhandfile)
-            result = os.system("%s %s %s %s" % (
-	    	files[file]["byhand-script"], byhandfile, 
-		changes["version"], files[file]["byhand-arch"]))
-	    if result != 0:
-	        print "error?"
-	os.unlink(byhandfile)
-	del files[file]
+            byhandleft = 1
+            continue
 
-    accept(summary, short_summary)
+        os.system("ls -l %s" % byhandfile)
+        result = os.system("%s %s %s %s %s" % (
+                files[file]["byhand-script"], byhandfile, 
+                changes["version"], files[file]["byhand-arch"],
+                os.path.abspath(pkg.changes_file)))
+        if result == 0:
+            os.unlink(byhandfile)
+            del files[file]
+        else:
+            print "Error processing %s, left as byhand." % (file)
+            byhandleft = 1
+
+    if byhandleft:
+        do_byhand(summary, short_summary)
+    else:
+        accept(summary, short_summary)
 
 ################################################################################
 
