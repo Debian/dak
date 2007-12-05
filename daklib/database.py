@@ -34,6 +34,7 @@ archive_id_cache = {}
 component_id_cache = {}
 location_id_cache = {}
 maintainer_id_cache = {}
+keyring_id_cache = {}
 source_id_cache = {}
 files_id_cache = {}
 maintainer_cache = {}
@@ -238,6 +239,23 @@ def get_or_set_maintainer_id (maintainer):
     maintainer_id_cache[maintainer] = maintainer_id
 
     return maintainer_id
+
+################################################################################
+
+def get_or_set_keyring_id (keyring):
+    global keyring_id_cache
+
+    if keyring_id_cache.has_key(keyring):
+        return keyring_id_cache[keyring]
+
+    q = projectB.query("SELECT id FROM keyrings WHERE name = '%s'" % (keyring))
+    if not q.getresult():
+        projectB.query("INSERT INTO keyrings (name) VALUES ('%s')" % (keyring))
+        q = projectB.query("SELECT id FROM keyrings WHERE name = '%s'" % (keyring))
+    keyring_id = q.getresult()[0][0]
+    keyring_id_cache[keyring] = keyring_id
+
+    return keyring_id
 
 ################################################################################
 
