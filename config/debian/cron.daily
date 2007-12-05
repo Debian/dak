@@ -179,7 +179,7 @@ dak cruft-report | tee $webdir/cruft-report-daily.txt | mail -e -s "Debian archi
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
-ulimit -m 90000 -d 90000 -s 10000 -v 90000
+ulimit -m 90000 -d 90000 -s 10000 -v 200000
 
 run-parts --report $base/scripts/distmnt
 
