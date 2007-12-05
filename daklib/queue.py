@@ -932,10 +932,12 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
 
                     in_unchecked = os.path.join(self.Cnf["Dir::Queue::Unchecked"],dsc_file)
                     # See process_it() in 'dak process-unchecked' for explanation of this
-                    if os.path.exists(in_unchecked):
+		    # in_unchecked check dropped by ajt 2007-08-28, how did that
+		    # ever make sense?
+                    if os.path.exists(in_unchecked) and False:
                         return (self.reject_message, in_unchecked)
                     else:
-                        for dir in [ "Accepted", "New", "Byhand" ]:
+                        for dir in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates" ]:
                             in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (dir)],dsc_file)
                             if os.path.exists(in_otherdir):
                                 in_otherdir_fh = utils.open_file(in_otherdir)
