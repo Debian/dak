@@ -309,6 +309,19 @@ def install ():
                     files_id = daklib.database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id))
 
+            # Add the src_uploaders to the DB
+            if dsc.get("dm-upload-allowed", "no") == "yes":
+                uploader_ids = []
+                if dsc.has_key("uploaders"):
+                    uploader_ids = [
+                        daklib.database.get_or_set_maintainer_id( u.strip() )
+                          for u in dsc["uploaders"].split(",")
+                    ]
+                uploader_ids.append(maintainer_id)
+                for u in uploader_ids:
+                    projectB.query("INSERT INTO src_uploaders (source, maintainer) VALUES (currval('source_id_seq'), %d)" % (u))
+
+
     # Add the .deb files to the DB
     for file in files.keys():
         if files[file]["type"] == "deb":

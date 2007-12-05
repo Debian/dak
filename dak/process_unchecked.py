@@ -1016,10 +1016,84 @@ def check_timestamps():
 
 ################################################################################
 
+def lookup_uid_from_fingerprint(fpr):
+    q = Upload.projectB.query("SELECT u.uid, u.name FROM fingerprint f, uid u WHERE f.uid = u.id AND f.fingerprint = '%s'" % (fpr))
+    qs = q.getresult()
+    if len(qs) == 0:
+        return (None, None)
+    else:
+        return qs[0]
+
 def check_signed_by_key():
     """Ensure the .changes is signed by an authorized uploader."""
 
-    # We only check binary-only uploads right now
+    (uid, uid_name) = lookup_uid_from_fingerprint(changes["fingerprint"])
+    if uid_name == None:
+        uid_name = ""
+
+    # match claimed name with actual name:
+    if uid == None:
+        uid, uid_email = changes["fingerprint"], uid
+        may_nmu, may_sponsor = 1, 1
+	# XXX by default new dds don't have a fingerprint/uid in the db atm,
+	#     and can't get one in there if we don't allow nmu/sponsorship
+    elif uid[:3] == "dm:":
+        uid_email = uid[3:]
+        may_nmu, may_sponsor = 0, 0
+    else:
+        uid_email = "%s@debian.org" % (uid)
+        may_nmu, may_sponsor = 1, 1
+
+    if uid_email in [changes["maintaineremail"], changes["changedbyemail"]]:
+        sponsored = 0
+    elif uid_name in [changes["maintainername"], changes["changedbyname"]]:
+        sponsored = 0
+        if uid_name == "": sponsored = 1
+    else:
+        sponsored = 1
+
+    if sponsored and not may_sponsor: 
+        reject("%s is not authorised to sponsor uploads" % (uid))
+
+    if not sponsored and not may_nmu:
+        source_ids = []
+	check_suites = changes["distribution"].keys()
+	if "unstable" not in check_suites: check_suites.append("unstable")
+        for suite in check_suites:
+            suite_id = daklib.database.get_suite_id(suite)
+            q = Upload.projectB.query("SELECT s.id FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND sa.suite = %d" % (changes["source"], suite_id))
+            for si in q.getresult():
+                if si[0] not in source_ids: source_ids.append(si[0])
+
+        print "source_ids: %s" % (",".join([str(x) for x in source_ids]))
+
+        is_nmu = 1
+        for si in source_ids:
+            is_nmu = 1
+            q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT maintainer FROM src_uploaders WHERE src_uploaders.source = %s)" % (si))
+            for m in q.getresult():
+                (rfc822, rfc2047, name, email) = daklib.utils.fix_maintainer(m[0])
+                if email == uid_email or name == uid_name:
+                    is_nmu=0
+                    break
+        if is_nmu:
+            reject("%s may not upload/NMU source package %s" % (uid, changes["source"]))
+
+        for b in changes["binary"].keys():
+            for suite in changes["distribution"].keys():
+                suite_id = daklib.database.get_suite_id(suite)
+	        q = Upload.projectB.query("SELECT DISTINCT s.source FROM source s JOIN binaries b ON (s.id = b.source) JOIN bin_associations ba On (b.id = ba.bin) WHERE b.package = '%s' AND ba.suite = %s" % (b, suite_id))
+		for s in q.getresult():
+                    if s[0] != changes["source"]:
+                        reject("%s may not hijack %s from source package %s in suite %s" % (uid, b, s, suite))
+
+        for file in files.keys():
+            if files[file].has_key("byhand"): 
+                reject("%s may not upload BYHAND file %s" % (uid, file))
+            if files[file].has_key("new"):
+                reject("%s may not upload NEW file %s" % (uid, file))
+
+    # The remaining checks only apply to binary-only uploads right now
     if changes["architecture"].has_key("source"):
         return
 

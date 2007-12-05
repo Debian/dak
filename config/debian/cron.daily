@@ -169,6 +169,8 @@ dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-mast
 # and one on crufty packages
 dak cruft-report | tee $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
 
+$scriptsdir/dm-monitor >$webdir/dm-uploaders.html
+
 ################################################################################
 
 # Run mirror-split

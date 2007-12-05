@@ -149,9 +149,13 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                 if not existing_uid:
                     q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                     print "Assigning %s to 0x%s." % (uid, fingerprint)
+		elif existing_uid == uid:
+		    pass
+		elif existing_uid[:3] == "dm:":
+                    q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
+                    print "Promoting DM %s to DD %s with keyid 0x%s." % (existing_uid, uid, fingerprint)
                 else:
-                    if existing_uid != uid:
-                        daklib.utils.fubar("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
+                    daklib.utils.warn("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
 
     # Try to update people who sign with non-primary key
     q = projectB.query("SELECT fingerprint, id FROM fingerprint WHERE uid is null")
@@ -168,10 +172,11 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             primary_key = m.group(1)
             primary_key = primary_key.replace(" ","")
             if not ldap_fin_uid_id.has_key(primary_key):
-                daklib.utils.fubar("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
-            (uid, uid_id) = ldap_fin_uid_id[primary_key]
-            q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
-            print "Assigning %s to 0x%s." % (uid, fingerprint)
+                daklib.utils.warn("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
+	    else:
+            	(uid, uid_id) = ldap_fin_uid_id[primary_key]
+            	q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
+            	print "Assigning %s to 0x%s." % (uid, fingerprint)
         else:
             extra_keyrings = ""
             for keyring in Cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):
@@ -204,6 +209,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                 guess_uid = "???"
             name = " ".join(output.split('\n')[0].split()[3:])
             print "0x%s -> %s -> %s" % (fingerprint, name, guess_uid)
+
             # FIXME: make me optionally non-interactive
             # FIXME: default to the guessed ID
             uid = None

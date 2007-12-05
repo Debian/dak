@@ -134,7 +134,7 @@ class Upload:
                 d_changes[i] = changes[i]
         ## dsc
         for i in [ "source", "version", "maintainer", "fingerprint",
-                   "uploaders", "bts changelog" ]:
+                   "uploaders", "bts changelog", "dm-upload-allowed" ]:
             if dsc.has_key(i):
                 d_dsc[i] = dsc[i]
         ## dsc_files

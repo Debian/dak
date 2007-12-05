@@ -90,6 +90,8 @@ def init():
          "Check for users with no packages in the archive"),
         ("import-archive",
          "Populate SQL database based from an archive tree"),
+        ("import-keyring",
+         "Populate fingerprint/uid table based on a new/updated keyring"),
         ("import-ldap-fingerprints",
          "Syncs fingerprint and uid tables with Debian LDAP db"),
         ("import-users-from-passwd",
