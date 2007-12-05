@@ -32,6 +32,6 @@ bindirectory "incoming/"
    Sources "Sources";
    BinOverride "override.sid.all3";
    SrcOverride "override.sid.all3.src";
-   SourceFileList "/srv/ftp.debian.org/database/dists/unstable_accepted.list";
+   FileList "/srv/ftp.debian.org/database/dists/unstable_accepted.list";
 };
 
