@@ -199,4 +199,16 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 cd $configdir
 apt-ftparchive -q clean apt.conf
 
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
+# Compress psql backups older than a month, but no more than 20 of them
+
+(cd $base/backup/
+ find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +30 | 
+   sort | head -n20 | while read dumpname; do
+     echo "Compressing $dumpname"
+     bzip2 -9 "$dumpname"
+   done
+)
+
 ################################################################################
