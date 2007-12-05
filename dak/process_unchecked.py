@@ -757,6 +757,7 @@ def check_dsc():
         m = daklib.utils.re_issource.match(f)
         if not m:
             reject("%s: %s in Files field not recognised as source." % (dsc_filename, f))
+	    continue
         type = m.group(3)
         if type == "orig.tar.gz" or type == "tar.gz":
             has_tar = 1
