@@ -20,8 +20,8 @@
 ################################################################################
 
 import daklib.database, daklib.logging
-import apt_pkg, pg
-import sys, os, email.Utils, re
+import sys, os, re
+import apt_pkg, pg, ldap, email.Utils
 
 # Globals
 Cnf = None
@@ -30,9 +30,6 @@ projectB = None
 Logger = None
 
 ################################################################################
-
-# These could possibly be daklib.db functions, and reused by
-# import-ldap-fingerprints
 
 def get_uid_info():
     byname = {}
@@ -52,12 +49,23 @@ def get_fingerprint_info():
 
 ################################################################################
 
+def get_ldap_name(entry):
+	name = []
+	for k in ["cn", "mn", "sn"]:
+		ret = entry.get(k)
+		if ret and ret[0] != "" and ret[0] != "-":
+        		name.append(ret[0])
+	return " ".join(name)
+
+################################################################################
+
 class Keyring:
 	gpg_invocation = "gpg --no-default-keyring --keyring %s" +\
 			 " --with-colons --fingerprint --fingerprint"
 	keys = {}
+	fpr_lookup = {}
 
- 	def de_escape_str(self, str):
+ 	def de_escape_gpg_str(self, str):
 		esclist = re.split(r'(\\x..)', str)
 		for x in range(1,len(esclist),2):
 			esclist[x] = "%c" % (int(esclist[x][2:],16))
@@ -67,6 +75,7 @@ class Keyring:
 		k = os.popen(self.gpg_invocation % keyring, "r")
 		keys = self.keys
 		key = None
+		fpr_lookup = self.fpr_lookup
 		signingkey = False
 		for line in k.xreadlines():
 			field = line.split(":")
@@ -77,7 +86,7 @@ class Keyring:
 				if name == "" or addr == "" or "@" not in addr:
 					name = field[9]
 					addr = "invalid-uid"
-				name = self.de_escape_str(name)
+				name = self.de_escape_gpg_str(name)
 				keys[key] = {"email": addr}
 				if name != "": keys[key]["name"] = name
 				keys[key]["aliases"] = [name]
@@ -91,11 +100,51 @@ class Keyring:
 					keys[key]["aliases"].append(name)
 			elif signingkey and field[0] == "fpr":
 				keys[key]["fingerprints"].append(field[9])
+				fpr_lookup[field[9]] = key
 
-	def desired_users(self, format="%s"):
-		if not Options["Generate-Users"]:
-			return ({}, {})
+	def generate_desired_users(self):
+		if Options["Generate-Users"]:
+			format = Options["Generate-Users"]
+			return self.generate_users_from_keyring(format)
+		if Options["Import-Ldap-Users"]:
+			return self.import_users_from_ldap()
+		return ({}, {})
 
+	def import_users_from_ldap(self):
+		LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
+   		LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
+    		l = ldap.open(LDAPServer)
+    		l.simple_bind_s("","")
+    		Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
+                       "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Import-Users-From-Passwd::ValidGID"]),
+                       ["uid", "keyfingerprint", "cn", "mn", "sn"])
+
+		ldap_fin_uid_id = {}
+
+		byuid = {}
+		byname = {}
+		keys = self.keys
+		fpr_lookup = self.fpr_lookup
+
+		for i in Attrs:
+			entry = i[1]
+			uid = entry["uid"][0]
+			name = get_ldap_name(entry)
+			fingerprints = entry["keyFingerPrint"]
+			id = None
+			for f in fingerprints:
+				key = fpr_lookup.get(f, None)
+				if key not in keys: continue
+				keys[key]["uid"] = uid
+
+				if id != None: continue
+				id = daklib.database.get_or_set_uid_id(uid)
+				byuid[id] = (uid, name)
+				byname[uid] = (id, name)
+			
+		return (byname, byuid)
+
+	def generate_users_from_keyring(self, format):
 		byuid = {}
 		byname = {}
 		keys = self.keys
@@ -103,11 +152,13 @@ class Keyring:
 		for x in keys.keys():
 			if keys[x]["email"] == "invalid-uid":
 				any_invalid = True
+				keys[x]["uid"] = format % "invalid-uid"
 			else:
 				uid = format % keys[x]["email"]
 				id = daklib.database.get_or_set_uid_id(uid)
 				byuid[id] = (uid, keys[x]["name"])
 				byname[uid] = (id, keys[x]["name"])
+				keys[x]["uid"] = uid
 		if any_invalid:
 			uid = format % "invalid-uid"
 			id = daklib.database.get_or_set_uid_id(uid)
@@ -120,6 +171,7 @@ class Keyring:
 def usage (exit_code=0):
     print """Usage: dak import-keyring [OPTION]... [KEYRING]
   -h, --help                  show this help and exit.
+  -L, --import-ldap-users     generate uid entries for keyring from LDAP
   -U, --generate-users FMT    generate uid entries from keyring as FMT"""
     sys.exit(exit_code)
 
@@ -131,50 +183,55 @@ def main():
 
     Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Import-Keyring::Options::Help"),
+		 ('L',"import-ldap-users","Import-Keyring::Options::Import-Ldap-Users"),
 		 ('U',"generate-users","Import-Keyring::Options::Generate-Users", "HasArg"),
 		]
 
-    for i in [ "help", "report-changes", "generate-users" ]:
+    for i in [ "help", "report-changes", "generate-users", "import-ldap-users" ]:
         if not Cnf.has_key("Import-Keyring::Options::%s" % (i)):
             Cnf["Import-Keyring::Options::%s" % (i)] = ""
 
     keyring_names = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
+    ### Parse options
+
     Options = Cnf.SubTree("Import-Keyring::Options")
     if Options["Help"]:
         usage()
 
-    uid_format = "%s"
-    if Options["Generate-Users"]:
-        uid_format = Options["Generate-Users"]
+    if len(keyring_names) != 1:
+	usage(1)
+
+    ### Keep track of changes made
 
     changes = []   # (uid, changes strings)
+
+    ### Initialise
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
 
     projectB.query("BEGIN WORK")
 
-    if len(keyring_names) != 1:
-	usage(1)
+    ### Cache all the existing fingerprint entries
 
-    # Parse the keyring
+    db_fin_info = get_fingerprint_info()
+
+    ### Parse the keyring
+
     keyringname = keyring_names[0]
     keyring = Keyring(keyringname)
 
     keyring_id = daklib.database.get_or_set_keyring_id(
 			keyringname.split("/")[-1])
 
-    # If we're generating uids, make sure we have entries in the uid
-    # table for every uid
-    (desuid_byname, desuid_byid) = keyring.desired_users(uid_format)
+    ### Generate new uid entries if they're needed (from LDAP or the keyring)
+    (desuid_byname, desuid_byid) = keyring.generate_desired_users()
 
-    # Cache all the existing fingerprint and uid entries
-    db_fin_info = get_fingerprint_info()
+    ### Cache all the existing uid entries
     (db_uid_byname, db_uid_byid) = get_uid_info()
 
-    # Update full names of uids
-
+    ### Update full names of applicable users
     for id in desuid_byid.keys():
         uid = (id, desuid_byid[id][0])
         name = desuid_byid[id][1]
@@ -184,27 +241,30 @@ def main():
             projectB.query("UPDATE uid SET name = '%s' WHERE id = %s" %
 	    	(pg.escape_string(name), id))
 
-    # Work out what the fingerprint table should look like for the keys
-    # in this keyring
+    # The fingerprint table (fpr) points to a uid and a keyring.
+    #   If the uid is being decided here (ldap/generate) we set it to it.
+    #   Otherwise, if the fingerprint table already has a uid (which we've
+    #     cached earlier), we preserve it.
+    #   Otherwise we leave it as None
+
     fpr = {}
     for z in keyring.keys.keys():
-	id = db_uid_byname.get(uid_format % keyring.keys[z]["email"], [None])[0]
+        id = db_uid_byname.get(keyring.keys[z].get("uid", None), [None])[0]
         if id == None:
 	    id = db_fin_info.get(keyring.keys[z]["fingerprints"][0], [None])[0]
 	for y in keyring.keys[z]["fingerprints"]:
 	    fpr[y] = (id,keyring_id)
 
     # For any keys that used to be in this keyring, disassociate them.
-    # We don't change the uid, leaving that to for historical info; if
-    # the id should change, it'll be set when importing another keyring
-    # or importing ldap fingerprints.
+    # We don't change the uid, leaving that for historical info; if
+    # the id should change, it'll be set when importing another keyring.
 
     for f,(u,fid,kr) in db_fin_info.iteritems():
         if kr != keyring_id: continue
 	if f in fpr: continue
 	changes.append((db_uid_byid.get(u, [None])[0], "Removed key: %s\n" % (f)))
 	projectB.query("UPDATE fingerprint SET keyring = NULL WHERE id = %d" % (fid))
-	
+
     # For the keys in this keyring, add/update any fingerprints that've
     # changed.
 
