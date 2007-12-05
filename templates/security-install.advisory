@@ -1,6 +1,9 @@
 From: __DAK_ADDRESS__
 To: __WHOAMI__ <dak@security.debian.org>
 __BCC__
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 Subject: Template Advisory __ADVISORY__
 
 ------------------------------------------------------------------------

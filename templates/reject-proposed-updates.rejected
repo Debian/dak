@@ -3,6 +3,9 @@ To: __MAINTAINER_TO__
 __CC__
 __BCC__
 Precedence: bulk
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 Subject: __CHANGES_FILENAME__ REJECTED from proposed-updates
 
 Your package was rejected by an ftp master on behalf of
