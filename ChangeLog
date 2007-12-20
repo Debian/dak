@@ -1,3 +1,8 @@
+2007-12-21  Joerg Jaspert  <joerg@debian.org>
+
+	* Remove the (now useless) check for a pre-depends on dpkg for
+	  binaries that contain bzip2 compressed data tarballs.
+
 2007-08-28  Anthony Towns  <ajt@debian.org>
 
 	* process_unchecked.py: Add support for automatic BYHAND

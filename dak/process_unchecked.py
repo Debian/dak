@@ -329,9 +329,7 @@ def check_deb_ar(filename, control):
  o control.tar.gz
  o data.tar.gz or data.tar.bz2
 
-in that order, and nothing else.  If the third member is a
-data.tar.bz2, an additional check is performed for the required
-Pre-Depends on dpkg (>= 1.10.24)."""
+in that order, and nothing else."""
     cmd = "ar t %s" % (filename)
     (result, output) = commands.getstatusoutput(cmd)
     if result != 0:
@@ -344,22 +342,7 @@ Pre-Depends on dpkg (>= 1.10.24)."""
         reject("%s: first chunk is '%s', expected 'debian-binary'." % (filename, chunks[0]))
     if chunks[1] != "control.tar.gz":
         reject("%s: second chunk is '%s', expected 'control.tar.gz'." % (filename, chunks[1]))
-    if chunks[2] == "data.tar.bz2":
-        # Packages using bzip2 compression must have a Pre-Depends on dpkg >= 1.10.24.
-        found_needed_predep = 0
-        for parsed_dep in apt_pkg.ParseDepends(control.Find("Pre-Depends", "")):
-            for atom in parsed_dep:
-                (dep, version, constraint) = atom
-                if dep != "dpkg" or (constraint != ">=" and constraint != ">>") or \
-                       len(parsed_dep) > 1: # or'ed deps don't count
-                    continue
-                if (constraint == ">=" and apt_pkg.VersionCompare(version, "1.10.24") < 0) or \
-                       (constraint == ">>" and apt_pkg.VersionCompare(version, "1.10.23") < 0):
-                    continue
-                found_needed_predep = 1
-        if not found_needed_predep:
-            reject("%s: uses bzip2 compression, but doesn't Pre-Depend on dpkg (>= 1.10.24)" % (filename))
-    elif chunks[2] != "data.tar.gz":
+    if chunks[2] not in [ "data.tar.bz2", "data.tar.gz" ]:
         reject("%s: third chunk is '%s', expected 'data.tar.gz' or 'data.tar.bz2'." % (filename, chunks[2]))
 
 ################################################################################
