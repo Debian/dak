@@ -311,13 +311,13 @@ def install ():
 
             # Add the src_uploaders to the DB
             if dsc.get("dm-upload-allowed", "no") == "yes":
-                uploader_ids = []
+                uploader_ids = [maintainer_id]
                 if dsc.has_key("uploaders"):
-                    uploader_ids = [
-                        daklib.database.get_or_set_maintainer_id( u.strip() )
-                          for u in dsc["uploaders"].split(",")
-                    ]
-                uploader_ids.append(maintainer_id)
+		    for u in dsc["uploaders"].split(","):
+		        u = u.replace("'", "\\'")
+			u = u.strip()
+                        uploader_ids.append(
+			    daklib.database.get_or_set_maintainer_id(u))
                 for u in uploader_ids:
                     projectB.query("INSERT INTO src_uploaders (source, maintainer) VALUES (currval('source_id_seq'), %d)" % (u))
 
