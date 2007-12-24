@@ -291,7 +291,7 @@ def do_command (command, filename):
 
 def print_copyright (deb_filename):
     package = re_package.sub(r'\1', deb_filename)
-    o = os.popen("ar p %s data.tar.gz | tar tzvf - | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{ print $6 }' | head -n 1" % (deb_filename))
+    o = os.popen("dpkg-deb -c %s | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{print $6}' | head -n 1" % (deb_filename))
     copyright = o.read()[:-1]
 
     if copyright == "":
@@ -303,7 +303,7 @@ def print_copyright (deb_filename):
         print "WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory)
         return
 
-    o = os.popen("ar p %s data.tar.gz | tar xzOf - %s" % (deb_filename, copyright))
+    o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s" % (deb_filename, copyright))
     copyright = o.read()
     copyrightmd5 = md5.md5(copyright).hexdigest()
 
@@ -319,6 +319,8 @@ def check_dsc (dsc_filename):
     print "---- .dsc file for %s ----" % (dsc_filename)
     (dsc) = read_dsc(dsc_filename)
     print dsc
+    print "---- lintian check for %s ----" % (dsc_filename)
+        do_command ("lintian --show-overrides --color always", dsc_filename)
 
 def check_deb (deb_filename):
     filename = os.path.basename(deb_filename)
