@@ -831,7 +831,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
     # the .orig.tar.gz is a duplicate of the one in the archive]; if
     # you're iterating over 'files' and call this function as part of
     # the loop, be sure to add a check to the top of the loop to
-    # ensure you haven't just tried to derefernece the deleted entry.
+    # ensure you haven't just tried to dereference the deleted entry.
     # **WARNING**
 
     def check_dsc_against_db(self, file):
