@@ -94,7 +94,7 @@ def recheck():
             (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(file)
             reject(reject_msg)
 
-    if reject_message:
+    if reject_message.find("Rejected") != -1:
         answer = "XXX"
         if Options["No-Action"] or Options["Automatic"]:
             answer = 'S'
