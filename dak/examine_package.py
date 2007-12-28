@@ -320,7 +320,7 @@ def check_dsc (dsc_filename):
     (dsc) = read_dsc(dsc_filename)
     print dsc
     print "---- lintian check for %s ----" % (dsc_filename)
-        do_command ("lintian --show-overrides --color always", dsc_filename)
+    do_command("lintian --show-overrides --color always", dsc_filename)
 
 def check_deb (deb_filename):
     filename = os.path.basename(deb_filename)
