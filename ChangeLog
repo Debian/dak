@@ -18,6 +18,25 @@
 	* config/debian/apt.conf: Add hurd-i386 to unstable
 	debian-installer stanza.
 
+2007-12-28  Joerg Jaspert  <joerg@debian.org>
+
+	* KEYEXPIRED is actually a known keyword. We do check it earlier
+	on and reject in case the sig is bad (or unknown)
+
+2007-12-24  Joerg Jaspert  <joerg@debian.org>
+
+	* Also run lintian on the .dsc file to check the source itself.
+
+	* Fix the direct usage of ar | tar etc to get the copyright file
+	and use dpkg-deb, which is made for this and makes us able to
+	process data.tar.bz2 (or whatever format it will be in the
+	future).
+
+2007-12-21  Joerg Jaspert  <joerg@debian.org>
+
+	* Remove the (now useless) check for a pre-depends on dpkg for
+	  binaries that contain bzip2 compressed data tarballs.
+
 2007-08-28  Anthony Towns  <ajt@debian.org>
 
 	* process_unchecked.py: Add support for automatic BYHAND
