@@ -1,3 +1,8 @@
+2007-12-28  Joerg Jaspert  <joerg@debian.org>
+
+	* KEYEXPIRED is actually a known keyword. We do check it earlier
+	on and reject in case the sig is bad (or unknown)
+
 2007-12-24  Joerg Jaspert  <joerg@debian.org>
 
 	* Also run lintian on the .dsc file to check the source itself.
