@@ -1,3 +1,23 @@
+2007-12-28  Anthony Towns  <ajt@debian.org>
+
+	* daklib/utils.py (check_signature): add NOTATION_DATA and
+	NOTATION_NAME to known keywords.
+
+	* daklib/queue.py (Upload.check_source_against_db): 
+
+	* dak/make_suite_file_list.py: add -f/--force option.
+
+	* dak/generate_releases.py: add -a/--apt-conf=FILE and
+	-f/--force-touch options.  Pull version info from the database.
+	Make suite description optional.
+
+	* config/debian/dak.conf: update
+	Reject-Proposed-Updates::MoreInfoURL.  Comment out
+	Suite::Stable::Version and ::Description.
+
+	* config/debian/apt.conf: Add hurd-i386 to unstable
+	debian-installer stanza.
+
 2007-08-28  Anthony Towns  <ajt@debian.org>
 
 	* process_unchecked.py: Add support for automatic BYHAND
