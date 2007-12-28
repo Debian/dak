@@ -1060,7 +1060,7 @@ used."""
     # Finally ensure there's not something we don't recognise
     known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
                           SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
-                          NODATA="")
+                          NODATA="",NOTATION_DATA="",NOTATION_NAME="")
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
