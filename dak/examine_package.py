@@ -333,7 +333,7 @@ def output_deb_info(filename):
 	    else:
 		output += escape_if_needed(control.Find(key))
             to_print += output + '\n'
-        print_formatted_text(to_print)
+        print_escaped_text(to_print)
 
 def do_command (command, filename):
     o = os.popen("%s %s" % (command, filename))

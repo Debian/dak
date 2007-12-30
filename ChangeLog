@@ -23,6 +23,7 @@
 	easily know if we want html or not and just DTRT
 	(do_lintian): new function
 	(check_deb): use it
+	(output_deb_info): Use print_escaped_text, not print_formatted_text.
 
 	Also add a variable to see if we want html output. Default is
 	disabled, show_new enables it for its use.
