@@ -122,71 +122,6 @@ def recheck():
 
 ################################################################################
 
-def determine_new (changes, files):
-    new = {}
-
-    # Build up a list of potentially new things
-    for file in files.keys():
-        f = files[file]
-        # Skip byhand elements
-        if f["type"] == "byhand":
-            continue
-        pkg = f["package"]
-        priority = f["priority"]
-        section = f["section"]
-        # FIXME: unhardcode
-        if section == "non-US/main":
-            section = "non-US"
-        type = get_type(f)
-        component = f["component"]
-
-        if type == "dsc":
-            priority = "source"
-        if not new.has_key(pkg):
-            new[pkg] = {}
-            new[pkg]["priority"] = priority
-            new[pkg]["section"] = section
-            new[pkg]["type"] = type
-            new[pkg]["component"] = component
-            new[pkg]["files"] = []
-        else:
-            old_type = new[pkg]["type"]
-            if old_type != type:
-                # source gets trumped by deb or udeb
-                if old_type == "dsc":
-                    new[pkg]["priority"] = priority
-                    new[pkg]["section"] = section
-                    new[pkg]["type"] = type
-                    new[pkg]["component"] = component
-        new[pkg]["files"].append(file)
-        if f.has_key("othercomponents"):
-            new[pkg]["othercomponents"] = f["othercomponents"]
-
-    for suite in changes["suite"].keys():
-        suite_id = daklib.database.get_suite_id(suite)
-        for pkg in new.keys():
-            component_id = daklib.database.get_component_id(new[pkg]["component"])
-            type_id = daklib.database.get_override_type_id(new[pkg]["type"])
-            q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id))
-            ql = q.getresult()
-            if ql:
-                for file in new[pkg]["files"]:
-                    if files[file].has_key("new"):
-                        del files[file]["new"]
-                del new[pkg]
-
-    if changes["suite"].has_key("stable"):
-        print "WARNING: overrides will be added for stable!"
-    if changes["suite"].has_key("oldstable"):
-        print "WARNING: overrides will be added for OLDstable!"
-    for pkg in new.keys():
-        if new[pkg].has_key("othercomponents"):
-            print "WARNING: %s already present in %s distribution." % (pkg, new[pkg]["othercomponents"])
-
-    return new
-
-################################################################################
-
 def indiv_sg_compare (a, b):
     """Sort by source name, source, version, 'have source', and
        finally by filename."""
@@ -320,25 +255,8 @@ class Priority_Completer:
 
 ################################################################################
 
-def check_valid (new):
-    for pkg in new.keys():
-        section = new[pkg]["section"]
-        priority = new[pkg]["priority"]
-        type = new[pkg]["type"]
-        new[pkg]["section id"] = daklib.database.get_section_id(section)
-        new[pkg]["priority id"] = daklib.database.get_priority_id(new[pkg]["priority"])
-        # Sanity checks
-        di = section.find("debian-installer") != -1
-        if (di and type != "udeb") or (not di and type == "udeb"):
-            new[pkg]["section id"] = -1
-        if (priority == "source" and type != "dsc") or \
-           (priority != "source" and type == "dsc"):
-            new[pkg]["priority id"] = -1
-
-################################################################################
-
 def print_new (new, indexed, file=sys.stdout):
-    check_valid(new)
+    daklib.queue.check_valid(new)
     broken = 0
     index = 0
     for pkg in new.keys():
@@ -363,24 +281,6 @@ def print_new (new, indexed, file=sys.stdout):
         print note
         print "*"*75
     return broken, note
-
-################################################################################
-
-def get_type (f):
-    # Determine the type
-    if f.has_key("dbtype"):
-        type = f["dbtype"]
-    elif f["type"] == "orig.tar.gz" or f["type"] == "tar.gz" or f["type"] == "diff.gz" or f["type"] == "dsc":
-        type = "dsc"
-    else:
-        daklib.utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
-
-    # Validate the override type
-    type_id = daklib.database.get_override_type_id(type)
-    if type_id == -1:
-        daklib.utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
-
-    return type
 
 ################################################################################
 
@@ -721,7 +621,7 @@ def do_new():
     done = 0
     while not done:
         # Find out what's new
-        new = determine_new(changes, files)
+        new = daklib.queue.determine_new(changes, files, projectB)
 
         if not new:
             break

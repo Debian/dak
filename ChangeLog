@@ -1,7 +1,49 @@
 2007-12-30  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/dak.py (init): add show-new. This is based on a patch
+	submitted by Thomas Viehmann in Bug #408318, but large parts of
+	handling it are rewritten and show-new is done by me.
+
+	* dak/queue_report.py (table_row): Add link to generated html page
+	for NEW package.
+
+	* dak/show_new.py: new file, generates html overview for NEW
+	packages, similar to what we see with examine-package.
+
+	* config/debian/cron.hourly: Add show-new call
+
+	* config/debian/dak.conf: Add HTMLPath for Show-New
+
 	* dak/examine_package.py (print_copyright): ignore stderr when
 	finding copyright file.
+	(main): add html option
+	(html_escape): new function
+	(escape_if_needed): ditto
+	(headline): ditto
+	(colour_output): ditto
+	(print_escaped_text): ditto
+	(print_formatted_text): ditto
+	- use those functions everywhere where we generate output, as they
+	easily know if we want html or not and just DTRT
+	(do_lintian): new function
+	(check_deb): use it
+	(output_deb_info): Use print_escaped_text, not print_formatted_text.
+	Also import daklib.queue, determine_new now lives there
+
+	Also add a variable to see if we want html output. Default is
+	disabled, show_new enables it for its use.
+	Most of html, besides header/footer are in examine_package instead
+	of show_new, as it makes it a whole lot easier to deal with it at
+	the point the info is generated.
+
+
+	* dak/process_new.py (determine_new): Moved out of here.
+	(check_valid): Moved out of here.
+	(get_type): Moved out of here.
+
+	* daklib/queue.py (determine_new): Moved here.
+	(check_valid): Moved here.
+	(get_type): Moved here.
 
 	* dak/init_db.py (do_section): Remove non-US code
 

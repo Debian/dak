@@ -34,7 +34,7 @@
 
 import errno, os, pg, re, sys, md5
 import apt_pkg, apt_inst
-import daklib.database, daklib.utils
+import daklib.database, daklib.utils, daklib.queue
 
 ################################################################################
 
@@ -54,24 +54,8 @@ re_version = re.compile('^(.*)\((.*)\)')
 re_newlinespace = re.compile('\n')
 re_spacestrip = re.compile('(\s)')
 
-################################################################################
-
-# Colour definitions
-
-# Main
-main_colour = "\033[36m"
-# Contrib
-contrib_colour = "\033[33m"
-# Non-Free
-nonfree_colour = "\033[31m"
-# Arch
-arch_colour = "\033[32m"
-# End
-end_colour = "\033[0m"
-# Bold
-bold_colour = "\033[1m"
-# Bad maintainer
-maintainer_colour = arch_colour
+html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
+re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
 
 ################################################################################
 
@@ -84,6 +68,9 @@ daklib.database.init(Cnf, projectB)
 
 printed_copyrights = {}
 
+# default is to not output html.
+use_html = 0
+
 ################################################################################
 
 def usage (exit_code=0):
@@ -91,10 +78,67 @@ def usage (exit_code=0):
 Check NEW package(s).
 
   -h, --help                 show this help and exit
+  -H, --html-output          output html page with inspection result
+  -f, --file-name            filename for the html page
 
 PACKAGE can be a .changes, .dsc, .deb or .udeb filename."""
 
     sys.exit(exit_code)
+
+################################################################################
+# probably xml.sax.saxutils would work as well
+
+def html_escape(s):
+  return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
+
+def escape_if_needed(s):
+  if use_html:
+    return re_html_escaping.sub(html_escaping.get, s)
+  else:
+    return s
+  
+def headline(s, level=2):
+  if use_html:
+    print "<h%d>%s</h%d>" % (level, html_escape(s), level)
+  else:
+    print "---- %s ----" % (s)
+
+# Colour definitions, 'end' isn't really for use
+
+ansi_colours = {
+  'main': "\033[36m",
+  'contrib': "\033[33m",
+  'nonfree': "\033[31m",
+  'arch': "\033[32m",
+  'end': "\033[0m",
+  'bold': "\033[1m",
+  'maintainer': "\033[32m"}
+
+html_colours = {
+  'main': ('<span style="color: aqua">',"</span>"),
+  'contrib': ('<span style="color: yellow">',"</span>"),
+  'nonfree': ('<span style="color: red">',"</span>"),
+  'arch': ('<span style="color: green">',"</span>"),
+  'bold': ('<span style="font-weight: bold">',"</span>"),
+  'maintainer': ('<span style="color: green">',"</span>")}
+
+def colour_output(s, colour):
+  if use_html:
+    return ("%s%s%s" % (html_colours[colour][0], html_escape(s), html_colours[colour][1]))
+  else:
+    return ("%s%s%s" % (ansi_colours[colour], s, ansi_colours['end']))
+
+def print_escaped_text(s):
+  if use_html:
+    print "<pre>%s</pre>" % (s)
+  else:
+    print s  
+
+def print_formatted_text(s):
+  if use_html:
+    print "<pre>%s</pre>" % (html_escape(s))
+  else:
+    print s
 
 ################################################################################
 
@@ -150,7 +194,8 @@ def read_control (filename):
 	extracts = apt_inst.debExtractControl(deb_file)
 	control = apt_pkg.ParseSection(extracts)
     except:
-	print "can't parse control info"
+	print_formatted_text("can't parse control info")
+	# TV-COMMENT: this will raise exceptions in two lines
 	control = ''
 
     deb_file.close()
@@ -173,23 +218,25 @@ def read_control (filename):
 	nf_match = re_nonfree.search(section_str)
 	if c_match :
 	    # contrib colour
-	    section = contrib_colour + section_str + end_colour
+	    section = colour_output(section_str, 'contrib')
 	elif nf_match :
 	    # non-free colour
-	    section = nonfree_colour + section_str + end_colour
+	    section = colour_output(section_str, 'nonfree')
 	else :
 	    # main
-	    section = main_colour +  section_str + end_colour
+	    section = colour_output(section_str, 'main')
     if control.has_key("Architecture"):
 	arch_str = control.Find("Architecture")
-   	arch = arch_colour + arch_str + end_colour
+   	arch = colour_output(arch_str, 'arch')
 
     if control.has_key("Maintainer"):
 	maintainer = control.Find("Maintainer")
    	localhost = re_localhost.search(maintainer)
 	if localhost:
 	    #highlight bad email
-	    maintainer = maintainer_colour + maintainer + end_colour
+	    maintainer = colour_output(maintainer, 'maintainer')
+	else:
+	    maintainer = escape_if_needed(maintainer)
 
     return (control, control_keys, section, depends, recommends, arch, maintainer)
 
@@ -200,10 +247,10 @@ def read_dsc (dsc_filename):
     try:
 	dsc = daklib.utils.parse_changes(dsc_filename)
     except:
-	print "can't parse control info"
+	print_formatted_text("can't parse control info")
     dsc_file.close()
 
-    filecontents = strip_pgp_signature(dsc_filename)
+    filecontents = escape_if_needed(strip_pgp_signature(dsc_filename))
 
     if dsc.has_key("build-depends"):
 	builddep = split_depends(dsc["build-depends"])
@@ -216,7 +263,7 @@ def read_dsc (dsc_filename):
 
     if dsc.has_key("architecture") :
 	if (dsc["architecture"] != "any"):
-	    newarch = arch_colour + dsc["architecture"] + end_colour
+	    newarch = colour_output(dsc["architecture"], 'arch')
 	    filecontents = re_arch.sub("Architecture: " + newarch, filecontents)
 
     return filecontents
@@ -240,21 +287,21 @@ def create_depends_string (depends_tree):
 	    if ql:
 		i = ql[0]
 
+		adepends = d['name']
+		if d['version'] != '' :
+		    adepends += " (%s)" % (d['version'])
+		
 		if i[2] == "contrib":
-		    result += contrib_colour + d['name']
+		    result += colour_output(adepends, "contrib")
 		elif i[2] == "non-free":
-		    result += nonfree_colour + d['name']
+		    result += colour_output(adepends, "nonfree")
 		else :
-		    result += main_colour + d['name']
-
-		if d['version'] != '' :
-		    result += " (%s)" % (d['version'])
-		result += end_colour
+		    result += colour_output(adepends, "main")
 	    else:
-		result += bold_colour + d['name']
+		adepends = d['name']
 		if d['version'] != '' :
-		    result += " (%s)" % (d['version'])
-		result += end_colour
+		    adepends += " (%s)" % (d['version'])
+		result += colour_output(adepends, "bold")
 	    or_count += 1
 	comma_count += 1
     return result
@@ -262,8 +309,9 @@ def create_depends_string (depends_tree):
 def output_deb_info(filename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
+    to_print = ""
     if control == '':
-	print "no control info"
+	print_formatted_text("no control info")
     else:
 	for key in control_keys :
 	    output = " " + key + ": "
@@ -280,14 +328,22 @@ def output_deb_info(filename):
 	    elif key == 'Description':
 		desc = control.Find(key)
 		desc = re_newlinespace.sub('\n ', desc)
-		output += desc
+		output += escape_if_needed(desc)
 	    else:
-		output += control.Find(key)
-	    print output
+		output += escape_if_needed(control.Find(key))
+            to_print += output + '\n'
+        print_escaped_text(to_print)
 
 def do_command (command, filename):
     o = os.popen("%s %s" % (command, filename))
-    print o.read()
+    print_formatted_text(o.read())
+
+def do_lintian (filename):
+    # lintian currently does not have html coloring, so dont use color for lintian (yet)
+    if use_html:
+        do_command("lintian --show-overrides", filename)
+    else:
+        do_command("lintian --show-overrides --color always", filename)
 
 def print_copyright (deb_filename):
     package = re_package.sub(r'\1', deb_filename)
@@ -295,12 +351,12 @@ def print_copyright (deb_filename):
     copyright = o.read()[:-1]
 
     if copyright == "":
-        print "WARNING: No copyright found, please check package manually."
+        print_formatted_text("WARNING: No copyright found, please check package manually.")
         return
 
     doc_directory = re_doc_directory.sub(r'\1', copyright)
     if package != doc_directory:
-        print "WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory)
+        print_formatted_text("WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory))
         return
 
     o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s 2>/dev/null" % (deb_filename, copyright))
@@ -308,19 +364,19 @@ def print_copyright (deb_filename):
     copyrightmd5 = md5.md5(copyright).hexdigest()
 
     if printed_copyrights.has_key(copyrightmd5) and printed_copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
-        print "NOTE: Copyright is the same as %s.\n" % \
-		(printed_copyrights[copyrightmd5])
+        print_formatted_text( "NOTE: Copyright is the same as %s.\n" % \
+		(printed_copyrights[copyrightmd5]))
     else:
 	printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
 
-    print copyright
+    print_formatted_text(copyright)
 
 def check_dsc (dsc_filename):
-    print "---- .dsc file for %s ----" % (dsc_filename)
+    headline(".dsc file for %s" % (dsc_filename))
     (dsc) = read_dsc(dsc_filename)
-    print dsc
-    print "---- lintian check for %s ----" % (dsc_filename)
-    do_command("lintian --show-overrides --color always", dsc_filename)
+    print_escaped_text(dsc)
+    headline("lintian check for %s" % (dsc_filename))
+    do_lintian(dsc_filename)
 
 def check_deb (deb_filename):
     filename = os.path.basename(deb_filename)
@@ -330,29 +386,29 @@ def check_deb (deb_filename):
     else:
 	is_a_udeb = 0
 
-    print "---- control file for %s ----" % (filename)
+    headline("control file for %s" % (filename))
     #do_command ("dpkg -I", deb_filename)
     output_deb_info(deb_filename)
 
     if is_a_udeb:
-	print "---- skipping lintian check for udeb ----"
+	headline("skipping lintian check for udeb")
 	print 
     else:
-	print "---- lintian check for %s ----" % (filename)
-        do_command ("lintian --show-overrides --color always", deb_filename)
-	print "---- linda check for %s ----" % (filename)
+	headline("lintian check for %s" % (filename))
+        do_lintian(deb_filename)
+	headline("---- linda check for %s ----" % (filename))
         do_command ("linda", deb_filename)
 
-    print "---- contents of %s ----" % (filename)
+    headline("contents of %s" % (filename))
     do_command ("dpkg -c", deb_filename)
 
     if is_a_udeb:
-	print "---- skipping copyright for udeb ----"
+	headline("skipping copyright for udeb")
     else:
-	print "---- copyright of %s ----" % (filename)
+	headline("copyright of %s" % (filename))
         print_copyright(deb_filename)
 
-    print "---- file listing of %s ----" % (filename)
+    headline("file listing of %s" % (filename))
     do_command ("ls -l", deb_filename)
 
 # Read a file, strip the signature and return the modified contents as
@@ -385,8 +441,8 @@ def strip_pgp_signature (filename):
 
 # Display the .changes [without the signature]
 def display_changes (changes_filename):
-    print "---- .changes file for %s ----" % (changes_filename)
-    print strip_pgp_signature(changes_filename)
+    headline(".changes file for %s" % (changes_filename))
+    print_formatted_text(strip_pgp_signature(changes_filename))
 
 def check_changes (changes_filename):
     display_changes(changes_filename)
@@ -405,9 +461,11 @@ def main ():
 
 #    Cnf = daklib.utils.get_conf()
 
-    Arguments = [('h',"help","Examine-Package::Options::Help")]
-    for i in [ "help" ]:
-	if not Cnf.has_key("Frenanda::Options::%s" % (i)):
+    Arguments = [('h',"help","Examine-Package::Options::Help"),
+                 ('H',"html-output","Examine-Package::Options::Html-Output"),
+                ]
+    for i in [ "Help", "Html-Output", "partial-html" ]:
+	if not Cnf.has_key("Examine-Package::Options::%s" % (i)):
 	    Cnf["Examine-Package::Options::%s" % (i)] = ""
 
     args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
@@ -420,11 +478,11 @@ def main ():
 
     for file in args:
         try:
-            # Pipe output for each argument through less
-            less_fd = os.popen("less -R -", 'w', 0)
-	    # -R added to display raw control chars for colour
-            sys.stdout = less_fd
-
+	    if not Options["Html-Output"]:
+		# Pipe output for each argument through less
+		less_fd = os.popen("less -R -", 'w', 0)
+		# -R added to display raw control chars for colour
+		sys.stdout = less_fd
             try:
                 if file.endswith(".changes"):
                     check_changes(file)
@@ -435,9 +493,10 @@ def main ():
                 else:
                     daklib.utils.fubar("Unrecognised file type: '%s'." % (file))
             finally:
-                # Reset stdout here so future less invocations aren't FUBAR
-                less_fd.close()
-                sys.stdout = stdout_fd
+		if not Options["Html-Output"]:
+		    # Reset stdout here so future less invocations aren't FUBAR
+		    less_fd.close()
+		    sys.stdout = stdout_fd
         except IOError, e:
             if errno.errorcode[e.errno] == 'EPIPE':
                 daklib.utils.warn("[examine-package] Caught EPIPE; skipping.")

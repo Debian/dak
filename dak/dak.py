@@ -46,6 +46,8 @@ def init():
          "Archive sanity checks"),
         ("queue-report",
          "Produce a report on NEW and BYHAND packages"),
+        ("show-new",
+         "Output html for packages in NEW"),
         
         ("rm",
          "Remove packages from suites"),
