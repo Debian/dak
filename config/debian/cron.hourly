@@ -10,3 +10,4 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 date -u > $ftpdir/project/trace/ftp-master.debian.org
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
+dak show-new > /dev/null
