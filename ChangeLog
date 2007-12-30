@@ -1,3 +1,8 @@
+2007-12-30  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/examine_package.py (print_copyright): ignore stderr when
+	finding copyright file.
+
 2007-12-28  Anthony Towns  <ajt@debian.org>
 
 	* daklib/utils.py (check_signature): add NOTATION_DATA and

@@ -303,7 +303,7 @@ def print_copyright (deb_filename):
         print "WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory)
         return
 
-    o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s" % (deb_filename, copyright))
+    o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s 2>/dev/null" % (deb_filename, copyright))
     copyright = o.read()
     copyrightmd5 = md5.md5(copyright).hexdigest()
 
