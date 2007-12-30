@@ -621,7 +621,7 @@ def do_new():
     done = 0
     while not done:
         # Find out what's new
-        new = daklib.utils.determine_new(changes, files, projectB)
+        new = daklib.queue.determine_new(changes, files, projectB)
 
         if not new:
             break

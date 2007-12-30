@@ -32,9 +32,9 @@
 
 ################################################################################
 
-import errno, os, pg, re, sys, md5, time
+import errno, os, pg, re, sys, md5
 import apt_pkg, apt_inst
-import daklib.database, daklib.utils
+import daklib.database, daklib.utils, daklib.queue
 
 ################################################################################
 
@@ -99,7 +99,7 @@ def escape_if_needed(s):
   
 def headline(s, level=2):
   if use_html:
-    print "<h%d>%s</h%d>" % (level,html_escape(s),level)
+    print "<h%d>%s</h%d>" % (level, html_escape(s), level)
   else:
     print "---- %s ----" % (s)
 
@@ -462,7 +462,7 @@ def main ():
 #    Cnf = daklib.utils.get_conf()
 
     Arguments = [('h',"help","Examine-Package::Options::Help"),
-                 ('H',"Html-output","Examine-Package::Options::Html-Output"),
+                 ('H',"html-output","Examine-Package::Options::Html-Output"),
                 ]
     for i in [ "Help", "Html-Output", "partial-html" ]:
 	if not Cnf.has_key("Examine-Package::Options::%s" % (i)):

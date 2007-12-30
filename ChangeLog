@@ -1,6 +1,8 @@
 2007-12-30  Joerg Jaspert  <joerg@debian.org>
 
-	* dak/dak.py (init): add show-new
+	* dak/dak.py (init): add show-new. This is based on a patch
+	submitted by Thomas Viehmann in Bug #408318, but large parts of
+	handling it are rewritten and show-new is done by me.
 
 	* dak/queue_report.py (table_row): Add link to generated html page
 	for NEW package.
@@ -26,6 +28,7 @@
 	(do_lintian): new function
 	(check_deb): use it
 	(output_deb_info): Use print_escaped_text, not print_formatted_text.
+	Also import daklib.queue, determine_new now lives there
 
 	Also add a variable to see if we want html output. Default is
 	disabled, show_new enables it for its use.
@@ -38,7 +41,7 @@
 	(check_valid): Moved out of here.
 	(get_type): Moved out of here.
 
-	* daklib/utils.py (determine_new): Moved here.
+	* daklib/queue.py (determine_new): Moved here.
 	(check_valid): Moved here.
 	(get_type): Moved here.
 

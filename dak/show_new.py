@@ -25,8 +25,8 @@
 
 ################################################################################
 
-import copy, errno, os, stat, sys, time
-import apt_pkg, apt_inst
+import copy, os, sys, time
+import apt_pkg
 import examine_package
 import daklib.database
 import daklib.queue 
@@ -106,7 +106,7 @@ def do_pkg(changes_file):
     changes["suite"] = copy.copy(changes["distribution"])
 
     # Find out what's new
-    new = daklib.utils.determine_new(changes, files, projectB, 0)
+    new = daklib.queue.determine_new(changes, files, projectB, 0)
 
     stdout_fd = sys.stdout
 
