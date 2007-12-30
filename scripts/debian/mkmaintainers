@@ -7,17 +7,8 @@ set -e
 . $SCRIPTVARS
 cd $base/misc/
 
-nonusmaint="$base/misc/Maintainers_Versions-non-US"
-
-
-if wget -T15 -q -O Maintainers_Versions-non-US.gz http://non-us.debian.org/indices-non-US/Maintainers_Versions.gz; then
-	rm -f $nonusmaint
-	gunzip -c ${nonusmaint}.gz > $nonusmaint
-	rm -f ${nonusmaint}.gz
-fi
-
 cd $indices
-dak make-maintainers $nonusmaint $configdir/pseudo-packages.maintainers | sed -e "s/~[^  ]*\([   ]\)/\1/"  | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
+dak make-maintainers $configdir/pseudo-packages.maintainers | sed -e "s/~[^  ]*\([   ]\)/\1/"  | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
 
 set +e
 cmp .new-maintainers Maintainers >/dev/null

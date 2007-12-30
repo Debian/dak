@@ -471,9 +471,6 @@ distribution."""
                 section = files[file]["section"]
                 override_section = files[file]["override section"]
                 if section.lower() != override_section.lower() and section != "-":
-                    # Ignore this; it's a common mistake and not worth whining about
-                    if section.lower() == "non-us/main" and override_section.lower() == "non-us":
-                        continue
                     summary += "%s: package says section is %s, override says %s.\n" % (file, section, override_section)
                 priority = files[file]["priority"]
                 override_priority = files[file]["override priority"]
@@ -672,10 +669,6 @@ distribution."""
             return None
         component_id = database.get_component_id(component)
         type_id = database.get_override_type_id(type)
-
-        # FIXME: nasty non-US speficic hack
-        if component.lower().startswith("non-us/"):
-            component = component[7:]
 
         q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND type = %s AND o.section = s.id AND o.priority = p.id"
                            % (package, suite_id, component_id, type_id))

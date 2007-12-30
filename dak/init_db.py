@@ -180,7 +180,6 @@ def do_section():
                 prefix = ""
         else:
             prefix = ""
-            component = component.replace("non-US/", "")
             if component != "main":
                 suffix = '/' + component
             else:

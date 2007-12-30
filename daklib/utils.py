@@ -104,17 +104,6 @@ def extract_component_from_section(section):
 
     if section.find('/') != -1:
         component = section.split('/')[0]
-    if component.lower() == "non-us" and section.find('/') != -1:
-        s = component + '/' + section.split('/')[1]
-        if Cnf.has_key("Component::%s" % s): # Avoid e.g. non-US/libs
-            component = s
-
-    if section.lower() == "non-us":
-        component = "non-US/main"
-
-    # non-US prefix is case insensitive
-    if component.lower()[:6] == "non-us":
-        component = "non-US"+component[6:]
 
     # Expand default component
     if component == "":
@@ -122,8 +111,6 @@ def extract_component_from_section(section):
             component = section
         else:
             component = "main"
-    elif component == "non-US":
-        component = "non-US/main"
 
     return (section, component)
 
@@ -386,8 +373,6 @@ def send_mail (message, filename=""):
 def poolify (source, component):
     if component:
 	component += '/'
-    # FIXME: this is nasty
-    component = component.lower().replace("non-us/", "non-US/")
     if source[:3] == "lib":
 	return component + source[:4] + '/' + source + '/'
     else:

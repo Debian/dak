@@ -27,7 +27,7 @@ if [ ! -e "$ftpdir/Archive_Maintenance_In_Progress" ]; then
 		for a in $ARCHS; do
 			cp /org/wanna-build/tmp/Packages.unstable.$a-old Packages
 			gzip -cd /org/incoming.debian.org/buildd/Packages.gz >> Packages
-			quinn-diff -i -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -A $a 2>/dev/null | perl -pi -e 's#^(non-US/)?(non-free)/.*$##msg' | wanna-build -b $a/build-db --merge-partial-quinn 2> /dev/null
+			quinn-diff -i -a /org/buildd.debian.org/web/quinn-diff/Packages-arch-specific -A $a 2>/dev/null | perl -pi -e 's#^(non-free)/.*$##msg' | wanna-build -b $a/build-db --merge-partial-quinn 2> /dev/null
 			wanna-build -A $a -b $a/build-db --merge-packages Packages 2>/dev/null
 		done
 		rm -f Sources Packages

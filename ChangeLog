@@ -3,6 +3,31 @@
 	* dak/examine_package.py (print_copyright): ignore stderr when
 	finding copyright file.
 
+	* dak/init_db.py (do_section): Remove non-US code
+
+	* dak/make_overrides.py (main): ditto
+
+	* dak/process_new.py (determine_new): ditto
+
+	* daklib/queue.py (Upload.in_override_p),
+	(Upload.check_override): ditto
+
+	* daklib/utils.py (extract_component_from_section):,
+	(poolify): ditto
+
+	* dak/import_archive.py (update_section): ditto
+
+	* dak/symlink_dists.py (fix_component_section): ditto
+
+	* scripts/debian/mkmaintainers: ditto
+
+	* scripts/debian/update-mirrorlists (masterlist): ditto
+
+	* config/debian-non-US/*: Remove subdir
+
+	* scripts/debian/update-readmenonus: Removed.
+
+
 2007-12-28  Anthony Towns  <ajt@debian.org>
 
 	* daklib/utils.py (check_signature): add NOTATION_DATA and

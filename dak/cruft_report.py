@@ -23,7 +23,7 @@
 #   you might as well write some letters to God about how unfair entropy
 #   is while you're at it.'' -- 20020802143104.GA5628@azure.humbug.org.au
 
-## TODO:  fix NBS looping for version, implement Dubious NBS, fix up output of duplicate source package stuff, improve experimental ?, add support for non-US ?, add overrides, avoid ANAIS for duplicated packages
+## TODO:  fix NBS looping for version, implement Dubious NBS, fix up output of duplicate source package stuff, improve experimental ?, add overrides, avoid ANAIS for duplicated packages
 
 ################################################################################
 

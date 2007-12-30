@@ -115,7 +115,7 @@ def main ():
                     suffix = ".debian-installer"
                 elif otype == "dsc":
                     suffix = ".src"
-                filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, component.replace("non-US/", ""), suffix)
+                filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, component, suffix)
                 output_file = daklib.utils.open_file(filename, 'w')
                 do_list(output_file, suite, component, otype)
                 output_file.close()

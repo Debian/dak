@@ -20,10 +20,5 @@ if [ ! -f $ftpdir/README.mirrors.html -o $masterlist -nt $ftpdir/README.mirrors.
 	rm -f $ftpdir/README.mirrors.html $ftpdir/README.mirrors.txt
 	$prog -m $masterlist -t html > $ftpdir/README.mirrors.html
 	$prog -m $masterlist -t text > $ftpdir/README.mirrors.txt
-	if [ ! -f $ftpdir/README.non-US -o $masterlist -nt $ftpdir/README.non-US ] ; then
-		rm -f $ftpdir/README.non-US
-		$prog -m $masterlist -t nonus > $ftpdir/README.non-US
-		install -m 664 $ftpdir/README.non-US $webdir
-	fi
 	echo Updated archive version of mirrors file
 fi
