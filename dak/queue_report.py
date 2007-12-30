@@ -239,7 +239,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes):
     print "<td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, source)
     print "<td valign=\"top\" class=\"%s\">" % (tdclass)
     for vers in version.split():
-        print "%s<br>" % (vers)
+        print "<a href=\"/new/%s_%s.html\">%s</a><br>" % (source, vers, vers)
     print "</td><td valign=\"top\" class=\"%s\">%s</td><td valign=\"top\" class=\"%s\">" % (tdclass, arch, tdclass)
     for dist in distribution:
         print "%s<br>" % (dist)
