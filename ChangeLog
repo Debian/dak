@@ -1,5 +1,7 @@
 2007-12-30  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/dak.py (init): add show-new
+
 	* dak/queue_report.py (table_row): Add link to generated html page
 	for NEW package.
 
