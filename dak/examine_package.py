@@ -391,7 +391,7 @@ def check_deb (deb_filename):
     output_deb_info(deb_filename)
 
     if is_a_udeb:
-	headline("skipping lintian check for µdeb")
+	headline("skipping lintian check for udeb")
 	print 
     else:
 	headline("lintian check for %s" % (filename))
@@ -403,7 +403,7 @@ def check_deb (deb_filename):
     do_command ("dpkg -c", deb_filename)
 
     if is_a_udeb:
-	headline("skipping copyright for µdeb")
+	headline("skipping copyright for udeb")
     else:
 	headline("copyright of %s" % (filename))
         print_copyright(deb_filename)

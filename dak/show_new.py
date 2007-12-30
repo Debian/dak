@@ -117,7 +117,7 @@ def do_pkg(changes_file):
         sys.stdout = open(os.path.join(Cnf["Show-New::HTMLPath"],htmlname),"w")
         html_header(changes["source"])
 
-        daklib.utils.check_valid(new)
+        daklib.queue.check_valid(new)
         examine_package.display_changes(Upload.pkg.changes_file)
 
         for pkg in new.keys():
