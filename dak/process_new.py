@@ -256,7 +256,7 @@ class Priority_Completer:
 ################################################################################
 
 def print_new (new, indexed, file=sys.stdout):
-    daklib.utils.check_valid(new)
+    daklib.queue.check_valid(new)
     broken = 0
     index = 0
     for pkg in new.keys():
