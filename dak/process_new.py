@@ -92,7 +92,7 @@ def recheck():
         elif files[file]["type"] == "dsc":
             reject(Upload.check_source_against_db(file))
             (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(file)
-            reject(reject_msg)
+            reject(reject_msg, "")
 
     if reject_message.find("Rejected") != -1:
         answer = "XXX"

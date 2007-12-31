@@ -1,3 +1,9 @@
+2007-12-31  Anthony Towns  <ajt@debian.org>
+
+	* dak/process_new.py (recheck): pass "" for prefix_str to reject()
+	when processing result of check_dsc_against_db so we don't promote
+	warnings to rejections.
+
 2007-12-30  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/dak.py (init): add show-new. This is based on a patch
