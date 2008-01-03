@@ -9,6 +9,8 @@ LOCKDAILY=""
 LOCKFILE="$lockdir/unchecked.lock"
 NOTICE="$lockdir/daily.lock"
 
+if [ -e $NOTICE ]; then exit 0; fi
+
 cleanup() {
   rm -f "$LOCKFILE"
   if [ ! -z "$LOCKDAILY" ]; then
