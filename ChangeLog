@@ -2,6 +2,7 @@
 
 	* dak/examine_package.py (do_lintian): lintian now supports html
 	coloring, so use it.
+	(do_command): Dont escape html chars if param escaped = 1
 
 2007-12-31  Anthony Towns  <ajt@debian.org>
 

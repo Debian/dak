@@ -334,15 +334,18 @@ def output_deb_info(filename):
             to_print += output + '\n'
         print_escaped_text(to_print)
 
-def do_command (command, filename):
+def do_command (command, filename, escaped=0):
     o = os.popen("%s %s" % (command, filename))
-    print_formatted_text(o.read())
+    if escaped:
+        print_escaped_text(o.read())
+    else:
+        print_formatted_text(o.read())
 
 def do_lintian (filename):
     if use_html:
-        do_command("lintian --show-overrides --color html", filename)
+        do_command("lintian --show-overrides --color html", filename, 1)
     else:
-        do_command("lintian --show-overrides --color always", filename)
+        do_command("lintian --show-overrides --color always", filename, 1)
 
 def print_copyright (deb_filename):
     package = re_package.sub(r'\1', deb_filename)
