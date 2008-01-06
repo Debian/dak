@@ -339,9 +339,8 @@ def do_command (command, filename):
     print_formatted_text(o.read())
 
 def do_lintian (filename):
-    # lintian currently does not have html coloring, so dont use color for lintian (yet)
     if use_html:
-        do_command("lintian --show-overrides", filename)
+        do_command("lintian --show-overrides --color html", filename)
     else:
         do_command("lintian --show-overrides --color always", filename)
 
