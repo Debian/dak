@@ -3,6 +3,12 @@
 	* dak/examine_package.py (check_deb): Remove linda call. It
 	provides no added benefit to lintian anymore.
 
+2008-01-06  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/examine_package.py (do_lintian): lintian now supports html
+	coloring, so use it.
+	(do_command): Dont escape html chars if param escaped = 1
+
 2007-12-31  Anthony Towns  <ajt@debian.org>
 
 	* dak/process_new.py (recheck): pass "" for prefix_str to reject()
