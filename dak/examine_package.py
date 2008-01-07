@@ -396,8 +396,6 @@ def check_deb (deb_filename):
     else:
 	headline("lintian check for %s" % (filename))
         do_lintian(deb_filename)
-	headline("---- linda check for %s ----" % (filename))
-        do_command ("linda", deb_filename)
 
     headline("contents of %s" % (filename))
     do_command ("dpkg -c", deb_filename)
