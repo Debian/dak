@@ -356,7 +356,6 @@ def main ():
     if suite != "experimental":
         check_components.append('main/debian-installer');
     for component in check_components:
-        print component
         architectures = filter(daklib.utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
