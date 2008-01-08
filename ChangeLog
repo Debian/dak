@@ -1,3 +1,8 @@
+2008-01-09  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/cruft_report.py (main): Make it possible to look at
+	experimental too, especially NBS
+
 2008-01-07  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/examine_package.py (check_deb): Remove linda call. It
