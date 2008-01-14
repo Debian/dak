@@ -1285,7 +1285,8 @@ def queue_unembargo (summary, short_summary):
 ################################################################################
 
 def is_embargo ():
-    return 0
+    # if embargoed queues are enabled always embargo
+    return 1
 
 def queue_embargo (summary, short_summary):
     print "Moving to EMBARGOED holding area."
