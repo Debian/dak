@@ -387,7 +387,8 @@ def check_files():
 
     for file in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
-        for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates" ]:
+        for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+	    if not Cnf.has_key("Dir::Queue::%s" % (dir)): continue
             if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+file):
                 reject("%s file already exists in the %s directory." % (file, dir))
         if not daklib.utils.re_taint_free.match(file):
