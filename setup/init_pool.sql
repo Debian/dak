@@ -34,10 +34,17 @@ CREATE TABLE uid (
        name TEXT
 );
 
+CREATE TABLE keyrings (
+       id SERIAL PRIMARY KEY,
+       name TEXT
+);
+
+
 CREATE TABLE fingerprint (
        id SERIAL PRIMARY KEY,
        fingerprint TEXT UNIQUE NOT NULL,
-       uid INT4 REFERENCES uid
+       uid INT4 REFERENCES uid,
+       keyring INT4 REFERENCES keyrings
 );
 
 CREATE TABLE location (
