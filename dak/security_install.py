@@ -84,9 +84,6 @@ def do_upload(changes_files):
         if changes["architecture"].has_key("amd64"):
             print "Not uploading amd64 part to ftp-master\n"
             continue
-        if changes["distribution"].has_key("oldstable"):
-            print "Not uploading oldstable-security changes to ftp-master\n"
-            continue
         # Build the file list for this .changes file
         for file in files.keys():
             poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
@@ -328,6 +325,9 @@ def spawn(command):
 
 
 def main():
+    print "Disabled. See your team@security email, and/or contact aj on OFTC."
+    sys.exit(1)
+
     (advisory_number, changes_files) = init()
 
     if not Options["No-Action"]:
@@ -340,7 +340,7 @@ def main():
 
     os.chdir(Cnf["Dir::Queue::Accepted"])
     print "Installing packages into the archive..."
-    spawn("dak process-accepted -pa %s" % (Cnf["Dir::Dak"], " ".join(changes_files)))
+    spawn("dak process-accepted -pa %s" % (" ".join(changes_files)))
     os.chdir(Cnf["Dir::Dak"])
     print "Updating file lists for apt-ftparchive..."
     spawn("dak make-suite-file-list")
