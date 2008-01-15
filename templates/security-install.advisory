@@ -1,15 +1,12 @@
 From: __DAK_ADDRESS__
 To: __WHOAMI__ <dak@security.debian.org>
 __BCC__
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
 Subject: Template Advisory __ADVISORY__
 
 ------------------------------------------------------------------------
-Debian Security Advisory __ADVISORY__              security@debian.org
+Debian Security Advisory __ADVISORY__                  security@debian.org
 http://www.debian.org/security/                         __WHOAMI__
-__DATE__
+__DATE__                   http://www.debian.org/security/faq
 ------------------------------------------------------------------------
 
 Package        : __PACKAGE__
@@ -21,20 +18,27 @@ CERT advisory  : XXX
 BugTraq ID     : XXX
 Debian Bug     : XXX
 
-...
+Several local/remote vulnerabilities have been discovered in...
+The Common
+Vulnerabilities and Exposures project identifies the following problems:
 
 [single issue]
-For the stable distribution (woody), this problem has been fixed in version XXX
+Foo discovered that
 
-For the old stable distribution (potato), this problem has been fixed in
-version XXX
+
+[single issue]
+For the stable distribution (etch), this problem has been fixed in version XXX
+__PACKAGE__
+
+For the old stable distribution (sarge), this problem has been fixed in
+version __PACKAGE__
 
 [multiple issues]
-For the stable distribution (woody), these problems have been fixed in version
-XXX
+For the stable distribution (etch), these problems have been fixed in version
+__PACKAGE__
 
-For the old stable distribution (potato), these problems have been fixed in
-version XXX
+For the old stable distribution (sarge), these problems have been fixed in
+version __PACKAGE__
 
 
 We recommend that you upgrade your __PACKAGE__ package.
@@ -57,6 +61,14 @@ apt-get upgrade
 
 You may use an automated update by adding the resources from the
 footer to the proper configuration.
+
+
+Debian GNU/Linux 3.1 alias sarge
+--------------------------------
+
+Debian GNU/Linux 4.0 alias etch
+-------------------------------
+
 
 __ADVISORY_TEXT__
 
