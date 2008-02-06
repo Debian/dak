@@ -405,7 +405,7 @@ def check_files():
             files[file]["type"] = "unreadable"
             continue
         # If it's byhand skip remaining checks
-        if files[file]["section"] == "byhand" or files[file]["section"][4:] == "raw-":
+        if files[file]["section"] == "byhand" or files[file]["section"][:4] == "raw-":
             files[file]["byhand"] = 1
             files[file]["type"] = "byhand"
         # Checks for a binary package...
