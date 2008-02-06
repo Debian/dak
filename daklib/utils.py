@@ -1009,6 +1009,9 @@ used."""
         reject("no signature found in %s." % (sig_filename))
         bad = 1
     if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
+        args = keywords["KEYEXPIRED"]
+        if len(args) >= 1:
+            key = args[0]
         reject("The key (0x%s) used to sign %s has expired." % (key, sig_filename))
         bad = 1
 

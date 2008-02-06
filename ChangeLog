@@ -1,3 +1,8 @@
+2008-02-06  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/utils.py (check_signature): Make variable key available,
+	so we can access it.
+
 2008-01-07  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/examine_package.py (check_deb): Remove linda call. It
