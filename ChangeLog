@@ -1,3 +1,8 @@
+2008-02-09  Christoph Berg <myon@debian.org>
+
+	* daklib/queue.py (get_type): fubar does not exist in global
+	namespace.
+
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 
 	* daklib/utils.py (check_signature): Make variable key available,
