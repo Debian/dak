@@ -1,3 +1,12 @@
+2008-02-09  Christoph Berg <myon@debian.org>
+
+	* setup/add_constraints.sql setup/init_pool.sql: Add changedby column
+	to source table, and move src_uploaders after source so the REFERNCES
+	clause works.
+	* dak/process_accepted.py (install): Fill the changedby column from
+	the information found in the .changes. This will allow to identify
+	NMUs and sponsored uploads more precisely in tools querying projectb.
+
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 
 	* daklib/utils.py (check_signature): Make variable key available,

@@ -28,12 +28,6 @@ CREATE TABLE maintainer (
        name TEXT UNIQUE NOT NULL
 );
 
-CREATE TABLE src_uploaders (
-       id SERIAL PRIMARY KEY,
-       source INT4 NOT NULL REFERENCES source,
-       maintainer INT4 NOT NULL REFERENCES maintainer
-);
-
 CREATE TABLE uid (
        id SERIAL PRIMARY KEY,
        uid TEXT UNIQUE NOT NULL,
@@ -78,10 +72,17 @@ CREATE TABLE source (
         source TEXT NOT NULL,
         version TEXT NOT NULL,
         maintainer INT4 NOT NULL, -- REFERENCES maintainer
+        changedby INT4 NOT NULL, -- REFERENCES maintainer
         file INT4 UNIQUE NOT NULL, -- REFERENCES files
 	install_date TIMESTAMP NOT NULL,
 	sig_fpr INT4 NOT NULL, -- REFERENCES fingerprint
 	unique (source, version)
+);
+
+CREATE TABLE src_uploaders (
+       id SERIAL PRIMARY KEY,
+       source INT4 NOT NULL REFERENCES source,
+       maintainer INT4 NOT NULL REFERENCES maintainer
 );
 
 CREATE TABLE dsc_files (
