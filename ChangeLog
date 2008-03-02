@@ -1,5 +1,8 @@
 2008-03-02  Joerg Jaspert  <joerg@debian.org>
 
+	* daklib/database.py (get_testing_version): Added. Returns the
+	version for the source in testing, if any
+
 	* dak/process_unchecked.py (check_transition): Added. Checks if a
 	release team member defined a transition, and rejects based on
 	that data.
@@ -9,6 +12,7 @@
 	(check_transition): Moved out of here, into daklib/queue
 	(process_it): Call check_transitions only if
 	changes[architecture] has source included.
+	(check_transition): Now call the database.get_testing_version
 
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 
