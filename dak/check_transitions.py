@@ -62,6 +62,7 @@ def init():
 
 def usage (exit_code=0):
     print """Usage: check_transitions [OPTION]...
+    Check the release managers transition file for correctness and outdated transitions
   -h, --help                show this help and exit.
   -n, --no-action           don't do anything"""
     sys.exit(exit_code)
@@ -95,7 +96,7 @@ def main():
     to_remove = []
     # Now look through all defined transitions
     for trans in transitions:
-        t = transition[trans]
+        t = transitions[trans]
         source = t["source"]
         new_vers = t["new"]
 
@@ -124,9 +125,13 @@ Looking at transition: %s
 
     if to_dump:
         for remove in to_remove:
-            del transitions[remove]
-        destfile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'w')
-        dump(transitions, destfile)
+            if Options["No-Action"]:
+                print "I: I would remove the %s transition" % (remove)
+            else:
+                del transitions[remove]
+        if not Options["No-Action"]:
+            destfile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'w')
+            dump(transitions, destfile)
 
 ################################################################################
 
