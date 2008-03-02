@@ -1,5 +1,7 @@
 2008-03-02  Joerg Jaspert  <joerg@debian.org>
 
+	* debian/control (Suggests): Add python-syck to Depends:
+
 	* dak/dak.py (init): Tell it about check_transitions
 
 	* dak/check_transitions.py (usage): Added, checks the transitions

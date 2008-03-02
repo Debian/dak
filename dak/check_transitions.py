@@ -44,25 +44,29 @@ def init():
 
     Cnf = daklib.utils.get_conf()
 
-    Arguments = [('h',"help","Dinstall::Options::Help"),
-                 ('n',"no-action","Dinstall::Options::No-Action")]
+    Arguments = [('h',"help","Check-Transitions::Options::Help"),
+                 ('n',"no-action","Check-Transitions::Options::No-Action")]
 
     for i in ["help", "no-action"]:
-        Cnf["Dinstall::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Check-Transitions::Options::%s" % (i)):
+            Cnf["Check-Transitions::Options::%s" % (i)] = ""
+
+    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+
+    Options = Cnf.SubTree("Check-Transitions::Options")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
     
-    Options = Cnf.SubTree("Dinstall::Options")
 
-    if Options["Help"]:
+    if Options["help"]:
         usage()
 
 ################################################################################
 
 def usage (exit_code=0):
     print """Usage: check_transitions [OPTION]...
-    Check the release managers transition file for correctness and outdated transitions
+  Check the release managers transition file for correctness and outdated transitions
   -h, --help                show this help and exit.
   -n, --no-action           don't do anything"""
     sys.exit(exit_code)
@@ -108,28 +112,34 @@ Looking at transition: %s
  Source:      %s
  New Version: %s
  Responsible: %s
- Reason:      %s
+ Description: %s
  Blocked Packages (total: %d): %s
 """ % (trans, source, new_vers, t["rm"], t["reason"], len(t["packages"]), ", ".join(t["packages"]))
 
-        if curvers and apt_pkg.VersionCompare(new_vers, curvers) == 1:
-            # This is still valid, the current version in database is older than
-            # the new version we wait for
-            print "This transition is still ongoing"
+        if curvers == None:
+            # No package in testing
+            print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
-            print "This transition is over, the target package reached testing, removing"
-            print "%s wanted version: %s, has %s" % (source, new_vers, curvers)
-            to_remove.append(trans)
-            to_dump = 1
+            compare = apt_pkg.VersionCompare(curvers, new_vers)
+            print "Apt compare says: %s" % (compare)
+            if compare < 0:
+                # This is still valid, the current version in database is older than
+                # the new version we wait for
+                print "This transition is still ongoing, we currently have version %s" % (curvers)
+            else:
+                print "This transition is over, the target package reached testing, removing"
+                print "%s wanted version: %s, has %s" % (source, new_vers, curvers)
+                to_remove.append(trans)
+                to_dump = 1
         print "-------------------------------------------------------------------------"
 
     if to_dump:
         for remove in to_remove:
-            if Options["No-Action"]:
+            if Options["no-action"]:
                 print "I: I would remove the %s transition" % (remove)
             else:
                 del transitions[remove]
-        if not Options["No-Action"]:
+        if not Options["no-action"]:
             destfile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'w')
             dump(transitions, destfile)
 

@@ -1030,10 +1030,12 @@ def check_transition(sourcepkg):
 
         # Will be None if nothing is in testing.
         curvers = daklib.database.get_testing_version(source)
+        if not curvers == None:
+            compare = apt_pkg.VersionCompare(curvers, new_vers)
 
-        if curvers and apt_pkg.VersionCompare(new_vers, curvers) == 1:
-            # This is still valid, the current version in database is older than
-            # the new version we wait for
+        if curvers == None or compare < 0:
+            # This is still valid, the current version in testing is older than
+            # the new version we wait for, or there is none in testing yet
 
             # Check if the source we look at is affected by this.
             if sourcepkg in t['packages']:
