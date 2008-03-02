@@ -134,6 +134,72 @@ def check_valid(new):
            (priority != "source" and type == "dsc"):
             new[pkg]["priority id"] = -1
 
+################################################################################
+
+# We reject packages if the release team defined a transition for them
+def check_transition(sourcepkg, cleanup=0):
+    to_dump = 0
+
+    # Only check if there is a file defined (and existant) with checks. It's a little bit
+    # specific to Debian, not much use for others, so return early there.
+    if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions") and
+    not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
+        return
+    
+    # Parse the yaml file
+    sourcefile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'r')
+    try:
+        transitions = load(sourcefile)
+    except error, msg:
+        utils.warn("Not checking transitions, the transitions file is broken: %s." % (msg))
+        return
+
+    # Now look through all defined transitions
+    for trans in transition:
+        t = transition[trans]
+        # We check if the transition is still valid
+        # If not we remove the whole setting from the dictionary and later dump it,
+        # so we don't process it again.
+        source = t["source"]
+        new_vers = t["new"]
+        q = Upload.projectB.query("""
+        SELECT s.version FROM source s, suite su, src_associations sa
+        WHERE sa.source=s.id
+          AND sa.suite=su.id
+          AND su.suite_name='testing'
+          AND s.source='%s'"""
+                                % (source))
+        ql = q.getresult()
+        if ql and apt_pkg.VersionCompare(new_vers, ql[0][0]) == 1:
+            # This is still valid, the current version in database is older than
+            # the new version we wait for
+
+            # Check if the source we look at is affected by this.
+            if sourcepkg in t['packages']:
+                # The source is affected, lets reject it.
+                reject("""%s: part of the %s transition.
+
+                Your package is part of a testing transition to get %s migrated.
+
+                Transition description: %s
+
+                This transition will finish when %s, version %s, reaches testing.
+                This transition is managed by the Release Team and %s
+                is the Release-Team member responsible for it.
+                Please contact them or debian-release@lists.debian.org if you
+                need further assistance.
+                """
+                       % (sourcepkg, trans, source, t["reason"], source, new_vers, t["rm"]))
+                return 0
+        else:
+            # We either have the wanted or a newer version in testing, or the package got
+            # removed completly. In that case we don't need to keep the transition blocker
+            del transition[trans]
+            to_dump = 1
+
+    if cleanup and to_dump:
+        destfile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'w')
+        dump(transition, destfile)
 
 ###############################################################################
 

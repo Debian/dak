@@ -1,9 +1,19 @@
 2008-03-02  Joerg Jaspert  <joerg@debian.org>
 
+	* daklib/queue.py (check_transition): Added in here
+	Modified so it only cleans up when called with cleanup
+	parameter. Which will be called from a seperate script for the
+	release managers.
+
 	* dak/process_unchecked.py (check_transition): Added. Checks if a
 	release team member defined a transition, and rejects based on
 	that data.
 	(process_it): Use it.
+	(check_transition): Warn on broken transitions file and return,
+	not doing anything.
+	(check_transition): Moved out of here, into daklib/queue
+	(process_it): Call it in daklib.queue, but only if
+	changes[architecture] has source included.
 
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 
