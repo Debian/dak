@@ -23,7 +23,7 @@
 
 ################################################################################
 
-import os, sys
+import os, pg, sys
 import apt_pkg
 import daklib.database
 import daklib.utils
@@ -70,6 +70,9 @@ def usage (exit_code=0):
 
 def main():
     global Cnf
+
+    init()
+    
     # Only check if there is a file defined (and existant) with checks. It's a little bit
     # specific to Debian, not much use for others, so return early there.
     if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions") or not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
@@ -79,8 +82,9 @@ def main():
     
     # Parse the yaml file
     sourcefile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'r')
+    sourcecontent = sourcefile.read()
     try:
-        transitions = load(sourcefile)
+        transitions = load(sourcecontent)
     except error, msg:
         # This shouldn't happen, the release team has a wrapper to check the file, but better
         # safe then sorry
@@ -88,9 +92,9 @@ def main():
         sys.exit(2)
 
     to_dump = 0
-
+    to_remove = []
     # Now look through all defined transitions
-    for trans in transition:
+    for trans in transitions:
         t = transition[trans]
         source = t["source"]
         new_vers = t["new"]
@@ -99,15 +103,13 @@ def main():
         curvers = daklib.database.get_testing_version(source)
 
         print """
-        Looking at transition: %s
-         Source:      %s
-         New Version: %s
-         Responsible: %s
-         Reason:      %s
-         Blocked Packages (total: %d):
-        """ % (trans, source, new_vers, t["rm"], t["reason"])
-        for i in t["packages"]:
-            print " %s" % (i)
+Looking at transition: %s
+ Source:      %s
+ New Version: %s
+ Responsible: %s
+ Reason:      %s
+ Blocked Packages (total: %d): %s
+""" % (trans, source, new_vers, t["rm"], t["reason"], len(t["packages"]), ", ".join(t["packages"]))
 
         if curvers and apt_pkg.VersionCompare(new_vers, curvers) == 1:
             # This is still valid, the current version in database is older than
@@ -116,13 +118,15 @@ def main():
         else:
             print "This transition is over, the target package reached testing, removing"
             print "%s wanted version: %s, has %s" % (source, new_vers, curvers)
-            del transition[trans]
+            to_remove.append(trans)
             to_dump = 1
         print "-------------------------------------------------------------------------"
 
     if to_dump:
+        for remove in to_remove:
+            del transitions[remove]
         destfile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'w')
-        dump(transition, destfile)
+        dump(transitions, destfile)
 
 ################################################################################
 

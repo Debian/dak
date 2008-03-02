@@ -1013,8 +1013,9 @@ def check_transition(sourcepkg):
     
     # Parse the yaml file
     sourcefile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'r')
+    sourcecontent = sourcefile.read()
     try:
-        transitions = load(sourcefile)
+        transitions = load(sourcecontent)
     except error, msg:
         # This shouldn't happen, the release team has a wrapper to check the file, but better
         # safe then sorry
@@ -1022,8 +1023,8 @@ def check_transition(sourcepkg):
         return
 
     # Now look through all defined transitions
-    for trans in transition:
-        t = transition[trans]
+    for trans in transitions:
+        t = transitions[trans]
         source = t["source"]
         new_vers = t["new"]
 

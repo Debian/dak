@@ -41,6 +41,7 @@ maintainer_cache = {}
 fingerprint_id_cache = {}
 queue_id_cache = {}
 uid_id_cache = {}
+testing_version_cache = {}
 
 ################################################################################
 
@@ -229,7 +230,7 @@ def get_testing_version(source):
     if testing_version_cache.has_key(source):
         return testing_version_cache[source]
 
-    q = Upload.projectB.query("""
+    q = projectB.query("""
     SELECT s.version FROM source s, suite su, src_associations sa
     WHERE sa.source=s.id
       AND sa.suite=su.id
