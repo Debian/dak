@@ -1,3 +1,10 @@
+2008-03-02  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_unchecked.py (check_transition): Added. Checks if a
+	release team member defined a transition, and rejects based on
+	that data.
+	(process_it): Use it.
+
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 
 	* daklib/utils.py (check_signature): Make variable key available,
