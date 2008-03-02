@@ -1148,19 +1148,16 @@ def upload_too_new():
 def check_transition():
     to_dump = 0
 
-    # Only check if there is a file defined with checks. It's a little bit
+    # Only check if there is a file defined (and existant) with checks. It's a little bit
     # specific to Debian, not much use for others, so return early there.
-    if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions"):
+    if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions") and
+    not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
         return
     
     # No need to do anything if this upload has no source included
     if not changes["architecture"].has_key("source"):
         return
 
-    # We first load the current set of transitions, if any
-    if not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
-        # Nothing to do, no file exists
-        return
     # Parse the yaml file
     sourcefile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'r')
     transitions = load(sourcefile)
@@ -1181,9 +1178,7 @@ def check_transition():
           AND s.source='%s'"""
                                 % (source))
         ql = q.getresult()
-        if ql:
-            current_vers = ql[0][0]
-        if apt_pkg.VersionCompare(new_vers, current_vers) == 1:
+        if ql and apt_pkg.VersionCompare(new_vers, ql[0][0]) == 1:
             # This is still valid, the current version in database is older than
             # the new version we wait for
 
@@ -1194,7 +1189,7 @@ def check_transition():
 
                 Your package is part of a testing transition to get %s migrated.
 
-                Transition reason: %s
+                Transition description: %s
 
                 This transition will finish when %s, version %s, reaches testing.
                 This transition is managed by the Release Team and %s
