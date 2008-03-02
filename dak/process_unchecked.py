@@ -1042,16 +1042,16 @@ def check_transition(sourcepkg):
                 # The source is affected, lets reject it.
                 reject("""%s: part of the %s transition.
 
-                Your package is part of a testing transition to get %s migrated.
+Your package is part of a testing transition to get %s migrated.
 
-                Transition description: %s
+Transition description: %s
 
-                This transition will finish when %s, version %s, reaches testing (it currently
-                has version %s).
-                This transition is managed by the Release Team and %s
-                is the Release-Team member responsible for it.
-                Please contact them or debian-release@lists.debian.org if you
-                need further assistance.
+This transition will finish when %s, version %s, reaches testing (it currently
+has version %s).
+This transition is managed by the Release Team and %s
+is the Release-Team member responsible for it.
+Please contact them or debian-release@lists.debian.org if you
+need further assistance.
                 """
                        % (sourcepkg, trans, source, t["reason"], source, new_vers, curvers, t["rm"]))
                 return 0
