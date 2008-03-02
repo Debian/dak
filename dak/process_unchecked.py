@@ -1008,8 +1008,7 @@ def check_transition(sourcepkg):
 
     # Only check if there is a file defined (and existant) with checks. It's a little bit
     # specific to Debian, not much use for others, so return early there.
-    if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions") and
-    not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
+    if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions") or not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
         return
     
     # Parse the yaml file
@@ -1019,7 +1018,7 @@ def check_transition(sourcepkg):
     except error, msg:
         # This shouldn't happen, the release team has a wrapper to check the file, but better
         # safe then sorry
-        utils.warn("Not checking transitions, the transitions file is broken: %s." % (msg))
+        daklib.utils.warn("Not checking transitions, the transitions file is broken: %s." % (msg))
         return
 
     # Now look through all defined transitions

@@ -223,6 +223,28 @@ def get_source_id (source, version):
 
     return source_id
 
+def get_testing_version(source):
+    global testing_version_cache
+
+    if testing_version_cache.has_key(source):
+        return testing_version_cache[source]
+
+    q = Upload.projectB.query("""
+    SELECT s.version FROM source s, suite su, src_associations sa
+    WHERE sa.source=s.id
+      AND sa.suite=su.id
+      AND su.suite_name='testing'
+      AND s.source='%s'"""
+                              % (source))
+
+    if not q.getresult():
+        return None
+
+    version = q.getresult()[0][0]
+    testing_version_cache[source] = version
+
+    return version
+
 ################################################################################
 
 def get_or_set_maintainer_id (maintainer):

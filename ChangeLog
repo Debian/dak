@@ -1,5 +1,10 @@
 2008-03-02  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/dak.py (init): Tell it about check_transitions
+
+	* dak/check_transitions.py (usage): Added, checks the transitions
+	file (if any)
+
 	* daklib/database.py (get_testing_version): Added. Returns the
 	version for the source in testing, if any
 
