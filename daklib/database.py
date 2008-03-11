@@ -41,7 +41,7 @@ maintainer_cache = {}
 fingerprint_id_cache = {}
 queue_id_cache = {}
 uid_id_cache = {}
-testing_version_cache = {}
+suite_version_cache = {}
 
 ################################################################################
 
@@ -224,25 +224,26 @@ def get_source_id (source, version):
 
     return source_id
 
-def get_testing_version(source):
-    global testing_version_cache
+def get_suite_version(source, suite):
+    global suite_version_cache
+    cache_key = "%s_%s" % (source, suite)
 
-    if testing_version_cache.has_key(source):
-        return testing_version_cache[source]
+    if suite_version_cache.has_key(cache_key):
+        return suite_version_cache[cache_key]
 
     q = projectB.query("""
     SELECT s.version FROM source s, suite su, src_associations sa
     WHERE sa.source=s.id
       AND sa.suite=su.id
-      AND su.suite_name='testing'
+      AND su.suite_name='%s'
       AND s.source='%s'"""
-                              % (source))
+                              % (suite, source))
 
     if not q.getresult():
         return None
 
     version = q.getresult()[0][0]
-    testing_version_cache[source] = version
+    suite_version_cache[cache_key] = version
 
     return version
 

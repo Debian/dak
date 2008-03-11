@@ -1,3 +1,16 @@
+2008-03-11  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_unchecked.py: Import syck module directly, not "from
+	syck import *"
+	(check_transition): Do the check for sourceful upload in here
+	Also adjust the syck loading commands, rename new_vers to
+	expected, curvers to current, to make it more clear what they mean.
+
+	* daklib/database.py (get_suite_version): Renamed from
+	get_testing_version. Also changed the cache variables name
+
+	* The above changes are based on modifications from Anthony.
+
 2008-03-02  Joerg Jaspert  <joerg@debian.org>
 
 	* debian/control (Suggests): Add python-syck to Depends:

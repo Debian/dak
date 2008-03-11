@@ -30,13 +30,13 @@
 
 import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceback
 import apt_inst, apt_pkg
+import syck
 import daklib.database
 import daklib.logging
 import daklib.queue 
 import daklib.utils
 
 from types import *
-from syck import *
 
 
 ################################################################################
@@ -1005,8 +1005,11 @@ def check_timestamps():
 
 # We reject packages if the release team defined a transition for them
 def check_transition(sourcepkg):
+    # No sourceful upload -> no need to do anything else, direct return
+    if changes["architecture"].has_key("source"):
+        return
 
-    # Only check if there is a file defined (and existant) with checks. It's a little bit
+    # Also only check if there is a file defined (and existant) with checks. It's a little bit
     # specific to Debian, not much use for others, so return early there.
     if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions") or not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
         return
@@ -1015,10 +1018,10 @@ def check_transition(sourcepkg):
     sourcefile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'r')
     sourcecontent = sourcefile.read()
     try:
-        transitions = load(sourcecontent)
+        transitions = syck.load(sourcecontent)
     except error, msg:
-        # This shouldn't happen, the release team has a wrapper to check the file, but better
-        # safe then sorry
+        # This shouldn't happen, there is a wrapper to edit the file which checks it, but we prefer
+        # to be safe than ending up rejecting everything.
         daklib.utils.warn("Not checking transitions, the transitions file is broken: %s." % (msg))
         return
 
@@ -1026,14 +1029,14 @@ def check_transition(sourcepkg):
     for trans in transitions:
         t = transitions[trans]
         source = t["source"]
-        new_vers = t["new"]
+        expected = t["new"]
 
         # Will be None if nothing is in testing.
-        curvers = daklib.database.get_testing_version(source)
-        if not curvers == None:
-            compare = apt_pkg.VersionCompare(curvers, new_vers)
+        current = daklib.database.get_suite_version(source, "testing")
+        if not current == None:
+            compare = apt_pkg.VersionCompare(current, expected)
 
-        if curvers == None or compare < 0:
+        if current == None or compare < 0:
             # This is still valid, the current version in testing is older than
             # the new version we wait for, or there is none in testing yet
 
@@ -1051,7 +1054,7 @@ This transition is managed by the Release Team, and %s
 is the Release-Team member responsible for it.
 Please contact %s or debian-release@lists.debian.org if you
 need further assistance.
-                """ % (sourcepkg, trans, source, curvers, new_vers, t["reason"], t["rm"], t["rm"]))
+                """ % (sourcepkg, trans, source, current, expected, t["reason"], t["rm"], t["rm"]))
                 return 0
 
 ################################################################################
@@ -1578,8 +1581,7 @@ def process_it (changes_file):
                 check_urgency()
                 check_timestamps()
                 check_signed_by_key()
-                if changes["architecture"].has_key("source"):
-                    check_transition(changes["source"])
+                check_transition(changes["source"])
         Upload.update_subst(reject_message)
         action()
     except SystemExit:
