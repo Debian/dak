@@ -1019,7 +1019,7 @@ def check_transition(sourcepkg):
     sourcecontent = sourcefile.read()
     try:
         transitions = syck.load(sourcecontent)
-    except error, msg:
+    except syck.error, msg:
         # This shouldn't happen, there is a wrapper to edit the file which checks it, but we prefer
         # to be safe than ending up rejecting everything.
         daklib.utils.warn("Not checking transitions, the transitions file is broken: %s." % (msg))

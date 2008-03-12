@@ -1,3 +1,11 @@
+2008-03-12  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/edit_transitions.py: Done a number of cleanups to make code
+	working. Also changed the way prompting/answering goes, to not
+	have to import daklib/queue.
+	(edit_transitions): When done with a successful edit - also print
+	a final overview about defined transitions
+
 2008-03-11  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_unchecked.py: Import syck module directly, not "from

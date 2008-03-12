@@ -45,8 +45,8 @@ def init():
     Cnf = daklib.utils.get_conf()
 
     Arguments = [('h',"help","Edit-Transitions::Options::Help"),
-                 ('e',"edit","Edit-Transitions::Option::Edit"),
-                 ('c',"check","Edit-Transitions::Option::check"),
+                 ('e',"edit","Edit-Transitions::Options::Edit"),
+                 ('c',"check","Edit-Transitions::Options::check"),
                  ('n',"no-action","Edit-Transitions::Options::No-Action")]
 
     for i in ["help", "no-action", "edit", "check"]:
@@ -80,11 +80,12 @@ def usage (exit_code=0):
 ################################################################################
 
 def lock_file(lockfile):
+    retry = 0
     while retry < 10:
         try:
             lock_fd = os.open(lockfile, os.O_RDONLY | os.O_CREAT | os.O_EXCL)
             retry = 10
-	    except OSError, e:
+        except OSError, e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
                 retry += 1
                 if (retry >= 10):
@@ -106,28 +107,29 @@ def edit_transitions():
     lockfile="%s.lock" % (tempfile)
     lock_file(lockfile)
 
-    daklib.utils.copy(trans_file, tempfile )
+    daklib.utils.copy(trans_file, tempfile)
 
     editor = os.environ.get("EDITOR", "vi")
 
     while True:
-        result = os.system("%s %s" % (editor, temp_file))
+        result = os.system("%s %s" % (editor, tempfile))
         if result != 0:
             os.unlink(tempfile)
             os.unlink(lockfile)
-            daklib.utils.fubar("%s invocation failed for %s, not removing tempfile." % (editor, temp_file))
+            daklib.utils.fubar("%s invocation failed for %s, not removing tempfile." % (editor, tempfile))
     
         # Now try to load the new file
         test = load_transitions(tempfile)
 
-        if test = None:
+        if test == None:
             # Edit is broken
+            answer = "XXX"
             prompt = "Broken edit: [E]dit again, Drop changes?"
+
             while prompt.find(answer) == -1:
                 answer = daklib.utils.our_raw_input(prompt)
-                m = daklib.queue.re_default_answer.match(prompt)
                 if answer == "":
-                    answer = m.group(1)
+                    answer = "E"
                 answer = answer[:1].upper()
 
             if answer == 'E':
@@ -135,15 +137,22 @@ def edit_transitions():
             elif answer == 'D':
                 os.unlink(tempfile)
                 os.unlink(lockfile)
+                print "OK, discarding changes"
                 sys.exit(0)
         else:
             # No problems in loading the new file, jump out of the while loop
             break
 
     # We seem to be done and also have a working file. Copy over.
-    daklib.utils.copy(tempfile, trans_file)
+    daklib.utils.copy(tempfile, trans_file, True)
     os.unlink(tempfile)
     os.unlink(lockfile)
+
+    # Before we finish print out transition info again
+    print "\n\n------------------------------------------------------------------------"
+    print "Edit done, file saved, currently defined transitions:\n"
+    transitions = load_transitions(Cnf["Dinstall::Reject::ReleaseTransitions"])
+    transition_info(transitions)
 
 ################################################################################
 
@@ -153,7 +162,7 @@ def load_transitions(trans_file):
     sourcecontent = sourcefile.read()
     try:
         trans = syck.load(sourcecontent)
-    except error, msg:
+    except syck.error, msg:
         # Someone fucked it up
         print "ERROR: %s" % (msg)
         return None
@@ -175,14 +184,13 @@ Looking at transition: %s
 ################################################################################
 
 def transition_info(transitions):
-    print "Currently defined transitions:"
     for trans in transitions:
         t = transitions[trans]
         source = t["source"]
         expected = t["new"]
 
         # Will be None if nothing is in testing.
-        current = daklib.database.get_testing_version(source)
+        current = daklib.database.get_suite_version(source, "testing")
 
         print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
@@ -213,7 +221,7 @@ def check_transitions(transitions):
         expected = t["new"]
 
         # Will be None if nothing is in testing.
-        current = daklib.database.get_testing_version(source)
+        current = daklib.database.get_suite_version(source, "testing")
 
         print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
@@ -241,6 +249,7 @@ def check_transitions(transitions):
             prompt += ","
 
         prompt += " Commit Changes? (y/N)"
+        answer = ""
 
         if Options["no-action"]:
             answer="n"
@@ -281,25 +290,25 @@ def main():
     
     # Parse the yaml file
     transitions = load_transitions(Cnf["Dinstall::Reject::ReleaseTransitions"])
-    if transitions = None:
+    if transitions == None:
         # Something very broken with the transitions, exit
         daklib.utils.warn("Not doing any work, someone fucked up the transitions file outside our control")
         sys.exit(2)
 
     if Options["edit"]:
         # Output information about the currently defined transitions.
+        print "Currently defined transitions:"
         transition_info(transitions)
-        daklib.utils.our_raw_input("Press a key to continue...")
+        daklib.utils.our_raw_input("Press enter to continue...")
 
         # Lets edit the transitions file
-        edit_transitions(Cnf["Dinstall::Reject::ReleaseTransitions"])
+        edit_transitions()
     elif Options["check"]:
         # Check and remove outdated transitions
         check_transitions(transitions, Cnf["Dinstall::Reject::ReleaseTransitions"])
     else:
         # Output information about the currently defined transitions.
         transition_info(transitions)
-        daklib.utils.our_raw_input("Press a key to continue...")
 
         # Nothing requested, doing nothing besides the above display of the transitions
         sys.exit(0)
