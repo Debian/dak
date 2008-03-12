@@ -305,7 +305,7 @@ def main():
         edit_transitions()
     elif Options["check"]:
         # Check and remove outdated transitions
-        check_transitions(transitions, Cnf["Dinstall::Reject::ReleaseTransitions"])
+        check_transitions(transitions)
     else:
         # Output information about the currently defined transitions.
         transition_info(transitions)
