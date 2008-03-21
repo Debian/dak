@@ -15,7 +15,9 @@ def check_transition():
     sourcepkg = changes["source"]
 
     # No sourceful upload -> no need to do anything else, direct return
-    if "source" not in changes["architecture"]:
+    # We also work with unstable uploads, not experimental or those going to some
+    # proposed-updates queue
+    if "source" not in changes["architecture"] or "unstable" not in changes["distribution"]:
         return
 
     # Also only check if there is a file defined (and existant) with 
@@ -32,7 +34,7 @@ def check_transition():
     except syck.error, msg:
         # This shouldn't happen, there is a wrapper to edit the file which
         # checks it, but we prefer to be safe than ending up rejecting
-	# everything.
+        # everything.
         daklib.utils.warn("Not checking transitions, the transitions file is broken: %s." % (msg))
         return
 
@@ -55,22 +57,23 @@ def check_transition():
             if sourcepkg in t['packages']:
                 # The source is affected, lets reject it.
 
-		rejectmsg = "%s: part of the %s transition.\n\n" % (
-			sourcepkg, trans)
-		rejectmsg += "Transition description: %s\n\n" % (t["reason"])
+                rejectmsg = "%s: part of the %s transition.\n\n" % (
+                    sourcepkg, trans)
 
-	    	if current is not None:
-	    	    currentlymsg = "at version %s" % (current)
-		else:
-		    currentlymsg = "not present in testing"
+                if current is not None:
+                    currentlymsg = "at version %s" % (current)
+                else:
+                    currentlymsg = "not present in testing"
 
-		rejectmsg += "\n".join(textwrap.wrap("""Your package
+                rejectmsg += "Transition description: %s\n\n" % (t["reason"])
+
+                rejectmsg += "\n".join(textwrap.wrap("""Your package
 is part of a testing transition designed to get %s migrated (it is
 currently %s, we need version %s).  This transition is managed by the
-release team, and %s is the release team member responsible for it.
+Release Team, and %s is the Release-Team member responsible for it.
 Please mail debian-release@lists.debian.org or contact %s directly if you
 need further assistance."""
-			% (source, currentlymsg, expected,t["rm"], t["rm"])))
+                        % (source, currentlymsg, expected,t["rm"], t["rm"])))
 
                 reject(rejectmsg + "\n")
                 return
