@@ -57,18 +57,17 @@ def check_transition():
 
 		rejectmsg = "%s: part of the %s transition.\n\n" % (
 			sourcepkg, trans)
+		rejectmsg += "Transition description: %s\n\n" % (t["reason"])
 
 	    	if current is not None:
 	    	    currentlymsg = "at version %s" % (current)
 		else:
 		    currentlymsg = "not present in testing"
 
-		rejectmsg += "Transition description: %s\n\n" % (t["reason"])
-
 		rejectmsg += "\n".join(textwrap.wrap("""Your package
 is part of a testing transition designed to get %s migrated (it is
 currently %s, we need version %s).  This transition is managed by the
-Release Team, and %s is the Release-Team member responsible for it.
+release team, and %s is the release team member responsible for it.
 Please mail debian-release@lists.debian.org or contact %s directly if you
 need further assistance."""
 			% (source, currentlymsg, expected,t["rm"], t["rm"])))
