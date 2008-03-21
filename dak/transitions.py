@@ -23,7 +23,7 @@
 
 ################################################################################
 
-import os, pg, sys, time, errno, fcntl, tempfile
+import os, pg, sys, time, errno, fcntl, tempfile, pwd
 import apt_pkg
 import daklib.database
 import daklib.utils
@@ -47,7 +47,7 @@ def init():
                  ('e',"edit","Edit-Transitions::Options::Edit"),
                  ('i',"import","Edit-Transitions::Options::Import", "HasArg"),
                  ('c',"check","Edit-Transitions::Options::Check"),
-                 ('S',"use-sudo","Edit-Transitions::Options::Sudo"),
+                 ('s',"sudo","Edit-Transitions::Options::Sudo"),
                  ('n',"no-action","Edit-Transitions::Options::No-Action")]
 
     for i in ["help", "no-action", "edit", "import", "check", "sudo"]:
@@ -57,6 +57,13 @@ def init():
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Edit-Transitions::Options")
+
+    whoami = os.getuid()
+    whoamifull = pwd.getpwuid(whoami)
+    username = whoamifull[0]
+    if username != "dak":
+        print "Non-dak user: %s" % username
+        Options["sudo"] = "y"
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
