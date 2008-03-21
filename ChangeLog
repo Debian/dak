@@ -1,3 +1,10 @@
+2008-03-21  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/edit_transitions.py (edit_transitions): Use sudo to copy the
+	edited file back in place
+	(check_transitions): Use proper locking and also use sudo to copy
+	the new file in place
+
 2008-03-21  Anthony Towns <ajt@debian.org>
 
 	* config/debian/extensions.py: Add infrastructure for replacing

@@ -104,7 +104,7 @@ def edit_transitions():
 
     tempfile = "./%s.transition.tmp" % (os.getpid() )
 
-    lockfile="%s.lock" % (tempfile)
+    lockfile="/tmp/transitions.lock"
     lock_file(lockfile)
 
     daklib.utils.copy(trans_file, tempfile)
@@ -144,7 +144,11 @@ def edit_transitions():
             break
 
     # We seem to be done and also have a working file. Copy over.
-    daklib.utils.copy(tempfile, trans_file, True)
+    # We are not using daklib.utils.copy here, as we use sudo to get this file copied, to
+    # limit the rights needed to edit transitions
+    os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
+              "cp", tempfile, trans_file)
+
     os.unlink(tempfile)
     os.unlink(lockfile)
 
@@ -230,7 +234,6 @@ def check_transitions(transitions):
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
             compare = apt_pkg.VersionCompare(current, expected)
-            print "Apt compare says: %s" % (compare)
             if compare < 0:
                 # This is still valid, the current version in database is older than
                 # the new version we wait for
@@ -266,13 +269,24 @@ def check_transitions(transitions):
             print "Committing"
             for remove in to_remove:
                 del transitions[remove]
-            destfile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'w')
+
+            lockfile="/tmp/transitions.lock"
+            lock_file(lockfile)
+            tempfile = "./%s.transition.tmp" % (os.getpid() )
+
+            destfile = file(tempfile, 'w')
             syck.dump(transitions, destfile)
+            destfile.close()
+
+            os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
+                      "cp", tempfile, Cnf["Dinstall::Reject::ReleaseTransitions"])
+
+            os.unlink(tempfile)
+            os.unlink(lockfile)
             print "Done"
         else:
             print "WTF are you typing?"
             sys.exit(0)
-
 
 ################################################################################
 
