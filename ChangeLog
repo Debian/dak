@@ -1,3 +1,8 @@
+2008-03-21  Anthony Towns <ajt@debian.org>
+
+	* config/debian/extensions.py: Add infrastructure for replacing
+	functions in dak modules; add upload blocking for dpkg.
+
 2008-03-12  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/edit_transitions.py: Done a number of cleanups to make code
