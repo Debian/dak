@@ -30,14 +30,12 @@
 
 import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceback
 import apt_inst, apt_pkg
-import syck
 import daklib.database
 import daklib.logging
 import daklib.queue 
 import daklib.utils
 
 from types import *
-
 
 ################################################################################
 
@@ -1001,63 +999,6 @@ def check_timestamps():
                 reject("%s: deb contents timestamp check failed [%s: %s]" % (filename, sys.exc_type, sys.exc_value))
 
 ################################################################################
-################################################################################
-
-# We reject packages if the release team defined a transition for them
-def check_transition(sourcepkg):
-    # No sourceful upload -> no need to do anything else, direct return
-    if changes["architecture"].has_key("source"):
-        return
-
-    # Also only check if there is a file defined (and existant) with checks. It's a little bit
-    # specific to Debian, not much use for others, so return early there.
-    if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions") or not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
-        return
-    
-    # Parse the yaml file
-    sourcefile = file(Cnf["Dinstall::Reject::ReleaseTransitions"], 'r')
-    sourcecontent = sourcefile.read()
-    try:
-        transitions = syck.load(sourcecontent)
-    except syck.error, msg:
-        # This shouldn't happen, there is a wrapper to edit the file which checks it, but we prefer
-        # to be safe than ending up rejecting everything.
-        daklib.utils.warn("Not checking transitions, the transitions file is broken: %s." % (msg))
-        return
-
-    # Now look through all defined transitions
-    for trans in transitions:
-        t = transitions[trans]
-        source = t["source"]
-        expected = t["new"]
-
-        # Will be None if nothing is in testing.
-        current = daklib.database.get_suite_version(source, "testing")
-        if not current == None:
-            compare = apt_pkg.VersionCompare(current, expected)
-
-        if current == None or compare < 0:
-            # This is still valid, the current version in testing is older than
-            # the new version we wait for, or there is none in testing yet
-
-            # Check if the source we look at is affected by this.
-            if sourcepkg in t['packages']:
-                # The source is affected, lets reject it.
-                reject("""%s: part of the %s transition.
-
-Your package is part of a testing transition designed to get %s migrated
-(it currently is at version %s, we need version %s)
-
-Transition description: %s
-
-This transition is managed by the Release Team, and %s
-is the Release-Team member responsible for it.
-Please contact %s or debian-release@lists.debian.org if you
-need further assistance.
-                """ % (sourcepkg, trans, source, current, expected, t["reason"], t["rm"], t["rm"]))
-                return 0
-
-################################################################################
 
 def lookup_uid_from_fingerprint(fpr):
     q = Upload.projectB.query("SELECT u.uid, u.name FROM fingerprint f, uid u WHERE f.uid = u.id AND f.fingerprint = '%s'" % (fpr))
@@ -1581,7 +1522,6 @@ def process_it (changes_file):
                 check_urgency()
                 check_timestamps()
                 check_signed_by_key()
-                check_transition(changes["source"])
         Upload.update_subst(reject_message)
         action()
     except SystemExit:

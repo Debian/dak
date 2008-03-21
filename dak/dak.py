@@ -29,7 +29,7 @@
 ################################################################################
 
 import sys, imp
-import daklib.utils
+import daklib.utils, daklib.extensions
 
 ################################################################################
 
@@ -211,6 +211,8 @@ def main():
 
     module.dak_userext = userext
     userext.dak_module = module
+
+    daklib.extensions.init(cmdname, module, userext)
     if userext.init is not None: userext.init(cmdname)
 
     module.main()
