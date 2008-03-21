@@ -24,7 +24,7 @@
 
 ################################################################################
 
-import os, pg, sys, time
+import os, pg, sys, time, errno
 import apt_pkg
 import daklib.database
 import daklib.utils
@@ -102,10 +102,10 @@ def lock_file(lockfile):
 def edit_transitions():
     trans_file = Cnf["Dinstall::Reject::ReleaseTransitions"]
 
-    tempfile = "./%s.transition.tmp" % (os.getpid() )
-
     lockfile="/tmp/transitions.lock"
     lock_file(lockfile)
+
+    tempfile = "./%s.transition.tmp" % (os.getpid() )
 
     daklib.utils.copy(trans_file, tempfile)
 
