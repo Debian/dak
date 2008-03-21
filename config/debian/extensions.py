@@ -10,7 +10,15 @@ replaced_funcs = {}
 replace_funcs = {}
 def replace_dak_function(module,name):
     def x(f):
-        replace_funcs["%s:%s" % (module,name)] = f
+        def myfunc(*a,**kw):
+	    global replaced_funcs
+            f(replaced_funcs[name], *a, **kw)
+	myfunc.__name__ = f.__name__
+	myfunc.__doc__ = f.__doc__
+	myfunc.__dict__.update(f.__dict__)
+
+        replace_funcs["%s:%s" % (module,name)] = myfunc
+	return f
     return x
 
 def check_transition():
@@ -83,7 +91,7 @@ need further assistance."""
                 return
 
 @replace_dak_function("process-unchecked", "check_signed_by_key")
-def check_signed_by_key():
+def check_signed_by_key(oldfn):
     changes = dak_module.changes
     reject = dak_module.reject
 
@@ -94,11 +102,11 @@ def check_signed_by_key():
             reject("Upload blocked due to hijack attempt 2008/03/19")
 
 	    # NB: 1.15.0, 1.15.2 signed by this key targetted at unstable
-	    #     have been made available in the wild, and should not be
+	    #     have been made available in the wild, and should remain
 	    #     blocked until Debian's dpkg has revved past those version
 	    #     numbers
 
-    replaced_funcs["check_signed_by_key"]()
+    oldfn()
 
     check_transition()
 
