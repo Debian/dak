@@ -1,3 +1,8 @@
+2008-03-21  Anthony Towns <ajt@debian.org>
+
+	* config/debian/extensions.py: Add infrastructure for replacing
+	functions in dak modules; add upload blocking for dpkg.
+
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 
 	* daklib/utils.py (check_signature): Make variable key available,
