@@ -15,7 +15,9 @@ def check_transition():
     sourcepkg = changes["source"]
 
     # No sourceful upload -> no need to do anything else, direct return
-    if "source" not in changes["architecture"]:
+    # We also work with unstable uploads, not experimental or those going to some
+    # proposed-updates queue
+    if "source" not in changes["architecture"] or "unstable" not in changes["distribution"]:
         return
 
     # Also only check if there is a file defined (and existant) with 
