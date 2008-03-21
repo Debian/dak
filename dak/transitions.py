@@ -76,7 +76,6 @@ def init():
 def usage (exit_code=0):
     print """Usage: transitions [OPTION]...
 Update and check the release managers transition file.
-transitions.
 
 Options:
 
@@ -85,7 +84,7 @@ Options:
   -i, --import <file>       check and import transitions from file
   -c, --check               check the transitions file, remove outdated entries
   -S, --sudo                use sudo to update transitions file
-  -n, --no-action           don't do anything"""
+  -n, --no-action           don't do anything (only affects check)"""
 
     sys.exit(exit_code)
 
@@ -167,8 +166,11 @@ def write_transitions_from_file(from_file):
 
 def temp_transitions_file(transitions):
     # NB: file is unlinked by caller, but fd is never actually closed.
-
+    # We need the chmod, as the file is (most possibly) copied from a
+    # sudo-ed script and would be unreadable if it has default mkstemp mode
+    
     (fd, path) = tempfile.mkstemp("","transitions")
+    os.chmod(path, 0644)
     f = open(path, "w")
     syck.dump(transitions, f)
     return path
@@ -197,6 +199,7 @@ def edit_transitions():
             default = "E"
         else:
             print "Edit looks okay.\n"
+            print "The following transitions are defined:"
             print "------------------------------------------------------------------------"
             transition_info(test)
 
