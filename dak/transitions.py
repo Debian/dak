@@ -58,6 +58,9 @@ def init():
 
     Options = Cnf.SubTree("Edit-Transitions::Options")
 
+    if Options["help"]:
+        usage()
+
     whoami = os.getuid()
     whoamifull = pwd.getpwuid(whoami)
     username = whoamifull[0]
@@ -68,9 +71,6 @@ def init():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
     
-    if Options["help"]:
-        usage()
-
 ################################################################################
 
 def usage (exit_code=0):
