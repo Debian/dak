@@ -4,22 +4,8 @@ import apt_pkg
 import daklib.utils, daklib.database
 import syck
 
-# This function and its data should move into daklib/extensions.py
-# or something.
-replaced_funcs = {}
-replace_funcs = {}
-def replace_dak_function(module,name):
-    def x(f):
-        def myfunc(*a,**kw):
-	    global replaced_funcs
-            f(replaced_funcs[name], *a, **kw)
-	myfunc.__name__ = f.__name__
-	myfunc.__doc__ = f.__doc__
-	myfunc.__dict__.update(f.__dict__)
-
-        replace_funcs["%s:%s" % (module,name)] = myfunc
-	return f
-    return x
+import daklib.extensions
+from daklib.extensions import replace_dak_function
 
 def check_transition():
     changes = dak_module.changes
@@ -109,15 +95,3 @@ def check_signed_by_key(oldfn):
     oldfn()
 
     check_transition()
-
-def init(name):
-    global replaced_funcs
-
-    # This bit should be done automatically too
-    replaced_funcs = {}
-    for f,newfunc in replace_funcs.iteritems():
-        m,f = f.split(":",1)
-        if len(f) > 0 and m == name:
-	    replaced_funcs[f] = dak_module.__dict__[f]
-	    dak_module.__dict__[f] = newfunc
-
