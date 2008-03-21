@@ -1,3 +1,12 @@
+2008-03-22  Anthony Towns  <ajt@debian.org>
+
+	* dak/edit_transitions.py: Add --import option.
+	Add --use-sudo option. Use fcntl locking for writing.
+	Move writing into a function (write_transitions).
+	Reinvoke self using sudo and --import if necessary.
+	Move temporary file creation into a function, use mkstemp.
+	Rename to "dak transitions".
+
 2008-03-21  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/edit_transitions.py (edit_transitions): Use sudo to copy the

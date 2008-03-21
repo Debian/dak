@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-# Edit and then check the release managers transition file for correctness
-# and outdated transitions
+# Display, edit and check the release manager's transition file.
 # Copyright (C) 2008 Joerg Jaspert <joerg@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -24,7 +23,7 @@
 
 ################################################################################
 
-import os, pg, sys, time, errno
+import os, pg, sys, time, errno, fcntl, tempfile
 import apt_pkg
 import daklib.database
 import daklib.utils
@@ -46,10 +45,12 @@ def init():
 
     Arguments = [('h',"help","Edit-Transitions::Options::Help"),
                  ('e',"edit","Edit-Transitions::Options::Edit"),
-                 ('c',"check","Edit-Transitions::Options::check"),
+                 ('i',"import","Edit-Transitions::Options::Import", "HasArg"),
+                 ('c',"check","Edit-Transitions::Options::Check"),
+                 ('S',"use-sudo","Edit-Transitions::Options::Sudo"),
                  ('n',"no-action","Edit-Transitions::Options::No-Action")]
 
-    for i in ["help", "no-action", "edit", "check"]:
+    for i in ["help", "no-action", "edit", "import", "check", "sudo"]:
         if not Cnf.has_key("Edit-Transitions::Options::%s" % (i)):
             Cnf["Edit-Transitions::Options::%s" % (i)] = ""
 
@@ -67,59 +68,120 @@ def init():
 
 def usage (exit_code=0):
     print """Usage: edit_transitions [OPTION]...
-  Check the release managers transition file for correctness and outdated transitions
+Update and check the release managers transition file.
+transitions.
+
+Options:
+
   -h, --help                show this help and exit.
   -e, --edit                edit the transitions file
+  -i, --import <file>       check and import transitions from file
   -c, --check               check the transitions file, remove outdated entries
-  -n, --no-action           don't do anything
+  -S, --sudo                use sudo to update transitions file
+  -n, --no-action           don't do anything"""
 
-  Called without an option this tool will check the transition file for outdated
-  transitions and remove them."""
     sys.exit(exit_code)
 
 ################################################################################
 
-def lock_file(lockfile):
-    retry = 0
-    while retry < 10:
+def load_transitions(trans_file):
+    # Parse the yaml file
+    sourcefile = file(trans_file, 'r')
+    sourcecontent = sourcefile.read()
+    try:
+        trans = syck.load(sourcecontent)
+    except syck.error, msg:
+        # Someone fucked it up
+        print "ERROR: %s" % (msg)
+        return None
+    # could do further validation here
+    return trans
+
+################################################################################
+
+def lock_file(file):
+    for retry in range(10):
+        lock_fd = os.open(file, os.O_RDWR | os.O_CREAT)
         try:
-            lock_fd = os.open(lockfile, os.O_RDONLY | os.O_CREAT | os.O_EXCL)
-            retry = 10
+            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return lock_fd
         except OSError, e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
-                retry += 1
-                if (retry >= 10):
-                    daklib.utils.fubar("Couldn't obtain lock for %s." % (lockfile) )
-                else:
-                    print("Unable to get lock for %s (try %d of 10)" % (lockfile, retry) )
-                    time.sleep(60)
+                print "Unable to get lock for %s (try %d of 10)" % \
+                        (file, retry+1)
+                time.sleep(60)
             else:
                 raise
 
+    daklib.utils.fubar("Couldn't obtain lock for %s." % (lockfile))
+
+################################################################################
+
+def write_transitions(from_trans):
+    """Update the active transitions file safely.
+       This function takes a parsed input file (which avoids invalid
+       files or files that may be be modified while the function is
+       active), and ensure the transitions file is updated atomically
+       to avoid locks."""
+
+    trans_file = Cnf["Dinstall::Reject::ReleaseTransitions"]
+    trans_temp = trans_file + ".tmp"
+  
+    trans_lock = lock_file(trans_file)
+    temp_lock  = lock_file(trans_temp)
+
+    destfile = file(trans_temp, 'w')
+    syck.dump(from_trans, destfile)
+    destfile.close()
+
+    os.rename(trans_temp, trans_file)
+    os.close(temp_lock)
+    os.close(trans_lock)
+
+################################################################################
+
+class ParseException(Exception):
+    pass
+
+def write_transitions_from_file(from_file):
+    """We have a file we think is valid; if we're using sudo, we invoke it
+       here, otherwise we just parse the file and call write_transitions"""
+
+    if Options["sudo"]:
+        os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
+              "/usr/local/bin/dak", "edit-transitions", "--import", from_file)
+    else:
+        trans = load_transitions(from_file)
+        if trans is None:
+            raise ParseException, "Unparsable transitions file %s" % (file)
+        write_transitions(trans)
+
+################################################################################
+
+def temp_transitions_file(transitions):
+    # NB: file is unlinked by caller, but fd is never actually closed.
+
+    (fd, path) = tempfile.mkstemp("","transitions")
+    f = open(path, "w")
+    syck.dump(transitions, f)
+    return path
 
 ################################################################################
 
 def edit_transitions():
     trans_file = Cnf["Dinstall::Reject::ReleaseTransitions"]
-
-    lockfile="/tmp/transitions.lock"
-    lock_file(lockfile)
-
-    tempfile = "./%s.transition.tmp" % (os.getpid() )
-
-    daklib.utils.copy(trans_file, tempfile)
+    edit_file = temp_transitions_file(load_transitions(trans_file))
 
     editor = os.environ.get("EDITOR", "vi")
 
     while True:
-        result = os.system("%s %s" % (editor, tempfile))
+        result = os.system("%s %s" % (editor, edit_file))
         if result != 0:
-            os.unlink(tempfile)
-            os.unlink(lockfile)
-            daklib.utils.fubar("%s invocation failed for %s, not removing tempfile." % (editor, tempfile))
+            os.unlink(edit_file)
+            daklib.utils.fubar("%s invocation failed for %s, not removing tempfile." % (editor, edit_file))
     
         # Now try to load the new file
-        test = load_transitions(tempfile)
+        test = load_transitions(edit_file)
 
         if test == None:
             # Edit is broken
@@ -135,8 +197,7 @@ def edit_transitions():
             if answer == 'E':
                 continue
             elif answer == 'D':
-                os.unlink(tempfile)
-                os.unlink(lockfile)
+                os.unlink(edit_file)
                 print "OK, discarding changes"
                 sys.exit(0)
         else:
@@ -144,74 +205,13 @@ def edit_transitions():
             break
 
     # We seem to be done and also have a working file. Copy over.
-    # We are not using daklib.utils.copy here, as we use sudo to get this file copied, to
-    # limit the rights needed to edit transitions
-    os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
-              "cp", tempfile, trans_file)
-
-    os.unlink(tempfile)
-    os.unlink(lockfile)
+    write_transitions_from_file(edit_file)
+    os.unlink(edit_file)
 
     # Before we finish print out transition info again
     print "\n\n------------------------------------------------------------------------"
     print "Edit done, file saved, currently defined transitions:\n"
-    transitions = load_transitions(Cnf["Dinstall::Reject::ReleaseTransitions"])
-    transition_info(transitions)
-
-################################################################################
-
-def load_transitions(trans_file):
-    # Parse the yaml file
-    sourcefile = file(trans_file, 'r')
-    sourcecontent = sourcefile.read()
-    try:
-        trans = syck.load(sourcecontent)
-    except syck.error, msg:
-        # Someone fucked it up
-        print "ERROR: %s" % (msg)
-        return None
-    return trans
-
-################################################################################
-
-def print_info(trans, source, expected, rm, reason, packages):
-        print """
-Looking at transition: %s
- Source:      %s
- New Version: %s
- Responsible: %s
- Description: %s
- Blocked Packages (total: %d): %s
-""" % (trans, source, expected, rm, reason, len(packages), ", ".join(packages))
-        return
-
-################################################################################
-
-def transition_info(transitions):
-    for trans in transitions:
-        t = transitions[trans]
-        source = t["source"]
-        expected = t["new"]
-
-        # Will be None if nothing is in testing.
-        current = daklib.database.get_suite_version(source, "testing")
-
-        print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
-
-        if current == None:
-            # No package in testing
-            print "Transition source %s not in testing, transition still ongoing." % (source)
-        else:
-            compare = apt_pkg.VersionCompare(current, expected)
-            print "Apt compare says: %s" % (compare)
-            if compare < 0:
-                # This is still valid, the current version in database is older than
-                # the new version we wait for
-                print "This transition is still ongoing, we currently have version %s" % (current)
-            else:
-                print "This transition is over, the target package reached testing, should be removed"
-                print "%s wanted version: %s, has %s" % (source, expected, current)
-        print "-------------------------------------------------------------------------"
+    transition_info(load_transitions(trans_file))
 
 ################################################################################
 
@@ -269,24 +269,55 @@ def check_transitions(transitions):
             print "Committing"
             for remove in to_remove:
                 del transitions[remove]
+    
+            edit_file = temp_transitions_file(transitions)
+            write_transitions_from_file(edit_file)
 
-            lockfile="/tmp/transitions.lock"
-            lock_file(lockfile)
-            tempfile = "./%s.transition.tmp" % (os.getpid() )
-
-            destfile = file(tempfile, 'w')
-            syck.dump(transitions, destfile)
-            destfile.close()
-
-            os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
-                      "cp", tempfile, Cnf["Dinstall::Reject::ReleaseTransitions"])
-
-            os.unlink(tempfile)
-            os.unlink(lockfile)
             print "Done"
         else:
             print "WTF are you typing?"
             sys.exit(0)
+
+################################################################################
+
+def print_info(trans, source, expected, rm, reason, packages):
+        print """
+Looking at transition: %s
+ Source:      %s
+ New Version: %s
+ Responsible: %s
+ Description: %s
+ Blocked Packages (total: %d): %s
+""" % (trans, source, expected, rm, reason, len(packages), ", ".join(packages))
+        return
+
+################################################################################
+
+def transition_info(transitions):
+    for trans in transitions:
+        t = transitions[trans]
+        source = t["source"]
+        expected = t["new"]
+
+        # Will be None if nothing is in testing.
+        current = daklib.database.get_suite_version(source, "testing")
+
+        print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+
+        if current == None:
+            # No package in testing
+            print "Transition source %s not in testing, transition still ongoing." % (source)
+        else:
+            compare = apt_pkg.VersionCompare(current, expected)
+            print "Apt compare says: %s" % (compare)
+            if compare < 0:
+                # This is still valid, the current version in database is older than
+                # the new version we wait for
+                print "This transition is still ongoing, we currently have version %s" % (current)
+            else:
+                print "This transition is over, the target package reached testing, should be removed"
+                print "%s wanted version: %s, has %s" % (source, expected, current)
+        print "-------------------------------------------------------------------------"
 
 ################################################################################
 
@@ -295,39 +326,44 @@ def main():
 
     init()
     
-    # Only check if there is a file defined (and existant) with checks. It's a little bit
-    # specific to Debian, not much use for others, so return early there.
-    if not Cnf.has_key("Dinstall::Reject::ReleaseTransitions") or not os.path.exists("%s" % (Cnf["Dinstall::Reject::ReleaseTransitions"])):
-        daklib.utils.warn("Dinstall::Reject::ReleaseTransitions not defined or file %s not existant." %
+    # Check if there is a file defined (and existant)
+    transpath = Cnf.get("Dinstall::Reject::ReleaseTransitions", "")
+    if transpath == "":
+        daklib.utils.warn("Dinstall::Reject::ReleaseTransitions not defined")
+        sys.exit(1)
+    if not os.path.exists(transpath):
+        daklib.utils.warn("ReleaseTransitions file, %s, not found." %
                           (Cnf["Dinstall::Reject::ReleaseTransitions"]))
         sys.exit(1)
-    
+   
+    if Options["import"]:
+        try:
+            write_transitions_from_file(Options["import"])
+        except ParseException, m:
+            print m
+            sys.exit(2)
+        sys.exit(0)
+
     # Parse the yaml file
-    transitions = load_transitions(Cnf["Dinstall::Reject::ReleaseTransitions"])
+    transitions = load_transitions(transpath)
     if transitions == None:
         # Something very broken with the transitions, exit
-        daklib.utils.warn("Not doing any work, someone fucked up the transitions file outside our control")
+        daklib.utils.warn("Could not parse existing transitions file. Aborting.")
         sys.exit(2)
 
     if Options["edit"]:
-        # Output information about the currently defined transitions.
-        print "Currently defined transitions:"
-        transition_info(transitions)
-        daklib.utils.our_raw_input("Press enter to continue...")
-
-        # Lets edit the transitions file
+        # Let's edit the transitions file
         edit_transitions()
     elif Options["check"]:
         # Check and remove outdated transitions
         check_transitions(transitions)
     else:
         # Output information about the currently defined transitions.
+        print "Currently defined transitions:"
         transition_info(transitions)
 
-        # Nothing requested, doing nothing besides the above display of the transitions
-        sys.exit(0)
+    sys.exit(0)
     
-
 ################################################################################
 
 if __name__ == '__main__':
