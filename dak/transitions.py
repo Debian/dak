@@ -149,7 +149,7 @@ def write_transitions_from_file(from_file):
 
     if Options["sudo"]:
         os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
-              "/usr/local/bin/dak", "edit-transitions", "--import", from_file)
+              "/usr/local/bin/dak", "transitions", "--import", from_file)
     else:
         trans = load_transitions(from_file)
         if trans is None:
