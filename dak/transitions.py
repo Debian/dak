@@ -67,7 +67,7 @@ def init():
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: edit_transitions [OPTION]...
+    print """Usage: transitions [OPTION]...
 Update and check the release managers transition file.
 transitions.
 
@@ -185,33 +185,42 @@ def edit_transitions():
 
         if test == None:
             # Edit is broken
-            answer = "XXX"
-            prompt = "Broken edit: [E]dit again, Drop changes?"
+	    print "Edit was unparsable."
+            prompt = "[E]dit again, Drop changes?"
+	    default = "E"
+	else:
+	    print "Edit looks okay.\n"
+            print "------------------------------------------------------------------------"
+            transition_info(test)
 
-            while prompt.find(answer) == -1:
-                answer = daklib.utils.our_raw_input(prompt)
-                if answer == "":
-                    answer = "E"
-                answer = answer[:1].upper()
+	    prompt = "[S]ave, Edit again, Drop changes?"
+	    default = "S"
 
-            if answer == 'E':
-                continue
-            elif answer == 'D':
-                os.unlink(edit_file)
-                print "OK, discarding changes"
-                sys.exit(0)
-        else:
-            # No problems in loading the new file, jump out of the while loop
+        answer = "XXX"
+        while prompt.find(answer) == -1:
+            answer = daklib.utils.our_raw_input(prompt)
+            if answer == "":
+                answer = default
+            answer = answer[:1].upper()
+
+        if answer == 'E':
+            continue
+        elif answer == 'D':
+            os.unlink(edit_file)
+            print "OK, discarding changes"
+            sys.exit(0)
+        elif answer == 'S':
+            # Ready to save
             break
+	else:
+	    print "You pressed something you shouldn't have :("
+	    sys.exit(1)
 
     # We seem to be done and also have a working file. Copy over.
     write_transitions_from_file(edit_file)
     os.unlink(edit_file)
 
-    # Before we finish print out transition info again
-    print "\n\n------------------------------------------------------------------------"
-    print "Edit done, file saved, currently defined transitions:\n"
-    transition_info(load_transitions(trans_file))
+    print "Transitions file updated."
 
 ################################################################################
 
@@ -281,8 +290,7 @@ def check_transitions(transitions):
 ################################################################################
 
 def print_info(trans, source, expected, rm, reason, packages):
-        print """
-Looking at transition: %s
+        print """Looking at transition: %s
  Source:      %s
  New Version: %s
  Responsible: %s
