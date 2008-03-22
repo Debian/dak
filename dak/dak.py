@@ -91,7 +91,9 @@ def init():
          "Clean cruft from incoming"),
         ("clean-proposed-updates",
          "Remove obsolete .changes from proposed-updates"),
-        
+
+        ("transitions",
+         "Manage the release transition file"),
         ("check-overrides",
          "Override cruft checks"),
         ("check-proposed-updates",

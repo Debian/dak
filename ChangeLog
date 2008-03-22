@@ -1,7 +1,75 @@
+2008-03-22  Anthony Towns  <ajt@debian.org>
+
+	* dak/edit_transitions.py: Add --import option.
+	Add --use-sudo option. Use fcntl locking for writing.
+	Move writing into a function (write_transitions).
+	Reinvoke self using sudo and --import if necessary.
+	Move temporary file creation into a function, use mkstemp.
+	Rename to "dak transitions".
+
+2008-03-21  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/edit_transitions.py (edit_transitions): Use sudo to copy the
+	edited file back in place
+	(check_transitions): Use proper locking and also use sudo to copy
+	the new file in place
+
 2008-03-21  Anthony Towns <ajt@debian.org>
 
 	* config/debian/extensions.py: Add infrastructure for replacing
 	functions in dak modules; add upload blocking for dpkg.
+
+2008-03-12  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/edit_transitions.py: Done a number of cleanups to make code
+	working. Also changed the way prompting/answering goes, to not
+	have to import daklib/queue.
+	(edit_transitions): When done with a successful edit - also print
+	a final overview about defined transitions
+
+2008-03-11  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_unchecked.py: Import syck module directly, not "from
+	syck import *"
+	(check_transition): Do the check for sourceful upload in here
+	Also adjust the syck loading commands, rename new_vers to
+	expected, curvers to current, to make it more clear what they mean.
+
+	* daklib/database.py (get_suite_version): Renamed from
+	get_testing_version. Also changed the cache variables name
+
+	* The above changes are based on modifications from Anthony.
+
+	* dak/dak.py (init): Renamed check -> edit transitions
+
+	* dak/edit_transitions.py: Renamed from check_transitions.py
+	(main): Also rename new_vers/curvers to expected/current
+	Basically a nice rewrite, so it now does checks and edit,
+	depending on how you call it. Check also removes old transitions,
+	if user wants it.
+
+2008-03-02  Joerg Jaspert  <joerg@debian.org>
+
+	* debian/control (Suggests): Add python-syck to Depends:
+
+	* dak/dak.py (init): Tell it about check_transitions
+
+	* dak/check_transitions.py (usage): Added, checks the transitions
+	file (if any)
+
+	* daklib/database.py (get_testing_version): Added. Returns the
+	version for the source in testing, if any
+
+	* dak/process_unchecked.py (check_transition): Added. Checks if a
+	release team member defined a transition, and rejects based on
+	that data.
+	(process_it): Use it.
+	(check_transition): Warn on broken transitions file and return,
+	not doing anything.
+	(check_transition): Moved out of here, into daklib/queue
+	(process_it): Call check_transitions only if
+	changes[architecture] has source included.
+	(check_transition): Now call the database.get_testing_version
 
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 
