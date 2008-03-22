@@ -94,13 +94,56 @@ def load_transitions(trans_file):
     # Parse the yaml file
     sourcefile = file(trans_file, 'r')
     sourcecontent = sourcefile.read()
+    failure = False
     try:
         trans = syck.load(sourcecontent)
     except syck.error, msg:
         # Someone fucked it up
         print "ERROR: %s" % (msg)
         return None
-    # could do further validation here
+
+    # lets do further validation here
+    checkkeys = ["source", "reason", "packages", "new", "rm"]
+    for test in trans:
+        t = trans[test]
+
+        # First check if we know all the keys for the transition and if they have
+        # the right type (and for the packages also if the list has the right types
+        # included, ie. not a list in list, but only str in the list)
+        for key in t:
+            if key not in checkkeys:
+                print "ERROR: Unknown key %s in transition %s" % (key, test)
+                failure = True
+
+            if key == "packages":
+                if type(t[key]) != list:
+                    print "ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test)
+                    failure = True
+
+                try:
+                    for package in t["packages"]:
+                        if type(package) != str:
+                            print "ERROR: Packages list contains invalid type %s (as %s) in transition %s" % (type(package), package, test)
+                            failure = True
+                except TypeError:
+                    # In case someone has an empty packages list
+                    print "ERROR: No packages defined in transition %s" % (test)
+                    failure = True
+                    continue
+
+            elif type(t[key]) != str:
+                print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
+                failure = True
+
+        # And now the other way round - are all our keys defined?
+        for key in checkkeys:
+            if key not in t:
+                print "ERROR: Missing key %s in transition %s" % (key, test)
+                failure = True
+
+    if failure:
+        return None
+
     return trans
 
 ################################################################################
