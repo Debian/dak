@@ -58,6 +58,9 @@ def init():
 
     Options = Cnf.SubTree("Edit-Transitions::Options")
 
+    if Options["help"]:
+        usage()
+
     whoami = os.getuid()
     whoamifull = pwd.getpwuid(whoami)
     username = whoamifull[0]
@@ -68,15 +71,11 @@ def init():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
     
-    if Options["help"]:
-        usage()
-
 ################################################################################
 
 def usage (exit_code=0):
     print """Usage: transitions [OPTION]...
 Update and check the release managers transition file.
-transitions.
 
 Options:
 
@@ -85,7 +84,7 @@ Options:
   -i, --import <file>       check and import transitions from file
   -c, --check               check the transitions file, remove outdated entries
   -S, --sudo                use sudo to update transitions file
-  -n, --no-action           don't do anything"""
+  -n, --no-action           don't do anything (only affects check)"""
 
     sys.exit(exit_code)
 
@@ -167,8 +166,11 @@ def write_transitions_from_file(from_file):
 
 def temp_transitions_file(transitions):
     # NB: file is unlinked by caller, but fd is never actually closed.
-
+    # We need the chmod, as the file is (most possibly) copied from a
+    # sudo-ed script and would be unreadable if it has default mkstemp mode
+    
     (fd, path) = tempfile.mkstemp("","transitions")
+    os.chmod(path, 0644)
     f = open(path, "w")
     syck.dump(transitions, f)
     return path
@@ -192,11 +194,12 @@ def edit_transitions():
 
         if test == None:
             # Edit is broken
-	    print "Edit was unparsable."
+            print "Edit was unparsable."
             prompt = "[E]dit again, Drop changes?"
-	    default = "E"
-	else:
-	    print "Edit looks okay.\n"
+            default = "E"
+        else:
+            print "Edit looks okay.\n"
+            print "The following transitions are defined:"
             print "------------------------------------------------------------------------"
             transition_info(test)
 
@@ -219,9 +222,9 @@ def edit_transitions():
         elif answer == 'S':
             # Ready to save
             break
-	else:
-	    print "You pressed something you shouldn't have :("
-	    sys.exit(1)
+        else:
+            print "You pressed something you shouldn't have :("
+            sys.exit(1)
 
     # We seem to be done and also have a working file. Copy over.
     write_transitions_from_file(edit_file)

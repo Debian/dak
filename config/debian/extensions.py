@@ -72,7 +72,8 @@ is part of a testing transition designed to get %s migrated (it is
 currently %s, we need version %s).  This transition is managed by the
 Release Team, and %s is the Release-Team member responsible for it.
 Please mail debian-release@lists.debian.org or contact %s directly if you
-need further assistance."""
+need further assistance.  You might want to upload to experimental until this
+transition is done."""
                         % (source, currentlymsg, expected,t["rm"], t["rm"])))
 
                 reject(rejectmsg + "\n")
