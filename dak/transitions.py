@@ -90,6 +90,9 @@ Options:
 
 ################################################################################
 
+#####################################
+#### This may run within sudo !! ####
+#####################################
 def load_transitions(trans_file):
     # Parse the yaml file
     sourcefile = file(trans_file, 'r')
@@ -148,6 +151,9 @@ def load_transitions(trans_file):
 
 ################################################################################
 
+#####################################
+#### This may run within sudo !! ####
+#####################################
 def lock_file(file):
     for retry in range(10):
         lock_fd = os.open(file, os.O_RDWR | os.O_CREAT)
@@ -166,6 +172,9 @@ def lock_file(file):
 
 ################################################################################
 
+#####################################
+#### This may run within sudo !! ####
+#####################################
 def write_transitions(from_trans):
     """Update the active transitions file safely.
        This function takes a parsed input file (which avoids invalid
@@ -192,6 +201,9 @@ def write_transitions(from_trans):
 class ParseException(Exception):
     pass
 
+##########################################
+#### This usually runs within sudo !! ####
+##########################################
 def write_transitions_from_file(from_file):
     """We have a file we think is valid; if we're using sudo, we invoke it
        here, otherwise we just parse the file and call write_transitions"""
@@ -385,6 +397,9 @@ def transition_info(transitions):
 def main():
     global Cnf
 
+    #####################################
+    #### This can run within sudo !! ####
+    #####################################
     init()
     
     # Check if there is a file defined (and existant)
@@ -404,6 +419,9 @@ def main():
             print m
             sys.exit(2)
         sys.exit(0)
+    ##############################################
+    #### Up to here it can run within sudo !! ####
+    ##############################################
 
     # Parse the yaml file
     transitions = load_transitions(transpath)
