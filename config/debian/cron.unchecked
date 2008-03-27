@@ -2,12 +2,14 @@
 
 set -e
 set -u
-export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 LOCKDAILY=""
 LOCKFILE="$lockdir/unchecked.lock"
 NOTICE="$lockdir/daily.lock"
+
+if [ -e $NOTICE ]; then exit 0; fi
 
 cleanup() {
   rm -f "$LOCKFILE"
@@ -30,6 +32,9 @@ if lockfile -r3 $LOCKFILE; then
 		dak process-unchecked -a $changes >> $report
 		echo "--" >> $report
 
+		# sync with debbugs
+		$scriptsdir/ssh-move --server --ssh-identity /srv/ftp.debian.org/s3kr1t/id_debbugs-vt --ssh-move-path /home/debbugs/ssh-move --from-directory $queuedir/bts_version_track --to-directory /org/bugs.debian.org/versions/queue/ftp-master debbugs@bugs.debian.org \*.debinfo \*.versions
+
 		if lockfile -r3 $NOTICE; then
 			LOCKDAILY="YES"
 			psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
@@ -43,7 +48,7 @@ if lockfile -r3 $LOCKFILE; then
 				fi
 			done
 			cd $configdir
-			apt-ftparchive -qq generate apt.conf.buildd
+			apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
 			. $configdir/cron.buildd
 		fi
 	else

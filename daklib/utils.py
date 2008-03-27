@@ -42,6 +42,8 @@ re_taint_free = re.compile(r"^[-+~/\.\w]+$")
 
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>")
 
+re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
+
 changes_parse_error_exc = "Can't parse line in .changes file"
 invalid_dsc_format_exc = "Invalid .dsc file"
 nk_format_exc = "Unknown Format: in .changes file"
@@ -102,17 +104,6 @@ def extract_component_from_section(section):
 
     if section.find('/') != -1:
         component = section.split('/')[0]
-    if component.lower() == "non-us" and section.find('/') != -1:
-        s = component + '/' + section.split('/')[1]
-        if Cnf.has_key("Component::%s" % s): # Avoid e.g. non-US/libs
-            component = s
-
-    if section.lower() == "non-us":
-        component = "non-US/main"
-
-    # non-US prefix is case insensitive
-    if component.lower()[:6] == "non-us":
-        component = "non-US"+component[6:]
 
     # Expand default component
     if component == "":
@@ -120,8 +111,6 @@ def extract_component_from_section(section):
             component = section
         else:
             component = "main"
-    elif component == "non-US":
-        component = "non-US/main"
 
     return (section, component)
 
@@ -222,6 +211,14 @@ The rules for (signing_rules == 1)-mode are:
 
     changes_in.close()
     changes["filecontents"] = "".join(lines)
+
+    if changes.has_key("source"):
+        # Strip the source version in brackets from the source field,
+	# put it in the "source-version" field instead.
+        srcver = re_srchasver.search(changes["source"])
+	if srcver:
+            changes["source"] = srcver.group(1)
+	    changes["source-version"] = srcver.group(2)
 
     if error:
 	raise changes_parse_error_exc, error
@@ -376,8 +373,6 @@ def send_mail (message, filename=""):
 def poolify (source, component):
     if component:
 	component += '/'
-    # FIXME: this is nasty
-    component = component.lower().replace("non-us/", "non-US/")
     if source[:3] == "lib":
 	return component + source[:4] + '/' + source + '/'
     else:
@@ -875,7 +870,7 @@ def process_gpgv_output(status):
             internal_error += "gpgv status line is malformed (incorrect prefix '%s').\n" % (gnupg)
             continue
         args = split[2:]
-        if keywords.has_key(keyword) and (keyword != "NODATA" and keyword != "SIGEXPIRED"):
+        if keywords.has_key(keyword) and keyword not in [ "NODATA", "SIGEXPIRED", "KEYEXPIRED" ]:
             internal_error += "found duplicate status token ('%s').\n" % (keyword)
             continue
         else:
@@ -894,7 +889,7 @@ on error."""
     if not keyserver:
         keyserver = Cnf["Dinstall::KeyServer"]
     if not keyring:
-        keyring = Cnf["Dinstall::GPGKeyring"]
+        keyring = Cnf.ValueList("Dinstall::GPGKeyring")[0]
 
     # Ensure the filename contains no shell meta-characters or other badness
     if not re_taint_free.match(filename):
@@ -929,6 +924,14 @@ on error."""
 
 ################################################################################
 
+def gpg_keyring_args(keyrings=None):
+    if not keyrings:
+        keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
+
+    return " ".join(["--keyring %s" % x for x in keyrings])
+
+################################################################################
+
 def check_signature (sig_filename, reject, data_filename="", keyrings=None, autofetch=None):
     """Check the signature of a file and return the fingerprint if the
 signature is valid or 'None' if it's not.  The first argument is the
@@ -953,7 +956,7 @@ used."""
         return None
 
     if not keyrings:
-        keyrings = (Cnf["Dinstall::PGPKeyring"], Cnf["Dinstall::GPGKeyring"])
+        keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
 
     # Autofetch the signing key if that's enabled
     if autofetch == None:
@@ -966,10 +969,9 @@ used."""
 
     # Build the command line
     status_read, status_write = os.pipe(); 
-    cmd = "gpgv --status-fd %s" % (status_write)
-    for keyring in keyrings:
-        cmd += " --keyring %s" % (keyring)
-    cmd += " %s %s" % (sig_filename, data_filename)
+    cmd = "gpgv --status-fd %s %s %s %s" % (
+        status_write, gpg_keyring_args(keyrings), sig_filename, data_filename)
+
     # Invoke gpgv on the file
     (output, status, exit_status) = gpgv_get_status_output(cmd, status_read, status_write)
 
@@ -985,9 +987,6 @@ used."""
 
     bad = ""
     # Now check for obviously bad things in the processed output
-    if keywords.has_key("SIGEXPIRED"):
-        reject("The key used to sign %s has expired." % (sig_filename))
-        bad = 1
     if keywords.has_key("KEYREVOKED"):
         reject("The key used to sign %s has been revoked." % (sig_filename))
         bad = 1
@@ -1008,6 +1007,9 @@ used."""
         bad = 1
     if keywords.has_key("NODATA"):
         reject("no signature found in %s." % (sig_filename))
+        bad = 1
+    if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
+        reject("The key (0x%s) used to sign %s has expired." % (key, sig_filename))
         bad = 1
 
     if bad:
@@ -1043,7 +1045,7 @@ used."""
     # Finally ensure there's not something we don't recognise
     known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
                           SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
-                          NODATA="")
+                          NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="")
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):

@@ -59,6 +59,7 @@ Write out file lists suitable for use with apt-ftparchive.
 
   -a, --architecture=ARCH   only write file lists for this architecture
   -c, --component=COMPONENT only write file lists for this component
+  -f, --force               ignore Untouchable suite directives in dak.conf
   -h, --help                show this help and exit
   -n, --no-delete           don't delete older versions
   -s, --suite=SUITE         only write file lists for this suite
@@ -84,7 +85,7 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
         delete_version = version[0]
         delete_id = packages[delete_unique_id]["id"]
         delete_arch = packages[delete_unique_id]["arch"]
-        if not Cnf.Find("Suite::%s::Untouchable" % (suite)):
+	if not Cnf.Find("Suite::%s::Untouchable" % (suite)) or Options["Force"]:
             if Options["No-Delete"]:
                 print "Would delete %s_%s_%s in %s in favour of %s_%s" % (pkg, delete_arch, delete_version, suite, dominant_version, dominant_arch)
             else:
@@ -413,8 +414,9 @@ def main():
                  ('c', "component", "Make-Suite-File-List::Options::Component", "HasArg"),
                  ('h', "help", "Make-Suite-File-List::Options::Help"),
                  ('n', "no-delete", "Make-Suite-File-List::Options::No-Delete"),
+		 ('f', "force", "Make-Suite-File-List::Options::Force"),
                  ('s', "suite", "Make-Suite-File-List::Options::Suite", "HasArg")]
-    for i in ["architecture", "component", "help", "no-delete", "suite" ]:
+    for i in ["architecture", "component", "help", "no-delete", "suite", "force-touch" ]:
 	if not Cnf.has_key("Make-Suite-File-List::Options::%s" % (i)):
 	    Cnf["Make-Suite-File-List::Options::%s" % (i)] = ""
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)

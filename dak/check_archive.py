@@ -80,7 +80,7 @@ def process_dir (unused, dirname, filenames):
         filename = filename.replace('potato-proposed-updates', 'proposed-updates')
         if os.path.isfile(filename) and not os.path.islink(filename) and not db_files.has_key(filename) and not excluded.has_key(filename):
             waste += os.stat(filename)[stat.ST_SIZE]
-            print filename
+            print "%s" % (filename)
 
 ################################################################################
 
@@ -88,15 +88,20 @@ def check_files():
     global db_files
 
     print "Building list of database files..."
-    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id")
+    q = projectB.query("SELECT l.path, f.filename, f.last_used FROM files f, location l WHERE f.location = l.id ORDER BY l.path, f.filename")
     ql = q.getresult()
 
+    print "Missing files:"
     db_files.clear()
     for i in ql:
 	filename = os.path.abspath(i[0] + i[1])
         db_files[filename] = ""
         if os.access(filename, os.R_OK) == 0:
-            daklib.utils.warn("'%s' doesn't exist." % (filename))
+	    if i[2]:
+                print "(last used: %s) %s" % (i[2], filename)
+	    else:
+                print "%s" % (filename)
+  	
 
     filename = Cnf["Dir::Override"]+'override.unreferenced'
     if os.path.exists(filename):
@@ -105,7 +110,7 @@ def check_files():
             filename = filename[:-1]
             excluded[filename] = ""
 
-    print "Checking against existent files..."
+    print "Existent files not in db:"
 
     os.path.walk(Cnf["Dir::Root"]+'pool/', process_dir, None)
 

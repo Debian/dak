@@ -39,10 +39,11 @@ from types import *
 
 ################################################################################
 
-re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:]+$")
+re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:~]+$")
 re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$")
 re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
 re_strip_revision = re.compile(r"-([^-]+)$")
+re_strip_srcver = re.compile(r"\s+\(\S+\)$")
 
 ################################################################################
 
@@ -202,6 +203,14 @@ def check_changes():
             reject("%s: Missing mandatory field `%s'." % (filename, i))
             return 0    # Avoid <undef> errors during later tests
 
+    # Strip a source version in brackets from the source field
+    if re_strip_srcver.search(changes["source"]):
+	changes["source"] = re_strip_srcver.sub('', changes["source"])
+
+    # Ensure the source field is a valid package name.
+    if not re_valid_pkg_name.match(changes["source"]):
+        reject("%s: invalid source name '%s'." % (filename, changes["source"]))
+
     # Split multi-value fields into a lower-level dictionary
     for i in ("architecture", "distribution", "binary", "closes"):
         o = changes.get(i, "")
@@ -246,7 +255,7 @@ def check_changes():
     # Check there isn't already a changes file of the same name in one
     # of the queue directories.
     base_filename = os.path.basename(filename)
-    for dir in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates" ]:
+    for dir in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
         if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+base_filename):
             reject("%s: a file with this name already exists in the %s directory." % (base_filename, dir))
 
@@ -320,9 +329,7 @@ def check_deb_ar(filename, control):
  o control.tar.gz
  o data.tar.gz or data.tar.bz2
 
-in that order, and nothing else.  If the third member is a
-data.tar.bz2, an additional check is performed for the required
-Pre-Depends on dpkg (>= 1.10.24)."""
+in that order, and nothing else."""
     cmd = "ar t %s" % (filename)
     (result, output) = commands.getstatusoutput(cmd)
     if result != 0:
@@ -335,22 +342,7 @@ Pre-Depends on dpkg (>= 1.10.24)."""
         reject("%s: first chunk is '%s', expected 'debian-binary'." % (filename, chunks[0]))
     if chunks[1] != "control.tar.gz":
         reject("%s: second chunk is '%s', expected 'control.tar.gz'." % (filename, chunks[1]))
-    if chunks[2] == "data.tar.bz2":
-        # Packages using bzip2 compression must have a Pre-Depends on dpkg >= 1.10.24.
-        found_needed_predep = 0
-        for parsed_dep in apt_pkg.ParseDepends(control.Find("Pre-Depends", "")):
-            for atom in parsed_dep:
-                (dep, version, constraint) = atom
-                if dep != "dpkg" or (constraint != ">=" and constraint != ">>") or \
-                       len(parsed_dep) > 1: # or'ed deps don't count
-                    continue
-                if (constraint == ">=" and apt_pkg.VersionCompare(version, "1.10.24") < 0) or \
-                       (constraint == ">>" and apt_pkg.VersionCompare(version, "1.10.23") < 0):
-                    continue
-                found_needed_predep = 1
-        if not found_needed_predep:
-            reject("%s: uses bzip2 compression, but doesn't Pre-Depend on dpkg (>= 1.10.24)" % (filename))
-    elif chunks[2] != "data.tar.gz":
+    if chunks[2] not in [ "data.tar.bz2", "data.tar.gz" ]:
         reject("%s: third chunk is '%s', expected 'data.tar.gz' or 'data.tar.bz2'." % (filename, chunks[2]))
 
 ################################################################################
@@ -395,7 +387,8 @@ def check_files():
 
     for file in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
-        for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates" ]:
+        for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+	    if not Cnf.has_key("Dir::Queue::%s" % (dir)): continue
             if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+file):
                 reject("%s file already exists in the %s directory." % (file, dir))
         if not daklib.utils.re_taint_free.match(file):
@@ -412,7 +405,7 @@ def check_files():
             files[file]["type"] = "unreadable"
             continue
         # If it's byhand skip remaining checks
-        if files[file]["section"] == "byhand" or files[file]["section"] == "raw-installer":
+        if files[file]["section"] == "byhand" or files[file]["section"][4:] == "raw-":
             files[file]["byhand"] = 1
             files[file]["type"] = "byhand"
         # Checks for a binary package...
@@ -531,10 +524,11 @@ def check_files():
                         files[file]["new"] = 1
                     else:
 		        dsc_file_exists = 0
-                        for myq in ["Accepted", "Embargoed", "Unembargoed"]:
-                            if os.path.exists(Cnf["Dir::Queue::"+myq] + '/' + dsc_filename):
-			        dsc_file_exists = 1
-				break
+                        for myq in ["Accepted", "Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
+			    if Cnf.has_key("Dir::Queue::%s" % (myq)):
+				if os.path.exists(Cnf["Dir::Queue::"+myq] + '/' + dsc_filename):
+				    dsc_file_exists = 1
+				    break
 			if not dsc_file_exists:
                             reject("no source found for %s %s (%s)." % (source_package, source_version, file))
             # Check the version and for file overwrites
@@ -747,6 +741,7 @@ def check_dsc():
         m = daklib.utils.re_issource.match(f)
         if not m:
             reject("%s: %s in Files field not recognised as source." % (dsc_filename, f))
+	    continue
         type = m.group(3)
         if type == "orig.tar.gz" or type == "tar.gz":
             has_tar = 1
@@ -977,7 +972,7 @@ def check_timestamps():
                     apt_inst.debExtract(deb_file,tar.callback,"data.tar.gz")
                 except SystemError, e:
                     # If we can't find a data.tar.gz, look for data.tar.bz2 instead.
-                    if not re.match(r"Cannot f[ui]nd chunk data.tar.gz$", str(e)):
+                    if not re.search(r"Cannot f[ui]nd chunk data.tar.gz$", str(e)):
                         raise
                     deb_file.seek(0)
                     apt_inst.debExtract(deb_file,tar.callback,"data.tar.bz2")
@@ -1002,6 +997,122 @@ def check_timestamps():
                               time.ctime(ancient_date)))
             except:
                 reject("%s: deb contents timestamp check failed [%s: %s]" % (filename, sys.exc_type, sys.exc_value))
+
+################################################################################
+
+def lookup_uid_from_fingerprint(fpr):
+    q = Upload.projectB.query("SELECT u.uid, u.name FROM fingerprint f, uid u WHERE f.uid = u.id AND f.fingerprint = '%s'" % (fpr))
+    qs = q.getresult()
+    if len(qs) == 0:
+        return (None, None)
+    else:
+        return qs[0]
+
+def check_signed_by_key():
+    """Ensure the .changes is signed by an authorized uploader."""
+
+    (uid, uid_name) = lookup_uid_from_fingerprint(changes["fingerprint"])
+    if uid_name == None:
+        uid_name = ""
+
+    # match claimed name with actual name:
+    if uid == None:
+        uid, uid_email = changes["fingerprint"], uid
+        may_nmu, may_sponsor = 1, 1
+	# XXX by default new dds don't have a fingerprint/uid in the db atm,
+	#     and can't get one in there if we don't allow nmu/sponsorship
+    elif uid[:3] == "dm:":
+        uid_email = uid[3:]
+        may_nmu, may_sponsor = 0, 0
+    else:
+        uid_email = "%s@debian.org" % (uid)
+        may_nmu, may_sponsor = 1, 1
+
+    if uid_email in [changes["maintaineremail"], changes["changedbyemail"]]:
+        sponsored = 0
+    elif uid_name in [changes["maintainername"], changes["changedbyname"]]:
+        sponsored = 0
+        if uid_name == "": sponsored = 1
+    else:
+        sponsored = 1
+
+    if sponsored and not may_sponsor: 
+        reject("%s is not authorised to sponsor uploads" % (uid))
+
+    if not sponsored and not may_nmu:
+        source_ids = []
+	check_suites = changes["distribution"].keys()
+	if "unstable" not in check_suites: check_suites.append("unstable")
+        for suite in check_suites:
+            suite_id = daklib.database.get_suite_id(suite)
+            q = Upload.projectB.query("SELECT s.id FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND sa.suite = %d" % (changes["source"], suite_id))
+            for si in q.getresult():
+                if si[0] not in source_ids: source_ids.append(si[0])
+
+        print "source_ids: %s" % (",".join([str(x) for x in source_ids]))
+
+        is_nmu = 1
+        for si in source_ids:
+            is_nmu = 1
+            q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT maintainer FROM src_uploaders WHERE src_uploaders.source = %s)" % (si))
+            for m in q.getresult():
+                (rfc822, rfc2047, name, email) = daklib.utils.fix_maintainer(m[0])
+                if email == uid_email or name == uid_name:
+                    is_nmu=0
+                    break
+        if is_nmu:
+            reject("%s may not upload/NMU source package %s" % (uid, changes["source"]))
+
+        for b in changes["binary"].keys():
+            for suite in changes["distribution"].keys():
+                suite_id = daklib.database.get_suite_id(suite)
+	        q = Upload.projectB.query("SELECT DISTINCT s.source FROM source s JOIN binaries b ON (s.id = b.source) JOIN bin_associations ba On (b.id = ba.bin) WHERE b.package = '%s' AND ba.suite = %s" % (b, suite_id))
+		for s in q.getresult():
+                    if s[0] != changes["source"]:
+                        reject("%s may not hijack %s from source package %s in suite %s" % (uid, b, s, suite))
+
+        for file in files.keys():
+            if files[file].has_key("byhand"): 
+                reject("%s may not upload BYHAND file %s" % (uid, file))
+            if files[file].has_key("new"):
+                reject("%s may not upload NEW file %s" % (uid, file))
+
+    # The remaining checks only apply to binary-only uploads right now
+    if changes["architecture"].has_key("source"):
+        return
+
+    if not Cnf.Exists("Binary-Upload-Restrictions"):
+        return
+
+    restrictions = Cnf.SubTree("Binary-Upload-Restrictions")
+
+    # If the restrictions only apply to certain components make sure
+    # that the upload is actual targeted there.
+    if restrictions.Exists("Components"):
+        restricted_components = restrictions.SubTree("Components").ValueList()
+        is_restricted = False
+        for file in files:
+            if files[file]["component"] in restricted_components:
+                is_restricted = True
+                break
+        if not is_restricted:
+            return
+
+    # Assuming binary only upload restrictions are in place we then
+    # iterate over suite and architecture checking the key is in the
+    # allowed list.  If no allowed list exists for a given suite or
+    # architecture it's assumed to be open to anyone.
+    for suite in changes["distribution"].keys():
+        if not restrictions.Exists(suite):
+            continue
+        for arch in changes["architecture"].keys():
+            if not restrictions.SubTree(suite).Exists(arch):
+                continue
+            allowed_keys = restrictions.SubTree("%s::%s" % (suite, arch)).ValueList()
+            if changes["fingerprint"] not in allowed_keys:
+                base_filename = os.path.basename(pkg.changes_file)
+                reject("%s: not signed by authorised uploader for %s/%s"
+                       % (base_filename, suite, arch))
 
 ################################################################################
 ################################################################################
@@ -1041,16 +1152,19 @@ def action ():
     # q-unapproved hax0ring
     queue_info = {
          "New": { "is": is_new, "process": acknowledge_new },
+	 "Autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
          "Byhand" : { "is": is_byhand, "process": do_byhand },
+         "OldStableUpdate" : { "is": is_oldstableupdate, 
+	 			"process": do_oldstableupdate },
          "StableUpdate" : { "is": is_stableupdate, "process": do_stableupdate },
          "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
          "Embargo" : { "is": is_embargo, "process": queue_embargo },
     }
-    queues = [ "New", "Byhand" ]
+    queues = [ "New", "Autobyhand", "Byhand" ]
     if Cnf.FindB("Dinstall::SecurityQueueHandling"):
         queues += [ "Unembargo", "Embargo" ]
     else:
-        queues += [ "StableUpdate" ]
+        queues += [ "OldStableUpdate", "StableUpdate" ]
 
     (prompt, answer) = ("", "XXX")
     if Options["No-Action"] or Options["Automatic"]:
@@ -1105,7 +1219,7 @@ def action ():
         accept(summary, short_summary)
         remove_from_unchecked()
     elif answer == queuekey:
-        queue_info[queue]["process"](summary)
+        queue_info[queue]["process"](summary, short_summary)
         remove_from_unchecked()
     elif answer == 'Q':
         sys.exit(0)
@@ -1156,7 +1270,7 @@ def is_unembargo ():
 
     return 0
 
-def queue_unembargo (summary):
+def queue_unembargo (summary, short_summary):
     print "Moving to UNEMBARGOED holding area."
     Logger.log(["Moving to unembargoed", pkg.changes_file])
 
@@ -1171,9 +1285,10 @@ def queue_unembargo (summary):
 ################################################################################
 
 def is_embargo ():
-    return 0
+    # if embargoed queues are enabled always embargo
+    return 1
 
-def queue_embargo (summary):
+def queue_embargo (summary, short_summary):
     print "Moving to EMBARGOED holding area."
     Logger.log(["Moving to embargoed", pkg.changes_file])
 
@@ -1188,11 +1303,22 @@ def queue_embargo (summary):
 ################################################################################
 
 def is_stableupdate ():
-    if changes["distribution"].has_key("proposed-updates"):
-	return 1
-    return 0
+    if not changes["distribution"].has_key("proposed-updates"):
+	return 0
 
-def do_stableupdate (summary):
+    if not changes["architecture"].has_key("source"):
+        pusuite = daklib.database.get_suite_id("proposed-updates")
+        q = Upload.projectB.query(
+          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" % 
+          (changes["source"], changes["version"], pusuite))
+        ql = q.getresult()
+        if ql:
+            # source is already in proposed-updates so no need to hold
+            return 0
+
+    return 1
+
+def do_stableupdate (summary, short_summary):
     print "Moving to PROPOSED-UPDATES holding area."
     Logger.log(["Moving to proposed-updates", pkg.changes_file]);
 
@@ -1205,13 +1331,109 @@ def do_stableupdate (summary):
 
 ################################################################################
 
+def is_oldstableupdate ():
+    if not changes["distribution"].has_key("oldstable-proposed-updates"):
+	return 0
+
+    if not changes["architecture"].has_key("source"):
+        pusuite = daklib.database.get_suite_id("oldstable-proposed-updates")
+        q = Upload.projectB.query(
+          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" % 
+          (changes["source"], changes["version"], pusuite))
+        ql = q.getresult()
+        if ql:
+            # source is already in oldstable-proposed-updates so no need to hold
+            return 0
+
+    return 1
+
+def do_oldstableupdate (summary, short_summary):
+    print "Moving to OLDSTABLE-PROPOSED-UPDATES holding area."
+    Logger.log(["Moving to oldstable-proposed-updates", pkg.changes_file]);
+
+    Upload.dump_vars(Cnf["Dir::Queue::OldProposedUpdates"]);
+    move_to_dir(Cnf["Dir::Queue::OldProposedUpdates"])
+
+    # Check for override disparities
+    Upload.Subst["__SUMMARY__"] = summary;
+    Upload.check_override();
+
+################################################################################
+
+def is_autobyhand ():
+    all_auto = 1
+    any_auto = 0
+    for file in files.keys():
+        if files[file].has_key("byhand"):
+	    any_auto = 1
+
+	    # filename is of form "PKG_VER_ARCH.EXT" where PKG, VER and ARCH
+	    # don't contain underscores, and ARCH doesn't contain dots.
+	    # further VER matches the .changes Version:, and ARCH should be in
+	    # the .changes Architecture: list.
+	    if file.count("_") < 2:
+	    	all_auto = 0
+		continue
+	
+	    (pkg, ver, archext) = file.split("_", 2)
+	    if archext.count(".") < 1 or changes["version"] != ver:
+	    	all_auto = 0
+		continue
+
+	    ABH = Cnf.SubTree("AutomaticByHandPackages")
+	    if not ABH.has_key(pkg) or \
+	      ABH["%s::Source" % (pkg)] != changes["source"]:
+	        print "not match %s %s" % (pkg, changes["source"])
+	        all_auto = 0
+		continue
+
+	    (arch, ext) = archext.split(".", 1)
+	    if arch not in changes["architecture"]:
+	        all_auto = 0
+		continue
+
+	    files[file]["byhand-arch"] = arch
+	    files[file]["byhand-script"] = ABH["%s::Script" % (pkg)]
+
+    return any_auto and all_auto
+
+def do_autobyhand (summary, short_summary):
+    print "Attempting AUTOBYHAND."
+    byhandleft = 0
+    for file in files.keys():
+        byhandfile = file
+        if not files[file].has_key("byhand"):
+            continue
+        if not files[file].has_key("byhand-script"):
+            byhandleft = 1
+            continue
+
+        os.system("ls -l %s" % byhandfile)
+        result = os.system("%s %s %s %s %s" % (
+                files[file]["byhand-script"], byhandfile, 
+                changes["version"], files[file]["byhand-arch"],
+                os.path.abspath(pkg.changes_file)))
+        if result == 0:
+            os.unlink(byhandfile)
+            del files[file]
+        else:
+            print "Error processing %s, left as byhand." % (file)
+            byhandleft = 1
+
+    if byhandleft:
+        do_byhand(summary, short_summary)
+    else:
+        accept(summary, short_summary)
+
+################################################################################
+
 def is_byhand ():
     for file in files.keys():
         if files[file].has_key("byhand"):
             return 1
     return 0
 
-def do_byhand (summary):
+def do_byhand (summary, short_summary):
     print "Moving to BYHAND holding area."
     Logger.log(["Moving to byhand", pkg.changes_file])
 
@@ -1230,7 +1452,7 @@ def is_new ():
             return 1
     return 0
 
-def acknowledge_new (summary):
+def acknowledge_new (summary, short_summary):
     Subst = Upload.Subst
 
     print "Moving to NEW holding area."
@@ -1299,6 +1521,7 @@ def process_it (changes_file):
                 check_md5sums()
                 check_urgency()
                 check_timestamps()
+                check_signed_by_key()
         Upload.update_subst(reject_message)
         action()
     except SystemExit:

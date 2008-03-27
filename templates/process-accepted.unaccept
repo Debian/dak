@@ -2,6 +2,9 @@ From: __REJECTOR_ADDRESS__
 To: __MAINTAINER_TO__
 __CC__
 __BCC__
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 Subject: __CHANGES_FILENAME__ UNACCEPT
 
 __REJECT_MESSAGE__

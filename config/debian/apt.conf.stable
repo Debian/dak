@@ -1,14 +1,14 @@
 Dir 
 {
-   ArchiveDir "/org/ftp.debian.org/ftp/";
-   OverrideDir "/org/ftp.debian.org/scripts/override/";
-   CacheDir "/org/ftp.debian.org/database/";
+   ArchiveDir "/srv/ftp.debian.org/ftp/";
+   OverrideDir "/srv/ftp.debian.org/scripts/override/";
+   CacheDir "/srv/ftp.debian.org/database/";
 };
 
 Default
 {
-   Packages::Compress ". gzip";
-   Sources::Compress "gzip";
+   Packages::Compress "gzip bzip2";
+   Sources::Compress "gzip bzip2";
    Contents::Compress "gzip";
    DeLinkLimit 0;
    FileMode 0664;
@@ -16,30 +16,43 @@ Default
 
 TreeDefault
 {
-   Contents::Header "/org/ftp.debian.org/dak/config/debian/Contents.top";
+   Contents::Header "/srv/ftp.debian.org/dak/config/debian/Contents.top";
 };
 
 tree "dists/stable"
 {
-   FileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/org/ftp.debian.org/database/dists/stable_$(SECTION)_source.list";
+   FileList "/srv/ftp.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp.debian.org/database/dists/stable_$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc source";
-   BinOverride "override.sarge.$(SECTION)";
-   ExtraOverride "override.sarge.extra.$(SECTION)";
-   SrcOverride "override.sarge.$(SECTION).src";
+   Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc source";
+   BinOverride "override.etch.$(SECTION)";
+   ExtraOverride "override.etch.extra.$(SECTION)";
+   SrcOverride "override.etch.$(SECTION).src";
 };
 
 // debian-installer
 
 tree "dists/stable/main"
 {
-   FileList "/org/ftp.debian.org/database/dists/stable_main_$(SECTION)_binary-$(ARCH).list";
+   FileList "/srv/ftp.debian.org/database/dists/stable_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
-   Architectures "alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 sparc";
-   BinOverride "override.sarge.main.$(SECTION)";
-   SrcOverride "override.sarge.main.src";
+   Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc";
+   BinOverride "override.etch.main.$(SECTION)";
+   SrcOverride "override.etch.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
-   Contents " ";
+   Contents "$(DIST)/../Contents-udeb";
 };
+
+tree "dists/stable/non-free"
+{
+   FileList "/srv/ftp.debian.org/database/dists/stable_non-free_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc";
+   BinOverride "override.etch.main.$(SECTION)";
+   SrcOverride "override.etch.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents "$(DIST)/../Contents-udeb-nf";
+};
+

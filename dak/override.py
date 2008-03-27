@@ -48,7 +48,7 @@ def game_over():
 
 def usage (exit_code=0):
     print """Usage: dak override [OPTIONS] package [section] [priority]
-Make microchanges or microqueries of the overrides
+Make microchanges or microqueries of the binary overrides
 
   -h, --help                 show this help and exit
   -d, --done=BUG#            send priority/section change as closure to bug#
@@ -105,30 +105,52 @@ def main ():
         else:
             daklib.utils.fubar("%s is not a valid section or priority" % (arg))
 
-
     # Retrieve current section/priority...
-    q = projectB.query("""
-    SELECT priority.priority AS prio, section.section AS sect
-      FROM override, priority, section, suite
+    oldsection, oldsourcesection, oldpriority = None, None, None
+    for type in ['source', 'binary']:
+        eqdsc = '!='
+        if type == 'source':
+            eqdsc = '='
+        q = projectB.query("""
+    SELECT priority.priority AS prio, section.section AS sect, override_type.type AS type
+      FROM override, priority, section, suite, override_type
      WHERE override.priority = priority.id
+       AND override.type = override_type.id
+       AND override_type.type %s 'dsc'
        AND override.section = section.id
        AND override.package = %s
        AND override.suite = suite.id
        AND suite.suite_name = %s
-    """ % (pg._quote(package,"str"), pg._quote(suite,"str")))
+        """ % (eqdsc, pg._quote(package,"str"), pg._quote(suite,"str")))
 
-    if q.ntuples() == 0:
+        if q.ntuples() == 0:
+            continue
+        if q.ntuples() > 1:
+            daklib.utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
+
+        r = q.getresult()
+        if type == 'binary':
+            oldsection = r[0][1]
+            oldpriority = r[0][0]
+        else:
+            oldsourcesection = r[0][1]
+
+    if not oldpriority and not oldsourcesection:
         daklib.utils.fubar("Unable to find package %s" % (package))
-    if q.ntuples() > 1:
-        daklib.utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
-
-    r = q.getresult()
-    oldsection = r[0][1]
-    oldpriority = r[0][0]
+    if oldsection and oldsourcesection and oldsection != oldsourcesection:
+        # When setting overrides, both source & binary will become the same section
+        daklib.utils.warn("Source is in section '%s' instead of '%s'" % (oldsourcesection, oldsection))
+    if not oldsection:
+        oldsection = oldsourcesection
 
     if not arguments:
-        print "%s is in section '%s' at priority '%s'" % (
-            package,oldsection,oldpriority)
+        if oldpriority:
+            print "%s is in section '%s' at priority '%s'" % (
+                package,oldsection,oldpriority)
+        elif oldsourcesection:
+            # no use printing this line if also binary
+            print "%s is in section '%s'" % (
+                package,oldsourcesection)
         sys.exit(0)
 
     # At this point, we have a new section and priority... check they're valid...
@@ -156,6 +178,9 @@ def main ():
     if newpriority == oldpriority and newsection == oldsection:
         print "I: Doing nothing"
         sys.exit(0)
+
+    if newpriority and not oldpriority:
+        daklib.utils.fubar("Trying to set priority of a source-only package")
 
     # If we're in no-action mode
     if Options["No-Action"]:
@@ -190,9 +215,10 @@ def main ():
         UPDATE override
            SET priority=%d
          WHERE package=%s
+           AND override.type != %d
            AND suite = (SELECT id FROM suite WHERE suite_name=%s)""" % (
             newprioid,
-            pg._quote(package,"str"),
+            pg._quote(package,"str"), daklib.database.get_override_type_id("dsc"),
             pg._quote(suite,"str") ))
         Logger.log(["changed priority",package,oldpriority,newpriority])
 
@@ -205,7 +231,7 @@ def main ():
             newsecid,
             pg._quote(package,"str"),
             pg._quote(suite,"str") ))
-        Logger.log(["changed priority",package,oldsection,newsection])
+        Logger.log(["changed section",package,oldsection,newsection])
     projectB.query("COMMIT WORK")
 
     if Options.has_key("Done"):

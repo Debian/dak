@@ -282,6 +282,9 @@ def main ():
     if action == "list":
         list(suite, component, type)
     else:
+        if Cnf.has_key("Suite::%s::Untouchable" % suite) and Cnf["Suite::%s::Untouchable" % suite] != 0:
+	    daklib.utils.fubar("%s: suite is untouchable" % suite)
+
         Logger = daklib.logging.Logger(Cnf, "control-overrides")
         if file_list:
             for file in file_list:

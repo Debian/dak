@@ -22,7 +22,7 @@
 
 ################################################################################
 
-import sys, os, popen2, tempfile, stat, time
+import sys, os, popen2, tempfile, stat, time, pg
 import apt_pkg
 import daklib.utils
 
@@ -40,6 +40,8 @@ def usage (exit_code=0):
 Generate Release files (for SUITE).
 
   -h, --help                 show this help and exit
+  -a, --apt-conf FILE        use FILE instead of default apt.conf
+  -f, --force-touch          ignore Untouchable directives in dak.conf
 
 If no SUITE is given Release files are generated for all suites."""
 
@@ -118,6 +120,9 @@ def print_md5_files (tree, files):
 def print_sha1_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.sha1sum)
 
+def print_sha256_files (tree, files):
+    print_md5sha_files (tree, files, apt_pkg.sha256sum)
+
 ################################################################################
 
 def main ():
@@ -126,8 +131,11 @@ def main ():
 
     Cnf = daklib.utils.get_conf()
 
-    Arguments = [('h',"help","Generate-Releases::Options::Help")]
-    for i in [ "help" ]:
+    Arguments = [('h',"help","Generate-Releases::Options::Help"),
+		 ('a',"apt-conf","Generate-Releases::Options::Apt-Conf", "HasArg"),
+		 ('f',"force-touch","Generate-Releases::Options::Force-Touch"),
+		]
+    for i in [ "help", "apt-conf", "force-touch" ]:
 	if not Cnf.has_key("Generate-Releases::Options::%s" % (i)):
 	    Cnf["Generate-Releases::Options::%s" % (i)] = ""
 
@@ -137,8 +145,13 @@ def main ():
     if Options["Help"]:
 	usage()
 
+    if not Options["Apt-Conf"]:
+        Options["Apt-Conf"] = daklib.utils.which_apt_conf_file()
+
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,daklib.utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf, Options["Apt-Conf"])
+
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
     if not suites:
         suites = Cnf.SubTree("Suite").List()
@@ -147,7 +160,7 @@ def main ():
         print "Processing: " + suite
 	SuiteBlock = Cnf.SubTree("Suite::" + suite)
 
-	if SuiteBlock.has_key("Untouchable"):
+	if SuiteBlock.has_key("Untouchable") and not Options["Force-Touch"]:
             print "Skipping: " + suite + " (untouchable)"
             continue
 
@@ -155,8 +168,16 @@ def main ():
 
 	origin = SuiteBlock["Origin"]
 	label = SuiteBlock.get("Label", origin)
-	version = SuiteBlock.get("Version", "")
 	codename = SuiteBlock.get("CodeName", "")
+
+	version = ""
+	description = ""
+
+	q = projectB.query("SELECT version, description FROM suite WHERE suite_name = '%s'" % (suite))
+	qs = q.getresult()
+	if len(qs) == 1:
+	    if qs[0][0] != "-": version = qs[0][0]
+	    if qs[0][1]: description = qs[0][1]
 
 	if SuiteBlock.has_key("NotAutomatic"):
 	    notautomatic = "yes"
@@ -202,7 +223,8 @@ def main ():
 	if components:
             out.write("Components: %s\n" % (" ".join(components)))
 
-	out.write("Description: %s\n" % (SuiteBlock["Description"]))
+	if description:
+	    out.write("Description: %s\n" % (description))
 
 	files = []
 
@@ -234,6 +256,9 @@ def main ():
 		    relpath = Cnf["Dir::Root"]+tree+"/"+rel
 
                     try:
+		    	if os.access(relpath, os.F_OK):
+			    if os.stat(relpath).st_nlink > 1:
+			        os.unlink(relpath)
                         release = open(relpath, "w")
                         #release = open(longsuite.replace("/","_") + "_" + arch + "_" + sec + "_Release", "w")
                     except IOError:
@@ -255,14 +280,18 @@ def main ():
                     files.append(rel)
 
 	    if AptCnf.has_key("tree::%s/main" % (tree)):
-	        sec = AptCnf["tree::%s/main::Sections" % (tree)].split()[0]
-		if sec != "debian-installer":
-	    	    print "ALERT: weird non debian-installer section in %s" % (tree)
+	        for dis in ["main", "contrib", "non-free"]:
+		    if not AptCnf.has_key("tree::%s/%s" % (tree, dis)): continue
+	            sec = AptCnf["tree::%s/%s::Sections" % (tree,dis)].split()[0]
+		    if sec != "debian-installer":
+	    	        print "ALERT: weird non debian-installer section in %s" % (tree)
 
-		for arch in AptCnf["tree::%s/main::Architectures" % (tree)].split():
-		    if arch != "source":  # always true
-			for file in compressnames("tree::%s/main" % (tree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
-			    files.append(file)
+		    for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
+		        if arch != "source":  # always true
+			    for file in compressnames("tree::%s/%s" % (tree,dis),
+			    	"Packages", 
+				"%s/%s/binary-%s/Packages" % (dis, sec, arch)):
+			        files.append(file)
 	    elif AptCnf.has_key("tree::%s::FakeDI" % (tree)):
 		usetree = AptCnf["tree::%s::FakeDI" % (tree)]
 		sec = AptCnf["tree::%s/main::Sections" % (usetree)].split()[0]
@@ -286,6 +315,8 @@ def main ():
 	print_md5_files(tree, files)
 	out.write("SHA1:\n")
 	print_sha1_files(tree, files)
+	out.write("SHA256:\n")
+	print_sha256_files(tree, files)
 
 	out.close()
 	if Cnf.has_key("Dinstall::SigningKeyring"):

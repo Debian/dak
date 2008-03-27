@@ -34,6 +34,7 @@ archive_id_cache = {}
 component_id_cache = {}
 location_id_cache = {}
 maintainer_id_cache = {}
+keyring_id_cache = {}
 source_id_cache = {}
 files_id_cache = {}
 maintainer_cache = {}
@@ -185,7 +186,7 @@ def get_component_id (component):
 def get_location_id (location, component, archive):
     global location_id_cache
 
-    cache_key = location + '~' + component + '~' + location
+    cache_key = location + '_' + component + '_' + location
     if location_id_cache.has_key(cache_key):
         return location_id_cache[cache_key]
 
@@ -208,7 +209,7 @@ def get_location_id (location, component, archive):
 def get_source_id (source, version):
     global source_id_cache
 
-    cache_key = source + '~' + version + '~'
+    cache_key = source + '_' + version + '_'
     if source_id_cache.has_key(cache_key):
         return source_id_cache[cache_key]
 
@@ -238,6 +239,23 @@ def get_or_set_maintainer_id (maintainer):
     maintainer_id_cache[maintainer] = maintainer_id
 
     return maintainer_id
+
+################################################################################
+
+def get_or_set_keyring_id (keyring):
+    global keyring_id_cache
+
+    if keyring_id_cache.has_key(keyring):
+        return keyring_id_cache[keyring]
+
+    q = projectB.query("SELECT id FROM keyrings WHERE name = '%s'" % (keyring))
+    if not q.getresult():
+        projectB.query("INSERT INTO keyrings (name) VALUES ('%s')" % (keyring))
+        q = projectB.query("SELECT id FROM keyrings WHERE name = '%s'" % (keyring))
+    keyring_id = q.getresult()[0][0]
+    keyring_id_cache[keyring] = keyring_id
+
+    return keyring_id
 
 ################################################################################
 
@@ -278,7 +296,7 @@ def get_or_set_fingerprint_id (fingerprint):
 def get_files_id (filename, size, md5sum, location_id):
     global files_id_cache
 
-    cache_key = "%s~%d" % (filename, location_id)
+    cache_key = "%s_%d" % (filename, location_id)
 
     if files_id_cache.has_key(cache_key):
         return files_id_cache[cache_key]
@@ -331,7 +349,7 @@ def set_files_id (filename, size, md5sum, location_id):
     ##
     ##q = projectB.query("SELECT id FROM files WHERE id = currval('files_id_seq')")
     ##ql = q.getresult()[0]
-    ##cache_key = "%s~%d" % (filename, location_id)
+    ##cache_key = "%s_%d" % (filename, location_id)
     ##files_id_cache[cache_key] = ql[0]
     ##return files_id_cache[cache_key]
 

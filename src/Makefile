@@ -11,7 +11,7 @@ all: sql-aptvc.so
 
 sql-aptvc.o: sql-aptvc.cpp
 sql-aptvc.so: sql-aptvc.o
-	$(C++) $(LDFLAGS) $(LIBS) -shared -o $@ $<
+	$(CC) $(LDFLAGS) $(LIBS) -shared -o $@ $<
 clean:
 	rm -f sql-aptvc.so sql-aptvc.o
 

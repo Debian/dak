@@ -15,23 +15,23 @@ o Install, reject and remove packages as directed by the SRM using
 
 o Do anything in proposed-updates/TODO
 o Close any applicable stable bugs
-  (hint: http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=ftp.debian.org&include=woody)
+  (hint: http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=ftp.debian.org&include=etch)
 o Update version number in README, README.html and dists/README (ftp-master only)
 o Update the 'Debian<n>.<n>r<n>' symlink in dists/
-o Clean up dists/ChangeLog (add header, basically)
-o Update version fields in dak.conf[-non-US]
+o Clean up dists/stable/ChangeLog (add header, basically)
+o Update version fields in dak.conf
 o Update fields in suite table in postgresql (see below)
 
-o Comment out "Untouchable" in dak.conf[-non-US]
+o Comment out "Untouchable" in dak.conf
 o Run 'dak make-suite-file-list -s stable'
-o Run apt-ftparchive generate apt.conf.stable[-non-US]
+o Run apt-ftparchive generate apt.conf.stable
 o Run 'dak generate-releases stable'  ** FIXME: requires apt.conf.stable stanza for stable in apt.conf
 		     ** FIXME: must be run as dak
-o Uncomment "Untouchable" in dak.conf[-non-US]
+o Uncomment "Untouchable" in dak.conf
 
 Yes, this sucks and more of it should be automated.
 
 #######################################################
 
-update suite set version = '3.0r4' where suite_name = 'stable';
-update suite set description = 'Debian 3.0r4 Released 31st December 2004' where suite_name = 'stable';
+update suite set version = '4.0r1' where suite_name = 'stable';
+update suite set description = 'Debian 4.0r1 Released 15th August 2007' where suite_name = 'stable';

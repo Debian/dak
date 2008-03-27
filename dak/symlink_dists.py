@@ -59,7 +59,6 @@ def fix_component_section (component, section):
 
     # FIXME: ugly hacks to work around override brain damage
     section = re_strip_section_prefix.sub('', section)
-    section = section.lower().replace('non-us', '')
     if section == "main" or section == "contrib" or section == "non-free":
         section = ''
     if section != '':

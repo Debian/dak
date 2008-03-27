@@ -1,21 +1,16 @@
-base			Base system (baseX_Y.tgz) general bugs
-install			Installation system
-installation		Installation system
+base			Base system general bugs
 cdrom			Installation system
-boot-floppy		Installation system
 spam			Spam (reassign spam to here so we can complain about it)
 press			Press release issues
 kernel			Problems with the Linux kernel, or that shipped with Debian
 project			Problems related to project administration
 general			General problems (e.g. "many manpages are mode 755")
-slink-cd		Slink CD
-potato-cd		Potato CD
 listarchives		Problems with the WWW mailing list archives
+nm.debian.org		New Maintainer process and nm.debian.org webpages
 qa.debian.org		The Quality Assurance group
 ftp.debian.org		Problems with the FTP site
 www.debian.org		Problems with the WWW site
 bugs.debian.org		The bug tracking system, @bugs.debian.org
-nonus.debian.org	Problems with the non-US FTP site
 lists.debian.org	The mailing lists, debian-*@lists.debian.org
 wnpp			Work-Needing and Prospective Packages list
 cdimage.debian.org	CD Image issues

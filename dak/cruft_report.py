@@ -23,7 +23,7 @@
 #   you might as well write some letters to God about how unfair entropy
 #   is while you're at it.'' -- 20020802143104.GA5628@azure.humbug.org.au
 
-## TODO:  fix NBS looping for version, implement Dubious NBS, fix up output of duplicate source package stuff, improve experimental ?, add support for non-US ?, add overrides, avoid ANAIS for duplicated packages
+## TODO:  fix NBS looping for version, implement Dubious NBS, fix up output of duplicate source package stuff, improve experimental ?, add overrides, avoid ANAIS for duplicated packages
 
 ################################################################################
 
@@ -202,7 +202,7 @@ def do_dubious_nbs(dubious_nbs):
 def do_obsolete_source(duplicate_bins, bin2source):
     obsolete = {}
     for key in duplicate_bins.keys():
-        (source_a, source_b) = key.split('~')
+        (source_a, source_b) = key.split('_')
         for source in [ source_a, source_b ]:
             if not obsolete.has_key(source):
                 if not source_binaries.has_key(source):
@@ -340,7 +340,7 @@ def main ():
                 if bin_pkgs.has_key(binary):
                     key_list = [ source, bin_pkgs[binary] ]
                     key_list.sort()
-                    key = '~'.join(key_list)
+                    key = '_'.join(key_list)
                     duplicate_bins.setdefault(key, [])
                     duplicate_bins[key].append(binary)
                 bin_pkgs[binary] = source
@@ -390,7 +390,7 @@ def main ():
                     if previous_source != source:
                         key_list = [ source, previous_source ]
                         key_list.sort()
-                        key = '~'.join(key_list)
+                        key = '_'.join(key_list)
                         duplicate_bins.setdefault(key, [])
                         if package not in duplicate_bins[key]:
                             duplicate_bins[key].append(package)
@@ -445,7 +445,7 @@ def main ():
         keys = duplicate_bins.keys()
         keys.sort()
         for key in keys:
-            (source_a, source_b) = key.split("~")
+            (source_a, source_b) = key.split("_")
             print " o %s & %s => %s" % (source_a, source_b, ", ".join(duplicate_bins[key]))
         print 
 

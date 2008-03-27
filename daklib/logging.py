@@ -39,13 +39,16 @@ class Logger:
         if not os.path.exists(logdir):
             umask = os.umask(00000)
             os.makedirs(logdir, 02775)
+	    os.umask(umask)
         # Open the logfile
         logfilename = "%s/%s" % (logdir, time.strftime("%Y-%m"))
 	logfile = None
 	if debug:
 	    logfile = sys.stderr
 	else:
+	    umask = os.umask(00002)
 	    logfile = utils.open_file(logfilename, 'a')
+	    os.umask(umask)
         self.logfile = logfile
         # Log the start of the program
         user = pwd.getpwuid(os.getuid())[0]

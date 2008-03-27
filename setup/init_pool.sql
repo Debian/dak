@@ -28,15 +28,29 @@ CREATE TABLE maintainer (
        name TEXT UNIQUE NOT NULL
 );
 
+CREATE TABLE src_uploaders (
+       id SERIAL PRIMARY KEY,
+       source INT4 NOT NULL REFERENCES source,
+       maintainer INT4 NOT NULL REFERENCES maintainer
+);
+
 CREATE TABLE uid (
        id SERIAL PRIMARY KEY,
-       uid TEXT UNIQUE NOT NULL
+       uid TEXT UNIQUE NOT NULL,
+       name TEXT
 );
+
+CREATE TABLE keyrings (
+       id SERIAL PRIMARY KEY,
+       name TEXT
+);
+
 
 CREATE TABLE fingerprint (
        id SERIAL PRIMARY KEY,
        fingerprint TEXT UNIQUE NOT NULL,
-       uid INT4 REFERENCES uid
+       uid INT4 REFERENCES uid,
+       keyring INT4 REFERENCES keyrings
 );
 
 CREATE TABLE location (

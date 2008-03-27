@@ -157,7 +157,7 @@ def sortfunc(a,b):
 
 def header():
     print """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-	<html><head><meta http-equiv="Content-Type" content="text/html; charset=iso8859-1">
+	<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>Debian NEW and BYHAND Packages</title>
 	<link type="text/css" rel="stylesheet" href="style.css">
 	<link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
@@ -222,11 +222,6 @@ def table_footer(type, source_count, total_count):
     print "<p class=\"validate\">Package count in <b>%s</b>: <i>%s</i>\n" % (type, source_count)
     print "<br>Total Package count: <i>%s</i></p>\n" % (total_count)
 
-def force_to_latin(s):
-    """Forces a string to Latin-1."""
-    latin1_s = unicode(s,'utf-8')
-    return latin1_s.encode('iso8859-1', 'replace')
-
 
 def table_row(source, version, arch, last_mod, maint, distribution, closes):
 
@@ -244,13 +239,12 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes):
     print "<td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, source)
     print "<td valign=\"top\" class=\"%s\">" % (tdclass)
     for vers in version.split():
-        print "%s<br>" % (vers)
+        print "<a href=\"/new/%s_%s.html\">%s</a><br>" % (source, vers, vers)
     print "</td><td valign=\"top\" class=\"%s\">%s</td><td valign=\"top\" class=\"%s\">" % (tdclass, arch, tdclass)
     for dist in distribution:
         print "%s<br>" % (dist)
     print "</td><td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, last_mod)
     (name, mail) = maint.split(":")
-    name = force_to_latin(name)
 
     print "<td valign=\"top\" class=\"%s\"><a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></td>" % (tdclass, mail, name)
     print "<td valign=\"top\" class=\"%s\">" % (tdclass)

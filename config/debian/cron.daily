@@ -3,7 +3,7 @@
 # Executed daily via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 ################################################################################
@@ -14,15 +14,19 @@ TS=0
 NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
 LOCKCU="$lockdir/daily.lock"
 LOCKAC="$lockdir/unchecked.lock"
+lockac=0
 
 cleanup() {
   rm -f "$NOTICE"
   rm -f "$LOCKCU"
+  if [ "$lockac" -eq "1" ]; then
+    rm -f "$LOCKAC"
+  fi
 }
+lockfile -l 3600 $LOCKCU
 trap cleanup 0
 
 rm -f "$NOTICE"
-lockfile -l 3600 $LOCKCU
 cat > "$NOTICE" <<EOF
 Packages are currently being installed and indices rebuilt.
 Maintenance is automatic, starting at 13:52 US Central time, and
@@ -34,7 +38,7 @@ EOF
 ################################################################################
 
 echo "Creating pre-daily-cron-job backup of projectb database..."
-pg_dump projectb > /org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
@@ -47,7 +51,22 @@ $scriptsdir/update-mailingliststxt
 ################################################################################
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+cd $queuedir/p-u-new
+date -u -R >> REPORT
+dak process-new -a -C COMMENTS >> REPORT
+echo >> REPORT
+
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+cd $queuedir/o-p-u-new
+date -u -R >> REPORT
+dak process-new -a -C COMMENTS >> REPORT
+echo >> REPORT
+
+################################################################################
+
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 lockfile $LOCKAC
+lockac=1
 cd $accepted
 rm -f REPORT
 dak process-accepted -pa *.changes | tee REPORT | \
@@ -59,6 +78,7 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 dak check-overrides
 rm -f $LOCKAC
+lockac=0
 
 symlinks -d -r $ftpdir
 
@@ -82,8 +102,7 @@ dak make-overrides
 #cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sid.extra.main
 
 # FIXME
-rm -f override.potato.all3 override.sid.all3
-for i in main contrib non-free; do cat override.potato.$i >> override.potato.all3; done
+rm -f override.sid.all3
 for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
@@ -107,6 +126,7 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
 # update this before wanna-build is updated.
 psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE suite = 5 AND queue = 0 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+symlinks -d /srv/incoming.debian.org/buildd > /dev/null
 apt-ftparchive generate apt.conf.buildd
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
@@ -119,7 +139,7 @@ cd $scriptsdir
 ./mkchecksums
 #
 # Fetch bugs information before unchecked processing is allowed again.
-/org/ftp.debian.org/testing/britney bugs
+$base/testing/britney allowdaklock bugs || true
 rm -f $NOTICE
 ssh buildd@buildd /org/wanna-build/trigger.daily
 
@@ -129,9 +149,9 @@ echo Archive maintenance finished at $(date +%X)
 ################################################################################
 
 echo "Creating post-daily-cron-job backup of projectb database..."
-POSTDUMP=/org/ftp.debian.org/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+POSTDUMP=$base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 pg_dump projectb > $POSTDUMP
-(cd /org/ftp.debian.org/backup; ln -sf $POSTDUMP current)
+(cd $base/backup; ln -sf $POSTDUMP current)
 
 ################################################################################
 
@@ -149,6 +169,8 @@ dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-mast
 # and one on crufty packages
 dak cruft-report | tee $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
 
+$scriptsdir/dm-monitor >$webdir/dm-uploaders.html
+
 ################################################################################
 
 # Run mirror-split
@@ -159,9 +181,9 @@ dak cruft-report | tee $webdir/cruft-report-daily.txt | mail -e -s "Debian archi
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
-ulimit -m 90000 -d 90000 -s 10000 -v 90000
+ulimit -m 90000 -d 90000 -s 10000 -v 200000
 
-run-parts --report /org/ftp.debian.org/scripts/distmnt
+run-parts --report $base/scripts/distmnt
 
 echo Daily cron scripts successful.
 
@@ -173,3 +195,22 @@ $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
 R --slave --vanilla < $base/misc/ftpstats.R
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
+# Clean up apt-ftparchive's databases
+
+cd $configdir
+apt-ftparchive -q clean apt.conf
+
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
+# Compress psql backups older than a month, but no more than 20 of them
+
+(cd $base/backup/
+ find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +30 | 
+   sort | head -n20 | while read dumpname; do
+     echo "Compressing $dumpname"
+     bzip2 -9 "$dumpname"
+   done
+)
+
+################################################################################

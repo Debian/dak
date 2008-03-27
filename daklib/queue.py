@@ -32,6 +32,109 @@ re_default_answer = re.compile(r"\[(.*)\]")
 re_fdnic = re.compile(r"\n\n")
 re_bin_only_nmu = re.compile(r"\+b\d+$")
 
+################################################################################
+
+# Determine what parts in a .changes are NEW
+
+def determine_new(changes, files, projectB, warn=1):
+    new = {}
+
+    # Build up a list of potentially new things
+    for file in files.keys():
+        f = files[file]
+        # Skip byhand elements
+        if f["type"] == "byhand":
+            continue
+        pkg = f["package"]
+        priority = f["priority"]
+        section = f["section"]
+        type = get_type(f)
+        component = f["component"]
+
+        if type == "dsc":
+            priority = "source"
+        if not new.has_key(pkg):
+            new[pkg] = {}
+            new[pkg]["priority"] = priority
+            new[pkg]["section"] = section
+            new[pkg]["type"] = type
+            new[pkg]["component"] = component
+            new[pkg]["files"] = []
+        else:
+            old_type = new[pkg]["type"]
+            if old_type != type:
+                # source gets trumped by deb or udeb
+                if old_type == "dsc":
+                    new[pkg]["priority"] = priority
+                    new[pkg]["section"] = section
+                    new[pkg]["type"] = type
+                    new[pkg]["component"] = component
+        new[pkg]["files"].append(file)
+        if f.has_key("othercomponents"):
+            new[pkg]["othercomponents"] = f["othercomponents"]
+
+    for suite in changes["suite"].keys():
+        suite_id = database.get_suite_id(suite)
+        for pkg in new.keys():
+            component_id = database.get_component_id(new[pkg]["component"])
+            type_id = database.get_override_type_id(new[pkg]["type"])
+            q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id))
+            ql = q.getresult()
+            if ql:
+                for file in new[pkg]["files"]:
+                    if files[file].has_key("new"):
+                        del files[file]["new"]
+                del new[pkg]
+
+    if warn:
+        if changes["suite"].has_key("stable"):
+            print "WARNING: overrides will be added for stable!"
+            if changes["suite"].has_key("oldstable"):
+                print "WARNING: overrides will be added for OLDstable!"
+        for pkg in new.keys():
+            if new[pkg].has_key("othercomponents"):
+                print "WARNING: %s already present in %s distribution." % (pkg, new[pkg]["othercomponents"])
+
+    return new
+
+################################################################################
+
+def get_type(f):
+    # Determine the type
+    if f.has_key("dbtype"):
+        type = f["dbtype"]
+    elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
+        type = "dsc"
+    else:
+        fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
+
+    # Validate the override type
+    type_id = database.get_override_type_id(type)
+    if type_id == -1:
+        fubar("invalid type (%s) for new.  Say wha?" % (type))
+
+    return type
+
+################################################################################
+
+# check if section/priority values are valid
+
+def check_valid(new):
+    for pkg in new.keys():
+        section = new[pkg]["section"]
+        priority = new[pkg]["priority"]
+        type = new[pkg]["type"]
+        new[pkg]["section id"] = database.get_section_id(section)
+        new[pkg]["priority id"] = database.get_priority_id(new[pkg]["priority"])
+        # Sanity checks
+        di = section.find("debian-installer") != -1
+        if (di and type != "udeb") or (not di and type == "udeb"):
+            new[pkg]["section id"] = -1
+        if (priority == "source" and type != "dsc") or \
+           (priority != "source" and type == "dsc"):
+            new[pkg]["priority id"] = -1
+
+
 ###############################################################################
 
 # Convenience wrapper to carry around all the package information in
@@ -45,56 +148,10 @@ class Pkg:
 
 ###############################################################################
 
-class nmu_p:
-    # Read in the group maintainer override file
-    def __init__ (self, Cnf):
-        self.group_maint = {}
-        self.Cnf = Cnf
-        if Cnf.get("Dinstall::GroupOverrideFilename"):
-            filename = Cnf["Dir::Override"] + Cnf["Dinstall::GroupOverrideFilename"]
-            file = utils.open_file(filename)
-            for line in file.readlines():
-                line = utils.re_comments.sub('', line).lower().strip()
-                if line != "":
-                    self.group_maint[line] = 1
-            file.close()
-
-    def is_an_nmu (self, pkg):
-        Cnf = self.Cnf
-        changes = pkg.changes
-        dsc = pkg.dsc
-
-        i = utils.fix_maintainer (dsc.get("maintainer",
-                                          Cnf["Dinstall::MyEmailAddress"]).lower())
-        (dsc_rfc822, dsc_rfc2047, dsc_name, dsc_email) = i
-        # changes["changedbyname"] == dsc_name is probably never true, but better safe than sorry
-        if dsc_name == changes["maintainername"].lower() and \
-           (changes["changedby822"] == "" or changes["changedbyname"].lower() == dsc_name):
-            return 0
-
-        if dsc.has_key("uploaders"):
-            uploaders = dsc["uploaders"].lower().split(",")
-            uploadernames = {}
-            for i in uploaders:
-                (rfc822, rfc2047, name, email) = utils.fix_maintainer (i.strip())
-                uploadernames[name] = ""
-            if uploadernames.has_key(changes["changedbyname"].lower()):
-                return 0
-
-        # Some group maintained packages (e.g. Debian QA) are never NMU's
-        if self.group_maint.has_key(changes["maintaineremail"].lower()):
-            return 0
-
-        return 1
-
-###############################################################################
-
 class Upload:
 
     def __init__(self, Cnf):
         self.Cnf = Cnf
-        # Read in the group-maint override file
-        self.nmu = nmu_p(Cnf)
         self.accept_count = 0
         self.accept_bytes = 0L
         self.pkg = Pkg(changes = {}, dsc = {}, dsc_files = {}, files = {},
@@ -180,7 +237,7 @@ class Upload:
                 d_changes[i] = changes[i]
         ## dsc
         for i in [ "source", "version", "maintainer", "fingerprint",
-                   "uploaders", "bts changelog" ]:
+                   "uploaders", "bts changelog", "dm-upload-allowed" ]:
             if dsc.has_key(i):
                 d_dsc[i] = dsc[i]
         ## dsc_files
@@ -252,6 +309,7 @@ class Upload:
         if not changes.has_key("distribution") or not isinstance(changes["distribution"], DictType):
             changes["distribution"] = {}
 
+        override_summary ="";
         file_keys = files.keys()
         file_keys.sort()
         for file in file_keys:
@@ -271,6 +329,14 @@ class Upload:
                 files[file]["pool name"] = utils.poolify (changes.get("source",""), files[file]["component"])
                 destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
                 summary += file + "\n  to " + destination + "\n"
+		if not files[file].has_key("type"):
+		    files[file]["type"] = "unknown"
+                if files[file]["type"] in ["deb", "udeb", "dsc"]:
+                    # (queue/unchecked), there we have override entries already, use them
+                    # (process-new), there we dont have override entries, use the newly generated ones.
+                    override_prio = files[file].get("override priority", files[file]["priority"])
+                    override_sect = files[file].get("override section", files[file]["section"])
+                    override_summary += "%s - %s %s\n" % (file, override_prio, override_sect)
 
         short_summary = summary
 
@@ -279,6 +345,8 @@ class Upload:
 
         if byhand or new:
             summary += "Changes: " + f
+
+        summary += "\n\nOverride entries for your package:\n" + override_summary + "\n"
 
         summary += self.announce(short_summary, 0)
 
@@ -297,55 +365,26 @@ class Upload:
             return summary
 
         bugs.sort()
-        if not self.nmu.is_an_nmu(self.pkg):
-            if changes["distribution"].has_key("experimental"):
-		# tag bugs as fixed-in-experimental for uploads to experimental
-		summary += "Setting bugs to severity fixed: "
-		control_message = ""
-		for bug in bugs:
-		    summary += "%s " % (bug)
-		    control_message += "tag %s + fixed-in-experimental\n" % (bug)
-		if action and control_message != "":
-		    Subst["__CONTROL_MESSAGE__"] = control_message
-		    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-experimental-fixed")
-		    utils.send_mail (mail_message)
-		if action:
-		    self.Logger.log(["setting bugs to fixed"]+bugs)
-
-
-	    else:
-		summary += "Closing bugs: "
-		for bug in bugs:
-		    summary += "%s " % (bug)
-		    if action:
-			Subst["__BUG_NUMBER__"] = bug
-			if changes["distribution"].has_key("stable"):
-			    Subst["__STABLE_WARNING__"] = """
+        summary += "Closing bugs: "
+        for bug in bugs:
+            summary += "%s " % (bug)
+            if action:
+                Subst["__BUG_NUMBER__"] = bug
+                if changes["distribution"].has_key("stable"):
+                    Subst["__STABLE_WARNING__"] = """
 Note that this package is not part of the released stable Debian
 distribution.  It may have dependencies on other unreleased software,
 or other instabilities.  Please take care if you wish to install it.
 The update will eventually make its way into the next released Debian
 distribution."""
-		        else:
-			    Subst["__STABLE_WARNING__"] = ""
-			    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-close")
-			    utils.send_mail (mail_message)
-                if action:
-                    self.Logger.log(["closing bugs"]+bugs)
-
-	else:                     # NMU
-            summary += "Setting bugs to severity fixed: "
-            control_message = ""
-            for bug in bugs:
-                summary += "%s " % (bug)
-                control_message += "tag %s + fixed\n" % (bug)
-            if action and control_message != "":
-                Subst["__CONTROL_MESSAGE__"] = control_message
-                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-nmu-fixed")
-                utils.send_mail (mail_message)
-            if action:
-                self.Logger.log(["setting bugs to fixed"]+bugs)
+                else:
+                    Subst["__STABLE_WARNING__"] = ""
+                    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-close")
+                    utils.send_mail (mail_message)
+        if action:
+            self.Logger.log(["closing bugs"]+bugs)
         summary += "\n"
+
         return summary
 
     ###########################################################################
@@ -535,9 +574,6 @@ distribution."""
                 section = files[file]["section"]
                 override_section = files[file]["override section"]
                 if section.lower() != override_section.lower() and section != "-":
-                    # Ignore this; it's a common mistake and not worth whining about
-                    if section.lower() == "non-us/main" and override_section.lower() == "non-us":
-                        continue
                     summary += "%s: package says section is %s, override says %s.\n" % (file, section, override_section)
                 priority = files[file]["priority"]
                 override_priority = files[file]["override priority"]
@@ -737,10 +773,6 @@ distribution."""
         component_id = database.get_component_id(component)
         type_id = database.get_override_type_id(type)
 
-        # FIXME: nasty non-US speficic hack
-        if component.lower().startswith("non-us/"):
-            component = component[7:]
-
         q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND type = %s AND o.section = s.id AND o.priority = p.id"
                            % (package, suite_id, component_id, type_id))
         result = q.getresult()
@@ -895,7 +927,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
     # the .orig.tar.gz is a duplicate of the one in the archive]; if
     # you're iterating over 'files' and call this function as part of
     # the loop, be sure to add a check to the top of the loop to
-    # ensure you haven't just tried to derefernece the deleted entry.
+    # ensure you haven't just tried to dereference the deleted entry.
     # **WARNING**
 
     def check_dsc_against_db(self, file):
@@ -908,6 +940,8 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
         # Try and find all files mentioned in the .dsc.  This has
         # to work harder to cope with the multiple possible
         # locations of an .orig.tar.gz.
+        # The ordering on the select is needed to pick the newest orig
+        # when it exists in multiple places.
         for dsc_file in dsc_files.keys():
             found = None
             if files.has_key(dsc_file):
@@ -915,7 +949,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 actual_size = int(files[dsc_file]["size"])
                 found = "%s in incoming" % (dsc_file)
                 # Check the file does not already exist in the archive
-                q = self.projectB.query("SELECT f.size, f.md5sum, l.path, f.filename FROM files f, location l WHERE f.filename LIKE '%%%s%%' AND l.id = f.location" % (dsc_file))
+                q = self.projectB.query("SELECT f.size, f.md5sum, l.path, f.filename FROM files f, location l WHERE f.filename LIKE '%%%s%%' AND l.id = f.location ORDER BY f.id DESC" % (dsc_file))
                 ql = q.getresult()
                 # Strip out anything that isn't '%s' or '/%s$'
                 for i in ql:
@@ -994,10 +1028,12 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
 
                     in_unchecked = os.path.join(self.Cnf["Dir::Queue::Unchecked"],dsc_file)
                     # See process_it() in 'dak process-unchecked' for explanation of this
-                    if os.path.exists(in_unchecked):
+		    # in_unchecked check dropped by ajt 2007-08-28, how did that
+		    # ever make sense?
+                    if os.path.exists(in_unchecked) and False:
                         return (self.reject_message, in_unchecked)
                     else:
-                        for dir in [ "Accepted", "New", "Byhand" ]:
+                        for dir in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates" ]:
                             in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (dir)],dsc_file)
                             if os.path.exists(in_otherdir):
                                 in_otherdir_fh = utils.open_file(in_otherdir)

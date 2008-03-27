@@ -128,7 +128,7 @@ def main():
             else:
                 packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
 
-    # Process any additional Maintainer files (e.g. from non-US or pseudo packages)
+    # Process any additional Maintainer files (e.g. from pseudo packages)
     for filename in extra_files:
         file = daklib.utils.open_file(filename)
         for line in file.readlines():
@@ -139,7 +139,7 @@ def main():
             lhs = split[0]
             maintainer = fix_maintainer(" ".join(split[1:]))
             if lhs.find('~') != -1:
-                (package, version) = lhs.split('~')
+                (package, version) = lhs.split('~', 1)
             else:
                 package = lhs
                 version = '*'
