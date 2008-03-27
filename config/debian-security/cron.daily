@@ -10,11 +10,12 @@ export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 
 # Fix overrides
 
-rsync -ql ftp-master::indices/override\* $overridedir
+# disabled by ajt 2008-01-01: requires auth
+rsync --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/override\* $overridedir
 
 cd $overridedir
 find . -name override\*.gz -type f -maxdepth 1 -mindepth 1 | xargs gunzip -f
-find . -type l -maxdepth 1 -mindepth 1 | xargs rm
+find . -type l -maxdepth 1 -mindepth 1 | xargs --no-run-if-empty rm
 
 for suite in $suites; do
     case $suite in
@@ -39,7 +40,9 @@ for suite in $suites; do
 	         dak control-overrides -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
 	       fi
 	    else
-	       dak control-overrides -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
+	       # XXX removed 2007-08-16 ajt
+	       #dak control-overrides -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
+	       true
 	    fi
 	    case $suite in
 	      oldstable)

@@ -23,7 +23,7 @@
 import daklib.queue, daklib.logging, daklib.utils, daklib.database
 import apt_pkg, os, sys, pwd, time, re, commands
 
-re_taint_free = re.compile(r"^['/;\-\+\.\s\w]+$");
+re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$");
 
 Cnf = None
 Options = None
@@ -44,6 +44,7 @@ def init():
                  ('n', "no-action", "Security-Install::Options::No-Action"),
                  ('s', "sudo", "Security-Install::Options::Sudo"),
                  (' ', "no-upload", "Security-Install::Options::No-Upload"),
+                 ('u', "fg-upload", "Security-Install::Options::Foreground-Upload"),
                  (' ', "drop-advisory", "Security-Install::Options::Drop-Advisory"),
                  ('A', "approve", "Security-Install::Options::Approve"),
                  ('R', "reject", "Security-Install::Options::Reject"),
@@ -71,6 +72,8 @@ def init():
         daklib.utils.fubar("Process what?")
 
     Upload = daklib.queue.Upload(Cnf)
+    if Options["No-Action"]:
+        Options["Sudo"] = ""
     if not Options["Sudo"] and not Options["No-Action"]:
         Logger = Upload.Logger = daklib.logging.Logger(Cnf, "new-security-install")
 
@@ -197,9 +200,96 @@ def yes_no(prompt):
 def do_upload():
     if Options["No-Upload"]:
         print "Not uploading as requested"
-        return
+    elif Options["Foreground-Upload"]:
+        actually_upload(changes)
+    else:
+        child = os.fork()
+	if child == 0:
+	    actually_upload(changes)
+	    os._exit(0)
+	print "Uploading in the background"
 
-    print "Would upload to ftp-master" # XXX
+def actually_upload(changes_files):
+    file_list = ""
+    suites = {}
+    component_mapping = {}
+    for component in Cnf.SubTree("Security-Install::ComponentMappings").List():
+        component_mapping[component] = Cnf["Security-Install::ComponentMappings::%s" % (component)]
+    uploads = {}; # uploads[uri] = file_list
+    changesfiles = {}; # changesfiles[uri] = file_list
+    package_list = {} # package_list[source_name][version]
+    changes_files.sort(daklib.utils.changes_compare)
+    for changes_file in changes_files:
+        changes_file = daklib.utils.validate_changes_file_arg(changes_file)
+        # Reset variables
+        components = {}
+        upload_uris = {}
+        file_list = []
+        Upload.init_vars()
+        # Parse the .dak file for the .changes file
+        Upload.pkg.changes_file = changes_file
+        Upload.update_vars()
+        files = Upload.pkg.files
+        changes = Upload.pkg.changes
+        dsc = Upload.pkg.dsc
+        # We have the changes, now return if its amd64, to not upload them to ftp-master
+        if changes["distribution"].has_key("oldstable-security") and changes["architecture"].has_key("amd64"):
+            print "Not uploading amd64 oldstable-security changes to ftp-master\n"
+            continue
+        # Build the file list for this .changes file
+        for file in files.keys():
+            poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
+                                    daklib.utils.poolify(changes["source"], files[file]["component"]),
+                                    file)
+            file_list.append(poolname)
+            orig_component = files[file].get("original component", files[file]["component"])
+            components[orig_component] = ""
+        # Determine the upload uri for this .changes file
+        for component in components.keys():
+            upload_uri = component_mapping.get(component)
+            if upload_uri:
+                upload_uris[upload_uri] = ""
+        num_upload_uris = len(upload_uris.keys())
+        if num_upload_uris == 0:
+            daklib.utils.fubar("%s: No valid upload URI found from components (%s)."
+                        % (changes_file, ", ".join(components.keys())))
+        elif num_upload_uris > 1:
+            daklib.utils.fubar("%s: more than one upload URI (%s) from components (%s)."
+                        % (changes_file, ", ".join(upload_uris.keys()),
+                           ", ".join(components.keys())))
+        upload_uri = upload_uris.keys()[0]
+        # Update the file list for the upload uri
+        if not uploads.has_key(upload_uri):
+            uploads[upload_uri] = []
+        uploads[upload_uri].extend(file_list)
+        # Update the changes list for the upload uri
+        if not changesfiles.has_key(upload_uri):
+            changesfiles[upload_uri] = []
+        changesfiles[upload_uri].append(changes_file)
+        # Remember the suites and source name/version
+        for suite in changes["distribution"].keys():
+            suites[suite] = ""
+        # Remember the source name and version
+        if changes["architecture"].has_key("source") and \
+           changes["distribution"].has_key("testing"):
+            if not package_list.has_key(dsc["source"]):
+                package_list[dsc["source"]] = {}
+            package_list[dsc["source"]][dsc["version"]] = ""
+
+    for uri in uploads.keys():
+        uploads[uri].extend(changesfiles[uri])
+        (host, path) = uri.split(":")
+        file_list = " ".join(uploads[uri])
+        print "Uploading files to %s..." % (host)
+        spawn("lftp -c 'open %s; cd %s; put %s'" % (host, path, file_list))
+
+    if not Options["No-Action"]:
+        filename = "%s/testing-processed" % (Cnf["Dir::Log"])
+        file = daklib.utils.open_file(filename, 'a')
+        for source in package_list.keys():
+            for version in package_list[source].keys():
+                file.write(" ".join([source, version])+'\n')
+        file.close()
 
 def generate_advisory(template):
     global changes, advisory
@@ -317,7 +407,6 @@ def generate_advisory(template):
     adv = daklib.utils.TemplateSubst(Subst, template)
     return adv
 
-
 def spawn(command):
     if not re_taint_free.match(command):
         daklib.utils.fubar("Invalid character in \"%s\"." % (command))
@@ -342,7 +431,7 @@ def sudo(arg, fn, exit):
         if advisory == None:
             daklib.utils.fubar("Must set advisory name")
         os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
-                  "/usr/local/bin/dak new-security-install", "-"+arg, "--", advisory)
+                  "/usr/local/bin/dak", "new-security-install", "-"+arg, "--", advisory)
     else:
         fn()
     if exit:
@@ -424,7 +513,7 @@ def _do_Disembargo():
     for c in changes:
         daklib.utils.copy(c, os.path.join(dest, c))
         os.unlink(c)
-        k = c[:8] + ".dak"
+        k = c[:-8] + ".dak"
         daklib.utils.copy(k, os.path.join(dest, k))
         os.unlink(k)
 
@@ -450,14 +539,14 @@ def _do_Reject():
 
         aborted = Upload.do_reject()
         if not aborted:
-            os.unlink(c[:-8]+".katie")
+            os.unlink(c[:-8]+".dak")
             for f in files:
                 Upload.projectB.query(
                     "DELETE FROM queue_build WHERE filename = '%s'" % (f))
                 os.unlink(f)
 
     print "Updating buildd information..."
-    spawn("/org/security.debian.org/katie/cron.buildd-security")
+    spawn("/org/security.debian.org/dak/config/debian-security/cron.buildd")
 
     adv_file = "./advisory.%s" % (advisory)
     if os.path.exists(adv_file):

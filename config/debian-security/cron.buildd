@@ -12,58 +12,65 @@ set -e
 export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
-if [ ! -e $ftpdir/Archive_Maintenance_In_Progress ]; then
-	cd $masterdir
-	for d in $DISTS; do
-		eval SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
-		eval PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
-	done
-	apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
-	dists=
-	for d in $DISTS; do
-		eval NEW_SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
-		eval NEW_PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
-		old=SOURCES_$d
-                new=NEW_$old
-                if [ ${!new} -gt ${!old} ]; then
-			if [ -z "$dists" ]; then
-				dists="$d"
-			else
-				dists="$dists $d"
-			fi
-			continue
+if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
+	exit 0
+fi
+
+cd $masterdir
+for d in $DISTS; do
+	eval SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
+	eval PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
+done
+
+apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
+dists=
+for d in $DISTS; do
+	eval NEW_SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
+	eval NEW_PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
+	old=SOURCES_$d
+        new=NEW_$old
+        if [ ${!new} -gt ${!old} ]; then
+		if [ -z "$dists" ]; then
+			dists="$d"
+		else
+			dists="$dists $d"
 		fi
-		old=PACKAGES_$d
-		new=NEW_$old
-                if [ ${!new} -gt ${!old} ]; then
-			if [ -z "$dists" ]; then
-				dists="$d"
-			else
-				dists="$dists $d"
-			fi
-			continue
+		continue
+	fi
+	old=PACKAGES_$d
+	new=NEW_$old
+        if [ ${!new} -gt ${!old} ]; then
+		if [ -z "$dists" ]; then
+			dists="$d"
+		else
+			dists="$dists $d"
 		fi
+		continue
+	fi
+done
+
+if [ ! -z "$dists" ]; then
+	# setup ssh master process
+	ssh buildd@buildd -S $SSH_SOCKET -MN 2> /dev/null &
+	SSH_PID=$!
+	while [ ! -S $SSH_SOCKET ]; do
+		sleep 1
 	done
-	if [ ! -z "$dists" ]; then
-		# setup ssh master process
-		ssh buildd@buildd -S $SSH_SOCKET -MN 2> /dev/null &
-		SSH_PID=$!
-		while [ ! -S $SSH_SOCKET ]; do
-			sleep 1
-		done
-		trap 'kill -TERM $SSH_PID' 0
-		for d in $dists; do
-			archs=ARCHS_$d
-			ARCHS=${!archs}
-			cd /org/security.debian.org/buildd/$d
+	trap 'kill -TERM $SSH_PID' 0
+	for d in $dists; do
+		archs=ARCHS_$d
+		ARCHS=${!archs}
+		cd /org/security.debian.org/buildd/$d
+		if [ "$d" != "oldstable" ]; then
+			# disabled for oldstable-security by ajt 2008-01-01
 			for a in $ARCHS; do
 				quinn-diff -a /org/security.debian.org/buildd/Packages-arch-specific -A $a 2>/dev/null | ssh buildd@buildd -S $SSH_SOCKET wanna-build -d $d-security -b $a/build-db --merge-partial-quinn
+
 				ssh buildd@buildd -S $SSH_SOCKET wanna-build -d $d-security -A $a -b $a/build-db --merge-packages < Packages
 			done
-			if [ "$d" = "oldstable" ]; then
-				ssh buildd@bester.farm.ftbfs.de -i ~/.ssh/id_bester sleep 1
-			fi
-		done
-	fi
+		else
+			ssh buildd@bester.farm.ftbfs.de -i ~/.ssh/id_bester sleep 1
+		fi
+	done
 fi
 

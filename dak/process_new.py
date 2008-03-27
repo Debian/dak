@@ -83,7 +83,11 @@ def recheck():
                and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
                 source_epochless_version = daklib.utils.re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
-                if not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
+		found = 0
+		for q in ["Accepted", "Embargoed", "Unembargoed"]:
+                    if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
+		        found = 1
+		if not found:
                     reject("no source found for %s %s (%s)." % (source_package, source_version, file))
 
         # Version and file overwrite checks
@@ -92,9 +96,9 @@ def recheck():
         elif files[file]["type"] == "dsc":
             reject(Upload.check_source_against_db(file))
             (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(file)
-            reject(reject_msg)
+            reject(reject_msg, "")
 
-    if reject_message:
+    if reject_message.find("Rejected") != -1:
         answer = "XXX"
         if Options["No-Action"] or Options["Automatic"]:
             answer = 'S'
@@ -119,71 +123,6 @@ def recheck():
             sys.exit(0)
 
     return 1
-
-################################################################################
-
-def determine_new (changes, files):
-    new = {}
-
-    # Build up a list of potentially new things
-    for file in files.keys():
-        f = files[file]
-        # Skip byhand elements
-        if f["type"] == "byhand":
-            continue
-        pkg = f["package"]
-        priority = f["priority"]
-        section = f["section"]
-        # FIXME: unhardcode
-        if section == "non-US/main":
-            section = "non-US"
-        type = get_type(f)
-        component = f["component"]
-
-        if type == "dsc":
-            priority = "source"
-        if not new.has_key(pkg):
-            new[pkg] = {}
-            new[pkg]["priority"] = priority
-            new[pkg]["section"] = section
-            new[pkg]["type"] = type
-            new[pkg]["component"] = component
-            new[pkg]["files"] = []
-        else:
-            old_type = new[pkg]["type"]
-            if old_type != type:
-                # source gets trumped by deb or udeb
-                if old_type == "dsc":
-                    new[pkg]["priority"] = priority
-                    new[pkg]["section"] = section
-                    new[pkg]["type"] = type
-                    new[pkg]["component"] = component
-        new[pkg]["files"].append(file)
-        if f.has_key("othercomponents"):
-            new[pkg]["othercomponents"] = f["othercomponents"]
-
-    for suite in changes["suite"].keys():
-        suite_id = daklib.database.get_suite_id(suite)
-        for pkg in new.keys():
-            component_id = daklib.database.get_component_id(new[pkg]["component"])
-            type_id = daklib.database.get_override_type_id(new[pkg]["type"])
-            q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id))
-            ql = q.getresult()
-            if ql:
-                for file in new[pkg]["files"]:
-                    if files[file].has_key("new"):
-                        del files[file]["new"]
-                del new[pkg]
-
-    if changes["suite"].has_key("stable"):
-        print "WARNING: overrides will be added for stable!"
-    if changes["suite"].has_key("oldstable"):
-        print "WARNING: overrides will be added for OLDstable!"
-    for pkg in new.keys():
-        if new[pkg].has_key("othercomponents"):
-            print "WARNING: %s already present in %s distribution." % (pkg, new[pkg]["othercomponents"])
-
-    return new
 
 ################################################################################
 
@@ -320,25 +259,8 @@ class Priority_Completer:
 
 ################################################################################
 
-def check_valid (new):
-    for pkg in new.keys():
-        section = new[pkg]["section"]
-        priority = new[pkg]["priority"]
-        type = new[pkg]["type"]
-        new[pkg]["section id"] = daklib.database.get_section_id(section)
-        new[pkg]["priority id"] = daklib.database.get_priority_id(new[pkg]["priority"])
-        # Sanity checks
-        if (section == "debian-installer" and type != "udeb") or \
-           (section != "debian-installer" and type == "udeb"):
-            new[pkg]["section id"] = -1
-        if (priority == "source" and type != "dsc") or \
-           (priority != "source" and type == "dsc"):
-            new[pkg]["priority id"] = -1
-
-################################################################################
-
 def print_new (new, indexed, file=sys.stdout):
-    check_valid(new)
+    daklib.queue.check_valid(new)
     broken = 0
     index = 0
     for pkg in new.keys():
@@ -363,24 +285,6 @@ def print_new (new, indexed, file=sys.stdout):
         print note
         print "*"*75
     return broken, note
-
-################################################################################
-
-def get_type (f):
-    # Determine the type
-    if f.has_key("dbtype"):
-        type = f["dbtype"]
-    elif f["type"] == "orig.tar.gz" or f["type"] == "tar.gz" or f["type"] == "diff.gz" or f["type"] == "dsc":
-        type = "dsc"
-    else:
-        daklib.utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
-
-    # Validate the override type
-    type_id = daklib.database.get_override_type_id(type)
-    if type_id == -1:
-        daklib.utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
-
-    return type
 
 ################################################################################
 
@@ -721,7 +625,7 @@ def do_new():
     done = 0
     while not done:
         # Find out what's new
-        new = determine_new(changes, files)
+        new = daklib.queue.determine_new(changes, files, projectB)
 
         if not new:
             break
@@ -796,10 +700,11 @@ def init():
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
                  ('h',"help","Process-New::Options::Help"),
+		 ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
                  ('n',"no-action","Process-New::Options::No-Action")]
 
-    for i in ["automatic", "help", "manual-reject", "no-action", "version"]:
+    for i in ["automatic", "help", "manual-reject", "no-action", "version", "comments-dir"]:
         if not Cnf.has_key("Process-New::Options::%s" % (i)):
             Cnf["Process-New::Options::%s" % (i)] = ""
 
@@ -871,26 +776,42 @@ def do_byhand():
 
 ################################################################################
 
+def get_accept_lock():
+    retry = 0
+    while retry < 10:
+        try:
+	    lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
+            retry = 10
+	except OSError, e:
+	    if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
+	        retry += 1
+		if (retry >= 10):
+		    daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
+		else:
+		    print("Unable to get accepted lock (try %d of 10)" % retry)
+		time.sleep(60)
+	    else:
+		raise
+
+def move_to_dir (dest, perms=0660, changesperms=0664):
+    daklib.utils.move (Upload.pkg.changes_file, dest, perms=changesperms)
+    file_keys = Upload.pkg.files.keys()
+    for file in file_keys:
+        daklib.utils.move (file, dest, perms=perms)
+
 def do_accept():
     print "ACCEPT"
     if not Options["No-Action"]:
-        retry = 0
-	while retry < 10:
-	    try:
-		lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
-                retry = 10
-	    except OSError, e:
-		if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
-		    retry += 1
-		    if (retry >= 10):
-			daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
-		    else:
-			print("Unable to get accepted lock (try %d of 10)" % retry)
-		    time.sleep(60)
-		else:
-		    raise
+        get_accept_lock()
         (summary, short_summary) = Upload.build_summaries()
-        Upload.accept(summary, short_summary)
+	if Cnf.FindB("Dinstall::SecurityQueueHandling"):
+	    Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
+	    move_to_dir(Cnf["Dir::Queue::Embargoed"])
+	    Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
+	    # Check for override disparities
+	    Upload.Subst["__SUMMARY__"] = summary
+	else:
+            Upload.accept(summary, short_summary)
         os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 	os.unlink(Cnf["Process-New::AcceptedLockFile"])
 
@@ -942,6 +863,59 @@ def end():
 
 ################################################################################
 
+def do_comments(dir, opref, npref, line, fn):
+    for comm in [ x for x in os.listdir(dir) if x.startswith(opref) ]:
+        lines = open("%s/%s" % (dir, comm)).readlines()
+        if len(lines) == 0 or lines[0] != line + "\n": continue
+        changes_files = [ x for x in os.listdir(".") if x.startswith(comm[7:]+"_")
+                                and x.endswith(".changes") ]
+	changes_files = sort_changes(changes_files)
+        for f in changes_files:
+                f = daklib.utils.validate_changes_file_arg(f, 0)
+                if not f: continue
+                print "\n" + f
+                fn(f, "".join(lines[1:]))
+
+        if opref != npref and not Options["No-Action"]:
+                newcomm = npref + comm[len(opref):]
+                os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
+
+################################################################################
+
+def comment_accept(changes_file, comments):
+    Upload.pkg.changes_file = changes_file
+    Upload.init_vars()
+    Upload.update_vars()
+    Upload.update_subst()
+    files = Upload.pkg.files
+
+    if not recheck():
+        return # dak wants to REJECT, crap
+
+    (new, byhand) = check_status(files)
+    if not new and not byhand:
+        do_accept()
+
+################################################################################
+
+def comment_reject(changes_file, comments):
+    Upload.pkg.changes_file = changes_file
+    Upload.init_vars()
+    Upload.update_vars()
+    Upload.update_subst()
+    files = Upload.pkg.files
+
+    if not recheck():
+        pass # dak has its own reasons to reject as well, which is fine
+
+    reject(comments)
+    print "REJECT\n" + reject_message,
+    if not Options["No-Action"]:
+        Upload.do_reject(0, reject_message)
+        os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+
+################################################################################
+
 def main():
     changes_files = init()
     if len(changes_files) > 50:
@@ -956,12 +930,20 @@ def main():
     else:
         Upload.Subst["__BCC__"] = bcc
 
-    for changes_file in changes_files:
-        changes_file = daklib.utils.validate_changes_file_arg(changes_file, 0)
-        if not changes_file:
-            continue
-        print "\n" + changes_file
-        do_pkg (changes_file)
+    commentsdir = Cnf.get("Process-New::Options::Comments-Dir","")
+    if commentsdir:
+	if changes_files != []:
+		sys.stderr.write("Can't specify any changes files if working with comments-dir")
+		sys.exit(1)
+	do_comments(commentsdir, "ACCEPT.", "ACCEPTED.", "OK", comment_accept)
+	do_comments(commentsdir, "REJECT.", "REJECTED.", "NOTOK", comment_reject)
+    else:
+        for changes_file in changes_files:
+            changes_file = daklib.utils.validate_changes_file_arg(changes_file, 0)
+            if not changes_file:
+                continue
+            print "\n" + changes_file
+            do_pkg (changes_file)
 
     end()
 
