@@ -240,7 +240,7 @@ def build_file_list(changes, is_a_dsc=0):
     format = changes.get("format", "")
     if format != "":
 	format = float(format)
-    if not is_a_dsc and (format < 1.5 or format > 2.0):
+    if not is_a_dsc and (format < 1.5 or format > 1.7):
 	raise nk_format_exc, format
 
     # Parse each entry/line:
