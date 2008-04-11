@@ -229,31 +229,42 @@ The rules for (signing_rules == 1)-mode are:
 
 # Dropped support for 1.4 and ``buggy dchanges 3.4'' (?!) compared to di.pl
 
-def build_file_list(changes, is_a_dsc=0):
+def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     files = {}
 
     # Make sure we have a Files: field to parse...
-    if not changes.has_key("files"):
-	raise no_files_exc
+    if not changes.has_key(field):
+        raise no_files_exc
 
     # Make sure we recognise the format of the Files: field
-    format = changes.get("format", "")
-    if format != "":
-	format = float(format)
-    if not is_a_dsc and (format < 1.5 or format > 2.0):
-	raise nk_format_exc, format
+    format = changes.get("format", "0.0").split(".",1)
+    if len(format) == 2:
+        format = int(format[0]), int(format[1])
+    else:
+        format = int(float(format[0])), 0
+
+    if is_a_dsc:
+        if format != (1,0):
+            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+    else:
+        if (format < (1,5) or format > (1,8)):
+            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+	if field != "files" and format < (1,8):
+            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+
+    includes_section = (not is_a_dsc) and field == "files"
 
     # Parse each entry/line:
-    for i in changes["files"].split('\n'):
+    for i in changes[field].split('\n'):
         if not i:
             break
         s = i.split()
         section = priority = ""
         try:
-            if is_a_dsc:
-                (md5, size, name) = s
-            else:
+            if includes_section:
                 (md5, size, section, priority, name) = s
+            else:
+                (md5, size, name) = s
         except ValueError:
             raise changes_parse_error_exc, i
 
@@ -264,8 +275,9 @@ def build_file_list(changes, is_a_dsc=0):
 
         (section, component) = extract_component_from_section(section)
 
-        files[name] = Dict(md5sum=md5, size=size, section=section,
+        files[name] = Dict(size=size, section=section,
                            priority=priority, component=component)
+        files[name][hashname] = md5
 
     return files
 

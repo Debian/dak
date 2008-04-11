@@ -1,3 +1,21 @@
+2008-04-11  Anthony Towns  <ajt@debian.org>
+
+	* dak/utils.py: build_file_list() extra parameters so it can
+	build a file list for checksums-foo fields. Don't use float() to
+	compare formats, because Format: 1.10 should compare greater than
+	Format: 1.9 (use "1.9".split(".",1) and tuple comparison instead)
+
+	* dak/process_unchecked.py: check_md5sum becomes check_hashes
+	and check_hash. If changes format is 1.8 or later, also check
+	checksums-sha1 and checksums-sha256 for both .changes and .dsc,
+	and reject on presence/absence of un/expected checksums-* fields.
+
+2008-04-07  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/utils.py (build_file_list): Check for dpkg .changes
+	adjusted to reject newer (and right now broken) 1.8 version, until
+	dpkg (or debsign) is fixed and doesn't produce invalid .changes anymore
+
 2008-03-22  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/transitions.py (load_transitions): Check if all our keys are
