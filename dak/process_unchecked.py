@@ -899,40 +899,59 @@ def check_urgency ():
 
 ################################################################################
 
-def check_md5sums ():
+def check_hashes ():
+    # Make sure we recognise the format of the Files: field
+    format = changes.get("format", "0.0").split(".",1)
+    if len(format) == 2:
+        format = int(format[0]), int(format[1])
+    else:
+        format = int(float(format[0])), 0
+
+    check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
+    check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
+
+    if format >= (1,8):
+        hashes = [("sha1", apt_pkg.sha1sum),
+                  ("sha256", apt_pkg.sha256sum)]
+    else:
+        hashes = []
+
+    for h,f in hashes:
+        fs = daklib.utils.build_file_list(changes, 0, "checksums-%s" % h, h)
+        check_hash( ".changes %s" % (h), fs, h, f, files)
+
+        if "source" not in changes["architecture"]: continue
+
+        fs = daklib.utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
+        check_hash( ".dsc %s" % (h), fs, h, f, dsc_files)
+
+################################################################################
+
+def check_hash (where, files, key, testfn, basedict = None):
+    if basedict:
+        for file in basedict.keys():
+            if file not in files:
+                reject("%s: no %s checksum" % (file, key))
+
     for file in files.keys():
+        if basedict and file not in basedict:
+            reject("%s: extraneous entry in %s checksums" % (file, key))
+
         try:
             file_handle = daklib.utils.open_file(file)
         except daklib.utils.cant_open_exc:
             continue
 
-        # Check md5sum
-        if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
-            reject("%s: md5sum check failed." % (file))
+        # Check hash
+        if testfn(file_handle) != files[file][key]:
+            reject("%s: %s check failed." % (file, key))
         file_handle.close()
         # Check size
         actual_size = os.stat(file)[stat.ST_SIZE]
         size = int(files[file]["size"])
         if size != actual_size:
-            reject("%s: actual file size (%s) does not match size (%s) in .changes"
-                   % (file, actual_size, size))
-
-    for file in dsc_files.keys():
-        try:
-            file_handle = daklib.utils.open_file(file)
-        except daklib.utils.cant_open_exc:
-            continue
-
-        # Check md5sum
-        if apt_pkg.md5sum(file_handle) != dsc_files[file]["md5sum"]:
-            reject("%s: md5sum check failed." % (file))
-        file_handle.close()
-        # Check size
-        actual_size = os.stat(file)[stat.ST_SIZE]
-        size = int(dsc_files[file]["size"])
-        if size != actual_size:
-            reject("%s: actual file size (%s) does not match size (%s) in .dsc"
-                   % (file, actual_size, size))
+            reject("%s: actual file size (%s) does not match size (%s) in %s"
+                   % (file, actual_size, size, where))
 
 ################################################################################
 
@@ -1518,7 +1537,7 @@ def process_it (changes_file):
                 valid_dsc_p = check_dsc()
                 if valid_dsc_p:
                     check_source()
-                check_md5sums()
+                check_hashes()
                 check_urgency()
                 check_timestamps()
                 check_signed_by_key()
