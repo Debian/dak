@@ -7,7 +7,8 @@
 
 	* dak/process_unchecked.py: check_md5sum becomes check_hashes
 	and check_hash. If changes format is 1.8 or later, also check
-	checksums-sha1 and checksums-sha256 for both .changes and .dsc.
+	checksums-sha1 and checksums-sha256 for both .changes and .dsc,
+	and reject on presence/absence of un/expected checksums-* fields.
 
 2008-04-07  Joerg Jaspert  <joerg@debian.org>
 

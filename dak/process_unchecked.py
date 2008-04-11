@@ -916,14 +916,32 @@ def check_hashes ():
     else:
         hashes = []
 
+    for x in changes:
+        if x.startswith("checksum-"):
+	    h = x.split("-",1)[1] 
+	    if h not in dict(hashes):
+	        reject("Unsupported checksum field in .changes" % (h))
+
+    for x in dsc:
+        if x.startswith("checksum-"):
+	    h = x.split("-",1)[1] 
+	    if h not in dict(hashes):
+	        reject("Unsupported checksum field in .dsc" % (h))
+
     for h,f in hashes:
-        fs = daklib.utils.build_file_list(changes, 0, "checksums-%s" % h, h)
-        check_hash( ".changes %s" % (h), fs, h, f, files)
+        try:
+            fs = daklib.utils.build_file_list(changes, 0, "checksums-%s" % h, h)
+            check_hash(".changes %s" % (h), fs, h, f, files)
+	except daklib.utils.no_files_exc:
+	    reject("No Checksums-%s: field in .changes file" % (h))
 
         if "source" not in changes["architecture"]: continue
 
-        fs = daklib.utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
-        check_hash( ".dsc %s" % (h), fs, h, f, dsc_files)
+        try:
+            fs = daklib.utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
+            check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
+	except daklib.utils.no_files_exc:
+	    reject("No Checksums-%s: field in .changes file" % (h))
 
 ################################################################################
 
