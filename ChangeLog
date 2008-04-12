@@ -1,3 +1,8 @@
+2008-04-12  James Troup  <troup@debian.org>
+
+	* dak/clean_proposed_updates.py: add support for -s/--suite and
+	-n/--no-action.
+
 2008-04-11  Anthony Towns  <ajt@debian.org>
 
 	* dak/utils.py: build_file_list() extra parameters so it can
