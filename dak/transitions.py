@@ -36,6 +36,9 @@ projectB = None
 
 ################################################################################
 
+#####################################
+#### This may run within sudo !! ####
+#####################################
 def init():
     global Cnf, Options, projectB
 
@@ -90,21 +93,70 @@ Options:
 
 ################################################################################
 
+#####################################
+#### This may run within sudo !! ####
+#####################################
 def load_transitions(trans_file):
     # Parse the yaml file
     sourcefile = file(trans_file, 'r')
     sourcecontent = sourcefile.read()
+    failure = False
     try:
         trans = syck.load(sourcecontent)
     except syck.error, msg:
         # Someone fucked it up
         print "ERROR: %s" % (msg)
         return None
-    # could do further validation here
+
+    # lets do further validation here
+    checkkeys = ["source", "reason", "packages", "new", "rm"]
+    for test in trans:
+        t = trans[test]
+
+        # First check if we know all the keys for the transition and if they have
+        # the right type (and for the packages also if the list has the right types
+        # included, ie. not a list in list, but only str in the list)
+        for key in t:
+            if key not in checkkeys:
+                print "ERROR: Unknown key %s in transition %s" % (key, test)
+                failure = True
+
+            if key == "packages":
+                if type(t[key]) != list:
+                    print "ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test)
+                    failure = True
+
+                try:
+                    for package in t["packages"]:
+                        if type(package) != str:
+                            print "ERROR: Packages list contains invalid type %s (as %s) in transition %s" % (type(package), package, test)
+                            failure = True
+                except TypeError:
+                    # In case someone has an empty packages list
+                    print "ERROR: No packages defined in transition %s" % (test)
+                    failure = True
+                    continue
+
+            elif type(t[key]) != str:
+                print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
+                failure = True
+
+        # And now the other way round - are all our keys defined?
+        for key in checkkeys:
+            if key not in t:
+                print "ERROR: Missing key %s in transition %s" % (key, test)
+                failure = True
+
+    if failure:
+        return None
+
     return trans
 
 ################################################################################
 
+#####################################
+#### This may run within sudo !! ####
+#####################################
 def lock_file(file):
     for retry in range(10):
         lock_fd = os.open(file, os.O_RDWR | os.O_CREAT)
@@ -123,6 +175,9 @@ def lock_file(file):
 
 ################################################################################
 
+#####################################
+#### This may run within sudo !! ####
+#####################################
 def write_transitions(from_trans):
     """Update the active transitions file safely.
        This function takes a parsed input file (which avoids invalid
@@ -149,9 +204,17 @@ def write_transitions(from_trans):
 class ParseException(Exception):
     pass
 
+##########################################
+#### This usually runs within sudo !! ####
+##########################################
 def write_transitions_from_file(from_file):
     """We have a file we think is valid; if we're using sudo, we invoke it
        here, otherwise we just parse the file and call write_transitions"""
+
+    # Lets check if from_file is in the directory we expect it to be in
+    if not os.path.abspath(from_file).startswith(Cnf["Transitions::TempPath"]):
+        print "Will not accept transitions file outside of %s" % (Cnf["Transitions::TempPath"])
+        sys.exit(3)
 
     if Options["sudo"]:
         os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
@@ -169,7 +232,7 @@ def temp_transitions_file(transitions):
     # We need the chmod, as the file is (most possibly) copied from a
     # sudo-ed script and would be unreadable if it has default mkstemp mode
     
-    (fd, path) = tempfile.mkstemp("","transitions")
+    (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Transitions::TempPath"])
     os.chmod(path, 0644)
     f = open(path, "w")
     syck.dump(transitions, f)
@@ -342,6 +405,9 @@ def transition_info(transitions):
 def main():
     global Cnf
 
+    #####################################
+    #### This can run within sudo !! ####
+    #####################################
     init()
     
     # Check if there is a file defined (and existant)
@@ -353,6 +419,15 @@ def main():
         daklib.utils.warn("ReleaseTransitions file, %s, not found." %
                           (Cnf["Dinstall::Reject::ReleaseTransitions"]))
         sys.exit(1)
+    # Also check if our temp directory is defined and existant
+    temppath = Cnf.get("Transitions::TempPath", "")
+    if temppath == "":
+        daklib.utils.warn("Transitions::TempPath not defined")
+        sys.exit(1)
+    if not os.path.exists(temppath):
+        daklib.utils.warn("Temporary path %s not found." %
+                          (Cnf["Transitions::TempPath"]))
+        sys.exit(1)
    
     if Options["import"]:
         try:
@@ -361,6 +436,9 @@ def main():
             print m
             sys.exit(2)
         sys.exit(0)
+    ##############################################
+    #### Up to here it can run within sudo !! ####
+    ##############################################
 
     # Parse the yaml file
     transitions = load_transitions(transpath)

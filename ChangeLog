@@ -1,3 +1,13 @@
+2008-04-17  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/dak.conf: Add TempPath statement for the Release
+	Transitions script
+
+	* dak/transitions.py (temp_transitions_file): Use the TempPath
+	(write_transitions_from_file): Check if the file we should get our
+	transitions from is in our TempPath, error out if it isnt
+	(main): Check for TempPath existance
+
 2008-04-12  James Troup  <troup@debian.org>
 
 	* dak/clean_proposed_updates.py: add support for -s/--suite and
@@ -20,6 +30,12 @@
 	* daklib/utils.py (build_file_list): Check for dpkg .changes
 	adjusted to reject newer (and right now broken) 1.8 version, until
 	dpkg (or debsign) is fixed and doesn't produce invalid .changes anymore
+
+2008-03-22  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/transitions.py (load_transitions): Check if all our keys are
+	defined, if there are only keys defined we want and also the types
+	of the various keys.
 
 2008-03-22  Anthony Towns  <ajt@debian.org>
 
