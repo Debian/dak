@@ -232,7 +232,7 @@ def temp_transitions_file(transitions):
     # We need the chmod, as the file is (most possibly) copied from a
     # sudo-ed script and would be unreadable if it has default mkstemp mode
     
-    (fd, path) = tempfile.mkstemp("","transitions",Cnf["Transitions::TempPath"])
+    (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Transitions::TempPath"])
     os.chmod(path, 0644)
     f = open(path, "w")
     syck.dump(transitions, f)
@@ -418,6 +418,15 @@ def main():
     if not os.path.exists(transpath):
         daklib.utils.warn("ReleaseTransitions file, %s, not found." %
                           (Cnf["Dinstall::Reject::ReleaseTransitions"]))
+        sys.exit(1)
+    # Also check if our temp directory is defined and existant
+    temppath = Cnf.get("Transitions::TempPath", "")
+    if temppath == "":
+        daklib.utils.warn("Transitions::TempPath not defined")
+        sys.exit(1)
+    if not os.path.exists(temppath):
+        daklib.utils.warn("Temporary path %s not found." %
+                          (Cnf["Transitions::TempPath"]))
         sys.exit(1)
    
     if Options["import"]:

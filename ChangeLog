@@ -6,6 +6,7 @@
 	* dak/transitions.py (temp_transitions_file): Use the TempPath
 	(write_transitions_from_file): Check if the file we should get our
 	transitions from is in our TempPath, error out if it isnt
+	(main): Check for TempPath existance
 
 2008-04-12  James Troup  <troup@debian.org>
 
