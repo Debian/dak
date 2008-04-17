@@ -1,3 +1,8 @@
+2008-04-18  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/transitions.py (load_transitions): Additionally check for
+	invalid package list indentation
+
 2008-04-17  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/dak.conf: Add TempPath statement for the Release
