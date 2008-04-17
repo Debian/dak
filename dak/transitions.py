@@ -211,6 +211,11 @@ def write_transitions_from_file(from_file):
     """We have a file we think is valid; if we're using sudo, we invoke it
        here, otherwise we just parse the file and call write_transitions"""
 
+    # Lets check if from_file is in the directory we expect it to be in
+    if not os.path.abspath(from_file).startswith(Cnf["Transitions::TempPath"]):
+        print "Will not accept transitions file outside of %s" % (Cnf["Transitions::TempPath"])
+        sys.exit(3)
+
     if Options["sudo"]:
         os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
               "/usr/local/bin/dak", "transitions", "--import", from_file)
@@ -227,7 +232,7 @@ def temp_transitions_file(transitions):
     # We need the chmod, as the file is (most possibly) copied from a
     # sudo-ed script and would be unreadable if it has default mkstemp mode
     
-    (fd, path) = tempfile.mkstemp("","transitions")
+    (fd, path) = tempfile.mkstemp("","transitions",Cnf["Transitions::TempPath"])
     os.chmod(path, 0644)
     f = open(path, "w")
     syck.dump(transitions, f)
