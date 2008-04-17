@@ -127,17 +127,16 @@ def load_transitions(trans_file):
                 if type(t[key]) != list:
                     print "ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test)
                     failure = True
-                if re_broken_package.match(key):
-                    # Someone had a space too much (or not enough), we have something looking like
-                    # "package1 - package2" now.
-                    print "ERROR: Invalid indentation of package list in transition %s, around package(s): %s" % (test, key)
-                    failure = True
                 try:
                     for package in t["packages"]:
                         if type(package) != str:
                             print "ERROR: Packages list contains invalid type %s (as %s) in transition %s" % (type(package), package, test)
                             failure = True
-                        if 
+                        if re_broken_package.match(package):
+                            # Someone had a space too much (or not enough), we have something looking like
+                            # "package1 - package2" now.
+                            print "ERROR: Invalid indentation of package list in transition %s, around package(s): %s" % (test, package)
+                            failure = True
                 except TypeError:
                     # In case someone has an empty packages list
                     print "ERROR: No packages defined in transition %s" % (test)
