@@ -157,6 +157,7 @@ def load_transitions(trans_file):
                 elif type(t[key]) != str:
                     if t[key] == "new" and type(t[key]) == int:
                         # Ok, debian native version
+                        continue
                     else:
                         print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
                         failure = True
