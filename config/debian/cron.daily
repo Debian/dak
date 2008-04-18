@@ -89,8 +89,7 @@ dak make-suite-file-list
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Update fingerprints
-# [JT - disabled, dak import-ldap-fingerprints currently can ask questions]
-#dak import-ldap-fingerprints
+dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
 # Generate override files
 cd $overridedir

@@ -237,7 +237,7 @@ def main():
         name = desuid_byid[id][1]
 	oname = db_uid_byid[id][1]
     	if name and oname != name:
-	    changes.append((uid[1], "Full name: %s\n" % (name)))
+	    changes.append((uid[1], "Full name: %s" % (name)))
             projectB.query("UPDATE uid SET name = '%s' WHERE id = %s" %
 	    	(pg.escape_string(name), id))
 
@@ -262,7 +262,7 @@ def main():
     for f,(u,fid,kr) in db_fin_info.iteritems():
         if kr != keyring_id: continue
 	if f in fpr: continue
-	changes.append((db_uid_byid.get(u, [None])[0], "Removed key: %s\n" % (f)))
+	changes.append((db_uid_byid.get(u, [None])[0], "Removed key: %s" % (f)))
 	projectB.query("UPDATE fingerprint SET keyring = NULL WHERE id = %d" % (fid))
 
     # For the keys in this keyring, add/update any fingerprints that've
@@ -275,7 +275,7 @@ def main():
 	if olduid == None: olduid = -1
 	if oldkid == None: oldkid = -1
 	if oldfid == -1:
-	    changes.append((newuiduid, "Added key: %s\n" % (f)))
+	    changes.append((newuiduid, "Added key: %s" % (f)))
             if newuid:
 	        projectB.query("INSERT INTO fingerprint (fingerprint, uid, keyring) VALUES ('%s', %d, %d)" % (f, newuid, keyring_id))
 	    else:
@@ -283,9 +283,11 @@ def main():
 	else:
 	    if newuid and olduid != newuid:
 		if olduid != -1:
-		    changes.append((newuiduid, "Linked key: %s (formerly belonging to %s)" % (f, db_uid_byid[olduid][0])))
+		    changes.append((newuiduid, "Linked key: %s" % f))
+		    changes.append((newuiduid, "  (formerly belonging to %s)" % (db_uid_byid[olduid][0])))
 		else:
-		    changes.append((newuiduid, "Linked key: %s (formerly unowned)\n" % (f)))
+		    changes.append((newuiduid, "Linked key: %s" % f))
+		    changes.append((newuiduid, "  (formerly unowned)"))
 	        projectB.query("UPDATE fingerprint SET uid = %d WHERE id = %d" % (newuid, oldfid))
 
 	    if oldkid != keyring_id:
@@ -298,12 +300,12 @@ def main():
     changesd = {}
     for (k, v) in changes:
         if k not in changesd: changesd[k] = ""
-        changesd[k] += "    " + v
+        changesd[k] += "    %s\n" % (v)
 
     keys = changesd.keys()
     keys.sort()
     for k in keys:
-        print "%s\n%s" % (k, changesd[k])
+        print "%s\n%s\n" % (k, changesd[k])
 
 ################################################################################
 
