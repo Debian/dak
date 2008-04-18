@@ -122,49 +122,56 @@ def load_transitions(trans_file):
         trans = ""
         return trans
 
-    for test in trans:
-        t = trans[test]
-
-        # First check if we know all the keys for the transition and if they have
-        # the right type (and for the packages also if the list has the right types
-        # included, ie. not a list in list, but only str in the list)
-        for key in t:
-            if key not in checkkeys:
-                print "ERROR: Unknown key %s in transition %s" % (key, test)
-                failure = True
-
-            if key == "packages":
-                if type(t[key]) != list:
-                    print "ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test)
+    try:
+        for test in trans:
+            t = trans[test]
+        
+            # First check if we know all the keys for the transition and if they have
+            # the right type (and for the packages also if the list has the right types
+            # included, ie. not a list in list, but only str in the list)
+            for key in t:
+                if key not in checkkeys:
+                    print "ERROR: Unknown key %s in transition %s" % (key, test)
                     failure = True
-                try:
-                    for package in t["packages"]:
-                        if type(package) != str:
-                            print "ERROR: Packages list contains invalid type %s (as %s) in transition %s" % (type(package), package, test)
-                            failure = True
-                        if re_broken_package.match(package):
-                            # Someone had a space too much (or not enough), we have something looking like
-                            # "package1 - package2" now.
-                            print "ERROR: Invalid indentation of package list in transition %s, around package(s): %s" % (test, package)
-                            failure = True
-                except TypeError:
-                    # In case someone has an empty packages list
-                    print "ERROR: No packages defined in transition %s" % (test)
+        
+                if key == "packages":
+                    if type(t[key]) != list:
+                        print "ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test)
+                        failure = True
+                    try:
+                        for package in t["packages"]:
+                            if type(package) != str:
+                                print "ERROR: Packages list contains invalid type %s (as %s) in transition %s" % (type(package), package, test)
+                                failure = True
+                            if re_broken_package.match(package):
+                                # Someone had a space too much (or not enough), we have something looking like
+                                # "package1 - package2" now.
+                                print "ERROR: Invalid indentation of package list in transition %s, around package(s): %s" % (test, package)
+                                failure = True
+                    except TypeError:
+                        # In case someone has an empty packages list
+                        print "ERROR: No packages defined in transition %s" % (test)
+                        failure = True
+                        continue
+        
+                elif type(t[key]) != str:
+                    if t[key] == "new" and type(t[key]) == int:
+                        # Ok, debian native version
+                        continue
+                    else:
+                        print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
+                        failure = True
+        
+            # And now the other way round - are all our keys defined?
+            for key in checkkeys:
+                if key not in t:
+                    print "ERROR: Missing key %s in transition %s" % (key, test)
                     failure = True
-                    continue
+    except TypeError:
+        # In case someone defined very broken things
+        print "ERROR: Unable to parse the file"
+        failure = True
 
-            elif type(t[key]) != str:
-                if t[key] == "new" and type(t[key]) == int:
-                    # Ok, debian native version
-                else:
-                    print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
-                    failure = True
-
-        # And now the other way round - are all our keys defined?
-        for key in checkkeys:
-            if key not in t:
-                print "ERROR: Missing key %s in transition %s" % (key, test)
-                failure = True
 
     if failure:
         return None
