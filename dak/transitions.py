@@ -155,7 +155,7 @@ def load_transitions(trans_file):
                         continue
         
                 elif type(t[key]) != str:
-                    if t[key] == "new" and type(t[key]) == int:
+                    if key == "new" and type(t[key]) == int:
                         # Ok, debian native version
                         continue
                     else:
