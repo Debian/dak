@@ -112,6 +112,16 @@ def load_transitions(trans_file):
 
     # lets do further validation here
     checkkeys = ["source", "reason", "packages", "new", "rm"]
+
+    # If we get an empty definition - we just have nothing to check, no transitions defined
+    if type(trans) != dict:
+        # This can be anything. We could have no transitions defined. Or someone totally fucked up the
+        # file, adding stuff in a way we dont know or want. Then we set it empty - and simply have no
+        # transitions anymore. User will see it in the information display after he quit the editor and
+        # could fix it
+        trans = ""
+        return trans
+
     for test in trans:
         t = trans[test]
 
@@ -144,8 +154,11 @@ def load_transitions(trans_file):
                     continue
 
             elif type(t[key]) != str:
-                print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
-                failure = True
+                if t[key] == "new" and type(t[key]) == int:
+                    # Ok, debian native version
+                else:
+                    print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
+                    failure = True
 
         # And now the other way round - are all our keys defined?
         for key in checkkeys:
