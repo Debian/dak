@@ -43,6 +43,7 @@ re_taint_free = re.compile(r"^[-+~/\.\w]+$")
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>")
 
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
+re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
 
 changes_parse_error_exc = "Can't parse line in .changes file"
 invalid_dsc_format_exc = "Invalid .dsc file"
@@ -237,11 +238,17 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         raise no_files_exc
 
     # Make sure we recognise the format of the Files: field
-    format = changes.get("format", "0.0").split(".",1)
-    if len(format) == 2:
-        format = int(format[0]), int(format[1])
+    format = re_verwithext.search(changes.get("format", "0.0"))
+    if not format:
+        raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+
+    format = format.groups()
+    if format[1] == None:
+        format = int(float(format[0])), 0, format[2]
     else:
-        format = int(float(format[0])), 0
+        format = int(format[0]), int(format[1]), format[2]
+    if format[2] == None:
+        format = format[:2]
 
     if is_a_dsc:
         if format != (1,0):
