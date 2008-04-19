@@ -1,3 +1,8 @@
+2008-04-20  Thomas Viehmann  <tviehmann@debian.org>
+
+	* daklib/utils.py (build_file_list): Deal with "Format 3 style"
+	Format lines (ie. those having extra text appended).
+
 2008-04-18  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/dak.conf: Add mapping stable-proposed-updates
