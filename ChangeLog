@@ -1,3 +1,8 @@
+2008-04-19  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_unchecked.py (check_files): Sanity check the
+	provides field, which closes #472783
+
 2008-04-18  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/dak.conf: Add mapping stable-proposed-updates
