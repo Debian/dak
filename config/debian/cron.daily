@@ -154,10 +154,14 @@ pg_dump projectb > $POSTDUMP
 
 ################################################################################
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+#TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Vacuum the database
-echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
+# (JJ, 20-04-2008) disabled, as we have autovacuum set to on in postgres.
+# refer to http://www.postgresql.org/docs/current/static/routine-vacuuming.html#AUTOVACUUM
+# which says "Beginning in PostgreSQL 8.1, there is an optional feature called autovacuum,
+# whose purpose is to automate the execution of VACUUM and ANALYZE  commands."
+# echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
 
 ################################################################################
 
