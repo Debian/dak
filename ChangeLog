@@ -1,5 +1,11 @@
 2008-04-21  Joerg Jaspert  <joerg@debian.org>
 
+	* scripts/debian/expire_dumps: New script, expires old database
+	dumps, using a scheme to keep more of the recent dumps.
+
+	* config/debian/cron.daily: Use the new script. Also - compress
+	all files older than 7 days, instead of 30. 
+
 	* dak/process_accepted.py (install): Do not break if a
 	source/maintainer combination is already in src_uploaders, "just"
 	warn us.
