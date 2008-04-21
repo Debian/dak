@@ -321,7 +321,7 @@ def install ():
                 added_ids = {}
                 for u in uploader_ids:
                     if added_ids.has_key(u):
-                        daklib.utils.warn("Already saw uploader %s for source %s") % (u, package)
+                        daklib.utils.warn("Already saw uploader %s for source %s" % (u, package))
                         continue
                     added_ids[u]=1
                     projectB.query("INSERT INTO src_uploaders (source, maintainer) VALUES (currval('source_id_seq'), %d)" % (u))
