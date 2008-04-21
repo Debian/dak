@@ -1,3 +1,8 @@
+2008-04-22  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.daily: push katie@merkel to immediately start
+	the sync of projectb there.
+
 2008-04-21  Joerg Jaspert  <joerg@debian.org>
 
 	* scripts/debian/expire_dumps: New script, expires old database

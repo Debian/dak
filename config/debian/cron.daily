@@ -179,6 +179,9 @@ $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
 
 ################################################################################
 
+# Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
+ssh -2 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1
+
 # Run mirror-split
 
 #time dak mirror-split
