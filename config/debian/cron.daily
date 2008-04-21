@@ -154,7 +154,7 @@ pg_dump projectb > $POSTDUMP
 
 ################################################################################
 
-#TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Vacuum the database
 # (JJ, 20-04-2008) disabled, as we have autovacuum set to on in postgres.
@@ -162,6 +162,9 @@ pg_dump projectb > $POSTDUMP
 # which says "Beginning in PostgreSQL 8.1, there is an optional feature called autovacuum,
 # whose purpose is to automate the execution of VACUUM and ANALYZE  commands."
 # echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
+
+echo "Expiring old database dumps..."
+(cd $base/backup; $scriptsdir/expire_dumps -d . -p -f "dump_*")
 
 ################################################################################
 
@@ -206,10 +209,10 @@ apt-ftparchive -q clean apt.conf
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
-# Compress psql backups older than a month, but no more than 20 of them
+# Compress psql backups older than a week, but no more than 20 of them
 
 (cd $base/backup/
- find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +30 | 
+ find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +7 | 
    sort | head -n20 | while read dumpname; do
      echo "Compressing $dumpname"
      bzip2 -9 "$dumpname"
