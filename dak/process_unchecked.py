@@ -1072,6 +1072,8 @@ def check_signed_by_key():
         if uid_name == "": sponsored = 1
     else:
         sponsored = 1
+        if daklib.utils.is_email_alias(uid_email):
+            changes["sponsoremail"] = uid_email
 
     if sponsored and not may_sponsor: 
         reject("%s is not authorised to sponsor uploads" % (uid))

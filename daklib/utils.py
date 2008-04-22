@@ -468,6 +468,14 @@ def which_apt_conf_file ():
     else:
 	return default_apt_config
 
+def which_alias_file():
+    hostname = socket.gethostbyaddr(socket.gethostname())[0]
+    aliasfn = '/var/lib/misc/'+hostname+'/forward-alias'
+    if os.path.exists(aliasfn):
+        return aliasfn
+    else:
+        return None
+
 ################################################################################
 
 # Escape characters which have meaning to SQL's regex comparison operator ('~')
@@ -1145,6 +1153,20 @@ If 'dotprefix' is non-null, the filename will be prefixed with a '.'."""
         tempfile.tempdir = old_tempdir
 
     return filename
+
+################################################################################
+
+# checks if the user part of the email is listed in the alias file
+
+def is_email_alias(email):
+  aliasfn = which_alias_file()
+  uid = email.split('@')[0]
+  if not aliasfn:
+      return False
+  for l in open(aliasfn):
+      if l.startswith(uid+': '):
+          return True
+  return False
 
 ################################################################################
 
