@@ -33,7 +33,7 @@ from optparse import OptionParser
 
 RULES = [
     {'days':14,   'interval':0},
-    {'days':31,   'interval':1},
+    {'days':31,   'interval':7},
     {'days':365,  'interval':31},
     {'days':3650, 'interval':365},
 
