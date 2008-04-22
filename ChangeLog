@@ -1,5 +1,8 @@
 2008-04-22  Joerg Jaspert  <joerg@debian.org>
 
+	* setup/init_pool.sql: added a function/aggregate for the release
+	team to base some script on it.
+
 	* config/debian/cron.daily: push katie@merkel to immediately start
 	the sync of projectb there.
 
