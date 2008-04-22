@@ -59,6 +59,8 @@ tried_too_hard_exc = "Tried too hard to find a free filename."
 default_config = "/etc/dak/dak.conf"
 default_apt_config = "/etc/dak/apt.conf"
 
+alias_cache = None
+
 ################################################################################
 
 class Error(Exception):
@@ -1159,14 +1161,15 @@ If 'dotprefix' is non-null, the filename will be prefixed with a '.'."""
 # checks if the user part of the email is listed in the alias file
 
 def is_email_alias(email):
-  aliasfn = which_alias_file()
-  uid = email.split('@')[0]
-  if not aliasfn:
-      return False
-  for l in open(aliasfn):
-      if l.startswith(uid+': '):
-          return True
-  return False
+    global alias_cache
+    if alias_cache == None:
+        aliasfn = which_alias_file()
+        alias_cache = set()
+        if aliasfn:
+            for l in open(aliasfn):
+                alias_cache.add(l.split(':')[0])
+    uid = email.split('@')[0]
+    return uid in alias_cache
 
 ################################################################################
 
