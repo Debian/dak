@@ -143,6 +143,11 @@
 	changes[architecture] has source included.
 	(check_transition): Now call the database.get_testing_version
 
+2008-02-09  Christoph Berg <myon@debian.org>
+
+	* daklib/queue.py (get_type): fubar does not exist in global
+	namespace.
+
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 
 	* daklib/utils.py (check_signature): Make variable key available,

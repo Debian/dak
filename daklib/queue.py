@@ -106,12 +106,12 @@ def get_type(f):
     elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
         type = "dsc"
     else:
-        fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
+        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
 
     # Validate the override type
     type_id = database.get_override_type_id(type)
     if type_id == -1:
-        fubar("invalid type (%s) for new.  Say wha?" % (type))
+        utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
 
     return type
 
