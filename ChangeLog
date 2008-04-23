@@ -1,3 +1,11 @@
+2008-04-23  Thomas Viehmann  <tviehmann@ries.debian.org>
+
+	* dak/process_unchecked.py: add changes["sponsoremail"]
+	  for sponsored uploads if desired
+	* daklib/utils.py: add functions
+	  is_email_alias to check which accounts allow email forwarding and
+	  which_alias_file to find the alias file
+
 2008-04-22  Joerg Jaspert  <joerg@debian.org>
 
 	* setup/init_pool.sql: added a function/aggregate for the release
@@ -12,7 +20,7 @@
 	dumps, using a scheme to keep more of the recent dumps.
 
 	* config/debian/cron.daily: Use the new script. Also - compress
-	all files older than 7 days, instead of 30. 
+	all files older than 7 days, instead of 30.
 
 	* dak/process_accepted.py (install): Do not break if a
 	source/maintainer combination is already in src_uploaders, "just"

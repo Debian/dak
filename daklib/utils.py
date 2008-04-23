@@ -59,6 +59,8 @@ tried_too_hard_exc = "Tried too hard to find a free filename."
 default_config = "/etc/dak/dak.conf"
 default_apt_config = "/etc/dak/apt.conf"
 
+alias_cache = None
+
 ################################################################################
 
 class Error(Exception):
@@ -467,6 +469,14 @@ def which_apt_conf_file ():
 	return Cnf["Config::" + res[0] + "::AptConfig"]
     else:
 	return default_apt_config
+
+def which_alias_file():
+    hostname = socket.gethostbyaddr(socket.gethostname())[0]
+    aliasfn = '/var/lib/misc/'+hostname+'/forward-alias'
+    if os.path.exists(aliasfn):
+        return aliasfn
+    else:
+        return None
 
 ################################################################################
 
@@ -1145,6 +1155,21 @@ If 'dotprefix' is non-null, the filename will be prefixed with a '.'."""
         tempfile.tempdir = old_tempdir
 
     return filename
+
+################################################################################
+
+# checks if the user part of the email is listed in the alias file
+
+def is_email_alias(email):
+    global alias_cache
+    if alias_cache == None:
+        aliasfn = which_alias_file()
+        alias_cache = set()
+        if aliasfn:
+            for l in open(aliasfn):
+                alias_cache.add(l.split(':')[0])
+    uid = email.split('@')[0]
+    return uid in alias_cache
 
 ################################################################################
 
