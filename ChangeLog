@@ -1,3 +1,11 @@
+2008-04-23  Thomas Viehmann  <tviehmann@ries.debian.org>
+
+	* dak/process_unchecked.py: add changes["sponsoremail"]
+	  for sponsored uploads if desired
+	* daklib/utils.py: add functions
+	  is_email_alias to check which accounts allow email forwarding and
+	  which_alias_file to find the alias file
+
 2008-04-22  Joerg Jaspert  <joerg@debian.org>
 
 	* setup/init_pool.sql: added a function/aggregate for the release
