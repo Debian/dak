@@ -279,6 +279,8 @@ class Upload:
             Subst["__MAINTAINER_FROM__"] = changes["changedby2047"]
             Subst["__MAINTAINER_TO__"] = "%s, %s" % (changes["changedby2047"],
                                                      changes["maintainer2047"])
+            if "sponsoremail" in changes:
+                Subst["__MAINTAINER_TO__"] += ", %s"%changes["sponsoremail"]
             Subst["__MAINTAINER__"] = changes.get("changed-by", "Unknown")
         else:
             Subst["__MAINTAINER_FROM__"] = changes["maintainer2047"]
