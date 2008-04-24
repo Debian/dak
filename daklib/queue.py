@@ -232,7 +232,8 @@ class Upload:
                    "closes", "changes" ]:
             d_changes[i] = changes[i]
         # Optional changes fields
-        for i in [ "changed-by", "filecontents", "format", "process-new note", "adv id", "distribution-version" ]:
+        for i in [ "changed-by", "filecontents", "format", "process-new note", "adv id", "distribution-version",
+                   "sponsoremail" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i]
         ## dsc
