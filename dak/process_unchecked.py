@@ -1073,7 +1073,10 @@ def check_signed_by_key():
     else:
         sponsored = 1
         if daklib.utils.is_email_alias(uid_email):
-            changes["sponsoremail"] = uid_email
+            sponsor_addresses = daklib.utils.gpg_get_key_addresses(changes["fingerprint"])
+            if (changes["maintaineremail"] not in sponsor_addresses and
+                changes["changedbyemail"] not in sponsor_addresses):
+                changes["sponsoremail"] = uid_email
 
     if sponsored and not may_sponsor: 
         reject("%s is not authorised to sponsor uploads" % (uid))
