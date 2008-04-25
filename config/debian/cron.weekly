@@ -18,7 +18,7 @@ fi
 # Clean up apt-ftparchive's databases
 
 # Split queue/done
-dak split-done
+dak split-done > /dev/null
 
 cd $configdir
 apt-ftparchive -q clean apt.conf
