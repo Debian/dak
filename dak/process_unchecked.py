@@ -44,6 +44,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$")
 re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
 re_strip_revision = re.compile(r"-([^-]+)$")
 re_strip_srcver = re.compile(r"\s+\(\S+\)$")
+re_spacestrip = re.compile('(\s)')
 
 ################################################################################
 
@@ -460,6 +461,16 @@ def check_files():
             depends = control.Find("Depends")
             if depends == '':
                 reject("%s: Depends field is empty." % (file))
+
+            # Sanity-check the Provides field
+            provides = re_spacestrip.sub('', control.Find("Provides"))
+            if provides == '':
+                reject("%s: Provides field is empty." % (file))
+            prov_list = provides.split(",")
+            for prov in prov_list:
+                if not re_valid_pkg_name.match(prov):
+                    reject("%s: Invalid Provides field content %s." % (file, prov))
+
 
             # Check the section & priority match those given in the .changes (non-fatal)
             if control.Find("Section") and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
