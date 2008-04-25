@@ -1,0 +1,12 @@
+Format: 1.5
+Date: 
+Source: debianqueued
+Binary: debianqueued
+Architecture: source all
+Version: 
+Distribution: unstable
+Urgency: low
+Maintainer: Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
+Description: 
+ Debian Upload Queue Daemon
+Files: 

@@ -1,0 +1,59 @@
+
+This directory is the Debian upload queue of ftp.uni-erlangen.de. All
+files uploaded here will be moved into the project incoming dir on
+master.debian.org.
+
+Only known Debian developers can upload here. All uploads must be in
+the same format as they would go to master, i.e. with a PGP-signed
+.changes file that lists all files that belong to the upload. Files
+not meeting this condition will be removed automatically after some
+time.
+
+The queue daemon will notify you by mail of success or any problems
+with your upload. For this, the Maintainer: field in the .changes must
+contain your (the uploader's) correct e-mail address, not the address
+of the real maintainer (if different). The same convention applies to
+master itself, which sends installation acknowledgements to the
+address in Maintainer:.
+
+
+*.commands Files
+----------------
+
+Besides *.changes files, you can also upload *.commands files for the
+daemon to process. With *.commands files, you can instruct the daemon
+to remove or rename files in the queue directory that, for example,
+resulted from failed or interrupted uploads. A *.commands file looks
+much like a *.changes, but contains only two fields: Uploader: and
+Commands:. It must be PGP-signed by a known Debian developer, to avoid
+that E.V.L. Hacker can remove/rename files in the queue. The basename
+(the part before the .commands extension) doesn't matter, but best
+make it somehow unique.
+
+The Uploader: field should contain the mail address to which the reply
+should go, just like Maintainer: in a *.changes. Commands: is a
+multi-line field like e.g. Description:, so each continuation line
+should start with a space. Each line in Commands: can contain a
+standard 'rm' or 'mv' command, but no options are allowed, and
+filenames may not contain slashes (so that they're restricted to the
+queue directory). 'rm' can process as much arguments as you give it
+(not only one), and also knows about the shell wildcards *, ?, and [].
+
+Example of a *.commands file:
+
+-----BEGIN PGP SIGNED MESSAGE-----
+
+Uploader: Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
+Commands: 
+ rm hello_1.0-1_i386.deb
+ mv hello_1.0-1.dsx hello_1.0-1.dsc
+
+-----BEGIN PGP SIGNATURE-----
+Version: 2.6.3ia
+
+iQCVAwUBNFiQSXVhJ0HiWnvJAQG58AP+IDJVeSWmDvzMUphScg1EK0mvChgnuD7h
+BRiVQubXkB2DphLJW5UUSRnjw1iuFcYwH/lFpNpl7XP95LkLX3iFza9qItw4k2/q
+tvylZkmIA9jxCyv/YB6zZCbHmbvUnL473eLRoxlnYZd3JFaCZMJ86B0Ph4GFNPAf
+Z4jxNrgh7Bc=
+=pH94
+-----END PGP SIGNATURE-----
