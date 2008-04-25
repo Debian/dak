@@ -1,5 +1,8 @@
 2008-04-26  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/process_new.py: Call end() whenever we try to leave by
+	pressing Q
+
 	* config/debian/cron.daily: Also report NBS in experimental
 
 2008-04-25  Joerg Jaspert  <joerg@debian.org>
