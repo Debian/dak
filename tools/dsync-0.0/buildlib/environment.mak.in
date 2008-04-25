@@ -1,0 +1,35 @@
+# This file contains everything that autoconf guessed for your system.
+# if you want you can edit it, just don't re-run configure.
+
+# C++ compiler options
+AR = @AR@
+CC = @CC@
+CPPFLAGS+= @CPPFLAGS@ @DEFS@ -D_REENTRANT
+CXX = @CXX@
+CXXFLAGS+= @CXXFLAGS@
+
+# Linker stuff
+PICFLAGS+= -fPIC -DPIC
+LFLAGS+= @LDFLAGS@
+
+# Dep generation - this only works for gnu stuff
+INLINEDEPFLAG =
+
+# Debian doc stuff
+DEBIANDOC_HTML = @DEBIANDOC_HTML@
+DEBIANDOC_TEXT = @DEBIANDOC_TEXT@
+
+# YODL for the man pages
+YODL_MAN = @YODL_MAN@
+
+# Various library checks
+PTHREADLIB = @PTHREADLIB@
+HAVE_C9X = @HAVE_C9X@
+
+# Shared library things
+HOST_OS = @host_os@
+ifeq ($(HOST_OS),linux-gnu)
+   ONLYSHAREDLIBS = yes
+   SONAME_MAGIC=-Wl,-h -Wl,
+   LFLAGS_SO=
+endif

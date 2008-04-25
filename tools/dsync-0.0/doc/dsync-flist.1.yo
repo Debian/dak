@@ -1,0 +1,160 @@
+mailto(jgg@debian.org)
+manpage(dsync-flist)(1)(17 Jan 1999)(dsync)()
+manpagename(dsync)(DSync Mirroring utility -- command-line file list manipulator)
+
+manpagesynopsis()
+  dsync-flist [options] [command] [file]
+
+manpagedescription()
+
+dsync-flist is the command line tool for generating and manipulating the
+dsync file list. It can check a previosly generated list against the local
+tree and provide a report on its findings. The dsync file list is an 
+optimized binary file suitable for transmission over the internet.
+
+em(command) is one of:
+itemize(
+  it() generate em(filelist)
+  it() help
+  it() dump em(filelist)
+  it() md5sums em(filelist)
+  it() md5cache em(filelist)
+  it() lookup em(filelist dir file)
+  it() link-dups em(filelist)
+  it() verify em(filelist)
+)
+
+Unless the -h, or --help option is given one of the above commands
+must be present.
+
+startdit()
+dit(bf(generate))
+bf(generate) creates a file list. It takes as an argument the location to
+write the file list to and then procceeds to recursively scan . to produce
+the list. If md5 generation is enabled bf(generate) will use the previous
+list as a cache for md5 checksums, only building new checksums if the file
+size or timestamp has changed.
+
+dit(bf(help))
+Displays the help text
+
+dit(bf(dump))
+bf(dump) shows the contents of the given file list in a short form. The first
+word is a type field and the remaing fields represent stored information.
+The possible types are F - File, D - Directory, DM - Directory Marker, DS -
+Directory Start, H - Header, S - Device Special, L - Symlink, T - Trailer. 
+After this the actual fields are displayed. Mod - Modification time in
+seconds since the unix epoch, N - Entitiy Name, MD5 - MD5 hash, Sz - Size
+in bytes, T - Link Target, U/G - User/Group internal ID, Sig - Header
+signature, Maj - Header major number, Min - Header minor number, Epoch - 
+Internal Epoch offset, Count - Flag counter.
+
+dit(bf(md5sums))
+bf(md5sums) takes the contents of the file list and displays the stored md5 
+of every file and then the file name. This output can then be given to
+bf(md5sum -c) (GNU) to verify the checksums. Combined with the caching
+action of the file list generator this can make md5 indexes of large archives
+practical.
+
+dit(bf(md5cache))
+Like bf(md5sums), bf(md5cache) displays the md5sums of the files given
+on stdin. It will use cached MD5 information if possible otherwise it will
+compute the MD5 and return that. It is necessary to run this command from the
+same directory the file list was generated in and to give filenames relative
+to that directory. Otherwise the caching mechanism will not work.
+
+dit(bf(lookup))
+bf(lookup) searches for a single entity in the list. You must specify the
+directory, ending in / and then the entity in that directory. The output is
+the same as bf(dump)
+
+dit(bf(link-dups))
+bf(link-dups) checks the entire file list for files that have duplicate
+contents and hard links them. It does this by examining the MD5 information
+from the file list and then converting the duplicated files into a hard link.
+The file choosen to be the target of all other links is the first file
+listed in the file list. The timestamp of the new link is set to be the
+largest timestamp of all the other links and the permissions and ownership
+remain as the first link. Output is two lines per combination, the first
+indicting the source file and the second the file that will be erased and
+hardlinked, a souce file may occure multiple times if there are many
+duplicated copies.
+
+dit(bf(verify))
+bf(verify) checks the given file list against . and reports and deviations.
+
+enddit()
+
+manpageoptions()
+All command line options may be set using the configuration file, the
+descriptions indicate the configuration option to set. For boolean
+options you can override the config file by using something like bf(-f-),
+bf(--no-f), bf(-f=no) or several other variations.
+
+startdit()
+dit(bf(-h, --help))
+Show the help text
+
+dit(bf(-q, --quiet, --silent))
+Quiet; produces output suitable for logging, omitting progress indicators.
+More qs will produce more quite up to a maximum of 2. You can also use
+bf(-q=#) to set the quiet level, overriding the configuration file.
+See bf(quiet)
+
+dit(bf(-i, --include))
+dit(bf(-e, --exclude))
+Add a pattern to the ordered include list. See bf(FileList::Filter).
+
+dit(bf(-n, --no-act))
+Suppress action; No changes will be made to the local file system. This
+applies to bf(generate) and bf(verify).
+
+dit(bf(--delete))
+Allow files to be deleted; This allows files to be erased, it effects
+bf(generate) and bf(verify). See bf(delete).
+
+dit(bf(--pi, --perfer-include))
+dit(bf(--pe, --perfer-exclude))
+Add a pattern to the ordered prefer include list. See
+bf(FileList::Prefer-Filter).
+
+dit(bf(--ci, --clean-include))
+dit(bf(--ce, --clean-exclude))
+Add a pattern to the ordered clean include list. Things excluded by this
+filter will be erased. See bf(FileList::Clean-Filter).
+
+dit(bf(--md5))
+Generate md5 hashes into the list. See bf(FileList::MD5-Hashes).
+
+dit(bf(--perm))
+Generate file permissions into the list. See bf(FileList::Permissions).
+
+dit(bf(--owner))
+Generate file ownership into the list [unsupported]. See
+bf(FileList::Ownership).
+
+dit(bf(-c, --config-file))
+Configuration File; Specify a configuration file to use. bf(apt-get) will
+read the default configuration file and then this configuration file. See
+bf(apt.conf(5)) for syntax information.
+
+dit(bf(-o, --option))
+Set a Configuration Option; This will set an arbitary configuration option.
+The syntax is 
+verb(-o Foo::Bar=bar)
+
+enddit()
+
+manpageseealso()
+dsync.conf(5)
+
+manpagediagnostics()
+dsync-flist returns zero on normal operation, decimal 100 on error.
+
+manpagebugs()
+See http://bugs.debian.org/dsync.  If you wish to report a
+bug in bf(apt-get), please see bf(/usr/doc/debian/bug-reporting.txt)
+or the bf(bug(1)) command.
+
+manpageauthor()
+dsync was written by Jason Gunthorpe <jgg@debian.org>.
