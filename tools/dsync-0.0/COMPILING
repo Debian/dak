@@ -1,0 +1,48 @@
+To compile this you need a couple things
+  - A working POSIX system with working POSIX sh, awk and sed
+  - GNU Make 3.74 or so, -- normal UNIX make will NOT work
+  - A working ANSI C++ compiler, this is not g++ 2.7.* 
+    g++ 2.8 works OK and newer egcs work well also. Nobody has tried it
+    on other compilers :<
+    You will need a properly working STL as well.
+  - A C library with the usual POSIX functions and a BSD socket layer
+
+The MD5 routine needs to know about the architecture, many of the common
+ones are in buildlib/archtable and buildlib/sizetable if your processor/host
+is not listed then just add them..
+
+This is a list of platforms and information that dsync has been compiled
+and tested on:
+
+Debian GNU Linux 2.1 'slink'
+  Linux Wakko 2.0.35 #1 Sun Nov 15 20:54:42 MST 1998 i586 unknown
+  Linux faure 2.0.35 #1 Tue Oct 30 14:31:28 CST 2018 alpha unknown  
+  g++ egcs-2.91.60
+  dsync 0.0 18/01/1999
+  - All versions work here
+  - Watch out! You get shared libraries! Use 'make ONLYSHAREDLIBS=' to 
+    disable
+  - You will want to have debiandoc-sgml and yodl installed to get
+    best results.
+    
+Sun Solaris
+  SunOS ohaton 5.6 Generic_105181-11 sun4u
+  g++ 2.8.1
+  dsync 0.0 18/01/1999
+  - The Sun I used did not have 'ar' in the path for some reason, it is
+    in /usr/ccs/bin/ar, export this before running configure or edit
+    environment.mak to fix it.
+  - libpthread seems to have some defectiveness issue with pthread_once,
+    it doesn't actually work. The code has a hack to advoid the 
+    defectiveness
+  
+HP-UX
+  HP-UX nyquist B.10.20 C 9000/780 2016574337 32-user license
+  g++ 2.8.1
+  dsync 0.0 18/01/1999
+  - I had alot of problems here initially, the utilities are very strict.
+    Things work well now.
+  - The HP-UX I used had gnu-make installed as 'gmake' this causes configure
+    to die when it does 'make dirs' I ran 'gmake dirs' by hand.
+  - There is a snprintf in the libraries someplace but it does not declare
+    it in any header, this causes all sorts of fun compile warnings

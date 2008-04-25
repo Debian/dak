@@ -1,0 +1,13 @@
+$Header: /allftp/CVS/debianqueued/TODO,v 1.8 1998/04/01 15:27:39 ftplinux Exp $
+
+ - There are numerous potential portability problems... They'll show
+   up as this script is used on more and different machines.
+
+ - There was a suggestion how bad files on uploads could be handled
+   easier than with command files: Give them some known extension
+   (e.g. .<digits>), and the daemon could look for those files if the
+   main file has bad size or md5.
+
+ - Make provisions for the (rare) case that the daemon looks at a
+   yet-incomplete .changes file.
+

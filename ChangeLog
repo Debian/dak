@@ -1,3 +1,48 @@
+2008-04-25  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/split_done.py (main): Only move files into their subdirs if
+	they are older than 30 days. That enables us to run this script as
+	part of a cronjob.
+
+	* config/debian/cron.weekly: Run dak split-done
+
+2008-04-23  Thomas Viehmann  <tviehmann@debian.org>
+
+	* dak/process_unchecked.py: add changes["sponsoremail"]
+	  for sponsored uploads if desired
+	* daklib/queue.py: add changes["sponsoremail"] to
+	  Subst["__MAINTAINER_TO__"] if present
+	* daklib/utils.py: add functions
+	  is_email_alias to check which accounts allow email forwarding,
+	  which_alias_file to find the alias file, and
+	  gpg_get_key_addresses to find uid addresses for a given
+	    fingerprint
+
+2008-04-22  Joerg Jaspert  <joerg@debian.org>
+
+	* setup/init_pool.sql: added a function/aggregate for the release
+	team to base some script on it.
+
+	* config/debian/cron.daily: push katie@merkel to immediately start
+	the sync of projectb there.
+
+2008-04-21  Joerg Jaspert  <joerg@debian.org>
+
+	* scripts/debian/expire_dumps: New script, expires old database
+	dumps, using a scheme to keep more of the recent dumps.
+
+	* config/debian/cron.daily: Use the new script. Also - compress
+	all files older than 7 days, instead of 30.
+
+	* dak/process_accepted.py (install): Do not break if a
+	source/maintainer combination is already in src_uploaders, "just"
+	warn us.
+
+2008-04-20  Thomas Viehmann  <tviehmann@debian.org>
+
+	* daklib/utils.py (build_file_list): Deal with "Format 3 style"
+	Format lines (ie. those having extra text appended).
+
 2008-04-19  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_unchecked.py (check_files): Sanity check the
@@ -122,6 +167,20 @@
 	(process_it): Call check_transitions only if
 	changes[architecture] has source included.
 	(check_transition): Now call the database.get_testing_version
+
+2008-02-09  Christoph Berg <myon@debian.org>
+
+	* daklib/queue.py (get_type): fubar does not exist in global
+	namespace.
+
+	* setup/add_constraints.sql setup/init_pool.sql: Add changedby column
+	to source table, and move src_uploaders after source so the REFERNCES
+	clause works.
+	* dak/process_accepted.py (install): Fill the changedby column from
+	the information found in the .changes. This will allow to identify
+	NMUs and sponsored uploads more precisely in tools querying projectb.
+	* scripts/debian/insert_missing_changedby.py: Script to import yet
+	missing fields from filippo's uploads-history DB.
 
 2008-02-06  Joerg Jaspert  <joerg@debian.org>
 

@@ -1,0 +1,11 @@
+Source: dsync
+Section: net
+Priority: optional
+Maintainer: Jason Gunthorpe <jgg@debian.org>
+Standards-Version: 2.4.1
+
+Package: dsync
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Mirroring tool
+ DSync is a mirroring tool.

@@ -1,0 +1,101 @@
+ad
+dnl Process this file with autoconf to produce a configure script.
+dnl The ONLY thing this is used for is to configure for different
+dnl linux architectures and configurations, it is not used to make the
+dnl code more portable
+
+dnl You MUST have an environment that has all the POSIX functions and
+dnl some of the more popular bsd/sysv ones (like select). You'll also
+dnl need a C++ compiler that is semi-standard conformant, exceptions are 
+dnl not used but STL is.
+
+dnl 'make -f Makefile startup' will generate the configure file from 
+dnl configure.in correctly and can be run at any time
+
+AC_INIT(configure.in)
+AC_CONFIG_AUX_DIR(buildlib)
+AC_CONFIG_HEADER(include/config.h:buildlib/config.h.in)
+
+dnl -- SET THIS TO THE RELEASE VERSION --
+AC_DEFINE_UNQUOTED(VERSION,"0.0")
+AC_DEFINE_UNQUOTED(PACKAGE,"dsync")
+
+AC_CHECK_TOOL_PREFIX	dnl Initial guess
+
+dnl Check our C compiler
+AC_PROG_CC
+AC_ISC_POSIX
+
+dnl Check the host arch (build+target not needed... yet)
+AC_CANONICAL_HOST
+AC_CHECK_TOOL_PREFIX	dnl recheck, in case the initial guess was wrong
+
+dnl Check for other programs
+AC_PROG_CXX
+AC_LANG_CPLUSPLUS
+AC_CHECK_TOOL(AR,ar, :)
+
+if test "$AR" = ":"; then
+     AC_MSG_ERROR(failed: Sorry I could not find ar in the path)
+fi
+
+dnl Checks for pthread
+AC_CHECK_LIB(pthread, pthread_create,[AC_DEFINE(HAVE_PTHREAD) PTHREADLIB="-lpthread"])
+AC_SUBST(PTHREADLIB)
+
+dnl Converts the ARCH to be the same as dpkg
+AC_MSG_CHECKING(system architecture)
+archset="`awk '$1 == "'$host_cpu'" { print $2 }' $srcdir/buildlib/archtable`"
+if test "x$archset" = "x"; then
+  AC_MSG_ERROR(failed: use --host=)
+fi
+AC_MSG_RESULT($archset)
+AC_DEFINE_UNQUOTED(ARCHITECTURE,"$archset")
+
+dnl We use C9x types if at all possible
+AC_CACHE_CHECK([for C9x integer types],c9x_ints,[
+    AC_TRY_COMPILE([#include <inttypes.h>],
+                   [uint8_t Foo1;uint16_t Foo2;uint32_t Foo3;uint64_t Foo],
+		   c9x_ints=yes,c9x_ints=no)])
+
+dnl Check the sizes etc. of the architecture
+changequote(,)
+if archline="`sed -ne 's/^'$archset':[ 	]\+\(.*\)/\1/gp' $srcdir/buildlib/sizetable`"; then
+   changequote([,])
+   set $archline
+   if test "$1" = "little"; then
+      ac_cv_c_bigendian=no
+   else
+      ac_cv_c_bigendian=yes
+   fi
+   size_char=$2
+   size_int=$3
+   size_short=$4
+   size_long=$5
+fi
+
+if test "$cross_compiling" = "yes" -a "$archline" = ""; then
+  AC_MSG_ERROR(When cross compiling, architecture must be present in sizetable)
+fi
+AC_C_BIGENDIAN
+   
+dnl We do not need this if we have inttypes..
+HAVE_C9X=yes
+if test x"$c9x_ints" = x"no"; then
+   AC_CHECK_SIZEOF(char,$size_char)
+   AC_CHECK_SIZEOF(int,$size_int)
+   AC_CHECK_SIZEOF(short,$size_short)
+   AC_CHECK_SIZEOF(long,$size_long)
+  
+   HAVE_C9X=
+   AC_SUBST(HAVE_C9X)
+fi
+
+dnl Check for debiandoc
+AC_CHECK_PROG(DEBIANDOC_HTML,debiandoc2html,"yes","")
+AC_CHECK_PROG(DEBIANDOC_TEXT,debiandoc2text,"yes","")
+
+dnl Check for YODL
+AC_CHECK_PROG(YODL_MAN,yodl2man,"yes","")
+
+AC_OUTPUT(environment.mak:buildlib/environment.mak.in makefile:buildlib/makefile.in,make dirs)

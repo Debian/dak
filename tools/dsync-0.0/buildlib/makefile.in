@@ -1,0 +1,41 @@
+# -*- make -*-
+
+# This is the build directory make file, it sets the build directory
+# and runs the src makefile.
+ifndef NOISY
+.SILENT:
+endif
+include environment.mak
+
+SRCDIR=@top_srcdir@
+DIRS:=./docs ./bin ./obj ./include 
+SUBDIRS:= $(DIRS)  ./include/dsync ./obj/libdsync ./obj/test ./obj/cmdline
+BUILD:=$(shell pwd)
+export BUILD
+
+# Chain to the parent make to do the actual building
+.PHONY: headers library clean veryclean all binary program doc \
+        veryclean/local
+all headers library clean veryclean binary program doc:
+	$(MAKE) -C $(SRCDIR) -f Makefile $@
+
+# Purge everything.
+.PHONY: maintainer-clean dist-clean pristine sanity distclean
+maintainer-clean dist-clean pristine sanity distclean:
+	-rm -rf $(DIRS)
+	-rm -f config.cache config.log config.status environment.mak makefile
+	
+# This makes any missing directories
+.PHONY: dirs
+MISSING_DIRS:=	$(filter-out $(wildcard $(SUBDIRS)),$(SUBDIRS))
+dirs:
+ifneq ($(words $(MISSING_DIRS)),0)
+	@mkdir  $(MISSING_DIRS)
+else
+	@echo > /dev/null
+endif	
+ifeq ($(HAVE_C9X),yes)
+	-@rm include/inttypes.h > /dev/null 2>&1
+else
+	@cp $(SRCDIR)/buildlib/inttypes.h.in include/inttypes.h
+endif

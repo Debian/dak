@@ -41,8 +41,10 @@ re_multi_line_field = re.compile(r"^\s(.*)")
 re_taint_free = re.compile(r"^[-+~/\.\w]+$")
 
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>")
+re_gpg_uid = re.compile('^uid.*<([^>]*)>')
 
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
+re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
 
 changes_parse_error_exc = "Can't parse line in .changes file"
 invalid_dsc_format_exc = "Invalid .dsc file"
@@ -57,6 +59,9 @@ tried_too_hard_exc = "Tried too hard to find a free filename."
 
 default_config = "/etc/dak/dak.conf"
 default_apt_config = "/etc/dak/apt.conf"
+
+alias_cache = None
+key_uid_email_cache = {}
 
 ################################################################################
 
@@ -237,11 +242,17 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         raise no_files_exc
 
     # Make sure we recognise the format of the Files: field
-    format = changes.get("format", "0.0").split(".",1)
-    if len(format) == 2:
-        format = int(format[0]), int(format[1])
+    format = re_verwithext.search(changes.get("format", "0.0"))
+    if not format:
+        raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+
+    format = format.groups()
+    if format[1] == None:
+        format = int(float(format[0])), 0, format[2]
     else:
-        format = int(float(format[0])), 0
+        format = int(format[0]), int(format[1]), format[2]
+    if format[2] == None:
+        format = format[:2]
 
     if is_a_dsc:
         if format != (1,0):
@@ -460,6 +471,14 @@ def which_apt_conf_file ():
 	return Cnf["Config::" + res[0] + "::AptConfig"]
     else:
 	return default_apt_config
+
+def which_alias_file():
+    hostname = socket.gethostbyaddr(socket.gethostname())[0]
+    aliasfn = '/var/lib/misc/'+hostname+'/forward-alias'
+    if os.path.exists(aliasfn):
+        return aliasfn
+    else:
+        return None
 
 ################################################################################
 
@@ -1074,6 +1093,25 @@ used."""
 
 ################################################################################
 
+def gpg_get_key_addresses(fingerprint):
+  """retreive email addresses from gpg key uids for a given fingerprint"""
+  addresses = key_uid_email_cache.get(fingerprint)
+  if addresses != None:
+      return addresses
+  addresses = set()
+  cmd = "gpg --no-default-keyring %s --fingerprint %s" \
+              % (gpg_keyring_args(), fingerprint)
+  (result, output) = commands.getstatusoutput(cmd)
+  if result == 0:
+    for l in output.split('\n'):
+      m = re_gpg_uid.match(l)
+      if m:
+        addresses.add(m.group(1))
+  key_uid_email_cache[fingerprint] = addresses
+  return addresses
+
+################################################################################
+
 # Inspired(tm) by http://www.zopelabs.com/cookbook/1022242603
 
 def wrap(paragraph, max_length, prefix=""):
@@ -1138,6 +1176,21 @@ If 'dotprefix' is non-null, the filename will be prefixed with a '.'."""
         tempfile.tempdir = old_tempdir
 
     return filename
+
+################################################################################
+
+# checks if the user part of the email is listed in the alias file
+
+def is_email_alias(email):
+    global alias_cache
+    if alias_cache == None:
+        aliasfn = which_alias_file()
+        alias_cache = set()
+        if aliasfn:
+            for l in open(aliasfn):
+                alias_cache.add(l.split(':')[0])
+    uid = email.split('@')[0]
+    return uid in alias_cache
 
 ################################################################################
 

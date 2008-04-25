@@ -1,0 +1,504 @@
+#!/usr/bin/perl -w
+#
+# dqueued-watcher -- for regularily watching the queue daemon
+#
+# This script is intended to check periodically (e.g. started by cron) that
+# everything is ok with debianqueued. If the daemon isn't running, it notifies
+# the maintainer. It also checks if a new Debian keyring is available (in a
+# Debian mirror aera, f.i.) and then updates the keyring used by debianqueued.
+#
+# Copyright (C) 1997 Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
+#
+# This program is free software.  You can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation: either version 2 or
+# (at your option) any later version.
+# This program comes with ABSOLUTELY NO WARRANTY!
+#
+# $Id: dqueued-watcher,v 1.28 1999/07/08 09:43:22 ftplinux Exp $
+#
+# $Log: dqueued-watcher,v $
+# Revision 1.28  1999/07/08 09:43:22  ftplinux
+# Bumped release number to 0.9
+#
+# Revision 1.27  1999/07/07 11:58:22  ftplinux
+# Also update gpg keyring if $conf::gpg_keyring is set.
+#
+# Revision 1.26  1998/07/06 14:24:36  ftplinux
+# Some changes to handle debian-keyring.tar.gz files which expand to a
+# directory including a date.
+#
+# Revision 1.25  1998/05/14 14:21:45  ftplinux
+# Bumped release number to 0.8
+#
+# Revision 1.24  1998/03/30 12:31:05  ftplinux
+# Don't count "already reported" or "ignored for now" errors as .changes errors.
+# Also list files for several error types.
+# Also print out names of processed jobs.
+#
+# Revision 1.23  1998/03/30 11:27:37  ftplinux
+# If called with args, make summaries for the log files given.
+# make_summary: New arg $to_stdout, for printing report directly.
+#
+# Revision 1.22  1998/03/23 14:05:15  ftplinux
+# Bumped release number to 0.7
+#
+# Revision 1.21  1997/12/16 13:19:29  ftplinux
+# Bumped release number to 0.6
+#
+# Revision 1.20  1997/11/20 15:18:48  ftplinux
+# Bumped release number to 0.5
+#
+# Revision 1.19  1997/10/31 12:26:31  ftplinux
+# Again added new counters in make_summary: suspicious_files,
+# transient_changes_errs.
+# Extended tests for bad_changes.
+# Quotes in pattern seem not to work, replaced by '.'.
+#
+# Revision 1.18  1997/10/30 14:17:32  ftplinux
+# In make_summary, implemented some new counters for command files.
+#
+# Revision 1.17  1997/10/17 09:39:09  ftplinux
+# Fixed wrong args to plural_s
+#
+# Revision 1.16  1997/09/25 11:20:42  ftplinux
+# Bumped release number to 0.4
+#
+# Revision 1.15  1997/09/17 12:16:33  ftplinux
+# Added writing summaries to a file
+#
+# Revision 1.14  1997/09/16 11:39:29  ftplinux
+# In make_summary, initialize all counters to avoid warnings about uninited
+# values.
+#
+# Revision 1.13  1997/09/16 10:53:36  ftplinux
+# Made logging more verbose in queued and dqueued-watcher
+#
+# Revision 1.12  1997/08/18 13:07:15  ftplinux
+# Implemented summary mails
+#
+# Revision 1.11  1997/08/18 12:11:44  ftplinux
+# Replaced timegm by timelocal in parse_date; times in log file are
+# local times...
+#
+# Revision 1.10  1997/08/18 11:27:20  ftplinux
+# Revised age calculation of log file for rotating
+#
+# Revision 1.9  1997/08/12 09:54:40  ftplinux
+# Bumped release number
+#
+# Revision 1.8  1997/08/11 12:49:10  ftplinux
+# Implemented logfile rotating
+#
+# Revision 1.7  1997/07/28 13:20:38  ftplinux
+# Added release numner to startup message
+#
+# Revision 1.6  1997/07/25 10:23:04  ftplinux
+# Made SIGCHLD handling more portable between perl versions
+#
+# Revision 1.5  1997/07/09 10:13:55  ftplinux
+# Alternative implementation of status file as plain file (not FIFO), because
+# standard wu-ftpd doesn't allow retrieval of non-regular files. New config
+# option $statusdelay for this.
+#
+# Revision 1.4  1997/07/08 08:39:56  ftplinux
+# Need to remove -z from tar options if --use-compress-program
+#
+# Revision 1.3  1997/07/08 08:34:15  ftplinux
+# If dqueued-watcher runs as cron job, $PATH might not contain gzip. Use extra
+# --use-compress-program option to tar, and new config var $gzip.
+#
+# Revision 1.2  1997/07/03 13:05:57  ftplinux
+# Added some verbosity if stdin is a terminal
+#
+# Revision 1.1.1.1  1997/07/03 12:54:59  ftplinux
+# Import initial sources
+#
+#
+
+require 5.002;
+use strict;
+use POSIX;
+require "timelocal.pl";
+
+sub LINEWIDTH { 79 }
+my $batchmode = !(-t STDIN);
+$main::curr_year = (localtime)[5];
+
+do {
+	my $version;
+	($version = 'Release: 0.9 $Revision: 1.28 $ $Date: 1999/07/08 09:43:22 $ $Author: ftplinux $') =~ s/\$ ?//g;
+	print "dqueued-watcher $version\n" if !$batchmode;
+};
+
+package conf;
+($conf::queued_dir = (($0 !~ m,^/,) ? POSIX::getcwd()."/" : "") . $0)
+	=~ s,/[^/]+$,,;
+require "$conf::queued_dir/config";
+my # avoid spurious warnings about unused vars
+$junk = $conf::gzip;
+$junk = $conf::maintainer_mail;
+$junk = $conf::log_age;
+package main;
+
+# prototypes
+sub check_daemon();
+sub daemon_running();
+sub rotate_log();
+sub logf($);
+sub parse_date($);
+sub make_summary($$$);
+sub stimes($);
+sub plural_s($);
+sub format_list($@);
+sub mail($@);
+sub logger(@);
+sub format_time();
+
+# the main program:
+if (@ARGV) {
+	# with arguments, make summaries (to stdout) for the logfiles given
+	foreach (@ARGV) {
+		make_summary( 1, undef, $_ );
+	}
+}
+else {
+	# without args, just do normal maintainance actions
+	check_daemon();
+	rotate_log();
+}
+exit 0;
+
+
+#
+# check if the daemon is running, notify maintainer if not
+#
+sub check_daemon() {
+	my $daemon_down_text = "Daemon is not running\n";
+	my( $line, $reported );
+
+	if (daemon_running()) {
+		print "Daemon is running\n" if !$batchmode;
+		return;
+	}
+	print "Daemon is NOT running!\n" if !$batchmode;
+
+	$reported = 0;
+	if ($conf::statusfile && -f $conf::statusfile && ! -p _ &&
+		open( STATUSFILE, "<$conf::statusfile" )) {
+		$line = <STATUSFILE>;
+		close( STATUSFILE );
+		$reported = $line eq $daemon_down_text;
+	}
+	if (!$reported) {
+		mail( "debianqueued down",
+			  "The Debian queue daemon isn't running!\n",
+			  "Please start it up again.\n" );
+		logger( "Found that daemon is not running\n" );
+	}
+
+	# remove unnecessary pid file
+	# also remove status FIFO, so opening it for reading won't block
+	# forever
+	unlink( $conf::pidfile, $conf::statusfile );
+
+	# replace status FIFO by a file that tells the user the daemon is down
+	if ($conf::statusfile) {
+		open( STATUSFILE, ">$conf::statusfile" )
+			or die "Can't open $conf::statusfile: $!\n";
+		print STATUSFILE $daemon_down_text;
+		close( STATUSFILE );
+	}
+}
+
+#
+# check if daemon is running
+#
+sub daemon_running() {
+	my $pid;
+	local( *PIDFILE );
+	
+	if (open( PIDFILE, "<$conf::pidfile" )) {
+		chomp( $pid = <PIDFILE> );
+		close( PIDFILE );
+		$main::daemon_pid = $pid, return 1 if $pid && kill( 0, $pid );
+	}
+	return 0;
+}
+
+#
+# check if new keyring is available, if yes extract it
+#
+
+sub rotate_log() {
+	my( $first_date, $f1, $f2, $i );
+	local( *F );
+
+	return if !defined $main::daemon_pid || !-f $conf::logfile;
+
+	open( F, "<$conf::logfile" ) or die "Can't open $conf::logfile: $!\n";
+	while( <F> ) {
+		last if $first_date = parse_date( $_ );
+	}
+	close( F );
+	# Simply don't rotate if nothing couldn't be parsed as date -- probably
+ 	# the file is empty.
+	return if !$first_date;
+	# assume year-wrap if $first_date is in the future
+	$first_date -= 365*24*60*60 if $first_date > time;
+	# don't rotate if first date too young
+	return if time - $first_date < $conf::log_age*24*60*60;
+	logger( "Logfile older than $conf::log_age days, rotating\n" );
+	
+	# remove oldest log
+	$f1 = logf($conf::log_keep-1);
+	if (-f $f1) {
+		unlink( $f1 ) or warn "Can't remove $f1: $!\n";
+	}
+
+	# rename other logs
+	for( $i = $conf::log_keep-2; $i > 0; --$i ) {
+		$f1 = logf($i);
+		$f2 = logf($i+1);
+		if ($i == 0) {
+		}
+		if (-f $f1) {
+			rename( $f1, $f2 ) or warn "Can't rename $f1 to $f2: $!\n";
+		}
+	}
+	
+	# compress newest log
+	$f1 = "$conf::logfile.0";
+	$f2 = "$conf::logfile.1.gz";
+	if (-f $f1) {
+		system $conf::gzip, "-9f", $f1
+			and die "gzip failed on $f1 (status $?)\n";
+		rename( "$f1.gz", $f2 ) or warn "Can't rename $f1.gz to $f2: $!\n";
+	}
+
+	# rename current log and signal the daemon to open a new logfile
+	rename( $conf::logfile, $f1 );
+	kill( 1, $main::daemon_pid );
+
+	print "Rotated log files\n" if !$batchmode;
+	make_summary( 0, $first_date, $f1 )
+		if $conf::mail_summary || $conf::summary_file;
+}
+
+sub logf($) {
+	my $num = shift;
+	return sprintf( "$conf::logfile.%d.gz", $num );
+}
+
+sub parse_date($) {
+	my $date = shift;
+	my( $mon, $day, $hours, $mins, $month, $year, $secs );
+	my %month_num = ( "jan", 0, "feb", 1, "mar", 2, "apr", 3, "may", 4,
+					  "jun", 5, "jul", 6, "aug", 7, "sep", 8, "oct", 9,
+					  "nov", 10, "dec", 11 );
+
+	warn "Invalid date: $date\n", return 0
+		unless $date =~ /^(\w\w\w)\s+(\d+)\s+(\d+):(\d+):(\d+)\s/;
+	($mon, $day, $hours, $mins, $secs) = ($1, $2, $3, $4, $5);
+	
+	$mon =~ tr/A-Z/a-z/;
+	return 0 if !exists $month_num{$mon};
+	$month = $month_num{$mon};
+	return timelocal( $secs, $mins, $hours, $day, $month, $main::curr_year );
+}
+
+sub make_summary($$$) {
+	my $to_stdout = shift;
+	my $startdate = shift;
+	my $file = shift;
+	my( $starts, $statusd_starts, $suspicious_files, $transient_errs,
+	    $upl_failed, $success, $commands, $rm_cmds, $mv_cmds, $msg,
+	    $uploader );
+	my( @pgp_fail, %transient_errs, @changes_errs, @removed_changes,
+	    @already_present, @del_stray, %uploaders, %cmd_uploaders );
+	local( *F );
+	
+	if (!open( F, "<$file" )) {
+		mail( "debianqueued summary failed",
+			  "Couldn't open $file to make summary of events." );
+		return;
+	}
+
+	$starts = $statusd_starts = $suspicious_files = $transient_errs =
+		$upl_failed = $success = $commands = $rm_cmds = $mv_cmds = 0;
+	while( <F> ) {
+		$startdate = parse_date( $_ ) if !$startdate;
+		++$starts if /daemon \(pid \d+\) started$/;
+		++$statusd_starts if /forked status daemon/;
+		push( @pgp_fail, $1 )
+			if /PGP signature check failed on (\S+)/;
+		++$suspicious_files if /found suspicious filename/;
+		++$transient_errs, ++$transient_errs{$1}
+			if /(\S+) (doesn.t exist|is too small) \(ignored for now\)/;
+		push( @changes_errs, $1 )
+			if (!/\((already reported|ignored for now)\)/ &&
+				(/(\S+) doesn.t exist/ || /(\S+) has incorrect (size|md5)/)) ||
+			   /(\S+) doesn.t contain a Maintainer: field/ ||
+			   /(\S+) isn.t signed with PGP/ ||
+			   /(\S+) doesn.t mention any files/;
+		push( @removed_changes, $1 )
+			if /(\S+) couldn.t be processed for \d+ hours and is now del/ ||
+			   /(\S+) couldn.t be uploaded for \d+ times/;
+		push( @already_present, $1 )
+			if /(\S+) is already present on master/;
+		++$upl_failed if /Upload to \S+ failed/;
+		++$success, push( @{$uploaders{$2}}, $1 )
+			if /(\S+) processed successfully \(uploader (\S*)\)$/;
+		push( @del_stray, $1 ) if /Deleted stray file (\S+)/;
+		++$commands if /processing .*\.commands$/;
+		++$rm_cmds if / > rm /;
+		++$mv_cmds if / > mv /;
+		++$cmd_uploaders{$1}
+			if /\(command uploader (\S*)\)$/;
+	}
+	close( F );
+
+	$msg .= "Queue Daemon Summary from " . localtime($startdate) . " to " .
+		    localtime(time) . ":\n\n";
+	
+	$msg .= "Daemon started ".stimes($starts)."\n"
+		if $starts;
+	$msg .= "Status daemon restarted ".stimes($statusd_starts-$starts)."\n"
+		if $statusd_starts > $starts;
+	$msg .= @pgp_fail." job".plural_s(@pgp_fail)." failed PGP check:\n" .
+		    format_list(2,@pgp_fail)
+		if @pgp_fail; 
+	$msg .= "$suspicious_files file".plural_s($suspicious_files)." with ".
+			"suspicious names found\n"
+		if $suspicious_files;
+	$msg .= "Detected ".$transient_errs." transient error".
+			plural_s($transient_errs)." in .changes files:\n".
+			format_list(2,keys %transient_errs)
+		if $transient_errs;
+	$msg .= "Detected ".@changes_errs." error".plural_s(@changes_errs).
+		    " in .changes files:\n".format_list(2,@changes_errs)
+		if @changes_errs;
+	$msg .= @removed_changes." job".plural_s(@removed_changes).
+		    " removed due to persistent errors:\n".
+			format_list(2,@removed_changes)
+		if @removed_changes;
+	$msg .= @already_present." job".plural_s(@already_present).
+			" were already present on master:\n".format_list(2,@already_present)
+		if @already_present;
+	$msg .= @del_stray." stray file".plural_s(@del_stray)." deleted:\n".
+			format_list(2,@del_stray)
+		if @del_stray;
+	$msg .= "$commands command file".plural_s($commands)." processed\n"
+		if $commands;
+	$msg .= "  ($rm_cmds rm, $mv_cmds mv commands)\n"
+		if $rm_cmds || $mv_cmds;
+	$msg .= "$success job".plural_s($success)." processed successfully\n";
+
+	if ($success) {
+		$msg .= "\nPeople who used the queue:\n";
+		foreach $uploader ( keys %uploaders ) {
+			$msg .= "  $uploader (".@{$uploaders{$uploader}}."):\n".
+					format_list(4,@{$uploaders{$uploader}});
+		}
+	}
+
+	if (%cmd_uploaders) {
+		$msg .= "\nPeople who used command files:\n";
+		foreach $uploader ( keys %cmd_uploaders ) {
+			$msg .= "  $uploader ($cmd_uploaders{$uploader})\n";
+		}
+	}
+
+	if ($to_stdout) {
+		print $msg;
+	}
+	else {
+		if ($conf::mail_summary) {
+			mail( "debianqueued summary", $msg );
+		}
+		
+		if ($conf::summary_file) {
+			local( *F );
+			open( F, ">>$conf::summary_file" ) or
+				die "Cannot open $conf::summary_file for appending: $!\n";
+			print F "\n", "-"x78, "\n", $msg;
+			close( F );
+		}
+	}
+}
+
+sub stimes($) {
+	my $num = shift;
+	return $num == 1 ? "once" : "$num times";
+}
+
+sub plural_s($) {
+	my $num = shift;
+	return $num == 1 ? "" : "s";
+}
+
+sub format_list($@) {
+	my $indent = shift;
+	my( $i, $pos, $ret, $item, $len );
+
+	$ret = " " x $indent; $pos += $indent;
+	while( $item = shift ) {
+		$len = length($item);
+		$item .= ", ", $len += 2 if @_;
+		if ($pos+$len > LINEWIDTH) {
+			$ret .= "\n" . " "x$indent;
+			$pos = $indent;
+		}
+		$ret .= $item;
+		$pos += $len;
+	}
+	$ret .= "\n";
+	return $ret;
+}
+
+#
+# send mail to maintainer
+#
+sub mail($@) {
+	my $subject = shift;
+	local( *MAIL );
+	
+	open( MAIL, "|$conf::mail -s '$subject' '$conf::maintainer_mail'" )
+		or (warn( "Could not open pipe to $conf::mail: $!\n" ), return);
+	print MAIL @_;
+	print MAIL "\nGreetings,\n\n\tYour Debian queue daemon watcher\n";
+	close( MAIL )
+		or warn( "$conf::mail failed (exit status $?)\n" );
+}
+
+#
+# log something to logfile
+#
+sub logger(@) {
+	my $now = format_time();
+	local( *LOG );
+	
+	if (!open( LOG, ">>$conf::logfile" )) {
+		warn( "Can't open $conf::logfile\n" );
+		return;
+	}
+	print LOG "$now dqueued-watcher: ", @_;
+	close( LOG );
+}
+
+#
+# return current time as string
+#
+sub format_time() {
+	my $t;
+
+	# omit weekday and year for brevity
+	($t = localtime) =~ /^\w+\s(.*)\s\d+$/;
+	return $1;
+}
+
+
+# Local Variables:
+#  tab-width: 4
+#  fill-column: 78
+# End:

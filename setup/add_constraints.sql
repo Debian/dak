@@ -5,6 +5,7 @@
 ALTER TABLE files ADD CONSTRAINT files_location FOREIGN KEY (location) REFERENCES location(id) MATCH FULL;
 
 ALTER TABLE source ADD CONSTRAINT source_maintainer FOREIGN KEY (maintainer) REFERENCES maintainer(id) MATCH FULL;
+ALTER TABLE source ADD CONSTRAINT source_changedby FOREIGN KEY (changedby) REFERENCES maintainer(id) MATCH FULL;
 ALTER TABLE source ADD CONSTRAINT source_file FOREIGN KEY (file) REFERENCES files(id) MATCH FULL;
 ALTER TABLE source ADD CONSTRAINT source_sig_fpr FOREIGN KEY (sig_fpr) REFERENCES fingerprint(id) MATCH FULL;
 

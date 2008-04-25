@@ -28,12 +28,6 @@ CREATE TABLE maintainer (
        name TEXT UNIQUE NOT NULL
 );
 
-CREATE TABLE src_uploaders (
-       id SERIAL PRIMARY KEY,
-       source INT4 NOT NULL REFERENCES source,
-       maintainer INT4 NOT NULL REFERENCES maintainer
-);
-
 CREATE TABLE uid (
        id SERIAL PRIMARY KEY,
        uid TEXT UNIQUE NOT NULL,
@@ -78,10 +72,17 @@ CREATE TABLE source (
         source TEXT NOT NULL,
         version TEXT NOT NULL,
         maintainer INT4 NOT NULL, -- REFERENCES maintainer
+        changedby INT4 NOT NULL, -- REFERENCES maintainer
         file INT4 UNIQUE NOT NULL, -- REFERENCES files
 	install_date TIMESTAMP NOT NULL,
 	sig_fpr INT4 NOT NULL, -- REFERENCES fingerprint
 	unique (source, version)
+);
+
+CREATE TABLE src_uploaders (
+       id SERIAL PRIMARY KEY,
+       source INT4 NOT NULL REFERENCES source,
+       maintainer INT4 NOT NULL REFERENCES maintainer
 );
 
 CREATE TABLE dsc_files (
@@ -184,3 +185,19 @@ CREATE INDEX binaries_maintainer ON binaries (maintainer);
 CREATE INDEX binaries_fingerprint on binaries (sig_fpr);
 CREATE INDEX source_fingerprint on source (sig_fpr);
 CREATE INDEX dsc_files_file ON dsc_files (file);
+
+-- Own function
+CREATE FUNCTION space_concat(text, text) RETURNS text
+    AS $_$select case
+WHEN $2 is null or $2 = '' THEN $1
+WHEN $1 is null or $1 = '' THEN $2
+ELSE $1 || ' ' || $2
+END$_$
+    LANGUAGE sql;
+
+CREATE AGGREGATE space_separated_list (
+    BASETYPE = text,
+    SFUNC = space_concat,
+    STYPE = text,
+    INITCOND = ''
+);
