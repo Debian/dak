@@ -280,15 +280,15 @@ class Upload:
             Subst["__MAINTAINER_FROM__"] = changes["changedby2047"]
             Subst["__MAINTAINER_TO__"] = "%s, %s" % (changes["changedby2047"],
                                                      changes["maintainer2047"])
-            if "sponsoremail" in changes:
-                Subst["__MAINTAINER_TO__"] += ", %s"%changes["sponsoremail"]
             Subst["__MAINTAINER__"] = changes.get("changed-by", "Unknown")
         else:
             Subst["__MAINTAINER_FROM__"] = changes["maintainer2047"]
             Subst["__MAINTAINER_TO__"] = changes["maintainer2047"]
-            if "sponsoremail" in changes:
-                Subst["__MAINTAINER_TO__"] += ", %s"%changes["sponsoremail"]
             Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown")
+
+        if "sponsoremail" in changes:
+            Subst["__MAINTAINER_TO__"] += ", %s"%changes["sponsoremail"]
+
         if self.Cnf.has_key("Dinstall::TrackingServer") and changes.has_key("source"):
             Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (changes["source"], self.Cnf["Dinstall::TrackingServer"])
 
