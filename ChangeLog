@@ -1,3 +1,11 @@
+2008-04-25  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/split_done.py (main): Only move files into their subdirs if
+	they are older than 30 days. That enables us to run this script as
+	part of a cronjob.
+
+	* config/debian/cron.weekly: Run dak split-done
+
 2008-04-23  Thomas Viehmann  <tviehmann@debian.org>
 
 	* dak/process_unchecked.py: add changes["sponsoremail"]
