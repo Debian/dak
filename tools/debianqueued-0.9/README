@@ -1,0 +1,724 @@
+	   debianqueued -- daemon for managing Debian upload queues
+	   ========================================================
+
+Copyright (C) 1997 Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
+$Id: README,v 1.20 1999/07/08 09:35:37 ftplinux Exp $
+
+
+Copyright and Disclaimer
+------------------------
+
+This program is free software.  You can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation: either version 2 or
+(at your option) any later version.
+
+This program comes with ABSOLUTELY NO WARRANTY!
+
+You're free to modify this program at your will, according to the GPL,
+and I don't object if you modify the program. But it would be nice if
+you could send me back such changes if they could be of public
+interest. I will try to integrate them into the mainstream version
+then.
+
+
+Installation
+------------
+
+debianqueued has been written for running a new Debian upload queue at
+ftp.uni-erlangen.de, but I tried to keep it as general as possible and
+it should be useable for other sites, too. If there should be
+non-portabilities, tell me about them and we'll try to get them fixed!
+
+Before installing debianqueued, you should have the following
+utilities installed:
+
+ - pgp (needed for checking signatures)
+
+ - ssh & Co. (but not necessarily sshd, only client programs used)
+
+ - md5sum (for checking file integrity)
+
+ - mkfifo (for creating the status FIFO)
+
+ - GNU tar
+
+ - gzip
+
+ - ar (for analyzing .deb files)
+
+The daemon needs a directory of its own where the scripts reside and
+where it can put certain files. This directory is called $queued_dir
+in the Perl scripts and below. There are no special requirements where
+in the filesystem hierarchy this directory should be.
+
+All configurations are done in file 'config' in $queued_dir. For
+security reasons, the $queued_dir should not be in a public FTP area,
+and should be writeable (as the files in it) only for the user
+maintaining the local debianqueued.
+
+The file Queue.README and Queue.message in the distribution archive
+are examples for README and .message files to put into the queue
+directory. Modify them as you like, or don't install them if you
+don't like them...
+
+
+Running debianqueued
+--------------------
+
+debianqueued is intended to run all time, not as a cron job.
+Unfortunately, you can't start it at system boot time automatically,
+because a human has to type in the pass phrase for the ssh key. So you
+have to start the daemon manually.
+
+The daemon can be stopped by simply killing it (with SIGTERM
+preferrably). SIGTERM and SIGINT are blocked during some operations,
+where it could leave files in a inconsistent state. So it make take
+some time until the daemon really dies. If you have the urgent need
+that it goes away immediately, use SIGQUIT. Please don't use SIGKILL
+except unavoidable, because the daemon can't clean up after this
+signal.
+
+For your convenience, the daemon can kill and restart itself. If you
+start debianqueued with a "-k" argument, it tries to kill a running
+daemon (and it complains if none is running.) If "-r" is on the
+command line, it tries to kill a running daemon first if there is one.
+(If not, it starts anyway, but prints a little warning.) If a daemon
+is running and a new one is started without "-r", you get an error
+message about this. This is to protect you from restarting the daemon
+without intention.
+
+The other script, dqueued-watcher, is intended as cron job, and it
+watches that the daemon is running, in case that it should crash
+sometimes. It also takes care of updating the Debian keyring files if
+necessary. You should enter it e.g. like
+
+  0,30 *   *   *   *    .../dqueued-watcher
+
+into your crontab. (Assuming you want to run it every 30 minutes,
+which seems a good compromise.)
+
+Both scripts (debianqueued and dqueued-watcher) need no special
+priviledges and thus can be run as an ordinary user (not root). You
+can create an own user for debianqueued (e.g. "dqueue"), but you need
+not. The only difference could be which ssh key is used for connects
+to the target host. But you can configure the file to take the ssh key
+from in the config file.
+
+
+The Config File
+---------------
+
+The config file, $queued_dir/config, is plain Perl code and is
+included by debianqueued and dqueued-watcher. You can set the
+following variables there:
+
+ - $debug:
+   Non-zero values enable debugging output (to log file).
+
+The following are all programs that debianqueued calls. You should
+always use absolute pathnames!
+
+ - $pgp, $ssh, $scp, $ssh_agent, $ssh_add, $md5sum, $mail, $mkfifo,
+   $tar, $gzip, $ar
+
+   Notes:
+
+    o $mail should support the -s option for supplying a subject.
+      Therefore choose mailx if your mail doesn't know -s.
+
+    o $tar should be GNU tar, several GNU features are used (e.g.
+      --use-compress-program).
+
+    o $ar must be able to unpack *.deb files and must understand the
+      'p' command. Better check this first... If you don't define $ar
+      (or define it to be empty), debianqueued won't be able to
+      extract a maintainer address from .deb files. (Which isn't that
+      disturbing...)
+
+ - @test_binaries:
+
+   All binaries listed in this variable are tested to be present
+   before each queue run. If any is not available, the queue run is
+   delayed. This test can be useful if those binaries reside on NFS
+   filesystems which may be (auto-)mounted only slowly. It is
+   specially annoying for users if pgp can't be found and a .changes
+   is deleted.
+
+ - $ssh_options:
+   Options passed to ssh and scp on every call. General ssh
+   configuration should be done here and not in ~/.ssh/config, to
+   avoid dependency on the user's settings. A good idea for
+   $ssh_options seems to be
+
+     -o'BatchMode yes' -o'FallBackToRsh no' -o'ForwardAgent no'
+     -o'ForwardX11 no' -o'PasswordAuthentication no'
+     -o'StrictHostKeyChecking yes'
+
+ - $ssh_key_file:
+   The file containing the ssh key you want the daemon to use for
+   connects to the target host. If you leave this empty, the default
+   ~/.ssh/identity is used, which may or may not be what you want.
+
+ - $incoming:
+   This names the queue directory itself. Probably it will be inside
+   the public FTP area. Don't forget to allow uploads to it in
+   ftpaccess if you're using wu-ftpd.
+
+   Maybe you should also allow anonymous users to rename files in that
+   directory, to fix upload problems (they can't delete files, so they
+   have to move the errorneous file out of the way). But this
+   introduces a denial-of-service security hole, that an attacker
+   renames files of other people and then a job won't be done. But at
+   least the data aren't lost, and the rename command probably was
+   logged by ftpd. Nevertheless, there's no urgent need to allow
+   renamings, because the queue daemon deletes all bad files
+   automatically, so they can be reuploaded under the same name.
+   Decide on your own...
+
+ - $keep_files:
+   This is a regular expression for files that never should be deleted
+   in the queue directory. The status file must be included here,
+   other probable candicates are .message and/or README files.
+
+ - $chmod_on_target:
+   If this variable is true (i.e., not 0 or ""), all files belonging
+   to a job are changed to mode 644 only on the target host. The
+   alternative (if the variable is false, i.e. 0) is to change the
+   mode already locally, after the sizes and md5 sums have been
+   verified. The latter is the default.
+
+   The background for this is the following: The files must be
+   word-readable on master for dinstall to work, so they must be at
+   least mode 444, but 644 seems more useful. If the upload policy of
+   your site says that uploaded files shouldn't be readable for world,
+   the queue daemon has to change the permission at some point of
+   time. (scp copies a file's permissions just as the contents, so
+   after scp, the files on the target have the same mode as in the
+   queue directory.) If the files in the queue are mode 644 anyway,
+   you don't need to care about this option. The default --to give
+   word read permission in the queue already after some checks-- is
+   obviously less restrictive, but might be against the policy of your
+   site. The alternative keeps the files unreadable in the queue in
+   any case, and they'll be readable only on the target host.
+
+ - $statusfile:
+   This is the name of the status file or FIFO, through which users
+   can ask the daemon what it's currently doing. It should normally be
+   in the queue directory. If you change the name, please don't forget
+   to check $keep_files. See also the own section on the status file.
+
+   If you leave $statusfile empty, the daemon doesn't create and
+   manage a status file at all, if you don't want it. Unfortunately,
+   dqueued-watcher's algorithm to determine whether it already has
+   reported a missing daemon depends on the status file, so this
+   doesn't work anymore in this case. You'll get dead daemon mails on
+   every run of dqueued-watcher.
+
+ - $statusdelay:
+   If this number is greater than 0, the status file is implemented as
+   a regular file, and updated at least every $statusdelay seconds. If
+   $statusdelay is 0, the FIFO implementation is used (see status file
+   section).
+
+ - $keyring:
+   The name of the PGP keyring the daemon uses to check PGP signatures
+   of .changes files. This is usually $queued_dir/debian-keyring.pgp.
+   It should contain exactly the keys of all Debian developers (i.e.
+   those and no other keys).
+
+ - $gpg_keyring:
+   The name of the GnuPG keyring. The daemon now alternatively accepts
+   GnuPG signatures on .changes and .commands files. The value here is
+   usually $queued_dir/debian-keyring.gpg. It should contain only keys
+   of Debian developers (but not all developers have a GPG key
+   yet...).
+
+ - $keyring_archive:
+   Path of the debian-keyring.tar.gz file inside a Debian mirror. The
+   file is "/debian/doc/debian-keyring.tar.gz" on ftp.debian.org,
+   don't know where you mirror it to... Leave it empty if you don't
+   have that file on your local machine. But then you'll have to
+   update the keyring manually from time to time.
+
+ - $keyring_archive_name:
+   Name of the PGP keyring file in the archive $keyring_archive. Currently
+   "debian-keyring*/debian-keyring.pgp".
+
+ - $gpg_keyring_archive_name:
+   Name of the GnuPG keyring file in the archive $keyring_archive. Currently
+   "debian-keyring*/debian-keyring.gpg".
+
+ - $logfile:
+   The file debianqueued writes its logging data to. Usually "log" in
+   $queued_dir.
+
+ - $pidfile:
+   The file debianqueued writes its pid to. Usually "pid" in
+   $queued_dir.
+
+ - $target:
+   Name of the target host, i.e. the host where the queue uploads to.
+   Usually "master.debian.org". (Ignored with "copy" upload method.)
+
+ - $targetlogin:
+   The login on the target to use for uploads. (Ignored with "copy"
+   and "ftp" upload methods; "ftp" always does anonymous logins.)
+
+ - $targetdir:
+   The directory on the target to where files should be uploaded. On
+   master.debian.org this currently is
+   "/home/Debian/ftp/private/project/Incoming".
+
+ - $max_upload_retries:
+   This is the number how often the daemon tries to upload a job (a
+   .changes + the files belonging to it). After that number is
+   exhausted, all these files are deleted.
+
+ - $log_age:
+   This is how many days are waited before logfiles are rotated. (The
+   age of the current log files is derived from the first date found
+   in it.)
+
+ - $log_keep:
+   How many old log files to keep. The current logfile is what you
+   configured as $logfile above, older versions have ".0", ".1.gz",
+   ".2.gz", ... appended. I.e., all old versions except the first are
+   additionally gzipped. $log_keep is one higher than the max.
+   appended number that should exist.
+
+ - $mail_summary:
+   If this is set to a true value (not 0 and not ""), dqueued-watcher
+   will send a mail with a summary of the daemon's acivities whenever
+   logfiles are rotated.
+
+ - $summary_file:
+   If that value is a file name (and not an empty string),
+   dqueued-watcher will write the same summary of daemon activities as
+   above to the named file. This can be in addition to sending a mail.
+
+ - @nonus_packages:
+   This is a (Perl) list of names of packages that must be uploaded to
+   nonus.debian.org and not to master. Since the queue daemon only can
+   deal with one target, it can't do that upload and thus must reject
+   the job. Generally you can treat this variable as a list of any
+   packages that should be rejected.
+
+All the following timing variables are in seconds:
+
+ - $upload_delay_1:
+   The time between the first (failed) upload try and the next one.
+   Usually shorter then $upload_delay_2 for quick retry after
+   transient errors.
+
+ - $upload_delay_2:
+   The time between the following (except the first) upload retries.
+
+ - $queue_delay:
+   The time between two queue runs. (May not be obeyed too exactly...
+   a few seconds deviation are normal).
+
+ - $stray_remove_timeout:
+   If a file not associated with any .changes file is found in the
+   queue directory, it is removed after this many seconds.
+
+ - $problem_report_timeout:
+   If there are problems with a job that could also be result of a
+   not-yet-complete upload (missing or too small files), the daemon
+   waits this long before reporting the problem to the uploader. This
+   avoids warning mails for slow but ongoing uploads.
+
+ - $no_changes_timeout:
+
+   If files are found in the queue directory that look like a Debian
+   upload (*.tar.gz, *.diff.gz, *.deb, or *.dsc files), but aren't
+   accompanied by a .changes file, then debianqueued tries to notify
+   the uploader after $no_changes_timeout seconds about this. This
+   value is somewhat similar to $problem_report_timeout, and the
+   values can be equal.
+
+   Since there's no .changes, the daemon can't never be sure who
+   really uploaded the files, but it tries to extract the maintainer
+   address from all of the files mentioned above. If they're real
+   Debian files (except a .orig.tar.gz), this works in most cases.
+
+ - $bad_changes_timeout:
+   After this time, a job with persisting problems (missing files,
+   wrong size or md5 checksum) is removed.
+
+ - $remote_timeout:
+   This is the maximum time a remote command (ssh/scp) may take. It's
+   to protect against network unreliabilities and the like. Choose the
+   number sufficiently high, so that the timeout doesn't inadventedly
+   kill a longish upload. A few hours seems ok.
+
+Contents of $queued_dir
+-----------------------
+
+$queued_dir contains usually the following files:
+
+ - config:
+   The configuration file, described above.
+
+ - log:
+   Log file of debianqueued. All interesting actions and errors are
+   logged there, in a format similar to syslog.
+
+ - pid:
+   This file contains the pid of debianqueued, to detect double
+   daemons and for killing a running daemon.
+
+ - debian-keyring.pgp, debian-keyring.gpg:
+   These are the PGP and GnuPG key rings used by debianqueued to
+   verify the signatures of .changes files. It should contain the keys
+   of all Debian developers and no other keys. The current Debian key
+   ring can be obtained from
+   ftp.debian.org:/debian/doc/debian-keyring.tar.gz. dqueued-watcher
+   supports the facility to update this file automatically if you also
+   run a Debian mirror.
+
+ - debianqueued, dqueued-watcher:
+   The Perl scripts.
+
+All filenames except "config" can be changed in the config file. The
+files are not really required to reside in $queued_dir, but it seems
+practical to have them all together...
+
+
+Details of Queue Processing
+---------------------------
+
+The details of how the files in the queue are processed may be a bit
+complicated. You can skip this section if you're not interested in
+those details and everything is running fine... :-)
+
+The first thing the daemon does on every queue run is determining all
+the *.changes files present. All of them are subsequently read and
+analyzed. The .changes MUST contain a Maintainer: field, and the
+contents of that field should be the mail address of the uploader. The
+address is used for sending back acknowledges and error messages.
+(dinstall on master uses the same convention.)
+
+Next, the PGP or GnuPG signature of the .changes is checked. The
+signature must be valid and must belong to one of the keys in the
+Debian keyring (see config variables $keyring and $gpg_keyring). This
+ensures that only registered Debian developers can use the upload
+queue to transfer files to master.
+
+Then all files mentioned in the Files: field of the .changes are
+checked. All of them must be present, and must have correct size and
+md5 checksum. If any of this conditions is violated, the upload
+doesn't happen and an error message is sent to the uploader. If the
+error is a incorrect size/md5sum, the file is also deleted, because it
+has to be reuploaded anyway, and it could be the case that the
+uploader cannot easily overwrite a file in the queue dir (due to
+upload permission restrictions). If the error is a missing file or a
+too small file, the error message is hold back for some time
+($problems_report_timeout), because they can also be result of an
+not-yet-complete upload.
+
+The time baseline for when to send such a problem report is the
+maximum modification time of the .changes itself and all files
+mentioned in it. When such a report is sent, the setgid bit (show as
+'S' in ls -l listing, in group x position) on the .changes is set to
+note that fact, and to avoid the report being sent on every following
+queue run. If any modification time becomes greater than the time the
+setgid bit was set, a new problem report is sent, because obviously
+something has changed to the files.
+
+If a job is hanging around for too long with errors
+($bad_changes_timeout), the .changes and all its files are deleted.
+The base for that timeout is again the maximum modification time as
+explained above.
+
+If now the .changes itself and all its files are ok, an upload is
+tried. The upload itself is done with scp. In that stage, various
+errors from the net and/or ssh can occur. All these simply count as
+upload failures, since it's not easy to distinguish transient and
+permanent failures :-( If the scp goes ok, the md5sums of the files on
+the target are compared with the local ones. This is to ensure that
+the transfer didn't corrupt anything. On any error in the upload or in
+the md5 check, the files written to the target host are deleted again
+(they may be broken), and an error message is sent to the uploader.
+
+The upload is retied $upload_delay_1 seconds later. If it fails again,
+the next retries have a (longer) delay $upload_delay_2 between them.
+At most $max_upload_retries retries are done. After all these failed,
+all the files are deleted, since it seems we can't move them... For
+remembering how many tries were alredy done (and when), debianqueued
+uses a separate file. Its name is the .changes' filename with
+".failures" appended. It contains simply two integers, the retry count
+and the last upload time (in Unix time format).
+
+After a successfull upload, the daemon also checks for files that look
+like they belonged to the same job, but weren't listed in the
+.changes. Due to experience, this happens rather often with
+.orig.tar.gz files, which people upload though they're aren't needed
+nor mentioned in the .changes. The daemon uses the filename pattern
+<pkg-name>_<version>* to find such unneeded files, where the Debian
+revision is stripped from <version>. The latter is needed to include
+.orig.tar.gz files, which don't have the Debian revision part. But
+this also introduces the possibility that files of another upload for
+the same package but with another revision are deleted though they
+shouldn't. However, this case seems rather unlikely, so I didn't care
+about it. If such files are deleted, that fact is mentioned in the
+reply mail to the uploader.
+
+If any files are found in the queue dir that don't belong to any
+.changes, they are considered "stray". Such files are remove after 
+$stray_remove_timeout. This should be around 1 day or so, to avoid
+files being removed that belong to a job, but whose .changes is still
+to come. The daemon also tries to find out whether such stray files
+could be part of an incomplete upload, where the .changes file is
+still missing or has been forgotten. Files that match the patterns
+*.deb, *.dsc, *.diff.gz, or *.tar.gz are analyzed whether a maintainer
+address can be extracted from them. If yes, the maintainer is notified
+about the incomplete upload after $no_changes_timeout seconds.
+However, the maintainer needs not really be the uploader... It could
+be a binary-only upload for another architecture, or a non-maintainer
+upload. In these cases, the mail goes to the wrong wrong person :-(
+But better than not writing at all, IMHO...
+
+
+The status file
+---------------
+
+debianqueued provides a status file for the user in the queue
+directory. By reading this file, the user can get an idea what the
+daemon is currently doing.
+
+There are two possible implementations of the status file: as a plain
+file, or as a named pipe (FIFO). Both have their advantages and
+disadvantages.
+
+If using the FIFO, the data printed (last ping time, next queue run)
+are always up to date, because they're interrogated (by a signal) just
+at the time the FIFO is opened for reading. Also, the daemon hasn't to
+care about the status file if nobody accesses it. The bad things about
+the FIFO: It is a potential portability problem, because not all
+systems have FIFOs, or they behave different than I expect... But the
+more severe problem: wu-ftpd refuses to send the contents of a FIFO on
+a FTP GET request :-(( It does an explicit check whether a file to be
+retrieved is a regular file. This can be easily patched [1], but not
+everybody wants to do that or can do that (but I did it for
+ftp.uni-erlangen.de). (BTW, there could still be problems (races) if
+more than one process try to read the status file at the same time...)
+
+The alternative is using a plain file, which is updated regularily by
+the daemon. This works on every system, but causes more overhead (the
+daemon has to wake up each $statusdelay seconds and write a file), and
+the time figures in the file can't be exact. $statusdelay should be a
+compromise between CPU wastage and desired accuracy of the times found
+in the status file. I think 15 or 30 seconds should be ok, but your
+milage may vary.
+
+If the status file is a FIFO, the queue daemon forks a second process
+for watching the FIFO (so don't wonder if debianqueued shows up twice
+in ps output :-), to avoid blocking a reading process too long until
+the main daemon has time to watch the pipe. The status daemon requests
+data from the main daemon by sending a signal (SIGUSR1). Nevertheless
+it can happen that a process that opens the status file (for reading)
+is blocked, because the daemon has crashed (or never has been started,
+after reboot). To minimize chances for that situation, dqueued-watcher
+replaces the FIFO by a plain file (telling that the daemon is down) if
+it sees that no queue daemon is running.
+
+
+  [1]: This is such a patch, for wu-ftpd-2.4.2-BETA-13:
+
+--- wu-ftpd/src/ftpd.c~	Wed Jul  9 13:18:44 1997
++++ wu-ftpd/src/ftpd.c	Wed Jul  9 13:19:15 1997
+@@ -1857,7 +1857,9 @@
+         return;
+     }
+     if (cmd == NULL &&
+-        (fstat(fileno(fin), &st) < 0 || (st.st_mode & S_IFMT) != S_IFREG)) {
++        (fstat(fileno(fin), &st) < 0 ||
++	 ((st.st_mode & S_IFMT) != S_IFREG &&
++	  (st.st_mode & S_IFMT) != S_IFIFO))) {
+         reply(550, "%s: not a plain file.", name);
+         goto done;
+     }
+
+
+Command Files
+-------------
+
+The practical experiences with debianqueued showed that users
+sometimes make errors with their uploads, resulting in misnamed or
+corrupted files... Formerly they didn't have any chance to fix such
+errors, because the ftpd usually doesn't allow deleting or renaming
+files in the queue directory. (If you would allow this, *anybody* can
+remove/rename files, which isn't desirable.) So users had to wait
+until the daemon deleted the bad files (usually ~ 24 hours), before
+they could start the next try.
+
+To overcome this, I invented the *.command files. The daemon looks for
+such files just as it tests for *.changes files on every queue run,
+and processes them before the usual jobs. *.commands files must be PGP
+or GnuPG signed by a known Debian developer (same test as for
+*.changes), so only these people can give the daemon commands. Since
+Debian developers can also delete files in master's incoming, the
+*.commands feature doesn't give away any security.
+
+The syntax of a *.commands file is much like a *.changes, but it
+contains only two (mandatory) fields: Uploader: and Commands.
+Uploader: contains the e-mail address of the uploader for reply mails,
+and should have same contents as Maintainer: in a .changes. Commands:
+is a multi-line field like e.g. Description: or Changes:. Every
+continuation line must start with a space. Each line in Commands:
+contains a command for the daemon that looks like a shell command (but
+it isn't one, the daemon parses and executes it itself and doesn't use
+sh or the respective binaries).
+
+Example:
+-----BEGIN PGP SIGNED MESSAGE-----
+
+Uploader: Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
+Commands: 
+ rm hello_1.0-1_i386.deb
+ mv hello_1.0-1.dsx hello_1.0-1.dsc
+
+-----BEGIN PGP SIGNATURE-----
+Version: 2.6.3ia
+
+iQCVAwUBNFiQSXVhJ0HiWnvJAQG58AP+IDJVeSWmDvzMUphScg1EK0mvChgnuD7h
+BRiVQubXkB2DphLJW5UUSRnjw1iuFcYwH/lFpNpl7XP95LkLX3iFza9qItw4k2/q
+tvylZkmIA9jxCyv/YB6zZCbHmbvUnL473eLRoxlnYZd3JFaCZMJ86B0Ph4GFNPAf
+Z4jxNrgh7Bc=
+=pH94
+-----END PGP SIGNATURE-----
+
+The only commands implemented at this time are 'rm' and 'mv'. No
+options are implemented, and filenames may not contain slashes and are
+interpreted relative to the queue directory. This ensures that only
+files there can be modified. 'mv' always takes two arguments. 'rm' can
+take any number of args. It also knows about the following shell
+wildcard chars: *, ?, and [...]. {..,..} constructs are *not*
+supported. The daemon expands these patterns itself and doesn't use sh
+for that (for security reasons).
+
+*.commands files are processed before the usual *.changes jobs, so if
+a commands file fixes a job so that it can be processed, that
+processing happens in the same queue run and no unnecessary delay is
+introduced.
+
+The uploader of a *.commands will receive a reply mail with a comment
+(OK or error message) to each of the commands given. The daemon not
+only logs the contents of the Uploader: field, but also the owner of
+the PGP/GnuPG key that was used to sign the file. In case you want to
+find out who issued some commands, the Uploader: field is insecure,
+since its contents can't be checked.
+
+
+Security Considerations
+-----------------------
+
+You already know that debianqueued uses ssh & Co. to get access to
+master, or in general any target host. You also probably know that you
+need to unlock your ssh secret key with a passphrase before it can be
+used. For the daemon this creates a problem: It needs the passphrase
+to be able to use ssh/scp, but obviously you can't type in the phrase
+every time the daemon needs it... It would also be very ugly and
+insecure to write the passphase into some config file of the daemon!
+
+The solution is using ssh-agent, which comes with the ssh package.
+This agent's purpose is to store passphrases and give it to
+ssh/scp/... if they need it. ssh-agent has to ways how it can be
+accessed: through a Unix domain socket, or with an inherited file
+descriptor (ssh-agent is the father of your login shell then). The
+second method is much more secure than the first, because the socket
+can be easily exploited by root. On the other hand, an inherited file
+descriptor can be access *only* from a child process, so even root has
+bad chances to get its hands on it. Unfortunately, the fd method has
+been removed in ssh-1.2.17, so I STRONGLY recommend to use ssh-1.2.16.
+(You can still have a newer version for normal use, but separate
+binaries for debianqueued.) Also, using debianqueued with Unix domain
+sockets is basically untested, though I've heard that it doesn't
+work...
+
+debianqueued starts the ssh-agent automatically and runs ssh-add. This
+will ask you for your passphrase. The phrase is stored in the agent
+and available only to child processes of the agent. The agent will
+also start up a second instance of the queue daemon that notices that
+the agent is already running.
+
+Currently, there's no method to store the passphrase in a file, due to
+all the security disadvantages of this. If you don't mind this and
+would like to have some opportunity to do it nevertheless, please ask
+me. If there's enough demand, I'll do it.
+
+
+New Upload Methods
+------------------
+
+Since release 0.9, debianqueued has two new upload methods as
+alternatives to ssh: copy and ftp.
+
+The copy method simply moves the files to another directory on the
+same host. This seems a bit silly, but is for a special purpose: The
+admins of master intend to run an upload queue there, too, in the
+future to avoid non-anonymous FTP connections, which transmit the
+password in cleartext. And, additionally to simply moving the files,
+the queue daemon also checks the signature and integrity of uploads
+and can reject non-US packages.
+
+The ftp method uploads to a standard anon-FTP incoming directory. The
+intention here is that you could create second-level queue daemons.
+I.e., those daemons would upload into the queue of another daemon
+(and, for example, this could be the queue of the daemon on master).
+
+However, the ftp method still has some limitations:
+
+ 1) Files in the target dir can't be deleted.
+ 2) Uploaded files can't be verified as good as with the other methods.
+ 3) $chmod_on_target often doesn't work.
+ 4) The check for a writable incoming directory leaves temporary files
+    behind.
+
+Ad 1): In anon-FTP incoming directories removing of files usually
+isn't allowed (this would widely open doors to denial-of-service
+attacks). But debianqueued has to remove files on the target as part
+of handling upload errors. So if an transmission error happens during
+a job, the bad file can't be deleted. On the next try, the file is
+already present on the target and can't be overwritten, so all the
+following tries will fail, too, except the upstream queue daemon has
+deleted them already. And if the .changes was among the files already
+(at least partially) uploaded, the daemon even will think that the
+whole job is already present on the target and will delete the job in
+its queue.
+
+Ad 2): Uploaded files are usually verified with md5sum if they're
+really the same as the originals. But getting the md5sum for a file on
+a FTP server usually isn't possible. It's currently handled as
+follows: If the server supports a SITE MD5SUM command (non-standard!),
+then this is used and you have the same checking quality. Otherwise,
+debianqueued falls back to only comparing the file sizes. This is
+better than nothing, but doesn't detected changed contents that don't
+result in size changes.
+
+Ad 3): Often SITE CHMOD (standard) isn't allowed in incoming
+directories. If this is the case, $chmod_on_target must be off,
+otherwise all uploads will fail. The mode of uploaded files if forced
+anyway by the FTP server in most cases.
+
+Ad 4): As you know, the queue daemon has a special check if the target
+directory is writable at all (it isn't during a freeze) to protect
+against repeated upload errors. (Jobs would be even deleted otherwise
+if the target dir is unaccessible for too long.) This check is
+performed by creating a test file and deleting it immediately again.
+But since in FTP incoming dirs deletion isn't permitted, the temporary
+file ("junk-for-writable-test-DATE") will remain there. As a partial
+fix, the daemon deletes such files immediately, it doesn't even wait
+for $stray_remove_timeout. So if the upload goes to the queue dir of
+an upstream debianqueued, those temporary files won't be there for
+long.
+
+These problems of the FTP method might be remove in future, if I have
+better ideas how to bypass the limitations of anon-FTP incoming
+directories. Hints welcome :-)
+
+
+# Local Variables:
+# mode: indented-text
+# End:

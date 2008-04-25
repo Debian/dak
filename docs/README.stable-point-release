@@ -13,25 +13,40 @@ o Install, reject and remove packages as directed by the SRM using
   NB: removing packages are not logged to the stable ChangeLog; you
       need to do that byhand.
 
-o Do anything in proposed-updates/TODO
+o If you installed a debian-installer upload; migrate the relevant
+  installer-*/$release directory from proposed-updates to stable.
+  (Including potentially removing older versions)
+
+o Decruft stable in coordination with SRMs
+
+o Do anything in proposed-updates/TODO 
 o Close any applicable stable bugs
   (hint: http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=ftp.debian.org&include=etch)
-o Update version number in README, README.html and dists/README (ftp-master only)
+o Update version number in README, README.html and dists/README
 o Update the 'Debian<n>.<n>r<n>' symlink in dists/
 o Clean up dists/stable/ChangeLog (add header, basically)
 o Update version fields in dak.conf
 o Update fields in suite table in postgresql (see below)
 
-o Comment out "Untouchable" in dak.conf
-o Run 'dak make-suite-file-list -s stable'
+o Run 'dak make-suite-file-list --force -s stable'
 o Run apt-ftparchive generate apt.conf.stable
-o Run 'dak generate-releases stable'  ** FIXME: requires apt.conf.stable stanza for stable in apt.conf
-		     ** FIXME: must be run as dak
-o Uncomment "Untouchable" in dak.conf
+o Run 'dak generate-releases --force-touch --apt-conf apt.conf.stable stable'
 
-Yes, this sucks and more of it should be automated.
+[Yes, this sucks and more of it should be automated. c.f. ~ajt/pointupdate]
 
 #######################################################
 
-update suite set version = '4.0r1' where suite_name = 'stable';
-update suite set description = 'Debian 4.0r1 Released 15th August 2007' where suite_name = 'stable';
+update suite set version = '4.0r3' where suite_name = 'stable';
+update suite set description = 'Debian 4.0r3 Released 16th February 2008' where suite_name = 'stable';
+
+Rough Guide to doing Old-Stable Point Releases in Debian
+--------------------------------------------------------
+
+Pretty much as above, except that process-accepted doesn't know about
+oldstable, so you have to do some surgery on it first to make it
+support that.  Probably want to disable cron.daily whilst doing so.
+Also watch out for the installing_to_stable detection which doesn't
+work well with the current layout of oldstable-proposed-updates (as a
+symlink to $distro-proposed-updates).  clean-proposed-updates,
+cruft-report and most everything else support a -s/--suite so they
+sould be fine to use.

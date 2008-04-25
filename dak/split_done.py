@@ -26,11 +26,15 @@ import daklib.utils
 def main():
     Cnf = daklib.utils.get_conf()
     count = 0
+    move_date = int(time.time())-(30*84600)
     os.chdir(Cnf["Dir::Queue::Done"])
     files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]))
     for filename in files:
         if os.path.isfile(filename):
-            mtime = time.gmtime(os.stat(filename)[stat.ST_MTIME])
+            filemtime = os.stat(filename)[stat.ST_MTIME]
+            if filemtime < move_date:
+                continue
+            mtime = time.gmtime(filemtime)
             dirname = time.strftime("%Y/%m/%d", mtime)
             if not os.path.exists(dirname):
                 print "Creating: %s" % (dirname)

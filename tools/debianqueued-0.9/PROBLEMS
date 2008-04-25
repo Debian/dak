@@ -1,0 +1,29 @@
+
+This is a list of problems that I have seen:
+
+ - One an upload failed with the following error:
+
+     Jul  8 12:13:53 Upload to master.debian.org failed, last exit status 1
+     Jul  8 12:13:53 Error messages from scp:
+     bind: Permission denied
+     lost connection
+
+   Never seen such an error from ssh/scp before... But since it didn't
+   happen again, I suspect something with master and/or the net.
+
+ - There are some protocol problems between certain ssh version (on
+   client/server side). The effect is that scp either hangs itself
+   (times out after $remote_timeout), or leaves ssh processes hanging
+   around. I've noticed that with ssh 1.2.19 on the server. I have a
+   prototype for a workaround, but haven't included it in
+   debianqueued, because master has been updated to 1.2.20 now and the
+   problem disappeared.
+
+ - The "ftp" method has some limitiations:
+   	1) Files in the target dir can't be deleted.
+   	2) Uploaded files can't be verified as good as with the other methods.
+   	3) $chmod_on_target often doesn't work.
+   	4) The check for a writable incoming directory leaves temporary files
+   	   behind.
+
+$Id: PROBLEMS,v 1.4 1999/07/08 09:34:52 ftplinux Exp $

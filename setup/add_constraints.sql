@@ -5,6 +5,7 @@
 ALTER TABLE files ADD CONSTRAINT files_location FOREIGN KEY (location) REFERENCES location(id) MATCH FULL;
 
 ALTER TABLE source ADD CONSTRAINT source_maintainer FOREIGN KEY (maintainer) REFERENCES maintainer(id) MATCH FULL;
+ALTER TABLE source ADD CONSTRAINT source_changedby FOREIGN KEY (changedby) REFERENCES maintainer(id) MATCH FULL;
 ALTER TABLE source ADD CONSTRAINT source_file FOREIGN KEY (file) REFERENCES files(id) MATCH FULL;
 ALTER TABLE source ADD CONSTRAINT source_sig_fpr FOREIGN KEY (sig_fpr) REFERENCES fingerprint(id) MATCH FULL;
 
@@ -104,10 +105,12 @@ GRANT ALL ON architecture, architecture_id_seq, archive,
   archive_id_seq, bin_associations, bin_associations_id_seq, binaries,
   binaries_id_seq, component, component_id_seq, dsc_files,
   dsc_files_id_seq, files, files_id_seq, fingerprint,
-  fingerprint_id_seq, location, location_id_seq, maintainer,
+  fingerprint_id_seq, keyrings, keyrings_id_seq,
+  location, location_id_seq, maintainer,
   maintainer_id_seq, override, override_type, override_type_id_seq,
   priority, priority_id_seq, section, section_id_seq, source,
-  source_id_seq, src_associations, src_associations_id_seq, suite,
+  source_id_seq, src_uploaders, src_uploaders_id_seq,
+  src_associations, src_associations_id_seq, suite,
   suite_architectures, suite_id_seq, queue_build, uid,
   uid_id_seq TO GROUP ftpmaster;
 
@@ -116,9 +119,11 @@ GRANT SELECT ON architecture, architecture_id_seq, archive,
   archive_id_seq, bin_associations, bin_associations_id_seq, binaries,
   binaries_id_seq, component, component_id_seq, dsc_files,
   dsc_files_id_seq, files, files_id_seq, fingerprint,
-  fingerprint_id_seq, location, location_id_seq, maintainer,
+  fingerprint_id_seq, keyrings, keyrings_id_seq,
+  location, location_id_seq, maintainer,
   maintainer_id_seq, override, override_type, override_type_id_seq,
   priority, priority_id_seq, section, section_id_seq, source,
-  source_id_seq, src_associations, src_associations_id_seq, suite,
+  source_id_seq, src_uploaders, src_uploaders_id_seq,
+  src_associations, src_associations_id_seq, suite,
   suite_architectures, suite_id_seq, queue_build, uid,
   uid_id_seq TO PUBLIC;

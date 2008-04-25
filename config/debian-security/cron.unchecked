@@ -33,4 +33,4 @@ if ! $doanything; then
   exit 0
 fi
 
-sh $masterdir/cron.buildd-security
+sh $masterdir/cron.buildd

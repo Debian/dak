@@ -1,0 +1,83 @@
+#!/usr/bin/make -f
+# Made with the aid of dh_make, by Craig Small
+# Sample debian/rules that uses debhelper. GNU copyright 1997 by Joey Hess.
+# Some lines taken from debmake, by Christoph Lameter.
+# $Id: rules,v 1.2 1999/01/18 02:38:15 jgg Exp $
+
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+export DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+export DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+# FOR AUTOCONF 2.13 ONLY
+ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
+#  confflags += --host=$(DEB_HOST_GNU_TYPE)
+else
+  $(error Cannot cross-compile this package out-of-the-box)
+endif
+
+build: build-stamp
+build-stamp: configure
+	dh_testdir
+	-mkdir build 
+	cd build; ../configure
+	cd ..
+	
+	# Add here commands to compile the package.
+	make
+	touch build-stamp
+
+clean:
+	dh_testdir
+#	dh_testroot
+	rm -f build-stamp
+	rm -rf build
+
+	# Add here commands to clean up after the build process.
+	-$(MAKE) clean
+	-$(MAKE) distclean
+	dh_clean
+
+# Build architecture-independent files here.
+binary-indep: build 
+# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+binary-arch: build dsync
+
+dsync: build
+#	dh_testversion -pdsync
+	dh_testdir -pdsync
+	dh_testroot -pdsync
+	dh_clean -pdsync -k
+	dh_installdirs -pdsync usr/bin usr/doc/dsync usr/lib usr/doc/dsync
+
+	cp build/bin/dsync-* debian/dsync/usr/bin/
+	cp -a build/bin/libdsync.so.0.0.0 debian/dsync/usr/lib/
+	cp -a build/bin/libdsync.so.0.0 debian/dsync/usr/lib/
+	cp COPYING debian/dsync/usr/doc/dsync/copyright
+	
+	dh_installdocs -pdsync 
+	dh_installman -pdsync
+
+	dh_installchangelogs -pdsync
+	dh_strip -pdsync
+	dh_compress -pdsync
+	dh_fixperms -pdsync
+	dh_installdeb -pdsync
+	dh_makeshlibs -pdsync
+	dh_shlibdeps -pdsync
+	dh_gencontrol -pdsync
+	dh_md5sums -pdsync
+	dh_builddeb -pdsync
+
+source diff:                                                                  
+	@echo >&2 'source and diff are obsolete - use dpkg-source -b'; false
+
+configure:
+	make startup
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary

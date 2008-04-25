@@ -1,7 +1,194 @@
-2008-01-09  Joerg Jaspert  <joerg@debian.org>
+2008-04-25  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/cruft_report.py (main): Make it possible to look at
 	experimental too, especially NBS
+
+	* dak/split_done.py (main): Only move files into their subdirs if
+	they are older than 30 days. That enables us to run this script as
+	part of a cronjob.
+
+	* config/debian/cron.weekly: Run dak split-done
+
+2008-04-23  Thomas Viehmann  <tviehmann@debian.org>
+
+	* dak/process_unchecked.py: add changes["sponsoremail"]
+	  for sponsored uploads if desired
+	* daklib/queue.py: add changes["sponsoremail"] to
+	  Subst["__MAINTAINER_TO__"] if present
+	* daklib/utils.py: add functions
+	  is_email_alias to check which accounts allow email forwarding,
+	  which_alias_file to find the alias file, and
+	  gpg_get_key_addresses to find uid addresses for a given
+	    fingerprint
+
+2008-04-22  Joerg Jaspert  <joerg@debian.org>
+
+	* setup/init_pool.sql: added a function/aggregate for the release
+	team to base some script on it.
+
+	* config/debian/cron.daily: push katie@merkel to immediately start
+	the sync of projectb there.
+
+2008-04-21  Joerg Jaspert  <joerg@debian.org>
+
+	* scripts/debian/expire_dumps: New script, expires old database
+	dumps, using a scheme to keep more of the recent dumps.
+
+	* config/debian/cron.daily: Use the new script. Also - compress
+	all files older than 7 days, instead of 30.
+
+	* dak/process_accepted.py (install): Do not break if a
+	source/maintainer combination is already in src_uploaders, "just"
+	warn us.
+
+2008-04-20  Thomas Viehmann  <tviehmann@debian.org>
+
+	* daklib/utils.py (build_file_list): Deal with "Format 3 style"
+	Format lines (ie. those having extra text appended).
+
+2008-04-19  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_unchecked.py (check_files): Sanity check the
+	provides field, which closes #472783
+
+2008-04-18  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/dak.conf: Add mapping stable-proposed-updates
+	  -> proposed-updates.
+
+	* dak/transitions.py (load_transitions): Additionally check for
+	invalid package list indentation
+
+2008-04-17  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/dak.conf: Add TempPath statement for the Release
+	Transitions script
+
+	* dak/transitions.py (temp_transitions_file): Use the TempPath
+	(write_transitions_from_file): Check if the file we should get our
+	transitions from is in our TempPath, error out if it isnt
+	(main): Check for TempPath existance
+
+2008-04-12  James Troup  <troup@debian.org>
+
+	* dak/clean_proposed_updates.py: add support for -s/--suite and
+	-n/--no-action.
+
+2008-04-11  Anthony Towns  <ajt@debian.org>
+
+	* dak/utils.py: build_file_list() extra parameters so it can
+	build a file list for checksums-foo fields. Don't use float() to
+	compare formats, because Format: 1.10 should compare greater than
+	Format: 1.9 (use "1.9".split(".",1) and tuple comparison instead)
+
+	* dak/process_unchecked.py: check_md5sum becomes check_hashes
+	and check_hash. If changes format is 1.8 or later, also check
+	checksums-sha1 and checksums-sha256 for both .changes and .dsc,
+	and reject on presence/absence of un/expected checksums-* fields.
+
+2008-04-07  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/utils.py (build_file_list): Check for dpkg .changes
+	adjusted to reject newer (and right now broken) 1.8 version, until
+	dpkg (or debsign) is fixed and doesn't produce invalid .changes anymore
+
+2008-03-22  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/transitions.py (load_transitions): Check if all our keys are
+	defined, if there are only keys defined we want and also the types
+	of the various keys.
+
+2008-03-22  Anthony Towns  <ajt@debian.org>
+
+	* dak/edit_transitions.py: Add --import option.
+	Add --use-sudo option. Use fcntl locking for writing.
+	Move writing into a function (write_transitions).
+	Reinvoke self using sudo and --import if necessary.
+	Move temporary file creation into a function, use mkstemp.
+	Rename to "dak transitions".
+
+2008-03-21  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/edit_transitions.py (edit_transitions): Use sudo to copy the
+	edited file back in place
+	(check_transitions): Use proper locking and also use sudo to copy
+	the new file in place
+
+2008-03-21  Anthony Towns <ajt@debian.org>
+
+	* config/debian/extensions.py: Add infrastructure for replacing
+	functions in dak modules; add upload blocking for dpkg.
+
+2008-03-12  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/edit_transitions.py: Done a number of cleanups to make code
+	working. Also changed the way prompting/answering goes, to not
+	have to import daklib/queue.
+	(edit_transitions): When done with a successful edit - also print
+	a final overview about defined transitions
+
+2008-03-11  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_unchecked.py: Import syck module directly, not "from
+	syck import *"
+	(check_transition): Do the check for sourceful upload in here
+	Also adjust the syck loading commands, rename new_vers to
+	expected, curvers to current, to make it more clear what they mean.
+
+	* daklib/database.py (get_suite_version): Renamed from
+	get_testing_version. Also changed the cache variables name
+
+	* The above changes are based on modifications from Anthony.
+
+	* dak/dak.py (init): Renamed check -> edit transitions
+
+	* dak/edit_transitions.py: Renamed from check_transitions.py
+	(main): Also rename new_vers/curvers to expected/current
+	Basically a nice rewrite, so it now does checks and edit,
+	depending on how you call it. Check also removes old transitions,
+	if user wants it.
+
+2008-03-02  Joerg Jaspert  <joerg@debian.org>
+
+	* debian/control (Suggests): Add python-syck to Depends:
+
+	* dak/dak.py (init): Tell it about check_transitions
+
+	* dak/check_transitions.py (usage): Added, checks the transitions
+	file (if any)
+
+	* daklib/database.py (get_testing_version): Added. Returns the
+	version for the source in testing, if any
+
+	* dak/process_unchecked.py (check_transition): Added. Checks if a
+	release team member defined a transition, and rejects based on
+	that data.
+	(process_it): Use it.
+	(check_transition): Warn on broken transitions file and return,
+	not doing anything.
+	(check_transition): Moved out of here, into daklib/queue
+	(process_it): Call check_transitions only if
+	changes[architecture] has source included.
+	(check_transition): Now call the database.get_testing_version
+
+2008-02-09  Christoph Berg <myon@debian.org>
+
+	* daklib/queue.py (get_type): fubar does not exist in global
+	namespace.
+
+	* setup/add_constraints.sql setup/init_pool.sql: Add changedby column
+	to source table, and move src_uploaders after source so the REFERNCES
+	clause works.
+	* dak/process_accepted.py (install): Fill the changedby column from
+	the information found in the .changes. This will allow to identify
+	NMUs and sponsored uploads more precisely in tools querying projectb.
+	* scripts/debian/insert_missing_changedby.py: Script to import yet
+	missing fields from filippo's uploads-history DB.
+
+2008-02-06  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/utils.py (check_signature): Make variable key available,
+	so we can access it.
 
 2008-01-07  Joerg Jaspert  <joerg@debian.org>
 

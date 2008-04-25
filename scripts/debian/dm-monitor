@@ -9,6 +9,25 @@ psql --html projectb <<EOF
 ORDER BY uid.uid;
 EOF
 
+echo "Debian maintainers not able to update any packages:"
+
+psql --html projectb <<EOF
+  SELECT uid.uid, uid.name
+    FROM uid 
+   WHERE uid.uid LIKE 'dm:%'
+     AND uid.uid NOT IN (
+              SELECT u.uid
+                FROM src_uploaders su JOIN source s ON (su.source = s.id)
+                     JOIN src_associations sa ON (s.id = sa.source)
+                     JOIN maintainer m ON (su.maintainer = m.id)
+                     JOIN uid u ON 
+		       (m.name LIKE u.name || ' <%>' OR
+		        m.name LIKE '% <' || substring(u.uid FROM 4) || '>')
+               WHERE u.uid LIKE 'dm:%' AND sa.suite = 5
+         )
+ORDER BY uid.uid;
+EOF
+
 echo "Packages debian maintainers may update:"
 
 psql --html projectb <<EOF
@@ -16,7 +35,8 @@ psql --html projectb <<EOF
     FROM src_uploaders su JOIN source s ON (su.source = s.id) 
          JOIN src_associations sa ON (s.id = sa.source)
          JOIN maintainer m ON (su.maintainer = m.id)
-         JOIN uid u ON (m.name LIKE u.name || ' <%>')
+         JOIN uid u ON (m.name LIKE u.name || ' <%>' OR
+		        m.name LIKE '% <' || substring(u.uid FROM 4) || '>')
    WHERE u.uid LIKE 'dm:%' AND sa.suite = 5
 ORDER BY u.uid, s.source, s.version;
 EOF

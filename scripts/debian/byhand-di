@@ -1,0 +1,101 @@
+#!/bin/sh -ue
+
+if [ $# -lt 4 ]; then
+	echo "Usage: $0 filename version arch changes_file"
+	exit 1
+fi
+
+TARBALL="$1"	# Tarball to read, compressed with gzip
+VERSION="$2"
+ARCH="$3"
+CHANGES="$4"	# Changes file for the upload
+
+error() {
+	echo "$*"
+	exit 1
+}
+
+# Check validity of version number
+# Expected are: YYYYMMDD, YYYYMMDD.x, YYYYMMDD<suite>x
+if ! echo "$VERSION" | grep -Eq "^[0-9]{8}(|(\.|[a-z]+)[0-9]+)$"; then
+	error "Invalid version: '$VERSION'"
+fi
+
+# Get the target suite from the Changes file
+# NOTE: it may be better to pass this to the script as a parameter!
+SUITE="$(grep "^Distribution:" "$CHANGES" | awk '{print $2}')"
+case $SUITE in
+    "")
+	error "Error: unable to determine suite from Changes file"
+	;;
+    unstable|sid)
+	: # nothing to do
+	;;
+    *)
+	SUITE="${SUITE}-proposed-updates"
+	;;
+esac
+
+# This must end with /
+TARGET="/srv/ftp.debian.org/ftp/dists/$SUITE/main/installer-$ARCH/"
+
+# Check validity of the target directory
+# This could fail, for example for new architectures; doing
+# a regular BYHAND is safer in that case
+if [ ! -d "$TARGET" ]; then
+	mkdir -p "$TARGET"
+fi
+# Check that there isn't already a directory for this version
+if [ -d "$TARGET/$VERSION" ]; then
+	error "Directory already exists: $TARGET/$VERSION"
+fi
+
+# We know all data to be in ./installer-<arch>/<version>; see if there's
+# anything else in the tarball except that and the 'current' symlink
+if tar tzf "$TARBALL" | \
+   grep -Eqv "^\./(installer-$ARCH/($VERSION/.*|current|)|)$"; then
+	error "Tarball contains unexpected contents"
+fi
+
+# Create a temporary directory where to store the images
+umask 002
+TMPDIR="$(mktemp -td byhand-di.XXXXXX)"
+
+# If we fail somewhere, cleanup the temporary directory
+cleanup() {
+        rm -rf "$TMPDIR"
+}
+trap cleanup EXIT
+
+# Extract the data into the temporary directory
+tar xzf "$TARBALL" --directory="$TMPDIR" "./installer-$ARCH/"
+
+# Check the 'current' symlink
+if [ ! -L $TMPDIR/installer-$ARCH/current ]; then
+	error "Missing 'current' symlink"
+elif [ X"$(readlink "$TMPDIR/installer-$ARCH/current")" != X"$VERSION" ]; then
+	error "Incorrect 'current' symlink"
+fi
+
+# We should have an MD5SUMS file; use that for a final check
+if [ -r "$TMPDIR/installer-$ARCH/$VERSION/images/MD5SUMS" ]; then
+	(
+		cd "$TMPDIR/installer-$ARCH/$VERSION/images"
+		md5sum -c --status MD5SUMS || error "Error while checking MD5SUMS"
+	)
+else
+	error "Missing MD5SUMS file"
+fi
+
+# Move the data to the final location
+mv "$TMPDIR/installer-$ARCH/$VERSION" "$TARGET"
+mv "$TMPDIR/installer-$ARCH/current"  "$TARGET"
+
+# Fixup permissions
+find "$TARGET/$VERSION" -type d -exec chmod 755 {} +
+find "$TARGET/$VERSION" -type f -exec chmod 644 {} +
+
+trap - EXIT
+cleanup
+
+exit 0

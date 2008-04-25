@@ -28,8 +28,28 @@
 
 ################################################################################
 
-import sys
-import daklib.utils
+import sys, imp
+import daklib.utils, daklib.extensions
+
+################################################################################
+
+class UserExtension:
+    def __init__(self, user_extension = None):
+        if user_extension:
+	    m = imp.load_source("dak_userext", user_extension)
+	    d = m.__dict__
+        else:
+            m, d = None, {}
+	self.__dict__["_module"] = m
+	self.__dict__["_d"] = d
+
+    def __getattr__(self, a):
+        if a in self.__dict__: return self.__dict__[a]
+        if a[0] == "_": raise AttributeError, a
+        return self._d.get(a, None)
+
+    def __setattr__(self, a, v):
+	self._d[a] = v
 
 ################################################################################
 
@@ -71,7 +91,9 @@ def init():
          "Clean cruft from incoming"),
         ("clean-proposed-updates",
          "Remove obsolete .changes from proposed-updates"),
-        
+
+        ("transitions",
+         "Manage the release transition file"),
         ("check-overrides",
          "Override cruft checks"),
         ("check-proposed-updates",
@@ -143,6 +165,13 @@ Availble commands:"""
 def main():
     """Launch dak functionality."""
 
+    Cnf = daklib.utils.get_conf()
+
+    if Cnf.has_key("Dinstall::UserExtensions"):
+        userext = UserExtension(Cnf["Dinstall::UserExtensions"])
+    else:
+        userext = UserExtension()
+
     functionality = init()
     modules = [ command for (command, _) in functionality ]
     
@@ -179,6 +208,13 @@ def main():
 
     # Invoke the module
     module = __import__(cmdname.replace("-","_"))
+
+    module.dak_userext = userext
+    userext.dak_module = module
+
+    daklib.extensions.init(cmdname, module, userext)
+    if userext.init is not None: userext.init(cmdname)
+
     module.main()
 
 ################################################################################

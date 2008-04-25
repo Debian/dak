@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Remove obsolete .changes files from proposed-updates
-# Copyright (C) 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+# Copyright (C) 2001, 2002, 2003, 2004, 2006, 2008  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,11 +80,11 @@ def check_changes (filename):
                 daklib.utils.fubar("unknown type, fix me")
         if not pu.has_key(pkg):
             # FIXME
-            daklib.utils.warn("%s doesn't seem to exist in p-u?? (from %s [%s])" % (pkg, file, filename))
+            daklib.utils.warn("%s doesn't seem to exist in %s?? (from %s [%s])" % (pkg, Options["suite"], file, filename))
             continue
         if not pu[pkg].has_key(arch):
             # FIXME
-            daklib.utils.warn("%s doesn't seem to exist for %s in p-u?? (from %s [%s])" % (pkg, arch, file, filename))
+            daklib.utils.warn("%s doesn't seem to exist for %s in %s?? (from %s [%s])" % (pkg, arch, Options["suite"], file, filename))
             continue
         pu_version = daklib.utils.re_no_epoch.sub('', pu[pkg][arch])
         if pu_version == version:
@@ -99,7 +99,8 @@ def check_changes (filename):
     if new_num_files == 0:
         print "%s: no files left, superseded by %s" % (filename, pu_version)
         dest = Cnf["Dir::Morgue"] + "/misc/"
-        daklib.utils.move(filename, dest)
+        if not Options["no-action"]:
+            daklib.utils.move(filename, dest)
     elif new_num_files < num_files:
         print "%s: lost files, MWAAP." % (filename)
     else:
@@ -112,7 +113,7 @@ def check_joey (filename):
     file = daklib.utils.open_file(filename)
 
     cwd = os.getcwd()
-    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]))
+    os.chdir("%s/dists/%s" % (Cnf["Dir::Root"]), Options["suite"])
 
     for line in file.readlines():
         line = line.rstrip()
@@ -139,13 +140,13 @@ def init_pu ():
 SELECT b.package, b.version, a.arch_string
   FROM bin_associations ba, binaries b, suite su, architecture a
   WHERE b.id = ba.bin AND ba.suite = su.id
-    AND su.suite_name = 'proposed-updates' AND a.id = b.architecture
+    AND su.suite_name = '%s' AND a.id = b.architecture
 UNION SELECT s.source, s.version, 'source'
   FROM src_associations sa, source s, suite su
   WHERE s.id = sa.source AND sa.suite = su.id
-    AND su.suite_name = 'proposed-updates'
+    AND su.suite_name = '%s'
 ORDER BY package, version, arch_string
-""")
+""" % (Options["suite"], Options["suite"]))
     ql = q.getresult()
     for i in ql:
         pkg = i[0]
@@ -161,11 +162,17 @@ def main ():
     Cnf = daklib.utils.get_conf()
 
     Arguments = [('d', "debug", "Clean-Proposed-Updates::Options::Debug"),
-                 ('v',"verbose","Clean-Proposed-Updates::Options::Verbose"),
-                 ('h',"help","Clean-Proposed-Updates::Options::Help")]
-    for i in [ "debug", "verbose", "help" ]:
+                 ('v', "verbose", "Clean-Proposed-Updates::Options::Verbose"),
+                 ('h', "help", "Clean-Proposed-Updates::Options::Help"),
+                 ('s', "suite", "Clean-Proposed-Updates::Options::Suite", "HasArg"),
+                 ('n', "no-action", "Clean-Proposed-Updates::Options::No-Action"),]
+    for i in [ "debug", "verbose", "help", "no-action" ]:
 	if not Cnf.has_key("Clean-Proposed-Updates::Options::%s" % (i)):
 	    Cnf["Clean-Proposed-Updates::Options::%s" % (i)] = ""
+
+    # suite defaults to proposed-updates
+    if not Cnf.has_key("Clean-Proposed-Updates::Options::Suite"):
+        Cnf["Clean-Proposed-Updates::Options::Suite"] = "proposed-updates"
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Clean-Proposed-Updates::Options")

@@ -106,12 +106,12 @@ def get_type(f):
     elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
         type = "dsc"
     else:
-        fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
+        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
 
     # Validate the override type
     type_id = database.get_override_type_id(type)
     if type_id == -1:
-        fubar("invalid type (%s) for new.  Say wha?" % (type))
+        utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
 
     return type
 
@@ -232,7 +232,8 @@ class Upload:
                    "closes", "changes" ]:
             d_changes[i] = changes[i]
         # Optional changes fields
-        for i in [ "changed-by", "filecontents", "format", "process-new note", "adv id", "distribution-version" ]:
+        for i in [ "changed-by", "filecontents", "format", "process-new note", "adv id", "distribution-version",
+                   "sponsoremail" ]:
             if changes.has_key(i):
                 d_changes[i] = changes[i]
         ## dsc
@@ -284,6 +285,10 @@ class Upload:
             Subst["__MAINTAINER_FROM__"] = changes["maintainer2047"]
             Subst["__MAINTAINER_TO__"] = changes["maintainer2047"]
             Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown")
+
+        if "sponsoremail" in changes:
+            Subst["__MAINTAINER_TO__"] += ", %s"%changes["sponsoremail"]
+
         if self.Cnf.has_key("Dinstall::TrackingServer") and changes.has_key("source"):
             Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (changes["source"], self.Cnf["Dinstall::TrackingServer"])
 
