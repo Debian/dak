@@ -36,6 +36,7 @@ import daklib.utils
 
 Cnf = None
 projectB = None
+suite = "unstable" # Default
 suite_id = None
 no_longer_in_suite = {}; # Really should be static to add_nbs, but I'm lazy
 
@@ -171,7 +172,7 @@ def do_nbs(real_nbs):
         print output
 
         print "Suggested command:"
-        print " dak rm -m \"[auto-cruft] NBS\" -b %s" % (" ".join(nbs_to_remove))
+        print " dak rm -m \"[auto-cruft] NBS\" -s %s -b %s" % (suite, " ".join(nbs_to_remove))
         print
 
 ################################################################################
@@ -244,7 +245,7 @@ def do_obsolete_source(duplicate_bins, bin2source):
 ################################################################################
 
 def main ():
-    global Cnf, projectB, suite_id, source_binaries, source_versions
+    global Cnf, projectB, suite, suite_id, source_binaries, source_versions
 
     Cnf = daklib.utils.get_conf()
 
@@ -351,7 +352,10 @@ def main ():
         os.unlink(temp_filename)
 
     # Checks based on the Packages files
-    for component in components + ['main/debian-installer']:
+    check_components = components[:]
+    if suite != "experimental":
+        check_components.append('main/debian-installer');
+    for component in check_components:
         architectures = filter(daklib.utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
