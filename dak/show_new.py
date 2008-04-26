@@ -44,54 +44,94 @@ sources = set()
 ################################################################################
 ################################################################################
 
-def html_header(name):
+def html_header(name, filestoexamine):
     if name.endswith('.changes'):
         name = ' '.join(name.split('_')[:2])
-    print """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-        <html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">"""
-    print "<title>%s - Debian NEW package overview</title>" % (name)
-    print """<link type="text/css" rel="stylesheet" href="/style.css">
-	<link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
-	</head>
-	<body>
-	<div align="center">
-	<a href="http://www.debian.org/">
-     <img src="http://www.debian.org/logos/openlogo-nd-50.png" border="0" hspace="0" vspace="0" alt=""></a>
-	<a href="http://www.debian.org/">
-     <img src="http://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace="0" alt="Debian Project"></a>
-	</div>
-	<br />
-	<table class="reddy" width="100%">
-	<tr>
-	<td class="reddy">
-    <img src="http://www.debian.org/Pics/red-upperleft.png" align="left" border="0" hspace="0" vspace="0"
-     alt="" width="15" height="16"></td>"""
-    print """<td rowspan="2" class="reddy">Debian NEW package overview for %s</td>""" % (name)
-    print """<td class="reddy">
-    <img src="http://www.debian.org/Pics/red-upperright.png" align="right" border="0" hspace="0" vspace="0"
-     alt="" width="16" height="16"></td>
-	</tr>
-	<tr>
-	<td class="reddy">
-    <img src="http://www.debian.org/Pics/red-lowerleft.png" align="left" border="0" hspace="0" vspace="0"
-     alt="" width="16" height="16"></td>
-	<td class="reddy">
-    <img src="http://www.debian.org/Pics/red-lowerright.png" align="right" border="0" hspace="0" vspace="0"
-     alt="" width="15" height="16"></td>
-	</tr>
-	</table>
-	"""
+    print """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
+  <head>
+    <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8"
+    />
+    <title>%(name)s - Debian NEW package overview</title>
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <link rel="shortcut icon" href="http://www.debian.org/favicon.ico" />
+    <script type="text/javascript">
+      //<![CDATA[
+      <!--
+      function toggle(id, initial, display) {
+        var o = document.getElementById(id);
+        toggleObj(o, initial, display);
+      }
+      function toggleObj(o, initial, display) {
+        if(! o.style.display)
+          o.style.display = initial;
+        if(o.style.display == display) {
+          o.style.display = "none";
+        } else {
+          o.style.display = display;
+        }
+      }
+      //-->
+      //]]>
+    </script>
+  </head>
+  <body>
+    <div id="logo">
+      <a href="http://www.debian.org/">
+        <img src="http://www.debian.org/logos/openlogo-nd-50.png"
+        alt="debian logo" /></a>
+      <a href="http://www.debian.org/">
+        <img src="http://www.debian.org/Pics/debian.png"
+        alt="Debian Project" /></a>
+    </div>
+    <div id="titleblock">
 
+      <img src="http://www.debian.org/Pics/red-upperleft.png"
+      id="red-upperleft" alt="corner image"/>
+      <img src="http://www.debian.org/Pics/red-lowerleft.png"
+      id="red-lowerleft" alt="corner image"/>
+      <img src="http://www.debian.org/Pics/red-upperright.png"
+      id="red-upperright" alt="corner image"/>
+      <img src="http://www.debian.org/Pics/red-lowerright.png"
+      id="red-lowerright" alt="corner image"/>
+      <span class="title">
+        Debian NEW package overview for %(name)s
+      </span>
+    </div>
+    """%{"name":name}
+
+    # we assume only one source (.dsc) per changes here
+    print """
+    <div id="menu">
+      <p class="title">Navigation</p>
+      <p><a href="#changes">.changes</a></p>
+      <p><a href="#dsc">.dsc</a></p>
+      <p><a href="#source-lintian">source lintian</a></p>
+      """
+    for fn in filter(lambda x: x.endswith('.deb') or x.endswith('.udeb'),filestoexamine):
+      packagename = fn.split('_')[0]
+      print """
+      <p class="subtitle">%(pkg)s</p>
+      <p><a href="#binary-%(pkg)s-control">control file</a></p>
+      <p><a href="#binary-%(pkg)s-lintian">binary lintian</a></p>
+      <p><a href="#binary-%(pkg)s-contents">.deb contents</a></p>
+      <p><a href="#binary-%(pkg)s-copyright">copyright</a></p>
+      <p><a href="#binary-%(pkg)s-file-listing">file listing</a></p>
+      """%{"pkg":packagename}
+    print "    </div>"
+   
 def html_footer():
-    print "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
-    print """<a href="http://validator.w3.org/check?uri=referer">
-    <img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a>
-	<a href="http://jigsaw.w3.org/css-validator/check/referer">
-    <img border="0" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!"
-     height="31" width="88"></a>
-    """
-    print "</body></html>"
-
+    print """    <p class="validate">Timestamp: %s (UTC)</p>"""% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
+    print """    <p><a href="http://validator.w3.org/check?uri=referer">
+      <img src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
+      style="border: none; height: 31px; width: 88px" /></a>
+    <a href="http://jigsaw.w3.org/css-validator/check/referer">
+      <img src="http://jigsaw.w3.org/css-validator/images/vcss"
+      alt="Valid CSS!" style="border: none; height: 31px; width: 88px" /></a>
+    </p>
+  </body>
+</html>
+"""
 
 ################################################################################
 
@@ -115,19 +155,24 @@ def do_pkg(changes_file):
     # do not generate html output if that source/version already has one.
     if not os.path.exists(os.path.join(Cnf["Show-New::HTMLPath"],htmlname)):
         sys.stdout = open(os.path.join(Cnf["Show-New::HTMLPath"],htmlname),"w")
-        html_header(changes["source"])
+
+        filestoexamine = []
+        for pkg in new.keys():
+            for fn in new[pkg]["files"]:
+                if ( files[fn].has_key("new") and not
+                     files[fn]["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2"] ):
+                    filestoexamine.append(fn)
+
+        html_header(changes["source"], filestoexamine)
 
         daklib.queue.check_valid(new)
         examine_package.display_changes(Upload.pkg.changes_file)
 
-        for pkg in new.keys():
-            for file in new[pkg]["files"]:
-                if ( files[file].has_key("new") and not
-                     files[file]["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2"] ):
-                    if file.endswith(".deb") or file.endswith(".udeb"):
-                        examine_package.check_deb(file)
-                    elif file.endswith(".dsc"):
-                        examine_package.check_dsc(file)
+        for fn in filestoexamine:
+            if fn.endswith(".deb") or fn.endswith(".udeb"):
+                examine_package.check_deb(fn)
+            elif fn.endswith(".dsc"):
+                examine_package.check_dsc(fn)
 
         html_footer()
         if sys.stdout != stdout_fd:
@@ -139,6 +184,7 @@ def do_pkg(changes_file):
 def usage (exit_code=0):
     print """Usage: dak show-new [OPTION]... [CHANGES]...
   -h, --help                show this help and exit.
+  -p, --html-path [path]    override output directory.
   """
     sys.exit(exit_code)
 
@@ -149,7 +195,8 @@ def init():
 
     Cnf = daklib.utils.get_conf()
 
-    Arguments = [('h',"help","Show-New::Options::Help")]
+    Arguments = [('h',"help","Show-New::Options::Help"),
+                 ("p","html-path","Show-New::HTMLPath","HasArg")]
 
     for i in ["help"]:
         if not Cnf.has_key("Show-New::Options::%s" % (i)):
@@ -183,7 +230,7 @@ def main():
         print "\n" + changes_file
         do_pkg (changes_file)
     files = set(os.listdir(Cnf["Show-New::HTMLPath"]))
-    to_delete = files.difference(sources)
+    to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))
     for file in to_delete:
         os.remove(os.path.join(Cnf["Show-New::HTMLPath"],file))
 

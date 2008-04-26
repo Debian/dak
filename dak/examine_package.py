@@ -97,9 +97,14 @@ def escape_if_needed(s):
   else:
     return s
   
-def headline(s, level=2):
+def headline(s, level=2, bodyelement=None):
   if use_html:
-    print "<h%d>%s</h%d>" % (level, html_escape(s), level)
+    if bodyelement:
+      print """<thead>
+          <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s</th></tr>
+        </thead>"""%{"bodyelement":bodyelement,"title":html_escape(s)}
+    else:
+      print "<h%d>%s</h%d>" % (level, html_escape(s), level)
   else:
     print "---- %s ----" % (s)
 
@@ -440,9 +445,48 @@ def strip_pgp_signature (filename):
     return contents
 
 # Display the .changes [without the signature]
-def display_changes (changes_filename):
-    headline(".changes file for %s" % (changes_filename))
+def display_changes(changes_filename):
+    if use_html:
+        print """<div id="changes-wrap"><a name="changes" />
+                   <table class="infobox rfc822">"""
+    headline(changes_filename, bodyelement="changes-body")
+    if use_html:
+        print """    <tbody id="changes-body" class="infobody">"""
+        print """<tr><td>"""
     print_formatted_text(strip_pgp_signature(changes_filename))
+    if use_html:
+        print """</td></tr>"""
+        """ <!--
+        1. Join multiline fields
+        2. s/^\s*\.?//gm
+        3. s#\n#<br/>#g
+        4. s#^\([^ :]*:\)\s*\(.*\)$#<tr><td class="key">\1</td><td class="val">\2</td></tr>#
+        5. Special handling for homepage, distribution, bugs
+        -->
+          <tr><td class="key">Format:</td><td class="val">1.7</td></tr>
+          <tr><td class="key">Date:</td><td class="val">Mon, 24 Dec 2007 15:32:08 -0200</td></tr>
+          <tr><td class="key">Source:</td><td class="val">php-xdebug</td></tr>
+          <tr><td class="key">Binary:</td><td class="val">php5-xdebug</td></tr>
+          <tr><td class="key">Architecture:</td><td class="val">source amd64</td></tr>
+          <tr><td class="key">Version:</td><td class="val">2.0.2-1</td></tr>
+          <tr><td class="key">Distribution:</td><td class="val"><span class="dist-unstable">unstable</span></td></tr>
+          <tr><td class="key">Urgency:</td><td class="val">low</td></tr>
+          <tr><td class="key">Maintainer:</td><td class="val">Marcelo Jorge Vieira (metal) &lt;metal@alucinados.com&gt;</td></tr>
+          <tr><td class="key">Changed-By:</td><td class="val">Marcelo Jorge Vieira (metal) &lt;metal@alucinados.com&gt;</td></tr>
+          <tr><td class="key">Description:</td><td class="val">
+              php5-xdebug - xdebug extension module for PHP5</td></tr>
+          <tr><td class="key">Closes:</td><td class="val"><a href="http://bugs.debian.org/377348">377348</a></td></tr>
+          <tr><td class="key">Changes:</td><td class="val">
+              php-xdebug (2.0.2-1) unstable; urgency=low<br/>
+              <br/>
+              * Initial release (Closes: <a href="http://bugs.debian.org/377348">#377348</a>)</td></tr>
+          <tr><td class="key">Files:</td><td class="val">
+              c6ee78b58a4d70d66f8a70436b2a943c 632 web optional php-xdebug_2.0.2-1.dsc<br/>
+              d3547f74353174884452a51ee9ca687f 279891 web optional php-xdebug_2.0.2.orig.tar.gz<br/>
+              8e7c262113c8ac13f47781e0ac0eb4c3 4107 web optional php-xdebug_2.0.2-1.diff.gz<br/>
+              3c6be09f23931fabf0b3048575390ed3 137930 web optional php5-xdebug_2.0.2-1_amd64.deb</td></tr>
+              """
+        print """</tbody></table></div>"""
 
 def check_changes (changes_filename):
     display_changes(changes_filename)
