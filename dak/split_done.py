@@ -32,7 +32,7 @@ def main():
     for filename in files:
         if os.path.isfile(filename):
             filemtime = os.stat(filename)[stat.ST_MTIME]
-            if filemtime < move_date:
+            if filemtime > move_date:
                 continue
             mtime = time.gmtime(filemtime)
             dirname = time.strftime("%Y/%m/%d", mtime)
