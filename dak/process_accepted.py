@@ -71,9 +71,9 @@ class Urgency_Log:
         self.timestamp = time.strftime("%Y%m%d%H%M%S")
         # Create the log directory if it doesn't exist
         self.log_dir = Cnf["Dir::UrgencyLog"]
-        if not os.path.exists(self.log_dir):
-            umask = os.umask(00000)
-            os.makedirs(self.log_dir, 02775)
+        if not os.path.exists(self.log_dir) or not os.access(self.log_dir, W_OK):
+            daklib.utils.warn("UrgencyLog directory %s does not exist or is not writeable, using /srv/ftp.debian.org/tmp/ instead" % (self.log_dir))
+            self.log_dir = '/srv/ftp.debian.org/tmp/'
         # Open the logfile
         self.log_filename = "%s/.install-urgencies-%s.new" % (self.log_dir, self.timestamp)
         self.log_file = daklib.utils.open_file(self.log_filename, 'w')

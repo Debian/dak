@@ -29,7 +29,7 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 # What file we look at.
-TESTINGINPUT="/srv/ftp.debian.org/testing/data/testing/HeidiReal"
+TESTINGINPUT="/srv/release.debian.org/britney/Heidi/set/current"
 
 # Change to a known safe location
 cd $masterdir

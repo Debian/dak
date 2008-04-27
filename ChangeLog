@@ -1,5 +1,9 @@
 2008-04-27  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/process_accepted.py (Urgency_Log.__init__): Warn if the
+	configured path does not exist or is not writeable by us. Use a
+	tmp path if so, so we do not lose the urgencies in such cases.
+
 	* config/debian/dak.conf: Changed path for UrgencyLog
 	Same for the ReleaseTransitions file
 
