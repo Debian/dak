@@ -35,6 +35,9 @@ ending at about 15:30.  This file is then removed.
 You should not mirror the archive during this period.
 EOF
 
+# Push merkels qa user, so the qa pages can show "dinstall is running" information
+ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 qa@merkel.debian.org sleep 1
+
 ################################################################################
 
 echo "Creating pre-daily-cron-job backup of projectb database..."
