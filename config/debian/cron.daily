@@ -140,8 +140,6 @@ cd $scriptsdir
 ./mkfilesindices
 ./mkchecksums
 #
-# Fetch bugs information before unchecked processing is allowed again.
-$base/testing/britney allowdaklock bugs || true
 rm -f $NOTICE
 ssh buildd@buildd /org/wanna-build/trigger.daily
 
