@@ -1,5 +1,8 @@
 2008-04-27  Joerg Jaspert  <joerg@debian.org>
 
+	* config/debian/dak.conf: Changed path for UrgencyLog
+	Same for the ReleaseTransitions file
+
 	* config/debian/cron.daily: Notify qa user on merkel of dinstall start
 
 2008-04-26  Joerg Jaspert  <joerg@debian.org>
