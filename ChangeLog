@@ -7,7 +7,8 @@
 	* config/debian/dak.conf: Changed path for UrgencyLog
 	Same for the ReleaseTransitions file
 
-	* config/debian/cron.daily: Notify qa user on merkel of dinstall start
+	* config/debian/cron.daily: Notify qa user on merkel of dinstall
+	start, Remove the britney call
 
 2008-04-26  Joerg Jaspert  <joerg@debian.org>
 
