@@ -133,17 +133,35 @@ def colour_output(s, colour):
   else:
     return ("%s%s%s" % (ansi_colours[colour], s, ansi_colours['end']))
 
-def print_escaped_text(s):
+def escaped_text(s):
   if use_html:
-    print "<pre>%s</pre>" % (s)
+    return "<pre>%s</pre>" % (s)
   else:
-    print s  
+    return s  
 
-def print_formatted_text(s):
+def formatted_text(s):
   if use_html:
-    print "<pre>%s</pre>" % (html_escape(s))
+    return "<pre>%s</pre>" % (html_escape(s))
   else:
-    print s
+    return s
+
+def output_row(s):
+    if use_html:
+        return """<tr><td>"""+s+"""</td></tr>"""
+    else:
+        return s
+
+def foldable_output(title, elementnameprefix, content):
+    d = {'elementnameprefix':elementnameprefix}
+    if use_html:
+        print """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
+                   <table class="infobox rfc822">"""%d
+    headline(title, bodyelement="%(elementnameprefix)s-body"%d)
+    if use_html:
+        print """    <tbody id="%(elementnameprefix)s-body" class="infobody">"""%d
+    print output_row(content)
+    if use_html:
+        print """</tbody></table></div>"""
 
 ################################################################################
 
@@ -199,7 +217,7 @@ def read_control (filename):
 	extracts = apt_inst.debExtractControl(deb_file)
 	control = apt_pkg.ParseSection(extracts)
     except:
-	print_formatted_text("can't parse control info")
+	print formatted_text("can't parse control info")
 	# TV-COMMENT: this will raise exceptions in two lines
 	control = ''
 
@@ -252,7 +270,7 @@ def read_dsc (dsc_filename):
     try:
 	dsc = daklib.utils.parse_changes(dsc_filename)
     except:
-	print_formatted_text("can't parse control info")
+	return formatted_text("can't parse control info")
     dsc_file.close()
 
     filecontents = escape_if_needed(strip_pgp_signature(dsc_filename))
@@ -314,107 +332,104 @@ def create_depends_string (depends_tree):
 def output_deb_info(filename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
-    to_print = ""
     if control == '':
-	print_formatted_text("no control info")
-    else:
-	for key in control_keys :
-	    output = " " + key + ": "
-	    if key == 'Depends':
-		output += create_depends_string(depends)
-	    elif key == 'Recommends':
-		output += create_depends_string(recommends)
-	    elif key == 'Section':
-		output += section
-	    elif key == 'Architecture':
-		output += arch
-	    elif key == 'Maintainer':
-		output += maintainer
-	    elif key == 'Description':
-		desc = control.Find(key)
-		desc = re_newlinespace.sub('\n ', desc)
-		output += escape_if_needed(desc)
-	    else:
-		output += escape_if_needed(control.Find(key))
-            to_print += output + '\n'
-        print_escaped_text(to_print)
+	return formatted_text("no control info")
+    to_print = ""
+    for key in control_keys :
+        output = " " + key + ": "
+        if key == 'Depends':
+            output += create_depends_string(depends)
+        elif key == 'Recommends':
+            output += create_depends_string(recommends)
+        elif key == 'Section':
+            output += section
+        elif key == 'Architecture':
+            output += arch
+        elif key == 'Maintainer':
+            output += maintainer
+        elif key == 'Description':
+            desc = control.Find(key)
+            desc = re_newlinespace.sub('\n ', desc)
+            output += escape_if_needed(desc)
+        else:
+            output += escape_if_needed(control.Find(key))
+        to_print += output + '\n'
+    return escaped_text(to_print)
 
 def do_command (command, filename, escaped=0):
     o = os.popen("%s %s" % (command, filename))
     if escaped:
-        print_escaped_text(o.read())
+        return escaped_text(o.read())
     else:
-        print_formatted_text(o.read())
+        return formatted_text(o.read())
 
 def do_lintian (filename):
     if use_html:
-        do_command("lintian --show-overrides --color html", filename, 1)
+        return do_command("lintian --show-overrides --color html", filename, 1)
     else:
-        do_command("lintian --show-overrides --color always", filename, 1)
+        return do_command("lintian --show-overrides --color always", filename, 1)
 
-def print_copyright (deb_filename):
+def get_copyright (deb_filename):
     package = re_package.sub(r'\1', deb_filename)
     o = os.popen("dpkg-deb -c %s | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{print $6}' | head -n 1" % (deb_filename))
     copyright = o.read()[:-1]
 
     if copyright == "":
-        print_formatted_text("WARNING: No copyright found, please check package manually.")
-        return
+        return formatted_text("WARNING: No copyright found, please check package manually.")
 
     doc_directory = re_doc_directory.sub(r'\1', copyright)
     if package != doc_directory:
-        print_formatted_text("WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory))
-        return
+        return formatted_text("WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory))
 
     o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s 2>/dev/null" % (deb_filename, copyright))
     copyright = o.read()
     copyrightmd5 = md5.md5(copyright).hexdigest()
 
+    res = ""
     if printed_copyrights.has_key(copyrightmd5) and printed_copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
-        print_formatted_text( "NOTE: Copyright is the same as %s.\n" % \
-		(printed_copyrights[copyrightmd5]))
+        res += formatted_text( "NOTE: Copyright is the same as %s.\n" % \
+                               (printed_copyrights[copyrightmd5]))
     else:
 	printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
-
-    print_formatted_text(copyright)
+    return res+formatted_text(copyright)
 
 def check_dsc (dsc_filename):
-    headline(".dsc file for %s" % (dsc_filename))
     (dsc) = read_dsc(dsc_filename)
-    print_escaped_text(dsc)
-    headline("lintian check for %s" % (dsc_filename))
-    do_lintian(dsc_filename)
+    foldable_output(dsc_filename, "dsc", escaped_text(dsc))
+    foldable_output("lintian check for %s" % dsc_filename, "source-lintian", do_lintian(dsc_filename))
 
 def check_deb (deb_filename):
     filename = os.path.basename(deb_filename)
+    packagename = filename.split('_')[0]
 
     if filename.endswith(".udeb"):
 	is_a_udeb = 1
     else:
 	is_a_udeb = 0
 
-    headline("control file for %s" % (filename))
-    #do_command ("dpkg -I", deb_filename)
-    output_deb_info(deb_filename)
+
+    foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
+                    output_deb_info(deb_filename))
 
     if is_a_udeb:
-	headline("skipping lintian check for udeb")
-	print 
+        foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
+                        "")
     else:
-	headline("lintian check for %s" % (filename))
-        do_lintian(deb_filename)
+        foldable_output("lintian check for %s" % (filename), "binary-%s-lintian"%packagename,
+                        do_lintian(deb_filename))
 
-    headline("contents of %s" % (filename))
-    do_command ("dpkg -c", deb_filename)
+    foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
+                    do_command("dpkg -c", deb_filename))
 
     if is_a_udeb:
-	headline("skipping copyright for udeb")
+        foldable_output("skipping copyright for udeb", "binary-%s-copyright"%packagename,
+                        "")
     else:
-	headline("copyright of %s" % (filename))
-        print_copyright(deb_filename)
+        foldable_output("copyright of %s" % (filename), "binary-%s-copyright"%packagename,
+                        get_copyright(deb_filename))
 
-    headline("file listing of %s" % (filename))
-    do_command ("ls -l", deb_filename)
+    foldable_output("file listing of %s" % (filename),  "binary-%s-file-listing"%packagename,
+                    do_command("ls -l", deb_filename))
 
 # Read a file, strip the signature and return the modified contents as
 # a string.
@@ -445,48 +460,9 @@ def strip_pgp_signature (filename):
     return contents
 
 # Display the .changes [without the signature]
+# TV-COMMENT: M. Ferrari has more formatting ideas
 def display_changes(changes_filename):
-    if use_html:
-        print """<div id="changes-wrap"><a name="changes" />
-                   <table class="infobox rfc822">"""
-    headline(changes_filename, bodyelement="changes-body")
-    if use_html:
-        print """    <tbody id="changes-body" class="infobody">"""
-        print """<tr><td>"""
-    print_formatted_text(strip_pgp_signature(changes_filename))
-    if use_html:
-        print """</td></tr>"""
-        """ <!--
-        1. Join multiline fields
-        2. s/^\s*\.?//gm
-        3. s#\n#<br/>#g
-        4. s#^\([^ :]*:\)\s*\(.*\)$#<tr><td class="key">\1</td><td class="val">\2</td></tr>#
-        5. Special handling for homepage, distribution, bugs
-        -->
-          <tr><td class="key">Format:</td><td class="val">1.7</td></tr>
-          <tr><td class="key">Date:</td><td class="val">Mon, 24 Dec 2007 15:32:08 -0200</td></tr>
-          <tr><td class="key">Source:</td><td class="val">php-xdebug</td></tr>
-          <tr><td class="key">Binary:</td><td class="val">php5-xdebug</td></tr>
-          <tr><td class="key">Architecture:</td><td class="val">source amd64</td></tr>
-          <tr><td class="key">Version:</td><td class="val">2.0.2-1</td></tr>
-          <tr><td class="key">Distribution:</td><td class="val"><span class="dist-unstable">unstable</span></td></tr>
-          <tr><td class="key">Urgency:</td><td class="val">low</td></tr>
-          <tr><td class="key">Maintainer:</td><td class="val">Marcelo Jorge Vieira (metal) &lt;metal@alucinados.com&gt;</td></tr>
-          <tr><td class="key">Changed-By:</td><td class="val">Marcelo Jorge Vieira (metal) &lt;metal@alucinados.com&gt;</td></tr>
-          <tr><td class="key">Description:</td><td class="val">
-              php5-xdebug - xdebug extension module for PHP5</td></tr>
-          <tr><td class="key">Closes:</td><td class="val"><a href="http://bugs.debian.org/377348">377348</a></td></tr>
-          <tr><td class="key">Changes:</td><td class="val">
-              php-xdebug (2.0.2-1) unstable; urgency=low<br/>
-              <br/>
-              * Initial release (Closes: <a href="http://bugs.debian.org/377348">#377348</a>)</td></tr>
-          <tr><td class="key">Files:</td><td class="val">
-              c6ee78b58a4d70d66f8a70436b2a943c 632 web optional php-xdebug_2.0.2-1.dsc<br/>
-              d3547f74353174884452a51ee9ca687f 279891 web optional php-xdebug_2.0.2.orig.tar.gz<br/>
-              8e7c262113c8ac13f47781e0ac0eb4c3 4107 web optional php-xdebug_2.0.2-1.diff.gz<br/>
-              3c6be09f23931fabf0b3048575390ed3 137930 web optional php5-xdebug_2.0.2-1_amd64.deb</td></tr>
-              """
-        print """</tbody></table></div>"""
+    foldable_output(changes_filename, "changes", formatted_text(strip_pgp_signature(changes_filename)))
 
 def check_changes (changes_filename):
     display_changes(changes_filename)
