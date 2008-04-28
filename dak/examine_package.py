@@ -274,21 +274,32 @@ def read_dsc (dsc_filename):
     dsc_file.close()
 
     filecontents = escape_if_needed(strip_pgp_signature(dsc_filename))
+    keysinorder = []
+    for l in filecontents.split('\n'):
+        m = re.match(r'([-a-zA-Z0-9]*):', l)
+        if m:
+            keysinorder.append(m.group(1))
 
     if dsc.has_key("build-depends"):
 	builddep = split_depends(dsc["build-depends"])
 	builddepstr = create_depends_string(builddep)
-	filecontents = re_builddep.sub("Build-Depends: "+builddepstr, filecontents)
+        dsc['build-depends'] = builddepstr
 
     if dsc.has_key("build-depends-indep"):
 	builddepindstr = create_depends_string(split_depends(dsc["build-depends-indep"]))
-	filecontents = re_builddepind.sub("Build-Depends-Indep: "+builddepindstr, filecontents)
+        dsc['build-depends-indep'] = builddepindstr
 
     if dsc.has_key("architecture") :
 	if (dsc["architecture"] != "any"):
 	    newarch = colour_output(dsc["architecture"], 'arch')
-	    filecontents = re_arch.sub("Architecture: " + newarch, filecontents)
+            dsc['architecture'] = newarch
 
+    if dsc.has_key("files"):
+        dsc["files"] = '\n'+'\n'.join(map(lambda x: ' '+x, dsc["files"].split('\n')))
+
+    keysinorder = filter(lambda x: not x.lower().startswith('checksums-'), keysinorder)
+
+    filecontents = ''.join(map(lambda x: '%s: %s\n'%(x,dsc[x.lower()]), keysinorder))
     return filecontents
 
 def create_depends_string (depends_tree):
