@@ -71,9 +71,9 @@ class Urgency_Log:
         self.timestamp = time.strftime("%Y%m%d%H%M%S")
         # Create the log directory if it doesn't exist
         self.log_dir = Cnf["Dir::UrgencyLog"]
-        if not os.path.exists(self.log_dir):
-            umask = os.umask(00000)
-            os.makedirs(self.log_dir, 02775)
+        if not os.path.exists(self.log_dir) or not os.access(self.log_dir, os.W_OK):
+            daklib.utils.warn("UrgencyLog directory %s does not exist or is not writeable, using /srv/ftp.debian.org/tmp/ instead" % (self.log_dir))
+            self.log_dir = '/srv/ftp.debian.org/tmp/'
         # Open the logfile
         self.log_filename = "%s/.install-urgencies-%s.new" % (self.log_dir, self.timestamp)
         self.log_file = daklib.utils.open_file(self.log_filename, 'w')
@@ -281,6 +281,9 @@ def install ():
             maintainer = dsc["maintainer"]
             maintainer = maintainer.replace("'", "\\'")
             maintainer_id = daklib.database.get_or_set_maintainer_id(maintainer)
+            changedby = changes["changed-by"]
+            changedby = changedby.replace("'", "\\'")
+            changedby_id = daklib.database.get_or_set_maintainer_id(changedby)
             fingerprint_id = daklib.database.get_or_set_fingerprint_id(dsc["fingerprint"])
             install_date = time.strftime("%Y-%m-%d")
             filename = files[file]["pool name"] + file
@@ -288,8 +291,8 @@ def install ():
             dsc_location_id = files[file]["location id"]
             if not files[file].has_key("files id") or not files[file]["files id"]:
                 files[file]["files id"] = daklib.database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
-            projectB.query("INSERT INTO source (source, version, maintainer, file, install_date, sig_fpr) VALUES ('%s', '%s', %d, %d, '%s', %s)"
-                           % (package, version, maintainer_id, files[file]["files id"], install_date, fingerprint_id))
+            projectB.query("INSERT INTO source (source, version, maintainer, changedby, file, install_date, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, '%s', %s)"
+                           % (package, version, maintainer_id, changedby_id, files[file]["files id"], install_date, fingerprint_id))
 
             for suite in changes["distribution"].keys():
                 suite_id = daklib.database.get_suite_id(suite)
@@ -313,12 +316,17 @@ def install ():
             if dsc.get("dm-upload-allowed", "no") == "yes":
                 uploader_ids = [maintainer_id]
                 if dsc.has_key("uploaders"):
-		    for u in dsc["uploaders"].split(","):
-		        u = u.replace("'", "\\'")
-			u = u.strip()
+                    for u in dsc["uploaders"].split(","):
+                        u = u.replace("'", "\\'")
+                        u = u.strip()
                         uploader_ids.append(
-			    daklib.database.get_or_set_maintainer_id(u))
+                            daklib.database.get_or_set_maintainer_id(u))
+                added_ids = {}
                 for u in uploader_ids:
+                    if added_ids.has_key(u):
+                        daklib.utils.warn("Already saw uploader %s for source %s" % (u, package))
+                        continue
+                    added_ids[u]=1
                     projectB.query("INSERT INTO src_uploaders (source, maintainer) VALUES (currval('source_id_seq'), %d)" % (u))
 
 

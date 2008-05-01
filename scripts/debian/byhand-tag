@@ -1,0 +1,45 @@
+#!/bin/sh -ue
+
+# Tarball to read, compressed with gzip
+INPUT="${1:?"Usage: $0 filename"}"
+
+# Regular expression used to validate tag lines
+CHECKRE='^[a-z0-9A-Z.+-]+[[:space:]]+Tag[[:space:]]+[a-z0-9:. ,{}+-]+$'
+
+# This must end with /
+TARGET=/srv/ftp.debian.org/scripts/external-overrides/
+
+# Read the main directory from the tarball
+DIR="`tar ztf \"$INPUT\" | tac | tail -n 1`"
+
+# Create temporary files where to store the validated data
+umask 002
+OUTMAIN="`mktemp \"$TARGET\"tag.new.XXXXXX`"
+OUTCONTRIB="`mktemp \"$TARGET\"tag.contrib.new.XXXXXX`"
+OUTNONFREE="`mktemp \"$TARGET\"tag.non-free.new.XXXXXX`"
+
+# If we fail somewhere, cleanup the temporary files
+cleanup() {
+        rm -f "$OUTMAIN"
+        rm -f "$OUTCONTRIB"
+        rm -f "$OUTNONFREE"
+}
+trap cleanup EXIT
+
+# Extract the data into the temporary files
+tar -O -zxf "$INPUT" "$DIR"tag | grep -E "$CHECKRE" > "$OUTMAIN"
+tar -O -zxf "$INPUT" "$DIR"tag.contrib | grep -E "$CHECKRE" > "$OUTCONTRIB"
+tar -O -zxf "$INPUT" "$DIR"tag.non-free | grep -E "$CHECKRE" > "$OUTNONFREE"
+
+# Move the data to the final location
+mv "$OUTMAIN"           "$TARGET"tag
+mv "$OUTCONTRIB"        "$TARGET"tag.contrib
+mv "$OUTNONFREE"        "$TARGET"tag.non-free
+
+chmod 644 "$TARGET"tag "$TARGET"tag.contrib "$TARGET"tag.non-free
+
+(cd $TARGET && ./mk-extra-overrides.sh)
+
+trap - EXIT
+
+exit 0

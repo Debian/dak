@@ -1,0 +1,2271 @@
+#!/usr/bin/perl -w
+#
+# debianqueued -- daemon for managing Debian upload queues
+#
+# Copyright (C) 1997 Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
+# Copyright (C) 2001-2007 Ryan Murray <rmurray@debian.org>
+#
+# This program is free software.  You can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation: either version 2 or
+# (at your option) any later version.
+# This program comes with ABSOLUTELY NO WARRANTY!
+#
+# $Id: debianqueued,v 1.51 1999/07/08 09:43:21 ftplinux Exp $
+#
+# $Log: debianqueued,v $
+# Revision 1.51  1999/07/08 09:43:21  ftplinux
+# Bumped release number to 0.9
+#
+# Revision 1.50  1999/07/07 16:17:30  ftplinux
+# Signatures can now also be created by GnuPG; in pgp_check, also try
+# gpg for checking.
+# In several messages, also mention GnuPG.
+#
+# Revision 1.49  1999/07/07 16:14:43  ftplinux
+# Implemented new upload methods "copy" and "ftp" as alternatives to "ssh".
+# Replaced "master" in many function and variable names by "target".
+# New functions ssh_cmd, ftp_cmd, and local_cmd for more abstraction and
+# better readable code.
+#
+# Revision 1.48  1998/12/08 13:09:39  ftplinux
+# At the end of process_changes, do not remove the @other_files with the same
+# stem if a .changes file is in that list; then there is probably another
+# upload for a different version or another architecture.
+#
+# Revision 1.47  1998/05/14 14:21:44  ftplinux
+# Bumped release number to 0.8
+#
+# Revision 1.46  1998/05/14 14:17:00  ftplinux
+# When --after a successfull upload-- deleting files for the same job, check
+# for equal revision number on files that have one. It has happened that the
+# daemon deleted files that belonged to another job with different revision.
+#
+# Revision 1.45  1998/04/23 11:05:47  ftplinux
+# Implemented $conf::chmod_on_master. If 0, new part to change mode locally in
+# process_changes.
+#
+# Revision 1.44  1998/04/21 08:44:44  ftplinux
+# Don't use return value of debian_file_stem as regexp, it's a shell pattern.
+#
+# Revision 1.43  1998/04/21 08:22:21  ftplinux
+# Also recogize "read-only filesystem" as error message so it triggers assuming
+# that incoming is unwritable.
+# Don't increment failure count after an upload try that did clear
+# $incoming_writable.
+# Fill in forgotten pattern for mail addr in process_commands.
+#
+# Revision 1.42  1998/03/31 13:27:32  ftplinux
+# In fatal_signal, kill status daemon only if it has been started (otherwise
+# warning about uninitialized variable).
+# Change mode of files uploaded to master explicitly to 644 there, scp copies the
+# permissions in the queue.
+#
+# Revision 1.41  1998/03/31 09:06:00  ftplinux
+# Implemented handling of improper mail addresses in Maintainer: field.
+#
+# Revision 1.40  1998/03/24 13:17:33  ftplinux
+# Added new check if incoming dir on master is writable. This check is triggered
+# if an upload returns "permission denied" errors. If the dir is unwritable, the
+# queue is holded (no upload tries) until it's writable again.
+#
+# Revision 1.39  1998/03/23 14:05:14  ftplinux
+# Bumped release number to 0.7
+#
+# Revision 1.38  1998/03/23 14:03:55  ftplinux
+# In an upload failure message, say explicitly that the job will be
+# retried, to avoid confusion of users.
+# $failure_file was put on @keep_list only for first retry.
+# If the daemon removes a .changes, set SGID bit on all files associated
+# with it, so that the test for Debian files without a .changes doesn't
+# find them.
+# Don't send reports for files without a .changes if the files look like
+# a recompilation for another architecture.
+# Also don't send such a report if the list of files with the same stem
+# contains a .changes.
+# Set @keep_list earlier, before PGP and non-US checks.
+# Fix recognition of -k argument.
+#
+# Revision 1.37  1998/02/17 12:29:58  ftplinux
+# Removed @conf::test_binaries used only once warning
+# Try to kill old daemon for 20secs instead of 10
+#
+# Revision 1.36  1998/02/17 10:53:47  ftplinux
+# Added test for binaries on maybe-slow NFS filesystems (@conf::test_binaries)
+#
+# Revision 1.35  1997/12/16 13:19:28  ftplinux
+# Bumped release number to 0.6
+#
+# Revision 1.34  1997/12/09 13:51:24  ftplinux
+# Implemented rejecting of nonus packages (new config var @nonus_packages)
+#
+# Revision 1.33  1997/11/25 10:40:53  ftplinux
+# In check_alive, loop up the IP address everytime, since it can change
+# while the daemon is running.
+# process_changes: Check presence of .changes on master at a later
+# point, to avoid bothering master as long as there are errors in a
+# .changes.
+# Don't view .orig.tar.gz files as is_debian_file, to avoid that they're
+# picked for extracting the maintainer address in the
+# job-without-changes processing.
+# END statement: Fix swapped arguments to kill
+# Program startup: Implemented -r and -k arguments.
+#
+# Revision 1.32  1997/11/20 15:18:47  ftplinux
+# Bumped release number to 0.5
+#
+# Revision 1.31  1997/11/11 13:37:52  ftplinux
+# Replaced <./$pattern> contruct be cleaner glob() call
+# Avoid potentially uninitialized $_ in process_commands file read loop
+# Implemented rm command with more than 1 arg and wildcards in rm args
+#
+# Revision 1.30  1997/11/06 14:09:53  ftplinux
+# In process_commands, also recognize commands given on the same line as
+# the Commands: keyword, not only the continuation lines.
+#
+# Revision 1.29  1997/11/03 15:52:20  ftplinux
+# After reopening the log file write one line to it for dqueued-watcher.
+#
+# Revision 1.28  1997/10/30 15:37:23  ftplinux
+# Removed some leftover comments in process_commands.
+# Changed pgp_check so that it returns the address of the signator.
+# process_commands now also logs PGP signator, since Uploader: address
+# can be choosen freely by uploader.
+#
+# Revision 1.27  1997/10/30 14:05:37  ftplinux
+# Added "command" to log string for command file uploader, to make it
+# unique for dqueued-watcher.
+#
+# Revision 1.26  1997/10/30 14:01:05  ftplinux
+# Implemented .commands files
+#
+# Revision 1.25  1997/10/30 13:05:29  ftplinux
+# Removed date from status version info (too long)
+#
+# Revision 1.24  1997/10/30 13:04:02  ftplinux
+# Print revision, version, and date in status data
+#
+# Revision 1.23  1997/10/30 12:56:01  ftplinux
+# Implemented deletion of files that (probably) belong to an upload, but
+# weren't listed in the .changes.
+#
+# Revision 1.22  1997/10/30 12:22:32  ftplinux
+# When setting sgid bit for stray files without a .changes, check for
+# files deleted in the meantime.
+#
+# Revision 1.21  1997/10/30 11:32:19  ftplinux
+# Added quotes where filenames are used on sh command lines, in case
+# they contain metacharacters.
+# print_time now always print three-field times, as omitting the hour if
+# 0 could cause confusing (hour or seconds missing?).
+# Implemented warning mails for incomplete uploads that miss a .changes
+# file. Maintainer address can be extracted from *.deb, *.diff.gz,
+# *.dsc, or *.tar.gz files with help of new utility functions
+# is_debian_file, get_maintainer, and debian_file_stem.
+#
+# Revision 1.20  1997/10/13 09:12:21  ftplinux
+# On some .changes errors (missing/bad PGP signature, no files) also log the
+# uploader
+#
+# Revision 1.19  1997/09/25 11:20:42  ftplinux
+# Bumped release number to 0.4
+#
+# Revision 1.18  1997/09/25 08:15:02  ftplinux
+# In process_changes, initialize some vars to avoid warnings
+# If first consistency checks failed, don't forget to delete .changes file
+#
+# Revision 1.17  1997/09/16 10:53:35  ftplinux
+# Made logging more verbose in queued and dqueued-watcher
+#
+# Revision 1.16  1997/08/12 09:54:39  ftplinux
+# Bumped release number
+#
+# Revision 1.15  1997/08/11 12:49:09  ftplinux
+# Implemented logfile rotating
+#
+# Revision 1.14  1997/08/11 11:35:05  ftplinux
+# Revised startup scheme so it works with the socket-based ssh-agent, too.
+# That watches whether its child still exists, so the go-to-background fork must be done before the ssh-agent.
+#
+# Revision 1.13  1997/08/11 08:48:31  ftplinux
+# Aaarg... forgot the alarm(0)'s
+#
+# Revision 1.12  1997/08/07 09:25:22  ftplinux
+# Added timeout for remote operations
+#
+# Revision 1.11  1997/07/28 13:20:38  ftplinux
+# Added release numner to startup message
+#
+# Revision 1.10  1997/07/28 11:23:39  ftplinux
+# $main::statusd_pid not necessarily defined in status daemon -- rewrite check
+# whether to delete pid file in signal handler.
+#
+# Revision 1.9  1997/07/28 08:12:16  ftplinux
+# Again revised SIGCHLD handling.
+# Set $SHELL to /bin/sh explicitly before starting ssh-agent.
+# Again raise ping timeout.
+#
+# Revision 1.8  1997/07/25 10:23:03  ftplinux
+# Made SIGCHLD handling more portable between perl versions
+#
+# Revision 1.7  1997/07/09 10:15:16  ftplinux
+# Change RCS Header: to Id:
+#
+# Revision 1.6  1997/07/09 10:13:53  ftplinux
+# Alternative implementation of status file as plain file (not FIFO), because
+# standard wu-ftpd doesn't allow retrieval of non-regular files. New config
+# option $statusdelay for this.
+#
+# Revision 1.5  1997/07/09 09:21:22  ftplinux
+# Little revisions to signal handling; status daemon should ignore SIGPIPE,
+# in case someone closes the FIFO before completely reading it; in fatal_signal,
+# only the main daemon should remove the pid file.
+#
+# Revision 1.4  1997/07/08 11:31:51  ftplinux
+# Print messages of ssh call in is_on_master to debug log.
+# In ssh call to remove bad files on master, the split() doesn't work
+#   anymore, now that I use -o'xxx y'. Use string interpolation and let
+#   the shell parse the stuff.
+#
+# Revision 1.3  1997/07/07 09:29:30  ftplinux
+# Call check_alive also if master hasn't been pinged for 8 hours.
+#
+# Revision 1.2  1997/07/03 13:06:49  ftplinux
+# Little last changes before beta release
+#
+# Revision 1.1.1.1  1997/07/03 12:54:59  ftplinux
+# Import initial sources
+#
+#
+
+require 5.002;
+use strict;
+use POSIX;
+use POSIX qw( sys_stat_h sys_wait_h signal_h );
+use Net::Ping;
+use Net::FTP;
+use Socket qw( PF_INET AF_INET SOCK_STREAM );
+use Config;
+
+# ---------------------------------------------------------------------------
+#								configuration
+# ---------------------------------------------------------------------------
+
+package conf;
+($conf::queued_dir = (($0 !~ m,^/,) ? POSIX::getcwd()."/" : "") . $0)
+	=~ s,/[^/]+$,,;
+require "$conf::queued_dir/config";
+my $junk = $conf::debug; # avoid spurious warnings about unused vars
+$junk = $conf::ssh_key_file;
+$junk = $conf::stray_remove_timeout;
+$junk = $conf::problem_report_timeout;
+$junk = $conf::queue_delay;
+$junk = $conf::keep_files;
+$junk = $conf::valid_files;
+$junk = $conf::max_upload_retries;
+$junk = $conf::upload_delay_1;
+$junk = $conf::upload_delay_2;
+$junk = $conf::ar;
+$junk = $conf::gzip;
+$junk = $conf::cp;
+$junk = $conf::ls;
+$junk = $conf::chmod;
+$junk = $conf::ftpdebug;
+$junk = $conf::ftptimeout;
+$junk = $conf::no_changes_timeout;
+$junk = @conf::nonus_packages;
+$junk = @conf::test_binaries;
+$junk = @conf::maintainer_mail;
+$conf::target = "localhost" if $conf::upload_method eq "copy";
+package main;
+
+($main::progname = $0) =~ s,.*/,,;
+
+# extract -r and -k args
+$main::arg = "";
+if (@ARGV == 1 && $ARGV[0] =~ /^-[rk]$/) {
+	$main::arg = ($ARGV[0] eq '-k') ? "kill" : "restart";
+	shift @ARGV;
+}
+
+# test for another instance of the queued already running
+my $pid;
+if (open( PIDFILE, "<$conf::pidfile" )) {
+	chomp( $pid = <PIDFILE> );
+	close( PIDFILE );
+	if (!$pid) {
+		# remove stale pid file
+		unlink( $conf::pidfile );
+	}
+	elsif ($main::arg) {
+		local($|) = 1;
+		print "Killing running daemon (pid $pid) ...";
+		kill( 15, $pid );
+		my $cnt = 20;
+		while( kill( 0, $pid ) && $cnt-- > 0 ) {
+			sleep 1;
+			print ".";
+		}
+		if (kill( 0, $pid )) {
+			print " failed!\nProcess $pid still running.\n";
+			exit 1;
+		}
+		print "ok\n";
+		if (-e "$conf::incoming/core") {
+			unlink( "$conf::incoming/core" );
+			print "(Removed core file)\n";
+		}
+		exit 0 if $main::arg eq "kill";
+	}
+	else {
+		die "Another $main::progname is already running (pid $pid)\n"
+			if $pid && kill( 0, $pid );
+	}
+}
+elsif ($main::arg eq "kill") {
+	die "No daemon running\n";
+}
+elsif ($main::arg eq "restart") {
+	print "(No daemon running; starting anyway)\n";
+}
+
+# if started without arguments (initial invocation), then fork
+if (!@ARGV) {
+	# now go to background
+	die "$main::progname: fork failed: $!\n" unless defined( $pid = fork );
+	if ($pid) {
+		# parent: wait for signal from child (SIGCHLD or SIGUSR1) and exit
+		my $sigset = POSIX::SigSet->new();
+		$sigset->emptyset();
+		$SIG{"CHLD"} = sub { };
+		$SIG{"USR1"} = sub { };
+		POSIX::sigsuspend( $sigset );
+		waitpid( $pid, WNOHANG );
+		if (kill( 0, $pid )) {
+			print "Daemon started in background (pid $pid)\n";
+			exit 0;
+		}
+		else {
+			exit 1;
+		}
+	}
+	else {
+		# child
+		setsid;
+		if ($conf::upload_method eq "ssh") { 
+			# exec an ssh-agent that starts us again
+			# force shell to be /bin/sh, ssh-agent may base its decision
+			# whether to use a fd or a Unix socket on the shell...
+			$ENV{"SHELL"} = "/bin/sh";
+			exec $conf::ssh_agent, $0, "startup", getppid();
+			die "$main::progname: Could not exec $conf::ssh_agent: $!\n";
+		}
+		else {
+			# no need to exec, just set up @ARGV as expected below
+			@ARGV = ("startup", getppid());
+		}
+	}
+}
+die "Please start without any arguments.\n"
+	if @ARGV != 2 || $ARGV[0] ne "startup";
+my $parent_pid = $ARGV[1];
+
+do {
+	my $version;
+	($version = 'Release: 0.9 $Revision: 1.51 $ $Date: 1999/07/08 09:43:21 $ $Author: ftplinux $') =~ s/\$ ?//g;
+	print "debianqueued $version\n";
+};
+
+# check if all programs exist
+my $prg;
+foreach $prg ( $conf::gpg, $conf::ssh, $conf::scp, $conf::ssh_agent,
+			   $conf::ssh_add, $conf::md5sum, $conf::mail, $conf::mkfifo ) {
+	die "Required program $prg doesn't exist or isn't executable\n"
+		if ! -x $prg;
+# check for correct upload method
+die "Bad upload method '$conf::upload_method'.\n"
+	if $conf::upload_method ne "ssh" &&
+	   $conf::upload_method ne "ftp" &&
+	   $conf::upload_method ne "copy";
+die "No keyrings\n" if ! @conf::keyrings;
+
+}
+
+# ---------------------------------------------------------------------------
+#							   initializations
+# ---------------------------------------------------------------------------
+
+# prototypes
+sub calc_delta();
+sub check_dir();
+sub process_changes($\@);
+sub process_commands($);
+sub is_on_target($);
+sub copy_to_target(@);
+sub pgp_check($);
+sub check_alive(;$);
+sub check_incoming_writable();
+sub fork_statusd();
+sub write_status_file();
+sub print_status($$$$$$);
+sub format_status_num(\$$);
+sub format_status_str(\$$);
+sub send_status();
+sub ftp_open();
+sub ftp_cmd($@);
+sub ftp_close();
+sub ftp_response();
+sub ftp_code();
+sub ftp_error();
+sub ssh_cmd($);
+sub scp_cmd(@);
+sub local_cmd($;$);
+sub check_alive(;$);
+sub check_incoming_writable();
+sub rm(@);
+sub md5sum($);
+sub is_debian_file($);
+sub get_maintainer($);
+sub debian_file_stem($);
+sub msg($@);
+sub debug(@);
+sub init_mail(;$);
+sub finish_mail();
+sub send_mail($$$);
+sub try_to_get_mail_addr($$);
+sub format_time();
+sub print_time($);
+sub block_signals();
+sub unblock_signals();
+sub close_log($);
+sub kid_died($);
+sub restart_statusd();
+sub fatal_signal($);
+
+$ENV{"PATH"} = "/bin:/usr/bin";
+$ENV{"IFS"} = "" if defined($ENV{"IFS"} && $ENV{"IFS"} ne "");
+
+# constants for stat
+sub ST_DEV()   { 0 }
+sub ST_INO()   { 1 }
+sub ST_MODE()  { 2 }
+sub ST_NLINK() { 3 }
+sub ST_UID()   { 4 }
+sub ST_GID()   { 5 }
+sub ST_RDEV()  { 6 }
+sub ST_SIZE()  { 7 }
+sub ST_ATIME() { 8 }
+sub ST_MTIME() { 9 }
+sub ST_CTIME() { 10 }
+# fixed lengths of data items passed over status pipe
+sub STATNUM_LEN() { 30 }
+sub STATSTR_LEN() { 128 }
+
+# init list of signals
+defined $Config{sig_name} or die "$main::progname: No signal list defined!\n";
+my $i = 0;
+my $name;
+foreach $name (split( ' ', $Config{sig_name} )) {
+	$main::signo{$name} = $i++;
+}
+
+@main::fatal_signals = qw( INT QUIT ILL TRAP ABRT BUS FPE USR2 SEGV PIPE
+						   TERM XCPU XFSZ PWR );
+
+$main::block_sigset = POSIX::SigSet->new;
+$main::block_sigset->addset( $main::signo{"INT"} );
+$main::block_sigset->addset( $main::signo{"TERM"} );
+
+# some constant net stuff
+$main::tcp_proto = (getprotobyname('tcp'))[2]
+	or die "Cannot get protocol number for 'tcp'\n";
+my $used_service = ($conf::upload_method eq "ssh") ? "ssh" : "ftp";
+$main::echo_port = (getservbyname($used_service, 'tcp'))[2]
+	or die "Cannot get port number for service '$used_service'\n";
+
+# clear queue of stored mails
+@main::stored_mails = ();
+
+# run ssh-add to bring the key into the agent (will use stdin/stdout)
+if ($conf::upload_method eq "ssh") {
+	system "$conf::ssh_add $conf::ssh_key_file"
+		and die "$main::progname: Running $conf::ssh_add failed ".
+				"(exit status ", $? >> 8, ")\n";
+}
+
+# change to queue dir
+chdir( $conf::incoming )
+	or die "$main::progname: cannot cd to $conf::incoming: $!\n";
+
+# needed before /dev/null redirects, some system send a SIGHUP when loosing
+# the controlling tty
+$SIG{"HUP"} = "IGNORE";
+
+# open logfile, make it unbuffered
+open( LOG, ">>$conf::logfile" )
+	or die "Cannot open my logfile $conf::logfile: $!\n";
+chmod( 0644, $conf::logfile )
+	or die "Cannot set modes of $conf::logfile: $!\n";
+select( (select(LOG), $| = 1)[0] );
+
+sleep( 1 );
+$SIG{"HUP"} = \&close_log;
+
+# redirect stdin, ... to /dev/null
+open( STDIN, "</dev/null" )
+	or die "$main::progname: Can't redirect stdin to /dev/null: $!\n";
+open( STDOUT, ">&LOG" )
+	or die "$main::progname: Can't redirect stdout to $conf::logfile: $!\n";
+open( STDERR, ">&LOG" )
+	or die "$main::progname: Can't redirect stderr to $conf::logfile: $!\n";
+# ok, from this point usually no "die" anymore, stderr is gone!
+msg( "log", "daemon (pid $$) started\n" );
+
+# initialize variables used by send_status before launching the status daemon
+$main::dstat = "i";
+format_status_num( $main::next_run, time+10 );
+format_status_str( $main::current_changes, "" );
+check_alive();
+$main::incoming_writable = 1; # assume this for now
+
+# start the daemon watching the 'status' FIFO
+if ($conf::statusfile && $conf::statusdelay == 0) {
+	$main::statusd_pid = fork_statusd();
+	$SIG{"CHLD"} = \&kid_died; # watch out for dead status daemon
+	# SIGUSR1 triggers status info
+	$SIG{"USR1"} = \&send_status;
+}
+$main::maind_pid = $$;
+
+END { kill( $main::signo{"ABRT"}, $$ ) if defined $main::signo{"ABRT"}; }
+
+# write the pid file
+open( PIDFILE, ">$conf::pidfile" )
+	or msg( "log", "Can't open $conf::pidfile: $!\n" );
+printf PIDFILE "%5d\n", $$;
+close( PIDFILE );
+chmod( 0644, $conf::pidfile )
+	or die "Cannot set modes of $conf::pidfile: $!\n";
+
+# other signals will just log an error and exit
+foreach ( @main::fatal_signals ) {
+	$SIG{$_} = \&fatal_signal;
+}
+
+# send signal to user-started process that we're ready and it can exit
+kill( $main::signo{"USR1"}, $parent_pid );
+
+# ---------------------------------------------------------------------------
+#								 the mainloop
+# ---------------------------------------------------------------------------
+
+$main::dstat = "i";
+write_status_file() if $conf::statusdelay;
+while( 1 ) {
+
+	# ping target only if there is the possibility that we'll contact it (but
+	# also don't wait too long).
+	my @have_changes = <*.changes *.commands>;
+	check_alive() if @have_changes || (time - $main::last_ping_time) > 8*60*60;
+
+	if (@have_changes && $main::target_up) {
+		check_incoming_writable if !$main::incoming_writable;
+		check_dir() if $main::incoming_writable;
+	}
+	$main::dstat = "i";
+	write_status_file() if $conf::statusdelay;
+
+	# sleep() returns if we received a signal (SIGUSR1 for status FIFO), so
+	# calculate the end time once and wait for it being reached.
+	format_status_num( $main::next_run, time + $conf::queue_delay );
+	my $delta;
+	while( ($delta = calc_delta()) > 0 ) {
+		debug( "mainloop sleeping $delta secs" );
+		sleep( $delta );
+		# check if statusd died, if using status FIFO, or update status file
+		if ($conf::statusdelay) {
+			write_status_file();
+		}
+		else {
+			restart_statusd();
+		}
+	}
+}
+
+sub calc_delta() {
+	my $delta;
+	
+	$delta = $main::next_run - time;
+	$delta = $conf::statusdelay
+		if $conf::statusdelay && $conf::statusdelay < $delta;
+	return $delta;
+}
+
+
+# ---------------------------------------------------------------------------
+#							main working functions
+# ---------------------------------------------------------------------------
+
+
+#
+# main function for checking the incoming dir
+#
+sub check_dir() {
+	my( @files, @changes, @keep_files, @this_keep_files, @stats, $file );
+	
+	debug( "starting checkdir" );
+	$main::dstat = "c";
+	write_status_file() if $conf::statusdelay;
+
+	# test if needed binaries are available; this is if they're on maybe
+	# slow-mounted NFS filesystems
+	foreach (@conf::test_binaries) {
+		next if -f $_;
+		# maybe the mount succeeds now
+		sleep 5;
+		next if -f $_;
+		msg( "log", "binary test failed for $_; delaying queue run\n");
+		goto end_run;
+	}
+	
+	# look for *.commands files
+	foreach $file ( <*.commands> ) {
+		init_mail( $file );
+		block_signals();
+		process_commands( $file );
+		unblock_signals();
+		$main::dstat = "c";
+		write_status_file() if $conf::statusdelay;
+		finish_mail();
+	}
+	
+	opendir( INC, "." )
+		or (msg( "log", "Cannot open incoming dir $conf::incoming: $!\n" ),
+			return);
+	@files = readdir( INC );
+	closedir( INC );
+
+	# process all .changes files found
+	@changes = grep /\.changes$/, @files;
+	push( @keep_files, @changes ); # .changes files aren't stray
+	foreach $file ( @changes ) {
+		init_mail( $file );
+		# wrap in an eval to allow jumpbacks to here with die in case
+		# of errors
+		block_signals();
+		eval { process_changes( $file, @this_keep_files ); };
+		unblock_signals();
+		msg( "log,mail", $@ ) if $@;
+		$main::dstat = "c";
+		write_status_file() if $conf::statusdelay;
+		
+		# files which are ok in conjunction with this .changes
+		debug( "$file tells to keep @this_keep_files" );
+		push( @keep_files, @this_keep_files );
+		finish_mail();
+
+		# break out of this loop if the incoming dir has become unwritable
+		goto end_run if !$main::incoming_writable;
+	}
+	ftp_close() if $conf::upload_method eq "ftp";
+
+	# find files which aren't related to any .changes
+	foreach $file ( @files ) {
+		# filter out files we never want to delete
+		next if ! -f $file ||	# may have disappeared in the meantime
+			    $file eq "." || $file eq ".." ||
+			    (grep { $_ eq $file } @keep_files) ||
+				$file =~ /$conf::keep_files/;
+		# Delete such files if they're older than
+		# $stray_remove_timeout; they could be part of an
+		# yet-incomplete upload, with the .changes still missing.
+		# Cannot send any notification, since owner unknown.
+		next if !(@stats = stat( $file ));
+		my $age = time - $stats[ST_MTIME];
+		my( $maint, $pattern, @job_files );
+		if ($file =~ /^junk-for-writable-test/ ||
+			$file !~ m,$conf::valid_files, ||
+			$age >= $conf::stray_remove_timeout) {
+			msg( "log", "Deleted stray file $file\n" ) if rm( $file );
+		}
+		elsif ($age > $conf::no_changes_timeout &&
+			   is_debian_file( $file ) &&
+			   # not already reported
+			   !($stats[ST_MODE] & S_ISGID) &&
+			   ($pattern = debian_file_stem( $file )) &&
+			   (@job_files = glob($pattern)) &&
+			   # If a .changes is in the list, it has the same stem as the
+			   # found file (probably a .orig.tar.gz). Don't report in this
+			   # case.
+			   !(grep( /\.changes$/, @job_files ))) {
+			$maint = get_maintainer( $file );
+			# Don't send a mail if this looks like the recompilation of a
+			# package for a non-i386 arch. For those, the maintainer field is
+			# useless :-(
+			if (!grep( /(\.dsc|_(i386|all)\.deb)$/, @job_files )) {
+				msg( "log", "Found an upload without .changes and with no ",
+					        ".dsc file\n" );
+				msg( "log", "Not sending a report, because probably ",
+					        "recompilation job\n" );
+			}
+			elsif ($maint) {
+				init_mail();
+				$main::mail_addr = $maint;
+				$main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
+				$main::mail_subject = "Incomplete upload found in ".
+									  "Debian upload queue";
+				msg( "mail", "Probably you are the uploader of the following ".
+							 "file(s) in\n" );
+				msg( "mail", "the Debian upload queue directory:\n  " );
+				msg( "mail", join( "\n  ", @job_files ), "\n" );
+				msg( "mail", "This looks like an upload, but a .changes file ".
+							 "is missing, so the job\n" );
+				msg( "mail", "cannot be processed.\n\n" );
+				msg( "mail", "If no .changes file arrives within ",
+							 print_time( $conf::stray_remove_timeout - $age ),
+							 ", the files will be deleted.\n\n" );
+				msg( "mail", "If you didn't upload those files, please just ".
+							 "ignore this message.\n" );
+				finish_mail();
+				msg( "log", "Sending problem report for an upload without a ".
+							".changes\n" );
+				msg( "log", "Maintainer: $maint\n" );
+			}
+			else {
+				msg( "log", "Found an upload without .changes, but can't ".
+							"find a maintainer address\n" );
+			}
+			msg( "log", "Files: @job_files\n" );
+			# remember we already have sent a mail regarding this file
+			foreach ( @job_files ) {
+				my @st = stat($_);
+				next if !@st; # file may have disappeared in the meantime
+				chmod +($st[ST_MODE] |= S_ISGID), $_;
+			}
+		}
+		else {
+			debug( "found stray file $file, deleting in ",
+				   print_time($conf::stray_remove_timeout - $age) );
+		}
+	}
+
+  end_run:
+	$main::dstat = "i";
+	write_status_file() if $conf::statusdelay;
+}
+
+#
+# process one .changes file
+#
+sub process_changes($\@) {
+	my $changes = shift;
+	my $keep_list = shift;
+	my( $pgplines, @files, @filenames, @changes_stats, $failure_file,
+	    $retries, $last_retry, $upload_time, $file, $do_report, $ls_l,
+	    $problems_reported, $errs, $pkgname, $signator );
+	local( *CHANGES );
+	local( *FAILS );
+
+	format_status_str( $main::current_changes, $changes );
+	$main::dstat = "c";
+	write_status_file() if $conf::statusdelay;
+
+	@$keep_list = ();
+	msg( "log", "processing $changes\n" );
+
+	# parse the .changes file
+	open( CHANGES, "<$changes" )
+		or die "Cannot open $changes: $!\n";
+	$pgplines = 0;
+	$main::mail_addr = "";
+	@files = ();
+	outer_loop: while( <CHANGES> ) {
+		if (/^---+(BEGIN|END) PGP .*---+$/) {
+			++$pgplines;
+		}
+		elsif (/^Maintainer:\s*/i) {
+			chomp( $main::mail_addr = $' );
+			$main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
+		}
+		elsif (/^Source:\s*/i) {
+			chomp( $pkgname = $' );
+			$pkgname =~ s/\s+$//;
+		}
+		elsif (/^Files:/i) {
+			while( <CHANGES> ) {
+				redo outer_loop if !/^\s/;
+				my @field = split( /\s+/ );
+				next if @field != 6;
+				# forbid shell meta chars in the name, we pass it to a
+				# subshell several times...
+				$field[5] =~ /^([a-zA-Z0-9.+_:@=%-][~a-zA-Z0-9.+_:@=%-]*)/;
+				if ($1 ne $field[5]) {
+					msg( "log", "found suspicious filename $field[5]\n" );
+					msg( "mail", "File '$field[5]' mentioned in $changes\n",
+						 "has bad characters in its name. Removed.\n" );
+					rm( $field[5] );
+					next;
+				}
+				push( @files, { md5  => $field[1],
+								size => $field[2],
+								name => $field[5] } );
+				push( @filenames, $field[5] );
+				debug( "includes file $field[5], size $field[2], ",
+					   "md5 $field[1]" );
+			}
+		}
+	}
+	close( CHANGES );
+
+	# tell check_dir that the files mentioned in this .changes aren't stray,
+	# we know about them somehow
+	@$keep_list = @filenames;
+
+	# some consistency checks
+	if (!$main::mail_addr) {
+		msg( "log,mail", "$changes doesn't contain a Maintainer: field; ".
+			 "cannot process\n" );
+		goto remove_only_changes;
+	}
+	if ($main::mail_addr !~ /^(buildd_\S+-\S+|\S+\@\S+\.\S+)/) {
+		# doesn't look like a mail address, maybe only the name
+		my( $new_addr, @addr_list );
+		if ($new_addr = try_to_get_mail_addr( $main::mail_addr, \@addr_list )){
+			# substitute (unique) found addr, but give a warning
+			msg( "mail", "(The Maintainer: field didn't contain a proper ".
+						 "mail address.\n" );
+			msg( "mail", "Looking for `$main::mail_addr' in the Debian ".
+						 "keyring gave your address\n" );
+			msg( "mail", "as unique result, so I used this.)\n" );
+			msg( "log", "Substituted $new_addr for malformed ".
+						"$main::mail_addr\n" );
+			$main::mail_addr = $new_addr;
+		}
+		else {
+			# not found or not unique: hold the job and inform queue maintainer
+			my $old_addr = $main::mail_addr;
+			$main::mail_addr = $conf::maintainer_mail;
+			msg( "mail", "The job $changes doesn't have a correct email\n" );
+			msg( "mail", "address in the Maintainer: field:\n" );
+			msg( "mail", "  $old_addr\n" );
+			msg( "mail", "A check for this in the Debian keyring gave:\n" );
+			msg( "mail", @addr_list ?
+						 "  " . join( ", ", @addr_list ) . "\n" :
+						 "  nothing\n" );
+			msg( "mail", "Please fix this manually\n" );
+			msg( "log", "Bad Maintainer: field in $changes: $old_addr\n" );
+			goto remove_only_changes;
+		}
+	}
+	if ($pgplines < 3) {
+		msg( "log,mail", "$changes isn't signed with PGP/GnuPG\n" );
+		msg( "log", "(uploader $main::mail_addr)\n" );
+		goto remove_only_changes;
+	}
+	if (!@files) {
+		msg( "log,mail", "$changes doesn't mention any files\n" );
+		msg( "log", "(uploader $main::mail_addr)\n" );
+		goto remove_only_changes;
+	}
+
+	# check for packages that shouldn't be processed
+	if (grep( $_ eq $pkgname, @conf::nonus_packages )) {
+		msg( "log,mail", "$pkgname is a package that must be uploaded ".
+			             "to nonus.debian.org\n" );
+		msg( "log,mail", "instead of target.\n" );
+		msg( "log,mail", "Job rejected and removed all files belonging ".
+						 "to it:\n" );
+		msg( "log,mail", "  ", join( ", ", @filenames ), "\n" );
+		rm( $changes, @filenames );
+		return;
+	}
+
+	$failure_file = $changes . ".failures";
+	$retries = $last_retry = 0;
+	if (-f $failure_file) {
+		open( FAILS, "<$failure_file" )
+			or die "Cannot open $failure_file: $!\n";
+		my $line = <FAILS>;
+		close( FAILS );
+		( $retries, $last_retry ) = ( $1, $2 ) if $line =~ /^(\d+)\s+(\d+)$/;
+		push( @$keep_list, $failure_file );
+	}
+
+	# run PGP on the file to check the signature
+	if (!($signator = pgp_check( $changes ))) {
+		msg( "log,mail", "$changes has bad PGP/GnuPG signature!\n" );
+		msg( "log", "(uploader $main::mail_addr)\n" );
+	  remove_only_changes:
+		msg( "log,mail", "Removing $changes, but keeping its associated ",
+			             "files for now.\n" );
+		rm( $changes );
+		# Set SGID bit on associated files, so that the test for Debian files
+		# without a .changes doesn't consider them.
+		foreach ( @filenames ) {
+			my @st = stat($_);
+			next if !@st; # file may have disappeared in the meantime
+			chmod +($st[ST_MODE] |= S_ISGID), $_;
+		}
+		return;
+	}
+	elsif ($signator eq "LOCAL ERROR") {
+		# An error has appened when starting pgp... Don't process the file,
+		# but also don't delete it
+		debug( "Can't PGP/GnuPG check $changes -- don't process it for now" );
+		return;
+	}
+
+	die "Cannot stat $changes (??): $!\n"
+		if !(@changes_stats = stat( $changes ));
+	# Make $upload_time the maximum of all modification times of files
+	# related to this .changes (and the .changes it self). This is the
+	# last time something changes to these files.
+	$upload_time = $changes_stats[ST_MTIME];
+	for $file ( @files ) {
+		my @stats;
+		next if !(@stats = stat( $file->{"name"} ));
+		$file->{"stats"} = \@stats;
+		$upload_time = $stats[ST_MTIME] if $stats[ST_MTIME] > $upload_time;
+	}
+
+	$do_report = (time - $upload_time) > $conf::problem_report_timeout;
+	$problems_reported = $changes_stats[ST_MODE] & S_ISGID;
+	# if any of the files is newer than the .changes' ctime (the time
+	# we sent a report and set the sticky bit), send new problem reports
+	if ($problems_reported && $changes_stats[ST_CTIME] < $upload_time) {
+		$problems_reported = 0;
+		chmod +($changes_stats[ST_MODE] &= ~S_ISGID), $changes;
+		debug( "upload_time>changes-ctime => resetting problems reported" );
+	}
+	debug( "do_report=$do_report problems_reported=$problems_reported" );
+	
+	# now check all files for correct size and md5 sum
+	for $file ( @files ) {
+		my $filename = $file->{"name"};
+		if (!defined( $file->{"stats"} )) {
+			# could be an upload that isn't complete yet, be quiet,
+			# but don't process the file;
+			msg( "log,mail", "$filename doesn't exist\n" )
+				if $do_report && !$problems_reported;
+			msg( "log", "$filename doesn't exist (ignored for now)\n" )
+				if !$do_report;
+			msg( "log", "$filename doesn't exist (already reported)\n" )
+				if $problems_reported;
+			++$errs;
+		}
+		elsif ($file->{"stats"}->[ST_SIZE] < $file->{"size"} && !$do_report) {
+			# could be an upload that isn't complete yet, be quiet,
+			# but don't process the file
+			msg( "log", "$filename is too small (ignored for now)\n" );
+			++$errs;
+		}
+		elsif ($file->{"stats"}->[ST_SIZE] != $file->{"size"}) {
+			msg( "log,mail", "$filename has incorrect size; deleting it\n" );
+			rm( $filename );
+			++$errs;
+		}
+		elsif (md5sum( $filename ) ne $file->{"md5"}) {
+			msg( "log,mail", "$filename has incorrect md5 checksum; ",
+				             "deleting it\n" );
+			rm( $filename );
+			++$errs;
+		}
+	}
+
+	if ($errs) {
+		if ((time - $upload_time) > $conf::bad_changes_timeout) {
+			# if a .changes fails for a really long time (several days
+			# or so), remove it and all associated files
+			msg( "log,mail",
+				 "$changes couldn't be processed for ",
+				 int($conf::bad_changes_timeout/(60*60)),
+				 " hours and is now deleted\n" );
+			msg( "log,mail",
+				 "All files it mentions are also removed:\n" );
+			msg( "log,mail", "  ", join( ", ", @filenames ), "\n" );
+			rm( $changes, @filenames, $failure_file );
+		}
+		elsif ($do_report && !$problems_reported) {
+			# otherwise, send a problem report, if not done already
+			msg( "mail",
+				 "Due to the errors above, the .changes file couldn't ",
+				 "be processed.\n",
+				 "Please fix the problems for the upload to happen.\n" );
+			# remember we already have sent a mail regarding this file
+			debug( "Sending problem report mail and setting SGID bit" );
+			my $mode = $changes_stats[ST_MODE] |= S_ISGID;
+			msg( "log", "chmod failed: $!" ) if (chmod ($mode, $changes) != 1);
+		}
+		# else: be quiet
+		
+		return;
+	}
+
+	# if this upload already failed earlier, wait until the delay requirement
+	# is fulfilled
+	if ($retries > 0 && (time - $last_retry) <
+		($retries == 1 ? $conf::upload_delay_1 : $conf::upload_delay_2)) {
+		msg( "log", "delaying retry of upload\n" );
+		return;
+	}
+
+	if ($conf::upload_method eq "ftp") {
+		return if !ftp_open();
+	}
+
+	# check if the job is already present on target
+	# (moved to here, to avoid bothering target as long as there are errors in
+	# the job)
+	if ($ls_l = is_on_target( $changes )) {
+		msg( "log,mail", "$changes is already present on target host:\n" );
+		msg( "log,mail", "$ls_l\n" );
+		msg( "mail", "Either you already uploaded it, or someone else ",
+			         "came first.\n" );
+		msg( "log,mail", "Job $changes removed.\n" );
+		rm( $changes, @filenames, $failure_file );
+		return;
+	}
+		
+	# clear sgid bit before upload, scp would copy it to target. We don't need
+	# it anymore, we know there are no problems if we come here. Also change
+	# mode of files to 644 if this should be done locally.
+	$changes_stats[ST_MODE] &= ~S_ISGID;
+	if (!$conf::chmod_on_target) {
+		$changes_stats[ST_MODE] &= ~0777;
+		$changes_stats[ST_MODE] |= 0644;
+	}
+	chmod +($changes_stats[ST_MODE]), $changes;
+
+	# try uploading to target
+	if (!copy_to_target( $changes, @filenames )) {
+		# if the upload failed, increment the retry counter and remember the
+		# current time; both things are written to the .failures file. Don't
+		# increment the fail counter if the error was due to incoming
+		# unwritable.
+		return if !$main::incoming_writable;
+		if (++$retries >= $conf::max_upload_retries) {
+			msg( "log,mail",
+				 "$changes couldn't be uploaded for $retries times now.\n" );
+			msg( "log,mail",
+				 "Giving up and removing it and its associated files:\n" );
+			msg( "log,mail", "  ", join( ", ", @filenames ), "\n" );
+			rm( $changes, @filenames, $failure_file );
+		}
+		else {
+			$last_retry = time;
+			if (open( FAILS, ">$failure_file" )) {
+				print FAILS "$retries $last_retry\n";
+				close( FAILS );
+				chmod( 0600, $failure_file )
+					or die "Cannot set modes of $failure_file: $!\n";
+			}
+			push( @$keep_list, $failure_file );
+			debug( "now $retries failed uploads" );
+			msg( "mail",
+				 "The upload will be retried in ",
+				 print_time( $retries == 1 ? $conf::upload_delay_1 :
+							 $conf::upload_delay_2 ), "\n" );
+		}
+		return;
+	}
+
+	# If the files were uploaded ok, remove them
+	rm( $changes, @filenames, $failure_file );
+
+	msg( "mail", "$changes uploaded successfully to $conf::target\n" );
+	msg( "mail", "along with the files:\n  ",
+		         join( "\n  ", @filenames ), "\n" );
+	msg( "log", "$changes processed successfully (uploader $main::mail_addr)\n" );
+
+	# Check for files that have the same stem as the .changes (and weren't
+	# mentioned there) and delete them. It happens often enough that people
+	# upload a .orig.tar.gz where it isn't needed and also not in the
+	# .changes. Explicitly deleting it (and not waiting for the
+	# $stray_remove_timeout) reduces clutter in the queue dir and maybe also
+	# educates uploaders :-)
+
+#	my $pattern = debian_file_stem( $changes );
+#	my $spattern = substr( $pattern, 0, -1 ); # strip off '*' at end
+#	my @other_files = glob($pattern);
+	# filter out files that have a Debian revision at all and a different
+	# revision. Those belong to a different upload.
+#	if ($changes =~ /^\Q$spattern\E-([\d.+-]+)/) {
+#		my $this_rev = $1;
+#		@other_files = grep( !/^\Q$spattern\E-([\d.+-]+)/ || $1 eq $this_rev,
+#							 @other_files);
+	#}
+	# Also do not remove those files if a .changes is among them. Then there
+	# is probably a second upload for another version or another architecture.
+#	if (@other_files && !grep( /\.changes$/, @other_files )) {
+#		rm( @other_files );
+#		msg( "mail", "\nThe following file(s) seemed to belong to the same ".
+#					 "upload, but weren't listed\n" );
+#		msg( "mail", "in the .changes file:\n  " );
+#		msg( "mail", join( "\n  ", @other_files ), "\n" );
+#		msg( "mail", "They have been deleted.\n" );
+#		msg( "log", "Deleted files in upload not in $changes: @other_files\n" );
+	#}
+}
+
+#
+# process one .commands file
+#
+sub process_commands($) {
+	my $commands = shift;
+	my( @cmds, $cmd, $pgplines, $signator );
+	local( *COMMANDS );
+	
+	format_status_str( $main::current_changes, $commands );
+	$main::dstat = "c";
+	write_status_file() if $conf::statusdelay;
+	
+	msg( "log", "processing $commands\n" );
+
+	# parse the .commands file
+	if (!open( COMMANDS, "<$commands" )) {
+		msg( "log", "Cannot open $commands: $!\n" );
+		return;
+	}
+	$pgplines = 0;
+	$main::mail_addr = "";
+	@cmds = ();
+	outer_loop: while( <COMMANDS> ) {
+		if (/^---+(BEGIN|END) PGP .*---+$/) {
+			++$pgplines;
+		}
+		elsif (/^Uploader:\s*/i) {
+			chomp( $main::mail_addr = $' );
+			$main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
+		}
+		elsif (/^Commands:/i) {
+			$_ = $';
+			for(;;) {
+				s/^\s*(.*)\s*$/$1/; # delete whitespace at both ends
+				if (!/^\s*$/) {
+					push( @cmds, $_ );
+					debug( "includes cmd $_" );
+				}
+				last outer_loop if !defined( $_ = scalar(<COMMANDS>) );
+				chomp;
+				redo outer_loop if !/^\s/ || /^$/;
+			}
+		}
+	}
+	close( COMMANDS );
+	
+	# some consistency checks
+	if (!$main::mail_addr || $main::mail_addr !~ /^\S+\@\S+\.\S+/) {
+		msg( "log,mail", "$commands contains no or bad Uploader: field: ".
+						 "$main::mail_addr\n" );
+		msg( "log,mail", "cannot process $commands\n" );
+		$main::mail_addr = "";
+		goto remove;
+	}
+	msg( "log", "(command uploader $main::mail_addr)\n" );
+
+	if ($pgplines < 3) {
+		msg( "log,mail", "$commands isn't signed with PGP/GnuPG\n" );
+		goto remove;
+	}
+	
+	# run PGP on the file to check the signature
+	if (!($signator = pgp_check( $commands ))) {
+		msg( "log,mail", "$commands has bad PGP/GnuPG signature!\n" );
+	  remove:
+		msg( "log,mail", "Removing $commands\n" );
+		rm( $commands );
+		return;
+	}
+	elsif ($signator eq "LOCAL ERROR") {
+		# An error has appened when starting pgp... Don't process the file,
+		# but also don't delete it
+		debug( "Can't PGP/GnuPG check $commands -- don't process it for now" );
+		return;
+	}
+	msg( "log", "(PGP/GnuPG signature by $signator)\n" );
+
+	# now process commands
+	msg( "mail", "Log of processing your commands file $commands:\n\n" );
+	foreach $cmd ( @cmds ) {
+		my @word = split( /\s+/, $cmd );
+		msg( "mail,log", "> @word\n" );
+		next if @word < 1;
+		
+		if ($word[0] eq "rm") {
+			my( @files, $file, @removed );
+			foreach ( @word[1..$#word] ) {
+				if (m,/,) {
+					msg( "mail,log", "$_: filename may not contain slashes\n" );
+				}
+				elsif (/[*?[]/) {
+					# process wildcards
+					my $pat = quotemeta($_);
+					$pat =~ s/\\\*/.*/g;
+					$pat =~ s/\\\?/.?/g;
+					$pat =~ s/\\([][])/$1/g;
+					opendir( DIR, "." );
+					push( @files, grep /^$pat$/, readdir(DIR) );
+					closedir( DIR );
+				}
+				else {
+					push( @files, $_ );
+				}
+			}
+			if (!@files) {
+				msg( "mail,log", "No files to delete\n" );
+			}
+			else {
+				@removed = ();
+				foreach $file ( @files ) {
+					if (!-f $file) {
+						msg( "mail,log", "$file: no such file\n" );
+					}
+					elsif ($file =~ /$conf::keep_files/) {
+						msg( "mail,log", "$file is protected, cannot ".
+							 "remove\n" );
+					}
+					elsif (!unlink( $file )) {
+						msg( "mail,log", "$file: rm: $!\n" );
+					}
+					else {
+						push( @removed, $file );
+					}
+				}
+				msg( "mail,log", "Files removed: @removed\n" ) if @removed;
+			}
+		}
+		elsif ($word[0] eq "mv") {
+			if (@word != 3) {
+				msg( "mail,log", "Wrong number of arguments\n" );
+			}
+			elsif ($word[1] =~ m,/,) {
+				msg( "mail,log", "$word[1]: filename may not contain slashes\n" );
+			}
+			elsif ($word[2] =~ m,/,) {
+				msg( "mail,log", "$word[2]: filename may not contain slashes\n" );
+			}
+			elsif (!-f $word[1]) {
+				msg( "mail,log", "$word[1]: no such file\n" );
+			}
+			elsif (-e $word[2]) {
+				msg( "mail,log", "$word[2]: file exists\n" );
+			}
+			elsif ($word[1] =~ /$conf::keep_files/) {
+				msg( "mail,log", "$word[1] is protected, cannot rename\n" );
+			}
+			else {
+				if (!rename( $word[1], $word[2] )) {
+					msg( "mail,log", "rename: $!\n" );
+				}
+				else {
+					msg( "mail,log", "OK\n" );
+				}
+			}
+		}
+		else {
+			msg( "mail,log", "unknown command $word[0]\n" );
+		}
+	}
+	rm( $commands );
+	msg( "log", "-- End of $commands processing\n" );
+}
+
+#
+# check if a file is already on target
+#
+sub is_on_target($) {
+	my $file = shift;
+	my $msg;
+	my $stat;
+	
+	if ($conf::upload_method eq "ssh") {
+		($msg, $stat) = ssh_cmd( "ls -l $file" );
+	}
+	elsif ($conf::upload_method eq "ftp") {
+		my $err;
+		($msg, $err) = ftp_cmd( "dir", $file );
+		if ($err) {
+			$stat = 1;
+			$msg = $err;
+		}
+		elsif (!$msg) {
+			$stat = 1;
+			$msg = "ls: no such file\n";
+		}
+		else {
+			$stat = 0;
+			$msg = join( "\n", @$msg );
+		}
+	}
+	else {
+		($msg, $stat) = local_cmd( "$conf::ls -l $file" );
+	}
+	chomp( $msg );
+	debug( "exit status: $stat, output was: $msg" );
+
+	return "" if $stat && $msg =~ /no such file/i; # file not present
+	msg( "log", "strange ls -l output on target:\n", $msg ), return ""
+		if $stat || $@; # some other error, but still try to upload
+
+	# ls -l returned 0 -> file already there
+	$msg =~ s/\s\s+/ /g; # make multiple spaces into one, to save space
+	return $msg;
+}
+
+#
+# copy a list of files to target
+#
+sub copy_to_target(@) {
+	my @files = @_;
+	my( @md5sum, @expected_files, $sum, $name, $msgs, $stat );
+	
+	$main::dstat = "u";
+	write_status_file() if $conf::statusdelay;
+
+	# copy the files
+	if ($conf::upload_method eq "ssh") {
+		($msgs, $stat) = scp_cmd( @files );
+		goto err if $stat;
+	}
+	elsif ($conf::upload_method eq "ftp") {
+		my($rv, $file);
+		foreach $file (@files) {
+			($rv, $msgs) = ftp_cmd( "put", $file );
+			goto err if !$rv;
+		}
+	}
+	else {
+		($msgs, $stat) = local_cmd( "$conf::cp @files $conf::targetdir", 'NOCD' );
+		goto err if $stat;
+	}
+	
+	# check md5sums or sizes on target against our own
+	my $have_md5sums = 1;
+	if ($conf::upload_method eq "ssh") {
+		($msgs, $stat) = ssh_cmd( "md5sum @files" );
+		goto err if $stat;
+		@md5sum = split( "\n", $msgs );
+	}
+	elsif ($conf::upload_method eq "ftp") {
+		my ($rv, $err, $file);
+		foreach $file (@files) {
+			($rv, $err) = ftp_cmd( "quot", "site", "md5sum", $file );
+			if ($err) {
+				next if ftp_code() == 550; # file not found
+				if (ftp_code() == 500) { # unimplemented
+					$have_md5sums = 0;
+					goto get_sizes_instead;
+				}
+				$msgs = $err;
+				goto err;
+			}
+			chomp( my $t = ftp_response() );
+			push( @md5sum, $t );
+		}
+		if (!$have_md5sums) {
+		  get_sizes_instead:
+			foreach $file (@files) {
+				($rv, $err) = ftp_cmd( "size", $file );
+				if ($err) {
+					next if ftp_code() == 550; # file not found
+					$msgs = $err;
+					goto err;
+				}
+				push( @md5sum, "$rv $file" );
+			}
+		}
+	}
+	else {
+		($msgs, $stat) = local_cmd( "$conf::md5sum @files" );
+		goto err if $stat;
+		@md5sum = split( "\n", $msgs );
+	}
+	
+	@expected_files = @files;
+	foreach (@md5sum) {
+		chomp;
+		($sum,$name) = split;
+		next if !grep { $_ eq $name } @files; # a file we didn't upload??
+		next if $sum eq "md5sum:"; # looks like an error message
+		if (($have_md5sums && $sum ne md5sum( $name )) ||
+			(!$have_md5sums && $sum != (-s $name))) {
+			msg( "log,mail", "Upload of $name to $conf::target failed ",
+				 "(".($have_md5sums ? "md5sum" : "size")." mismatch)\n" );
+			goto err;
+		}
+		# seen that file, remove it from expect list
+		@expected_files = map { $_ eq $name ? () : $_ } @expected_files;
+	}
+	if (@expected_files) {
+		msg( "log,mail", "Failed to upload the files\n" );
+		msg( "log,mail", "  ", join( ", ", @expected_files ), "\n" );
+		msg( "log,mail", "(Not present on target after upload)\n" );
+		goto err;
+	}
+
+	if ($conf::chmod_on_target) {
+		# change file's mode explicitly to 644 on target
+		if ($conf::upload_method eq "ssh") {
+			($msgs, $stat) = ssh_cmd( "chmod 644 @files" );
+			goto err if $stat;
+		}
+		elsif ($conf::upload_method eq "ftp") {
+			my ($rv, $file);
+			foreach $file (@files) {
+				($rv, $msgs) = ftp_cmd( "quot", "site", "chmod", "644", $file );
+				msg( "log", "Can't chmod $file on target:\n$msgs" )
+					if $msgs;
+				goto err if !$rv;
+			}
+		}
+		else {
+			($msgs, $stat) = local_cmd( "$conf::chmod 644 @files" );
+			goto err if $stat;
+		}
+	}
+
+	$main::dstat = "c";
+	write_status_file() if $conf::statusdelay;
+	return 1;
+	
+  err:
+	msg( "log,mail", "Upload to $conf::target failed",
+		 $? ? ", last exit status ".sprintf( "%s", $?>>8 ) : "", "\n" );
+	msg( "log,mail", "Error messages:\n", $msgs )
+		if $msgs;
+
+	# If "permission denied" was among the errors, test if the incoming is
+	# writable at all.
+	if ($msgs =~ /(permission denied|read-?only file)/i) {
+		if (!check_incoming_writable()) {
+			msg( "log,mail", "(The incoming directory seems to be ",
+				             "unwritable.)\n" );
+		}
+	}
+
+	# remove bad files or an incomplete upload on target
+	if ($conf::upload_method eq "ssh") {
+		ssh_cmd( "rm -f @files" );
+	}
+	elsif ($conf::upload_method eq "ftp") {
+		my $file;
+		foreach $file (@files) {
+			my ($rv, $err);
+			($rv, $err) = ftp_cmd( "delete", $file );
+			msg( "log", "Can't delete $file on target:\n$err" )
+				if $err;
+		}
+	}
+	else {
+		my @tfiles = map { "$conf::targetdir/$_" } @files;
+		debug( "executing unlink(@tfiles)" );
+		rm( @tfiles );
+	}
+	$main::dstat = "c";
+	write_status_file() if $conf::statusdelay;
+	return 0;
+}
+
+#
+# check if a file is correctly signed with PGP
+#
+sub pgp_check($) {
+	my $file = shift;
+	my $output = "";
+	my $signator;
+	my $found = 0;
+	my $stat;
+	local( *PIPE );
+	
+	$stat = 1;
+	if (-x $conf::gpg) {
+		debug( "executing $conf::gpg --no-options --batch ".
+		   "--no-default-keyring --always-trust ".
+		   "--keyring ". join (" --keyring ",@conf::keyrings).
+		   " --verify '$file'" );
+		if (!open( PIPE, "$conf::gpg --no-options --batch ".
+		   "--no-default-keyring --always-trust ".
+		   "--keyring " . join (" --keyring ",@conf::keyrings).
+		   " --verify '$file'".
+		   " 2>&1 |" )) {
+			msg( "log", "Can't open pipe to $conf::gpg: $!\n" );
+			return "LOCAL ERROR";
+		}
+		$output .= $_ while( <PIPE> );
+		close( PIPE );
+		$stat = $?;
+	}
+
+	if ($stat) {
+		msg( "log,mail", "GnuPG signature check failed on $file\n" );
+		msg( "mail", $output );
+		msg( "log,mail", "(Exit status ", $stat >> 8, ")\n" );
+		return "";
+	}
+
+	$output =~ /^(gpg: )?good signature from (user )?"(.*)"\.?$/im;
+	($signator = $3) ||= "unknown signator";
+	if ($conf::debug) {
+		debug( "GnuPG signature ok (by $signator)" );
+	}
+	return $signator;
+}
+
+
+# ---------------------------------------------------------------------------
+#							  the status daemon
+# ---------------------------------------------------------------------------
+
+#
+# fork a subprocess that watches the 'status' FIFO
+# 
+# that process blocks until someone opens the FIFO, then sends a
+# signal (SIGUSR1) to the main process, expects 
+#
+sub fork_statusd() {
+	my $statusd_pid;
+	my $main_pid = $$;
+	my $errs;
+	local( *STATFIFO );
+
+	$statusd_pid = open( STATUSD, "|-" );
+	die "cannot fork: $!\n" if !defined( $statusd_pid );
+	# parent just returns
+	if ($statusd_pid) {
+		msg( "log", "forked status daemon (pid $statusd_pid)\n" );
+		return $statusd_pid;
+	}
+	# child: the status FIFO daemon
+
+	# ignore SIGPIPE here, in case some closes the FIFO without completely
+	# reading it
+	$SIG{"PIPE"} = "IGNORE";
+	# also ignore SIGCLD, we don't want to inherit the restart-statusd handler
+	# from our parent
+	$SIG{"CHLD"} = "DEFAULT";
+	
+	rm( $conf::statusfile );
+	$errs = `$conf::mkfifo $conf::statusfile`;
+	die "$main::progname: cannot create named pipe $conf::statusfile: $errs"
+		if $?;
+	chmod( 0644, $conf::statusfile )
+		or die "Cannot set modes of $conf::statusfile: $!\n";
+
+	# close log file, so that log rotating works
+	close( LOG );
+	close( STDOUT );
+	close( STDERR );
+	
+	while( 1 ) {
+		my( $status, $mup, $incw, $ds, $next_run, $last_ping, $currch, $l );
+
+		# open the FIFO for writing; this blocks until someone (probably ftpd)
+		# opens it for reading
+		open( STATFIFO, ">$conf::statusfile" )
+			or die "Cannot open $conf::statusfile\n";
+		select( STATFIFO );
+		# tell main daemon to send us status infos
+		kill( $main::signo{"USR1"}, $main_pid );
+
+		# get the infos from stdin; must loop until enough bytes received!
+		my $expect_len = 3 + 2*STATNUM_LEN + STATSTR_LEN;
+		for( $status = ""; ($l = length($status)) < $expect_len; ) {
+			sysread( STDIN, $status, $expect_len-$l, $l );
+		}
+
+		# disassemble the status byte stream
+		my $pos = 0;
+		foreach ( [ mup => 1 ], [ incw => 1 ], [ ds => 1 ],
+				  [ next_run => STATNUM_LEN ], [ last_ping => STATNUM_LEN ],
+				  [ currch => STATSTR_LEN ] ) {
+			eval "\$$_->[0] = substr( \$status, $pos, $_->[1] );";
+			$pos += $_->[1];
+		}
+		$currch =~ s/\n+//g;
+
+		print_status( $mup, $incw, $ds, $next_run, $last_ping, $currch );
+		close( STATFIFO );
+
+		# This sleep is necessary so that we can't reopen the FIFO
+		# immediately, in case the reader hasn't closed it yet if we get to
+		# the open again. Is there a better solution for this??
+		sleep 1;
+	}
+}
+
+#
+# update the status file, in case we use a plain file and not a FIFO
+#
+sub write_status_file() {
+
+	return if !$conf::statusfile;
+	
+	open( STATFILE, ">$conf::statusfile" ) or
+		(msg( "log", "Could not open $conf::statusfile: $!\n" ), return);
+	my $oldsel = select( STATFILE );
+
+	print_status( $main::target_up, $main::incoming_writable, $main::dstat,
+				  $main::next_run, $main::last_ping_time,
+				  $main::current_changes );
+
+	select( $oldsel );
+	close( STATFILE );
+}
+
+sub print_status($$$$$$) {
+	my $mup = shift;
+	my $incw = shift;
+	my $ds = shift;
+	my $next_run = shift;
+	my $last_ping = shift;
+	my $currch = shift;
+	my $approx;
+	my $version;
+
+	($version = 'Release: 0.9 $Revision: 1.51 $') =~ s/\$ ?//g;
+	print "debianqueued $version\n";
+	
+	$approx = $conf::statusdelay ? "approx. " : "";
+	
+	if ($mup eq "0") {
+		print "$conf::target is down, queue pausing\n";
+		return;
+	}
+	elsif ($conf::upload_method ne "copy") {
+		print "$conf::target seems to be up, last ping $approx",
+			  print_time(time-$last_ping), " ago\n";
+	}
+
+	if ($incw eq "0") {
+		print "The incoming directory is not writable, queue pausing\n";
+		return;
+	}
+	
+	if ($ds eq "i") {
+		print "Next queue check in $approx",print_time($next_run-time),"\n";
+		return;
+	}
+	elsif ($ds eq "c") {
+		print "Checking queue directory\n";
+	}
+	elsif ($ds eq "u") {
+		print "Uploading to $conf::target\n";
+	}
+	else {
+		print "Bad status data from daemon: \"$mup$incw$ds\"\n";
+		return;
+	}
+	
+	print "Current job is $currch\n" if $currch;
+}		
+
+#
+# format a number for sending to statusd (fixed length STATNUM_LEN)
+#
+sub format_status_num(\$$) {
+	my $varref = shift;
+	my $num = shift;
+	
+	$$varref = sprintf "%".STATNUM_LEN."d", $num;
+}
+
+#
+# format a string for sending to statusd (fixed length STATSTR_LEN)
+#
+sub format_status_str(\$$) {
+	my $varref = shift;
+	my $str = shift;
+
+	$$varref = substr( $str, 0, STATSTR_LEN );
+	$$varref .= "\n" x (STATSTR_LEN - length($$varref));
+}
+
+#
+# send a status string to the status daemon
+#
+# Avoid all operations that could call malloc() here! Most libc
+# implementations aren't reentrant, so we may not call it from a
+# signal handler. So use only already-defined variables.
+#
+sub send_status() {
+    local $! = 0; # preserve errno
+	
+	# re-setup handler, in case we have broken SysV signals
+	$SIG{"USR1"} = \&send_status;
+
+	syswrite( STATUSD, $main::target_up, 1 );
+	syswrite( STATUSD, $main::incoming_writable, 1 );
+	syswrite( STATUSD, $main::dstat, 1 );
+	syswrite( STATUSD, $main::next_run, STATNUM_LEN );
+	syswrite( STATUSD, $main::last_ping_time, STATNUM_LEN );
+	syswrite( STATUSD, $main::current_changes, STATSTR_LEN );
+}
+
+
+# ---------------------------------------------------------------------------
+#							    FTP functions
+# ---------------------------------------------------------------------------
+
+#
+# open FTP connection to target host if not already open
+#
+sub ftp_open() {
+
+	if ($main::FTP_chan) {
+		# is already open, but might have timed out; test with a cwd
+		return $main::FTP_chan if $main::FTP_chan->cwd( $conf::targetdir );
+		# cwd didn't work, channel is closed, try to reopen it
+		$main::FTP_chan = undef;
+	}
+	
+	if (!($main::FTP_chan = Net::FTP->new( $conf::target,
+										   Debug => $conf::ftpdebug,
+										   Timeout => $conf::ftptimeout ))) {
+		msg( "log,mail", "Cannot open FTP server $conf::target\n" );
+		goto err;
+	}
+	if (!$main::FTP_chan->login()) {
+		msg( "log,mail", "Anonymous login on FTP server $conf::target failed\n" );
+		goto err;
+	}
+	if (!$main::FTP_chan->binary()) {
+		msg( "log,mail", "Can't set binary FTP mode on $conf::target\n" );
+		goto err;
+	}
+	if (!$main::FTP_chan->cwd( $conf::targetdir )) {
+		msg( "log,mail", "Can't cd to $conf::targetdir on $conf::target\n" );
+		goto err;
+	}
+	debug( "opened FTP channel to $conf::target" );
+	return 1;
+
+  err:
+	$main::FTP_chan = undef;
+	return 0;
+}
+
+sub ftp_cmd($@) {
+	my $cmd = shift;
+	my ($rv, $err);
+	my $direct_resp_cmd = ($cmd eq "quot");
+	
+	debug( "executing FTP::$cmd(".join(", ",@_).")" );
+	$SIG{"ALRM"} = sub { die "timeout in FTP::$cmd\n" } ;
+	alarm( $conf::remote_timeout );
+	eval { $rv = $main::FTP_chan->$cmd( @_ ); };
+	alarm( 0 );
+	$err = "";
+	$rv = (ftp_code() =~ /^2/) ? 1 : 0 if $direct_resp_cmd;
+	if ($@) {
+		$err = $@;
+		undef $rv;
+	}
+	elsif (!$rv) {
+		$err = ftp_response();
+	}
+	return ($rv, $err);
+}
+
+sub ftp_close() {
+	if ($main::FTP_chan) {
+		$main::FTP_chan->quit();
+		$main::FTP_chan = undef;
+	}
+	return 1;
+}
+
+sub ftp_response() {
+	return join( '', @{${*$main::FTP_chan}{'net_cmd_resp'}} );
+}
+
+sub ftp_code() {
+	return ${*$main::FTP_chan}{'net_cmd_code'};
+}
+
+sub ftp_error() {
+	my $code = ftp_code();
+	return ($code =~ /^[45]/) ? 1 : 0;
+}
+
+# ---------------------------------------------------------------------------
+#							  utility functions
+# ---------------------------------------------------------------------------
+
+sub ssh_cmd($) {
+	my $cmd = shift;
+	my ($msg, $stat);
+
+	my $ecmd = "$conf::ssh $conf::ssh_options $conf::target ".
+			   "-l $conf::targetlogin \'cd $conf::targetdir; $cmd\'";
+	debug( "executing $ecmd" );
+	$SIG{"ALRM"} = sub { die "timeout in ssh command\n" } ;
+	alarm( $conf::remote_timeout );
+	eval { $msg = `$ecmd 2>&1`; };
+	alarm( 0 );
+	if ($@) {
+		$msg = $@;
+		$stat = 1;
+	}
+	else {
+		$stat = $?;
+	}
+	return ($msg, $stat);
+}
+
+sub scp_cmd(@) {
+	my ($msg, $stat);
+
+	my $ecmd = "$conf::scp $conf::ssh_options @_ ".
+			   "$conf::targetlogin\@$conf::target:$conf::targetdir";
+	debug( "executing $ecmd" );
+	$SIG{"ALRM"} = sub { die "timeout in scp\n" } ;
+	alarm( $conf::remote_timeout );
+	eval { $msg = `$ecmd 2>&1`; };
+	alarm( 0 );
+	if ($@) {
+		$msg = $@;
+		$stat = 1;
+	}
+	else {
+		$stat = $?;
+	}
+	return ($msg, $stat);
+}
+
+sub local_cmd($;$) {
+	my $cmd = shift;
+	my $nocd = shift;
+	my ($msg, $stat);
+
+	my $ecmd = ($nocd ? "" : "cd $conf::targetdir; ") . $cmd;
+	debug( "executing $ecmd" );
+	$msg = `($ecmd) 2>&1`;
+	$stat = $?;
+	return ($msg, $stat);
+	
+}
+
+#
+# check if target is alive (code stolen from Net::Ping.pm)
+#
+sub check_alive(;$) {
+    my $timeout = shift;
+    my( $saddr, $ret, $target_ip );
+    local( *PINGSOCK );
+
+	if ($conf::upload_method eq "copy") {
+		format_status_num( $main::last_ping_time, time );
+		$main::target_up = 1;
+		return;
+	}
+	
+    $timeout ||= 30;
+
+	if (!($target_ip = (gethostbyname($conf::target))[4])) {
+		msg( "log", "Cannot get IP address of $conf::target\n" );
+		$ret = 0;
+		goto out;
+	}
+    $saddr = pack( 'S n a4 x8', AF_INET, $main::echo_port, $target_ip );
+    $SIG{'ALRM'} = sub { die } ;
+    alarm( $timeout );
+    
+	$ret = $main::tcp_proto; # avoid warnings about unused variable
+    $ret = 0;
+    eval <<'EOM' ;
+    return unless socket( PINGSOCK, PF_INET, SOCK_STREAM, $main::tcp_proto );
+    return unless connect( PINGSOCK, $saddr );
+    $ret = 1;
+EOM
+    alarm( 0 );
+    close( PINGSOCK );
+	msg( "log", "pinging $conf::target: " . ($ret ? "ok" : "down") . "\n" );
+  out:
+	$main::target_up = $ret ? "1" : "0";
+	format_status_num( $main::last_ping_time, time );
+	write_status_file() if $conf::statusdelay;
+}
+
+#
+# check if incoming dir on target is writable
+#
+sub check_incoming_writable() {
+	my $testfile = ".debianqueued-testfile";
+	my ($msg, $stat);
+
+	if ($conf::upload_method eq "ssh") {
+		($msg, $stat) = ssh_cmd( "rm -f $testfile; touch $testfile; ".
+								 "rm -f $testfile" );
+	}
+	elsif ($conf::upload_method eq "ftp") {
+		my $file = "junk-for-writable-test-".format_time();
+		$file =~ s/[ :.]/-/g;
+		local( *F );
+		open( F, ">$file" ); close( F );
+		my $rv;
+		($rv, $msg) = ftp_cmd( "put", $file );
+		$stat = 0;
+		$msg = "" if !defined $msg;
+		unlink $file;
+		ftp_cmd( "delete", $file );
+	}
+	elsif ($conf::upload_method eq "copy") {
+		($msg, $stat) = local_cmd( "rm -f $testfile; touch $testfile; ".
+								   "rm -f $testfile" );
+	}
+	chomp( $msg );
+	debug( "exit status: $stat, output was: $msg" );
+
+	if (!$stat) {
+		# change incoming_writable only if ssh didn't return an error
+		$main::incoming_writable =
+			($msg =~ /(permission denied|read-?only file|cannot create)/i) ? "0":"1";
+	}
+	else {
+		debug( "local error, keeping old status" );
+	}
+	debug( "incoming_writable = $main::incoming_writable" );
+	write_status_file() if $conf::statusdelay;
+	return $main::incoming_writable;
+}
+
+#
+# remove a list of files, log failing ones
+#
+sub rm(@) {
+	my $done = 0;
+
+	foreach ( @_ ) {
+		(unlink $_ and ++$done)
+			or $! == ENOENT or msg( "log", "Could not delete $_: $!\n" );
+	}
+	return $done;
+}
+
+#
+# get md5 checksum of a file
+#
+sub md5sum($) {
+	my $file = shift;
+	my $line;
+
+	chomp( $line = `$conf::md5sum $file` );
+	debug( "md5sum($file): ", $? ? "exit status $?" :
+		                      $line =~ /^(\S+)/ ? $1 : "match failed" );
+	return $? ? "" : $line =~ /^(\S+)/ ? $1 : "";
+}
+
+#
+# check if a file probably belongs to a Debian upload
+#
+sub is_debian_file($) {
+	my $file = shift;
+	return $file =~ /\.(deb|dsc|(diff|tar)\.gz)$/ &&
+		   $file !~ /\.orig\.tar\.gz/;
+}
+
+#
+# try to extract maintainer email address from some a non-.changes file
+# return "" if not possible
+#
+sub get_maintainer($) {
+	my $file = shift;
+	my $maintainer = "";
+	local( *F );
+	
+	if ($file =~ /\.diff\.gz$/) {
+		# parse a diff 
+		open( F, "$conf::gzip -dc '$file' 2>/dev/null |" ) or return "";
+		while( <F> ) {
+			# look for header line of a file */debian/control
+			last if m,^\+\+\+\s+[^/]+/debian/control(\s+|$),;
+		}
+		while( <F> ) {
+			last if /^---/; # end of control file patch, no Maintainer: found
+			# inside control file patch look for Maintainer: field
+			$maintainer = $1, last if /^\+Maintainer:\s*(.*)$/i;
+		}
+		while( <F> ) { } # read to end of file to avoid broken pipe
+		close( F ) or return "";
+	}
+	elsif ($file =~ /\.(deb|dsc|tar\.gz)$/) {
+		if ($file =~ /\.deb$/ && $conf::ar) {
+			# extract control.tar.gz from .deb with ar, then let tar extract
+			# the control file itself
+			open( F, "($conf::ar p '$file' control.tar.gz | ".
+				     "$conf::tar -xOf - ".
+				     "--use-compress-program $conf::gzip ".
+				     "control) 2>/dev/null |" )
+				or return "";
+		}
+		elsif ($file =~ /\.dsc$/) {
+			# just do a plain grep
+			debug( "get_maint: .dsc, no cmd" );
+			open( F, "<$file" ) or return "";
+		}
+		elsif ($file =~ /\.tar\.gz$/) {
+			# let tar extract a file */debian/control
+			open(F, "$conf::tar -xOf '$file' ".
+				    "--use-compress-program $conf::gzip ".
+				    "\\*/debian/control 2>&1 |")
+				or return "";
+		}
+		else {
+			return "";
+		}
+		while( <F> ) {
+			$maintainer = $1, last if /^Maintainer:\s*(.*)$/i;
+		}
+		close( F ) or return "";
+	}
+
+	return $maintainer;
+}
+
+#
+# return a pattern that matches all files that probably belong to one job
+#
+sub debian_file_stem($) {
+	my $file = shift;
+	my( $pkg, $version );
+
+	# strip file suffix
+	$file =~ s,\.(deb|dsc|changes|(orig\.)?tar\.gz|diff\.gz)$,,;
+	# if not is *_* (name_version), can't derive a stem and return just
+	# the file's name
+	return $file if !($file =~ /^([^_]+)_([^_]+)/);
+	($pkg, $version) = ($1, $2);
+	# strip Debian revision from version
+	$version =~ s/^(.*)-[\d.+-]+$/$1/;
+
+	return "${pkg}_${version}*";
+}
+	
+#
+# output a messages to several destinations
+#
+# first arg is a comma-separated list of destinations; valid are "log"
+# and "mail"; rest is stuff to be printed, just as with print
+# 
+sub msg($@) {
+	my @dest = split( ',', shift );
+
+	if (grep /log/, @dest ) {
+		my $now = format_time();
+		print LOG "$now ", @_;
+	}
+
+	if (grep /mail/, @dest ) {
+		$main::mail_text .= join( '', @_ );
+	}
+}
+
+#
+# print a debug messages, if $debug is true
+#
+sub debug(@) {
+	return if !$conf::debug;
+	my $now = format_time();
+	print LOG "$now DEBUG ", @_, "\n";
+}
+
+#
+# intialize the "mail" destination of msg() (this clears text,
+# address, subject, ...)
+#
+sub init_mail(;$) {
+	my $file = shift;
+
+	$main::mail_addr = "";
+	$main::mail_text = "";
+	$main::mail_subject = $file ? "Processing of $file" : "";
+}
+
+#
+# finalize mail to be sent from msg(): check if something present, and
+# then send out
+#
+sub finish_mail() {
+	local( *MAIL );
+
+	debug( "No mail for $main::mail_addr" )
+		if $main::mail_addr && !$main::mail_text;
+	return unless $main::mail_addr && $main::mail_text;
+
+	if (!send_mail($main::mail_addr, $main::mail_subject, $main::mail_text)) {
+		# store this mail in memory so it isn't lost if executing sendmail
+		# failed.
+		push( @main::stored_mails, { addr    => $main::mail_addr,
+									 subject => $main::mail_subject,
+									 text    => $main::mail_text } );
+	}
+	init_mail();
+
+	# try to send out stored mails
+	my $mailref;
+	while( $mailref = shift(@main::stored_mails) ) {
+		if (!send_mail( $mailref->{'addr'}, $mailref->{'subject'},
+					    $mailref->{'text'} )) {
+			unshift( @main::stored_mails, $mailref );
+			last;
+		}
+	}
+}
+
+#
+# send one mail
+#
+sub send_mail($$$) {
+	my $addr = shift;
+	my $subject = shift;
+	my $text = shift;
+
+	debug( "Sending mail to $addr" );
+	debug( "executing $conf::mail -s '$subject' '$addr'" );
+	if (!open( MAIL, "|$conf::mail -s '$subject' '$addr'" )) {
+		msg( "log", "Could not open pipe to $conf::mail: $!\n" );
+		return 0;
+	}
+	print MAIL $text;
+	print MAIL "\nGreetings,\n\n\tYour Debian queue daemon\n";
+	if (!close( MAIL )) {
+		msg( "log", "$conf::mail failed (exit status ", $? >> 8, ")\n" );
+		return 0;
+	}
+	return 1;
+}
+
+#
+# try to find a mail address for a name in the keyrings
+#
+sub try_to_get_mail_addr($$) {
+	my $name = shift;
+	my $listref = shift;
+
+	@$listref = ();
+	open( F, "$conf::gpg --no-options --batch --no-default-keyring ".
+		"--always-trust --keyring ".
+		join (" --keyring ",@conf::keyrings).
+		" --list-keys |" )
+		or return "";
+	while( <F> ) {
+		if (/^pub / && / $name /) {
+			/<([^>]*)>/;
+			push( @$listref, $1 );
+		}
+	}
+	close( F );
+
+	return (@$listref >= 1) ? $listref->[0] : "";
+}
+
+#
+# return current time as string
+#
+sub format_time() {
+	my $t;
+
+	# omit weekday and year for brevity
+	($t = localtime) =~ /^\w+\s(.*)\s\d+$/;
+	return $1;
+}
+
+sub print_time($) {
+	my $secs = shift;
+	my $hours = int($secs/(60*60));
+
+	$secs -= $hours*60*60;
+	return sprintf "%d:%02d:%02d", $hours, int($secs/60), $secs % 60;
+}
+
+#
+# block some signals during queue processing
+# 
+# This is just to avoid data inconsistency or uploads being aborted in the
+# middle. Only "soft" signals are blocked, i.e. SIGINT and SIGTERM, try harder
+# ones if you really want to kill the daemon at once.
+#
+sub block_signals() {
+	POSIX::sigprocmask( SIG_BLOCK, $main::block_sigset );
+}
+
+sub unblock_signals() {
+	POSIX::sigprocmask( SIG_UNBLOCK, $main::block_sigset );
+}
+
+#
+# process SIGHUP: close log file and reopen it (for logfile cycling)
+#
+sub close_log($) {
+	close( LOG );
+	close( STDOUT );
+	close( STDERR );
+
+	open( LOG, ">>$conf::logfile" )
+		or die "Cannot open my logfile $conf::logfile: $!\n";
+	chmod( 0644, $conf::logfile )
+		or msg( "log", "Cannot set modes of $conf::logfile: $!\n" );
+	select( (select(LOG), $| = 1)[0] );
+
+	open( STDOUT, ">&LOG" )
+		or msg( "log", "$main::progname: Can't redirect stdout to ".
+			    "$conf::logfile: $!\n" );
+	open( STDERR, ">&LOG" )
+		or msg( "log", "$main::progname: Can't redirect stderr to ".
+			    "$conf::logfile: $!\n" );
+	msg( "log", "Restart after SIGHUP\n" );
+}
+
+#
+# process SIGCHLD: check if it was our statusd process
+#
+sub kid_died($) {
+	my $pid;
+
+	# reap statusd, so that it's no zombie when we try to kill(0) it
+	waitpid( $main::statusd_pid, WNOHANG );
+
+# Uncomment the following line if your Perl uses unreliable System V signal
+# (i.e. if handlers reset to default if the signal is delivered).
+# (Unfortunately, the re-setup can't be done in any case, since on some
+# systems this will cause the SIGCHLD to be delivered again if there are
+# still unreaped children :-(( )
+	
+#	 $SIG{"CHLD"} = \&kid_died; # resetup handler for SysV
+}
+
+sub restart_statusd() {
+	# restart statusd if it died
+	if (!kill( 0, $main::statusd_pid)) {
+		close( STATUSD ); # close out pipe end
+		$main::statusd_pid = fork_statusd();
+	}
+}
+
+#
+# process a fatal signal: cleanup and exit
+#
+sub fatal_signal($) {
+	my $signame = shift;
+	my $sig;
+	
+	# avoid recursions of fatal_signal in case of BSD signals
+	foreach $sig ( qw( ILL ABRT BUS FPE SEGV PIPE ) ) {
+		$SIG{$sig} = "DEFAULT";
+	}
+
+	if ($$ == $main::maind_pid) {
+		# only the main daemon should do this
+		kill( $main::signo{"TERM"}, $main::statusd_pid )
+			if defined $main::statusd_pid;
+		unlink( $conf::statusfile, $conf::pidfile );
+	}
+	msg( "log", "Caught SIG$signame -- exiting (pid $$)\n" );
+	exit 1;
+}
+
+
+# Local Variables:
+#  tab-width: 4
+#  fill-column: 78
+# End:

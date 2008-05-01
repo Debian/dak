@@ -1,0 +1,275 @@
+Contents:
+
+1. Little "Howto Use it"
+2. Explanation of how it works
+
+
+1. Little "Howto Use it"
+------------------------
+
+The input file is in YAML format. Do bnot bother with comments, they
+will be removed.
+
+The format: Dont use tabs for indentation, use spaces.
+
+Strings should be within "", but normally work without.
+Exception: Version-numbers with an epoch really do want to be in
+"". YES, THEY WANT TO (or they get interpreted in a way you dont expect
+it).
+
+Keys (The order of them does not matter, only the indentation):
+
+short_tag:    A short tag for the transition, like apt_update
+  reason:     One-line reason what is intended with it
+  source:     Source package that needs to transition
+  new:        New version of the target package
+  rm:         Name of the Release Team member responsible for this transition
+  packages:   Array of package names that are affected by this transition
+
+
+The following example wants to
+a.) update apt to version 0.7.12, the responsible Release Team member
+is Andreas Barth, and it affects some apt related packages and
+b.) wants to do something similar for lintian.
+
+apt_update:
+  packages:
+    - apt
+    - synaptic
+    - cron-apt
+    - debtags
+    - feta
+    - apticron
+    - aptitude
+  reason: "Apt needs to transition to testing to get foo and bar done"
+  source: apt
+  new: 0.7.12
+  rm: Andreas Barth
+lintian_breakage:
+  reason: "Testing a new feature"
+  source: lintian
+  new: 1.23.45~bpo40+1
+  rm: Ganneff
+  packages:
+    - lintian
+    - python-syck
+
+
+########################################################################
+########################################################################
+
+
+2. Explanation of how it works
+------------------------------
+
+Assume the following transition is defined:
+
+lintian_funtest:
+  reason: "Testing a new feature"
+  source: lintian
+  new: 1.23.45~bpo40+1
+  rm: Ganneff
+  packages:
+    - lintian
+    - python-syck
+
+Also assume the lintian situation on this archive looks like this:
+   lintian | 1.23.28~bpo.1 | sarge-backports | source, all
+   lintian | 1.23.45~bpo40+1 | etch-backports | source, all
+
+------------------------------------------------------------------------
+
+Now, I try to upload a (NEW, but that makes no difference) version of
+python-syck:
+
+$ dak process-unchecked -n python-syck_0.61.2-1~bpo40+1_i386.changes 
+
+python-syck_0.61.2-1~bpo40+1_i386.changes
+REJECT
+Rejected: python-syck: part of the lintian_funtest transition.
+
+Your package is part of a testing transition designed to get lintian migrated
+(it currently is at version 1.23.28~bpo.1, we need version 1.23.45~bpo40+1)
+
+Transition description: Testing a new feature
+
+This transition is managed by the Release Team, and Ganneff
+is the Release-Team member responsible for it.
+Please contact Ganneff or debian-release@lists.debian.org if you
+need further assistance.
+
+------------------------------------------------------------------------
+
+Lets change the definition of the transition, assume it is now:
+
+lintian_funtest:
+  reason: "Testing a new feature"
+  source: lintian
+  new: 1.22.28~bpo.1
+  rm: Ganneff
+  packages:
+    - lintian
+    - python-syck
+
+Which checks for a version older than the version actually available. Result:
+
+dak process-unchecked -n python-syck_0.61.2-1~bpo40+1_i386.changes 
+
+python-syck_0.61.2-1~bpo40+1_i386.changes
+NEW for etch-backports
+(new) python-syck_0.61.2-1~bpo40+1.diff.gz extra python
+(new) python-syck_0.61.2-1~bpo40+1.dsc extra python
+(new) python-syck_0.61.2-1~bpo40+1_i386.deb extra python
+PySyck python bindings to the Syck YAML parser kit
+ Syck is a simple YAML parser kit.
+ .
+[...] the whole stuff about a new package.
+
+------------------------------------------------------------------------
+
+For completness, change the transition to (exact existing version):
+lintian_funtest:
+  reason: "Testing a new feature"
+  source: lintian
+  new: 1.23.28~bpo.1
+  rm: Ganneff
+  packages:
+    - lintian
+
+and the result is:
+
+dak process-unchecked -n python-syck_0.61.2-1~bpo40+1_i386.changes 
+
+python-syck_0.61.2-1~bpo40+1_i386.changes
+NEW for etch-backports
+[... we know this ...]
+
+------------------------------------------------------------------------
+
+The second part is the check_transitions script.
+For that we take the following transitions as example:
+
+apt_update:
+  reason: "Apt needs to transition to testing to get foo and bar done"
+  source: apt
+  new: 0.2.12-1+b1.3
+  rm: Andreas Barth
+  packages:
+    - apt
+    - synaptic
+    - cron-apt
+    - debtags
+    - feta
+    - apticron
+    - aptitude
+lintian_funtest:
+  reason: "Testing a new feature"
+  source: lintian
+  new: 1.23.45~bpo40+1
+  rm: Ganneff
+  packages:
+    - lintian
+    - python-syck
+bar_breaks_it:
+  reason: We dont want bar to break it
+  source: bar
+  new: "9:99"
+  rm: Ganneff
+  packages:
+    - kdelibs
+    - qt4-x11
+    - libqt-perl
+
+Running check-transitions ends up with the following output:
+
+Looking at transition: lintian_funtest
+ Source:      lintian
+ New Version: 1.23.45~bpo40+1
+ Responsible: Ganneff
+ Description: Testing a new feature
+ Blocked Packages (total: 2): lintian, python-syck
+
+Apt compare says: -2
+This transition is still ongoing, we currently have version 1.23.28~bpo.1
+-------------------------------------------------------------------------
+
+Looking at transition: apt_update
+ Source:      apt
+ New Version: 0.2.12-1+b1.3
+ Responsible: Andreas Barth
+ Description: Apt needs to transition to testing to get foo and bar done
+ Blocked Packages (total: 7): apt, synaptic, cron-apt, debtags, feta, apticron, aptitude
+
+Apt compare says: 4
+This transition is over, the target package reached testing, removing
+apt wanted version: 0.2.12-1+b1.3, has 0.6.46.4-0.1~bpo.1
+-------------------------------------------------------------------------
+
+Looking at transition: bar_breaks_it
+ Source:      bar
+ New Version: 9:99
+ Responsible: Ganneff
+ Description: We dont want bar to break it
+ Blocked Packages (total: 3): kdelibs, qt4-x11, libqt-perl
+
+Transition source bar not in testing, transition still ongoing.
+-------------------------------------------------------------------------
+I: I would remove the apt_update transition
+
+
+Changing our transition definitions for lintian (keeping the rest as
+above) to
+
+lintian_funtest:
+  reason: "Testing a new feature"
+  source: lintian
+  new: 1.22.28~bpo.1
+  rm: Ganneff
+  packages:
+    - lintian
+    - python-syck
+
+now we get
+
+Looking at transition: lintian_funtest
+ Source:      lintian
+ New Version: 1.22.28~bpo.1
+ Responsible: Ganneff
+ Description: Testing a new feature
+ Blocked Packages (total: 2): lintian, python-syck
+
+Apt compare says: 1
+This transition is over, the target package reached testing, removing
+lintian wanted version: 1.22.28~bpo.1, has 1.23.28~bpo.1
+-------------------------------------------------------------------------
+
+Looking at transition: apt_update
+ Source:      apt
+ New Version: 0.2.12-1+b1.3
+ Responsible: Andreas Barth
+ Description: Apt needs to transition to testing to get foo and bar done
+ Blocked Packages (total: 7): apt, synaptic, cron-apt, debtags, feta, apticron, aptitude
+
+Apt compare says: 4
+This transition is over, the target package reached testing, removing
+apt wanted version: 0.2.12-1+b1.3, has 0.6.46.4-0.1~bpo.1
+-------------------------------------------------------------------------
+
+Looking at transition: bar_breaks_it
+ Source:      bar
+ New Version: 9:99
+ Responsible: Ganneff
+ Description: We dont want bar to break it
+ Blocked Packages (total: 3): kdelibs, qt4-x11, libqt-perl
+
+Transition source bar not in testing, transition still ongoing.
+-------------------------------------------------------------------------
+I: I would remove the lintian_funtest transition
+I: I would remove the apt_update transition
+
+
+Not using the -n switch would turn the I: in actual removals :)
+The check-transition command is meant for the release team to always run
+it when they change a transition definition. It checks if the yaml is
+valid and can be loaded (but if not the archive simply does no reject)
+and also shows a nice overview.

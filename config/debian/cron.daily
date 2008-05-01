@@ -35,6 +35,9 @@ ending at about 15:30.  This file is then removed.
 You should not mirror the archive during this period.
 EOF
 
+# Push merkels qa user, so the qa pages can show "dinstall is running" information
+ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 qa@merkel.debian.org sleep 1
+
 ################################################################################
 
 echo "Creating pre-daily-cron-job backup of projectb database..."
@@ -89,8 +92,7 @@ dak make-suite-file-list
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Update fingerprints
-# [JT - disabled, dak import-ldap-fingerprints currently can ask questions]
-#dak import-ldap-fingerprints
+dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
 # Generate override files
 cd $overridedir
@@ -138,8 +140,6 @@ cd $scriptsdir
 ./mkfilesindices
 ./mkchecksums
 #
-# Fetch bugs information before unchecked processing is allowed again.
-$base/testing/britney allowdaklock bugs || true
 rm -f $NOTICE
 ssh buildd@buildd /org/wanna-build/trigger.daily
 
@@ -158,7 +158,14 @@ pg_dump projectb > $POSTDUMP
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Vacuum the database
-echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
+# (JJ, 20-04-2008) disabled, as we have autovacuum set to on in postgres.
+# refer to http://www.postgresql.org/docs/current/static/routine-vacuuming.html#AUTOVACUUM
+# which says "Beginning in PostgreSQL 8.1, there is an optional feature called autovacuum,
+# whose purpose is to automate the execution of VACUUM and ANALYZE  commands."
+# echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
+
+echo "Expiring old database dumps..."
+(cd $base/backup; $scriptsdir/expire_dumps -d . -p -f "dump_*")
 
 ################################################################################
 
@@ -167,11 +174,18 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 # Send a report on NEW/BYHAND packages
 dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org
 # and one on crufty packages
-dak cruft-report | tee $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
+dak cruft-report > $webdir/cruft-report-daily.txt
+dak cruft-report -s experimental >> $webdir/cruft-report-daily.txt
+cat $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
+
+$scriptsdir/dm-monitor >$webdir/dm-uploaders.html
 
 $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
 
 ################################################################################
+
+# Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
+ssh -2 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1
 
 # Run mirror-split
 
@@ -203,10 +217,10 @@ apt-ftparchive -q clean apt.conf
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
-# Compress psql backups older than a month, but no more than 20 of them
+# Compress psql backups older than a week, but no more than 20 of them
 
 (cd $base/backup/
- find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +30 | 
+ find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +7 | 
    sort | head -n20 | while read dumpname; do
      echo "Compressing $dumpname"
      bzip2 -9 "$dumpname"

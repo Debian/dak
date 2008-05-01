@@ -120,6 +120,7 @@ def recheck():
         elif answer == 'S':
             return 0
         elif answer == 'Q':
+            end()
             sys.exit(0)
 
     return 1
@@ -470,6 +471,7 @@ def edit_note(note):
     if answer == 'A':
         return
     elif answer == 'Q':
+        end()
         sys.exit(0)
     Upload.pkg.changes["process-new note"] = note
     Upload.dump_vars(Cnf["Dir::Queue::New"])
@@ -571,6 +573,7 @@ def prod_maintainer ():
         if answer == 'A':
             return
         elif answer == 'Q':
+            end()
             sys.exit(0)
     # Otherwise, do the proding...
     user_email_address = daklib.utils.whoami() + " <%s>" % (
@@ -676,6 +679,7 @@ def do_new():
         elif answer == 'S':
             done = 1
         elif answer == 'Q':
+            end()
             sys.exit(0)
 
 ################################################################################
@@ -772,6 +776,7 @@ def do_byhand():
         elif answer == 'S':
             done = 1
         elif answer == 'Q':
+            end()
             sys.exit(0)
 
 ################################################################################

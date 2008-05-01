@@ -250,7 +250,7 @@ def clean_maintainers():
     q = projectB.query("""
 SELECT m.id FROM maintainer m
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.maintainer = m.id)
-    AND NOT EXISTS (SELECT 1 FROM source s WHERE s.maintainer = m.id)
+    AND NOT EXISTS (SELECT 1 FROM source s WHERE s.maintainer = m.id OR s.changedby = m.id)
     AND NOT EXISTS (SELECT 1 FROM src_uploaders u WHERE u.maintainer = m.id)""")
     ql = q.getresult()
 

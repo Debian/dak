@@ -1,0 +1,70 @@
+#!/bin/sh -e
+
+BYHAND="$1"
+VERSION="$2"
+ARCH="$3"
+CHANGES="$4"
+
+KEYRING=/srv/keyring.debian.org/keyrings/debian-keyring.gpg
+
+DESTKR=/srv/ftp.debian.org/keyrings/debian-maintainers.gpg
+
+get_id () {
+  echo "SELECT U.name, U.uid FROM fingerprint F JOIN uid U ON (F.uid = U.id) WHERE F.fingerprint = '$1';" |
+    psql projectb -At |
+    sed 's/|\(.*\)/ <\1@debian.org>/'
+}
+
+is_allowed () {
+  echo "SELECT M.name from src_uploaders U join source S on (U.source = S.id) join maintainer M on (U.maintainer = M.id) WHERE S.source = 'debian-maintainers';" |
+    psql projectb -At | 
+    while read ALLOWED; do
+      if [ "$1" = "$ALLOWED" ]; then
+        echo yes
+	break
+      fi
+    done
+}
+
+FPRINT=$(gpgv --keyring "$KEYRING" --status-fd 3 3>&1 >/dev/null 2>&1 "$CHANGES" |
+    cut -d\  -f2,3 | grep ^VALIDSIG | head -n1 | cut -d\  -f2)
+
+ID="$(get_id "$FPRINT")"
+
+if [ "$(is_allowed "$ID")" != "yes" ]; then
+  echo "Unauthorised upload by $ID"
+  exit 1
+fi
+
+echo "Authorised upload by $ID, copying into place"
+
+OUT=$(mktemp)
+
+cp "$BYHAND" "$DESTKR"
+dak import-keyring --generate-users "dm:%s" "$DESTKR" >$OUT
+
+if [ -s "$OUT" ]; then
+  /usr/sbin/sendmail -odq -oi -t <<EOF
+From: $ID
+To: <debian-project@lists.debian.org>
+Subject: Updated Debian Maintainers Keyring
+Content-Type: text/plain; charset=utf-8
+MIME-Version: 1.0
+
+With the upload of debian-maintainers version $VERSION, the following
+changes to the keyring have been made:
+
+$(cat $OUT)
+
+A summary of all the changes in this upload follows.
+
+Debian distribution maintenance software,
+on behalf of,
+$ID
+
+$(cat $CHANGES)
+EOF
+fi
+rm -f "$OUT"
+
+exit 0

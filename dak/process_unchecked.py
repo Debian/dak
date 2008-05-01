@@ -44,6 +44,7 @@ re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$")
 re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
 re_strip_revision = re.compile(r"-([^-]+)$")
 re_strip_srcver = re.compile(r"\s+\(\S+\)$")
+re_spacestrip = re.compile('(\s)')
 
 ################################################################################
 
@@ -405,7 +406,7 @@ def check_files():
             files[file]["type"] = "unreadable"
             continue
         # If it's byhand skip remaining checks
-        if files[file]["section"] == "byhand" or files[file]["section"][4:] == "raw-":
+        if files[file]["section"] == "byhand" or files[file]["section"][:4] == "raw-":
             files[file]["byhand"] = 1
             files[file]["type"] = "byhand"
         # Checks for a binary package...
@@ -460,6 +461,18 @@ def check_files():
             depends = control.Find("Depends")
             if depends == '':
                 reject("%s: Depends field is empty." % (file))
+
+            # Sanity-check the Provides field
+            provides = control.Find("Provides")
+            if provides:
+                provide = re_spacestrip.sub('', provides)
+                if provide == '':
+                    reject("%s: Provides field is empty." % (file))
+                prov_list = provide.split(",")
+                for prov in prov_list:
+                    if not re_valid_pkg_name.match(prov):
+                        reject("%s: Invalid Provides field content %s." % (file, prov))
+
 
             # Check the section & priority match those given in the .changes (non-fatal)
             if control.Find("Section") and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
@@ -899,40 +912,77 @@ def check_urgency ():
 
 ################################################################################
 
-def check_md5sums ():
+def check_hashes ():
+    # Make sure we recognise the format of the Files: field
+    format = changes.get("format", "0.0").split(".",1)
+    if len(format) == 2:
+        format = int(format[0]), int(format[1])
+    else:
+        format = int(float(format[0])), 0
+
+    check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
+    check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
+
+    if format >= (1,8):
+        hashes = [("sha1", apt_pkg.sha1sum),
+                  ("sha256", apt_pkg.sha256sum)]
+    else:
+        hashes = []
+
+    for x in changes:
+        if x.startswith("checksum-"):
+	    h = x.split("-",1)[1] 
+	    if h not in dict(hashes):
+	        reject("Unsupported checksum field in .changes" % (h))
+
+    for x in dsc:
+        if x.startswith("checksum-"):
+	    h = x.split("-",1)[1] 
+	    if h not in dict(hashes):
+	        reject("Unsupported checksum field in .dsc" % (h))
+
+    for h,f in hashes:
+        try:
+            fs = daklib.utils.build_file_list(changes, 0, "checksums-%s" % h, h)
+            check_hash(".changes %s" % (h), fs, h, f, files)
+	except daklib.utils.no_files_exc:
+	    reject("No Checksums-%s: field in .changes file" % (h))
+
+        if "source" not in changes["architecture"]: continue
+
+        try:
+            fs = daklib.utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
+            check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
+	except daklib.utils.no_files_exc:
+	    reject("No Checksums-%s: field in .changes file" % (h))
+
+################################################################################
+
+def check_hash (where, files, key, testfn, basedict = None):
+    if basedict:
+        for file in basedict.keys():
+            if file not in files:
+                reject("%s: no %s checksum" % (file, key))
+
     for file in files.keys():
+        if basedict and file not in basedict:
+            reject("%s: extraneous entry in %s checksums" % (file, key))
+
         try:
             file_handle = daklib.utils.open_file(file)
         except daklib.utils.cant_open_exc:
             continue
 
-        # Check md5sum
-        if apt_pkg.md5sum(file_handle) != files[file]["md5sum"]:
-            reject("%s: md5sum check failed." % (file))
+        # Check hash
+        if testfn(file_handle) != files[file][key]:
+            reject("%s: %s check failed." % (file, key))
         file_handle.close()
         # Check size
         actual_size = os.stat(file)[stat.ST_SIZE]
         size = int(files[file]["size"])
         if size != actual_size:
-            reject("%s: actual file size (%s) does not match size (%s) in .changes"
-                   % (file, actual_size, size))
-
-    for file in dsc_files.keys():
-        try:
-            file_handle = daklib.utils.open_file(file)
-        except daklib.utils.cant_open_exc:
-            continue
-
-        # Check md5sum
-        if apt_pkg.md5sum(file_handle) != dsc_files[file]["md5sum"]:
-            reject("%s: md5sum check failed." % (file))
-        file_handle.close()
-        # Check size
-        actual_size = os.stat(file)[stat.ST_SIZE]
-        size = int(dsc_files[file]["size"])
-        if size != actual_size:
-            reject("%s: actual file size (%s) does not match size (%s) in .dsc"
-                   % (file, actual_size, size))
+            reject("%s: actual file size (%s) does not match size (%s) in %s"
+                   % (file, actual_size, size, where))
 
 ################################################################################
 
@@ -1035,6 +1085,12 @@ def check_signed_by_key():
         if uid_name == "": sponsored = 1
     else:
         sponsored = 1
+        if ("source" in changes["architecture"] and
+            daklib.utils.is_email_alias(uid_email)):
+            sponsor_addresses = daklib.utils.gpg_get_key_addresses(changes["fingerprint"])
+            if (changes["maintaineremail"] not in sponsor_addresses and
+                changes["changedbyemail"] not in sponsor_addresses):
+                changes["sponsoremail"] = uid_email
 
     if sponsored and not may_sponsor: 
         reject("%s is not authorised to sponsor uploads" % (uid))
@@ -1518,7 +1574,7 @@ def process_it (changes_file):
                 valid_dsc_p = check_dsc()
                 if valid_dsc_p:
                     check_source()
-                check_md5sums()
+                check_hashes()
                 check_urgency()
                 check_timestamps()
                 check_signed_by_key()
