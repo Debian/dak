@@ -83,7 +83,11 @@ def recheck():
                and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
                 source_epochless_version = daklib.utils.re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
-                if not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
+		found = 0
+		for q in ["Accepted", "Embargoed", "Unembargoed"]:
+                    if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
+		        found = 1
+		if not found:
                     reject("no source found for %s %s (%s)." % (source_package, source_version, file))
 
         # Version and file overwrite checks
@@ -777,26 +781,42 @@ def do_byhand():
 
 ################################################################################
 
+def get_accept_lock():
+    retry = 0
+    while retry < 10:
+        try:
+	    lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
+            retry = 10
+	except OSError, e:
+	    if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
+	        retry += 1
+		if (retry >= 10):
+		    daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
+		else:
+		    print("Unable to get accepted lock (try %d of 10)" % retry)
+		time.sleep(60)
+	    else:
+		raise
+
+def move_to_dir (dest, perms=0660, changesperms=0664):
+    daklib.utils.move (Upload.pkg.changes_file, dest, perms=changesperms)
+    file_keys = Upload.pkg.files.keys()
+    for file in file_keys:
+        daklib.utils.move (file, dest, perms=perms)
+
 def do_accept():
     print "ACCEPT"
     if not Options["No-Action"]:
-        retry = 0
-	while retry < 10:
-	    try:
-		lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
-                retry = 10
-	    except OSError, e:
-		if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
-		    retry += 1
-		    if (retry >= 10):
-			daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
-		    else:
-			print("Unable to get accepted lock (try %d of 10)" % retry)
-		    time.sleep(60)
-		else:
-		    raise
+        get_accept_lock()
         (summary, short_summary) = Upload.build_summaries()
-        Upload.accept(summary, short_summary)
+	if Cnf.FindB("Dinstall::SecurityQueueHandling"):
+	    Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
+	    move_to_dir(Cnf["Dir::Queue::Embargoed"])
+	    Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
+	    # Check for override disparities
+	    Upload.Subst["__SUMMARY__"] = summary
+	else:
+            Upload.accept(summary, short_summary)
         os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 	os.unlink(Cnf["Process-New::AcceptedLockFile"])
 

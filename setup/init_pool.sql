@@ -28,6 +28,12 @@ CREATE TABLE maintainer (
        name TEXT UNIQUE NOT NULL
 );
 
+CREATE TABLE src_uploaders (
+       id SERIAL PRIMARY KEY,
+       source INT4 NOT NULL REFERENCES source,
+       maintainer INT4 NOT NULL REFERENCES maintainer
+);
+
 CREATE TABLE uid (
        id SERIAL PRIMARY KEY,
        uid TEXT UNIQUE NOT NULL,

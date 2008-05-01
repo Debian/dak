@@ -46,6 +46,8 @@ re_gpg_uid = re.compile('^uid.*<([^>]*)>')
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
 re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
 
+re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
+
 changes_parse_error_exc = "Can't parse line in .changes file"
 invalid_dsc_format_exc = "Invalid .dsc file"
 nk_format_exc = "Unknown Format: in .changes file"

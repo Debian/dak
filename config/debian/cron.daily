@@ -180,6 +180,8 @@ cat $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for
 
 $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
 
+$scriptsdir/dm-monitor >$webdir/dm-uploaders.html
+
 ################################################################################
 
 # Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
