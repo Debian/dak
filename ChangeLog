@@ -3,6 +3,7 @@
 	* config/debian/pseudo-packages*: Removed listarchives, closes #468667
 	added wiki.debian.org (currently pointing to debian-www), closes #194206
 	added security-tracker, closes #436152
+	added release.debian.org, closes #451005
 
 	* config/debian/cron.buildd: Cleanup unreachable code. (If someone
 	still wants it - its in revision control...)
