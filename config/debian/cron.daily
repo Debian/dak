@@ -8,6 +8,11 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 
 ################################################################################
 
+# Start logging
+NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+LOGFILE="$logdir/daily_${NOW}.log"
+exec > "$LOGFILE" 2>&1
+
 echo Archive maintenance started at $(date +%X)
 TS=0
 
@@ -22,6 +27,8 @@ cleanup() {
   if [ "$lockac" -eq "1" ]; then
     rm -f "$LOCKAC"
   fi
+  echo "Cleanup"
+  rm -f "$LOGFILE"
 }
 lockfile -l 3600 $LOCKCU
 trap cleanup 0
@@ -36,6 +43,7 @@ You should not mirror the archive during this period.
 EOF
 
 # Push merkels qa user, so the qa pages can show "dinstall is running" information
+echo "Telling merkels QA user that we start dinstall"
 ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 qa@merkel.debian.org sleep 1
 
 ################################################################################
@@ -46,6 +54,7 @@ pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 ################################################################################
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+echo "Updating Bugs docu, Mirror list and mailing-lists.txt"
 cd $configdir
 $scriptsdir/update-bugdoctxt
 $scriptsdir/update-mirrorlists
@@ -54,12 +63,14 @@ $scriptsdir/update-mailingliststxt
 ################################################################################
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+echo "Doing automated p-u-new processing"
 cd $queuedir/p-u-new
 date -u -R >> REPORT
 dak process-new -a -C COMMENTS >> REPORT
 echo >> REPORT
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+echo "Doing automated o-p-u-new processing"
 cd $queuedir/o-p-u-new
 date -u -R >> REPORT
 dak process-new -a -C COMMENTS >> REPORT
@@ -70,6 +81,7 @@ echo >> REPORT
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 lockfile $LOCKAC
 lockac=1
+echo "Processing queue/accepted"
 cd $accepted
 rm -f REPORT
 dak process-accepted -pa *.changes | tee REPORT | \
@@ -78,30 +90,29 @@ chgrp debadmin REPORT
 chmod 664 REPORT
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
-
+echo "Checking for cruft in overrides"
 dak check-overrides
 rm -f $LOCKAC
 lockac=0
 
+echo "Fixing symlinks in $ftpdir"
 symlinks -d -r $ftpdir
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
+echo "Generating suite file lists for apt-ftparchive"
 dak make-suite-file-list
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
+echo "Updating fingerprints"
 # Update fingerprints
 dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
 # Generate override files
+echo "Writing overrides into text files"
 cd $overridedir
 dak make-overrides
-
-# Update task overrides for testing and unstable
-# [JT 2004-02-04 disabled; copying in by hand for now]
-#cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sarge.extra.main
-#cat $extoverridedir/task | perl -ne 'print if /^\S+\sTask\s\S+(,\s*\S+)*$/;' > override.sid.extra.main
 
 # FIXME
 rm -f override.sid.all3
@@ -110,16 +121,20 @@ for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Generate Packages and Sources files
+echo "Generating Packages and Sources files"
 cd $configdir
 apt-ftparchive generate apt.conf
 # Generate *.diff/ incremental updates
+echo "Generating pdiff files"
 dak generate-index-diffs
 # Generate Release files
+echo "Generating Release files"
 dak generate-releases
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Clean out old packages
+echo "Cleanup old packages/files"
 dak clean-suites
 dak clean-queues
 
@@ -127,12 +142,14 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
 # update this before wanna-build is updated.
+echo "Regenerating wanna-build/buildd information"
 psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE suite = 5 AND queue = 0 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
 symlinks -d /srv/incoming.debian.org/buildd > /dev/null
 apt-ftparchive generate apt.conf.buildd
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
+echo "Running various scripts from $scriptsdir"
 cd $scriptsdir
 ./mkmaintainers
 ./copyoverrides
@@ -141,6 +158,7 @@ cd $scriptsdir
 ./mkchecksums
 #
 rm -f $NOTICE
+echo "Trigger daily wanna-build run"
 ssh buildd@buildd /org/wanna-build/trigger.daily
 
 rm -f $LOCKCU
@@ -157,13 +175,6 @@ pg_dump projectb > $POSTDUMP
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
-# Vacuum the database
-# (JJ, 20-04-2008) disabled, as we have autovacuum set to on in postgres.
-# refer to http://www.postgresql.org/docs/current/static/routine-vacuuming.html#AUTOVACUUM
-# which says "Beginning in PostgreSQL 8.1, there is an optional feature called autovacuum,
-# whose purpose is to automate the execution of VACUUM and ANALYZE  commands."
-# echo "VACUUM; VACUUM ANALYZE;" | psql projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
-
 echo "Expiring old database dumps..."
 (cd $base/backup; $scriptsdir/expire_dumps -d . -p -f "dump_*")
 
@@ -172,24 +183,22 @@ echo "Expiring old database dumps..."
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Send a report on NEW/BYHAND packages
+echo "Nagging ftpteam about NEW/BYHAND packages"
 dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org
 # and one on crufty packages
+echo "Sending information about crufty packages"
 dak cruft-report > $webdir/cruft-report-daily.txt
 dak cruft-report -s experimental >> $webdir/cruft-report-daily.txt
 cat $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
 
-$scriptsdir/dm-monitor >$webdir/dm-uploaders.html
-
+echo "Updating DM html page"
 $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
 
 ################################################################################
 
 # Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
+echo "Trigger merkels projectb sync"
 ssh -2 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1
-
-# Run mirror-split
-
-#time dak mirror-split
 
 ################################################################################
 
@@ -197,13 +206,15 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 ulimit -m 90000 -d 90000 -s 10000 -v 200000
 
+echo "Using run-parts to run scripts in $base/scripts/distmnt"
 run-parts --report $base/scripts/distmnt
 
-echo Daily cron scripts successful.
+echo "Daily cron scripts successful."
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Stats pr0n
+echo "Updating stats data"
 cd $configdir
 $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
 R --slave --vanilla < $base/misc/ftpstats.R
@@ -211,14 +222,14 @@ R --slave --vanilla < $base/misc/ftpstats.R
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Clean up apt-ftparchive's databases
-
+echo "Clean up apt-ftparchive's databases"
 cd $configdir
 apt-ftparchive -q clean apt.conf
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # Compress psql backups older than a week, but no more than 20 of them
-
+echo "Compress old psql backups"
 (cd $base/backup/
  find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +7 | 
    sort | head -n20 | while read dumpname; do
@@ -226,5 +237,11 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
      bzip2 -9 "$dumpname"
    done
 )
+
+echo "Finally, all is done, sending mail and compressing logfile"
+exec > /dev/null 2>&1
+
+cat "$LOGFILE" | mail -s "Log for cron.daily run of $(date +%Y.%m.%d)" cron@ftp-master.debian.org
+bzip2 -9 "$LOGFILE"
 
 ################################################################################
