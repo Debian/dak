@@ -1,3 +1,8 @@
+2008-05-02  Thomas Viehmann  <tv@beamnet.de>
+
+	* dak/process_unchecked.py (check_hashes): fix typo in
+	  checksum reject message.
+
 2008-05-02  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/extensions.py: used reindent.py from the python

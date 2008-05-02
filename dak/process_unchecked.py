@@ -946,7 +946,7 @@ def check_hashes ():
             fs = daklib.utils.build_file_list(changes, 0, "checksums-%s" % h, h)
             check_hash(".changes %s" % (h), fs, h, f, files)
         except daklib.utils.no_files_exc:
-            reject("No Checksums-%s: field in .changes file" % (h))
+            reject("No Checksums-%s: field in .changes" % (h))
 
         if "source" not in changes["architecture"]: continue
 
@@ -954,7 +954,7 @@ def check_hashes ():
             fs = daklib.utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
             check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
         except daklib.utils.no_files_exc:
-            reject("No Checksums-%s: field in .changes file" % (h))
+            reject("No Checksums-%s: field in .dsc" % (h))
 
 ################################################################################
 
