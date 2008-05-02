@@ -1,5 +1,7 @@
 2008-05-02  Joerg Jaspert  <joerg@debian.org>
 
+	* config/debian/pseudo-packages*: Removed listarchives, closes #468667
+
 	* config/debian/cron.buildd: Cleanup unreachable code. (If someone
 	still wants it - its in revision control...)
 
