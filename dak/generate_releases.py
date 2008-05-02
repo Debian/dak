@@ -62,18 +62,18 @@ def compressnames (tree,type,file):
     cl = compress.split()
     uncompress = ("." not in cl)
     for mode in compress.split():
-	if mode == ".":
-	    result.append(file)
-	elif mode == "gzip":
-	    if uncompress:
-		result.append("<zcat/.gz>" + file)
-		uncompress = 0
-	    result.append(file + ".gz")
-	elif mode == "bzip2":
-	    if uncompress:
-		result.append("<bzcat/.bz2>" + file)
-		uncompress = 0
-	    result.append(file + ".bz2")
+        if mode == ".":
+            result.append(file)
+        elif mode == "gzip":
+            if uncompress:
+                result.append("<zcat/.gz>" + file)
+                uncompress = 0
+            result.append(file + ".gz")
+        elif mode == "bzip2":
+            if uncompress:
+                result.append("<bzcat/.bz2>" + file)
+                uncompress = 0
+            result.append(file + ".bz2")
     return result
 
 def create_temp_file (cmd):
@@ -83,13 +83,13 @@ def create_temp_file (cmd):
     r = r[0]
     size = 0
     while 1:
-	x = r.readline()
-	if not x:
-	    r.close()
-	    del x,r
-	    break
-	f.write(x)
-	size += len(x)
+        x = r.readline()
+        if not x:
+            r.close()
+            del x,r
+            break
+        f.write(x)
+        size += len(x)
     f.flush()
     f.seek(0)
     return (size, f)
@@ -98,21 +98,21 @@ def print_md5sha_files (tree, files, hashop):
     path = Cnf["Dir::Root"] + tree + "/"
     for name in files:
         try:
-	    if name[0] == "<":
-		j = name.index("/")
-		k = name.index(">")
-		(cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
-		(size, file_handle) = create_temp_file("%s %s%s%s" %
-		    (cat, path, name, ext))
-	    else:
-        	size = os.stat(path + name)[stat.ST_SIZE]
-       	        file_handle = daklib.utils.open_file(path + name)
+            if name[0] == "<":
+                j = name.index("/")
+                k = name.index(">")
+                (cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
+                (size, file_handle) = create_temp_file("%s %s%s%s" %
+                    (cat, path, name, ext))
+            else:
+                size = os.stat(path + name)[stat.ST_SIZE]
+                file_handle = daklib.utils.open_file(path + name)
         except daklib.utils.cant_open_exc:
             print "ALERT: Couldn't open " + path + name
         else:
-	    hash = hashop(file_handle)
-	    file_handle.close()
-	    out.write(" %s %8d %s\n" % (hash, size, name))
+            hash = hashop(file_handle)
+            file_handle.close()
+            out.write(" %s %8d %s\n" % (hash, size, name))
 
 def print_md5_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.md5sum)
@@ -132,18 +132,18 @@ def main ():
     Cnf = daklib.utils.get_conf()
 
     Arguments = [('h',"help","Generate-Releases::Options::Help"),
-		 ('a',"apt-conf","Generate-Releases::Options::Apt-Conf", "HasArg"),
-		 ('f',"force-touch","Generate-Releases::Options::Force-Touch"),
-		]
+                 ('a',"apt-conf","Generate-Releases::Options::Apt-Conf", "HasArg"),
+                 ('f',"force-touch","Generate-Releases::Options::Force-Touch"),
+                ]
     for i in [ "help", "apt-conf", "force-touch" ]:
-	if not Cnf.has_key("Generate-Releases::Options::%s" % (i)):
-	    Cnf["Generate-Releases::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Generate-Releases::Options::%s" % (i)):
+            Cnf["Generate-Releases::Options::%s" % (i)] = ""
 
     suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Generate-Releases::Options")
 
     if Options["Help"]:
-	usage()
+        usage()
 
     if not Options["Apt-Conf"]:
         Options["Apt-Conf"] = daklib.utils.which_apt_conf_file()
@@ -158,36 +158,36 @@ def main ():
 
     for suite in suites:
         print "Processing: " + suite
-	SuiteBlock = Cnf.SubTree("Suite::" + suite)
+        SuiteBlock = Cnf.SubTree("Suite::" + suite)
 
-	if SuiteBlock.has_key("Untouchable") and not Options["Force-Touch"]:
+        if SuiteBlock.has_key("Untouchable") and not Options["Force-Touch"]:
             print "Skipping: " + suite + " (untouchable)"
             continue
 
-	suite = suite.lower()
+        suite = suite.lower()
 
-	origin = SuiteBlock["Origin"]
-	label = SuiteBlock.get("Label", origin)
-	codename = SuiteBlock.get("CodeName", "")
+        origin = SuiteBlock["Origin"]
+        label = SuiteBlock.get("Label", origin)
+        codename = SuiteBlock.get("CodeName", "")
 
-	version = ""
-	description = ""
+        version = ""
+        description = ""
 
-	q = projectB.query("SELECT version, description FROM suite WHERE suite_name = '%s'" % (suite))
-	qs = q.getresult()
-	if len(qs) == 1:
-	    if qs[0][0] != "-": version = qs[0][0]
-	    if qs[0][1]: description = qs[0][1]
+        q = projectB.query("SELECT version, description FROM suite WHERE suite_name = '%s'" % (suite))
+        qs = q.getresult()
+        if len(qs) == 1:
+            if qs[0][0] != "-": version = qs[0][0]
+            if qs[0][1]: description = qs[0][1]
 
-	if SuiteBlock.has_key("NotAutomatic"):
-	    notautomatic = "yes"
-	else:
-	    notautomatic = ""
+        if SuiteBlock.has_key("NotAutomatic"):
+            notautomatic = "yes"
+        else:
+            notautomatic = ""
 
-	if SuiteBlock.has_key("Components"):
-	    components = SuiteBlock.ValueList("Components")
-	else:
-	    components = []
+        if SuiteBlock.has_key("Components"):
+            components = SuiteBlock.ValueList("Components")
+        else:
+            components = []
 
         suite_suffix = Cnf.Find("Dinstall::SuiteSuffix")
         if components and suite_suffix:
@@ -195,70 +195,70 @@ def main ():
         else:
             longsuite = suite
 
-	tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
+        tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
 
-	if AptCnf.has_key("tree::%s" % (tree)):
-	    pass
-	elif AptCnf.has_key("bindirectory::%s" % (tree)):
-	    pass
-	else:
+        if AptCnf.has_key("tree::%s" % (tree)):
+            pass
+        elif AptCnf.has_key("bindirectory::%s" % (tree)):
+            pass
+        else:
             aptcnf_filename = os.path.basename(daklib.utils.which_apt_conf_file())
-	    print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
-	    continue
+            print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
+            continue
 
-	print Cnf["Dir::Root"] + tree + "/Release"
-	out = open(Cnf["Dir::Root"] + tree + "/Release", "w")
+        print Cnf["Dir::Root"] + tree + "/Release"
+        out = open(Cnf["Dir::Root"] + tree + "/Release", "w")
 
-	out.write("Origin: %s\n" % (origin))
-	out.write("Label: %s\n" % (label))
-	out.write("Suite: %s\n" % (suite))
-	if version != "":
-	    out.write("Version: %s\n" % (version))
-	if codename != "":
-	    out.write("Codename: %s\n" % (codename))
-	out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
-	if notautomatic != "":
-	    out.write("NotAutomatic: %s\n" % (notautomatic))
-	out.write("Architectures: %s\n" % (" ".join(filter(daklib.utils.real_arch, SuiteBlock.ValueList("Architectures")))))
-	if components:
+        out.write("Origin: %s\n" % (origin))
+        out.write("Label: %s\n" % (label))
+        out.write("Suite: %s\n" % (suite))
+        if version != "":
+            out.write("Version: %s\n" % (version))
+        if codename != "":
+            out.write("Codename: %s\n" % (codename))
+        out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
+        if notautomatic != "":
+            out.write("NotAutomatic: %s\n" % (notautomatic))
+        out.write("Architectures: %s\n" % (" ".join(filter(daklib.utils.real_arch, SuiteBlock.ValueList("Architectures")))))
+        if components:
             out.write("Components: %s\n" % (" ".join(components)))
 
-	if description:
-	    out.write("Description: %s\n" % (description))
+        if description:
+            out.write("Description: %s\n" % (description))
 
-	files = []
+        files = []
 
-	if AptCnf.has_key("tree::%s" % (tree)):
-	    for sec in AptCnf["tree::%s::Sections" % (tree)].split():
-		for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
-		    if arch == "source":
-		        filepath = "%s/%s/Sources" % (sec, arch)
-			for file in compressnames("tree::%s" % (tree), "Sources", filepath):
-			    files.append(file)
-			add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
-		    else:
-			disks = "%s/disks-%s" % (sec, arch)
-			diskspath = Cnf["Dir::Root"]+tree+"/"+disks
-			if os.path.exists(diskspath):
-			    for dir in os.listdir(diskspath):
-				if os.path.exists("%s/%s/md5sum.txt" % (diskspath, dir)):
-				    files.append("%s/%s/md5sum.txt" % (disks, dir))
+        if AptCnf.has_key("tree::%s" % (tree)):
+            for sec in AptCnf["tree::%s::Sections" % (tree)].split():
+                for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
+                    if arch == "source":
+                        filepath = "%s/%s/Sources" % (sec, arch)
+                        for file in compressnames("tree::%s" % (tree), "Sources", filepath):
+                            files.append(file)
+                        add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
+                    else:
+                        disks = "%s/disks-%s" % (sec, arch)
+                        diskspath = Cnf["Dir::Root"]+tree+"/"+disks
+                        if os.path.exists(diskspath):
+                            for dir in os.listdir(diskspath):
+                                if os.path.exists("%s/%s/md5sum.txt" % (diskspath, dir)):
+                                    files.append("%s/%s/md5sum.txt" % (disks, dir))
 
-			filepath = "%s/binary-%s/Packages" % (sec, arch)
-			for file in compressnames("tree::%s" % (tree), "Packages", filepath):
-			    files.append(file)
-			add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
+                        filepath = "%s/binary-%s/Packages" % (sec, arch)
+                        for file in compressnames("tree::%s" % (tree), "Packages", filepath):
+                            files.append(file)
+                        add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
 
-		    if arch == "source":
-			rel = "%s/%s/Release" % (sec, arch)
-		    else:
-			rel = "%s/binary-%s/Release" % (sec, arch)
-		    relpath = Cnf["Dir::Root"]+tree+"/"+rel
+                    if arch == "source":
+                        rel = "%s/%s/Release" % (sec, arch)
+                    else:
+                        rel = "%s/binary-%s/Release" % (sec, arch)
+                    relpath = Cnf["Dir::Root"]+tree+"/"+rel
 
                     try:
-		    	if os.access(relpath, os.F_OK):
-			    if os.stat(relpath).st_nlink > 1:
-			        os.unlink(relpath)
+                        if os.access(relpath, os.F_OK):
+                            if os.stat(relpath).st_nlink > 1:
+                                os.unlink(relpath)
                         release = open(relpath, "w")
                         #release = open(longsuite.replace("/","_") + "_" + arch + "_" + sec + "_Release", "w")
                     except IOError:
@@ -279,70 +279,69 @@ def main ():
                     release.close()
                     files.append(rel)
 
-	    if AptCnf.has_key("tree::%s/main" % (tree)):
-	        for dis in ["main", "contrib", "non-free"]:
-		    if not AptCnf.has_key("tree::%s/%s" % (tree, dis)): continue
-	            sec = AptCnf["tree::%s/%s::Sections" % (tree,dis)].split()[0]
-		    if sec != "debian-installer":
-	    	        print "ALERT: weird non debian-installer section in %s" % (tree)
+            if AptCnf.has_key("tree::%s/main" % (tree)):
+                for dis in ["main", "contrib", "non-free"]:
+                    if not AptCnf.has_key("tree::%s/%s" % (tree, dis)): continue
+                    sec = AptCnf["tree::%s/%s::Sections" % (tree,dis)].split()[0]
+                    if sec != "debian-installer":
+                        print "ALERT: weird non debian-installer section in %s" % (tree)
 
-		    for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
-		        if arch != "source":  # always true
-			    for file in compressnames("tree::%s/%s" % (tree,dis),
-			    	"Packages", 
-				"%s/%s/binary-%s/Packages" % (dis, sec, arch)):
-			        files.append(file)
-	    elif AptCnf.has_key("tree::%s::FakeDI" % (tree)):
-		usetree = AptCnf["tree::%s::FakeDI" % (tree)]
-		sec = AptCnf["tree::%s/main::Sections" % (usetree)].split()[0]
-		if sec != "debian-installer":
-		    print "ALERT: weird non debian-installer section in %s" % (usetree)
- 
-		for arch in AptCnf["tree::%s/main::Architectures" % (usetree)].split():
-		    if arch != "source":  # always true
-			for file in compressnames("tree::%s/main" % (usetree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
-			    files.append(file)
+                    for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
+                        if arch != "source":  # always true
+                            for file in compressnames("tree::%s/%s" % (tree,dis),
+                                "Packages",
+                                "%s/%s/binary-%s/Packages" % (dis, sec, arch)):
+                                files.append(file)
+            elif AptCnf.has_key("tree::%s::FakeDI" % (tree)):
+                usetree = AptCnf["tree::%s::FakeDI" % (tree)]
+                sec = AptCnf["tree::%s/main::Sections" % (usetree)].split()[0]
+                if sec != "debian-installer":
+                    print "ALERT: weird non debian-installer section in %s" % (usetree)
 
-	elif AptCnf.has_key("bindirectory::%s" % (tree)):
-	    for file in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
-		files.append(file.replace(tree+"/","",1))
-	    for file in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
-		files.append(file.replace(tree+"/","",1))
-	else:
-	    print "ALERT: no tree/bindirectory for %s" % (tree)
+                for arch in AptCnf["tree::%s/main::Architectures" % (usetree)].split():
+                    if arch != "source":  # always true
+                        for file in compressnames("tree::%s/main" % (usetree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
+                            files.append(file)
 
-	out.write("MD5Sum:\n")
-	print_md5_files(tree, files)
-	out.write("SHA1:\n")
-	print_sha1_files(tree, files)
-	out.write("SHA256:\n")
-	print_sha256_files(tree, files)
+        elif AptCnf.has_key("bindirectory::%s" % (tree)):
+            for file in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
+                files.append(file.replace(tree+"/","",1))
+            for file in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
+                files.append(file.replace(tree+"/","",1))
+        else:
+            print "ALERT: no tree/bindirectory for %s" % (tree)
 
-	out.close()
-	if Cnf.has_key("Dinstall::SigningKeyring"):
-	    keyring = "--secret-keyring \"%s\"" % Cnf["Dinstall::SigningKeyring"]
-	    if Cnf.has_key("Dinstall::SigningPubKeyring"):
-		keyring += " --keyring \"%s\"" % Cnf["Dinstall::SigningPubKeyring"]
+        out.write("MD5Sum:\n")
+        print_md5_files(tree, files)
+        out.write("SHA1:\n")
+        print_sha1_files(tree, files)
+        out.write("SHA256:\n")
+        print_sha256_files(tree, files)
 
-	    arguments = "--no-options --batch --no-tty --armour"
-	    if Cnf.has_key("Dinstall::SigningKeyIds"):
-		signkeyids = Cnf["Dinstall::SigningKeyIds"].split()
-	    else:
-		signkeyids = [""]
+        out.close()
+        if Cnf.has_key("Dinstall::SigningKeyring"):
+            keyring = "--secret-keyring \"%s\"" % Cnf["Dinstall::SigningKeyring"]
+            if Cnf.has_key("Dinstall::SigningPubKeyring"):
+                keyring += " --keyring \"%s\"" % Cnf["Dinstall::SigningPubKeyring"]
 
-	    dest = Cnf["Dir::Root"] + tree + "/Release.gpg"
-	    if os.path.exists(dest):
-		os.unlink(dest)
+            arguments = "--no-options --batch --no-tty --armour"
+            if Cnf.has_key("Dinstall::SigningKeyIds"):
+                signkeyids = Cnf["Dinstall::SigningKeyIds"].split()
+            else:
+                signkeyids = [""]
 
-	    for keyid in signkeyids:
-		if keyid != "": defkeyid = "--default-key %s" % keyid
-		else: defkeyid = ""
-		os.system("gpg %s %s %s --detach-sign <%s >>%s" %
-			(keyring, defkeyid, arguments,
-			Cnf["Dir::Root"] + tree + "/Release", dest))
+            dest = Cnf["Dir::Root"] + tree + "/Release.gpg"
+            if os.path.exists(dest):
+                os.unlink(dest)
+
+            for keyid in signkeyids:
+                if keyid != "": defkeyid = "--default-key %s" % keyid
+                else: defkeyid = ""
+                os.system("gpg %s %s %s --detach-sign <%s >>%s" %
+                        (keyring, defkeyid, arguments,
+                        Cnf["Dir::Root"] + tree + "/Release", dest))
 
 #######################################################################################
 
 if __name__ == '__main__':
     main()
-

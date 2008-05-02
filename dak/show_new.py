@@ -29,7 +29,7 @@ import copy, os, sys, time
 import apt_pkg
 import examine_package
 import daklib.database
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 # Globals
@@ -51,42 +51,42 @@ def html_header(name):
         <html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">"""
     print "<title>%s - Debian NEW package overview</title>" % (name)
     print """<link type="text/css" rel="stylesheet" href="/style.css">
-	<link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
-	</head>
-	<body>
-	<div align="center">
-	<a href="http://www.debian.org/">
+        <link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
+        </head>
+        <body>
+        <div align="center">
+        <a href="http://www.debian.org/">
      <img src="http://www.debian.org/logos/openlogo-nd-50.png" border="0" hspace="0" vspace="0" alt=""></a>
-	<a href="http://www.debian.org/">
+        <a href="http://www.debian.org/">
      <img src="http://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace="0" alt="Debian Project"></a>
-	</div>
-	<br />
-	<table class="reddy" width="100%">
-	<tr>
-	<td class="reddy">
+        </div>
+        <br />
+        <table class="reddy" width="100%">
+        <tr>
+        <td class="reddy">
     <img src="http://www.debian.org/Pics/red-upperleft.png" align="left" border="0" hspace="0" vspace="0"
      alt="" width="15" height="16"></td>"""
     print """<td rowspan="2" class="reddy">Debian NEW package overview for %s</td>""" % (name)
     print """<td class="reddy">
     <img src="http://www.debian.org/Pics/red-upperright.png" align="right" border="0" hspace="0" vspace="0"
      alt="" width="16" height="16"></td>
-	</tr>
-	<tr>
-	<td class="reddy">
+        </tr>
+        <tr>
+        <td class="reddy">
     <img src="http://www.debian.org/Pics/red-lowerleft.png" align="left" border="0" hspace="0" vspace="0"
      alt="" width="16" height="16"></td>
-	<td class="reddy">
+        <td class="reddy">
     <img src="http://www.debian.org/Pics/red-lowerright.png" align="right" border="0" hspace="0" vspace="0"
      alt="" width="15" height="16"></td>
-	</tr>
-	</table>
-	"""
+        </tr>
+        </table>
+        """
 
 def html_footer():
     print "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     print """<a href="http://validator.w3.org/check?uri=referer">
     <img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a>
-	<a href="http://jigsaw.w3.org/css-validator/check/referer">
+        <a href="http://jigsaw.w3.org/css-validator/check/referer">
     <img border="0" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!"
      height="31" width="88"></a>
     """

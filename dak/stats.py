@@ -216,14 +216,14 @@ def main ():
     Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Stats::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Stats::Options::%s" % (i)):
-	    Cnf["Stats::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Stats::Options::%s" % (i)):
+            Cnf["Stats::Options::%s" % (i)] = ""
 
     args = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Stats::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     if len(args) < 1:
         daklib.utils.warn("dak stats requires a MODE argument")
@@ -249,4 +249,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

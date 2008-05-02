@@ -86,7 +86,7 @@ class ParseMaintError(Error):
 
 def open_file(filename, mode='r'):
     try:
-	f = open(filename, mode)
+        f = open(filename, mode)
     except IOError:
         raise cant_open_exc, filename
     return f
@@ -151,7 +151,7 @@ The rules for (signing_rules == 1)-mode are:
     lines = changes_in.readlines()
 
     if not lines:
-	raise changes_parse_error_exc, "[Empty changes file]"
+        raise changes_parse_error_exc, "[Empty changes file]"
 
     # Reindex by line number so we can easily verify the format of
     # .dsc files...
@@ -197,7 +197,7 @@ The rules for (signing_rules == 1)-mode are:
         if slf:
             field = slf.groups()[0].lower()
             changes[field] = slf.groups()[1]
-	    first = 1
+            first = 1
             continue
         if line == " .":
             changes[field] += '\n'
@@ -209,9 +209,9 @@ The rules for (signing_rules == 1)-mode are:
             if first == 1 and changes[field] != "":
                 changes[field] += '\n'
             first = 0
-	    changes[field] += mlf.groups()[0] + '\n'
+            changes[field] += mlf.groups()[0] + '\n'
             continue
-	error += line
+        error += line
 
     if signing_rules == 1 and inside_signature:
         raise invalid_dsc_format_exc, index
@@ -221,14 +221,14 @@ The rules for (signing_rules == 1)-mode are:
 
     if changes.has_key("source"):
         # Strip the source version in brackets from the source field,
-	# put it in the "source-version" field instead.
+        # put it in the "source-version" field instead.
         srcver = re_srchasver.search(changes["source"])
-	if srcver:
+        if srcver:
             changes["source"] = srcver.group(1)
-	    changes["source-version"] = srcver.group(2)
+            changes["source-version"] = srcver.group(2)
 
     if error:
-	raise changes_parse_error_exc, error
+        raise changes_parse_error_exc, error
 
     return changes
 
@@ -262,7 +262,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     else:
         if (format < (1,5) or format > (1,8)):
             raise nk_format_exc, "%s" % (changes.get("format","0.0"))
-	if field != "files" and format < (1,8):
+        if field != "files" and format < (1,8):
             raise nk_format_exc, "%s" % (changes.get("format","0.0"))
 
     includes_section = (not is_a_dsc) and field == "files"
@@ -377,46 +377,46 @@ switched to 'email (name)' format."""
 
 # sendmail wrapper, takes _either_ a message string or a file as arguments
 def send_mail (message, filename=""):
-	# If we've been passed a string dump it into a temporary file
-	if message:
-            filename = tempfile.mktemp()
-            fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
-            os.write (fd, message)
-            os.close (fd)
+        # If we've been passed a string dump it into a temporary file
+    if message:
+        filename = tempfile.mktemp()
+        fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
+        os.write (fd, message)
+        os.close (fd)
 
-	# Invoke sendmail
-	(result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
-	if (result != 0):
-            raise sendmail_failed_exc, output
+    # Invoke sendmail
+    (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
+    if (result != 0):
+        raise sendmail_failed_exc, output
 
-	# Clean up any temporary files
-	if message:
-            os.unlink (filename)
+    # Clean up any temporary files
+    if message:
+        os.unlink (filename)
 
 ################################################################################
 
 def poolify (source, component):
     if component:
-	component += '/'
+        component += '/'
     if source[:3] == "lib":
-	return component + source[:4] + '/' + source + '/'
+        return component + source[:4] + '/' + source + '/'
     else:
-	return component + source[:1] + '/' + source + '/'
+        return component + source[:1] + '/' + source + '/'
 
 ################################################################################
 
 def move (src, dest, overwrite = 0, perms = 0664):
     if os.path.exists(dest) and os.path.isdir(dest):
-	dest_dir = dest
+        dest_dir = dest
     else:
-	dest_dir = os.path.dirname(dest)
+        dest_dir = os.path.dirname(dest)
     if not os.path.exists(dest_dir):
-	umask = os.umask(00000)
-	os.makedirs(dest_dir, 02775)
-	os.umask(umask)
+        umask = os.umask(00000)
+        os.makedirs(dest_dir, 02775)
+        os.umask(umask)
     #print "Moving %s to %s..." % (src, dest)
     if os.path.exists(dest) and os.path.isdir(dest):
-	dest += '/' + os.path.basename(src)
+        dest += '/' + os.path.basename(src)
     # Don't overwrite unless forced to
     if os.path.exists(dest):
         if not overwrite:
@@ -430,16 +430,16 @@ def move (src, dest, overwrite = 0, perms = 0664):
 
 def copy (src, dest, overwrite = 0, perms = 0664):
     if os.path.exists(dest) and os.path.isdir(dest):
-	dest_dir = dest
+        dest_dir = dest
     else:
-	dest_dir = os.path.dirname(dest)
+        dest_dir = os.path.dirname(dest)
     if not os.path.exists(dest_dir):
-	umask = os.umask(00000)
-	os.makedirs(dest_dir, 02775)
-	os.umask(umask)
+        umask = os.umask(00000)
+        os.makedirs(dest_dir, 02775)
+        os.umask(umask)
     #print "Copying %s to %s..." % (src, dest)
     if os.path.exists(dest) and os.path.isdir(dest):
-	dest += '/' + os.path.basename(src)
+        dest += '/' + os.path.basename(src)
     # Don't overwrite unless forced to
     if os.path.exists(dest):
         if not overwrite:
@@ -456,23 +456,23 @@ def where_am_i ():
     res = socket.gethostbyaddr(socket.gethostname())
     database_hostname = Cnf.get("Config::" + res[0] + "::DatabaseHostname")
     if database_hostname:
-	return database_hostname
+        return database_hostname
     else:
         return res[0]
 
 def which_conf_file ():
     res = socket.gethostbyaddr(socket.gethostname())
     if Cnf.get("Config::" + res[0] + "::DakConfig"):
-	return Cnf["Config::" + res[0] + "::DakConfig"]
+        return Cnf["Config::" + res[0] + "::DakConfig"]
     else:
-	return default_config
+        return default_config
 
 def which_apt_conf_file ():
     res = socket.gethostbyaddr(socket.gethostname())
     if Cnf.get("Config::" + res[0] + "::AptConfig"):
-	return Cnf["Config::" + res[0] + "::AptConfig"]
+        return Cnf["Config::" + res[0] + "::AptConfig"]
     else:
-	return default_apt_config
+        return default_apt_config
 
 def which_alias_file():
     hostname = socket.gethostbyaddr(socket.gethostname())[0]
@@ -666,9 +666,9 @@ def real_arch(arch):
 ################################################################################
 
 def join_with_commas_and(list):
-	if len(list) == 0: return "nothing"
-	if len(list) == 1: return list[0]
-	return ", ".join(list[:-1]) + " and " + list[-1]
+    if len(list) == 0: return "nothing"
+    if len(list) == 1: return list[0]
+    return ", ".join(list[:-1]) + " and " + list[-1]
 
 ################################################################################
 
@@ -686,7 +686,7 @@ def pp_deps (deps):
 ################################################################################
 
 def get_conf():
-	return Cnf
+    return Cnf
 
 ################################################################################
 
@@ -929,7 +929,7 @@ on error."""
         return "%s: tainted filename" % (filename)
 
     # Invoke gpgv on the file
-    status_read, status_write = os.pipe(); 
+    status_read, status_write = os.pipe();
     cmd = "gpgv --status-fd %s --keyring /dev/null %s" % (status_write, filename)
     (_, status, _) = gpgv_get_status_output(cmd, status_read, status_write)
 
@@ -1001,7 +1001,7 @@ used."""
             return None
 
     # Build the command line
-    status_read, status_write = os.pipe(); 
+    status_read, status_write = os.pipe();
     cmd = "gpgv --status-fd %s %s %s %s" % (
         status_write, gpg_keyring_args(keyrings), sig_filename, data_filename)
 
@@ -1096,21 +1096,21 @@ used."""
 ################################################################################
 
 def gpg_get_key_addresses(fingerprint):
-  """retreive email addresses from gpg key uids for a given fingerprint"""
-  addresses = key_uid_email_cache.get(fingerprint)
-  if addresses != None:
-      return addresses
-  addresses = set()
-  cmd = "gpg --no-default-keyring %s --fingerprint %s" \
-              % (gpg_keyring_args(), fingerprint)
-  (result, output) = commands.getstatusoutput(cmd)
-  if result == 0:
-    for l in output.split('\n'):
-      m = re_gpg_uid.match(l)
-      if m:
-        addresses.add(m.group(1))
-  key_uid_email_cache[fingerprint] = addresses
-  return addresses
+    """retreive email addresses from gpg key uids for a given fingerprint"""
+    addresses = key_uid_email_cache.get(fingerprint)
+    if addresses != None:
+        return addresses
+    addresses = set()
+    cmd = "gpg --no-default-keyring %s --fingerprint %s" \
+                % (gpg_keyring_args(), fingerprint)
+    (result, output) = commands.getstatusoutput(cmd)
+    if result == 0:
+        for l in output.split('\n'):
+            m = re_gpg_uid.match(l)
+            if m:
+                addresses.add(m.group(1))
+    key_uid_email_cache[fingerprint] = addresses
+    return addresses
 
 ################################################################################
 
@@ -1202,6 +1202,6 @@ Cnf = apt_pkg.newConfiguration()
 apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
 if which_conf_file() != default_config:
-	apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
+    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
 
 ################################################################################

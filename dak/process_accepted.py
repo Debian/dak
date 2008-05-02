@@ -33,7 +33,7 @@ import errno, fcntl, os, sys, time, re
 import apt_pkg
 import daklib.database
 import daklib.logging
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 ###############################################################################
@@ -133,15 +133,15 @@ def check():
         # propogate in the case it is in the override tables:
         if changes.has_key("propdistribution"):
             for suite in changes["propdistribution"].keys():
-		if Upload.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
-		    propogate[suite] = 1
-		else:
-		    nopropogate[suite] = 1
+                if Upload.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
+                    propogate[suite] = 1
+                else:
+                    nopropogate[suite] = 1
 
     for suite in propogate.keys():
-	if suite in nopropogate:
-	    continue
-	changes["distribution"][suite] = 1
+        if suite in nopropogate:
+            continue
+        changes["distribution"][suite] = 1
 
     for file in files.keys():
         # Check the package is still in the override tables
@@ -163,8 +163,8 @@ def init():
                  ('s',"no-mail", "Dinstall::Options::No-Mail")]
 
     for i in ["automatic", "help", "no-action", "no-lock", "no-mail", "version"]:
-	if not Cnf.has_key("Dinstall::Options::%s" % (i)):
-	    Cnf["Dinstall::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Dinstall::Options::%s" % (i)):
+            Cnf["Dinstall::Options::%s" % (i)] = ""
 
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Dinstall::Options")
@@ -211,8 +211,8 @@ def action ():
         if Options["Automatic"]:
             answer = 'R'
     else:
-        print "INSTALL to " + ", ".join(changes["distribution"].keys()) 
-	print reject_message + summary,
+        print "INSTALL to " + ", ".join(changes["distribution"].keys())
+        print reject_message + summary,
         prompt = "[I]nstall, Skip, Quit ?"
         if Options["Automatic"]:
             answer = 'I'
@@ -345,8 +345,8 @@ def install ():
             source = files[file]["source package"]
             source_version = files[file]["source version"]
             filename = files[file]["pool name"] + file
-	    if not files[file].has_key("location id") or not files[file]["location id"]:
-		files[file]["location id"] = daklib.database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],daklib.utils.where_am_i())
+            if not files[file].has_key("location id") or not files[file]["location id"]:
+                files[file]["location id"] = daklib.database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],daklib.utils.where_am_i())
             if not files[file].has_key("files id") or not files[file]["files id"]:
                 files[file]["files id"] = daklib.database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
             source_id = daklib.database.get_source_id (source, source_version)

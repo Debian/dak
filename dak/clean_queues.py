@@ -173,10 +173,10 @@ def main ():
     Cnf = daklib.utils.get_conf()
 
     for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
-	if not Cnf.has_key("Clean-Queues::Options::%s" % (i)):
-	    Cnf["Clean-Queues::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Clean-Queues::Options::%s" % (i)):
+            Cnf["Clean-Queues::Options::%s" % (i)] = ""
     if not Cnf.has_key("Clean-Queues::Options::Days"):
-	Cnf["Clean-Queues::Options::Days"] = "14"
+        Cnf["Clean-Queues::Options::Days"] = "14"
 
     Arguments = [('h',"help","Clean-Queues::Options::Help"),
                  ('d',"days","Clean-Queues::Options::Days", "IntLevel"),
@@ -188,7 +188,7 @@ def main ():
     Options = Cnf.SubTree("Clean-Queues::Options")
 
     if Options["Help"]:
-	usage()
+        usage()
 
     init()
 

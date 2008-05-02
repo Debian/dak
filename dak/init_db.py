@@ -190,7 +190,7 @@ def do_section():
     projectB.query("COMMIT WORK")
 
 ################################################################################
-    
+
 def main ():
     """Sync dak.conf configuartion file and the SQL database"""
 

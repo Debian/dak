@@ -141,8 +141,8 @@ def main ():
     Cnf = daklib.utils.get_conf()
 
     for i in ["help", "limit", "no-action", "verbose" ]:
-	if not Cnf.has_key("Poolize::Options::%s" % (i)):
-	    Cnf["Poolize::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Poolize::Options::%s" % (i)):
+            Cnf["Poolize::Options::%s" % (i)] = ""
 
 
     Arguments = [('h',"help","Poolize::Options::Help"),
@@ -190,4 +190,3 @@ UNION SELECT l.path, f.filename, f.id as files_id, null as component
 
 if __name__ == '__main__':
     main()
-

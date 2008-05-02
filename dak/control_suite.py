@@ -242,14 +242,14 @@ def main ():
                  ('s',"set", "Control-Suite::Options::Set", "HasArg")]
 
     for i in ["add", "help", "list", "remove", "set", "version" ]:
-	if not Cnf.has_key("Control-Suite::Options::%s" % (i)):
-	    Cnf["Control-Suite::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Control-Suite::Options::%s" % (i)):
+            Cnf["Control-Suite::Options::%s" % (i)] = ""
 
     file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Control-Suite::Options")
 
     if Options["Help"]:
-	usage()
+        usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],int(Cnf["DB::Port"]))
 
@@ -290,4 +290,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

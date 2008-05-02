@@ -47,14 +47,14 @@ def main ():
     Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Compare-Suites::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Compare-Suites::Options::%s" % (i)):
-	    Cnf["Compare-Suites::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Compare-Suites::Options::%s" % (i)):
+            Cnf["Compare-Suites::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Compare-Suites::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
@@ -99,4 +99,3 @@ ORDER BY b_src.package;"""
 
 if __name__ == '__main__':
     main()
-

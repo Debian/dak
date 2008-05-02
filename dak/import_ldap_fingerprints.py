@@ -91,14 +91,14 @@ def main():
     Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Import-LDAP-Fingerprints::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Import-LDAP-Fingerprints::Options::%s" % (i)):
-	    Cnf["Import-LDAP-Fingerprints::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Import-LDAP-Fingerprints::Options::%s" % (i)):
+            Cnf["Import-LDAP-Fingerprints::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Import-LDAP-Fingerprints::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
@@ -139,8 +139,8 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
         uid_id = daklib.database.get_or_set_uid_id(uid)
 
         if not db_uid_name.has_key(uid_id) or db_uid_name[uid_id] != name:
-	    q = projectB.query("UPDATE uid SET name = '%s' WHERE id = %d" % (escape_string(name), uid_id))
-	    print "Assigning name of %s as %s" % (uid, name)
+            q = projectB.query("UPDATE uid SET name = '%s' WHERE id = %d" % (escape_string(name), uid_id))
+            print "Assigning name of %s as %s" % (uid, name)
 
         for fingerprint in fingerprints:
             ldap_fin_uid_id[fingerprint] = (uid, uid_id)
@@ -149,9 +149,9 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                 if not existing_uid:
                     q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                     print "Assigning %s to 0x%s." % (uid, fingerprint)
-		elif existing_uid == uid:
-		    pass
-		elif existing_uid[:3] == "dm:":
+                elif existing_uid == uid:
+                    pass
+                elif existing_uid[:3] == "dm:":
                     q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                     print "Promoting DM %s to DD %s with keyid 0x%s." % (existing_uid, uid, fingerprint)
                 else:
@@ -173,10 +173,10 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             primary_key = primary_key.replace(" ","")
             if not ldap_fin_uid_id.has_key(primary_key):
                 daklib.utils.warn("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
-	    else:
-            	(uid, uid_id) = ldap_fin_uid_id[primary_key]
-            	q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
-            	print "Assigning %s to 0x%s." % (uid, fingerprint)
+            else:
+                (uid, uid_id) = ldap_fin_uid_id[primary_key]
+                q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
+                print "Assigning %s to 0x%s." % (uid, fingerprint)
         else:
             extra_keyrings = ""
             for keyring in Cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):

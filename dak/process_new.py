@@ -41,7 +41,7 @@ import apt_pkg, apt_inst
 import examine_package
 import daklib.database
 import daklib.logging
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 # Globals
@@ -609,14 +609,14 @@ def do_new():
     for suite in changes["suite"].keys():
         override = Cnf.Find("Suite::%s::OverrideSuite" % (suite))
         if override:
-	    (olderr, newerr) = (daklib.database.get_suite_id(suite) == -1,
-	      daklib.database.get_suite_id(override) == -1)
-	    if olderr or newerr:
-	        (oinv, newinv) = ("", "")
-		if olderr: oinv = "invalid "
-		if newerr: ninv = "invalid "
-	        print "warning: overriding %ssuite %s to %ssuite %s" % (
-			oinv, suite, ninv, override)
+            (olderr, newerr) = (daklib.database.get_suite_id(suite) == -1,
+              daklib.database.get_suite_id(override) == -1)
+            if olderr or newerr:
+                (oinv, newinv) = ("", "")
+                if olderr: oinv = "invalid "
+                if newerr: ninv = "invalid "
+                print "warning: overriding %ssuite %s to %ssuite %s" % (
+                        oinv, suite, ninv, override)
             del changes["suite"][suite]
             changes["suite"][override] = 1
     # Validate suites
@@ -787,18 +787,18 @@ def get_accept_lock():
     retry = 0
     while retry < 10:
         try:
-	    lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
+            lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
             retry = 10
-	except OSError, e:
-	    if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
-	        retry += 1
-		if (retry >= 10):
-		    daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
-		else:
-		    print("Unable to get accepted lock (try %d of 10)" % retry)
-		time.sleep(60)
-	    else:
-		raise
+        except OSError, e:
+            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
+                retry += 1
+                if (retry >= 10):
+                    daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
+                else:
+                    print("Unable to get accepted lock (try %d of 10)" % retry)
+                time.sleep(60)
+            else:
+                raise
 
 def move_to_dir (dest, perms=0660, changesperms=0664):
     daklib.utils.move (Upload.pkg.changes_file, dest, perms=changesperms)
@@ -876,16 +876,16 @@ def do_comments(dir, opref, npref, line, fn):
         if len(lines) == 0 or lines[0] != line + "\n": continue
         changes_files = [ x for x in os.listdir(".") if x.startswith(comm[7:]+"_")
                                 and x.endswith(".changes") ]
-	changes_files = sort_changes(changes_files)
+        changes_files = sort_changes(changes_files)
         for f in changes_files:
-                f = daklib.utils.validate_changes_file_arg(f, 0)
-                if not f: continue
-                print "\n" + f
-                fn(f, "".join(lines[1:]))
+            f = daklib.utils.validate_changes_file_arg(f, 0)
+            if not f: continue
+            print "\n" + f
+            fn(f, "".join(lines[1:]))
 
         if opref != npref and not Options["No-Action"]:
-                newcomm = npref + comm[len(opref):]
-                os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
+            newcomm = npref + comm[len(opref):]
+            os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
 
 ################################################################################
 

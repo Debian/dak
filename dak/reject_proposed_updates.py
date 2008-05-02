@@ -23,7 +23,7 @@ import os, pg, sys
 import apt_pkg
 import daklib.database
 import daklib.logging
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 ################################################################################
@@ -56,14 +56,14 @@ def main():
                  ('m',"manual-reject","Reject-Proposed-Updates::Options::Manual-Reject", "HasArg"),
                  ('s',"no-mail", "Reject-Proposed-Updates::Options::No-Mail")]
     for i in [ "help", "manual-reject", "no-mail" ]:
-	if not Cnf.has_key("Reject-Proposed-Updates::Options::%s" % (i)):
-	    Cnf["Reject-Proposed-Updates::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Reject-Proposed-Updates::Options::%s" % (i)):
+            Cnf["Reject-Proposed-Updates::Options::%s" % (i)] = ""
 
     arguments = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Reject-Proposed-Updates::Options")
     if Options["Help"]:
-	usage()
+        usage()
     if not arguments:
         daklib.utils.fubar("need at least one .changes filename as an argument.")
 
@@ -82,7 +82,7 @@ def main():
     for arg in arguments:
         arg = daklib.utils.validate_changes_file_arg(arg)
         Upload.pkg.changes_file = arg
-	Upload.init_vars()
+        Upload.init_vars()
         cwd = os.getcwd()
         os.chdir(Cnf["Suite::Proposed-Updates::CopyDotDak"])
         Upload.update_vars()
@@ -159,7 +159,7 @@ def reject (reject_message = ""):
     # If we fail here someone is probably trying to exploit the race
     # so let's just raise an exception ...
     if os.path.exists(reject_filename):
-         os.unlink(reject_filename)
+        os.unlink(reject_filename)
     reject_fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
 
     # Build up the rejection email

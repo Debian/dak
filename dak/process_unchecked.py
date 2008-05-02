@@ -32,7 +32,7 @@ import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceb
 import apt_inst, apt_pkg
 import daklib.database
 import daklib.logging
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 from types import *
@@ -206,7 +206,7 @@ def check_changes():
 
     # Strip a source version in brackets from the source field
     if re_strip_srcver.search(changes["source"]):
-	changes["source"] = re_strip_srcver.sub('', changes["source"])
+        changes["source"] = re_strip_srcver.sub('', changes["source"])
 
     # Ensure the source field is a valid package name.
     if not re_valid_pkg_name.match(changes["source"]):
@@ -238,7 +238,7 @@ def check_changes():
     except daklib.utils.ParseMaintError, msg:
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
-	 ("", "", "", "")
+         ("", "", "", "")
         reject("%s: Changed-By field ('%s') failed to parse: %s" \
                % (filename, changes["changed-by"], msg))
 
@@ -389,7 +389,7 @@ def check_files():
     for file in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
         for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
-	    if not Cnf.has_key("Dir::Queue::%s" % (dir)): continue
+            if not Cnf.has_key("Dir::Queue::%s" % (dir)): continue
             if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+file):
                 reject("%s file already exists in the %s directory." % (file, dir))
         if not daklib.utils.re_taint_free.match(file):
@@ -536,13 +536,13 @@ def check_files():
                     elif os.path.exists(Cnf["Dir::Queue::New"] + '/' + dsc_filename):
                         files[file]["new"] = 1
                     else:
-		        dsc_file_exists = 0
+                        dsc_file_exists = 0
                         for myq in ["Accepted", "Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
-			    if Cnf.has_key("Dir::Queue::%s" % (myq)):
-				if os.path.exists(Cnf["Dir::Queue::"+myq] + '/' + dsc_filename):
-				    dsc_file_exists = 1
-				    break
-			if not dsc_file_exists:
+                            if Cnf.has_key("Dir::Queue::%s" % (myq)):
+                                if os.path.exists(Cnf["Dir::Queue::"+myq] + '/' + dsc_filename):
+                                    dsc_file_exists = 1
+                                    break
+                        if not dsc_file_exists:
                             reject("no source found for %s %s (%s)." % (source_package, source_version, file))
             # Check the version and for file overwrites
             reject(Upload.check_binary_against_db(file),"")
@@ -754,7 +754,7 @@ def check_dsc():
         m = daklib.utils.re_issource.match(f)
         if not m:
             reject("%s: %s in Files field not recognised as source." % (dsc_filename, f))
-	    continue
+            continue
         type = m.group(3)
         if type == "orig.tar.gz" or type == "tar.gz":
             has_tar = 1
@@ -856,7 +856,7 @@ def get_changelog_versions(source_dir):
 
 def check_source():
     # Bail out if:
-    #    a) there's no source 
+    #    a) there's no source
     # or b) reprocess is 2 - we will do this check next time when orig.tar.gz is in 'files'
     # or c) the orig.tar.gz is MIA
     if not changes["architecture"].has_key("source") or reprocess == 2 \
@@ -931,30 +931,30 @@ def check_hashes ():
 
     for x in changes:
         if x.startswith("checksum-"):
-	    h = x.split("-",1)[1] 
-	    if h not in dict(hashes):
-	        reject("Unsupported checksum field in .changes" % (h))
+            h = x.split("-",1)[1]
+            if h not in dict(hashes):
+                reject("Unsupported checksum field in .changes" % (h))
 
     for x in dsc:
         if x.startswith("checksum-"):
-	    h = x.split("-",1)[1] 
-	    if h not in dict(hashes):
-	        reject("Unsupported checksum field in .dsc" % (h))
+            h = x.split("-",1)[1]
+            if h not in dict(hashes):
+                reject("Unsupported checksum field in .dsc" % (h))
 
     for h,f in hashes:
         try:
             fs = daklib.utils.build_file_list(changes, 0, "checksums-%s" % h, h)
             check_hash(".changes %s" % (h), fs, h, f, files)
-	except daklib.utils.no_files_exc:
-	    reject("No Checksums-%s: field in .changes file" % (h))
+        except daklib.utils.no_files_exc:
+            reject("No Checksums-%s: field in .changes file" % (h))
 
         if "source" not in changes["architecture"]: continue
 
         try:
             fs = daklib.utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
             check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
-	except daklib.utils.no_files_exc:
-	    reject("No Checksums-%s: field in .changes file" % (h))
+        except daklib.utils.no_files_exc:
+            reject("No Checksums-%s: field in .changes file" % (h))
 
 ################################################################################
 
@@ -1069,8 +1069,8 @@ def check_signed_by_key():
     if uid == None:
         uid, uid_email = changes["fingerprint"], uid
         may_nmu, may_sponsor = 1, 1
-	# XXX by default new dds don't have a fingerprint/uid in the db atm,
-	#     and can't get one in there if we don't allow nmu/sponsorship
+        # XXX by default new dds don't have a fingerprint/uid in the db atm,
+        #     and can't get one in there if we don't allow nmu/sponsorship
     elif uid[:3] == "dm:":
         uid_email = uid[3:]
         may_nmu, may_sponsor = 0, 0
@@ -1092,13 +1092,13 @@ def check_signed_by_key():
                 changes["changedbyemail"] not in sponsor_addresses):
                 changes["sponsoremail"] = uid_email
 
-    if sponsored and not may_sponsor: 
+    if sponsored and not may_sponsor:
         reject("%s is not authorised to sponsor uploads" % (uid))
 
     if not sponsored and not may_nmu:
         source_ids = []
-	check_suites = changes["distribution"].keys()
-	if "unstable" not in check_suites: check_suites.append("unstable")
+        check_suites = changes["distribution"].keys()
+        if "unstable" not in check_suites: check_suites.append("unstable")
         for suite in check_suites:
             suite_id = daklib.database.get_suite_id(suite)
             q = Upload.projectB.query("SELECT s.id FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND sa.suite = %d" % (changes["source"], suite_id))
@@ -1122,13 +1122,13 @@ def check_signed_by_key():
         for b in changes["binary"].keys():
             for suite in changes["distribution"].keys():
                 suite_id = daklib.database.get_suite_id(suite)
-	        q = Upload.projectB.query("SELECT DISTINCT s.source FROM source s JOIN binaries b ON (s.id = b.source) JOIN bin_associations ba On (b.id = ba.bin) WHERE b.package = '%s' AND ba.suite = %s" % (b, suite_id))
-		for s in q.getresult():
+                q = Upload.projectB.query("SELECT DISTINCT s.source FROM source s JOIN binaries b ON (s.id = b.source) JOIN bin_associations ba On (b.id = ba.bin) WHERE b.package = '%s' AND ba.suite = %s" % (b, suite_id))
+                for s in q.getresult():
                     if s[0] != changes["source"]:
                         reject("%s may not hijack %s from source package %s in suite %s" % (uid, b, s, suite))
 
         for file in files.keys():
-            if files[file].has_key("byhand"): 
+            if files[file].has_key("byhand"):
                 reject("%s may not upload BYHAND file %s" % (uid, file))
             if files[file].has_key("new"):
                 reject("%s may not upload NEW file %s" % (uid, file))
@@ -1208,10 +1208,10 @@ def action ():
     # q-unapproved hax0ring
     queue_info = {
          "New": { "is": is_new, "process": acknowledge_new },
-	 "Autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
+         "Autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
          "Byhand" : { "is": is_byhand, "process": do_byhand },
-         "OldStableUpdate" : { "is": is_oldstableupdate, 
-	 			"process": do_oldstableupdate },
+         "OldStableUpdate" : { "is": is_oldstableupdate,
+                                "process": do_oldstableupdate },
          "StableUpdate" : { "is": is_stableupdate, "process": do_stableupdate },
          "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
          "Embargo" : { "is": is_embargo, "process": queue_embargo },
@@ -1245,7 +1245,7 @@ def action ():
                 break
         if queue:
             print "%s for %s\n%s%s" % (
-                queue.upper(), ", ".join(changes["distribution"].keys()), 
+                queue.upper(), ", ".join(changes["distribution"].keys()),
                 reject_message, summary),
             queuekey = queue[0].upper()
             if queuekey in "RQSA":
@@ -1304,7 +1304,7 @@ def move_to_dir (dest, perms=0660, changesperms=0664):
 
 def is_unembargo ():
     q = Upload.projectB.query(
-      "SELECT package FROM disembargo WHERE package = '%s' AND version = '%s'" % 
+      "SELECT package FROM disembargo WHERE package = '%s' AND version = '%s'" %
       (changes["source"], changes["version"]))
     ql = q.getresult()
     if ql:
@@ -1320,7 +1320,7 @@ def is_unembargo ():
             if Options["No-Action"]: return 1
 
             Upload.projectB.query(
-              "INSERT INTO disembargo (package, version) VALUES ('%s', '%s')" % 
+              "INSERT INTO disembargo (package, version) VALUES ('%s', '%s')" %
               (changes["source"], changes["version"]))
             return 1
 
@@ -1360,12 +1360,12 @@ def queue_embargo (summary, short_summary):
 
 def is_stableupdate ():
     if not changes["distribution"].has_key("proposed-updates"):
-	return 0
+        return 0
 
     if not changes["architecture"].has_key("source"):
         pusuite = daklib.database.get_suite_id("proposed-updates")
         q = Upload.projectB.query(
-          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" % 
+          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" %
           (changes["source"], changes["version"], pusuite))
         ql = q.getresult()
         if ql:
@@ -1389,12 +1389,12 @@ def do_stableupdate (summary, short_summary):
 
 def is_oldstableupdate ():
     if not changes["distribution"].has_key("oldstable-proposed-updates"):
-	return 0
+        return 0
 
     if not changes["architecture"].has_key("source"):
         pusuite = daklib.database.get_suite_id("oldstable-proposed-updates")
         q = Upload.projectB.query(
-          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" % 
+          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" %
           (changes["source"], changes["version"], pusuite))
         ql = q.getresult()
         if ql:
@@ -1421,35 +1421,35 @@ def is_autobyhand ():
     any_auto = 0
     for file in files.keys():
         if files[file].has_key("byhand"):
-	    any_auto = 1
+            any_auto = 1
 
-	    # filename is of form "PKG_VER_ARCH.EXT" where PKG, VER and ARCH
-	    # don't contain underscores, and ARCH doesn't contain dots.
-	    # further VER matches the .changes Version:, and ARCH should be in
-	    # the .changes Architecture: list.
-	    if file.count("_") < 2:
-	    	all_auto = 0
-		continue
-	
-	    (pkg, ver, archext) = file.split("_", 2)
-	    if archext.count(".") < 1 or changes["version"] != ver:
-	    	all_auto = 0
-		continue
+            # filename is of form "PKG_VER_ARCH.EXT" where PKG, VER and ARCH
+            # don't contain underscores, and ARCH doesn't contain dots.
+            # further VER matches the .changes Version:, and ARCH should be in
+            # the .changes Architecture: list.
+            if file.count("_") < 2:
+                all_auto = 0
+                continue
 
-	    ABH = Cnf.SubTree("AutomaticByHandPackages")
-	    if not ABH.has_key(pkg) or \
-	      ABH["%s::Source" % (pkg)] != changes["source"]:
-	        print "not match %s %s" % (pkg, changes["source"])
-	        all_auto = 0
-		continue
+            (pkg, ver, archext) = file.split("_", 2)
+            if archext.count(".") < 1 or changes["version"] != ver:
+                all_auto = 0
+                continue
 
-	    (arch, ext) = archext.split(".", 1)
-	    if arch not in changes["architecture"]:
-	        all_auto = 0
-		continue
+            ABH = Cnf.SubTree("AutomaticByHandPackages")
+            if not ABH.has_key(pkg) or \
+              ABH["%s::Source" % (pkg)] != changes["source"]:
+                print "not match %s %s" % (pkg, changes["source"])
+                all_auto = 0
+                continue
 
-	    files[file]["byhand-arch"] = arch
-	    files[file]["byhand-script"] = ABH["%s::Script" % (pkg)]
+            (arch, ext) = archext.split(".", 1)
+            if arch not in changes["architecture"]:
+                all_auto = 0
+                continue
+
+            files[file]["byhand-arch"] = arch
+            files[file]["byhand-script"] = ABH["%s::Script" % (pkg)]
 
     return any_auto and all_auto
 
@@ -1466,7 +1466,7 @@ def do_autobyhand (summary, short_summary):
 
         os.system("ls -l %s" % byhandfile)
         result = os.system("%s %s %s %s %s" % (
-                files[file]["byhand-script"], byhandfile, 
+                files[file]["byhand-script"], byhandfile,
                 changes["version"], files[file]["byhand-arch"],
                 os.path.abspath(pkg.changes_file)))
         if result == 0:
@@ -1584,7 +1584,7 @@ def process_it (changes_file):
         raise
     except:
         print "ERROR"
-	traceback.print_exc(file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         pass
 
     # Restore previous WD
@@ -1664,4 +1664,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

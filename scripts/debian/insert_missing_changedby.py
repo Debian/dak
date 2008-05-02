@@ -57,7 +57,7 @@ def get_or_set_maintainer_id (maintainer):
 
     if isinstance(maintainer, basestring):
         if not isinstance(maintainer, unicode):
-	    try:
+            try:
                 maintainer = unicode(maintainer, 'utf-8')
             except:
                 maintainer = unicode(maintainer, 'iso8859-15')
@@ -106,7 +106,7 @@ def insert ():
             sqliteConn.text_factory = unicode
         if res:
             changedby_id = get_or_set_maintainer_id(res[0])
-        
+
             cur = projectBdb.cursor()
             cur.execute("UPDATE source SET changedby=%s WHERE id=%s" % (changedby_id, row[0]))
             cur.close()

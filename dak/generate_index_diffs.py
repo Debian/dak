@@ -107,51 +107,51 @@ class Updates:
         self.filesizesha1 = None
 
         if readpath:
-          try:
-            f = open(readpath + "/Index")
-            x = f.readline()
-
-            def read_hashs(ind, f, self, x=x):
-                while 1:
-                    x = f.readline()
-                    if not x or x[0] != " ": break
-                    l = x.split()
-                    if not self.history.has_key(l[2]):
-                        self.history[l[2]] = [None,None]
-			self.history_order.append(l[2])
-                    self.history[l[2]][ind] = (l[0], int(l[1]))
-                return x
-
-            while x:
-                l = x.split()
-
-                if len(l) == 0:
-                    x = f.readline()
-                    continue
-
-                if l[0] == "SHA1-History:":
-                    x = read_hashs(0,f,self)
-                    continue
-
-                if l[0] == "SHA1-Patches:":
-                    x = read_hashs(1,f,self)
-                    continue
-
-                if l[0] == "Canonical-Name:" or l[0]=="Canonical-Path:":
-                    self.can_path = l[1]
-
-                if l[0] == "SHA1-Current:" and len(l) == 3:
-                    self.filesizesha1 = (l[1], int(l[2]))
-
+            try:
+                f = open(readpath + "/Index")
                 x = f.readline()
 
-          except IOError:
-            0
+                def read_hashs(ind, f, self, x=x):
+                    while 1:
+                        x = f.readline()
+                        if not x or x[0] != " ": break
+                        l = x.split()
+                        if not self.history.has_key(l[2]):
+                            self.history[l[2]] = [None,None]
+                            self.history_order.append(l[2])
+                        self.history[l[2]][ind] = (l[0], int(l[1]))
+                    return x
+
+                while x:
+                    l = x.split()
+
+                    if len(l) == 0:
+                        x = f.readline()
+                        continue
+
+                    if l[0] == "SHA1-History:":
+                        x = read_hashs(0,f,self)
+                        continue
+
+                    if l[0] == "SHA1-Patches:":
+                        x = read_hashs(1,f,self)
+                        continue
+
+                    if l[0] == "Canonical-Name:" or l[0]=="Canonical-Path:":
+                        self.can_path = l[1]
+
+                    if l[0] == "SHA1-Current:" and len(l) == 3:
+                        self.filesizesha1 = (l[1], int(l[2]))
+
+                    x = f.readline()
+
+            except IOError:
+                0
 
     def dump(self, out=sys.stdout):
         if self.can_path:
             out.write("Canonical-Path: %s\n" % (self.can_path))
-        
+
         if self.filesizesha1:
             out.write("SHA1-Current: %s %7d\n" % (self.filesizesha1))
 
@@ -164,7 +164,7 @@ class Updates:
                 tryunlink("%s/%s.gz" % (self.readpath, h))
                 del hs[h]
             l = l[cnt-self.max:]
-	    self.history_order = l[:]
+            self.history_order = l[:]
 
         out.write("SHA1-History:\n")
         for h in l:
@@ -192,7 +192,7 @@ def sizesha1(f):
     return (sha1sum, size)
 
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
-    if Options.has_key("NoAct"): 
+    if Options.has_key("NoAct"):
         return
 
     patchname = Options["PatchName"]
@@ -258,7 +258,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
         print "%s: unchanged" % (origfile)
     else:
         if not os.path.isdir(outdir): os.mkdir(outdir)
-        w = os.popen("diff --ed - %s | gzip -c -9 > %s.gz" % 
+        w = os.popen("diff --ed - %s | gzip -c -9 > %s.gz" %
                          (newfile, difffile), "w")
         pipe_file(oldf, w)
         oldf.close()
@@ -293,7 +293,7 @@ def main():
                   ('r', "rootdir", "Generate-Index-Diffs::Options::RootDir", "hasArg"),
                   ('d', "tmpdir", "Generate-Index-Diffs::Options::TempDir", "hasArg"),
                   ('m', "maxdiffs", "Generate-Index-Diffs::Options::MaxDiffs", "hasArg"),
-		  ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
+                  ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
                 ]
     suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Generate-Index-Diffs::Options")

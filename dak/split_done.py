@@ -42,7 +42,7 @@ def main():
             dest = dirname + '/' + os.path.basename(filename)
             if os.path.exists(dest):
                 daklib.utils.fubar("%s already exists." % (dest))
-            print "Move: %s -> %s" % (filename, dest) 
+            print "Move: %s -> %s" % (filename, dest)
             os.rename(filename, dest)
             count = count + 1
     print "Moved %d files." % (count)

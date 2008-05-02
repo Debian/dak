@@ -55,14 +55,14 @@ it."""
 
 def process_file(config, config_name):
     """Create directories for a config entry that's a filename."""
-    
+
     if config.has_key(config_name):
         target = os.path.dirname(config[config_name])
         do_dir(target, config_name)
 
 def process_tree(config, tree):
     """Create directories for a config tree."""
-    
+
     for entry in config.SubTree(tree).List():
         entry = entry.lower()
         if tree == "Dir":
@@ -74,7 +74,7 @@ def process_tree(config, tree):
 
 def process_morguesubdir(subdir):
     """Create directories for morgue sub directories."""
-    
+
     config_name = "%s::MorgueSubDir" % (subdir)
     if Cnf.has_key(config_name):
         target = os.path.join(Cnf["Dir::Morgue"], Cnf[config_name])
@@ -142,4 +142,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

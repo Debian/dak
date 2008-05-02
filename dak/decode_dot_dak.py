@@ -28,7 +28,7 @@
 
 import sys
 import apt_pkg
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 ################################################################################
@@ -46,21 +46,21 @@ def main():
     Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Decode-Dot-Dak::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Decode-Dot-Dak::Options::%s" % (i)):
-	    Cnf["Decode-Dot-Dak::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Decode-Dot-Dak::Options::%s" % (i)):
+            Cnf["Decode-Dot-Dak::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Decode-Dot-Dak::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     k = daklib.queue.Upload(Cnf)
     for arg in sys.argv[1:]:
         arg = daklib.utils.validate_changes_file_arg(arg,require_changes=-1)
         k.pkg.changes_file = arg
         print "%s:" % (arg)
-	k.init_vars()
+        k.init_vars()
         k.update_vars()
 
         changes = k.pkg.changes
@@ -131,4 +131,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

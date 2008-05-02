@@ -68,16 +68,16 @@ def main ():
                  ('s',"suite","Override::Options::Suite", "HasArg"),
                  ]
     for i in ["help", "no-action"]:
-	if not Cnf.has_key("Override::Options::%s" % (i)):
-	    Cnf["Override::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Override::Options::%s" % (i)):
+            Cnf["Override::Options::%s" % (i)] = ""
     if not Cnf.has_key("Override::Options::Suite"):
-	Cnf["Override::Options::Suite"] = "unstable"
+        Cnf["Override::Options::Suite"] = "unstable"
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Override::Options")
 
     if Options["Help"]:
-	usage()
+        usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)

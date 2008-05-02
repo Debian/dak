@@ -76,8 +76,8 @@ def main ():
     for i in [ "architecture", "binarytype", "component", "format",
                "greaterorequal", "greaterthan", "regex", "suite",
                "source-and-binary", "help" ]:
-	if not Cnf.has_key("Ls::Options::%s" % (i)):
-	    Cnf["Ls::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Ls::Options::%s" % (i)):
+            Cnf["Ls::Options::%s" % (i)] = ""
 
     packages = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Ls::Options")
@@ -198,4 +198,3 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
 
 if __name__ == '__main__':
     main()
-

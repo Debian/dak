@@ -156,7 +156,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
             if not src_packages.has_key(package) or src_packages[package]:
                 continue
             src_packages[package] = 1
-            
+
             Logger.log(["add missing override", osuite, component,
                 type, package, "source", sections[i[2]], i[3]])
             if not Options["No-Action"]:
@@ -327,7 +327,7 @@ def main ():
         suiteids = []
         for i in q.getresult():
             suiteids.append(i[0])
-            
+
         if len(suiteids) != len(suites) or len(suiteids) < 1:
             daklib.utils.fubar("Couldn't find id's of all suites: %s" % suites)
 
@@ -351,4 +351,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

@@ -1,5 +1,58 @@
 2008-05-02  Joerg Jaspert  <joerg@debian.org>
 
+	* config/debian/extensions.py: used reindent.py from the python
+	2.x source examples to get all dak code use the same indentation
+	style, no longer a mix of 4 spaces / 1 tab.
+	* dak/check_archive.py: likewise
+	* dak/check_overrides.py: likewise
+	* dak/check_proposed_updates.py: likewise
+	* dak/clean_proposed_updates.py: likewise
+	* dak/clean_queues.py: likewise
+	* dak/clean_suites.py: likewise
+	* dak/compare_suites.py: likewise
+	* dak/control_overrides.py: likewise
+	* dak/control_suite.py: likewise
+	* dak/cruft_report.py: likewise
+	* dak/dak.py: likewise
+	* dak/decode_dot_dak.py: likewise
+	* dak/examine_package.py: likewise
+	* dak/find_null_maintainers.py: likewise
+	* dak/generate_index_diffs.py: likewise
+	* dak/generate_releases.py: likewise
+	* dak/import_archive.py: likewise
+	* dak/import_keyring.py: likewise
+	* dak/import_ldap_fingerprints.py: likewise
+	* dak/import_users_from_passwd.py: likewise
+	* dak/init_db.py: likewise
+	* dak/init_dirs.py: likewise
+	* dak/ls.py: likewise
+	* dak/make_maintainers.py: likewise
+	* dak/make_overrides.py: likewise
+	* dak/make_suite_file_list.py: likewise
+	* dak/mirror_split.py: likewise
+	* dak/new_security_install.py: likewise
+	* dak/override.py: likewise
+	* dak/poolize.py: likewise
+	* dak/process_accepted.py: likewise
+	* dak/process_new.py: likewise
+	* dak/process_unchecked.py: likewise
+	* dak/queue_report.py: likewise
+	* dak/reject_proposed_updates.py: likewise
+	* dak/rm.py: likewise
+	* dak/security_install.py: likewise
+	* dak/show_new.py: likewise
+	* dak/split_done.py: likewise
+	* dak/stats.py: likewise
+	* dak/symlink_dists.py: likewise
+	* dak/test/001/test.py: likewise
+	* dak/test/002/test.py: likewise
+	* dak/transitions.py: likewise
+	* daklib/extensions.py: likewise
+	* daklib/logging.py: likewise
+	* daklib/queue.py: likewise
+	* daklib/utils.py: likewise
+	* scripts/debian/insert_missing_changedby.py: likewise
+
 	* dak/process_new.py (recheck): Make the path check more robust,
 	so we no longer have to keep process_new seperate trees between
 	security and normal archive.

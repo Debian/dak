@@ -61,8 +61,8 @@ def main ():
                  ('v', "verbose", "Import-Users-From-Passwd::Options::Verbose"),
                  ('h', "help", "Import-Users-From-Passwd::Options::Help")]
     for i in [ "no-action", "quiet", "verbose", "help" ]:
-	if not Cnf.has_key("Import-Users-From-Passwd::Options::%s" % (i)):
-	    Cnf["Import-Users-From-Passwd::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Import-Users-From-Passwd::Options::%s" % (i)):
+            Cnf["Import-Users-From-Passwd::Options::%s" % (i)] = ""
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Import-Users-From-Passwd::Options")
@@ -117,4 +117,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

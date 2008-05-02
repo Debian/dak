@@ -36,12 +36,12 @@ import daklib.utils, daklib.extensions
 class UserExtension:
     def __init__(self, user_extension = None):
         if user_extension:
-	    m = imp.load_source("dak_userext", user_extension)
-	    d = m.__dict__
+            m = imp.load_source("dak_userext", user_extension)
+            d = m.__dict__
         else:
             m, d = None, {}
-	self.__dict__["_module"] = m
-	self.__dict__["_d"] = d
+        self.__dict__["_module"] = m
+        self.__dict__["_d"] = d
 
     def __getattr__(self, a):
         if a in self.__dict__: return self.__dict__[a]
@@ -49,19 +49,19 @@ class UserExtension:
         return self._d.get(a, None)
 
     def __setattr__(self, a, v):
-	self._d[a] = v
+        self._d[a] = v
 
 ################################################################################
 
 class UserExtension:
     def __init__(self, user_extension = None):
         if user_extension:
-	    m = imp.load_source("dak_userext", user_extension)
-	    d = m.__dict__
+            m = imp.load_source("dak_userext", user_extension)
+            d = m.__dict__
         else:
             m, d = None, {}
-	self.__dict__["_module"] = m
-	self.__dict__["_d"] = d
+        self.__dict__["_module"] = m
+        self.__dict__["_d"] = d
 
     def __getattr__(self, a):
         if a in self.__dict__: return self.__dict__[a]
@@ -69,7 +69,7 @@ class UserExtension:
         return self._d.get(a, None)
 
     def __setattr__(self, a, v):
-	self._d[a] = v
+        self._d[a] = v
 
 ################################################################################
 
@@ -88,17 +88,17 @@ def init():
          "Produce a report on NEW and BYHAND packages"),
         ("show-new",
          "Output html for packages in NEW"),
-        
+
         ("rm",
          "Remove packages from suites"),
-        
+
         ("process-new",
          "Process NEW and BYHAND packages"),
         ("process-unchecked",
          "Process packages in queue/unchecked"),
         ("process-accepted",
          "Install packages into the pool"),
-        
+
         ("make-suite-file-list",
          "Generate lists of packages per suite for apt-ftparchive"),
         ("generate-releases",
@@ -166,7 +166,7 @@ def init():
          "Generate compatability symlinks from dists/ into pool/"),
         ]
     return functionality
-    
+
 ################################################################################
 
 def usage(functionality, exit_code=0):
@@ -194,7 +194,7 @@ def main():
 
     functionality = init()
     modules = [ command for (command, _) in functionality ]
-    
+
     if len(sys.argv) == 0:
         daklib.utils.fubar("err, argc == 0? how is that possible?")
     elif (len(sys.argv) == 1

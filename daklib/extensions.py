@@ -37,10 +37,10 @@ def replace_dak_function(module,name):
         myfunc.__doc__ = f.__doc__
         myfunc.__dict__.update(f.__dict__)
 
-	fnname = "%s:%s" % (module, name)
-	if fnname in dak_functions_to_replace:
-	    raise Exception, \
-		"%s in %s already marked to be replaced" % (name, module)
+        fnname = "%s:%s" % (module, name)
+        if fnname in dak_functions_to_replace:
+            raise Exception, \
+                "%s in %s already marked to be replaced" % (name, module)
         dak_functions_to_replace["%s:%s" % (module,name)] = myfunc
         return f
     return x
@@ -57,5 +57,3 @@ def init(name, module, userext):
         if len(f) > 0 and m == name:
             dak_replaced_functions[f] = module.__dict__[f]
             module.__dict__[f] = newfunc
-
-
