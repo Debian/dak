@@ -19,3 +19,4 @@ security.debian.org	The Debian Security Team
 installation-reports	Reports of installation problems with stable & testing
 upgrade-reports		Reports of upgrade problems for stable & testing
 release-notes		Problems with the Release Notes
+wiki.debian.org		Problems with the Debian wiki

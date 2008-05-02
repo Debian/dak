@@ -19,3 +19,4 @@ security.debian.org     Debian Security Team <team@security.debian.org>
 installation-reports    Debian Install Team <debian-boot@lists.debian.org>
 upgrade-reports         Debian Testing Group <debian-testing@lists.debian.org>
 release-notes           Debian Documentation Team <debian-doc@lists.debian.org>
+wiki.debian.org         Debian WWW Team <debian-www@lists.debian.org>
