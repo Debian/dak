@@ -83,13 +83,13 @@ def recheck():
                and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
                 source_epochless_version = daklib.utils.re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
-		found = 0
-		for q in ["Accepted", "Embargoed", "Unembargoed"]:
-            if Cnf.has_key(Cnf["Dir::Queue::%s" % (q)]):
-                if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
-                    found = 1
-		if not found:
-            reject("no source found for %s %s (%s)." % (source_package, source_version, file))
+                found = 0
+                for q in ["Accepted", "Embargoed", "Unembargoed"]:
+                    if Cnf.has_key("Dir::Queue::%s" % (q)):
+                        if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
+                            found = 1
+                if not found:
+                    reject("no source found for %s %s (%s)." % (source_package, source_version, file))
 
         # Version and file overwrite checks
         if files[file]["type"] == "deb":
@@ -691,6 +691,7 @@ def usage (exit_code=0):
     print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -h, --help                show this help and exit.
+  -C, --comments-dir=DIR    use DIR as comments-dir, for [o-]p-u-new
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
   -V, --version             display the version number and exit"""
@@ -705,7 +706,7 @@ def init():
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
                  ('h',"help","Process-New::Options::Help"),
-		 ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
+                 ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
                  ('n',"no-action","Process-New::Options::No-Action")]
 
@@ -810,16 +811,16 @@ def do_accept():
     if not Options["No-Action"]:
         get_accept_lock()
         (summary, short_summary) = Upload.build_summaries()
-	if Cnf.FindB("Dinstall::SecurityQueueHandling"):
-	    Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
-	    move_to_dir(Cnf["Dir::Queue::Embargoed"])
-	    Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
-	    # Check for override disparities
-	    Upload.Subst["__SUMMARY__"] = summary
-	else:
+    if Cnf.FindB("Dinstall::SecurityQueueHandling"):
+        Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
+        move_to_dir(Cnf["Dir::Queue::Embargoed"])
+        Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
+        # Check for override disparities
+        Upload.Subst["__SUMMARY__"] = summary
+    else:
         Upload.accept(summary, short_summary)
         os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-	os.unlink(Cnf["Process-New::AcceptedLockFile"])
+    os.unlink(Cnf["Process-New::AcceptedLockFile"])
 
 def check_status(files):
     new = byhand = 0
@@ -938,11 +939,11 @@ def main():
 
     commentsdir = Cnf.get("Process-New::Options::Comments-Dir","")
     if commentsdir:
-	if changes_files != []:
-		sys.stderr.write("Can't specify any changes files if working with comments-dir")
-		sys.exit(1)
-	do_comments(commentsdir, "ACCEPT.", "ACCEPTED.", "OK", comment_accept)
-	do_comments(commentsdir, "REJECT.", "REJECTED.", "NOTOK", comment_reject)
+        if changes_files != []:
+            sys.stderr.write("Can't specify any changes files if working with comments-dir")
+            sys.exit(1)
+        do_comments(commentsdir, "ACCEPT.", "ACCEPTED.", "OK", comment_accept)
+        do_comments(commentsdir, "REJECT.", "REJECTED.", "NOTOK", comment_reject)
     else:
         for changes_file in changes_files:
             changes_file = daklib.utils.validate_changes_file_arg(changes_file, 0)
