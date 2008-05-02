@@ -451,7 +451,7 @@
 	* daklib/utils.py (check_signature): add NOTATION_DATA and
 	NOTATION_NAME to known keywords.
 
-	* daklib/queue.py (Upload.check_source_against_db): 
+	* daklib/queue.py (Upload.check_source_against_db):
 
 	* dak/make_suite_file_list.py: add -f/--force option.
 
@@ -476,7 +476,7 @@
 	* daklib/utils.py (check_signature): add NOTATION_DATA and
 	NOTATION_NAME to known keywords.
 
-	* daklib/queue.py (Upload.check_source_against_db): 
+	* daklib/queue.py (Upload.check_source_against_db):
 
 	* dak/make_suite_file_list.py: add -f/--force option.
 
@@ -585,7 +585,7 @@
 
 	* config/debian/dak.conf: typo fix for Dinstall::GPGKeyring,
 	drop upload limitations, add release postgres user
-	
+
 	* dak/process_new.py: support for automatically accepting and rejecting
 	packages from proposed-updates holding queues via COMMENTS directory
 	* cron.daily: automatically process COMMENTS-based approvals
@@ -635,7 +635,7 @@
 
 	* config/debian/dak.conf: typo fix for Dinstall::GPGKeyring,
 	drop upload limitations, add release postgres user
-	
+
 	* dak/process_new.py: support for automatically accepting and rejecting
 	packages from proposed-updates holding queues via COMMENTS directory
 	* cron.daily: automatically process COMMENTS-based approvals
@@ -777,7 +777,7 @@
 	* config/debian/dak.conf: likewise.
 	* config/debian/vars: likewise.
 	* scripts/debian/mkfilesindices: likewise.
-	
+
 2007-02-08  James Troup  <james@nocrew.org>
 
 	* dak/process_unchecked.py (check_signed_by_key): new function to
@@ -867,7 +867,7 @@
 	* config/debian/dak.conf: likewise.
 	* config/debian/vars: likewise.
 	* scripts/debian/mkfilesindices: likewise.
-	
+
 2007-02-08  James Troup  <james@nocrew.org>
 
 	* dak/process_unchecked.py (check_signed_by_key): new function to
@@ -1072,7 +1072,7 @@
 	that signed a given file from a keyserver.
 	(check_signature): add 'autofetch' argument that if not set
 	defaults to the value of Dinstall::KeyAutoFetch (if that exists).
-	If 'autofetch' is true, invoke retrieve_key().  
+	If 'autofetch' is true, invoke retrieve_key().
 
 	* docs/README.config: document Dinstall::KeyAutoFetch and
 	Dinstall:KeyServer.
@@ -1344,7 +1344,7 @@
 	* apt.conf.stable: update for sarge's release
 	* apt.conf: bump daily max Contents change to 25MB from 12MB
 
-	* cron.daily: add accepted lock and invoke cindy  
+	* cron.daily: add accepted lock and invoke cindy
 	* cron.daily: add daily.lock
 	* cron.daily: invoke tiffani
 	* cron.daily: rebuild accepted buildd stuff
@@ -1493,7 +1493,7 @@
 
 	* amber (do_upload): Sort changes files in "katie" order so that
 	  source always arrives before binary-only rebuilds
-	
+
 2004-10-05  James Troup  <james@nocrew.org>
 
 	* jennifer (check_dsc): correct reject message on invalid
@@ -1661,7 +1661,7 @@
 	valid_dsc_p and don't run check_source() if check_dsc() failed.
 	(check_dsc): on fatal failures return 0 so check_source() isn't
 	run (since it makes fatal assumptions about the presence of
-	mandatory .dsc fields).  
+	mandatory .dsc fields).
 	Remove unused and obsolete re_bad_diff and re_is_changes regexps.
 
 2004-05-07  James Troup  <james@nocrew.org>
