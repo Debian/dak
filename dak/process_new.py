@@ -85,10 +85,11 @@ def recheck():
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
 		found = 0
 		for q in ["Accepted", "Embargoed", "Unembargoed"]:
-                    if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
-		        found = 1
+            if Cnf.has_key(Cnf["Dir::Queue::%s" % (q)]):
+                if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
+                    found = 1
 		if not found:
-                    reject("no source found for %s %s (%s)." % (source_package, source_version, file))
+            reject("no source found for %s %s (%s)." % (source_package, source_version, file))
 
         # Version and file overwrite checks
         if files[file]["type"] == "deb":
@@ -816,7 +817,7 @@ def do_accept():
 	    # Check for override disparities
 	    Upload.Subst["__SUMMARY__"] = summary
 	else:
-            Upload.accept(summary, short_summary)
+        Upload.accept(summary, short_summary)
         os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 	os.unlink(Cnf["Process-New::AcceptedLockFile"])
 

@@ -1,3 +1,9 @@
+2008-05-02  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_new.py (recheck): Make the path check more robust,
+	so we no longer have to keep process_new seperate trees between
+	security and normal archive.
+
 2008-04-27  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_accepted.py (Urgency_Log.__init__): Warn if the
