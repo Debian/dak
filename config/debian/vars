@@ -14,6 +14,7 @@ dbdir=$base/database/
 lockdir=$base/lock/
 overridedir=$scriptdir/override
 extoverridedir=$scriptdir/external-overrides
+logdir=$base/log/cron/
 
 queuedir=$base/queue/
 unchecked=$queuedir/unchecked/

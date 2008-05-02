@@ -1,3 +1,25 @@
+2008-05-02  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.buildd: Cleanup unreachable code. (If someone
+	still wants it - its in revision control...)
+
+	* config/debian/cron.daily: Modify call to update-ftpstats to only
+	use files log/2*, instead of log/*, so it ignores the new cron/
+	subdir. Makes sure it can't get confused, and is also safe for
+	nearly thousand years. If this code is really in use in year 3000,
+	im sure people can adjust it! :)
+
+	* config/debian/vars: Add logdir as a place for cronjob log output
+
+	* config/debian/cron.daily: Use a logfile and be more verbose of
+	whats going on.
+	  Also moved the commented VACUUM ; VACUUM ANALYZE calls over to
+	cron.weekly, ...
+	* config/debian/cron.weekly: likewise,
+	  ... and activate those calls again. Once a week, as an
+	additional safety bet to be sure the stuff does get run is ok,
+	even if we have autovacuum by default.
+
 2008-05-02  Thomas Viehmann  <tv@beamnet.de>
 
 	* dak/process_unchecked.py (check_hashes): fix typo in
