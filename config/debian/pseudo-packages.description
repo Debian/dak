@@ -5,7 +5,6 @@ press			Press release issues
 kernel			Problems with the Linux kernel, or that shipped with Debian
 project			Problems related to project administration
 general			General problems (e.g. "many manpages are mode 755")
-listarchives		Problems with the WWW mailing list archives
 nm.debian.org		New Maintainer process and nm.debian.org webpages
 qa.debian.org		The Quality Assurance group
 ftp.debian.org		Problems with the FTP site
@@ -20,3 +19,6 @@ security.debian.org	The Debian Security Team
 installation-reports	Reports of installation problems with stable & testing
 upgrade-reports		Reports of upgrade problems for stable & testing
 release-notes		Problems with the Release Notes
+wiki.debian.org		Problems with the Debian wiki
+security-tracker	The Debian Security Bug Tracker
+release.debian.org	Requests regarding Debian releases and release team tools
