@@ -85,12 +85,12 @@ def do_upload(changes_files):
             print "Not uploading amd64 part to ftp-master\n"
             continue
         # Build the file list for this .changes file
-        for file in files.keys():
+        for f in files.keys():
             poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
-                                    daklib.utils.poolify(changes["source"], files[file]["component"]),
-                                    file)
+                                    daklib.utils.poolify(changes["source"], files[f]["component"]),
+                                    f)
             file_list.append(poolname)
-            orig_component = files[file].get("original component", files[file]["component"])
+            orig_component = files[f].get("original component", files[f]["component"])
             components[orig_component] = ""
         # Determine the upload uri for this .changes file
         for component in components.keys():
@@ -138,11 +138,11 @@ def do_upload(changes_files):
 
     if not Options["No-Action"]:
         filename = "%s/testing-processed" % (Cnf["Dir::Log"])
-        file = daklib.utils.open_file(filename, 'a')
+        f = daklib.utils.open_file(filename, 'a')
         for source in package_list.keys():
             for version in package_list[source].keys():
-                file.write(" ".join([source, version])+'\n')
-        file.close()
+                f.write(" ".join([source, version])+'\n')
+        f.close()
 
 ######################################################################
 # This function was originally written by aj and NIHishly merged into
@@ -168,35 +168,35 @@ def make_advisory(advisory_nr, changes_files):
                 updated_pkgs[suite] = {}
 
         files = Upload.pkg.files
-        for file in files.keys():
-            arch = files[file]["architecture"]
-            md5 = files[file]["md5sum"]
-            size = files[file]["size"]
+        for f in files.keys():
+            arch = files[f]["architecture"]
+            md5 = files[f]["md5sum"]
+            size = files[f]["size"]
             poolname = Cnf["Dir::PoolRoot"] + \
-                daklib.utils.poolify(src, files[file]["component"])
-            if arch == "source" and file.endswith(".dsc"):
+                daklib.utils.poolify(src, files[f]["component"])
+            if arch == "source" and f.endswith(".dsc"):
                 dscpoolname = poolname
             for suite in suites:
                 if not updated_pkgs[suite].has_key(arch):
                     updated_pkgs[suite][arch] = {}
-                updated_pkgs[suite][arch][file] = {
+                updated_pkgs[suite][arch][f] = {
                     "md5": md5, "size": size,
                     "poolname": poolname }
 
         dsc_files = Upload.pkg.dsc_files
-        for file in dsc_files.keys():
+        for f in dsc_files.keys():
             arch = "source"
-            if not dsc_files[file].has_key("files id"):
+            if not dsc_files[f].has_key("files id"):
                 continue
 
             # otherwise, it's already in the pool and needs to be
             # listed specially
-            md5 = dsc_files[file]["md5sum"]
-            size = dsc_files[file]["size"]
+            md5 = dsc_files[f]["md5sum"]
+            size = dsc_files[f]["size"]
             for suite in suites:
                 if not updated_pkgs[suite].has_key(arch):
                     updated_pkgs[suite][arch] = {}
-                updated_pkgs[suite][arch][file] = {
+                updated_pkgs[suite][arch][f] = {
                     "md5": md5, "size": size,
                     "poolname": dscpoolname }
 
@@ -247,12 +247,12 @@ def make_advisory(advisory_nr, changes_files):
                 adv += "  %s architecture (%s)\n\n" % (a,
                         Cnf["Architectures::%s" % a])
 
-            for file in updated_pkgs[suite][a].keys():
+            for f in updated_pkgs[suite][a].keys():
                 adv += "    http://%s/%s%s\n" % (
-                                archive, updated_pkgs[suite][a][file]["poolname"], file)
+                                archive, updated_pkgs[suite][a][f]["poolname"], f)
                 adv += "      Size/MD5 checksum: %8s %s\n" % (
-                        updated_pkgs[suite][a][file]["size"],
-                        updated_pkgs[suite][a][file]["md5"])
+                        updated_pkgs[suite][a][f]["size"],
+                        updated_pkgs[suite][a][f]["md5"])
             adv += "\n"
     adv = adv.rstrip()
 
@@ -293,8 +293,8 @@ def init():
     if advisory_number.endswith(".changes"):
         daklib.utils.warn("first argument must be the advisory number.")
         usage(1)
-    for file in changes_files:
-        file = daklib.utils.validate_changes_file_arg(file)
+    for f in changes_files:
+        f = daklib.utils.validate_changes_file_arg(f)
     return (advisory_number, changes_files)
 
 ######################################################################
@@ -332,8 +332,8 @@ def main():
 
     if not Options["No-Action"]:
         print "About to install the following files: "
-        for file in changes_files:
-            print "  %s" % (file)
+        for f in changes_files:
+            print "  %s" % (f)
         answer = yes_no("Continue (Y/n)?")
         if answer == "n":
             sys.exit(0)
