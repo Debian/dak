@@ -75,7 +75,7 @@ def init():
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
-    
+
 ################################################################################
 
 def usage (exit_code=0):
@@ -125,7 +125,7 @@ def load_transitions(trans_file):
     try:
         for test in trans:
             t = trans[test]
-        
+
             # First check if we know all the keys for the transition and if they have
             # the right type (and for the packages also if the list has the right types
             # included, ie. not a list in list, but only str in the list)
@@ -133,7 +133,7 @@ def load_transitions(trans_file):
                 if key not in checkkeys:
                     print "ERROR: Unknown key %s in transition %s" % (key, test)
                     failure = True
-        
+
                 if key == "packages":
                     if type(t[key]) != list:
                         print "ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test)
@@ -153,7 +153,7 @@ def load_transitions(trans_file):
                         print "ERROR: No packages defined in transition %s" % (test)
                         failure = True
                         continue
-        
+
                 elif type(t[key]) != str:
                     if key == "new" and type(t[key]) == int:
                         # Ok, debian native version
@@ -161,7 +161,7 @@ def load_transitions(trans_file):
                     else:
                         print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
                         failure = True
-        
+
             # And now the other way round - are all our keys defined?
             for key in checkkeys:
                 if key not in t:
@@ -213,7 +213,7 @@ def write_transitions(from_trans):
 
     trans_file = Cnf["Dinstall::Reject::ReleaseTransitions"]
     trans_temp = trans_file + ".tmp"
-  
+
     trans_lock = lock_file(trans_file)
     temp_lock  = lock_file(trans_temp)
 
@@ -243,7 +243,7 @@ def write_transitions_from_file(from_file):
         sys.exit(3)
 
     if Options["sudo"]:
-        os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
+        os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H",
               "/usr/local/bin/dak", "transitions", "--import", from_file)
     else:
         trans = load_transitions(from_file)
@@ -257,7 +257,7 @@ def temp_transitions_file(transitions):
     # NB: file is unlinked by caller, but fd is never actually closed.
     # We need the chmod, as the file is (most possibly) copied from a
     # sudo-ed script and would be unreadable if it has default mkstemp mode
-    
+
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Transitions::TempPath"])
     os.chmod(path, 0644)
     f = open(path, "w")
@@ -277,7 +277,7 @@ def edit_transitions():
         if result != 0:
             os.unlink(edit_file)
             daklib.utils.fubar("%s invocation failed for %s, not removing tempfile." % (editor, edit_file))
-    
+
         # Now try to load the new file
         test = load_transitions(edit_file)
 
@@ -292,8 +292,8 @@ def edit_transitions():
             print "------------------------------------------------------------------------"
             transition_info(test)
 
-	    prompt = "[S]ave, Edit again, Drop changes?"
-	    default = "S"
+            prompt = "[S]ave, Edit again, Drop changes?"
+            default = "S"
 
         answer = "XXX"
         while prompt.find(answer) == -1:
@@ -377,7 +377,7 @@ def check_transitions(transitions):
             print "Committing"
             for remove in to_remove:
                 del transitions[remove]
-    
+
             edit_file = temp_transitions_file(transitions)
             write_transitions_from_file(edit_file)
 
@@ -389,14 +389,14 @@ def check_transitions(transitions):
 ################################################################################
 
 def print_info(trans, source, expected, rm, reason, packages):
-        print """Looking at transition: %s
- Source:      %s
- New Version: %s
- Responsible: %s
- Description: %s
- Blocked Packages (total: %d): %s
+    print """Looking at transition: %s
+Source:      %s
+New Version: %s
+Responsible: %s
+Description: %s
+Blocked Packages (total: %d): %s
 """ % (trans, source, expected, rm, reason, len(packages), ", ".join(packages))
-        return
+    return
 
 ################################################################################
 
@@ -435,7 +435,7 @@ def main():
     #### This can run within sudo !! ####
     #####################################
     init()
-    
+
     # Check if there is a file defined (and existant)
     transpath = Cnf.get("Dinstall::Reject::ReleaseTransitions", "")
     if transpath == "":
@@ -454,7 +454,7 @@ def main():
         daklib.utils.warn("Temporary path %s not found." %
                           (Cnf["Transitions::TempPath"]))
         sys.exit(1)
-   
+
     if Options["import"]:
         try:
             write_transitions_from_file(Options["import"])
@@ -485,7 +485,7 @@ def main():
         transition_info(transitions)
 
     sys.exit(0)
-    
+
 ################################################################################
 
 if __name__ == '__main__':

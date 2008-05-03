@@ -30,7 +30,7 @@ import utils
 def fail(message):
     sys.stderr.write("%s\n" % (message))
     sys.exit(1)
-    
+
 ################################################################################
 
 def main ():

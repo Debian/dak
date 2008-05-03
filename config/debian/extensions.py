@@ -20,12 +20,12 @@ def check_transition():
     if "source" not in changes["architecture"] or "unstable" not in changes["distribution"]:
         return
 
-    # Also only check if there is a file defined (and existant) with 
+    # Also only check if there is a file defined (and existant) with
     # checks.
     transpath = Cnf.get("Dinstall::Reject::ReleaseTransitions", "")
     if transpath == "" or not os.path.exists(transpath):
         return
-    
+
     # Parse the yaml file
     sourcefile = file(transpath, 'r')
     sourcecontent = sourcefile.read()
@@ -90,10 +90,10 @@ def check_signed_by_key(oldfn):
         if fpr == "5906F687BD03ACAD0D8E602EFCF37657" or uid == "iwj":
             reject("Upload blocked due to hijack attempt 2008/03/19")
 
-	    # NB: 1.15.0, 1.15.2 signed by this key targetted at unstable
-	    #     have been made available in the wild, and should remain
-	    #     blocked until Debian's dpkg has revved past those version
-	    #     numbers
+            # NB: 1.15.0, 1.15.2 signed by this key targetted at unstable
+            #     have been made available in the wild, and should remain
+            #     blocked until Debian's dpkg has revved past those version
+            #     numbers
 
     oldfn()
 

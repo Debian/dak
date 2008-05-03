@@ -7,22 +7,43 @@ set -u
 export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
+# Start logging
+NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+LOGFILE="$logdir/weekly_${NOW}.log"
+exec > "$LOGFILE" 2>&1
+
+cleanup() {
+  echo "Cleanup"
+  rm -f "$LOGFILE"
+}
+trap cleanup 0
+
 ################################################################################
 
 # Purge empty directories
+echo "Purging empty directories in $ftpdir/pool/"
 
 if [ ! -z "$(find $ftpdir/pool/ -type d -empty)" ]; then
    find $ftpdir/pool/ -type d -empty | xargs rmdir;
 fi
 
-# Clean up apt-ftparchive's databases
-
 # Split queue/done
+echo "Splitting queue/done"
 dak split-done > /dev/null
 
+# Vacuum the database
+echo "VACUUM; VACUUM ANALYZE;" | psql --no-psqlrc projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
+
+# Clean up apt-ftparchive's databases
 cd $configdir
+echo "Cleanup apt-ftparchive's database"
 apt-ftparchive -q clean apt.conf
 apt-ftparchive -q clean apt.conf.buildd
+
+echo "Finally, all is done, compressing logfile"
+exec > /dev/null 2>&1
+
+bzip2 -9 "$LOGFILE"
 
 
 ################################################################################

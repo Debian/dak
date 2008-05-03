@@ -334,8 +334,8 @@ class Upload:
                 files[file]["pool name"] = utils.poolify (changes.get("source",""), files[file]["component"])
                 destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
                 summary += file + "\n  to " + destination + "\n"
-		if not files[file].has_key("type"):
-		    files[file]["type"] = "unknown"
+                if not files[file].has_key("type"):
+                    files[file]["type"] = "unknown"
                 if files[file]["type"] in ["deb", "udeb", "dsc"]:
                     # (queue/unchecked), there we have override entries already, use them
                     # (process-new), there we dont have override entries, use the newly generated ones.
@@ -718,26 +718,26 @@ distribution."""
     # (2) Bin-only NMU                     => 1.0-3+b1 , 1.0-3.1+b1
 
     def source_exists (self, package, source_version, suites = ["any"]):
-	okay = 1
-	for suite in suites:
-	    if suite == "any":
-	    	que = "SELECT s.version FROM source s WHERE s.source = '%s'" % \
-		    (package)
-	    else:
-		# source must exist in suite X, or in some other suite that's
-		# mapped to X, recursively... silent-maps are counted too,
-		# unreleased-maps aren't.
-		maps = self.Cnf.ValueList("SuiteMappings")[:]
-		maps.reverse()
-		maps = [ m.split() for m in maps ]
-		maps = [ (x[1], x[2]) for x in maps
-				if x[0] == "map" or x[0] == "silent-map" ]
-		s = [suite]
-		for x in maps:
-			if x[1] in s and x[0] not in s:
-				s.append(x[0])
+        okay = 1
+        for suite in suites:
+            if suite == "any":
+                que = "SELECT s.version FROM source s WHERE s.source = '%s'" % \
+                    (package)
+            else:
+                # source must exist in suite X, or in some other suite that's
+                # mapped to X, recursively... silent-maps are counted too,
+                # unreleased-maps aren't.
+                maps = self.Cnf.ValueList("SuiteMappings")[:]
+                maps.reverse()
+                maps = [ m.split() for m in maps ]
+                maps = [ (x[1], x[2]) for x in maps
+                                if x[0] == "map" or x[0] == "silent-map" ]
+                s = [suite]
+                for x in maps:
+                    if x[1] in s and x[0] not in s:
+                        s.append(x[0])
 
-		que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) JOIN suite su ON (sa.suite = su.id) WHERE s.source = '%s' AND (%s)" % (package, " OR ".join(["su.suite_name = '%s'" % a for a in s]))
+                que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) JOIN suite su ON (sa.suite = su.id) WHERE s.source = '%s' AND (%s)" % (package, " OR ".join(["su.suite_name = '%s'" % a for a in s]))
             q = self.projectB.query(que)
 
             # Reduce the query results to a list of version numbers
@@ -754,11 +754,11 @@ distribution."""
 
             # No source found...
             okay = 0
-	    break
-	return okay
+            break
+        return okay
 
     ################################################################################
-    
+
     def in_override_p (self, package, component, suite, binary_type, file):
         files = self.pkg.files
 
@@ -842,12 +842,12 @@ distribution."""
                     ch = self.pkg.changes
                     cansave = 0
                     if ch.get('distribution-version', {}).has_key(suite):
-                        # we really use the other suite, ignoring the conflicting one ...
+                    # we really use the other suite, ignoring the conflicting one ...
                         addsuite = ch["distribution-version"][suite]
-                    
+
                         add_version = self.get_anyversion(query_result, addsuite)
                         target_version = self.get_anyversion(query_result, target_suite)
-                    
+
                         if not add_version:
                             # not add_version can only happen if we map to a suite
                             # that doesn't enhance the suite we're propup'ing from.
@@ -878,7 +878,7 @@ distribution."""
                             self.pkg.changes.setdefault("propdistribution", {})
                             self.pkg.changes["propdistribution"][addsuite] = 1
                             cansave = 1
-                
+
                     if not cansave:
                         self.reject("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
 
@@ -1033,8 +1033,8 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
 
                     in_unchecked = os.path.join(self.Cnf["Dir::Queue::Unchecked"],dsc_file)
                     # See process_it() in 'dak process-unchecked' for explanation of this
-		    # in_unchecked check dropped by ajt 2007-08-28, how did that
-		    # ever make sense?
+                    # in_unchecked check dropped by ajt 2007-08-28, how did that
+                    # ever make sense?
                     if os.path.exists(in_unchecked) and False:
                         return (self.reject_message, in_unchecked)
                     else:

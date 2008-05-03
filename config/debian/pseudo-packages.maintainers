@@ -7,7 +7,6 @@ nm.debian.org		New Maintainer Front-Desk <new-maintainer@debian.org>
 qa.debian.org		debian-qa@lists.debian.org
 www.debian.org		Debian WWW Team <debian-www@lists.debian.org>
 mirrors			Debian Mirrors Team <mirrors@debian.org>
-listarchives		Debian List Archive Team <listarchives@debian.org>
 project			debian-project@lists.debian.org
 general			debian-devel@lists.debian.org
 kernel			Debian Kernel Team <debian-kernel@lists.debian.org>
@@ -20,3 +19,6 @@ security.debian.org     Debian Security Team <team@security.debian.org>
 installation-reports    Debian Install Team <debian-boot@lists.debian.org>
 upgrade-reports         Debian Testing Group <debian-testing@lists.debian.org>
 release-notes           Debian Documentation Team <debian-doc@lists.debian.org>
+wiki.debian.org         Debian WWW Team <debian-www@lists.debian.org>
+security-tracker        Debian Security Tracker Team <debian-security-tracker@lists.debian.org>
+release.debian.org      Debian Release Team <debian-release@lists.debian.org>

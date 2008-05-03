@@ -20,10 +20,10 @@
 ################################################################################
 
 # | > amd64 is more mature than even some released architectures
-# |  
+# |
 # | This might be true of the architecture, unfortunately it seems to be the
 # | exact opposite for most of the people involved with it.
-# 
+#
 # <1089213290.24029.6.camel@descent.netsplit.com>
 
 ################################################################################
@@ -274,8 +274,8 @@ def main ():
                  ('v',"verbose","Check-Proposed-Updates::Options::Verbose"),
                  ('h',"help","Check-Proposed-Updates::Options::Help")]
     for i in [ "debug", "quiet", "verbose", "help" ]:
-	if not Cnf.has_key("Check-Proposed-Updates::Options::%s" % (i)):
-	    Cnf["Check-Proposed-Updates::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Check-Proposed-Updates::Options::%s" % (i)):
+            Cnf["Check-Proposed-Updates::Options::%s" % (i)] = ""
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Check-Proposed-Updates::Options")

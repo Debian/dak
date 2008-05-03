@@ -134,7 +134,7 @@ def load_adv_changes():
             continue
 
         if c not in changes: changes.append(c)
-        srcver = "%s %s" % (Upload.pkg.changes["source"], 
+        srcver = "%s %s" % (Upload.pkg.changes["source"],
                             Upload.pkg.changes["version"])
         srcverarches.setdefault(srcver, {})
         for arch in Upload.pkg.changes["architecture"].keys():
@@ -173,7 +173,7 @@ def prompt(opts, default):
     while a not in v:
         a = daklib.utils.our_raw_input(p) + default
         a = a[:1].upper()
-        
+
     return v[a]
 
 def add_changes(extras):
@@ -204,10 +204,10 @@ def do_upload():
         actually_upload(changes)
     else:
         child = os.fork()
-	if child == 0:
-	    actually_upload(changes)
-	    os._exit(0)
-	print "Uploading in the background"
+        if child == 0:
+            actually_upload(changes)
+            os._exit(0)
+        print "Uploading in the background"
 
 def actually_upload(changes_files):
     file_list = ""
@@ -430,7 +430,7 @@ def sudo(arg, fn, exit):
     if Options["Sudo"]:
         if advisory == None:
             daklib.utils.fubar("Must set advisory name")
-        os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H", 
+        os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H",
                   "/usr/local/bin/dak", "new-security-install", "-"+arg, "--", advisory)
     else:
         fn()
@@ -632,7 +632,7 @@ def main():
             if os.getcwd() == Cnf["Dir::Queue::Embargoed"].rstrip("/"):
                 opts.append("Disembargo")
             opts += ["Show advisory", "Reject", "Quit"]
-        
+
             advisory_info()
             what = prompt(opts, default)
 

@@ -97,7 +97,7 @@ class MirrorSplitTarget:
         if path.find("/installer-") != -1:
             return 0
         return 1
-    
+
 ##############################################################################
 # The applicable function is basically a predicate. Given a path and a
 # target object its job is to decide if the path conforms for the
@@ -190,7 +190,7 @@ class MirrorSplitDB:
         cPickle.dump( self.root, f, 1 )
         f.close()
 
-        
+
 ##############################################################################
 # Helper functions for the tree syncing...
 ##################
@@ -238,7 +238,7 @@ def _internal_reconcile( path, srcdir, targdir, targ ):
         #print "-L-", _pth(path,k)
         do_unlink(targ, _pth(path,k))
         del targdir.links[k]
-    
+
     # Remove any files in targdir which aren't in srcdir
     # Or which aren't applicable
     rm = []
@@ -281,7 +281,7 @@ def _internal_reconcile( path, srcdir, targdir, targ ):
     for k in srcdir.links.keys():
         if applicable( _pth(path,k), targ ):
             if not targdir.links.has_key(k):
-                targdir.links[k] = srcdir.links[k]; 
+                targdir.links[k] = srcdir.links[k];
                 #print "+L+",_pth(path,k), "->", srcdir.links[k]
                 do_symlink( targ, _pth(path,k), targdir.links[k] )
             else:
@@ -314,7 +314,7 @@ def load_config():
     MASTER_PATH = Cnf["Mirror-Split::FTPPath"]
     TREE_ROOT = Cnf["Mirror-Split::TreeRootPath"]
     TREE_DB_ROOT = Cnf["Mirror-Split::TreeDatabasePath"]
-    
+
     for a in Cnf.ValueList("Mirror-Split::BasicTrees"):
         trees.append( MirrorSplitTarget( a, "%s,all" % a, 1 ) )
 
@@ -338,7 +338,7 @@ def do_list ():
             print " [source]"
         else:
             print ""
-        
+
 def do_help ():
     print """Usage: dak mirror-split [OPTIONS]
 Generate hardlink trees of certain architectures
@@ -371,7 +371,7 @@ def main ():
     if Options.has_key("List"):
         do_list()
         return
-    
+
 
     src = MirrorSplitDB()
     print "Scanning", MASTER_PATH
@@ -384,7 +384,7 @@ def main ():
         print "Saving updated DB...",
         tree.save_db()
         print "Done"
-    
+
 ##############################################################################
 
 if __name__ == '__main__':

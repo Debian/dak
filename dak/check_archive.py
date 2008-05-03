@@ -94,14 +94,14 @@ def check_files():
     print "Missing files:"
     db_files.clear()
     for i in ql:
-	filename = os.path.abspath(i[0] + i[1])
+        filename = os.path.abspath(i[0] + i[1])
         db_files[filename] = ""
         if os.access(filename, os.R_OK) == 0:
-	    if i[2]:
+            if i[2]:
                 print "(last used: %s) %s" % (i[2], filename)
-	    else:
+            else:
                 print "%s" % (filename)
-  	
+
 
     filename = Cnf["Dir::Override"]+'override.unreferenced'
     if os.path.exists(filename):
@@ -201,7 +201,7 @@ def check_md5sums():
 
     print "Checking file md5sums & sizes..."
     for i in ql:
-	filename = os.path.abspath(i[0] + i[1])
+        filename = os.path.abspath(i[0] + i[1])
         db_md5sum = i[2]
         db_size = int(i[3])
         try:
@@ -238,7 +238,7 @@ def check_timestamps():
     db_files.clear()
     count = 0
     for i in ql:
-	filename = os.path.abspath(i[0] + i[1])
+        filename = os.path.abspath(i[0] + i[1])
         if os.access(filename, os.R_OK):
             file = daklib.utils.open_file(filename)
             current_file = filename
@@ -375,7 +375,7 @@ def check_files_not_symlinks():
 
 #      q = projectB.query("BEGIN WORK")
     for i in q_files:
-	filename = os.path.normpath(i[0] + i[1])
+        filename = os.path.normpath(i[0] + i[1])
 #        file_id = i[2]
         if os.access(filename, os.R_OK) == 0:
             daklib.utils.warn("%s: doesn't exist." % (filename))
@@ -431,14 +431,14 @@ def main ():
     Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Check-Archive::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Check-Archive::Options::%s" % (i)):
-	    Cnf["Check-Archive::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Check-Archive::Options::%s" % (i)):
+            Cnf["Check-Archive::Options::%s" % (i)] = ""
 
     args = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Check-Archive::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     if len(args) < 1:
         daklib.utils.warn("dak check-archive requires at least one argument")

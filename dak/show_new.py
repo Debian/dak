@@ -29,7 +29,7 @@ import copy, os, sys, time
 import apt_pkg
 import examine_package
 import daklib.database
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 # Globals
@@ -113,17 +113,17 @@ def html_header(name, filestoexamine):
       <p><a href="#source-lintian" onclick="show('source-lintian-body')">source lintian</a></p>
       """
     for fn in filter(lambda x: x.endswith('.deb') or x.endswith('.udeb'),filestoexamine):
-      packagename = fn.split('_')[0]
-      print """
-      <p class="subtitle">%(pkg)s</p>
-      <p><a href="#binary-%(pkg)s-control" onclick="show('binary-%(pkg)s-control-body')">control file</a></p>
-      <p><a href="#binary-%(pkg)s-lintian" onclick="show('binary-%(pkg)s-lintian-body')">binary lintian</a></p>
-      <p><a href="#binary-%(pkg)s-contents" onclick="show('binary-%(pkg)s-contents-body')">.deb contents</a></p>
-      <p><a href="#binary-%(pkg)s-copyright" onclick="show('binary-%(pkg)s-copyright-body')">copyright</a></p>
-      <p><a href="#binary-%(pkg)s-file-listing" onclick="show('binary-%(pkg)s-file-listing-body')">file listing</a></p>
-      """%{"pkg":packagename}
+        packagename = fn.split('_')[0]
+        print """
+        <p class="subtitle">%(pkg)s</p>
+        <p><a href="#binary-%(pkg)s-control" onclick="show('binary-%(pkg)s-control-body')">control file</a></p>
+        <p><a href="#binary-%(pkg)s-lintian" onclick="show('binary-%(pkg)s-lintian-body')">binary lintian</a></p>
+        <p><a href="#binary-%(pkg)s-contents" onclick="show('binary-%(pkg)s-contents-body')">.deb contents</a></p>
+        <p><a href="#binary-%(pkg)s-copyright" onclick="show('binary-%(pkg)s-copyright-body')">copyright</a></p>
+        <p><a href="#binary-%(pkg)s-file-listing" onclick="show('binary-%(pkg)s-file-listing-body')">file listing</a></p>
+        """%{"pkg":packagename}
     print "    </div>"
-   
+
 def html_footer():
     print """    <p class="validate">Timestamp: %s (UTC)</p>"""% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     print """    <p><a href="http://validator.w3.org/check?uri=referer">

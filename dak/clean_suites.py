@@ -325,8 +325,8 @@ def main():
 
     Cnf = daklib.utils.get_conf()
     for i in ["Help", "No-Action" ]:
-	if not Cnf.has_key("Clean-Suites::Options::%s" % (i)):
-	    Cnf["Clean-Suites::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Clean-Suites::Options::%s" % (i)):
+            Cnf["Clean-Suites::Options::%s" % (i)] = ""
 
     Arguments = [('h',"help","Clean-Suites::Options::Help"),
                  ('n',"no-action","Clean-Suites::Options::No-Action")]
@@ -355,4 +355,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

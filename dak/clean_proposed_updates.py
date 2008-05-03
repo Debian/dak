@@ -167,8 +167,8 @@ def main ():
                  ('s', "suite", "Clean-Proposed-Updates::Options::Suite", "HasArg"),
                  ('n', "no-action", "Clean-Proposed-Updates::Options::No-Action"),]
     for i in [ "debug", "verbose", "help", "no-action" ]:
-	if not Cnf.has_key("Clean-Proposed-Updates::Options::%s" % (i)):
-	    Cnf["Clean-Proposed-Updates::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Clean-Proposed-Updates::Options::%s" % (i)):
+            Cnf["Clean-Proposed-Updates::Options::%s" % (i)] = ""
 
     # suite defaults to proposed-updates
     if not Cnf.has_key("Clean-Proposed-Updates::Options::Suite"):
@@ -199,4 +199,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

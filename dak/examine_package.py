@@ -89,24 +89,24 @@ PACKAGE can be a .changes, .dsc, .deb or .udeb filename."""
 # probably xml.sax.saxutils would work as well
 
 def html_escape(s):
-  return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
+    return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
 
 def escape_if_needed(s):
-  if use_html:
-      return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
-  else:
-    return s
-  
-def headline(s, level=2, bodyelement=None):
-  if use_html:
-    if bodyelement:
-      print """<thead>
-          <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s</th></tr>
-        </thead>"""%{"bodyelement":bodyelement,"title":html_escape(s)}
+    if use_html:
+        return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
     else:
-      print "<h%d>%s</h%d>" % (level, html_escape(s), level)
-  else:
-    print "---- %s ----" % (s)
+        return s
+
+def headline(s, level=2, bodyelement=None):
+    if use_html:
+        if bodyelement:
+            print """<thead>
+                <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s</th></tr>
+              </thead>"""%{"bodyelement":bodyelement,"title":html_escape(s)}
+        else:
+            print "<h%d>%s</h%d>" % (level, html_escape(s), level)
+    else:
+        print "---- %s ----" % (s)
 
 # Colour definitions, 'end' isn't really for use
 
@@ -128,26 +128,26 @@ html_colours = {
   'maintainer': ('<span style="color: green">',"</span>")}
 
 def colour_output(s, colour):
-  if use_html:
-    return ("%s%s%s" % (html_colours[colour][0], html_escape(s), html_colours[colour][1]))
-  else:
-    return ("%s%s%s" % (ansi_colours[colour], s, ansi_colours['end']))
+    if use_html:
+        return ("%s%s%s" % (html_colours[colour][0], html_escape(s), html_colours[colour][1]))
+    else:
+        return ("%s%s%s" % (ansi_colours[colour], s, ansi_colours['end']))
 
 def escaped_text(s, strip=False):
-  if use_html:
-    if strip:
-        s = s.strip()
-    return "<pre>%s</pre>" % (s)
-  else:
-    return s  
+    if use_html:
+        if strip:
+            s = s.strip()
+        return "<pre>%s</pre>" % (s)
+    else:
+        return s
 
 def formatted_text(s, strip=False):
-  if use_html:
-    if strip:
-        s = s.strip()
-    return "<pre>%s</pre>" % (html_escape(s))
-  else:
-    return s
+    if use_html:
+        if strip:
+            s = s.strip()
+        return "<pre>%s</pre>" % (html_escape(s))
+    else:
+        return s
 
 def output_row(s):
     if use_html:
@@ -181,9 +181,9 @@ def foldable_output(title, elementnameprefix, content, norow=False):
 def get_depends_parts(depend) :
     v_match = re_version.match(depend)
     if v_match:
-	d_parts = { 'name' : v_match.group(1), 'version' : v_match.group(2) }
+        d_parts = { 'name' : v_match.group(1), 'version' : v_match.group(2) }
     else :
-	d_parts = { 'name' : depend , 'version' : '' }
+        d_parts = { 'name' : depend , 'version' : '' }
     return d_parts
 
 def get_or_list(depend) :
@@ -203,19 +203,19 @@ def split_depends (d_str) :
     dep_list = get_comma_list(d_str)
     d = 0
     while d < len(dep_list):
-	# put depends into their own list
-	depends_tree.append([dep_list[d]])
-	d += 1
+        # put depends into their own list
+        depends_tree.append([dep_list[d]])
+        d += 1
     d = 0
     while d < len(depends_tree):
-	k = 0
-	# split up Or'd depends into a multi-item list
-	depends_tree[d] = get_or_list(depends_tree[d][0])
-	while k < len(depends_tree[d]):
-	    # split depends into {package, version relation}
-	    depends_tree[d][k] = get_depends_parts(depends_tree[d][k])
-	    k += 1
-	d += 1
+        k = 0
+        # split up Or'd depends into a multi-item list
+        depends_tree[d] = get_or_list(depends_tree[d][0])
+        while k < len(depends_tree[d]):
+            # split depends into {package, version relation}
+            depends_tree[d][k] = get_depends_parts(depends_tree[d][k])
+            k += 1
+        d += 1
     return depends_tree
 
 def read_control (filename):
@@ -227,10 +227,10 @@ def read_control (filename):
 
     deb_file = daklib.utils.open_file(filename)
     try:
-	extracts = apt_inst.debExtractControl(deb_file)
-	control = apt_pkg.ParseSection(extracts)
+        extracts = apt_inst.debExtractControl(deb_file)
+        control = apt_pkg.ParseSection(extracts)
     except:
-	print formatted_text("can't parse control info")
+        print formatted_text("can't parse control info")
         deb_file.close()
         raise
 
@@ -239,40 +239,40 @@ def read_control (filename):
     control_keys = control.keys()
 
     if control.has_key("Depends"):
-	depends_str = control.Find("Depends")
-	# create list of dependancy lists
-	depends = split_depends(depends_str)
+        depends_str = control.Find("Depends")
+        # create list of dependancy lists
+        depends = split_depends(depends_str)
 
     if control.has_key("Recommends"):
-	recommends_str = control.Find("Recommends")
-	recommends = split_depends(recommends_str)
+        recommends_str = control.Find("Recommends")
+        recommends = split_depends(recommends_str)
 
     if control.has_key("Section"):
-	section_str = control.Find("Section")
+        section_str = control.Find("Section")
 
-	c_match = re_contrib.search(section_str)
-	nf_match = re_nonfree.search(section_str)
-	if c_match :
-	    # contrib colour
-	    section = colour_output(section_str, 'contrib')
-	elif nf_match :
-	    # non-free colour
-	    section = colour_output(section_str, 'nonfree')
-	else :
-	    # main
-	    section = colour_output(section_str, 'main')
+        c_match = re_contrib.search(section_str)
+        nf_match = re_nonfree.search(section_str)
+        if c_match :
+            # contrib colour
+            section = colour_output(section_str, 'contrib')
+        elif nf_match :
+            # non-free colour
+            section = colour_output(section_str, 'nonfree')
+        else :
+            # main
+            section = colour_output(section_str, 'main')
     if control.has_key("Architecture"):
-	arch_str = control.Find("Architecture")
-   	arch = colour_output(arch_str, 'arch')
+        arch_str = control.Find("Architecture")
+        arch = colour_output(arch_str, 'arch')
 
     if control.has_key("Maintainer"):
-	maintainer = control.Find("Maintainer")
-   	localhost = re_localhost.search(maintainer)
-	if localhost:
-	    #highlight bad email
-	    maintainer = colour_output(maintainer, 'maintainer')
-	else:
-	    maintainer = escape_if_needed(maintainer)
+        maintainer = control.Find("Maintainer")
+        localhost = re_localhost.search(maintainer)
+        if localhost:
+            #highlight bad email
+            maintainer = colour_output(maintainer, 'maintainer')
+        else:
+            maintainer = escape_if_needed(maintainer)
 
     return (control, control_keys, section, depends, recommends, arch, maintainer)
 
@@ -281,9 +281,9 @@ def read_changes_or_dsc (filename):
 
     dsc_file = daklib.utils.open_file(filename)
     try:
-	dsc = daklib.utils.parse_changes(filename)
+        dsc = daklib.utils.parse_changes(filename)
     except:
-	return formatted_text("can't parse .dsc control info")
+        return formatted_text("can't parse .dsc control info")
     dsc_file.close()
 
     filecontents = strip_pgp_signature(filename)
@@ -318,43 +318,43 @@ def create_depends_string (depends_tree):
     result = ""
     comma_count = 1
     for l in depends_tree:
-	if (comma_count >= 2):
-	    result += ", "
-	or_count = 1
-	for d in l:
-	    if (or_count >= 2 ):
-		result += " | "
-	    # doesn't do version lookup yet.
+        if (comma_count >= 2):
+            result += ", "
+        or_count = 1
+        for d in l:
+            if (or_count >= 2 ):
+                result += " | "
+            # doesn't do version lookup yet.
 
-	    q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name='%s' ORDER BY b.version desc" % (d['name'], suite))
-	    ql = q.getresult()
-	    if ql:
-		i = ql[0]
+            q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name='%s' ORDER BY b.version desc" % (d['name'], suite))
+            ql = q.getresult()
+            if ql:
+                i = ql[0]
 
-		adepends = d['name']
-		if d['version'] != '' :
-		    adepends += " (%s)" % (d['version'])
-		
-		if i[2] == "contrib":
-		    result += colour_output(adepends, "contrib")
-		elif i[2] == "non-free":
-		    result += colour_output(adepends, "nonfree")
-		else :
-		    result += colour_output(adepends, "main")
-	    else:
-		adepends = d['name']
-		if d['version'] != '' :
-		    adepends += " (%s)" % (d['version'])
-		result += colour_output(adepends, "bold")
-	    or_count += 1
-	comma_count += 1
+                adepends = d['name']
+                if d['version'] != '' :
+                    adepends += " (%s)" % (d['version'])
+
+                if i[2] == "contrib":
+                    result += colour_output(adepends, "contrib")
+                elif i[2] == "non-free":
+                    result += colour_output(adepends, "nonfree")
+                else :
+                    result += colour_output(adepends, "main")
+            else:
+                adepends = d['name']
+                if d['version'] != '' :
+                    adepends += " (%s)" % (d['version'])
+                result += colour_output(adepends, "bold")
+            or_count += 1
+        comma_count += 1
     return result
 
 def output_deb_info(filename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
-	return formatted_text("no control info")
+        return formatted_text("no control info")
     to_print = ""
     for key in control_keys :
         if key == 'Depends':
@@ -410,7 +410,7 @@ def get_copyright (deb_filename):
         res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
                                (printed_copyrights[copyrightmd5]))
     else:
-	printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
+        printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
     return res+formatted_text(copyright)
 
 def check_dsc (dsc_filename):
@@ -423,9 +423,9 @@ def check_deb (deb_filename):
     packagename = filename.split('_')[0]
 
     if filename.endswith(".udeb"):
-	is_a_udeb = 1
+        is_a_udeb = 1
     else:
-	is_a_udeb = 0
+        is_a_udeb = 0
 
 
     foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
@@ -475,7 +475,7 @@ def strip_pgp_signature (filename):
         if line.startswith("-----END PGP SIGNATURE"):
             inside_signature = 0
             continue
-	contents += line
+        contents += line
     file.close()
     return contents
 
@@ -489,8 +489,8 @@ def check_changes (changes_filename):
     changes = daklib.utils.parse_changes (changes_filename)
     files = daklib.utils.build_file_list(changes)
     for file in files.keys():
-	if file.endswith(".deb") or file.endswith(".udeb"):
-	    check_deb(file)
+        if file.endswith(".deb") or file.endswith(".udeb"):
+            check_deb(file)
         if file.endswith(".dsc"):
             check_dsc(file)
         # else: => byhand
@@ -504,24 +504,24 @@ def main ():
                  ('H',"html-output","Examine-Package::Options::Html-Output"),
                 ]
     for i in [ "Help", "Html-Output", "partial-html" ]:
-	if not Cnf.has_key("Examine-Package::Options::%s" % (i)):
-	    Cnf["Examine-Package::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Examine-Package::Options::%s" % (i)):
+            Cnf["Examine-Package::Options::%s" % (i)] = ""
 
     args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Examine-Package::Options")
 
     if Options["Help"]:
-	usage()
+        usage()
 
     stdout_fd = sys.stdout
 
     for file in args:
         try:
-	    if not Options["Html-Output"]:
-		# Pipe output for each argument through less
-		less_fd = os.popen("less -R -", 'w', 0)
-		# -R added to display raw control chars for colour
-		sys.stdout = less_fd
+            if not Options["Html-Output"]:
+                # Pipe output for each argument through less
+                less_fd = os.popen("less -R -", 'w', 0)
+                # -R added to display raw control chars for colour
+                sys.stdout = less_fd
             try:
                 if file.endswith(".changes"):
                     check_changes(file)
@@ -532,10 +532,10 @@ def main ():
                 else:
                     daklib.utils.fubar("Unrecognised file type: '%s'." % (file))
             finally:
-		if not Options["Html-Output"]:
-		    # Reset stdout here so future less invocations aren't FUBAR
-		    less_fd.close()
-		    sys.stdout = stdout_fd
+                if not Options["Html-Output"]:
+                    # Reset stdout here so future less invocations aren't FUBAR
+                    less_fd.close()
+                    sys.stdout = stdout_fd
         except IOError, e:
             if errno.errorcode[e.errno] == 'EPIPE':
                 daklib.utils.warn("[examine-package] Caught EPIPE; skipping.")
@@ -550,4 +550,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

@@ -32,7 +32,7 @@
 
 import commands, os, pwd, re, sys, time
 import apt_pkg
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 ################################################################################
@@ -73,7 +73,7 @@ def do_upload(changes_files):
         components = {}
         upload_uris = {}
         file_list = []
-	Upload.init_vars()
+        Upload.init_vars()
         # Parse the .dak file for the .changes file
         Upload.pkg.changes_file = changes_file
         Upload.update_vars()
@@ -154,49 +154,49 @@ def make_advisory(advisory_nr, changes_files):
 
     for arg in changes_files:
         arg = daklib.utils.validate_changes_file_arg(arg)
-	Upload.pkg.changes_file = arg
-	Upload.init_vars()
-	Upload.update_vars()
+        Upload.pkg.changes_file = arg
+        Upload.init_vars()
+        Upload.update_vars()
 
-	src = Upload.pkg.changes["source"]
-	if src not in adv_packages:
-	    adv_packages += [src]
+        src = Upload.pkg.changes["source"]
+        if src not in adv_packages:
+            adv_packages += [src]
 
-	suites = Upload.pkg.changes["distribution"].keys()
-	for suite in suites:
-	    if not updated_pkgs.has_key(suite):
+        suites = Upload.pkg.changes["distribution"].keys()
+        for suite in suites:
+            if not updated_pkgs.has_key(suite):
                 updated_pkgs[suite] = {}
 
-	files = Upload.pkg.files
-	for file in files.keys():
-	    arch = files[file]["architecture"]
-	    md5 = files[file]["md5sum"]
-	    size = files[file]["size"]
-	    poolname = Cnf["Dir::PoolRoot"] + \
-	    	daklib.utils.poolify(src, files[file]["component"])
-	    if arch == "source" and file.endswith(".dsc"):
-	        dscpoolname = poolname
-	    for suite in suites:
-	        if not updated_pkgs[suite].has_key(arch):
-		    updated_pkgs[suite][arch] = {}
-		updated_pkgs[suite][arch][file] = {
+        files = Upload.pkg.files
+        for file in files.keys():
+            arch = files[file]["architecture"]
+            md5 = files[file]["md5sum"]
+            size = files[file]["size"]
+            poolname = Cnf["Dir::PoolRoot"] + \
+                daklib.utils.poolify(src, files[file]["component"])
+            if arch == "source" and file.endswith(".dsc"):
+                dscpoolname = poolname
+            for suite in suites:
+                if not updated_pkgs[suite].has_key(arch):
+                    updated_pkgs[suite][arch] = {}
+                updated_pkgs[suite][arch][file] = {
                     "md5": md5, "size": size,
                     "poolname": poolname }
 
-	dsc_files = Upload.pkg.dsc_files
-	for file in dsc_files.keys():
-	    arch = "source"
-	    if not dsc_files[file].has_key("files id"):
+        dsc_files = Upload.pkg.dsc_files
+        for file in dsc_files.keys():
+            arch = "source"
+            if not dsc_files[file].has_key("files id"):
                 continue
 
-	    # otherwise, it's already in the pool and needs to be
-	    # listed specially
-	    md5 = dsc_files[file]["md5sum"]
-	    size = dsc_files[file]["size"]
-	    for suite in suites:
-	        if not updated_pkgs[suite].has_key(arch):
-		    updated_pkgs[suite][arch] = {}
-		updated_pkgs[suite][arch][file] = {
+            # otherwise, it's already in the pool and needs to be
+            # listed specially
+            md5 = dsc_files[file]["md5sum"]
+            size = dsc_files[file]["size"]
+            for suite in suites:
+                if not updated_pkgs[suite].has_key(arch):
+                    updated_pkgs[suite][arch] = {}
+                updated_pkgs[suite][arch][file] = {
                     "md5": md5, "size": size,
                     "poolname": dscpoolname }
 
@@ -208,10 +208,10 @@ def make_advisory(advisory_nr, changes_files):
     username = whoamifull[4].split(",")[0]
 
     Subst = {
-    	"__ADVISORY__": advisory_nr,
-	"__WHOAMI__": username,
-	"__DATE__": time.strftime("%B %d, %Y", time.gmtime(time.time())),
-	"__PACKAGE__": ", ".join(adv_packages),
+        "__ADVISORY__": advisory_nr,
+        "__WHOAMI__": username,
+        "__DATE__": time.strftime("%B %d, %Y", time.gmtime(time.time())),
+        "__PACKAGE__": ", ".join(adv_packages),
         "__DAK_ADDRESS__": Cnf["Dinstall::MyEmailAddress"]
         }
 
@@ -225,35 +225,35 @@ def make_advisory(advisory_nr, changes_files):
                                        Cnf["Suite::%s::Version" % suite], suite)
         adv += "%s\n%s\n\n" % (suite_header, "-"*len(suite_header))
 
-	arches = Cnf.ValueList("Suite::%s::Architectures" % suite)
-	if "source" in arches:
+        arches = Cnf.ValueList("Suite::%s::Architectures" % suite)
+        if "source" in arches:
             arches.remove("source")
-	if "all" in arches:
+        if "all" in arches:
             arches.remove("all")
-	arches.sort()
+        arches.sort()
 
-	adv += "  %s was released for %s.\n\n" % (
-		suite.capitalize(), daklib.utils.join_with_commas_and(arches))
+        adv += "  %s was released for %s.\n\n" % (
+                suite.capitalize(), daklib.utils.join_with_commas_and(arches))
 
-	for a in ["source", "all"] + arches:
-	    if not updated_pkgs[suite].has_key(a):
+        for a in ["source", "all"] + arches:
+            if not updated_pkgs[suite].has_key(a):
                 continue
 
-	    if a == "source":
-	    	adv += "  Source archives:\n\n"
-	    elif a == "all":
-	        adv += "  Architecture independent packages:\n\n"
-	    else:
-	        adv += "  %s architecture (%s)\n\n" % (a,
-			Cnf["Architectures::%s" % a])
+            if a == "source":
+                adv += "  Source archives:\n\n"
+            elif a == "all":
+                adv += "  Architecture independent packages:\n\n"
+            else:
+                adv += "  %s architecture (%s)\n\n" % (a,
+                        Cnf["Architectures::%s" % a])
 
-	    for file in updated_pkgs[suite][a].keys():
-		adv += "    http://%s/%s%s\n" % (
-				archive, updated_pkgs[suite][a][file]["poolname"], file)
-		adv += "      Size/MD5 checksum: %8s %s\n" % (
-			updated_pkgs[suite][a][file]["size"],
-			updated_pkgs[suite][a][file]["md5"])
-	    adv += "\n"
+            for file in updated_pkgs[suite][a].keys():
+                adv += "    http://%s/%s%s\n" % (
+                                archive, updated_pkgs[suite][a][file]["poolname"], file)
+                adv += "      Size/MD5 checksum: %8s %s\n" % (
+                        updated_pkgs[suite][a][file]["size"],
+                        updated_pkgs[suite][a][file]["md5"])
+            adv += "\n"
     adv = adv.rstrip()
 
     Subst["__ADVISORY_TEXT__"] = adv

@@ -80,7 +80,7 @@ def main():
 
     Arguments = [('h',"help","Make-Maintainers::Options::Help")]
     if not Cnf.has_key("Make-Maintainers::Options::Help"):
-	Cnf["Make-Maintainers::Options::Help"] = ""
+        Cnf["Make-Maintainers::Options::Help"] = ""
 
     extra_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Make-Maintainers::Options")
@@ -159,4 +159,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

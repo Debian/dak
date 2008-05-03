@@ -99,8 +99,8 @@ SELECT DISTINCT ON (f.id) c.name, sec.section, l.path, f.filename, f.id
             section=""
         dest = "%sdists/%s/%s/source/%s%s" % (Cnf["Dir::Root"], codename, component, section, os.path.basename(i[3]))
         if not os.path.exists(dest):
-	    src = i[2]+i[3]
-	    src = daklib.utils.clean_symlink(src, dest, Cnf["Dir::Root"])
+            src = i[2]+i[3]
+            src = daklib.utils.clean_symlink(src, dest, Cnf["Dir::Root"])
             if Cnf.Find("Symlink-Dists::Options::Verbose"):
                 print src+' -> '+dest
             os.symlink(src, dest)
@@ -165,14 +165,14 @@ def main ():
     Arguments = [('h',"help","Symlink-Dists::Options::Help"),
                  ('v',"verbose","Symlink-Dists::Options::Verbose")]
     for i in ["help", "verbose" ]:
-	if not Cnf.has_key("Symlink-Dists::Options::%s" % (i)):
-	    Cnf["Symlink-Dists::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Symlink-Dists::Options::%s" % (i)):
+            Cnf["Symlink-Dists::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Symlink-Dists::Options")
 
     if Options["Help"]:
-	usage()
+        usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
@@ -184,4 +184,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

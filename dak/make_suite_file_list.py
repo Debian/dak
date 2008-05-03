@@ -85,7 +85,7 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
         delete_version = version[0]
         delete_id = packages[delete_unique_id]["id"]
         delete_arch = packages[delete_unique_id]["arch"]
-	if not Cnf.Find("Suite::%s::Untouchable" % (suite)) or Options["Force"]:
+        if not Cnf.Find("Suite::%s::Untouchable" % (suite)) or Options["Force"]:
             if Options["No-Delete"]:
                 print "Would delete %s_%s_%s in %s in favour of %s_%s" % (pkg, delete_arch, delete_version, suite, dominant_version, dominant_arch)
             else:
@@ -363,7 +363,7 @@ def do_da_do_da():
                 daklib.utils.warn("Adding %s as %s maps Arch: all from it." % (archall_suite, suite))
                 suites.append(archall_suite)
         Options["Suite"] = ",".join(suites)
-    
+
     (con_suites, con_architectures, con_components, check_source) = \
                  daklib.utils.parse_args(Options)
 
@@ -414,11 +414,11 @@ def main():
                  ('c', "component", "Make-Suite-File-List::Options::Component", "HasArg"),
                  ('h', "help", "Make-Suite-File-List::Options::Help"),
                  ('n', "no-delete", "Make-Suite-File-List::Options::No-Delete"),
-		 ('f', "force", "Make-Suite-File-List::Options::Force"),
+                 ('f', "force", "Make-Suite-File-List::Options::Force"),
                  ('s', "suite", "Make-Suite-File-List::Options::Suite", "HasArg")]
     for i in ["architecture", "component", "help", "no-delete", "suite", "force-touch" ]:
-	if not Cnf.has_key("Make-Suite-File-List::Options::%s" % (i)):
-	    Cnf["Make-Suite-File-List::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Make-Suite-File-List::Options::%s" % (i)):
+            Cnf["Make-Suite-File-List::Options::%s" % (i)] = ""
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Make-Suite-File-List::Options")
     if Options["Help"]:

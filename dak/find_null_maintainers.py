@@ -53,14 +53,14 @@ def main():
     Cnf = daklib.utils.get_conf()
     Arguments = [('h',"help","Find-Null-Maintainers::Options::Help")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Find-Null-Maintainers::Options::%s" % (i)):
-	    Cnf["Find-Null-Maintainers::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Find-Null-Maintainers::Options::%s" % (i)):
+            Cnf["Find-Null-Maintainers::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Find-Null-Maintainers::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 

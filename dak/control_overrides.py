@@ -20,27 +20,27 @@
 ################################################################################
 
 # On 30 Nov 1998, James Troup wrote:
-# 
+#
 # > James Troup<2> <troup2@debian.org>
-# > 
+# >
 # >    James is a clone of James; he's going to take over the world.
 # >    After he gets some sleep.
-# 
+#
 # Could you clone other things too? Sheep? Llamas? Giant mutant turnips?
-# 
+#
 # Your clone will need some help to take over the world, maybe clone up an
 # army of penguins and threaten to unleash them on the world, forcing
 # governments to sway to the new James' will!
-# 
+#
 # Yes, I can envision a day when James' duplicate decides to take a horrific
 # vengance on the James that spawned him and unleashes his fury in the form
 # of thousands upon thousands of chickens that look just like Captin Blue
 # Eye! Oh the horror.
-# 
+#
 # Now you'll have to were name tags to people can tell you apart, unless of
 # course the new clone is truely evil in which case he should be easy to
 # identify!
-# 
+#
 # Jason
 # Chicken. Black. Helicopters.
 # Be afraid.
@@ -164,7 +164,7 @@ def process_file (file, suite, component, type, action):
             if action == "add" or old_priority_id == priority_id and \
                old_section_id == section_id and \
                ((old_maintainer_override == maintainer_override) or \
-		(old_maintainer_override == "" and maintainer_override == None)):
+                (old_maintainer_override == "" and maintainer_override == None)):
                 # If it's unchanged or we're in 'add only' mode, ignore it
                 c_skipped += 1
                 continue
@@ -251,14 +251,14 @@ def main ():
 
     # Default arguments
     for i in [ "add", "help", "list", "quiet", "set" ]:
-	if not Cnf.has_key("Control-Overrides::Options::%s" % (i)):
-	    Cnf["Control-Overrides::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Control-Overrides::Options::%s" % (i)):
+            Cnf["Control-Overrides::Options::%s" % (i)] = ""
     if not Cnf.has_key("Control-Overrides::Options::Component"):
-	Cnf["Control-Overrides::Options::Component"] = "main"
+        Cnf["Control-Overrides::Options::Component"] = "main"
     if not Cnf.has_key("Control-Overrides::Options::Suite"):
-	Cnf["Control-Overrides::Options::Suite"] = "unstable"
+        Cnf["Control-Overrides::Options::Suite"] = "unstable"
     if not Cnf.has_key("Control-Overrides::Options::Type"):
-	Cnf["Control-Overrides::Options::Type"] = "deb"
+        Cnf["Control-Overrides::Options::Type"] = "deb"
 
     file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
 
@@ -283,7 +283,7 @@ def main ():
         list(suite, component, type)
     else:
         if Cnf.has_key("Suite::%s::Untouchable" % suite) and Cnf["Suite::%s::Untouchable" % suite] != 0:
-	    daklib.utils.fubar("%s: suite is untouchable" % suite)
+            daklib.utils.fubar("%s: suite is untouchable" % suite)
 
         Logger = daklib.logging.Logger(Cnf, "control-overrides")
         if file_list:
@@ -297,4 +297,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

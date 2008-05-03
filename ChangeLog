@@ -1,3 +1,111 @@
+2008-05-03  Thomas Viehmann  <tv@beamnet.de>
+
+	* dak/process_unchecked.py (check_hashes): Reject on error while
+	parsing Checksums-*.
+
+2008-05-02  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/pseudo-packages*: Removed listarchives, closes #468667
+	added wiki.debian.org (currently pointing to debian-www), closes #194206
+	added security-tracker, closes #436152
+	added release.debian.org, closes #451005
+
+	* config/debian/cron.buildd: Cleanup unreachable code. (If someone
+	still wants it - its in revision control...)
+
+	* config/debian/cron.daily: Modify call to update-ftpstats to only
+	use files log/2*, instead of log/*, so it ignores the new cron/
+	subdir. Makes sure it can't get confused, and is also safe for
+	nearly thousand years. If this code is really in use in year 3000,
+	im sure people can adjust it! :)
+
+	* config/debian/vars: Add logdir as a place for cronjob log output
+
+	* config/debian/cron.daily: Use a logfile and be more verbose of
+	whats going on.
+	  Also moved the commented VACUUM ; VACUUM ANALYZE calls over to
+	cron.weekly, ...
+	* config/debian/cron.weekly: likewise,
+	  ... and activate those calls again. Once a week, as an
+	additional safety bet to be sure the stuff does get run is ok,
+	even if we have autovacuum by default.
+
+2008-05-02  Thomas Viehmann  <tv@beamnet.de>
+
+	* dak/process_unchecked.py (check_hashes): fix typo in
+	  checksum reject message.
+
+2008-05-02  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/extensions.py: used reindent.py from the python
+	2.x source examples to get all dak code use the same indentation
+	style, no longer a mix of 4 spaces / 1 tab.
+	* dak/check_archive.py: likewise
+	* dak/check_overrides.py: likewise
+	* dak/check_proposed_updates.py: likewise
+	* dak/clean_proposed_updates.py: likewise
+	* dak/clean_queues.py: likewise
+	* dak/clean_suites.py: likewise
+	* dak/compare_suites.py: likewise
+	* dak/control_overrides.py: likewise
+	* dak/control_suite.py: likewise
+	* dak/cruft_report.py: likewise
+	* dak/dak.py: likewise
+	* dak/decode_dot_dak.py: likewise
+	* dak/examine_package.py: likewise
+	* dak/find_null_maintainers.py: likewise
+	* dak/generate_index_diffs.py: likewise
+	* dak/generate_releases.py: likewise
+	* dak/import_archive.py: likewise
+	* dak/import_keyring.py: likewise
+	* dak/import_ldap_fingerprints.py: likewise
+	* dak/import_users_from_passwd.py: likewise
+	* dak/init_db.py: likewise
+	* dak/init_dirs.py: likewise
+	* dak/ls.py: likewise
+	* dak/make_maintainers.py: likewise
+	* dak/make_overrides.py: likewise
+	* dak/make_suite_file_list.py: likewise
+	* dak/mirror_split.py: likewise
+	* dak/new_security_install.py: likewise
+	* dak/override.py: likewise
+	* dak/poolize.py: likewise
+	* dak/process_accepted.py: likewise
+	* dak/process_new.py: likewise
+	* dak/process_unchecked.py: likewise
+	* dak/queue_report.py: likewise
+	* dak/reject_proposed_updates.py: likewise
+	* dak/rm.py: likewise
+	* dak/security_install.py: likewise
+	* dak/show_new.py: likewise
+	* dak/split_done.py: likewise
+	* dak/stats.py: likewise
+	* dak/symlink_dists.py: likewise
+	* dak/test/001/test.py: likewise
+	* dak/test/002/test.py: likewise
+	* dak/transitions.py: likewise
+	* daklib/extensions.py: likewise
+	* daklib/logging.py: likewise
+	* daklib/queue.py: likewise
+	* daklib/utils.py: likewise
+	* scripts/debian/insert_missing_changedby.py: likewise
+
+	* dak/process_new.py (recheck): Make the path check more robust,
+	so we no longer have to keep process_new seperate trees between
+	security and normal archive.
+
+2008-04-27  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_accepted.py (Urgency_Log.__init__): Warn if the
+	configured path does not exist or is not writeable by us. Use a
+	tmp path if so, so we do not lose the urgencies in such cases.
+
+	* config/debian/dak.conf: Changed path for UrgencyLog
+	Same for the ReleaseTransitions file
+
+	* config/debian/cron.daily: Notify qa user on merkel of dinstall
+	start, Remove the britney call
+
 2008-04-26  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_new.py: Call end() whenever we try to leave by
@@ -202,11 +310,28 @@
 	* dak/examine_package.py (check_deb): Remove linda call. It
 	provides no added benefit to lintian anymore.
 
+2008-01-07  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/examine_package.py (check_deb): Remove linda call. It
+	provides no added benefit to lintian anymore.
+
 2008-01-06  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/examine_package.py (do_lintian): lintian now supports html
 	coloring, so use it.
 	(do_command): Dont escape html chars if param escaped = 1
+
+2008-01-06  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/examine_package.py (do_lintian): lintian now supports html
+	coloring, so use it.
+	(do_command): Dont escape html chars if param escaped = 1
+
+2007-12-31  Anthony Towns  <ajt@debian.org>
+
+	* dak/process_new.py (recheck): pass "" for prefix_str to reject()
+	when processing result of check_dsc_against_db so we don't promote
+	warnings to rejections.
 
 2007-12-31  Anthony Towns  <ajt@debian.org>
 
@@ -286,12 +411,109 @@
 	* scripts/debian/update-readmenonus: Removed.
 
 
+2007-12-30  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/dak.py (init): add show-new. This is based on a patch
+	submitted by Thomas Viehmann in Bug #408318, but large parts of
+	handling it are rewritten and show-new is done by me.
+
+	* dak/queue_report.py (table_row): Add link to generated html page
+	for NEW package.
+
+	* dak/show_new.py: new file, generates html overview for NEW
+	packages, similar to what we see with examine-package.
+
+	* config/debian/cron.hourly: Add show-new call
+
+	* config/debian/dak.conf: Add HTMLPath for Show-New
+
+	* dak/examine_package.py (print_copyright): ignore stderr when
+	finding copyright file.
+	(main): add html option
+	(html_escape): new function
+	(escape_if_needed): ditto
+	(headline): ditto
+	(colour_output): ditto
+	(print_escaped_text): ditto
+	(print_formatted_text): ditto
+	- use those functions everywhere where we generate output, as they
+	easily know if we want html or not and just DTRT
+	(do_lintian): new function
+	(check_deb): use it
+	(output_deb_info): Use print_escaped_text, not print_formatted_text.
+	Also import daklib.queue, determine_new now lives there
+
+	Also add a variable to see if we want html output. Default is
+	disabled, show_new enables it for its use.
+	Most of html, besides header/footer are in examine_package instead
+	of show_new, as it makes it a whole lot easier to deal with it at
+	the point the info is generated.
+
+
+	* dak/process_new.py (determine_new): Moved out of here.
+	(check_valid): Moved out of here.
+	(get_type): Moved out of here.
+
+	* daklib/queue.py (determine_new): Moved here.
+	(check_valid): Moved here.
+	(get_type): Moved here.
+
+	* dak/init_db.py (do_section): Remove non-US code
+
+	* dak/make_overrides.py (main): ditto
+
+	* dak/process_new.py (determine_new): ditto
+
+	* daklib/queue.py (Upload.in_override_p),
+	(Upload.check_override): ditto
+
+	* daklib/utils.py (extract_component_from_section):,
+	(poolify): ditto
+
+	* dak/import_archive.py (update_section): ditto
+
+	* dak/symlink_dists.py (fix_component_section): ditto
+
+	* scripts/debian/mkmaintainers: ditto
+
+	* scripts/debian/update-mirrorlists (masterlist): ditto
+
+	* config/debian-non-US/*: Remove subdir
+
+	* scripts/debian/update-readmenonus: Removed.
+
+
 2007-12-28  Anthony Towns  <ajt@debian.org>
 
 	* daklib/utils.py (check_signature): add NOTATION_DATA and
 	NOTATION_NAME to known keywords.
 
-	* daklib/queue.py (Upload.check_source_against_db): 
+	* daklib/queue.py (Upload.check_source_against_db):
+
+	* dak/make_suite_file_list.py: add -f/--force option.
+
+	* dak/generate_releases.py: add -a/--apt-conf=FILE and
+	-f/--force-touch options.  Pull version info from the database.
+	Make suite description optional.
+
+	* config/debian/dak.conf: update
+	Reject-Proposed-Updates::MoreInfoURL.  Comment out
+	Suite::Stable::Version and ::Description.
+
+	* config/debian/apt.conf: Add hurd-i386 to unstable
+	debian-installer stanza.
+
+2007-12-28  Joerg Jaspert  <joerg@debian.org>
+
+	* KEYEXPIRED is actually a known keyword. We do check it earlier
+	on and reject in case the sig is bad (or unknown)
+
+2007-12-28  Anthony Towns  <ajt@debian.org>
+
+	* daklib/utils.py (check_signature): add NOTATION_DATA and
+	NOTATION_NAME to known keywords.
+
+	* daklib/queue.py (Upload.check_source_against_db):
 
 	* dak/make_suite_file_list.py: add -f/--force option.
 
@@ -320,6 +542,20 @@
 	process data.tar.bz2 (or whatever format it will be in the
 	future).
 
+2007-12-24  Joerg Jaspert  <joerg@debian.org>
+
+	* Also run lintian on the .dsc file to check the source itself.
+
+	* Fix the direct usage of ar | tar etc to get the copyright file
+	and use dpkg-deb, which is made for this and makes us able to
+	process data.tar.bz2 (or whatever format it will be in the
+	future).
+
+2007-12-21  Joerg Jaspert  <joerg@debian.org>
+
+	* Remove the (now useless) check for a pre-depends on dpkg for
+	  binaries that contain bzip2 compressed data tarballs.
+
 2007-12-21  Joerg Jaspert  <joerg@debian.org>
 
 	* Remove the (now useless) check for a pre-depends on dpkg for
@@ -337,6 +573,23 @@
 	* process_new.py: When rejecting from the p-u-new or o-p-u-new
 	holding queues, don't worry if dak has its own reasons for
 	rejecting the package as well as the SRMs.
+
+2007-08-28  Anthony Towns  <ajt@debian.org>
+
+	* process_unchecked.py: Add support for automatic BYHAND
+	processing.
+	* config/debian/dak.conf, scripts/debian/byhand-tag: Automatic
+	processing of tag-overrides.
+	* examine_package.py: Summarise duplicate copyright file entries
+	(same md5sum) with a reference to the previous instance, rather
+	than repeating them.
+	* process_new.py: When rejecting from the p-u-new or o-p-u-new
+	holding queues, don't worry if dak has its own reasons for
+	rejecting the package as well as the SRMs.
+
+2007-06-19  Anthony Towns  <ajt@debian.org>
+
+	* Add nm.debian.org pseudopackage
 
 2007-06-19  Anthony Towns  <ajt@debian.org>
 
@@ -369,7 +622,57 @@
 
 	* config/debian/dak.conf: typo fix for Dinstall::GPGKeyring,
 	drop upload limitations, add release postgres user
-	
+
+	* dak/process_new.py: support for automatically accepting and rejecting
+	packages from proposed-updates holding queues via COMMENTS directory
+	* cron.daily: automatically process COMMENTS-based approvals
+	and rejections for proposed-updates holding queues
+
+	* dak/process_unchecked.py: add support for oldproposedupdates
+	holding queue
+
+	* dak/control_suite.py: allow control-suite to work with etch-m68k
+
+	* dak/generate_releases.py: unlink old Release files before updating
+	them if nlinks > 1 (ie, if two files used to be the same, maybe they
+	shouldn't be when generate-releases is run)
+
+	* dak/generate_releases.py: add a couple of commented lines to make
+	it easier to deal with point releases
+
+	* dak/make_overrides.py: generate overrides for !contrib udebs
+
+	* docs/README.stable-point-release: update docs for doing a
+	point release
+
+2007-06-18  Anthony Towns  <ajt@debian.org>
+
+	* daklib/logging.py: Set umask to not exclude group-writability
+	so we don't get reminded at the start of each month. Thanks to
+	Random J.
+	* dak/override.py: More changes from Herr von Wifflepuck: warn
+	if section of source is different to binary section; restore
+	functionality on source-only overrides; croak if trying to set
+	priority of a source override; never set priority of source
+	overrides; correct typo in logging (s/priority/section/ at
+	one place)
+
+	* config/debian/apt.conf.oldstable: Added for oldstable point releases.
+	* config/debian/cron.daily: auotmatically accept/reject
+	oldstable-proposed-updates based on COMMENTS directory
+
+2007-06-18  Anthony Towns  <ajt@debian.org>
+
+	* config/debian/apt.conf, config/debian/apt.conf.stable,
+	config/debian/dak.conf: update for 4.0r0 (etch), and 3.1r6
+	(sarge), support for oldstable-proposed-updates, dropping m68k
+	from etch, creating etch-m68k suite, creating lenny.
+
+	* config/debian/vars: update for lenny
+
+	* config/debian/dak.conf: typo fix for Dinstall::GPGKeyring,
+	drop upload limitations, add release postgres user
+
 	* dak/process_new.py: support for automatically accepting and rejecting
 	packages from proposed-updates holding queues via COMMENTS directory
 	* cron.daily: automatically process COMMENTS-based approvals
@@ -398,6 +701,26 @@
 	* scripts/debian/ssh-move: add ssh-move script from debbugs
 	* config/debian/cron.unchecked: push version info to debbugs using
 	ssh-move.
+
+2007-03-05  Anthony Towns  <ajt@debian.org>
+
+	* config/debian/dak.conf: update for 3.1r5.
+	* scripts/debian/ssh-move: add ssh-move script from debbugs
+	* config/debian/cron.unchecked: push version info to debbugs using
+	ssh-move.
+
+2007-02-14  James Troup  <troup@ries.debian.org>
+
+	* docs/README.config: remove Dinstall::GroupOverrideFilename.
+	* config/debian/dak.conf: likewise.
+	* config/debian-non-US/dak.conf: likewise.
+	* config/debian-security/dak.conf: likewise.
+
+	* daklib/queue.py (Upload.close_bugs): no longer handle NMUs or
+	experimental differently, just close the bugs and let version
+	tracking sort it out.
+	 (nmu_p): remove entire class - now unused.
+	 (Upload.__init__): don't use nmu_p.
 
 2007-02-14  James Troup  <troup@ries.debian.org>
 
@@ -491,7 +814,97 @@
 	* config/debian/dak.conf: likewise.
 	* config/debian/vars: likewise.
 	* scripts/debian/mkfilesindices: likewise.
-	
+
+2007-02-08  James Troup  <james@nocrew.org>
+
+	* dak/process_unchecked.py (check_signed_by_key): new function to
+	ensure .changes files are signed by an authorized uploader.
+	(process_it): use it.
+
+	* config/debian/dak.conf (Binary-Upload-Restrictions): new stanza
+	to configure per suite/component/architecture binary upload
+	restrictions.
+
+2007-02-08  Anthony Towns  <ajt@debian.org>
+
+	* config/debian/dak.conf: update for 3.1r4.  Use new 'etch'
+	signing key.  Drop maximum index diffs down to 14.
+
+	* config/debian/apt.conf: add udeb support for non-free (testing,
+	unstable) and experimental.
+	* config/debian/dak.conf: likewise.
+
+	* dak/generate_releases.py (main): handle udebs in any component.
+
+	* daklib/queue.py (Upload.build_summaries): handle files without a
+	'type' gracefully.
+
+	* dak/generate_releases.py (print_sha256_files): new function.
+	(main): use it.
+
+	* dak/process_accepted.py (stable_install): fix name of template
+	mail.
+
+	* dak/process_unchecked.py (is_stableupdate): fix invocation of
+	database.get_suite_id().
+
+	* templates/process-new.bxa_notification: Update on request
+	of/after discussion with BIS staff.
+
+	* scripts/debian/mkfilesindices: also handle proposed-updates.
+
+2007-02-08  Ryan Murray  <rmurray@debian.org>
+
+	* config/debian/cron.monthly: use $ftpgroup instead of hardcoding
+	group name for chgrp of mail archives.
+
+	* daklib/queue.py (Upload.check_dsc_against_db): handle multiple
+	orig.tar.gz's by picking the first one by file id.
+
+	* dak/override.py (main): limit to binary overrides only for now.
+	(usage): update to match.
+
+	* config/debian/cron.daily: track when we have the accepted lock
+	and clean it up on exit if we have it.  Take/check the
+	cron.unchecked lock just before traping to cleanup on exit.
+	Remove potato override handling.  Remove any dangling symlinks in
+	/srv/incoming.d.o/buildd.  Clean up apt-ftparchive's databases.
+
+	* config/debian/apt.conf: change default compression scheme for
+	both Sources and Packages to gzip and bzip2 rather than
+	uncompressed and gzip (Packages) and gzip (Sources).  Use old
+	defaults for proposed-updates.
+
+	* dak/control_overrides.py (main): refuse to operate on
+	untouchable suites.
+
+	* config/debian/pseudo-packages.maintainers: drop install,
+	installation, boot-floppy, slink-cd, potato-cd and
+	nonus.debian.org.  Update base.
+	* config/debian/pseudo-packages.description: likewise.
+
+	* daklib/utils.py (re_srchasver): new regex.
+	(parse_changes): use regex to split 'Source (Version)' style
+	Source fields into 'source' and 'source-version'.
+
+	* config/debian/cron.daily: use $base instead of hardcoding path
+	name.
+
+	* scripts/debian/mkfilesindices: source 'vars' file and use it's
+	variables instead of hardcoding path names.
+
+	* config/debian/apt.conf: switch from /org to /srv.
+	* config/debian/apt.conf.buildd: likewise.
+	* config/debian/apt.conf.stable: likewise.
+	* config/debian/cron.daily: likewise.
+	* config/debian/cron.hourly: likewise.
+	* config/debian/cron.monthly: likewise.
+	* config/debian/cron.unchecked: likewise.
+	* config/debian/cron.weekly: likewise.
+	* config/debian/dak.conf: likewise.
+	* config/debian/vars: likewise.
+	* scripts/debian/mkfilesindices: likewise.
+
 2007-02-08  James Troup  <james@nocrew.org>
 
 	* dak/process_unchecked.py (check_signed_by_key): new function to
@@ -507,6 +920,17 @@
 	* dak/process_unchecked.py (check_timestamps): change match to
 	search as recent versions of python-apt prefix the string with 'E: '.
 
+2006-10-09  James Troup  <james.troup@canonical.com>
+
+	* dak/process_unchecked.py (check_timestamps): change match to
+	search as recent versions of python-apt prefix the string with 'E: '.
+
+2006-06-26  Ryan Murray  <rmurray@debian.org>
+
+	* dak/process_unchecked.py (check_files): strip optional source version
+	from Source: field in changes file, and ensure what is left is a valid
+	package name.
+
 2006-06-26  Ryan Murray  <rmurray@debian.org>
 
 	* dak/process_unchecked.py (check_files): strip optional source version
@@ -517,6 +941,22 @@
 
 	* dak/process_unchecked.py (check_files): also check ProposedUpdates
 	queue for source.
+
+2006-06-23  Ryan Murray  <rmurray@debian.org>
+
+	* dak/process_unchecked.py (check_files): also check ProposedUpdates
+	queue for source.
+
+2006-06-18  Ryan Murray  <rmurray@debian.org>
+
+	* dak/scripts/debian/update-ftpstats: look for dak named processes in
+	the log, too.
+
+	* dak/process_unchecked.py (check_files): only check embargoed and
+	unembargoed queues if the keys are set.
+
+	* dak/config/debian-security/apt.conf: set Packages::Compress to gzip
+	and bzip2 for etch.
 
 2006-06-18  Ryan Murray  <rmurray@debian.org>
 
@@ -669,7 +1109,7 @@
 	that signed a given file from a keyserver.
 	(check_signature): add 'autofetch' argument that if not set
 	defaults to the value of Dinstall::KeyAutoFetch (if that exists).
-	If 'autofetch' is true, invoke retrieve_key().  
+	If 'autofetch' is true, invoke retrieve_key().
 
 	* docs/README.config: document Dinstall::KeyAutoFetch and
 	Dinstall:KeyServer.
@@ -941,7 +1381,7 @@
 	* apt.conf.stable: update for sarge's release
 	* apt.conf: bump daily max Contents change to 25MB from 12MB
 
-	* cron.daily: add accepted lock and invoke cindy  
+	* cron.daily: add accepted lock and invoke cindy
 	* cron.daily: add daily.lock
 	* cron.daily: invoke tiffani
 	* cron.daily: rebuild accepted buildd stuff
@@ -1090,7 +1530,7 @@
 
 	* amber (do_upload): Sort changes files in "katie" order so that
 	  source always arrives before binary-only rebuilds
-	
+
 2004-10-05  James Troup  <james@nocrew.org>
 
 	* jennifer (check_dsc): correct reject message on invalid
@@ -1258,7 +1698,7 @@
 	valid_dsc_p and don't run check_source() if check_dsc() failed.
 	(check_dsc): on fatal failures return 0 so check_source() isn't
 	run (since it makes fatal assumptions about the presence of
-	mandatory .dsc fields).  
+	mandatory .dsc fields).
 	Remove unused and obsolete re_bad_diff and re_is_changes regexps.
 
 2004-05-07  James Troup  <james@nocrew.org>

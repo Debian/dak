@@ -158,7 +158,7 @@ def reverse_depends_check(removals, suites):
                 unsat = 0
                 for dep_package, _, _ in dep:
                     if dep_package in removals:
-                            unsat += 1
+                        unsat += 1
                 if unsat == len(dep):
                     component = p2c[package]
                     if component != "main":
@@ -196,7 +196,7 @@ def reverse_depends_check(removals, suites):
                 unsat = 0
                 for dep_package, _, _ in dep:
                     if dep_package in removals:
-                            unsat += 1
+                        unsat += 1
                 if unsat == len(dep):
                     if component != "main":
                         source = "%s/%s" % (source, component)
@@ -214,7 +214,7 @@ def reverse_depends_check(removals, suites):
     else:
         print "No dependency problem found."
     print
-    
+
 ################################################################################
 
 def main ():
@@ -239,16 +239,16 @@ def main ():
     for i in [ "architecture", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
                "source-only" ]:
-	if not Cnf.has_key("Rm::Options::%s" % (i)):
-	    Cnf["Rm::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Rm::Options::%s" % (i)):
+            Cnf["Rm::Options::%s" % (i)] = ""
     if not Cnf.has_key("Rm::Options::Suite"):
-	Cnf["Rm::Options::Suite"] = "unstable"
+        Cnf["Rm::Options::Suite"] = "unstable"
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Rm::Options")
 
     if Options["Help"]:
-	usage()
+        usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     daklib.database.init(Cnf, projectB)
@@ -534,4 +534,3 @@ def main ():
 
 if __name__ == '__main__':
     main()
-

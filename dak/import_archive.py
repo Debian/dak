@@ -490,14 +490,14 @@ def do_da_do_da ():
     Arguments = [('a', "action", "Import-Archive::Options::Action"),
                  ('h', "help", "Import-Archive::Options::Help")]
     for i in [ "action", "help" ]:
-	if not Cnf.has_key("Import-Archive::Options::%s" % (i)):
-	    Cnf["Import-Archive::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Import-Archive::Options::%s" % (i)):
+            Cnf["Import-Archive::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Import-Archive::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     if not Options["Action"]:
         daklib.utils.warn("""no -a/--action given; not doing anything.

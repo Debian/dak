@@ -36,7 +36,7 @@
 
 import copy, glob, os, stat, sys, time
 import apt_pkg
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 Cnf = None
@@ -61,7 +61,7 @@ Prints a report of packages in queue directories (usually new and byhand).
                    nf=notes, first           nl=notes, last
 
      Age Keys: m=minutes, h=hours, d=days, w=weeks, o=months, y=years
-     
+
 """
     sys.exit(exit_code)
 
@@ -119,77 +119,77 @@ def sg_compare (a, b):
 ############################################################
 
 def sortfunc(a,b):
-     for sorting in direction:
-         (sortkey, way, time) = sorting
-         ret = 0
-         if time == "m":
-             x=int(a[sortkey]/60)
-             y=int(b[sortkey]/60)
-         elif time == "h":
-             x=int(a[sortkey]/3600)
-             y=int(b[sortkey]/3600)
-         elif time == "d":
-             x=int(a[sortkey]/86400)
-             y=int(b[sortkey]/86400)
-         elif time == "w":
-             x=int(a[sortkey]/604800)
-             y=int(b[sortkey]/604800)
-         elif time == "o":
-             x=int(a[sortkey]/2419200)
-             y=int(b[sortkey]/2419200)
-         elif time == "y":
-             x=int(a[sortkey]/29030400)
-             y=int(b[sortkey]/29030400)
-         else:
-             x=a[sortkey]
-             y=b[sortkey]
-         if x < y:
-             ret = -1
-         elif x > y:
-             ret = 1
-         if ret != 0:
-             if way < 0:
-                 ret = ret*-1
-             return ret
-     return 0
+    for sorting in direction:
+        (sortkey, way, time) = sorting
+        ret = 0
+        if time == "m":
+            x=int(a[sortkey]/60)
+            y=int(b[sortkey]/60)
+        elif time == "h":
+            x=int(a[sortkey]/3600)
+            y=int(b[sortkey]/3600)
+        elif time == "d":
+            x=int(a[sortkey]/86400)
+            y=int(b[sortkey]/86400)
+        elif time == "w":
+            x=int(a[sortkey]/604800)
+            y=int(b[sortkey]/604800)
+        elif time == "o":
+            x=int(a[sortkey]/2419200)
+            y=int(b[sortkey]/2419200)
+        elif time == "y":
+            x=int(a[sortkey]/29030400)
+            y=int(b[sortkey]/29030400)
+        else:
+            x=a[sortkey]
+            y=b[sortkey]
+        if x < y:
+            ret = -1
+        elif x > y:
+            ret = 1
+        if ret != 0:
+            if way < 0:
+                ret = ret*-1
+            return ret
+    return 0
 
 ############################################################
 
 def header():
     print """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-	<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>Debian NEW and BYHAND Packages</title>
-	<link type="text/css" rel="stylesheet" href="style.css">
-	<link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
-	</head>
-	<body>
-	<div align="center">
-	<a href="http://www.debian.org/">
+        <html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Debian NEW and BYHAND Packages</title>
+        <link type="text/css" rel="stylesheet" href="style.css">
+        <link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
+        </head>
+        <body>
+        <div align="center">
+        <a href="http://www.debian.org/">
      <img src="http://www.debian.org/logos/openlogo-nd-50.png" border="0" hspace="0" vspace="0" alt=""></a>
-	<a href="http://www.debian.org/">
+        <a href="http://www.debian.org/">
      <img src="http://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace="0" alt="Debian Project"></a>
-	</div>
-	<br />
-	<table class="reddy" width="100%">
-	<tr>
-	<td class="reddy">
+        </div>
+        <br />
+        <table class="reddy" width="100%">
+        <tr>
+        <td class="reddy">
     <img src="http://www.debian.org/Pics/red-upperleft.png" align="left" border="0" hspace="0" vspace="0"
      alt="" width="15" height="16"></td>
-	<td rowspan="2" class="reddy">Debian NEW and BYHAND Packages</td>
-	<td class="reddy">
+        <td rowspan="2" class="reddy">Debian NEW and BYHAND Packages</td>
+        <td class="reddy">
     <img src="http://www.debian.org/Pics/red-upperright.png" align="right" border="0" hspace="0" vspace="0"
      alt="" width="16" height="16"></td>
-	</tr>
-	<tr>
-	<td class="reddy">
+        </tr>
+        <tr>
+        <td class="reddy">
     <img src="http://www.debian.org/Pics/red-lowerleft.png" align="left" border="0" hspace="0" vspace="0"
      alt="" width="16" height="16"></td>
-	<td class="reddy">
+        <td class="reddy">
     <img src="http://www.debian.org/Pics/red-lowerright.png" align="right" border="0" hspace="0" vspace="0"
      alt="" width="15" height="16"></td>
-	</tr>
-	</table>
-	"""
+        </tr>
+        </table>
+        """
 
 def footer():
     print "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
@@ -197,7 +197,7 @@ def footer():
     print "<p>You may want to look at <a href=\"http://ftp-master.debian.org/REJECT-FAQ.html\">the REJECT-FAQ</a> for possible reasons why one of the above packages may get rejected.</p>"
     print """<a href="http://validator.w3.org/check?uri=referer">
     <img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a>
-	<a href="http://jigsaw.w3.org/css-validator/check/referer">
+        <a href="http://jigsaw.w3.org/css-validator/check/referer">
     <img border="0" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!"
      height="31" width="88"></a>
     """
@@ -206,16 +206,16 @@ def footer():
 def table_header(type):
     print "<h1>Summary for: %s</h1>" % (type)
     print """<center><table border="0">
-	<tr>
-	  <th align="center">Package</th>
-	  <th align="center">Version</th>
-	  <th align="center">Arch</th>
-	  <th align="center">Distribution</th>
-	  <th align="center">Age</th>
-	  <th align="center">Maintainer</th>
-	  <th align="center">Closes</th>
-	</tr>
-	"""
+        <tr>
+          <th align="center">Package</th>
+          <th align="center">Version</th>
+          <th align="center">Arch</th>
+          <th align="center">Distribution</th>
+          <th align="center">Age</th>
+          <th align="center">Maintainer</th>
+          <th align="center">Closes</th>
+        </tr>
+        """
 
 def table_footer(type, source_count, total_count):
     print "</table></center><br>\n"
@@ -252,7 +252,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes):
         print "<a href=\"http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br>" % (close, close)
     print "</td></tr>"
     row_number+=1
-    
+
 ############################################################
 
 def process_changes_files(changes_files, type):
@@ -359,26 +359,26 @@ def process_changes_files(changes_files, type):
     # If we produce html we always have oldest first.
         direction.append([4,-1,"ao"])
     else:
-		if Cnf.has_key("Queue-Report::Options::Sort"):
-			for i in Cnf["Queue-Report::Options::Sort"].split(","):
-			  if i == "ao":
-				  # Age, oldest first.
-				  direction.append([4,-1,age])
-			  elif i == "an":
-				  # Age, newest first.
-				  direction.append([4,1,age])
-			  elif i == "na":
-				  # Name, Ascending.
-				  direction.append([0,1,0])
-			  elif i == "nd":
-				  # Name, Descending.
-				  direction.append([0,-1,0])
-			  elif i == "nl":
-				  # Notes last.
-				  direction.append([3,1,0])
-			  elif i == "nf":
-				  # Notes first.
-				  direction.append([3,-1,0])
+        if Cnf.has_key("Queue-Report::Options::Sort"):
+            for i in Cnf["Queue-Report::Options::Sort"].split(","):
+                if i == "ao":
+                    # Age, oldest first.
+                    direction.append([4,-1,age])
+                elif i == "an":
+                    # Age, newest first.
+                    direction.append([4,1,age])
+                elif i == "na":
+                    # Name, Ascending.
+                    direction.append([0,1,0])
+                elif i == "nd":
+                    # Name, Descending.
+                    direction.append([0,-1,0])
+                elif i == "nl":
+                    # Notes last.
+                    direction.append([3,1,0])
+                elif i == "nf":
+                    # Notes first.
+                    direction.append([3,-1,0])
     entries.sort(lambda x, y: sortfunc(x, y))
     # Yes, in theory you can add several sort options at the commandline with. But my mind is to small
     # at the moment to come up with a real good sorting function that considers all the sidesteps you
@@ -429,14 +429,14 @@ def main():
                  ('s',"sort","Queue-Report::Options::Sort", "HasArg"),
                  ('a',"age","Queue-Report::Options::Age", "HasArg")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Queue-Report::Options::%s" % (i)):
-	    Cnf["Queue-Report::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Queue-Report::Options::%s" % (i)):
+            Cnf["Queue-Report::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
     Options = Cnf.SubTree("Queue-Report::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     Upload = daklib.queue.Upload(Cnf)
 

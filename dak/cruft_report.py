@@ -133,7 +133,7 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
         nviu_to_remove = []
         print "Newer version in unstable"
         print "-------------------------"
-        print 
+        print
         for i in ql:
             (source, experimental_version, unstable_version) = i
             print " o %s (%s, %s)" % (source, experimental_version, unstable_version)
@@ -180,7 +180,7 @@ def do_nbs(real_nbs):
 def do_dubious_nbs(dubious_nbs):
     print "Dubious NBS"
     print "-----------"
-    print 
+    print
 
     dubious_nbs_keys = dubious_nbs.keys()
     dubious_nbs_keys.sort()
@@ -196,7 +196,7 @@ def do_dubious_nbs(dubious_nbs):
             packages.sort()
             print "        o %s: %s" % (version, ", ".join(packages))
 
-        print 
+        print
 
 ################################################################################
 
@@ -253,8 +253,8 @@ def main ():
                  ('m',"mode","Cruft-Report::Options::Mode", "HasArg"),
                  ('s',"suite","Cruft-Report::Options::Suite","HasArg")]
     for i in [ "help" ]:
-	if not Cnf.has_key("Cruft-Report::Options::%s" % (i)):
-	    Cnf["Cruft-Report::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Cruft-Report::Options::%s" % (i)):
+            Cnf["Cruft-Report::Options::%s" % (i)] = ""
     Cnf["Cruft-Report::Options::Suite"] = Cnf["Dinstall::DefaultSuite"]
 
     if not Cnf.has_key("Cruft-Report::Options::Mode"):
@@ -264,7 +264,7 @@ def main ():
 
     Options = Cnf.SubTree("Cruft-Report::Options")
     if Options["Help"]:
-	usage()
+        usage()
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
@@ -400,7 +400,7 @@ def main ():
                             duplicate_bins[key].append(package)
             packages.close()
             os.unlink(temp_filename)
-    
+
     if "obsolete source" in checks:
         do_obsolete_source(duplicate_bins, bin2source)
 
@@ -440,24 +440,24 @@ def main ():
             binaries = bin_not_built[source].keys()
             binaries.sort()
             print " o %s: %s" % (source, ", ".join(binaries))
-        print 
+        print
 
     if "bms" in checks:
         print "Built from multiple source packages"
         print "-----------------------------------"
-        print 
+        print
         keys = duplicate_bins.keys()
         keys.sort()
         for key in keys:
             (source_a, source_b) = key.split("_")
             print " o %s & %s => %s" % (source_a, source_b, ", ".join(duplicate_bins[key]))
-        print 
+        print
 
     if "anais" in checks:
         print "Architecture Not Allowed In Source"
         print "----------------------------------"
         print anais_output
-        print 
+        print
 
     if "dubious nbs" in checks:
         do_dubious_nbs(dubious_nbs)

@@ -41,7 +41,7 @@ import apt_pkg, apt_inst
 import examine_package
 import daklib.database
 import daklib.logging
-import daklib.queue 
+import daklib.queue
 import daklib.utils
 
 # Globals
@@ -83,7 +83,12 @@ def recheck():
                and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
                 source_epochless_version = daklib.utils.re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
-                if not os.path.exists(Cnf["Dir::Queue::Accepted"] + '/' + dsc_filename):
+                found = 0
+                for q in ["Accepted", "Embargoed", "Unembargoed"]:
+                    if Cnf.has_key("Dir::Queue::%s" % (q)):
+                        if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
+                            found = 1
+                if not found:
                     reject("no source found for %s %s (%s)." % (source_package, source_version, file))
 
         # Version and file overwrite checks
@@ -604,14 +609,14 @@ def do_new():
     for suite in changes["suite"].keys():
         override = Cnf.Find("Suite::%s::OverrideSuite" % (suite))
         if override:
-	    (olderr, newerr) = (daklib.database.get_suite_id(suite) == -1,
-	      daklib.database.get_suite_id(override) == -1)
-	    if olderr or newerr:
-	        (oinv, newinv) = ("", "")
-		if olderr: oinv = "invalid "
-		if newerr: ninv = "invalid "
-	        print "warning: overriding %ssuite %s to %ssuite %s" % (
-			oinv, suite, ninv, override)
+            (olderr, newerr) = (daklib.database.get_suite_id(suite) == -1,
+              daklib.database.get_suite_id(override) == -1)
+            if olderr or newerr:
+                (oinv, newinv) = ("", "")
+                if olderr: oinv = "invalid "
+                if newerr: ninv = "invalid "
+                print "warning: overriding %ssuite %s to %ssuite %s" % (
+                        oinv, suite, ninv, override)
             del changes["suite"][suite]
             changes["suite"][override] = 1
     # Validate suites
@@ -686,6 +691,7 @@ def usage (exit_code=0):
     print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -h, --help                show this help and exit.
+  -C, --comments-dir=DIR    use DIR as comments-dir, for [o-]p-u-new
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
   -V, --version             display the version number and exit"""
@@ -700,7 +706,7 @@ def init():
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
                  ('h',"help","Process-New::Options::Help"),
-		 ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
+                 ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
                  ('n',"no-action","Process-New::Options::No-Action")]
 
@@ -777,28 +783,44 @@ def do_byhand():
 
 ################################################################################
 
+def get_accept_lock():
+    retry = 0
+    while retry < 10:
+        try:
+            lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
+            retry = 10
+        except OSError, e:
+            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
+                retry += 1
+                if (retry >= 10):
+                    daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
+                else:
+                    print("Unable to get accepted lock (try %d of 10)" % retry)
+                time.sleep(60)
+            else:
+                raise
+
+def move_to_dir (dest, perms=0660, changesperms=0664):
+    daklib.utils.move (Upload.pkg.changes_file, dest, perms=changesperms)
+    file_keys = Upload.pkg.files.keys()
+    for file in file_keys:
+        daklib.utils.move (file, dest, perms=perms)
+
 def do_accept():
     print "ACCEPT"
     if not Options["No-Action"]:
-        retry = 0
-	while retry < 10:
-	    try:
-		lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
-                retry = 10
-	    except OSError, e:
-		if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
-		    retry += 1
-		    if (retry >= 10):
-			daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
-		    else:
-			print("Unable to get accepted lock (try %d of 10)" % retry)
-		    time.sleep(60)
-		else:
-		    raise
+        get_accept_lock()
         (summary, short_summary) = Upload.build_summaries()
+    if Cnf.FindB("Dinstall::SecurityQueueHandling"):
+        Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
+        move_to_dir(Cnf["Dir::Queue::Embargoed"])
+        Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
+        # Check for override disparities
+        Upload.Subst["__SUMMARY__"] = summary
+    else:
         Upload.accept(summary, short_summary)
         os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-	os.unlink(Cnf["Process-New::AcceptedLockFile"])
+    os.unlink(Cnf["Process-New::AcceptedLockFile"])
 
 def check_status(files):
     new = byhand = 0
@@ -854,16 +876,16 @@ def do_comments(dir, opref, npref, line, fn):
         if len(lines) == 0 or lines[0] != line + "\n": continue
         changes_files = [ x for x in os.listdir(".") if x.startswith(comm[7:]+"_")
                                 and x.endswith(".changes") ]
-	changes_files = sort_changes(changes_files)
+        changes_files = sort_changes(changes_files)
         for f in changes_files:
-                f = daklib.utils.validate_changes_file_arg(f, 0)
-                if not f: continue
-                print "\n" + f
-                fn(f, "".join(lines[1:]))
+            f = daklib.utils.validate_changes_file_arg(f, 0)
+            if not f: continue
+            print "\n" + f
+            fn(f, "".join(lines[1:]))
 
         if opref != npref and not Options["No-Action"]:
-                newcomm = npref + comm[len(opref):]
-                os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
+            newcomm = npref + comm[len(opref):]
+            os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
 
 ################################################################################
 
@@ -917,11 +939,11 @@ def main():
 
     commentsdir = Cnf.get("Process-New::Options::Comments-Dir","")
     if commentsdir:
-	if changes_files != []:
-		sys.stderr.write("Can't specify any changes files if working with comments-dir")
-		sys.exit(1)
-	do_comments(commentsdir, "ACCEPT.", "ACCEPTED.", "OK", comment_accept)
-	do_comments(commentsdir, "REJECT.", "REJECTED.", "NOTOK", comment_reject)
+        if changes_files != []:
+            sys.stderr.write("Can't specify any changes files if working with comments-dir")
+            sys.exit(1)
+        do_comments(commentsdir, "ACCEPT.", "ACCEPTED.", "OK", comment_accept)
+        do_comments(commentsdir, "REJECT.", "REJECTED.", "NOTOK", comment_reject)
     else:
         for changes_file in changes_files:
             changes_file = daklib.utils.validate_changes_file_arg(changes_file, 0)
