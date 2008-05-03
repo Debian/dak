@@ -65,14 +65,14 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 echo "Doing automated p-u-new processing"
 cd $queuedir/p-u-new
 date -u -R >> REPORT
-dak process-new -a -C COMMENTS >> REPORT
+dak process-new -a -C COMMENTS >> REPORT || true
 echo >> REPORT
 
 TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 echo "Doing automated o-p-u-new processing"
 cd $queuedir/o-p-u-new
 date -u -R >> REPORT
-dak process-new -a -C COMMENTS >> REPORT
+dak process-new -a -C COMMENTS >> REPORT || true
 echo >> REPORT
 
 ################################################################################

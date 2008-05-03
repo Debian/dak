@@ -5,6 +5,7 @@
 	daily for some time now. And while dinstall is an OLD name, its
 	recognized pretty well within Debian
 	Also add some more timing information
+	Do not allow automated [o-]p-u-new processing to break dinstall
 
 2008-05-03  Thomas Viehmann  <tv@beamnet.de>
 
