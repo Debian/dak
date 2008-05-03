@@ -12,6 +12,7 @@
 	* dak/examine_package.py: likewise
 	* dak/find_null_maintainers.py: likewise
 	* dak/generate_index_diffs.py: likewise
+	* dak/generate_releases.py: likewise
 
 	* dak/check_archive.py (check_files_not_symlinks): Remove
 	long-time unused and commented code. Import stuff from daklib as
