@@ -395,28 +395,26 @@ def do_lintian (filename):
 def get_copyright (deb_filename):
     package = re_package.sub(r'\1', deb_filename)
     o = os.popen("dpkg-deb -c %s | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{print $6}' | head -n 1" % (deb_filename))
-    cright = o.read()[:-1]
+    copyright = o.read()[:-1]
 
-    if cright == "":
-        print_formatted_text("WARNING: No copyright found, please check package manually.")
-        return
+    if copyright == "":
+        return formatted_text("WARNING: No copyright found, please check package manually.")
 
-    doc_directory = re_doc_directory.sub(r'\1', cright)
+    doc_directory = re_doc_directory.sub(r'\1', copyright)
     if package != doc_directory:
         return formatted_text("WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory))
 
-    o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s 2>/dev/null" % (deb_filename, cright))
-    cright = o.read()
-    crightmd5 = md5.md5(cright).hexdigest()
+    o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s 2>/dev/null" % (deb_filename, copyright))
+    copyright = o.read()
+    copyrightmd5 = md5.md5(copyright).hexdigest()
 
     res = ""
-    if printed_copyrights.has_key(crightmd5) and printed_copyrights[crightmd5] != "%s (%s)" % (package, deb_filename):
-        res += formatted_text( "NOTE: Copyright is the same as %s.\n" % \
-                (printed_copyrights[crightmd5]))
+    if printed_copyrights.has_key(copyrightmd5) and printed_copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
+        res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
+                               (printed_copyrights[copyrightmd5]))
     else:
-        printed_copyrights[crightmd5] = "%s (%s)" % (package, deb_filename)
-    res += formatted_text(cright)
-    return res
+        printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
+    return res+formatted_text(copyright)
 
 def check_dsc (dsc_filename):
     (dsc) = read_changes_or_dsc(dsc_filename)
@@ -459,11 +457,11 @@ def check_deb (deb_filename):
 # Read a file, strip the signature and return the modified contents as
 # a string.
 def strip_pgp_signature (filename):
-    f = daklib.utils.open_file (filename)
+    file = daklib.utils.open_file (filename)
     contents = ""
     inside_signature = 0
     skip_next = 0
-    for line in f.readlines():
+    for line in file.readlines():
         if line[:-1] == "":
             continue
         if inside_signature:
@@ -481,7 +479,7 @@ def strip_pgp_signature (filename):
             inside_signature = 0
             continue
         contents += line
-    f.close()
+    file.close()
     return contents
 
 def display_changes(changes_filename):
@@ -493,11 +491,11 @@ def check_changes (changes_filename):
 
     changes = daklib.utils.parse_changes (changes_filename)
     files = daklib.utils.build_file_list(changes)
-    for f in files.keys():
-        if f.endswith(".deb") or f.endswith(".udeb"):
-            check_deb(f)
-        if f.endswith(".dsc"):
-            check_dsc(f)
+    for file in files.keys():
+        if file.endswith(".deb") or file.endswith(".udeb"):
+            check_deb(file)
+        if file.endswith(".dsc"):
+            check_dsc(file)
         # else: => byhand
 
 def main ():
@@ -520,7 +518,7 @@ def main ():
 
     stdout_fd = sys.stdout
 
-    for f in args:
+    for file in args:
         try:
             if not Options["Html-Output"]:
                 # Pipe output for each argument through less
@@ -528,21 +526,21 @@ def main ():
                 # -R added to display raw control chars for colour
                 sys.stdout = less_fd
             try:
-                if f.endswith(".changes"):
-                    check_changes(f)
-                elif f.endswith(".deb") or f.endswith(".udeb"):
-                    check_deb(f)
-                elif f.endswith(".dsc"):
-                    check_dsc(f)
+                if file.endswith(".changes"):
+                    check_changes(file)
+                elif file.endswith(".deb") or file.endswith(".udeb"):
+                    check_deb(file)
+                elif file.endswith(".dsc"):
+                    check_dsc(file)
                 else:
-                    daklib.utils.fubar("Unrecognised file type: '%s'." % (f))
+                    daklib.utils.fubar("Unrecognised file type: '%s'." % (file))
             finally:
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()
                     sys.stdout = stdout_fd
         except IOError, e:
-            if e.errno == errno.EPIPE:
+            if errno.errorcode[e.errno] == 'EPIPE':
                 daklib.utils.warn("[examine-package] Caught EPIPE; skipping.")
                 pass
             else:
