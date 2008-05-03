@@ -28,8 +28,8 @@
 
 import commands, os, pg, stat, sys, time
 import apt_pkg, apt_inst
-import daklib.database
-import daklib.utils
+import daklib.database as database
+import daklib.utils as utils
 
 ################################################################################
 
@@ -105,7 +105,7 @@ def check_files():
 
     filename = Cnf["Dir::Override"]+'override.unreferenced'
     if os.path.exists(filename):
-        f = daklib.utils.open_file(filename)
+        f = utils.open_file(filename)
         for filename in f.readlines():
             filename = filename[:-1]
             excluded[filename] = ""
@@ -115,7 +115,7 @@ def check_files():
     os.path.walk(Cnf["Dir::Root"]+'pool/', process_dir, None)
 
     print
-    print "%s wasted..." % (daklib.utils.size_type(waste))
+    print "%s wasted..." % (utils.size_type(waste))
 
 ################################################################################
 
@@ -127,17 +127,17 @@ def check_dscs():
             continue
         component = component.lower()
         list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component)
-        list_file = daklib.utils.open_file(list_filename)
+        list_file = utils.open_file(list_filename)
         for line in list_file.readlines():
             f = line[:-1]
             try:
-                daklib.utils.parse_changes(f, signing_rules=1)
-            except daklib.utils.invalid_dsc_format_exc, line:
-                daklib.utils.warn("syntax error in .dsc file '%s', line %s." % (f, line))
+                utils.parse_changes(f, signing_rules=1)
+            except utils.invalid_dsc_format_exc, line:
+                utils.warn("syntax error in .dsc file '%s', line %s." % (f, line))
                 count += 1
 
     if count:
-        daklib.utils.warn("Found %s invalid .dsc files." % (count))
+        utils.warn("Found %s invalid .dsc files." % (count))
 
 ################################################################################
 
@@ -146,7 +146,7 @@ def check_override():
         print suite
         print "-"*len(suite)
         print
-        suite_id = daklib.database.get_suite_id(suite)
+        suite_id = database.get_suite_id(suite)
         q = projectB.query("""
 SELECT DISTINCT b.package FROM binaries b, bin_associations ba
  WHERE b.id = ba.bin AND ba.suite = %s AND NOT EXISTS
@@ -205,16 +205,16 @@ def check_md5sums():
         db_md5sum = i[2]
         db_size = int(i[3])
         try:
-            f = daklib.utils.open_file(filename)
+            f = utils.open_file(filename)
         except:
-            daklib.utils.warn("can't open '%s'." % (filename))
+            utils.warn("can't open '%s'." % (filename))
             continue
         md5sum = apt_pkg.md5sum(f)
         size = os.stat(filename)[stat.ST_SIZE]
         if md5sum != db_md5sum:
-            daklib.utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
+            utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
         if size != db_size:
-            daklib.utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
+            utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
 
     print "Done."
 
@@ -240,7 +240,7 @@ def check_timestamps():
     for i in ql:
         filename = os.path.abspath(i[0] + i[1])
         if os.access(filename, os.R_OK):
-            f = daklib.utils.open_file(filename)
+            f = utils.open_file(filename)
             current_file = filename
             sys.stderr.write("Processing %s.\n" % (filename))
             apt_inst.debExtract(f, Ent, "control.tar.gz")
@@ -265,24 +265,24 @@ def check_missing_tar_gz_in_dsc():
         filename = os.path.abspath(i[0] + i[1])
         try:
             # NB: don't enforce .dsc syntax
-            dsc = daklib.utils.parse_changes(filename)
+            dsc = utils.parse_changes(filename)
         except:
-            daklib.utils.fubar("error parsing .dsc file '%s'." % (filename))
-        dsc_files = daklib.utils.build_file_list(dsc, is_a_dsc=1)
+            utils.fubar("error parsing .dsc file '%s'." % (filename))
+        dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
         has_tar = 0
         for f in dsc_files.keys():
-            m = daklib.utils.re_issource.match(f)
+            m = utils.re_issource.match(f)
             if not m:
-                daklib.utils.fubar("%s not recognised as source." % (f))
+                utils.fubar("%s not recognised as source." % (f))
             ftype = m.group(3)
             if ftype == "orig.tar.gz" or ftype == "tar.gz":
                 has_tar = 1
         if not has_tar:
-            daklib.utils.warn("%s has no .tar.gz in the .dsc file." % (f))
+            utils.warn("%s has no .tar.gz in the .dsc file." % (f))
             count += 1
 
     if count:
-        daklib.utils.warn("Found %s invalid .dsc files." % (count))
+        utils.warn("Found %s invalid .dsc files." % (count))
 
 
 ################################################################################
@@ -291,12 +291,12 @@ def validate_sources(suite, component):
     filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
     print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-    temp_filename = daklib.utils.temp_filename()
+    temp_filename = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
-    sources = daklib.utils.open_file(temp_filename)
+    sources = utils.open_file(temp_filename)
     Sources = apt_pkg.ParseTagFile(sources)
     while Sources.Step():
         source = Sources.Section.Find('Package')
@@ -309,7 +309,7 @@ def validate_sources(suite, component):
                 if directory.find("potato") == -1:
                     print "W: %s missing." % (filename)
                 else:
-                    pool_location = daklib.utils.poolify (source, component)
+                    pool_location = utils.poolify (source, component)
                     pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name)
                     if not os.path.exists(pool_filename):
                         print "E: %s missing (%s)." % (filename, pool_filename)
@@ -317,7 +317,7 @@ def validate_sources(suite, component):
                         # Create symlink
                         pool_filename = os.path.normpath(pool_filename)
                         filename = os.path.normpath(filename)
-                        src = daklib.utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
+                        src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
                         print "Symlinking: %s -> %s" % (filename, src)
                         #os.symlink(src, filename)
     sources.close()
@@ -330,12 +330,12 @@ def validate_packages(suite, component, architecture):
                % (Cnf["Dir::Root"], suite, component, architecture)
     print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-    temp_filename = daklib.utils.temp_filename()
+    temp_filename = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
-    packages = daklib.utils.open_file(temp_filename)
+    packages = utils.open_file(temp_filename)
     Packages = apt_pkg.ParseTagFile(packages)
     while Packages.Step():
         filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'))
@@ -367,39 +367,13 @@ def check_files_not_symlinks():
     print "done. (%d seconds)" % (int(time.time()-before))
     q_files = q.getresult()
 
-#      locations = {}
-#      q = projectB.query("SELECT l.path, c.name, l.id FROM location l, component c WHERE l.component = c.id")
-#      for i in q.getresult():
-#          path = os.path.normpath(i[0] + i[1])
-#          locations[path] = (i[0], i[2])
-
-#      q = projectB.query("BEGIN WORK")
     for i in q_files:
         filename = os.path.normpath(i[0] + i[1])
-#        file_id = i[2]
         if os.access(filename, os.R_OK) == 0:
-            daklib.utils.warn("%s: doesn't exist." % (filename))
+            utils.warn("%s: doesn't exist." % (filename))
         else:
             if os.path.islink(filename):
-                daklib.utils.warn("%s: is a symlink." % (filename))
-                # You probably don't want to use the rest of this...
-#                  print "%s: is a symlink." % (filename)
-#                  dest = os.readlink(filename)
-#                  if not os.path.isabs(dest):
-#                      dest = os.path.normpath(os.path.join(os.path.dirname(filename), dest))
-#                  print "--> %s" % (dest)
-#                  # Determine suitable location ID
-#                  # [in what must be the suckiest way possible?]
-#                  location_id = None
-#                  for path in locations.keys():
-#                      if dest.find(path) == 0:
-#                          (location, location_id) = locations[path]
-#                          break
-#                  if not location_id:
-#                      daklib.utils.fubar("Can't find location for %s (%s)." % (dest, filename))
-#                  new_filename = dest.replace(location, "")
-#                  q = projectB.query("UPDATE files SET filename = '%s', location = %s WHERE id = %s" % (new_filename, location_id, file_id))
-#      q = projectB.query("COMMIT WORK")
+                utils.warn("%s: is a symlink." % (filename))
 
 ################################################################################
 
@@ -408,7 +382,7 @@ def chk_bd_process_dir (unused, dirname, filenames):
         if not name.endswith(".dsc"):
             continue
         filename = os.path.abspath(dirname+'/'+name)
-        dsc = daklib.utils.parse_changes(filename)
+        dsc = utils.parse_changes(filename)
         for field_name in [ "build-depends", "build-depends-indep" ]:
             field = dsc.get(field_name)
             if field:
@@ -428,7 +402,7 @@ def check_build_depends():
 def main ():
     global Cnf, projectB, db_files, waste, excluded
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Check-Archive::Options::Help")]
     for i in [ "help" ]:
         if not Cnf.has_key("Check-Archive::Options::%s" % (i)):
@@ -441,15 +415,15 @@ def main ():
         usage()
 
     if len(args) < 1:
-        daklib.utils.warn("dak check-archive requires at least one argument")
+        utils.warn("dak check-archive requires at least one argument")
         usage(1)
     elif len(args) > 1:
-        daklib.utils.warn("dak check-archive accepts only one argument")
+        utils.warn("dak check-archive accepts only one argument")
         usage(1)
     mode = args[0].lower()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     if mode == "md5sums":
         check_md5sums()
@@ -472,7 +446,7 @@ def main ():
     elif mode == "validate-builddeps":
         check_build_depends()
     else:
-        daklib.utils.warn("unknown mode '%s'" % (mode))
+        utils.warn("unknown mode '%s'" % (mode))
         usage(1)
 
 ################################################################################

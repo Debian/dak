@@ -1,3 +1,9 @@
+2008-05-04  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/check_archive.py (check_files_not_symlinks): Remove
+	long-time unused and commented code. Import stuff from daklib as
+	"import daklib.foo as foo"
+
 2008-05-03  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/examine_package.py: clean up pychecker warnings (merged with
