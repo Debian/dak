@@ -101,7 +101,7 @@ def headline(s, level=2, bodyelement=None):
     if use_html:
         if bodyelement:
             print """<thead>
-                <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s</th></tr>
+                <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s <span class="toggle-msg">(click to toggle)</span></th></tr>
               </thead>"""%{"bodyelement":bodyelement,"title":html_escape(s)}
         else:
             print "<h%d>%s</h%d>" % (level, html_escape(s), level)
