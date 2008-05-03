@@ -368,9 +368,12 @@ def output_deb_info(filename):
         elif key == 'Maintainer':
             field_value = maintainer
         elif key == 'Description':
-            desc = control.Find(key)
-            desc = re_newlinespace.sub('\n ', desc)
-            field_value = escape_if_needed(desc)
+            if use_html:
+                field_value = formatted_text(control.Find(key), strip=True)
+            else:
+                desc = control.Find(key)
+                desc = re_newlinespace.sub('\n ', desc)
+                field_value = escape_if_needed(desc)
         else:
             field_value = escape_if_needed(control.Find(key))
         to_print += " "+format_field(key,field_value)+'\n'
