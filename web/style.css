@@ -173,6 +173,17 @@ a:hover{
 }
 
 /************* NEW details pages ************/
+
+/* this overides some overly general styles above */
+#NEW-details-page th {
+ background-color: white;
+ padding: 0;
+}
+#NEW-details-page table { 
+ background-color: white;
+ padding: 0;
+}
+
 #NEW-details-page a img {
 	text-decoration: none;
 	border: none;
@@ -197,6 +208,14 @@ a:hover{
 #NEW-details-page #titleblock a:hover {
 	color: #FFFF00;
 	text-decoration: underline;
+}
+#NEW-details-page #menu a:visited {
+	color: #0000FF;
+	text-decoration: none;
+}
+#NEW-details-page #menu a:hover {
+	color: #0000FF;
+	text-decoration: none;
 }
 #NEW-details-page #red-upperleft {
 	position: absolute;
@@ -224,6 +243,11 @@ a:hover{
 	font-family: serif;
 	font-size: 22px;
 }
+#NEW-details-page .toggle-msg { 
+        font-weight: normal;
+	font-family: serif;
+	font-size: 80%;
+}
 #NEW-details-page #menu {
 	font-size: 80%;
 	position: fixed;
@@ -235,6 +259,7 @@ a:hover{
 }
 #NEW-details-page #menu p {
 	margin: 0px;
+	font-size: 80%;
 }
 #NEW-details-page .infobox {
 	width: 80%;
