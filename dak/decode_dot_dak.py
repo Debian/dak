@@ -28,8 +28,8 @@
 
 import sys
 import apt_pkg
-import daklib.queue
-import daklib.utils
+import daklib.queue as queue
+import daklib.utils as utils
 
 ################################################################################
 
@@ -43,7 +43,7 @@ Dumps the info in .dak FILE(s).
 ################################################################################
 
 def main():
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Decode-Dot-Dak::Options::Help")]
     for i in [ "help" ]:
         if not Cnf.has_key("Decode-Dot-Dak::Options::%s" % (i)):
@@ -55,9 +55,9 @@ def main():
     if Options["Help"]:
         usage()
 
-    k = daklib.queue.Upload(Cnf)
+    k = queue.Upload(Cnf)
     for arg in sys.argv[1:]:
-        arg = daklib.utils.validate_changes_file_arg(arg,require_changes=-1)
+        arg = utils.validate_changes_file_arg(arg,require_changes=-1)
         k.pkg.changes_file = arg
         print "%s:" % (arg)
         k.init_vars()
@@ -83,7 +83,7 @@ def main():
                 del changes[i]
         print
         if changes:
-            daklib.utils.warn("changes still has following unrecognised keys: %s" % (changes.keys()))
+            utils.warn("changes still has following unrecognised keys: %s" % (changes.keys()))
 
         dsc = k.pkg.dsc
         print " Dsc:"
@@ -94,38 +94,38 @@ def main():
                 del dsc[i]
         print
         if dsc:
-            daklib.utils.warn("dsc still has following unrecognised keys: %s" % (dsc.keys()))
+            utils.warn("dsc still has following unrecognised keys: %s" % (dsc.keys()))
 
         files = k.pkg.files
         print " Files:"
-        for file in files.keys():
-            print "  %s:" % (file)
+        for f in files.keys():
+            print "  %s:" % (f)
             for i in [ "package", "version", "architecture", "type", "size",
                        "md5sum", "component", "location id", "source package",
                        "source version", "maintainer", "dbtype", "files id",
                        "new", "section", "priority", "pool name" ]:
-                if files[file].has_key(i):
-                    print "   %s: %s" % (i.capitalize(), files[file][i])
-                    del files[file][i]
-            if files[file]:
-                daklib.utils.warn("files[%s] still has following unrecognised keys: %s" % (file, files[file].keys()))
+                if files[f].has_key(i):
+                    print "   %s: %s" % (i.capitalize(), files[f][i])
+                    del files[f][i]
+            if files[f]:
+                utils.warn("files[%s] still has following unrecognised keys: %s" % (f, files[f].keys()))
         print
 
         dsc_files = k.pkg.dsc_files
         print " Dsc Files:"
-        for file in dsc_files.keys():
-            print "  %s:" % (file)
+        for f in dsc_files.keys():
+            print "  %s:" % (f)
             # Mandatory fields
             for i in [ "size", "md5sum" ]:
-                print "   %s: %s" % (i.capitalize(), dsc_files[file][i])
-                del dsc_files[file][i]
+                print "   %s: %s" % (i.capitalize(), dsc_files[f][i])
+                del dsc_files[f][i]
             # Optional fields
             for i in [ "files id" ]:
-                if dsc_files[file].has_key(i):
-                    print "   %s: %s" % (i.capitalize(), dsc_files[file][i])
-                    del dsc_files[file][i]
-            if dsc_files[file]:
-                daklib.utils.warn("dsc_files[%s] still has following unrecognised keys: %s" % (file, dsc_files[file].keys()))
+                if dsc_files[f].has_key(i):
+                    print "   %s: %s" % (i.capitalize(), dsc_files[f][i])
+                    del dsc_files[f][i]
+            if dsc_files[f]:
+                utils.warn("dsc_files[%s] still has following unrecognised keys: %s" % (f, dsc_files[f].keys()))
 
 ################################################################################
 
