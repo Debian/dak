@@ -1,0 +1,277 @@
+p.note {
+ font-family: sans-serif;
+ color: #900;
+ text-align: center;
+ padding: 5px;
+ font-size: 11px;
+ font-weight: normal;
+}
+
+div.c1 {text-align: center}
+
+p.text {
+ font-family: sans-serif;
+ padding: 5px;
+ font-size: 105%;
+ font-weight: normal;
+}
+
+body {
+ font-family: Arial, Helvetica, sans-serif;
+ color: #000000;
+ background-color: #FFF;
+}
+
+table.reddy
+{
+ color: #000;
+ background-color: #000;
+ border: 0px solid #000;
+ border-collapse: collapse;
+}
+
+ul {
+ color: #222;
+ font-size: 115%;
+}
+
+td.reddy {
+ font-family: serif;
+ font-size: 24px;
+ font-weight: normal;
+ background-color: #DF0451;
+ color: #FFFF00;
+ border: 0px solid #DF0451;
+ vertical-align: middle;
+ text-align: center;
+ padding: 0px;
+}
+
+p.validate {
+ text-align: center;
+}
+
+table
+{
+ color: #000;
+ background-color: #000;
+ border: 0px solid #000;
+ border-collapse: separate;
+ border-spacing: 1px;
+}
+
+h1 {
+ font-size: 200%;
+ text-align: center;
+ color: #000;
+}
+
+h2 {
+ font-size: 160%;
+ color: #000;
+}
+
+p {
+ font-size: 100%;
+ font-weight: bold;
+ text-align: justify;
+ color: #222;
+}
+
+tr {
+ background-color: #FFF;
+}
+
+tr.odd {
+ background-color: #FFFFFF;
+}
+
+tr.even {
+ background-color: #e8e8e8;
+}
+
+td.sid {
+ color: #000;
+ text-align: left;
+}
+
+tr.experimental {
+ color: #cc0000;
+}
+
+tr.unstable {
+ color: #345677;
+}
+
+tr.sid_odd {
+ color: #000;
+}
+
+td.exp {
+ color: #cc0000;
+ text-align: left;
+}
+
+tr.exp_odd {
+ color: #900;
+}
+
+th {
+ font-size: 120%;
+ text-align: center;
+ font-weight: bold;
+ background-color: #BDF;
+ border: 0px solid #000;
+ padding-top: 10px;
+ padding-bottom: 10px;
+ padding-left: 6px;
+ padding-right: 6px;
+}
+
+th.reject {
+ font-size: 120%;
+ text-align: center;
+ font-weight: bold;
+ background-color: #BDF;
+ border: 0px solid #000;
+ padding-top: 10px;
+ padding-bottom: 10px;
+ padding-left: 6px;
+ padding-right: 6px;
+}
+
+td {
+ font-size: 105%;
+ border: 0px solid #000;
+ padding: 4px;
+ padding-left: 6px;
+ padding-right: 6px;
+}
+
+a:link {
+ color: #0000FF;
+ text-decoration: none;
+}
+
+a:visited {
+ color: #800080;
+ text-decoration: none;
+}
+
+a:active {
+ color: #FF0000;
+ text-decoration: none;
+}
+
+a:hover{
+ color: #0000FF;
+ text-decoration: underline;
+}
+
+.footer {
+ font-size: 90%;
+}
+
+/************* NEW details pages ************/
+#NEW-details-page a img {
+	text-decoration: none;
+	border: none;
+}
+#NEW-details-page #logo {
+	text-align: center;
+	margin-bottom: 1.5em;
+}
+#NEW-details-page #titleblock {
+	position: relative;
+	width: 100%;
+	text-align: center;
+	background-color: #DF0451;
+	color: #FFFF00;
+	padding: 0.2em;
+	margin-bottom: 1.5em;
+}
+#NEW-details-page #titleblock a {
+        color: #FFFF00;
+        text-decoration: none;
+}
+#NEW-details-page #titleblock a:hover {
+	color: #FFFF00;
+	text-decoration: underline;
+}
+#NEW-details-page #red-upperleft {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+#NEW-details-page #red-lowerleft {
+	position: absolute;
+	bottom: 0px;
+	left: 0px;
+}
+#NEW-details-page #red-upperright {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+}
+#NEW-details-page #red-lowerright {
+	position: absolute;
+	bottom: 0px;
+	right: 0px;
+}
+#NEW-details-page #titleblock .title {
+	vertical-align: middle;
+        font-weight: normal;
+	font-family: serif;
+	font-size: 22px;
+}
+#NEW-details-page #menu {
+	font-size: 80%;
+	position: fixed;
+	bottom: 1em;
+	right: 0em;
+	background: #ddd;
+	width: 9%;
+	padding: 0.5em 0 0.5em 0.5em;
+}
+#NEW-details-page #menu p {
+	margin: 0px;
+}
+#NEW-details-page .infobox {
+	width: 80%;
+	border: solid black 2px;
+	margin: 1em auto;
+}
+#NEW-details-page #menu .title,.infobox .title {
+	text-align: center;
+	font-weight: bold;
+	border-bottom: dashed 1px black;
+	margin: 0.2em;
+}
+#NEW-details-page .infobox .subtitle { 
+	text-align: center;
+	font-weight: bold;
+	border-bottom: dashed 1px black;
+	margin: 0.2em;
+}
+#NEW-details-page table.infobox {
+	padding: 0 .5em 1em .5em;
+}
+#NEW-details-page div.infobody {
+	margin: .5em 1em;
+}
+#NEW-details-page .rfc822 .key,#NEW-details-page .val {
+	font-family: monospace;
+}
+#NEW-details-page .rfc822 .key {
+	vertical-align: baseline;
+}
+#NEW-details-page .rfc822 .val {
+}
+#NEW-details-page .copyright .infobody {
+	font-family: monospace;
+	white-space: pre;
+}
+
+#NEW-details-page td pre { 
+        margin: 0pt
+}
