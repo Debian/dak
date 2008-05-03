@@ -29,7 +29,7 @@ import copy, os, sys, time
 import apt_pkg
 import examine_package
 import daklib.database
-import daklib.queue
+import daklib.queue as queue
 import daklib.utils
 
 # Globals
@@ -106,7 +106,7 @@ def do_pkg(changes_file):
     changes["suite"] = copy.copy(changes["distribution"])
 
     # Find out what's new
-    new = daklib.queue.determine_new(changes, files, projectB, 0)
+    new = queue.determine_new(changes, files, projectB, 0)
 
     stdout_fd = sys.stdout
 
@@ -117,17 +117,17 @@ def do_pkg(changes_file):
         sys.stdout = open(os.path.join(Cnf["Show-New::HTMLPath"],htmlname),"w")
         html_header(changes["source"])
 
-        daklib.queue.check_valid(new)
+        queue.check_valid(new)
         examine_package.display_changes(Upload.pkg.changes_file)
 
         for pkg in new.keys():
-            for file in new[pkg]["files"]:
-                if ( files[file].has_key("new") and not
-                     files[file]["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2"] ):
-                    if file.endswith(".deb") or file.endswith(".udeb"):
-                        examine_package.check_deb(file)
-                    elif file.endswith(".dsc"):
-                        examine_package.check_dsc(file)
+            for f in new[pkg]["files"]:
+                if ( files[f].has_key("new") and not
+                     files[f]["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2"] ):
+                    if f.endswith(".deb") or f.endswith(".udeb"):
+                        examine_package.check_deb(f)
+                    elif f.endswith(".dsc"):
+                        examine_package.check_dsc(f)
 
         html_footer()
         if sys.stdout != stdout_fd:
@@ -161,7 +161,7 @@ def init():
     if Options["help"]:
         usage()
 
-    Upload = daklib.queue.Upload(Cnf)
+    Upload = queue.Upload(Cnf)
 
     projectB = Upload.projectB
 
@@ -184,8 +184,8 @@ def main():
         do_pkg (changes_file)
     files = set(os.listdir(Cnf["Show-New::HTMLPath"]))
     to_delete = files.difference(sources)
-    for file in to_delete:
-        os.remove(os.path.join(Cnf["Show-New::HTMLPath"],file))
+    for f in to_delete:
+        os.remove(os.path.join(Cnf["Show-New::HTMLPath"],f))
 
 ################################################################################
 
