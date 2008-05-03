@@ -10,7 +10,7 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 
 # Start logging
 NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-LOGFILE="$logdir/daily_${NOW}.log"
+LOGFILE="$logdir/dinstall_${NOW}.log"
 exec > "$LOGFILE" 2>&1
 
 echo Archive maintenance started at $(date +%X)
@@ -109,10 +109,14 @@ echo "Updating fingerprints"
 # Update fingerprints
 dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
 # Generate override files
 echo "Writing overrides into text files"
 cd $overridedir
 dak make-overrides
+
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 # FIXME
 rm -f override.sid.all3
@@ -125,8 +129,14 @@ echo "Generating Packages and Sources files"
 cd $configdir
 apt-ftparchive generate apt.conf
 # Generate *.diff/ incremental updates
+
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
 echo "Generating pdiff files"
 dak generate-index-diffs
+
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
 # Generate Release files
 echo "Generating Release files"
 dak generate-releases
@@ -158,6 +168,9 @@ cd $scriptsdir
 ./mkchecksums
 #
 rm -f $NOTICE
+
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
 echo "Trigger daily wanna-build run"
 ssh buildd@buildd /org/wanna-build/trigger.daily
 
@@ -190,6 +203,8 @@ echo "Sending information about crufty packages"
 dak cruft-report > $webdir/cruft-report-daily.txt
 dak cruft-report -s experimental >> $webdir/cruft-report-daily.txt
 cat $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
+
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 
 echo "Updating DM html page"
 $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
@@ -238,10 +253,12 @@ echo "Compress old psql backups"
    done
 )
 
+TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+
 echo "Finally, all is done, sending mail and compressing logfile"
 exec > /dev/null 2>&1
 
-cat "$LOGFILE" | mail -s "Log for cron.daily run of $(date +%Y.%m.%d)" cron@ftp-master.debian.org
+cat "$LOGFILE" | mail -s "Log for dinstall run of $(date +%Y.%m.%d' at '%H:%M)" cron@ftp-master.debian.org
 bzip2 -9 "$LOGFILE"
 
 ################################################################################
