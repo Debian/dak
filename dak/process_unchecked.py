@@ -947,6 +947,8 @@ def check_hashes ():
             check_hash(".changes %s" % (h), fs, h, f, files)
         except daklib.utils.no_files_exc:
             reject("No Checksums-%s: field in .changes" % (h))
+        except daklib.utils.changes_parse_error_exc, line:
+            reject("parse error for Checksums-%s in .changes, can't grok: %s." % (h, line))
 
         if "source" not in changes["architecture"]: continue
 
@@ -955,6 +957,8 @@ def check_hashes ():
             check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
         except daklib.utils.no_files_exc:
             reject("No Checksums-%s: field in .dsc" % (h))
+        except daklib.utils.changes_parse_error_exc, line:
+            reject("parse error for Checksums-%s in .dsc, can't grok: %s." % (h, line))
 
 ################################################################################
 
