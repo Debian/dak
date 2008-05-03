@@ -62,6 +62,10 @@ def html_header(name, filestoexamine):
         var o = document.getElementById(id);
         toggleObj(o, initial, display);
       }
+      function show(id, display) {
+        var o = document.getElementById(id);
+        o.style.display = 'table-row-group';
+      }
       function toggleObj(o, initial, display) {
         if(! o.style.display)
           o.style.display = initial;
@@ -104,19 +108,19 @@ def html_header(name, filestoexamine):
     print """
     <div id="menu">
       <p class="title">Navigation</p>
-      <p><a href="#changes">.changes</a></p>
-      <p><a href="#dsc">.dsc</a></p>
-      <p><a href="#source-lintian">source lintian</a></p>
+      <p><a href="#changes" onclick="show('changes-body')">.changes</a></p>
+      <p><a href="#dsc" onclick="show('dsc-body')">.dsc</a></p>
+      <p><a href="#source-lintian" onclick="show('source-lintian-body')">source lintian</a></p>
       """
     for fn in filter(lambda x: x.endswith('.deb') or x.endswith('.udeb'),filestoexamine):
       packagename = fn.split('_')[0]
       print """
       <p class="subtitle">%(pkg)s</p>
-      <p><a href="#binary-%(pkg)s-control">control file</a></p>
-      <p><a href="#binary-%(pkg)s-lintian">binary lintian</a></p>
-      <p><a href="#binary-%(pkg)s-contents">.deb contents</a></p>
-      <p><a href="#binary-%(pkg)s-copyright">copyright</a></p>
-      <p><a href="#binary-%(pkg)s-file-listing">file listing</a></p>
+      <p><a href="#binary-%(pkg)s-control" onclick="show('binary-%(pkg)s-control-body')">control file</a></p>
+      <p><a href="#binary-%(pkg)s-lintian" onclick="show('binary-%(pkg)s-lintian-body')">binary lintian</a></p>
+      <p><a href="#binary-%(pkg)s-contents" onclick="show('binary-%(pkg)s-contents-body')">.deb contents</a></p>
+      <p><a href="#binary-%(pkg)s-copyright" onclick="show('binary-%(pkg)s-copyright-body')">copyright</a></p>
+      <p><a href="#binary-%(pkg)s-file-listing" onclick="show('binary-%(pkg)s-file-listing-body')">file listing</a></p>
       """%{"pkg":packagename}
     print "    </div>"
    
@@ -168,11 +172,10 @@ def do_pkg(changes_file):
         daklib.queue.check_valid(new)
         examine_package.display_changes(Upload.pkg.changes_file)
 
-        for fn in filestoexamine:
-            if fn.endswith(".deb") or fn.endswith(".udeb"):
-                examine_package.check_deb(fn)
-            elif fn.endswith(".dsc"):
-                examine_package.check_dsc(fn)
+        for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
+            examine_package.check_dsc(fn)
+        for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
+            examine_package.check_deb(fn)
 
         html_footer()
         if sys.stdout != stdout_fd:

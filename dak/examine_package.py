@@ -93,7 +93,7 @@ def html_escape(s):
 
 def escape_if_needed(s):
   if use_html:
-    return re_html_escaping.sub(html_escaping.get, s)
+      return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
   else:
     return s
   
@@ -133,14 +133,18 @@ def colour_output(s, colour):
   else:
     return ("%s%s%s" % (ansi_colours[colour], s, ansi_colours['end']))
 
-def escaped_text(s):
+def escaped_text(s, strip=False):
   if use_html:
+    if strip:
+        s = s.strip()
     return "<pre>%s</pre>" % (s)
   else:
     return s  
 
-def formatted_text(s):
+def formatted_text(s, strip=False):
   if use_html:
+    if strip:
+        s = s.strip()
     return "<pre>%s</pre>" % (html_escape(s))
   else:
     return s
@@ -151,7 +155,13 @@ def output_row(s):
     else:
         return s
 
-def foldable_output(title, elementnameprefix, content):
+def format_field(k,v):
+    if use_html:
+        return """<tr><td class="key">%s:</td><td class="val">%s</td></tr>"""%(k,v)
+    else:
+        return "%s: %s"%(k,v)
+
+def foldable_output(title, elementnameprefix, content, norow=False):
     d = {'elementnameprefix':elementnameprefix}
     if use_html:
         print """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
@@ -159,7 +169,10 @@ def foldable_output(title, elementnameprefix, content):
     headline(title, bodyelement="%(elementnameprefix)s-body"%d)
     if use_html:
         print """    <tbody id="%(elementnameprefix)s-body" class="infobody">"""%d
-    print output_row(content)
+    if norow:
+        print content
+    else:
+        print output_row(content)
     if use_html:
         print """</tbody></table></div>"""
 
@@ -218,8 +231,8 @@ def read_control (filename):
 	control = apt_pkg.ParseSection(extracts)
     except:
 	print formatted_text("can't parse control info")
-	# TV-COMMENT: this will raise exceptions in two lines
-	control = ''
+        deb_file.close()
+        raise
 
     deb_file.close()
 
@@ -263,43 +276,40 @@ def read_control (filename):
 
     return (control, control_keys, section, depends, recommends, arch, maintainer)
 
-def read_dsc (dsc_filename):
+def read_changes_or_dsc (filename):
     dsc = {}
 
-    dsc_file = daklib.utils.open_file(dsc_filename)
+    dsc_file = daklib.utils.open_file(filename)
     try:
-	dsc = daklib.utils.parse_changes(dsc_filename)
+	dsc = daklib.utils.parse_changes(filename)
     except:
-	return formatted_text("can't parse control info")
+	return formatted_text("can't parse .dsc control info")
     dsc_file.close()
 
-    filecontents = escape_if_needed(strip_pgp_signature(dsc_filename))
+    filecontents = strip_pgp_signature(filename)
     keysinorder = []
     for l in filecontents.split('\n'):
         m = re.match(r'([-a-zA-Z0-9]*):', l)
         if m:
             keysinorder.append(m.group(1))
 
-    if dsc.has_key("build-depends"):
-	builddep = split_depends(dsc["build-depends"])
-	builddepstr = create_depends_string(builddep)
-        dsc['build-depends'] = builddepstr
-
-    if dsc.has_key("build-depends-indep"):
-	builddepindstr = create_depends_string(split_depends(dsc["build-depends-indep"]))
-        dsc['build-depends-indep'] = builddepindstr
-
-    if dsc.has_key("architecture") :
-	if (dsc["architecture"] != "any"):
-	    newarch = colour_output(dsc["architecture"], 'arch')
-            dsc['architecture'] = newarch
-
-    if dsc.has_key("files"):
-        dsc["files"] = '\n'+'\n'.join(map(lambda x: ' '+x, dsc["files"].split('\n')))
+    for k in dsc.keys():
+        if k in ("build-depends","build-depends-indep"):
+            dsc[k] = create_depends_string(split_depends(dsc[k]))
+        elif k == "architecture":
+            if (dsc["architecture"] != "any"):
+                dsc['architecture'] = colour_output(dsc["architecture"], 'arch')
+        elif k in ("files","changes","description"):
+            if use_html:
+                dsc[k] = formatted_text(dsc[k], strip=True)
+            else:
+                dsc[k] = ('\n'+'\n'.join(map(lambda x: ' '+x, dsc[k].split('\n')))).rstrip()
+        else:
+            dsc[k] = escape_if_needed(dsc[k])
 
     keysinorder = filter(lambda x: not x.lower().startswith('checksums-'), keysinorder)
 
-    filecontents = ''.join(map(lambda x: '%s: %s\n'%(x,dsc[x.lower()]), keysinorder))
+    filecontents = '\n'.join(map(lambda x: format_field(x,dsc[x.lower()]), keysinorder))+'\n'
     return filecontents
 
 def create_depends_string (depends_tree):
@@ -347,25 +357,24 @@ def output_deb_info(filename):
 	return formatted_text("no control info")
     to_print = ""
     for key in control_keys :
-        output = " " + key + ": "
         if key == 'Depends':
-            output += create_depends_string(depends)
+            field_value = create_depends_string(depends)
         elif key == 'Recommends':
-            output += create_depends_string(recommends)
+            field_value = create_depends_string(recommends)
         elif key == 'Section':
-            output += section
+            field_value = section
         elif key == 'Architecture':
-            output += arch
+            field_value = arch
         elif key == 'Maintainer':
-            output += maintainer
+            field_value = maintainer
         elif key == 'Description':
             desc = control.Find(key)
             desc = re_newlinespace.sub('\n ', desc)
-            output += escape_if_needed(desc)
+            field_value = escape_if_needed(desc)
         else:
-            output += escape_if_needed(control.Find(key))
-        to_print += output + '\n'
-    return escaped_text(to_print)
+            field_value = escape_if_needed(control.Find(key))
+        to_print += " "+format_field(key,field_value)+'\n'
+    return to_print
 
 def do_command (command, filename, escaped=0):
     o = os.popen("%s %s" % (command, filename))
@@ -398,15 +407,15 @@ def get_copyright (deb_filename):
 
     res = ""
     if printed_copyrights.has_key(copyrightmd5) and printed_copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
-        res += formatted_text( "NOTE: Copyright is the same as %s.\n" % \
+        res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
                                (printed_copyrights[copyrightmd5]))
     else:
 	printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
     return res+formatted_text(copyright)
 
 def check_dsc (dsc_filename):
-    (dsc) = read_dsc(dsc_filename)
-    foldable_output(dsc_filename, "dsc", escaped_text(dsc))
+    (dsc) = read_changes_or_dsc(dsc_filename)
+    foldable_output(dsc_filename, "dsc", dsc, norow=True)
     foldable_output("lintian check for %s" % dsc_filename, "source-lintian", do_lintian(dsc_filename))
 
 def check_deb (deb_filename):
@@ -420,7 +429,7 @@ def check_deb (deb_filename):
 
 
     foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
-                    output_deb_info(deb_filename))
+                    output_deb_info(deb_filename), norow=True)
 
     if is_a_udeb:
         foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
@@ -470,10 +479,9 @@ def strip_pgp_signature (filename):
     file.close()
     return contents
 
-# Display the .changes [without the signature]
-# TV-COMMENT: M. Ferrari has more formatting ideas
 def display_changes(changes_filename):
-    foldable_output(changes_filename, "changes", formatted_text(strip_pgp_signature(changes_filename)))
+    changes = read_changes_or_dsc(changes_filename)
+    foldable_output(changes_filename, "changes", changes, norow=True)
 
 def check_changes (changes_filename):
     display_changes(changes_filename)
