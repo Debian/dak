@@ -1,5 +1,8 @@
 2008-05-04  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/check_proposed_updates.py: Import stuff from daklib as
+	"import daklib.foo as foo"
+
 	* dak/check_archive.py (check_files_not_symlinks): Remove
 	long-time unused and commented code. Import stuff from daklib as
 	"import daklib.foo as foo"
