@@ -32,7 +32,7 @@
 
 import commands, os, pwd, re, sys, time
 import apt_pkg
-import daklib.queue
+import daklib.queue as queue
 import daklib.utils
 
 ################################################################################
@@ -280,7 +280,7 @@ def init():
 
     arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Security-Install::Options")
-    Upload = daklib.queue.Upload(Cnf)
+    Upload = queue.Upload(Cnf)
 
     if Options["Help"]:
         usage(0)
