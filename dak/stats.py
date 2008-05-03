@@ -71,8 +71,8 @@ SELECT a.arch_string as Architecture, sum(f.size)
 
 def daily_install_stats():
     stats = {}
-    file = daklib.utils.open_file("2001-11")
-    for line in file.readlines():
+    f = daklib.utils.open_file("2001-11")
+    for line in f.readlines():
         split = line.strip().split('|')
         program = split[1]
         if program != "katie" and program != "process-accepted":
@@ -140,15 +140,15 @@ def number_of_packages():
     q = projectB.query("SELECT id, suite_name FROM suite")
     suite_ql = q.getresult()
     for i in suite_ql:
-        (id, name) = i
-        suites[id] = name
-        suite_ids[name] = id
+        (sid, name) = i
+        suites[sid] = name
+        suite_ids[name] = sid
     # Build up architecture mapping
     q = projectB.query("SELECT id, arch_string FROM architecture")
     for i in q.getresult():
-        (id, name) = i
-        arches[id] = name
-        arch_ids[name] = id
+        (aid, name) = i
+        arches[aid] = name
+        arch_ids[name] = aid
     # Pre-create the dictionary
     for suite_id in suites.keys():
         d[suite_id] = {}

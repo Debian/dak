@@ -35,7 +35,7 @@
 
 import os, stat, sys, time
 import apt_pkg
-import daklib.utils
+import daklib.utils as utils
 
 ################################################################################
 
@@ -72,7 +72,7 @@ def init ():
         if not os.path.exists(del_dir):
             os.makedirs(del_dir, 02775)
         if not os.path.isdir(del_dir):
-            daklib.utils.fubar("%s must be a directory." % (del_dir))
+            utils.fubar("%s must be a directory." % (del_dir))
 
     # Move to the directory to clean
     incoming = Options["Incoming"]
@@ -81,32 +81,32 @@ def init ():
     os.chdir(incoming)
 
 # Remove a file to the morgue
-def remove (file):
-    if os.access(file, os.R_OK):
-        dest_filename = del_dir + '/' + os.path.basename(file)
+def remove (f):
+    if os.access(f, os.R_OK):
+        dest_filename = del_dir + '/' + os.path.basename(f)
         # If the destination file exists; try to find another filename to use
         if os.path.exists(dest_filename):
-            dest_filename = daklib.utils.find_next_free(dest_filename, 10)
-        daklib.utils.move(file, dest_filename, 0660)
+            dest_filename = utils.find_next_free(dest_filename, 10)
+        utils.move(f, dest_filename, 0660)
     else:
-        daklib.utils.warn("skipping '%s', permission denied." % (os.path.basename(file)))
+        utils.warn("skipping '%s', permission denied." % (os.path.basename(f)))
 
 # Removes any old files.
 # [Used for Incoming/REJECT]
 #
 def flush_old ():
-    for file in os.listdir('.'):
-        if os.path.isfile(file):
-            if os.stat(file)[stat.ST_MTIME] < delete_date:
+    for f in os.listdir('.'):
+        if os.path.isfile(f):
+            if os.stat(f)[stat.ST_MTIME] < delete_date:
                 if Options["No-Action"]:
-                    print "I: Would delete '%s'." % (os.path.basename(file))
+                    print "I: Would delete '%s'." % (os.path.basename(f))
                 else:
                     if Options["Verbose"]:
-                        print "Removing '%s' (to '%s')."  % (os.path.basename(file), del_dir)
-                    remove(file)
+                        print "Removing '%s' (to '%s')."  % (os.path.basename(f), del_dir)
+                    remove(f)
             else:
                 if Options["Verbose"]:
-                    print "Skipping, too new, '%s'." % (os.path.basename(file))
+                    print "Skipping, too new, '%s'." % (os.path.basename(f))
 
 # Removes any files which are old orphans (not associated with a valid .changes file).
 # [Used for Incoming]
@@ -125,20 +125,20 @@ def flush_orphans ():
     # Proces all .changes and .dsc files.
     for changes_filename in changes_files:
         try:
-            changes = daklib.utils.parse_changes(changes_filename)
-            files = daklib.utils.build_file_list(changes)
+            changes = utils.parse_changes(changes_filename)
+            files = utils.build_file_list(changes)
         except:
-            daklib.utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
+            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
             continue
 
         dsc_files = {}
-        for file in files.keys():
-            if file.endswith(".dsc"):
+        for f in files.keys():
+            if f.endswith(".dsc"):
                 try:
-                    dsc = daklib.utils.parse_changes(file)
-                    dsc_files = daklib.utils.build_file_list(dsc, is_a_dsc=1)
+                    dsc = utils.parse_changes(f)
+                    dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
                 except:
-                    daklib.utils.warn("error processing '%s'; skipping it. [Got %s]" % (file, sys.exc_type))
+                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (f, sys.exc_type))
                     continue
 
         # Ensure all the files we've seen aren't deleted
@@ -153,24 +153,24 @@ def flush_orphans ():
 
     # Anthing left at this stage is not referenced by a .changes (or
     # a .dsc) and should be deleted if old enough.
-    for file in all_files.keys():
-        if os.stat(file)[stat.ST_MTIME] < delete_date:
+    for f in all_files.keys():
+        if os.stat(f)[stat.ST_MTIME] < delete_date:
             if Options["No-Action"]:
-                print "I: Would delete '%s'." % (os.path.basename(file))
+                print "I: Would delete '%s'." % (os.path.basename(f))
             else:
                 if Options["Verbose"]:
-                    print "Removing '%s' (to '%s')."  % (os.path.basename(file), del_dir)
-                remove(file)
+                    print "Removing '%s' (to '%s')."  % (os.path.basename(f), del_dir)
+                remove(f)
         else:
             if Options["Verbose"]:
-                print "Skipping, too new, '%s'." % (os.path.basename(file))
+                print "Skipping, too new, '%s'." % (os.path.basename(f))
 
 ################################################################################
 
 def main ():
     global Cnf, Options
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
         if not Cnf.has_key("Clean-Queues::Options::%s" % (i)):

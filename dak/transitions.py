@@ -183,9 +183,9 @@ def load_transitions(trans_file):
 #####################################
 #### This may run within sudo !! ####
 #####################################
-def lock_file(file):
+def lock_file(f):
     for retry in range(10):
-        lock_fd = os.open(file, os.O_RDWR | os.O_CREAT)
+        lock_fd = os.open(f, os.O_RDWR | os.O_CREAT)
         try:
             fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             return lock_fd
@@ -197,7 +197,7 @@ def lock_file(file):
             else:
                 raise
 
-    daklib.utils.fubar("Couldn't obtain lock for %s." % (lockfile))
+    daklib.utils.fubar("Couldn't obtain lock for %s." % (f))
 
 ################################################################################
 

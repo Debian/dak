@@ -29,7 +29,7 @@ import copy, os, sys, time
 import apt_pkg
 import examine_package
 import daklib.database
-import daklib.queue
+import daklib.queue as queue
 import daklib.utils
 
 # Globals
@@ -149,7 +149,7 @@ def do_pkg(changes_file):
     changes["suite"] = copy.copy(changes["distribution"])
 
     # Find out what's new
-    new = daklib.queue.determine_new(changes, files, projectB, 0)
+    new = queue.determine_new(changes, files, projectB, 0)
 
     stdout_fd = sys.stdout
 
@@ -168,7 +168,7 @@ def do_pkg(changes_file):
 
         html_header(changes["source"], filestoexamine)
 
-        daklib.queue.check_valid(new)
+        queue.check_valid(new)
         examine_package.display_changes(Upload.pkg.changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
@@ -210,7 +210,7 @@ def init():
     if Options["help"]:
         usage()
 
-    Upload = daklib.queue.Upload(Cnf)
+    Upload = queue.Upload(Cnf)
 
     projectB = Upload.projectB
 
@@ -233,8 +233,8 @@ def main():
         do_pkg (changes_file)
     files = set(os.listdir(Cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))
-    for file in to_delete:
-        os.remove(os.path.join(Cnf["Show-New::HTMLPath"],file))
+    for f in to_delete:
+        os.remove(os.path.join(Cnf["Show-New::HTMLPath"],f))
 
 ################################################################################
 
