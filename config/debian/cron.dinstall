@@ -28,7 +28,6 @@ cleanup() {
     rm -f "$LOCKAC"
   fi
   echo "Cleanup"
-  rm -f "$LOGFILE"
 }
 lockfile -l 3600 $LOCKCU
 trap cleanup 0
