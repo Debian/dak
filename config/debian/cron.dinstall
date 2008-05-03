@@ -258,7 +258,7 @@ TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
 echo "Finally, all is done, sending mail and compressing logfile"
 exec > /dev/null 2>&1
 
-cat "$LOGFILE" | mail -s "Log for dinstall run of $(date +%Y.%m.%d' at '%H:%M)" cron@ftp-master.debian.org
+cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
 bzip2 -9 "$LOGFILE"
 
 ################################################################################
