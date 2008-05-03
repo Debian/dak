@@ -183,16 +183,16 @@ def check_changes (filename):
 
     # Move to the pool directory
     cwd = os.getcwd()
-    file = files.keys()[0]
-    pool_dir = Cnf["Dir::Pool"] + '/' + daklib.utils.poolify(changes["source"], files[file]["component"])
+    f = files.keys()[0]
+    pool_dir = Cnf["Dir::Pool"] + '/' + daklib.utils.poolify(changes["source"], files[f]["component"])
     os.chdir(pool_dir)
 
     changes_result = 0
-    for file in files.keys():
-        if file.endswith(".deb"):
-            result = check_package(file, files)
+    for f in files.keys():
+        if f.endswith(".deb"):
+            result = check_package(f, files)
             if Options["verbose"]:
-                pass_fail(file, result)
+                pass_fail(f, result)
             changes_result += result
 
     pass_fail (filename, changes_result)
@@ -210,12 +210,12 @@ def check_deb (filename):
 ################################################################################
 
 def check_joey (filename):
-    file = daklib.utils.open_file(filename)
+    f = daklib.utils.open_file(filename)
 
     cwd = os.getcwd()
     os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]))
 
-    for line in file.readlines():
+    for line in f.readlines():
         line = line.rstrip()
         if line.find('install') != -1:
             split_line = line.split()
@@ -228,7 +228,7 @@ def check_joey (filename):
             if Options["debug"]:
                 print "Processing %s..." % (changes_filename)
             check_changes(changes_filename)
-    file.close()
+    f.close()
 
     os.chdir(cwd)
 
@@ -292,15 +292,15 @@ def main ():
     parse_packages()
     print "done."
 
-    for file in arguments:
-        if file.endswith(".changes"):
-            check_changes(file)
-        elif file.endswith(".deb"):
-            check_deb(file)
-        elif file.endswith(".joey"):
-            check_joey(file)
+    for f in arguments:
+        if f.endswith(".changes"):
+            check_changes(f)
+        elif f.endswith(".deb"):
+            check_deb(f)
+        elif f.endswith(".joey"):
+            check_joey(f)
         else:
-            daklib.utils.fubar("Unrecognised file type: '%s'." % (file))
+            daklib.utils.fubar("Unrecognised file type: '%s'." % (f))
 
 #######################################################################################
 

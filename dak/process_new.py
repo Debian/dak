@@ -70,15 +70,15 @@ def recheck():
     files = Upload.pkg.files
     reject_message = ""
 
-    for file in files.keys():
+    for f in files.keys():
         # The .orig.tar.gz can disappear out from under us is it's a
         # duplicate of one in the archive.
-        if not files.has_key(file):
+        if not files.has_key(f):
             continue
         # Check that the source still exists
-        if files[file]["type"] == "deb":
-            source_version = files[file]["source version"]
-            source_package = files[file]["source package"]
+        if files[f]["type"] == "deb":
+            source_version = files[f]["source version"]
+            source_package = files[f]["source package"]
             if not Upload.pkg.changes["architecture"].has_key("source") \
                and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
                 source_epochless_version = daklib.utils.re_no_epoch.sub('', source_version)
@@ -89,14 +89,14 @@ def recheck():
                         if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
                             found = 1
                 if not found:
-                    reject("no source found for %s %s (%s)." % (source_package, source_version, file))
+                    reject("no source found for %s %s (%s)." % (source_package, source_version, f))
 
         # Version and file overwrite checks
-        if files[file]["type"] == "deb":
-            reject(Upload.check_binary_against_db(file))
-        elif files[file]["type"] == "dsc":
-            reject(Upload.check_source_against_db(file))
-            (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(file)
+        if files[f]["type"] == "deb":
+            reject(Upload.check_binary_against_db(f))
+        elif files[f]["type"] == "dsc":
+            reject(Upload.check_source_against_db(f))
+            (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(f)
             reject(reject_msg, "")
 
     if reject_message.find("Rejected") != -1:
@@ -332,9 +332,9 @@ def edit_new (new):
                 section = section[:-3]
             if priority.endswith("[!]"):
                 priority = priority[:-3]
-            for file in new[pkg]["files"]:
-                Upload.pkg.files[file]["section"] = section
-                Upload.pkg.files[file]["priority"] = priority
+            for f in new[pkg]["files"]:
+                Upload.pkg.files[f]["section"] = section
+                Upload.pkg.files[f]["priority"] = priority
             new[pkg]["section"] = section
             new[pkg]["priority"] = priority
 
@@ -343,13 +343,13 @@ def edit_new (new):
 def edit_index (new, index):
     priority = new[index]["priority"]
     section = new[index]["section"]
-    type = new[index]["type"]
+    ftype = new[index]["type"]
     done = 0
     while not done:
         print "\t".join([index, priority, section])
 
         answer = "XXX"
-        if type != "dsc":
+        if ftype != "dsc":
             prompt = "[B]oth, Priority, Section, Done ? "
         else:
             prompt = "[S]ection, Done ? "
@@ -398,9 +398,9 @@ def edit_index (new, index):
         # Reset the readline completer
         readline.set_completer(None)
 
-    for file in new[index]["files"]:
-        Upload.pkg.files[file]["section"] = section
-        Upload.pkg.files[file]["priority"] = priority
+    for f in new[index]["files"]:
+        Upload.pkg.files[f]["section"] = section
+        Upload.pkg.files[f]["priority"] = priority
     new[index]["priority"] = priority
     new[index]["section"] = section
     return new
@@ -487,17 +487,17 @@ def check_pkg ():
             sys.stdout = less_fd
             examine_package.display_changes(Upload.pkg.changes_file)
             files = Upload.pkg.files
-            for file in files.keys():
-                if files[file].has_key("new"):
-                    type = files[file]["type"]
-                    if type == "deb":
-                        examine_package.check_deb(file)
-                    elif type == "dsc":
-                        examine_package.check_dsc(file)
+            for f in files.keys():
+                if files[f].has_key("new"):
+                    ftype = files[f]["type"]
+                    if ftype == "deb":
+                        examine_package.check_deb(f)
+                    elif ftype == "dsc":
+                        examine_package.check_dsc(f)
         finally:
             sys.stdout = stdout_fd
     except IOError, e:
-        if errno.errorcode[e.errno] == 'EPIPE':
+        if e.errno == errno.EPIPE:
             daklib.utils.warn("[examine_package] Caught EPIPE; skipping.")
             pass
         else:
@@ -513,9 +513,9 @@ def check_pkg ():
 def do_bxa_notification():
     files = Upload.pkg.files
     summary = ""
-    for file in files.keys():
-        if files[file]["type"] == "deb":
-            control = apt_pkg.ParseSection(apt_inst.debExtractControl(daklib.utils.open_file(file)))
+    for f in files.keys():
+        if files[f]["type"] == "deb":
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(daklib.utils.open_file(f)))
             summary += "\n"
             summary += "Package: %s\n" % (control.Find("Package"))
             summary += "Description: %s\n" % (control.Find("Description"))
@@ -538,9 +538,9 @@ def add_overrides (new):
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')" % (suite_id, component_id, type_id, pkg, priority_id, section_id))
-            for file in new[pkg]["files"]:
-                if files[file].has_key("new"):
-                    del files[file]["new"]
+            for f in new[pkg]["files"]:
+                if files[f].has_key("new"):
+                    del files[f]["new"]
             del new[pkg]
 
     projectB.query("COMMIT WORK")
@@ -557,9 +557,9 @@ def prod_maintainer ():
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        file = daklib.utils.open_file(temp_filename)
-        prod_message = "".join(file.readlines())
-        file.close()
+        f = daklib.utils.open_file(temp_filename)
+        prod_message = "".join(f.readlines())
+        f.close()
         print "Prod message:"
         print daklib.utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
         prompt = "[P]rod, Edit, Abandon, Quit ?"
@@ -742,13 +742,13 @@ def do_byhand():
         will_install = 1
         byhand = []
 
-        for file in files.keys():
-            if files[file]["type"] == "byhand":
-                if os.path.exists(file):
-                    print "W: %s still present; please process byhand components and try again." % (file)
+        for f in files.keys():
+            if files[f]["type"] == "byhand":
+                if os.path.exists(f):
+                    print "W: %s still present; please process byhand components and try again." % (f)
                     will_install = 0
                 else:
-                    byhand.append(file)
+                    byhand.append(f)
 
         answer = "XXXX"
         if Options["No-Action"]:
@@ -769,8 +769,8 @@ def do_byhand():
 
         if answer == 'A':
             done = 1
-            for file in byhand:
-                del files[file]
+            for f in byhand:
+                del files[f]
         elif answer == 'M':
             Upload.do_reject(1, Options["Manual-Reject"])
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
@@ -787,10 +787,10 @@ def get_accept_lock():
     retry = 0
     while retry < 10:
         try:
-            lock_fd = os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
+            os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
             retry = 10
         except OSError, e:
-            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
+            if e.errno == errno.EACCES or e.errno == errno.EEXIST:
                 retry += 1
                 if (retry >= 10):
                     daklib.utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
@@ -803,8 +803,8 @@ def get_accept_lock():
 def move_to_dir (dest, perms=0660, changesperms=0664):
     daklib.utils.move (Upload.pkg.changes_file, dest, perms=changesperms)
     file_keys = Upload.pkg.files.keys()
-    for file in file_keys:
-        daklib.utils.move (file, dest, perms=perms)
+    for f in file_keys:
+        daklib.utils.move (f, dest, perms=perms)
 
 def do_accept():
     print "ACCEPT"
@@ -824,10 +824,10 @@ def do_accept():
 
 def check_status(files):
     new = byhand = 0
-    for file in files.keys():
-        if files[file]["type"] == "byhand":
+    for f in files.keys():
+        if files[f]["type"] == "byhand":
             byhand = 1
-        elif files[file].has_key("new"):
+        elif files[f].has_key("new"):
             new = 1
     return (new, byhand)
 
@@ -910,7 +910,6 @@ def comment_reject(changes_file, comments):
     Upload.init_vars()
     Upload.update_vars()
     Upload.update_subst()
-    files = Upload.pkg.files
 
     if not recheck():
         pass # dak has its own reasons to reject as well, which is fine

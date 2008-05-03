@@ -43,9 +43,9 @@
 
 import pg, sys
 import apt_pkg
-import daklib.database
-import daklib.logging
-import daklib.utils
+import daklib.database as database
+import daklib.logging as logging
+import daklib.utils as utils
 
 #######################################################################################
 
@@ -77,13 +77,12 @@ def get_id (package, version, architecture):
 
     ql = q.getresult()
     if not ql:
-        daklib.utils.warn("Couldn't find '%s_%s_%s'." % (package, version, architecture))
+        utils.warn("Couldn't find '%s_%s_%s'." % (package, version, architecture))
         return None
     if len(ql) > 1:
-        daklib.utils.warn("Found more than one match for '%s_%s_%s'." % (package, version, architecture))
+        utils.warn("Found more than one match for '%s_%s_%s'." % (package, version, architecture))
         return None
-    id = ql[0][0]
-    return id
+    return ql[0][0]
 
 #######################################################################################
 
@@ -110,7 +109,7 @@ def set_suite (file, suite_id):
     for line in lines:
         split_line = line.strip().split()
         if len(split_line) != 3:
-            daklib.utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
+            utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
             continue
         key = " ".join(split_line)
         desired[key] = ""
@@ -119,25 +118,25 @@ def set_suite (file, suite_id):
     for key in current.keys():
         if not desired.has_key(key):
             (package, version, architecture) = key.split()
-            id = current[key]
+            pkid = current[key]
             if architecture == "source":
-                q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (id))
+                q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (pkid))
             else:
-                q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (id))
-            Logger.log(["removed",key,id])
+                q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (pkid))
+            Logger.log(["removed", key, pkid])
 
     # Check to see which packages need added and add them
     for key in desired.keys():
         if not current.has_key(key):
             (package, version, architecture) = key.split()
-            id = get_id (package, version, architecture)
-            if not id:
+            pkid = get_id (package, version, architecture)
+            if not pkid:
                 continue
             if architecture == "source":
-                q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id))
+                q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, pkid))
             else:
-                q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id))
-            Logger.log(["added",key,id])
+                q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, pkid))
+            Logger.log(["added", key, pkid])
 
     projectB.query("COMMIT WORK")
 
@@ -145,7 +144,7 @@ def set_suite (file, suite_id):
 
 def process_file (file, suite, action):
 
-    suite_id = daklib.database.get_suite_id(suite)
+    suite_id = database.get_suite_id(suite)
 
     if action == "set":
         set_suite (file, suite_id)
@@ -158,18 +157,18 @@ def process_file (file, suite, action):
     for line in lines:
         split_line = line.strip().split()
         if len(split_line) != 3:
-            daklib.utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
+            utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
             continue
 
         (package, version, architecture) = split_line
 
-        id = get_id(package, version, architecture)
-        if not id:
+        pkid = get_id(package, version, architecture)
+        if not pkid:
             continue
 
         if architecture == "source":
             # Find the existing assoications ID, if any
-            q = projectB.query("SELECT id FROM src_associations WHERE suite = %s and source = %s" % (suite_id, id))
+            q = projectB.query("SELECT id FROM src_associations WHERE suite = %s and source = %s" % (suite_id, pkid))
             ql = q.getresult()
             if not ql:
                 assoication_id = None
@@ -178,19 +177,19 @@ def process_file (file, suite, action):
             # Take action
             if action == "add":
                 if assoication_id:
-                    daklib.utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
+                    utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
-                    q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, id))
+                    q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, pkid))
             elif action == "remove":
                 if assoication_id == None:
-                    daklib.utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (assoication_id))
         else:
             # Find the existing assoications ID, if any
-            q = projectB.query("SELECT id FROM bin_associations WHERE suite = %s and bin = %s" % (suite_id, id))
+            q = projectB.query("SELECT id FROM bin_associations WHERE suite = %s and bin = %s" % (suite_id, pkid))
             ql = q.getresult()
             if not ql:
                 assoication_id = None
@@ -199,13 +198,13 @@ def process_file (file, suite, action):
             # Take action
             if action == "add":
                 if assoication_id:
-                    daklib.utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
+                    utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
-                    q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, id))
+                    q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, pkid))
             elif action == "remove":
                 if assoication_id == None:
-                    daklib.utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (assoication_id))
@@ -215,7 +214,7 @@ def process_file (file, suite, action):
 #######################################################################################
 
 def get_list (suite):
-    suite_id = daklib.database.get_suite_id(suite)
+    suite_id = database.get_suite_id(suite)
     # List binaries
     q = projectB.query("SELECT b.package, b.version, a.arch_string FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id))
     ql = q.getresult()
@@ -233,7 +232,7 @@ def get_list (suite):
 def main ():
     global Cnf, projectB, Logger
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('a',"add","Control-Suite::Options::Add", "HasArg"),
                  ('h',"help","Control-Suite::Options::Help"),
@@ -253,35 +252,35 @@ def main ():
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],int(Cnf["DB::Port"]))
 
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     action = None
 
     for i in ("add", "list", "remove", "set"):
         if Cnf["Control-Suite::Options::%s" % (i)] != "":
             suite = Cnf["Control-Suite::Options::%s" % (i)]
-            if daklib.database.get_suite_id(suite) == -1:
-                daklib.utils.fubar("Unknown suite '%s'." %(suite))
+            if database.get_suite_id(suite) == -1:
+                utils.fubar("Unknown suite '%s'." %(suite))
             else:
                 if action:
-                    daklib.utils.fubar("Can only perform one action at a time.")
+                    utils.fubar("Can only perform one action at a time.")
                 action = i
 
     # Need an action...
     if action == None:
-        daklib.utils.fubar("No action specified.")
+        utils.fubar("No action specified.")
 
     # Safety/Sanity check
     if action == "set" and suite not in ["testing", "etch-m68k"]:
-        daklib.utils.fubar("Will not reset a suite other than testing.")
+        utils.fubar("Will not reset a suite other than testing.")
 
     if action == "list":
         get_list(suite)
     else:
-        Logger = daklib.logging.Logger(Cnf, "control-suite")
+        Logger = logging.Logger(Cnf, "control-suite")
         if file_list:
-            for file in file_list:
-                process_file(daklib.utils.open_file(file), suite, action)
+            for f in file_list:
+                process_file(utils.open_file(f), suite, action)
         else:
             process_file(sys.stdin, suite, action)
         Logger.close()
