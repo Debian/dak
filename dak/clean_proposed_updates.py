@@ -55,45 +55,45 @@ def check_changes (filename):
         daklib.utils.warn("Couldn't read changes file '%s'." % (filename))
         return
     num_files = len(files.keys())
-    for file in files.keys():
-        if daklib.utils.re_isadeb.match(file):
-            m = re_isdeb.match(file)
+    for f in files.keys():
+        if daklib.utils.re_isadeb.match(f):
+            m = re_isdeb.match(f)
             pkg = m.group(1)
             version = m.group(2)
             arch = m.group(3)
             if Options["debug"]:
-                print "BINARY: %s ==> %s_%s_%s" % (file, pkg, version, arch)
+                print "BINARY: %s ==> %s_%s_%s" % (f, pkg, version, arch)
         else:
-            m = daklib.utils.re_issource.match(file)
+            m = daklib.utils.re_issource.match(f)
             if m:
                 pkg = m.group(1)
                 version = m.group(2)
-                type = m.group(3)
-                if type != "dsc":
-                    del files[file]
+                ftype = m.group(3)
+                if ftype != "dsc":
+                    del files[f]
                     num_files -= 1
                     continue
                 arch = "source"
                 if Options["debug"]:
-                    print "SOURCE: %s ==> %s_%s_%s" % (file, pkg, version, arch)
+                    print "SOURCE: %s ==> %s_%s_%s" % (f, pkg, version, arch)
             else:
                 daklib.utils.fubar("unknown type, fix me")
         if not pu.has_key(pkg):
             # FIXME
-            daklib.utils.warn("%s doesn't seem to exist in %s?? (from %s [%s])" % (pkg, Options["suite"], file, filename))
+            daklib.utils.warn("%s doesn't seem to exist in %s?? (from %s [%s])" % (pkg, Options["suite"], f, filename))
             continue
         if not pu[pkg].has_key(arch):
             # FIXME
-            daklib.utils.warn("%s doesn't seem to exist for %s in %s?? (from %s [%s])" % (pkg, arch, Options["suite"], file, filename))
+            daklib.utils.warn("%s doesn't seem to exist for %s in %s?? (from %s [%s])" % (pkg, arch, Options["suite"], f, filename))
             continue
         pu_version = daklib.utils.re_no_epoch.sub('', pu[pkg][arch])
         if pu_version == version:
             if Options["verbose"]:
-                print "%s: ok" % (file)
+                print "%s: ok" % (f)
         else:
             if Options["verbose"]:
-                print "%s: superseded, removing. [%s]" % (file, pu_version)
-            del files[file]
+                print "%s: superseded, removing. [%s]" % (f, pu_version)
+            del files[f]
 
     new_num_files = len(files.keys())
     if new_num_files == 0:
@@ -110,12 +110,12 @@ def check_changes (filename):
 ################################################################################
 
 def check_joey (filename):
-    file = daklib.utils.open_file(filename)
+    f = daklib.utils.open_file(filename)
 
     cwd = os.getcwd()
     os.chdir("%s/dists/%s" % (Cnf["Dir::Root"]), Options["suite"])
 
-    for line in file.readlines():
+    for line in f.readlines():
         line = line.rstrip()
         if line.find('install') != -1:
             split_line = line.split()
@@ -187,13 +187,13 @@ def main ():
 
     init_pu()
 
-    for file in arguments:
-        if file.endswith(".changes"):
-            check_changes(file)
-        elif file.endswith(".joey"):
-            check_joey(file)
+    for f in arguments:
+        if f.endswith(".changes"):
+            check_changes(f)
+        elif f.endswith(".joey"):
+            check_joey(f)
         else:
-            daklib.utils.fubar("Unrecognised file type: '%s'." % (file))
+            daklib.utils.fubar("Unrecognised file type: '%s'." % (f))
 
 #######################################################################################
 
