@@ -1,5 +1,10 @@
 2008-05-03  Thomas Viehmann  <tv@beamnet.de>
 
+	* dak/examine_package.py, dak/show_new.py: improve NEW html pages,
+	remove Checksums-* from examine-package output
+
+2008-05-03  Thomas Viehmann  <tv@beamnet.de>
+
 	* dak/process_unchecked.py (check_hashes): Reject on error while
 	parsing Checksums-*.
 
