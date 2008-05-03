@@ -105,8 +105,8 @@ def check_files():
 
     filename = Cnf["Dir::Override"]+'override.unreferenced'
     if os.path.exists(filename):
-        file = daklib.utils.open_file(filename)
-        for filename in file.readlines():
+        f = daklib.utils.open_file(filename)
+        for filename in f.readlines():
             filename = filename[:-1]
             excluded[filename] = ""
 
@@ -129,11 +129,11 @@ def check_dscs():
         list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component)
         list_file = daklib.utils.open_file(list_filename)
         for line in list_file.readlines():
-            file = line[:-1]
+            f = line[:-1]
             try:
-                daklib.utils.parse_changes(file, signing_rules=1)
+                daklib.utils.parse_changes(f, signing_rules=1)
             except daklib.utils.invalid_dsc_format_exc, line:
-                daklib.utils.warn("syntax error in .dsc file '%s', line %s." % (file, line))
+                daklib.utils.warn("syntax error in .dsc file '%s', line %s." % (f, line))
                 count += 1
 
     if count:
@@ -205,11 +205,11 @@ def check_md5sums():
         db_md5sum = i[2]
         db_size = int(i[3])
         try:
-            file = daklib.utils.open_file(filename)
+            f = daklib.utils.open_file(filename)
         except:
             daklib.utils.warn("can't open '%s'." % (filename))
             continue
-        md5sum = apt_pkg.md5sum(file)
+        md5sum = apt_pkg.md5sum(f)
         size = os.stat(filename)[stat.ST_SIZE]
         if md5sum != db_md5sum:
             daklib.utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
@@ -240,12 +240,12 @@ def check_timestamps():
     for i in ql:
         filename = os.path.abspath(i[0] + i[1])
         if os.access(filename, os.R_OK):
-            file = daklib.utils.open_file(filename)
+            f = daklib.utils.open_file(filename)
             current_file = filename
             sys.stderr.write("Processing %s.\n" % (filename))
-            apt_inst.debExtract(file,Ent,"control.tar.gz")
-            file.seek(0)
-            apt_inst.debExtract(file,Ent,"data.tar.gz")
+            apt_inst.debExtract(f, Ent, "control.tar.gz")
+            f.seek(0)
+            apt_inst.debExtract(f, Ent, "data.tar.gz")
             count += 1
     print "Checked %d files (out of %d)." % (count, len(db_files.keys()))
 
@@ -270,15 +270,15 @@ def check_missing_tar_gz_in_dsc():
             daklib.utils.fubar("error parsing .dsc file '%s'." % (filename))
         dsc_files = daklib.utils.build_file_list(dsc, is_a_dsc=1)
         has_tar = 0
-        for file in dsc_files.keys():
-            m = daklib.utils.re_issource.match(file)
+        for f in dsc_files.keys():
+            m = daklib.utils.re_issource.match(f)
             if not m:
-                daklib.utils.fubar("%s not recognised as source." % (file))
-            type = m.group(3)
-            if type == "orig.tar.gz" or type == "tar.gz":
+                daklib.utils.fubar("%s not recognised as source." % (f))
+            ftype = m.group(3)
+            if ftype == "orig.tar.gz" or ftype == "tar.gz":
                 has_tar = 1
         if not has_tar:
-            daklib.utils.warn("%s has no .tar.gz in the .dsc file." % (file))
+            daklib.utils.warn("%s has no .tar.gz in the .dsc file." % (f))
             count += 1
 
     if count:
