@@ -1,3 +1,24 @@
+2008-05-03  Mark Hymers <mhy@debian.org>
+
+	* dak/check_archive.py: clean up pychecker warnings
+	* dak/check_overrides.py: likewise
+	* dak/check_proposed_updates.py: likewise
+	* dak/clean_proposed_updates.py: likewise
+	* dak/clean_queues.py: likewise
+	* dak/control_overrides.py: likewise
+	* dak/control_suite.py: likewise
+	* dak/decode_dot_dak.py: likewise
+	* dak/examine_package.py: likewise
+	* dak/process_new.py: likewise
+	* dak/process_unchecked.py: likewise
+	* dak/queue_report.py: likewise
+	* dak/reject_proposed_updates.py: likewise
+	* dak/security_install.py: likewise
+	* dak/show_new.py: likewise
+	* dak/stats.py: likewise
+	* dak/symlink_dists.py: likewise
+	* dak/transitions.py: likewise
+
 2008-05-03  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.daily: Rename to
