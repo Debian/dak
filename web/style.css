@@ -1,0 +1,174 @@
+p.note {
+ font-family: sans-serif;
+ color: #900;
+ text-align: center;
+ padding: 5px;
+ font-size: 11px;
+ font-weight: normal;
+}
+
+div.c1 {text-align: center}
+
+p.text {
+ font-family: sans-serif;
+ padding: 5px;
+ font-size: 105%;
+ font-weight: normal;
+}
+
+body {
+ font-family: Arial, Helvetica, sans-serif;
+ color: #000000;
+ background-color: #FFF;
+}
+
+table.reddy
+{
+ color: #000;
+ background-color: #000;
+ border: 0px solid #000;
+ border-collapse: collapse;
+}
+
+ul {
+ color: #222;
+ font-size: 115%;
+}
+
+td.reddy {
+ font-family: serif;
+ font-size: 24px;
+ font-weight: normal;
+ background-color: #DF0451;
+ color: #FFFF00;
+ border: 0px solid #DF0451;
+ vertical-align: middle;
+ text-align: center;
+ padding: 0px;
+}
+
+p.validate {
+ text-align: center;
+}
+
+table
+{
+ color: #000;
+ background-color: #000;
+ border: 0px solid #000;
+ border-collapse: separate;
+ border-spacing: 1px;
+}
+
+h1 {
+ font-size: 200%;
+ text-align: center;
+ color: #000;
+}
+
+h2 {
+ font-size: 160%;
+ color: #000;
+}
+
+p {
+ font-size: 100%;
+ font-weight: bold;
+ text-align: justify;
+ color: #222;
+}
+
+tr {
+ background-color: #FFF;
+}
+
+tr.odd {
+ background-color: #FFFFFF;
+}
+
+tr.even {
+ background-color: #e8e8e8;
+}
+
+td.sid {
+ color: #000;
+ text-align: left;
+}
+
+tr.experimental {
+ color: #cc0000;
+}
+
+tr.unstable {
+ color: #345677;
+}
+
+tr.sid_odd {
+ color: #000;
+}
+
+td.exp {
+ color: #cc0000;
+ text-align: left;
+}
+
+tr.exp_odd {
+ color: #900;
+}
+
+th {
+ font-size: 120%;
+ text-align: center;
+ font-weight: bold;
+ background-color: #BDF;
+ border: 0px solid #000;
+ padding-top: 10px;
+ padding-bottom: 10px;
+ padding-left: 6px;
+ padding-right: 6px;
+}
+
+th.reject {
+ font-size: 120%;
+ text-align: center;
+ font-weight: bold;
+ background-color: #BDF;
+ border: 0px solid #000;
+ padding-top: 10px;
+ padding-bottom: 10px;
+ padding-left: 6px;
+ padding-right: 6px;
+}
+
+td {
+ font-size: 105%;
+ border: 0px solid #000;
+ padding: 4px;
+ padding-left: 6px;
+ padding-right: 6px;
+}
+
+a:link {
+ color: #0000FF;
+ text-decoration: none;
+}
+
+a:visited {
+ color: #800080;
+ text-decoration: none;
+}
+
+a:active {
+ color: #FF0000;
+ text-decoration: none;
+}
+
+a:hover{
+ color: #0000FF;
+ text-decoration: underline;
+}
+
+.footer {
+ font-size: 90%;
+}
+

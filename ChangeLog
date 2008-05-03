@@ -1,5 +1,7 @@
 2008-05-03  Thomas Viehmann  <tv@beamnet.de>
 
+	* web/,web/style.css: add web dir and current style.css
+
 	* dak/examine_package.py, dak/show_new.py: improve NEW html pages,
 	remove Checksums-* from examine-package output
 
