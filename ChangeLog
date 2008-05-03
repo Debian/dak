@@ -6,6 +6,7 @@
 	* dak/clean_queues.py: likewise
 	* dak/clean_suites.py: likewise
 	* dak/compare_suites.py: likewise
+	* dak/cruft_report.py: likewise
 
 	* dak/check_archive.py (check_files_not_symlinks): Remove
 	long-time unused and commented code. Import stuff from daklib as
