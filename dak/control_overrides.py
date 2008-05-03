@@ -212,7 +212,7 @@ def process_file (file, suite, component, type, action):
 
 ################################################################################
 
-def list(suite, component, type):
+def list_overrides(suite, component, type):
     suite_id = daklib.database.get_suite_id(suite)
     if suite_id == -1:
         daklib.utils.fubar("Suite '%s' not recognised." % (suite))
@@ -275,22 +275,22 @@ def main ():
                 daklib.utils.fubar("Can not perform more than one action at once.")
             action = i
 
-    (suite, component, type) = (Cnf["Control-Overrides::Options::Suite"],
-                                Cnf["Control-Overrides::Options::Component"],
-                                Cnf["Control-Overrides::Options::Type"])
+    (suite, component, otype) = (Cnf["Control-Overrides::Options::Suite"],
+                                 Cnf["Control-Overrides::Options::Component"],
+                                 Cnf["Control-Overrides::Options::Type"])
 
     if action == "list":
-        list(suite, component, type)
+        list_overrides(suite, component, otype)
     else:
         if Cnf.has_key("Suite::%s::Untouchable" % suite) and Cnf["Suite::%s::Untouchable" % suite] != 0:
             daklib.utils.fubar("%s: suite is untouchable" % suite)
 
         Logger = daklib.logging.Logger(Cnf, "control-overrides")
         if file_list:
-            for file in file_list:
-                process_file(daklib.utils.open_file(file), suite, component, type, action)
+            for f in file_list:
+                process_file(daklib.utils.open_file(f), suite, component, otype, action)
         else:
-            process_file(sys.stdin, suite, component, type, action)
+            process_file(sys.stdin, suite, component, otype, action)
         Logger.close()
 
 #######################################################################################
