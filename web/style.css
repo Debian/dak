@@ -172,3 +172,106 @@ a:hover{
  font-size: 90%;
 }
 
+/************* NEW details pages ************/
+#NEW-details-page a img {
+	text-decoration: none;
+	border: none;
+}
+#NEW-details-page #logo {
+	text-align: center;
+	margin-bottom: 1.5em;
+}
+#NEW-details-page #titleblock {
+	position: relative;
+	width: 100%;
+	text-align: center;
+	background-color: #DF0451;
+	color: #FFFF00;
+	padding: 0.2em;
+	margin-bottom: 1.5em;
+}
+#NEW-details-page #titleblock a {
+        color: #FFFF00;
+        text-decoration: none;
+}
+#NEW-details-page #titleblock a:hover {
+	color: #FFFF00;
+	text-decoration: underline;
+}
+#NEW-details-page #red-upperleft {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+#NEW-details-page #red-lowerleft {
+	position: absolute;
+	bottom: 0px;
+	left: 0px;
+}
+#NEW-details-page #red-upperright {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+}
+#NEW-details-page #red-lowerright {
+	position: absolute;
+	bottom: 0px;
+	right: 0px;
+}
+#NEW-details-page #titleblock .title {
+	vertical-align: middle;
+        font-weight: normal;
+	font-family: serif;
+	font-size: 22px;
+}
+#NEW-details-page #menu {
+	font-size: 80%;
+	position: fixed;
+	bottom: 1em;
+	right: 0em;
+	background: #ddd;
+	width: 9%;
+	padding: 0.5em 0 0.5em 0.5em;
+}
+#NEW-details-page #menu p {
+	margin: 0px;
+}
+#NEW-details-page .infobox {
+	width: 80%;
+	border: solid black 2px;
+	margin: 1em auto;
+}
+#NEW-details-page #menu .title,.infobox .title {
+	text-align: center;
+	font-weight: bold;
+	border-bottom: dashed 1px black;
+	margin: 0.2em;
+}
+#NEW-details-page .infobox .subtitle { 
+	text-align: center;
+	font-weight: bold;
+	border-bottom: dashed 1px black;
+	margin: 0.2em;
+}
+#NEW-details-page table.infobox {
+	padding: 0 .5em 1em .5em;
+}
+#NEW-details-page div.infobody {
+	margin: .5em 1em;
+}
+#NEW-details-page .rfc822 .key,#NEW-details-page .val {
+	font-family: monospace;
+}
+#NEW-details-page .rfc822 .key {
+	vertical-align: baseline;
+}
+#NEW-details-page .rfc822 .val {
+}
+#NEW-details-page .copyright .infobody {
+	font-family: monospace;
+	white-space: pre;
+}
+
+#NEW-details-page td pre { 
+        margin: 0pt
+}

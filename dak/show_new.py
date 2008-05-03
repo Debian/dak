@@ -53,7 +53,7 @@ def html_header(name, filestoexamine):
     <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8"
     />
     <title>%(name)s - Debian NEW package overview</title>
-    <link type="text/css" rel="stylesheet" href="style.css" />
+    <link type="text/css" rel="stylesheet" href="/style.css" />
     <link rel="shortcut icon" href="http://www.debian.org/favicon.ico" />
     <script type="text/javascript">
       //<![CDATA[
@@ -79,7 +79,7 @@ def html_header(name, filestoexamine):
       //]]>
     </script>
   </head>
-  <body>
+  <body id="NEW-details-page">
     <div id="logo">
       <a href="http://www.debian.org/">
         <img src="http://www.debian.org/logos/openlogo-nd-50.png"
@@ -89,7 +89,6 @@ def html_header(name, filestoexamine):
         alt="Debian Project" /></a>
     </div>
     <div id="titleblock">
-
       <img src="http://www.debian.org/Pics/red-upperleft.png"
       id="red-upperleft" alt="corner image"/>
       <img src="http://www.debian.org/Pics/red-lowerleft.png"
