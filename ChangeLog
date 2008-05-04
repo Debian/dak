@@ -18,6 +18,8 @@
 	* dak/generate_releases.py: likewise
 	* dak/import_archive.py: likewise
 	* dak/import_ldap_fingerprints.py: likewise
+	* dak/import_users_from_passwd.py: likewise
+	* dak/init_db.py: likewise
 
 	* dak/check_archive.py (check_files_not_symlinks): Remove
 	long-time unused and commented code. Import stuff from daklib as
