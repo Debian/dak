@@ -21,7 +21,7 @@
 
 import os, sys
 import apt_pkg
-import daklib.utils
+import daklib.utils as utils
 
 ################################################################################
 
@@ -47,7 +47,7 @@ it."""
 
     if os.path.exists(target):
         if not os.path.isdir(target):
-            daklib.utils.fubar("%s (%s) is not a directory."
+            utils.fubar("%s (%s) is not a directory."
                                % (target, config_name))
     else:
         print "Creating %s ..." % (target)
@@ -118,7 +118,7 @@ def main ():
 
     global AptCnf, Cnf
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     arguments = [('h', "help", "Init-Dirs::Options::Help")]
     for i in [ "help" ]:
         if not Cnf.has_key("Init-Dirs::Options::%s" % (i)):
@@ -130,11 +130,11 @@ def main ():
     if options["Help"]:
         usage()
     elif arguments:
-        daklib.utils.warn("dak init-dirs takes no arguments.")
+        utils.warn("dak init-dirs takes no arguments.")
         usage(exit_code=1)
 
     AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf, daklib.utils.which_apt_conf_file())
+    apt_pkg.ReadConfigFileISC(AptCnf, utils.which_apt_conf_file())
 
     create_directories()
 
