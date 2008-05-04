@@ -12,6 +12,10 @@
 	* dak/clean_suites.py: likewise
 	* dak/compare_suites.py: likewise
 	* dak/cruft_report.py: likewise
+	(get_suite_binaries): Seperated in own function, out of main. More
+	of main should be splitted. (Or well, cruft_report redesigned a
+	little, so its easier to run on multiple suites with differing tests)
+
 	* dak/examine_package.py: likewise
 	* dak/find_null_maintainers.py: likewise
 	* dak/generate_index_diffs.py: likewise
