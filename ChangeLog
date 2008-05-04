@@ -1,5 +1,7 @@
 2008-05-04  Joerg Jaspert  <joerg@debian.org>
 
+	* daklib/queue.py: Various pychecker cleanups
+
 	* dak/import_keyring.py: Remove unused daklib.logging and Logger
 	and add the actually used daklib/utils
 
