@@ -34,6 +34,7 @@
 	* dak/show_new.py: likewise
 	* dak/split_done.py: likewise
 	* dak/stats.py: likewise
+	* dak/transitions.py: likewise
 
 	* dak/check_archive.py (check_files_not_symlinks): Remove
 	long-time unused and commented code. Import stuff from daklib as
