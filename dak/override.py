@@ -27,9 +27,9 @@
 
 import pg, sys
 import apt_pkg
-import daklib.logging
-import daklib.database
-import daklib.utils
+import daklib.logging as logging
+import daklib.database as database
+import daklib.utils as utils
 
 ################################################################################
 
@@ -38,9 +38,9 @@ projectB = None
 
 ################################################################################
 
-# Shamelessly stolen from 'dak rm'. Should probably end up in daklib.utils.py
+# Shamelessly stolen from 'dak rm'. Should probably end up in utils.py
 def game_over():
-    answer = daklib.utils.our_raw_input("Continue (y/N)? ").lower()
+    answer = utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
         print "Aborted."
         sys.exit(1)
@@ -60,7 +60,7 @@ Make microchanges or microqueries of the binary overrides
 def main ():
     global Cnf, projectB
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Override::Options::Help"),
                  ('d',"done","Override::Options::Done", "HasArg"),
@@ -80,15 +80,15 @@ def main ():
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     if not arguments:
-        daklib.utils.fubar("package name is a required argument.")
+        utils.fubar("package name is a required argument.")
 
     package = arguments.pop(0)
     suite = Options["Suite"]
     if arguments and len(arguments) > 2:
-        daklib.utils.fubar("Too many arguments")
+        utils.fubar("Too many arguments")
 
     if arguments and len(arguments) == 1:
         # Determine if the argument is a priority or a section...
@@ -103,7 +103,7 @@ def main ():
         elif r[0][1] == 1:
             arguments = (".",arg)
         else:
-            daklib.utils.fubar("%s is not a valid section or priority" % (arg))
+            utils.fubar("%s is not a valid section or priority" % (arg))
 
     # Retrieve current section/priority...
     oldsection, oldsourcesection, oldpriority = None, None, None
@@ -126,7 +126,7 @@ def main ():
         if q.ntuples() == 0:
             continue
         if q.ntuples() > 1:
-            daklib.utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
+            utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
 
         r = q.getresult()
         if type == 'binary':
@@ -136,10 +136,10 @@ def main ():
             oldsourcesection = r[0][1]
 
     if not oldpriority and not oldsourcesection:
-        daklib.utils.fubar("Unable to find package %s" % (package))
+        utils.fubar("Unable to find package %s" % (package))
     if oldsection and oldsourcesection and oldsection != oldsourcesection:
         # When setting overrides, both source & binary will become the same section
-        daklib.utils.warn("Source is in section '%s' instead of '%s'" % (oldsourcesection, oldsection))
+        utils.warn("Source is in section '%s' instead of '%s'" % (oldsourcesection, oldsection))
     if not oldsection:
         oldsection = oldsourcesection
 
@@ -165,14 +165,14 @@ def main ():
         pg._quote(newsection,"str")))
 
     if q.ntuples() == 0:
-        daklib.utils.fubar("Supplied section %s is invalid" % (newsection))
+        utils.fubar("Supplied section %s is invalid" % (newsection))
     newsecid = q.getresult()[0][0]
 
     q = projectB.query("SELECT id FROM priority WHERE priority=%s" % (
         pg._quote(newpriority,"str")))
 
     if q.ntuples() == 0:
-        daklib.utils.fubar("Supplied priority %s is invalid" % (newpriority))
+        utils.fubar("Supplied priority %s is invalid" % (newpriority))
     newprioid = q.getresult()[0][0]
 
     if newpriority == oldpriority and newsection == oldsection:
@@ -180,7 +180,7 @@ def main ():
         sys.exit(0)
 
     if newpriority and not oldpriority:
-        daklib.utils.fubar("Trying to set priority of a source-only package")
+        utils.fubar("Trying to set priority of a source-only package")
 
     # If we're in no-action mode
     if Options["No-Action"]:
@@ -200,13 +200,13 @@ def main ():
 
     if not Options.has_key("Done"):
         pass
-        #daklib.utils.warn("No bugs to close have been specified. Noone will know you have done this.")
+        #utils.warn("No bugs to close have been specified. Noone will know you have done this.")
     else:
         print "I: Will close bug(s): %s" % (Options["Done"])
 
     game_over()
 
-    Logger = daklib.logging.Logger(Cnf, "override")
+    Logger = logging.Logger(Cnf, "override")
 
     projectB.query("BEGIN WORK")
     # We're in "do it" mode, we have something to do... do it
@@ -218,7 +218,7 @@ def main ():
            AND override.type != %d
            AND suite = (SELECT id FROM suite WHERE suite_name=%s)""" % (
             newprioid,
-            pg._quote(package,"str"), daklib.database.get_override_type_id("dsc"),
+            pg._quote(package,"str"), database.get_override_type_id("dsc"),
             pg._quote(suite,"str") ))
         Logger.log(["changed priority",package,oldpriority,newpriority])
 
@@ -250,7 +250,7 @@ def main ():
         Subst["__CC__"] = "X-DAK: dak override\nX-Katie: alicia $Revision: 1.6$"
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
-        Subst["__WHOAMI__"] = daklib.utils.whoami()
+        Subst["__WHOAMI__"] = utils.whoami()
 
         summary = "Concerning package %s...\n" % (package)
         summary += "Operating on the %s suite\n" % (suite)
@@ -260,11 +260,11 @@ def main ():
             summary += "Changed section from %s to %s\n" % (oldsection,newsection)
         Subst["__SUMMARY__"] = summary
 
-        for bug in daklib.utils.split_args(Options["Done"]):
+        for bug in utils.split_args(Options["Done"]):
             Subst["__BUG_NUMBER__"] = bug
-            mail_message = daklib.utils.TemplateSubst(
+            mail_message = utils.TemplateSubst(
                 Subst,Cnf["Dir::Templates"]+"/override.bug-close")
-            daklib.utils.send_mail(mail_message)
+            utils.send_mail(mail_message)
             Logger.log(["closed bug",bug])
 
     Logger.close()

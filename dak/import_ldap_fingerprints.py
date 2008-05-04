@@ -46,8 +46,8 @@
 
 import commands, ldap, pg, re, sys
 import apt_pkg
-import daklib.database
-import daklib.utils
+import daklib.database as database
+import daklib.utils as utils
 
 ################################################################################
 
@@ -88,7 +88,7 @@ def escape_string(str):
 def main():
     global Cnf, projectB
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Import-LDAP-Fingerprints::Options::Help")]
     for i in [ "help" ]:
         if not Cnf.has_key("Import-LDAP-Fingerprints::Options::%s" % (i)):
@@ -101,7 +101,7 @@ def main():
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
     LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
@@ -136,7 +136,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
         fingerprints = entry["keyFingerPrint"]
         uid = entry["uid"][0]
         name = get_ldap_name(entry)
-        uid_id = daklib.database.get_or_set_uid_id(uid)
+        uid_id = database.get_or_set_uid_id(uid)
 
         if not db_uid_name.has_key(uid_id) or db_uid_name[uid_id] != name:
             q = projectB.query("UPDATE uid SET name = '%s' WHERE id = %d" % (escape_string(name), uid_id))
@@ -155,24 +155,24 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                     q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                     print "Promoting DM %s to DD %s with keyid 0x%s." % (existing_uid, uid, fingerprint)
                 else:
-                    daklib.utils.warn("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
+                    utils.warn("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
 
     # Try to update people who sign with non-primary key
     q = projectB.query("SELECT fingerprint, id FROM fingerprint WHERE uid is null")
     for i in q.getresult():
         (fingerprint, fingerprint_id) = i
         cmd = "gpg --no-default-keyring %s --fingerprint %s" \
-              % (daklib.utils.gpg_keyring_args(), fingerprint)
+              % (utils.gpg_keyring_args(), fingerprint)
         (result, output) = commands.getstatusoutput(cmd)
         if result == 0:
             m = re_gpg_fingerprint.search(output)
             if not m:
                 print output
-                daklib.utils.fubar("0x%s: No fingerprint found in gpg output but it returned 0?\n%s" % (fingerprint, daklib.utils.prefix_multi_line_string(output, " [GPG output:] ")))
+                utils.fubar("0x%s: No fingerprint found in gpg output but it returned 0?\n%s" % (fingerprint, utils.prefix_multi_line_string(output, " [GPG output:] ")))
             primary_key = m.group(1)
             primary_key = primary_key.replace(" ","")
             if not ldap_fin_uid_id.has_key(primary_key):
-                daklib.utils.warn("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
+                utils.warn("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
             else:
                 (uid, uid_id) = ldap_fin_uid_id[primary_key]
                 q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
@@ -182,7 +182,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             for keyring in Cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):
                 extra_keyrings += " --keyring=%s" % (keyring)
             cmd = "gpg %s %s --list-key %s" \
-                  % (daklib.utils.gpg_keyring_args(), extra_keyrings, fingerprint)
+                  % (utils.gpg_keyring_args(), extra_keyrings, fingerprint)
             (result, output) = commands.getstatusoutput(cmd)
             if result != 0:
                 cmd = "gpg --keyserver=%s --allow-non-selfsigned-uid --recv-key %s" % (Cnf["Import-LDAP-Fingerprints::KeyServer"], fingerprint)
@@ -214,7 +214,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             # FIXME: default to the guessed ID
             uid = None
             while not uid:
-                uid = daklib.utils.our_raw_input("Map to which UID ? ")
+                uid = utils.our_raw_input("Map to which UID ? ")
                 Attrs = l.search_s(LDAPDn,ldap.SCOPE_ONELEVEL,"(uid=%s)" % (uid), ["cn","mn","sn"])
                 if not Attrs:
                     print "That UID doesn't exist in LDAP!"
@@ -223,9 +223,9 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                     entry = Attrs[0][1]
                     name = get_ldap_name(entry)
                     prompt = "Map to %s - %s (y/N) ? " % (uid, name.replace("  "," "))
-                    yn = daklib.utils.our_raw_input(prompt).lower()
+                    yn = utils.our_raw_input(prompt).lower()
                     if yn == "y":
-                        uid_id = daklib.database.get_or_set_uid_id(uid)
+                        uid_id = database.get_or_set_uid_id(uid)
                         projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                         print "Assigning %s to 0x%s." % (uid, fingerprint)
                     else:
