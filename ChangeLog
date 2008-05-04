@@ -27,6 +27,7 @@
 	* dak/make_suite_file_list.py: likewise
 	* dak/new_security_install.py: likewise
 	* dak/override.py: likewise
+	* dak/process_accepted.py: likewise
 
 	* dak/check_archive.py (check_files_not_symlinks): Remove
 	long-time unused and commented code. Import stuff from daklib as
