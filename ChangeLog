@@ -1,5 +1,8 @@
 2008-05-04  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/import_keyring.py: Remove unused daklib.logging and Logger
+	and add the actually used daklib/utils
+
 	* dak/examine_package.py: remove daklib.queue import, never used
 
 	* dak/check_proposed_updates.py: Import stuff from daklib as
