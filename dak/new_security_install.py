@@ -20,7 +20,10 @@
 
 ################################################################################
 
-import daklib.queue, daklib.logging, daklib.utils, daklib.database
+import daklib.queue as queue
+import daklib.logging as logging
+import daklib.utils as utils
+import daklib.database as database
 import apt_pkg, os, sys, pwd, time, re, commands
 
 re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$");
@@ -37,7 +40,7 @@ srcverarches = {}
 def init():
     global Cnf, Upload, Options, Logger
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     Cnf["Dinstall::Options::No-Mail"] = "y"
     Arguments = [('h', "help", "Security-Install::Options::Help"),
                  ('a', "automatic", "Security-Install::Options::Automatic"),
@@ -69,13 +72,13 @@ def init():
         sys.exit(0)
 
     if len(arguments) == 0:
-        daklib.utils.fubar("Process what?")
+        utils.fubar("Process what?")
 
-    Upload = daklib.queue.Upload(Cnf)
+    Upload = queue.Upload(Cnf)
     if Options["No-Action"]:
         Options["Sudo"] = ""
     if not Options["Sudo"] and not Options["No-Action"]:
-        Logger = Upload.Logger = daklib.logging.Logger(Cnf, "new-security-install")
+        Logger = Upload.Logger = logging.Logger(Cnf, "new-security-install")
 
     return arguments
 
@@ -97,9 +100,9 @@ def load_args(arguments):
     changesfiles = {}
     for a in arguments:
         if "/" in a:
-            daklib.utils.fubar("can only deal with files in the current directory")
+            utils.fubar("can only deal with files in the current directory")
         if not a.endswith(".changes"):
-            daklib.utils.fubar("not a .changes file: %s" % (a))
+            utils.fubar("not a .changes file: %s" % (a))
         Upload.init_vars()
         Upload.pkg.changes_file = a
         Upload.update_vars()
@@ -111,7 +114,7 @@ def load_args(arguments):
 
     adv_ids = adv_ids.keys()
     if len(adv_ids) > 1:
-        daklib.utils.fubar("multiple advisories selected: %s" % (", ".join(adv_ids)))
+        utils.fubar("multiple advisories selected: %s" % (", ".join(adv_ids)))
     if adv_ids == []:
         advisory = None
     else:
@@ -171,7 +174,7 @@ def prompt(opts, default):
         a = default
 
     while a not in v:
-        a = daklib.utils.our_raw_input(p) + default
+        a = utils.our_raw_input(p) + default
         a = a[:1].upper()
 
     return v[a]
@@ -192,7 +195,7 @@ def add_changes(extras):
 def yes_no(prompt):
     if Options["Automatic"]: return True
     while 1:
-        answer = daklib.utils.our_raw_input(prompt + " ").lower()
+        answer = utils.our_raw_input(prompt + " ").lower()
         if answer in "yn":
             return answer == "y"
         print "Invalid answer; please try again."
@@ -218,9 +221,9 @@ def actually_upload(changes_files):
     uploads = {}; # uploads[uri] = file_list
     changesfiles = {}; # changesfiles[uri] = file_list
     package_list = {} # package_list[source_name][version]
-    changes_files.sort(daklib.utils.changes_compare)
+    changes_files.sort(utils.changes_compare)
     for changes_file in changes_files:
-        changes_file = daklib.utils.validate_changes_file_arg(changes_file)
+        changes_file = utils.validate_changes_file_arg(changes_file)
         # Reset variables
         components = {}
         upload_uris = {}
@@ -239,7 +242,7 @@ def actually_upload(changes_files):
         # Build the file list for this .changes file
         for file in files.keys():
             poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
-                                    daklib.utils.poolify(changes["source"], files[file]["component"]),
+                                    utils.poolify(changes["source"], files[file]["component"]),
                                     file)
             file_list.append(poolname)
             orig_component = files[file].get("original component", files[file]["component"])
@@ -251,10 +254,10 @@ def actually_upload(changes_files):
                 upload_uris[upload_uri] = ""
         num_upload_uris = len(upload_uris.keys())
         if num_upload_uris == 0:
-            daklib.utils.fubar("%s: No valid upload URI found from components (%s)."
+            utils.fubar("%s: No valid upload URI found from components (%s)."
                         % (changes_file, ", ".join(components.keys())))
         elif num_upload_uris > 1:
-            daklib.utils.fubar("%s: more than one upload URI (%s) from components (%s)."
+            utils.fubar("%s: more than one upload URI (%s) from components (%s)."
                         % (changes_file, ", ".join(upload_uris.keys()),
                            ", ".join(components.keys())))
         upload_uri = upload_uris.keys()[0]
@@ -285,7 +288,7 @@ def actually_upload(changes_files):
 
     if not Options["No-Action"]:
         filename = "%s/testing-processed" % (Cnf["Dir::Log"])
-        file = daklib.utils.open_file(filename, 'a')
+        file = utils.open_file(filename, 'a')
         for source in package_list.keys():
             for version in package_list[source].keys():
                 file.write(" ".join([source, version])+'\n')
@@ -298,7 +301,7 @@ def generate_advisory(template):
     updated_pkgs = {};  # updated_pkgs[distro][arch][file] = {path,md5,size}
 
     for arg in changes:
-        arg = daklib.utils.validate_changes_file_arg(arg)
+        arg = utils.validate_changes_file_arg(arg)
         Upload.pkg.changes_file = arg
         Upload.init_vars()
         Upload.update_vars()
@@ -319,7 +322,7 @@ def generate_advisory(template):
             md5 = files[file]["md5sum"]
             size = files[file]["size"]
             poolname = Cnf["Dir::PoolRoot"] + \
-                daklib.utils.poolify(src, files[file]["component"])
+                utils.poolify(src, files[file]["component"])
             if arch == "source" and file.endswith(".dsc"):
                 dscpoolname = poolname
             for suite in suites:
@@ -363,7 +366,7 @@ def generate_advisory(template):
         Subst["__BCC__"] = "Bcc: %s" % (Cnf["Dinstall::Bcc"])
 
     adv = ""
-    archive = Cnf["Archive::%s::PrimaryMirror" % (daklib.utils.where_am_i())]
+    archive = Cnf["Archive::%s::PrimaryMirror" % (utils.where_am_i())]
     for suite in updated_pkgs.keys():
         ver = Cnf["Suite::%s::Version" % suite]
         if ver != "": ver += " "
@@ -379,7 +382,7 @@ def generate_advisory(template):
         arches.sort()
 
         adv += "%s updates are available for %s.\n\n" % (
-                suite.capitalize(), daklib.utils.join_with_commas_and(arches))
+                suite.capitalize(), utils.join_with_commas_and(arches))
 
         for a in ["source", "all"] + arches:
             if not updated_pkgs[suite].has_key(a):
@@ -404,19 +407,19 @@ def generate_advisory(template):
 
     Subst["__ADVISORY_TEXT__"] = adv
 
-    adv = daklib.utils.TemplateSubst(Subst, template)
+    adv = utils.TemplateSubst(Subst, template)
     return adv
 
 def spawn(command):
     if not re_taint_free.match(command):
-        daklib.utils.fubar("Invalid character in \"%s\"." % (command))
+        utils.fubar("Invalid character in \"%s\"." % (command))
 
     if Options["No-Action"]:
         print "[%s]" % (command)
     else:
         (result, output) = commands.getstatusoutput(command)
         if (result != 0):
-            daklib.utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, output), result)
+            utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, output), result)
 
 
 ##################### ! ! ! N O T E ! ! !  #####################
@@ -429,7 +432,7 @@ def spawn(command):
 def sudo(arg, fn, exit):
     if Options["Sudo"]:
         if advisory == None:
-            daklib.utils.fubar("Must set advisory name")
+            utils.fubar("Must set advisory name")
         os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H",
                   "/usr/local/bin/dak", "new-security-install", "-"+arg, "--", advisory)
     else:
@@ -459,7 +462,7 @@ def _do_Approve():
     print "Updating file lists for apt-ftparchive..."
     spawn("dak make-suite-file-list")
     print "Updating Packages and Sources files..."
-    spawn("apt-ftparchive generate %s" % (daklib.utils.which_apt_conf_file()))
+    spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
     print "Updating Release files..."
     spawn("dak generate-releases")
     print "Triggering security mirrors..."
@@ -473,11 +476,11 @@ def _do_Approve():
 def do_Disembargo(): sudo("D", _do_Disembargo, True)
 def _do_Disembargo():
     if os.getcwd() != Cnf["Dir::Queue::Embargoed"].rstrip("/"):
-        daklib.utils.fubar("Can only disembargo from %s" % Cnf["Dir::Queue::Embargoed"])
+        utils.fubar("Can only disembargo from %s" % Cnf["Dir::Queue::Embargoed"])
 
     dest = Cnf["Dir::Queue::Unembargoed"]
-    emb_q = daklib.database.get_or_set_queue_id("embargoed")
-    une_q = daklib.database.get_or_set_queue_id("unembargoed")
+    emb_q = database.get_or_set_queue_id("embargoed")
+    une_q = database.get_or_set_queue_id("unembargoed")
 
     for c in changes:
         print "Disembargoing %s" % (c)
@@ -507,14 +510,14 @@ def _do_Disembargo():
         Upload.projectB.query("COMMIT WORK")
 
         for file in Upload.pkg.files.keys():
-            daklib.utils.copy(file, os.path.join(dest, file))
+            utils.copy(file, os.path.join(dest, file))
             os.unlink(file)
 
     for c in changes:
-        daklib.utils.copy(c, os.path.join(dest, c))
+        utils.copy(c, os.path.join(dest, c))
         os.unlink(c)
         k = c[:-8] + ".dak"
-        daklib.utils.copy(k, os.path.join(dest, k))
+        utils.copy(k, os.path.join(dest, k))
         os.unlink(k)
 
 def do_Reject(): sudo("R", _do_Reject, True)
@@ -564,11 +567,11 @@ def do_DropAdvisory():
 def do_Edit():
     adv_file = "./advisory.%s" % (advisory)
     if not os.path.exists(adv_file):
-        daklib.utils.copy(Cnf["Dir::Templates"]+"/security-install.advisory", adv_file)
+        utils.copy(Cnf["Dir::Templates"]+"/security-install.advisory", adv_file)
     editor = os.environ.get("EDITOR", "vi")
     result = os.system("%s %s" % (editor, adv_file))
     if result != 0:
-        daklib.utils.fubar("%s invocation failed for %s." % (editor, adv_file))
+        utils.fubar("%s invocation failed for %s." % (editor, adv_file))
 
 def do_Show():
     adv_file = "./advisory.%s" % (advisory)
@@ -604,10 +607,10 @@ def main():
             add_changes(extras)
 
     if not advisory:
-        daklib.utils.fubar("Must specify an advisory id")
+        utils.fubar("Must specify an advisory id")
 
     if not changes:
-        daklib.utils.fubar("No changes specified")
+        utils.fubar("No changes specified")
 
     if Options["Approve"]:
         advisory_info()
@@ -649,7 +652,7 @@ def main():
             elif what == "Reject":
                 do_Reject()
             else:
-                daklib.utils.fubar("Impossible answer '%s', wtf?" % (what))
+                utils.fubar("Impossible answer '%s', wtf?" % (what))
 
 ################################################################################
 
