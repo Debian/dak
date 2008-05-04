@@ -27,8 +27,8 @@
 
 import pg, sys
 import apt_pkg
-import daklib.database
-import daklib.utils
+import daklib.database as database
+import daklib.utils as utils
 
 ################################################################################
 
@@ -54,12 +54,12 @@ def fix_maintainer (maintainer):
     global fixed_maintainer_cache
 
     if not fixed_maintainer_cache.has_key(maintainer):
-        fixed_maintainer_cache[maintainer] = daklib.utils.fix_maintainer(maintainer)[0]
+        fixed_maintainer_cache[maintainer] = utils.fix_maintainer(maintainer)[0]
 
     return fixed_maintainer_cache[maintainer]
 
 def get_maintainer (maintainer):
-    return fix_maintainer(daklib.database.get_maintainer(maintainer))
+    return fix_maintainer(database.get_maintainer(maintainer))
 
 def get_maintainer_from_source (source_id):
     global maintainer_from_source_cache
@@ -76,7 +76,7 @@ def get_maintainer_from_source (source_id):
 def main():
     global Cnf, projectB
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Make-Maintainers::Options::Help")]
     if not Cnf.has_key("Make-Maintainers::Options::Help"):
@@ -89,7 +89,7 @@ def main():
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     for suite in Cnf.SubTree("Suite").List():
         suite = suite.lower()
@@ -130,9 +130,9 @@ def main():
 
     # Process any additional Maintainer files (e.g. from pseudo packages)
     for filename in extra_files:
-        file = daklib.utils.open_file(filename)
+        file = utils.open_file(filename)
         for line in file.readlines():
-            line = daklib.utils.re_comments.sub('', line).strip()
+            line = utils.re_comments.sub('', line).strip()
             if line == "":
                 continue
             split = line.split()

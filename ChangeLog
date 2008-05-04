@@ -22,6 +22,7 @@
 	* dak/init_db.py: likewise
 	* dak/init_dirs.py: likewise
 	* dak/ls.py: likewise
+	* dak/make_maintainers.py: likewise
 
 	* dak/check_archive.py (check_files_not_symlinks): Remove
 	long-time unused and commented code. Import stuff from daklib as
