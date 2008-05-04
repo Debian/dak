@@ -1090,7 +1090,7 @@ def check_signed_by_key():
     else:
         sponsored = 1
         if ("source" in changes["architecture"] and
-            utils.is_email_alias(uid_email)):
+            uid_email and utils.is_email_alias(uid_email)):
             sponsor_addresses = utils.gpg_get_key_addresses(changes["fingerprint"])
             if (changes["maintaineremail"] not in sponsor_addresses and
                 changes["changedbyemail"] not in sponsor_addresses):

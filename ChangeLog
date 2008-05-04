@@ -40,6 +40,11 @@
 	long-time unused and commented code. Import stuff from daklib as
 	"import daklib.foo as foo"
 
+2008-05-04  Thomas Viehmann  <tv@beamnet.de>
+
+	* dak/process_unchecked.py (check_signed_by_key): cater for uid_email
+	None in sponsor notification
+
 2008-05-03  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/examine_package.py: clean up pychecker warnings (merged with
