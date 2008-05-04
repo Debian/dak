@@ -28,9 +28,9 @@
 import copy, os, sys, time
 import apt_pkg
 import examine_package
-import daklib.database
+import daklib.database as database
 import daklib.queue as queue
-import daklib.utils
+import daklib.utils as utils
 
 # Globals
 Cnf = None
@@ -195,7 +195,7 @@ def usage (exit_code=0):
 def init():
     global Cnf, Options, Upload, projectB
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Show-New::Options::Help"),
                  ("p","html-path","Show-New::HTMLPath","HasArg")]
@@ -226,7 +226,7 @@ def main():
     examine_package.use_html=1
 
     for changes_file in changes_files:
-        changes_file = daklib.utils.validate_changes_file_arg(changes_file, 0)
+        changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
             continue
         print "\n" + changes_file

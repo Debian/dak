@@ -31,6 +31,7 @@
 	* dak/process_new.py: likewise
 	* dak/process_unchecked.py: likewise
 	* dak/rm.py: likewise
+	* dak/show_new.py: likewise
 
 	* dak/check_archive.py (check_files_not_symlinks): Remove
 	long-time unused and commented code. Import stuff from daklib as
