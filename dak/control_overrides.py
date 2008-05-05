@@ -51,9 +51,9 @@
 
 import pg, sys, time
 import apt_pkg
-import daklib.utils as utils
-import daklib.database as database
-import daklib.logging as logging
+from daklib import utils
+from daklib import database
+from daklib import logging
 
 ################################################################################
 

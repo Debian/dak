@@ -36,8 +36,8 @@
 
 import copy, glob, os, stat, sys, time
 import apt_pkg
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import queue
+from daklib import utils
 from daklib.dak_exceptions import *
 
 Cnf = None

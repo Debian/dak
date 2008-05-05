@@ -27,9 +27,9 @@
 
 import pg, sys
 import apt_pkg
-import daklib.logging as logging
-import daklib.database as database
-import daklib.utils as utils
+from daklib import logging
+from daklib import database
+from daklib import utils
 
 ################################################################################
 
