@@ -38,8 +38,8 @@
 
 import commands, os, pg, re, sys, time
 import apt_pkg
-import daklib.database as database
-import daklib.utils as utils
+from daklib import database
+from daklib import utils
 from daklib.dak_exceptions import *
 
 ###############################################################################

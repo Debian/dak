@@ -32,7 +32,7 @@
 
 import sys, os, tempfile
 import apt_pkg
-import daklib.utils as utils
+from daklib import utils
 
 ################################################################################
 

@@ -31,10 +31,10 @@
 
 import errno, fcntl, os, sys, time, re
 import apt_pkg
-import daklib.database as database
-import daklib.logging as logging
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import database
+from daklib import logging
+from daklib import queue
+from daklib import utils
 
 ###############################################################################
 

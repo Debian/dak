@@ -34,8 +34,8 @@
 
 import errno, os, pg, re, sys, md5
 import apt_pkg, apt_inst
-import daklib.database as database
-import daklib.utils as utils
+from daklib import database
+from daklib import utils
 
 ################################################################################
 

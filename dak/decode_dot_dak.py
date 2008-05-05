@@ -28,8 +28,8 @@
 
 import sys
 import apt_pkg
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import queue
+from daklib import utils
 
 ################################################################################
 

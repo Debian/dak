@@ -20,10 +20,10 @@
 
 ################################################################################
 
-import daklib.queue as queue
-import daklib.logging as logging
-import daklib.utils as utils
-import daklib.database as database
+from daklib import queue
+from daklib import logging
+from daklib import utils
+from daklib import database
 import apt_pkg, os, sys, pwd, time, re, commands
 
 re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$");
