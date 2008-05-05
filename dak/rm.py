@@ -43,7 +43,7 @@ import commands, os, pg, re, sys
 import apt_pkg, apt_inst
 import daklib.database as database
 import daklib.utils as utils
-from daklib.exceptions import *
+from daklib.dak_exceptions import *
 
 ################################################################################
 

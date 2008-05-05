@@ -25,7 +25,7 @@
 import sys, os, popen2, tempfile, stat, time, pg
 import apt_pkg
 import daklib.utils as utils
-from daklib.exceptions import *
+from daklib.dak_exceptions import *
 
 ################################################################################
 
