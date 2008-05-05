@@ -21,8 +21,8 @@
 
 import pg, sys
 import apt_pkg
-import daklib.database as database
-import daklib.utils as utils
+from daklib import database
+from daklib import utils
 
 ################################################################################
 

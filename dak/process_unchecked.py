@@ -30,10 +30,10 @@
 
 import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceback
 import apt_inst, apt_pkg
-import daklib.database as database
-import daklib.logging as logging
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import database
+from daklib import logging
+from daklib import queue
+from daklib import utils
 from daklib.dak_exceptions import *
 
 from types import *

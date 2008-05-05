@@ -19,8 +19,8 @@
 
 ################################################################################
 
-import daklib.database as database
-import daklib.utils as utils
+from daklib import database
+from daklib import utils
 import sys, os, re
 import apt_pkg, pg, ldap, email.Utils
 

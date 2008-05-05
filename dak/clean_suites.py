@@ -30,7 +30,7 @@
 
 import os, pg, stat, sys, time
 import apt_pkg
-import daklib.utils as utils
+from daklib import utils
 
 ################################################################################
 

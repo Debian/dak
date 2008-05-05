@@ -39,10 +39,10 @@
 import copy, errno, os, readline, stat, sys, time
 import apt_pkg, apt_inst
 import examine_package
-import daklib.database as database
-import daklib.logging as logging
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import database
+from daklib import logging
+from daklib import queue
+from daklib import utils
 
 # Globals
 Cnf = None
