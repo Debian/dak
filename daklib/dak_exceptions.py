@@ -28,9 +28,12 @@ class DakError(Exception):
        message -- explanation of the error
     """
 
-    def __init__(self, message):
-        self.args = message
-        self.message = message
+    def __init__(self, message=""):
+        self.args = str(message)
+        self.message = str(message)
+
+    def __str__(self):
+        return self.message
 
 __all__ = ['DakError']
 
