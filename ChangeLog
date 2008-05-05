@@ -1,4 +1,26 @@
+2008-05-05  Mark Hymers  <mhy@debian.org>
+
+	* daklib/dak_exceptions.py: Add a default message and tidy up our string
+	representation
+
+2008-05-05  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/dak_exceptions.py: New file, central place for all those
+	own exceptions dak may raise.
+
+	* daklib/utils.py: Use dak_exceptions and delete all those string
+	exception raising stuff, which is depcreated.
+	During that delete the unknown_hostname_exc, as it wasnt used.
+
+	* dak/import_archive.py: use the new Exception class
+	* dak/rm.py: dito
+	* dak/generate_releases.py: dito
+	* dak/queue_report.py: dito
+	* daklib/queue.py: dito
+
 2008-05-04  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/queue.py: Various pychecker cleanups
 
 	* dak/import_keyring.py: Remove unused daklib.logging and Logger
 	and add the actually used daklib/utils
@@ -12,6 +34,10 @@
 	* dak/clean_suites.py: likewise
 	* dak/compare_suites.py: likewise
 	* dak/cruft_report.py: likewise
+	(get_suite_binaries): Seperated in own function, out of main. More
+	of main should be splitted. (Or well, cruft_report redesigned a
+	little, so its easier to run on multiple suites with differing tests)
+
 	* dak/examine_package.py: likewise
 	* dak/find_null_maintainers.py: likewise
 	* dak/generate_index_diffs.py: likewise

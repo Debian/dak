@@ -242,6 +242,20 @@ def do_obsolete_source(duplicate_bins, bin2source):
         print " dak rm -S -p -m \"[auto-cruft] obsolete source package\" %s" % (" ".join(to_remove))
         print
 
+def get_suite_binaries():
+    # Initalize a large hash table of all binary packages
+    binaries = {}
+    before = time.time()
+
+    sys.stderr.write("[Getting a list of binary packages in %s..." % (suite))
+    q = projectB.query("SELECT distinct b.package FROM binaries b, bin_associations ba WHERE ba.suite = %s AND ba.bin = b.id" % (suite_id))
+    ql = q.getresult()
+    sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
+    for i in ql:
+        binaries[i[0]] = ""
+
+    return binaries
+
 ################################################################################
 
 def main ():
@@ -294,14 +308,7 @@ def main ():
     bin_not_built = {}
 
     if "bnb" in checks:
-        # Initalize a large hash table of all binary packages
-        before = time.time()
-        sys.stderr.write("[Getting a list of binary packages in %s..." % (suite))
-        q = projectB.query("SELECT distinct b.package FROM binaries b, bin_associations ba WHERE ba.suite = %s AND ba.bin = b.id" % (suite_id))
-        ql = q.getresult()
-        sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
-        for i in ql:
-            bins_in_suite[i[0]] = ""
+        bins_in_suite = get_suite_binaries()
 
     # Checks based on the Sources files
     components = Cnf.ValueList("Suite::%s::Components" % (suite))

@@ -40,6 +40,7 @@ import commands, os, pg, re, sys, time
 import apt_pkg
 import daklib.database as database
 import daklib.utils as utils
+from daklib.dak_exceptions import *
 
 ###############################################################################
 
@@ -323,7 +324,7 @@ def process_sources (filename, suite, component, archive):
     suite_id = database.get_suite_id(suite)
     try:
         file = utils.open_file (filename)
-    except utils.cant_open_exc:
+    except CantOpenError:
         utils.warn("can't open '%s'" % (filename))
         return
     Scanner = apt_pkg.ParseTagFile(file)
@@ -406,7 +407,7 @@ def process_packages (filename, suite, component, archive):
     suite_id = database.get_suite_id(suite)
     try:
         file = utils.open_file (filename)
-    except utils.cant_open_exc:
+    except CantOpenError:
         utils.warn("can't open '%s'" % (filename))
         return
     Scanner = apt_pkg.ParseTagFile(file)

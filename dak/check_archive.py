@@ -132,7 +132,7 @@ def check_dscs():
             f = line[:-1]
             try:
                 utils.parse_changes(f, signing_rules=1)
-            except utils.invalid_dsc_format_exc, line:
+            except InvalidDscError, line:
                 utils.warn("syntax error in .dsc file '%s', line %s." % (f, line))
                 count += 1
 
