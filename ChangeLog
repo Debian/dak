@@ -1,13 +1,17 @@
 2008-05-05  Joerg Jaspert  <joerg@debian.org>
 
-	* dak/queue_report.py: Use the exception class
-	* dak/process_unchecked.py: dito
-
 	* daklib/dak_exceptions.py: New file, central place for all those
 	own exceptions dak may raise.
 
 	* daklib/utils.py: Use dak_exceptions and delete all those string
 	exception raising stuff, which is depcreated.
+	During that delete the unknown_hostname_exc, as it wasnt used.
+
+	* dak/import_archive.py: use the new Exception class
+	* dak/rm.py: dito
+	* dak/generate_releases.py: dito
+	* dak/queue_report.py: dito
+	* daklib/queue.py: dito
 
 2008-05-04  Joerg Jaspert  <joerg@debian.org>
 

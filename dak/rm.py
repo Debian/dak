@@ -43,6 +43,7 @@ import commands, os, pg, re, sys
 import apt_pkg, apt_inst
 import daklib.database as database
 import daklib.utils as utils
+from daklib.exceptions import *
 
 ################################################################################
 
@@ -364,7 +365,7 @@ def main ():
                 filename = "/".join(source_packages[i])
                 try:
                     dsc = utils.parse_changes(filename)
-                except utils.cant_open_exc:
+                except CantOpenError:
                     utils.warn("couldn't open '%s'." % (filename))
                     continue
                 for package in dsc.get("binary").split(','):

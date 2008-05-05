@@ -182,19 +182,19 @@ def check_changes():
     # Parse the .changes field into a dictionary
     try:
         changes.update(utils.parse_changes(filename))
-    except utils.cant_open_exc:
+    except CantOpenError:
         reject("%s: can't read file." % (filename))
         return 0
-    except utils.changes_parse_error_exc, line:
+    except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (filename, line))
         return 0
 
     # Parse the Files field from the .changes into another dictionary
     try:
         files.update(utils.build_file_list(changes))
-    except utils.changes_parse_error_exc, line:
+    except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (filename, line))
-    except utils.nk_format_exc, format:
+    except UnknownFormatError, format:
         reject("%s: unknown format '%s'." % (filename, format))
         return 0
 
@@ -686,21 +686,21 @@ def check_dsc():
     # Parse the .dsc file
     try:
         dsc.update(utils.parse_changes(dsc_filename, signing_rules=1))
-    except utils.cant_open_exc:
+    except CantOpenError:
         # if not -n copy_to_holding() will have done this for us...
         if Options["No-Action"]:
             reject("%s: can't read file." % (dsc_filename))
-    except utils.changes_parse_error_exc, line:
+    except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line))
-    except utils.invalid_dsc_format_exc, line:
+    except InvalidDscError, line:
         reject("%s: syntax error on line %s." % (dsc_filename, line))
     # Build up the file list of files mentioned by the .dsc
     try:
         dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1))
-    except utils.no_files_exc:
+    except NoFilesFieldError:
         reject("%s: no Files: field." % (dsc_filename))
         return 0
-    except utils.changes_parse_error_exc, line:
+    except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line))
         return 0
 
@@ -946,9 +946,9 @@ def check_hashes ():
         try:
             fs = utils.build_file_list(changes, 0, "checksums-%s" % h, h)
             check_hash(".changes %s" % (h), fs, h, f, files)
-        except utils.no_files_exc:
+        except NoFilesFieldError:
             reject("No Checksums-%s: field in .changes" % (h))
-        except utils.changes_parse_error_exc, line:
+        except ParseChangesError, line:
             reject("parse error for Checksums-%s in .changes, can't grok: %s." % (h, line))
 
         if "source" not in changes["architecture"]: continue
@@ -956,9 +956,9 @@ def check_hashes ():
         try:
             fs = utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
             check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
-        except utils.no_files_exc:
+        except NoFilesFieldError:
             reject("No Checksums-%s: field in .dsc" % (h))
-        except utils.changes_parse_error_exc, line:
+        except ParseChangesError, line:
             reject("parse error for Checksums-%s in .dsc, can't grok: %s." % (h, line))
 
 ################################################################################
@@ -975,7 +975,7 @@ def check_hash (where, lfiles, key, testfn, basedict = None):
 
         try:
             file_handle = utils.open_file(f)
-        except utils.cant_open_exc:
+        except CantOpenError:
             continue
 
         # Check hash

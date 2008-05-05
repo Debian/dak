@@ -25,6 +25,7 @@
 import sys, os, popen2, tempfile, stat, time, pg
 import apt_pkg
 import daklib.utils as utils
+from daklib.exceptions import *
 
 ################################################################################
 
@@ -107,7 +108,7 @@ def print_md5sha_files (tree, files, hashop):
             else:
                 size = os.stat(path + name)[stat.ST_SIZE]
                 file_handle = utils.open_file(path + name)
-        except utils.cant_open_exc:
+        except CantOpenError:
             print "ALERT: Couldn't open " + path + name
         else:
             hash = hashop(file_handle)

@@ -22,6 +22,7 @@
 import cPickle, errno, os, pg, re, stat, sys, time
 import apt_inst, apt_pkg
 import utils, database
+from dak_exceptions import *
 
 from types import *
 
@@ -615,7 +616,7 @@ distribution."""
                     morgue_file = os.path.join(Cnf["Dir::Morgue"],Cnf["Dir::MorgueReject"],file_entry)
                     try:
                         morgue_file = utils.find_next_free(morgue_file)
-                    except utils.tried_too_hard_exc:
+                    except NoFreeFilenameError:
                         # Something's either gone badly Pete Tong, or
                         # someone is trying to exploit us.
                         utils.warn("**WARNING** failed to move %s from the reject directory to the morgue." % (file_entry))

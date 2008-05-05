@@ -49,17 +49,6 @@ re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
 
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
 
-changes_parse_error_exc = "Can't parse line in .changes file"
-invalid_dsc_format_exc = "Invalid .dsc file"
-nk_format_exc = "Unknown Format: in .changes file"
-no_files_exc = "No Files: field in .dsc or .changes file."
-cant_open_exc = "Can't open file"
-unknown_hostname_exc = "Unknown hostname"
-cant_overwrite_exc = "Permission denied; can't overwrite existent file."
-file_exists_exc = "Destination file exists"
-sendmail_failed_exc = "Sendmail invocation failed"
-tried_too_hard_exc = "Tried too hard to find a free filename."
-
 default_config = "/etc/dak/dak.conf"
 default_apt_config = "/etc/dak/apt.conf"
 
@@ -72,7 +61,7 @@ def open_file(filename, mode='r'):
     try:
         f = open(filename, mode)
     except IOError:
-        raise cant_open_exc, filename
+        raise CantOpenError, filename
     return f
 
 ################################################################################
@@ -135,7 +124,7 @@ The rules for (signing_rules == 1)-mode are:
     lines = changes_in.readlines()
 
     if not lines:
-        raise changes_parse_error_exc, "[Empty changes file]"
+        raise ParseChangesError, "[Empty changes file]"
 
     # Reindex by line number so we can easily verify the format of
     # .dsc files...
@@ -157,10 +146,10 @@ The rules for (signing_rules == 1)-mode are:
             if signing_rules == 1:
                 index += 1
                 if index > num_of_lines:
-                    raise invalid_dsc_format_exc, index
+                    raise InvalidDscError, index
                 line = indexed_lines[index]
                 if not line.startswith("-----BEGIN PGP SIGNATURE"):
-                    raise invalid_dsc_format_exc, index
+                    raise InvalidDscError, index
                 inside_signature = 0
                 break
             else:
@@ -189,7 +178,7 @@ The rules for (signing_rules == 1)-mode are:
         mlf = re_multi_line_field.match(line)
         if mlf:
             if first == -1:
-                raise changes_parse_error_exc, "'%s'\n [Multi-line field continuing on from nothing?]" % (line)
+                raise ParseChangesError, "'%s'\n [Multi-line field continuing on from nothing?]" % (line)
             if first == 1 and changes[field] != "":
                 changes[field] += '\n'
             first = 0
@@ -198,7 +187,7 @@ The rules for (signing_rules == 1)-mode are:
         error += line
 
     if signing_rules == 1 and inside_signature:
-        raise invalid_dsc_format_exc, index
+        raise InvalidDscError, index
 
     changes_in.close()
     changes["filecontents"] = "".join(lines)
@@ -212,7 +201,7 @@ The rules for (signing_rules == 1)-mode are:
             changes["source-version"] = srcver.group(2)
 
     if error:
-        raise changes_parse_error_exc, error
+        raise ParseChangesError, error
 
     return changes
 
@@ -225,12 +214,12 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
     # Make sure we have a Files: field to parse...
     if not changes.has_key(field):
-        raise no_files_exc
+        raise NoFilesFieldError
 
     # Make sure we recognise the format of the Files: field
     format = re_verwithext.search(changes.get("format", "0.0"))
     if not format:
-        raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+        raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
 
     format = format.groups()
     if format[1] == None:
@@ -242,12 +231,12 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
     if is_a_dsc:
         if format != (1,0):
-            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
     else:
         if (format < (1,5) or format > (1,8)):
-            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
         if field != "files" and format < (1,8):
-            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
 
     includes_section = (not is_a_dsc) and field == "files"
 
@@ -263,7 +252,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
             else:
                 (md5, size, name) = s
         except ValueError:
-            raise changes_parse_error_exc, i
+            raise ParseChangesError, i
 
         if section == "":
             section = "-"
@@ -371,7 +360,7 @@ def send_mail (message, filename=""):
     # Invoke sendmail
     (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
     if (result != 0):
-        raise sendmail_failed_exc, output
+        raise SendmailFailedError, output
 
     # Clean up any temporary files
     if message:
@@ -427,10 +416,10 @@ def copy (src, dest, overwrite = 0, perms = 0664):
     # Don't overwrite unless forced to
     if os.path.exists(dest):
         if not overwrite:
-            raise file_exists_exc
+            raise FileExistsError
         else:
             if not os.access(dest, os.W_OK):
-                raise cant_overwrite_exc
+                raise CantOverwriteError
     shutil.copy2(src, dest)
     os.chmod(dest, perms)
 
@@ -574,7 +563,7 @@ def find_next_free (dest, too_many=100):
         dest = orig_dest + '.' + repr(extra)
         extra += 1
     if extra >= too_many:
-        raise tried_too_hard_exc
+        raise NoFreeFilenameError
     return dest
 
 ################################################################################
