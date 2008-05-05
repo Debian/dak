@@ -27,7 +27,7 @@ import os, pg, sys, time, errno, fcntl, tempfile, pwd, re
 import apt_pkg
 import daklib.database as database
 import daklib.utils as utils
-from daklib.dak_extensions import TransitionsError
+from daklib.dak_exceptions import TransitionsError
 import syck
 
 # Globals
