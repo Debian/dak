@@ -44,12 +44,12 @@ dakerrors = {
     "UnknownFormatError":  """Exception raised for unknown Format: lines in changes files.""",
     "NoFilesFieldError":   """Exception raised for missing files field in dsc/changes.""",
     "CantOpenError":       """Exception raised when files can't be opened.""",
-    "CantOverwriteError":  """Exception raised when files cant be overwritten.""",
+    "CantOverwriteError":  """Exception raised when files can't be overwritten.""",
     "FileExistsError":     """Exception raised when destination file exists.""",
     "SendmailFailedError": """Exception raised when Sendmail invocation failed.""",
-    "NoFreeFilenameError": """Exception raised when no alternate filename was found."""
+    "NoFreeFilenameError": """Exception raised when no alternate filename was found.""",
+    "TransitionsError":    """Exception raised when transitions file can't be parsed."""
 }
-
 
 def construct_dak_exception(name, description):
     class Er(DakError):

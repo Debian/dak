@@ -27,6 +27,7 @@ import os, pg, sys, time, errno, fcntl, tempfile, pwd, re
 import apt_pkg
 import daklib.database as database
 import daklib.utils as utils
+from daklib.dak_extensions import TransitionsError
 import syck
 
 # Globals
@@ -227,9 +228,6 @@ def write_transitions(from_trans):
 
 ################################################################################
 
-class ParseException(Exception):
-    pass
-
 ##########################################
 #### This usually runs within sudo !! ####
 ##########################################
@@ -248,7 +246,7 @@ def write_transitions_from_file(from_file):
     else:
         trans = load_transitions(from_file)
         if trans is None:
-            raise ParseException, "Unparsable transitions file %s" % (file)
+            raise TransitionsError, "Unparsable transitions file %s" % (file)
         write_transitions(trans)
 
 ################################################################################
@@ -458,7 +456,7 @@ def main():
     if Options["import"]:
         try:
             write_transitions_from_file(Options["import"])
-        except ParseException, m:
+        except TransitionsError, m:
             print m
             sys.exit(2)
         sys.exit(0)

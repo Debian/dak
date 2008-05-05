@@ -1,3 +1,8 @@
+2008-05-05  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/dak_exceptions.py (dakerrors): add TransitionsError
+	* dak/transitions.py: Use it, instead of the own definition
+
 2008-05-05  Mark Hymers  <mhy@debian.org>
 
 	* daklib/dak_exceptions.py: Add a default message and tidy up our string
