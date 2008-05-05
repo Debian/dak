@@ -34,6 +34,7 @@ import daklib.database as database
 import daklib.logging as logging
 import daklib.queue as queue
 import daklib.utils as utils
+from daklib.dak_exceptions import *
 
 from types import *
 
@@ -226,7 +227,7 @@ def check_changes():
         (changes["maintainer822"], changes["maintainer2047"],
          changes["maintainername"], changes["maintaineremail"]) = \
          utils.fix_maintainer (changes["maintainer"])
-    except utils.ParseMaintError, msg:
+    except ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
                % (filename, changes["maintainer"], msg))
 
@@ -235,7 +236,7 @@ def check_changes():
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
          utils.fix_maintainer (changes.get("changed-by", ""))
-    except utils.ParseMaintError, msg:
+    except ParseMaintError, msg:
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
          ("", "", "", "")
@@ -723,7 +724,7 @@ def check_dsc():
     # Validate the Maintainer field
     try:
         utils.fix_maintainer (dsc["maintainer"])
-    except utils.ParseMaintError, msg:
+    except ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
                % (dsc_filename, dsc["maintainer"], msg))
 

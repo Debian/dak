@@ -25,6 +25,7 @@ import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
        sys, tempfile, traceback
 import apt_pkg
 import database
+from dak_exceptions import *
 
 ################################################################################
 
@@ -64,23 +65,6 @@ default_apt_config = "/etc/dak/apt.conf"
 
 alias_cache = None
 key_uid_email_cache = {}
-
-################################################################################
-
-class Error(Exception):
-    """Base class for exceptions in this module."""
-    pass
-
-class ParseMaintError(Error):
-    """Exception raised for errors in parsing a maintainer field.
-
-    Attributes:
-       message -- explanation of the error
-    """
-
-    def __init__(self, message):
-        self.args = message,
-        self.message = message
 
 ################################################################################
 

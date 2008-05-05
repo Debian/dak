@@ -1,3 +1,14 @@
+2008-05-05  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/queue_report.py: Use the exception class
+	* dak/process_unchecked.py: dito
+
+	* daklib/dak_exceptions.py: New file, central place for all those
+	own exceptions dak may raise.
+
+	* daklib/utils.py: Use dak_exceptions and delete all those string
+	exception raising stuff, which is depcreated.
+
 2008-05-04  Joerg Jaspert  <joerg@debian.org>
 
 	* daklib/queue.py: Various pychecker cleanups
