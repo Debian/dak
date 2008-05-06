@@ -13,7 +13,12 @@ NOW=`date "+%Y.%m.%d-%H:%M:%S"`
 LOGFILE="$logdir/dinstall_${NOW}.log"
 exec > "$LOGFILE" 2>&1
 
-echo Archive maintenance started at $(date +%X)
+ts() {
+	TS=$(($TS+1));
+	echo Archive maintenance timestamp $TS: $(date +%H:%M:%S)
+}
+
+echo Archive maintenance started at $(date +%H:%M:%S)
 TS=0
 
 NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
@@ -35,8 +40,8 @@ trap cleanup 0
 rm -f "$NOTICE"
 cat > "$NOTICE" <<EOF
 Packages are currently being installed and indices rebuilt.
-Maintenance is automatic, starting at 13:52 US Central time, and
-ending at about 15:30.  This file is then removed.
+Maintenance is automatic, starting at 07:52 and 19:52 UTC, and
+ending about an hour later.  This file is then removed.
 
 You should not mirror the archive during this period.
 EOF
@@ -44,6 +49,7 @@ EOF
 # Push merkels qa user, so the qa pages can show "dinstall is running" information
 echo "Telling merkels QA user that we start dinstall"
 ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 qa@merkel.debian.org sleep 1
+ts
 
 ################################################################################
 
@@ -52,7 +58,7 @@ pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 ################################################################################
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 echo "Updating Bugs docu, Mirror list and mailing-lists.txt"
 cd $configdir
 $scriptsdir/update-bugdoctxt
@@ -61,14 +67,14 @@ $scriptsdir/update-mailingliststxt
 
 ################################################################################
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 echo "Doing automated p-u-new processing"
 cd $queuedir/p-u-new
 date -u -R >> REPORT
 dak process-new -a -C COMMENTS >> REPORT || true
 echo >> REPORT
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 echo "Doing automated o-p-u-new processing"
 cd $queuedir/o-p-u-new
 date -u -R >> REPORT
@@ -77,7 +83,7 @@ echo >> REPORT
 
 ################################################################################
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 lockfile $LOCKAC
 lockac=1
 echo "Processing queue/accepted"
@@ -88,7 +94,7 @@ dak process-accepted -pa *.changes | tee REPORT | \
 chgrp debadmin REPORT
 chmod 664 REPORT
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 echo "Checking for cruft in overrides"
 dak check-overrides
 rm -f $LOCKAC
@@ -97,57 +103,57 @@ lockac=0
 echo "Fixing symlinks in $ftpdir"
 symlinks -d -r $ftpdir
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 echo "Generating suite file lists for apt-ftparchive"
 dak make-suite-file-list
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 echo "Updating fingerprints"
 # Update fingerprints
 dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Generate override files
 echo "Writing overrides into text files"
 cd $overridedir
 dak make-overrides
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # FIXME
 rm -f override.sid.all3
 for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Generate Packages and Sources files
 echo "Generating Packages and Sources files"
 cd $configdir
 apt-ftparchive generate apt.conf
+
+ts
+
 # Generate *.diff/ incremental updates
-
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
-
 echo "Generating pdiff files"
 dak generate-index-diffs
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Generate Release files
 echo "Generating Release files"
 dak generate-releases
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Clean out old packages
 echo "Cleanup old packages/files"
 dak clean-suites
 dak clean-queues
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
 # update this before wanna-build is updated.
@@ -156,7 +162,7 @@ psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE suite = 5 AND 
 symlinks -d /srv/incoming.debian.org/buildd > /dev/null
 apt-ftparchive generate apt.conf.buildd
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 echo "Running various scripts from $scriptsdir"
 cd $scriptsdir
@@ -165,16 +171,15 @@ cd $scriptsdir
 ./mklslar
 ./mkfilesindices
 ./mkchecksums
-#
-rm -f $NOTICE
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 echo "Trigger daily wanna-build run"
 ssh buildd@buildd /org/wanna-build/trigger.daily
 
+rm -f $NOTICE
 rm -f $LOCKCU
-echo Archive maintenance finished at $(date +%X)
+echo Archive maintenance finished at $(date +%H:%M:%S)
 
 ################################################################################
 
@@ -185,14 +190,14 @@ pg_dump projectb > $POSTDUMP
 
 ################################################################################
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 echo "Expiring old database dumps..."
 (cd $base/backup; $scriptsdir/expire_dumps -d . -p -f "dump_*")
 
 ################################################################################
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Send a report on NEW/BYHAND packages
 echo "Nagging ftpteam about NEW/BYHAND packages"
@@ -203,7 +208,7 @@ dak cruft-report > $webdir/cruft-report-daily.txt
 dak cruft-report -s experimental >> $webdir/cruft-report-daily.txt
 cat $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 echo "Updating DM html page"
 $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
@@ -216,7 +221,7 @@ ssh -2 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1
 
 ################################################################################
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 ulimit -m 90000 -d 90000 -s 10000 -v 200000
 
@@ -225,7 +230,7 @@ run-parts --report $base/scripts/distmnt
 
 echo "Daily cron scripts successful."
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Stats pr0n
 echo "Updating stats data"
@@ -233,14 +238,14 @@ cd $configdir
 $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
 R --slave --vanilla < $base/misc/ftpstats.R
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Clean up apt-ftparchive's databases
 echo "Clean up apt-ftparchive's databases"
 cd $configdir
 apt-ftparchive -q clean apt.conf
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 # Compress psql backups older than a week, but no more than 20 of them
 echo "Compress old psql backups"
@@ -252,7 +257,7 @@ echo "Compress old psql backups"
    done
 )
 
-TS=$(($TS+1)); echo Archive maintenance timestamp $TS: $(date +%X)
+ts
 
 echo "Finally, all is done, sending mail and compressing logfile"
 exec > /dev/null 2>&1

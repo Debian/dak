@@ -1,3 +1,9 @@
+2008-05-06  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: Put the timestamp stuff into an own
+	function, call that from everywhere. Also change the timestamp
+	format to not be local dependent.
+
 2008-05-05  Joerg Jaspert  <joerg@debian.org>
 
 	* daklib/dak_exceptions.py (dakerrors): add TransitionsError
