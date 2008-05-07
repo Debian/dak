@@ -1,6 +1,7 @@
 From: __FROM_ADDRESS__
 To: __MAINTAINER_TO__
 __CC__
+X-Debian: DAK
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
