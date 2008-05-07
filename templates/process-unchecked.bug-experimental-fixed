@@ -2,6 +2,7 @@ From: __MAINTAINER_FROM__
 To: control@__BUG_SERVER__
 Cc: __MAINTAINER_TO__
 __BCC__
+X-Debian: DAK
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit

@@ -1,3 +1,35 @@
+2008-05-08  Joerg Jaspert  <joerg@debian.org>
+
+	* templates/rm.bug-close: dito
+
+	* templates/reject-proposed-updates.rejected: dito
+
+	* templates/queue.rejected: dito
+
+	* templates/process-unchecked.override-disparity: dito, but also
+	mention that people should include the package lists with the
+	override disparities.
+
+	* templates/process-unchecked.new: dito
+
+	* templates/process-unchecked.bug-nmu-fixed: dito
+
+	* templates/process-unchecked.bug-experimental-fixed: dito
+
+	* templates/process-unchecked.bug-close: dito
+
+	* templates/process-unchecked.announce: dito
+
+	* templates/process-unchecked.accepted: dito
+
+	* templates/process-new.prod: dito
+
+	* templates/process-accepted.unaccept: dito
+
+	* templates/process-accepted.install: dito
+
+	* templates/override.bug-close: Add X-Debian header
+
 2008-05-06  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.dinstall: Put the timestamp stuff into an own

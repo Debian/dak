@@ -2077,7 +2077,7 @@ sub init_mail(;$) {
 	my $file = shift;
 
 	$main::mail_addr = "";
-	$main::mail_text = "";
+	$main::mail_text = "X-Debian: DAK\n";
 	$main::mail_subject = $file ? "Processing of $file" : "";
 }
 

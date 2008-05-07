@@ -2,6 +2,7 @@ From: __REJECTOR_ADDRESS__
 To: __MAINTAINER_TO__
 __BCC__
 __CC__
+X-Debian: DAK
 Precedence: bulk
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"

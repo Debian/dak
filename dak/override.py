@@ -247,7 +247,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak override\nX-Katie: alicia $Revision: 1.6$"
+        Subst["__CC__"] = "X-DAK: dak override\nX-Katie: alicia"
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = utils.whoami()
