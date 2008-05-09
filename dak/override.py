@@ -251,6 +251,7 @@ def main ():
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = utils.whoami()
+        Subst["__SOURCE__"] = package
 
         summary = "Concerning package %s...\n" % (package)
         summary += "Operating on the %s suite\n" % (suite)

@@ -1,6 +1,7 @@
 From: __DAK_ADDRESS__
 To: __WHOAMI__ <dak@security.debian.org>
 __BCC__
+X-Debian-Package: __SOURCE__
 Subject: Template Advisory __ADVISORY__
 
 ------------------------------------------------------------------------
