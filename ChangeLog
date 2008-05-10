@@ -1,3 +1,8 @@
+2008-05-10  Stephen Gran   <sgran@debian.org>
+       * tools/debianqueued-0.9/debianqueued: First pass at a send_mail 
+         implementation that sucks less
+       * Update debian/control to reflect new perl dependency
+
 2008-05-09  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/override.py (main): substitute value in X-Debian-Package

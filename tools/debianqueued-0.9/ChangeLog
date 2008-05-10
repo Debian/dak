@@ -1,3 +1,7 @@
+2008-05-10  Stephen Gran   <sgran@debian.org>
+       * debianqueued: First pass at a send_mail implementation that 
+         sucks less.  This also gives us X-Debian-Package
+
 2008-05-08  Joerg Jaspert  <joerg@debian.org>
 
 	* debianqueued: added header X-Debian: DAK
