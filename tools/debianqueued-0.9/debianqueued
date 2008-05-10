@@ -281,6 +281,8 @@ package main;
 
 ($main::progname = $0) =~ s,.*/,,;
 
+my %packages = ();
+
 # extract -r and -k args
 $main::arg = "";
 if (@ARGV == 1 && $ARGV[0] =~ /^-[rk]$/) {
@@ -790,6 +792,7 @@ sub process_changes($\@) {
 		elsif (/^Source:\s*/i) {
 			chomp( $pkgname = $' );
 			$pkgname =~ s/\s+$//;
+                        $main::packages{$pkgname}++;
 		}
 		elsif (/^Files:/i) {
 			while( <CHANGES> ) {
@@ -2078,6 +2081,7 @@ sub init_mail(;$) {
 
 	$main::mail_addr = "";
 	$main::mail_text = "";
+        %main::packages  = ();
 	$main::mail_subject = $file ? "Processing of $file" : "";
 }
 
@@ -2120,18 +2124,35 @@ sub send_mail($$$) {
 	my $subject = shift;
 	my $text = shift;
 
-	debug( "Sending mail to $addr" );
-	debug( "executing $conf::mail -s '$subject' -a 'X-Debian: DAK' '$addr'" );
-	if (!open( MAIL, "|$conf::mail -s '$subject' -a 'X-Debian: DAK' '$addr'" )) {
-		msg( "log", "Could not open pipe to $conf::mail: $!\n" );
+	my $package = keys %main::packages ? join(' ', keys %main::packages) : "";
+
+	use Email::Send;
+	$Email::Send::Sendmail::SENDMAIL = '/usr/sbin/sendmail';
+
+	my $message = <<__MESSAGE__;
+To: $addr
+From: dak\@ftp-master.debian.org
+Subject: $subject
+X-Debian: DAK
+__MESSAGE__
+
+	if (length $package) {
+		$message .= "X-Debian-Package: $package\n";
+	}
+
+	$message .= "\n$text";
+	$message .= "\nGreetings,\n\n\tYour Debian queue daemon\n";
+
+	my $mail = Email::Send->new;
+	for ( qw[Sendmail SMTP] ) {
+		$mail->mailer($_) and last if $mail->mailer_available($_);
+	}
+
+	my $ret = $mail->send($message);
+	if ($ret && $ret !~ /Message sent|success/) {
 		return 0;
 	}
-	print MAIL $text;
-	print MAIL "\nGreetings,\n\n\tYour Debian queue daemon\n";
-	if (!close( MAIL )) {
-		msg( "log", "$conf::mail failed (exit status ", $? >> 8, ")\n" );
-		return 0;
-	}
+
 	return 1;
 }
 
