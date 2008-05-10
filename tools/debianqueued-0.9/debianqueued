@@ -276,6 +276,7 @@ $junk = $conf::no_changes_timeout;
 $junk = @conf::nonus_packages;
 $junk = @conf::test_binaries;
 $junk = @conf::maintainer_mail;
+$junk = $conf::mail ||= '/usr/sbin/sendmail';
 $conf::target = "localhost" if $conf::upload_method eq "copy";
 package main;
 
@@ -2090,7 +2091,6 @@ sub init_mail(;$) {
 # then send out
 #
 sub finish_mail() {
-	local( *MAIL );
 
 	debug( "No mail for $main::mail_addr" )
 		if $main::mail_addr && !$main::mail_text;
@@ -2127,7 +2127,10 @@ sub send_mail($$$) {
 	my $package = keys %main::packages ? join(' ', keys %main::packages) : "";
 
 	use Email::Send;
-	$Email::Send::Sendmail::SENDMAIL = '/usr/sbin/sendmail';
+
+        unless (defined($Email::Send::Sendmail::SENDMAIL)) {
+		$Email::Send::Sendmail::SENDMAIL = $conf::mail;
+	}
 
 	my $message = <<__MESSAGE__;
 To: $addr
