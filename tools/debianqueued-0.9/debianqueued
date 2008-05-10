@@ -241,7 +241,7 @@
 require 5.002;
 use strict;
 use POSIX;
-use POSIX qw( sys_stat_h sys_wait_h signal_h );
+use POSIX qw( strftime sys_stat_h sys_wait_h signal_h );
 use Net::Ping;
 use Net::FTP;
 use Socket qw( PF_INET AF_INET SOCK_STREAM );
@@ -2132,10 +2132,12 @@ sub send_mail($$$) {
 		$Email::Send::Sendmail::SENDMAIL = $conf::mail;
 	}
 
+	my $date = sprintf "%s", strftime("%a, %d %B %Y %T %z", (localtime(time)));
 	my $message = <<__MESSAGE__;
 To: $addr
 From: Archive Administrator <dak\@ftp-master.debian.org>
 Subject: $subject
+Date: $date
 X-Debian: DAK
 __MESSAGE__
 
