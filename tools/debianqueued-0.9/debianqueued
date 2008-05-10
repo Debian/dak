@@ -2134,7 +2134,7 @@ sub send_mail($$$) {
 
 	my $message = <<__MESSAGE__;
 To: $addr
-From: dak\@ftp-master.debian.org
+From: Archive Administrator <dak\@ftp-master.debian.org>
 Subject: $subject
 X-Debian: DAK
 __MESSAGE__
