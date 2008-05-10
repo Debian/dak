@@ -2127,12 +2127,13 @@ sub send_mail($$$) {
         my $package = keys %main::packages ? join(' ', keys %main::packages) : "";
 
         use Email::Send;
+        $Email::Send::Sendmail::SENDMAIL = '/usr/sbin/sendmail';
 
-        my $message = <<'__MESSAGE__';
-        To: $addr
-        From: dak@ftp-master.debian.org
-        Subject: $subject
-        X-Debian: DAK
+        my $message = <<__MESSAGE__;
+To: $addr
+From: dak\@ftp-master.debian.org
+Subject: $subject
+X-Debian: DAK
 __MESSAGE__
 
         if (length $package) {
@@ -2147,7 +2148,7 @@ __MESSAGE__
         }
 
         my $ret = $mail->send($message);
-        if ($ret && $ret !~ /Message sent/) {
+        if ($ret && $ret !~ /Message sent|success/) {
             return 0;
         }
 
