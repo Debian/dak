@@ -2124,35 +2124,36 @@ sub send_mail($$$) {
 	my $subject = shift;
 	my $text = shift;
 
-        my $package = keys %main::packages ? join(' ', keys %main::packages) : "";
+	my $package = keys %main::packages ? join(' ', keys %main::packages) : "";
 
-        use Email::Send;
-        $Email::Send::Sendmail::SENDMAIL = '/usr/sbin/sendmail';
+	use Email::Send;
+	$Email::Send::Sendmail::SENDMAIL = '/usr/sbin/sendmail';
 
-        my $message = <<__MESSAGE__;
+	my $message = <<__MESSAGE__;
 To: $addr
 From: dak\@ftp-master.debian.org
 Subject: $subject
 X-Debian: DAK
 __MESSAGE__
 
-        if (length $package) {
-            $message .= "X-Debian-Package: $package\n";
-        }
+	if (length $package) {
+		$message .= "X-Debian-Package: $package\n";
+	}
 
-        $message .= "\n$text";
+	$message .= "\n$text";
+	$message .= "\nGreetings,\n\n\tYour Debian queue daemon\n";
 
-        my $mail = Email::Send->new;
-        for ( qw[Sendmail SMTP] ) {
-            $mail->mailer($_) and last if $mail->mailer_available($_);
-        }
+	my $mail = Email::Send->new;
+	for ( qw[Sendmail SMTP] ) {
+		$mail->mailer($_) and last if $mail->mailer_available($_);
+	}
 
-        my $ret = $mail->send($message);
-        if ($ret && $ret !~ /Message sent|success/) {
-            return 0;
-        }
+	my $ret = $mail->send($message);
+	if ($ret && $ret !~ /Message sent|success/) {
+		return 0;
+	}
 
-        return 1;
+	return 1;
 }
 
 #
