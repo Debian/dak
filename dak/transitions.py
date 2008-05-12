@@ -29,6 +29,7 @@ from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
 import syck
+import yaml
 
 # Globals
 Cnf = None
@@ -219,7 +220,7 @@ def write_transitions(from_trans):
     temp_lock  = lock_file(trans_temp)
 
     destfile = file(trans_temp, 'w')
-    syck.dump(from_trans, destfile)
+    yaml.dump(from_trans, destfile, default_flow_style=False)
     destfile.close()
 
     os.rename(trans_temp, trans_file)
@@ -259,7 +260,7 @@ def temp_transitions_file(transitions):
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Transitions::TempPath"])
     os.chmod(path, 0644)
     f = open(path, "w")
-    syck.dump(transitions, f)
+    yaml.dump(transitions, f, default_flow_style=False)
     return path
 
 ################################################################################
