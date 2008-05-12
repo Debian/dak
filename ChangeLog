@@ -1,5 +1,11 @@
+2008-05-12  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/transitions.py: use yaml.dump instead of syck.dump, as syck
+	seems to have a bug in its dump(), causing it to write illegal entries
+	And also do this for load.
+
 2008-05-10  Stephen Gran   <sgran@debian.org>
-       * tools/debianqueued-0.9/debianqueued: First pass at a send_mail 
+       * tools/debianqueued-0.9/debianqueued: First pass at a send_mail
          implementation that sucks less
        * Update debian/control to reflect new perl dependency
 
