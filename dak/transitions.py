@@ -28,7 +28,6 @@ import apt_pkg
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
-import syck
 import yaml
 
 # Globals
@@ -106,10 +105,10 @@ def load_transitions(trans_file):
     sourcecontent = sourcefile.read()
     failure = False
     try:
-        trans = syck.load(sourcecontent)
-    except syck.error, msg:
+        trans = yaml.load(sourcecontent)
+    except yaml.YAMLError, exc:
         # Someone fucked it up
-        print "ERROR: %s" % (msg)
+        print "ERROR: %s" % (exc)
         return None
 
     # lets do further validation here
