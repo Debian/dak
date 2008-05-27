@@ -1,3 +1,8 @@
+2008-05-27  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/pseudo-packages.maintainers: Change ftp.debian.org
+	pseudopackage maintainer name.
+
 2008-05-12  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/transitions.py: use yaml.dump instead of syck.dump, as syck

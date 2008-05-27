@@ -2,7 +2,7 @@ base			Base Maintainers <virtual-pkg-base-maintainers@lists.alioth.debian.org>
 cdrom			Debian CD-ROM Team <debian-cd@lists.debian.org>
 press			press@debian.org
 bugs.debian.org		Debian Bug Tracking Team <owner@bugs.debian.org>
-ftp.debian.org		James Troup and others <ftpmaster@ftp-master.debian.org>
+ftp.debian.org		Debian FTP Master <ftpmaster@ftp-master.debian.org>
 nm.debian.org		New Maintainer Front-Desk <new-maintainer@debian.org>
 qa.debian.org		debian-qa@lists.debian.org
 www.debian.org		Debian WWW Team <debian-www@lists.debian.org>
