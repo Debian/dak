@@ -1,3 +1,7 @@
+2008-05-28  Frans Pop  <fjp@debian.org>
+
+	* add autobyhand support for task overrides (from tasksel)
+
 2008-05-27  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/pseudo-packages.maintainers: Change ftp.debian.org
