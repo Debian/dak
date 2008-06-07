@@ -906,10 +906,10 @@ def check_urgency ():
     if changes["architecture"].has_key("source"):
         if not changes.has_key("urgency"):
             changes["urgency"] = Cnf["Urgency::Default"]
+        changes["urgency"] = changes["urgency"].lower()
         if changes["urgency"] not in Cnf.ValueList("Urgency::Valid"):
             reject("%s is not a valid urgency; it will be treated as %s by testing." % (changes["urgency"], Cnf["Urgency::Default"]), "Warning: ")
             changes["urgency"] = Cnf["Urgency::Default"]
-        changes["urgency"] = changes["urgency"].lower()
 
 ################################################################################
 
