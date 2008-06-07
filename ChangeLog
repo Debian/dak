@@ -3,6 +3,11 @@
 	* dak/process_unchecked.py (check_urgency): Lowercase urgency
 	before we (eventually) warn on it. Patch taken from Russ Allbery.
 
+2008-06-01  Otavio Salvador  <otavio@debian.org>
+
+	* daklib/queue.py (check_valid): allow debian-installer specific
+	sources to have 'debian-installer' section.
+
 2008-05-28  Frans Pop  <fjp@debian.org>
 
 	* add autobyhand support for task overrides (from tasksel)

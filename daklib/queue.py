@@ -129,7 +129,7 @@ def check_valid(new):
         new[pkg]["priority id"] = database.get_priority_id(new[pkg]["priority"])
         # Sanity checks
         di = section.find("debian-installer") != -1
-        if (di and file_type != "udeb") or (not di and file_type == "udeb"):
+        if (di and file_type not in ("udeb", "dsc")) or (not di and file_type == "udeb"):
             new[pkg]["section id"] = -1
         if (priority == "source" and file_type != "dsc") or \
            (priority != "source" and file_type == "dsc"):
