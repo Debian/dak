@@ -247,14 +247,14 @@ apt-ftparchive -q clean apt.conf
 
 ts
 
-# Compress psql backups older than a week, but no more than 20 of them
+# Compress psql backups
 echo "Compress old psql backups"
 (cd $base/backup/
- find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +7 | 
-   sort | head -n20 | while read dumpname; do
-     echo "Compressing $dumpname"
-     bzip2 -9 "$dumpname"
-   done
+	find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' | 
+	while read dumpname; do
+		echo "Compressing $dumpname"
+		bzip2 -9 "$dumpname"
+	done
 )
 
 ts

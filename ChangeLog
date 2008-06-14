@@ -1,3 +1,8 @@
+2008-06-14  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall (POSTDUMP): Compress all
+	uncompressed psql backups
+
 2008-06-08  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_unchecked.py (check_urgency): Lowercase urgency
