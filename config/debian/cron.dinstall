@@ -112,7 +112,7 @@ ts
 
 echo "Updating fingerprints"
 # Update fingerprints
-dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
+dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg || true
 
 ts
 

@@ -4,6 +4,8 @@
 	batchmode/connect/setuptimeout to not take too long with
 	connections... Also || true them, no need to die in dinstall if
 	one host isn't reachable.
+	Also do not die when the ldap server is unreachable, just ignore
+	that error.
 
 	* README: Updated mailing list location
 
