@@ -1,3 +1,8 @@
+2008-06-14  Otavio Salvador  <otavio@debian.org>
+
+	* dak/check_overrides.py (main): Use case-insensitive comparing
+	for codename
+
 2008-06-14  Joerg Jaspert  <joerg@debian.org>
 
 	* scripts/debian/byhand-task: Merged patch from Frans Pop to
