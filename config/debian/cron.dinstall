@@ -48,7 +48,7 @@ EOF
 
 # Push merkels qa user, so the qa pages can show "dinstall is running" information
 echo "Telling merkels QA user that we start dinstall"
-ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 qa@merkel.debian.org sleep 1
+ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 qa@merkel.debian.org sleep 1 || true
 ts
 
 ################################################################################
@@ -175,7 +175,7 @@ cd $scriptsdir
 ts
 
 echo "Trigger daily wanna-build run"
-ssh buildd@buildd /org/wanna-build/trigger.daily
+ssh -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 buildd@buildd /org/wanna-build/trigger.daily || echo "W-B trigger.daily failed" | mail -s "W-B Daily trigger failed" ftpmaster@ftp-master.debian.org
 
 rm -f $NOTICE
 rm -f $LOCKCU
@@ -217,7 +217,7 @@ $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
 
 # Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
 echo "Trigger merkels projectb sync"
-ssh -2 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1
+ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1 || true
 
 ################################################################################
 
