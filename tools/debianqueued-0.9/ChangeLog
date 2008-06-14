@@ -1,3 +1,8 @@
+2008-06-14  Joerg Jaspert  <joerg@debian.org>
+
+	* debianqueued (process_commands): Add a little note that one
+	should use dcut for .commands files
+
 2008-05-10  Stephen Gran   <sgran@debian.org>
        * debianqueued: First pass at a send_mail implementation that 
          sucks less.  This also gives us X-Debian-Package

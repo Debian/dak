@@ -1169,6 +1169,8 @@ sub process_commands($) {
 
 	if ($pgplines < 3) {
 		msg( "log,mail", "$commands isn't signed with PGP/GnuPG\n" );
+		msg( "mail", "or the uploaded file is broken. Make sure to transfer in binary mode\n" );
+		msg( "mail", "or better yet - use dcut for commands files\n");
 		goto remove;
 	}
 	
