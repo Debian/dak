@@ -244,7 +244,11 @@ def main ():
         if not Cnf.has_key("Control-Suite::Options::%s" % (i)):
             Cnf["Control-Suite::Options::%s" % (i)] = ""
 
-    file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    try:
+        file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+    except SystemError, e:
+        print "%s\n" % e
+        usage(1)
     Options = Cnf.SubTree("Control-Suite::Options")
 
     if Options["Help"]:

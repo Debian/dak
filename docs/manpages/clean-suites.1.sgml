@@ -30,7 +30,7 @@
 
   <RefSect1><Title>Description</>
     <para>
-      <command>dak clean-suites</command> is a utility clean out old packages. It will clean out any binary packages not referenced by a suite and any source packages not referenced by a suite and not referenced by any binary packages.  Cleaning is not actual deletion, but rather, removal of packages from the pool to a 'morgue' directory.  The 'morgue' directory is split into dated sub-directories to keep things sane in big archives.
+      <command>dak clean-suites</command> is a utility to clean out old packages. It will clean out any binary packages not referenced by a suite and any source packages not referenced by a suite and not referenced by any binary packages.  Cleaning is not actual deletion, but rather, removal of packages from the pool to a 'morgue' directory.  The 'morgue' directory is split into dated sub-directories to keep things sane in big archives.
     </PARA>
   </REFSECT1>
 
