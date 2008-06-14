@@ -1,5 +1,8 @@
 2008-06-14  Joerg Jaspert  <joerg@debian.org>
 
+	* scripts/debian/byhand-task: Merged patch from Frans Pop to
+	fail on byhand-task uploads if they do not go to unstable.
+
 	* config/debian/cron.weekly: Do a little git cleanup work too.
 
 	* config/debian/cron.buildd: Add batchmode and also
