@@ -34,6 +34,12 @@ dak split-done > /dev/null
 # Vacuum the database
 echo "VACUUM; VACUUM ANALYZE;" | psql --no-psqlrc projectb 2>&1 | grep -v "^NOTICE:  Skipping.*only table owner can VACUUM it$"
 
+# Do git cleanup stuff
+echo "Doing git stuff"
+cd /org/ftp.debian.org/git/dak.git
+git gc --prune
+git update-server-info
+
 # Clean up apt-ftparchive's databases
 cd $configdir
 echo "Cleanup apt-ftparchive's database"
