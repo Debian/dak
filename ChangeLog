@@ -1,5 +1,7 @@
 2008-06-14  Otavio Salvador  <otavio@debian.org>
 
+	* dak/import_archive.py: Add support to udeb packages
+
 	* dak/control_suite.py (main): Handle SystemError exception in
 	case of a incompatible commandline parameter
 
