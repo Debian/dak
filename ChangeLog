@@ -1,5 +1,8 @@
 2008-06-15  Joerg Jaspert  <joerg@debian.org>
 
+	* config/debian/cron.weekly: Work around a git bug until git is
+	fixed upstream and the fix is on backports.org
+
 	* config/debian/cron.dinstall: (various ssh calls): Make them use
 	batchmode/connect/setuptimeout to not take too long with
 	connections... Also || true them, no need to die in dinstall if
