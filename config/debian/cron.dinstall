@@ -250,7 +250,7 @@ ts
 # Compress psql backups
 echo "Compress old psql backups"
 (cd $base/backup/
-	find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' | 
+	find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +1 | 
 	while read dumpname; do
 		echo "Compressing $dumpname"
 		bzip2 -9 "$dumpname"
