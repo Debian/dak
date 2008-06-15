@@ -1,3 +1,9 @@
+2008-06-15  Joerg Jaspert  <joerg@debian.org>
+
+	* debianqueued: Fix a brown-paper-bag bug (we just dont know who
+	to assign the bag too). strftime %b is better than %B for
+	the month name.
+
 2008-06-14  Joerg Jaspert  <joerg@debian.org>
 
 	* debianqueued (process_commands): Add a little note that one

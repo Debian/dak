@@ -2134,7 +2134,7 @@ sub send_mail($$$) {
 		$Email::Send::Sendmail::SENDMAIL = $conf::mail;
 	}
 
-	my $date = sprintf "%s", strftime("%a, %d %B %Y %T %z", (localtime(time)));
+	my $date = sprintf "%s", strftime("%a, %d %b %Y %T %z", (localtime(time)));
 	my $message = <<__MESSAGE__;
 To: $addr
 From: Archive Administrator <dak\@ftp-master.debian.org>
