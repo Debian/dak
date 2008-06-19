@@ -951,6 +951,8 @@ def check_hashes ():
             check_hash(".changes %s" % (h), fs, h, f, files)
         except NoFilesFieldError:
             reject("No Checksums-%s: field in .changes" % (h))
+        except UnknownFormatError, format:
+            reject("%s: unknown format of .changes" % (format))
         except ParseChangesError, line:
             reject("parse error for Checksums-%s in .changes, can't grok: %s." % (h, line))
 
@@ -959,6 +961,8 @@ def check_hashes ():
         try:
             fs = utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
             check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
+        except UnknownFormatError, format:
+            reject("%s: unknown format of .dsc" % (format))
         except NoFilesFieldError:
             reject("No Checksums-%s: field in .dsc" % (h))
         except ParseChangesError, line:

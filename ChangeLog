@@ -1,7 +1,7 @@
 2008-06-19  Thomas Viehmann  <tv@beamnet.de>
 
-	* dak/process_unchecked.py (check_dsc): Catch UnknownFormatError
-	and reject
+	* dak/process_unchecked.py (check_dsc,check_hashes): Catch
+	UnknownFormatError and reject
 
 2008-06-15  Joerg Jaspert  <joerg@debian.org>
 
