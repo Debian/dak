@@ -700,6 +700,9 @@ def check_dsc():
     except NoFilesFieldError:
         reject("%s: no Files: field." % (dsc_filename))
         return 0
+    except UnknownFormatError, format:
+        reject("%s: unknown format '%s'." % (filename, format))
+        return 0
     except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line))
         return 0
