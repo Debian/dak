@@ -1,3 +1,7 @@
+2008-07-26  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/dak.conf: no m68k in testing, so no m68k in t-p-u
+
 2008-06-19  Thomas Viehmann  <tv@beamnet.de>
 
 	* dak/process_unchecked.py (check_dsc,check_hashes): Catch
