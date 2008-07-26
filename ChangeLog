@@ -1,5 +1,9 @@
 2008-07-26  Joerg Jaspert  <joerg@debian.org>
 
+	* templates/reject-proposed-updates.rejected,dak/reject_proposed_updates.py:
+	applied a patch by luk modifying the stable rejection mails to fit
+	reality a bit more
+
 	* config/debian/dak.conf: no m68k in testing, so no m68k in t-p-u
 	r4 now
 

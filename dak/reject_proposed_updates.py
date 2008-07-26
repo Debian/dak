@@ -168,6 +168,7 @@ def reject (reject_message = ""):
     Upload.Subst["__REJECTOR_ADDRESS__"] = user_email_address
     Upload.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
     Upload.Subst["__STABLE_REJECTOR__"] = Cnf["Reject-Proposed-Updates::StableRejector"]
+    Upload.Subst["__STABLE_MAIL__"] = Cnf["Reject-Proposed-Updates::StableMail"]
     Upload.Subst["__MORE_INFO_URL__"] = Cnf["Reject-Proposed-Updates::MoreInfoURL"]
     Upload.Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
     reject_mail_message = utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/reject-proposed-updates.rejected")
