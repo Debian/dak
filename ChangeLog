@@ -1,6 +1,7 @@
 2008-07-26  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/dak.conf: no m68k in testing, so no m68k in t-p-u
+	r4 now
 
 2008-06-19  Thomas Viehmann  <tv@beamnet.de>
 
