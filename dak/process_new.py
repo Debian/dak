@@ -151,7 +151,7 @@ def indiv_sg_compare (a, b):
 def sg_compare (a, b):
     a = a[1]
     b = b[1]
-    """Sort by have note, time of oldest upload."""
+    """Sort by have note, source already in database, time of oldest upload."""
     # Sort by have note
     a_note_state = a["note_state"]
     b_note_state = b["note_state"]
@@ -159,6 +159,10 @@ def sg_compare (a, b):
         return -1
     elif a_note_state > b_note_state:
         return 1
+    # Sort by source already in database (descending)
+    source_in_database = cmp(a["source_in_database"], b["source_in_database"])
+    if source_in_database:
+        return -source_in_database
 
     # Sort by time of oldest upload
     return cmp(a["oldest"], b["oldest"])
@@ -193,6 +197,9 @@ def sort_changes(changes_files):
         per_source[source]["list"].append(cache[filename])
     # Determine oldest time and have note status for each source group
     for source in per_source.keys():
+        q = projectB.query("SELECT 1 FROM source WHERE source = '%s'" % source)
+        ql = q.getresult()
+        per_source[source]["source_in_database"] = len(ql)>0
         source_list = per_source[source]["list"]
         first = source_list[0]
         oldest = os.stat(first["filename"])[stat.ST_MTIME]
