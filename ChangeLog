@@ -1,3 +1,8 @@
+2008-08-03  Mark Hymers <mhy@debian.org>
+
+	* dak/process_new.py: Apply jvw's patch so that process_new shows
+	packages which need binary uploads sorted earlier than other packages.
+
 2008-07-26  Joerg Jaspert  <joerg@debian.org>
 
 	* templates/reject-proposed-updates.rejected,dak/reject_proposed_updates.py:
