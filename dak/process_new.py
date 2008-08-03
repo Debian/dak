@@ -151,7 +151,7 @@ def indiv_sg_compare (a, b):
 def sg_compare (a, b):
     a = a[1]
     b = b[1]
-    """Sort by have note, source already in database, time of oldest upload."""
+    """Sort by have note, source already in database and time of oldest upload."""
     # Sort by have note
     a_note_state = a["note_state"]
     b_note_state = b["note_state"]
