@@ -27,7 +27,7 @@
 
 ################################################################################
 
-import commands, pg, os, sys, time
+import commands, pg, os, sys, time, re
 import apt_pkg
 from daklib import database
 from daklib import utils
@@ -51,7 +51,8 @@ Check for obsolete or duplicated packages.
 
   -h, --help                show this help and exit.
   -m, --mode=MODE           chose the MODE to run in (full or daily).
-  -s, --suite=SUITE         check suite SUITE."""
+  -s, --suite=SUITE         check suite SUITE.
+  -w, --wanna-build-dump    where to find the copies of http://buildd.debian.org/stats/*.txt"""
     sys.exit(exit_code)
 
 ################################################################################
@@ -113,6 +114,58 @@ def do_anais(architecture, binaries_list, source):
                 arches.sort()
                 anais_output += "    o %s: %s\n" % (version, ", ".join(arches))
     return anais_output
+
+
+################################################################################
+
+# Check for out-of-date binaries on architectures that do not want to build that
+# package any more, and have them listed as Not-For-Us
+def do_nfu(nfu_packages):
+    output = ""
+    
+    a2p = {}
+
+    for architecture in nfu_packages:
+        a2p[architecture] = []
+        for (package,bver,sver) in nfu_packages[architecture]:
+            output += "  * [%s] does not want %s (binary %s, source %s)\n" % (architecture, package, bver, sver)
+            a2p[architecture].append(package)
+
+
+    if output:
+        print "Obsolete by Not-For-Us"
+        print "----------------------"
+        print
+        print output
+
+        print "Suggested commands:"
+        for architecture in a2p:
+            if a2p[architecture]:
+                print (" dak rm -m \"[auto-cruft] NFU\" -s %s -a %s -b %s" % 
+                    (suite, architecture, " ".join(a2p[architecture])))
+        print
+
+def parse_nfu(architecture):
+    # utils/hpodder_1.1.5.0: Not-For-Us [optional:out-of-date]
+    r = re.compile("^\w+/([^_]+)_.*: Not-For-Us")
+
+    ret = set()
+    
+    filename = "%s/%s-all.txt" % (Cnf["Cruft-Report::Options::Wanna-Build-Dump"], architecture)
+
+    # Not all architectures have a wanna-build dump, for example armel at the time of writing
+    if os.path.exists(filename):
+        f = utils.open_file(filename)
+        for line in f:
+            if line[0] == ' ':
+                continue
+
+            m = r.match(line)
+            if m:
+                ret.add(m.group(1))
+
+        f.close()
+    return ret
 
 ################################################################################
 
@@ -265,7 +318,8 @@ def main ():
 
     Arguments = [('h',"help","Cruft-Report::Options::Help"),
                  ('m',"mode","Cruft-Report::Options::Mode", "HasArg"),
-                 ('s',"suite","Cruft-Report::Options::Suite","HasArg")]
+                 ('s',"suite","Cruft-Report::Options::Suite","HasArg"),
+                 ('w',"wanna-build-dump","Cruft-Report::Options::Wanna-Build-Dump","HasArg")]
     for i in [ "help" ]:
         if not Cnf.has_key("Cruft-Report::Options::%s" % (i)):
             Cnf["Cruft-Report::Options::%s" % (i)] = ""
@@ -273,6 +327,9 @@ def main ():
 
     if not Cnf.has_key("Cruft-Report::Options::Mode"):
         Cnf["Cruft-Report::Options::Mode"] = "daily"
+
+    if not Cnf.has_key("Cruft-Report::Options::Wanna-Build-Dump"):
+        Cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "./wanna-build-dump"
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
@@ -284,7 +341,7 @@ def main ():
     if Options["Mode"] == "daily":
         checks = [ "nbs", "nviu", "obsolete source" ]
     elif Options["Mode"] == "full":
-        checks = [ "nbs", "nviu", "obsolete source", "dubious nbs", "bnb", "bms", "anais" ]
+        checks = [ "nbs", "nviu", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
     else:
         utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
         usage(1)
@@ -301,6 +358,8 @@ def main ():
 
     anais_output = ""
     duplicate_bins = {}
+
+    nfu_packages = {}
 
     suite = Options["Suite"]
     suite_id = database.get_suite_id(suite)
@@ -372,6 +431,10 @@ def main ():
             if (result != 0):
                 sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
                 sys.exit(result)
+
+            nfu_packages.setdefault(architecture,[])
+            nfu_entries = parse_nfu(architecture)
+
             packages = utils.open_file(temp_filename)
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
@@ -405,6 +468,10 @@ def main ():
                         duplicate_bins.setdefault(key, [])
                         if package not in duplicate_bins[key]:
                             duplicate_bins[key].append(package)
+                    if package in nfu_entries and \
+                        version != source_versions[source]: # only suggest to remove out-of-date packages
+                        nfu_packages[architecture].append((package,version,source_versions[source]))
+                    
             packages.close()
             os.unlink(temp_filename)
 
@@ -436,6 +503,9 @@ def main ():
     if Options["Mode"] == "full":
         print "="*75
         print
+
+    if "nfu" in checks:
+        do_nfu(nfu_packages)
 
     if "bnb" in checks:
         print "Unbuilt binary packages"
