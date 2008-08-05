@@ -1,3 +1,9 @@
+2008-08-05  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.unchecked: disable the ssh-move insanity (and
+	as soon as rietz is back online - replace it with a one-line scp
+	or rsync statement followed by a one-line rm)
+
 2008-08-03  Mark Hymers <mhy@debian.org>
 
 	* dak/process_new.py: Apply jvw's patch so that process_new shows
