@@ -49,6 +49,10 @@ echo "Cleanup apt-ftparchive's database"
 apt-ftparchive -q clean apt.conf
 apt-ftparchive -q clean apt.conf.buildd
 
+# Update wanna-build dump
+echo "Update wanan-build database dump"
+/org/ftp.debian.org/scripts/nfu/get-w-b-db
+
 echo "Finally, all is done, compressing logfile"
 exec > /dev/null 2>&1
 
