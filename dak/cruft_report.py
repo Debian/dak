@@ -332,7 +332,7 @@ def main ():
         Cnf["Cruft-Report::Options::Mode"] = "daily"
 
     if not Cnf.has_key("Cruft-Report::Options::Wanna-Build-Dump"):
-        Cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "./wanna-build-dump"
+        Cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp.debian.org/scripts/nfu/"
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
