@@ -153,7 +153,8 @@ def parse_nfu(architecture):
     
     filename = "%s/%s-all.txt" % (Cnf["Cruft-Report::Options::Wanna-Build-Dump"], architecture)
 
-    # Not all architectures have a wanna-build dump, for example armel at the time of writing
+    # Not all architectures may have a wanna-build dump, so we want to ignore missin
+    # files
     if os.path.exists(filename):
         f = utils.open_file(filename)
         for line in f:
@@ -165,6 +166,8 @@ def parse_nfu(architecture):
                 ret.add(m.group(1))
 
         f.close()
+    else:
+        warn("No wanna-build dump file for architecture %s", architecture)
     return ret
 
 ################################################################################
