@@ -33,7 +33,7 @@ if lockfile -r3 $LOCKFILE; then
 		echo "--" >> $report
 
 		# sync with debbugs
-#		$scriptsdir/ssh-move --server --ssh-identity /srv/ftp.debian.org/s3kr1t/id_debbugs-vt --ssh-move-path /home/debbugs/ssh-move --from-directory $queuedir/bts_version_track --to-directory /org/bugs.debian.org/versions/queue/ftp-master debbugs@bugs.debian.org \*.debinfo \*.versions
+		rsync -aq --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/
 
 		if lockfile -r3 $NOTICE; then
 			LOCKDAILY="YES"

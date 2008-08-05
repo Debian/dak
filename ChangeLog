@@ -3,6 +3,9 @@
 	* config/debian/cron.unchecked: disable the ssh-move insanity (and
 	as soon as rietz is back online - replace it with a one-line scp
 	or rsync statement followed by a one-line rm)
+	And now replaced this 128 line perl "not-invented-here" with a
+	one-line rsync command, using a feature rsync only understands
+	since sarge - damn new-fangled technology.
 
 2008-08-03  Mark Hymers <mhy@debian.org>
 
