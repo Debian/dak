@@ -15,6 +15,16 @@
 	one-line rsync command, using a feature rsync only understands
 	since sarge - damn new-fangled technology.
 
+2008-08-05  Joachim Breitner <nomeata@debian.org>
+
+	* dak/cruft_report.py: In full mode, report out-of-date binaries on
+	architectures that have set Not-For-Us for that package.
+
+	* scripts/nfu/get-w-b-db: Script to fetch the wanna-build database
+	dump from http://buildd.debian.org/
+
+	* config/debian/cron.weekly: Run the above script
+
 2008-08-03  Mark Hymers <mhy@debian.org>
 
 	* dak/process_new.py: Apply jvw's patch so that process_new shows
