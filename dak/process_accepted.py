@@ -35,6 +35,7 @@ from daklib import database
 from daklib import logging
 from daklib import queue
 from daklib import utils
+from daklib.dak_exceptions import *
 
 ###############################################################################
 
@@ -354,8 +355,7 @@ def install ():
                 projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, %d, '%s', %d)"
                                % (package, version, maintainer_id, source_id, architecture_id, files[file]["files id"], type, fingerprint_id))
             else:
-                projectB.query("INSERT INTO binaries (package, version, maintainer, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, '%s', %d)"
-                               % (package, version, maintainer_id, architecture_id, files[file]["files id"], type, fingerprint_id))
+                raise NoSourceFieldError, "Unable to find a source id for %s (%s), %s, file %s, type %s, signed by %s" % (package, version, architecture, file, type, sig_fpr)
             for suite in changes["distribution"].keys():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))

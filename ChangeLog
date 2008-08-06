@@ -1,3 +1,11 @@
+2008-08-07  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_accepted.py (install): Error out with the new
+	exception if we dont know the source package for a file we want to
+	install. Shouldn't ever hit us, but better safe than sorry.
+
+	* daklib/dak_exceptions.py (dakerrors): new exception - no source field.
+
 2008-08-05  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.unchecked: disable the ssh-move insanity (and

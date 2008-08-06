@@ -48,7 +48,8 @@ dakerrors = {
     "FileExistsError":     """Exception raised when destination file exists.""",
     "SendmailFailedError": """Exception raised when Sendmail invocation failed.""",
     "NoFreeFilenameError": """Exception raised when no alternate filename was found.""",
-    "TransitionsError":    """Exception raised when transitions file can't be parsed."""
+    "TransitionsError":    """Exception raised when transitions file can't be parsed.""",
+    "NoSourceFieldError":  """Exception raised - we cant find the source - wtf?"""
 }
 
 def construct_dak_exception(name, description):
