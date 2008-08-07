@@ -171,8 +171,11 @@ class Upload:
     ###########################################################################
 
     def init_vars (self):
-        for i in [ "changes", "dsc", "files", "dsc_files", "legacy_source_untouchable" ]:
-            exec "self.pkg.%s.clear();" % (i)
+        self.pkg.changes.clear()
+        self.pkg.dsc.clear()
+        self.pkg.files.clear()
+        self.pkg.dsc_files.clear()
+        self.pkg.legacy_source_untouchable.clear()
         self.pkg.orig_tar_id = None
         self.pkg.orig_tar_location = ""
         self.pkg.orig_tar_gz = None
@@ -183,10 +186,16 @@ class Upload:
         dump_filename = self.pkg.changes_file[:-8]+".dak"
         dump_file = utils.open_file(dump_filename)
         p = cPickle.Unpickler(dump_file)
-        for i in [ "changes", "dsc", "files", "dsc_files", "legacy_source_untouchable" ]:
-            exec "self.pkg.%s.update(p.load());" % (i)
-        for i in [ "orig_tar_id", "orig_tar_location" ]:
-            exec "self.pkg.%s = p.load();" % (i)
+
+        self.pkg.changes.update(p.load())
+        self.pkg.dsc.update(p.load())
+        self.pkg.files.update(p.load())
+        self.pkg.dsc_files.update(p.load())
+        self.pkg.legacy_source_untouchable.update(p.load())
+
+        self.pkg.orig_tar_id = p.load()
+        self.pkg.orig_tar_location = p.load()
+
         dump_file.close()
 
     ###########################################################################
@@ -196,9 +205,15 @@ class Upload:
     # process-new use from process-unchecked
 
     def dump_vars(self, dest_dir):
-        for i in [ "changes", "dsc", "files", "dsc_files",
-                   "legacy_source_untouchable", "orig_tar_id", "orig_tar_location" ]:
-            exec "%s = self.pkg.%s;" % (i,i)
+
+        changes = self.pkg.changes
+        dsc = self.pkg.dsc
+        files = self.pkg.files
+        dsc_files = self.pkg.dsc_files
+        legacy_source_untouchable = self.pkg.legacy_source_untouchable
+        orig_tar_id = self.pkg.orig_tar_id
+        orig_tar_location = self.pkg.orig_tar_location
+
         dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".dak")
         dump_file = utils.open_file(dump_filename, 'w')
         try:
@@ -212,8 +227,11 @@ class Upload:
                 raise
 
         p = cPickle.Pickler(dump_file, 1)
-        for i in [ "d_changes", "d_dsc", "d_files", "d_dsc_files" ]:
-            exec "%s = {}" % i
+        d_changes = {}
+        d_dsc = {}
+        d_files = {}
+        d_dsc_files = {}
+
         ## files
         for file_entry in files.keys():
             d_files[file_entry] = {}
