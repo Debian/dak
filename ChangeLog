@@ -1,3 +1,7 @@
+2008-08-07  Stephen Gran  <sgran@debian.org>
+
+	* Drop use of exec to eval variable interpolation
+
 2008-08-07  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_accepted.py (install): Error out with the new
