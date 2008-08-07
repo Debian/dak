@@ -1,3 +1,11 @@
+2008-08-07  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (do_accept): handle uploads to (oldstable-)
+	  proposed-updates differently and put them into p-u holding
+	  for review instead of unconditionally accepting them into
+	  p-u proper; additional care needed to be taken to look
+	  out for the source if a binary-only upload is being handled
+
 2008-08-07  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/cruft_report.py (parse_nfu): call utils.warn instead of warn
