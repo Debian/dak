@@ -167,7 +167,7 @@ def parse_nfu(architecture):
 
         f.close()
     else:
-        warn("No wanna-build dump file for architecture %s", architecture)
+        utils.warn("No wanna-build dump file for architecture %s", architecture)
     return ret
 
 ################################################################################
@@ -435,8 +435,9 @@ def main ():
                 sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
                 sys.exit(result)
 
-            nfu_packages.setdefault(architecture,[])
-            nfu_entries = parse_nfu(architecture)
+            if "nfu" in checks:
+                nfu_packages.setdefault(architecture,[])
+                nfu_entries = parse_nfu(architecture)
 
             packages = utils.open_file(temp_filename)
             Packages = apt_pkg.ParseTagFile(packages)
