@@ -11,47 +11,61 @@ NOTICE="$lockdir/daily.lock"
 
 if [ -e $NOTICE ]; then exit 0; fi
 
+STAMP=$(date "+%Y%m%d%H%M")
+
 cleanup() {
-  rm -f "$LOCKFILE"
-  if [ ! -z "$LOCKDAILY" ]; then
-	  rm -f "$NOTICE"
-  fi
+    rm -f "$LOCKFILE"
+    if [ ! -z "$LOCKDAILY" ]; then
+	rm -f "$NOTICE"
+    fi
 }
 
 # only run one cron.unchecked
 if lockfile -r3 $LOCKFILE; then
-	trap cleanup 0
-	cd $unchecked
+    trap cleanup 0
+    cd $unchecked
 
-	changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
-	report=$queuedir/REPORT
-	timestamp=$(date "+%Y-%m-%d %H:%M")
+    changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+    report=$queuedir/REPORT
+    timestamp=$(date "+%Y-%m-%d %H:%M")
 
-	if [ ! -z "$changes" ]; then
-		echo "$timestamp": "$changes"  >> $report
-		dak process-unchecked -a $changes >> $report
-		echo "--" >> $report
+    if [ ! -z "$changes" ]; then
+	echo "$timestamp": "$changes"  >> $report
+	dak process-unchecked -a $changes >> $report
+	echo "--" >> $report
 
-		# sync with debbugs
-		rsync -aq --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/
+	# sync with debbugs
+	rsync -aq --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/
 
-		if lockfile -r3 $NOTICE; then
-			LOCKDAILY="YES"
-			psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
-			cd $overridedir
-			dak make-overrides &>/dev/null
-			rm -f override.sid.all3 override.sid.all3.src
-			for i in main contrib non-free main.debian-installer; do
-				cat override.sid.$i >> override.sid.all3
-				if [ "$i" != "main.debian-installer" ]; then
-					cat override.sid.$i.src >> override.sid.all3.src
-				fi
-			done
-			cd $configdir
-			apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
-			. $configdir/cron.buildd
+	if lockfile -r3 $NOTICE; then
+	    LOCKDAILY="YES"
+	    psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+	    cd $overridedir
+	    dak make-overrides &>/dev/null
+	    rm -f override.sid.all3 override.sid.all3.src
+	    for i in main contrib non-free main.debian-installer; do
+		cat override.sid.$i >> override.sid.all3
+		if [ "$i" != "main.debian-installer" ]; then
+		    cat override.sid.$i.src >> override.sid.all3.src
 		fi
-	else
-		echo "$timestamp": Nothing to do >> $report
+	    done
+	    cd $configdir
+	    apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
+
+	    cd  ${incoming}/buildd
+	    rm -f Release.*
+	    apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd incoming" -o APT::FTPArchive::Release::Architectures="${archs}" release . > Release
+	    gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 6070D3A1 --detach-sign -o Release.gpg Release 
+
+	    cd ${incoming}
+	    mkdir -p tree/${STAMP}
+	    cp -al ${incoming}/buildd/. tree/${STAMP}/
+	    ln -sf ${incoming}/builddweb tree/${STAMP}
+	    find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+
+	    . $configdir/cron.buildd
 	fi
+    else
+		echo "$timestamp": Nothing to do >> $report
+    fi
 fi
