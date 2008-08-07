@@ -3,6 +3,8 @@
 	* dak/cruft_report.py (parse_nfu): call utils.warn instead of warn
 	(main): Only do the nfu stuff if nfu is a check we want to run
 	later.
+	(main): And another place where we dont want to do nfu foo unless
+	we need nfu
 
 	* dak/make_suite_file_list.py (main): Fix a bug that has been
 	there for ages, but "just" never triggered.

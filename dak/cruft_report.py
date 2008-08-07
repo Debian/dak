@@ -472,9 +472,10 @@ def main ():
                         duplicate_bins.setdefault(key, [])
                         if package not in duplicate_bins[key]:
                             duplicate_bins[key].append(package)
-                    if package in nfu_entries and \
-                        version != source_versions[source]: # only suggest to remove out-of-date packages
-                        nfu_packages[architecture].append((package,version,source_versions[source]))
+                    if "nfu" in checks:
+                        if package in nfu_entries and \
+                               version != source_versions[source]: # only suggest to remove out-of-date packages
+                            nfu_packages[architecture].append((package,version,source_versions[source]))
                     
             packages.close()
             os.unlink(temp_filename)
