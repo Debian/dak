@@ -929,33 +929,25 @@ def check_hashes ():
     check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
     check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
 
-    # (hashname, function, originate)
-    # If originate is true, we have to calculate it because
-    # the changes file version is too early for it to be
-    # included
-    hashes = [("sha1", apt_pkg.sha1sum, False),
-              ("sha256", apt_pkg.sha256sum, False)]
-
-    if format <= (1,8):
-        hashes["sha1"] = True
-        hashes["sha256"] = True
-
     for x in changes:
         if x.startswith("checksum-"):
             h = x.split("-",1)[1]
-            if h not in dict(hashes):
+            if h not in dict(utils.known_hashes):
                 reject("Unsupported checksum field in .changes" % (h))
 
     for x in dsc:
         if x.startswith("checksum-"):
             h = x.split("-",1)[1]
-            if h not in dict(hashes):
+            if h not in dict(utils.known_hashes):
                 reject("Unsupported checksum field in .dsc" % (h))
 
-    for h,f,o in hashes:
+    # We have to calculate the hash if we have an earlier changes version than
+    # the hash appears in rather than require it exist in the changes file
+    # I hate backwards compatibility
+    for h,f,v in utils.known_hashes:
         try:
             fs = utils.build_file_list(changes, 0, "checksums-%s" % h, h)
-            if o:
+            if format < v:
                 create_hash(fs, h, f, files)
             else:
                 check_hash(".changes %s" % (h), fs, h, f, files)
@@ -970,7 +962,7 @@ def check_hashes ():
 
         try:
             fs = utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
-            if o:
+            if format < v:
                 create_hash(fs, h, f, dsc_files)
             else:
                 check_hash(".dsc %s" % (h), fs, h, f, dsc_files)

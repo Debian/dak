@@ -55,6 +55,10 @@ default_apt_config = "/etc/dak/apt.conf"
 alias_cache = None
 key_uid_email_cache = {}
 
+# (hashname, function, earliest_changes_version)
+known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
+                ("sha256", apt_pkg.sha256sum, (1, 8))]
+
 ################################################################################
 
 def open_file(filename, mode='r'):
