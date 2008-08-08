@@ -813,21 +813,84 @@ def move_to_dir (dest, perms=0660, changesperms=0664):
     for f in file_keys:
         utils.move (f, dest, perms=perms)
 
+def is_source_in_queue_dir(qdir):
+    entries = [ x for x in os.listdir(qdir) if x.startswith(Upload.pkg.changes["source"])
+                and x.endswith(".changes") ]
+    for entry in entries:
+        # read the .dak
+        u = queue.Upload(Cnf)
+        u.pkg.changes_file = entry
+        u.update_vars()
+        if not changes["architecture"].has_key("source"):
+            # another binary upload, ignore
+            continue
+        if Upload.pkg.changes["version"] != u.pkg.changes["version"]:
+            # another version, ignore
+            continue
+        # found it!
+        return True
+    return False
+
+def move_to_holding(suite, queue_dir):
+    print "Moving to %s holding area." % (suite.upper(),)
+    Logger.log(["Moving to %s" % (suite,), Upload.pkg.changes_file])
+    Upload.dump_vars(queue_dir)
+    move_to_dir(queue_dir)
+    os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+
+def do_accept_stableupdate(suite, q):
+    queue_dir = Cnf["Dir::Queue::%s" % (q,)]
+    if not Upload.pkg.changes["architecture"].has_key("source"):
+        # It is not a sourceful upload.  So its source may be either in p-u
+        # holding, in new, in accepted or already installed.
+        if is_source_in_qdir(queue_dir):
+            # It's in p-u holding, so move it there.
+            move_to_holding(suite, queue_dir)
+        elif is_source_in_qdir(Cnf["Dir::Queue::New"]):
+            # It's in NEW.  We expect the source to land in p-u holding
+            # pretty soon.
+            move_to_holding(suite, queue_dir)
+        elif is_source_in_qdir(Cnf["Dir::Queue::Accepted"]):
+            # The source is in accepted, the binary cleared NEW: accept it.
+            Upload.accept(summary, short_summary)
+            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+        elif Upload.source_exists(Upload.pkg.changes["source"],
+                Upload.pkg.changes["version"]):
+            # dak tells us that there is source available.  At time of
+            # writing this means that it is installed, so put it into
+            # accepted.
+            Upload.accept(summary, short_summary)
+            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+	return
+    move_to_holding(suite, queue_dir)
+
 def do_accept():
     print "ACCEPT"
     if not Options["No-Action"]:
         get_accept_lock()
         (summary, short_summary) = Upload.build_summaries()
-    if Cnf.FindB("Dinstall::SecurityQueueHandling"):
-        Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
-        move_to_dir(Cnf["Dir::Queue::Embargoed"])
-        Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
-        # Check for override disparities
-        Upload.Subst["__SUMMARY__"] = summary
-    else:
-        Upload.accept(summary, short_summary)
-        os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-    os.unlink(Cnf["Process-New::AcceptedLockFile"])
+    try:
+        if Cnf.FindB("Dinstall::SecurityQueueHandling"):
+            Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
+            move_to_dir(Cnf["Dir::Queue::Embargoed"])
+            Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
+            # Check for override disparities
+            Upload.Subst["__SUMMARY__"] = summary
+        else:
+            # Stable updates need to be copied to proposed-updates holding
+            # area instead of accepted.  Sourceful uploads need to go
+            # to it directly, binaries only if the source has not yet been
+            # accepted into p-u.
+            for suite, q in [("proposed-updates", "ProposedUpdates"),
+                    ("oldstable-proposed-updates", "OldProposedUpdates")]:
+                if not Upload.pkg.changes["distribution"].has_key(suite):
+                    continue
+                return do_accept_stableupdate(suite, q)
+            # Just a normal upload, accept it...
+            Upload.accept(summary, short_summary)
+            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+    finally:
+        os.unlink(Cnf["Process-New::AcceptedLockFile"])
 
 def check_status(files):
     new = byhand = 0
