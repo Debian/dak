@@ -24,6 +24,7 @@ TS=0
 NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
 LOCKCU="$lockdir/daily.lock"
 LOCKAC="$lockdir/unchecked.lock"
+BRITNEYLOCK="$lockdir/britney.lock"
 lockac=0
 
 cleanup() {
@@ -36,6 +37,11 @@ cleanup() {
 }
 lockfile -l 3600 $LOCKCU
 trap cleanup 0
+
+# This file is simply used to indicate to britney whether or not
+# the Packages file updates completed sucessfully.  It's not a lock
+# from our point of view
+touch ${BRITNEYLOCK}
 
 rm -f "$NOTICE"
 cat > "$NOTICE" <<EOF
@@ -239,6 +245,9 @@ $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
 R --slave --vanilla < $base/misc/ftpstats.R
 
 ts
+
+# Remove the britney lock
+rm -f ${BRITNEYLOCK}
 
 # Clean up apt-ftparchive's databases
 echo "Clean up apt-ftparchive's databases"
