@@ -274,6 +274,10 @@ def install ():
     # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
     projectB.query("BEGIN WORK")
 
+    # Check the hashes are all present: HACK: Can go away once all dak files
+    # are known to be newer than the shasum changes
+    utils.ensure_hashes(Upload)
+
     # Add the .dsc file to the DB
     for file in files.keys():
         if files[file]["type"] == "dsc":
