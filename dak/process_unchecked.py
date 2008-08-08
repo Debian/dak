@@ -926,96 +926,13 @@ def check_hashes ():
     else:
         format = int(float(format[0])), 0
 
-    check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
-    check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
+    utils.check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
+    utils.check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
 
-    for x in changes:
-        if x.startswith("checksum-"):
-            h = x.split("-",1)[1]
-            if h not in dict(utils.known_hashes):
-                reject("Unsupported checksum field in .changes" % (h))
-
-    for x in dsc:
-        if x.startswith("checksum-"):
-            h = x.split("-",1)[1]
-            if h not in dict(utils.known_hashes):
-                reject("Unsupported checksum field in .dsc" % (h))
-
-    # We have to calculate the hash if we have an earlier changes version than
-    # the hash appears in rather than require it exist in the changes file
-    # I hate backwards compatibility
-    for h,f,v in utils.known_hashes:
-        try:
-            fs = utils.build_file_list(changes, 0, "checksums-%s" % h, h)
-            if format < v:
-                create_hash(fs, h, f, files)
-            else:
-                check_hash(".changes %s" % (h), fs, h, f, files)
-        except NoFilesFieldError:
-            reject("No Checksums-%s: field in .changes" % (h))
-        except UnknownFormatError, format:
-            reject("%s: unknown format of .changes" % (format))
-        except ParseChangesError, line:
-            reject("parse error for Checksums-%s in .changes, can't grok: %s." % (h, line))
-
-        if "source" not in changes["architecture"]: continue
-
-        try:
-            fs = utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
-            if format < v:
-                create_hash(fs, h, f, dsc_files)
-            else:
-                check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
-        except UnknownFormatError, format:
-            reject("%s: unknown format of .dsc" % (format))
-        except NoFilesFieldError:
-            reject("No Checksums-%s: field in .dsc" % (h))
-        except ParseChangesError, line:
-            reject("parse error for Checksums-%s in .dsc, can't grok: %s." % (h, line))
-
-################################################################################
-
-def create_hash (lfiles, key, testfn, basedict = None):
-    for f in lfiles.keys():
-        try:
-            file_handle = utils.open_file(f)
-        except CantOpenError:
-            continue
-
-        # Check hash
-        basedict[f]['%ssum' % key] = testfn(file_handle)
-        file_handle.close()
-
-
-################################################################################
-
-def check_hash (where, lfiles, key, testfn, basedict = None):
-    if basedict:
-        for f in basedict.keys():
-            if f not in lfiles:
-                reject("%s: no %s checksum" % (f, key))
-
-    for f in lfiles.keys():
-        if basedict and f not in basedict:
-            reject("%s: extraneous entry in %s checksums" % (f, key))
-
-        try:
-            file_handle = utils.open_file(f)
-        except CantOpenError:
-            continue
-
-        # Check hash
-        if testfn(file_handle) != lfiles[f][key]:
-            reject("%s: %s check failed." % (f, key))
-        file_handle.close()
-        # Store the hashes for later use
-        basedict[f]['%ssum' % key] = lfiles[f][key]
-        # Check size
-        actual_size = os.stat(f)[stat.ST_SIZE]
-        size = int(lfiles[f]["size"])
-        if size != actual_size:
-            reject("%s: actual file size (%s) does not match size (%s) in %s"
-                   % (f, actual_size, size, where))
+    # This is stupid API, but it'll have to do for now until
+    # we actually have proper abstraction
+    for m in utils.ensure_hashes(Upload):
+        reject(m)
 
 ################################################################################
 

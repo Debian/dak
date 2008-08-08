@@ -211,6 +211,109 @@ The rules for (signing_rules == 1)-mode are:
 
 ################################################################################
 
+def create_hash (lfiles, key, testfn, basedict = None):
+    rejmsg = []
+    for f in lfiles.keys():
+        try:
+            file_handle = open_file(f)
+        except CantOpenError:
+            rejmsg.append("Could not open file %s for checksumming" % (f))
+
+        # Check hash
+        basedict[f]['%ssum' % key] = testfn(file_handle)
+        file_handle.close()
+
+    return rejmsg
+
+################################################################################
+
+def check_hash (where, lfiles, key, testfn, basedict = None):
+    rejmsg = []
+    if basedict:
+        for f in basedict.keys():
+            if f not in lfiles:
+                rejmsg.append("%s: no %s checksum" % (f, key))
+
+    for f in lfiles.keys():
+        if basedict and f not in basedict:
+            rejmsg.append("%s: extraneous entry in %s checksums" % (f, key))
+
+        try:
+            file_handle = open_file(f)
+        except CantOpenError:
+            continue
+
+        # Check hash
+        if testfn(file_handle) != lfiles[f][key]:
+            rejmsg.append("%s: %s check failed." % (f, key))
+        file_handle.close()
+        # Store the hashes for later use
+        basedict[f]['%ssum' % key] = lfiles[f][key]
+        # Check size
+        actual_size = os.stat(f)[stat.ST_SIZE]
+        size = int(lfiles[f]["size"])
+        if size != actual_size:
+            rejmsg.append("%s: actual file size (%s) does not match size (%s) in %s"
+                   % (f, actual_size, size, where))
+
+    return rejmsg
+
+################################################################################
+
+def ensure_hashes(Upload):
+    rejmsg = []
+    for x in Upload.changes:
+        if x.startswith("checksum-"):
+            h = x.split("-",1)[1]
+            if h not in dict(known_hashes):
+                rejmsg.append("Unsupported checksum field in .changes" % (h))
+
+    for x in Upload.dsc:
+        if x.startswith("checksum-"):
+            h = x.split("-",1)[1]
+            if h not in dict(known_hashes):
+                rejmsg.append("Unsupported checksum field in .dsc" % (h))
+
+    # We have to calculate the hash if we have an earlier changes version than
+    # the hash appears in rather than require it exist in the changes file
+    # I hate backwards compatibility
+    for h,f,v in known_hashes:
+        try:
+            fs = build_file_list(Upload.changes, 0, "checksums-%s" % h, h)
+            if format < v:
+                for m in create_hash(fs, h, f, Upload.files):
+                    rejmsg.append(m)
+            else:
+                for m in check_hash(".changes %s" % (h), fs, h, f, Upload.files):
+                    rejmsg.append(m)
+        except NoFilesFieldError:
+            rejmsg.append("No Checksums-%s: field in .changes" % (h))
+        except UnknownFormatError, format:
+            rejmsg.append("%s: unknown format of .changes" % (format))
+        except ParseChangesError, line:
+            rejmsg.append("parse error for Checksums-%s in .changes, can't grok: %s." % (h, line))
+
+        if "source" not in Upload.changes["architecture"]: continue
+
+        try:
+            fs = build_file_list(Upload.dsc, 1, "checksums-%s" % h, h)
+            if format < v:
+                for m in create_hash(fs, h, f, Upload.dsc_files):
+                    rejmsg.append(m)
+            else:
+                for m in check_hash(".dsc %s" % (h), fs, h, f, Upload.dsc_files):
+                    rejmsg.append(m)
+        except UnknownFormatError, format:
+            rejmsg.append("%s: unknown format of .dsc" % (format))
+        except NoFilesFieldError:
+            rejmsg.append("No Checksums-%s: field in .dsc" % (h))
+        except ParseChangesError, line:
+            rejmsg.append("parse error for Checksums-%s in .dsc, can't grok: %s." % (h, line))
+
+    return rejmsg
+
+################################################################################
+
 # Dropped support for 1.4 and ``buggy dchanges 3.4'' (?!) compared to di.pl
 
 def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
