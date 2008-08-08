@@ -19,6 +19,7 @@ logdir=$base/log/cron/
 queuedir=$base/queue/
 unchecked=$queuedir/unchecked/
 accepted=$queuedir/accepted/
+mirrordir=$base/mirror/
 incoming=$base/incoming
 
 ftpgroup=debadmin

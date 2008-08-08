@@ -1,5 +1,9 @@
 2008-08-08  Joerg Jaspert  <joerg@debian.org>
 
+	* config/debian/cron.dinstall: Create a hardlinked tree of the
+	ftp/ in mirror/ so we have more atomic mirror updates for the
+	buildds
+
 	* config/debian/cron.unchecked: Added signing of buildd incoming
 
 2008-08-07  Joerg Jaspert  <joerg@debian.org>

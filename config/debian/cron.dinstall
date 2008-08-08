@@ -180,6 +180,14 @@ cd $scriptsdir
 
 ts
 
+# (Re)generate the hardlinked mirror directory for "public" buildd / mirror access
+echo "Regenerating mirror/ hardlink fun"
+cd ${mirrordir}
+rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
+
+
+ts
+
 echo "Trigger daily wanna-build run"
 ssh -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 buildd@buildd /org/wanna-build/trigger.daily || echo "W-B trigger.daily failed" | mail -s "W-B Daily trigger failed" ftpmaster@ftp-master.debian.org
 
