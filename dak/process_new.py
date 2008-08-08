@@ -846,21 +846,22 @@ def do_accept_stableupdate(suite, q):
         if is_source_in_qdir(queue_dir):
             # It's in p-u holding, so move it there.
             move_to_holding(suite, queue_dir)
-        if is_source_in_qdir(Cnf["Dir::Queue::New"]):
+        elif is_source_in_qdir(Cnf["Dir::Queue::New"]):
             # It's in NEW.  We expect the source to land in p-u holding
             # pretty soon.
             move_to_holding(suite, queue_dir)
-        if is_source_in_qdir(Cnf["Dir::Queue::Accepted"]):
+        elif is_source_in_qdir(Cnf["Dir::Queue::Accepted"]):
             # The source is in accepted, the binary cleared NEW: accept it.
             Upload.accept(summary, short_summary)
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-        if Upload.source_exists(Upload.pkg.changes["source"],
+        elif Upload.source_exists(Upload.pkg.changes["source"],
                 Upload.pkg.changes["version"]):
             # dak tells us that there is source available.  At time of
             # writing this means that it is installed, so put it into
             # accepted.
             Upload.accept(summary, short_summary)
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+	return
     move_to_holding(suite, queue_dir)
 
 def do_accept():
