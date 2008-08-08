@@ -60,7 +60,7 @@ if lockfile -r3 $LOCKFILE; then
 	    cd ${incoming}
 	    mkdir -p tree/${STAMP}
 	    cp -al ${incoming}/buildd/. tree/${STAMP}/
-	    ln -sf tree/${STAMP} ${incoming}/builddweb
+	    ln -sfT tree/${STAMP} ${incoming}/builddweb
 	    find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 
 	    . $configdir/cron.buildd
