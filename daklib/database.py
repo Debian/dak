@@ -317,7 +317,7 @@ def get_or_set_fingerprint_id (fingerprint):
 
 ################################################################################
 
-def get_files_id (filename, size, md5sum, sha1sum, sha256sum location_id):
+def get_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
     global files_id_cache
 
     cache_key = "%s_%d" % (filename, location_id)
@@ -365,7 +365,7 @@ def get_or_set_queue_id (queue):
 def set_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
     global files_id_cache
 
-    projectB.query("INSERT INTO files (filename, size, md5sum, sha1sum, sha256sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, sha1sum, sha256sum location_id))
+    projectB.query("INSERT INTO files (filename, size, md5sum, sha1sum, sha256sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, sha1sum, sha256sum, location_id))
 
     return get_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id)
 
