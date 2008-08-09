@@ -1,5 +1,8 @@
 2008-08-09  Joerg Jaspert  <joerg@debian.org>
 
+	* config/debian/dak.conf: No longer use the pgp keyring - no
+	uploads recorded for any of the pgp keys for a long time.
+
 	* config/debian/cron.dinstall: Export the i18n foo.
 
 2008-08-08  Joerg Jaspert  <joerg@debian.org>
