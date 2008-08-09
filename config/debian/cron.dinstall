@@ -242,6 +242,17 @@ ulimit -m 90000 -d 90000 -s 10000 -v 200000
 echo "Using run-parts to run scripts in $base/scripts/distmnt"
 run-parts --report $base/scripts/distmnt
 
+ts
+
+echo "Exporting package data foo for i18n project"
+cd ${webdir}/i18n
+dak control-suite -l stable > etch
+dak control-suite -l testing > lenny
+dak control-suite -l unstable > sid
+md5sum * > md5sum
+
+ts
+
 echo "Daily cron scripts successful."
 
 ts

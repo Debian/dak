@@ -1,3 +1,7 @@
+2008-08-09  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: Export the i18n foo.
+
 2008-08-08  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.dinstall: Create a hardlinked tree of the
