@@ -249,6 +249,7 @@ cd ${webdir}/i18n
 dak control-suite -l stable > etch
 dak control-suite -l testing > lenny
 dak control-suite -l unstable > sid
+rm md5sum
 md5sum * > md5sum
 
 ts
