@@ -1,5 +1,7 @@
 2008-08-11  Joerg Jaspert  <joerg@debian.org>
 
+	* web/dinstall.html: Added
+
 	* config/debian/dak.conf: Added back the pgp keyrings for now, as
 	it seems that we should keep it for a few more days, until we
 	somehow got ll those oldtimers to get a newer key into the
