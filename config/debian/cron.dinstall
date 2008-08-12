@@ -245,12 +245,21 @@ run-parts --report $base/scripts/distmnt
 ts
 
 echo "Exporting package data foo for i18n project"
-cd ${webdir}/i18n
+STAMP=$(date "+%Y%m%d%H%M")
+mkdir -p ${scriptdir}/i18n/${STAMP}
+cd ${scriptdir}/i18n/${STAMP}
 dak control-suite -l stable > etch
 dak control-suite -l testing > lenny
 dak control-suite -l unstable > sid
-rm md5sum
+echo "${STAMP}" > timestamp
+gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 6070D3A1 --detach-sign -o timestamp.gpg timestamp
+rm -f md5sum
 md5sum * > md5sum
+cd ${webdir}/
+ln -sfT ${scriptdir}/i18n/${STAMP} i18n
+
+cd ${scriptdir}
+find ./i18n -mtime +2 -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 
 ts
 

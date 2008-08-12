@@ -1,3 +1,13 @@
+2008-08-12  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: Complicate the i18n export a little
+	by using date/hour based directories which we then link into the
+	web view. They contain a signed timestamp file now, which means
+	the i18n people can take a long time to generate files, yet we
+	still know exactly on which dataset their data is based on, and
+	can then verify it with that. Ensures we only get descriptions for
+	packages we know off (or knew of in the past 2 days).
+
 2008-08-11  Joerg Jaspert  <joerg@debian.org>
 
 	* web/dinstall.html: Added
