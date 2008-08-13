@@ -90,6 +90,46 @@ echo >> REPORT
 ################################################################################
 
 ts
+
+echo "Synchronizing i18n package descriptions"
+# First sync their newest data
+cd ${scriptdir}/i18nsync
+rsync -aq --delete --delete-after ddtp-sync:/does/not/matter .
+
+# Now check if we still know about the packages for which they created the files
+# is the timestamp signed by us?
+if $(gpgv --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg timestamp.gpg timestamp); then
+    # now read it. As its signed by us we are sure the content is what we expect, no need
+	# to do more here. And we only test -d a directory on it anyway.
+    TSTAMP=$(cat timestamp)
+    # do we have the dir still?
+    if [ -d ${scriptdir}/i18n/${TSTAMP} ]; then
+        # Lets check!
+        if $(${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}); then
+			# Yay, worked, lets copy around
+			for dir in lenny sid; do
+				if [ -d dists/${dir}/ ]; then
+					cd dists/${dir}/main/i18n
+					rsync -aq --delete --delete-after  . ${ftpdir}/dists/${dir}/main/i18n/.
+				fi
+				cd ${scriptdir}/i18nsync
+			done
+		else
+			echo "ARRRR, bad guys, wrong files, ARRR"
+			echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail debian-l10n-devel@lists.alioth.debian.org
+		fi
+    else
+		echo "ARRRR, missing the timestamp ${TSTAMP} directory, not updating i18n, ARRR"
+		echo "Arf, Arf, Arf, missing the timestamp ${TSTAMP} directory, not updating i18n, arf, arf, arf" | mail debian-l10n-devel@lists.alioth.debian.org
+	fi
+else
+    echo "ARRRRRRR, could not verify our timestamp signature, ARRR. Don't mess with our files, i18n guys, ARRRRR."
+	echo "Arf, Arf, Arf, could not verify our timestamp signature, arf. Don't mess with our files, i18n guys, arf, arf, arf" | mail debian-l10n-devel@lists.alioth.debian.org
+fi
+
+################################################################################
+
+ts
 lockfile $LOCKAC
 lockac=1
 echo "Processing queue/accepted"
