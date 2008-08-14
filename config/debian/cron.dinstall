@@ -105,7 +105,7 @@ if $(gpgv --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg timestamp.g
     # do we have the dir still?
     if [ -d ${scriptdir}/i18n/${TSTAMP} ]; then
         # Lets check!
-        if $(${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}); then
+        if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
 			# Yay, worked, lets copy around
 			for dir in lenny sid; do
 				if [ -d dists/${dir}/ ]; then
