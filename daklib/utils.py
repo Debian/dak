@@ -262,15 +262,22 @@ def check_hash (where, lfiles, key, testfn, basedict = None):
 
 ################################################################################
 
-def ensure_hashes(Upload):
+def ensure_hashes(changes, dsc, files, dsc_files):
+    # Make sure we recognise the format of the Files: field
+    format = changes.get("format", "0.0").split(".",1)
+    if len(format) == 2:
+        format = int(format[0]), int(format[1])
+    else:
+        format = int(float(format[0])), 0
+
     rejmsg = []
-    for x in Upload.changes:
+    for x in changes:
         if x.startswith("checksum-"):
             h = x.split("-",1)[1]
             if h not in dict(known_hashes):
                 rejmsg.append("Unsupported checksum field in .changes" % (h))
 
-    for x in Upload.dsc:
+    for x in dsc:
         if x.startswith("checksum-"):
             h = x.split("-",1)[1]
             if h not in dict(known_hashes):
@@ -281,12 +288,12 @@ def ensure_hashes(Upload):
     # I hate backwards compatibility
     for h,f,v in known_hashes:
         try:
-            fs = build_file_list(Upload.changes, 0, "checksums-%s" % h, h)
+            fs = build_file_list(changes, 0, "checksums-%s" % h, h)
             if format < v:
-                for m in create_hash(fs, h, f, Upload.files):
+                for m in create_hash(fs, h, f, files):
                     rejmsg.append(m)
             else:
-                for m in check_hash(".changes %s" % (h), fs, h, f, Upload.files):
+                for m in check_hash(".changes %s" % (h), fs, h, f, files):
                     rejmsg.append(m)
         except NoFilesFieldError:
             rejmsg.append("No Checksums-%s: field in .changes" % (h))
@@ -295,15 +302,15 @@ def ensure_hashes(Upload):
         except ParseChangesError, line:
             rejmsg.append("parse error for Checksums-%s in .changes, can't grok: %s." % (h, line))
 
-        if "source" not in Upload.changes["architecture"]: continue
+        if "source" not in changes["architecture"]: continue
 
         try:
-            fs = build_file_list(Upload.dsc, 1, "checksums-%s" % h, h)
+            fs = build_file_list(dsc, 1, "checksums-%s" % h, h)
             if format < v:
-                for m in create_hash(fs, h, f, Upload.dsc_files):
+                for m in create_hash(fs, h, f, dsc_files):
                     rejmsg.append(m)
             else:
-                for m in check_hash(".dsc %s" % (h), fs, h, f, Upload.dsc_files):
+                for m in check_hash(".dsc %s" % (h), fs, h, f, dsc_files):
                     rejmsg.append(m)
         except UnknownFormatError, format:
             rejmsg.append("%s: unknown format of .dsc" % (format))

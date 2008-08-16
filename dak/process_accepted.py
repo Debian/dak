@@ -276,7 +276,7 @@ def install ():
 
     # Check the hashes are all present: HACK: Can go away once all dak files
     # are known to be newer than the shasum changes
-    utils.ensure_hashes(Upload)
+    utils.ensure_hashes(changes, dsc, files, dsc_files)
 
     # Add the .dsc file to the DB
     for file in files.keys():
