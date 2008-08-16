@@ -292,7 +292,7 @@ def ensure_hashes(changes, dsc, files, dsc_files):
                 for m in create_hash(files, h, f, files):
                     rejmsg.append(m)
             else:
-                for m in check_hash(".changes %s" % (h), files, h, f, files):
+                for m in check_hash(".changes %s" % (h), files, '%ssum' % h, f, files):
                     rejmsg.append(m)
         except NoFilesFieldError:
             rejmsg.append("No Checksums-%s: field in .changes" % (h))
@@ -308,7 +308,7 @@ def ensure_hashes(changes, dsc, files, dsc_files):
                 for m in create_hash(dsc_files, h, f, dsc_files):
                     rejmsg.append(m)
             else:
-                for m in check_hash(".dsc %s" % (h), dsc_files, h, f, dsc_files):
+                for m in check_hash(".dsc %s" % (h), dsc_files, '%ssum' % h, f, dsc_files):
                     rejmsg.append(m)
         except UnknownFormatError, format:
             rejmsg.append("%s: unknown format of .dsc" % (format))
