@@ -94,7 +94,7 @@ ts
 echo "Synchronizing i18n package descriptions"
 # First sync their newest data
 cd ${scriptdir}/i18nsync
-rsync -aq --delete --delete-after ddtp-sync:/does/not/matter .
+rsync -aq --delete --delete-after ddtp-sync:/does/not/matter . || true
 
 # Now check if we still know about the packages for which they created the files
 # is the timestamp signed by us?
