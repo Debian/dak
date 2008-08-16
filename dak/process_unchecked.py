@@ -919,19 +919,12 @@ def check_urgency ():
 ################################################################################
 
 def check_hashes ():
-    # Make sure we recognise the format of the Files: field
-    format = changes.get("format", "0.0").split(".",1)
-    if len(format) == 2:
-        format = int(format[0]), int(format[1])
-    else:
-        format = int(float(format[0])), 0
-
     utils.check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
     utils.check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
 
     # This is stupid API, but it'll have to do for now until
     # we actually have proper abstraction
-    for m in utils.ensure_hashes(Upload):
+    for m in utils.ensure_hashes(changes, dsc, files, dsc_files):
         reject(m)
 
 ################################################################################

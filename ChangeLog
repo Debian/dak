@@ -1,5 +1,7 @@
 2008-08-15  Mark Hymers  <mhy@debian.org>
 
+	* daklib/utils.py: Actually import a module before using it.
+
 	* daklib/utils.py: Actually check we have basedict before trying to
 	use it.
 
