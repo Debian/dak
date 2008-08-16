@@ -317,7 +317,7 @@ def get_or_set_fingerprint_id (fingerprint):
 
 ################################################################################
 
-def get_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
+def get_files_id (filename, size, md5sum, location_id):
     global files_id_cache
 
     cache_key = "%s_%d" % (filename, location_id)
@@ -326,7 +326,7 @@ def get_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
         return files_id_cache[cache_key]
 
     size = int(size)
-    q = projectB.query("SELECT id, size, md5sum, sha1sum, sha256sum FROM files WHERE filename = '%s' AND location = %d" % (filename, location_id))
+    q = projectB.query("SELECT id, size, md5sum FROM files WHERE filename = '%s' AND location = %d" % (filename, location_id))
     ql = q.getresult()
     if ql:
         if len(ql) != 1:
@@ -334,9 +334,7 @@ def get_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
         ql = ql[0]
         orig_size = int(ql[1])
         orig_md5sum = ql[2]
-        orig_sha1sum = ql[3]
-        orig_sha256sum = ql[4]
-        if orig_size != size or orig_md5sum != md5sum or orig_sha1sum != sha1sum or orig_sha256sum != sha256sum:
+        if orig_size != size or orig_md5sum != md5sum:
             return -2
         files_id_cache[cache_key] = ql[0]
         return files_id_cache[cache_key]
@@ -367,7 +365,7 @@ def set_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
 
     projectB.query("INSERT INTO files (filename, size, md5sum, sha1sum, sha256sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, sha1sum, sha256sum, location_id))
 
-    return get_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id)
+    return get_files_id (filename, size, md5sum, location_id)
 
     ### currval has issues with postgresql 7.1.3 when the table is big
     ### it was taking ~3 seconds to return on auric which is very Not
