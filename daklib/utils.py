@@ -22,7 +22,7 @@
 ################################################################################
 
 import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
-       sys, tempfile, traceback
+       sys, tempfile, traceback, stat
 import apt_pkg
 import database
 from dak_exceptions import *
