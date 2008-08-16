@@ -274,6 +274,10 @@ def install ():
     # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
     projectB.query("BEGIN WORK")
 
+    # Check the hashes are all present: HACK: Can go away once all dak files
+    # are known to be newer than the shasum changes
+    utils.ensure_hashes(Upload)
+
     # Add the .dsc file to the DB
     for file in files.keys():
         if files[file]["type"] == "dsc":
@@ -291,7 +295,7 @@ def install ():
             dsc_component = files[file]["component"]
             dsc_location_id = files[file]["location id"]
             if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
+                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
             projectB.query("INSERT INTO source (source, version, maintainer, changedby, file, install_date, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, '%s', %s)"
                            % (package, version, maintainer_id, changedby_id, files[file]["files id"], install_date, fingerprint_id))
 
@@ -307,10 +311,10 @@ def install ():
                 # files id is stored in dsc_files by check_dsc().
                 files_id = dsc_files[dsc_file].get("files id", None)
                 if files_id == None:
-                    files_id = database.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
+                    files_id = database.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
                 # FIXME: needs to check for -1/-2 and or handle exception
                 if files_id == None:
-                    files_id = database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
+                    files_id = database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id))
 
             # Add the src_uploaders to the DB
@@ -388,16 +392,18 @@ def install ():
     #
     if changes["architecture"].has_key("source") and orig_tar_id and \
        orig_tar_location != "legacy" and orig_tar_location != dsc_location_id:
-        q = projectB.query("SELECT l.path, f.filename, f.size, f.md5sum FROM files f, location l WHERE f.id = %s AND f.location = l.id" % (orig_tar_id))
+        q = projectB.query("SELECT l.path, f.filename, f.size, f.md5sum, f.sha1sum, f.sha256sum FROM files f, location l WHERE f.id = %s AND f.location = l.id" % (orig_tar_id))
         ql = q.getresult()[0]
         old_filename = ql[0] + ql[1]
         file_size = ql[2]
         file_md5sum = ql[3]
+        file_sha1sum = ql[4]
+        file_sha256sum = ql[5]
         new_filename = utils.poolify(changes["source"], dsc_component) + os.path.basename(old_filename)
         new_files_id = database.get_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
         if new_files_id == None:
             utils.copy(old_filename, Cnf["Dir::Pool"] + new_filename)
-            new_files_id = database.set_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
+            new_files_id = database.set_files_id(new_filename, file_size, file_md5sum, file_sha1sum, file_sha256sum, dsc_location_id)
             projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, source_id, orig_tar_id))
 
     # Install the files into the pool
