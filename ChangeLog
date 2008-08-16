@@ -1,5 +1,8 @@
 2008-08-15  Mark Hymers  <mhy@debian.org>
 
+	* daklib/utils.py: Actually check we have basedict before trying to
+	use it.
+
 	*  dak/process_accepted.py, dak/process_unchecked.py,
 	daklib/database.py: Don't change get_files_id to use sha1sum and
 	sha256sum.

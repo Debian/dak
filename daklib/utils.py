@@ -220,7 +220,8 @@ def create_hash (lfiles, key, testfn, basedict = None):
             rejmsg.append("Could not open file %s for checksumming" % (f))
 
         # Check hash
-        basedict[f]['%ssum' % key] = testfn(file_handle)
+        if basedict:
+            basedict[f]['%ssum' % key] = testfn(file_handle)
         file_handle.close()
 
     return rejmsg
@@ -248,7 +249,8 @@ def check_hash (where, lfiles, key, testfn, basedict = None):
             rejmsg.append("%s: %s check failed." % (f, key))
         file_handle.close()
         # Store the hashes for later use
-        basedict[f]['%ssum' % key] = lfiles[f][key]
+        if basedict:
+            basedict[f]['%ssum' % key] = lfiles[f][key]
         # Check size
         actual_size = os.stat(f)[stat.ST_SIZE]
         size = int(lfiles[f]["size"])
