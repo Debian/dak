@@ -70,8 +70,6 @@ CREATE TABLE files (
        md5sum TEXT NOT NULL,
        location INT4 NOT NULL, -- REFERENCES location
        last_used TIMESTAMP,
-       sha1sum TEXT NOT NULL,
-       sha256sum TEXT NOT NULL,
        unique (filename, location)
 );
 
