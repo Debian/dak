@@ -630,11 +630,11 @@ def check_files():
 
             # Check the md5sum & size against existing files (if any)
             files[f]["pool name"] = utils.poolify (changes["source"], files[f]["component"])
-            files_id = database.get_files_id(files[f]["pool name"] + f, files[f]["size"], files[f]["md5sum"], files[f]["sha1sum"], files[f]["sha256sum"], files[f]["location id"])
+            files_id = database.get_files_id(files[f]["pool name"] + f, files[f]["size"], files[f]["md5sum"], files[f]["location id"])
             if files_id == -1:
                 reject("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (f))
             elif files_id == -2:
-                reject("md5sum, sha1sum, sha256sum and/or size mismatch on existing copy of %s." % (f))
+                reject("md5sum and/or size mismatch on existing copy of %s." % (f))
             files[f]["files id"] = files_id
 
             # Check for packages that have moved from one component to another

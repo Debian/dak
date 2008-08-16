@@ -1,5 +1,9 @@
 2008-08-15  Mark Hymers  <mhy@debian.org>
 
+	*  dak/process_accepted.py, dak/process_unchecked.py,
+	daklib/database.py: Don't change get_files_id to use sha1sum and
+	sha256sum.
+
 	* setup/init_pool.sql, dak/check_archive.py, dak/decode_dot_dak.py,
 	dak/process_accepted.py, dak/process_unchecked.py, daklib/database.py,
 	daklib/queue.py, daklib/utils.py: Attempt to add sha1sum and
