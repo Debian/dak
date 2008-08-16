@@ -353,7 +353,7 @@ def install ():
             if not files[file].has_key("location id") or not files[file]["location id"]:
                 files[file]["location id"] = database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],utils.where_am_i())
             if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
+                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], files[file]["location id"])
             source_id = database.get_source_id (source, source_version)
             if source_id:
                 projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, %d, '%s', %d)"
