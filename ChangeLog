@@ -1,11 +1,11 @@
 2008-08-15  Mark Hymers  <mhy@debian.org>
 
-	* setup/init_pool.sql, dak/decode_dot_dak.py, dak/process_accepted.py,
-	dak/process_unchecked.py, daklib/database.py, daklib/queue.py,
-	daklib/utils.py: Attempt to add sha1sum and sha256sums into the
-	database.  The complication is that we have to keep backwards
-	compatibility with the .dak files already in existance.  Note that
-	import_archive hasn't been hacked to deal with this yet.
+	* setup/init_pool.sql, dak/check_archive.py, dak/decode_dot_dak.py,
+	dak/process_accepted.py, dak/process_unchecked.py, daklib/database.py,
+	daklib/queue.py, daklib/utils.py: Attempt to add sha1sum and
+	sha256sums into the database.  The complication is that we have to
+	keep backwards compatibility with the .dak files already in existance.
+	Note that import_archive hasn't been hacked to deal with this yet.
 
 2008-08-14  Joerg Jaspert  <joerg@debian.org>
 
@@ -70,7 +70,6 @@
 2008-08-07  Stephen Gran  <sgran@debian.org>
 
 	* Drop use of exec to eval variable interpolation
-
 2008-08-07  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_accepted.py (install): Error out with the new
