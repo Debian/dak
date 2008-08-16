@@ -285,7 +285,8 @@ def ensure_hashes(changes, dsc, files, dsc_files):
 
 
     fs_m = build_file_list(changes, 0)
-    fs_md = build_file_list(dsc, 1)
+    if "source" in changes["architecture"]:
+        fs_md = build_file_list(dsc, 1)
 
     # We have to calculate the hash if we have an earlier changes version than
     # the hash appears in rather than require it exist in the changes file
