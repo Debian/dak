@@ -630,11 +630,11 @@ def check_files():
 
             # Check the md5sum & size against existing files (if any)
             files[f]["pool name"] = utils.poolify (changes["source"], files[f]["component"])
-            files_id = database.get_files_id(files[f]["pool name"] + f, files[f]["size"], files[f]["md5sum"], files[f]["sha1sum"], files[f]["sha256sum"], files[f]["location id"])
+            files_id = database.get_files_id(files[f]["pool name"] + f, files[f]["size"], files[f]["md5sum"], files[f]["location id"])
             if files_id == -1:
                 reject("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (f))
             elif files_id == -2:
-                reject("md5sum, sha1sum, sha256sum and/or size mismatch on existing copy of %s." % (f))
+                reject("md5sum and/or size mismatch on existing copy of %s." % (f))
             files[f]["files id"] = files_id
 
             # Check for packages that have moved from one component to another
@@ -777,8 +777,6 @@ def check_dsc():
         files[orig_tar_gz] = {}
         files[orig_tar_gz]["size"] = os.stat(orig_tar_gz)[stat.ST_SIZE]
         files[orig_tar_gz]["md5sum"] = dsc_files[orig_tar_gz]["md5sum"]
-        files[orig_tar_gz]["sha1sum"] = dsc_files[orig_tar_gz]["sha1sum"]
-        files[orig_tar_gz]["sha256sum"] = dsc_files[orig_tar_gz]["sha256sum"]
         files[orig_tar_gz]["section"] = files[dsc_filename]["section"]
         files[orig_tar_gz]["priority"] = files[dsc_filename]["priority"]
         files[orig_tar_gz]["component"] = files[dsc_filename]["component"]
@@ -929,16 +927,11 @@ def check_hashes ():
     check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
     check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
 
-    # (hashname, function, originate)
-    # If originate is true, we have to calculate it because
-    # the changes file version is too early for it to be
-    # included
-    hashes = [("sha1", apt_pkg.sha1sum, False),
-              ("sha256", apt_pkg.sha256sum, False)]
-
-    if format <= (1,8):
-        hashes["sha1"] = True
-        hashes["sha256"] = True
+    if format >= (1,8):
+        hashes = [("sha1", apt_pkg.sha1sum),
+                  ("sha256", apt_pkg.sha256sum)]
+    else:
+        hashes = []
 
     for x in changes:
         if x.startswith("checksum-"):
@@ -952,13 +945,10 @@ def check_hashes ():
             if h not in dict(hashes):
                 reject("Unsupported checksum field in .dsc" % (h))
 
-    for h,f,o in hashes:
+    for h,f in hashes:
         try:
             fs = utils.build_file_list(changes, 0, "checksums-%s" % h, h)
-            if o:
-                create_hash(fs, h, f, files)
-            else:
-                check_hash(".changes %s" % (h), fs, h, f, files)
+            check_hash(".changes %s" % (h), fs, h, f, files)
         except NoFilesFieldError:
             reject("No Checksums-%s: field in .changes" % (h))
         except UnknownFormatError, format:
@@ -970,30 +960,13 @@ def check_hashes ():
 
         try:
             fs = utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
-            if o:
-                create_hash(fs, h, f, dsc_files)
-            else:
-                check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
+            check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
         except UnknownFormatError, format:
             reject("%s: unknown format of .dsc" % (format))
         except NoFilesFieldError:
             reject("No Checksums-%s: field in .dsc" % (h))
         except ParseChangesError, line:
             reject("parse error for Checksums-%s in .dsc, can't grok: %s." % (h, line))
-
-################################################################################
-
-def create_hash (lfiles, key, testfn, basedict = None):
-    for f in lfiles.keys():
-        try:
-            file_handle = utils.open_file(f)
-        except CantOpenError:
-            continue
-
-        # Check hash
-        basedict[f]['%ssum' % key] = testfn(file_handle)
-        file_handle.close()
-
 
 ################################################################################
 
@@ -1016,8 +989,6 @@ def check_hash (where, lfiles, key, testfn, basedict = None):
         if testfn(file_handle) != lfiles[f][key]:
             reject("%s: %s check failed." % (f, key))
         file_handle.close()
-        # Store the hashes for later use
-        basedict[f]['%ssum' % key] = lfiles[f][key]
         # Check size
         actual_size = os.stat(f)[stat.ST_SIZE]
         size = int(lfiles[f]["size"])

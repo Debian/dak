@@ -101,9 +101,9 @@ def main():
         for f in files.keys():
             print "  %s:" % (f)
             for i in [ "package", "version", "architecture", "type", "size",
-                       "md5sum", "sha1sum", "sha256sum", "component", "location id",
-                       "source package", "source version", "maintainer", "dbtype",
-                       "files id", "new", "section", "priority", "pool name" ]:
+                       "md5sum", "component", "location id", "source package",
+                       "source version", "maintainer", "dbtype", "files id",
+                       "new", "section", "priority", "pool name" ]:
                 if files[f].has_key(i):
                     print "   %s: %s" % (i.capitalize(), files[f][i])
                     del files[f][i]

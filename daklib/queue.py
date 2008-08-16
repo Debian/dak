@@ -236,10 +236,9 @@ class Upload:
         for file_entry in files.keys():
             d_files[file_entry] = {}
             for i in [ "package", "version", "architecture", "type", "size",
-                       "md5sum", "sha1sum", "sha256sum", "component",
-                       "location id", "source package", "source version",
-                       "maintainer", "dbtype", "files id", "new",
-                       "section", "priority", "othercomponents",
+                       "md5sum", "component", "location id", "source package",
+                       "source version", "maintainer", "dbtype", "files id",
+                       "new", "section", "priority", "othercomponents",
                        "pool name", "original component" ]:
                 if files[file_entry].has_key(i):
                     d_files[file_entry][i] = files[file_entry][i]
