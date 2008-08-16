@@ -283,23 +283,16 @@ def ensure_hashes(changes, dsc, files, dsc_files):
             if h not in dict(known_hashes):
                 rejmsg.append("Unsupported checksum field in .dsc" % (h))
 
-
-    fs_m = build_file_list(changes, 0)
-    if "source" in changes["architecture"]:
-        fs_md = build_file_list(dsc, 1)
-
     # We have to calculate the hash if we have an earlier changes version than
     # the hash appears in rather than require it exist in the changes file
     # I hate backwards compatibility
     for h,f,v in known_hashes:
         try:
-
             if format < v:
-                for m in create_hash(fs_m, h, f, files):
+                for m in create_hash(files, h, f, files):
                     rejmsg.append(m)
             else:
-                fs = build_file_list(changes, 0, "checksums-%s" % h, h)
-                for m in check_hash(".changes %s" % (h), fs, h, f, files):
+                for m in check_hash(".changes %s" % (h), files, h, f, files):
                     rejmsg.append(m)
         except NoFilesFieldError:
             rejmsg.append("No Checksums-%s: field in .changes" % (h))
@@ -312,11 +305,10 @@ def ensure_hashes(changes, dsc, files, dsc_files):
 
         try:
             if format < v:
-                for m in create_hash(fs_md, h, f, dsc_files):
+                for m in create_hash(dsc_files, h, f, dsc_files):
                     rejmsg.append(m)
             else:
-                fs = build_file_list(dsc, 1, "checksums-%s" % h, h)
-                for m in check_hash(".dsc %s" % (h), fs, h, f, dsc_files):
+                for m in check_hash(".dsc %s" % (h), dsc_files, h, f, dsc_files):
                     rejmsg.append(m)
         except UnknownFormatError, format:
             rejmsg.append("%s: unknown format of .dsc" % (format))
