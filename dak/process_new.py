@@ -821,7 +821,7 @@ def is_source_in_queue_dir(qdir):
         u = queue.Upload(Cnf)
         u.pkg.changes_file = entry
         u.update_vars()
-        if not changes["architecture"].has_key("source"):
+        if not Upload.pkg.changes["architecture"].has_key("source"):
             # another binary upload, ignore
             continue
         if Upload.pkg.changes["version"] != u.pkg.changes["version"]:
@@ -833,24 +833,27 @@ def is_source_in_queue_dir(qdir):
 
 def move_to_holding(suite, queue_dir):
     print "Moving to %s holding area." % (suite.upper(),)
+    if Options["No-Action"]:
+    	return
     Logger.log(["Moving to %s" % (suite,), Upload.pkg.changes_file])
     Upload.dump_vars(queue_dir)
     move_to_dir(queue_dir)
     os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 
 def do_accept_stableupdate(suite, q):
+    (summary, short_summary) = Upload.build_summaries()
     queue_dir = Cnf["Dir::Queue::%s" % (q,)]
     if not Upload.pkg.changes["architecture"].has_key("source"):
         # It is not a sourceful upload.  So its source may be either in p-u
         # holding, in new, in accepted or already installed.
-        if is_source_in_qdir(queue_dir):
+        if is_source_in_queue_dir(queue_dir):
             # It's in p-u holding, so move it there.
             move_to_holding(suite, queue_dir)
-        elif is_source_in_qdir(Cnf["Dir::Queue::New"]):
+        elif is_source_in_queue_dir(Cnf["Dir::Queue::New"]):
             # It's in NEW.  We expect the source to land in p-u holding
             # pretty soon.
             move_to_holding(suite, queue_dir)
-        elif is_source_in_qdir(Cnf["Dir::Queue::Accepted"]):
+        elif is_source_in_queue_dir(Cnf["Dir::Queue::Accepted"]):
             # The source is in accepted, the binary cleared NEW: accept it.
             Upload.accept(summary, short_summary)
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
@@ -861,8 +864,14 @@ def do_accept_stableupdate(suite, q):
             # accepted.
             Upload.accept(summary, short_summary)
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-	return
-    move_to_holding(suite, queue_dir)
+    else:
+        # We are handling a sourceful upload.  Move to accepted if currently
+        # in p-u holding and to p-u holding otherwise.
+        if is_source_in_queue_dir(queue_dir):
+            Upload.accept(summary, short_summary)
+            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+        else:
+            move_to_holding(suite, queue_dir)
 
 def do_accept():
     print "ACCEPT"
