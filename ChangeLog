@@ -1,3 +1,8 @@
+2008-08-26  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (do_accept): do not try to free the unchecked
+	lockfile in no-action mode
+
 2008-08-16  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.dinstall: We dont want i18n to ever fail

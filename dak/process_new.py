@@ -890,7 +890,8 @@ def do_accept():
             Upload.accept(summary, short_summary)
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
     finally:
-        os.unlink(Cnf["Process-New::AcceptedLockFile"])
+        if not Options["No-Action"]:
+            os.unlink(Cnf["Process-New::AcceptedLockFile"])
 
 def check_status(files):
     new = byhand = 0
