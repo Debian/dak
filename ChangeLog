@@ -1,3 +1,17 @@
+2008-08-26  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (is_source_in_queue_dir): fix variable usage
+	* dak/process_new.py (move_to_holding): just state what we intend
+	to do in no-action mode
+	* dak/process_new.py (do_accept_stableupdate): fetch summaries,
+	fix invokation of is_source_in_queue_dir, actually accept sourceful
+	uploads in p-u holding
+
+2008-08-26  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (do_accept): do not try to free the unchecked
+	lockfile in no-action mode
+
 2008-08-16  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.dinstall: We dont want i18n to ever fail
