@@ -848,13 +848,16 @@ def do_accept_stableupdate(suite, q):
         # holding, in new, in accepted or already installed.
         if is_source_in_queue_dir(queue_dir):
             # It's in p-u holding, so move it there.
+            print "Binary-only upload, source in %s." % (q,)
             move_to_holding(suite, queue_dir)
         elif is_source_in_queue_dir(Cnf["Dir::Queue::New"]):
             # It's in NEW.  We expect the source to land in p-u holding
             # pretty soon.
+            print "Binary-only upload, source in new."
             move_to_holding(suite, queue_dir)
         elif is_source_in_queue_dir(Cnf["Dir::Queue::Accepted"]):
             # The source is in accepted, the binary cleared NEW: accept it.
+            print "Binary-only upload, source in accepted."
             Upload.accept(summary, short_summary)
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
         elif Upload.source_exists(Upload.pkg.changes["source"],
@@ -862,12 +865,14 @@ def do_accept_stableupdate(suite, q):
             # dak tells us that there is source available.  At time of
             # writing this means that it is installed, so put it into
             # accepted.
+            print "Binary-only upload, source installed."
             Upload.accept(summary, short_summary)
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
     else:
         # We are handling a sourceful upload.  Move to accepted if currently
         # in p-u holding and to p-u holding otherwise.
         if is_source_in_queue_dir(queue_dir):
+            print "Sourceful upload in %s, accepting." % (q,)
             Upload.accept(summary, short_summary)
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
         else:
