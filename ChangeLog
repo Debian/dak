@@ -1,5 +1,10 @@
 2008-08-30  Philipp Kern  <pkern@debian.org>
 
+	* dak/process_new.py (is_source_in_queue_dir): join the queue path
+	because os.listdir entries come with their path stripped
+
+2008-08-30  Philipp Kern  <pkern@debian.org>
+
 	* dak/process_new.py (do_accept_stableupdate): state what we intend
 	to do
 

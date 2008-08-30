@@ -819,7 +819,7 @@ def is_source_in_queue_dir(qdir):
     for entry in entries:
         # read the .dak
         u = queue.Upload(Cnf)
-        u.pkg.changes_file = entry
+        u.pkg.changes_file = os.path.join(qdir, entry)
         u.update_vars()
         if not Upload.pkg.changes["architecture"].has_key("source"):
             # another binary upload, ignore
