@@ -1,3 +1,12 @@
+2008-08-31  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (_accept): new helper function to accept
+	an upload regularly, obeying no-action if set
+	* dak/process_new.py (do_accept): use _accept
+	* dak/process_new.py (do_accept_stableupdate): bail out in else
+	on binary uploads, in case we missed something; use the _accept
+	helper
+
 2008-08-30  Philipp Kern  <pkern@debian.org>
 
 	* dak/process_new.py (is_source_in_queue_dir): join the queue path

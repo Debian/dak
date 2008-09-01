@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# vim:set et ts=4 sw=4:
 
 # Handles NEW and BYHAND packages
 # Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
@@ -840,6 +841,12 @@ def move_to_holding(suite, queue_dir):
     move_to_dir(queue_dir)
     os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 
+def _accept():
+    if Options["No-Action"]:
+        return
+    Upload.accept(summary, short_summary)
+    os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+
 def do_accept_stableupdate(suite, q):
     (summary, short_summary) = Upload.build_summaries()
     queue_dir = Cnf["Dir::Queue::%s" % (q,)]
@@ -850,31 +857,34 @@ def do_accept_stableupdate(suite, q):
             # It's in p-u holding, so move it there.
             print "Binary-only upload, source in %s." % (q,)
             move_to_holding(suite, queue_dir)
-        elif is_source_in_queue_dir(Cnf["Dir::Queue::New"]):
-            # It's in NEW.  We expect the source to land in p-u holding
-            # pretty soon.
-            print "Binary-only upload, source in new."
-            move_to_holding(suite, queue_dir)
-        elif is_source_in_queue_dir(Cnf["Dir::Queue::Accepted"]):
-            # The source is in accepted, the binary cleared NEW: accept it.
-            print "Binary-only upload, source in accepted."
-            Upload.accept(summary, short_summary)
-            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
         elif Upload.source_exists(Upload.pkg.changes["source"],
                 Upload.pkg.changes["version"]):
             # dak tells us that there is source available.  At time of
             # writing this means that it is installed, so put it into
             # accepted.
             print "Binary-only upload, source installed."
-            Upload.accept(summary, short_summary)
-            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+            _accept()
+        elif is_source_in_queue_dir(Cnf["Dir::Queue::Accepted"]):
+            # The source is in accepted, the binary cleared NEW: accept it.
+            print "Binary-only upload, source in accepted."
+            _accept()
+        elif is_source_in_queue_dir(Cnf["Dir::Queue::New"]):
+            # It's in NEW.  We expect the source to land in p-u holding
+            # pretty soon.
+            print "Binary-only upload, source in new."
+            move_to_holding(suite, queue_dir)
+        else:
+            # No case applicable.  Bail out.  Return will cause the upload
+            # to be skipped.
+            print "ERROR"
+            print "Stable update failed.  Source not found."
+            return
     else:
         # We are handling a sourceful upload.  Move to accepted if currently
         # in p-u holding and to p-u holding otherwise.
         if is_source_in_queue_dir(queue_dir):
             print "Sourceful upload in %s, accepting." % (q,)
-            Upload.accept(summary, short_summary)
-            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+            _accept()
         else:
             move_to_holding(suite, queue_dir)
 
@@ -901,8 +911,7 @@ def do_accept():
                     continue
                 return do_accept_stableupdate(suite, q)
             # Just a normal upload, accept it...
-            Upload.accept(summary, short_summary)
-            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+            _accept()
     finally:
         if not Options["No-Action"]:
             os.unlink(Cnf["Process-New::AcceptedLockFile"])
