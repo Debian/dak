@@ -844,11 +844,11 @@ def move_to_holding(suite, queue_dir):
 def _accept():
     if Options["No-Action"]:
         return
+    (summary, short_summary) = Upload.build_summaries()
     Upload.accept(summary, short_summary)
     os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 
 def do_accept_stableupdate(suite, q):
-    (summary, short_summary) = Upload.build_summaries()
     queue_dir = Cnf["Dir::Queue::%s" % (q,)]
     if not Upload.pkg.changes["architecture"].has_key("source"):
         # It is not a sourceful upload.  So its source may be either in p-u
