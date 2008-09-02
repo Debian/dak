@@ -274,6 +274,10 @@ def install ():
     # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
     projectB.query("BEGIN WORK")
 
+    # Check the hashes are all present: HACK: Can go away once all dak files
+    # are known to be newer than the shasum changes
+    utils.ensure_hashes(changes, dsc, files, dsc_files)
+
     # Add the .dsc file to the DB
     for file in files.keys():
         if files[file]["type"] == "dsc":
@@ -307,7 +311,7 @@ def install ():
                 # files id is stored in dsc_files by check_dsc().
                 files_id = dsc_files[dsc_file].get("files id", None)
                 if files_id == None:
-                    files_id = database.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
+                    files_id = database.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
                 # FIXME: needs to check for -1/-2 and or handle exception
                 if files_id == None:
                     files_id = database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
@@ -349,7 +353,7 @@ def install ():
             if not files[file].has_key("location id") or not files[file]["location id"]:
                 files[file]["location id"] = database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],utils.where_am_i())
             if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
+                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], files[file]["location id"])
             source_id = database.get_source_id (source, source_version)
             if source_id:
                 projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, %d, '%s', %d)"
