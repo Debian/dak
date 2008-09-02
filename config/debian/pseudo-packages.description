@@ -22,3 +22,5 @@ release-notes		Problems with the Release Notes
 wiki.debian.org		Problems with the Debian wiki
 security-tracker	The Debian Security Bug Tracker
 release.debian.org	Requests regarding Debian releases and release team tools
+debian-i18n			Requests regarding Internationalization (i18n) of the distribution
+buildd.emdebian.org		Problems related to building packages for Emdebian
