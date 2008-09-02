@@ -919,8 +919,10 @@ def check_urgency ():
 ################################################################################
 
 def check_hashes ():
-    utils.check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
-    utils.check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
+    utils.check_hash(".changes", files, "md5", apt_pkg.md5sum)
+    utils.check_size(".changes", files)
+    utils.check_hash(".dsc", dsc_files, "md5", apt_pkg.md5sum)
+    utils.check_size(".dsc", dsc_files)
 
     # This is stupid API, but it'll have to do for now until
     # we actually have proper abstraction
