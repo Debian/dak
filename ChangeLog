@@ -1,3 +1,9 @@
+2008-09-06  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (is_source_in_queue_dir): Access the right
+	variable to check if the given entry in the queue is the sourceful
+	upload we are looking for.
+
 2008-09-02  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/pseudo-packages.description: Added debian-i18n and
