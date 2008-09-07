@@ -3,6 +3,10 @@
 	* daklib/utils.py (check_hash): try..except..finally only
 	works on python >=2.5.
 
+	* dak/process_accepted.py (install): better use dsc_file
+	instead of the (for the loop iteration) static file
+	variable
+
 2008-09-07  Philipp Kern  <pkern@debian.org>
 
 	* daklib/utils.py (check_hash): change the comment and warn
