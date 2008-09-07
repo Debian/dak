@@ -1,3 +1,16 @@
+2008-09-07  Philipp Kern  <pkern@debian.org>
+
+	* daklib/utils.py (check_hash): change the comment and warn
+	if a file is not found when checking the hashes (i.e. when
+	it is probably in the pool)
+
+	* daklib/utils.py (check_size): do not bail out if the file
+	is not found, because it may be in the pool
+
+	* dak/process_accepted.py (install): bail out and skip the
+	upload when ensure_hashes fails, print the rejection messages
+	as warnings
+
 2008-08-28  Philipp Kern  <pkern@debian.org>
 
 	* daklib/utils.py (check_hashes): adapt to different API, check
