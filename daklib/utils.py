@@ -252,22 +252,23 @@ def check_hash(where, files, hashname, hashfunc):
     for f in files.keys():
         file_handle = None
         try:
-            file_handle = open_file(f)
-
-            # Check for the hash entry, to not trigger a KeyError.
-            if not files[f].has_key(hash_key(hashname)):
-                rejmsg.append("%s: misses %s checksum in %s" % (f, hashname,
-                    where))
+            try:
+                file_handle = open_file(f)
+    
+                # Check for the hash entry, to not trigger a KeyError.
+                if not files[f].has_key(hash_key(hashname)):
+                    rejmsg.append("%s: misses %s checksum in %s" % (f, hashname,
+                        where))
+                    continue
+    
+                # Actually check the hash for correctness.
+                if hashfunc(file_handle) != files[f][hash_key(hashname)]:
+                    rejmsg.append("%s: %s check failed in %s" % (f, hashname,
+                        where))
+            except CantOpenError:
+                # TODO: This happens when the file is in the pool.
+                warn("Cannot open file %s" % f)
                 continue
-
-            # Actually check the hash for correctness.
-            if hashfunc(file_handle) != files[f][hash_key(hashname)]:
-                rejmsg.append("%s: %s check failed in %s" % (f, hashname,
-                    where))
-        except CantOpenError:
-            # TODO: This happens when the file is in the pool.
-            warn("Cannot open file %s" % f)
-            continue
         finally:
             if file_handle:
                 file_handle.close()
