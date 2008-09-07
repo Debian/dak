@@ -394,11 +394,12 @@ def parse_checksums(where, files, manifest, hashname):
         if not line:
             break
         hash, size, file = line.strip().split(' ')
+        if not files.has_key(file):
         # TODO: check for the file's entry in the original files dict, not
         # the one modified by (auto)byhand and other weird stuff
-        #if not files.has_key(file):
         #    rejmsg.append("%s: not present in files but in checksums-%s in %s" %
         #        (file, hashname, where))
+            continue
         if not files[file]["size"] == size:
             rejmsg.append("%s: size differs for files and checksums-%s entry "\
                 "in %s" % (file, hashname, where))
