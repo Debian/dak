@@ -250,6 +250,7 @@ def check_hash(where, files, hashname, hashfunc):
 
     rejmsg = []
     for f in files.keys():
+        file_handle = None
         try:
             file_handle = open_file(f)
 
@@ -264,10 +265,12 @@ def check_hash(where, files, hashname, hashfunc):
                 rejmsg.append("%s: %s check failed in %s" % (f, hashname,
                     where))
         except CantOpenError:
-            # XXX: IS THIS THE BLOODY CASE WHEN THE FILE'S IN THE POOL!?
+            # TODO: This happens when the file is in the pool.
+            warn("Cannot open file %s" % f)
             continue
         finally:
-            file_handle.close()
+            if file_handle:
+                file_handle.close()
     return rejmsg
 
 ################################################################################
@@ -278,7 +281,15 @@ def check_size(where, files):
 
     rejmsg = []
     for f in files.keys():
-        actual_size = os.stat(f)[stat.ST_SIZE]
+        try:
+            entry = os.stat(f)
+        except OSError, exc:
+            if exc.errno == 2:
+                # TODO: This happens when the file is in the pool.
+                continue
+            raise
+
+        actual_size = entry[stat.ST_SIZE]
         size = int(files[f]["size"])
         if size != actual_size:
             rejmsg.append("%s: actual file size (%s) does not match size (%s) in %s"
