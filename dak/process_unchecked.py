@@ -1050,8 +1050,6 @@ def check_signed_by_key():
             for si in q.getresult():
                 if si[0] not in source_ids: source_ids.append(si[0])
 
-        print "source_ids: %s" % (",".join([str(x) for x in source_ids]))
-
         is_nmu = 1
         for si in source_ids:
             is_nmu = 1
