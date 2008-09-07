@@ -1,5 +1,10 @@
 2008-09-07  Philipp Kern  <pkern@debian.org>
 
+	* daklib/utils.py (check_hash): try..except..finally only
+	works on python >=2.5.
+
+2008-09-07  Philipp Kern  <pkern@debian.org>
+
 	* daklib/utils.py (check_hash): change the comment and warn
 	if a file is not found when checking the hashes (i.e. when
 	it is probably in the pool)
