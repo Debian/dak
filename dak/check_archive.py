@@ -52,7 +52,7 @@ Run various sanity checks of the archive and/or database.
 
 The following MODEs are available:
 
-  md5sums            - validate the md5sums stored in the database
+  checksums          - validate the checksums stored in the database
   files              - check files in the database against what's in the archive
   dsc-syntax         - validate the syntax of .dsc files in the archive
   missing-overrides  - check for missing overrides
@@ -194,16 +194,18 @@ SELECT l.path, f.filename FROM files f, dsc_files df, location l WHERE df.source
 
 ################################################################################
 
-def check_md5sums():
+def check_checksums():
     print "Getting file information from database..."
-    q = projectB.query("SELECT l.path, f.filename, f.md5sum, f.size FROM files f, location l WHERE f.location = l.id")
+    q = projectB.query("SELECT l.path, f.filename, f.md5sum, f.sha1sum, f.sha256sum, f.size FROM files f, location l WHERE f.location = l.id")
     ql = q.getresult()
 
-    print "Checking file md5sums & sizes..."
+    print "Checking file checksums & sizes..."
     for i in ql:
         filename = os.path.abspath(i[0] + i[1])
         db_md5sum = i[2]
-        db_size = int(i[3])
+        db_sha1sum = i[3]
+        db_sha256sum = i[4]
+        db_size = int(i[5])
         try:
             f = utils.open_file(filename)
         except:
@@ -215,6 +217,18 @@ def check_md5sums():
             utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
         if size != db_size:
             utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
+        # Until the main database is filled, we need to not spit 500,000 warnings
+        # every time we scan the archive.  Yet another hack (TM) which can go away
+        # once this is all working
+        if db_sha1sum is not None and db_sha1sum != '':
+            sha1sum = apt_pkg.sha1sum(f)
+            if sha1sum != db_sha1sum:
+                utils.warn("**WARNING** sha1sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha1sum, db_sha1sum))
+
+        if db_sha256sum is not None and db_sha256sum != '':
+            sha256sum = apt_pkg.sha256sum(f)
+            if sha256sum != db_sha256sum:
+                utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, db_sha256sum))
 
     print "Done."
 
@@ -425,8 +439,8 @@ def main ():
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     database.init(Cnf, projectB)
 
-    if mode == "md5sums":
-        check_md5sums()
+    if mode == "checksums":
+        check_checksums()
     elif mode == "files":
         check_files()
     elif mode == "dsc-syntax":

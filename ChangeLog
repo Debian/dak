@@ -1,3 +1,36 @@
+2008-08-28  Philipp Kern  <pkern@debian.org>
+
+	* daklib/utils.py (check_hashes): adapt to different API, check
+	sizes separately
+
+	* daklib/utils.py (parse_changes, parse_deb822): refactor
+	the string-based logic of parse_changes into a new function
+	parse_deb822; parse_changes itself remains file-based
+
+	* daklib/utils.py (hash_key): gives the key of a hash in the
+	files dict
+
+	* daklib/utils.py (create_hash, check_size): made more readable
+
+	* daklib/utils.py (check_hash): just check the hashes and complain
+	about missing checksums
+
+	* daklib/utils.py (check_hash_fields): function to reject unknown
+	checksums fields
+
+	* daklib/utils.py (_ensure_changes_hash, _ensure_dsc_hash): helper
+	functions for ensure_hashes; check their corresponding manifests'
+	hashes
+
+	* daklib/utils.py (ensure_hashes): retrieve the checksums fields
+	from the original filecontents blob so that they do not need to
+	be present in the .dak; refactored the actual checks by calling
+	the aforementioned helper functions
+
+	* daklib/utils.py (parse_checksums): parse a given checksums field
+	in a manifest and insert the values found into the files dict,
+	checking the file sizes on the way
+
 2008-09-06  Philipp Kern  <pkern@debian.org>
 
 	* dak/process_new.py (is_source_in_queue_dir): Access the right
@@ -49,6 +82,24 @@
 
 	* config/debian/cron.dinstall: We dont want i18n to ever fail
 	dinstall, add a || true
+
+2008-08-15  Mark Hymers  <mhy@debian.org>
+
+	* daklib/utils.py: Actually import a module before using it.
+
+	* daklib/utils.py: Actually check we have basedict before trying to
+	use it.
+
+	*  dak/process_accepted.py, dak/process_unchecked.py,
+	daklib/database.py: Don't change get_files_id to use sha1sum and
+	sha256sum.
+
+	* setup/init_pool.sql, dak/check_archive.py, dak/decode_dot_dak.py,
+	dak/process_accepted.py, dak/process_unchecked.py, daklib/database.py,
+	daklib/queue.py, daklib/utils.py: Attempt to add sha1sum and
+	sha256sums into the database.  The complication is that we have to
+	keep backwards compatibility with the .dak files already in existance.
+	Note that import_archive hasn't been hacked to deal with this yet.
 
 2008-08-14  Joerg Jaspert  <joerg@debian.org>
 
@@ -113,7 +164,6 @@
 2008-08-07  Stephen Gran  <sgran@debian.org>
 
 	* Drop use of exec to eval variable interpolation
-
 2008-08-07  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_accepted.py (install): Error out with the new
