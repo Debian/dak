@@ -267,7 +267,7 @@ def check_hash(where, files, hashname, hashfunc):
                         where))
             except CantOpenError:
                 # TODO: This happens when the file is in the pool.
-                warn("Cannot open file %s" % f)
+                # warn("Cannot open file %s" % f)
                 continue
         finally:
             if file_handle:
