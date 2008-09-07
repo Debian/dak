@@ -318,7 +318,7 @@ def install ():
                     files_id = database.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
                 # FIXME: needs to check for -1/-2 and or handle exception
                 if files_id == None:
-                    files_id = database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
+                    files_id = database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[dsc_file]["sha1sum"], files[dsc_file]["sha256sum"], dsc_location_id)
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id))
 
             # Add the src_uploaders to the DB
