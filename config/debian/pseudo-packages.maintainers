@@ -22,3 +22,5 @@ release-notes           Debian Documentation Team <debian-doc@lists.debian.org>
 wiki.debian.org         Debian WWW Team <debian-www@lists.debian.org>
 security-tracker        Debian Security Tracker Team <debian-security-tracker@lists.debian.org>
 release.debian.org      Debian Release Team <debian-release@lists.debian.org>
+debian-i18n             Debian I18N Team <debian-i18n@lists.debian.org>
+buildd.emdebian.org			Debian Embedded Team <debian-embedded@lists.debian.org>

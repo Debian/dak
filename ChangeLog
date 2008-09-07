@@ -31,6 +31,20 @@
 	in a manifest and insert the values found into the files dict,
 	checking the file sizes on the way
 
+2008-09-06  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (is_source_in_queue_dir): Access the right
+	variable to check if the given entry in the queue is the sourceful
+	upload we are looking for.
+
+2008-09-02  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/pseudo-packages.description: Added debian-i18n and
+	buildd.emdebian.org
+
+	* dak/process_new.py (_accept): Fix Philipps new helper function
+	to not break by moving Upload.build_summaries there.
+
 2008-08-31  Philipp Kern  <pkern@debian.org>
 
 	* dak/process_new.py (_accept): new helper function to accept
