@@ -4,6 +4,9 @@
 	before the sha1sum/sha256sum checks as they got seeked by
 	md5sum
 
+	* daklib/utils.py (build_file_list): do not die on very
+	old dsc files without format header
+
 2008-09-07  Philipp Kern  <pkern@debian.org>
 
 	* daklib/utils.py (check_hash): try..except..finally only
