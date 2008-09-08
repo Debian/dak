@@ -1,3 +1,9 @@
+2008-09-08  Philipp Kern  <pkern@debian.org>
+
+	* dak/check_archive.py (check_checksums): rewind the files
+	before the sha1sum/sha256sum checks as they got seeked by
+	md5sum
+
 2008-09-07  Philipp Kern  <pkern@debian.org>
 
 	* daklib/utils.py (check_hash): try..except..finally only

@@ -221,11 +221,13 @@ def check_checksums():
         # every time we scan the archive.  Yet another hack (TM) which can go away
         # once this is all working
         if db_sha1sum is not None and db_sha1sum != '':
+            f.seek(0)
             sha1sum = apt_pkg.sha1sum(f)
             if sha1sum != db_sha1sum:
                 utils.warn("**WARNING** sha1sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha1sum, db_sha1sum))
 
         if db_sha256sum is not None and db_sha256sum != '':
+            f.seek(0)
             sha256sum = apt_pkg.sha256sum(f)
             if sha256sum != db_sha256sum:
                 utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, db_sha256sum))
