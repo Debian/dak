@@ -1,3 +1,13 @@
+2008-09-11  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/pseudo-packages.description, ...maintainers:
+	Removed, now with the bts people
+
+	* scripts/debian/update-pseudopackages.sh: Added, fetching
+	pseudo-packages from new bts location
+
+	* scripts/debian/mkmaintainers: Use new location
+
 2008-09-08  Philipp Kern  <pkern@debian.org>
 
 	* dak/check_archive.py (check_checksums): rewind the files
