@@ -75,7 +75,7 @@
 # Revision 1.38  1998/03/23 14:03:55  ftplinux
 # In an upload failure message, say explicitly that the job will be
 # retried, to avoid confusion of users.
-# $failure_file was put on @keep_list only for first retry.
+# $failure_file was put onÂ @keep_list only for first retry.
 # If the daemon removes a .changes, set SGID bit on all files associated
 # with it, so that the test for Debian files without a .changes doesn't
 # find them.
@@ -276,6 +276,7 @@ $junk = $conf::no_changes_timeout;
 $junk = @conf::nonus_packages;
 $junk = @conf::test_binaries;
 $junk = @conf::maintainer_mail;
+$junk = @conf::targetdir_delayed;
 $junk = $conf::mail ||= '/usr/sbin/sendmail';
 $conf::target = "localhost" if $conf::upload_method eq "copy";
 package main;
@@ -292,7 +293,7 @@ if (@ARGV == 1 && $ARGV[0] =~ /^-[rk]$/) {
 }
 
 # test for another instance of the queued already running
-my $pid;
+my ($pid, $delayed_dirs, $adelayedcore);
 if (open( PIDFILE, "<$conf::pidfile" )) {
 	chomp( $pid = <PIDFILE> );
 	close( PIDFILE );
@@ -317,6 +318,15 @@ if (open( PIDFILE, "<$conf::pidfile" )) {
 		if (-e "$conf::incoming/core") {
 			unlink( "$conf::incoming/core" );
 			print "(Removed core file)\n";
+		}
+		for ($delayed_dirs = 0; $delayed_dirs <= $conf::max_delayed; 
+			 $delayed_dirs++) {
+			$adelayedcore = sprintf( "$conf::incoming_delayed/core",
+									 $delayed_dirs );
+			if (-e $adelayedcore) {
+				unlink( $adelayedcore );
+				print "(Removed core file)\n";
+			}
 		}
 		exit 0 if $main::arg eq "kill";
 	}
@@ -393,6 +403,14 @@ die "Bad upload method '$conf::upload_method'.\n"
 die "No keyrings\n" if ! @conf::keyrings;
 
 }
+die "statusfile path must be absolute."
+	if $conf::statusfile !~ m,^/,;
+die "upload and target queue paths must be absolute."
+	if $conf::incoming !~ m,^/, ||
+	   $conf::incoming_delayed !~ m,^/, ||
+	   $conf::targetdir !~ m,^/, ||
+	   $conf::targetdir_delayed !~ m,^/,;
+
 
 # ---------------------------------------------------------------------------
 #							   initializations
@@ -562,6 +580,10 @@ kill( $main::signo{"USR1"}, $parent_pid );
 #								 the mainloop
 # ---------------------------------------------------------------------------
 
+# default to classical incoming/target
+$main::current_incoming = $conf::incoming;
+$main::current_targetdir = $conf::targetdir;
+
 $main::dstat = "i";
 write_status_file() if $conf::statusdelay;
 while( 1 ) {
@@ -569,6 +591,13 @@ while( 1 ) {
 	# ping target only if there is the possibility that we'll contact it (but
 	# also don't wait too long).
 	my @have_changes = <*.changes *.commands>;
+	for ( my $delayed_dirs = 0; $delayed_dirs <= $conf::max_delayed; 
+		  $delayed_dirs++) {
+		my $adelayeddir = sprintf( "$conf::incoming_delayed",
+								   $delayed_dirs );
+		push( @have_changes,
+			  <$adelayeddir/*.changes $adelayeddir/*.commands> );
+	}
 	check_alive() if @have_changes || (time - $main::last_ping_time) > 8*60*60;
 
 	if (@have_changes && $main::target_up) {
@@ -614,7 +643,8 @@ sub calc_delta() {
 # main function for checking the incoming dir
 #
 sub check_dir() {
-	my( @files, @changes, @keep_files, @this_keep_files, @stats, $file );
+	my( @files, @changes, @keep_files, @this_keep_files, @stats, $file ,
+		$adelay );
 	
 	debug( "starting checkdir" );
 	$main::dstat = "c";
@@ -630,127 +660,154 @@ sub check_dir() {
 		msg( "log", "binary test failed for $_; delaying queue run\n");
 		goto end_run;
 	}
-	
-	# look for *.commands files
-	foreach $file ( <*.commands> ) {
-		init_mail( $file );
-		block_signals();
-		process_commands( $file );
-		unblock_signals();
-		$main::dstat = "c";
-		write_status_file() if $conf::statusdelay;
-		finish_mail();
-	}
-	
-	opendir( INC, "." )
-		or (msg( "log", "Cannot open incoming dir $conf::incoming: $!\n" ),
-			return);
-	@files = readdir( INC );
-	closedir( INC );
 
-	# process all .changes files found
-	@changes = grep /\.changes$/, @files;
-	push( @keep_files, @changes ); # .changes files aren't stray
-	foreach $file ( @changes ) {
-		init_mail( $file );
-		# wrap in an eval to allow jumpbacks to here with die in case
-		# of errors
-		block_signals();
-		eval { process_changes( $file, @this_keep_files ); };
-		unblock_signals();
-		msg( "log,mail", $@ ) if $@;
-		$main::dstat = "c";
-		write_status_file() if $conf::statusdelay;
+	for ( $adelay=-1; $adelay <= $conf::max_delayed; $adelay++ ) {
+		if ( $adelay == -1 ) {
+			$main::current_incoming = $conf::incoming;
+			$main::current_incoming_short = "";
+			$main::current_targetdir = $conf::targetdir;
+		}
+		else {
+			$main::current_incoming = sprintf( $conf::incoming_delayed,
+											   $adelay );
+			$main::current_incoming_short = sprintf( "DELAYED/%d-day",
+													 $adelay );
+			$main::current_targetdir = sprintf( $conf::targetdir_delayed,
+												$adelay );
+		}
+
+		# need to clear directory specific variables
+		undef ( @keep_files );
+		undef ( @this_keep_files );
+
+		chdir ( $main::current_incoming )
+			or (msg( "log",
+					 "Cannot change to dir ".
+					 "${main::current_incoming_short}: $!\n" ),
+				return);
+	
+		# look for *.commands files
+		foreach $file ( <*.commands> ) {
+			init_mail( $file );
+			block_signals();
+			process_commands( $file );
+			unblock_signals();
+			$main::dstat = "c";
+			write_status_file() if $conf::statusdelay;
+			finish_mail();
+		}
+	
+		opendir( INC, "." )
+			or (msg( "log", "Cannot open dir ${main::current_incoming_short}: $!\n" ),
+				return);
+		@files = readdir( INC );
+		closedir( INC );
+
+		# process all .changes files found
+		@changes = grep /\.changes$/, @files;
+		push( @keep_files, @changes ); # .changes files aren't stray
+		foreach $file ( @changes ) {
+			init_mail( $file );
+			# wrap in an eval to allow jumpbacks to here with die in case
+			# of errors
+			block_signals();
+			eval { process_changes( $file, @this_keep_files ); };
+			unblock_signals();
+			msg( "log,mail", $@ ) if $@;
+			$main::dstat = "c";
+			write_status_file() if $conf::statusdelay;
 		
-		# files which are ok in conjunction with this .changes
-		debug( "$file tells to keep @this_keep_files" );
-		push( @keep_files, @this_keep_files );
-		finish_mail();
+			# files which are ok in conjunction with this .changes
+			debug( "$file tells to keep @this_keep_files" );
+			push( @keep_files, @this_keep_files );
+			finish_mail();
 
-		# break out of this loop if the incoming dir has become unwritable
-		goto end_run if !$main::incoming_writable;
-	}
-	ftp_close() if $conf::upload_method eq "ftp";
+			# break out of this loop if the incoming dir has become unwritable
+			goto end_run if !$main::incoming_writable;
+		}
+		ftp_close() if $conf::upload_method eq "ftp";
 
-	# find files which aren't related to any .changes
-	foreach $file ( @files ) {
-		# filter out files we never want to delete
-		next if ! -f $file ||	# may have disappeared in the meantime
+		# find files which aren't related to any .changes
+		foreach $file ( @files ) {
+			# filter out files we never want to delete
+			next if ! -f $file ||	# may have disappeared in the meantime
 			    $file eq "." || $file eq ".." ||
 			    (grep { $_ eq $file } @keep_files) ||
 				$file =~ /$conf::keep_files/;
-		# Delete such files if they're older than
-		# $stray_remove_timeout; they could be part of an
-		# yet-incomplete upload, with the .changes still missing.
-		# Cannot send any notification, since owner unknown.
-		next if !(@stats = stat( $file ));
-		my $age = time - $stats[ST_MTIME];
-		my( $maint, $pattern, @job_files );
-		if ($file =~ /^junk-for-writable-test/ ||
-			$file !~ m,$conf::valid_files, ||
-			$age >= $conf::stray_remove_timeout) {
-			msg( "log", "Deleted stray file $file\n" ) if rm( $file );
-		}
-		elsif ($age > $conf::no_changes_timeout &&
-			   is_debian_file( $file ) &&
-			   # not already reported
-			   !($stats[ST_MODE] & S_ISGID) &&
-			   ($pattern = debian_file_stem( $file )) &&
-			   (@job_files = glob($pattern)) &&
-			   # If a .changes is in the list, it has the same stem as the
-			   # found file (probably a .orig.tar.gz). Don't report in this
-			   # case.
-			   !(grep( /\.changes$/, @job_files ))) {
-			$maint = get_maintainer( $file );
-			# Don't send a mail if this looks like the recompilation of a
-			# package for a non-i386 arch. For those, the maintainer field is
-			# useless :-(
-			if (!grep( /(\.dsc|_(i386|all)\.deb)$/, @job_files )) {
-				msg( "log", "Found an upload without .changes and with no ",
-					        ".dsc file\n" );
-				msg( "log", "Not sending a report, because probably ",
-					        "recompilation job\n" );
+			# Delete such files if they're older than
+			# $stray_remove_timeout; they could be part of an
+			# yet-incomplete upload, with the .changes still missing.
+			# Cannot send any notification, since owner unknown.
+			next if !(@stats = stat( $file ));
+			my $age = time - $stats[ST_MTIME];
+			my( $maint, $pattern, @job_files );
+			if ($file =~ /^junk-for-writable-test/ ||
+				$file !~ m,$conf::valid_files, ||
+				$age >= $conf::stray_remove_timeout) {
+				msg( "log", "Deleted stray file ${main::current_incoming_short}/$file\n" ) if rm( $file );
 			}
-			elsif ($maint) {
-				init_mail();
-				$main::mail_addr = $maint;
-				$main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
-				$main::mail_subject = "Incomplete upload found in ".
-									  "Debian upload queue";
-				msg( "mail", "Probably you are the uploader of the following ".
-							 "file(s) in\n" );
-				msg( "mail", "the Debian upload queue directory:\n  " );
-				msg( "mail", join( "\n  ", @job_files ), "\n" );
-				msg( "mail", "This looks like an upload, but a .changes file ".
-							 "is missing, so the job\n" );
-				msg( "mail", "cannot be processed.\n\n" );
-				msg( "mail", "If no .changes file arrives within ",
-							 print_time( $conf::stray_remove_timeout - $age ),
-							 ", the files will be deleted.\n\n" );
-				msg( "mail", "If you didn't upload those files, please just ".
-							 "ignore this message.\n" );
-				finish_mail();
-				msg( "log", "Sending problem report for an upload without a ".
-							".changes\n" );
-				msg( "log", "Maintainer: $maint\n" );
+			elsif ($age > $conf::no_changes_timeout &&
+				   is_debian_file( $file ) &&
+				   # not already reported
+				   !($stats[ST_MODE] & S_ISGID) &&
+				   ($pattern = debian_file_stem( $file )) &&
+				   (@job_files = glob($pattern)) &&
+				   # If a .changes is in the list, it has the same stem as the
+				   # found file (probably a .orig.tar.gz). Don't report in this
+				   # case.
+				   !(grep( /\.changes$/, @job_files ))) {
+				$maint = get_maintainer( $file );
+				# Don't send a mail if this looks like the recompilation of a
+				# package for a non-i386 arch. For those, the maintainer field is
+				# useless :-(
+				if (!grep( /(\.dsc|_(i386|all)\.deb)$/, @job_files )) {
+					msg( "log", "Found an upload without .changes and with no ",
+						        ".dsc file\n" );
+					msg( "log", "Not sending a report, because probably ",
+						        "recompilation job\n" );
+				}
+				elsif ($maint) {
+					init_mail();
+					$main::mail_addr = $maint;
+					$main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
+					$main::mail_subject = "Incomplete upload found in ".
+						                  "Debian upload queue";
+					msg( "mail", "Probably you are the uploader of the following ".
+								 "file(s) in\n" );
+					msg( "mail", "the Debian upload queue directory:\n  " );
+					msg( "mail", join( "\n  ", @job_files ), "\n" );
+					msg( "mail", "This looks like an upload, but a .changes file ".
+								 "is missing, so the job\n" );
+					msg( "mail", "cannot be processed.\n\n" );
+					msg( "mail", "If no .changes file arrives within ",
+								 print_time( $conf::stray_remove_timeout - $age ),
+								 ", the files will be deleted.\n\n" );
+					msg( "mail", "If you didn't upload those files, please just ".
+								 "ignore this message.\n" );
+					finish_mail();
+					msg( "log", "Sending problem report for an upload without a ".
+								".changes\n" );
+					msg( "log", "Maintainer: $maint\n" );
+				}
+				else {
+					msg( "log", "Found an upload without .changes, but can't ".
+								"find a maintainer address\n" );
+				}
+				msg( "log", "Files: @job_files\n" );
+				# remember we already have sent a mail regarding this file
+				foreach ( @job_files ) {
+					my @st = stat($_);
+					next if !@st; # file may have disappeared in the meantime
+					chmod +($st[ST_MODE] |= S_ISGID), $_;
+				}
 			}
 			else {
-				msg( "log", "Found an upload without .changes, but can't ".
-							"find a maintainer address\n" );
+				debug( "found stray file ${main::current_incoming_short}/$file, deleting in ",
+					   print_time($conf::stray_remove_timeout - $age) );
 			}
-			msg( "log", "Files: @job_files\n" );
-			# remember we already have sent a mail regarding this file
-			foreach ( @job_files ) {
-				my @st = stat($_);
-				next if !@st; # file may have disappeared in the meantime
-				chmod +($st[ST_MODE] |= S_ISGID), $_;
-			}
-		}
-		else {
-			debug( "found stray file $file, deleting in ",
-				   print_time($conf::stray_remove_timeout - $age) );
 		}
 	}
+	chdir( $conf::incoming );
 
   end_run:
 	$main::dstat = "i";
@@ -769,16 +826,16 @@ sub process_changes($\@) {
 	local( *CHANGES );
 	local( *FAILS );
 
-	format_status_str( $main::current_changes, $changes );
+	format_status_str( $main::current_changes, "$main::current_incoming_short/$changes" );
 	$main::dstat = "c";
 	write_status_file() if $conf::statusdelay;
 
 	@$keep_list = ();
-	msg( "log", "processing $changes\n" );
+	msg( "log", "processing ${main::current_incoming_short}/$changes\n" );
 
 	# parse the .changes file
 	open( CHANGES, "<$changes" )
-		or die "Cannot open $changes: $!\n";
+		or die "Cannot open ${main::current_incoming_short}/$changes: $!\n";
 	$pgplines = 0;
 	$main::mail_addr = "";
 	@files = ();
@@ -805,7 +862,7 @@ sub process_changes($\@) {
 				$field[5] =~ /^([a-zA-Z0-9.+_:@=%-][~a-zA-Z0-9.+_:@=%-]*)/;
 				if ($1 ne $field[5]) {
 					msg( "log", "found suspicious filename $field[5]\n" );
-					msg( "mail", "File '$field[5]' mentioned in $changes\n",
+					msg( "mail", "File '$field[5]' mentioned in $main::current_incoming_short/$changes\n",
 						 "has bad characters in its name. Removed.\n" );
 					rm( $field[5] );
 					next;
@@ -827,7 +884,7 @@ sub process_changes($\@) {
 
 	# some consistency checks
 	if (!$main::mail_addr) {
-		msg( "log,mail", "$changes doesn't contain a Maintainer: field; ".
+		msg( "log,mail", "$main::current_incoming_short/$changes doesn't contain a Maintainer: field; ".
 			 "cannot process\n" );
 		goto remove_only_changes;
 	}
@@ -849,25 +906,25 @@ sub process_changes($\@) {
 			# not found or not unique: hold the job and inform queue maintainer
 			my $old_addr = $main::mail_addr;
 			$main::mail_addr = $conf::maintainer_mail;
-			msg( "mail", "The job $changes doesn't have a correct email\n" );
-			msg( "mail", "address in the Maintainer: field:\n" );
+			msg( "mail", "The job ${main::current_incoming_short}/$changes doesn't have a correct email\n" );
+		    msg( "mail", "address in the Maintainer: field:\n" );
 			msg( "mail", "  $old_addr\n" );
 			msg( "mail", "A check for this in the Debian keyring gave:\n" );
 			msg( "mail", @addr_list ?
 						 "  " . join( ", ", @addr_list ) . "\n" :
 						 "  nothing\n" );
 			msg( "mail", "Please fix this manually\n" );
-			msg( "log", "Bad Maintainer: field in $changes: $old_addr\n" );
+			msg( "log", "Bad Maintainer: field in ${main::current_incoming_short}/$changes: $old_addr\n" );
 			goto remove_only_changes;
 		}
 	}
 	if ($pgplines < 3) {
-		msg( "log,mail", "$changes isn't signed with PGP/GnuPG\n" );
+		msg( "log,mail", "$main::current_incoming_short/$changes isn't signed with PGP/GnuPG\n" );
 		msg( "log", "(uploader $main::mail_addr)\n" );
 		goto remove_only_changes;
 	}
 	if (!@files) {
-		msg( "log,mail", "$changes doesn't mention any files\n" );
+		msg( "log,mail", "$main::current_incoming_short/$changes doesn't mention any files\n" );
 		msg( "log", "(uploader $main::mail_addr)\n" );
 		goto remove_only_changes;
 	}
@@ -888,7 +945,7 @@ sub process_changes($\@) {
 	$retries = $last_retry = 0;
 	if (-f $failure_file) {
 		open( FAILS, "<$failure_file" )
-			or die "Cannot open $failure_file: $!\n";
+			or die "Cannot open $main::current_incoming_short/$failure_file: $!\n";
 		my $line = <FAILS>;
 		close( FAILS );
 		( $retries, $last_retry ) = ( $1, $2 ) if $line =~ /^(\d+)\s+(\d+)$/;
@@ -897,10 +954,10 @@ sub process_changes($\@) {
 
 	# run PGP on the file to check the signature
 	if (!($signator = pgp_check( $changes ))) {
-		msg( "log,mail", "$changes has bad PGP/GnuPG signature!\n" );
+		msg( "log,mail", "$main::current_incoming_short/$changes has bad PGP/GnuPG signature!\n" );
 		msg( "log", "(uploader $main::mail_addr)\n" );
 	  remove_only_changes:
-		msg( "log,mail", "Removing $changes, but keeping its associated ",
+		msg( "log,mail", "Removing $main::current_incoming_short/$changes, but keeping its associated ",
 			             "files for now.\n" );
 		rm( $changes );
 		# Set SGID bit on associated files, so that the test for Debian files
@@ -915,11 +972,11 @@ sub process_changes($\@) {
 	elsif ($signator eq "LOCAL ERROR") {
 		# An error has appened when starting pgp... Don't process the file,
 		# but also don't delete it
-		debug( "Can't PGP/GnuPG check $changes -- don't process it for now" );
+		debug( "Can't PGP/GnuPG check $main::current_incoming_short/$changes -- don't process it for now" );
 		return;
 	}
 
-	die "Cannot stat $changes (??): $!\n"
+	die "Cannot stat ${main::current_incoming_short}/$changes (??): $!\n"
 		if !(@changes_stats = stat( $changes ));
 	# Make $upload_time the maximum of all modification times of files
 	# related to this .changes (and the .changes it self). This is the
@@ -981,7 +1038,7 @@ sub process_changes($\@) {
 			# if a .changes fails for a really long time (several days
 			# or so), remove it and all associated files
 			msg( "log,mail",
-				 "$changes couldn't be processed for ",
+				 "$main::current_incoming_short/$changes couldn't be processed for ",
 				 int($conf::bad_changes_timeout/(60*60)),
 				 " hours and is now deleted\n" );
 			msg( "log,mail",
@@ -1021,7 +1078,7 @@ sub process_changes($\@) {
 	# (moved to here, to avoid bothering target as long as there are errors in
 	# the job)
 	if ($ls_l = is_on_target( $changes )) {
-		msg( "log,mail", "$changes is already present on target host:\n" );
+		msg( "log,mail", "$main::current_incoming_short/$changes is already present on target host:\n" );
 		msg( "log,mail", "$ls_l\n" );
 		msg( "mail", "Either you already uploaded it, or someone else ",
 			         "came first.\n" );
@@ -1123,11 +1180,11 @@ sub process_commands($) {
 	$main::dstat = "c";
 	write_status_file() if $conf::statusdelay;
 	
-	msg( "log", "processing $commands\n" );
+	msg( "log", "processing $main::current_incoming_short/$commands\n" );
 
 	# parse the .commands file
 	if (!open( COMMANDS, "<$commands" )) {
-		msg( "log", "Cannot open $commands: $!\n" );
+		msg( "log", "Cannot open $main::current_incoming_short/$commands: $!\n" );
 		return;
 	}
 	$pgplines = 0;
@@ -1159,16 +1216,16 @@ sub process_commands($) {
 	
 	# some consistency checks
 	if (!$main::mail_addr || $main::mail_addr !~ /^\S+\@\S+\.\S+/) {
-		msg( "log,mail", "$commands contains no or bad Uploader: field: ".
+		msg( "log,mail", "$main::current_incoming_short/$commands contains no or bad Uploader: field: ".
 						 "$main::mail_addr\n" );
-		msg( "log,mail", "cannot process $commands\n" );
+		msg( "log,mail", "cannot process $main::current_incoming_short/$commands\n" );
 		$main::mail_addr = "";
 		goto remove;
 	}
 	msg( "log", "(command uploader $main::mail_addr)\n" );
 
 	if ($pgplines < 3) {
-		msg( "log,mail", "$commands isn't signed with PGP/GnuPG\n" );
+		msg( "log,mail", "$main::current_incoming_short/$commands isn't signed with PGP/GnuPG\n" );
 		msg( "mail", "or the uploaded file is broken. Make sure to transfer in binary mode\n" );
 		msg( "mail", "or better yet - use dcut for commands files\n");
 		goto remove;
@@ -1176,22 +1233,22 @@ sub process_commands($) {
 	
 	# run PGP on the file to check the signature
 	if (!($signator = pgp_check( $commands ))) {
-		msg( "log,mail", "$commands has bad PGP/GnuPG signature!\n" );
+		msg( "log,mail", "$main::current_incoming_short/$commands has bad PGP/GnuPG signature!\n" );
 	  remove:
-		msg( "log,mail", "Removing $commands\n" );
+		msg( "log,mail", "Removing $main::current_incoming_short/$commands\n" );
 		rm( $commands );
 		return;
 	}
 	elsif ($signator eq "LOCAL ERROR") {
 		# An error has appened when starting pgp... Don't process the file,
 		# but also don't delete it
-		debug( "Can't PGP/GnuPG check $commands -- don't process it for now" );
+		debug( "Can't PGP/GnuPG check $main::current_incoming_short/$commands -- don't process it for now" );
 		return;
 	}
 	msg( "log", "(PGP/GnuPG signature by $signator)\n" );
 
 	# now process commands
-	msg( "mail", "Log of processing your commands file $commands:\n\n" );
+	msg( "mail", "Log of processing your commands file $main::current_incoming_short/$commands:\n\n" );
 	foreach $cmd ( @cmds ) {
 		my @word = split( /\s+/, $cmd );
 		msg( "mail,log", "> @word\n" );
@@ -1273,7 +1330,7 @@ sub process_commands($) {
 		}
 	}
 	rm( $commands );
-	msg( "log", "-- End of $commands processing\n" );
+	msg( "log", "-- End of $main::current_incoming_short/$commands processing\n" );
 }
 
 #
@@ -1335,13 +1392,17 @@ sub copy_to_target(@) {
 	}
 	elsif ($conf::upload_method eq "ftp") {
 		my($rv, $file);
+		if (!$main::FTP_chan->cwd( $main::current_targetdir )) {
+			msg( "log,mail", "Can't cd to $main::current_targetdir on $conf::target\n" );
+			goto err;
+		}
 		foreach $file (@files) {
 			($rv, $msgs) = ftp_cmd( "put", $file );
 			goto err if !$rv;
 		}
 	}
 	else {
-		($msgs, $stat) = local_cmd( "$conf::cp @files $conf::targetdir", 'NOCD' );
+		($msgs, $stat) = local_cmd( "$conf::cp @files $main::current_targetdir", 'NOCD' );
 		goto err if $stat;
 	}
 	
@@ -1463,7 +1524,7 @@ sub copy_to_target(@) {
 		}
 	}
 	else {
-		my @tfiles = map { "$conf::targetdir/$_" } @files;
+		my @tfiles = map { "$main::current_targetdir/$_" } @files;
 		debug( "executing unlink(@tfiles)" );
 		rm( @tfiles );
 	}
@@ -1482,17 +1543,17 @@ sub pgp_check($) {
 	my $found = 0;
 	my $stat;
 	local( *PIPE );
-	
+
 	$stat = 1;
 	if (-x $conf::gpg) {
 		debug( "executing $conf::gpg --no-options --batch ".
 		   "--no-default-keyring --always-trust ".
 		   "--keyring ". join (" --keyring ",@conf::keyrings).
-		   " --verify '$file'" );
+		   "--verify '$file'" );
 		if (!open( PIPE, "$conf::gpg --no-options --batch ".
 		   "--no-default-keyring --always-trust ".
 		   "--keyring " . join (" --keyring ",@conf::keyrings).
-		   " --verify '$file'".
+		   "--verify '$file'".
 		   " 2>&1 |" )) {
 			msg( "log", "Can't open pipe to $conf::gpg: $!\n" );
 			return "LOCAL ERROR";
@@ -1719,7 +1780,7 @@ sub ftp_open() {
 
 	if ($main::FTP_chan) {
 		# is already open, but might have timed out; test with a cwd
-		return $main::FTP_chan if $main::FTP_chan->cwd( $conf::targetdir );
+		return $main::FTP_chan if $main::FTP_chan->cwd( $main::current_targetdir );
 		# cwd didn't work, channel is closed, try to reopen it
 		$main::FTP_chan = undef;
 	}
@@ -1738,8 +1799,8 @@ sub ftp_open() {
 		msg( "log,mail", "Can't set binary FTP mode on $conf::target\n" );
 		goto err;
 	}
-	if (!$main::FTP_chan->cwd( $conf::targetdir )) {
-		msg( "log,mail", "Can't cd to $conf::targetdir on $conf::target\n" );
+	if (!$main::FTP_chan->cwd( $main::current_targetdir )) {
+		msg( "log,mail", "Can't cd to $main::current_targetdir on $conf::target\n" );
 		goto err;
 	}
 	debug( "opened FTP channel to $conf::target" );
@@ -1802,7 +1863,7 @@ sub ssh_cmd($) {
 	my ($msg, $stat);
 
 	my $ecmd = "$conf::ssh $conf::ssh_options $conf::target ".
-			   "-l $conf::targetlogin \'cd $conf::targetdir; $cmd\'";
+			   "-l $conf::targetlogin \'cd $main::current_targetdir; $cmd\'";
 	debug( "executing $ecmd" );
 	$SIG{"ALRM"} = sub { die "timeout in ssh command\n" } ;
 	alarm( $conf::remote_timeout );
@@ -1822,7 +1883,7 @@ sub scp_cmd(@) {
 	my ($msg, $stat);
 
 	my $ecmd = "$conf::scp $conf::ssh_options @_ ".
-			   "$conf::targetlogin\@$conf::target:$conf::targetdir";
+			   "$conf::targetlogin\@$conf::target:$main::current_targetdir";
 	debug( "executing $ecmd" );
 	$SIG{"ALRM"} = sub { die "timeout in scp\n" } ;
 	alarm( $conf::remote_timeout );
@@ -1843,7 +1904,7 @@ sub local_cmd($;$) {
 	my $nocd = shift;
 	my ($msg, $stat);
 
-	my $ecmd = ($nocd ? "" : "cd $conf::targetdir; ") . $cmd;
+	my $ecmd = ($nocd ? "" : "cd $main::current_targetdir; ") . $cmd;
 	debug( "executing $ecmd" );
 	$msg = `($ecmd) 2>&1`;
 	$stat = $?;
