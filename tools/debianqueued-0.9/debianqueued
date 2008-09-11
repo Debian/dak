@@ -1173,7 +1173,7 @@ sub process_changes($\@) {
 #
 sub process_commands($) {
 	my $commands = shift;
-	my( @cmds, $cmd, $pgplines, $signator );
+	my( @cmds, $cmd, $pgplines, $signator, $adelay );
 	local( *COMMANDS );
 	
 	format_status_str( $main::current_changes, $commands );
@@ -1257,21 +1257,44 @@ sub process_commands($) {
 		if ($word[0] eq "rm") {
 			my( @files, $file, @removed );
 			foreach ( @word[1..$#word] ) {
+                if (m,^DELAYED/([0-9]+)-day/,) {
+                    $adelay = $1;
+                    s,^DELAYED/[0-9]+-day/,,
+                }
+                else {
+                    $adelay = -1;
+                }
 				if (m,/,) {
 					msg( "mail,log", "$_: filename may not contain slashes\n" );
 				}
-				elsif (/[*?[]/) {
-					# process wildcards
+				else {
+					# process wildcards but also plain names (for delayed target removal)
 					my $pat = quotemeta($_);
 					$pat =~ s/\\\*/.*/g;
 					$pat =~ s/\\\?/.?/g;
 					$pat =~ s/\\([][])/$1/g;
-					opendir( DIR, "." );
-					push( @files, grep /^$pat$/, readdir(DIR) );
-					closedir( DIR );
-				}
-				else {
-					push( @files, $_ );
+                    if ($adelay == -1) {
+						opendir( DIR, "." );
+						push( @files, grep /^$pat$/, readdir(DIR) );
+						closedir( DIR );
+                    }
+					else {
+						if ($conf::upload_method eq "copy") {
+			            	my($dir) = sprintf( $conf::incoming_delayed,
+												$adelay );
+							opendir( DIR, "$dir" );
+							push( @files, map ("$dir/$_", grep /^$pat$/, readdir(DIR) ));
+							closedir( DIR );
+			            	$dir = sprintf( $conf::targetdir_delayed,
+											$adelay );
+							opendir( DIR, "$dir" );
+							push( @files, map ("$dir/$_", grep /^$pat$/, readdir(DIR) ));
+							closedir( DIR );
+						}
+						else {
+							msg( "mail,log", "No DELAYED removal possible\n" );
+						}
+					}
 				}
 			}
 			if (!@files) {
@@ -1549,11 +1572,11 @@ sub pgp_check($) {
 		debug( "executing $conf::gpg --no-options --batch ".
 		   "--no-default-keyring --always-trust ".
 		   "--keyring ". join (" --keyring ",@conf::keyrings).
-		   "--verify '$file'" );
+		   " --verify '$file'" );
 		if (!open( PIPE, "$conf::gpg --no-options --batch ".
 		   "--no-default-keyring --always-trust ".
 		   "--keyring " . join (" --keyring ",@conf::keyrings).
-		   "--verify '$file'".
+		   " --verify '$file'".
 		   " 2>&1 |" )) {
 			msg( "log", "Can't open pipe to $conf::gpg: $!\n" );
 			return "LOCAL ERROR";
