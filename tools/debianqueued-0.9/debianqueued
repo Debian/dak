@@ -1327,8 +1327,9 @@ sub process_commands($) {
 						push (@thesefiles, $file);
 					}
 					for ( my($adelay)=0; $adelay <= $conf::max_delayed; $adelay++ ) {
-						if (-f $file) {
-							push (@thesefiles, $file);
+						my($dir) = sprintf( $conf::incoming_delayed, $adelay );
+						if (-f "$dir/$file") {
+							push (@thesefiles, "$dir/$file");
 						}
 				    }
 					if ($file =~ m/\.changes$/ &&  $conf::upload_method eq "copy") {
