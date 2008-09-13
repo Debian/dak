@@ -15,6 +15,10 @@
 	oldstable-security/amd64 check; Etch, as the next oldstable,
 	already had proper amd64 support
 
+2008-09-12  Joerg Jaspert  <joerg@debian.org>
+
+	* scripts/debian/update-pseudopackages.sh: s/i/file/
+
 2008-09-11  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/pseudo-packages.description, ...maintainers:
