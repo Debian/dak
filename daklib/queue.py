@@ -216,10 +216,7 @@ class Upload:
 
         dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".dak")
         dump_file = utils.open_file(dump_filename, 'w')
-        try:
-            os.chmod(dump_filename, 0664)
-        except OSError, e:
-            raise
+        os.chmod(dump_filename, 0664)
 
         p = cPickle.Pickler(dump_file, 1)
         d_changes = {}
