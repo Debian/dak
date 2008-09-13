@@ -420,9 +420,11 @@ die "upload and target queue paths must be absolute."
 sub calc_delta();
 sub check_dir();
 sub get_filelist_from_known_good_changes($);
+sub age_delayed_queues();
 sub process_changes($\@);
 sub process_commands($);
-sub is_on_target($);
+sub age_delayed_queues();
+sub is_on_target($\@);
 sub copy_to_target(@);
 sub pgp_check($);
 sub check_alive(;$);
@@ -607,6 +609,10 @@ while( 1 ) {
 	}
 	$main::dstat = "i";
 	write_status_file() if $conf::statusdelay;
+
+	if ($conf::upload_method eq "copy") {
+		age_delayed_queues();
+	}
 
 	# sleep() returns if we received a signal (SIGUSR1 for status FIFO), so
 	# calculate the end time once and wait for it being reached.
@@ -1109,7 +1115,7 @@ sub process_changes($\@) {
 	# check if the job is already present on target
 	# (moved to here, to avoid bothering target as long as there are errors in
 	# the job)
-	if ($ls_l = is_on_target( $changes )) {
+	if ($ls_l = is_on_target( $changes, @filenames )) {
 		msg( "log,mail", "$main::current_incoming_short/$changes is already present on target host:\n" );
 		msg( "log,mail", "$ls_l\n" );
 		msg( "mail", "Either you already uploaded it, or someone else ",
@@ -1411,14 +1417,44 @@ sub process_commands($) {
 	msg( "log", "-- End of $main::current_incoming_short/$commands processing\n" );
 }
 
+sub age_delayed_queues() {
+	for ( my($adelay)=0 ; $adelay <= $conf::max_delayed ; $adelay++ ) {
+		my($dir) = sprintf( "$conf::targetdir_delayed",$adelay );
+		my($target_dir);
+		if ($adelay == 0) {
+		    $target_dir = $conf::targetdir;
+		}
+		else {
+			$target_dir = sprintf( "$conf::targetdir_delayed",$adelay-1 );
+		}
+		for my $achanges (<$dir/*.changes>) {
+			my $mtime = (stat($achanges))[9];
+			if ($mtime + 24*60*60 <= time) {
+				utime undef,undef,($achanges);
+				my @thesefiles = ($achanges =~ m,.*/([^/]*),);
+				push (@thesefiles, get_filelist_from_known_good_changes($achanges));
+				for my $afile(@thesefiles) {
+					if (! rename "$dir/$afile","$target_dir/$afile") {
+						msg( "log", "rename: $!\n" );
+					}
+					else {
+						msg( "log", "$afile moved to $target_dir\n" );
+					}
+				}
+			}
+		}
+	}
+}
+
 #
 # check if a file is already on target
 #
-sub is_on_target($) {
+sub is_on_target($\@) {
 	my $file = shift;
+	my $filelist = shift;
 	my $msg;
 	my $stat;
-	
+
 	if ($conf::upload_method eq "ssh") {
 		($msg, $stat) = ssh_cmd( "ls -l $file" );
 	}
@@ -1439,16 +1475,22 @@ sub is_on_target($) {
 		}
 	}
 	else {
+		my @allfiles = ($file);
+		push ( @allfiles, @$filelist);
 		$stat = 1;
 		$msg = "no such file";
-		if (-f "$conf::incoming/$file") {
-			$stat = 0;
-            $msg = "$file";
+		for my $afile(@allfiles) {
+			if (-f "$conf::incoming/$afile") {
+				$stat = 0;
+        	    $msg = "$afile";
+			}
 		}
 		for ( my($adelay)=0 ; $adelay <= $conf::max_delayed && $stat ; $adelay++ ) {
-			if (-f (sprintf( "$conf::targetdir_delayed",$adelay )."/$file")) {
-				$stat = 0;
-				$msg = sprintf( "%d-day",$adelay )."/$file";
+			for my $afile(@allfiles) {
+				if (-f (sprintf( "$conf::targetdir_delayed",$adelay )."/$afile")) {
+					$stat = 0;
+					$msg = sprintf( "%d-day",$adelay )."/$afile";
+				}
 			}
 		}
 	}
