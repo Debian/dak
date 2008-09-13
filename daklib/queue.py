@@ -216,15 +216,7 @@ class Upload:
 
         dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".dak")
         dump_file = utils.open_file(dump_filename, 'w')
-        try:
-            os.chmod(dump_filename, 0660)
-        except OSError, e:
-            if errno.errorcode[e.errno] == 'EPERM':
-                perms = stat.S_IMODE(os.stat(dump_filename)[stat.ST_MODE])
-                if perms & stat.S_IROTH:
-                    utils.fubar("%s is world readable and chmod failed." % (dump_filename))
-            else:
-                raise
+        os.chmod(dump_filename, 0664)
 
         p = cPickle.Pickler(dump_file, 1)
         d_changes = {}

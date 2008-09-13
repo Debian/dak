@@ -235,10 +235,6 @@ def actually_upload(changes_files):
         files = Upload.pkg.files
         changes = Upload.pkg.changes
         dsc = Upload.pkg.dsc
-        # We have the changes, now return if its amd64, to not upload them to ftp-master
-        if changes["distribution"].has_key("oldstable-security") and changes["architecture"].has_key("amd64"):
-            print "Not uploading amd64 oldstable-security changes to ftp-master\n"
-            continue
         # Build the file list for this .changes file
         for file in files.keys():
             poolname = os.path.join(Cnf["Dir::Root"], Cnf["Dir::PoolRoot"],
