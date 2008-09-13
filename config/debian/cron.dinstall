@@ -70,7 +70,7 @@ cd $configdir
 $scriptsdir/update-bugdoctxt
 $scriptsdir/update-mirrorlists
 $scriptsdir/update-mailingliststxt
-$scriptsdir/update-pseudopackages
+$scriptsdir/update-pseudopackages.sh
 
 ################################################################################
 
