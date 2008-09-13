@@ -5,7 +5,7 @@
 
 . vars
 
-cd ${scriptdir}/masterdir
+cd ${scriptdir}/masterfiles
 
 echo Updating archive version of pseudo-packages
 for file in maintainers description; do
