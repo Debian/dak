@@ -1,3 +1,14 @@
+2008-09-13  Philipp Kern  <pkern@debian.org>
+
+	* dak/queue.py (dump_vars): make .dak u,g=rw,o=r; James'
+	assumption (as stated in 2002-05-18's ChangeLog entry)
+	was that people will use the information therein albeit
+	it is "just" a duplication of information present in
+	other control files; people should still not use it
+	as source of information but access to those files makes
+	dak debugging easier and there is no leak of sensitive
+	information involved
+
 2008-09-12  Philipp Kern  <pkern@debian.org>
 
 	* dak/new_security_install.py (actually_upload): remove
