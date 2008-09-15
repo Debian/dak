@@ -1378,7 +1378,7 @@ sub process_commands($) {
 				msg( "mail,log", "$word[1]: filename may not contain slashes\n" );
 			}
 			elsif (! (($target_delay) = $word[2] =~ m,^([0-9]+)-day$,) || $target_delay > $conf::max_delayed) {
-				msg( "mail,log", "$word[2]: target must be #-day with # between 0 and $conf::max_delayed\n");
+				msg( "mail,log", "$word[2]: target must be #-day with # between 0 and $conf::max_delayed (in particular, no '/' allowed)\n");
 			}
 			elsif ($word[1] =~ /$conf::keep_files/) {
 				msg( "mail,log", "$word[1] is protected, cannot rename\n" );
