@@ -1,7 +1,7 @@
 
-This directory is the Debian upload queue of ftp.uni-erlangen.de. All
+This directory is the Debian upload queue of ftp-master.debian.org. All
 files uploaded here will be moved into the project incoming dir on
-master.debian.org.
+this machine.
 
 Only known Debian developers can upload here. All uploads must be in
 the same format as they would go to master, i.e. with a PGP-signed
