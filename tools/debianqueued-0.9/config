@@ -96,6 +96,13 @@ $ssh_key_file = "";
 # the incoming dir we live in
 $incoming = "/srv/queued/UploadQueue";
 
+# the delayed incoming directories
+$incoming_delayed = "/srv/queued/UploadQueue/DELAYED/%d-day";
+
+# maximum delay directory, -1 for no delayed directory,
+# incoming_delayed and target_delayed need to exist.
+$max_delayed = 9;
+
 # files not to delete in $incoming (regexp)
 $keep_files = '(status|\.message|README)$';
 
@@ -134,6 +141,9 @@ $targetlogin = "queue";
 
 # incoming on target host
 $targetdir = "/srv/ftp.debian.org/queue/unchecked/";
+
+# incoming/delayed on target host
+$targetdir_delayed = "/srv/queued/Incoming/DELAYED/%d-day";
 
 # select FTP debugging
 #$ftpdebug = 0;

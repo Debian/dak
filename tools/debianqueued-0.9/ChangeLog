@@ -1,3 +1,7 @@
+2008-09-11  Thomas Viehmann  <tv@beamnet.de>
+
+	* debianqueued: Add DELAYED-support.
+
 2008-06-15  Joerg Jaspert  <joerg@debian.org>
 
 	* debianqueued: Fix a brown-paper-bag bug (we just dont know who
