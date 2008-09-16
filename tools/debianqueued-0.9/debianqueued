@@ -11,6 +11,232 @@
 # (at your option) any later version.
 # This program comes with ABSOLUTELY NO WARRANTY!
 #
+# $Id: debianqueued,v 1.51 1999/07/08 09:43:21 ftplinux Exp $
+#
+# $Log: debianqueued,v $
+# Revision 1.51  1999/07/08 09:43:21  ftplinux
+# Bumped release number to 0.9
+#
+# Revision 1.50  1999/07/07 16:17:30  ftplinux
+# Signatures can now also be created by GnuPG; in pgp_check, also try
+# gpg for checking.
+# In several messages, also mention GnuPG.
+#
+# Revision 1.49  1999/07/07 16:14:43  ftplinux
+# Implemented new upload methods "copy" and "ftp" as alternatives to "ssh".
+# Replaced "master" in many function and variable names by "target".
+# New functions ssh_cmd, ftp_cmd, and local_cmd for more abstraction and
+# better readable code.
+#
+# Revision 1.48  1998/12/08 13:09:39  ftplinux
+# At the end of process_changes, do not remove the @other_files with the same
+# stem if a .changes file is in that list; then there is probably another
+# upload for a different version or another architecture.
+#
+# Revision 1.47  1998/05/14 14:21:44  ftplinux
+# Bumped release number to 0.8
+#
+# Revision 1.46  1998/05/14 14:17:00  ftplinux
+# When --after a successfull upload-- deleting files for the same job, check
+# for equal revision number on files that have one. It has happened that the
+# daemon deleted files that belonged to another job with different revision.
+#
+# Revision 1.45  1998/04/23 11:05:47  ftplinux
+# Implemented $conf::chmod_on_master. If 0, new part to change mode locally in
+# process_changes.
+#
+# Revision 1.44  1998/04/21 08:44:44  ftplinux
+# Don't use return value of debian_file_stem as regexp, it's a shell pattern.
+#
+# Revision 1.43  1998/04/21 08:22:21  ftplinux
+# Also recogize "read-only filesystem" as error message so it triggers assuming
+# that incoming is unwritable.
+# Don't increment failure count after an upload try that did clear
+# $incoming_writable.
+# Fill in forgotten pattern for mail addr in process_commands.
+#
+# Revision 1.42  1998/03/31 13:27:32  ftplinux
+# In fatal_signal, kill status daemon only if it has been started (otherwise
+# warning about uninitialized variable).
+# Change mode of files uploaded to master explicitly to 644 there, scp copies the
+# permissions in the queue.
+#
+# Revision 1.41  1998/03/31 09:06:00  ftplinux
+# Implemented handling of improper mail addresses in Maintainer: field.
+#
+# Revision 1.40  1998/03/24 13:17:33  ftplinux
+# Added new check if incoming dir on master is writable. This check is triggered
+# if an upload returns "permission denied" errors. If the dir is unwritable, the
+# queue is holded (no upload tries) until it's writable again.
+#
+# Revision 1.39  1998/03/23 14:05:14  ftplinux
+# Bumped release number to 0.7
+#
+# Revision 1.38  1998/03/23 14:03:55  ftplinux
+# In an upload failure message, say explicitly that the job will be
+# retried, to avoid confusion of users.
+# $failure_file was put on @keep_list only for first retry.
+# If the daemon removes a .changes, set SGID bit on all files associated
+# with it, so that the test for Debian files without a .changes doesn't
+# find them.
+# Don't send reports for files without a .changes if the files look like
+# a recompilation for another architecture.
+# Also don't send such a report if the list of files with the same stem
+# contains a .changes.
+# Set @keep_list earlier, before PGP and non-US checks.
+# Fix recognition of -k argument.
+#
+# Revision 1.37  1998/02/17 12:29:58  ftplinux
+# Removed @conf::test_binaries used only once warning
+# Try to kill old daemon for 20secs instead of 10
+#
+# Revision 1.36  1998/02/17 10:53:47  ftplinux
+# Added test for binaries on maybe-slow NFS filesystems (@conf::test_binaries)
+#
+# Revision 1.35  1997/12/16 13:19:28  ftplinux
+# Bumped release number to 0.6
+#
+# Revision 1.34  1997/12/09 13:51:24  ftplinux
+# Implemented rejecting of nonus packages (new config var @nonus_packages)
+#
+# Revision 1.33  1997/11/25 10:40:53  ftplinux
+# In check_alive, loop up the IP address everytime, since it can change
+# while the daemon is running.
+# process_changes: Check presence of .changes on master at a later
+# point, to avoid bothering master as long as there are errors in a
+# .changes.
+# Don't view .orig.tar.gz files as is_debian_file, to avoid that they're
+# picked for extracting the maintainer address in the
+# job-without-changes processing.
+# END statement: Fix swapped arguments to kill
+# Program startup: Implemented -r and -k arguments.
+#
+# Revision 1.32  1997/11/20 15:18:47  ftplinux
+# Bumped release number to 0.5
+#
+# Revision 1.31  1997/11/11 13:37:52  ftplinux
+# Replaced <./$pattern> contruct be cleaner glob() call
+# Avoid potentially uninitialized $_ in process_commands file read loop
+# Implemented rm command with more than 1 arg and wildcards in rm args
+#
+# Revision 1.30  1997/11/06 14:09:53  ftplinux
+# In process_commands, also recognize commands given on the same line as
+# the Commands: keyword, not only the continuation lines.
+#
+# Revision 1.29  1997/11/03 15:52:20  ftplinux
+# After reopening the log file write one line to it for dqueued-watcher.
+#
+# Revision 1.28  1997/10/30 15:37:23  ftplinux
+# Removed some leftover comments in process_commands.
+# Changed pgp_check so that it returns the address of the signator.
+# process_commands now also logs PGP signator, since Uploader: address
+# can be choosen freely by uploader.
+#
+# Revision 1.27  1997/10/30 14:05:37  ftplinux
+# Added "command" to log string for command file uploader, to make it
+# unique for dqueued-watcher.
+#
+# Revision 1.26  1997/10/30 14:01:05  ftplinux
+# Implemented .commands files
+#
+# Revision 1.25  1997/10/30 13:05:29  ftplinux
+# Removed date from status version info (too long)
+#
+# Revision 1.24  1997/10/30 13:04:02  ftplinux
+# Print revision, version, and date in status data
+#
+# Revision 1.23  1997/10/30 12:56:01  ftplinux
+# Implemented deletion of files that (probably) belong to an upload, but
+# weren't listed in the .changes.
+#
+# Revision 1.22  1997/10/30 12:22:32  ftplinux
+# When setting sgid bit for stray files without a .changes, check for
+# files deleted in the meantime.
+#
+# Revision 1.21  1997/10/30 11:32:19  ftplinux
+# Added quotes where filenames are used on sh command lines, in case
+# they contain metacharacters.
+# print_time now always print three-field times, as omitting the hour if
+# 0 could cause confusing (hour or seconds missing?).
+# Implemented warning mails for incomplete uploads that miss a .changes
+# file. Maintainer address can be extracted from *.deb, *.diff.gz,
+# *.dsc, or *.tar.gz files with help of new utility functions
+# is_debian_file, get_maintainer, and debian_file_stem.
+#
+# Revision 1.20  1997/10/13 09:12:21  ftplinux
+# On some .changes errors (missing/bad PGP signature, no files) also log the
+# uploader
+#
+# Revision 1.19  1997/09/25 11:20:42  ftplinux
+# Bumped release number to 0.4
+#
+# Revision 1.18  1997/09/25 08:15:02  ftplinux
+# In process_changes, initialize some vars to avoid warnings
+# If first consistency checks failed, don't forget to delete .changes file
+#
+# Revision 1.17  1997/09/16 10:53:35  ftplinux
+# Made logging more verbose in queued and dqueued-watcher
+#
+# Revision 1.16  1997/08/12 09:54:39  ftplinux
+# Bumped release number
+#
+# Revision 1.15  1997/08/11 12:49:09  ftplinux
+# Implemented logfile rotating
+#
+# Revision 1.14  1997/08/11 11:35:05  ftplinux
+# Revised startup scheme so it works with the socket-based ssh-agent, too.
+# That watches whether its child still exists, so the go-to-background fork must be done before the ssh-agent.
+#
+# Revision 1.13  1997/08/11 08:48:31  ftplinux
+# Aaarg... forgot the alarm(0)'s
+#
+# Revision 1.12  1997/08/07 09:25:22  ftplinux
+# Added timeout for remote operations
+#
+# Revision 1.11  1997/07/28 13:20:38  ftplinux
+# Added release numner to startup message
+#
+# Revision 1.10  1997/07/28 11:23:39  ftplinux
+# $main::statusd_pid not necessarily defined in status daemon -- rewrite check
+# whether to delete pid file in signal handler.
+#
+# Revision 1.9  1997/07/28 08:12:16  ftplinux
+# Again revised SIGCHLD handling.
+# Set $SHELL to /bin/sh explicitly before starting ssh-agent.
+# Again raise ping timeout.
+#
+# Revision 1.8  1997/07/25 10:23:03  ftplinux
+# Made SIGCHLD handling more portable between perl versions
+#
+# Revision 1.7  1997/07/09 10:15:16  ftplinux
+# Change RCS Header: to Id:
+#
+# Revision 1.6  1997/07/09 10:13:53  ftplinux
+# Alternative implementation of status file as plain file (not FIFO), because
+# standard wu-ftpd doesn't allow retrieval of non-regular files. New config
+# option $statusdelay for this.
+#
+# Revision 1.5  1997/07/09 09:21:22  ftplinux
+# Little revisions to signal handling; status daemon should ignore SIGPIPE,
+# in case someone closes the FIFO before completely reading it; in fatal_signal,
+# only the main daemon should remove the pid file.
+#
+# Revision 1.4  1997/07/08 11:31:51  ftplinux
+# Print messages of ssh call in is_on_master to debug log.
+# In ssh call to remove bad files on master, the split() doesn't work
+#   anymore, now that I use -o'xxx y'. Use string interpolation and let
+#   the shell parse the stuff.
+#
+# Revision 1.3  1997/07/07 09:29:30  ftplinux
+# Call check_alive also if master hasn't been pinged for 8 hours.
+#
+# Revision 1.2  1997/07/03 13:06:49  ftplinux
+# Little last changes before beta release
+#
+# Revision 1.1.1.1  1997/07/03 12:54:59  ftplinux
+# Import initial sources
+#
+#
 
 require 5.002;
 use strict;
