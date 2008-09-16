@@ -1,3 +1,12 @@
+2008-09-15  Joerg Jaspert  <joerg@debian.org>
+
+	* config: Use 15 delayed dirs. Also change maintainer_mail to
+	ftpmaster. And remove lotsa ancient cvs history foo
+
+2008-09-11  Thomas Viehmann  <tv@beamnet.de>
+
+	* debianqueued: Add DELAYED-support.
+
 2008-06-15  Joerg Jaspert  <joerg@debian.org>
 
 	* debianqueued: Fix a brown-paper-bag bug (we just dont know who

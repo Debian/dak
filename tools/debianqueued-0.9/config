@@ -1,66 +1,6 @@
 #
 # example configuration file for debianqueued
 #
-# $Id: config,v 1.15 1999/07/07 16:19:32 ftplinux Exp $
-#
-# $Log: config,v $
-# Revision 1.15  1999/07/07 16:19:32  ftplinux
-# New variables for upload methods: $upload_method, $ftptimeout,
-# $ftpdebug, $ls, $cp, $chmod.
-# New variables for GnuPG checking: $gpg, $gpg_keyring,
-# $gpg_keyring_archive_name.
-# Renamed "master" in vars to "target".
-# Updated list of non-US packages.
-#
-# Revision 1.14  1998/07/06 14:25:46  ftplinux
-# Make $keyring_archive_name use a wildcard, newer debian keyring tarball
-# contain a dir with a date.
-#
-# Revision 1.13  1998/04/23 10:56:53  ftplinux
-# Added new config var $chmod_on_master.
-#
-# Revision 1.12  1998/02/17 10:57:21  ftplinux
-# Added @test_binaries
-#
-# Revision 1.11  1997/12/09 13:51:46  ftplinux
-# Implemented rejecting of nonus packages (new config var @nonus_packages)
-#
-# Revision 1.10  1997/10/30 11:32:39  ftplinux
-# Implemented warning mails for incomplete uploads that miss a .changes
-# file. Maintainer address can be extracted from *.deb, *.diff.gz,
-# *.dsc, or *.tar.gz files with help of new utility functions
-# is_debian_file, get_maintainer, and debian_file_stem.
-#
-# Revision 1.9  1997/09/17 12:16:33  ftplinux
-# Added writing summaries to a file
-#
-# Revision 1.8  1997/08/18 13:07:14  ftplinux
-# Implemented summary mails
-#
-# Revision 1.7  1997/08/11 12:49:09  ftplinux
-# Implemented logfile rotating
-#
-# Revision 1.6  1997/08/07 09:25:21  ftplinux
-# Added timeout for remote operations
-#
-# Revision 1.5  1997/07/09 10:14:58  ftplinux
-# Change RCS Header: to Id:
-#
-# Revision 1.4  1997/07/09 10:13:51  ftplinux
-# Alternative implementation of status file as plain file (not FIFO), because
-# standard wu-ftpd doesn't allow retrieval of non-regular files. New config
-# option $statusdelay for this.
-#
-# Revision 1.3  1997/07/08 08:34:14  ftplinux
-# If dqueued-watcher runs as cron job, $PATH might not contain gzip. Use extra
-# --use-compress-program option to tar, and new config var $gzip.
-#
-# Revision 1.2  1997/07/03 13:06:48  ftplinux
-# Little last changes before beta release
-#
-# Revision 1.1.1.1  1997/07/03 12:54:59  ftplinux
-# Import initial sources
-#
 
 # set to != 0 for debugging output (to log file)
 $debug = 0;
@@ -95,6 +35,13 @@ $ssh_key_file = "";
 
 # the incoming dir we live in
 $incoming = "/srv/queued/UploadQueue";
+
+# the delayed incoming directories
+$incoming_delayed = "/srv/queued/UploadQueue/DELAYED/%d-day";
+
+# maximum delay directory, -1 for no delayed directory,
+# incoming_delayed and target_delayed need to exist.
+$max_delayed = 15;
 
 # files not to delete in $incoming (regexp)
 $keep_files = '(status|\.message|README)$';
@@ -135,6 +82,9 @@ $targetlogin = "queue";
 # incoming on target host
 $targetdir = "/srv/ftp.debian.org/queue/unchecked/";
 
+# incoming/delayed on target host
+$targetdir_delayed = "/srv/queued/DEFERRED/%d-day";
+
 # select FTP debugging
 #$ftpdebug = 0;
 
@@ -171,7 +121,7 @@ $bad_changes_timeout = 2*24*60*60; # 2 days
 $remote_timeout = 3*60*60; # 3 hours
 
 # mail address of maintainer
-$maintainer_mail = "james\@nocrew.org";
+$maintainer_mail = "ftpmaster\@debian.org";
 
 
 # logfile rotating:

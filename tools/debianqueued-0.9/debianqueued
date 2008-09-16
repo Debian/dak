@@ -11,232 +11,6 @@
 # (at your option) any later version.
 # This program comes with ABSOLUTELY NO WARRANTY!
 #
-# $Id: debianqueued,v 1.51 1999/07/08 09:43:21 ftplinux Exp $
-#
-# $Log: debianqueued,v $
-# Revision 1.51  1999/07/08 09:43:21  ftplinux
-# Bumped release number to 0.9
-#
-# Revision 1.50  1999/07/07 16:17:30  ftplinux
-# Signatures can now also be created by GnuPG; in pgp_check, also try
-# gpg for checking.
-# In several messages, also mention GnuPG.
-#
-# Revision 1.49  1999/07/07 16:14:43  ftplinux
-# Implemented new upload methods "copy" and "ftp" as alternatives to "ssh".
-# Replaced "master" in many function and variable names by "target".
-# New functions ssh_cmd, ftp_cmd, and local_cmd for more abstraction and
-# better readable code.
-#
-# Revision 1.48  1998/12/08 13:09:39  ftplinux
-# At the end of process_changes, do not remove the @other_files with the same
-# stem if a .changes file is in that list; then there is probably another
-# upload for a different version or another architecture.
-#
-# Revision 1.47  1998/05/14 14:21:44  ftplinux
-# Bumped release number to 0.8
-#
-# Revision 1.46  1998/05/14 14:17:00  ftplinux
-# When --after a successfull upload-- deleting files for the same job, check
-# for equal revision number on files that have one. It has happened that the
-# daemon deleted files that belonged to another job with different revision.
-#
-# Revision 1.45  1998/04/23 11:05:47  ftplinux
-# Implemented $conf::chmod_on_master. If 0, new part to change mode locally in
-# process_changes.
-#
-# Revision 1.44  1998/04/21 08:44:44  ftplinux
-# Don't use return value of debian_file_stem as regexp, it's a shell pattern.
-#
-# Revision 1.43  1998/04/21 08:22:21  ftplinux
-# Also recogize "read-only filesystem" as error message so it triggers assuming
-# that incoming is unwritable.
-# Don't increment failure count after an upload try that did clear
-# $incoming_writable.
-# Fill in forgotten pattern for mail addr in process_commands.
-#
-# Revision 1.42  1998/03/31 13:27:32  ftplinux
-# In fatal_signal, kill status daemon only if it has been started (otherwise
-# warning about uninitialized variable).
-# Change mode of files uploaded to master explicitly to 644 there, scp copies the
-# permissions in the queue.
-#
-# Revision 1.41  1998/03/31 09:06:00  ftplinux
-# Implemented handling of improper mail addresses in Maintainer: field.
-#
-# Revision 1.40  1998/03/24 13:17:33  ftplinux
-# Added new check if incoming dir on master is writable. This check is triggered
-# if an upload returns "permission denied" errors. If the dir is unwritable, the
-# queue is holded (no upload tries) until it's writable again.
-#
-# Revision 1.39  1998/03/23 14:05:14  ftplinux
-# Bumped release number to 0.7
-#
-# Revision 1.38  1998/03/23 14:03:55  ftplinux
-# In an upload failure message, say explicitly that the job will be
-# retried, to avoid confusion of users.
-# $failure_file was put on @keep_list only for first retry.
-# If the daemon removes a .changes, set SGID bit on all files associated
-# with it, so that the test for Debian files without a .changes doesn't
-# find them.
-# Don't send reports for files without a .changes if the files look like
-# a recompilation for another architecture.
-# Also don't send such a report if the list of files with the same stem
-# contains a .changes.
-# Set @keep_list earlier, before PGP and non-US checks.
-# Fix recognition of -k argument.
-#
-# Revision 1.37  1998/02/17 12:29:58  ftplinux
-# Removed @conf::test_binaries used only once warning
-# Try to kill old daemon for 20secs instead of 10
-#
-# Revision 1.36  1998/02/17 10:53:47  ftplinux
-# Added test for binaries on maybe-slow NFS filesystems (@conf::test_binaries)
-#
-# Revision 1.35  1997/12/16 13:19:28  ftplinux
-# Bumped release number to 0.6
-#
-# Revision 1.34  1997/12/09 13:51:24  ftplinux
-# Implemented rejecting of nonus packages (new config var @nonus_packages)
-#
-# Revision 1.33  1997/11/25 10:40:53  ftplinux
-# In check_alive, loop up the IP address everytime, since it can change
-# while the daemon is running.
-# process_changes: Check presence of .changes on master at a later
-# point, to avoid bothering master as long as there are errors in a
-# .changes.
-# Don't view .orig.tar.gz files as is_debian_file, to avoid that they're
-# picked for extracting the maintainer address in the
-# job-without-changes processing.
-# END statement: Fix swapped arguments to kill
-# Program startup: Implemented -r and -k arguments.
-#
-# Revision 1.32  1997/11/20 15:18:47  ftplinux
-# Bumped release number to 0.5
-#
-# Revision 1.31  1997/11/11 13:37:52  ftplinux
-# Replaced <./$pattern> contruct be cleaner glob() call
-# Avoid potentially uninitialized $_ in process_commands file read loop
-# Implemented rm command with more than 1 arg and wildcards in rm args
-#
-# Revision 1.30  1997/11/06 14:09:53  ftplinux
-# In process_commands, also recognize commands given on the same line as
-# the Commands: keyword, not only the continuation lines.
-#
-# Revision 1.29  1997/11/03 15:52:20  ftplinux
-# After reopening the log file write one line to it for dqueued-watcher.
-#
-# Revision 1.28  1997/10/30 15:37:23  ftplinux
-# Removed some leftover comments in process_commands.
-# Changed pgp_check so that it returns the address of the signator.
-# process_commands now also logs PGP signator, since Uploader: address
-# can be choosen freely by uploader.
-#
-# Revision 1.27  1997/10/30 14:05:37  ftplinux
-# Added "command" to log string for command file uploader, to make it
-# unique for dqueued-watcher.
-#
-# Revision 1.26  1997/10/30 14:01:05  ftplinux
-# Implemented .commands files
-#
-# Revision 1.25  1997/10/30 13:05:29  ftplinux
-# Removed date from status version info (too long)
-#
-# Revision 1.24  1997/10/30 13:04:02  ftplinux
-# Print revision, version, and date in status data
-#
-# Revision 1.23  1997/10/30 12:56:01  ftplinux
-# Implemented deletion of files that (probably) belong to an upload, but
-# weren't listed in the .changes.
-#
-# Revision 1.22  1997/10/30 12:22:32  ftplinux
-# When setting sgid bit for stray files without a .changes, check for
-# files deleted in the meantime.
-#
-# Revision 1.21  1997/10/30 11:32:19  ftplinux
-# Added quotes where filenames are used on sh command lines, in case
-# they contain metacharacters.
-# print_time now always print three-field times, as omitting the hour if
-# 0 could cause confusing (hour or seconds missing?).
-# Implemented warning mails for incomplete uploads that miss a .changes
-# file. Maintainer address can be extracted from *.deb, *.diff.gz,
-# *.dsc, or *.tar.gz files with help of new utility functions
-# is_debian_file, get_maintainer, and debian_file_stem.
-#
-# Revision 1.20  1997/10/13 09:12:21  ftplinux
-# On some .changes errors (missing/bad PGP signature, no files) also log the
-# uploader
-#
-# Revision 1.19  1997/09/25 11:20:42  ftplinux
-# Bumped release number to 0.4
-#
-# Revision 1.18  1997/09/25 08:15:02  ftplinux
-# In process_changes, initialize some vars to avoid warnings
-# If first consistency checks failed, don't forget to delete .changes file
-#
-# Revision 1.17  1997/09/16 10:53:35  ftplinux
-# Made logging more verbose in queued and dqueued-watcher
-#
-# Revision 1.16  1997/08/12 09:54:39  ftplinux
-# Bumped release number
-#
-# Revision 1.15  1997/08/11 12:49:09  ftplinux
-# Implemented logfile rotating
-#
-# Revision 1.14  1997/08/11 11:35:05  ftplinux
-# Revised startup scheme so it works with the socket-based ssh-agent, too.
-# That watches whether its child still exists, so the go-to-background fork must be done before the ssh-agent.
-#
-# Revision 1.13  1997/08/11 08:48:31  ftplinux
-# Aaarg... forgot the alarm(0)'s
-#
-# Revision 1.12  1997/08/07 09:25:22  ftplinux
-# Added timeout for remote operations
-#
-# Revision 1.11  1997/07/28 13:20:38  ftplinux
-# Added release numner to startup message
-#
-# Revision 1.10  1997/07/28 11:23:39  ftplinux
-# $main::statusd_pid not necessarily defined in status daemon -- rewrite check
-# whether to delete pid file in signal handler.
-#
-# Revision 1.9  1997/07/28 08:12:16  ftplinux
-# Again revised SIGCHLD handling.
-# Set $SHELL to /bin/sh explicitly before starting ssh-agent.
-# Again raise ping timeout.
-#
-# Revision 1.8  1997/07/25 10:23:03  ftplinux
-# Made SIGCHLD handling more portable between perl versions
-#
-# Revision 1.7  1997/07/09 10:15:16  ftplinux
-# Change RCS Header: to Id:
-#
-# Revision 1.6  1997/07/09 10:13:53  ftplinux
-# Alternative implementation of status file as plain file (not FIFO), because
-# standard wu-ftpd doesn't allow retrieval of non-regular files. New config
-# option $statusdelay for this.
-#
-# Revision 1.5  1997/07/09 09:21:22  ftplinux
-# Little revisions to signal handling; status daemon should ignore SIGPIPE,
-# in case someone closes the FIFO before completely reading it; in fatal_signal,
-# only the main daemon should remove the pid file.
-#
-# Revision 1.4  1997/07/08 11:31:51  ftplinux
-# Print messages of ssh call in is_on_master to debug log.
-# In ssh call to remove bad files on master, the split() doesn't work
-#   anymore, now that I use -o'xxx y'. Use string interpolation and let
-#   the shell parse the stuff.
-#
-# Revision 1.3  1997/07/07 09:29:30  ftplinux
-# Call check_alive also if master hasn't been pinged for 8 hours.
-#
-# Revision 1.2  1997/07/03 13:06:49  ftplinux
-# Little last changes before beta release
-#
-# Revision 1.1.1.1  1997/07/03 12:54:59  ftplinux
-# Import initial sources
-#
-#
 
 require 5.002;
 use strict;
@@ -268,7 +42,7 @@ $junk = $conf::upload_delay_2;
 $junk = $conf::ar;
 $junk = $conf::gzip;
 $junk = $conf::cp;
-$junk = $conf::ls;
+#$junk = $conf::ls;
 $junk = $conf::chmod;
 $junk = $conf::ftpdebug;
 $junk = $conf::ftptimeout;
@@ -276,6 +50,7 @@ $junk = $conf::no_changes_timeout;
 $junk = @conf::nonus_packages;
 $junk = @conf::test_binaries;
 $junk = @conf::maintainer_mail;
+$junk = @conf::targetdir_delayed;
 $junk = $conf::mail ||= '/usr/sbin/sendmail';
 $conf::target = "localhost" if $conf::upload_method eq "copy";
 package main;
@@ -292,7 +67,7 @@ if (@ARGV == 1 && $ARGV[0] =~ /^-[rk]$/) {
 }
 
 # test for another instance of the queued already running
-my $pid;
+my ($pid, $delayed_dirs, $adelayedcore);
 if (open( PIDFILE, "<$conf::pidfile" )) {
 	chomp( $pid = <PIDFILE> );
 	close( PIDFILE );
@@ -317,6 +92,15 @@ if (open( PIDFILE, "<$conf::pidfile" )) {
 		if (-e "$conf::incoming/core") {
 			unlink( "$conf::incoming/core" );
 			print "(Removed core file)\n";
+		}
+		for ($delayed_dirs = 0; $delayed_dirs <= $conf::max_delayed; 
+			 $delayed_dirs++) {
+			$adelayedcore = sprintf( "$conf::incoming_delayed/core",
+									 $delayed_dirs );
+			if (-e $adelayedcore) {
+				unlink( $adelayedcore );
+				print "(Removed core file)\n";
+			}
 		}
 		exit 0 if $main::arg eq "kill";
 	}
@@ -393,6 +177,14 @@ die "Bad upload method '$conf::upload_method'.\n"
 die "No keyrings\n" if ! @conf::keyrings;
 
 }
+die "statusfile path must be absolute."
+	if $conf::statusfile !~ m,^/,;
+die "upload and target queue paths must be absolute."
+	if $conf::incoming !~ m,^/, ||
+	   $conf::incoming_delayed !~ m,^/, ||
+	   $conf::targetdir !~ m,^/, ||
+	   $conf::targetdir_delayed !~ m,^/,;
+
 
 # ---------------------------------------------------------------------------
 #							   initializations
@@ -401,9 +193,12 @@ die "No keyrings\n" if ! @conf::keyrings;
 # prototypes
 sub calc_delta();
 sub check_dir();
+sub get_filelist_from_known_good_changes($);
+sub age_delayed_queues();
 sub process_changes($\@);
 sub process_commands($);
-sub is_on_target($);
+sub age_delayed_queues();
+sub is_on_target($\@);
 sub copy_to_target(@);
 sub pgp_check($);
 sub check_alive(;$);
@@ -562,6 +357,10 @@ kill( $main::signo{"USR1"}, $parent_pid );
 #								 the mainloop
 # ---------------------------------------------------------------------------
 
+# default to classical incoming/target
+$main::current_incoming = $conf::incoming;
+$main::current_targetdir = $conf::targetdir;
+
 $main::dstat = "i";
 write_status_file() if $conf::statusdelay;
 while( 1 ) {
@@ -569,6 +368,13 @@ while( 1 ) {
 	# ping target only if there is the possibility that we'll contact it (but
 	# also don't wait too long).
 	my @have_changes = <*.changes *.commands>;
+	for ( my $delayed_dirs = 0; $delayed_dirs <= $conf::max_delayed; 
+		  $delayed_dirs++) {
+		my $adelayeddir = sprintf( "$conf::incoming_delayed",
+								   $delayed_dirs );
+		push( @have_changes,
+			  <$adelayeddir/*.changes> );
+	}
 	check_alive() if @have_changes || (time - $main::last_ping_time) > 8*60*60;
 
 	if (@have_changes && $main::target_up) {
@@ -577,6 +383,10 @@ while( 1 ) {
 	}
 	$main::dstat = "i";
 	write_status_file() if $conf::statusdelay;
+
+	if ($conf::upload_method eq "copy") {
+		age_delayed_queues();
+	}
 
 	# sleep() returns if we received a signal (SIGUSR1 for status FIFO), so
 	# calculate the end time once and wait for it being reached.
@@ -614,7 +424,8 @@ sub calc_delta() {
 # main function for checking the incoming dir
 #
 sub check_dir() {
-	my( @files, @changes, @keep_files, @this_keep_files, @stats, $file );
+	my( @files, @changes, @keep_files, @this_keep_files, @stats, $file ,
+		$adelay );
 	
 	debug( "starting checkdir" );
 	$main::dstat = "c";
@@ -630,131 +441,189 @@ sub check_dir() {
 		msg( "log", "binary test failed for $_; delaying queue run\n");
 		goto end_run;
 	}
-	
-	# look for *.commands files
-	foreach $file ( <*.commands> ) {
-		init_mail( $file );
-		block_signals();
-		process_commands( $file );
-		unblock_signals();
-		$main::dstat = "c";
-		write_status_file() if $conf::statusdelay;
-		finish_mail();
-	}
-	
-	opendir( INC, "." )
-		or (msg( "log", "Cannot open incoming dir $conf::incoming: $!\n" ),
-			return);
-	@files = readdir( INC );
-	closedir( INC );
 
-	# process all .changes files found
-	@changes = grep /\.changes$/, @files;
-	push( @keep_files, @changes ); # .changes files aren't stray
-	foreach $file ( @changes ) {
-		init_mail( $file );
-		# wrap in an eval to allow jumpbacks to here with die in case
-		# of errors
-		block_signals();
-		eval { process_changes( $file, @this_keep_files ); };
-		unblock_signals();
-		msg( "log,mail", $@ ) if $@;
-		$main::dstat = "c";
-		write_status_file() if $conf::statusdelay;
+	for ( $adelay=-1; $adelay <= $conf::max_delayed; $adelay++ ) {
+		if ( $adelay == -1 ) {
+			$main::current_incoming = $conf::incoming;
+			$main::current_incoming_short = "";
+			$main::current_targetdir = $conf::targetdir;
+		}
+		else {
+			$main::current_incoming = sprintf( $conf::incoming_delayed,
+											   $adelay );
+			$main::current_incoming_short = sprintf( "DELAYED/%d-day",
+													 $adelay );
+			$main::current_targetdir = sprintf( $conf::targetdir_delayed,
+												$adelay );
+		}
+
+		# need to clear directory specific variables
+		undef ( @keep_files );
+		undef ( @this_keep_files );
+
+		chdir ( $main::current_incoming )
+			or (msg( "log",
+					 "Cannot change to dir ".
+					 "${main::current_incoming_short}: $!\n" ),
+				return);
+
+		# look for *.commands files but not in delayed queues
+		if ( $adelay==-1 ) {
+			foreach $file ( <*.commands> ) {
+				init_mail( $file );
+				block_signals();
+				process_commands( $file );
+				unblock_signals();
+				$main::dstat = "c";
+				write_status_file() if $conf::statusdelay;
+				finish_mail();
+			}
+		}
+		opendir( INC, "." )
+			or (msg( "log", "Cannot open dir ${main::current_incoming_short}: $!\n" ),
+				return);
+		@files = readdir( INC );
+		closedir( INC );
+
+		# process all .changes files found
+		@changes = grep /\.changes$/, @files;
+		push( @keep_files, @changes ); # .changes files aren't stray
+		foreach $file ( @changes ) {
+			init_mail( $file );
+			# wrap in an eval to allow jumpbacks to here with die in case
+			# of errors
+			block_signals();
+			eval { process_changes( $file, @this_keep_files ); };
+			unblock_signals();
+			msg( "log,mail", $@ ) if $@;
+			$main::dstat = "c";
+			write_status_file() if $conf::statusdelay;
 		
-		# files which are ok in conjunction with this .changes
-		debug( "$file tells to keep @this_keep_files" );
-		push( @keep_files, @this_keep_files );
-		finish_mail();
+			# files which are ok in conjunction with this .changes
+			debug( "$file tells to keep @this_keep_files" );
+			push( @keep_files, @this_keep_files );
+			finish_mail();
 
-		# break out of this loop if the incoming dir has become unwritable
-		goto end_run if !$main::incoming_writable;
-	}
-	ftp_close() if $conf::upload_method eq "ftp";
+			# break out of this loop if the incoming dir has become unwritable
+			goto end_run if !$main::incoming_writable;
+		}
+		ftp_close() if $conf::upload_method eq "ftp";
 
-	# find files which aren't related to any .changes
-	foreach $file ( @files ) {
-		# filter out files we never want to delete
-		next if ! -f $file ||	# may have disappeared in the meantime
+		# find files which aren't related to any .changes
+		foreach $file ( @files ) {
+			# filter out files we never want to delete
+			next if ! -f $file ||	# may have disappeared in the meantime
 			    $file eq "." || $file eq ".." ||
 			    (grep { $_ eq $file } @keep_files) ||
 				$file =~ /$conf::keep_files/;
-		# Delete such files if they're older than
-		# $stray_remove_timeout; they could be part of an
-		# yet-incomplete upload, with the .changes still missing.
-		# Cannot send any notification, since owner unknown.
-		next if !(@stats = stat( $file ));
-		my $age = time - $stats[ST_MTIME];
-		my( $maint, $pattern, @job_files );
-		if ($file =~ /^junk-for-writable-test/ ||
-			$file !~ m,$conf::valid_files, ||
-			$age >= $conf::stray_remove_timeout) {
-			msg( "log", "Deleted stray file $file\n" ) if rm( $file );
-		}
-		elsif ($age > $conf::no_changes_timeout &&
-			   is_debian_file( $file ) &&
-			   # not already reported
-			   !($stats[ST_MODE] & S_ISGID) &&
-			   ($pattern = debian_file_stem( $file )) &&
-			   (@job_files = glob($pattern)) &&
-			   # If a .changes is in the list, it has the same stem as the
-			   # found file (probably a .orig.tar.gz). Don't report in this
-			   # case.
-			   !(grep( /\.changes$/, @job_files ))) {
-			$maint = get_maintainer( $file );
-			# Don't send a mail if this looks like the recompilation of a
-			# package for a non-i386 arch. For those, the maintainer field is
-			# useless :-(
-			if (!grep( /(\.dsc|_(i386|all)\.deb)$/, @job_files )) {
-				msg( "log", "Found an upload without .changes and with no ",
-					        ".dsc file\n" );
-				msg( "log", "Not sending a report, because probably ",
-					        "recompilation job\n" );
+			# Delete such files if they're older than
+			# $stray_remove_timeout; they could be part of an
+			# yet-incomplete upload, with the .changes still missing.
+			# Cannot send any notification, since owner unknown.
+			next if !(@stats = stat( $file ));
+			my $age = time - $stats[ST_MTIME];
+			my( $maint, $pattern, @job_files );
+			if ($file =~ /^junk-for-writable-test/ ||
+				$file !~ m,$conf::valid_files, ||
+				$age >= $conf::stray_remove_timeout) {
+				msg( "log", "Deleted stray file ${main::current_incoming_short}/$file\n" ) if rm( $file );
 			}
-			elsif ($maint) {
-				init_mail();
-				$main::mail_addr = $maint;
-				$main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
-				$main::mail_subject = "Incomplete upload found in ".
-									  "Debian upload queue";
-				msg( "mail", "Probably you are the uploader of the following ".
-							 "file(s) in\n" );
-				msg( "mail", "the Debian upload queue directory:\n  " );
-				msg( "mail", join( "\n  ", @job_files ), "\n" );
-				msg( "mail", "This looks like an upload, but a .changes file ".
-							 "is missing, so the job\n" );
-				msg( "mail", "cannot be processed.\n\n" );
-				msg( "mail", "If no .changes file arrives within ",
-							 print_time( $conf::stray_remove_timeout - $age ),
-							 ", the files will be deleted.\n\n" );
-				msg( "mail", "If you didn't upload those files, please just ".
-							 "ignore this message.\n" );
-				finish_mail();
-				msg( "log", "Sending problem report for an upload without a ".
-							".changes\n" );
-				msg( "log", "Maintainer: $maint\n" );
+			elsif ($age > $conf::no_changes_timeout &&
+				   is_debian_file( $file ) &&
+				   # not already reported
+				   !($stats[ST_MODE] & S_ISGID) &&
+				   ($pattern = debian_file_stem( $file )) &&
+				   (@job_files = glob($pattern)) &&
+				   # If a .changes is in the list, it has the same stem as the
+				   # found file (probably a .orig.tar.gz). Don't report in this
+				   # case.
+				   !(grep( /\.changes$/, @job_files ))) {
+				$maint = get_maintainer( $file );
+				# Don't send a mail if this looks like the recompilation of a
+				# package for a non-i386 arch. For those, the maintainer field is
+				# useless :-(
+				if (!grep( /(\.dsc|_(i386|all)\.deb)$/, @job_files )) {
+					msg( "log", "Found an upload without .changes and with no ",
+						        ".dsc file\n" );
+					msg( "log", "Not sending a report, because probably ",
+						        "recompilation job\n" );
+				}
+				elsif ($maint) {
+					init_mail();
+					$main::mail_addr = $maint;
+					$main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
+					$main::mail_subject = "Incomplete upload found in ".
+						                  "Debian upload queue";
+					msg( "mail", "Probably you are the uploader of the following ".
+								 "file(s) in\n" );
+					msg( "mail", "the Debian upload queue directory:\n  " );
+					msg( "mail", join( "\n  ", @job_files ), "\n" );
+					msg( "mail", "This looks like an upload, but a .changes file ".
+								 "is missing, so the job\n" );
+					msg( "mail", "cannot be processed.\n\n" );
+					msg( "mail", "If no .changes file arrives within ",
+								 print_time( $conf::stray_remove_timeout - $age ),
+								 ", the files will be deleted.\n\n" );
+					msg( "mail", "If you didn't upload those files, please just ".
+								 "ignore this message.\n" );
+					finish_mail();
+					msg( "log", "Sending problem report for an upload without a ".
+								".changes\n" );
+					msg( "log", "Maintainer: $maint\n" );
+				}
+				else {
+					msg( "log", "Found an upload without .changes, but can't ".
+								"find a maintainer address\n" );
+				}
+				msg( "log", "Files: @job_files\n" );
+				# remember we already have sent a mail regarding this file
+				foreach ( @job_files ) {
+					my @st = stat($_);
+					next if !@st; # file may have disappeared in the meantime
+					chmod +($st[ST_MODE] |= S_ISGID), $_;
+				}
 			}
 			else {
-				msg( "log", "Found an upload without .changes, but can't ".
-							"find a maintainer address\n" );
+				debug( "found stray file ${main::current_incoming_short}/$file, deleting in ",
+					   print_time($conf::stray_remove_timeout - $age) );
 			}
-			msg( "log", "Files: @job_files\n" );
-			# remember we already have sent a mail regarding this file
-			foreach ( @job_files ) {
-				my @st = stat($_);
-				next if !@st; # file may have disappeared in the meantime
-				chmod +($st[ST_MODE] |= S_ISGID), $_;
-			}
-		}
-		else {
-			debug( "found stray file $file, deleting in ",
-				   print_time($conf::stray_remove_timeout - $age) );
 		}
 	}
+	chdir( $conf::incoming );
 
   end_run:
 	$main::dstat = "i";
 	write_status_file() if $conf::statusdelay;
+}
+
+sub get_filelist_from_known_good_changes($) {
+	my $changes = shift;
+
+	local( *CHANGES );
+	my(@filenames);
+
+	# parse the .changes file
+	open( CHANGES, "<$changes" )
+		or die "$changes: $!\n";
+	outer_loop: while( <CHANGES> ) {
+		if (/^Files:/i) {
+			while( <CHANGES> ) {
+				redo outer_loop if !/^\s/;
+				my @field = split( /\s+/ );
+				next if @field != 6;
+				# forbid shell meta chars in the name, we pass it to a
+				# subshell several times...
+				$field[5] =~ /^([a-zA-Z0-9.+_:@=%-][~a-zA-Z0-9.+_:@=%-]*)/;
+				if ($1 ne $field[5]) {
+					msg( "log", "found suspicious filename $field[5]\n" );
+					next;
+				}
+				push( @filenames, $field[5] );
+			}
+		}
+	}
+	close( CHANGES );
+	return @filenames;
 }
 
 #
@@ -769,16 +638,16 @@ sub process_changes($\@) {
 	local( *CHANGES );
 	local( *FAILS );
 
-	format_status_str( $main::current_changes, $changes );
+	format_status_str( $main::current_changes, "$main::current_incoming_short/$changes" );
 	$main::dstat = "c";
 	write_status_file() if $conf::statusdelay;
 
 	@$keep_list = ();
-	msg( "log", "processing $changes\n" );
+	msg( "log", "processing ${main::current_incoming_short}/$changes\n" );
 
 	# parse the .changes file
 	open( CHANGES, "<$changes" )
-		or die "Cannot open $changes: $!\n";
+		or die "Cannot open ${main::current_incoming_short}/$changes: $!\n";
 	$pgplines = 0;
 	$main::mail_addr = "";
 	@files = ();
@@ -805,7 +674,7 @@ sub process_changes($\@) {
 				$field[5] =~ /^([a-zA-Z0-9.+_:@=%-][~a-zA-Z0-9.+_:@=%-]*)/;
 				if ($1 ne $field[5]) {
 					msg( "log", "found suspicious filename $field[5]\n" );
-					msg( "mail", "File '$field[5]' mentioned in $changes\n",
+					msg( "mail", "File '$field[5]' mentioned in $main::current_incoming_short/$changes\n",
 						 "has bad characters in its name. Removed.\n" );
 					rm( $field[5] );
 					next;
@@ -827,7 +696,7 @@ sub process_changes($\@) {
 
 	# some consistency checks
 	if (!$main::mail_addr) {
-		msg( "log,mail", "$changes doesn't contain a Maintainer: field; ".
+		msg( "log,mail", "$main::current_incoming_short/$changes doesn't contain a Maintainer: field; ".
 			 "cannot process\n" );
 		goto remove_only_changes;
 	}
@@ -849,25 +718,25 @@ sub process_changes($\@) {
 			# not found or not unique: hold the job and inform queue maintainer
 			my $old_addr = $main::mail_addr;
 			$main::mail_addr = $conf::maintainer_mail;
-			msg( "mail", "The job $changes doesn't have a correct email\n" );
-			msg( "mail", "address in the Maintainer: field:\n" );
+			msg( "mail", "The job ${main::current_incoming_short}/$changes doesn't have a correct email\n" );
+		    msg( "mail", "address in the Maintainer: field:\n" );
 			msg( "mail", "  $old_addr\n" );
 			msg( "mail", "A check for this in the Debian keyring gave:\n" );
 			msg( "mail", @addr_list ?
 						 "  " . join( ", ", @addr_list ) . "\n" :
 						 "  nothing\n" );
 			msg( "mail", "Please fix this manually\n" );
-			msg( "log", "Bad Maintainer: field in $changes: $old_addr\n" );
+			msg( "log", "Bad Maintainer: field in ${main::current_incoming_short}/$changes: $old_addr\n" );
 			goto remove_only_changes;
 		}
 	}
 	if ($pgplines < 3) {
-		msg( "log,mail", "$changes isn't signed with PGP/GnuPG\n" );
+		msg( "log,mail", "$main::current_incoming_short/$changes isn't signed with PGP/GnuPG\n" );
 		msg( "log", "(uploader $main::mail_addr)\n" );
 		goto remove_only_changes;
 	}
 	if (!@files) {
-		msg( "log,mail", "$changes doesn't mention any files\n" );
+		msg( "log,mail", "$main::current_incoming_short/$changes doesn't mention any files\n" );
 		msg( "log", "(uploader $main::mail_addr)\n" );
 		goto remove_only_changes;
 	}
@@ -888,7 +757,7 @@ sub process_changes($\@) {
 	$retries = $last_retry = 0;
 	if (-f $failure_file) {
 		open( FAILS, "<$failure_file" )
-			or die "Cannot open $failure_file: $!\n";
+			or die "Cannot open $main::current_incoming_short/$failure_file: $!\n";
 		my $line = <FAILS>;
 		close( FAILS );
 		( $retries, $last_retry ) = ( $1, $2 ) if $line =~ /^(\d+)\s+(\d+)$/;
@@ -897,10 +766,10 @@ sub process_changes($\@) {
 
 	# run PGP on the file to check the signature
 	if (!($signator = pgp_check( $changes ))) {
-		msg( "log,mail", "$changes has bad PGP/GnuPG signature!\n" );
+		msg( "log,mail", "$main::current_incoming_short/$changes has bad PGP/GnuPG signature!\n" );
 		msg( "log", "(uploader $main::mail_addr)\n" );
 	  remove_only_changes:
-		msg( "log,mail", "Removing $changes, but keeping its associated ",
+		msg( "log,mail", "Removing $main::current_incoming_short/$changes, but keeping its associated ",
 			             "files for now.\n" );
 		rm( $changes );
 		# Set SGID bit on associated files, so that the test for Debian files
@@ -915,11 +784,11 @@ sub process_changes($\@) {
 	elsif ($signator eq "LOCAL ERROR") {
 		# An error has appened when starting pgp... Don't process the file,
 		# but also don't delete it
-		debug( "Can't PGP/GnuPG check $changes -- don't process it for now" );
+		debug( "Can't PGP/GnuPG check $main::current_incoming_short/$changes -- don't process it for now" );
 		return;
 	}
 
-	die "Cannot stat $changes (??): $!\n"
+	die "Cannot stat ${main::current_incoming_short}/$changes (??): $!\n"
 		if !(@changes_stats = stat( $changes ));
 	# Make $upload_time the maximum of all modification times of files
 	# related to this .changes (and the .changes it self). This is the
@@ -981,7 +850,7 @@ sub process_changes($\@) {
 			# if a .changes fails for a really long time (several days
 			# or so), remove it and all associated files
 			msg( "log,mail",
-				 "$changes couldn't be processed for ",
+				 "$main::current_incoming_short/$changes couldn't be processed for ",
 				 int($conf::bad_changes_timeout/(60*60)),
 				 " hours and is now deleted\n" );
 			msg( "log,mail",
@@ -1020,8 +889,8 @@ sub process_changes($\@) {
 	# check if the job is already present on target
 	# (moved to here, to avoid bothering target as long as there are errors in
 	# the job)
-	if ($ls_l = is_on_target( $changes )) {
-		msg( "log,mail", "$changes is already present on target host:\n" );
+	if ($ls_l = is_on_target( $changes, @filenames )) {
+		msg( "log,mail", "$main::current_incoming_short/$changes is already present on target host:\n" );
 		msg( "log,mail", "$ls_l\n" );
 		msg( "mail", "Either you already uploaded it, or someone else ",
 			         "came first.\n" );
@@ -1118,16 +987,17 @@ sub process_commands($) {
 	my $commands = shift;
 	my( @cmds, $cmd, $pgplines, $signator );
 	local( *COMMANDS );
+	my( @files, $file, @removed, $target_delay );
 	
 	format_status_str( $main::current_changes, $commands );
 	$main::dstat = "c";
 	write_status_file() if $conf::statusdelay;
 	
-	msg( "log", "processing $commands\n" );
+	msg( "log", "processing $main::current_incoming_short/$commands\n" );
 
 	# parse the .commands file
 	if (!open( COMMANDS, "<$commands" )) {
-		msg( "log", "Cannot open $commands: $!\n" );
+		msg( "log", "Cannot open $main::current_incoming_short/$commands: $!\n" );
 		return;
 	}
 	$pgplines = 0;
@@ -1159,16 +1029,16 @@ sub process_commands($) {
 	
 	# some consistency checks
 	if (!$main::mail_addr || $main::mail_addr !~ /^\S+\@\S+\.\S+/) {
-		msg( "log,mail", "$commands contains no or bad Uploader: field: ".
+		msg( "log,mail", "$main::current_incoming_short/$commands contains no or bad Uploader: field: ".
 						 "$main::mail_addr\n" );
-		msg( "log,mail", "cannot process $commands\n" );
+		msg( "log,mail", "cannot process $main::current_incoming_short/$commands\n" );
 		$main::mail_addr = "";
 		goto remove;
 	}
 	msg( "log", "(command uploader $main::mail_addr)\n" );
 
 	if ($pgplines < 3) {
-		msg( "log,mail", "$commands isn't signed with PGP/GnuPG\n" );
+		msg( "log,mail", "$main::current_incoming_short/$commands isn't signed with PGP/GnuPG\n" );
 		msg( "mail", "or the uploaded file is broken. Make sure to transfer in binary mode\n" );
 		msg( "mail", "or better yet - use dcut for commands files\n");
 		goto remove;
@@ -1176,45 +1046,79 @@ sub process_commands($) {
 	
 	# run PGP on the file to check the signature
 	if (!($signator = pgp_check( $commands ))) {
-		msg( "log,mail", "$commands has bad PGP/GnuPG signature!\n" );
+		msg( "log,mail", "$main::current_incoming_short/$commands has bad PGP/GnuPG signature!\n" );
 	  remove:
-		msg( "log,mail", "Removing $commands\n" );
+		msg( "log,mail", "Removing $main::current_incoming_short/$commands\n" );
 		rm( $commands );
 		return;
 	}
 	elsif ($signator eq "LOCAL ERROR") {
 		# An error has appened when starting pgp... Don't process the file,
 		# but also don't delete it
-		debug( "Can't PGP/GnuPG check $commands -- don't process it for now" );
+		debug( "Can't PGP/GnuPG check $main::current_incoming_short/$commands -- don't process it for now" );
 		return;
 	}
 	msg( "log", "(PGP/GnuPG signature by $signator)\n" );
 
 	# now process commands
-	msg( "mail", "Log of processing your commands file $commands:\n\n" );
+	msg( "mail", "Log of processing your commands file $main::current_incoming_short/$commands:\n\n" );
 	foreach $cmd ( @cmds ) {
 		my @word = split( /\s+/, $cmd );
 		msg( "mail,log", "> @word\n" );
 		next if @word < 1;
 		
 		if ($word[0] eq "rm") {
-			my( @files, $file, @removed );
 			foreach ( @word[1..$#word] ) {
 				if (m,/,) {
 					msg( "mail,log", "$_: filename may not contain slashes\n" );
 				}
 				elsif (/[*?[]/) {
-					# process wildcards
+					# process wildcards but also plain names (for delayed target removal)
+					my (@thesefiles);
 					my $pat = quotemeta($_);
 					$pat =~ s/\\\*/.*/g;
 					$pat =~ s/\\\?/.?/g;
 					$pat =~ s/\\([][])/$1/g;
 					opendir( DIR, "." );
-					push( @files, grep /^$pat$/, readdir(DIR) );
+					push (@thesefiles, grep /^$pat$/, readdir(DIR) );
 					closedir( DIR );
+					for ( my($adelay)=0; (! @thesefiles) && $adelay <= $conf::max_delayed; $adelay++ ) {
+						my($dir) = sprintf( $conf::incoming_delayed,
+								    $adelay );
+						opendir( DIR, "$dir" );
+						push( @thesefiles, map ("$dir/$_", grep /^$pat$/, readdir(DIR) ));
+						closedir( DIR );
+					}
+					push (@files, @thesefiles);
+					if (! @thesefiles) {
+						msg( "mail,log", "$_ did not match anything\n" );
+					}
 				}
 				else {
-					push( @files, $_ );
+				    my (@thesefiles);
+				    $file = $_;
+				    if (-f $file) {
+						push (@thesefiles, $file);
+					}
+					for ( my($adelay)=0; $adelay <= $conf::max_delayed; $adelay++ ) {
+						my($dir) = sprintf( $conf::incoming_delayed, $adelay );
+						if (-f "$dir/$file") {
+							push (@thesefiles, "$dir/$file");
+						}
+				    }
+					if ($file =~ m/\.changes$/ &&  $conf::upload_method eq "copy") {
+						for ( my($adelay)=0; $adelay <= $conf::max_delayed; $adelay++ ) {
+							my($dir) = sprintf( "$conf::targetdir_delayed",$adelay );
+							if (-f "$dir/$file") {
+								push (@thesefiles, "$dir/$file");
+								push (@thesefiles, map( "$dir/$_",get_filelist_from_known_good_changes("$dir/$file")));
+							}
+						}
+					}
+					if (!@thesefiles) {
+						msg( "mail,log", "No file found: $file\n" );
+					}
+					push (@files, @thesefiles);
 				}
 			}
 			if (!@files) {
@@ -1244,27 +1148,39 @@ sub process_commands($) {
 			if (@word != 3) {
 				msg( "mail,log", "Wrong number of arguments\n" );
 			}
-			elsif ($word[1] =~ m,/,) {
+			elsif ($word[1] =~ m,/, || $word[1] !~ m/\.changes/) {
 				msg( "mail,log", "$word[1]: filename may not contain slashes\n" );
 			}
-			elsif ($word[2] =~ m,/,) {
-				msg( "mail,log", "$word[2]: filename may not contain slashes\n" );
-			}
-			elsif (!-f $word[1]) {
-				msg( "mail,log", "$word[1]: no such file\n" );
-			}
-			elsif (-e $word[2]) {
-				msg( "mail,log", "$word[2]: file exists\n" );
+			elsif (! (($target_delay) = $word[2] =~ m,^([0-9]+)-day$,) || $target_delay > $conf::max_delayed) {
+				msg( "mail,log", "$word[2]: target must be #-day with # between 0 and $conf::max_delayed (in particular, no '/' allowed)\n");
 			}
 			elsif ($word[1] =~ /$conf::keep_files/) {
 				msg( "mail,log", "$word[1] is protected, cannot rename\n" );
 			}
 			else {
-				if (!rename( $word[1], $word[2] )) {
-					msg( "mail,log", "rename: $!\n" );
+				my($adelay);
+				for ( $adelay=0; $adelay <= $conf::max_delayed && ! -f (sprintf( "$conf::targetdir_delayed",$adelay )."/$word[1]"); $adelay++ ) {
+				}
+				if ( $adelay > $conf::max_delayed) {
+					msg( "mail,log", "$word[1] not found\n" );
+				}
+				elsif ($adelay == $target_delay) {
+					msg( "mail,log", "$word[1] already is in $word[2]\n" );
 				}
 				else {
-					msg( "mail,log", "OK\n" );
+					my(@thesefiles);
+					my($dir) = sprintf( "$conf::targetdir_delayed",$adelay );
+					my($target_dir) = sprintf( "$conf::targetdir_delayed",$target_delay );
+					push (@thesefiles, $word[1]);
+					push (@thesefiles, get_filelist_from_known_good_changes("$dir/$word[1]"));
+					for my $afile(@thesefiles) {
+						if (! rename "$dir/$afile","$target_dir/$afile") {
+							msg( "mail,log", "rename: $!\n" );
+						}
+						else {
+							msg( "mail,log", "$afile moved to $target_delay-day\n" );
+						}
+					}
 				}
 			}
 		}
@@ -1273,17 +1189,47 @@ sub process_commands($) {
 		}
 	}
 	rm( $commands );
-	msg( "log", "-- End of $commands processing\n" );
+	msg( "log", "-- End of $main::current_incoming_short/$commands processing\n" );
+}
+
+sub age_delayed_queues() {
+	for ( my($adelay)=0 ; $adelay <= $conf::max_delayed ; $adelay++ ) {
+		my($dir) = sprintf( "$conf::targetdir_delayed",$adelay );
+		my($target_dir);
+		if ($adelay == 0) {
+		    $target_dir = $conf::targetdir;
+		}
+		else {
+			$target_dir = sprintf( "$conf::targetdir_delayed",$adelay-1 );
+		}
+		for my $achanges (<$dir/*.changes>) {
+			my $mtime = (stat($achanges))[9];
+			if ($mtime + 24*60*60 <= time) {
+				utime undef,undef,($achanges);
+				my @thesefiles = ($achanges =~ m,.*/([^/]*),);
+				push (@thesefiles, get_filelist_from_known_good_changes($achanges));
+				for my $afile(@thesefiles) {
+					if (! rename "$dir/$afile","$target_dir/$afile") {
+						msg( "log", "rename: $!\n" );
+					}
+					else {
+						msg( "log", "$afile moved to $target_dir\n" );
+					}
+				}
+			}
+		}
+	}
 }
 
 #
 # check if a file is already on target
 #
-sub is_on_target($) {
+sub is_on_target($\@) {
 	my $file = shift;
+	my $filelist = shift;
 	my $msg;
 	my $stat;
-	
+
 	if ($conf::upload_method eq "ssh") {
 		($msg, $stat) = ssh_cmd( "ls -l $file" );
 	}
@@ -1304,7 +1250,24 @@ sub is_on_target($) {
 		}
 	}
 	else {
-		($msg, $stat) = local_cmd( "$conf::ls -l $file" );
+		my @allfiles = ($file);
+		push ( @allfiles, @$filelist);
+		$stat = 1;
+		$msg = "no such file";
+		for my $afile(@allfiles) {
+			if (-f "$conf::incoming/$afile") {
+				$stat = 0;
+        	    $msg = "$afile";
+			}
+		}
+		for ( my($adelay)=0 ; $adelay <= $conf::max_delayed && $stat ; $adelay++ ) {
+			for my $afile(@allfiles) {
+				if (-f (sprintf( "$conf::targetdir_delayed",$adelay )."/$afile")) {
+					$stat = 0;
+					$msg = sprintf( "%d-day",$adelay )."/$afile";
+				}
+			}
+		}
 	}
 	chomp( $msg );
 	debug( "exit status: $stat, output was: $msg" );
@@ -1335,13 +1298,17 @@ sub copy_to_target(@) {
 	}
 	elsif ($conf::upload_method eq "ftp") {
 		my($rv, $file);
+		if (!$main::FTP_chan->cwd( $main::current_targetdir )) {
+			msg( "log,mail", "Can't cd to $main::current_targetdir on $conf::target\n" );
+			goto err;
+		}
 		foreach $file (@files) {
 			($rv, $msgs) = ftp_cmd( "put", $file );
 			goto err if !$rv;
 		}
 	}
 	else {
-		($msgs, $stat) = local_cmd( "$conf::cp @files $conf::targetdir", 'NOCD' );
+		($msgs, $stat) = local_cmd( "$conf::cp @files $main::current_targetdir", 'NOCD' );
 		goto err if $stat;
 	}
 	
@@ -1463,7 +1430,7 @@ sub copy_to_target(@) {
 		}
 	}
 	else {
-		my @tfiles = map { "$conf::targetdir/$_" } @files;
+		my @tfiles = map { "$main::current_targetdir/$_" } @files;
 		debug( "executing unlink(@tfiles)" );
 		rm( @tfiles );
 	}
@@ -1482,7 +1449,7 @@ sub pgp_check($) {
 	my $found = 0;
 	my $stat;
 	local( *PIPE );
-	
+
 	$stat = 1;
 	if (-x $conf::gpg) {
 		debug( "executing $conf::gpg --no-options --batch ".
@@ -1719,7 +1686,7 @@ sub ftp_open() {
 
 	if ($main::FTP_chan) {
 		# is already open, but might have timed out; test with a cwd
-		return $main::FTP_chan if $main::FTP_chan->cwd( $conf::targetdir );
+		return $main::FTP_chan if $main::FTP_chan->cwd( $main::current_targetdir );
 		# cwd didn't work, channel is closed, try to reopen it
 		$main::FTP_chan = undef;
 	}
@@ -1738,8 +1705,8 @@ sub ftp_open() {
 		msg( "log,mail", "Can't set binary FTP mode on $conf::target\n" );
 		goto err;
 	}
-	if (!$main::FTP_chan->cwd( $conf::targetdir )) {
-		msg( "log,mail", "Can't cd to $conf::targetdir on $conf::target\n" );
+	if (!$main::FTP_chan->cwd( $main::current_targetdir )) {
+		msg( "log,mail", "Can't cd to $main::current_targetdir on $conf::target\n" );
 		goto err;
 	}
 	debug( "opened FTP channel to $conf::target" );
@@ -1802,7 +1769,7 @@ sub ssh_cmd($) {
 	my ($msg, $stat);
 
 	my $ecmd = "$conf::ssh $conf::ssh_options $conf::target ".
-			   "-l $conf::targetlogin \'cd $conf::targetdir; $cmd\'";
+			   "-l $conf::targetlogin \'cd $main::current_targetdir; $cmd\'";
 	debug( "executing $ecmd" );
 	$SIG{"ALRM"} = sub { die "timeout in ssh command\n" } ;
 	alarm( $conf::remote_timeout );
@@ -1822,7 +1789,7 @@ sub scp_cmd(@) {
 	my ($msg, $stat);
 
 	my $ecmd = "$conf::scp $conf::ssh_options @_ ".
-			   "$conf::targetlogin\@$conf::target:$conf::targetdir";
+			   "$conf::targetlogin\@$conf::target:$main::current_targetdir";
 	debug( "executing $ecmd" );
 	$SIG{"ALRM"} = sub { die "timeout in scp\n" } ;
 	alarm( $conf::remote_timeout );
@@ -1843,7 +1810,7 @@ sub local_cmd($;$) {
 	my $nocd = shift;
 	my ($msg, $stat);
 
-	my $ecmd = ($nocd ? "" : "cd $conf::targetdir; ") . $cmd;
+	my $ecmd = ($nocd ? "" : "cd $main::current_targetdir; ") . $cmd;
 	debug( "executing $ecmd" );
 	$msg = `($ecmd) 2>&1`;
 	$stat = $?;
