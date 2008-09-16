@@ -1255,7 +1255,7 @@ sub is_on_target($\@) {
 		$stat = 1;
 		$msg = "no such file";
 		for my $afile(@allfiles) {
-			if (-f "$conf::incoming/$afile") {
+			if (-f "$conf::targetdir/$afile") {
 				$stat = 0;
         	    $msg = "$afile";
 			}
