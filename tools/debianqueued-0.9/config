@@ -83,7 +83,7 @@ $targetlogin = "queue";
 $targetdir = "/srv/ftp.debian.org/queue/unchecked/";
 
 # incoming/delayed on target host
-$targetdir_delayed = "/srv/queued/DEFERRED/%d-day";
+$targetdir_delayed = "/srv/queued/DELAYED/%d-day";
 
 # select FTP debugging
 #$ftpdebug = 0;
