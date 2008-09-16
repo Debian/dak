@@ -1065,60 +1065,53 @@ sub process_commands($) {
 	foreach $cmd ( @cmds ) {
 		my @word = split( /\s+/, $cmd );
 		msg( "mail,log", "> @word\n" );
+        my $selecteddelayed = -1;
 		next if @word < 1;
-		
+
 		if ($word[0] eq "rm") {
 			foreach ( @word[1..$#word] ) {
-				if (m,/,) {
-					msg( "mail,log", "$_: filename may not contain slashes\n" );
+				my $origword = $_;
+				if ($_ eq "--searchdirs") {
+					$selecteddelayed = -2;
 				}
-				elsif (/[*?[]/) {
-					# process wildcards but also plain names (for delayed target removal)
+				elsif (m,^DELAYED/([0-9]+)-day/,) {
+					$selecteddelayed = $1;
+                    s,^DELAYED/[0-9]+-day/,,;
+				}
+				if (m,/,) {
+					msg( "mail,log", "$_: filename may not contain slashes except for DELAYED/#-day/ prefixes\n" );
+				}
+				else {
+					# process wildcards but also plain names
 					my (@thesefiles);
 					my $pat = quotemeta($_);
 					$pat =~ s/\\\*/.*/g;
 					$pat =~ s/\\\?/.?/g;
 					$pat =~ s/\\([][])/$1/g;
-					opendir( DIR, "." );
-					push (@thesefiles, grep /^$pat$/, readdir(DIR) );
-					closedir( DIR );
-					for ( my($adelay)=0; (! @thesefiles) && $adelay <= $conf::max_delayed; $adelay++ ) {
-						my($dir) = sprintf( $conf::incoming_delayed,
-								    $adelay );
-						opendir( DIR, "$dir" );
+
+					if ( $selecteddelayed < 0) { # scanning or explicitly incoming
+						opendir( DIR, "." );
+						push (@thesefiles, grep /^$pat$/, readdir(DIR) );
+						closedir( DIR );
+					}
+					if ( $selecteddelayed >= 0) {
+						my $dir = sprintf( $conf::incoming_delayed, $selecteddelayed );
+						opendir( DIR, $dir );
 						push( @thesefiles, map ("$dir/$_", grep /^$pat$/, readdir(DIR) ));
 						closedir( DIR );
 					}
+					elsif ( $selecteddelayed == -2) {
+						for ( my($adelay)=0; (! @thesefiles) && $adelay <= $conf::max_delayed; $adelay++ ) {
+							my $dir = sprintf( $conf::incoming_delayed, $adelay );
+							opendir( DIR, $dir);
+							push( @thesefiles, map ("$dir/$_", grep /^$pat$/, readdir(DIR) ));
+							closedir( DIR );
+						}
+					}
 					push (@files, @thesefiles);
 					if (! @thesefiles) {
-						msg( "mail,log", "$_ did not match anything\n" );
+						msg( "mail,log", "$origword did not match anything\n" );
 					}
-				}
-				else {
-				    my (@thesefiles);
-				    $file = $_;
-				    if (-f $file) {
-						push (@thesefiles, $file);
-					}
-					for ( my($adelay)=0; $adelay <= $conf::max_delayed; $adelay++ ) {
-						my($dir) = sprintf( $conf::incoming_delayed, $adelay );
-						if (-f "$dir/$file") {
-							push (@thesefiles, "$dir/$file");
-						}
-				    }
-					if ($file =~ m/\.changes$/ &&  $conf::upload_method eq "copy") {
-						for ( my($adelay)=0; $adelay <= $conf::max_delayed; $adelay++ ) {
-							my($dir) = sprintf( "$conf::targetdir_delayed",$adelay );
-							if (-f "$dir/$file") {
-								push (@thesefiles, "$dir/$file");
-								push (@thesefiles, map( "$dir/$_",get_filelist_from_known_good_changes("$dir/$file")));
-							}
-						}
-					}
-					if (!@thesefiles) {
-						msg( "mail,log", "No file found: $file\n" );
-					}
-					push (@files, @thesefiles);
 				}
 			}
 			if (!@files) {
@@ -1144,18 +1137,21 @@ sub process_commands($) {
 				msg( "mail,log", "Files removed: @removed\n" ) if @removed;
 			}
 		}
-		elsif ($word[0] eq "mv") {
+		elsif ($word[0] eq "reschedule") {
 			if (@word != 3) {
 				msg( "mail,log", "Wrong number of arguments\n" );
 			}
+			elsif ($conf::upload_method ne "copy") {
+				msg( "mail,log", "reschedule not available\n" );
+			}
 			elsif ($word[1] =~ m,/, || $word[1] !~ m/\.changes/) {
-				msg( "mail,log", "$word[1]: filename may not contain slashes\n" );
+				msg( "mail,log", "$word[1]: filename may not contain slashes and must be .changes\n" );
 			}
 			elsif (! (($target_delay) = $word[2] =~ m,^([0-9]+)-day$,) || $target_delay > $conf::max_delayed) {
-				msg( "mail,log", "$word[2]: target must be #-day with # between 0 and $conf::max_delayed (in particular, no '/' allowed)\n");
+				msg( "mail,log", "$word[2]: rescheduling target must be #-day with # between 0 and $conf::max_delayed (in particular, no '/' allowed)\n");
 			}
 			elsif ($word[1] =~ /$conf::keep_files/) {
-				msg( "mail,log", "$word[1] is protected, cannot rename\n" );
+				msg( "mail,log", "$word[1] is protected, cannot do stuff with it\n" );
 			}
 			else {
 				my($adelay);
@@ -1174,6 +1170,9 @@ sub process_commands($) {
 					push (@thesefiles, $word[1]);
 					push (@thesefiles, get_filelist_from_known_good_changes("$dir/$word[1]"));
 					for my $afile(@thesefiles) {
+						if ($afile =~ m/\.changes$/) {
+							utime undef,undef,("$dir/$afile");
+						}
 						if (! rename "$dir/$afile","$target_dir/$afile") {
 							msg( "mail,log", "rename: $!\n" );
 						}
@@ -1182,6 +1181,47 @@ sub process_commands($) {
 						}
 					}
 				}
+			}
+		}
+		elsif ($word[0] eq "cancel") {
+			if (@word != 2) {
+				msg( "mail,log", "Wrong number of arguments\n" );
+			}
+			elsif ($conf::upload_method ne "copy") {
+				msg( "mail,log", "cancel not available\n" );
+			}
+			elsif ($word[1] !~ m,^[a-zA-Z0-9.+_:@=%-][~a-zA-Z0-9.+_:@=%-]*\.changes$,) {
+				msg( "mail,log", "argument to cancel must be one .changes filename without path\n" );
+			}
+		    my (@files);
+			for ( my($adelay)=0; $adelay <= $conf::max_delayed; $adelay++ ) {
+				my($dir) = sprintf( "$conf::targetdir_delayed",$adelay );
+				if (-f "$dir/$word[1]") {
+					push (@files, "$dir/$word[1]");
+					push (@files, map( "$dir/$_",get_filelist_from_known_good_changes("$dir/$word[1]")));
+				}
+			}
+			if (!@files) {
+				msg( "mail,log", "No upload found: $word[1]\n" );
+			}
+			else {
+				@removed = ();
+				foreach $file ( @files ) {
+					if (!-f $file) {
+						msg( "mail,log", "$file: no such file\n" );
+					}
+					elsif ($file =~ /$conf::keep_files/) {
+						msg( "mail,log", "$file is protected, cannot ".
+							 "remove\n" );
+					}
+					elsif (!unlink( $file )) {
+						msg( "mail,log", "$file: rm: $!\n" );
+					}
+					else {
+						push( @removed, $file );
+					}
+				}
+				msg( "mail,log", "Files removed: @removed\n" ) if @removed;
 			}
 		}
 		else {
@@ -1204,7 +1244,7 @@ sub age_delayed_queues() {
 		}
 		for my $achanges (<$dir/*.changes>) {
 			my $mtime = (stat($achanges))[9];
-			if ($mtime + 24*60*60 <= time) {
+			if ($mtime + 24*60*60 <= time || $adelay==0) {
 				utime undef,undef,($achanges);
 				my @thesefiles = ($achanges =~ m,.*/([^/]*),);
 				push (@thesefiles, get_filelist_from_known_good_changes($achanges));
@@ -1255,7 +1295,7 @@ sub is_on_target($\@) {
 		$stat = 1;
 		$msg = "no such file";
 		for my $afile(@allfiles) {
-			if (-f "$conf::incoming/$afile") {
+			if (-f "$conf::targetdir/$afile") {
 				$stat = 0;
         	    $msg = "$afile";
 			}
