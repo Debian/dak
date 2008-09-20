@@ -4,7 +4,7 @@ files uploaded here will be moved into the project incoming dir on
 this machine.
 
 Only known Debian developers can upload here. Uploads have to be signed
-by PGP keys in the Debian keyring. Files not meeting this criteria or
+by PGP keys in the Debian keyring. Files not meeting this criterion or
 files not mentioned in a .changes file will be removed after some time.
 
 The queue daemon will notify you by mail of success or any problems
@@ -28,10 +28,11 @@ The Uploader: field should contain the mail address to which the reply
 should go, just like Maintainer: in a *.changes. Commands: is a
 multi-line field like e.g. Description:, so each continuation line
 should start with a space. Each line in Commands: can contain a
-standard 'rm' command, but no options are allowed, and filenames may not
-contain slashes (so that they're restricted to the queue
-directory). 'rm' can process as much arguments as you give it (not only
-one), and also knows about the shell wildcards *, ?, and [].
+standard 'rm' command, but no options are allowed. Except for the
+DELAYED queue (see below) filenames may not contain slashes (so that
+they're restricted to the queue directory). 'rm' can process as much
+arguments as you give it (not only one), and also knows about the shell
+wildcards *, ?, and [].
 
 Example of a *.commands file:
 
