@@ -136,4 +136,13 @@ def list_uploads(filelist):
         print '<h1>Currently no deferred uploads to Debian</h1>'
     print footer()
 
-list_uploads(sys.argv[1:])
+if len(sys.argv)!=2:
+    print >> sys.stderr, """Error! Invoke %s /path/to/DEFERRED"""%sys.argv[0]
+    sys.exit(1)
+    
+filelist = []
+for r,d,f  in os.walk(sys.argv[1]):
+    filelist += map (lambda x: os.path.join(r,x),
+                     filter(lambda x: x.endswith('.changes'), f))
+
+list_uploads(filelist)
