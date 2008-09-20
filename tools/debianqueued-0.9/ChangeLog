@@ -1,3 +1,8 @@
+2008-09-20  Joerg Jaspert  <joerg@debian.org>
+
+	* Queue.README (Version): Update the text to match reality with
+	DEFERRED/DELAYED and the removed mv command
+
 2008-09-15  Joerg Jaspert  <joerg@debian.org>
 
 	* config: Use 15 delayed dirs. Also change maintainer_mail to

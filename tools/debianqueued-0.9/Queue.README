@@ -3,18 +3,12 @@ This directory is the Debian upload queue of ftp-master.debian.org. All
 files uploaded here will be moved into the project incoming dir on
 this machine.
 
-Only known Debian developers can upload here. All uploads must be in
-the same format as they would go to master, i.e. with a PGP-signed
-.changes file that lists all files that belong to the upload. Files
-not meeting this condition will be removed automatically after some
-time.
+Only known Debian developers can upload here. Uploads have to be signed
+by PGP keys in the Debian keyring. Files not meeting this criteria or
+files not mentioned in a .changes file will be removed after some time.
 
 The queue daemon will notify you by mail of success or any problems
-with your upload. For this, the Maintainer: field in the .changes must
-contain your (the uploader's) correct e-mail address, not the address
-of the real maintainer (if different). The same convention applies to
-master itself, which sends installation acknowledgements to the
-address in Maintainer:.
+with your upload.
 
 
 *.commands Files
@@ -34,26 +28,67 @@ The Uploader: field should contain the mail address to which the reply
 should go, just like Maintainer: in a *.changes. Commands: is a
 multi-line field like e.g. Description:, so each continuation line
 should start with a space. Each line in Commands: can contain a
-standard 'rm' or 'mv' command, but no options are allowed, and
-filenames may not contain slashes (so that they're restricted to the
-queue directory). 'rm' can process as much arguments as you give it
-(not only one), and also knows about the shell wildcards *, ?, and [].
+standard 'rm' command, but no options are allowed, and filenames may not
+contain slashes (so that they're restricted to the queue
+directory). 'rm' can process as much arguments as you give it (not only
+one), and also knows about the shell wildcards *, ?, and [].
 
 Example of a *.commands file:
 
 -----BEGIN PGP SIGNED MESSAGE-----
 
-Uploader: Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
+Uploader: Some One <some@example.com>
 Commands: 
  rm hello_1.0-1_i386.deb
- mv hello_1.0-1.dsx hello_1.0-1.dsc
 
 -----BEGIN PGP SIGNATURE-----
 Version: 2.6.3ia
 
-iQCVAwUBNFiQSXVhJ0HiWnvJAQG58AP+IDJVeSWmDvzMUphScg1EK0mvChgnuD7h
-BRiVQubXkB2DphLJW5UUSRnjw1iuFcYwH/lFpNpl7XP95LkLX3iFza9qItw4k2/q
-tvylZkmIA9jxCyv/YB6zZCbHmbvUnL473eLRoxlnYZd3JFaCZMJ86B0Ph4GFNPAf
-Z4jxNrgh7Bc=
-=pH94
+[...]
 -----END PGP SIGNATURE-----
+
+
+DELAYED Queue
+-------------
+There is a DELAYED queue available. Packages uploaded into the
+X-day (X between 0 and 15) subdirectories of DELAYED/ will be moved into
+the DEFERRED queue and won't be placed into the archive before the
+waiting time is over.
+
+To avoid confusion, the terms used are:
+DELAYED  - the public ftp upload directories, reachable via DELAYED/X-day
+
+DEFERRED - this is the place where the uploads are placed by the queue
+           daemon after processing and where packages wait before they
+           are moved into the incoming queue.
+
+
+You can modify the queues (besides uploading packages) with *.commands
+files as described above, using the following syntax.
+
+Note that any processing in the DEFERRED queue works on whole uploads
+(i.e. a .changes file and all the files that came with it), whereas
+operations in the DELAYED queue (and the normal ftp root directory)
+work on individual files.
+
+ - To move a package from one DEFERRED directory into another, say
+   from 8-days to 2-days delay:
+   reschedule foo_1.2-1.1_all.changes 2-day
+
+   The move-target has to be without the trailing /.
+
+ - To delete an upload (and all associated files) in the DEFERRED queue:
+   cancel foo_1.2-1.1_all.changes
+
+ - To delete a broken upload in the DELAYED queue:
+   rm DELAYED/X-day/foobar.deb
+
+   or
+
+   rm --searchdirs foobar.deb
+
+ - The old mv command is no longer supported.
+
+Wildcards in .commands files are only valid for the DELAYED queue and
+its rm command, the DEFERRED queue commands cancel and reschedule do
+not allow them.
