@@ -3,6 +3,10 @@
 	* Queue.README (Version): Update the text to match reality with
 	DEFERRED/DELAYED and the removed mv command
 
+2008-09-20  Thomas Viehmann  <tv@beamnet.de>
+
+	* debianqueued: Minor fixes on .commands processing.
+
 2008-09-15  Joerg Jaspert  <joerg@debian.org>
 
 	* config: Use 15 delayed dirs. Also change maintainer_mail to
