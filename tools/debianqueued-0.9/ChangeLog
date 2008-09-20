@@ -1,3 +1,7 @@
+2008-09-20  Thomas Viehmann  <tv@beamnet.de>
+
+	* show-deferred: status page for deferred upload queue
+
 2008-09-20  Joerg Jaspert  <joerg@debian.org>
 
 	* Queue.README (Version): Update the text to match reality with
