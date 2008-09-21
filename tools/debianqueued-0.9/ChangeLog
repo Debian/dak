@@ -1,5 +1,7 @@
 2008-09-21  Joerg Jaspert  <joerg@debian.org>
 
+	* debianqueued: Use perltidy
+
 	* Queue.README: Its ftp.upload.debian.org now, not
 	ftp-master.debian.org.
 
