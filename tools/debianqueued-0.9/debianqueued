@@ -43,6 +43,7 @@ $junk = $conf::upload_delay_2;
 $junk = $conf::ar;
 $junk = $conf::gzip;
 $junk = $conf::cp;
+$junk = $conf::check_md5sum;
 
 #$junk = $conf::ls;
 $junk         = $conf::chmod;
@@ -1490,70 +1491,72 @@ sub copy_to_target(@) {
 
   # check md5sums or sizes on target against our own
   my $have_md5sums = 1;
-  if ( $conf::upload_method eq "ssh" ) {
-    ( $msgs, $stat ) = ssh_cmd("md5sum @files");
-    goto err if $stat;
-    @md5sum = split( "\n", $msgs );
-  } elsif ( $conf::upload_method eq "ftp" ) {
-    my ( $rv, $err, $file );
-    foreach $file (@files) {
-      ( $rv, $err ) = ftp_cmd( "quot", "site", "md5sum", $file );
-      if ($err) {
-        next if ftp_code() == 550;    # file not found
-        if ( ftp_code() == 500 ) {    # unimplemented
-          $have_md5sums = 0;
-          goto get_sizes_instead;
-        }
-        $msgs = $err;
-        goto err;
-      } ## end if ($err)
-      chomp( my $t = ftp_response() );
-      push( @md5sum, $t );
-    } ## end foreach $file (@files)
-    if ( !$have_md5sums ) {
-    get_sizes_instead:
+  if ($conf::check_md5sum) {
+    if ( $conf::upload_method eq "ssh" ) {
+      ( $msgs, $stat ) = ssh_cmd("md5sum @files");
+      goto err if $stat;
+      @md5sum = split( "\n", $msgs );
+    } elsif ( $conf::upload_method eq "ftp" ) {
+      my ( $rv, $err, $file );
       foreach $file (@files) {
-        ( $rv, $err ) = ftp_cmd( "size", $file );
+        ( $rv, $err ) = ftp_cmd( "quot", "site", "md5sum", $file );
         if ($err) {
           next if ftp_code() == 550;    # file not found
+          if ( ftp_code() == 500 ) {    # unimplemented
+            $have_md5sums = 0;
+            goto get_sizes_instead;
+          }
           $msgs = $err;
           goto err;
-        }
-        push( @md5sum, "$rv $file" );
+        } ## end if ($err)
+        chomp( my $t = ftp_response() );
+        push( @md5sum, $t );
       } ## end foreach $file (@files)
-    } ## end if ( !$have_md5sums )
-  } else {
-    ( $msgs, $stat ) = local_cmd("$conf::md5sum @files");
-    goto err if $stat;
-    @md5sum = split( "\n", $msgs );
-  }
+      if ( !$have_md5sums ) {
+      get_sizes_instead:
+        foreach $file (@files) {
+          ( $rv, $err ) = ftp_cmd( "size", $file );
+          if ($err) {
+            next if ftp_code() == 550;    # file not found
+            $msgs = $err;
+            goto err;
+          }
+          push( @md5sum, "$rv $file" );
+        } ## end foreach $file (@files)
+      } ## end if ( !$have_md5sums )
+    } else {
+      ( $msgs, $stat ) = local_cmd("$conf::md5sum @files");
+      goto err if $stat;
+      @md5sum = split( "\n", $msgs );
+    }
 
-  @expected_files = @files;
-  foreach (@md5sum) {
-    chomp;
-    ( $sum, $name ) = split;
-    next if !grep { $_ eq $name } @files;    # a file we didn't upload??
-    next if $sum eq "md5sum:";               # looks like an error message
-    if (    ( $have_md5sums && $sum ne md5sum($name) )
-         || ( !$have_md5sums && $sum != ( -s $name ) ) )
-    {
-      msg(
-           "log,mail",
-           "Upload of $name to $conf::target failed ",
-           "(" . ( $have_md5sums ? "md5sum" : "size" ) . " mismatch)\n"
-         );
+    @expected_files = @files;
+    foreach (@md5sum) {
+      chomp;
+      ( $sum, $name ) = split;
+      next if !grep { $_ eq $name } @files;    # a file we didn't upload??
+      next if $sum eq "md5sum:";               # looks like an error message
+      if (    ( $have_md5sums && $sum ne md5sum($name) )
+           || ( !$have_md5sums && $sum != ( -s $name ) ) )
+      {
+        msg(
+             "log,mail",
+             "Upload of $name to $conf::target failed ",
+             "(" . ( $have_md5sums ? "md5sum" : "size" ) . " mismatch)\n"
+           );
+        goto err;
+      } ## end if ( ( $have_md5sums &&...
+
+      # seen that file, remove it from expect list
+      @expected_files = map { $_ eq $name ? () : $_ } @expected_files;
+    } ## end foreach (@md5sum)
+    if (@expected_files) {
+      msg( "log,mail", "Failed to upload the files\n" );
+      msg( "log,mail", "  ", join( ", ", @expected_files ), "\n" );
+      msg( "log,mail", "(Not present on target after upload)\n" );
       goto err;
-    } ## end if ( ( $have_md5sums &&...
-
-    # seen that file, remove it from expect list
-    @expected_files = map { $_ eq $name ? () : $_ } @expected_files;
-  } ## end foreach (@md5sum)
-  if (@expected_files) {
-    msg( "log,mail", "Failed to upload the files\n" );
-    msg( "log,mail", "  ", join( ", ", @expected_files ), "\n" );
-    msg( "log,mail", "(Not present on target after upload)\n" );
-    goto err;
-  } ## end if (@expected_files)
+    } ## end if (@expected_files)
+  } ## end if ($conf::check_md5sum)
 
   if ($conf::chmod_on_target) {
 
@@ -1890,7 +1893,8 @@ sub ftp_open() {
           Net::FTP->new(
                          $conf::target,
                          Debug   => $conf::ftpdebug,
-                         Timeout => $conf::ftptimeout
+                         Timeout => $conf::ftptimeout,
+                         Passive => 1,
                        )
         )
      )

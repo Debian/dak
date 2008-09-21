@@ -1,6 +1,8 @@
 2008-09-21  Joerg Jaspert  <joerg@debian.org>
 
 	* debianqueued: Use perltidy
+	(copy_to_target): Only check md5sums if we want it, using a new
+	config value for it.
 
 	* Queue.README: Its ftp.upload.debian.org now, not
 	ftp-master.debian.org.
