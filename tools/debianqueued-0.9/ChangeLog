@@ -1,3 +1,7 @@
+2008-09-21  Joerg Jaspert  <joerg@debian.org>
+
+	* config-upload: New file, used for ravel
+
 2008-09-20  Thomas Viehmann  <tv@beamnet.de>
 
 	* show-deferred: status page for deferred upload queue
