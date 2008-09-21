@@ -88,7 +88,7 @@ $targetdir = "/pub/UploadQueue/";
 $targetdir_delayed = "/srv/queued/DEFERRED/%d-day";
 
 # select FTP debugging
-$ftpdebug = 1;
+$ftpdebug = 0;
 
 # FTP timeout
 $ftptimeout = 900;
