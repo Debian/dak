@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+
+# based on queue-report
+#    Copyright (C) 2001, 2002, 2003, 2005, 2006  James Troup <james@nocrew.org>
+# Copyright (C) 2008 Thomas Viehmann <tv@beamnet.de>
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+import sys, os, re, time
+from debian_bundle import deb822
+
+################################################################################
+
+row_number = 0
+
+html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
+re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
+def html_escape(s):
+    return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
+
+################################################################################
+
+def header():
+  return  """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+        <html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Deferred uploads to Debian</title>
+        <link type="text/css" rel="stylesheet" href="style.css">
+        <link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
+        </head>
+        <body>
+        <div align="center">
+        <a href="http://www.debian.org/">
+     <img src="http://www.debian.org/logos/openlogo-nd-50.png" border="0" hspace="0" vspace="0" alt=""></a>
+        <a href="http://www.debian.org/">
+     <img src="http://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace="0" alt="Debian Project"></a>
+        </div>
+        <br />
+        <table class="reddy" width="100%">
+        <tr>
+        <td class="reddy">
+    <img src="http://www.debian.org/Pics/red-upperleft.png" align="left" border="0" hspace="0" vspace="0"
+     alt="" width="15" height="16"></td>
+        <td rowspan="2" class="reddy">Deferred uploads to Debian</td>
+        <td class="reddy">
+    <img src="http://www.debian.org/Pics/red-upperright.png" align="right" border="0" hspace="0" vspace="0"
+     alt="" width="16" height="16"></td>
+        </tr>
+        <tr>
+        <td class="reddy">
+    <img src="http://www.debian.org/Pics/red-lowerleft.png" align="left" border="0" hspace="0" vspace="0"
+     alt="" width="16" height="16"></td>
+        <td class="reddy">
+    <img src="http://www.debian.org/Pics/red-lowerright.png" align="right" border="0" hspace="0" vspace="0"
+     alt="" width="15" height="16"></td>
+        </tr>
+        </table>
+        """
+
+def footer():
+    res = "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
+    res += """<a href="http://validator.w3.org/check?uri=referer">
+    <img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a>
+        <a href="http://jigsaw.w3.org/css-validator/check/referer">
+    <img border="0" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!"
+     height="31" width="88"></a>
+    """
+    res += "</body></html>"
+    return res
+
+def table_header():
+    return """<h1>Deferred uploads</h1>
+      <center><table border="0">
+        <tr>
+          <th align="center">Change</th>
+          <th align="center">Time remaining</th>
+          <th align="center">Uploader</th>
+          <th align="center">Closes</th>
+        </tr>
+        """
+    return res
+
+def table_footer():
+    return '</table></center><br>\n'
+
+def table_row(changesname, delay, changed_by, closes):
+    global row_number
+
+    res = '<tr class="%s">'%(['even','odd'][row_number %2])
+    res += (3*'<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay,changed_by)))
+    res += ('<td valign="top">%s</td>' % 
+             ''.join(map(lambda close:  '<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
+    res += '</tr>\n'
+    row_number+=1
+    return res
+
+def get_upload_data(changesfn):
+    achanges = deb822.Changes(file(changesfn))
+    changesname = os.path.basename(changesfn)
+    delay = os.path.basename(os.path.dirname(changesfn))
+    m = re.match(r'([0-9]+)-day', delay)
+    if m:
+        delaydays = int(m.group(1))
+        remainingtime = max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
+        delay = "%d days %02d:%02d" %(delaydays, int(remainingtime/3600),int(remainingtime/60)%60)
+    else:
+        remainingtime = 0
+    #print dir(achanges)
+    #print achanges.keys()
+    uploader = achanges.get('changed-by')
+    uploader = re.sub(r'\s+(\S.*)\s+<.*>',r'\1',uploader)
+    return (delaydays*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes').split())
+
+def list_uploads(filelist):
+    uploads = map(get_upload_data, filelist)
+    uploads.sort()
+    print header()
+    if uploads:
+        print table_header()
+        print ''.join(map(lambda x: table_row(*x[1:]), uploads))
+        print table_footer()
+    else:
+        print '<h1>Currently no deferred uploads to Debian</h1>'
+    print footer()
+
+if len(sys.argv)!=2:
+    print >> sys.stderr, """Error! Invoke %s /path/to/DEFERRED"""%sys.argv[0]
+    sys.exit(1)
+    
+filelist = []
+for r,d,f  in os.walk(sys.argv[1]):
+    filelist += map (lambda x: os.path.join(r,x),
+                     filter(lambda x: x.endswith('.changes'), f))
+
+list_uploads(filelist)
