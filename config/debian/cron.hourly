@@ -10,4 +10,5 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 date -u > $ftpdir/project/trace/ftp-master.debian.org
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
+/srv/queued/debianqueued-0.9/show-deferred /srv/queued/DEFERRED/ > ${webdir}/deferred.html
 cd $queuedir/new ; dak show-new *.changes > /dev/null
