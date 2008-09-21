@@ -1,5 +1,10 @@
 2008-09-21  Joerg Jaspert  <joerg@debian.org>
 
+	* Queue.README: Its ftp.upload.debian.org now, not
+	ftp-master.debian.org.
+
+	* Queue.README.ravel: New file for ravel
+
 	* config-upload: New file, used for ravel
 
 2008-09-20  Thomas Viehmann  <tv@beamnet.de>

@@ -1,5 +1,5 @@
 
-This directory is the Debian upload queue of ftp-master.debian.org. All
+This directory is the Debian upload queue of ftp.upload.debian.org. All
 files uploaded here will be moved into the project incoming dir on
 this machine.
 
