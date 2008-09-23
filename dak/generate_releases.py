@@ -218,6 +218,7 @@ def main ():
         if codename != "":
             out.write("Codename: %s\n" % (codename))
         out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
+        out.write("Valid-Until: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()+7*24*60*60))))
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
         out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, SuiteBlock.ValueList("Architectures")))))

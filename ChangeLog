@@ -1,3 +1,10 @@
+2008-09-23  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/generate_releases.py (main): Add a "Valid-Until" line into
+	our release files, meaning "$receiver shouldn't trust this files
+	after that date". Should be used by apt and similar tools to
+	detect some kind of MITM attacks, see #499897
+
 2008-09-21  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.hourly: Generate the DEFERRED queue
