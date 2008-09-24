@@ -30,16 +30,15 @@ Foo discovered that
 For the stable distribution (etch), this problem has been fixed in version XXX
 __PACKAGE__
 
-For the old stable distribution (sarge), this problem has been fixed in
-version __PACKAGE__
+For the unstable distribution (sid), this problem has been fixed in
+version XXX
 
 [multiple issues]
 For the stable distribution (etch), these problems have been fixed in version
 __PACKAGE__
 
-For the old stable distribution (sarge), these problems have been fixed in
-version __PACKAGE__
-
+For the unstable distribution (sid), these problems have been fixed in
+version XXX
 
 We recommend that you upgrade your __PACKAGE__ package.
 
@@ -63,12 +62,8 @@ You may use an automated update by adding the resources from the
 footer to the proper configuration.
 
 
-Debian GNU/Linux 3.1 alias sarge
---------------------------------
-
 Debian GNU/Linux 4.0 alias etch
 -------------------------------
-
 
 __ADVISORY_TEXT__
 
