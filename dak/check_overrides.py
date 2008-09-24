@@ -50,9 +50,9 @@
 
 import pg, sys, os
 import apt_pkg
-import daklib.database
-import daklib.logging
-import daklib.utils
+import daklib.database as database
+import daklib.logging as logging
+import daklib.utils as utils
 
 ################################################################################
 
@@ -84,26 +84,25 @@ def gen_blacklist(dir):
 def process(osuite, affected_suites, originosuite, component, type):
     global Logger, Options, projectB, sections, priorities
 
-    osuite_id = daklib.database.get_suite_id(osuite)
+    osuite_id = database.get_suite_id(osuite)
     if osuite_id == -1:
-        daklib.utils.fubar("Suite '%s' not recognised." % (osuite))
+        utils.fubar("Suite '%s' not recognised." % (osuite))
     originosuite_id = None
     if originosuite:
-        originosuite_id = daklib.database.get_suite_id(originosuite)
+        originosuite_id = database.get_suite_id(originosuite)
         if originosuite_id == -1:
-            daklib.utils.fubar("Suite '%s' not recognised." % (originosuite))
+            utils.fubar("Suite '%s' not recognised." % (originosuite))
 
-    component_id = daklib.database.get_component_id(component)
+    component_id = database.get_component_id(component)
     if component_id == -1:
-        daklib.utils.fubar("Component '%s' not recognised." % (component))
+        utils.fubar("Component '%s' not recognised." % (component))
 
-    type_id = daklib.database.get_override_type_id(type)
+    type_id = database.get_override_type_id(type)
     if type_id == -1:
-        daklib.utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type))
-    dsc_type_id = daklib.database.get_override_type_id("dsc")
-    deb_type_id = daklib.database.get_override_type_id("deb")
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type))
+    dsc_type_id = database.get_override_type_id("dsc")
 
-    source_priority_id = daklib.database.get_priority_id("source")
+    source_priority_id = database.get_priority_id("source")
 
     if type == "deb" or type == "udeb":
         packages = {}
@@ -138,7 +137,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 src_packages[package] = 1
             else:
                 if blacklist.has_key(package):
-                    daklib.utils.warn("%s in incoming, not touching" % package)
+                    utils.warn("%s in incoming, not touching" % package)
                     continue
                 Logger.log(["removing unused override", osuite, component,
                     type, package, priorities[i[1]], sections[i[2]], i[3]])
@@ -202,7 +201,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
 
         for package, hasoverride in src_packages.items():
             if not hasoverride:
-                daklib.utils.warn("%s has no override!" % package)
+                utils.warn("%s has no override!" % package)
 
     else: # binary override
         for i in q.getresult():
@@ -211,7 +210,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 packages[package] = 1
             else:
                 if blacklist.has_key(package):
-                    daklib.utils.warn("%s in incoming, not touching" % package)
+                    utils.warn("%s in incoming, not touching" % package)
                     continue
                 Logger.log(["removing unused override", osuite, component,
                     type, package, priorities[i[1]], sections[i[2]], i[3]])
@@ -256,7 +255,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
 
         for package, hasoverride in packages.items():
             if not hasoverride:
-                daklib.utils.warn("%s has no override!" % package)
+                utils.warn("%s has no override!" % package)
 
     projectB.query("COMMIT WORK")
     sys.stdout.flush()
@@ -267,7 +266,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
 def main ():
     global Logger, Options, projectB, sections, priorities
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Check-Overrides::Options::Help"),
                  ('n',"no-action", "Check-Overrides::Options::No-Action")]
@@ -281,7 +280,7 @@ def main ():
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     # init sections, priorities:
     q = projectB.query("SELECT id, section FROM section")
@@ -292,9 +291,9 @@ def main ():
         priorities[i[0]] = i[1]
 
     if not Options["No-Action"]:
-        Logger = daklib.logging.Logger(Cnf, "check-overrides")
+        Logger = logging.Logger(Cnf, "check-overrides")
     else:
-        Logger = daklib.logging.Logger(Cnf, "check-overrides", 1)
+        Logger = logging.Logger(Cnf, "check-overrides", 1)
 
     gen_blacklist(Cnf["Dir::Queue::Accepted"])
 
@@ -329,7 +328,7 @@ def main ():
             suiteids.append(i[0])
 
         if len(suiteids) != len(suites) or len(suiteids) < 1:
-            daklib.utils.fubar("Couldn't find id's of all suites: %s" % suites)
+            utils.fubar("Couldn't find id's of all suites: %s" % suites)
 
         for component in Cnf.SubTree("Component").List():
             if component == "mixed":

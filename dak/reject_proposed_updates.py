@@ -21,10 +21,10 @@
 
 import os, pg, sys
 import apt_pkg
-import daklib.database
-import daklib.logging
-import daklib.queue
-import daklib.utils
+import daklib.database as database
+import daklib.logging as logging
+import daklib.queue as queue
+import daklib.utils as utils
 
 ################################################################################
 
@@ -51,7 +51,7 @@ Manually reject the .CHANGES file(s).
 def main():
     global Cnf, Logger, Options, projectB, Upload
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Reject-Proposed-Updates::Options::Help"),
                  ('m',"manual-reject","Reject-Proposed-Updates::Options::Manual-Reject", "HasArg"),
                  ('s',"no-mail", "Reject-Proposed-Updates::Options::No-Mail")]
@@ -65,13 +65,13 @@ def main():
     if Options["Help"]:
         usage()
     if not arguments:
-        daklib.utils.fubar("need at least one .changes filename as an argument.")
+        utils.fubar("need at least one .changes filename as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
-    Upload = daklib.queue.Upload(Cnf)
-    Logger = Upload.Logger = daklib.logging.Logger(Cnf, "reject-proposed-updates")
+    Upload = queue.Upload(Cnf)
+    Logger = Upload.Logger = logging.Logger(Cnf, "reject-proposed-updates")
 
     bcc = "X-DAK: dak rejected-proposed-updates\nX-Katie: lauren $Revision: 1.4 $"
     if Cnf.has_key("Dinstall::Bcc"):
@@ -80,7 +80,7 @@ def main():
         Upload.Subst["__BCC__"] = bcc
 
     for arg in arguments:
-        arg = daklib.utils.validate_changes_file_arg(arg)
+        arg = utils.validate_changes_file_arg(arg)
         Upload.pkg.changes_file = arg
         Upload.init_vars()
         cwd = os.getcwd()
@@ -96,8 +96,8 @@ def main():
             answer = "XXX"
 
             while prompt.find(answer) == -1:
-                answer = daklib.utils.our_raw_input(prompt)
-                m = daklib.queue.re_default_answer.search(prompt)
+                answer = utils.our_raw_input(prompt)
+                m = queue.re_default_answer.search(prompt)
                 if answer == "":
                     answer = m.group(1)
                 answer = answer[:1].upper()
@@ -123,21 +123,21 @@ def reject (reject_message = ""):
     # If we weren't given a manual rejection message, spawn an editor
     # so the user can add one in...
     if not reject_message:
-        temp_filename = daklib.utils.temp_filename()
+        temp_filename = utils.temp_filename()
         editor = os.environ.get("EDITOR","vi")
         answer = 'E'
         while answer == 'E':
             os.system("%s %s" % (editor, temp_filename))
-            file = daklib.utils.open_file(temp_filename)
-            reject_message = "".join(file.readlines())
-            file.close()
+            f = utils.open_file(temp_filename)
+            reject_message = "".join(f.readlines())
+            f.close()
             print "Reject message:"
-            print daklib.utils.prefix_multi_line_string(reject_message,"  ", include_blank_lines=1)
+            print utils.prefix_multi_line_string(reject_message,"  ", include_blank_lines=1)
             prompt = "[R]eject, Edit, Abandon, Quit ?"
             answer = "XXX"
             while prompt.find(answer) == -1:
-                answer = daklib.utils.our_raw_input(prompt)
-                m = daklib.queue.re_default_answer.search(prompt)
+                answer = utils.our_raw_input(prompt)
+                m = queue.re_default_answer.search(prompt)
                 if answer == "":
                     answer = m.group(1)
                 answer = answer[:1].upper()
@@ -163,38 +163,38 @@ def reject (reject_message = ""):
     reject_fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
 
     # Build up the rejection email
-    user_email_address = daklib.utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"])
+    user_email_address = utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"])
 
     Upload.Subst["__REJECTOR_ADDRESS__"] = user_email_address
     Upload.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
     Upload.Subst["__STABLE_REJECTOR__"] = Cnf["Reject-Proposed-Updates::StableRejector"]
     Upload.Subst["__MORE_INFO_URL__"] = Cnf["Reject-Proposed-Updates::MoreInfoURL"]
     Upload.Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
-    reject_mail_message = daklib.utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/reject-proposed-updates.rejected")
+    reject_mail_message = utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/reject-proposed-updates.rejected")
 
     # Write the rejection email out as the <foo>.reason file
     os.write(reject_fd, reject_mail_message)
     os.close(reject_fd)
 
     # Remove the packages from proposed-updates
-    suite_id = daklib.database.get_suite_id('proposed-updates')
+    suite_id = database.get_suite_id('proposed-updates')
 
     projectB.query("BEGIN WORK")
     # Remove files from proposed-updates suite
-    for file in files.keys():
-        if files[file]["type"] == "dsc":
+    for f in files.keys():
+        if files[f]["type"] == "dsc":
             package = dsc["source"]
-            version = dsc["version"];  # NB: not files[file]["version"], that has no epoch
+            version = dsc["version"];  # NB: not files[f]["version"], that has no epoch
             q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
             ql = q.getresult()
             if not ql:
-                daklib.utils.fubar("reject: Couldn't find %s_%s in source table." % (package, version))
+                utils.fubar("reject: Couldn't find %s_%s in source table." % (package, version))
             source_id = ql[0][0]
             projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id))
-        elif files[file]["type"] == "deb":
-            package = files[file]["package"]
-            version = files[file]["version"]
-            architecture = files[file]["architecture"]
+        elif files[f]["type"] == "deb":
+            package = files[f]["package"]
+            version = files[f]["version"]
+            architecture = files[f]["architecture"]
             q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
             ql = q.getresult()
 
@@ -204,7 +204,7 @@ def reject (reject_message = ""):
             # newer version of the package and only do the
             # warn&continue thing if it finds one.
             if not ql:
-                daklib.utils.warn("reject: Couldn't find %s_%s_%s in binaries table." % (package, version, architecture))
+                utils.warn("reject: Couldn't find %s_%s_%s in binaries table." % (package, version, architecture))
             else:
                 binary_id = ql[0][0]
                 projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id))
@@ -212,7 +212,7 @@ def reject (reject_message = ""):
 
     # Send the rejection mail if appropriate
     if not Options["No-Mail"]:
-        daklib.utils.send_mail(reject_mail_message)
+        utils.send_mail(reject_mail_message)
 
     # Finally remove the .dak file
     dot_dak_file = os.path.join(Cnf["Suite::Proposed-Updates::CopyDotDak"], os.path.basename(changes_file[:-8]+".dak"))

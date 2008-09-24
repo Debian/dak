@@ -1,7 +1,45 @@
+2008-05-04  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/check_proposed_updates.py: Import stuff from daklib as
+	"import daklib.foo as foo"
+	* dak/clean_proposed_updates.py: likewise
+	* dak/clean_queues.py: likewise
+
+	* dak/check_archive.py (check_files_not_symlinks): Remove
+	long-time unused and commented code. Import stuff from daklib as
+	"import daklib.foo as foo"
+
 2008-05-04  Thomas Viehmann  <tv@beamnet.de>
 
 	* dak/process_unchecked.py (check_signed_by_key): cater for uid_email
 	None in sponsor notification
+
+2008-05-03  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/examine_package.py: clean up pychecker warnings (merged with
+	Thomas changes to the NEW display)
+
+2008-05-03  Mark Hymers <mhy@debian.org>
+
+	* dak/check_archive.py: clean up pychecker warnings
+	* dak/check_overrides.py: likewise
+	* dak/check_proposed_updates.py: likewise
+	* dak/clean_proposed_updates.py: likewise
+	* dak/clean_queues.py: likewise
+	* dak/control_overrides.py: likewise
+	* dak/control_suite.py: likewise
+	* dak/decode_dot_dak.py: likewise
+	* dak/examine_package.py: likewise
+	* dak/process_new.py: likewise
+	* dak/process_unchecked.py: likewise
+	* dak/queue_report.py: likewise
+	* dak/reject_proposed_updates.py: likewise
+	* dak/security_install.py: likewise
+	* dak/show_new.py: likewise
+	* dak/stats.py: likewise
+	* dak/symlink_dists.py: likewise
+	* dak/transitions.py: likewise
+>>>>>>> sec-merge:ChangeLog
 
 2008-05-03  Joerg Jaspert  <joerg@debian.org>
 
@@ -10,6 +48,7 @@
 	daily for some time now. And while dinstall is an OLD name, its
 	recognized pretty well within Debian
 	Also add some more timing information
+	Do not allow automated [o-]p-u-new processing to break dinstall
 
 2008-05-03  Thomas Viehmann  <tv@beamnet.de>
 

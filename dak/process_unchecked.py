@@ -30,9 +30,9 @@
 
 import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceback
 import apt_inst, apt_pkg
-import daklib.database
-import daklib.logging
-import daklib.queue
+import daklib.database as database
+import daklib.logging as logging
+import daklib.queue as queue
 import daklib.utils
 
 from types import *
@@ -91,7 +91,7 @@ def init():
     if Options["Help"]:
         usage()
 
-    Upload = daklib.queue.Upload(Cnf)
+    Upload = queue.Upload(Cnf)
 
     changes = Upload.pkg.changes
     dsc = Upload.pkg.dsc
@@ -164,12 +164,12 @@ def clean_holding():
 
     cwd = os.getcwd()
     os.chdir(Cnf["Dir::Queue::Holding"])
-    for file in in_holding.keys():
-        if os.path.exists(file):
-            if file.find('/') != -1:
-                daklib.utils.fubar("WTF? clean_holding() got a file ('%s') with / in it!" % (file))
+    for f in in_holding.keys():
+        if os.path.exists(f):
+            if f.find('/') != -1:
+                daklib.utils.fubar("WTF? clean_holding() got a file ('%s') with / in it!" % (f))
             else:
-                os.unlink(file)
+                os.unlink(f)
     in_holding = {}
     os.chdir(cwd)
 
@@ -245,7 +245,7 @@ def check_changes():
     # Ensure all the values in Closes: are numbers
     if changes.has_key("closes"):
         for i in changes["closes"].keys():
-            if daklib.queue.re_isanum.match (i) == None:
+            if queue.re_isanum.match (i) == None:
                 reject("%s: `%s' from Closes field isn't a number." % (filename, i))
 
 
@@ -256,9 +256,9 @@ def check_changes():
     # Check there isn't already a changes file of the same name in one
     # of the queue directories.
     base_filename = os.path.basename(filename)
-    for dir in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
-        if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+base_filename):
-            reject("%s: a file with this name already exists in the %s directory." % (base_filename, dir))
+    for d in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
+        if os.path.exists(Cnf["Dir::Queue::%s" % (d) ]+'/'+base_filename):
+            reject("%s: a file with this name already exists in the %s directory." % (base_filename, d))
 
     # Check the .changes is non-empty
     if not files:
@@ -273,20 +273,20 @@ def check_distributions():
     "Check and map the Distribution field of a .changes file."
 
     # Handle suite mappings
-    for map in Cnf.ValueList("SuiteMappings"):
-        args = map.split()
-        type = args[0]
-        if type == "map" or type == "silent-map":
+    for m in Cnf.ValueList("SuiteMappings"):
+        args = m.split()
+        mtype = args[0]
+        if mtype == "map" or mtype == "silent-map":
             (source, dest) = args[1:3]
             if changes["distribution"].has_key(source):
                 del changes["distribution"][source]
                 changes["distribution"][dest] = 1
-                if type != "silent-map":
+                if mtype != "silent-map":
                     reject("Mapping %s to %s." % (source, dest),"")
             if changes.has_key("distribution-version"):
                 if changes["distribution-version"].has_key(source):
                     changes["distribution-version"][source]=dest
-        elif type == "map-unreleased":
+        elif mtype == "map-unreleased":
             (source, dest) = args[1:3]
             if changes["distribution"].has_key(source):
                 for arch in changes["architecture"].keys():
@@ -295,16 +295,16 @@ def check_distributions():
                         del changes["distribution"][source]
                         changes["distribution"][dest] = 1
                         break
-        elif type == "ignore":
+        elif mtype == "ignore":
             suite = args[1]
             if changes["distribution"].has_key(suite):
                 del changes["distribution"][suite]
                 reject("Ignoring %s as a target suite." % (suite), "Warning: ")
-        elif type == "reject":
+        elif mtype == "reject":
             suite = args[1]
             if changes["distribution"].has_key(suite):
                 reject("Uploads to %s are not accepted." % (suite))
-        elif type == "propup-version":
+        elif mtype == "propup-version":
             # give these as "uploaded-to(non-mapped) suites-to-add-when-upload-obsoletes"
             #
             # changes["distribution-version"] looks like: {'testing': 'testing-proposed-updates'}
@@ -323,7 +323,7 @@ def check_distributions():
 
 ################################################################################
 
-def check_deb_ar(filename, control):
+def check_deb_ar(filename):
     """Sanity check the ar of a .deb, i.e. that there is:
 
  o debian-binary
@@ -360,8 +360,8 @@ def check_files():
     if not Options["No-Action"] and reprocess < 2:
         cwd = os.getcwd()
         os.chdir(pkg.directory)
-        for file in file_keys:
-            copy_to_holding(file)
+        for f in file_keys:
+            copy_to_holding(f)
         os.chdir(cwd)
 
     # Check there isn't already a .changes or .dak file of the same name in
@@ -386,40 +386,40 @@ def check_files():
     has_binaries = 0
     has_source = 0
 
-    for file in file_keys:
+    for f in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
-        for dir in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
-            if not Cnf.has_key("Dir::Queue::%s" % (dir)): continue
-            if os.path.exists(Cnf["Dir::Queue::%s" % (dir) ]+'/'+file):
-                reject("%s file already exists in the %s directory." % (file, dir))
-        if not daklib.utils.re_taint_free.match(file):
-            reject("!!WARNING!! tainted filename: '%s'." % (file))
+        for d in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+            if not Cnf.has_key("Dir::Queue::%s" % (d)): continue
+            if os.path.exists(Cnf["Dir::Queue::%s" % (d) ] + '/' + f):
+                reject("%s file already exists in the %s directory." % (f, d))
+        if not daklib.utils.re_taint_free.match(f):
+            reject("!!WARNING!! tainted filename: '%s'." % (f))
         # Check the file is readable
-        if os.access(file,os.R_OK) == 0:
+        if os.access(f, os.R_OK) == 0:
             # When running in -n, copy_to_holding() won't have
             # generated the reject_message, so we need to.
             if Options["No-Action"]:
-                if os.path.exists(file):
-                    reject("Can't read `%s'. [permission denied]" % (file))
+                if os.path.exists(f):
+                    reject("Can't read `%s'. [permission denied]" % (f))
                 else:
-                    reject("Can't read `%s'. [file not found]" % (file))
-            files[file]["type"] = "unreadable"
+                    reject("Can't read `%s'. [file not found]" % (f))
+            files[f]["type"] = "unreadable"
             continue
         # If it's byhand skip remaining checks
-        if files[file]["section"] == "byhand" or files[file]["section"][:4] == "raw-":
-            files[file]["byhand"] = 1
-            files[file]["type"] = "byhand"
+        if files[f]["section"] == "byhand" or files[f]["section"][:4] == "raw-":
+            files[f]["byhand"] = 1
+            files[f]["type"] = "byhand"
         # Checks for a binary package...
-        elif daklib.utils.re_isadeb.match(file):
+        elif daklib.utils.re_isadeb.match(f):
             has_binaries = 1
-            files[file]["type"] = "deb"
+            files[f]["type"] = "deb"
 
             # Extract package control information
-            deb_file = daklib.utils.open_file(file)
+            deb_file = daklib.utils.open_file(f)
             try:
                 control = apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))
             except:
-                reject("%s: debExtractControl() raised %s." % (file, sys.exc_type))
+                reject("%s: debExtractControl() raised %s." % (f, sys.exc_type))
                 deb_file.close()
                 # Can't continue, none of the checks on control would work.
                 continue
@@ -428,23 +428,23 @@ def check_files():
             # Check for mandatory fields
             for field in [ "Package", "Architecture", "Version" ]:
                 if control.Find(field) == None:
-                    reject("%s: No %s field in control." % (file, field))
+                    reject("%s: No %s field in control." % (f, field))
                     # Can't continue
                     continue
 
             # Ensure the package name matches the one give in the .changes
             if not changes["binary"].has_key(control.Find("Package", "")):
-                reject("%s: control file lists name as `%s', which isn't in changes file." % (file, control.Find("Package", "")))
+                reject("%s: control file lists name as `%s', which isn't in changes file." % (f, control.Find("Package", "")))
 
             # Validate the package field
             package = control.Find("Package")
             if not re_valid_pkg_name.match(package):
-                reject("%s: invalid package name '%s'." % (file, package))
+                reject("%s: invalid package name '%s'." % (f, package))
 
             # Validate the version field
             version = control.Find("Version")
             if not re_valid_version.match(version):
-                reject("%s: invalid version number '%s'." % (file, version))
+                reject("%s: invalid version number '%s'." % (f, version))
 
             # Ensure the architecture of the .deb is one we know about.
             default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
@@ -455,76 +455,76 @@ def check_files():
             # Ensure the architecture of the .deb is one of the ones
             # listed in the .changes.
             if not changes["architecture"].has_key(architecture):
-                reject("%s: control file lists arch as `%s', which isn't in changes file." % (file, architecture))
+                reject("%s: control file lists arch as `%s', which isn't in changes file." % (f, architecture))
 
             # Sanity-check the Depends field
             depends = control.Find("Depends")
             if depends == '':
-                reject("%s: Depends field is empty." % (file))
+                reject("%s: Depends field is empty." % (f))
 
             # Sanity-check the Provides field
             provides = control.Find("Provides")
             if provides:
                 provide = re_spacestrip.sub('', provides)
                 if provide == '':
-                    reject("%s: Provides field is empty." % (file))
+                    reject("%s: Provides field is empty." % (f))
                 prov_list = provide.split(",")
                 for prov in prov_list:
                     if not re_valid_pkg_name.match(prov):
-                        reject("%s: Invalid Provides field content %s." % (file, prov))
+                        reject("%s: Invalid Provides field content %s." % (f, prov))
 
 
             # Check the section & priority match those given in the .changes (non-fatal)
-            if control.Find("Section") and files[file]["section"] != "" and files[file]["section"] != control.Find("Section"):
-                reject("%s control file lists section as `%s', but changes file has `%s'." % (file, control.Find("Section", ""), files[file]["section"]), "Warning: ")
-            if control.Find("Priority") and files[file]["priority"] != "" and files[file]["priority"] != control.Find("Priority"):
-                reject("%s control file lists priority as `%s', but changes file has `%s'." % (file, control.Find("Priority", ""), files[file]["priority"]),"Warning: ")
+            if control.Find("Section") and files[f]["section"] != "" and files[f]["section"] != control.Find("Section"):
+                reject("%s control file lists section as `%s', but changes file has `%s'." % (f, control.Find("Section", ""), files[f]["section"]), "Warning: ")
+            if control.Find("Priority") and files[f]["priority"] != "" and files[f]["priority"] != control.Find("Priority"):
+                reject("%s control file lists priority as `%s', but changes file has `%s'." % (f, control.Find("Priority", ""), files[f]["priority"]),"Warning: ")
 
-            files[file]["package"] = package
-            files[file]["architecture"] = architecture
-            files[file]["version"] = version
-            files[file]["maintainer"] = control.Find("Maintainer", "")
-            if file.endswith(".udeb"):
-                files[file]["dbtype"] = "udeb"
-            elif file.endswith(".deb"):
-                files[file]["dbtype"] = "deb"
+            files[f]["package"] = package
+            files[f]["architecture"] = architecture
+            files[f]["version"] = version
+            files[f]["maintainer"] = control.Find("Maintainer", "")
+            if f.endswith(".udeb"):
+                files[f]["dbtype"] = "udeb"
+            elif f.endswith(".deb"):
+                files[f]["dbtype"] = "deb"
             else:
-                reject("%s is neither a .deb or a .udeb." % (file))
-            files[file]["source"] = control.Find("Source", files[file]["package"])
+                reject("%s is neither a .deb or a .udeb." % (f))
+            files[f]["source"] = control.Find("Source", files[f]["package"])
             # Get the source version
-            source = files[file]["source"]
+            source = files[f]["source"]
             source_version = ""
             if source.find("(") != -1:
                 m = daklib.utils.re_extract_src_version.match(source)
                 source = m.group(1)
                 source_version = m.group(2)
             if not source_version:
-                source_version = files[file]["version"]
-            files[file]["source package"] = source
-            files[file]["source version"] = source_version
+                source_version = files[f]["version"]
+            files[f]["source package"] = source
+            files[f]["source version"] = source_version
 
             # Ensure the filename matches the contents of the .deb
-            m = daklib.utils.re_isadeb.match(file)
+            m = daklib.utils.re_isadeb.match(f)
             #  package name
             file_package = m.group(1)
-            if files[file]["package"] != file_package:
-                reject("%s: package part of filename (%s) does not match package name in the %s (%s)." % (file, file_package, files[file]["dbtype"], files[file]["package"]))
+            if files[f]["package"] != file_package:
+                reject("%s: package part of filename (%s) does not match package name in the %s (%s)." % (f, file_package, files[f]["dbtype"], files[f]["package"]))
             epochless_version = daklib.utils.re_no_epoch.sub('', control.Find("Version"))
             #  version
             file_version = m.group(2)
             if epochless_version != file_version:
-                reject("%s: version part of filename (%s) does not match package version in the %s (%s)." % (file, file_version, files[file]["dbtype"], epochless_version))
+                reject("%s: version part of filename (%s) does not match package version in the %s (%s)." % (f, file_version, files[f]["dbtype"], epochless_version))
             #  architecture
             file_architecture = m.group(3)
-            if files[file]["architecture"] != file_architecture:
-                reject("%s: architecture part of filename (%s) does not match package architecture in the %s (%s)." % (file, file_architecture, files[file]["dbtype"], files[file]["architecture"]))
+            if files[f]["architecture"] != file_architecture:
+                reject("%s: architecture part of filename (%s) does not match package architecture in the %s (%s)." % (f, file_architecture, files[f]["dbtype"], files[f]["architecture"]))
 
             # Check for existent source
-            source_version = files[file]["source version"]
-            source_package = files[file]["source package"]
+            source_version = files[f]["source version"]
+            source_package = files[f]["source package"]
             if changes["architecture"].has_key("source"):
                 if source_version != changes["version"]:
-                    reject("source version (%s) for %s doesn't match changes version %s." % (source_version, file, changes["version"]))
+                    reject("source version (%s) for %s doesn't match changes version %s." % (source_version, f, changes["version"]))
             else:
                 # Check in the SQL database
                 if not Upload.source_exists(source_package, source_version, changes["distribution"].keys()):
@@ -532,9 +532,9 @@ def check_files():
                     source_epochless_version = daklib.utils.re_no_epoch.sub('', source_version)
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                     if os.path.exists(Cnf["Dir::Queue::Byhand"] + '/' + dsc_filename):
-                        files[file]["byhand"] = 1
+                        files[f]["byhand"] = 1
                     elif os.path.exists(Cnf["Dir::Queue::New"] + '/' + dsc_filename):
-                        files[file]["new"] = 1
+                        files[f]["new"] = 1
                     else:
                         dsc_file_exists = 0
                         for myq in ["Accepted", "Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
@@ -543,98 +543,98 @@ def check_files():
                                     dsc_file_exists = 1
                                     break
                         if not dsc_file_exists:
-                            reject("no source found for %s %s (%s)." % (source_package, source_version, file))
+                            reject("no source found for %s %s (%s)." % (source_package, source_version, f))
             # Check the version and for file overwrites
-            reject(Upload.check_binary_against_db(file),"")
+            reject(Upload.check_binary_against_db(f),"")
 
-            check_deb_ar(file, control)
+            check_deb_ar(f)
 
         # Checks for a source package...
         else:
-            m = daklib.utils.re_issource.match(file)
+            m = daklib.utils.re_issource.match(f)
             if m:
                 has_source = 1
-                files[file]["package"] = m.group(1)
-                files[file]["version"] = m.group(2)
-                files[file]["type"] = m.group(3)
+                files[f]["package"] = m.group(1)
+                files[f]["version"] = m.group(2)
+                files[f]["type"] = m.group(3)
 
                 # Ensure the source package name matches the Source filed in the .changes
-                if changes["source"] != files[file]["package"]:
-                    reject("%s: changes file doesn't say %s for Source" % (file, files[file]["package"]))
+                if changes["source"] != files[f]["package"]:
+                    reject("%s: changes file doesn't say %s for Source" % (f, files[f]["package"]))
 
                 # Ensure the source version matches the version in the .changes file
-                if files[file]["type"] == "orig.tar.gz":
+                if files[f]["type"] == "orig.tar.gz":
                     changes_version = changes["chopversion2"]
                 else:
                     changes_version = changes["chopversion"]
-                if changes_version != files[file]["version"]:
-                    reject("%s: should be %s according to changes file." % (file, changes_version))
+                if changes_version != files[f]["version"]:
+                    reject("%s: should be %s according to changes file." % (f, changes_version))
 
                 # Ensure the .changes lists source in the Architecture field
                 if not changes["architecture"].has_key("source"):
-                    reject("%s: changes file doesn't list `source' in Architecture field." % (file))
+                    reject("%s: changes file doesn't list `source' in Architecture field." % (f))
 
                 # Check the signature of a .dsc file
-                if files[file]["type"] == "dsc":
-                    dsc["fingerprint"] = daklib.utils.check_signature(file, reject)
+                if files[f]["type"] == "dsc":
+                    dsc["fingerprint"] = daklib.utils.check_signature(f, reject)
 
-                files[file]["architecture"] = "source"
+                files[f]["architecture"] = "source"
 
             # Not a binary or source package?  Assume byhand...
             else:
-                files[file]["byhand"] = 1
-                files[file]["type"] = "byhand"
+                files[f]["byhand"] = 1
+                files[f]["type"] = "byhand"
 
         # Per-suite file checks
-        files[file]["oldfiles"] = {}
+        files[f]["oldfiles"] = {}
         for suite in changes["distribution"].keys():
             # Skip byhand
-            if files[file].has_key("byhand"):
+            if files[f].has_key("byhand"):
                 continue
 
             # Handle component mappings
-            for map in Cnf.ValueList("ComponentMappings"):
-                (source, dest) = map.split()
-                if files[file]["component"] == source:
-                    files[file]["original component"] = source
-                    files[file]["component"] = dest
+            for m in Cnf.ValueList("ComponentMappings"):
+                (source, dest) = m.split()
+                if files[f]["component"] == source:
+                    files[f]["original component"] = source
+                    files[f]["component"] = dest
 
             # Ensure the component is valid for the target suite
             if Cnf.has_key("Suite:%s::Components" % (suite)) and \
-               files[file]["component"] not in Cnf.ValueList("Suite::%s::Components" % (suite)):
-                reject("unknown component `%s' for suite `%s'." % (files[file]["component"], suite))
+               files[f]["component"] not in Cnf.ValueList("Suite::%s::Components" % (suite)):
+                reject("unknown component `%s' for suite `%s'." % (files[f]["component"], suite))
                 continue
 
             # Validate the component
-            component = files[file]["component"]
-            component_id = daklib.database.get_component_id(component)
+            component = files[f]["component"]
+            component_id = database.get_component_id(component)
             if component_id == -1:
-                reject("file '%s' has unknown component '%s'." % (file, component))
+                reject("file '%s' has unknown component '%s'." % (f, component))
                 continue
 
             # See if the package is NEW
-            if not Upload.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
-                files[file]["new"] = 1
+            if not Upload.in_override_p(files[f]["package"], files[f]["component"], suite, files[f].get("dbtype",""), f):
+                files[f]["new"] = 1
 
             # Validate the priority
-            if files[file]["priority"].find('/') != -1:
-                reject("file '%s' has invalid priority '%s' [contains '/']." % (file, files[file]["priority"]))
+            if files[f]["priority"].find('/') != -1:
+                reject("file '%s' has invalid priority '%s' [contains '/']." % (f, files[f]["priority"]))
 
             # Determine the location
             location = Cnf["Dir::Pool"]
-            location_id = daklib.database.get_location_id (location, component, archive)
+            location_id = database.get_location_id (location, component, archive)
             if location_id == -1:
                 reject("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive))
-            files[file]["location id"] = location_id
+            files[f]["location id"] = location_id
 
             # Check the md5sum & size against existing files (if any)
-            files[file]["pool name"] = daklib.utils.poolify (changes["source"], files[file]["component"])
-            files_id = daklib.database.get_files_id(files[file]["pool name"] + file, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
+            files[f]["pool name"] = daklib.utils.poolify (changes["source"], files[f]["component"])
+            files_id = database.get_files_id(files[f]["pool name"] + f, files[f]["size"], files[f]["md5sum"], files[f]["location id"])
             if files_id == -1:
-                reject("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (file))
+                reject("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (f))
             elif files_id == -2:
-                reject("md5sum and/or size mismatch on existing copy of %s." % (file))
-            files[file]["files id"] = files_id
+                reject("md5sum and/or size mismatch on existing copy of %s." % (f))
+            files[f]["files id"] = files_id
 
             # Check for packages that have moved from one component to another
             q = Upload.projectB.query("""
@@ -644,11 +644,11 @@ SELECT c.name FROM binaries b, bin_associations ba, suite s, location l,
    AND (a.arch_string = '%s' OR a.arch_string = 'all')
    AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id
    AND f.location = l.id AND l.component = c.id AND b.file = f.id"""
-                               % (files[file]["package"], suite,
-                                  files[file]["architecture"]))
+                               % (files[f]["package"], suite,
+                                  files[f]["architecture"]))
             ql = q.getresult()
             if ql:
-                files[file]["othercomponents"] = ql[0][0]
+                files[f]["othercomponents"] = ql[0][0]
 
     # If the .changes file says it has source, it must have source.
     if changes["architecture"].has_key("source"):
@@ -669,13 +669,13 @@ def check_dsc():
 
     # Find the .dsc
     dsc_filename = None
-    for file in files.keys():
-        if files[file]["type"] == "dsc":
+    for f in files.keys():
+        if files[f]["type"] == "dsc":
             if dsc_filename:
                 reject("can not process a .changes file with multiple .dsc's.")
                 return 0
             else:
-                dsc_filename = file
+                dsc_filename = f
 
     # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
     if not dsc_filename:
@@ -755,8 +755,8 @@ def check_dsc():
         if not m:
             reject("%s: %s in Files field not recognised as source." % (dsc_filename, f))
             continue
-        type = m.group(3)
-        if type == "orig.tar.gz" or type == "tar.gz":
+        ftype = m.group(3)
+        if ftype == "orig.tar.gz" or ftype == "tar.gz":
             has_tar = 1
     if not has_tar:
         reject("%s: no .tar.gz or .orig.tar.gz in 'Files' field." % (dsc_filename))
@@ -789,9 +789,9 @@ def get_changelog_versions(source_dir):
 
     # Find the .dsc (again)
     dsc_filename = None
-    for file in files.keys():
-        if files[file]["type"] == "dsc":
-            dsc_filename = file
+    for f in files.keys():
+        if files[f]["type"] == "dsc":
+            dsc_filename = f
 
     # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
     if not dsc_filename:
@@ -805,8 +805,8 @@ def get_changelog_versions(source_dir):
             # If a file is missing for whatever reason, give up.
             if not os.path.exists(src):
                 return
-            type = m.group(3)
-            if type == "orig.tar.gz" and pkg.orig_tar_gz:
+            ftype = m.group(3)
+            if ftype == "orig.tar.gz" and pkg.orig_tar_gz:
                 continue
             dest = os.path.join(os.getcwd(), f)
             os.symlink(src, dest)
@@ -865,11 +865,11 @@ def check_source():
 
     # Create a temporary directory to extract the source into
     if Options["No-Action"]:
-        tmpdir = tempfile.mktemp()
+        tmpdir = tempfile.mkdtemp()
     else:
         # We're in queue/holding and can create a random directory.
         tmpdir = "%s" % (os.getpid())
-    os.mkdir(tmpdir)
+        os.mkdir(tmpdir)
 
     # Move into the temporary directory
     cwd = os.getcwd()
@@ -962,31 +962,31 @@ def check_hashes ():
 
 ################################################################################
 
-def check_hash (where, files, key, testfn, basedict = None):
+def check_hash (where, lfiles, key, testfn, basedict = None):
     if basedict:
-        for file in basedict.keys():
-            if file not in files:
-                reject("%s: no %s checksum" % (file, key))
+        for f in basedict.keys():
+            if f not in lfiles:
+                reject("%s: no %s checksum" % (f, key))
 
-    for file in files.keys():
-        if basedict and file not in basedict:
-            reject("%s: extraneous entry in %s checksums" % (file, key))
+    for f in lfiles.keys():
+        if basedict and f not in basedict:
+            reject("%s: extraneous entry in %s checksums" % (f, key))
 
         try:
-            file_handle = daklib.utils.open_file(file)
+            file_handle = daklib.utils.open_file(f)
         except daklib.utils.cant_open_exc:
             continue
 
         # Check hash
-        if testfn(file_handle) != files[file][key]:
-            reject("%s: %s check failed." % (file, key))
+        if testfn(file_handle) != lfiles[f][key]:
+            reject("%s: %s check failed." % (f, key))
         file_handle.close()
         # Check size
-        actual_size = os.stat(file)[stat.ST_SIZE]
-        size = int(files[file]["size"])
+        actual_size = os.stat(f)[stat.ST_SIZE]
+        size = int(lfiles[f]["size"])
         if size != actual_size:
             reject("%s: actual file size (%s) does not match size (%s) in %s"
-                   % (file, actual_size, size, where))
+                   % (f, actual_size, size, where))
 
 ################################################################################
 
@@ -1104,7 +1104,7 @@ def check_signed_by_key():
         check_suites = changes["distribution"].keys()
         if "unstable" not in check_suites: check_suites.append("unstable")
         for suite in check_suites:
-            suite_id = daklib.database.get_suite_id(suite)
+            suite_id = database.get_suite_id(suite)
             q = Upload.projectB.query("SELECT s.id FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND sa.suite = %d" % (changes["source"], suite_id))
             for si in q.getresult():
                 if si[0] not in source_ids: source_ids.append(si[0])
@@ -1125,17 +1125,17 @@ def check_signed_by_key():
 
         for b in changes["binary"].keys():
             for suite in changes["distribution"].keys():
-                suite_id = daklib.database.get_suite_id(suite)
+                suite_id = database.get_suite_id(suite)
                 q = Upload.projectB.query("SELECT DISTINCT s.source FROM source s JOIN binaries b ON (s.id = b.source) JOIN bin_associations ba On (b.id = ba.bin) WHERE b.package = '%s' AND ba.suite = %s" % (b, suite_id))
                 for s in q.getresult():
                     if s[0] != changes["source"]:
                         reject("%s may not hijack %s from source package %s in suite %s" % (uid, b, s, suite))
 
-        for file in files.keys():
-            if files[file].has_key("byhand"):
-                reject("%s may not upload BYHAND file %s" % (uid, file))
-            if files[file].has_key("new"):
-                reject("%s may not upload NEW file %s" % (uid, file))
+        for f in files.keys():
+            if files[f].has_key("byhand"):
+                reject("%s may not upload BYHAND file %s" % (uid, f))
+            if files[f].has_key("new"):
+                reject("%s may not upload NEW file %s" % (uid, f))
 
     # The remaining checks only apply to binary-only uploads right now
     if changes["architecture"].has_key("source"):
@@ -1151,8 +1151,8 @@ def check_signed_by_key():
     if restrictions.Exists("Components"):
         restricted_components = restrictions.SubTree("Components").ValueList()
         is_restricted = False
-        for file in files:
-            if files[file]["component"] in restricted_components:
+        for f in files:
+            if files[f]["component"] in restricted_components:
                 is_restricted = True
                 break
         if not is_restricted:
@@ -1188,9 +1188,9 @@ def upload_too_new():
     file_list = pkg.files.keys()
     file_list.extend(pkg.dsc_files.keys())
     file_list.append(pkg.changes_file)
-    for file in file_list:
+    for f in file_list:
         try:
-            last_modified = time.time()-os.path.getmtime(file)
+            last_modified = time.time()-os.path.getmtime(f)
             if last_modified < int(Cnf["Dinstall::SkipTime"]):
                 too_new = 1
                 break
@@ -1242,21 +1242,21 @@ def action ():
             if Options["Automatic"]:
                 answer = 'R'
     else:
-        queue = None
+        qu = None
         for q in queues:
             if queue_info[q]["is"]():
-                queue = q
+                qu = q
                 break
-        if queue:
+        if qu:
             print "%s for %s\n%s%s" % (
-                queue.upper(), ", ".join(changes["distribution"].keys()),
+                qu.upper(), ", ".join(changes["distribution"].keys()),
                 reject_message, summary),
-            queuekey = queue[0].upper()
+            queuekey = qu[0].upper()
             if queuekey in "RQSA":
                 queuekey = "D"
                 prompt = "[D]ivert, Skip, Quit ?"
             else:
-                prompt = "[%s]%s, Skip, Quit ?" % (queuekey, queue[1:].lower())
+                prompt = "[%s]%s, Skip, Quit ?" % (queuekey, qu[1:].lower())
             if Options["Automatic"]:
                 answer = queuekey
         else:
@@ -1267,7 +1267,7 @@ def action ():
 
     while prompt.find(answer) == -1:
         answer = daklib.utils.our_raw_input(prompt)
-        m = daklib.queue.re_default_answer.match(prompt)
+        m = queue.re_default_answer.match(prompt)
         if answer == "":
             answer = m.group(1)
         answer = answer[:1].upper()
@@ -1279,15 +1279,15 @@ def action ():
         accept(summary, short_summary)
         remove_from_unchecked()
     elif answer == queuekey:
-        queue_info[queue]["process"](summary, short_summary)
+        queue_info[qu]["process"](summary, short_summary)
         remove_from_unchecked()
     elif answer == 'Q':
         sys.exit(0)
 
 def remove_from_unchecked():
     os.chdir (pkg.directory)
-    for file in files.keys():
-        os.unlink(file)
+    for f in files.keys():
+        os.unlink(f)
     os.unlink(pkg.changes_file)
 
 ################################################################################
@@ -1301,8 +1301,8 @@ def accept (summary, short_summary):
 def move_to_dir (dest, perms=0660, changesperms=0664):
     daklib.utils.move (pkg.changes_file, dest, perms=changesperms)
     file_keys = files.keys()
-    for file in file_keys:
-        daklib.utils.move (file, dest, perms=perms)
+    for f in file_keys:
+        daklib.utils.move (f, dest, perms=perms)
 
 ################################################################################
 
@@ -1367,7 +1367,7 @@ def is_stableupdate ():
         return 0
 
     if not changes["architecture"].has_key("source"):
-        pusuite = daklib.database.get_suite_id("proposed-updates")
+        pusuite = database.get_suite_id("proposed-updates")
         q = Upload.projectB.query(
           "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" %
           (changes["source"], changes["version"], pusuite))
@@ -1396,7 +1396,7 @@ def is_oldstableupdate ():
         return 0
 
     if not changes["architecture"].has_key("source"):
-        pusuite = daklib.database.get_suite_id("oldstable-proposed-updates")
+        pusuite = database.get_suite_id("oldstable-proposed-updates")
         q = Upload.projectB.query(
           "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" %
           (changes["source"], changes["version"], pusuite))
@@ -1423,27 +1423,27 @@ def do_oldstableupdate (summary, short_summary):
 def is_autobyhand ():
     all_auto = 1
     any_auto = 0
-    for file in files.keys():
-        if files[file].has_key("byhand"):
+    for f in files.keys():
+        if files[f].has_key("byhand"):
             any_auto = 1
 
             # filename is of form "PKG_VER_ARCH.EXT" where PKG, VER and ARCH
             # don't contain underscores, and ARCH doesn't contain dots.
             # further VER matches the .changes Version:, and ARCH should be in
             # the .changes Architecture: list.
-            if file.count("_") < 2:
+            if f.count("_") < 2:
                 all_auto = 0
                 continue
 
-            (pkg, ver, archext) = file.split("_", 2)
+            (pckg, ver, archext) = f.split("_", 2)
             if archext.count(".") < 1 or changes["version"] != ver:
                 all_auto = 0
                 continue
 
             ABH = Cnf.SubTree("AutomaticByHandPackages")
-            if not ABH.has_key(pkg) or \
-              ABH["%s::Source" % (pkg)] != changes["source"]:
-                print "not match %s %s" % (pkg, changes["source"])
+            if not ABH.has_key(pckg) or \
+              ABH["%s::Source" % (pckg)] != changes["source"]:
+                print "not match %s %s" % (pckg, changes["source"])
                 all_auto = 0
                 continue
 
@@ -1452,32 +1452,32 @@ def is_autobyhand ():
                 all_auto = 0
                 continue
 
-            files[file]["byhand-arch"] = arch
-            files[file]["byhand-script"] = ABH["%s::Script" % (pkg)]
+            files[f]["byhand-arch"] = arch
+            files[f]["byhand-script"] = ABH["%s::Script" % (pckg)]
 
     return any_auto and all_auto
 
 def do_autobyhand (summary, short_summary):
     print "Attempting AUTOBYHAND."
     byhandleft = 0
-    for file in files.keys():
-        byhandfile = file
-        if not files[file].has_key("byhand"):
+    for f in files.keys():
+        byhandfile = f
+        if not files[f].has_key("byhand"):
             continue
-        if not files[file].has_key("byhand-script"):
+        if not files[f].has_key("byhand-script"):
             byhandleft = 1
             continue
 
         os.system("ls -l %s" % byhandfile)
         result = os.system("%s %s %s %s %s" % (
-                files[file]["byhand-script"], byhandfile,
-                changes["version"], files[file]["byhand-arch"],
+                files[f]["byhand-script"], byhandfile,
+                changes["version"], files[f]["byhand-arch"],
                 os.path.abspath(pkg.changes_file)))
         if result == 0:
             os.unlink(byhandfile)
-            del files[file]
+            del files[f]
         else:
-            print "Error processing %s, left as byhand." % (file)
+            print "Error processing %s, left as byhand." % (f)
             byhandleft = 1
 
     if byhandleft:
@@ -1488,8 +1488,8 @@ def do_autobyhand (summary, short_summary):
 ################################################################################
 
 def is_byhand ():
-    for file in files.keys():
-        if files[file].has_key("byhand"):
+    for f in files.keys():
+        if files[f].has_key("byhand"):
             return 1
     return 0
 
@@ -1507,8 +1507,8 @@ def do_byhand (summary, short_summary):
 ################################################################################
 
 def is_new ():
-    for file in files.keys():
-        if files[file].has_key("new"):
+    for f in files.keys():
+        if files[f].has_key("new"):
             return 1
     return 0
 
@@ -1606,10 +1606,10 @@ def main():
         Options["Automatic"] = ""
 
     # Ensure all the arguments we were given are .changes files
-    for file in changes_files:
-        if not file.endswith(".changes"):
-            daklib.utils.warn("Ignoring '%s' because it's not a .changes file." % (file))
-            changes_files.remove(file)
+    for f in changes_files:
+        if not f.endswith(".changes"):
+            daklib.utils.warn("Ignoring '%s' because it's not a .changes file." % (f))
+            changes_files.remove(f)
 
     if changes_files == []:
         daklib.utils.fubar("Need at least one .changes file as an argument.")
@@ -1630,7 +1630,7 @@ def main():
                 daklib.utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
             else:
                 raise
-        Logger = Upload.Logger = daklib.logging.Logger(Cnf, "process-unchecked")
+        Logger = Upload.Logger = logging.Logger(Cnf, "process-unchecked")
 
     # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
     bcc = "X-DAK: dak process-unchecked\nX-Katie: $Revision: 1.65 $"

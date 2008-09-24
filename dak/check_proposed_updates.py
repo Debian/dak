@@ -30,8 +30,8 @@
 
 import pg, sys, os
 import apt_pkg, apt_inst
-import daklib.database
-import daklib.utils
+import daklib.database as database
+import daklib.utils as utils
 
 ################################################################################
 
@@ -79,7 +79,7 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                     if stable[dep].has_key(arch):
                         if apt_pkg.CheckDep(stable[dep][arch], constraint, version):
                             if Options["debug"]:
-                                print "Found %s as a real package." % (daklib.utils.pp_deps(parsed_dep))
+                                print "Found %s as a real package." % (utils.pp_deps(parsed_dep))
                             unsat = 0
                             break
                 # As a virtual?
@@ -87,20 +87,20 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                     if stable_virtual[dep].has_key(arch):
                         if not constraint and not version:
                             if Options["debug"]:
-                                print "Found %s as a virtual package." % (daklib.utils.pp_deps(parsed_dep))
+                                print "Found %s as a virtual package." % (utils.pp_deps(parsed_dep))
                             unsat = 0
                             break
                 # As part of the same .changes?
-                epochless_version = daklib.utils.re_no_epoch.sub('', version)
+                epochless_version = utils.re_no_epoch.sub('', version)
                 dep_filename = "%s_%s_%s.deb" % (dep, epochless_version, arch)
                 if files.has_key(dep_filename):
                     if Options["debug"]:
-                        print "Found %s in the same upload." % (daklib.utils.pp_deps(parsed_dep))
+                        print "Found %s in the same upload." % (utils.pp_deps(parsed_dep))
                     unsat = 0
                     break
                 # Not found...
                 # [FIXME: must be a better way ... ]
-                error = "%s not found. [Real: " % (daklib.utils.pp_deps(parsed_dep))
+                error = "%s not found. [Real: " % (utils.pp_deps(parsed_dep))
                 if stable.has_key(dep):
                     if stable[dep].has_key(arch):
                         error += "%s:%s:%s" % (dep, arch, stable[dep][arch])
@@ -125,7 +125,7 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                 unsat.append(error)
 
             if unsat:
-                sys.stderr.write("MWAAP! %s: '%s' %s can not be satisifed:\n" % (filename, daklib.utils.pp_deps(parsed_dep), dep_type))
+                sys.stderr.write("MWAAP! %s: '%s' %s can not be satisifed:\n" % (filename, utils.pp_deps(parsed_dep), dep_type))
                 for error in unsat:
                     sys.stderr.write("  %s\n" % (error))
                 pkg_unsat = 1
@@ -134,9 +134,9 @@ def check_dep (depends, dep_type, check_archs, filename, files):
 
 def check_package(filename, files):
     try:
-        control = apt_pkg.ParseSection(apt_inst.debExtractControl(daklib.utils.open_file(filename)))
+        control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename)))
     except:
-        daklib.utils.warn("%s: debExtractControl() raised %s." % (filename, sys.exc_type))
+        utils.warn("%s: debExtractControl() raised %s." % (filename, sys.exc_type))
         return 1
     Depends = control.Find("Depends")
     Pre_Depends = control.Find("Pre-Depends")
@@ -173,26 +173,26 @@ def pass_fail (filename, result):
 
 def check_changes (filename):
     try:
-        changes = daklib.utils.parse_changes(filename)
-        files = daklib.utils.build_file_list(changes)
+        changes = utils.parse_changes(filename)
+        files = utils.build_file_list(changes)
     except:
-        daklib.utils.warn("Error parsing changes file '%s'" % (filename))
+        utils.warn("Error parsing changes file '%s'" % (filename))
         return
 
     result = 0
 
     # Move to the pool directory
     cwd = os.getcwd()
-    file = files.keys()[0]
-    pool_dir = Cnf["Dir::Pool"] + '/' + daklib.utils.poolify(changes["source"], files[file]["component"])
+    f = files.keys()[0]
+    pool_dir = Cnf["Dir::Pool"] + '/' + utils.poolify(changes["source"], files[f]["component"])
     os.chdir(pool_dir)
 
     changes_result = 0
-    for file in files.keys():
-        if file.endswith(".deb"):
-            result = check_package(file, files)
+    for f in files.keys():
+        if f.endswith(".deb"):
+            result = check_package(f, files)
             if Options["verbose"]:
-                pass_fail(file, result)
+                pass_fail(f, result)
             changes_result += result
 
     pass_fail (filename, changes_result)
@@ -210,25 +210,25 @@ def check_deb (filename):
 ################################################################################
 
 def check_joey (filename):
-    file = daklib.utils.open_file(filename)
+    f = utils.open_file(filename)
 
     cwd = os.getcwd()
     os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]))
 
-    for line in file.readlines():
+    for line in f.readlines():
         line = line.rstrip()
         if line.find('install') != -1:
             split_line = line.split()
             if len(split_line) != 2:
-                daklib.utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
+                utils.fubar("Parse error (not exactly 2 elements): %s" % (line))
             install_type = split_line[0]
             if install_type not in [ "install", "install-u", "sync-install" ]:
-                daklib.utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
+                utils.fubar("Unknown install type ('%s') from: %s" % (install_type, line))
             changes_filename = split_line[1]
             if Options["debug"]:
                 print "Processing %s..." % (changes_filename)
             check_changes(changes_filename)
-    file.close()
+    f.close()
 
     os.chdir(cwd)
 
@@ -241,11 +241,11 @@ def parse_packages():
     suite = "stable"
     stable = {}
     components = Cnf.ValueList("Suite::%s::Components" % (suite))
-    architectures = filter(daklib.utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
+    architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
     for component in components:
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suite, component, architecture)
-            packages = daklib.utils.open_file(filename, 'r')
+            packages = utils.open_file(filename, 'r')
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find('Package')
@@ -267,7 +267,7 @@ def parse_packages():
 def main ():
     global Cnf, projectB, Options
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('d', "debug", "Check-Proposed-Updates::Options::Debug"),
                  ('q',"quiet","Check-Proposed-Updates::Options::Quiet"),
@@ -283,24 +283,24 @@ def main ():
     if Options["Help"]:
         usage(0)
     if not arguments:
-        daklib.utils.fubar("need at least one package name as an argument.")
+        utils.fubar("need at least one package name as an argument.")
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     print "Parsing packages files...",
     parse_packages()
     print "done."
 
-    for file in arguments:
-        if file.endswith(".changes"):
-            check_changes(file)
-        elif file.endswith(".deb"):
-            check_deb(file)
-        elif file.endswith(".joey"):
-            check_joey(file)
+    for f in arguments:
+        if f.endswith(".changes"):
+            check_changes(f)
+        elif f.endswith(".deb"):
+            check_deb(f)
+        elif f.endswith(".joey"):
+            check_joey(f)
         else:
-            daklib.utils.fubar("Unrecognised file type: '%s'." % (file))
+            utils.fubar("Unrecognised file type: '%s'." % (f))
 
 #######################################################################################
 
