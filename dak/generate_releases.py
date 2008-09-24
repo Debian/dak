@@ -24,7 +24,7 @@
 
 import sys, os, popen2, tempfile, stat, time, pg
 import apt_pkg
-import daklib.utils
+import daklib.utils as utils
 
 ################################################################################
 
@@ -106,8 +106,8 @@ def print_md5sha_files (tree, files, hashop):
                     (cat, path, name, ext))
             else:
                 size = os.stat(path + name)[stat.ST_SIZE]
-                file_handle = daklib.utils.open_file(path + name)
-        except daklib.utils.cant_open_exc:
+                file_handle = utils.open_file(path + name)
+        except utils.cant_open_exc:
             print "ALERT: Couldn't open " + path + name
         else:
             hash = hashop(file_handle)
@@ -129,7 +129,7 @@ def main ():
     global Cnf, AptCnf, projectB, out
     out = sys.stdout
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Generate-Releases::Options::Help"),
                  ('a',"apt-conf","Generate-Releases::Options::Apt-Conf", "HasArg"),
@@ -146,7 +146,7 @@ def main ():
         usage()
 
     if not Options["Apt-Conf"]:
-        Options["Apt-Conf"] = daklib.utils.which_apt_conf_file()
+        Options["Apt-Conf"] = utils.which_apt_conf_file()
 
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf, Options["Apt-Conf"])
@@ -202,7 +202,7 @@ def main ():
         elif AptCnf.has_key("bindirectory::%s" % (tree)):
             pass
         else:
-            aptcnf_filename = os.path.basename(daklib.utils.which_apt_conf_file())
+            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
             print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
             continue
 
@@ -219,7 +219,7 @@ def main ():
         out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
-        out.write("Architectures: %s\n" % (" ".join(filter(daklib.utils.real_arch, SuiteBlock.ValueList("Architectures")))))
+        out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, SuiteBlock.ValueList("Architectures")))))
         if components:
             out.write("Components: %s\n" % (" ".join(components)))
 
@@ -262,7 +262,7 @@ def main ():
                         release = open(relpath, "w")
                         #release = open(longsuite.replace("/","_") + "_" + arch + "_" + sec + "_Release", "w")
                     except IOError:
-                        daklib.utils.fubar("Couldn't write to " + relpath)
+                        utils.fubar("Couldn't write to " + relpath)
 
                     release.write("Archive: %s\n" % (suite))
                     if version != "":
