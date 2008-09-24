@@ -19,7 +19,8 @@
 
 ################################################################################
 
-import daklib.database, daklib.logging
+import daklib.database as database
+import daklib.utils as utils
 import sys, os, re
 import apt_pkg, pg, ldap, email.Utils
 
@@ -27,7 +28,6 @@ import apt_pkg, pg, ldap, email.Utils
 Cnf = None
 Options = None
 projectB = None
-Logger = None
 
 ################################################################################
 
@@ -138,7 +138,7 @@ class Keyring:
                 keys[key]["uid"] = uid
 
                 if id != None: continue
-                id = daklib.database.get_or_set_uid_id(uid)
+                id = database.get_or_set_uid_id(uid)
                 byuid[id] = (uid, name)
                 byname[uid] = (id, name)
 
@@ -155,13 +155,13 @@ class Keyring:
                 keys[x]["uid"] = format % "invalid-uid"
             else:
                 uid = format % keys[x]["email"]
-                id = daklib.database.get_or_set_uid_id(uid)
+                id = database.get_or_set_uid_id(uid)
                 byuid[id] = (uid, keys[x]["name"])
                 byname[uid] = (id, keys[x]["name"])
                 keys[x]["uid"] = uid
         if any_invalid:
             uid = format % "invalid-uid"
-            id = daklib.database.get_or_set_uid_id(uid)
+            id = database.get_or_set_uid_id(uid)
             byuid[id] = (uid, "ungeneratable user id")
             byname[uid] = (id, "ungeneratable user id")
         return (byname, byuid)
@@ -181,7 +181,7 @@ def usage (exit_code=0):
 def main():
     global Cnf, projectB, Options
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Import-Keyring::Options::Help"),
                  ('L',"import-ldap-users","Import-Keyring::Options::Import-Ldap-Users"),
                  ('U',"generate-users","Import-Keyring::Options::Generate-Users", "HasArg"),
@@ -209,7 +209,7 @@ def main():
     ### Initialise
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     projectB.query("BEGIN WORK")
 
@@ -222,7 +222,7 @@ def main():
     keyringname = keyring_names[0]
     keyring = Keyring(keyringname)
 
-    keyring_id = daklib.database.get_or_set_keyring_id(
+    keyring_id = database.get_or_set_keyring_id(
                         keyringname.split("/")[-1])
 
     ### Generate new uid entries if they're needed (from LDAP or the keyring)

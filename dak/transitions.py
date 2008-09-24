@@ -25,8 +25,8 @@
 
 import os, pg, sys, time, errno, fcntl, tempfile, pwd, re
 import apt_pkg
-import daklib.database
-import daklib.utils
+import daklib.database as database
+import daklib.utils as utils
 import syck
 
 # Globals
@@ -46,7 +46,7 @@ def init():
 
     apt_pkg.init()
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Edit-Transitions::Options::Help"),
                  ('e',"edit","Edit-Transitions::Options::Edit"),
@@ -74,7 +74,7 @@ def init():
         Options["sudo"] = "y"
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
 ################################################################################
 
@@ -197,7 +197,7 @@ def lock_file(f):
             else:
                 raise
 
-    daklib.utils.fubar("Couldn't obtain lock for %s." % (f))
+    utils.fubar("Couldn't obtain lock for %s." % (f))
 
 ################################################################################
 
@@ -276,7 +276,7 @@ def edit_transitions():
         result = os.system("%s %s" % (editor, edit_file))
         if result != 0:
             os.unlink(edit_file)
-            daklib.utils.fubar("%s invocation failed for %s, not removing tempfile." % (editor, edit_file))
+            utils.fubar("%s invocation failed for %s, not removing tempfile." % (editor, edit_file))
 
         # Now try to load the new file
         test = load_transitions(edit_file)
@@ -297,7 +297,7 @@ def edit_transitions():
 
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = daklib.utils.our_raw_input(prompt)
+            answer = utils.our_raw_input(prompt)
             if answer == "":
                 answer = default
             answer = answer[:1].upper()
@@ -333,7 +333,7 @@ def check_transitions(transitions):
         expected = t["new"]
 
         # Will be None if nothing is in testing.
-        current = daklib.database.get_suite_version(source, "testing")
+        current = database.get_suite_version(source, "testing")
 
         print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
@@ -365,7 +365,7 @@ def check_transitions(transitions):
         if Options["no-action"]:
             answer="n"
         else:
-            answer = daklib.utils.our_raw_input(prompt).lower()
+            answer = utils.our_raw_input(prompt).lower()
 
         if answer == "":
             answer = "n"
@@ -407,7 +407,7 @@ def transition_info(transitions):
         expected = t["new"]
 
         # Will be None if nothing is in testing.
-        current = daklib.database.get_suite_version(source, "testing")
+        current = database.get_suite_version(source, "testing")
 
         print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
@@ -439,19 +439,19 @@ def main():
     # Check if there is a file defined (and existant)
     transpath = Cnf.get("Dinstall::Reject::ReleaseTransitions", "")
     if transpath == "":
-        daklib.utils.warn("Dinstall::Reject::ReleaseTransitions not defined")
+        utils.warn("Dinstall::Reject::ReleaseTransitions not defined")
         sys.exit(1)
     if not os.path.exists(transpath):
-        daklib.utils.warn("ReleaseTransitions file, %s, not found." %
+        utils.warn("ReleaseTransitions file, %s, not found." %
                           (Cnf["Dinstall::Reject::ReleaseTransitions"]))
         sys.exit(1)
     # Also check if our temp directory is defined and existant
     temppath = Cnf.get("Transitions::TempPath", "")
     if temppath == "":
-        daklib.utils.warn("Transitions::TempPath not defined")
+        utils.warn("Transitions::TempPath not defined")
         sys.exit(1)
     if not os.path.exists(temppath):
-        daklib.utils.warn("Temporary path %s not found." %
+        utils.warn("Temporary path %s not found." %
                           (Cnf["Transitions::TempPath"]))
         sys.exit(1)
 
@@ -470,7 +470,7 @@ def main():
     transitions = load_transitions(transpath)
     if transitions == None:
         # Something very broken with the transitions, exit
-        daklib.utils.warn("Could not parse existing transitions file. Aborting.")
+        utils.warn("Could not parse existing transitions file. Aborting.")
         sys.exit(2)
 
     if Options["edit"]:

@@ -33,7 +33,7 @@ import apt_inst, apt_pkg
 import daklib.database as database
 import daklib.logging as logging
 import daklib.queue as queue
-import daklib.utils
+import daklib.utils as utils
 
 from types import *
 
@@ -73,7 +73,7 @@ def init():
     apt_pkg.init()
 
     Cnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(Cnf,daklib.utils.which_conf_file())
+    apt_pkg.ReadConfigFileISC(Cnf,utils.which_conf_file())
 
     Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
                  ('h',"help","Dinstall::Options::Help"),
@@ -167,7 +167,7 @@ def clean_holding():
     for f in in_holding.keys():
         if os.path.exists(f):
             if f.find('/') != -1:
-                daklib.utils.fubar("WTF? clean_holding() got a file ('%s') with / in it!" % (f))
+                utils.fubar("WTF? clean_holding() got a file ('%s') with / in it!" % (f))
             else:
                 os.unlink(f)
     in_holding = {}
@@ -180,20 +180,20 @@ def check_changes():
 
     # Parse the .changes field into a dictionary
     try:
-        changes.update(daklib.utils.parse_changes(filename))
-    except daklib.utils.cant_open_exc:
+        changes.update(utils.parse_changes(filename))
+    except utils.cant_open_exc:
         reject("%s: can't read file." % (filename))
         return 0
-    except daklib.utils.changes_parse_error_exc, line:
+    except utils.changes_parse_error_exc, line:
         reject("%s: parse error, can't grok: %s." % (filename, line))
         return 0
 
     # Parse the Files field from the .changes into another dictionary
     try:
-        files.update(daklib.utils.build_file_list(changes))
-    except daklib.utils.changes_parse_error_exc, line:
+        files.update(utils.build_file_list(changes))
+    except utils.changes_parse_error_exc, line:
         reject("%s: parse error, can't grok: %s." % (filename, line))
-    except daklib.utils.nk_format_exc, format:
+    except utils.nk_format_exc, format:
         reject("%s: unknown format '%s'." % (filename, format))
         return 0
 
@@ -225,8 +225,8 @@ def check_changes():
     try:
         (changes["maintainer822"], changes["maintainer2047"],
          changes["maintainername"], changes["maintaineremail"]) = \
-         daklib.utils.fix_maintainer (changes["maintainer"])
-    except daklib.utils.ParseMaintError, msg:
+         utils.fix_maintainer (changes["maintainer"])
+    except utils.ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
                % (filename, changes["maintainer"], msg))
 
@@ -234,8 +234,8 @@ def check_changes():
     try:
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
-         daklib.utils.fix_maintainer (changes.get("changed-by", ""))
-    except daklib.utils.ParseMaintError, msg:
+         utils.fix_maintainer (changes.get("changed-by", ""))
+    except utils.ParseMaintError, msg:
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
          ("", "", "", "")
@@ -250,8 +250,8 @@ def check_changes():
 
 
     # chopversion = no epoch; chopversion2 = no epoch and no revision (e.g. for .orig.tar.gz comparison)
-    changes["chopversion"] = daklib.utils.re_no_epoch.sub('', changes["version"])
-    changes["chopversion2"] = daklib.utils.re_no_revision.sub('', changes["chopversion"])
+    changes["chopversion"] = utils.re_no_epoch.sub('', changes["version"])
+    changes["chopversion2"] = utils.re_no_revision.sub('', changes["chopversion"])
 
     # Check there isn't already a changes file of the same name in one
     # of the queue directories.
@@ -335,7 +335,7 @@ in that order, and nothing else."""
     (result, output) = commands.getstatusoutput(cmd)
     if result != 0:
         reject("%s: 'ar t' invocation failed." % (filename))
-        reject(daklib.utils.prefix_multi_line_string(output, " [ar output:] "), "")
+        reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
     chunks = output.split('\n')
     if len(chunks) != 3:
         reject("%s: found %d chunks, expected 3." % (filename, len(chunks)))
@@ -351,7 +351,7 @@ in that order, and nothing else."""
 def check_files():
     global reprocess
 
-    archive = daklib.utils.where_am_i()
+    archive = utils.where_am_i()
     file_keys = files.keys()
 
     # if reprocess is 2 we've already done this and we're checking
@@ -392,7 +392,7 @@ def check_files():
             if not Cnf.has_key("Dir::Queue::%s" % (d)): continue
             if os.path.exists(Cnf["Dir::Queue::%s" % (d) ] + '/' + f):
                 reject("%s file already exists in the %s directory." % (f, d))
-        if not daklib.utils.re_taint_free.match(f):
+        if not utils.re_taint_free.match(f):
             reject("!!WARNING!! tainted filename: '%s'." % (f))
         # Check the file is readable
         if os.access(f, os.R_OK) == 0:
@@ -410,12 +410,12 @@ def check_files():
             files[f]["byhand"] = 1
             files[f]["type"] = "byhand"
         # Checks for a binary package...
-        elif daklib.utils.re_isadeb.match(f):
+        elif utils.re_isadeb.match(f):
             has_binaries = 1
             files[f]["type"] = "deb"
 
             # Extract package control information
-            deb_file = daklib.utils.open_file(f)
+            deb_file = utils.open_file(f)
             try:
                 control = apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))
             except:
@@ -495,7 +495,7 @@ def check_files():
             source = files[f]["source"]
             source_version = ""
             if source.find("(") != -1:
-                m = daklib.utils.re_extract_src_version.match(source)
+                m = utils.re_extract_src_version.match(source)
                 source = m.group(1)
                 source_version = m.group(2)
             if not source_version:
@@ -504,12 +504,12 @@ def check_files():
             files[f]["source version"] = source_version
 
             # Ensure the filename matches the contents of the .deb
-            m = daklib.utils.re_isadeb.match(f)
+            m = utils.re_isadeb.match(f)
             #  package name
             file_package = m.group(1)
             if files[f]["package"] != file_package:
                 reject("%s: package part of filename (%s) does not match package name in the %s (%s)." % (f, file_package, files[f]["dbtype"], files[f]["package"]))
-            epochless_version = daklib.utils.re_no_epoch.sub('', control.Find("Version"))
+            epochless_version = utils.re_no_epoch.sub('', control.Find("Version"))
             #  version
             file_version = m.group(2)
             if epochless_version != file_version:
@@ -529,7 +529,7 @@ def check_files():
                 # Check in the SQL database
                 if not Upload.source_exists(source_package, source_version, changes["distribution"].keys()):
                     # Check in one of the other directories
-                    source_epochless_version = daklib.utils.re_no_epoch.sub('', source_version)
+                    source_epochless_version = utils.re_no_epoch.sub('', source_version)
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                     if os.path.exists(Cnf["Dir::Queue::Byhand"] + '/' + dsc_filename):
                         files[f]["byhand"] = 1
@@ -551,7 +551,7 @@ def check_files():
 
         # Checks for a source package...
         else:
-            m = daklib.utils.re_issource.match(f)
+            m = utils.re_issource.match(f)
             if m:
                 has_source = 1
                 files[f]["package"] = m.group(1)
@@ -576,7 +576,7 @@ def check_files():
 
                 # Check the signature of a .dsc file
                 if files[f]["type"] == "dsc":
-                    dsc["fingerprint"] = daklib.utils.check_signature(f, reject)
+                    dsc["fingerprint"] = utils.check_signature(f, reject)
 
                 files[f]["architecture"] = "source"
 
@@ -628,7 +628,7 @@ def check_files():
             files[f]["location id"] = location_id
 
             # Check the md5sum & size against existing files (if any)
-            files[f]["pool name"] = daklib.utils.poolify (changes["source"], files[f]["component"])
+            files[f]["pool name"] = utils.poolify (changes["source"], files[f]["component"])
             files_id = database.get_files_id(files[f]["pool name"] + f, files[f]["size"], files[f]["md5sum"], files[f]["location id"])
             if files_id == -1:
                 reject("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (f))
@@ -684,22 +684,22 @@ def check_dsc():
 
     # Parse the .dsc file
     try:
-        dsc.update(daklib.utils.parse_changes(dsc_filename, signing_rules=1))
-    except daklib.utils.cant_open_exc:
+        dsc.update(utils.parse_changes(dsc_filename, signing_rules=1))
+    except utils.cant_open_exc:
         # if not -n copy_to_holding() will have done this for us...
         if Options["No-Action"]:
             reject("%s: can't read file." % (dsc_filename))
-    except daklib.utils.changes_parse_error_exc, line:
+    except utils.changes_parse_error_exc, line:
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line))
-    except daklib.utils.invalid_dsc_format_exc, line:
+    except utils.invalid_dsc_format_exc, line:
         reject("%s: syntax error on line %s." % (dsc_filename, line))
     # Build up the file list of files mentioned by the .dsc
     try:
-        dsc_files.update(daklib.utils.build_file_list(dsc, is_a_dsc=1))
-    except daklib.utils.no_files_exc:
+        dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1))
+    except utils.no_files_exc:
         reject("%s: no Files: field." % (dsc_filename))
         return 0
-    except daklib.utils.changes_parse_error_exc, line:
+    except utils.changes_parse_error_exc, line:
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line))
         return 0
 
@@ -722,8 +722,8 @@ def check_dsc():
 
     # Validate the Maintainer field
     try:
-        daklib.utils.fix_maintainer (dsc["maintainer"])
-    except daklib.utils.ParseMaintError, msg:
+        utils.fix_maintainer (dsc["maintainer"])
+    except utils.ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
                % (dsc_filename, dsc["maintainer"], msg))
 
@@ -743,7 +743,7 @@ def check_dsc():
                 pass
 
     # Ensure the version number in the .dsc matches the version number in the .changes
-    epochless_dsc_version = daklib.utils.re_no_epoch.sub('', dsc["version"])
+    epochless_dsc_version = utils.re_no_epoch.sub('', dsc["version"])
     changes_version = files[dsc_filename]["version"]
     if epochless_dsc_version != files[dsc_filename]["version"]:
         reject("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version))
@@ -751,7 +751,7 @@ def check_dsc():
     # Ensure there is a .tar.gz in the .dsc file
     has_tar = 0
     for f in dsc_files.keys():
-        m = daklib.utils.re_issource.match(f)
+        m = utils.re_issource.match(f)
         if not m:
             reject("%s: %s in Files field not recognised as source." % (dsc_filename, f))
             continue
@@ -799,7 +799,7 @@ def get_changelog_versions(source_dir):
 
     # Create a symlink mirror of the source files in our temporary directory
     for f in files.keys():
-        m = daklib.utils.re_issource.match(f)
+        m = utils.re_issource.match(f)
         if m:
             src = os.path.join(source_dir, f)
             # If a file is missing for whatever reason, give up.
@@ -822,14 +822,14 @@ def get_changelog_versions(source_dir):
     (result, output) = commands.getstatusoutput(cmd)
     if (result != 0):
         reject("'dpkg-source -x' failed for %s [return code: %s]." % (dsc_filename, result))
-        reject(daklib.utils.prefix_multi_line_string(output, " [dpkg-source output:] "), "")
+        reject(utils.prefix_multi_line_string(output, " [dpkg-source output:] "), "")
         return
 
     if not Cnf.Find("Dir::Queue::BTSVersionTrack"):
         return
 
     # Get the upstream version
-    upstr_version = daklib.utils.re_no_epoch.sub('', dsc["version"])
+    upstr_version = utils.re_no_epoch.sub('', dsc["version"])
     if re_strip_revision.search(upstr_version):
         upstr_version = re_strip_revision.sub('', upstr_version)
 
@@ -841,7 +841,7 @@ def get_changelog_versions(source_dir):
 
     # Parse the changelog
     dsc["bts changelog"] = ""
-    changelog_file = daklib.utils.open_file(changelog_filename)
+    changelog_file = utils.open_file(changelog_filename)
     for line in changelog_file.readlines():
         m = re_changelog_versions.match(line)
         if m:
@@ -884,7 +884,7 @@ def check_source():
         shutil.rmtree(tmpdir)
     except OSError, e:
         if errno.errorcode[e.errno] != 'EACCES':
-            daklib.utils.fubar("%s: couldn't remove tmp dir for source tree." % (dsc["source"]))
+            utils.fubar("%s: couldn't remove tmp dir for source tree." % (dsc["source"]))
 
         reject("%s: source tree could not be cleanly removed." % (dsc["source"]))
         # We probably have u-r or u-w directories so chmod everything
@@ -892,10 +892,10 @@ def check_source():
         cmd = "chmod -R u+rwx %s" % (tmpdir)
         result = os.system(cmd)
         if result != 0:
-            daklib.utils.fubar("'%s' failed with result %s." % (cmd, result))
+            utils.fubar("'%s' failed with result %s." % (cmd, result))
         shutil.rmtree(tmpdir)
     except:
-        daklib.utils.fubar("%s: couldn't remove tmp dir for source tree." % (dsc["source"]))
+        utils.fubar("%s: couldn't remove tmp dir for source tree." % (dsc["source"]))
 
 ################################################################################
 
@@ -943,21 +943,21 @@ def check_hashes ():
 
     for h,f in hashes:
         try:
-            fs = daklib.utils.build_file_list(changes, 0, "checksums-%s" % h, h)
+            fs = utils.build_file_list(changes, 0, "checksums-%s" % h, h)
             check_hash(".changes %s" % (h), fs, h, f, files)
-        except daklib.utils.no_files_exc:
+        except utils.no_files_exc:
             reject("No Checksums-%s: field in .changes" % (h))
-        except daklib.utils.changes_parse_error_exc, line:
+        except utils.changes_parse_error_exc, line:
             reject("parse error for Checksums-%s in .changes, can't grok: %s." % (h, line))
 
         if "source" not in changes["architecture"]: continue
 
         try:
-            fs = daklib.utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
+            fs = utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
             check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
-        except daklib.utils.no_files_exc:
+        except utils.no_files_exc:
             reject("No Checksums-%s: field in .dsc" % (h))
-        except daklib.utils.changes_parse_error_exc, line:
+        except utils.changes_parse_error_exc, line:
             reject("parse error for Checksums-%s in .dsc, can't grok: %s." % (h, line))
 
 ################################################################################
@@ -973,8 +973,8 @@ def check_hash (where, lfiles, key, testfn, basedict = None):
             reject("%s: extraneous entry in %s checksums" % (f, key))
 
         try:
-            file_handle = daklib.utils.open_file(f)
-        except daklib.utils.cant_open_exc:
+            file_handle = utils.open_file(f)
+        except utils.cant_open_exc:
             continue
 
         # Check hash
@@ -1019,7 +1019,7 @@ def check_timestamps():
         if files[filename]["type"] == "deb":
             tar.reset()
             try:
-                deb_file = daklib.utils.open_file(filename)
+                deb_file = utils.open_file(filename)
                 apt_inst.debExtract(deb_file,tar.callback,"control.tar.gz")
                 deb_file.seek(0)
                 try:
@@ -1090,8 +1090,8 @@ def check_signed_by_key():
     else:
         sponsored = 1
         if ("source" in changes["architecture"] and
-            uid_email and daklib.utils.is_email_alias(uid_email)):
-            sponsor_addresses = daklib.utils.gpg_get_key_addresses(changes["fingerprint"])
+            uid_email and utils.is_email_alias(uid_email)):
+            sponsor_addresses = utils.gpg_get_key_addresses(changes["fingerprint"])
             if (changes["maintaineremail"] not in sponsor_addresses and
                 changes["changedbyemail"] not in sponsor_addresses):
                 changes["sponsoremail"] = uid_email
@@ -1116,7 +1116,7 @@ def check_signed_by_key():
             is_nmu = 1
             q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT maintainer FROM src_uploaders WHERE src_uploaders.source = %s)" % (si))
             for m in q.getresult():
-                (rfc822, rfc2047, name, email) = daklib.utils.fix_maintainer(m[0])
+                (rfc822, rfc2047, name, email) = utils.fix_maintainer(m[0])
                 if email == uid_email or name == uid_name:
                     is_nmu=0
                     break
@@ -1266,7 +1266,7 @@ def action ():
                 answer = 'A'
 
     while prompt.find(answer) == -1:
-        answer = daklib.utils.our_raw_input(prompt)
+        answer = utils.our_raw_input(prompt)
         m = queue.re_default_answer.match(prompt)
         if answer == "":
             answer = m.group(1)
@@ -1299,10 +1299,10 @@ def accept (summary, short_summary):
 ################################################################################
 
 def move_to_dir (dest, perms=0660, changesperms=0664):
-    daklib.utils.move (pkg.changes_file, dest, perms=changesperms)
+    utils.move (pkg.changes_file, dest, perms=changesperms)
     file_keys = files.keys()
     for f in file_keys:
-        daklib.utils.move (f, dest, perms=perms)
+        utils.move (f, dest, perms=perms)
 
 ################################################################################
 
@@ -1524,8 +1524,8 @@ def acknowledge_new (summary, short_summary):
     if not Options["No-Mail"]:
         print "Sending new ack."
         Subst["__SUMMARY__"] = summary
-        new_ack_message = daklib.utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.new")
-        daklib.utils.send_mail(new_ack_message)
+        new_ack_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.new")
+        utils.send_mail(new_ack_message)
 
 ################################################################################
 
@@ -1566,7 +1566,7 @@ def process_it (changes_file):
             # Relativize the filename so we use the copy in holding
             # rather than the original...
             pkg.changes_file = os.path.basename(pkg.changes_file)
-        changes["fingerprint"] = daklib.utils.check_signature(pkg.changes_file, reject)
+        changes["fingerprint"] = utils.check_signature(pkg.changes_file, reject)
         if changes["fingerprint"]:
             valid_changes_p = check_changes()
         else:
@@ -1608,16 +1608,16 @@ def main():
     # Ensure all the arguments we were given are .changes files
     for f in changes_files:
         if not f.endswith(".changes"):
-            daklib.utils.warn("Ignoring '%s' because it's not a .changes file." % (f))
+            utils.warn("Ignoring '%s' because it's not a .changes file." % (f))
             changes_files.remove(f)
 
     if changes_files == []:
-        daklib.utils.fubar("Need at least one .changes file as an argument.")
+        utils.fubar("Need at least one .changes file as an argument.")
 
     # Check that we aren't going to clash with the daily cron job
 
     if not Options["No-Action"] and os.path.exists("%s/daily.lock" % (Cnf["Dir::Lock"])) and not Options["No-Lock"]:
-        daklib.utils.fubar("Archive maintenance in progress.  Try again later.")
+        utils.fubar("Archive maintenance in progress.  Try again later.")
 
     # Obtain lock if not in no-action mode and initialize the log
 
@@ -1627,7 +1627,7 @@ def main():
             fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError, e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
-                daklib.utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
+                utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
             else:
                 raise
         Logger = Upload.Logger = logging.Logger(Cnf, "process-unchecked")
@@ -1641,7 +1641,7 @@ def main():
 
 
     # Sort the .changes files so that we process sourceful ones first
-    changes_files.sort(daklib.utils.changes_compare)
+    changes_files.sort(utils.changes_compare)
 
     # Process the changes files
     for changes_file in changes_files:
@@ -1658,7 +1658,7 @@ def main():
         sets = "set"
         if accept_count > 1:
             sets = "sets"
-        print "Accepted %d package %s, %s." % (accept_count, sets, daklib.utils.size_type(int(accept_bytes)))
+        print "Accepted %d package %s, %s." % (accept_count, sets, utils.size_type(int(accept_bytes)))
         Logger.log(["total",accept_count,accept_bytes])
 
     if not Options["No-Action"]:

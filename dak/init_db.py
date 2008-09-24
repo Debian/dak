@@ -21,8 +21,8 @@
 
 import pg, sys
 import apt_pkg
-import daklib.database
-import daklib.utils
+import daklib.database as database
+import daklib.utils as utils
 
 ################################################################################
 
@@ -101,9 +101,9 @@ def do_location():
     projectB.query("DELETE FROM location")
     for location in Cnf.SubTree("Location").List():
         location_config = Cnf.SubTree("Location::%s" % (location))
-        archive_id = daklib.database.get_archive_id(location_config["Archive"])
+        archive_id = database.get_archive_id(location_config["Archive"])
         if archive_id == -1:
-            daklib.utils.fubar("Archive '%s' for location '%s' not found."
+            utils.fubar("Archive '%s' for location '%s' not found."
                                % (location_config["Archive"], location))
         location_type = location_config.get("type")
         if location_type == "legacy-mixed":
@@ -112,13 +112,13 @@ def do_location():
                            % (location, archive_id, location_config["type"]))
         elif location_type == "legacy" or location_type == "pool":
             for component in Cnf.SubTree("Component").List():
-                component_id = daklib.database.get_component_id(component)
+                component_id = database.get_component_id(component)
                 projectB.query("INSERT INTO location (path, component, "
                                "archive, type) VALUES ('%s', %d, %d, '%s')"
                                % (location, component_id, archive_id,
                                   location_type))
         else:
-            daklib.utils.fubar("E: type '%s' not recognised in location %s."
+            utils.fubar("E: type '%s' not recognised in location %s."
                                % (location_type, location))
     projectB.query("COMMIT WORK")
 
@@ -136,9 +136,9 @@ def do_suite():
                        "description) VALUES ('%s', %s, %s, %s)"
                        % (suite.lower(), version, origin, description))
         for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
-            architecture_id = daklib.database.get_architecture_id (architecture)
+            architecture_id = database.get_architecture_id (architecture)
             if architecture_id < 0:
-                daklib.utils.fubar("architecture '%s' not found in architecture"
+                utils.fubar("architecture '%s' not found in architecture"
                                    " table for suite %s."
                                    % (architecture, suite))
             projectB.query("INSERT INTO suite_architectures (suite, "
@@ -196,7 +196,7 @@ def main ():
 
     global Cnf, projectB
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     arguments = [('h', "help", "Init-DB::Options::Help")]
     for i in [ "help" ]:
         if not Cnf.has_key("Init-DB::Options::%s" % (i)):
@@ -208,12 +208,12 @@ def main ():
     if options["Help"]:
         usage()
     elif arguments:
-        daklib.utils.warn("dak init-db takes no arguments.")
+        utils.warn("dak init-db takes no arguments.")
         usage(exit_code=1)
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],
                           int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     do_archive()
     do_architecture()

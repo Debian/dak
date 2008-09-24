@@ -32,7 +32,7 @@
 
 import pg, sys
 import apt_pkg
-import daklib.utils
+import daklib.utils as utils
 
 ################################################################################
 
@@ -71,7 +71,7 @@ SELECT a.arch_string as Architecture, sum(f.size)
 
 def daily_install_stats():
     stats = {}
-    f = daklib.utils.open_file("2001-11")
+    f = utils.open_file("2001-11")
     for line in f.readlines():
         split = line.strip().split('|')
         program = split[1]
@@ -213,7 +213,7 @@ SELECT suite, count(suite) FROM src_associations GROUP BY suite;""")
 def main ():
     global Cnf, projectB
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
     Arguments = [('h',"help","Stats::Options::Help")]
     for i in [ "help" ]:
         if not Cnf.has_key("Stats::Options::%s" % (i)):
@@ -226,10 +226,10 @@ def main ():
         usage()
 
     if len(args) < 1:
-        daklib.utils.warn("dak stats requires a MODE argument")
+        utils.warn("dak stats requires a MODE argument")
         usage(1)
     elif len(args) > 1:
-        daklib.utils.warn("dak stats accepts only one MODE argument")
+        utils.warn("dak stats accepts only one MODE argument")
         usage(1)
     mode = args[0].lower()
 
@@ -242,7 +242,7 @@ def main ():
     elif mode == "daily-install":
         daily_install_stats()
     else:
-        daklib.utils.warn("unknown mode '%s'" % (mode))
+        utils.warn("unknown mode '%s'" % (mode))
         usage(1)
 
 ################################################################################
