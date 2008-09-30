@@ -25,7 +25,7 @@ from debian_bundle import deb822
 
 ################################################################################
 
-row_number = 0
+row_number = 1
 
 html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
 re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
@@ -99,7 +99,7 @@ def table_footer():
 def table_row(changesname, delay, changed_by, closes):
     global row_number
 
-    res = '<tr class="%s">'%(['even','odd'][row_number %2])
+    res = '<tr class="%s">'%((row_number%2) and 'odd' or 'even')
     res += (3*'<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay,changed_by)))
     res += ('<td valign="top">%s</td>' % 
              ''.join(map(lambda close:  '<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
@@ -114,8 +114,8 @@ def get_upload_data(changesfn):
     m = re.match(r'([0-9]+)-day', delay)
     if m:
         delaydays = int(m.group(1))
-        remainingtime = max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
-        delay = "%d days %02d:%02d" %(delaydays, int(remainingtime/3600),int(remainingtime/60)%60)
+        remainingtime = (delaydays>0)*max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
+        delay = "%d days %02d:%02d" %(max(delaydays-1,0), int(remainingtime/3600),int(remainingtime/60)%60)
     else:
         remainingtime = 0
     #print dir(achanges)

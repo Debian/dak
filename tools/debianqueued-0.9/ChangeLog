@@ -1,3 +1,7 @@
+2008-09-20  Thomas Viehmann  <tv@beamnet.de>
+
+	* show-deferred: minor fixes
+
 2008-09-21  Joerg Jaspert  <joerg@debian.org>
 
 	* debianqueued: Use perltidy
