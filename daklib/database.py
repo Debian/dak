@@ -389,3 +389,12 @@ def get_maintainer (maintainer_id):
     return maintainer_cache[maintainer_id]
 
 ################################################################################
+
+def get_suites(pkgname, src=False):
+    if src:
+        sql = "select suite_name from source, src_associations,suite where source.id=src_associations.source and source.source='%s' and src_associations.suite = suite.id"%pkgname
+    else:
+        sql = "select suite_name from binaries, bin_associations,suite where binaries.id=bin_associations.bin and  package='%s' and bin_associations.suite = suite.id"%pkgname
+    q = projectB.query(sql)
+    return map(lambda x: x[0], q.getresult())
+

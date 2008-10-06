@@ -1,4 +1,8 @@
-2008-09-20  Thomas Viehmann  <tv@beamnet.de>
+2008-10-05  Thomas Viehmann  <tv@beamnet.de>
+
+	* show-deferred: make non-new uploads in deferred accessible
+
+2008-09-22  Thomas Viehmann  <tv@beamnet.de>
 
 	* show-deferred: minor fixes
 
