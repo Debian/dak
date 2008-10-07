@@ -164,9 +164,10 @@ def usage (exit_code=0):
         f = sys.stderr
     else:
         f = sys.stdout
-    print >> f, """Usage: dak show-deferred /path/to/DEFERRED
-  -h, --help                show this help and exit.
-  -p, --html-path [path]    override output directory.
+    print >> f, """Usage: dak show-deferred
+  -h, --help                    show this help and exit.
+  -p, --link-path [path]        override output directory.
+  -d, --deferred-queue [path]   path to the deferred queue
   """
     sys.exit(exit_code)
 
@@ -174,11 +175,17 @@ def init():
     global Cnf, Options, Upload, projectB
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Show-Deferred::Options::Help"),
-                 ("p","link-path","Show-Deferred::LinkPath","HasArg")]
+                 ("p","link-path","Show-Deferred::LinkPath","HasArg"),
+                 ("d","deferred-queue","Show-Deferred::DeferredQueue","HasArg")]
+    args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     for i in ["help"]:
         if not Cnf.has_key("Show-Deferred::Options::%s" % (i)):
             Cnf["Show-Deferred::Options::%s" % (i)] = ""
-    args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    for i,j in [("DeferredQueue","--deferred-queue")]:
+        if not Cnf.has_key("Show-Deferred::%s" % (i)):
+            print >> sys.stderr, """Show-Deferred::%s is mandatory.
+  set via config file or command-line option %s"""%(i,j)
+
     Options = Cnf.SubTree("Show-Deferred::Options")
     if Options["help"]:
         usage()
@@ -188,11 +195,11 @@ def init():
 
 def main():
     args = init()
-    if len(args)!=1:
+    if len(args)!=0:
         usage(1)
 
     filelist = []
-    for r,d,f  in os.walk(args[0]):
+    for r,d,f  in os.walk(Cnf["Show-Deferred::DeferredQueue"]):
         filelist += map (lambda x: os.path.join(r,x),
                          filter(lambda x: x.endswith('.changes'), f))
     list_uploads(filelist)
