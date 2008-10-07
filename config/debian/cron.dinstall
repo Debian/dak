@@ -338,6 +338,21 @@ echo "Compress old psql backups"
 
 ts
 
+echo "Removing old dinstall logfiles"
+(cd $logdir
+	find -maxdepth 1 -mindepth 1 -type f -name 'dinstall_*' -mtime +60 | 
+	while read dumpname; do
+		echo "Removing $dumpname"
+		rm -f "$dumpname"
+	done
+
+	find -maxdepth 1 -mindepth 1 -type f -name 'weekly_*' -mtime +60 | 
+	while read dumpname; do
+		echo "Removing $dumpname"
+		rm -f "$dumpname"
+	done
+)
+
 echo "Finally, all is done, sending mail and compressing logfile"
 exec > /dev/null 2>&1
 
