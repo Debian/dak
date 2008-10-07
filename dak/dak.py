@@ -88,6 +88,8 @@ def init():
          "Produce a report on NEW and BYHAND packages"),
         ("show-new",
          "Output html for packages in NEW"),
+        ("show-deferred",
+         "Output html and symlinks for packages in DEFERRED"),
 
         ("rm",
          "Remove packages from suites"),

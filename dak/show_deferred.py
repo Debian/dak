@@ -21,11 +21,15 @@
 ################################################################################
 
 import sys, os, re, time
+import apt_pkg
 from debian_bundle import deb822
+from daklib import database
+from daklib import queue
+from daklib import utils
 
 ################################################################################
 
-row_number = 0
+row_number = 1
 
 html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
 re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
@@ -94,12 +98,12 @@ def table_header():
     return res
 
 def table_footer():
-    return '</table></center><br>\n'
+    return '</table><br/><p>non-NEW uploads are <a href="/deferred/">available</a>, see the <a href="ftp://ftp-master.debian.org/pub/UploadQueue/README">UploadQueue-README</a> for more information.</p></center><br/>\n'
 
 def table_row(changesname, delay, changed_by, closes):
     global row_number
 
-    res = '<tr class="%s">'%(['even','odd'][row_number %2])
+    res = '<tr class="%s">'%((row_number%2) and 'odd' or 'even')
     res += (3*'<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay,changed_by)))
     res += ('<td valign="top">%s</td>' % 
              ''.join(map(lambda close:  '<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
@@ -114,14 +118,33 @@ def get_upload_data(changesfn):
     m = re.match(r'([0-9]+)-day', delay)
     if m:
         delaydays = int(m.group(1))
-        remainingtime = max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
-        delay = "%d days %02d:%02d" %(delaydays, int(remainingtime/3600),int(remainingtime/60)%60)
+        remainingtime = (delaydays>0)*max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
+        delay = "%d days %02d:%02d" %(max(delaydays-1,0), int(remainingtime/3600),int(remainingtime/60)%60)
     else:
         remainingtime = 0
-    #print dir(achanges)
-    #print achanges.keys()
+
     uploader = achanges.get('changed-by')
     uploader = re.sub(r'^\s*(\S.*)\s+<.*>',r'\1',uploader)
+    if Cnf.has_key("Show-Deferred::LinkPath"):
+        isnew = 0
+        suites = database.get_suites(achanges['source'],src=1)
+        if 'unstable' not in suites and 'experimental' not in suites:
+            isnew = 1
+        for b in achanges['binary'].split():
+            suites = database.get_suites(b)
+            if 'unstable' not in suites and 'experimental' not in suites:
+                isnew = 1
+        if not isnew:
+            # we don't link .changes because we don't want other people to
+            # upload it with the existing signature.
+            for afn in map(lambda x: x['name'],achanges['files']):
+                lfn = os.path.join(Cnf["Show-Deferred::LinkPath"],afn)
+                qfn = os.path.join(os.path.dirname(changesfn),afn)
+                if os.path.islink(lfn):
+                    os.unlink(lfn)
+                if os.path.exists(qfn):
+                    os.symlink(qfn,lfn)
+                    os.chmod(qfn, 0644)
     return (delaydays*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes').split())
 
 def list_uploads(filelist):
@@ -136,13 +159,49 @@ def list_uploads(filelist):
         print '<h1>Currently no deferred uploads to Debian</h1>'
     print footer()
 
-if len(sys.argv)!=2:
-    print >> sys.stderr, """Error! Invoke %s /path/to/DEFERRED"""%sys.argv[0]
-    sys.exit(1)
-    
-filelist = []
-for r,d,f  in os.walk(sys.argv[1]):
-    filelist += map (lambda x: os.path.join(r,x),
-                     filter(lambda x: x.endswith('.changes'), f))
+def usage (exit_code=0):
+    if exit_code:
+        f = sys.stderr
+    else:
+        f = sys.stdout
+    print >> f, """Usage: dak show-deferred /path/to/DEFERRED
+  -h, --help                show this help and exit.
+  -p, --html-path [path]    override output directory.
+  """
+    sys.exit(exit_code)
+   
+def init():
+    global Cnf, Options, Upload, projectB
+    Cnf = utils.get_conf()
+    Arguments = [('h',"help","Show-Deferred::Options::Help"),
+                 ("p","link-path","Show-Deferred::LinkPath","HasArg")]
+    for i in ["help"]:
+        if not Cnf.has_key("Show-Deferred::Options::%s" % (i)):
+            Cnf["Show-Deferred::Options::%s" % (i)] = ""
+    args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    Options = Cnf.SubTree("Show-Deferred::Options")
+    if Options["help"]:
+        usage()
+    Upload = queue.Upload(Cnf)
+    projectB = Upload.projectB
+    return args
 
-list_uploads(filelist)
+def main():
+    args = init()
+    if len(args)!=1:
+        usage(1)
+    
+    filelist = []
+    for r,d,f  in os.walk(args[0]):
+        filelist += map (lambda x: os.path.join(r,x),
+                         filter(lambda x: x.endswith('.changes'), f))
+    list_uploads(filelist)
+
+    if Cnf.has_key("Show-Deferred::LinkPath"):
+        # remove dead links
+        for r,d,f in os.walk(Cnf["Show-Deferred::LinkPath"]):
+            for af in f:
+                af = os.path.join(r,af)
+                if not os.path.exists(af):
+                    print >> sys.stderr, "obsolete",af
+                    os.unlink(af)

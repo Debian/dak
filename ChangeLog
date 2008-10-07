@@ -3,6 +3,11 @@
 	* config/debian/cron.dinstall: Only keep the last 60 days of
 	dinstall logfiles on disc.
 
+2008-10-05  Thomas Viehmann <tv@beamnet.de>
+
+        * daklib/database.py: added get_suites
+	* dak/dak.py, dak/show_deferred.py: add show-deferred to dak.
+	
 2008-09-23  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/dak.conf: Add the validtime fields, set to 7
