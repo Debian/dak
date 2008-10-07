@@ -122,8 +122,7 @@ def get_upload_data(changesfn):
         delay = "%d days %02d:%02d" %(max(delaydays-1,0), int(remainingtime/3600),int(remainingtime/60)%60)
     else:
         remainingtime = 0
-    #print dir(achanges)
-    print >> sys.stderr, achanges.keys(), achanges['binary']
+
     uploader = achanges.get('changed-by')
     uploader = re.sub(r'^\s*(\S.*)\s+<.*>',r'\1',uploader)
     if Cnf.has_key("Show-Deferred::LinkPath"):
