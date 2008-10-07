@@ -176,10 +176,8 @@ def init():
     Arguments = [('h',"help","Show-Deferred::Options::Help"),
                  ("p","link-path","Show-Deferred::LinkPath","HasArg")]
     for i in ["help"]:
-        if not Cnf.has_key("Show-Deferred::Options::LinkPath"):
-            Cnf["Show-Deferred::Options::LinkPath"] = "/org/ftp.debian.org/web/deferred/"
-    if not Cnf.has_key("Show-Deferred::Options::%s" % (i)):
-          Cnf["Show-Deferred::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Show-Deferred::Options::%s" % (i)):
+            Cnf["Show-Deferred::Options::%s" % (i)] = ""
     args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Show-Deferred::Options")
     if Options["help"]:
