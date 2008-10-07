@@ -142,8 +142,9 @@ def get_upload_data(changesfn):
                 qfn = os.path.join(os.path.dirname(changesfn),afn)
                 if os.path.islink(lfn):
                     os.unlink(lfn)
-                os.symlink(qfn,lfn)
-                os.chmod(qfn, 0644)
+                if os.path.exists(qfn):
+                    os.symlink(qfn,lfn)
+                    os.chmod(qfn, 0644)
     return (delaydays*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes').split())
 
 def list_uploads(filelist):
@@ -187,21 +188,22 @@ def init():
     projectB = Upload.projectB
     return args
 
-args = init()
-if len(args)!=1:
-    usage(1)
+def main():
+    args = init()
+    if len(args)!=1:
+        usage(1)
     
-filelist = []
-for r,d,f  in os.walk(args[0]):
-    filelist += map (lambda x: os.path.join(r,x),
-                     filter(lambda x: x.endswith('.changes'), f))
-list_uploads(filelist)
+    filelist = []
+    for r,d,f  in os.walk(args[0]):
+        filelist += map (lambda x: os.path.join(r,x),
+                         filter(lambda x: x.endswith('.changes'), f))
+    list_uploads(filelist)
 
-if Cnf.has_key("Show-Deferred::LinkPath"):
-    # remove dead links
-    for r,d,f in os.walk(Cnf["Show-Deferred::LinkPath"]):
-        for af in f:
-            af = os.path.join(r,af)
-            if not os.path.exists(af):
-                print >> sys.stderr, "obsolete",af
-                os.unlink(af)
+    if Cnf.has_key("Show-Deferred::LinkPath"):
+        # remove dead links
+        for r,d,f in os.walk(Cnf["Show-Deferred::LinkPath"]):
+            for af in f:
+                af = os.path.join(r,af)
+                if not os.path.exists(af):
+                    print >> sys.stderr, "obsolete",af
+                    os.unlink(af)

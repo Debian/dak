@@ -1,6 +1,7 @@
 2008-10-05  Thomas Viehmann <tv@beamnet.de>
 
         * daklib/database.py: added get_suites
+	* dak/dak.py, dak/show_deferred.py: add show-deferred to dak.
 	
 2008-09-23  Joerg Jaspert  <joerg@debian.org>
 
