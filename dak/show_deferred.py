@@ -105,7 +105,7 @@ def table_row(changesname, delay, changed_by, closes):
 
     res = '<tr class="%s">'%((row_number%2) and 'odd' or 'even')
     res += (3*'<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay,changed_by)))
-    res += ('<td valign="top">%s</td>' % 
+    res += ('<td valign="top">%s</td>' %
              ''.join(map(lambda close:  '<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
     res += '</tr>\n'
     row_number+=1
@@ -169,7 +169,7 @@ def usage (exit_code=0):
   -p, --html-path [path]    override output directory.
   """
     sys.exit(exit_code)
-   
+
 def init():
     global Cnf, Options, Upload, projectB
     Cnf = utils.get_conf()
@@ -190,7 +190,7 @@ def main():
     args = init()
     if len(args)!=1:
         usage(1)
-    
+
     filelist = []
     for r,d,f  in os.walk(args[0]):
         filelist += map (lambda x: os.path.join(r,x),

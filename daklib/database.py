@@ -397,4 +397,3 @@ def get_suites(pkgname, src=False):
         sql = "select suite_name from binaries, bin_associations,suite where binaries.id=bin_associations.bin and  package='%s' and bin_associations.suite = suite.id"%pkgname
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
-
