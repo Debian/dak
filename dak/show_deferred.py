@@ -210,5 +210,5 @@ def main():
             for af in f:
                 af = os.path.join(r,af)
                 if not os.path.exists(af):
-                    print >> sys.stderr, "obsolete",af
+                    #print >> sys.stderr, "obsolete",af
                     os.unlink(af)
