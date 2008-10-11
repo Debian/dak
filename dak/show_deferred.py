@@ -22,6 +22,7 @@
 
 import sys, os, re, time
 import apt_pkg
+import tempfile
 from debian_bundle import deb822
 from daklib import database
 from daklib import queue
@@ -145,19 +146,40 @@ def get_upload_data(changesfn):
                 if os.path.exists(qfn):
                     os.symlink(qfn,lfn)
                     os.chmod(qfn, 0644)
-    return (delaydays*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes').split())
+    return (delaydays*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes').split(),achanges)
 
 def list_uploads(filelist):
     uploads = map(get_upload_data, filelist)
     uploads.sort()
+    # print the summary page
     print header()
     if uploads:
         print table_header()
-        print ''.join(map(lambda x: table_row(*x[1:]), uploads))
+        print ''.join(map(lambda x: table_row(*x[1:5]), uploads))
         print table_footer()
     else:
         print '<h1>Currently no deferred uploads to Debian</h1>'
     print footer()
+    # machine readable summary
+    if Cnf.has_key("Show-Deferred::LinkPath"):
+        fn = os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp')
+        f = open(fn,"w")
+        try:
+            for u in uploads:
+                print >> f, """Changes: %s
+Location: DEFERRED
+Delayed-Until: %s
+Delay-Remaining: %s"""%(u[1],time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u[0])),u[2])
+                for k,v in u[5].items():
+                    if not k.startswith('Checksums-') and k != 'Files':
+                        print >> f, "%s: %s"%(k,v)
+                print >> f
+            f.close()
+            os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp'),
+                      os.path.join(Cnf["Show-Deferred::LinkPath"],'status'))
+        except:
+            os.unlink(fn)
+            raise
 
 def usage (exit_code=0):
     if exit_code:
@@ -204,11 +226,12 @@ def main():
                          filter(lambda x: x.endswith('.changes'), f))
     list_uploads(filelist)
 
+    available_changes = set(map(os.path.basename,filelist))
     if Cnf.has_key("Show-Deferred::LinkPath"):
         # remove dead links
         for r,d,f in os.walk(Cnf["Show-Deferred::LinkPath"]):
             for af in f:
                 af = os.path.join(r,af)
-                if not os.path.exists(af):
-                    #print >> sys.stderr, "obsolete",af
+                if (not os.path.exists(af) or
+                    (af.endswith('.changes') and af not in available_changes)):
                     os.unlink(af)
