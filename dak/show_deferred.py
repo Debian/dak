@@ -29,6 +29,14 @@ from daklib import queue
 from daklib import utils
 
 ################################################################################
+### work around bug in debian-python 0.1.10
+deb822.Changes._multivalued_fields = {
+            "files": [ "md5sum", "size", "section", "priority", "name" ],
+            "checksums-sha1": ["sha1", "size", "name"],
+            "checksums-sha256": ["sha256", "size", "name"],
+          }
+
+################################################################################
 
 row_number = 1
 
@@ -146,7 +154,7 @@ def get_upload_data(changesfn):
                 if os.path.exists(qfn):
                     os.symlink(qfn,lfn)
                     os.chmod(qfn, 0644)
-    return (delaydays*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes').split(),achanges)
+    return (max(delaydays-1,0)*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes').split(),achanges)
 
 def list_uploads(filelist):
     uploads = map(get_upload_data, filelist)
@@ -166,13 +174,13 @@ def list_uploads(filelist):
         f = open(fn,"w")
         try:
             for u in uploads:
-                print >> f, """Changes: %s
-Location: DEFERRED
+                print >> f, "Changes: %s"%u[1]
+                fields = """Location: DEFERRED
 Delayed-Until: %s
-Delay-Remaining: %s"""%(u[1],time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u[0])),u[2])
-                for k,v in u[5].items():
-                    if not k.startswith('Checksums-') and k != 'Files':
-                        print >> f, "%s: %s"%(k,v)
+Delay-Remaining: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u[0])),u[2])
+                print >> f, fields
+                print >> f, str(u[5]).rstrip()
+                open(os.path.join(Cnf["Show-Deferred::LinkPath"],u[1]),"w").write(str(u[5])+fields+'\n')
                 print >> f
             f.close()
             os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp'),
@@ -231,7 +239,7 @@ def main():
         # remove dead links
         for r,d,f in os.walk(Cnf["Show-Deferred::LinkPath"]):
             for af in f:
-                af = os.path.join(r,af)
-                if (not os.path.exists(af) or
+                afp = os.path.join(r,af)
+                if (not os.path.exists(afp) or
                     (af.endswith('.changes') and af not in available_changes)):
-                    os.unlink(af)
+                    os.unlink(afp)
