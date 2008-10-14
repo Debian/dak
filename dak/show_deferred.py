@@ -29,7 +29,7 @@ from daklib import queue
 from daklib import utils
 
 ################################################################################
-### work around bug in debian-python 0.1.10
+### work around bug #487902 in debian-python 0.1.10
 deb822.Changes._multivalued_fields = {
             "files": [ "md5sum", "size", "section", "priority", "name" ],
             "checksums-sha1": ["sha1", "size", "name"],
