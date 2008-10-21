@@ -216,7 +216,24 @@ class Upload:
 
         dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".dak")
         dump_file = utils.open_file(dump_filename, 'w')
-        os.chmod(dump_filename, 0664)
+        try:
+            os.chmod(dump_filename, 0664)
+        except OSError, e:
+            # chmod may fail when the dumpfile is not owned by the user
+            # invoking dak (like e.g. when NEW is processed by a member
+            # of ftpteam)
+            if errno.errorcode[e.errno] == 'EPERM':
+                perms = stat.S_IMODE(os.stat(dump_filename)[stat.ST_MODE])
+                # security precaution, should never happen unless a weird
+                # umask is set anywhere
+                if perms & stat.S_IWOTH:
+                    utils.fubar("%s is world writable and chmod failed." % \
+                        (dump_filename,))
+                # ignore the failed chmod otherwise as the file should
+                # already have the right privileges and is just, at worst,
+                # unreadable for world
+            else:
+                raise
 
         p = cPickle.Pickler(dump_file, 1)
         d_changes = {}
