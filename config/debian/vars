@@ -24,7 +24,7 @@ incoming=$base/incoming
 
 ftpgroup=debadmin
 
-copyoverrides="etch.contrib etch.contrib.src etch.main etch.main.src etch.non-free etch.non-free.src etch.extra.main etch.extra.non-free etch.extra.contrib etch.main.debian-installer sarge.contrib sarge.contrib.src sarge.main sarge.main.src sarge.non-free sarge.non-free.src sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src sid.extra.contrib sid.extra.main sid.extra.non-free sarge.extra.contrib sarge.extra.main sarge.extra.non-free lenny.contrib lenny.contrib.src lenny.main lenny.main.src lenny.non-free lenny.non-free.src lenny.extra.main lenny.extra.contrib lenny.extra.non-free"
+copyoverrides="etch.contrib etch.contrib.src etch.main etch.main.src etch.non-free etch.non-free.src etch.extra.main etch.extra.non-free etch.extra.contrib etch.main.debian-installer sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src sid.extra.contrib sid.extra.main sid.extra.non-free lenny.contrib lenny.contrib.src lenny.main lenny.main.src lenny.non-free lenny.non-free.src lenny.extra.main lenny.extra.contrib lenny.extra.non-free"
 
 PATH=$masterdir:$PATH
 umask 022

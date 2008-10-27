@@ -38,9 +38,6 @@ for a in $ARCHES; do
    cd $base/ftp
    find ./dists -maxdepth 1 \! -type d
    find ./dists \! -type d | grep -E "(proposed-updates.*_$a.changes$|/main/disks-$a/|/main/installer-$a/|/Contents-$a|/binary-$a/)"
-   if echo X sparc mips mipsel hppa X | grep -q " $a "; then
-     find ./dists/sarge/main/upgrade-kernel \! -type d
-   fi
   ) | sort -u | gzip -9 > arch-$a.list.gz
 done
 
@@ -83,7 +80,7 @@ for a in $ARCHES; do
     sort -u | poolfirst > ../arch-$a.files
 done
 
-(cat ../arch-i386.files ../arch-amd64.files; zcat suite-oldstable.list.gz suite-proposed-updates.list.gz) |
+(cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz) |
    sort -u | poolfirst > ../typical.files
 
 rm -f $ARCHLIST
