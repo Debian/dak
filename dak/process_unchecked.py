@@ -450,7 +450,8 @@ def check_files():
             # Ensure the architecture of the .deb is one we know about.
             default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
             architecture = control.Find("Architecture")
-            if architecture not in Cnf.ValueList("Suite::%s::Architectures" % (default_suite)):
+            upload_suite = changes["distribution"]
+            if architecture not in Cnf.ValueList("Suite::%s::Architectures" % (default_suite)) and architecture not in Cnf.ValueList("Suite::%s::Architectures" % (upload_suite)):
                 reject("Unknown architecture '%s'." % (architecture))
 
             # Ensure the architecture of the .deb is one of the ones
