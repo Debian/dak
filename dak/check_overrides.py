@@ -50,9 +50,9 @@
 
 import pg, sys, os
 import apt_pkg
-import daklib.database as database
-import daklib.logging as logging
-import daklib.utils as utils
+from daklib import database
+from daklib import logging
+from daklib import utils
 
 ################################################################################
 
@@ -314,10 +314,10 @@ def main ():
 
         print "Processing %s%s..." % (osuite, originremark)
         # Get a list of all suites that use the override file of 'osuite'
-        ocodename = Cnf["Suite::%s::codename" % osuite]
+        ocodename = Cnf["Suite::%s::codename" % osuite].lower()
         suites = []
         for suite in Cnf.SubTree("Suite").List():
-            if ocodename == Cnf["Suite::%s::OverrideCodeName" % suite]:
+            if ocodename == Cnf["Suite::%s::OverrideCodeName" % suite].lower():
                 suites.append(suite)
 
         q = projectB.query("SELECT id FROM suite WHERE suite_name in (%s)" \

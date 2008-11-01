@@ -25,9 +25,10 @@
 
 import os, pg, sys, time, errno, fcntl, tempfile, pwd, re
 import apt_pkg
-import daklib.database as database
-import daklib.utils as utils
-import syck
+from daklib import database
+from daklib import utils
+from daklib.dak_exceptions import TransitionsError
+import yaml
 
 # Globals
 Cnf = None
@@ -104,10 +105,10 @@ def load_transitions(trans_file):
     sourcecontent = sourcefile.read()
     failure = False
     try:
-        trans = syck.load(sourcecontent)
-    except syck.error, msg:
+        trans = yaml.load(sourcecontent)
+    except yaml.YAMLError, exc:
         # Someone fucked it up
-        print "ERROR: %s" % (msg)
+        print "ERROR: %s" % (exc)
         return None
 
     # lets do further validation here
@@ -218,7 +219,7 @@ def write_transitions(from_trans):
     temp_lock  = lock_file(trans_temp)
 
     destfile = file(trans_temp, 'w')
-    syck.dump(from_trans, destfile)
+    yaml.dump(from_trans, destfile, default_flow_style=False)
     destfile.close()
 
     os.rename(trans_temp, trans_file)
@@ -226,9 +227,6 @@ def write_transitions(from_trans):
     os.close(trans_lock)
 
 ################################################################################
-
-class ParseException(Exception):
-    pass
 
 ##########################################
 #### This usually runs within sudo !! ####
@@ -248,7 +246,7 @@ def write_transitions_from_file(from_file):
     else:
         trans = load_transitions(from_file)
         if trans is None:
-            raise ParseException, "Unparsable transitions file %s" % (file)
+            raise TransitionsError, "Unparsable transitions file %s" % (file)
         write_transitions(trans)
 
 ################################################################################
@@ -261,7 +259,7 @@ def temp_transitions_file(transitions):
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Transitions::TempPath"])
     os.chmod(path, 0644)
     f = open(path, "w")
-    syck.dump(transitions, f)
+    yaml.dump(transitions, f, default_flow_style=False)
     return path
 
 ################################################################################
@@ -458,7 +456,7 @@ def main():
     if Options["import"]:
         try:
             write_transitions_from_file(Options["import"])
-        except ParseException, m:
+        except TransitionsError, m:
             print m
             sys.exit(2)
         sys.exit(0)

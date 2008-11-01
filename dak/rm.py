@@ -41,8 +41,9 @@
 
 import commands, os, pg, re, sys
 import apt_pkg, apt_inst
-import daklib.database as database
-import daklib.utils as utils
+from daklib import database
+from daklib import utils
+from daklib.dak_exceptions import *
 
 ################################################################################
 
@@ -364,7 +365,7 @@ def main ():
                 filename = "/".join(source_packages[i])
                 try:
                     dsc = utils.parse_changes(filename)
-                except utils.cant_open_exc:
+                except CantOpenError:
                     utils.warn("couldn't open '%s'." % (filename))
                     continue
                 for package in dsc.get("binary").split(','):
@@ -510,7 +511,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak rm\nX-Katie: melanie $Revision: 1.44 $"
+        Subst["__CC__"] = "X-DAK: dak rm\nX-Katie: melanie"
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
         Subst["__SUITE_LIST__"] = suites_list

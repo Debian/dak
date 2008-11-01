@@ -36,9 +36,9 @@
 import copy, os, pg, sys
 import apt_pkg
 import symlink_dists
-import daklib.database as database
-import daklib.logging as logging
-import daklib.utils as utils
+from daklib import database
+from daklib import logging
+from daklib import utils
 
 ################################################################################
 
@@ -416,7 +416,7 @@ def main():
                  ('n', "no-delete", "Make-Suite-File-List::Options::No-Delete"),
                  ('f', "force", "Make-Suite-File-List::Options::Force"),
                  ('s', "suite", "Make-Suite-File-List::Options::Suite", "HasArg")]
-    for i in ["architecture", "component", "help", "no-delete", "suite", "force-touch" ]:
+    for i in ["architecture", "component", "help", "no-delete", "suite", "force" ]:
         if not Cnf.has_key("Make-Suite-File-List::Options::%s" % (i)):
             Cnf["Make-Suite-File-List::Options::%s" % (i)] = ""
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)

@@ -28,9 +28,9 @@
 import copy, os, sys, time
 import apt_pkg
 import examine_package
-import daklib.database as database
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import database
+from daklib import queue
+from daklib import utils
 
 # Globals
 Cnf = None

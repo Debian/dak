@@ -22,6 +22,7 @@
 import cPickle, errno, os, pg, re, stat, sys, time
 import apt_inst, apt_pkg
 import utils, database
+from dak_exceptions import *
 
 from types import *
 
@@ -40,36 +41,36 @@ def determine_new(changes, files, projectB, warn=1):
     new = {}
 
     # Build up a list of potentially new things
-    for file in files.keys():
-        f = files[file]
+    for file_entry in files.keys():
+        f = files[file_entry]
         # Skip byhand elements
         if f["type"] == "byhand":
             continue
         pkg = f["package"]
         priority = f["priority"]
         section = f["section"]
-        type = get_type(f)
+        file_type = get_type(f)
         component = f["component"]
 
-        if type == "dsc":
+        if file_type == "dsc":
             priority = "source"
         if not new.has_key(pkg):
             new[pkg] = {}
             new[pkg]["priority"] = priority
             new[pkg]["section"] = section
-            new[pkg]["type"] = type
+            new[pkg]["type"] = file_type
             new[pkg]["component"] = component
             new[pkg]["files"] = []
         else:
             old_type = new[pkg]["type"]
-            if old_type != type:
+            if old_type != file_type:
                 # source gets trumped by deb or udeb
                 if old_type == "dsc":
                     new[pkg]["priority"] = priority
                     new[pkg]["section"] = section
-                    new[pkg]["type"] = type
+                    new[pkg]["type"] = file_type
                     new[pkg]["component"] = component
-        new[pkg]["files"].append(file)
+        new[pkg]["files"].append(file_entry)
         if f.has_key("othercomponents"):
             new[pkg]["othercomponents"] = f["othercomponents"]
 
@@ -81,9 +82,9 @@ def determine_new(changes, files, projectB, warn=1):
             q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id))
             ql = q.getresult()
             if ql:
-                for file in new[pkg]["files"]:
-                    if files[file].has_key("new"):
-                        del files[file]["new"]
+                for file_entry in new[pkg]["files"]:
+                    if files[file_entry].has_key("new"):
+                        del files[file_entry]["new"]
                 del new[pkg]
 
     if warn:
@@ -102,18 +103,18 @@ def determine_new(changes, files, projectB, warn=1):
 def get_type(f):
     # Determine the type
     if f.has_key("dbtype"):
-        type = f["dbtype"]
+        file_type = f["dbtype"]
     elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
-        type = "dsc"
+        file_type = "dsc"
     else:
-        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (type))
+        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (file_type))
 
     # Validate the override type
-    type_id = database.get_override_type_id(type)
+    type_id = database.get_override_type_id(file_type)
     if type_id == -1:
-        utils.fubar("invalid type (%s) for new.  Say wha?" % (type))
+        utils.fubar("invalid type (%s) for new.  Say wha?" % (file_type))
 
-    return type
+    return file_type
 
 ################################################################################
 
@@ -123,15 +124,15 @@ def check_valid(new):
     for pkg in new.keys():
         section = new[pkg]["section"]
         priority = new[pkg]["priority"]
-        type = new[pkg]["type"]
+        file_type = new[pkg]["type"]
         new[pkg]["section id"] = database.get_section_id(section)
         new[pkg]["priority id"] = database.get_priority_id(new[pkg]["priority"])
         # Sanity checks
         di = section.find("debian-installer") != -1
-        if (di and type != "udeb") or (not di and type == "udeb"):
+        if (di and file_type not in ("udeb", "dsc")) or (not di and file_type == "udeb"):
             new[pkg]["section id"] = -1
-        if (priority == "source" and type != "dsc") or \
-           (priority != "source" and type == "dsc"):
+        if (priority == "source" and file_type != "dsc") or \
+           (priority != "source" and file_type == "dsc"):
             new[pkg]["priority id"] = -1
 
 
@@ -170,8 +171,11 @@ class Upload:
     ###########################################################################
 
     def init_vars (self):
-        for i in [ "changes", "dsc", "files", "dsc_files", "legacy_source_untouchable" ]:
-            exec "self.pkg.%s.clear();" % (i)
+        self.pkg.changes.clear()
+        self.pkg.dsc.clear()
+        self.pkg.files.clear()
+        self.pkg.dsc_files.clear()
+        self.pkg.legacy_source_untouchable.clear()
         self.pkg.orig_tar_id = None
         self.pkg.orig_tar_location = ""
         self.pkg.orig_tar_gz = None
@@ -182,10 +186,16 @@ class Upload:
         dump_filename = self.pkg.changes_file[:-8]+".dak"
         dump_file = utils.open_file(dump_filename)
         p = cPickle.Unpickler(dump_file)
-        for i in [ "changes", "dsc", "files", "dsc_files", "legacy_source_untouchable" ]:
-            exec "self.pkg.%s.update(p.load());" % (i)
-        for i in [ "orig_tar_id", "orig_tar_location" ]:
-            exec "self.pkg.%s = p.load();" % (i)
+
+        self.pkg.changes.update(p.load())
+        self.pkg.dsc.update(p.load())
+        self.pkg.files.update(p.load())
+        self.pkg.dsc_files.update(p.load())
+        self.pkg.legacy_source_untouchable.update(p.load())
+
+        self.pkg.orig_tar_id = p.load()
+        self.pkg.orig_tar_location = p.load()
+
         dump_file.close()
 
     ###########################################################################
@@ -195,34 +205,53 @@ class Upload:
     # process-new use from process-unchecked
 
     def dump_vars(self, dest_dir):
-        for i in [ "changes", "dsc", "files", "dsc_files",
-                   "legacy_source_untouchable", "orig_tar_id", "orig_tar_location" ]:
-            exec "%s = self.pkg.%s;" % (i,i)
+
+        changes = self.pkg.changes
+        dsc = self.pkg.dsc
+        files = self.pkg.files
+        dsc_files = self.pkg.dsc_files
+        legacy_source_untouchable = self.pkg.legacy_source_untouchable
+        orig_tar_id = self.pkg.orig_tar_id
+        orig_tar_location = self.pkg.orig_tar_location
+
         dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".dak")
         dump_file = utils.open_file(dump_filename, 'w')
         try:
-            os.chmod(dump_filename, 0660)
+            os.chmod(dump_filename, 0664)
         except OSError, e:
+            # chmod may fail when the dumpfile is not owned by the user
+            # invoking dak (like e.g. when NEW is processed by a member
+            # of ftpteam)
             if errno.errorcode[e.errno] == 'EPERM':
                 perms = stat.S_IMODE(os.stat(dump_filename)[stat.ST_MODE])
-                if perms & stat.S_IROTH:
-                    utils.fubar("%s is world readable and chmod failed." % (dump_filename))
+                # security precaution, should never happen unless a weird
+                # umask is set anywhere
+                if perms & stat.S_IWOTH:
+                    utils.fubar("%s is world writable and chmod failed." % \
+                        (dump_filename,))
+                # ignore the failed chmod otherwise as the file should
+                # already have the right privileges and is just, at worst,
+                # unreadable for world
             else:
                 raise
 
         p = cPickle.Pickler(dump_file, 1)
-        for i in [ "d_changes", "d_dsc", "d_files", "d_dsc_files" ]:
-            exec "%s = {}" % i
+        d_changes = {}
+        d_dsc = {}
+        d_files = {}
+        d_dsc_files = {}
+
         ## files
-        for file in files.keys():
-            d_files[file] = {}
+        for file_entry in files.keys():
+            d_files[file_entry] = {}
             for i in [ "package", "version", "architecture", "type", "size",
-                       "md5sum", "component", "location id", "source package",
-                       "source version", "maintainer", "dbtype", "files id",
-                       "new", "section", "priority", "othercomponents",
+                       "md5sum", "sha1sum", "sha256sum", "component",
+                       "location id", "source package", "source version",
+                       "maintainer", "dbtype", "files id", "new",
+                       "section", "priority", "othercomponents",
                        "pool name", "original component" ]:
-                if files[file].has_key(i):
-                    d_files[file][i] = files[file][i]
+                if files[file_entry].has_key(i):
+                    d_files[file_entry][i] = files[file_entry][i]
         ## changes
         # Mandatory changes fields
         for i in [ "distribution", "source", "architecture", "version",
@@ -242,15 +271,15 @@ class Upload:
             if dsc.has_key(i):
                 d_dsc[i] = dsc[i]
         ## dsc_files
-        for file in dsc_files.keys():
-            d_dsc_files[file] = {}
+        for file_entry in dsc_files.keys():
+            d_dsc_files[file_entry] = {}
             # Mandatory dsc_files fields
             for i in [ "size", "md5sum" ]:
-                d_dsc_files[file][i] = dsc_files[file][i]
+                d_dsc_files[file_entry][i] = dsc_files[file_entry][i]
             # Optional dsc_files fields
             for i in [ "files id" ]:
-                if dsc_files[file].has_key(i):
-                    d_dsc_files[file][i] = dsc_files[file][i]
+                if dsc_files[file_entry].has_key(i):
+                    d_dsc_files[file_entry][i] = dsc_files[file_entry][i]
 
         for i in [ d_changes, d_dsc, d_files, d_dsc_files,
                    legacy_source_untouchable, orig_tar_id, orig_tar_location ]:
@@ -317,31 +346,31 @@ class Upload:
         override_summary ="";
         file_keys = files.keys()
         file_keys.sort()
-        for file in file_keys:
-            if files[file].has_key("byhand"):
+        for file_entry in file_keys:
+            if files[file_entry].has_key("byhand"):
                 byhand = 1
-                summary += file + " byhand\n"
-            elif files[file].has_key("new"):
+                summary += file_entry + " byhand\n"
+            elif files[file_entry].has_key("new"):
                 new = 1
-                summary += "(new) %s %s %s\n" % (file, files[file]["priority"], files[file]["section"])
-                if files[file].has_key("othercomponents"):
-                    summary += "WARNING: Already present in %s distribution.\n" % (files[file]["othercomponents"])
-                if files[file]["type"] == "deb":
-                    deb_fh = utils.open_file(file)
+                summary += "(new) %s %s %s\n" % (file_entry, files[file_entry]["priority"], files[file_entry]["section"])
+                if files[file_entry].has_key("othercomponents"):
+                    summary += "WARNING: Already present in %s distribution.\n" % (files[file_entry]["othercomponents"])
+                if files[file_entry]["type"] == "deb":
+                    deb_fh = utils.open_file(file_entry)
                     summary += apt_pkg.ParseSection(apt_inst.debExtractControl(deb_fh))["Description"] + '\n'
                     deb_fh.close()
             else:
-                files[file]["pool name"] = utils.poolify (changes.get("source",""), files[file]["component"])
-                destination = self.Cnf["Dir::PoolRoot"] + files[file]["pool name"] + file
-                summary += file + "\n  to " + destination + "\n"
-                if not files[file].has_key("type"):
-                    files[file]["type"] = "unknown"
-                if files[file]["type"] in ["deb", "udeb", "dsc"]:
+                files[file_entry]["pool name"] = utils.poolify (changes.get("source",""), files[file_entry]["component"])
+                destination = self.Cnf["Dir::PoolRoot"] + files[file_entry]["pool name"] + file_entry
+                summary += file_entry + "\n  to " + destination + "\n"
+                if not files[file_entry].has_key("type"):
+                    files[file_entry]["type"] = "unknown"
+                if files[file_entry]["type"] in ["deb", "udeb", "dsc"]:
                     # (queue/unchecked), there we have override entries already, use them
                     # (process-new), there we dont have override entries, use the newly generated ones.
-                    override_prio = files[file].get("override priority", files[file]["priority"])
-                    override_sect = files[file].get("override section", files[file]["section"])
-                    override_summary += "%s - %s %s\n" % (file, override_prio, override_sect)
+                    override_prio = files[file_entry].get("override priority", files[file_entry]["priority"])
+                    override_sect = files[file_entry].get("override section", files[file_entry]["section"])
+                    override_summary += "%s - %s %s\n" % (file_entry, override_prio, override_sect)
 
         short_summary = summary
 
@@ -408,14 +437,14 @@ distribution."""
         Subst["__SHORT_SUMMARY__"] = short_summary
 
         for dist in changes["distribution"].keys():
-            list = Cnf.Find("Suite::%s::Announce" % (dist))
-            if list == "" or lists_done.has_key(list):
+            announce_list = Cnf.Find("Suite::%s::Announce" % (dist))
+            if announce_list == "" or lists_done.has_key(announce_list):
                 continue
-            lists_done[list] = 1
-            summary += "Announcing to %s\n" % (list)
+            lists_done[announce_list] = 1
+            summary += "Announcing to %s\n" % (announce_list)
 
             if action:
-                Subst["__ANNOUNCE_LIST_ADDRESS__"] = list
+                Subst["__ANNOUNCE_LIST_ADDRESS__"] = announce_list
                 if Cnf.get("Dinstall::TrackingServer") and changes["architecture"].has_key("source"):
                     Subst["__ANNOUNCE_LIST_ADDRESS__"] = Subst["__ANNOUNCE_LIST_ADDRESS__"] + "\nBcc: %s@%s" % (changes["source"], Cnf["Dinstall::TrackingServer"])
                 mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.announce")
@@ -444,9 +473,9 @@ distribution."""
         # Move all the files into the accepted directory
         utils.move(changes_file, Cnf["Dir::Queue::Accepted"])
         file_keys = files.keys()
-        for file in file_keys:
-            utils.move(file, Cnf["Dir::Queue::Accepted"])
-            self.accept_bytes += float(files[file]["size"])
+        for file_entry in file_keys:
+            utils.move(file_entry, Cnf["Dir::Queue::Accepted"])
+            self.accept_bytes += float(files[file_entry]["size"])
         self.accept_count += 1
 
         # Send accept mail, announce to lists, close bugs and check for
@@ -482,8 +511,8 @@ distribution."""
             temp_filename = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"],
                                                 dotprefix=1, perms=0644)
             debinfo = utils.open_file(temp_filename, 'w')
-            for file in file_keys:
-                f = files[file]
+            for file_entry in file_keys:
+                f = files[file_entry]
                 if f["type"] == "deb":
                     line = " ".join([f["package"], f["version"],
                                      f["architecture"], f["source package"],
@@ -518,9 +547,9 @@ distribution."""
             dest_dir = Cnf["Dir::QueueBuild"]
             if Cnf.FindB("Dinstall::SecurityQueueBuild"):
                 dest_dir = os.path.join(dest_dir, suite)
-            for file in file_keys:
-                src = os.path.join(path, file)
-                dest = os.path.join(dest_dir, file)
+            for file_entry in file_keys:
+                src = os.path.join(path, file_entry)
+                dest = os.path.join(dest_dir, file_entry)
                 if Cnf.FindB("Dinstall::SecurityQueueBuild"):
                     # Copy it since the original won't be readable by www-data
                     utils.copy(src, dest)
@@ -574,16 +603,16 @@ distribution."""
         summary = ""
         file_keys = files.keys()
         file_keys.sort()
-        for file in file_keys:
-            if not files[file].has_key("new") and files[file]["type"] == "deb":
-                section = files[file]["section"]
-                override_section = files[file]["override section"]
+        for file_entry in file_keys:
+            if not files[file_entry].has_key("new") and files[file_entry]["type"] == "deb":
+                section = files[file_entry]["section"]
+                override_section = files[file_entry]["override section"]
                 if section.lower() != override_section.lower() and section != "-":
-                    summary += "%s: package says section is %s, override says %s.\n" % (file, section, override_section)
-                priority = files[file]["priority"]
-                override_priority = files[file]["override priority"]
+                    summary += "%s: package says section is %s, override says %s.\n" % (file_entry, section, override_section)
+                priority = files[file_entry]["priority"]
+                override_priority = files[file_entry]["override priority"]
                 if priority != override_priority and priority != "-":
-                    summary += "%s: package says priority is %s, override says %s.\n" % (file, priority, override_priority)
+                    summary += "%s: package says priority is %s, override says %s.\n" % (file_entry, priority, override_priority)
 
         if summary == "":
             return
@@ -602,36 +631,36 @@ distribution."""
 
         Cnf = self.Cnf
 
-        for file in files:
+        for file_entry in files:
             # Skip any files which don't exist or which we don't have permission to copy.
-            if os.access(file,os.R_OK) == 0:
+            if os.access(file_entry,os.R_OK) == 0:
                 continue
-            dest_file = os.path.join(Cnf["Dir::Queue::Reject"], file)
+            dest_file = os.path.join(Cnf["Dir::Queue::Reject"], file_entry)
             try:
                 dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
             except OSError, e:
                 # File exists?  Let's try and move it to the morgue
                 if errno.errorcode[e.errno] == 'EEXIST':
-                    morgue_file = os.path.join(Cnf["Dir::Morgue"],Cnf["Dir::MorgueReject"],file)
+                    morgue_file = os.path.join(Cnf["Dir::Morgue"],Cnf["Dir::MorgueReject"],file_entry)
                     try:
                         morgue_file = utils.find_next_free(morgue_file)
-                    except utils.tried_too_hard_exc:
+                    except NoFreeFilenameError:
                         # Something's either gone badly Pete Tong, or
                         # someone is trying to exploit us.
-                        utils.warn("**WARNING** failed to move %s from the reject directory to the morgue." % (file))
+                        utils.warn("**WARNING** failed to move %s from the reject directory to the morgue." % (file_entry))
                         return
                     utils.move(dest_file, morgue_file, perms=0660)
                     try:
                         dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
                     except OSError, e:
                         # Likewise
-                        utils.warn("**WARNING** failed to claim %s in the reject directory." % (file))
+                        utils.warn("**WARNING** failed to claim %s in the reject directory." % (file_entry))
                         return
                 else:
                     raise
             # If we got here, we own the destination file, so we can
             # safely overwrite it.
-            utils.move(file, dest_file, 1, perms=0660)
+            utils.move(file_entry, dest_file, 1, perms=0660)
             os.close(dest_fd)
 
     ###########################################################################
@@ -763,9 +792,9 @@ distribution."""
         files = self.pkg.files
 
         if binary_type == "": # must be source
-            type = "dsc"
+            file_type = "dsc"
         else:
-            type = binary_type
+            file_type = binary_type
 
         # Override suite name; used for example with proposed-updates
         if self.Cnf.Find("Suite::%s::OverrideSuite" % (suite)) != "":
@@ -776,13 +805,13 @@ distribution."""
         if suite_id == -1:
             return None
         component_id = database.get_component_id(component)
-        type_id = database.get_override_type_id(type)
+        type_id = database.get_override_type_id(file_type)
 
         q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND type = %s AND o.section = s.id AND o.priority = p.id"
                            % (package, suite_id, component_id, type_id))
         result = q.getresult()
         # If checking for a source package fall back on the binary override type
-        if type == "dsc" and not result:
+        if file_type == "dsc" and not result:
             deb_type_id = database.get_override_type_id("deb")
             udeb_type_id = database.get_override_type_id("udeb")
             q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND (type = %s OR type = %s) AND o.section = s.id AND o.priority = p.id"
@@ -1038,8 +1067,8 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     if os.path.exists(in_unchecked) and False:
                         return (self.reject_message, in_unchecked)
                     else:
-                        for dir in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates" ]:
-                            in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (dir)],dsc_file)
+                        for directory in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates" ]:
+                            in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (directory)],dsc_file)
                             if os.path.exists(in_otherdir):
                                 in_otherdir_fh = utils.open_file(in_otherdir)
                                 actual_md5 = apt_pkg.md5sum(in_otherdir_fh)

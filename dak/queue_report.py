@@ -36,8 +36,9 @@
 
 import copy, glob, os, stat, sys, time
 import apt_pkg
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import queue
+from daklib import utils
+from daklib.dak_exceptions import *
 
 Cnf = None
 Upload = None
@@ -322,7 +323,7 @@ def process_changes_files(changes_files, type):
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
                     utils.fix_maintainer (j["maintainer"])
-                except utils.ParseMaintError, msg:
+                except ParseMaintError, msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
                     maintainer["maintaineremail"] = "Unknown"

@@ -27,9 +27,9 @@
 
 import pg, sys
 import apt_pkg
-import daklib.logging as logging
-import daklib.database as database
-import daklib.utils as utils
+from daklib import logging
+from daklib import database
+from daklib import utils
 
 ################################################################################
 
@@ -247,10 +247,11 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak override\nX-Katie: alicia $Revision: 1.6$"
+        Subst["__CC__"] = "X-DAK: dak override\nX-Katie: alicia"
         Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = utils.whoami()
+        Subst["__SOURCE__"] = package
 
         summary = "Concerning package %s...\n" % (package)
         summary += "Operating on the %s suite\n" % (suite)

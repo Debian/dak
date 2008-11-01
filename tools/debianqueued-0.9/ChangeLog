@@ -1,3 +1,64 @@
+2008-10-05  Thomas Viehmann  <tv@beamnet.de>
+
+	* show-deferred: make non-new uploads in deferred accessible
+
+2008-09-22  Thomas Viehmann  <tv@beamnet.de>
+
+	* show-deferred: minor fixes
+
+2008-09-21  Joerg Jaspert  <joerg@debian.org>
+
+	* debianqueued: Use perltidy
+	(copy_to_target): Only check md5sums if we want it, using a new
+	config value for it.
+
+	* Queue.README: Its ftp.upload.debian.org now, not
+	ftp-master.debian.org.
+
+	* Queue.README.ravel: New file for ravel
+
+	* config-upload: New file, used for ravel
+
+2008-09-20  Thomas Viehmann  <tv@beamnet.de>
+
+	* show-deferred: status page for deferred upload queue
+
+2008-09-20  Joerg Jaspert  <joerg@debian.org>
+
+	* Queue.README (Version): Update the text to match reality with
+	DEFERRED/DELAYED and the removed mv command
+
+2008-09-20  Thomas Viehmann  <tv@beamnet.de>
+
+	* debianqueued: Minor fixes on .commands processing.
+
+2008-09-15  Joerg Jaspert  <joerg@debian.org>
+
+	* config: Use 15 delayed dirs. Also change maintainer_mail to
+	ftpmaster. And remove lotsa ancient cvs history foo
+
+2008-09-11  Thomas Viehmann  <tv@beamnet.de>
+
+	* debianqueued: Add DELAYED-support.
+
+2008-06-15  Joerg Jaspert  <joerg@debian.org>
+
+	* debianqueued: Fix a brown-paper-bag bug (we just dont know who
+	to assign the bag too). strftime %b is better than %B for
+	the month name.
+
+2008-06-14  Joerg Jaspert  <joerg@debian.org>
+
+	* debianqueued (process_commands): Add a little note that one
+	should use dcut for .commands files
+
+2008-05-10  Stephen Gran   <sgran@debian.org>
+       * debianqueued: First pass at a send_mail implementation that 
+         sucks less.  This also gives us X-Debian-Package
+
+2008-05-08  Joerg Jaspert  <joerg@debian.org>
+
+	* debianqueued: added header X-Debian: DAK
 
 -- Version 0.9 released
 

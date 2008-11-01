@@ -1,0 +1,65 @@
+#!/bin/sh -ue
+
+if [ $# -lt 4 ]; then
+        echo "Usage: $0 filename version arch changes_file"
+        exit 1
+fi
+
+INPUT="$1"      # Tarball to read, compressed with gzip
+VERSION="$2"
+ARCH="$3"
+CHANGES="$4"    # Changes file for the upload
+
+error() {
+        echo "$*"
+        exit 1
+}
+
+# Get the target suite from the Changes file
+# NOTE: it may be better to pass this to the script as a parameter!
+SUITE="$(grep "^Distribution:" "$CHANGES" | awk '{print $2}')"
+case $SUITE in
+    "")
+        error "Error: unable to determine suite from Changes file"
+        ;;
+    unstable|sid)
+        : # OK for automated byband processing
+        ;;
+    *)
+        error "Reject: task overrides can only be processed automatically for uploads to unstable"
+        ;;
+esac
+
+
+# Regular expression used to validate tag lines
+CHECKRE='^[a-z0-9A-Z.+-]+[[:space:]]+Task[[:space:]]+[a-z0-9:. ,{}+-]+$'
+
+# This must end with /
+TARGET=/srv/ftp.debian.org/scripts/external-overrides/
+
+# Read the main directory from the tarball
+DIR="`tar ztf \"$INPUT\" | tac | tail -n 1`"
+
+# Create temporary files where to store the validated data
+umask 002
+OUTMAIN="`mktemp \"$TARGET\"task.new.XXXXXX`"
+
+# If we fail somewhere, cleanup the temporary files
+cleanup() {
+        rm -f "$OUTMAIN"
+}
+trap cleanup EXIT
+
+# Extract the data into the temporary files
+tar -O -zxf "$INPUT" "$DIR"task | grep -E "$CHECKRE" > "$OUTMAIN"
+
+# Move the data to the final location
+mv "$OUTMAIN"           "$TARGET"task
+
+chmod 644 "$TARGET"task
+
+(cd $TARGET && ./mk-extra-overrides.sh)
+
+trap - EXIT
+
+exit 0

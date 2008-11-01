@@ -1,0 +1,47 @@
+
+This directory is the Debian upload queue of ssh.upload.debian.org. All
+valid files uploaded here will be transferred to ftp.upload.debian.org.
+
+Only known Debian developers can upload here. Uploads have to be signed
+by PGP keys in the Debian keyring. Files not meeting this criterion or
+files not mentioned in a .changes file will be removed after some time.
+
+The queue daemon will notify you by mail of success or any problems
+with your upload.
+
+
+*.commands Files
+----------------
+
+Besides *.changes files, you can also upload *.commands files for the
+daemon to process. With *.commands files, you can instruct the daemon
+to remove or rename files in the queue directory that, for example,
+resulted from failed or interrupted uploads. A *.commands file looks
+much like a *.changes, but contains only two fields: Uploader: and
+Commands:. It must be PGP-signed by a known Debian developer, to avoid
+that E.V.L. Hacker can remove/rename files in the queue. The basename
+(the part before the .commands extension) doesn't matter, but best
+make it somehow unique.
+
+The Uploader: field should contain the mail address to which the reply
+should go, just like Maintainer: in a *.changes. Commands: is a
+multi-line field like e.g. Description:, so each continuation line
+should start with a space. Each line in Commands: can contain a
+standard 'rm' command, but no options are allowed. Filenames may not
+contain slashes (so that they're restricted to the queue
+directory). 'rm' can process as much arguments as you give it (not only
+one), and also knows about the shell wildcards *, ?, and [].
+
+Example of a *.commands file:
+
+-----BEGIN PGP SIGNED MESSAGE-----
+
+Uploader: Some One <some@example.com>
+Commands: 
+ rm hello_1.0-1_i386.deb
+
+-----BEGIN PGP SIGNATURE-----
+Version: 2.6.3ia
+
+[...]
+-----END PGP SIGNATURE-----

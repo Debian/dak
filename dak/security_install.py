@@ -32,7 +32,7 @@
 
 import commands, os, pwd, re, sys, time
 import apt_pkg
-import daklib.queue as queue
+from daklib import queue
 import daklib.utils
 
 ################################################################################

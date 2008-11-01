@@ -31,10 +31,11 @@
 
 import errno, fcntl, os, sys, time, re
 import apt_pkg
-import daklib.database as database
-import daklib.logging as logging
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import database
+from daklib import logging
+from daklib import queue
+from daklib import utils
+from daklib.dak_exceptions import *
 
 ###############################################################################
 
@@ -273,6 +274,14 @@ def install ():
     # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
     projectB.query("BEGIN WORK")
 
+    # Ensure that we have all the hashes we need below.
+    rejmsg = utils.ensure_hashes(changes, dsc, files, dsc_files)
+    if len(rejmsg) > 0:
+        # There were errors.  Print them and SKIP the changes.
+        for msg in rejmsg:
+            utils.warn(msg)
+        return
+
     # Add the .dsc file to the DB
     for file in files.keys():
         if files[file]["type"] == "dsc":
@@ -290,7 +299,7 @@ def install ():
             dsc_component = files[file]["component"]
             dsc_location_id = files[file]["location id"]
             if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], dsc_location_id)
+                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
             projectB.query("INSERT INTO source (source, version, maintainer, changedby, file, install_date, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, '%s', %s)"
                            % (package, version, maintainer_id, changedby_id, files[file]["files id"], install_date, fingerprint_id))
 
@@ -309,7 +318,7 @@ def install ():
                     files_id = database.get_files_id(filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
                 # FIXME: needs to check for -1/-2 and or handle exception
                 if files_id == None:
-                    files_id = database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], dsc_location_id)
+                    files_id = database.set_files_id (filename, dsc_files[dsc_file]["size"], dsc_files[dsc_file]["md5sum"], files[dsc_file]["sha1sum"], files[dsc_file]["sha256sum"], dsc_location_id)
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id))
 
             # Add the src_uploaders to the DB
@@ -348,14 +357,13 @@ def install ():
             if not files[file].has_key("location id") or not files[file]["location id"]:
                 files[file]["location id"] = database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],utils.where_am_i())
             if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["location id"])
+                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], files[file]["location id"])
             source_id = database.get_source_id (source, source_version)
             if source_id:
                 projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, %d, '%s', %d)"
                                % (package, version, maintainer_id, source_id, architecture_id, files[file]["files id"], type, fingerprint_id))
             else:
-                projectB.query("INSERT INTO binaries (package, version, maintainer, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, '%s', %d)"
-                               % (package, version, maintainer_id, architecture_id, files[file]["files id"], type, fingerprint_id))
+                raise NoSourceFieldError, "Unable to find a source id for %s (%s), %s, file %s, type %s, signed by %s" % (package, version, architecture, file, type, sig_fpr)
             for suite in changes["distribution"].keys():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
@@ -388,16 +396,18 @@ def install ():
     #
     if changes["architecture"].has_key("source") and orig_tar_id and \
        orig_tar_location != "legacy" and orig_tar_location != dsc_location_id:
-        q = projectB.query("SELECT l.path, f.filename, f.size, f.md5sum FROM files f, location l WHERE f.id = %s AND f.location = l.id" % (orig_tar_id))
+        q = projectB.query("SELECT l.path, f.filename, f.size, f.md5sum, f.sha1sum, f.sha256sum FROM files f, location l WHERE f.id = %s AND f.location = l.id" % (orig_tar_id))
         ql = q.getresult()[0]
         old_filename = ql[0] + ql[1]
         file_size = ql[2]
         file_md5sum = ql[3]
+        file_sha1sum = ql[4]
+        file_sha256sum = ql[5]
         new_filename = utils.poolify(changes["source"], dsc_component) + os.path.basename(old_filename)
         new_files_id = database.get_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
         if new_files_id == None:
             utils.copy(old_filename, Cnf["Dir::Pool"] + new_filename)
-            new_files_id = database.set_files_id(new_filename, file_size, file_md5sum, dsc_location_id)
+            new_files_id = database.set_files_id(new_filename, file_size, file_md5sum, file_sha1sum, file_sha256sum, dsc_location_id)
             projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, source_id, orig_tar_id))
 
     # Install the files into the pool

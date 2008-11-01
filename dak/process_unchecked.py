@@ -30,10 +30,11 @@
 
 import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceback
 import apt_inst, apt_pkg
-import daklib.database as database
-import daklib.logging as logging
-import daklib.queue as queue
-import daklib.utils as utils
+from daklib import database
+from daklib import logging
+from daklib import queue
+from daklib import utils
+from daklib.dak_exceptions import *
 
 from types import *
 
@@ -181,19 +182,19 @@ def check_changes():
     # Parse the .changes field into a dictionary
     try:
         changes.update(utils.parse_changes(filename))
-    except utils.cant_open_exc:
+    except CantOpenError:
         reject("%s: can't read file." % (filename))
         return 0
-    except utils.changes_parse_error_exc, line:
+    except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (filename, line))
         return 0
 
     # Parse the Files field from the .changes into another dictionary
     try:
         files.update(utils.build_file_list(changes))
-    except utils.changes_parse_error_exc, line:
+    except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (filename, line))
-    except utils.nk_format_exc, format:
+    except UnknownFormatError, format:
         reject("%s: unknown format '%s'." % (filename, format))
         return 0
 
@@ -226,7 +227,7 @@ def check_changes():
         (changes["maintainer822"], changes["maintainer2047"],
          changes["maintainername"], changes["maintaineremail"]) = \
          utils.fix_maintainer (changes["maintainer"])
-    except utils.ParseMaintError, msg:
+    except ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
                % (filename, changes["maintainer"], msg))
 
@@ -235,7 +236,7 @@ def check_changes():
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
          utils.fix_maintainer (changes.get("changed-by", ""))
-    except utils.ParseMaintError, msg:
+    except ParseMaintError, msg:
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
          ("", "", "", "")
@@ -685,21 +686,24 @@ def check_dsc():
     # Parse the .dsc file
     try:
         dsc.update(utils.parse_changes(dsc_filename, signing_rules=1))
-    except utils.cant_open_exc:
+    except CantOpenError:
         # if not -n copy_to_holding() will have done this for us...
         if Options["No-Action"]:
             reject("%s: can't read file." % (dsc_filename))
-    except utils.changes_parse_error_exc, line:
+    except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line))
-    except utils.invalid_dsc_format_exc, line:
+    except InvalidDscError, line:
         reject("%s: syntax error on line %s." % (dsc_filename, line))
     # Build up the file list of files mentioned by the .dsc
     try:
         dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1))
-    except utils.no_files_exc:
+    except NoFilesFieldError:
         reject("%s: no Files: field." % (dsc_filename))
         return 0
-    except utils.changes_parse_error_exc, line:
+    except UnknownFormatError, format:
+        reject("%s: unknown format '%s'." % (dsc_filename, format))
+        return 0
+    except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line))
         return 0
 
@@ -723,7 +727,7 @@ def check_dsc():
     # Validate the Maintainer field
     try:
         utils.fix_maintainer (dsc["maintainer"])
-    except utils.ParseMaintError, msg:
+    except ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
                % (dsc_filename, dsc["maintainer"], msg))
 
@@ -773,6 +777,8 @@ def check_dsc():
         files[orig_tar_gz] = {}
         files[orig_tar_gz]["size"] = os.stat(orig_tar_gz)[stat.ST_SIZE]
         files[orig_tar_gz]["md5sum"] = dsc_files[orig_tar_gz]["md5sum"]
+        files[orig_tar_gz]["sha1sum"] = dsc_files[orig_tar_gz]["sha1sum"]
+        files[orig_tar_gz]["sha256sum"] = dsc_files[orig_tar_gz]["sha256sum"]
         files[orig_tar_gz]["section"] = files[dsc_filename]["section"]
         files[orig_tar_gz]["priority"] = files[dsc_filename]["priority"]
         files[orig_tar_gz]["component"] = files[dsc_filename]["component"]
@@ -905,88 +911,23 @@ def check_urgency ():
     if changes["architecture"].has_key("source"):
         if not changes.has_key("urgency"):
             changes["urgency"] = Cnf["Urgency::Default"]
+        changes["urgency"] = changes["urgency"].lower()
         if changes["urgency"] not in Cnf.ValueList("Urgency::Valid"):
             reject("%s is not a valid urgency; it will be treated as %s by testing." % (changes["urgency"], Cnf["Urgency::Default"]), "Warning: ")
             changes["urgency"] = Cnf["Urgency::Default"]
-        changes["urgency"] = changes["urgency"].lower()
 
 ################################################################################
 
 def check_hashes ():
-    # Make sure we recognise the format of the Files: field
-    format = changes.get("format", "0.0").split(".",1)
-    if len(format) == 2:
-        format = int(format[0]), int(format[1])
-    else:
-        format = int(float(format[0])), 0
+    utils.check_hash(".changes", files, "md5", apt_pkg.md5sum)
+    utils.check_size(".changes", files)
+    utils.check_hash(".dsc", dsc_files, "md5", apt_pkg.md5sum)
+    utils.check_size(".dsc", dsc_files)
 
-    check_hash(".changes", files, "md5sum", apt_pkg.md5sum)
-    check_hash(".dsc", dsc_files, "md5sum", apt_pkg.md5sum)
-
-    if format >= (1,8):
-        hashes = [("sha1", apt_pkg.sha1sum),
-                  ("sha256", apt_pkg.sha256sum)]
-    else:
-        hashes = []
-
-    for x in changes:
-        if x.startswith("checksum-"):
-            h = x.split("-",1)[1]
-            if h not in dict(hashes):
-                reject("Unsupported checksum field in .changes" % (h))
-
-    for x in dsc:
-        if x.startswith("checksum-"):
-            h = x.split("-",1)[1]
-            if h not in dict(hashes):
-                reject("Unsupported checksum field in .dsc" % (h))
-
-    for h,f in hashes:
-        try:
-            fs = utils.build_file_list(changes, 0, "checksums-%s" % h, h)
-            check_hash(".changes %s" % (h), fs, h, f, files)
-        except utils.no_files_exc:
-            reject("No Checksums-%s: field in .changes" % (h))
-        except utils.changes_parse_error_exc, line:
-            reject("parse error for Checksums-%s in .changes, can't grok: %s." % (h, line))
-
-        if "source" not in changes["architecture"]: continue
-
-        try:
-            fs = utils.build_file_list(dsc, 1, "checksums-%s" % h, h)
-            check_hash(".dsc %s" % (h), fs, h, f, dsc_files)
-        except utils.no_files_exc:
-            reject("No Checksums-%s: field in .dsc" % (h))
-        except utils.changes_parse_error_exc, line:
-            reject("parse error for Checksums-%s in .dsc, can't grok: %s." % (h, line))
-
-################################################################################
-
-def check_hash (where, lfiles, key, testfn, basedict = None):
-    if basedict:
-        for f in basedict.keys():
-            if f not in lfiles:
-                reject("%s: no %s checksum" % (f, key))
-
-    for f in lfiles.keys():
-        if basedict and f not in basedict:
-            reject("%s: extraneous entry in %s checksums" % (f, key))
-
-        try:
-            file_handle = utils.open_file(f)
-        except utils.cant_open_exc:
-            continue
-
-        # Check hash
-        if testfn(file_handle) != lfiles[f][key]:
-            reject("%s: %s check failed." % (f, key))
-        file_handle.close()
-        # Check size
-        actual_size = os.stat(f)[stat.ST_SIZE]
-        size = int(lfiles[f]["size"])
-        if size != actual_size:
-            reject("%s: actual file size (%s) does not match size (%s) in %s"
-                   % (f, actual_size, size, where))
+    # This is stupid API, but it'll have to do for now until
+    # we actually have proper abstraction
+    for m in utils.ensure_hashes(changes, dsc, files, dsc_files):
+        reject(m)
 
 ################################################################################
 
@@ -1108,8 +1049,6 @@ def check_signed_by_key():
             q = Upload.projectB.query("SELECT s.id FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND sa.suite = %d" % (changes["source"], suite_id))
             for si in q.getresult():
                 if si[0] not in source_ids: source_ids.append(si[0])
-
-        print "source_ids: %s" % (",".join([str(x) for x in source_ids]))
 
         is_nmu = 1
         for si in source_ids:

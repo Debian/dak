@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Executed hourly via cron, out of troup's crontab.
+# Executed hourly via cron, out of dak's crontab.
 
 set -e
 set -u
@@ -10,4 +10,5 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 date -u > $ftpdir/project/trace/ftp-master.debian.org
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
+dak show-deferred > ${webdir}/deferred.html
 cd $queuedir/new ; dak show-new *.changes > /dev/null

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# vim:set et ts=4 sw=4:
 
 # Utility functions
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
@@ -22,9 +23,10 @@
 ################################################################################
 
 import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
-       sys, tempfile, traceback
+       sys, tempfile, traceback, stat
 import apt_pkg
 import database
+from dak_exceptions import *
 
 ################################################################################
 
@@ -48,39 +50,15 @@ re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
 
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
 
-changes_parse_error_exc = "Can't parse line in .changes file"
-invalid_dsc_format_exc = "Invalid .dsc file"
-nk_format_exc = "Unknown Format: in .changes file"
-no_files_exc = "No Files: field in .dsc or .changes file."
-cant_open_exc = "Can't open file"
-unknown_hostname_exc = "Unknown hostname"
-cant_overwrite_exc = "Permission denied; can't overwrite existent file."
-file_exists_exc = "Destination file exists"
-sendmail_failed_exc = "Sendmail invocation failed"
-tried_too_hard_exc = "Tried too hard to find a free filename."
-
 default_config = "/etc/dak/dak.conf"
 default_apt_config = "/etc/dak/apt.conf"
 
 alias_cache = None
 key_uid_email_cache = {}
 
-################################################################################
-
-class Error(Exception):
-    """Base class for exceptions in this module."""
-    pass
-
-class ParseMaintError(Error):
-    """Exception raised for errors in parsing a maintainer field.
-
-    Attributes:
-       message -- explanation of the error
-    """
-
-    def __init__(self, message):
-        self.args = message,
-        self.message = message
+# (hashname, function, earliest_changes_version)
+known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
+                ("sha256", apt_pkg.sha256sum, (1, 8))]
 
 ################################################################################
 
@@ -88,7 +66,7 @@ def open_file(filename, mode='r'):
     try:
         f = open(filename, mode)
     except IOError:
-        raise cant_open_exc, filename
+        raise CantOpenError, filename
     return f
 
 ################################################################################
@@ -123,35 +101,15 @@ def extract_component_from_section(section):
 
 ################################################################################
 
-def parse_changes(filename, signing_rules=0):
-    """Parses a changes file and returns a dictionary where each field is a
-key.  The mandatory first argument is the filename of the .changes
-file.
-
-signing_rules is an optional argument:
-
- o If signing_rules == -1, no signature is required.
- o If signing_rules == 0 (the default), a signature is required.
- o If signing_rules == 1, it turns on the same strict format checking
-   as dpkg-source.
-
-The rules for (signing_rules == 1)-mode are:
-
-  o The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
-    followed by any PGP header data and must end with a blank line.
-
-  o The data section must end with a blank line and must be followed by
-    "-----BEGIN PGP SIGNATURE-----".
-"""
-
+def parse_deb822(contents, signing_rules=0):
     error = ""
     changes = {}
 
-    changes_in = open_file(filename)
-    lines = changes_in.readlines()
+    # Split the lines in the input, keeping the linebreaks.
+    lines = contents.splitlines(True)
 
-    if not lines:
-        raise changes_parse_error_exc, "[Empty changes file]"
+    if len(lines) == 0:
+        raise ParseChangesError, "[Empty changes file]"
 
     # Reindex by line number so we can easily verify the format of
     # .dsc files...
@@ -173,10 +131,10 @@ The rules for (signing_rules == 1)-mode are:
             if signing_rules == 1:
                 index += 1
                 if index > num_of_lines:
-                    raise invalid_dsc_format_exc, index
+                    raise InvalidDscError, index
                 line = indexed_lines[index]
                 if not line.startswith("-----BEGIN PGP SIGNATURE"):
-                    raise invalid_dsc_format_exc, index
+                    raise InvalidDscError, index
                 inside_signature = 0
                 break
             else:
@@ -205,7 +163,7 @@ The rules for (signing_rules == 1)-mode are:
         mlf = re_multi_line_field.match(line)
         if mlf:
             if first == -1:
-                raise changes_parse_error_exc, "'%s'\n [Multi-line field continuing on from nothing?]" % (line)
+                raise ParseChangesError, "'%s'\n [Multi-line field continuing on from nothing?]" % (line)
             if first == 1 and changes[field] != "":
                 changes[field] += '\n'
             first = 0
@@ -214,9 +172,8 @@ The rules for (signing_rules == 1)-mode are:
         error += line
 
     if signing_rules == 1 and inside_signature:
-        raise invalid_dsc_format_exc, index
+        raise InvalidDscError, index
 
-    changes_in.close()
     changes["filecontents"] = "".join(lines)
 
     if changes.has_key("source"):
@@ -228,9 +185,231 @@ The rules for (signing_rules == 1)-mode are:
             changes["source-version"] = srcver.group(2)
 
     if error:
-        raise changes_parse_error_exc, error
+        raise ParseChangesError, error
 
     return changes
+
+################################################################################
+
+def parse_changes(filename, signing_rules=0):
+    """Parses a changes file and returns a dictionary where each field is a
+key.  The mandatory first argument is the filename of the .changes
+file.
+
+signing_rules is an optional argument:
+
+ o If signing_rules == -1, no signature is required.
+ o If signing_rules == 0 (the default), a signature is required.
+ o If signing_rules == 1, it turns on the same strict format checking
+   as dpkg-source.
+
+The rules for (signing_rules == 1)-mode are:
+
+  o The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
+    followed by any PGP header data and must end with a blank line.
+
+  o The data section must end with a blank line and must be followed by
+    "-----BEGIN PGP SIGNATURE-----".
+"""
+
+    changes_in = open_file(filename)
+    content = changes_in.read()
+    changes_in.close()
+    return parse_deb822(content, signing_rules)
+
+################################################################################
+
+def hash_key(hashname):
+    return '%ssum' % hashname
+
+################################################################################
+
+def create_hash(where, files, hashname, hashfunc):
+    """create_hash extends the passed files dict with the given hash by
+    iterating over all files on disk and passing them to the hashing
+    function given."""
+
+    rejmsg = []
+    for f in files.keys():
+        try:
+            file_handle = open_file(f)
+        except CantOpenError:
+            rejmsg.append("Could not open file %s for checksumming" % (f))
+
+        files[f][hash_key(hashname)] = hashfunc(file_handle)
+
+        file_handle.close()
+    return rejmsg
+
+################################################################################
+
+def check_hash(where, files, hashname, hashfunc):
+    """check_hash checks the given hash in the files dict against the actual
+    files on disk.  The hash values need to be present consistently in
+    all file entries.  It does not modify its input in any way."""
+
+    rejmsg = []
+    for f in files.keys():
+        file_handle = None
+        try:
+            try:
+                file_handle = open_file(f)
+    
+                # Check for the hash entry, to not trigger a KeyError.
+                if not files[f].has_key(hash_key(hashname)):
+                    rejmsg.append("%s: misses %s checksum in %s" % (f, hashname,
+                        where))
+                    continue
+    
+                # Actually check the hash for correctness.
+                if hashfunc(file_handle) != files[f][hash_key(hashname)]:
+                    rejmsg.append("%s: %s check failed in %s" % (f, hashname,
+                        where))
+            except CantOpenError:
+                # TODO: This happens when the file is in the pool.
+                # warn("Cannot open file %s" % f)
+                continue
+        finally:
+            if file_handle:
+                file_handle.close()
+    return rejmsg
+
+################################################################################
+
+def check_size(where, files):
+    """check_size checks the file sizes in the passed files dict against the
+    files on disk."""
+
+    rejmsg = []
+    for f in files.keys():
+        try:
+            entry = os.stat(f)
+        except OSError, exc:
+            if exc.errno == 2:
+                # TODO: This happens when the file is in the pool.
+                continue
+            raise
+
+        actual_size = entry[stat.ST_SIZE]
+        size = int(files[f]["size"])
+        if size != actual_size:
+            rejmsg.append("%s: actual file size (%s) does not match size (%s) in %s"
+                   % (f, actual_size, size, where))
+    return rejmsg
+
+################################################################################
+
+def check_hash_fields(what, manifest):
+    """check_hash_fields ensures that there are no checksum fields in the
+    given dict that we do not know about."""
+
+    rejmsg = []
+    hashes = map(lambda x: x[0], known_hashes)
+    for field in manifest:
+        if field.startswith("checksums-"):
+            hashname = field.split("-",1)[1]
+            if hashname not in hashes:
+                rejmsg.append("Unsupported checksum field for %s "\
+                    "in %s" % (hashname, what))
+    return rejmsg
+
+################################################################################
+
+def _ensure_changes_hash(changes, format, version, files, hashname, hashfunc):
+    if format >= version:
+        # The version should contain the specified hash.
+        func = check_hash
+
+        # Import hashes from the changes
+        rejmsg = parse_checksums(".changes", files, changes, hashname)
+        if len(rejmsg) > 0:
+            return rejmsg
+    else:
+        # We need to calculate the hash because it can't possibly
+        # be in the file.
+        func = create_hash
+    return func(".changes", files, hashname, hashfunc)
+
+# We could add the orig which might be in the pool to the files dict to
+# access the checksums easily.
+
+def _ensure_dsc_hash(dsc, dsc_files, hashname, hashfunc):
+    """ensure_dsc_hashes' task is to ensure that each and every *present* hash
+    in the dsc is correct, i.e. identical to the changes file and if necessary
+    the pool.  The latter task is delegated to check_hash."""
+
+    rejmsg = []
+    if not dsc.has_key('Checksums-%s' % (hashname,)):
+        return rejmsg
+    # Import hashes from the dsc
+    parse_checksums(".dsc", dsc_files, dsc, hashname)
+    # And check it...
+    rejmsg.extend(check_hash(".dsc", dsc_files, hashname, hashfunc))
+    return rejmsg
+
+################################################################################
+
+def ensure_hashes(changes, dsc, files, dsc_files):
+    rejmsg = []
+
+    # Make sure we recognise the format of the Files: field in the .changes
+    format = changes.get("format", "0.0").split(".", 1)
+    if len(format) == 2:
+        format = int(format[0]), int(format[1])
+    else:
+        format = int(float(format[0])), 0
+
+    # We need to deal with the original changes blob, as the fields we need
+    # might not be in the changes dict serialised into the .dak anymore.
+    orig_changes = parse_deb822(changes['filecontents'])
+
+    # Copy the checksums over to the current changes dict.  This will keep
+    # the existing modifications to it intact.
+    for field in orig_changes:
+        if field.startswith('checksums-'):
+            changes[field] = orig_changes[field]
+
+    # Check for unsupported hashes
+    rejmsg.extend(check_hash_fields(".changes", changes))
+    rejmsg.extend(check_hash_fields(".dsc", dsc))
+
+    # We have to calculate the hash if we have an earlier changes version than
+    # the hash appears in rather than require it exist in the changes file
+    for hashname, hashfunc, version in known_hashes:
+        rejmsg.extend(_ensure_changes_hash(changes, format, version, files,
+            hashname, hashfunc))
+        if "source" in changes["architecture"]:
+            rejmsg.extend(_ensure_dsc_hash(dsc, dsc_files, hashname,
+                hashfunc))
+
+    return rejmsg
+
+def parse_checksums(where, files, manifest, hashname):
+    rejmsg = []
+    field = 'checksums-%s' % hashname
+    if not field in manifest:
+        return rejmsg
+    input = manifest[field]
+    for line in input.split('\n'):
+        if not line:
+            break
+        hash, size, file = line.strip().split(' ')
+        if not files.has_key(file):
+        # TODO: check for the file's entry in the original files dict, not
+        # the one modified by (auto)byhand and other weird stuff
+        #    rejmsg.append("%s: not present in files but in checksums-%s in %s" %
+        #        (file, hashname, where))
+            continue
+        if not files[file]["size"] == size:
+            rejmsg.append("%s: size differs for files and checksums-%s entry "\
+                "in %s" % (file, hashname, where))
+            continue
+        files[file][hash_key(hashname)] = hash
+    for f in files.keys():
+        if not files[f].has_key(hash_key(hashname)):
+            rejmsg.append("%s: no entry in checksums-%s in %s" % (file,
+                hashname, where))
+    return rejmsg
 
 ################################################################################
 
@@ -241,12 +420,12 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
     # Make sure we have a Files: field to parse...
     if not changes.has_key(field):
-        raise no_files_exc
+        raise NoFilesFieldError
 
     # Make sure we recognise the format of the Files: field
     format = re_verwithext.search(changes.get("format", "0.0"))
     if not format:
-        raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+        raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
 
     format = format.groups()
     if format[1] == None:
@@ -257,13 +436,16 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         format = format[:2]
 
     if is_a_dsc:
-        if format != (1,0):
-            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+        # format = (1,0) are the only formats we currently accept,
+        # format = (0,0) are missing format headers of which we still
+        # have some in the archive.
+        if format != (1,0) and format != (0,0):
+            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
     else:
         if (format < (1,5) or format > (1,8)):
-            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
         if field != "files" and format < (1,8):
-            raise nk_format_exc, "%s" % (changes.get("format","0.0"))
+            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
 
     includes_section = (not is_a_dsc) and field == "files"
 
@@ -279,7 +461,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
             else:
                 (md5, size, name) = s
         except ValueError:
-            raise changes_parse_error_exc, i
+            raise ParseChangesError, i
 
         if section == "":
             section = "-"
@@ -387,7 +569,7 @@ def send_mail (message, filename=""):
     # Invoke sendmail
     (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
     if (result != 0):
-        raise sendmail_failed_exc, output
+        raise SendmailFailedError, output
 
     # Clean up any temporary files
     if message:
@@ -443,10 +625,10 @@ def copy (src, dest, overwrite = 0, perms = 0664):
     # Don't overwrite unless forced to
     if os.path.exists(dest):
         if not overwrite:
-            raise file_exists_exc
+            raise FileExistsError
         else:
             if not os.access(dest, os.W_OK):
-                raise cant_overwrite_exc
+                raise CantOverwriteError
     shutil.copy2(src, dest)
     os.chmod(dest, perms)
 
@@ -590,7 +772,7 @@ def find_next_free (dest, too_many=100):
         dest = orig_dest + '.' + repr(extra)
         extra += 1
     if extra >= too_many:
-        raise tried_too_hard_exc
+        raise NoFreeFilenameError
     return dest
 
 ################################################################################

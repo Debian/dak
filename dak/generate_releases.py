@@ -24,7 +24,8 @@
 
 import sys, os, popen2, tempfile, stat, time, pg
 import apt_pkg
-import daklib.utils as utils
+from daklib import utils
+from daklib.dak_exceptions import *
 
 ################################################################################
 
@@ -107,7 +108,7 @@ def print_md5sha_files (tree, files, hashop):
             else:
                 size = os.stat(path + name)[stat.ST_SIZE]
                 file_handle = utils.open_file(path + name)
-        except utils.cant_open_exc:
+        except CantOpenError:
             print "ALERT: Couldn't open " + path + name
         else:
             hash = hashop(file_handle)
@@ -217,6 +218,11 @@ def main ():
         if codename != "":
             out.write("Codename: %s\n" % (codename))
         out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
+
+        if SuiteBlock.has_key("ValidTime"):
+            validtime=float(SuiteBlock["ValidTime"])
+            out.write("Valid-Until: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()+validtime))))
+
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
         out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, SuiteBlock.ValueList("Architectures")))))

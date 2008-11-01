@@ -1,6 +1,8 @@
 From: __DAK_ADDRESS__
 To: __MAINTAINER_TO__
 __BCC__
+X-Debian: DAK
+X-Debian-Package: __SOURCE__
 Precedence: junk
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
@@ -15,6 +17,8 @@ Either the package or the override file is incorrect.  If you think
 the override is correct and the package wrong please fix the package
 so that this disparity is fixed in the next upload.  If you feel the
 override is incorrect then please reply to this mail and explain why.
+Please INCLUDE the list of packages as seen above, or we won't be able
+to deal with your mail due to missing information.
 
 [NB: this is an automatically generated mail; if you replied to one
 like it before and have not received a response yet, please ignore

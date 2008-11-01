@@ -360,10 +360,10 @@ def get_or_set_queue_id (queue):
 
 ################################################################################
 
-def set_files_id (filename, size, md5sum, location_id):
+def set_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
     global files_id_cache
 
-    projectB.query("INSERT INTO files (filename, size, md5sum, location) VALUES ('%s', %d, '%s', %d)" % (filename, long(size), md5sum, location_id))
+    projectB.query("INSERT INTO files (filename, size, md5sum, sha1sum, sha256sum, location) VALUES ('%s', %d, '%s', '%s', '%s', %d)" % (filename, long(size), md5sum, sha1sum, sha256sum, location_id))
 
     return get_files_id (filename, size, md5sum, location_id)
 
@@ -389,3 +389,11 @@ def get_maintainer (maintainer_id):
     return maintainer_cache[maintainer_id]
 
 ################################################################################
+
+def get_suites(pkgname, src=False):
+    if src:
+        sql = "select suite_name from source, src_associations,suite where source.id=src_associations.source and source.source='%s' and src_associations.suite = suite.id"%pkgname
+    else:
+        sql = "select suite_name from binaries, bin_associations,suite where binaries.id=bin_associations.bin and  package='%s' and bin_associations.suite = suite.id"%pkgname
+    q = projectB.query(sql)
+    return map(lambda x: x[0], q.getresult())

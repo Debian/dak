@@ -1,4 +1,460 @@
+2008-10-27  Joerg Jaspert  <joerg@debian.org>
+
+	* scripts/debian/mkfilesindices: Remove oldstable
+
+	* config/debian/vars: Remove sarge
+
+	* config/debian/dak.conf: Untouchable o-p-u, until we removed all
+	of sarge and its files.
+
+	* config/debian/apt.conf.oldstable: Removed
+
+	* config/debian/apt.conf: Remove oldstable
+
+2008-10-14  Thomas Viehmann <tv@beamnet.de>
+
+	* dak/show_deferred.py: produce .changes and improve status
+
+2008-10-07  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: Only keep the last 60 days of
+	dinstall logfiles on disc.
+
+2008-10-05  Thomas Viehmann <tv@beamnet.de>
+
+        * daklib/database.py: added get_suites
+	* dak/dak.py, dak/show_deferred.py: add show-deferred to dak.
+
+2008-09-23  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/dak.conf: Add the validtime fields, set to 7
+	days.
+
+	* dak/generate_releases.py (main): Add a "Valid-Until" line into
+	our release files, meaning "$receiver shouldn't trust this files
+	after that date". Should be used by apt and similar tools to
+	detect some kind of MITM attacks, see #499897
+
+2008-09-21  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.hourly: Generate the DEFERRED queue
+	overview.
+
+2008-09-13  Philipp Kern  <pkern@debian.org>
+
+	* dak/queue.py (dump_vars): make .dak u,g=rw,o=r; James'
+	assumption (as stated in 2002-05-18's ChangeLog entry)
+	was that people will use the information therein albeit
+	it is "just" a duplication of information present in
+	other control files; people should still not use it
+	as source of information but access to those files makes
+	dak debugging easier and there is no leak of sensitive
+	information involved
+
+2008-09-12  Philipp Kern  <pkern@debian.org>
+
+	* dak/new_security_install.py (actually_upload): remove
+	oldstable-security/amd64 check; Etch, as the next oldstable,
+	already had proper amd64 support
+
+2008-09-12  Joerg Jaspert  <joerg@debian.org>
+
+	* scripts/debian/update-pseudopackages.sh: s/i/file/
+
+2008-09-11  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/pseudo-packages.description, ...maintainers:
+	Removed, now with the bts people
+
+	* scripts/debian/update-pseudopackages.sh: Added, fetching
+	pseudo-packages from new bts location
+
+	* scripts/debian/mkmaintainers: Use new location
+
+2008-09-08  Philipp Kern  <pkern@debian.org>
+
+	* dak/check_archive.py (check_checksums): rewind the files
+	before the sha1sum/sha256sum checks as they got seeked by
+	md5sum
+
+	* daklib/utils.py (build_file_list): do not die on very
+	old dsc files without format header
+
+2008-09-07  Philipp Kern  <pkern@debian.org>
+
+	* daklib/utils.py (check_hash): try..except..finally only
+	works on python >=2.5.
+
+	* dak/process_accepted.py (install): better use dsc_file
+	instead of the (for the loop iteration) static file
+	variable
+
+2008-09-07  Philipp Kern  <pkern@debian.org>
+
+	* daklib/utils.py (check_hash): change the comment and warn
+	if a file is not found when checking the hashes (i.e. when
+	it is probably in the pool)
+
+	* daklib/utils.py (check_size): do not bail out if the file
+	is not found, because it may be in the pool
+
+	* dak/process_accepted.py (install): bail out and skip the
+	upload when ensure_hashes fails, print the rejection messages
+	as warnings
+
+2008-08-28  Philipp Kern  <pkern@debian.org>
+
+	* daklib/utils.py (check_hashes): adapt to different API, check
+	sizes separately
+
+	* daklib/utils.py (parse_changes, parse_deb822): refactor
+	the string-based logic of parse_changes into a new function
+	parse_deb822; parse_changes itself remains file-based
+
+	* daklib/utils.py (hash_key): gives the key of a hash in the
+	files dict
+
+	* daklib/utils.py (create_hash, check_size): made more readable
+
+	* daklib/utils.py (check_hash): just check the hashes and complain
+	about missing checksums
+
+	* daklib/utils.py (check_hash_fields): function to reject unknown
+	checksums fields
+
+	* daklib/utils.py (_ensure_changes_hash, _ensure_dsc_hash): helper
+	functions for ensure_hashes; check their corresponding manifests'
+	hashes
+
+	* daklib/utils.py (ensure_hashes): retrieve the checksums fields
+	from the original filecontents blob so that they do not need to
+	be present in the .dak; refactored the actual checks by calling
+	the aforementioned helper functions
+
+	* daklib/utils.py (parse_checksums): parse a given checksums field
+	in a manifest and insert the values found into the files dict,
+	checking the file sizes on the way
+
+2008-09-06  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (is_source_in_queue_dir): Access the right
+	variable to check if the given entry in the queue is the sourceful
+	upload we are looking for.
+
+2008-09-02  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/pseudo-packages.description: Added debian-i18n and
+	buildd.emdebian.org
+
+	* dak/process_new.py (_accept): Fix Philipps new helper function
+	to not break by moving Upload.build_summaries there.
+
+2008-08-31  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (_accept): new helper function to accept
+	an upload regularly, obeying no-action if set
+	* dak/process_new.py (do_accept): use _accept
+	* dak/process_new.py (do_accept_stableupdate): bail out in else
+	on binary uploads, in case we missed something; use the _accept
+	helper
+
+2008-08-30  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (is_source_in_queue_dir): join the queue path
+	because os.listdir entries come with their path stripped
+
+2008-08-30  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (do_accept_stableupdate): state what we intend
+	to do
+
+2008-08-26  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (is_source_in_queue_dir): fix variable usage
+	* dak/process_new.py (move_to_holding): just state what we intend
+	to do in no-action mode
+	* dak/process_new.py (do_accept_stableupdate): fetch summaries,
+	fix invokation of is_source_in_queue_dir, actually accept sourceful
+	uploads in p-u holding
+
+2008-08-26  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (do_accept): do not try to free the unchecked
+	lockfile in no-action mode
+
+2008-08-16  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: We dont want i18n to ever fail
+	dinstall, add a || true
+
+2008-08-15  Mark Hymers  <mhy@debian.org>
+
+	* daklib/utils.py: Actually import a module before using it.
+
+	* daklib/utils.py: Actually check we have basedict before trying to
+	use it.
+
+	*  dak/process_accepted.py, dak/process_unchecked.py,
+	daklib/database.py: Don't change get_files_id to use sha1sum and
+	sha256sum.
+
+	* setup/init_pool.sql, dak/check_archive.py, dak/decode_dot_dak.py,
+	dak/process_accepted.py, dak/process_unchecked.py, daklib/database.py,
+	daklib/queue.py, daklib/utils.py: Attempt to add sha1sum and
+	sha256sums into the database.  The complication is that we have to
+	keep backwards compatibility with the .dak files already in existance.
+	Note that import_archive hasn't been hacked to deal with this yet.
+
+2008-08-14  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: Added the i18n retrieval of package
+	description translations
+
+2008-08-12  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: Complicate the i18n export a little
+	by using date/hour based directories which we then link into the
+	web view. They contain a signed timestamp file now, which means
+	the i18n people can take a long time to generate files, yet we
+	still know exactly on which dataset their data is based on, and
+	can then verify it with that. Ensures we only get descriptions for
+	packages we know off (or knew of in the past 2 days).
+
+2008-08-11  Joerg Jaspert  <joerg@debian.org>
+
+	* web/dinstall.html: Added
+
+	* config/debian/dak.conf: Added back the pgp keyrings for now, as
+	it seems that we should keep it for a few more days, until we
+	somehow got ll those oldtimers to get a newer key into the
+	keyring. Unfortunately our logic to look for uploads done from
+	that keyring wasnt the most perfect one, so well, it is actually
+	used. Damn.
+
+2008-08-09  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/dak.conf: No longer use the pgp keyring - no
+	uploads recorded for any of the pgp keys for a long time.
+
+	* config/debian/cron.dinstall: Export the i18n foo.
+
+2008-08-08  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: Create a hardlinked tree of the
+	ftp/ in mirror/ so we have more atomic mirror updates for the
+	buildds
+
+	* config/debian/cron.unchecked: Added signing of buildd incoming
+
+2008-08-07  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (do_accept): handle uploads to (oldstable-)
+	  proposed-updates differently and put them into p-u holding
+	  for review instead of unconditionally accepting them into
+	  p-u proper; additional care needed to be taken to look
+	  out for the source if a binary-only upload is being handled
+
+2008-08-07  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/cruft_report.py (parse_nfu): call utils.warn instead of warn
+	(main): Only do the nfu stuff if nfu is a check we want to run
+	later.
+	(main): And another place where we dont want to do nfu foo unless
+	we need nfu
+
+	* dak/make_suite_file_list.py (main): Fix a bug that has been
+	there for ages, but "just" never triggered.
+
+2008-08-07  Stephen Gran  <sgran@debian.org>
+
+	* Drop use of exec to eval variable interpolation
+2008-08-07  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_accepted.py (install): Error out with the new
+	exception if we dont know the source package for a file we want to
+	install. Shouldn't ever hit us, but better safe than sorry.
+
+	* daklib/dak_exceptions.py (dakerrors): new exception - no source field.
+
+2008-08-05  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.unchecked: disable the ssh-move insanity (and
+	as soon as rietz is back online - replace it with a one-line scp
+	or rsync statement followed by a one-line rm)
+	And now replaced this 128 line perl "not-invented-here" with a
+	one-line rsync command, using a feature rsync only understands
+	since sarge - damn new-fangled technology.
+
+2008-08-05  Joachim Breitner <nomeata@debian.org>
+
+	* dak/cruft_report.py: In full mode, report out-of-date binaries on
+	architectures that have set Not-For-Us for that package.
+
+	* scripts/nfu/get-w-b-db: Script to fetch the wanna-build database
+	dump from http://buildd.debian.org/
+
+	* config/debian/cron.weekly: Run the above script
+
+2008-08-03  Mark Hymers <mhy@debian.org>
+
+	* dak/process_new.py: Apply jvw's patch so that process_new shows
+	packages which need binary uploads sorted earlier than other packages.
+
+2008-07-26  Joerg Jaspert  <joerg@debian.org>
+
+	* templates/reject-proposed-updates.rejected,dak/reject_proposed_updates.py:
+	applied a patch by luk modifying the stable rejection mails to fit
+	reality a bit more
+
+	* config/debian/dak.conf: no m68k in testing, so no m68k in t-p-u
+	r4 now
+
+2008-06-19  Thomas Viehmann  <tv@beamnet.de>
+
+	* dak/process_unchecked.py (check_dsc,check_hashes): Catch
+	UnknownFormatError and reject
+
+2008-06-15  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.weekly: Work around a git bug until git is
+	fixed upstream and the fix is on backports.org
+
+	* config/debian/cron.dinstall: (various ssh calls): Make them use
+	batchmode/connect/setuptimeout to not take too long with
+	connections... Also || true them, no need to die in dinstall if
+	one host isn't reachable.
+	Also do not die when the ldap server is unreachable, just ignore
+	that error.
+
+	* README: Updated mailing list location
+
+2008-06-14  Otavio Salvador  <otavio@debian.org>
+
+	* docs/manpages/clean-suites.1.sgml: Minor typo fix
+
+	* dak/import_archive.py: Add support to udeb packages
+
+	* dak/control_suite.py (main): Handle SystemError exception in
+	case of a incompatible commandline parameter
+
+	* dak/check_overrides.py (main): Use case-insensitive comparing
+	for codename
+
+2008-06-14  Joerg Jaspert  <joerg@debian.org>
+
+	* scripts/debian/byhand-task: Merged patch from Frans Pop to
+	fail on byhand-task uploads if they do not go to unstable.
+
+	* config/debian/cron.weekly: Do a little git cleanup work too.
+
+	* config/debian/cron.buildd: Add batchmode and also
+	Connect/SetupTimeout parameters to ssh
+
+	* config/debian/cron.dinstall (POSTDUMP): Compress all
+	uncompressed psql backups
+
+2008-06-08  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/process_unchecked.py (check_urgency): Lowercase urgency
+	before we (eventually) warn on it. Patch taken from Russ Allbery.
+
+2008-06-01  Otavio Salvador  <otavio@debian.org>
+
+	* daklib/queue.py (check_valid): allow debian-installer specific
+	sources to have 'debian-installer' section.
+
+2008-05-28  Frans Pop  <fjp@debian.org>
+
+	* add autobyhand support for task overrides (from tasksel)
+
+2008-05-27  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/pseudo-packages.maintainers: Change ftp.debian.org
+	pseudopackage maintainer name.
+
+2008-05-12  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/transitions.py: use yaml.dump instead of syck.dump, as syck
+	seems to have a bug in its dump(), causing it to write illegal entries
+	And also do this for load.
+
+2008-05-10  Stephen Gran   <sgran@debian.org>
+       * tools/debianqueued-0.9/debianqueued: First pass at a send_mail
+         implementation that sucks less
+       * Update debian/control to reflect new perl dependency
+
+2008-05-09  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/override.py (main): substitute value in X-Debian-Package
+	header
+
+	* templates/override.bug-close: Add X-Debian-Package header
+	* templates/reject-proposed-updates.rejected: dito
+	* templates/queue.rejected: dito
+	* templates/process-unchecked.new: dito
+	* templates/process-unchecked.bug-nmu-fixed: dito
+	* templates/process-unchecked.bug-experimental-fixed: dito
+	* templates/process-unchecked.bug-close: dito
+	* templates/process-unchecked.announce: dito
+	* templates/process-unchecked.accepted: dito
+	* templates/process-new.prod: dito
+	* templates/process-accepted.unaccept: dito
+	* templates/process-accepted.install: dito
+	* templates/process-unchecked.override-disparity: dito
+
+2008-05-08  Joerg Jaspert  <joerg@debian.org>
+
+	* templates/override.bug-close: Add X-Debian header
+	* templates/rm.bug-close: dito
+	* templates/reject-proposed-updates.rejected: dito
+	* templates/queue.rejected: dito
+	* templates/process-unchecked.new: dito
+	* templates/process-unchecked.bug-nmu-fixed: dito
+	* templates/process-unchecked.bug-experimental-fixed: dito
+	* templates/process-unchecked.bug-close: dito
+	* templates/process-unchecked.announce: dito
+	* templates/process-unchecked.accepted: dito
+	* templates/process-new.prod: dito
+	* templates/process-accepted.unaccept: dito
+	* templates/process-accepted.install: dito
+	* templates/process-unchecked.override-disparity: dito, but also
+	mention that people should include the package lists with the
+	override disparities.
+
+2008-05-06  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.dinstall: Put the timestamp stuff into an own
+	function, call that from everywhere. Also change the timestamp
+	format to not be local dependent.
+
+2008-05-05  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/dak_exceptions.py (dakerrors): add TransitionsError
+	* dak/transitions.py: Use it, instead of the own definition
+
+2008-05-05  Mark Hymers  <mhy@debian.org>
+
+	* daklib/dak_exceptions.py: Add a default message and tidy up our string
+	representation
+
+2008-05-05  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/dak_exceptions.py: New file, central place for all those
+	own exceptions dak may raise.
+
+	* daklib/utils.py: Use dak_exceptions and delete all those string
+	exception raising stuff, which is depcreated.
+	During that delete the unknown_hostname_exc, as it wasnt used.
+
+	* dak/import_archive.py: use the new Exception class
+	* dak/rm.py: dito
+	* dak/generate_releases.py: dito
+	* dak/queue_report.py: dito
+	* daklib/queue.py: dito
+
 2008-05-04  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/queue.py: Various pychecker cleanups
 
 	* dak/import_keyring.py: Remove unused daklib.logging and Logger
 	and add the actually used daklib/utils
@@ -12,6 +468,10 @@
 	* dak/clean_suites.py: likewise
 	* dak/compare_suites.py: likewise
 	* dak/cruft_report.py: likewise
+	(get_suite_binaries): Seperated in own function, out of main. More
+	of main should be splitted. (Or well, cruft_report redesigned a
+	little, so its easier to run on multiple suites with differing tests)
+
 	* dak/examine_package.py: likewise
 	* dak/find_null_maintainers.py: likewise
 	* dak/generate_index_diffs.py: likewise

@@ -30,8 +30,8 @@
 
 import pg, sys, os
 import apt_pkg, apt_inst
-import daklib.database as database
-import daklib.utils as utils
+from daklib import database
+from daklib import utils
 
 ################################################################################
 

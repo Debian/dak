@@ -38,8 +38,9 @@
 
 import commands, os, pg, re, sys, time
 import apt_pkg
-import daklib.database as database
-import daklib.utils as utils
+from daklib import database
+from daklib import utils
+from daklib.dak_exceptions import *
 
 ###############################################################################
 
@@ -323,7 +324,7 @@ def process_sources (filename, suite, component, archive):
     suite_id = database.get_suite_id(suite)
     try:
         file = utils.open_file (filename)
-    except utils.cant_open_exc:
+    except CantOpenError:
         utils.warn("can't open '%s'" % (filename))
         return
     Scanner = apt_pkg.ParseTagFile(file)
@@ -406,7 +407,7 @@ def process_packages (filename, suite, component, archive):
     suite_id = database.get_suite_id(suite)
     try:
         file = utils.open_file (filename)
-    except utils.cant_open_exc:
+    except CantOpenError:
         utils.warn("can't open '%s'" % (filename))
         return
     Scanner = apt_pkg.ParseTagFile(file)
@@ -432,8 +433,12 @@ def process_packages (filename, suite, component, archive):
         if not source_version:
             source_version = version
         filename = Scanner.Section["filename"]
+        if filename.endswith(".deb"):
+            type = "deb"
+        else:
+            type = "udeb"
         location = get_location_path(filename.split('/')[0])
-        location_id = database.get_location_id (location, component, archive)
+        location_id = database.get_location_id (location, component.replace("/debian-installer", ""), archive)
         filename = poolify (filename, location)
         if architecture == "all":
             filename = re_arch_from_filename.sub("binary-all", filename)
@@ -442,7 +447,6 @@ def process_packages (filename, suite, component, archive):
         size = Scanner.Section["size"]
         md5sum = Scanner.Section["md5sum"]
         files_id = get_or_set_files_id (filename, size, md5sum, location_id)
-        type = "deb"; # FIXME
         cache_key = "%s_%s_%s_%d_%d_%d_%d" % (package, version, repr(source_id), architecture_id, location_id, files_id, suite_id)
         if not arch_all_cache.has_key(cache_key):
             arch_all_cache[cache_key] = 1
@@ -565,7 +569,9 @@ Please read the documentation before running this script.
             process_packages (packages, suite, "", server)
         elif type == "legacy" or type == "pool":
             for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
-                for component in Cnf.SubTree("Component").List():
+                udeb_components = map(lambda x: x+"/debian-installer",
+                                      Cnf.ValueList("Suite::%s::UdebComponents" % suite))
+                for component in Cnf.SubTree("Component").List() + udeb_components:
                     architectures = filter(utils.real_arch,
                                            Cnf.ValueList("Suite::%s::Architectures" % (suite)))
                     for architecture in architectures:
