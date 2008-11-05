@@ -1,3 +1,8 @@
+2008-11-05  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/new_security_install.py (_do_Approve): This sudo call
+	definitely wants the -H option.
+
 2008-11-01  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_unchecked.py (check_files): Also check the

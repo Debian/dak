@@ -462,7 +462,7 @@ def _do_Approve():
     print "Updating Release files..."
     spawn("dak generate-releases")
     print "Triggering security mirrors..."
-    spawn("sudo -u archvsync /home/archvsync/signal_security")
+    spawn("sudo -u archvsync -H /home/archvsync/signal_security")
 
     # 4. chdir to done - do upload
     if not Options["No-Action"]:
