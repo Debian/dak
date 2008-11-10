@@ -35,7 +35,14 @@ if lockfile -r3 $LOCKFILE; then
 	echo "--" >> $report
 
 	# sync with debbugs
-	rsync -aq --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/
+    rsync -aq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30" --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/ 2>/dev/null && touch $lockdir/synced_bts_version || true
+
+	NOW=$(date +%s)
+	TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
+	DIFF=$(( NOW - TSTAMP ))
+	if [ $DIFF -ge 259200 ]; then
+		echo "Kids, you tried your best and you failed miserably. The lesson is, never try. (Homer Simpson)"
+	fi
 
 	if lockfile -r3 $NOTICE; then
 	    LOCKDAILY="YES"
