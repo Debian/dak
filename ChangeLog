@@ -1,3 +1,7 @@
+2008-11-15  Thomas Viehmann <tv@beamnet.de>
+
+	* dak/show_deferred.py: handle uploads that do not close bugs
+
 2008-11-11  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/dak.conf: good bye oldstable/o-p-u
