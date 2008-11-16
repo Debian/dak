@@ -82,7 +82,7 @@ done
 
 (cd $base/ftp/
 	for dist in unstable testing; do
-		find ./dists/$dist \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
+		find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
 	done
 )
 
