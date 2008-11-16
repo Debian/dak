@@ -80,7 +80,13 @@ for a in $ARCHES; do
     sort -u | poolfirst > ../arch-$a.files
 done
 
-(cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz) |
+(cd $base/ftp/
+	for dist in unstable testing; do
+		find ./dists/$dist \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
+	done
+)
+
+(cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-unstable.list.gz ; zcat translation-testing.list.gz) |
    sort -u | poolfirst > ../typical.files
 
 rm -f $ARCHLIST

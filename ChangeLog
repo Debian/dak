@@ -1,3 +1,8 @@
+2008-11-16  Joerg Jaspert  <joerg@debian.org>
+
+	* scripts/debian/mkfilesindices: useless typical, doesnt have
+	i18n/ dirs. Force them in (i hope).
+
 2008-11-15  Thomas Viehmann <tv@beamnet.de>
 
 	* dak/show_deferred.py: handle uploads that do not close bugs
