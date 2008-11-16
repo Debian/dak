@@ -278,9 +278,11 @@ def actually_upload(changes_files):
     for uri in uploads.keys():
         uploads[uri].extend(changesfiles[uri])
         (host, path) = uri.split(":")
-        file_list = " ".join(uploads[uri])
-        print "Uploading files to %s..." % (host)
-        spawn("lftp -c 'open %s; cd %s; put %s'" % (host, path, file_list))
+        #        file_list = " ".join(uploads[uri])
+        print "Moving files to UploadQueue"
+        for filename in uploads[uri]:
+            utils.copy(filename, Cnf["Dir::Upload"])
+        #spawn("lftp -c 'open %s; cd %s; put %s'" % (host, path, file_list))
 
     if not Options["No-Action"]:
         filename = "%s/testing-processed" % (Cnf["Dir::Log"])
