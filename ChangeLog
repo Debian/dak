@@ -1,3 +1,7 @@
+2008-11-17  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/security-install.py: Removed, no longer in use.
+
 2008-11-16  Joerg Jaspert  <joerg@debian.org>
 
 	* scripts/debian/mkfilesindices: useless typical, doesnt have

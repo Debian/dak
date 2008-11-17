@@ -156,8 +156,6 @@ def init():
          "Move packages from dists/ to pool/"),
         ("reject-proposed-updates",
          "Manually reject from proposed-updates"),
-        ("security-install",
-         "Install a security upload into the archive"),
         ("new-security-install",
          "New way to install a security upload into the archive"),
         ("split-done",
