@@ -1,3 +1,9 @@
+2008-11-23  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian-security/dak.conf: Set ValidTime
+
+	* config/debian-security/cron.weekly: Added
+
 2008-11-17  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/security-install.py: Removed, no longer in use.
