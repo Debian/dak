@@ -31,18 +31,11 @@ for suite in $suites; do
 				dsc) type=".src" ;;
 				udeb) type=".debian-installer" ;;
 			esac
-			#XXX RUN AFUCKINGAWAY
+
 			if [ "$override_type" = "udeb" ]; then
 				if [ ! "$component" = "main" ]; then
 					continue
 				fi
-				if [ "$suite" = "unstable" ]; then
-					dak control-overrides -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
-				fi
-			else
-				# XXX removed 2007-08-16 ajt
-				#dak control-overrides -q -S -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
-				true
 			fi
 			case $suite in
 				oldstable)
