@@ -37,18 +37,7 @@ for suite in $suites; do
 					continue
 				fi
 			fi
-			case $suite in
-				oldstable)
-					dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
-					;;
-				stable)
-					dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
-					;;
-				testing)
-					dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.sid.$component$type
-					;;
-				*) echo "Unknown suite type ($suite)"; exit 1;;
-			esac
+			dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
 		done
     done
 done
