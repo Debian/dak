@@ -10,8 +10,7 @@ export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 
 # Fix overrides
 
-# disabled by ajt 2008-01-01: requires auth
-rsync --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/override\* $overridedir
+rsync --delete -r --include=override\* --exclude=\* --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -vl security-master@ftp-master::indices/ $overridedir
 
 cd $overridedir
 find . -name override\*.gz -type f -maxdepth 1 -mindepth 1 | xargs gunzip -f
