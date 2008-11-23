@@ -10,7 +10,7 @@ ARCHLIST=$(tempfile)
 
 echo "Querying projectb..."
 
-echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s/|all$/|/;s,^/srv/ftp.debian.org/ftp,.,' | sort >$ARCHLIST
+echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s,^/srv/ftp.debian.org/ftp,.,' | sort >$ARCHLIST
 
 includedirs () {
     perl -ne 'print; while (m,/[^/]+$,) { $_=$`; print $_ . "\n" unless $d{$_}++; }'
@@ -31,9 +31,10 @@ echo "Generating sources list..."
 
 echo "Generating arch lists..."
 
-ARCHES=$( (<$ARCHLIST sed -n 's/^.*|//p'; echo amd64) | grep . | sort -u)
+ARCHES=$( (<$ARCHLIST sed -n 's/^.*|//p'; echo amd64) | grep . | grep -v all | sort -u)
 for a in $ARCHES; do
   (sed -n "s/|$a$//p" $ARCHLIST
+   sed -n 's/|all$//p' $ARCHLIST
 
    cd $base/ftp
    find ./dists -maxdepth 1 \! -type d
