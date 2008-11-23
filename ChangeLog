@@ -1,5 +1,7 @@
 2008-11-23  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/process_unchecked.py (check_files): fix this armel mess
+
 	* config/debian-security/dak.conf: Set ValidTime
 
 	* config/debian-security/cron.weekly: Added
