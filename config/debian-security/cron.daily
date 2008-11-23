@@ -10,11 +10,10 @@ export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 
 # Fix overrides
 
-rsync --delete -r --include=override\* --exclude=\* --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -vl security-master@ftp-master::indices/ $overridedir
+rsync --delete -r --include=override\* --exclude=\* --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
 
 cd $overridedir
-find . -name override\*.gz -type f -maxdepth 1 -mindepth 1 | xargs gunzip -f
-find . -type l -maxdepth 1 -mindepth 1 | xargs --no-run-if-empty rm
+find . -maxdepth 1 -mindepth 1 -type l | xargs --no-run-if-empty rm
 
 for suite in $suites; do
     case $suite in
@@ -36,7 +35,7 @@ for suite in $suites; do
 					continue
 				fi
 			fi
-			dak control-overrides -q -a -t $override_type -s $suite -c updates/$component < override.$override_suite.$component$type
+			zcat override.$override_suite.$component$type.gz | dak control-overrides -q -a -t $override_type -s $suite -c updates/$component
 		done
     done
 done
@@ -45,13 +44,13 @@ done
 for dist in etch lenny; do
     rm -f override.$dist.all3
     components="main contrib non-free";
-    if [ -f override.$dist.main.debian-installer ]; then
+    if [ -f override.$dist.main.debian-installer.gz ]; then
 		components="$components main.debian-installer"
     fi
     for component in $components; do
-		cat override.$dist.$component >> override.$dist.all3
-        if [ -e "override.$dist.$component.src" ]; then
-			cat override.$dist.$component.src >> override.$dist.all3.src
+		zcat override.$dist.$component.gz >> override.$dist.all3
+        if [ -e "override.$dist.$component.src.gz" ]; then
+			zcat override.$dist.$component.src.gz >> override.$dist.all3.src
 		fi
     done
 done
