@@ -13,6 +13,9 @@ export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 rsync --delete -r --include=override\* --exclude=\* --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
 
 cd $overridedir
+for file in override*.gz; do
+	zcat $file > $(basename $file .gz)
+done
 find . -maxdepth 1 -mindepth 1 -type l | xargs --no-run-if-empty rm
 
 for suite in $suites; do
