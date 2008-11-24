@@ -1,3 +1,13 @@
+2008-11-24  Joerg Jaspert  <joerg@debian.org>
+
+	* scripts/nfu/get-w-b-db: remove m68k
+
+	* scripts/debian/update-ftpstats: remove m68k
+
+	* config/debian/dak.conf: remove m68k
+
+	* config/debian/vars (archs): Remove m68k
+
 2008-11-23  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_unchecked.py (check_files): fix this armel mess

@@ -14,7 +14,7 @@ fi
 
 cd $WB_DB_DIR || { echo "Failed to cd to $WB_DB_DIR" ; exit 1 ;}
 
-for arch in alpha amd64 arm armel hppa i386 ia64 m68k mips mipsel powerpc s390 sparc
+for arch in alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sparc
 do
 	rm -f $arch-all.txt
 	echo "Getting $arch-all.txt"
