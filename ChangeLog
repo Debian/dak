@@ -1,5 +1,7 @@
 2008-11-24  Joerg Jaspert  <joerg@debian.org>
 
+	* config/debian-security/apt.conf.buildd: byebye sarge
+
 	* scripts/nfu/get-w-b-db: remove m68k
 
 	* scripts/debian/update-ftpstats: remove m68k

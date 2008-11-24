@@ -41,16 +41,3 @@ bindirectory "lenny"
    Packages::Extensions ".deb .udeb";
 };
 
-bindirectory "sarge"
-{
-   Packages "sarge/Packages";
-   Sources "sarge/Sources";
-   Contents " ";
-
-   BinOverride "override.sarge.all3";
-   SrcOverride "override.sarge.all3.src";
-   BinCacheDB "packages-accepted-sarge.db";
-   PathPrefix "";
-   Packages::Extensions ".deb .udeb";
-};
-
