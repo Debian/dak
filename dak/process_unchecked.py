@@ -1077,42 +1077,6 @@ def check_signed_by_key():
             if files[f].has_key("new"):
                 reject("%s may not upload NEW file %s" % (uid, f))
 
-    # The remaining checks only apply to binary-only uploads right now
-    if changes["architecture"].has_key("source"):
-        return
-
-    if not Cnf.Exists("Binary-Upload-Restrictions"):
-        return
-
-    restrictions = Cnf.SubTree("Binary-Upload-Restrictions")
-
-    # If the restrictions only apply to certain components make sure
-    # that the upload is actual targeted there.
-    if restrictions.Exists("Components"):
-        restricted_components = restrictions.SubTree("Components").ValueList()
-        is_restricted = False
-        for f in files:
-            if files[f]["component"] in restricted_components:
-                is_restricted = True
-                break
-        if not is_restricted:
-            return
-
-    # Assuming binary only upload restrictions are in place we then
-    # iterate over suite and architecture checking the key is in the
-    # allowed list.  If no allowed list exists for a given suite or
-    # architecture it's assumed to be open to anyone.
-    for suite in changes["distribution"].keys():
-        if not restrictions.Exists(suite):
-            continue
-        for arch in changes["architecture"].keys():
-            if not restrictions.SubTree(suite).Exists(arch):
-                continue
-            allowed_keys = restrictions.SubTree("%s::%s" % (suite, arch)).ValueList()
-            if changes["fingerprint"] not in allowed_keys:
-                base_filename = os.path.basename(pkg.changes_file)
-                reject("%s: not signed by authorised uploader for %s/%s"
-                       % (base_filename, suite, arch))
 
 ################################################################################
 ################################################################################

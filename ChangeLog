@@ -1,5 +1,8 @@
 2008-11-24  Joerg Jaspert  <joerg@debian.org>
 
+	* dak/process_unchecked.py (check_signed_by_key): remove the
+	binary-upload restriction stuff. unused.
+
 	* config/debian-security/apt.conf.buildd: byebye sarge
 
 	* scripts/nfu/get-w-b-db: remove m68k
@@ -7,6 +10,7 @@
 	* scripts/debian/update-ftpstats: remove m68k
 
 	* config/debian/dak.conf: remove m68k
+	remove the binary-upload-restrictions
 
 	* config/debian/vars (archs): Remove m68k
 
