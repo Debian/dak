@@ -1246,6 +1246,14 @@ def queue_unembargo (summary, short_summary):
     Upload.Subst["__SUMMARY__"] = summary
     Upload.check_override()
 
+    # Send accept mail, announce to lists, close bugs and check for
+    # override disparities
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        Upload.Subst["__SUITE__"] = ""
+        mail_message = utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/process-unchecked.accepted")
+        utils.send_mail(mail_message)
+        Upload.announce(short_summary, 1)
+
 ################################################################################
 
 def is_embargo ():
@@ -1263,6 +1271,14 @@ def queue_embargo (summary, short_summary):
     # Check for override disparities
     Upload.Subst["__SUMMARY__"] = summary
     Upload.check_override()
+
+    # Send accept mail, announce to lists, close bugs and check for
+    # override disparities
+    if not Cnf["Dinstall::Options::No-Mail"]:
+        Upload.Subst["__SUITE__"] = ""
+        mail_message = utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/process-unchecked.accepted")
+        utils.send_mail(mail_message)
+        Upload.announce(short_summary, 1)
 
 ################################################################################
 
