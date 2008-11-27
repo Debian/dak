@@ -282,6 +282,7 @@ def actually_upload(changes_files):
         print "Moving files to UploadQueue"
         for filename in uploads[uri]:
             utils.copy(filename, Cnf["Dir::Upload"])
+            remove_from_buildd(suites, filename)
         #spawn("lftp -c 'open %s; cd %s; put %s'" % (host, path, file_list))
 
     if not Options["No-Action"]:
@@ -291,6 +292,17 @@ def actually_upload(changes_files):
             for version in package_list[source].keys():
                 file.write(" ".join([source, version])+'\n')
         file.close()
+
+def remove_from_buildd(suites, filename):
+    """Check the buildd dir for each suite and remove the file if needed"""
+    builddbase = Cnf["Dir::QueueBuild"]
+    filebase = os.path.basename(filename)
+    for s in suites:
+        try:
+            os.unlink(os.path.join(builddbase, s, filebase))
+        except OSError, e:
+            utils.warn("Problem removing %s from buildd queue %s [%s]" % (filebase, s, str(e)))
+
 
 def generate_advisory(template):
     global changes, advisory
