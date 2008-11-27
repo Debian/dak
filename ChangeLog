@@ -1,3 +1,9 @@
+2008-11-27  Mark Hymers  <mhy@debian.org>
+
+	* dak/new_security_install.py: Attempt to tidy up the buildd queue.  The
+	buildd team believes that the fact that the packages are in the security
+	pool after this point should be good enough.
+
 2008-11-25  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/process_unchecked.py (queue_(un)embargo): (Hopefully) enable
