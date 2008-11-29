@@ -1,5 +1,8 @@
 2008-11-30  Joerg Jaspert  <joerg@debian.org>
 
+	* config/debian/apt.conf: Lets generate experimental content
+	files.
+
 	* dak/daklib/queue.py (Upload.cross_suite_version_check): Add a
 	few () to make cross_suite_version_check finally work as
 	intended (well, we hope). Thanks to Philipp Kern for spotting this.
