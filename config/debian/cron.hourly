@@ -14,3 +14,4 @@ dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
 dak show-deferred > ${webdir}/deferred.html
 cd $queuedir/new ; dak show-new *.changes > /dev/null
+$scriptsdir/generate-di
