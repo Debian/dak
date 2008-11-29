@@ -855,8 +855,8 @@ distribution."""
 
         # Check versions for each target suite
         for target_suite in self.pkg.changes["distribution"].keys():
-            must_be_newer_than = [ i.lower for i in self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeNewerThan" % (target_suite)) ]
-            must_be_older_than = [ i.lower for i in self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeOlderThan" % (target_suite)) ]
+            must_be_newer_than = [ i.lower() for i in self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeNewerThan" % (target_suite)) ]
+            must_be_older_than = [ i.lower() for i in self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeOlderThan" % (target_suite)) ]
             # Enforce "must be newer than target suite" even if conffile omits it
             if target_suite not in must_be_newer_than:
                 must_be_newer_than.append(target_suite)
