@@ -282,7 +282,9 @@ def actually_upload(changes_files):
         print "Moving files to UploadQueue"
         for filename in uploads[uri]:
             utils.copy(filename, Cnf["Dir::Upload"])
-            remove_from_buildd(suites, filename)
+            # .changes files have already been moved to queue/done by p-a
+            if not filename.endswith('.changes'):
+                remove_from_buildd(suites, filename)
         #spawn("lftp -c 'open %s; cd %s; put %s'" % (host, path, file_list))
 
     if not Options["No-Action"]:
