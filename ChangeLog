@@ -1,3 +1,8 @@
+2008-11-28  Mark Hymers  <mhy@debian.org>
+
+	* dak/new_security_install.py: Don't attempt to delete the .changes files
+	which have already been moved to queue/done by now.
+
 2008-11-27  Mark Hymers  <mhy@debian.org>
 
 	* dak/new_security_install.py: Attempt to tidy up the buildd queue.  The
