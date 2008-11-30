@@ -1,3 +1,9 @@
+2008-11-30  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_unchecked.py (do_stableupdate, do_oldstableupdate):
+	move files to NEW for {old,}stable-proposed-updates world-readable
+	(Closes: #368056)
+
 2008-11-30  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/apt.conf: Lets generate experimental content
