@@ -176,11 +176,19 @@ if __name__ == "__main__":
     feed_in_file = os.path.join(settings.outdir, inrss_filename)
     feed_out_file = os.path.join(settings.outdir, outrss_filename)
 
-    status.feed_in.write_xml(file(feed_in_file, "w+"), "utf-8")
-    status.feed_out.write_xml(file(feed_out_file, "w+"), "utf-8")
+    try:
+        status.feed_in.write_xml(file(feed_in_file, "w+"), "utf-8")
+        status.feed_out.write_xml(file(feed_out_file, "w+"), "utf-8")
+    except IOError, why:
+        sys.stderr.write("Unable to write feeds: %s\n", why)
+        sys.exit(1)
 
     status.queue = current_queue
 
-    cPickle.dump(status, open(status_db, "w+"))
+    try:
+        cPickle.dump(status, open(status_db, "w+"))
+    except IOError, why:
+        sys.stderr.write("Unable to save status: %s\n", why)
+        sys.exit(1)
 
 # vim:et:ts=4
