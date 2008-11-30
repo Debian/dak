@@ -40,7 +40,7 @@ class Status:
                        title = "Packages leaving NEW",
                        link = "http://ftp-master.debian.org/new.html",
                        description = "Debian packages leaving the NEW queue" )
-        
+
         self.queue = {}
 
 def utf2ascii(src):
@@ -63,7 +63,7 @@ def purge_old_items(feed, max):
 
 def parse_changes(fname):
     """ Parse a .changes file named fname.
-    
+
     Return {fname: parsed} """
 
     p = HeaderParser()
@@ -83,17 +83,17 @@ def parse_changes(fname):
 
 def parse_queuedir(dir):
     """ Parse dir for .changes files.
-    
+
     Return a dictionary {filename: parsed_file}"""
 
     if not os.path.exists(dir):
         return None
-    
+
     res = {}
     for fname in os.listdir(dir):
         if not fname.endswith(".changes"):
             continue
-        
+
         parsed = parse_changes(os.path.join(dir, fname))
         if parsed:
             res.update(parsed)
@@ -109,7 +109,7 @@ def append_rss_item(status, msg, direction):
         title = "%s %s left NEW" % (msg['Source'], msg['Version'])
     else:
         return False
-    
+
     description = "<pre>Description: %s\nChanges: %s\n</pre>" % \
             (utf2ascii(msg['Description']), utf2ascii(msg['Changes']))
 
@@ -128,7 +128,7 @@ def append_rss_item(status, msg, direction):
 def update_feeds(curqueue, status):
     # inrss -> append all items in curqueue not in status.queue
     # outrss -> append all items in status.queue not in curqueue
-    
+
     for (name, parsed) in curqueue.items():
         if not status.queue.has_key(name):
             # new package
@@ -139,7 +139,7 @@ def update_feeds(curqueue, status):
             # removed package
             append_rss_item(status, parsed, "out")
 
-    
+
 
 if __name__ == "__main__":
 
@@ -164,8 +164,8 @@ if __name__ == "__main__":
 
     update_feeds(current_queue, status)
 
-    purge_old_items(status.feed_in, settings.max_entries) 
-    purge_old_items(status.feed_out, settings.max_entries) 
+    purge_old_items(status.feed_in, settings.max_entries)
+    purge_old_items(status.feed_out, settings.max_entries)
 
     feed_in_file = os.path.join(settings.outdir, inrss_filename)
     feed_out_file = os.path.join(settings.outdir, outrss_filename)
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     status.feed_in.write_xml(file(feed_in_file, "w+"), "utf-8")
     status.feed_out.write_xml(file(feed_out_file, "w+"), "utf-8")
 
-    status.queue = current_queue 
+    status.queue = current_queue
 
     cPickle.dump(status, open(status_db, "w+"))
 
