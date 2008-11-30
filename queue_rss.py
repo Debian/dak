@@ -147,10 +147,12 @@ if __name__ == "__main__":
 
     if not os.path.exists(settings.outdir):
         sys.stderr.write("Outdir '%s' does not exists\n" % settings.outdir)
+        parser.print_help()
         sys.exit(1)
 
     if not os.path.exists(settings.datadir):
         sys.stderr.write("Datadir '%s' does not exists\n" % settings.datadir)
+        parser.print_help()
         sys.exit(1)
 
     status_db = os.path.join(settings.datadir, db_filename)
