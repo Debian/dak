@@ -20,12 +20,14 @@ outrss_filename = "changes_out.rss"
 db_filename = "status.db"
 
 parser = OptionParser()
-parser.set_defaults(queuedir="queue", outdir="out", max_entries="30")
+parser.set_defaults(queuedir="queue", outdir="out", datadir="status", max_entries="30")
 
 parser.add_option("-q", "--queuedir", dest="queuedir",
         help="The queue dir (%default)")
 parser.add_option("-o", "--outdir", dest="outdir",
         help="The output directory (%default)")
+parser.add_option("-d", "--datadir", dest="datadir",
+        help="The data dir (%default)")
 parser.add_option("-m", "--max-entries", dest="max_entries", type="int",
         help="Max number of entries to keep (%default)")
 
@@ -149,7 +151,11 @@ if __name__ == "__main__":
         sys.stderr.write("Outdir '%s' does not exists\n" % settings.outdir)
         sys.exit(1)
 
-    status_db = os.path.join(settings.outdir, db_filename)
+    if not os.path.exists(settings.datadir):
+        sys.stderr.write("Datadir '%s' does not exists\n" % settings.datadir)
+        sys.exit(1)
+
+    status_db = os.path.join(settings.datadir, db_filename)
 
     try:
         status = cPickle.load(open(status_db))
