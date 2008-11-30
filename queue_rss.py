@@ -58,8 +58,6 @@ def purge_old_items(feed, max):
     if feed.items is None or len(feed.items) == 0:
         return False
     
-    # most recent first
-    feed.items.sort(lambda x,y: cmp(y.pubDate, x.pubDate))
     feed.items = feed.items[:max]
     return True
 
@@ -102,7 +100,7 @@ def parse_queuedir(dir):
 
     return res
 
-def append_rss_item(status, msg, direction):
+def add_rss_item(status, msg, direction):
     if direction == "in":
         feed = status.feed_in
         title = "%s %s entered NEW" % (msg['Source'], msg['Version'])
@@ -115,7 +113,7 @@ def append_rss_item(status, msg, direction):
     description = "<pre>Description: %s\nChanges: %s\n</pre>" % \
             (utf2ascii(msg['Description']), utf2ascii(msg['Changes']))
 
-    feed.items.append(
+    feed.items.insert(0,
         PyRSS2Gen.RSSItem(
             title, 
             pubDate = msg['Date'],
@@ -134,12 +132,12 @@ def update_feeds(curqueue, status):
     for (name, parsed) in curqueue.items():
         if not status.queue.has_key(name):
             # new package
-            append_rss_item(status, parsed, "in")
+            add_rss_item(status, parsed, "in")
 
     for (name, parsed) in status.queue.items():
         if not curqueue.has_key(name):
             # removed package
-            append_rss_item(status, parsed, "out")
+            add_rss_item(status, parsed, "out")
 
 
 
