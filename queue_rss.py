@@ -48,7 +48,7 @@ class Status:
 def utf2ascii(src):
     """ Return an ASCII encoded copy of the input UTF-8 string """
     try:
-        res = unicode(src, 'utf-8').encode('ascii', 'replace') 
+        res = unicode(src, 'utf-8').encode('ascii', 'replace')
     except UnicodeDecodeError:
         res = None
     return res
@@ -57,7 +57,7 @@ def purge_old_items(feed, max):
     """ Purge RSSItem from feed, no more than max. """
     if feed.items is None or len(feed.items) == 0:
         return False
-    
+
     feed.items = feed.items[:max]
     return True
 
@@ -115,7 +115,7 @@ def add_rss_item(status, msg, direction):
 
     feed.items.insert(0,
         PyRSS2Gen.RSSItem(
-            title, 
+            title,
             pubDate = msg['Date'],
 #            pubDate = now(),
             description = description,
