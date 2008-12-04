@@ -94,9 +94,9 @@ def recheck():
 
         # Version and file overwrite checks
         if files[f]["type"] == "deb":
-            reject(Upload.check_binary_against_db(f))
+            reject(Upload.check_binary_against_db(f), "")
         elif files[f]["type"] == "dsc":
-            reject(Upload.check_source_against_db(f))
+            reject(Upload.check_source_against_db(f), "")
             (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(f)
             reject(reject_msg, "")
 
