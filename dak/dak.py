@@ -175,7 +175,7 @@ def usage(functionality, exit_code=0):
     print """Usage: dak COMMAND [...]
 Run DAK commands.  (Will also work if invoked as COMMAND.)
 
-Availble commands:"""
+Available commands:"""
     for (command, description) in functionality:
         print "  %-23s %s" % (command, description)
     sys.exit(exit_code)
