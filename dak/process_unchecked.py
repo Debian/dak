@@ -1303,7 +1303,7 @@ def do_stableupdate (summary, short_summary):
     Logger.log(["Moving to proposed-updates", pkg.changes_file]);
 
     Upload.dump_vars(Cnf["Dir::Queue::ProposedUpdates"]);
-    move_to_dir(Cnf["Dir::Queue::ProposedUpdates"])
+    move_to_dir(Cnf["Dir::Queue::ProposedUpdates"], perms=0664)
 
     # Check for override disparities
     Upload.Subst["__SUMMARY__"] = summary;
@@ -1332,7 +1332,7 @@ def do_oldstableupdate (summary, short_summary):
     Logger.log(["Moving to oldstable-proposed-updates", pkg.changes_file]);
 
     Upload.dump_vars(Cnf["Dir::Queue::OldProposedUpdates"]);
-    move_to_dir(Cnf["Dir::Queue::OldProposedUpdates"])
+    move_to_dir(Cnf["Dir::Queue::OldProposedUpdates"], perms=0664)
 
     # Check for override disparities
     Upload.Subst["__SUMMARY__"] = summary;
