@@ -1,3 +1,9 @@
+2008-12-04  Philipp Kern  <pkern@debian.org>
+
+	* dak/process_new.py (recheck): call reject for
+	Upload.check_{binary,source}_against_db with an empty prefix to not
+	reject on warnings
+
 2008-11-30  Philipp Kern  <pkern@debian.org>
 
 	* dak/process_unchecked.py (do_stableupdate, do_oldstableupdate):
