@@ -1,3 +1,7 @@
+2008-12-09  Filippo Giunchedi <filippo@debian.org>
+
+	* tools/queue_rss.py: Added, generates RSS feeds of NEW.
+
 2008-12-09  Philipp Kern  <pkern@debian.org>
 
 	* daklib/queue.py (cross_suite_version_check): add an additional
