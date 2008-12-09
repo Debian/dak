@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# vim:set et sw=4:
 
 # Queue utility functions for dak
 # Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
@@ -848,7 +849,8 @@ distribution."""
 
     ################################################################################
 
-    def cross_suite_version_check(self, query_result, file, new_version):
+    def cross_suite_version_check(self, query_result, file, new_version,
+            sourceful=False):
         """Ensure versions are newer than existing packages in target
         suites and that cross-suite version checking rules as
         set out in the conf file are satisfied."""
@@ -863,7 +865,7 @@ distribution."""
             for entry in query_result:
                 existent_version = entry[0]
                 suite = entry[1]
-                if suite in must_be_newer_than and \
+                if suite in must_be_newer_than and sourceful and \
                    apt_pkg.VersionCompare(new_version, existent_version) < 1:
                     self.reject("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
                 if suite in must_be_older_than and \
@@ -925,7 +927,8 @@ SELECT b.version, su.suite_name FROM binaries b, bin_associations ba, suite su,
    AND ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id"""
                                 % (files[file]["package"],
                                    files[file]["architecture"]))
-        self.cross_suite_version_check(q.getresult(), file, files[file]["version"])
+        self.cross_suite_version_check(q.getresult(), file,
+            files[file]["version"], sourceful=False)
 
         # Check for any existing copies of the file
         q = self.projectB.query("""
@@ -950,7 +953,8 @@ SELECT b.id FROM binaries b, architecture a
         q = self.projectB.query("""
 SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
  WHERE s.source = '%s' AND sa.source = s.id AND sa.suite = su.id""" % (dsc.get("source")))
-        self.cross_suite_version_check(q.getresult(), file, dsc.get("version"))
+        self.cross_suite_version_check(q.getresult(), file, dsc.get("version"),
+            sourceful=True)
 
         return self.reject_message
 
