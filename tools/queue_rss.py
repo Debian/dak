@@ -10,7 +10,6 @@ import os.path
 import cPickle
 import sys
 import encodings.ascii
-from email.Parser import HeaderParser
 from optparse import OptionParser
 from datetime import datetime
 
