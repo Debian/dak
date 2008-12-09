@@ -15,6 +15,8 @@ from optparse import OptionParser
 
 import PyRSS2Gen
 
+from debian_bundle.deb822 import Changes
+
 inrss_filename = "changes_in.rss"
 outrss_filename = "changes_out.rss"
 db_filename = "status.db"
@@ -66,12 +68,7 @@ def parse_changes(fname):
 
     Return {fname: parsed} """
 
-    p = HeaderParser()
-
-    try:
-        m = p.parse(open(fname), True)
-    except IOError:
-        sys.stderr.write("Unable to parse %s\n" % fname)
+    m = Changes(open(fname))
 
     wanted_fields = set(['Source', 'Version', 'Architecture', 'Distribution',
                          'Date', 'Maintainer', 'Description', 'Changes'])
