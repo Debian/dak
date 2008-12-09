@@ -12,6 +12,7 @@ import sys
 import encodings.ascii
 from email.Parser import HeaderParser
 from optparse import OptionParser
+from datetime import datetime
 
 import PyRSS2Gen
 
@@ -101,9 +102,11 @@ def add_rss_item(status, msg, direction):
     if direction == "in":
         feed = status.feed_in
         title = "%s %s entered NEW" % (msg['Source'], msg['Version'])
+        pubdate = msg['Date']
     elif direction == "out":
         feed = status.feed_out
         title = "%s %s left NEW" % (msg['Source'], msg['Version'])
+        pubdate = datetime.utcnow()
     else:
         return False
 
@@ -113,8 +116,7 @@ def add_rss_item(status, msg, direction):
     feed.items.insert(0,
         PyRSS2Gen.RSSItem(
             title,
-            pubDate = msg['Date'],
-#            pubDate = now(),
+            pubDate = pubdate,
             description = description,
             author = utf2ascii(msg['Maintainer']),
             link = "http://ftp-master.debian.org/new/%s_%s.html" % \
