@@ -338,6 +338,8 @@ ts "logremove"
 echo "Finally, all is done, sending mail and compressing logfile"
 exec > /dev/null 2>&1
 
+$base/tools/logs.py "$LOGFILE"
+
 cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
 bzip2 -9 "$LOGFILE"
 
