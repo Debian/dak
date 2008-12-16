@@ -1,3 +1,7 @@
+2008-12-16  Joerg Jaspert  <joerg@debian.org>
+
+	* tools/logs.py: Added script from Thomas.
+
 2008-12-15  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.hourly: Call the removals.pl
