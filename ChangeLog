@@ -1,6 +1,13 @@
 2008-12-16  Joerg Jaspert  <joerg@debian.org>
 
 	* tools/logs.py: Added script from Thomas.
+	Modifications from me:
+	 - Use path entries that fit ftpmaster dak user
+	 - Make the bz2 extension optional for log files, so we can run it
+	out of cron.dinstall, where it is not yet compressed.
+	 - Also show the two largest time killers in the totals graph.
+	 - do not drop old entries from the cachefile
+	 - fiddle with the color palette
 
 2008-12-15  Joerg Jaspert  <joerg@debian.org>
 

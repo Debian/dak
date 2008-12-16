@@ -6,11 +6,11 @@
 import os,re,datetime, sys
 import tempfile, time
 
-ITEMS_TO_KEEP = 10
-CACHE_FILE = os.path.join(os.path.dirname(sys.argv[0]),'time_cache')
-GRAPH_DIR = '/home/tviehmann/public_html/stat'
+ITEMS_TO_KEEP = 20
+CACHE_FILE = '/srv/ftp.debian.org/misc/dinstall_time_cache'
+GRAPH_DIR = '/srv/ftp.debian.org/web/stat'
 
-LINE = re.compile(r'(?:|.*/)dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log\.bz2:'+
+LINE = re.compile(r'(?:|.*/)dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)?:'+
                   r'Archive maintenance timestamp \d+ \(([^\)]*)\): (\d{2}):(\d{2}):(\d{2})$')
 UNSAFE = re.compile(r'[^a-zA-Z/\._:0-9\- ]')
 
@@ -19,7 +19,7 @@ graphs = {"dinstall1": {"keystolist":["pg_dump1", "i18n 1", "accepted", "make-su
                         "showothers":True},
           "dinstall2": {"keystolist":['External Updates', 'p-u-new', 'o-p-u-new', 'cruft', 'import-keyring', 'overrides', 'cleanup', 'scripts', 'mirror hardlinks', 'stats', 'compress'],
                         "showothers":False},
-          "totals":{"keystolist":[],"showothers":True}}
+          "totals":{"keystolist":["apt-ftparchive", "apt-ftparchive cleanup"],"showothers":True}}
 
 #'mirror hardlinks', 'apt-ftparchive', 'logremove', 'startup', 'import-keyring', 'release files', 'accepted', 'stats', 'o-p-u-new', 'i18n 2', 'locked part finished', 'i18n 1', 'cruft', 'pdiff', 'init', 'cleanup', , 'p-u-new', 'run-parts', 'compress', 'scripts', 'expire_dumps', 'removed', 'make-suite-file-list', 'pg_dump1', 'pg_dump2', 'overrides', 'reports', 'merkel projectb push', 'buildd', 'apt-ftparchive cleanup', 'w-b'
 
@@ -71,13 +71,13 @@ if (wantkeys-ks):
 datakeys = d.keys()
 datakeys.sort()
 
-datakeys = datakeys[-ITEMS_TO_KEEP:]
 f = open(CACHE_FILE+".tmp","w")
 for dk in datakeys:
     print >> f, dk+'\t'+'\t'.join(
       ["%s:%s"%(k,str(d[dk][k])) for k in kl if k in d[dk]])
 f.close()
 os.rename(CACHE_FILE+".tmp", CACHE_FILE)
+datakeys = datakeys[-ITEMS_TO_KEEP:]
 
 def dump_file(outfn,keystolist, showothers):
     showothers = (showothers and 1) or 0
@@ -98,10 +98,8 @@ def dump_file(outfn,keystolist, showothers):
   #d[["ts"]] <- as.POSIXct(d[["timestamp"]])
   k = setdiff(names(d),c("ts","timestamp"))
   #palette(rainbow(max(length(k),2)))
-  palette(c("midnightblue", "gold", "turquoise", "cyan", "black", "red", "OrangeRed", "green3", "blue",
-	"magenta", "tomato4",
-        "violetred2","thistle4", "steelblue2", "springgreen4",
-	"salmon","gray"))
+  palette(c("midnightblue", "gold", "turquoise", "plum4", "palegreen1", "OrangeRed", "green4", "blue",
+	"magenta", "darkgoldenrod3", "tomato4", "violetred2","thistle4", "steelblue2", "springgreen4", "salmon","gray"))
   #plot(d[["runtime"]],d[["compress"]],type="l",col="blue")
   #lines(d[["runtime"]],d[["logremove"]],type="l",col="red")
   #legend(as.POSIXct("2008-12-05"),9500,"logremove",col="red",lty=1)
