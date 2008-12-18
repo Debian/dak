@@ -95,15 +95,20 @@ def game_over():
 
 ################################################################################
 
-def reverse_depends_check(removals, suites):
+def reverse_depends_check(removals, suites, arches=None):
     print "Checking reverse dependencies..."
     components = Cnf.ValueList("Suite::%s::Components" % suites[0])
     dep_problem = 0
     p2c = {}
-    for architecture in Cnf.ValueList("Suite::%s::Architectures" % suites[0]):
-        if architecture in ["source", "all"]:
-            continue
+    all_broken = {}
+    if arches:
+        all_arches = set(arches)
+    else:
+        all_arches = set(Cnf.ValueList("Suite::%s::Architectures" % suites[0]))
+    all_arches -= set(["source", "all"])
+    for architecture in all_arches:
         deps = {}
+        sources = {}
         virtual_packages = {}
         for component in components:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suites[0], component, architecture)
@@ -116,6 +121,12 @@ def reverse_depends_check(removals, suites):
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find("Package")
+                source = Packages.Section.Find("Source")
+                if not source:
+                    source = package
+                elif ' ' in source:
+                    source = source.split(' ', 1)[0]
+                sources[package] = source
                 depends = Packages.Section.Find("Depends")
                 if depends:
                     deps[package] = depends
@@ -162,14 +173,28 @@ def reverse_depends_check(removals, suites):
                         unsat += 1
                 if unsat == len(dep):
                     component = p2c[package]
+                    source = sources[package]
                     if component != "main":
-                        what = "%s/%s" % (package, component)
-                    else:
-                        what = "** %s" % (package)
-                    print "%s has an unsatisfied dependency on %s: %s" % (what, architecture, utils.pp_deps(dep))
+                        source = "%s/%s" % (source, component)
+                    all_broken.setdefault(source, {}).setdefault(package, set()).add(architecture)
                     dep_problem = 1
 
+    if all_broken:
+        print "# Broken Depends:"
+        for source, bindict in sorted(all_broken.items()):
+            lines = []
+            for binary, arches in sorted(bindict.items()):
+                if arches == all_arches:
+                    lines.append(binary)
+                else:
+                    lines.append('%s [%s]' % (binary, ' '.join(sorted(arches))))
+            print '%s: %s' % (source, lines[0])
+            for line in lines[1:]:
+                print ' ' * (len(source) + 2) + line
+        print
+
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
+    all_broken.clear()
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suites[0], component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
@@ -201,12 +226,19 @@ def reverse_depends_check(removals, suites):
                 if unsat == len(dep):
                     if component != "main":
                         source = "%s/%s" % (source, component)
-                    else:
-                        source = "** %s" % (source)
-                    print "%s has an unsatisfied build-dependency: %s" % (source, utils.pp_deps(dep))
+                    all_broken.setdefault(source, set()).add(utils.pp_deps(dep))
                     dep_problem = 1
         sources.close()
         os.unlink(temp_filename)
+
+    if all_broken:
+        print "# Broken Build-Depends:"
+        for source, bdeps in sorted(all_broken.items()):
+            bdeps = sorted(bdeps)
+            print '%s: %s' % (source, bdeps[0])
+            for bdep in bdeps[1:]:
+                print ' ' * (len(source) + 2) + bdep
+        print
 
     if dep_problem:
         print "Dependency problem found."
@@ -258,7 +290,7 @@ def main ():
     if not arguments:
         utils.fubar("need at least one package name as an argument.")
     if Options["Architecture"] and Options["Source-Only"]:
-        utils.fubar("can't use -a/--architecutre and -S/--source-only options simultaneously.")
+        utils.fubar("can't use -a/--architecture and -S/--source-only options simultaneously.")
     if Options["Binary-Only"] and Options["Source-Only"]:
         utils.fubar("can't use -b/--binary-only and -S/--source-only options simultaneously.")
     if Options.has_key("Carbon-Copy") and not Options.has_key("Done"):
@@ -446,7 +478,8 @@ def main ():
     print
 
     if Options["Rdep-Check"]:
-        reverse_depends_check(removals, suites)
+        arches = utils.split_args(Options["Architecture"])
+        reverse_depends_check(removals, suites, arches)
 
     # If -n/--no-action, drop out here
     if Options["No-Action"]:
