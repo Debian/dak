@@ -60,11 +60,6 @@ done
 
 ################################################################################
 
-# Freshen Packages-Arch-Specific
-wget -qN http://buildd.debian.org/quinn-diff/Packages-arch-specific -O $base/buildd/Packages-arch-specific
-
-################################################################################
-
 cd $masterdir
 dak clean-queues
 dak clean-suites

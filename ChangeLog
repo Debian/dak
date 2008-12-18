@@ -1,3 +1,10 @@
+2008-12-18  Philipp Kern  <pkern@debian.org>
+
+	* config/debian-security/cron.buildd: simplify wanna-build update
+	by calling a trigger script on the wanna-build host
+	* config/debian-security/cron.daily: no need to refresh
+	packages-arch-specific anymore
+
 2008-12-16  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.dinstall: Run logs.py as last command before
