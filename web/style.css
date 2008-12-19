@@ -300,3 +300,105 @@ a:hover{
 #NEW-details-page td pre { 
         margin: 0pt
 }
+
+/*
+ * Added by Tincho 2008/12/18
+ */
+#NEW p {
+ font-weight: normal;
+}
+#NEW div.footer {
+ border-top: 1px solid black;
+}
+#NEW p.timestamp {
+ text-align: right;
+ font-size: 90%;
+ font-family: monospace;
+ margin: 0px;
+}
+table.NEW {
+ margin: auto auto;
+ width: 95%;
+}
+table.NEW tr {
+ background-color: #FFF;
+ text-align: left;
+}
+table.NEW tr.exp td.package, table.NEW tr.exp td.distribution, table.NEW tr.exp td.arch, table.NEW tr.exp td.age {
+ color: #c00;
+}
+table.NEW tr.sid {
+ color: #000;
+}
+table.NEW tr.odd {
+ background-color: #FFFFFF;
+}
+table.NEW tr.even {
+ background-color: #e8e8e8;
+}
+table.NEW td {
+ vertical-align: top;
+}
+table.NEW td.upload-data {
+}
+table.NEW span.signature {
+ font-size: 60%;
+}
+table.NEW caption {
+ caption-side: bottom;
+ background-color: #FFF;
+}
+/*
+ * Copied from removals-style.css
+ */
+a img {
+	text-decoration: none;
+	border: none;
+}
+#logo {
+	text-align: center;
+	margin-bottom: 1.5em;
+}
+#titleblock {
+	position: relative;
+	width: 100%;
+	text-align: center;
+	background-color: #DF0451;
+	color: #FFFF00;
+	padding: 0.2em;
+}
+	.titleblock a {
+		color: #FFFF00;
+		text-decoration: none;
+	}
+	.titleblock a:hover {
+		color: #FFFF00;
+		text-decoration: underline;
+	}
+	#red-upperleft {
+		position: absolute;
+		top: 0px;
+		left: 0px;
+	}
+	#red-lowerleft {
+		position: absolute;
+		bottom: 0px;
+		left: 0px;
+	}
+	#red-upperright {
+		position: absolute;
+		top: 0px;
+		right: 0px;
+	}
+	#red-lowerright {
+		position: absolute;
+		bottom: 0px;
+		right: 0px;
+	}
+	.title {
+		vertical-align: middle;
+	        font-weight: normal;
+		font-family: serif;
+		font-size: 22px;
+	}
+

@@ -1,3 +1,14 @@
+2008-12-19  Joerg Jaspert  <joerg@debian.org>
+
+	* daklib/utils.py: move the html escape stuff here.
+
+	* dak/examine_package.py: Remove the html escape stuff.
+
+	* dak/queue_report.py: lotsa html changes to get more info on the
+	page and to get Tinchos css foo working.
+
+	* web/style.css: Added new stuff from Tincho
+
 2008-12-16  Joerg Jaspert  <joerg@debian.org>
 
 	* config/debian/cron.dinstall: Run logs.py as last command before

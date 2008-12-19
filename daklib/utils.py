@@ -50,6 +50,9 @@ re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
 
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
 
+html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
+re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
+
 default_config = "/etc/dak/dak.conf"
 default_apt_config = "/etc/dak/apt.conf"
 
@@ -59,6 +62,11 @@ key_uid_email_cache = {}
 # (hashname, function, earliest_changes_version)
 known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
                 ("sha256", apt_pkg.sha256sum, (1, 8))]
+
+################################################################################
+
+def html_escape(s):
+    return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
 
 ################################################################################
 

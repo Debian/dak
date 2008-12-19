@@ -55,9 +55,6 @@ re_version = re.compile('^(.*)\((.*)\)')
 re_newlinespace = re.compile('\n')
 re_spacestrip = re.compile('(\s)')
 
-html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
-re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
-
 ################################################################################
 
 Cnf = None
@@ -89,12 +86,9 @@ PACKAGE can be a .changes, .dsc, .deb or .udeb filename."""
 ################################################################################
 # probably xml.sax.saxutils would work as well
 
-def html_escape(s):
-    return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
-
 def escape_if_needed(s):
     if use_html:
-        return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
+        return utils.re_html_escaping.sub(lambda x: utils.html_escaping.get(x.group(0)), s)
     else:
         return s
 
@@ -103,9 +97,9 @@ def headline(s, level=2, bodyelement=None):
         if bodyelement:
             print """<thead>
                 <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s <span class="toggle-msg">(click to toggle)</span></th></tr>
-              </thead>"""%{"bodyelement":bodyelement,"title":html_escape(s)}
+              </thead>"""%{"bodyelement":bodyelement,"title":utils.html_escape(s)}
         else:
-            print "<h%d>%s</h%d>" % (level, html_escape(s), level)
+            print "<h%d>%s</h%d>" % (level, utils.html_escape(s), level)
     else:
         print "---- %s ----" % (s)
 
@@ -130,7 +124,7 @@ html_colours = {
 
 def colour_output(s, colour):
     if use_html:
-        return ("%s%s%s" % (html_colours[colour][0], html_escape(s), html_colours[colour][1]))
+        return ("%s%s%s" % (html_colours[colour][0], utils.html_escape(s), html_colours[colour][1]))
     else:
         return ("%s%s%s" % (ansi_colours[colour], s, ansi_colours['end']))
 
@@ -146,7 +140,7 @@ def formatted_text(s, strip=False):
     if use_html:
         if strip:
             s = s.strip()
-        return "<pre>%s</pre>" % (html_escape(s))
+        return "<pre>%s</pre>" % (utils.html_escape(s))
     else:
         return s
 

@@ -36,6 +36,7 @@
 
 import copy, glob, os, stat, sys, time
 import apt_pkg
+import cgi
 from daklib import queue
 from daklib import utils
 from daklib.dak_exceptions import *
@@ -157,100 +158,133 @@ def sortfunc(a,b):
 ############################################################
 
 def header():
-    print """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-        <html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <title>Debian NEW and BYHAND Packages</title>
-        <link type="text/css" rel="stylesheet" href="style.css">
-        <link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
-        </head>
-        <body>
-        <div align="center">
-        <a href="http://www.debian.org/">
-     <img src="http://www.debian.org/logos/openlogo-nd-50.png" border="0" hspace="0" vspace="0" alt=""></a>
-        <a href="http://www.debian.org/">
-     <img src="http://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace="0" alt="Debian Project"></a>
-        </div>
-        <br />
-        <table class="reddy" width="100%">
-        <tr>
-        <td class="reddy">
-    <img src="http://www.debian.org/Pics/red-upperleft.png" align="left" border="0" hspace="0" vspace="0"
-     alt="" width="15" height="16"></td>
-        <td rowspan="2" class="reddy">Debian NEW and BYHAND Packages</td>
-        <td class="reddy">
-    <img src="http://www.debian.org/Pics/red-upperright.png" align="right" border="0" hspace="0" vspace="0"
-     alt="" width="16" height="16"></td>
-        </tr>
-        <tr>
-        <td class="reddy">
-    <img src="http://www.debian.org/Pics/red-lowerleft.png" align="left" border="0" hspace="0" vspace="0"
-     alt="" width="16" height="16"></td>
-        <td class="reddy">
-    <img src="http://www.debian.org/Pics/red-lowerright.png" align="right" border="0" hspace="0" vspace="0"
-     alt="" width="15" height="16"></td>
-        </tr>
-        </table>
-        """
+    print """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
+  <head>
+    <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8" />
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <link rel="shortcut icon" href="http://www.debian.org/favicon.ico" />
+    <title>
+      Debian NEW and BYHAND Packages
+    </title>
+  </head>
+  <body id="NEW">
+    <div id="logo">
+      <a href="http://www.debian.org/">
+        <img src="http://www.debian.org/logos/openlogo-nd-50.png"
+        alt="debian logo" /></a>
+      <a href="http://www.debian.org/">
+        <img src="http://www.debian.org/Pics/debian.png"
+        alt="Debian Project" /></a>
+    </div>
+    <div id="titleblock">
+
+      <img src="http://www.debian.org/Pics/red-upperleft.png"
+      id="red-upperleft" alt="corner image"/>
+      <img src="http://www.debian.org/Pics/red-lowerleft.png"
+      id="red-lowerleft" alt="corner image"/>
+      <img src="http://www.debian.org/Pics/red-upperright.png"
+      id="red-upperright" alt="corner image"/>
+      <img src="http://www.debian.org/Pics/red-lowerright.png"
+      id="red-lowerright" alt="corner image"/>
+      <span class="title">
+        Debian NEW and BYHAND Packages
+      </span>
+    </div>
+    """
 
 def footer():
-    print "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
-    print "<hr><p>Hint: Age is the youngest upload of the package, if there is more than one version.</p>"
-    print "<p>You may want to look at <a href=\"http://ftp-master.debian.org/REJECT-FAQ.html\">the REJECT-FAQ</a> for possible reasons why one of the above packages may get rejected.</p>"
-    print """<a href="http://validator.w3.org/check?uri=referer">
-    <img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a>
-        <a href="http://jigsaw.w3.org/css-validator/check/referer">
-    <img border="0" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!"
-     height="31" width="88"></a>
+    print "<p class=\"timestamp\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
+
+    print """
+    <div class="footer">
+    <p>Hint: Age is the youngest upload of the package, if there is more than
+    one version.<br />
+    You may want to look at <a href="http://ftp-master.debian.org/REJECT-FAQ.html">the REJECT-FAQ</a>
+      for possible reasons why one of the above packages may get rejected.</p>
+      <p>
+      <a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10"
+        alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+      <a href="http://jigsaw.w3.org/css-validator/">
+        <img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss"
+        alt="Valid CSS!" />
+      </a>
+      </p>
+    </div> </body> </html>
     """
-    print "</body></html>"
 
-def table_header(type):
+def table_header(type, source_count, total_count):
     print "<h1>Summary for: %s</h1>" % (type)
-    print """<center><table border="0">
+    print """
+    <table class="NEW">
+      <caption>
+    """
+    print "Package count in <strong>%s</strong>: <em>%s</em>&nbsp;|&nbsp; Total Package count: <em>%s</em>" % (type, source_count, total_count)
+    print """
+      </caption>
+      <thead>
         <tr>
-          <th align="center">Package</th>
-          <th align="center">Version</th>
-          <th align="center">Arch</th>
-          <th align="center">Distribution</th>
-          <th align="center">Age</th>
-          <th align="center">Maintainer</th>
-          <th align="center">Closes</th>
+          <th>Package</th>
+          <th>Version</th>
+          <th>Arch</th>
+          <th>Distribution</th>
+          <th>Age</th>
+          <th>Upload info</th>
+          <th>Closes</th>
         </tr>
-        """
+      </thead>
+      <tbody>
+    """
 
-def table_footer(type, source_count, total_count):
-    print "</table></center><br>\n"
-    print "<p class=\"validate\">Package count in <b>%s</b>: <i>%s</i>\n" % (type, source_count)
-    print "<br>Total Package count: <i>%s</i></p>\n" % (total_count)
+def table_footer(type):
+    print "</tbody></table>"
 
 
-def table_row(source, version, arch, last_mod, maint, distribution, closes):
+def table_row(source, version, arch, last_mod, maint, distribution, closes, fingerprint, sponsor, changedby):
 
     global row_number
 
-    if row_number % 2 != 0:
-        print "<tr class=\"even\">"
-    else:
-        print "<tr class=\"odd\">"
-
-    tdclass = "sid"
+    trclass = "sid"
     for dist in distribution:
         if dist == "experimental":
-            tdclass = "exp"
-    print "<td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, source)
-    print "<td valign=\"top\" class=\"%s\">" % (tdclass)
+            trclass = "exp"
+
+    if row_number % 2 != 0:
+        print "<tr class=\"%s even\">" % (trclass)
+    else:
+        print "<tr class=\"%s odd\">" % (trclass)
+
+    print "<td class=\"package\">%s</td>" % (source)
+    print "<td class=\"version\">"
     for vers in version.split():
-        print "<a href=\"/new/%s_%s.html\">%s</a><br>" % (source, vers, vers)
-    print "</td><td valign=\"top\" class=\"%s\">%s</td><td valign=\"top\" class=\"%s\">" % (tdclass, arch, tdclass)
+        print "<a href=\"/new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers))
+    print "</td>"
+    print "<td class=\"arch\">%s</td>" % (arch)
+    print "<td class=\"distribution\">"
     for dist in distribution:
-        print "%s<br>" % (dist)
-    print "</td><td valign=\"top\" class=\"%s\">%s</td>" % (tdclass, last_mod)
+        print "%s<br/>" % (dist)
+    print "</td>"
+    print "<td class=\"age\">%s</td>" % (last_mod)
     (name, mail) = maint.split(":")
 
-    print "<td valign=\"top\" class=\"%s\"><a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></td>" % (tdclass, mail, name)
-    print "<td valign=\"top\" class=\"%s\">" % (tdclass)
+    print "<td class=\"upload-data\">"
+    print "<span class=\"maintainer\">Maintainer: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
+    (name, mail) = changedby.split(":")
+    print "<span class=\"changed-by\">Changed-By: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
+
+    try:
+        (login, domain) = sponsor.split("@")
+        print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
+    except:
+        pass
+
+    print "<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint)
+    print "</td>"
+
+    print "<td class=\"closes\">"
     for close in closes:
-        print "<a href=\"http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br>" % (close, close)
+        print "<a href=\"http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (utils.html_escape(close), utils.html_escape(close))
     print "</td></tr>"
     row_number+=1
 
@@ -306,11 +340,15 @@ def process_changes_files(changes_files, type):
     max_source_len = 0
     max_version_len = 0
     max_arch_len = 0
-    maintainer = {}
-    maint=""
-    distribution=""
-    closes=""
     for i in per_source_items:
+        maintainer = {}
+        maint=""
+        distribution=""
+        closes=""
+        fingerprint=""
+        changeby = {}
+        changedby=""
+        sponsor=""
         last_modified = time.time()-i[1]["oldest"]
         source = i[1]["list"][0]["source"]
         if len(source) > max_source_len:
@@ -328,8 +366,22 @@ def process_changes_files(changes_files, type):
                     maintainer["maintainername"] = "Unknown"
                     maintainer["maintaineremail"] = "Unknown"
                 maint="%s:%s" % (maintainer["maintainername"], maintainer["maintaineremail"])
+                # ...likewise for the Changed-By: field if it exists.
+                try:
+                    (changeby["changedby822"], changeby["changedby2047"],
+                     changeby["changedbyname"], changeby["changedbyemail"]) = \
+                     utils.fix_maintainer (j["changed-by"])
+                except ParseMaintError, msg:
+                    (changeby["changedby822"], changeby["changedby2047"],
+                     changeby["changedbyname"], changeby["changedbyemail"]) = \
+                     ("", "", "", "")
+                changedby="%s:%s" % (changeby["changedbyname"], changeby["changedbyemail"])
+
                 distribution=j["distribution"].keys()
                 closes=j["closes"].keys()
+                fingerprint=j["fingerprint"]
+                if j.has_key("sponsoremail"):
+                    sponsor=j["sponsoremail"]
             for arch in j["architecture"].keys():
                 arches[arch] = ""
             version = j["version"]
@@ -346,7 +398,7 @@ def process_changes_files(changes_files, type):
             note = " | [N]"
         else:
             note = ""
-        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes])
+        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby])
 
     # direction entry consists of "Which field, which direction, time-consider" where
     # time-consider says how we should treat last_modified. Thats all.
@@ -391,20 +443,20 @@ def process_changes_files(changes_files, type):
     # Output for a html file. First table header. then table_footer.
     # Any line between them is then a <tr> printed from subroutine table_row.
         if len(entries) > 0:
-            table_header(type.upper())
-            for entry in entries:
-                (source, version_list, arch_list, note, last_modified, maint, distribution, closes) = entry
-                table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes)
             total_count = len(changes_files)
             source_count = len(per_source_items)
-            table_footer(type.upper(), source_count, total_count)
+            table_header(type.upper(), source_count, total_count)
+            for entry in entries:
+                (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby) = entry
+                table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
+            table_footer(type.upper())
     else:
     # The "normal" output without any formatting.
         format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old\n" % (max_source_len, max_version_len, max_arch_len)
 
         msg = ""
         for entry in entries:
-            (source, version_list, arch_list, note, last_modified, undef, undef, undef) = entry
+            (source, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef) = entry
             msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
