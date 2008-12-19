@@ -57,19 +57,7 @@ if [ ! -z "$dists" ]; then
 	done
 	trap 'kill -TERM $SSH_PID' 0
 	for d in $dists; do
-		archs=ARCHS_$d
-		ARCHS=${!archs}
-		cd /org/security.debian.org/buildd/$d
-		if [ "$d" != "oldstable" ]; then
-			# disabled for oldstable-security by ajt 2008-01-01
-			for a in $ARCHS; do
-				quinn-diff -a /org/security.debian.org/buildd/Packages-arch-specific -A $a 2>/dev/null | ssh wbadm@buildd -S $SSH_SOCKET wanna-build -d $d-security -b $a/build-db --merge-partial-quinn
-
-				ssh wbadm@buildd -S $SSH_SOCKET wanna-build -d $d-security -A $a -b $a/build-db --merge-packages < Packages
-			done
-		else
-			ssh buildd@bester.farm.ftbfs.de -i ~/.ssh/id_bester sleep 1
-		fi
+		ssh wbadm@buildd -S $SSH_SOCKET trigger.security $d
 	done
 fi
 
