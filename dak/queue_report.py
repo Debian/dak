@@ -53,6 +53,7 @@ def usage(exit_code=0):
 Prints a report of packages in queue directories (usually new and byhand).
 
   -h, --help                show this help and exit.
+  -8, --822                 writes 822 formated output to the location set in dak.conf
   -n, --new                 produce html-output
   -s, --sort=key            sort output according to key, see below.
   -a, --age=key             if using sort by age, how should time be treated?
@@ -356,7 +357,7 @@ def process_changes_files(changes_files, type):
         arches = {}
         versions = {}
         for j in i[1]["list"]:
-            if Cnf.has_key("Queue-Report::Options::New"):
+            if Cnf.has_key("Queue-Report::Options::New") or Cnf.has_key("Queue-Report::Options:822"):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
@@ -437,6 +438,43 @@ def process_changes_files(changes_files, type):
     # have with it. (If you combine options it will simply take the last one at the moment).
     # Will be enhanced in the future.
 
+    if Cnf.has_key("Queue-Report::Options:822"):
+        # Open the report file
+        f = open(Cnf["Queue-Report::ReportLocations::822Location"], "w")
+
+        # print stuff out in 822 format
+        for entry in entries:
+            (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby) = entry
+
+            # We'll always have Source, Version, Arch, Mantainer, and Dist
+            # For the rest, check to see if we have them, then print them out
+            f.write("Source: " + source + "\n")
+            f.write("Version: " + version_list + "\n")
+            f.write("Architectures:")
+            f.write( (", ".join(arch_list.split(" "))) + "\n")
+            f.write("Age: " + time_pp(last_modified) + "\n")
+
+            (name, mail) = maint.split(":")
+            f.write("Maintainer: " + name + " <"+mail+">" + "\n")
+            if changedby:
+               (name, mail) = changedby.split(":")
+               f.write("Changed-By: " + name + " <"+mail+">" + "\n")
+            if sponsor:
+               (name, mail) = sponsor.split(":")
+               f.write("Sponsored-By: " + name + " <"+mail+">" + "\n")
+            f.write("Distribution:")
+            for dist in distribution:
+               f.write(" " + dist)
+            f.write("\n")
+            f.write("Fingerprint: " + fingerprint + "\n")
+            if closes:
+                bug_string = ""
+                for bugs in closes:
+                    bug_string += "#"+bugs+", "
+                f.write("Closes: " + bug_string[:-2] + "\n")
+            f.write("\n")
+        f.close()
+
     if Cnf.has_key("Queue-Report::Options::New"):
         direction.append([4,1,"ao"])
         entries.sort(lambda x, y: sortfunc(x, y))
@@ -450,7 +488,7 @@ def process_changes_files(changes_files, type):
                 (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby) = entry
                 table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
-    else:
+    elif not Cnf.has_key("Queue-Report::Options:822"):
     # The "normal" output without any formatting.
         format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old\n" % (max_source_len, max_version_len, max_arch_len)
 
@@ -478,6 +516,7 @@ def main():
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Queue-Report::Options::Help"),
                  ('n',"new","Queue-Report::Options::New"),
+                 ('8','822',"Queue-Report::Options:822"),
                  ('s',"sort","Queue-Report::Options::Sort", "HasArg"),
                  ('a',"age","Queue-Report::Options::Age", "HasArg")]
     for i in [ "help" ]:

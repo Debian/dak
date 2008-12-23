@@ -1,3 +1,12 @@
+2008-12-23  Michael Casadevall <sonicmctails@gmail.com>
+
+        * dak/queue_report.py - Added 822 output format
+
+        * config/debian/dak.conf - Added 822 output location
+
+        * dak/process_accepted.py - Added orig.tar.gz copying when going
+          inbetween two components
+
 2008-12-23  Joerg Jaspert  <joerg@debian.org>
 
 	* dak/make_suite_file_list.py (stable_dislocation_p): Removed
