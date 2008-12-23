@@ -35,7 +35,6 @@
 
 import copy, os, pg, sys
 import apt_pkg
-import symlink_dists
 from daklib import database
 from daklib import logging
 from daklib import utils
