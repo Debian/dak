@@ -162,8 +162,6 @@ def init():
          "Split queue/done into a date-based hierarchy"),
         ("stats",
          "Generate statistics"),
-        ("symlink-dists",
-         "Generate compatability symlinks from dists/ into pool/"),
         ]
     return functionality
 
