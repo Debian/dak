@@ -357,7 +357,7 @@ def process_changes_files(changes_files, type):
         arches = {}
         versions = {}
         for j in i[1]["list"]:
-            if Cnf.has_key("Queue-Report::Options::New") or Cnf.has_key("Queue-Report::Options:822"):
+            if Cnf.has_key("Queue-Report::Options::New") or Cnf.has_key("Queue-Report::Options::822"):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
@@ -438,7 +438,7 @@ def process_changes_files(changes_files, type):
     # have with it. (If you combine options it will simply take the last one at the moment).
     # Will be enhanced in the future.
 
-    if Cnf.has_key("Queue-Report::Options:822"):
+    if Cnf.has_key("Queue-Report::Options::822"):
         # Open the report file
         f = open(Cnf["Queue-Report::ReportLocations::822Location"], "w")
 
@@ -488,7 +488,7 @@ def process_changes_files(changes_files, type):
                 (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby) = entry
                 table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
-    elif not Cnf.has_key("Queue-Report::Options:822"):
+    elif not Cnf.has_key("Queue-Report::Options::822"):
     # The "normal" output without any formatting.
         format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old\n" % (max_source_len, max_version_len, max_arch_len)
 
@@ -516,7 +516,7 @@ def main():
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Queue-Report::Options::Help"),
                  ('n',"new","Queue-Report::Options::New"),
-                 ('8','822',"Queue-Report::Options:822"),
+                 ('8','822',"Queue-Report::Options::822"),
                  ('s',"sort","Queue-Report::Options::Sort", "HasArg"),
                  ('a',"age","Queue-Report::Options::Age", "HasArg")]
     for i in [ "help" ]:
