@@ -408,7 +408,7 @@ def install ():
         if new_files_id == None:
             utils.copy(old_filename, Cnf["Dir::Pool"] + new_filename)
             new_files_id = database.set_files_id(new_filename, file_size, file_md5sum, file_sha1sum, file_sha256sum, dsc_location_id)
-            projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, source_id, orig_tar_id))
+            projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, database.get_source_id(changes["source"], changes["version"]), orig_tar_id))
 
     # Install the files into the pool
     for file in files.keys():
