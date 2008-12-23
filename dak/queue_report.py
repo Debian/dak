@@ -53,7 +53,7 @@ def usage(exit_code=0):
 Prints a report of packages in queue directories (usually new and byhand).
 
   -h, --help                show this help and exit.
-  -8, --822                 produce 822 formated output
+  -8, --822                 writes 822 formated output to the location set in dak.conf
   -n, --new                 produce html-output
   -s, --sort=key            sort output according to key, see below.
   -a, --age=key             if using sort by age, how should time be treated?
