@@ -331,27 +331,6 @@ def write_filelists(packages, dislocated_files):
 
 ################################################################################
 
-# Want to use stable dislocation support: True or false?
-def stable_dislocation_p():
-    # If the support is not explicitly enabled, assume it's disabled
-    if not Cnf.FindB("Dinstall::StableDislocationSupport"):
-        return 0
-    # If we don't have a stable suite, obviously a no-op
-    if not Cnf.has_key("Suite::Stable"):
-        return 0
-    # If the suite(s) weren't explicitly listed, all suites are done
-    if not Options["Suite"]:
-        return 1
-    # Otherwise, look in what suites the user specified
-    suites = utils.split_args(Options["Suite"])
-
-    if "stable" in suites:
-        return 1
-    else:
-        return 0
-
-################################################################################
-
 def do_da_do_da():
     # If we're only doing a subset of suites, ensure we do enough to
     # be able to do arch: all mapping.
@@ -367,10 +346,7 @@ def do_da_do_da():
     (con_suites, con_architectures, con_components, check_source) = \
                  utils.parse_args(Options)
 
-    if stable_dislocation_p():
-        dislocated_files = symlink_dists.find_dislocated_stable(Cnf, projectB)
-    else:
-        dislocated_files = {}
+    dislocated_files = {}
 
     query = """
 SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name,
