@@ -11,7 +11,7 @@ date -u > $ftpdir/project/trace/ftp-master.debian.org
 echo "Using dak v1" >> $ftpdir/project/trace/ftp-master.debian.org
 echo "Running on host: $(hostname -f)" >> $ftpdir/project/trace/ftp-master.debian.org
 dak import-users-from-passwd
-dak queue-report -n > $webdir/new.html
+dak queue-report -n -8 > $webdir/new.html
 dak show-deferred > ${webdir}/deferred.html
 cd $queuedir/new ; dak show-new *.changes > /dev/null
 $base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc

@@ -534,6 +534,7 @@ def main():
     if not directories:
         directories = [ "byhand", "new" ]
 
+    f = None
     if Cnf.has_key("Queue-Report::Options::822"):
         # Open the report file
         f = open(Cnf["Queue-Report::ReportLocations::822Location"], "w")
