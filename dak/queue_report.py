@@ -291,7 +291,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
 
 ############################################################
 
-def process_changes_files(changes_files, type):
+def process_changes_files(changes_files, type, log):
     msg = ""
     cache = {}
     # Read in all the .changes files
@@ -439,40 +439,36 @@ def process_changes_files(changes_files, type):
     # Will be enhanced in the future.
 
     if Cnf.has_key("Queue-Report::Options::822"):
-        # Open the report file
-        f = open(Cnf["Queue-Report::ReportLocations::822Location"], "w")
-
         # print stuff out in 822 format
         for entry in entries:
             (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby) = entry
 
             # We'll always have Source, Version, Arch, Mantainer, and Dist
             # For the rest, check to see if we have them, then print them out
-            f.write("Source: " + source + "\n")
-            f.write("Version: " + version_list + "\n")
-            f.write("Architectures: ")
-            f.write( (", ".join(arch_list.split(" "))) + "\n")
-            f.write("Age: " + time_pp(last_modified) + "\n")
+            log.write("Source: " + source + "\n")
+            log.write("Version: " + version_list + "\n")
+            log.write("Architectures: ")
+            log.write( (", ".join(arch_list.split(" "))) + "\n")
+            log.write("Age: " + time_pp(last_modified) + "\n")
 
             (name, mail) = maint.split(":")
-            f.write("Maintainer: " + name + " <"+mail+">" + "\n")
+            log.write("Maintainer: " + name + " <"+mail+">" + "\n")
             if changedby:
                (name, mail) = changedby.split(":")
-               f.write("Changed-By: " + name + " <"+mail+">" + "\n")
+               log.write("Changed-By: " + name + " <"+mail+">" + "\n")
             if sponsor:
-               f.write("Sponsored-By: " + sponsor + "\n")
-            f.write("Distribution:")
+               log.write("Sponsored-By: " + sponsor + "\n")
+            log.write("Distribution:")
             for dist in distribution:
-               f.write(" " + dist)
-            f.write("\n")
-            f.write("Fingerprint: " + fingerprint + "\n")
+               log.write(" " + dist)
+            log.write("\n")
+            log.write("Fingerprint: " + fingerprint + "\n")
             if closes:
                 bug_string = ""
                 for bugs in closes:
                     bug_string += "#"+bugs+", "
-                f.write("Closes: " + bug_string[:-2] + "\n")
-            f.write("\n")
-        f.close()
+                log.write("Closes: " + bug_string[:-2] + "\n")
+            log.write("\n")
 
     if Cnf.has_key("Queue-Report::Options::New"):
         direction.append([4,1,"ao"])
@@ -537,9 +533,16 @@ def main():
     if not directories:
         directories = [ "byhand", "new" ]
 
+    if Cnf.has_key("Queue-Report::Options::822"):
+        # Open the report file
+        f = open(Cnf["Queue-Report::ReportLocations::822Location"], "w")
+
     for directory in directories:
         changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::%s" % (directory)]))
-        process_changes_files(changes_files, directory)
+        process_changes_files(changes_files, directory, f)
+
+    if Cnf.has_key("Queue-Report::Options::822"):
+        f.close()
 
     if Cnf.has_key("Queue-Report::Options::New"):
         footer()
