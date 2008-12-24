@@ -460,8 +460,7 @@ def process_changes_files(changes_files, type):
                (name, mail) = changedby.split(":")
                f.write("Changed-By: " + name + " <"+mail+">" + "\n")
             if sponsor:
-               (name, mail) = sponsor.split(":")
-               f.write("Sponsored-By: " + name + " <"+mail+">" + "\n")
+               f.write("Sponsored-By: " + sponsor + "\n")
             f.write("Distribution:")
             for dist in distribution:
                f.write(" " + dist)
