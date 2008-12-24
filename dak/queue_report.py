@@ -450,7 +450,7 @@ def process_changes_files(changes_files, type):
             # For the rest, check to see if we have them, then print them out
             f.write("Source: " + source + "\n")
             f.write("Version: " + version_list + "\n")
-            f.write("Architectures:")
+            f.write("Architectures: ")
             f.write( (", ".join(arch_list.split(" "))) + "\n")
             f.write("Age: " + time_pp(last_modified) + "\n")
 
