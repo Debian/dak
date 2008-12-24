@@ -4,6 +4,8 @@
 
         * dak/queue_report.py - Fixed display of BYHAND packages
 
+        * dak/queue_report.py - Added queue field
+
         * config/debian/dak.conf - Added 822 output location
 
         * dak/process_accepted.py - Added orig.tar.gz copying when going
