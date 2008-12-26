@@ -1,3 +1,12 @@
+2008-12-26  Michael Casadevall <sonicmctails@gmail.com>
+
+        * dak/process_unchecked.py - Implemented new dm_upload_allowed field in source
+
+        * dak/process_accepted.py - Ditto, also causes new uploads to include uploaders
+          table to properly include all uploads
+
+        * setup/init_pool.sql - Updated schema
+
 2008-12-23  Michael Casadevall <sonicmctails@gmail.com>
 
         * dak/queue_report.py - Added 822 output format

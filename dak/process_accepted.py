@@ -298,10 +298,14 @@ def install ():
             filename = files[file]["pool name"] + file
             dsc_component = files[file]["component"]
             dsc_location_id = files[file]["location id"]
+            if dsc.has_key("dm-upload-allowed") and  dsc["dm-upload-allowed"] == "yes":
+                dm_upload_allowed = "true"
+            else:
+                dm_upload_allowed = "false"
             if not files[file].has_key("files id") or not files[file]["files id"]:
                 files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
-            projectB.query("INSERT INTO source (source, version, maintainer, changedby, file, install_date, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, '%s', %s)"
-                           % (package, version, maintainer_id, changedby_id, files[file]["files id"], install_date, fingerprint_id))
+            projectB.query("INSERT INTO source (source, version, maintainer, changedby, file, install_date, sig_fpr, dm_upload_allowed) VALUES ('%s', '%s', %d, %d, %d, '%s', %s, %s)"
+                           % (package, version, maintainer_id, changedby_id, files[file]["files id"], install_date, fingerprint_id, dm_upload_allowed))
 
             for suite in changes["distribution"].keys():
                 suite_id = database.get_suite_id(suite)
@@ -322,21 +326,20 @@ def install ():
                 projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files_id))
 
             # Add the src_uploaders to the DB
-            if dsc.get("dm-upload-allowed", "no") == "yes":
-                uploader_ids = [maintainer_id]
-                if dsc.has_key("uploaders"):
-                    for u in dsc["uploaders"].split(","):
-                        u = u.replace("'", "\\'")
-                        u = u.strip()
-                        uploader_ids.append(
-                            database.get_or_set_maintainer_id(u))
-                added_ids = {}
-                for u in uploader_ids:
-                    if added_ids.has_key(u):
-                        utils.warn("Already saw uploader %s for source %s" % (u, package))
-                        continue
-                    added_ids[u]=1
-                    projectB.query("INSERT INTO src_uploaders (source, maintainer) VALUES (currval('source_id_seq'), %d)" % (u))
+            uploader_ids = [maintainer_id]
+            if dsc.has_key("uploaders"):
+                for u in dsc["uploaders"].split(","):
+                    u = u.replace("'", "\\'")
+                    u = u.strip()
+                    uploader_ids.append(
+                        database.get_or_set_maintainer_id(u))
+            added_ids = {}
+            for u in uploader_ids:
+                if added_ids.has_key(u):
+                    utils.warn("Already saw uploader %s for source %s" % (u, package))
+                    continue
+                added_ids[u]=1
+                projectB.query("INSERT INTO src_uploaders (source, maintainer) VALUES (currval('source_id_seq'), %d)" % (u))
 
 
     # Add the .deb files to the DB

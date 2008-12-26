@@ -1054,7 +1054,7 @@ def check_signed_by_key():
         is_nmu = 1
         for si in source_ids:
             is_nmu = 1
-            q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT maintainer FROM src_uploaders WHERE src_uploaders.source = %s)" % (si))
+            q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT su.maintainer FROM src_uploaders su JOIN source s ON (s.id = su.source) WHERE su.source = %s AND s.dm_upload_allowed = 'yes')" % (si))
             for m in q.getresult():
                 (rfc822, rfc2047, name, email) = utils.fix_maintainer(m[0])
                 if email == uid_email or name == uid_name:

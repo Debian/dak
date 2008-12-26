@@ -84,6 +84,7 @@ CREATE TABLE source (
         file INT4 UNIQUE NOT NULL, -- REFERENCES files
 	install_date TIMESTAMP NOT NULL,
 	sig_fpr INT4 NOT NULL, -- REFERENCES fingerprint
+        dm-upload-allowed BOOLEAN NOT NULL,
 	unique (source, version)
 );
 
