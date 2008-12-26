@@ -1045,6 +1045,7 @@ def check_signed_by_key():
         source_ids = []
         check_suites = changes["distribution"].keys()
         if "unstable" not in check_suites: check_suites.append("unstable")
+        if "experimental" not in check_suites: check_suites.append("experimental")
         for suite in check_suites:
             suite_id = database.get_suite_id(suite)
             q = Upload.projectB.query("SELECT s.id FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND sa.suite = %d" % (changes["source"], suite_id))
@@ -1053,7 +1054,6 @@ def check_signed_by_key():
 
         is_nmu = 1
         for si in source_ids:
-            is_nmu = 1
             q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT su.maintainer FROM src_uploaders su JOIN source s ON (s.id = su.source) WHERE su.source = %s AND s.dm_upload_allowed = 'yes')" % (si))
             for m in q.getresult():
                 (rfc822, rfc2047, name, email) = utils.fix_maintainer(m[0])

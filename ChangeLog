@@ -2,6 +2,9 @@
 
         * dak/process_unchecked.py - Implemented new dm_upload_allowed field in source
 
+        * dak/process_unchecked.py - Fixed bug where dm-upload-allowed would not be respected
+          in cases where only experimental had the DM-Upload-Allowed: yes flag.
+
         * dak/process_accepted.py - Ditto, also causes new uploads to include uploaders
           table to properly include all uploads
 
