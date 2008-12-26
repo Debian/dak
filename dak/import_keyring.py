@@ -173,6 +173,7 @@ def usage (exit_code=0):
   -h, --help                  show this help and exit.
   -L, --import-ldap-users     generate uid entries for keyring from LDAP
   -U, --generate-users FMT    generate uid entries from keyring as FMT"""
+  -d, --debian-maintainer     mark generated uids as debian-maintainers
     sys.exit(exit_code)
 
 
@@ -185,7 +186,8 @@ def main():
     Arguments = [('h',"help","Import-Keyring::Options::Help"),
                  ('L',"import-ldap-users","Import-Keyring::Options::Import-Ldap-Users"),
                  ('U',"generate-users","Import-Keyring::Options::Generate-Users", "HasArg"),
-                ]
+                 ('D',"debian-maintainer","Import-Keyring::Options::Debian-Maintainer"),
+        ]
 
     for i in [ "help", "report-changes", "generate-users", "import-ldap-users" ]:
         if not Cnf.has_key("Import-Keyring::Options::%s" % (i)):
@@ -268,6 +270,11 @@ def main():
     # For the keys in this keyring, add/update any fingerprints that've
     # changed.
 
+    # Determine if we need to set the DM flag
+    is_dm = "no"
+    if Cnf("Import-Keyring::Options::Debian-Maintainer"):
+        is_dm = "yes"
+
     for f in fpr:
         newuid = fpr[f][0]
         newuiduid = db_uid_byid.get(newuid, [None])[0]
@@ -277,9 +284,9 @@ def main():
         if oldfid == -1:
             changes.append((newuiduid, "Added key: %s" % (f)))
             if newuid:
-                projectB.query("INSERT INTO fingerprint (fingerprint, uid, keyring) VALUES ('%s', %d, %d)" % (f, newuid, keyring_id))
+                projectB.query("INSERT INTO fingerprint (fingerprint, uid, keyring, debian_maintainer) VALUES ('%s', %d, %d, %s)" % (f, newuid, keyring_id, is_dm))
             else:
-                projectB.query("INSERT INTO fingerprint (fingerprint, keyring) VALUES ('%s', %d)" % (f, keyring_id))
+                projectB.query("INSERT INTO fingerprint (fingerprint, keyring) VALUES ('%s', %d, %s)" % (f, keyring_id, is_dm))
         else:
             if newuid and olduid != newuid:
                 if olduid != -1:

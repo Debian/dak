@@ -38,6 +38,7 @@ CREATE TABLE uid (
        id SERIAL PRIMARY KEY,
        uid TEXT UNIQUE NOT NULL,
        name TEXT
+       debian_maintainer BOOLEAN NOT NULL,
 );
 
 CREATE TABLE keyrings (

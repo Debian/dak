@@ -120,11 +120,11 @@ def main():
     db_uid_name = {}
     ldap_fin_uid_id = {}
     q = projectB.query("""
-SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
+SELECT f.fingerprint, f.id, u.uid, u.debian_maintainer FROM fingerprint f, uid u WHERE f.uid = u.id
  UNION SELECT f.fingerprint, f.id, null FROM fingerprint f where f.uid is null""")
     for i in q.getresult():
         (fingerprint, fingerprint_id, uid) = i
-        db_fin_uid[fingerprint] = (uid, fingerprint_id)
+        db_fin_uid[fingerprint] = (uid, fingerprint_id, debian_maintainer)
 
     q = projectB.query("SELECT id, name FROM uid")
     for i in q.getresult():
@@ -145,14 +145,14 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
         for fingerprint in fingerprints:
             ldap_fin_uid_id[fingerprint] = (uid, uid_id)
             if db_fin_uid.has_key(fingerprint):
-                (existing_uid, fingerprint_id) = db_fin_uid[fingerprint]
+                (existing_uid, fingerprint_id, is_dm) = db_fin_uid[fingerprint]
                 if not existing_uid:
                     q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                     print "Assigning %s to 0x%s." % (uid, fingerprint)
                 elif existing_uid == uid:
                     pass
-                elif existing_uid[:3] == "dm:":
-                    q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
+                elif is_dm = "t":
+                    q = projectB.query("UPDATE fingerprint SET uid = %s AND debian_maintainer = 'f' WHERE id = %s" % (uid_id, fingerprint_id))
                     print "Promoting DM %s to DD %s with keyid 0x%s." % (existing_uid, uid, fingerprint)
                 else:
                     utils.warn("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
