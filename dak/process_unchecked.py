@@ -1043,25 +1043,29 @@ def check_signed_by_key():
 
     if not sponsored and not may_nmu:
         source_ids = []
-        check_suites = changes["distribution"].keys()
-        if "unstable" not in check_suites: check_suites.append("unstable")
-        if "experimental" not in check_suites: check_suites.append("experimental")
-        for suite in check_suites:
-            suite_id = database.get_suite_id(suite)
-            q = Upload.projectB.query("SELECT s.id FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND sa.suite = %d" % (changes["source"], suite_id))
-            for si in q.getresult():
-                if si[0] not in source_ids: source_ids.append(si[0])
+        q = Upload.projectB.query("SELECT s.id, s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.dm_upload_allowed = 'yes'" % (changes["source"]))
 
-        is_nmu = 1
-        for si in source_ids:
-            q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT su.maintainer FROM src_uploaders su JOIN source s ON (s.id = su.source) WHERE su.source = %s AND s.dm_upload_allowed = 'yes')" % (si))
+        highest_sid, highest_version = None, None
+
+        is_allowed = 1
+        for si in q.getresult():
+            if highest_version == None or apt_pkg.VersionCompare(si[1], highest_version) == 1:
+                 highest_sid = si[0]
+                 highest_version = si[1]
+
+        print highest_sid
+        if highest_sid == None:
+           reject("Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version" % changes["source"])
+        else:
+            q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT su.maintainer FROM src_uploaders su JOIN source s ON (s.id = su.source) WHERE su.source = %s)" % (highest_sid))
             for m in q.getresult():
                 (rfc822, rfc2047, name, email) = utils.fix_maintainer(m[0])
                 if email == uid_email or name == uid_name:
-                    is_nmu=0
+                    is_allowed=0
                     break
-        if is_nmu:
-            reject("%s may not upload/NMU source package %s" % (uid, changes["source"]))
+
+        if is_allowed:
+            reject("%s is not in Maintainer or Uploaders of source package %s" % (uid, changes["source"]))
 
         for b in changes["binary"].keys():
             for suite in changes["distribution"].keys():

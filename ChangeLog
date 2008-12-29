@@ -1,3 +1,12 @@
+2008-12-28  Michael Casadevall  <sonicmctails@gmail.com>
+
+        * dak/process_unchecked.py - Modified DM to comply strictly with the DM GR
+                                     Upload right to a package is determined by the
+                                     newest version of that package in the archive
+
+        * dak/process_unchecked.py - Added new REJECT for DM-Upload-Allowed not being set
+                                     and clarified NMU reject message.
+
 2008-12-28  Frank Lichtenheld  <djpig@debian.org>
 
 	* dak/override.py (main): Handle source-only packages better
@@ -5,7 +14,7 @@
 2008-12-26  Michael Casadevall <sonicmctails@gmail.com>
 
         * dak/import_keyring.py - Debrainized the projectb schema w.r.t. to DMs
-                                  Now uses Debian-Maintainer column in uid tabl
+                                  Now uses Debian-Maintainer column in uid table
 
         * dak/import_ldap_fingerprints.py - Ditto
 
