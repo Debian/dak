@@ -134,6 +134,7 @@ def main ():
             oldpriority = r[0][0]
         else:
             oldsourcesection = r[0][1]
+            oldpriority = 'source'
 
     if not oldpriority and not oldsourcesection:
         utils.fubar("Unable to find package %s" % (package))
@@ -144,13 +145,8 @@ def main ():
         oldsection = oldsourcesection
 
     if not arguments:
-        if oldpriority:
-            print "%s is in section '%s' at priority '%s'" % (
-                package,oldsection,oldpriority)
-        elif oldsourcesection:
-            # no use printing this line if also binary
-            print "%s is in section '%s'" % (
-                package,oldsourcesection)
+        print "%s is in section '%s' at priority '%s'" % (
+            package,oldsection,oldpriority)
         sys.exit(0)
 
     # At this point, we have a new section and priority... check they're valid...
@@ -179,8 +175,8 @@ def main ():
         print "I: Doing nothing"
         sys.exit(0)
 
-    if newpriority and not oldpriority:
-        utils.fubar("Trying to set priority of a source-only package")
+    if oldpriority == 'source' and newpriority != 'source':
+        utils.fubar("Trying to change priority of a source-only package")
 
     # If we're in no-action mode
     if Options["No-Action"]:
