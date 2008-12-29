@@ -1,3 +1,7 @@
+2008-12-28  Frank Lichtenheld  <djpig@debian.org>
+
+	* dak/override.py (main): Handle source-only packages better
+
 2008-12-26  Michael Casadevall <sonicmctails@gmail.com>
 
         * dak/import_keyring.py - Debrainized the projectb schema w.r.t. to DMs
@@ -10,9 +14,6 @@
         * scripts/debian/byhand-dm - See Above
 
         * setup/init_pool.sql - More of the same
-
-
-2008-12-26  Michael Casadevall <sonicmctails@gmail.com>
 
         * dak/process_unchecked.py - Implemented new dm_upload_allowed field in source
 
