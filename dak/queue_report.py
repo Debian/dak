@@ -450,7 +450,7 @@ def process_changes_files(changes_files, type, log):
             log.write("Architectures: ")
             log.write( (", ".join(arch_list.split(" "))) + "\n")
             log.write("Age: " + time_pp(last_modified) + "\n")
-            log.write("Last-Modified: " + time.asctime(time.time() - last_modified) + "\n")
+            log.write("Last-Modified: " + str(int(time.time()) - int(last_modified)) + "\n")
             log.write("Queue: " + type + "\n")
 
             (name, mail) = maint.split(":")
