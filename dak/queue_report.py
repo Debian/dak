@@ -58,7 +58,7 @@ Prints a report of packages in queue directories (usually new and byhand).
   -s, --sort=key            sort output according to key, see below.
   -a, --age=key             if using sort by age, how should time be treated?
                             If not given a default of hours will be used.
-  -d, --directories=key     A comma seperated list of directories to be scanned
+  -d, --directories=key     A comma seperated list of queues to be scanned
 
      Sorting Keys: ao=age,   oldest first.   an=age,   newest first.
                    na=name,  ascending       nd=name,  descending
