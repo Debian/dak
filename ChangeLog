@@ -43,6 +43,8 @@
 
         * setup/init_pool.sql - Updated schema
 
+        * dak/queue_report.py - Added Last Modified in asctime() for QA team
+
 2008-12-23  Michael Casadevall <sonicmctails@gmail.com>
 
         * dak/queue_report.py - Added 822 output format
