@@ -134,7 +134,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
             dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i+1)])
             update_module = getattr(dakdb, "update"+str(i+1))
             update_module.do_update(self)
-            database_revision =+ 1
+            database_revision += 1
 
 ################################################################################
 
