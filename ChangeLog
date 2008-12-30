@@ -1,3 +1,7 @@
+2008-12-30  Michael Casadevall <sonicmctails@gmail.com>
+
+	* dak/queue_report.py	- Added directories option to queue report
+
 2008-12-28  Frank Lichtenheld  <djpig@debian.org>
 
 	* dak/override.py (main): Handle source-only packages better
