@@ -26,7 +26,7 @@
 
 ################################################################################
 
-import psycopg2, sys
+import psycopg2, sys, fcntl, os
 import apt_pkg
 import time
 from daklib import database
@@ -156,7 +156,16 @@ Updates dak's database schema to the lastest version. You should disable crontab
             utils.warn("dak update-db takes no arguments.")
             usage(exit_code=1)
 
+
         self.update_db()
+
+        try:
+            lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT)
+            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except IOError, e:
+            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
+                utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
+
 
 ################################################################################
 
