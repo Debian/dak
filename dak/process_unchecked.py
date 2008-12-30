@@ -1047,13 +1047,12 @@ def check_signed_by_key():
 
         highest_sid, highest_version = None, None
 
-        is_allowed = 1
+        should_reject = True
         for si in q.getresult():
             if highest_version == None or apt_pkg.VersionCompare(si[1], highest_version) == 1:
                  highest_sid = si[0]
                  highest_version = si[1]
 
-        print highest_sid
         if highest_sid == None:
            reject("Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version" % changes["source"])
         else:
@@ -1061,10 +1060,10 @@ def check_signed_by_key():
             for m in q.getresult():
                 (rfc822, rfc2047, name, email) = utils.fix_maintainer(m[0])
                 if email == uid_email or name == uid_name:
-                    is_allowed=0
+                    should_reject=True
                     break
 
-        if is_allowed:
+        if should_reject == True:
             reject("%s is not in Maintainer or Uploaders of source package %s" % (uid, changes["source"]))
 
         for b in changes["binary"].keys():

@@ -172,8 +172,8 @@ def usage (exit_code=0):
     print """Usage: dak import-keyring [OPTION]... [KEYRING]
   -h, --help                  show this help and exit.
   -L, --import-ldap-users     generate uid entries for keyring from LDAP
-  -U, --generate-users FMT    generate uid entries from keyring as FMT"""
-  -D, --debian-maintainer     mark generated uids as debian-maintainers
+  -U, --generate-users FMT    generate uid entries from keyring as FMT
+  -D, --debian-maintainer     mark generated uids as debian-maintainers"""
     sys.exit(exit_code)
 
 
