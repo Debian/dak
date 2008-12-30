@@ -1,24 +1,11 @@
-2008-12-29  Michael Casadevall  <sonicmctails@gmail.com>
+2008-12-30  Joerg Jaspert  <joerg@debian.org>
 
-	* dak/update_db.py	   - Modified to use the lockfile and uncommented sleep() call
+	* config/debian/cron.hourly: Generate the 822 format for accepted,
+	new, byhand and proposed-updates
 
-2008-12-28  Michael Casadevall  <sonicmctails@gmail.com>
+2008-12-30  Michael Casadevall <sonicmctails@gmail.com>
 
-        * dak/process_unchecked.py - Modified DM to comply strictly with the DM GR
-                                     Upload right to a package is determined by the
-                                     newest version of that package in the archive
-
-        * dak/process_unchecked.py - Added new REJECT for DM-Upload-Allowed not being set
-                                     and clarified NMU reject message.
-
-        * dak/update_db.py         - Added a update-database mechanism. New database updates
-                                     can be added by simply adding a simple upgrade script to dakdb
-                                     It probably has some bugs, but it can update git HEAD 12-08-2008
-                                     to DB revision 1 without any issues.
-
-        * dak/dakdb/1.py           - Adds DM tables
-
-        * dak/import_keyring       - Fixed an argument typo on the help screen
+	* dak/queue_report.py	- Added directories option to queue report
 
 2008-12-28  Frank Lichtenheld  <djpig@debian.org>
 
@@ -26,28 +13,7 @@
 
 2008-12-26  Michael Casadevall <sonicmctails@gmail.com>
 
-        * dak/import_keyring.py - Debrainized the projectb schema w.r.t. to DMs
-                                  Now uses Debian-Maintainer column in uid table
-
-        * dak/import_ldap_fingerprints.py - Ditto
-
-        * dak/process_unchecked.py - Same
-
-        * scripts/debian/byhand-dm - See Above
-
-        * setup/init_pool.sql - More of the same
-
-        * dak/process_unchecked.py - Implemented new dm_upload_allowed field in source
-
-        * dak/process_unchecked.py - Fixed bug where dm-upload-allowed would not be respected
-          in cases where only experimental had the DM-Upload-Allowed: yes flag.
-
-        * dak/process_accepted.py - Ditto, also causes new uploads to include uploaders
-          table to properly include all uploads
-
-        * setup/init_pool.sql - Updated schema
-
-        * dak/queue_report.py - Added Last Modified in asctime() for QA team
+       * dak/queue_report.py - Added Last Modified in asctime() for QA team
 
 2008-12-23  Michael Casadevall <sonicmctails@gmail.com>
 

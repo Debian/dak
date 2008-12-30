@@ -58,6 +58,7 @@ Prints a report of packages in queue directories (usually new and byhand).
   -s, --sort=key            sort output according to key, see below.
   -a, --age=key             if using sort by age, how should time be treated?
                             If not given a default of hours will be used.
+  -d, --directories=key     A comma seperated list of queues to be scanned
 
      Sorting Keys: ao=age,   oldest first.   an=age,   newest first.
                    na=name,  ascending       nd=name,  descending
@@ -515,7 +516,8 @@ def main():
                  ('n',"new","Queue-Report::Options::New"),
                  ('8','822',"Queue-Report::Options::822"),
                  ('s',"sort","Queue-Report::Options::Sort", "HasArg"),
-                 ('a',"age","Queue-Report::Options::Age", "HasArg")]
+                 ('a',"age","Queue-Report::Options::Age", "HasArg"),
+                 ('d',"directories","Queue-Report::Options::Directories", "HasArg")]
     for i in [ "help" ]:
         if not Cnf.has_key("Queue-Report::Options::%s" % (i)):
             Cnf["Queue-Report::Options::%s" % (i)] = ""
@@ -531,8 +533,14 @@ def main():
     if Cnf.has_key("Queue-Report::Options::New"):
         header()
 
-    directories = Cnf.ValueList("Queue-Report::Directories")
-    if not directories:
+    directories = [ ]
+
+    if Cnf.has_key("Queue-Report::Options::Directories"):
+        for i in Cnf["Queue-Report::Options::Directories"].split(","):
+            directories.append(i)
+    elif Cnf.has_key("Queue-Report::Directories"):
+        directories = Cnf.ValueList("Queue-Report::Directories")
+    else:
         directories = [ "byhand", "new" ]
 
     f = None
