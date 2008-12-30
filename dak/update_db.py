@@ -115,7 +115,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
             print "Please make sure you have a database backup handy. If you don't, press Ctrl-C now!"
             print ""
             print "Continuing in five seconds ..."
-            #time.sleep(5)
+            time.sleep(5)
             print ""
             print "Attempting to upgrade pre-zero database to zero"
 
