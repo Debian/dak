@@ -7,6 +7,15 @@
         * dak/process_unchecked.py - Added new REJECT for DM-Upload-Allowed not being set
                                      and clarified NMU reject message.
 
+        * dak/update_db.py         - Added a update-database mechanism. New database updates
+                                     can be added by simply adding a simple upgrade script to dakdb
+                                     It probably has some bugs, but it can update git HEAD 12-08-2008
+                                     to DB revision 1 without any issues.
+
+        * dak/dakdb/1.py           - Adds DM tables
+
+        * dak/import_keyring       - Fixed an argument typo on the help screen
+
 2008-12-28  Frank Lichtenheld  <djpig@debian.org>
 
 	* dak/override.py (main): Handle source-only packages better
