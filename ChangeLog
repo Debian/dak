@@ -1,3 +1,8 @@
+2008-12-30  Joerg Jaspert  <joerg@debian.org>
+
+	* config/debian/cron.hourly: Generate the 822 format for accepted,
+	new, byhand and proposed-updates
+
 2008-12-30  Michael Casadevall <sonicmctails@gmail.com>
 
 	* dak/queue_report.py	- Added directories option to queue report
