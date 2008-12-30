@@ -27,7 +27,7 @@
 ################################################################################
 
 import sys, os, popen2, tempfile, stat, time, pg
-import apt_pkg
+import gzip, apt_pkg
 from daklib import database, utils
 from daklib.dak_exceptions import *
 
@@ -51,17 +51,6 @@ Generate Contents files
 
 ################################################################################
 
-def handle_dup_files(file_list):
-    # Sort the list, and then handle finding dups in the filenames key
-
-    # Walk the list, seeing if the current entry and the next one are the same
-    # and if so, join them together
-
-
-    return file_list
-
-################################################################################
-
 def generate_contents(suites):
     global projectB, Cnf
     # Ok, the contents information is in the database
@@ -69,38 +58,76 @@ def generate_contents(suites):
     # We need to work and get the contents, and print it out on a per
     # architectual basis
 
+    # Read in the contents file header
+    header = False
+    if Cnf.has_key("Generate-Contents::Header"):
+        h = open(Cnf["Generate-Contents::Header"], "r")
+        header = h.read()
+        h.close()
+
     # Get our suites, and the architectures
     for s in suites:
         suite_id = database.get_suite_id(s)
 
-        q = projectB.query("SELECT architecture FROM suite_architectures WHERE suite = '%d'" % suite_id)
+        q = projectB.query("SELECT s.architecture, a.arch_string FROM suite_architectures s JOIN architecture a ON (s.architecture=a.id) WHERE suite = '%d'" % suite_id)
 
         arch_list = [ ]
         for r in q.getresult():
-            arch_list.append(r[0])
+            if r[1] != "source" and r[1] != "all":
+                arch_list.append((r[0], r[1]))
 
         arch_all_id = database.get_architecture_id("all")
 
-       # Got the arch all packages, now we need to get the arch dependent packages
-       # attach the arch all, stick them together, and write out the result
+        # Time for the query from hell. Essentially, we need to get the assiocations, the filenames, the paths,
+        # and all that fun stuff from the database.
 
         for arch_id in arch_list:
-            print "SELECT b.package, c.file, s.section FROM contents c JOIN binaries b ON (b.id=c.binary_pkg) JOIN bin_associations ba ON (b.id=ba.bin) JOIN override o ON (o.package=b.package) JOIN section s ON (s.id=o.section) WHERE (b.architecture = '%d' OR b.architecture = '%d') AND ba.suite = '%d'" % (arch_id, arch_all_id, suite_id)
-            q = projectB.query("SELECT b.package, c.file, s.section FROM contents c JOIN binaries b ON (b.id=c.binary_pkg) JOIN bin_associations ba ON (b.id=ba.bin) JOIN override o ON (o.package=b.package) JOIN section s ON (s.id=o.section) WHERE (b.architecture = '%d' OR b.architecture = '%d') AND ba.suite = '%d'" % (arch_id, arch_all_id, suite_id))
-            # We need to copy the arch_all packages table into arch packages
+            q = projectB.query("""SELECT p.path||'/'||n.file, comma_separated_list(s.section||'/'||b.package) FROM content_associations c JOIN content_file_paths p ON (c.filepath=p.id) JOIN content_file_names n ON (c.filename=n.id) JOIN binaries b ON (b.id=c.binary_pkg) JOIN bin_associations ba ON (b.id=ba.bin) JOIN override o ON (o.package=b.package) JOIN section s ON (s.id=o.section) WHERE (b.architecture = '%d' OR b.architecture = '%d') AND ba.suite = '%d' AND b.type = 'deb' GROUP BY (p.path||'/'||n.file)""" % (arch_id[0], arch_all_id, suite_id))
 
-            # This is for the corner case of arch dependent packages colliding
-            # with arch all packages only on some architectures.
-            # Ugly, I know ...
+            f = gzip.open(Cnf["Dir::Root"] + "dists/%s/Contents-%s.gz" % (s, arch_id[1]), "w")
 
-            arch_packages = []
-            for r in q.getresult():
-                arch_packages.append((r[1], (r[2] + '/' + r[0])))
+            if header:
+                f.write(header)
 
-            arch_packages = handle_dup_files(arch_packages)
+            for contents in q.getresult():
+                f.write(contents[0] + "\t\t\t" + contents[-1] + "\n")
 
-            #for contents in arch_packages:
-                #print contents[0] + '\t\t\t\t' + contents[1]
+            f.close()
+
+        # The MORE fun part. Ok, udebs need their own contents files, udeb, and udeb-nf (not-free)
+        # This is HORRIBLY debian specific :-/
+        # First off, udeb
+
+        section_id = database.get_section_id('debian-installer') # all udebs should be here)
+
+        if section_id != -1:
+            q = projectB.query("""SELECT p.path||'/'||n.file, comma_separated_list(s.section||'/'||b.package) FROM content_associations c JOIN content_file_paths p ON (c.filepath=p.id) JOIN content_file_names n ON (c.filename=n.id) JOIN binaries b ON (b.id=c.binary_pkg) JOIN bin_associations ba ON (b.id=ba.bin) JOIN override o ON (o.package=b.package) JOIN section s ON (s.id=o.section) WHERE s.id = '%d' AND ba.suite = '%d' AND b.type = 'udeb' GROUP BY (p.path||'/'||n.file)""" % (section_id, suite_id))
+
+            f = gzip.open(Cnf["Dir::Root"] + "dists/%s/Contents-udeb.gz" % (s), "w")
+
+            if header:
+                f.write(header)
+
+            for contents in q.getresult():
+                f.write(contents[0] + "\t\t\t" + contents[-1] + "\n")
+
+            f.close()
+
+        # Once more, with non-free
+        section_id = database.get_section_id('non-free/debian-installer') # all udebs should be here)
+
+        if section_id != -1:
+            q = projectB.query("""SELECT p.path||'/'||n.file, comma_separated_list(s.section||'/'||b.package) FROM content_associations c JOIN content_file_paths p ON (c.filepath=p.id) JOIN content_file_names n ON (c.filename=n.id) JOIN binaries b ON (b.id=c.binary_pkg) JOIN bin_associations ba ON (b.id=ba.bin) JOIN override o ON (o.package=b.package) JOIN section s ON (s.id=o.section) WHERE s.id = '%d' AND ba.suite = '%d' AND b.type = 'udeb' GROUP BY (p.path||'/'||n.file)""" % (section_id, suite_id))
+
+            f = gzip.open(Cnf["Dir::Root"] + "dists/%s/Contents-udeb-nf.gz" % (s), "w")
+
+            if header:
+                f.write(header)
+
+            for contents in q.getresult():
+                f.write(contents[0] + "\t\t\t" + contents[-1] + "\n")
+
+            f.close()
 
 ################################################################################
 
@@ -113,6 +140,7 @@ def main ():
     Arguments = [('h',"help","Generate-Contents::Options::Help"),
                  ('s',"suite","Generate-Contents::Options::Suite","HasArg"),
                 ]
+
     for i in [ "help", "suite" ]:
         if not Cnf.has_key("Generate-Contents::Options::%s" % (i)):
             Cnf["Generate-Contents::Options::%s" % (i)] = ""

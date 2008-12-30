@@ -19,7 +19,7 @@
 
 ################################################################################
 
-import sys, time, types
+import os, sys, time, types
 
 ################################################################################
 
@@ -42,6 +42,8 @@ fingerprint_id_cache = {}
 queue_id_cache = {}
 uid_id_cache = {}
 suite_version_cache = {}
+content_path_id_cache = {}
+content_file_id_cache = {}
 
 ################################################################################
 
@@ -247,6 +249,26 @@ def get_suite_version(source, suite):
 
     return version
 
+def get_latest_binary_version_id(binary, suite):
+    global suite_version_cache
+    cache_key = "%s_%s" % (binary, suite)
+
+
+    if suite_version_cache.has_key(cache_key):
+        return suite_version_cache[cache_key]
+
+        #print "SELECT b.id, b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) WHERE b.package = '%s AND ba.suite = '%d'" % (binary, int(suite))
+        q = projectB.query("SELECT b.id, b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) WHERE b.package = '%s AND ba.suite = '%d'" % (binary, int(suite)))
+
+        highest_bid, highest_version = None, None
+
+        for bi in q.getresult():
+            if highest_version == None or apt_pkg.VersionCompare(bi[1], highest_version) == 1:
+                 highest_bid = bi[0]
+                 highest_version = bi[1]
+
+        return highest_bid
+
 ################################################################################
 
 def get_or_set_maintainer_id (maintainer):
@@ -397,3 +419,54 @@ def get_suites(pkgname, src=False):
         sql = "select suite_name from binaries, bin_associations,suite where binaries.id=bin_associations.bin and  package='%s' and bin_associations.suite = suite.id"%pkgname
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
+
+################################################################################
+
+def get_or_set_contents_file_id(file):
+    global content_file_id_cache
+
+    if not content_file_id_cache.has_key(file):
+        sql_select = "SELECT id FROM content_file_names WHERE file = '%s'" % file
+        q = projectB.query(sql_select)
+        if not q.getresult():
+            # since this can be called within a transaction, we can't use currval
+            q = projectB.query("SELECT nextval('content_file_names_id_seq')")
+            file_id = int(q.getresult()[0][0])
+            projectB.query("INSERT INTO content_file_names VALUES ('%d', '%s')" % (file_id, file))
+            content_file_id_cache[file] =  file_id
+        else:
+            content_file_id_cache[file] = int(q.getresult()[0][0])
+    return content_file_id_cache[file]
+
+################################################################################
+
+def get_or_set_contents_path_id(path):
+    global content_path_id_cache
+
+    if not content_path_id_cache.has_key(path):
+        sql_select = "SELECT id FROM content_file_paths WHERE path = '%s'" % path
+        q = projectB.query(sql_select)
+        if not q.getresult():
+            # since this can be called within a transaction, we can't use currval
+            q = projectB.query("SELECT nextval('content_file_names_id_seq')")
+            path_id = int(q.getresult()[0][0])
+            projectB.query("INSERT INTO content_file_paths VALUES ('%d', '%s')" % ( path_id, path))
+            content_path_id_cache[path] = path_id
+        else:
+            content_path_id_cache[path] = int(q.getresult()[0][0])
+
+    return content_path_id_cache[path]
+
+################################################################################
+
+def insert_content_path(bin_id, fullpath):
+    # split the path into basename, and pathname
+    (path, file)  = os.path.split(fullpath)
+
+    # Get the necessary IDs ...
+    file_id = get_or_set_contents_file_id(file)
+    path_id = get_or_set_contents_path_id(path)
+
+    # Put them into content_assiocations
+    projectB.query("INSERT INTO content_associations VALUES (DEFAULT, '%d', '%d', '%d')" % (bin_id, path_id, file_id))
+    return

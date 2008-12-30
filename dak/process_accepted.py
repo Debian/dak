@@ -407,8 +407,10 @@ def install ():
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
             # insert contents into the database
+            q = projectB.query("SELECT currval('binaries_id_seq')")
+            bin_id = int(q.getresult()[0][0])
             for file in contents:
-                projectB.query("INSERT INTO contents (binary_pkg, file) VALUES (currval('binaries_id_seq'), '%s')" % file)
+                database.insert_content_path(bin_id, file)
 
     # If the .orig.tar.gz is in a legacy directory we need to poolify
     # it, so that apt-get source (and anything else that goes by the
