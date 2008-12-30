@@ -30,7 +30,7 @@
 ###############################################################################
 
 import errno, fcntl, os, sys, time, re
-import apt_pkg
+import apt_pkg, tarfile, commands
 from daklib import database
 from daklib import logging
 from daklib import queue
@@ -95,6 +95,43 @@ class Urgency_Log:
             utils.move(self.log_filename, new_filename)
         else:
             os.unlink(self.log_filename)
+
+
+###############################################################################
+
+def generate_contents_information(filename):
+    # Generate all the contents for the database
+    cmd = "ar t %s" % (filename)
+    (result, output) = commands.getstatusoutput(cmd)
+    if result != 0:
+        reject("%s: 'ar t' invocation failed." % (filename))
+        reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
+
+    # Ugh ... this is ugly ... Code ripped from process_unchecked.py
+    chunks = output.split('\n')
+    cmd = "ar x %s %s" % (filename, chunks[2])
+    (result, output) = commands.getstatusoutput(cmd)
+    if result != 0:
+        reject("%s: 'ar t' invocation failed." % (filename))
+        reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
+
+    # Got deb tarballs, now lets go through and determine what bits
+    # and pieces the deb had ...
+    if chunks[2] == "data.tar.gz":
+        data = tarfile.open("data.tar.gz", "r:gz")
+    elif data_tar == "data.tar.bz2":
+        data = tarfile.open("data.tar.bz2", "r:bz2")
+    else:
+        os.remove(chunks[2])
+        reject("couldn't find data.tar.*")
+
+    contents = []
+    for tarinfo in data:
+        if not tarinfo.isdir():
+            contents.append(tarinfo.name[2:])
+
+    os.remove(chunks[2])
+    return contents
 
 ###############################################################################
 
@@ -354,6 +391,7 @@ def install ():
             source = files[file]["source package"]
             source_version = files[file]["source version"]
             filename = files[file]["pool name"] + file
+            contents = generate_contents_information(file)
             if not files[file].has_key("location id") or not files[file]["location id"]:
                 files[file]["location id"] = database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],utils.where_am_i())
             if not files[file].has_key("files id") or not files[file]["files id"]:
@@ -367,6 +405,10 @@ def install ():
             for suite in changes["distribution"].keys():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
+
+            # insert contents into the database
+            for file in contents:
+                projectB.query("INSERT INTO contents (binary_pkg, file) VALUES (currval('binaries_id_seq'), '%s')" % file)
 
     # If the .orig.tar.gz is in a legacy directory we need to poolify
     # it, so that apt-get source (and anything else that goes by the
@@ -430,7 +472,6 @@ def install ():
         utils.copy(pkg.changes_file, Cnf["Dir::Root"] + dest)
     for dest in copy_dot_dak.keys():
         utils.copy(Upload.pkg.changes_file[:-8]+".dak", dest)
-
     projectB.query("COMMIT WORK")
 
     # Move the .changes into the 'done' directory

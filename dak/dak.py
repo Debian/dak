@@ -105,6 +105,8 @@ def init():
          "Generate lists of packages per suite for apt-ftparchive"),
         ("generate-releases",
          "Generate Release files"),
+        ("generate-contents",
+         "Generate contest files"),
         ("generate-index-diffs",
          "Generate .diff/Index files"),
         ("clean-suites",
