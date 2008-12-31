@@ -400,7 +400,7 @@ def process_changes_files(changes_files, type, log):
             note = " | [N]"
         else:
             note = ""
-        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby])
+        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, cache[filename]["filename"]])
 
     # direction entry consists of "Which field, which direction, time-consider" where
     # time-consider says how we should treat last_modified. Thats all.
@@ -442,7 +442,7 @@ def process_changes_files(changes_files, type, log):
     if Cnf.has_key("Queue-Report::Options::822"):
         # print stuff out in 822 format
         for entry in entries:
-            (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby) = entry
+            (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file) = entry
 
             # We'll always have Source, Version, Arch, Mantainer, and Dist
             # For the rest, check to see if we have them, then print them out
@@ -471,6 +471,7 @@ def process_changes_files(changes_files, type, log):
                 for bugs in closes:
                     bug_string += "#"+bugs+", "
                 log.write("Closes: " + bug_string[:-2] + "\n")
+            log.write("Changes-File: " + os.path.basename(changes_file) + "\n")
             log.write("\n")
 
     if Cnf.has_key("Queue-Report::Options::New"):

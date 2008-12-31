@@ -1,7 +1,10 @@
 2008-12-30  Michael Casadevall  <sonicmctails@gmail.com>
 
 	* src/sql-aptvc.cpp	- Fixed to work on modern postgresql version
+
 	* src/Makefile		- Gave it a brain on finding postgres headers
+
+        * queue-report.py	- Added changes file to the 822 output for QA team
 
 2008-12-30  Joerg Jaspert  <joerg@debian.org>
 
