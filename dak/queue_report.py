@@ -485,7 +485,7 @@ def process_changes_files(changes_files, type, log):
             source_count = len(per_source_items)
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
-                (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby) = entry
+                (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
                 table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
     elif not Cnf.has_key("Queue-Report::Options::822"):
@@ -494,7 +494,7 @@ def process_changes_files(changes_files, type, log):
 
         msg = ""
         for entry in entries:
-            (source, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef) = entry
+            (source, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
             msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
