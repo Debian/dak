@@ -351,6 +351,7 @@ def process_changes_files(changes_files, type, log):
         changeby = {}
         changedby=""
         sponsor=""
+        filename=i[1]["list"][0]["filename"]
         last_modified = time.time()-i[1]["oldest"]
         source = i[1]["list"][0]["source"]
         if len(source) > max_source_len:
@@ -400,7 +401,7 @@ def process_changes_files(changes_files, type, log):
             note = " | [N]"
         else:
             note = ""
-        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, cache[filename]["filename"]])
+        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename])
 
     # direction entry consists of "Which field, which direction, time-consider" where
     # time-consider says how we should treat last_modified. Thats all.

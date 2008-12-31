@@ -1,3 +1,8 @@
+2008-12-31  Joerg Jaspert  <joerg@debian.org>
+
+	* dak/queue_report.py (process_changes_files): Actually use the
+	right changes filename
+
 2008-12-30  Michael Casadevall  <sonicmctails@gmail.com>
 
 	* src/sql-aptvc.cpp	- Fixed to work on modern postgresql version
