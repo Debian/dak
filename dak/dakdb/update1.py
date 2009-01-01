@@ -24,7 +24,7 @@
 
 ################################################################################
 
-import psycopg2
+import psycopg2, time
 
 ################################################################################
 
@@ -32,17 +32,30 @@ def do_update(self):
     print "Adding DM fields to database"
 
     try:
-       c = self.db.cursor()
-       c.execute("ALTER TABLE source ADD COLUMN dm_upload_allowed BOOLEAN DEFAULT 'no' NOT NULL;")
-       c.execute("ALTER TABLE fingerprint ADD COLUMN is_dm BOOLEAN DEFAULT 'false' NOT NULL;")
+        c = self.db.cursor()
+        c.execute("ALTER TABLE source ADD COLUMN dm_upload_allowed BOOLEAN DEFAULT 'no' NOT NULL;")
+        c.execute("ALTER TABLE keyrings ADD COLUMN debian_maintainer BOOLEAN DEFAULT 'false' NOT NULL;")
 
-       print "Migrating DM data to source table. This might take some time ..."
+        print "Migrating DM data to source table. This might take some time ..."
 
-       c.execute("UPDATE source SET dm_upload_allowed = 't' WHERE id = (SELECT source FROM src_uploaders);")
-       c.execute("UPDATE config SET value = '1' WHERE name = 'db_revision'")
-       self.db.commit()
+        c.execute("UPDATE source SET dm_upload_allowed = 't' WHERE id IN (SELECT source FROM src_uploaders);")
+        c.execute("UPDATE config SET value = '1' WHERE name = 'db_revision'")
 
-       print "REMINDER: Remember to run the updated byhand-dm crontab to update Debian Maintainer information"
+        print "Migrating DM uids to normal uids"
+        c.execute("SELECT uid FROM uid WHERE uid  LIKE 'dm:%'")
+        rows = c.fetchall()
+        for r in rows:
+            uid = r[0]
+            c.execute("UPDATE uid SET uid = '%s' WHERE uid = '%s'" % (uid[3:], uid))
+
+        self.db.commit()
+
+        print "IMPORTANT: Set the debian_maintainer flag in the config file for keyrings that are DMs!"
+        print "           Failure to do so will result in DM's having full upload abilities!"
+        print "REMINDER: Remember to run the updated byhand-dm crontab to update Debian Maintainer information"
+        print ""
+        print "Pausing for five seconds ..."
+        time.sleep (5)
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
