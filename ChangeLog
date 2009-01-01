@@ -1,3 +1,9 @@
+2009-01-01  Michael Casadevall  <sonicmctails@gmail.com>
+
+	* dak/process_unchecked.pu - Changed it to look up on the correct table
+
+	* dak/dakdb/update1.py	- Changed to add the right table
+
 2008-12-30  Michael Casadevall  <sonicmctails@gmail.com>
 
 	* src/sql-aptvc.cpp	- Fixed to work on modern postgresql version

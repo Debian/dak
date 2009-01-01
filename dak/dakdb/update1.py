@@ -34,7 +34,7 @@ def do_update(self):
     try:
        c = self.db.cursor()
        c.execute("ALTER TABLE source ADD COLUMN dm_upload_allowed BOOLEAN DEFAULT 'no' NOT NULL;")
-       c.execute("ALTER TABLE uid ADD COLUMN debian_maintainer BOOLEAN DEFAULT 'false' NOT NULL;")
+       c.execute("ALTER TABLE fingerprint ADD COLUMN is_dm BOOLEAN DEFAULT 'false' NOT NULL;")
 
        print "Migrating DM data to source table. This might take some time ..."
 
