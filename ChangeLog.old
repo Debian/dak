@@ -1,15 +1,7 @@
-2009-01-02  Michael Casadevall  <sonicmctails@gmail.com>
+2008-12-31  Joerg Jaspert  <joerg@debian.org>
 
-	* dak/import_keyring.py   - Modified to handle users in multiple keyrings
-                                    with differing DM/DD status
-
-	* dak/import_ldap_fingerpints - Modified to handle DM changes
-
-2009-01-01  Michael Casadevall  <sonicmctails@gmail.com>
-
-	* dak/process_unchecked.py - Changed it to look up on the correct table
-
-	* dak/dakdb/update1.py	- Changed to add the right table
+	* dak/queue_report.py (process_changes_files): Actually use the
+	right changes filename
 
 2008-12-30  Michael Casadevall  <sonicmctails@gmail.com>
 
