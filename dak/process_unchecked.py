@@ -1060,7 +1060,7 @@ def check_signed_by_key():
             for m in q.getresult():
                 (rfc822, rfc2047, name, email) = utils.fix_maintainer(m[0])
                 if email == uid_email or name == uid_name:
-                    should_reject=True
+                    should_reject=False
                     break
 
         if should_reject == True:
