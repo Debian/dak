@@ -222,8 +222,10 @@ def main():
     keyringname = keyring_names[0]
     keyring = Keyring(keyringname)
 
+    is_dm = "false"
     if Cnf.has_key("Import-Keyring::"+keyringname+"::Debian-Maintainer"):
         projectB.query("UPDATE keyrings SET debian_maintainer = '%s' WHERE name = '%s'" % (Cnf["Import-Keyring::"+keyringname+"::Debian-Maintainer"], keyringname.split("/")[-1]))
+        is_dm = Cnf["Import-Keyring::"+keyringname+"::Debian-Maintainer"]
 
     keyring_id = database.get_or_set_keyring_id(
                         keyringname.split("/")[-1])
@@ -294,7 +296,12 @@ def main():
                 projectB.query("UPDATE fingerprint SET uid = %d WHERE id = %d" % (newuid, oldfid))
 
             if oldkid != keyring_id:
-                projectB.query("UPDATE fingerprint SET keyring = %d WHERE id = %d" % (keyring_id, oldfid))
+                # Only change the keyring if it won't result in a loss of permissions
+                q = projectB.query("SELECT debian_maintainer FROM keyrings WHERE id = '%d'" % (keyring_id))
+                if is_dm == "false" and q.getresult()[0][0] == 'f':
+                    projectB.query("UPDATE fingerprint SET keyring = %d WHERE id = %d" % (keyring_id, oldfid))
+                else:
+                    print "Key %s exists in both DM and DD keyrings. Not demoting." % (f)
 
     # All done!
 
