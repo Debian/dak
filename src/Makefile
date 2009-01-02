@@ -1,9 +1,9 @@
 #!/usr/bin/make -f
 
-CXXFLAGS	= -I/usr/include/postgresql/ -I/usr/include/postgresql/server/ -fPIC -Wall
-CFLAGS		= -fPIC -Wall
-LDFLAGS		= -fPIC
-LIBS		= -lapt-pkg
+CXXFLAGS	= -I/usr/include/postgresql/ -I`pg_config --includedir-server` -fPIC -Wall
+CFLAGS		= -fFIC -Wall `pg_config --cflags`
+LDFLAGS		= `pg_config --ldflags`
+LIBS		= -lapt-pkg `pg_config --libs`
 
 C++		= g++
 

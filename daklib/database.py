@@ -19,7 +19,7 @@
 
 ################################################################################
 
-import os, sys, time, types
+import os, sys, time, types, apt_pkg
 
 ################################################################################
 
@@ -42,6 +42,7 @@ fingerprint_id_cache = {}
 queue_id_cache = {}
 uid_id_cache = {}
 suite_version_cache = {}
+suite_bin_version_cache = {}
 content_path_id_cache = {}
 content_file_id_cache = {}
 
@@ -226,7 +227,7 @@ def get_source_id (source, version):
 
     return source_id
 
-def get_suite_version(source, suite):
+def get_suite_version(source, suite, arch):
     global suite_version_cache
     cache_key = "%s_%s" % (source, suite)
 
@@ -249,25 +250,23 @@ def get_suite_version(source, suite):
 
     return version
 
-def get_latest_binary_version_id(binary, suite):
-    global suite_version_cache
+def get_latest_binary_version_id(binary, suite, arch):
+    global suite_bin_version_cache
     cache_key = "%s_%s" % (binary, suite)
 
+    if suite_bin_version_cache.has_key(cache_key):
+        return suite_bin_version_cache[cache_key]
 
-    if suite_version_cache.has_key(cache_key):
-        return suite_version_cache[cache_key]
+    q = projectB.query("SELECT b.id, b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) WHERE b.package = '%s' AND b.architecture = '%d' AND ba.suite = '%d'" % (binary, int(arch), int(suite)))
 
-        #print "SELECT b.id, b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) WHERE b.package = '%s AND ba.suite = '%d'" % (binary, int(suite))
-        q = projectB.query("SELECT b.id, b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) WHERE b.package = '%s AND ba.suite = '%d'" % (binary, int(suite)))
+    highest_bid, highest_version = None, None
 
-        highest_bid, highest_version = None, None
+    for bi in q.getresult():
+        if highest_version == None or apt_pkg.VersionCompare(bi[1], highest_version) == 1:
+             highest_bid = bi[0]
+             highest_version = bi[1]
 
-        for bi in q.getresult():
-            if highest_version == None or apt_pkg.VersionCompare(bi[1], highest_version) == 1:
-                 highest_bid = bi[0]
-                 highest_version = bi[1]
-
-        return highest_bid
+    return highest_bid
 
 ################################################################################
 
