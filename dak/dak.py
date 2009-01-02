@@ -144,6 +144,8 @@ def init():
          "Sync PostgreSQL users with passwd file"),
         ("init-db",
          "Update the database to match the conf file"),
+        ("update-db",
+         "Updates databae schema to latest revision"),
         ("init-dirs",
          "Initial setup of the archive"),
         ("make-maintainers",

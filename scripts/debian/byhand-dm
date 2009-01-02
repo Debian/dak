@@ -41,7 +41,7 @@ echo "Authorised upload by $ID, copying into place"
 OUT=$(mktemp)
 
 cp "$BYHAND" "$DESTKR"
-dak import-keyring --generate-users "dm:%s" "$DESTKR" >$OUT
+dak import-keyring -D --generate-users "%s" "$DESTKR" >$OUT
 
 if [ -s "$OUT" ]; then
   /usr/sbin/sendmail -odq -oi -t <<EOF
