@@ -100,7 +100,12 @@ Updates dak's database schema to the lastest version. You should disable crontab
         print "Determining dak database revision ..."
 
         try:
-            self.db = psycopg2.connect("dbname='" + Cnf["DB::Name"] + "' host='" + Cnf["DB::Host"] + "' port='" + str(Cnf["DB::Port"]) + "'")
+            # Build a connect string
+            connect_str = "dbname=%s"% (Cnf["DB::Name"])
+            if Cnf["DB::Host"] != '': connect_str += " host=%s" % (Cnf["DB::Host"])
+            if Cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(Cnf["DB::Port"]))
+
+            self.db = psycopg2.connect(connect_str)
 
         except:
             print "FATAL: Failed connect to database"
@@ -151,10 +156,10 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         options = Cnf.SubTree("Update-DB::Options")
         if options["Help"]:
-            usage()
+            self.usage()
         elif arguments:
             utils.warn("dak update-db takes no arguments.")
-            usage(exit_code=1)
+            self.usage(exit_code=1)
 
 
         self.update_db()
