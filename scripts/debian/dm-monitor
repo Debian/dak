@@ -5,7 +5,7 @@ echo "Known debian maintainers:"
 psql --html projectb <<EOF
   SELECT uid.uid, uid.name, f.fingerprint
     FROM uid LEFT OUTER JOIN fingerprint f ON (uid.id = f.uid) 
-   WHERE uid.uid LIKE 'dm:%'
+   WHERE uid.uid LIKE '%@%'
 ORDER BY uid.uid;
 EOF
 
@@ -23,7 +23,7 @@ psql --html projectb <<EOF
                      JOIN uid u ON 
 		       (m.name LIKE u.name || ' <%>' OR
 		        m.name LIKE '% <' || substring(u.uid FROM 4) || '>')
-               WHERE u.uid LIKE 'dm:%' AND sa.suite = 5
+               WHERE u.uid LIKE '%@%' AND sa.suite = 5
          )
 ORDER BY uid.uid;
 EOF
@@ -37,7 +37,7 @@ psql --html projectb <<EOF
          JOIN maintainer m ON (su.maintainer = m.id)
          JOIN uid u ON (m.name LIKE u.name || ' <%>' OR
 		        m.name LIKE '% <' || substring(u.uid FROM 4) || '>')
-   WHERE u.uid LIKE 'dm:%' AND sa.suite = 5
+   WHERE s.dm_upload_allowed = 't'
 ORDER BY u.uid, s.source, s.version;
 EOF
 
@@ -47,7 +47,7 @@ psql --html projectb <<EOF
   SELECT s.source, s.version, s.install_date, u.uid
     FROM source s JOIN fingerprint f ON (s.sig_fpr = f.id) 
          JOIN uid u ON (f.uid = u.id)
-   WHERE u.uid LIKE 'dm:%'
+   WHERE u.uid LIKE '%@%'
 ORDER BY u.uid, s.source, s.version;
 EOF
 
@@ -58,7 +58,7 @@ psql --html projectb <<EOF
     FROM binaries b JOIN architecture a ON (b.architecture = a.id)
          JOIN fingerprint f ON (b.sig_fpr = f.id) 
          JOIN uid u ON (f.uid = u.id)
-   WHERE u.uid LIKE 'dm:%'
+   WHERE u.uid LIKE '%@%'
 ORDER BY u.uid, b.package, b.version;
 EOF
 
