@@ -138,6 +138,8 @@ def init():
          "Check for users with no packages in the archive"),
         ("import-archive",
          "Populate SQL database based from an archive tree"),
+        ("import-contents",
+         "Populate SQL database with Contents files"),
         ("import-keyring",
          "Populate fingerprint/uid table based on a new/updated keyring"),
         ("import-ldap-fingerprints",

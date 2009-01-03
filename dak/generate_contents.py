@@ -66,7 +66,7 @@ def generate_contents(suites):
         h.close()
 
     # Get our suites, and the architectures
-    for s in suites:
+    for s in [i.lower() for i in suites]:
         suite_id = database.get_suite_id(s)
 
         q = projectB.query("SELECT s.architecture, a.arch_string FROM suite_architectures s JOIN architecture a ON (s.architecture=a.id) WHERE suite = '%d'" % suite_id)

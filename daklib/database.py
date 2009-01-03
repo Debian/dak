@@ -45,6 +45,7 @@ suite_version_cache = {}
 suite_bin_version_cache = {}
 content_path_id_cache = {}
 content_file_id_cache = {}
+insert_contents_file_cache = {}
 
 ################################################################################
 
@@ -250,14 +251,14 @@ def get_suite_version(source, suite, arch):
 
     return version
 
-def get_latest_binary_version_id(binary, suite, arch):
+def get_latest_binary_version_id(binary, section, suite, arch):
     global suite_bin_version_cache
-    cache_key = "%s_%s" % (binary, suite)
+    cache_key = "%s_%s_%s_%s" % (binary, section, suite, arch)
 
     if suite_bin_version_cache.has_key(cache_key):
         return suite_bin_version_cache[cache_key]
 
-    q = projectB.query("SELECT b.id, b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) WHERE b.package = '%s' AND b.architecture = '%d' AND ba.suite = '%d'" % (binary, int(arch), int(suite)))
+    q = projectB.query("SELECT b.id, b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN override o ON (o.package=b.package) WHERE b.package = '%s' AND b.architecture = '%d' AND ba.suite = '%d' AND o.section = '%d'" % (binary, int(arch), int(suite), int(section)))
 
     highest_bid, highest_version = None, None
 
@@ -266,6 +267,7 @@ def get_latest_binary_version_id(binary, suite, arch):
              highest_bid = bi[0]
              highest_version = bi[1]
 
+    suite_bin_version_cache[cache_key] = highest_bid
     return highest_bid
 
 ################################################################################
@@ -459,12 +461,27 @@ def get_or_set_contents_path_id(path):
 ################################################################################
 
 def insert_content_path(bin_id, fullpath):
+    global insert_contents_file_cache
+    cache_key = "%s_%s" % (bin_id, fullpath)
+
+    # have we seen this contents before?
+    # probably only revelant during package import
+    if insert_contents_file_cache.has_key(cache_key):
+        return
+
     # split the path into basename, and pathname
     (path, file)  = os.path.split(fullpath)
 
     # Get the necessary IDs ...
     file_id = get_or_set_contents_file_id(file)
     path_id = get_or_set_contents_path_id(path)
+
+    # Determine if we're inserting a duplicate row
+    q = projectB.query("SELECT 1 FROM content_associations WHERE binary_pkg = '%d' AND filepath = '%d' AND filename = '%d'" % (int(bin_id), path_id, file_id))
+    if q.getresult():
+        # Yes we are, return without doing the insert
+        print "Inserting dup row"
+        return
 
     # Put them into content_assiocations
     projectB.query("INSERT INTO content_associations VALUES (DEFAULT, '%d', '%d', '%d')" % (bin_id, path_id, file_id))
