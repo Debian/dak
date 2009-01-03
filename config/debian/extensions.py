@@ -86,7 +86,7 @@ def check_signed_by_key(oldfn):
 
     if changes["source"] == "dpkg":
         fpr = changes["fingerprint"]
-        (uid, uid_name) = dak_module.lookup_uid_from_fingerprint(fpr)
+        (uid, uid_name, is_dm) = dak_module.lookup_uid_from_fingerprint(fpr)
         if fpr == "5906F687BD03ACAD0D8E602EFCF37657" or uid == "iwj":
             reject("Upload blocked due to hijack attempt 2008/03/19")
 
