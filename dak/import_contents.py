@@ -33,6 +33,9 @@ Cnf = None
 projectB = None
 out = None
 AptCnf = None
+content_path_id_cache = {}
+content_file_id_cache = {}
+insert_contents_file_cache = {}
 
 ################################################################################
 
@@ -47,6 +50,50 @@ Import Contents files
 
 ################################################################################
 
+
+def set_contents_file_id(file):
+    global content_file_id_cache
+
+    if not content_file_id_cache.has_key(file):
+        # since this can be called within a transaction, we can't use currval
+        q = projectB.query("INSERT INTO content_file_names VALUES (DEFAULT, '%s') RETURNING id" % (file))
+        content_file_id_cache[file] = int(q.getresult()[0][0])
+    return content_file_id_cache[file]
+
+################################################################################
+
+def set_contents_path_id(path):
+    global content_path_id_cache
+
+    if not content_path_id_cache.has_key(path):
+        q = projectB.query("INSERT INTO content_file_paths VALUES (DEFAULT, '%s') RETURNING id" % (path))
+        content_path_id_cache[path] = int(q.getresult()[0][0])
+    return content_path_id_cache[path]
+
+################################################################################
+
+def insert_content_path(bin_id, fullpath):
+    global insert_contents_file_cache
+    cache_key = "%s_%s" % (bin_id, fullpath)
+
+    # have we seen this contents before?
+    # probably only revelant during package import
+    if insert_contents_file_cache.has_key(cache_key):
+        return
+
+    # split the path into basename, and pathname
+    (path, file)  = os.path.split(fullpath)
+
+    # Get the necessary IDs ...
+    file_id = set_contents_file_id(file)
+    path_id = set_contents_path_id(path)
+
+    # Put them into content_assiocations
+    projectB.query("INSERT INTO content_associations VALUES (DEFAULT, '%d', '%d', '%d')" % (bin_id, path_id, file_id))
+    return
+
+################################################################################
+
 def import_contents(suites):
     global projectB, Cnf
 
@@ -55,6 +102,11 @@ def import_contents(suites):
 
     # Needed to make sure postgreSQL doesn't freak out on some of the data
     projectB.query("SET CLIENT_ENCODING TO 'LATIN1'")
+
+    # Prep regexs
+    line_regex = re.compile(r'^(.+?)\s+(\S+)$')
+    pkg_regex = re.compile(r'(\S+)/(\S+)$')
+    file_regex = re.compile('^FILE')
 
     # Get our suites, and the architectures
     for s in suites:
@@ -89,8 +141,7 @@ def import_contents(suites):
                         sys.exit(255)
 
                     lines_processed += 1
-                    p = re.compile('^FILE')
-                    if p.match(line):
+                    if file_regex.match(line):
                         found_header = True
                     continue
 
@@ -99,18 +150,16 @@ def import_contents(suites):
                 # to split the two bits
 
                 # Print out progress bar
-                print "\rProcessed %d lines of %d (%%%.2f)" % (lines_processed, num_of_lines, (float(lines_processed)/num_of_lines)),
+                print "\rProcessed %d lines of %d (%%%.2f)" % (lines_processed, num_of_lines, ((float(lines_processed)/num_of_lines)*100)),
 
                 # regex lifted from packages.d.o code
-                p = re.compile('^(.+?)\s+(\S+)$')
-                matchs = p.findall(line)
+                matchs = line_regex.findall(line)
                 filename = matchs[0][0]
                 packages = matchs[0][1].split(',')
 
                 # Iterate through each file's packages
                 for package in packages:
-                    p = re.compile('(\S+)/(\S+)$')
-                    matchs = p.findall(package)
+                    matchs = pkg_regex.findall(package)
 
                     # Needed since the DB is unicode, and these files
                     # are ASCII
@@ -124,7 +173,7 @@ def import_contents(suites):
                         # Likely got an arch all package
                         package_id = database.get_latest_binary_version_id(package_name, section_id, suite_id, arch_all_id)
 
-                    database.insert_content_path(package_id, filename)
+                    insert_content_path(package_id, filename)
 
                 lines_processed += 1
             f.close()

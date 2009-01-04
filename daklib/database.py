@@ -431,12 +431,8 @@ def get_or_set_contents_file_id(file):
         q = projectB.query(sql_select)
         if not q.getresult():
             # since this can be called within a transaction, we can't use currval
-            q = projectB.query("SELECT nextval('content_file_names_id_seq')")
-            file_id = int(q.getresult()[0][0])
-            projectB.query("INSERT INTO content_file_names VALUES ('%d', '%s')" % (file_id, file))
-            content_file_id_cache[file] =  file_id
-        else:
-            content_file_id_cache[file] = int(q.getresult()[0][0])
+            q = projectB.query("INSERT INTO content_file_names VALUES (DEFAULT, '%s') RETURNING id" % (file))
+        content_file_id_cache[file] = int(q.getresult()[0][0])
     return content_file_id_cache[file]
 
 ################################################################################
@@ -449,13 +445,8 @@ def get_or_set_contents_path_id(path):
         q = projectB.query(sql_select)
         if not q.getresult():
             # since this can be called within a transaction, we can't use currval
-            q = projectB.query("SELECT nextval('content_file_names_id_seq')")
-            path_id = int(q.getresult()[0][0])
-            projectB.query("INSERT INTO content_file_paths VALUES ('%d', '%s')" % ( path_id, path))
-            content_path_id_cache[path] = path_id
-        else:
-            content_path_id_cache[path] = int(q.getresult()[0][0])
-
+            q = projectB.query("INSERT INTO content_file_paths VALUES (DEFAULT, '%s') RETURNING id" % (path))
+        content_path_id_cache[path] = int(q.getresult()[0][0])
     return content_path_id_cache[path]
 
 ################################################################################
@@ -480,7 +471,6 @@ def insert_content_path(bin_id, fullpath):
     q = projectB.query("SELECT 1 FROM content_associations WHERE binary_pkg = '%d' AND filepath = '%d' AND filename = '%d'" % (int(bin_id), path_id, file_id))
     if q.getresult():
         # Yes we are, return without doing the insert
-        print "Inserting dup row"
         return
 
     # Put them into content_assiocations
