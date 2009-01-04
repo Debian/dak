@@ -46,6 +46,7 @@ suite_bin_version_cache = {}
 content_path_id_cache = {}
 content_file_id_cache = {}
 insert_contents_file_cache = {}
+cache_preloaded = False
 
 ################################################################################
 
@@ -254,21 +255,46 @@ def get_suite_version(source, suite, arch):
 def get_latest_binary_version_id(binary, section, suite, arch):
     global suite_bin_version_cache
     cache_key = "%s_%s_%s_%s" % (binary, section, suite, arch)
+    cache_key_all = "%s_%s_%s_%s" % (binary, section, suite, get_architecture_id("all"))
 
+    # Check for the cache hit for its arch, then arch all
     if suite_bin_version_cache.has_key(cache_key):
         return suite_bin_version_cache[cache_key]
+    if suite_bin_version_cache.has_key(cache_key_all):
+        return suite_bin_version_cache[cache_key_all]
+    if cache_preloaded == True:
+        return # package does not exist
 
-    q = projectB.query("SELECT b.id, b.version FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN override o ON (o.package=b.package) WHERE b.package = '%s' AND b.architecture = '%d' AND ba.suite = '%d' AND o.section = '%d'" % (binary, int(arch), int(suite), int(section)))
+    q = projectB.query("SELECT DISTINCT b.id FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN override o ON (o.package=b.package) WHERE b.package = '%s' AND b.architecture = '%d' AND ba.suite = '%d' AND o.section = '%d'" % (binary, int(arch), int(suite), int(section)))
 
-    highest_bid, highest_version = None, None
+    if not q.getresult():
+        return False
 
-    for bi in q.getresult():
-        if highest_version == None or apt_pkg.VersionCompare(bi[1], highest_version) == 1:
-             highest_bid = bi[0]
-             highest_version = bi[1]
+    highest_bid = q.getresult()[0][0]
 
     suite_bin_version_cache[cache_key] = highest_bid
     return highest_bid
+
+def preload_binary_id_cache():
+    global suite_bin_version_cache, cache_preloaded
+
+    # Get suite info
+    q = projectB.query("SELECT id FROM suite")
+    suites = q.getresult()
+
+    # Get arch mappings
+    q = projectB.query("SELECT id FROM architecture")
+    arches = q.getresult()
+
+    for suite in suites:
+        for arch in arches:
+            q = projectB.query("SELECT DISTINCT b.id, b.package, o.section FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN override o ON (o.package=b.package) WHERE b.architecture = '%d' AND ba.suite = '%d'" % (int(arch[0]), int(suite[0])))
+
+            for bi in q.getresult():
+                cache_key = "%s_%s_%s_%s" % (bi[1], bi[2], suite[0], arch[0])
+                suite_bin_version_cache[cache_key] = int(bi[0])
+
+    cache_preloaded = True
 
 ################################################################################
 

@@ -33,9 +33,12 @@ Cnf = None
 projectB = None
 out = None
 AptCnf = None
-content_path_id_cache = {}
-content_file_id_cache = {}
-insert_contents_file_cache = {}
+has_opened_temp_file_lists = False
+content_path_file = ""
+content_name_file = ""
+content_file_cache = {}
+content_name_cache = {}
+content_path_cache = {}
 
 ################################################################################
 
@@ -50,46 +53,31 @@ Import Contents files
 
 ################################################################################
 
-
-def set_contents_file_id(file):
-    global content_file_id_cache
-
-    if not content_file_id_cache.has_key(file):
-        # since this can be called within a transaction, we can't use currval
-        q = projectB.query("INSERT INTO content_file_names VALUES (DEFAULT, '%s') RETURNING id" % (file))
-        content_file_id_cache[file] = int(q.getresult()[0][0])
-    return content_file_id_cache[file]
-
-################################################################################
-
-def set_contents_path_id(path):
-    global content_path_id_cache
-
-    if not content_path_id_cache.has_key(path):
-        q = projectB.query("INSERT INTO content_file_paths VALUES (DEFAULT, '%s') RETURNING id" % (path))
-        content_path_id_cache[path] = int(q.getresult()[0][0])
-    return content_path_id_cache[path]
-
-################################################################################
-
-def insert_content_path(bin_id, fullpath):
-    global insert_contents_file_cache
-    cache_key = "%s_%s" % (bin_id, fullpath)
+def cache_content_path(fullpath):
+    global content_file_cache, contents_name_cache, content_path_cache
+    global content_path_file, content_name_file, has_opened_temp_file_lists
 
     # have we seen this contents before?
-    # probably only revelant during package import
-    if insert_contents_file_cache.has_key(cache_key):
+    if content_file_cache.has_key(fullpath):
         return
 
     # split the path into basename, and pathname
     (path, file)  = os.path.split(fullpath)
 
-    # Get the necessary IDs ...
-    file_id = set_contents_file_id(file)
-    path_id = set_contents_path_id(path)
+    # Due to performance reasons, we need to get the entire filelists table
+    # sorted first before we can do assiocation tables.
+    if has_opened_temp_file_lists == False:
+        content_path_file = open("/tmp/content_file_path.tmp", "w")
+        content_name_file = open("/tmp/content_name_path.tmp", "w")
+        has_opened_temp_file_lists = True
 
-    # Put them into content_assiocations
-    projectB.query("INSERT INTO content_associations VALUES (DEFAULT, '%d', '%d', '%d')" % (bin_id, path_id, file_id))
+    if not content_path_cache.has_key(path):
+        content_path_file.write("DEFAULT %s\n" % (path))
+        content_path_cache[path] = 1
+
+    if not content_name_cache.has_key(file):
+        content_name_file.write("DEFAULT %s\n" % (file))
+        content_name_cache[file] = 1
     return
 
 ################################################################################
@@ -102,6 +90,10 @@ def import_contents(suites):
 
     # Needed to make sure postgreSQL doesn't freak out on some of the data
     projectB.query("SET CLIENT_ENCODING TO 'LATIN1'")
+
+    # Precache everything
+    #print "Precaching binary information, this will take a few moments ..."
+    #database.preload_binary_id_cache()
 
     # Prep regexs
     line_regex = re.compile(r'^(.+?)\s+(\S+)$')
@@ -124,7 +116,14 @@ def import_contents(suites):
         for arch in arch_list:
             print "Processing %s/%s" % (s, arch[1])
             arch_id = database.get_architecture_id(arch[1])
-            f = gzip.open(Cnf["Dir::Root"] + "dists/%s/Contents-%s.gz" % (s, arch[1]), "r")
+
+            try:
+                f = gzip.open(Cnf["Dir::Root"] + "dists/%s/Contents-%s.gz" % (s, arch[1]), "r")
+
+            except:
+                print "Unable to open dists/%s/Contents-%s.gz" % (s, arch[1])
+                print "Skipping ..."
+                continue
 
             # Get line count
             lines = f.readlines()
@@ -157,28 +156,39 @@ def import_contents(suites):
                 filename = matchs[0][0]
                 packages = matchs[0][1].split(',')
 
+
+                cache_content_path(filename)
+
                 # Iterate through each file's packages
-                for package in packages:
-                    matchs = pkg_regex.findall(package)
+                #for package in packages:
+                #    matchs = pkg_regex.findall(package)
 
                     # Needed since the DB is unicode, and these files
                     # are ASCII
-                    section_name = matchs[0][0]
-                    package_name = matchs[0][1]
+                #    section_name = matchs[0][0]
+                #    package_name = matchs[0][1]
 
-                    section_id = database.get_section_id(section_name)
-                    package_id = database.get_latest_binary_version_id(package_name, section_id, suite_id, arch_id)
+                    #section_id = database.get_section_id(section_name)
+                    #package_id = database.get_latest_binary_version_id(package_name, section_id, suite_id, arch_id)
 
-                    if package_id == None:
-                        # Likely got an arch all package
-                        package_id = database.get_latest_binary_version_id(package_name, section_id, suite_id, arch_all_id)
+               #     if package_id == None:
+                        # This can happen if the Contents file refers to a non-existant package
+                        # it seems Contents sometimes can be stale due to use of caches (i.e., hurd-i386)
+                        # hurd-i386 was removed from the archive, but its Contents file still exists
+                        # and is seemingly still updated. The sane thing to do is skip it and continue
+               #         continue
 
-                    insert_content_path(package_id, filename)
 
                 lines_processed += 1
+
+            print "" # newline since the Progress bar doesn't print one
             f.close()
 
     # Commit work
+
+    content_name_file.close()
+    content_path_file.close()
+
     print "Committing to database ..."
     projectB.query("COMMIT")
 
