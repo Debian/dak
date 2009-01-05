@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.4
 # Import contents files
 
 # Copyright (C) 2008, 2009 Michael Casadevall <mcasadevall@debian.org>
@@ -36,9 +36,9 @@ AptCnf = None
 has_opened_temp_file_lists = False
 content_path_file = ""
 content_name_file = ""
-content_file_cache = {}
-content_name_cache = {}
-content_path_cache = {}
+content_file_cache = set([])
+content_name_cache = set([])
+content_path_cache = set([])
 
 ################################################################################
 
@@ -55,29 +55,25 @@ Import Contents files
 
 def cache_content_path(fullpath):
     global content_file_cache, contents_name_cache, content_path_cache
-    global content_path_file, content_name_file, has_opened_temp_file_lists
 
     # have we seen this contents before?
-    if content_file_cache.has_key(fullpath):
+    if fullpath in content_file_cache:
         return
+
+    # Add the new key to the cache
+    content_file_cache.add(fullpath)
 
     # split the path into basename, and pathname
     (path, file)  = os.path.split(fullpath)
 
     # Due to performance reasons, we need to get the entire filelists table
     # sorted first before we can do assiocation tables.
-    if has_opened_temp_file_lists == False:
-        content_path_file = open("/tmp/content_file_path.tmp", "w")
-        content_name_file = open("/tmp/content_name_path.tmp", "w")
-        has_opened_temp_file_lists = True
+    if path not in content_path_cache:
+        content_path_cache.add(path)
 
-    if not content_path_cache.has_key(path):
-        content_path_file.write("DEFAULT %s\n" % (path))
-        content_path_cache[path] = 1
+    if file not in content_name_cache:
+        content_name_cache.add(file)
 
-    if not content_name_cache.has_key(file):
-        content_name_file.write("DEFAULT %s\n" % (file))
-        content_name_cache[file] = 1
     return
 
 ################################################################################
@@ -104,24 +100,22 @@ def import_contents(suites):
     for s in suites:
         suite_id = database.get_suite_id(s)
 
-        q = projectB.query("SELECT s.architecture, a.arch_string FROM suite_architectures s JOIN architecture a ON (s.architecture=a.id) WHERE suite = '%d'" % suite_id)
-
         arch_list = [ ]
-        for r in q.getresult():
-            if r[1] != "source" and r[1] != "all":
-                arch_list.append((r[0], r[1]))
+        for r in Cnf.ValueList("Suite::%s::Architectures" % (s)):
+            if r != "source" and r != "all":
+                arch_list.append(r)
 
         arch_all_id = database.get_architecture_id("all")
 
         for arch in arch_list:
-            print "Processing %s/%s" % (s, arch[1])
-            arch_id = database.get_architecture_id(arch[1])
+            print "Processing %s/%s" % (s, arch)
+            arch_id = database.get_architecture_id(arch)
 
             try:
-                f = gzip.open(Cnf["Dir::Root"] + "dists/%s/Contents-%s.gz" % (s, arch[1]), "r")
+                f = gzip.open(Cnf["Dir::Root"] + "dists/%s/Contents-%s.gz" % (s, arch), "r")
 
             except:
-                print "Unable to open dists/%s/Contents-%s.gz" % (s, arch[1])
+                print "Unable to open dists/%s/Contents-%s.gz" % (s, arch)
                 print "Skipping ..."
                 continue
 
@@ -136,7 +130,7 @@ def import_contents(suites):
             for line in lines:
                 if found_header == False:
                     if not line:
-                        print "Unable to find end of Contents-%s.gz header!" % ( arch[1])
+                        print "Unable to find end of Contents-%s.gz header!" % (arch)
                         sys.exit(255)
 
                     lines_processed += 1
@@ -186,10 +180,14 @@ def import_contents(suites):
 
     # Commit work
 
-    content_name_file.close()
-    content_path_file.close()
-
     print "Committing to database ..."
+    projectB.query("COPY content_file_names (file) FROM STDIN")
+
+    for line in content_name_cache:
+        projectB.putline("%s\n" % (line))
+
+    projectB.endcopy()
+
     projectB.query("COMMIT")
 
 ################################################################################
