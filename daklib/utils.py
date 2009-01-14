@@ -1236,7 +1236,7 @@ used."""
         args = keywords["EXPKEYSIG"]
         if len(args) >= 1:
             key = args[0]
-        reject("Signature made by expired key ßx%s" % (key))
+        reject("Signature made by expired key 0x%s" % (key))
         bad = 1
     if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
         args = keywords["KEYEXPIRED"]
