@@ -26,6 +26,7 @@ import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
        sys, tempfile, traceback, stat
 import apt_pkg
 import database
+import time
 from dak_exceptions import *
 
 ################################################################################
@@ -1231,11 +1232,22 @@ used."""
     if keywords.has_key("NODATA"):
         reject("no signature found in %s." % (sig_filename))
         bad = 1
-    if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
-        args = keywords["KEYEXPIRED"]
+    if keywords.has_key("EXPKEYSIG"):
+        args = keywords["EXPKEYSIG"]
         if len(args) >= 1:
             key = args[0]
-        reject("The key (0x%s) used to sign %s has expired." % (key, sig_filename))
+        reject("Signature made by expired key ßx%s" % (key))
+        bad = 1
+    if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
+        args = keywords["KEYEXPIRED"]
+        expiredate=""
+        if len(args) >= 1:
+            timestamp = args[0]
+            if timestamp.count("T") == 0:
+                expiredate = time.strftime("%Y-%m-%d", time.gmtime(timestamp))
+            else:
+                expiredate = timestamp
+        reject("The key used to sign %s has expired on %s" % (sig_filename, expiredate))
         bad = 1
 
     if bad:
