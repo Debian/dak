@@ -172,9 +172,9 @@ def do_pkg(changes_file):
         examine_package.display_changes(changes['distribution'], Upload.pkg.changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-            examine_package.check_dsc(fn)
+            examine_package.check_dsc(changes['distribution'], fn)
         for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-            examine_package.check_deb(fn)
+            examine_package.check_deb(changes['distribution'], fn)
 
         html_footer()
         if sys.stdout != stdout_fd:
