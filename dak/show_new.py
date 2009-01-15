@@ -169,7 +169,7 @@ def do_pkg(changes_file):
         html_header(changes["source"], filestoexamine)
 
         queue.check_valid(new)
-        examine_package.display_changes(Upload.pkg.changes_file)
+        examine_package.display_changes(changes['distribution'], Upload.pkg.changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
             examine_package.check_dsc(fn)
