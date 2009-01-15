@@ -493,15 +493,16 @@ def check_pkg ():
         stdout_fd = sys.stdout
         try:
             sys.stdout = less_fd
-            examine_package.display_changes(Upload.pkg.changes_file)
+            changes = utils.parse_changes (Upload.pkg.changes_file)
+            examine_package.display_changes(changes['distribution'], Upload.pkg.changes_file)
             files = Upload.pkg.files
             for f in files.keys():
                 if files[f].has_key("new"):
                     ftype = files[f]["type"]
                     if ftype == "deb":
-                        examine_package.check_deb(f)
+                        examine_package.check_deb(changes['distribution'], f)
                     elif ftype == "dsc":
-                        examine_package.check_dsc(f)
+                        examine_package.check_dsc(changes['distribution'], f)
         finally:
             sys.stdout = stdout_fd
     except IOError, e:
