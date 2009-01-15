@@ -324,7 +324,7 @@ def create_depends_string (suite, depends_tree):
                 result += " | "
             # doesn't do version lookup yet.
 
-            q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name = %s ORDER BY b.version desc" % (d['name'], suite_where))
+            q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name %s ORDER BY b.version desc" % (d['name'], suite_where))
             ql = q.getresult()
             if ql:
                 i = ql[0]
