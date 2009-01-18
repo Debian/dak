@@ -36,7 +36,7 @@ from daklib import utils
 
 Cnf = None
 projectB = None
-required_database_schema = 2
+required_database_schema = 3
 
 ################################################################################
 
