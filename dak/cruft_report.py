@@ -182,8 +182,8 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
   FROM src_associations sa, source s, source s2, src_associations sa2
   WHERE sa.suite = %s AND sa2.suite = %d AND sa.source = s.id
    AND sa2.source = s2.id AND s.source = s2.source
-   AND versioncmp(s.version, s2.version) < 0""" % (experimental_id,
-                                                   database.get_suite_id("unstable")))
+   AND s.version < s2.version""" % (experimental_id,
+                                    database.get_suite_id("unstable")))
     ql = q.getresult()
     if ql:
         nviu_to_remove = []
