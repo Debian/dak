@@ -26,11 +26,17 @@ import psycopg2, time
 ################################################################################
 
 def do_update(self):
-    print "Note the PL/Perl (plperl) procedural language must be enabled first."
-    print "Run 'createlang plpgsql projectb' to add it."
+    print "Note: to be able to enable the the PL/Perl (plperl) procedural language, we do"
+    print "need postgresql-plperl-$postgres-version installed. Make sure that this is the"
+    print "case before you continue. Interrupt if it isn't, sleeping 5 seconds now."
+    print "(We need to be database superuser for this to work!)"
+    time.sleep (5)
 
     try:
         c = self.db.cursor()
+
+        print "Enabling PL/Perl language"
+        c.execute("CREATE LANGUAGE plpgsql;")
 
         print "Adding debversion type to database."
 
@@ -378,7 +384,7 @@ $$
         c.execute("ALTER TABLE source ALTER COLUMN version TYPE debversion;")
         c.execute("ALTER TABLE binaries ALTER COLUMN version TYPE debversion;")
 
-        c.execute("UPDATE config SET value = '1' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '2' WHERE name = 'db_revision'")
 
         self.db.commit()
 
