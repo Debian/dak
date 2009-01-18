@@ -36,7 +36,7 @@ def do_update(self):
         c = self.db.cursor()
 
         print "Enabling PL/Perl language"
-        c.execute("CREATE LANGUAGE plpgsql;")
+        c.execute("CREATE LANGUAGE plperl;")
 
         print "Adding debversion type to database."
 
