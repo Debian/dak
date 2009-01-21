@@ -22,7 +22,8 @@
 
 ################################################################################
 
-import sys, os, popen2, tempfile, stat, time, pg
+import sys, os, stat, time, pg
+import zlib, bz2
 import apt_pkg
 from daklib import utils
 from daklib.dak_exceptions import *
@@ -77,23 +78,23 @@ def compressnames (tree,type,file):
             result.append(file + ".bz2")
     return result
 
-def create_temp_file (cmd):
-    f = tempfile.TemporaryFile()
-    r = popen2.popen2(cmd)
-    r[1].close()
-    r = r[0]
-    size = 0
-    while 1:
-        x = r.readline()
-        if not x:
-            r.close()
-            del x,r
-            break
-        f.write(x)
-        size += len(x)
-    f.flush()
-    f.seek(0)
-    return (size, f)
+compressors = { 'zcat' : zlib.compress,
+                'bzip2' : bz2.compress }
+
+def compress(how, filename):
+    compressor = compressors[ how ]
+    uncompressed = None
+    output = None
+    try:
+        uncompressed = utils.open_file(filename)
+        output = compressor(uncompressed.read())
+    except:
+        raise
+    else:
+        if uncompressed:
+            uncompressed.close()
+
+    return output
 
 def print_md5sha_files (tree, files, hashop):
     path = Cnf["Dir::Root"] + tree + "/"
@@ -103,17 +104,23 @@ def print_md5sha_files (tree, files, hashop):
                 j = name.index("/")
                 k = name.index(">")
                 (cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
-                (size, file_handle) = create_temp_file("%s %s%s%s" %
-                    (cat, path, name, ext))
+                contents = compress( cat, "%s%s%s" % (path, name, ext) )
             else:
                 size = os.stat(path + name)[stat.ST_SIZE]
-                file_handle = utils.open_file(path + name)
+                try:
+                    file_handle = utils.open_file(path + name)
+                    contents = file_handle.read()
+                except:
+                    raise
+                else:
+                    if file_handle:
+                        file_handle.close()
+
         except CantOpenError:
             print "ALERT: Couldn't open " + path + name
         else:
-            hash = hashop(file_handle)
-            file_handle.close()
-            out.write(" %s %8d %s\n" % (hash, size, name))
+            hash = hashop(contents)
+            out.write(" %s %8d %s\n" % (hash, len(contents), name))
 
 def print_md5_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.md5sum)
