@@ -23,7 +23,7 @@
 ################################################################################
 
 import sys, os, stat, time, pg
-import zlib, bz2
+import gzip, bz2
 import apt_pkg
 from daklib import utils
 from daklib.dak_exceptions import *
@@ -78,23 +78,8 @@ def compressnames (tree,type,file):
             result.append(file + ".bz2")
     return result
 
-compressors = { 'zcat' : zlib.compress,
-                'bzip2' : bz2.compress }
-
-def compress(how, filename):
-    compressor = compressors[ how ]
-    uncompressed = None
-    output = None
-    try:
-        uncompressed = utils.open_file(filename)
-        output = compressor(uncompressed.read())
-    except:
-        raise
-    else:
-        if uncompressed:
-            uncompressed.close()
-
-    return output
+decompressors = { 'zcat' : gzip.GzipFile,
+                  'bzip2' : bz2.BZ2File }
 
 def print_md5sha_files (tree, files, hashop):
     path = Cnf["Dir::Root"] + tree + "/"
@@ -104,9 +89,9 @@ def print_md5sha_files (tree, files, hashop):
                 j = name.index("/")
                 k = name.index(">")
                 (cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
-                contents = compress( cat, "%s%s%s" % (path, name, ext) )
+                file_handle = decompressors[ cat ]( "%s%s%s" % (path, name, ext) )
+                contents = file_handle.read()
             else:
-                size = os.stat(path + name)[stat.ST_SIZE]
                 try:
                     file_handle = utils.open_file(path + name)
                     contents = file_handle.read()
