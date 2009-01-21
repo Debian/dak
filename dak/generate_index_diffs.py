@@ -32,6 +32,7 @@
 
 import sys, os, tempfile
 import apt_pkg
+import bz2, gzip, time
 from daklib import utils
 
 ################################################################################
@@ -82,9 +83,9 @@ def smartopen(file):
     if os.path.isfile(file):
         f = open(file, "r")
     elif os.path.isfile("%s.gz" % file):
-        f = create_temp_file(os.popen("zcat %s.gz" % file, "r"))
+        f = decompressors[ 'zcat' ]( file )
     elif os.path.isfile("%s.bz2" % file):
-        f = create_temp_file(os.popen("bzcat %s.bz2" % file, "r"))
+        f = decompressors[ 'bzcat' ]( file )
     else:
         f = None
     return f
@@ -173,17 +174,8 @@ class Updates:
         for h in l:
             out.write(" %s %7d %s\n" % (hs[h][1][0], hs[h][1][1], h))
 
-def create_temp_file(r):
-    f = tempfile.TemporaryFile()
-    while 1:
-        x = r.readline()
-        if not x: break
-        f.write(x)
-    r.close()
-    del x,r
-    f.flush()
-    f.seek(0)
-    return f
+decompressors = { 'zcat' : gzip.GzipFile,
+                  'bzip2' : bz2.BZ2File }
 
 def sizesha1(f):
     size = os.fstat(f.fileno())[6]
@@ -306,10 +298,7 @@ def main():
 
     if not Options.has_key("PatchName"):
         format = "%Y-%m-%d-%H%M.%S"
-        i,o = os.popen2("date +%s" % (format))
-        i.close()
-        Options["PatchName"] = o.readline()[:-1]
-        o.close()
+        Options["PatchName"] = time.strftime( format )
 
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
