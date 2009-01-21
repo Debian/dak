@@ -79,16 +79,29 @@ def smartlink(f, t):
         print "missing: %s" % (f)
         raise IOError, f
 
-def smartopen(file):
-    if os.path.isfile(file):
-        f = open(file, "r")
-    elif os.path.isfile("%s.gz" % file):
-        f = decompressors[ 'zcat' ]( file )
-    elif os.path.isfile("%s.bz2" % file):
-        f = decompressors[ 'bzcat' ]( file )
+def smartread(filename):
+    """
+    If filename exists, slurp the contents into a string.
+    if filename.gz or filename.bz2 exists instead, decompress and slurp
+    It returns a tuple of (filename, filecontents)
+    """
+    actual_filename = None
+    contents = None
+    if os.path.isfile(filename):
+        f = open(filename, "r")
+    elif os.path.isfile("%s.gz" % filename):
+        actual_filename = "%s.gz" % filename
+        f = decompressors['zcat'](actual_filename)
+    elif os.path.isfile("%s.bz2" % filename):
+        actual_filename = "%s.bz2" % filename
+        f = decompressors['bzcat'](actual_filename)
     else:
         f = None
-    return f
+
+    if f:
+        contents = f.read()
+
+    return (actual_filename, contents)
 
 def pipe_file(f, t):
     f.seek(0)
@@ -177,6 +190,12 @@ class Updates:
 decompressors = { 'zcat' : gzip.GzipFile,
                   'bzip2' : bz2.BZ2File }
 
+def sizesha1_str(s):
+    """
+    given a string, return a tuple containing its (sha1sum, length)
+    """
+    return (apt_pkg.sha1sum(s), len( s ) )
+
 def sizesha1(f):
     size = os.fstat(f.fileno())[6]
     f.seek(0)
@@ -215,8 +234,8 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
         print "%s: hardlink unbroken, assuming unchanged" % (origfile)
         return
 
-    oldf = smartopen(oldfile)
-    oldsizesha1 = sizesha1(oldf)
+    (oldf,contents) = smartread(oldfile)
+    oldsizesha1 = sizesha1_str(contents)
 
     # should probably early exit if either of these checks fail
     # alternatively (optionally?) could just trim the patch history
@@ -226,6 +245,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
             print "warning: old file seems to have changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
 
     # XXX this should be usable now
+    # stew: whatever this is, it won't be usable now that i removed smartopen
     #
     #for d in upd.history.keys():
     #    df = smartopen("%s/%s" % (outdir,d))
@@ -246,18 +266,17 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 
     if newsizesha1 == oldsizesha1:
         os.unlink(newfile)
-        oldf.close()
+#        oldf.close()
         print "%s: unchanged" % (origfile)
     else:
         if not os.path.isdir(outdir): os.mkdir(outdir)
-        w = os.popen("diff --ed - %s | gzip -c -9 > %s.gz" %
-                         (newfile, difffile), "w")
-        pipe_file(oldf, w)
-        oldf.close()
+        os.popen("diff --ed %s %s | gzip -c -9 > %s.gz" %
+                 (oldf, newfile, difffile))
+#        pipe_file(oldf, w)
+#        oldf.close()
 
-        difff = smartopen(difffile)
-        difsizesha1 = sizesha1(difff)
-        difff.close()
+        (oldf,contents) = smartread(difffile)
+        difsizesha1 = sizesha1_str(contents)
 
         upd.history[patchname] = (oldsizesha1, difsizesha1)
         upd.history_order.append(patchname)
