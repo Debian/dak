@@ -84,6 +84,8 @@ decompressors = { 'zcat' : gzip.GzipFile,
 def print_md5sha_files (tree, files, hashop):
     path = Cnf["Dir::Root"] + tree + "/"
     for name in files:
+        hashvalue = ""
+        hashlen = 0
         try:
             if name[0] == "<":
                 j = name.index("/")
@@ -91,10 +93,13 @@ def print_md5sha_files (tree, files, hashop):
                 (cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
                 file_handle = decompressors[ cat ]( "%s%s%s" % (path, name, ext) )
                 contents = file_handle.read()
+                hashvalue = hashop(contents)
+                hashlen = len(contents)
             else:
                 try:
                     file_handle = utils.open_file(path + name)
-                    contents = file_handle.read()
+                    hashvalue = hashop(file_handle)
+                    hashlen = os.stat(path + name).st_size
                 except:
                     raise
                 else:
@@ -104,8 +109,7 @@ def print_md5sha_files (tree, files, hashop):
         except CantOpenError:
             print "ALERT: Couldn't open " + path + name
         else:
-            hash = hashop(contents)
-            out.write(" %s %8d %s\n" % (hash, len(contents), name))
+            out.write(" %s %8d %s\n" % (hashvalue, hashlen, name))
 
 def print_md5_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.md5sum)
