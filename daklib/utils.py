@@ -569,8 +569,7 @@ switched to 'email (name)' format."""
 def send_mail (message, filename=""):
         # If we've been passed a string dump it into a temporary file
     if message:
-        filename = tempfile.mktemp()
-        fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
+        (fd, filename) = tempfile.mkstemp()
         os.write (fd, message)
         os.close (fd)
 
