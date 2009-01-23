@@ -1358,26 +1358,16 @@ def clean_symlink (src, dest, root):
 
 ################################################################################
 
-def temp_filename(directory=None, dotprefix=None, perms=0700):
+def temp_filename(directory=None, prefix="dak", suffix=""):
     """Return a secure and unique filename by pre-creating it.
 If 'directory' is non-null, it will be the directory the file is pre-created in.
-If 'dotprefix' is non-null, the filename will be prefixed with a '.'."""
+If 'prefix' is non-null, the filename will be prefixed with it, default is dak.
+If 'suffix' is non-null, the filename will end with it.
 
-    if directory:
-        old_tempdir = tempfile.tempdir
-        tempfile.tempdir = directory
+Returns a pair (fd, name).
+"""
 
-    filename = tempfile.mktemp()
-
-    if dotprefix:
-        filename = "%s/.%s" % (os.path.dirname(filename), os.path.basename(filename))
-    fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, perms)
-    os.close(fd)
-
-    if directory:
-        tempfile.tempdir = old_tempdir
-
-    return filename
+    return tempfile.mkstemp(suffix, prefix, directory)
 
 ################################################################################
 
