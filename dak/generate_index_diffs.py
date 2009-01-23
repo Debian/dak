@@ -231,7 +231,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 
     if upd.filesizesha1:
         if upd.filesizesha1 != oldsizesha1:
-            print "warning: old file seems to have changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
+            print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
 
     # XXX this should be usable now
     #
