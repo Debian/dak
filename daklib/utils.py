@@ -398,25 +398,24 @@ def parse_checksums(where, files, manifest, hashname):
     field = 'checksums-%s' % hashname
     if not field in manifest:
         return rejmsg
-    input = manifest[field]
-    for line in input.split('\n'):
+    for line in manifest[field].split('\n'):
         if not line:
             break
-        hash, size, file = line.strip().split(' ')
-        if not files.has_key(file):
+        checksum, size, checkfile = line.strip().split(' ')
+        if not files.has_key(checkfile):
         # TODO: check for the file's entry in the original files dict, not
         # the one modified by (auto)byhand and other weird stuff
         #    rejmsg.append("%s: not present in files but in checksums-%s in %s" %
         #        (file, hashname, where))
             continue
-        if not files[file]["size"] == size:
+        if not files[checkfile]["size"] == size:
             rejmsg.append("%s: size differs for files and checksums-%s entry "\
-                "in %s" % (file, hashname, where))
+                "in %s" % (checkfile, hashname, where))
             continue
-        files[file][hash_key(hashname)] = hash
+        files[checkfile][hash_key(hashname)] = checksum
     for f in files.keys():
         if not files[f].has_key(hash_key(hashname)):
-            rejmsg.append("%s: no entry in checksums-%s in %s" % (file,
+            rejmsg.append("%s: no entry in checksums-%s in %s" % (checkfile,
                 hashname, where))
     return rejmsg
 
