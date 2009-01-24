@@ -131,8 +131,8 @@ def main():
 
     # Process any additional Maintainer files (e.g. from pseudo packages)
     for filename in extra_files:
-        file = utils.open_file(filename)
-        for line in file.readlines():
+        extrafile = utils.open_file(filename)
+        for line in extrafile.readlines():
             line = re_comments.sub('', line).strip()
             if line == "":
                 continue
@@ -148,7 +148,7 @@ def main():
             if not packages.has_key(package) or version == '*' \
                or apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
                 packages[package] = { "maintainer": maintainer, "version": version }
-        file.close()
+        extrafile.close()
 
     package_keys = packages.keys()
     package_keys.sort()

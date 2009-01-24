@@ -231,6 +231,7 @@ def sort_changes(changes_files):
 class Section_Completer:
     def __init__ (self):
         self.sections = []
+        self.matches = []
         q = projectB.query("SELECT section FROM section")
         for i in q.getresult():
             self.sections.append(i[0])
@@ -252,6 +253,7 @@ class Section_Completer:
 class Priority_Completer:
     def __init__ (self):
         self.priorities = []
+        self.matches = []
         q = projectB.query("SELECT priority FROM priority")
         for i in q.getresult():
             self.priorities.append(i[0])
@@ -457,7 +459,7 @@ def edit_overrides (new):
 def edit_note(note):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
-    temp_file = os.fdopen(temp_filename, 'w')
+    temp_file = os.fdopen(fd, 'w')
     temp_file.write(note)
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")

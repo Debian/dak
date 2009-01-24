@@ -105,13 +105,13 @@ def main ():
         override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)]
         for component in Cnf.SubTree("Component").List():
             if component == "mixed":
-                continue; # Ick
+                continue # Ick
             for otype in Cnf.ValueList("OverrideType"):
                 if otype == "deb":
                     suffix = ""
                 elif otype == "udeb":
                     if component == "contrib":
-                        continue; # Ick2
+                        continue # Ick2
                     suffix = ".debian-installer"
                 elif otype == "dsc":
                     suffix = ".src"

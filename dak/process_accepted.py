@@ -110,32 +110,32 @@ def reject (str, prefix="Rejected: "):
 def check():
     propogate={}
     nopropogate={}
-    for file in files.keys():
+    for checkfile in files.keys():
         # The .orig.tar.gz can disappear out from under us is it's a
         # duplicate of one in the archive.
-        if not files.has_key(file):
+        if not files.has_key(checkfile):
             continue
         # Check that the source still exists
-        if files[file]["type"] == "deb":
-            source_version = files[file]["source version"]
-            source_package = files[file]["source package"]
+        if files[checkfile]["type"] == "deb":
+            source_version = files[checkfile]["source version"]
+            source_package = files[checkfile]["source package"]
             if not changes["architecture"].has_key("source") \
                and not Upload.source_exists(source_package, source_version,  changes["distribution"].keys()):
-                reject("no source found for %s %s (%s)." % (source_package, source_version, file))
+                reject("no source found for %s %s (%s)." % (source_package, source_version, checkfile))
 
         # Version and file overwrite checks
         if not installing_to_stable:
-            if files[file]["type"] == "deb":
-                reject(Upload.check_binary_against_db(file), "")
-            elif files[file]["type"] == "dsc":
-                reject(Upload.check_source_against_db(file), "")
-                (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(file)
+            if files[checkfile]["type"] == "deb":
+                reject(Upload.check_binary_against_db(checkfile), "")
+            elif files[checkfile]["type"] == "dsc":
+                reject(Upload.check_source_against_db(checkfile), "")
+                (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(checkfile)
                 reject(reject_msg, "")
 
         # propogate in the case it is in the override tables:
         if changes.has_key("propdistribution"):
             for suite in changes["propdistribution"].keys():
-                if Upload.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
+                if Upload.in_override_p(files[checkfile]["package"], files[checkfile]["component"], suite, files[checkfile].get("dbtype",""), checkfile):
                     propogate[suite] = 1
                 else:
                     nopropogate[suite] = 1
@@ -145,11 +145,11 @@ def check():
             continue
         changes["distribution"][suite] = 1
 
-    for file in files.keys():
+    for checkfile in files.keys():
         # Check the package is still in the override tables
         for suite in changes["distribution"].keys():
-            if not Upload.in_override_p(files[file]["package"], files[file]["component"], suite, files[file].get("dbtype",""), file):
-                reject("%s is NEW for %s." % (file, suite))
+            if not Upload.in_override_p(files[checkfile]["package"], files[checkfile]["component"], suite, files[checkfile].get("dbtype",""), checkfile):
+                reject("%s is NEW for %s." % (checkfile, suite))
 
 ###############################################################################
 
@@ -284,8 +284,8 @@ def install ():
         return
 
     # Add the .dsc file to the DB
-    for file in files.keys():
-        if files[file]["type"] == "dsc":
+    for newfile in files.keys():
+        if files[newfile]["type"] == "dsc":
             package = dsc["source"]
             version = dsc["version"]  # NB: not files[file]["version"], that has no epoch
             maintainer = dsc["maintainer"]
@@ -296,26 +296,26 @@ def install ():
             changedby_id = database.get_or_set_maintainer_id(changedby)
             fingerprint_id = database.get_or_set_fingerprint_id(dsc["fingerprint"])
             install_date = time.strftime("%Y-%m-%d")
-            filename = files[file]["pool name"] + file
-            dsc_component = files[file]["component"]
-            dsc_location_id = files[file]["location id"]
+            filename = files[newfile]["pool name"] + newfile
+            dsc_component = files[newfile]["component"]
+            dsc_location_id = files[newfile]["location id"]
             if dsc.has_key("dm-upload-allowed") and  dsc["dm-upload-allowed"] == "yes":
                 dm_upload_allowed = "true"
             else:
                 dm_upload_allowed = "false"
-            if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], dsc_location_id)
+            if not files[newfile].has_key("files id") or not files[newfile]["files id"]:
+                files[newfile]["files id"] = database.set_files_id (filename, files[newfile]["size"], files[newfile]["md5sum"], files[newfile]["sha1sum"], files[newfile]["sha256sum"], dsc_location_id)
             projectB.query("INSERT INTO source (source, version, maintainer, changedby, file, install_date, sig_fpr, dm_upload_allowed) VALUES ('%s', '%s', %d, %d, %d, '%s', %s, %s)"
-                           % (package, version, maintainer_id, changedby_id, files[file]["files id"], install_date, fingerprint_id, dm_upload_allowed))
+                           % (package, version, maintainer_id, changedby_id, files[newfile]["files id"], install_date, fingerprint_id, dm_upload_allowed))
 
             for suite in changes["distribution"].keys():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO src_associations (suite, source) VALUES (%d, currval('source_id_seq'))" % (suite_id))
 
             # Add the source files to the DB (files and dsc_files)
-            projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files[file]["files id"]))
+            projectB.query("INSERT INTO dsc_files (source, file) VALUES (currval('source_id_seq'), %d)" % (files[newfile]["files id"]))
             for dsc_file in dsc_files.keys():
-                filename = files[file]["pool name"] + dsc_file
+                filename = files[newfile]["pool name"] + dsc_file
                 # If the .orig.tar.gz is already in the pool, it's
                 # files id is stored in dsc_files by check_dsc().
                 files_id = dsc_files[dsc_file].get("files id", None)
@@ -344,30 +344,30 @@ def install ():
 
 
     # Add the .deb files to the DB
-    for file in files.keys():
-        if files[file]["type"] == "deb":
-            package = files[file]["package"]
-            version = files[file]["version"]
-            maintainer = files[file]["maintainer"]
+    for newfile in files.keys():
+        if files[newfile]["type"] == "deb":
+            package = files[newfile]["package"]
+            version = files[newfile]["version"]
+            maintainer = files[newfile]["maintainer"]
             maintainer = maintainer.replace("'", "\\'")
             maintainer_id = database.get_or_set_maintainer_id(maintainer)
             fingerprint_id = database.get_or_set_fingerprint_id(changes["fingerprint"])
-            architecture = files[file]["architecture"]
+            architecture = files[newfile]["architecture"]
             architecture_id = database.get_architecture_id (architecture)
-            type = files[file]["dbtype"]
-            source = files[file]["source package"]
-            source_version = files[file]["source version"]
-            filename = files[file]["pool name"] + file
-            if not files[file].has_key("location id") or not files[file]["location id"]:
-                files[file]["location id"] = database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],utils.where_am_i())
-            if not files[file].has_key("files id") or not files[file]["files id"]:
-                files[file]["files id"] = database.set_files_id (filename, files[file]["size"], files[file]["md5sum"], files[file]["sha1sum"], files[file]["sha256sum"], files[file]["location id"])
+            filetype = files[newfile]["dbtype"]
+            source = files[newfile]["source package"]
+            source_version = files[newfile]["source version"]
+            filename = files[newfile]["pool name"] + newfile
+            if not files[newfile].has_key("location id") or not files[newfile]["location id"]:
+                files[newfile]["location id"] = database.get_location_id(Cnf["Dir::Pool"],files[newfile]["component"],utils.where_am_i())
+            if not files[newfile].has_key("files id") or not files[newfile]["files id"]:
+                files[newfile]["files id"] = database.set_files_id (filename, files[newfile]["size"], files[newfile]["md5sum"], files[newfile]["sha1sum"], files[newfile]["sha256sum"], files[newfile]["location id"])
             source_id = database.get_source_id (source, source_version)
             if source_id:
                 projectB.query("INSERT INTO binaries (package, version, maintainer, source, architecture, file, type, sig_fpr) VALUES ('%s', '%s', %d, %d, %d, %d, '%s', %d)"
-                               % (package, version, maintainer_id, source_id, architecture_id, files[file]["files id"], type, fingerprint_id))
+                               % (package, version, maintainer_id, source_id, architecture_id, files[newfile]["files id"], filetype, fingerprint_id))
             else:
-                raise NoSourceFieldError, "Unable to find a source id for %s (%s), %s, file %s, type %s, signed by %s" % (package, version, architecture, file, type, sig_fpr)
+                raise NoSourceFieldError, "Unable to find a source id for %s (%s), %s, file %s, type %s, signed by %s" % (package, version, architecture, newfile, filetype, changes["fingerprint"])
             for suite in changes["distribution"].keys():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
@@ -387,7 +387,7 @@ def install ():
                 continue
             # First move the files to the new location
             legacy_filename = qid["path"] + qid["filename"]
-            pool_location = utils.poolify (changes["source"], files[file]["component"])
+            pool_location = utils.poolify (changes["source"], files[newfile]["component"])
             pool_filename = pool_location + os.path.basename(qid["filename"])
             destination = Cnf["Dir::Pool"] + pool_location
             utils.move(legacy_filename, destination)
@@ -415,11 +415,11 @@ def install ():
             projectB.query("UPDATE dsc_files SET file = %s WHERE source = %s AND file = %s" % (new_files_id, database.get_source_id(changes["source"], changes["version"]), orig_tar_id))
 
     # Install the files into the pool
-    for file in files.keys():
-        destination = Cnf["Dir::Pool"] + files[file]["pool name"] + file
-        utils.move(file, destination)
-        Logger.log(["installed", file, files[file]["type"], files[file]["size"], files[file]["architecture"]])
-        install_bytes += float(files[file]["size"])
+    for newfile in files.keys():
+        destination = Cnf["Dir::Pool"] + files[newfile]["pool name"] + newfile
+        utils.move(newfile, destination)
+        Logger.log(["installed", newfile, files[newfile]["type"], files[newfile]["size"], files[newfile]["architecture"]])
+        install_bytes += float(files[newfile]["size"])
 
     # Copy the .changes file across for suite which need it.
     copy_changes = {}
@@ -458,14 +458,14 @@ def install ():
         dest_dir = Cnf["Dir::QueueBuild"]
         if Cnf.FindB("Dinstall::SecurityQueueBuild"):
             dest_dir = os.path.join(dest_dir, suite)
-        for file in files.keys():
-            dest = os.path.join(dest_dir, file)
+        for newfile in files.keys():
+            dest = os.path.join(dest_dir, newfile)
             # Remove it from the list of packages for later processing by apt-ftparchive
             projectB.query("UPDATE queue_build SET in_queue = 'f', last_used = '%s' WHERE filename = '%s' AND suite = %s" % (now_date, dest, suite_id))
             if not Cnf.FindB("Dinstall::SecurityQueueBuild"):
                 # Update the symlink to point to the new location in the pool
-                pool_location = utils.poolify (changes["source"], files[file]["component"])
-                src = os.path.join(Cnf["Dir::Pool"], pool_location, os.path.basename(file))
+                pool_location = utils.poolify (changes["source"], files[newfile]["component"])
+                src = os.path.join(Cnf["Dir::Pool"], pool_location, os.path.basename(newfile))
                 if os.path.islink(dest):
                     os.unlink(dest)
                 os.symlink(src, dest)
@@ -494,8 +494,8 @@ def stable_install (summary, short_summary):
     projectB.query("BEGIN WORK")
 
     # Add the source to stable (and remove it from proposed-updates)
-    for file in files.keys():
-        if files[file]["type"] == "dsc":
+    for newfile in files.keys():
+        if files[newfile]["type"] == "dsc":
             package = dsc["source"]
             version = dsc["version"];  # NB: not files[file]["version"], that has no epoch
             q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
@@ -509,11 +509,11 @@ def stable_install (summary, short_summary):
             projectB.query("INSERT INTO src_associations (suite, source) VALUES ('%s', '%s')" % (suite_id, source_id))
 
     # Add the binaries to stable (and remove it/them from proposed-updates)
-    for file in files.keys():
-        if files[file]["type"] == "deb":
-            package = files[file]["package"]
-            version = files[file]["version"]
-            architecture = files[file]["architecture"]
+    for newfile in files.keys():
+        if files[newfile]["type"] == "deb":
+            package = files[newfile]["package"]
+            version = files[newfile]["version"]
+            architecture = files[newfile]["architecture"]
             q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
             ql = q.getresult()
             if not ql:
@@ -536,13 +536,13 @@ def stable_install (summary, short_summary):
         os.unlink (new_changelog_filename)
 
     new_changelog = utils.open_file(new_changelog_filename, 'w')
-    for file in files.keys():
-        if files[file]["type"] == "deb":
-            new_changelog.write("stable/%s/binary-%s/%s\n" % (files[file]["component"], files[file]["architecture"], file))
-        elif re_issource.match(file):
-            new_changelog.write("stable/%s/source/%s\n" % (files[file]["component"], file))
+    for newfile in files.keys():
+        if files[newfile]["type"] == "deb":
+            new_changelog.write("stable/%s/binary-%s/%s\n" % (files[newfile]["component"], files[newfile]["architecture"], newfile))
+        elif re_issource.match(newfile):
+            new_changelog.write("stable/%s/source/%s\n" % (files[newfile]["component"], newfile))
         else:
-            new_changelog.write("%s\n" % (file))
+            new_changelog.write("%s\n" % (newfile))
     chop_changes = re_fdnic.sub("\n", changes["changes"])
     new_changelog.write(chop_changes + '\n\n')
     if os.access(changelog_filename, os.R_OK) != 0:

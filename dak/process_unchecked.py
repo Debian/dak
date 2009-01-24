@@ -1301,14 +1301,14 @@ def is_stableupdate ():
 
 def do_stableupdate (summary, short_summary):
     print "Moving to PROPOSED-UPDATES holding area."
-    Logger.log(["Moving to proposed-updates", pkg.changes_file]);
+    Logger.log(["Moving to proposed-updates", pkg.changes_file])
 
-    Upload.dump_vars(Cnf["Dir::Queue::ProposedUpdates"]);
+    Upload.dump_vars(Cnf["Dir::Queue::ProposedUpdates"])
     move_to_dir(Cnf["Dir::Queue::ProposedUpdates"], perms=0664)
 
     # Check for override disparities
-    Upload.Subst["__SUMMARY__"] = summary;
-    Upload.check_override();
+    Upload.Subst["__SUMMARY__"] = summary
+    Upload.check_override()
 
 ################################################################################
 
@@ -1330,14 +1330,14 @@ def is_oldstableupdate ():
 
 def do_oldstableupdate (summary, short_summary):
     print "Moving to OLDSTABLE-PROPOSED-UPDATES holding area."
-    Logger.log(["Moving to oldstable-proposed-updates", pkg.changes_file]);
+    Logger.log(["Moving to oldstable-proposed-updates", pkg.changes_file])
 
-    Upload.dump_vars(Cnf["Dir::Queue::OldProposedUpdates"]);
+    Upload.dump_vars(Cnf["Dir::Queue::OldProposedUpdates"])
     move_to_dir(Cnf["Dir::Queue::OldProposedUpdates"], perms=0664)
 
     # Check for override disparities
-    Upload.Subst["__SUMMARY__"] = summary;
-    Upload.check_override();
+    Upload.Subst["__SUMMARY__"] = summary
+    Upload.check_override()
 
 ################################################################################
 

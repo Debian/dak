@@ -665,11 +665,11 @@ def regex_safe (s):
 
 # Perform a substition of template
 def TemplateSubst(map, filename):
-    file = open_file(filename)
-    template = file.read()
+    templatefile = open_file(filename)
+    template = templatefile.read()
     for x in map.keys():
         template = template.replace(x,map[x])
-    file.close()
+    templatefile.close()
     return template
 
 ################################################################################
@@ -765,13 +765,13 @@ def find_next_free (dest, too_many=100):
 ################################################################################
 
 def result_join (original, sep = '\t'):
-    list = []
+    resultlist = []
     for i in xrange(len(original)):
         if original[i] == None:
-            list.append("")
+            resultlist.append("")
         else:
-            list.append(original[i])
-    return sep.join(list)
+            resultlist.append(original[i])
+    return sep.join(resultlist)
 
 ################################################################################
 
@@ -1098,7 +1098,7 @@ on error."""
         return "%s: tainted filename" % (filename)
 
     # Invoke gpgv on the file
-    status_read, status_write = os.pipe();
+    status_read, status_write = os.pipe()
     cmd = "gpgv --status-fd %s --keyring /dev/null %s" % (status_write, filename)
     (_, status, _) = gpgv_get_status_output(cmd, status_read, status_write)
 
@@ -1170,7 +1170,7 @@ used."""
             return None
 
     # Build the command line
-    status_read, status_write = os.pipe();
+    status_read, status_write = os.pipe()
     cmd = "gpgv --status-fd %s %s %s %s" % (
         status_write, gpg_keyring_args(keyrings), sig_filename, data_filename)
 
