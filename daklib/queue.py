@@ -501,7 +501,7 @@ distribution."""
                dsc.has_key("bts changelog"):
 
                 (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
-                version_history = os.fdopen(temp_filename, 'w')
+                version_history = os.fdopen(fd, 'w')
                 version_history.write(dsc["bts changelog"])
                 version_history.close()
                 filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
@@ -511,7 +511,7 @@ distribution."""
 
             # Write out the binary -> source mapping.
             (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
-            debinfo = os.fdopen(temp_filename, 'w')
+            debinfo = os.fdopen(fd, 'w')
             for file_entry in file_keys:
                 f = files[file_entry]
                 if f["type"] == "deb":

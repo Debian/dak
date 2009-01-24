@@ -458,7 +458,7 @@ def edit_overrides (new):
 def edit_note(note):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
-    temp_file = os.fdopen(temp_filename, 'w')
+    temp_file = os.fdopen(fd, 'w')
     temp_file.write(note)
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")
