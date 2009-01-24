@@ -30,7 +30,11 @@
 
 ################################################################################
 
-import sys, os, tempfile
+import sys
+import os
+import tempfile
+import subprocess
+import time
 import apt_pkg
 from daklib import utils
 
@@ -257,9 +261,14 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
         oldf.close()
         print "%s: unchanged" % (origfile)
     else:
-        if not os.path.isdir(outdir): os.mkdir(outdir)
-        w = os.popen("diff --ed - %s | gzip -c -9 > %s.gz" %
-                         (newfile, difffile), "w")
+        if not os.path.isdir(outdir):
+            os.mkdir(outdir)
+
+        cmd = "diff --ed - %s | gzip -c -9 > %s.gz" % (newfile, difffile)
+        # Do we need shell=True?
+        w = subprocess.Popen(cmd, shell=True, stdin=PIPE).stdin
+
+        # I bet subprocess can do that better than this, but lets do little steps
         pipe_file(oldf, w)
         oldf.close()
 
@@ -306,10 +315,7 @@ def main():
 
     if not Options.has_key("PatchName"):
         format = "%Y-%m-%d-%H%M.%S"
-        i,o = os.popen2("date +%s" % (format))
-        i.close()
-        Options["PatchName"] = o.readline()[:-1]
-        o.close()
+        Options["PatchName"] = time.strftime( format )
 
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
