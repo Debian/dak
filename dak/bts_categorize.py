@@ -124,14 +124,14 @@ class BugClassifier(object):
         return retval
 
     def email_text(self):
-        controls = 'user ftp.debian.org@packages.debian.org\n'
+        controls = ""
 
         bc = BugClassifier()
         for bug in bc.unclassified_bugs():
             controls += bc.classify_bug(bug)
 
-        return controls
-
+        if controls:
+            return 'user ftp.debian.org@packages.debian.org\n' + controls
 
 import smtplib
 import email.Message
@@ -182,11 +182,14 @@ def main():
 
     body = BugClassifier().email_text()
 
-    if Options["Simulate"]:
-        print body
+    if body:
+        if Options["Simulate"]:
+            print body
+        else:
+            send_email(body)
 
     else:
-        send_email(body)
+        log.info( "nothing to do" )
 
 
 if __name__ == '__main__':
