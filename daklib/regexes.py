@@ -62,10 +62,6 @@ re_doc_directory = re.compile(r".*/doc/([^/]*).*")
 re_contrib = re.compile('^contrib/')
 re_nonfree = re.compile('^non\-free/')
 
-re_arch = re.compile("Architecture: .*")
-re_builddep = re.compile("Build-Depends: .*")
-re_builddepind = re.compile("Build-Depends-Indep: .*")
-
 re_localhost = re.compile("localhost\.localdomain")
 re_version = re.compile('^(.*)\((.*)\)')
 
