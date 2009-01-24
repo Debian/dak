@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:set et sw=4:
 
-# Queue utility functions for dak
+# dak regexes
 # Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 # Copyright (C) 2009  Mark Hymers <mhy@debian.org>
 
