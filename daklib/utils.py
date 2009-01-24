@@ -1118,7 +1118,7 @@ on error."""
         return "%s: tainted filename" % (filename)
 
     # Invoke gpgv on the file
-    status_read, status_write = os.pipe();
+    status_read, status_write = os.pipe()
     cmd = "gpgv --status-fd %s --keyring /dev/null %s" % (status_write, filename)
     (_, status, _) = gpgv_get_status_output(cmd, status_read, status_write)
 
@@ -1190,7 +1190,7 @@ used."""
             return None
 
     # Build the command line
-    status_read, status_write = os.pipe();
+    status_read, status_write = os.pipe()
     cmd = "gpgv --status-fd %s %s %s %s" % (
         status_write, gpg_keyring_args(keyrings), sig_filename, data_filename)
 

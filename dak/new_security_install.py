@@ -26,7 +26,7 @@ from daklib import utils
 from daklib import database
 import apt_pkg, os, sys, pwd, time, re, commands
 
-re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$");
+re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$")
 
 Cnf = None
 Options = None
