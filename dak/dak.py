@@ -152,8 +152,6 @@ def init():
          "Generates Maintainers file for BTS etc"),
         ("make-overrides",
          "Generates override files"),
-        ("mirror-split",
-         "Split the pool/ by architecture groups"),
         ("poolize",
          "Move packages from dists/ to pool/"),
         ("reject-proposed-updates",

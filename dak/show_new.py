@@ -147,7 +147,7 @@ def do_pkg(changes_file):
     changes = Upload.pkg.changes
 
     changes["suite"] = copy.copy(changes["distribution"])
-
+    distribution = changes["distribution"].keys()[0]
     # Find out what's new
     new = queue.determine_new(changes, files, projectB, 0)
 
@@ -169,12 +169,12 @@ def do_pkg(changes_file):
         html_header(changes["source"], filestoexamine)
 
         queue.check_valid(new)
-        examine_package.display_changes(Upload.pkg.changes_file)
+        examine_package.display_changes( distribution, Upload.pkg.changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-            examine_package.check_dsc(fn)
+            examine_package.check_dsc(distribution, fn)
         for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-            examine_package.check_deb(fn)
+            examine_package.check_deb(distribution, fn)
 
         html_footer()
         if sys.stdout != stdout_fd:

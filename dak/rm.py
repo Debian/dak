@@ -113,7 +113,7 @@ def reverse_depends_check(removals, suites, arches=None):
         for component in components:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suites[0], component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-            temp_filename = utils.temp_filename()
+            (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
                 utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
@@ -198,7 +198,7 @@ def reverse_depends_check(removals, suites, arches=None):
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suites[0], component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = utils.temp_filename()
+        (fd, temp_filename) = utils.temp_filename()
         result, output = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if result != 0:
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
@@ -425,7 +425,7 @@ def main ():
     # If we don't have a reason; spawn an editor so the user can add one
     # Write the rejection email out as the <foo>.reason file
     if not Options["Reason"] and not Options["No-Action"]:
-        temp_filename = utils.temp_filename()
+        (fd, temp_filename) = utils.temp_filename()
         editor = os.environ.get("EDITOR","vi")
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:

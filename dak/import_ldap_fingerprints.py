@@ -151,7 +151,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                     print "Assigning %s to 0x%s." % (uid, fingerprint)
                 elif existing_uid == uid:
                     pass
-                elif '@' not in existing_ui:
+                elif '@' not in existing_uid:
                     q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                     print "Promoting DM %s to DD %s with keyid 0x%s." % (existing_uid, uid, fingerprint)
                 else:

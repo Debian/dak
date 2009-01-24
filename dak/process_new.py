@@ -230,6 +230,7 @@ def sort_changes(changes_files):
 class Section_Completer:
     def __init__ (self):
         self.sections = []
+        self.matches = []
         q = projectB.query("SELECT section FROM section")
         for i in q.getresult():
             self.sections.append(i[0])
@@ -251,6 +252,7 @@ class Section_Completer:
 class Priority_Completer:
     def __init__ (self):
         self.priorities = []
+        self.matches = []
         q = projectB.query("SELECT priority FROM priority")
         for i in q.getresult():
             self.priorities.append(i[0])
@@ -309,8 +311,8 @@ def index_range (index):
 
 def edit_new (new):
     # Write the current data to a temporary file
-    temp_filename = utils.temp_filename()
-    temp_file = utils.open_file(temp_filename, 'w')
+    (fd, temp_filename) = utils.temp_filename()
+    temp_file = os.fdopen(fd, 'w')
     print_new (new, 0, temp_file)
     temp_file.close()
     # Spawn an editor on that file
@@ -455,8 +457,8 @@ def edit_overrides (new):
 
 def edit_note(note):
     # Write the current data to a temporary file
-    temp_filename = utils.temp_filename()
-    temp_file = utils.open_file(temp_filename, 'w')
+    (fd, temp_filename) = utils.temp_filename()
+    temp_file = os.fdopen(fd, 'w')
     temp_file.write(note)
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")
@@ -493,15 +495,16 @@ def check_pkg ():
         stdout_fd = sys.stdout
         try:
             sys.stdout = less_fd
-            examine_package.display_changes(Upload.pkg.changes_file)
+            changes = utils.parse_changes (Upload.pkg.changes_file)
+            examine_package.display_changes(changes['distribution'], Upload.pkg.changes_file)
             files = Upload.pkg.files
             for f in files.keys():
                 if files[f].has_key("new"):
                     ftype = files[f]["type"]
                     if ftype == "deb":
-                        examine_package.check_deb(f)
+                        examine_package.check_deb(changes['distribution'], f)
                     elif ftype == "dsc":
-                        examine_package.check_dsc(f)
+                        examine_package.check_dsc(changes['distribution'], f)
         finally:
             sys.stdout = stdout_fd
     except IOError, e:
@@ -560,12 +563,12 @@ def add_overrides (new):
 
 def prod_maintainer ():
     # Here we prepare an editor and get them ready to prod...
-    temp_filename = utils.temp_filename()
+    (fd, temp_filename) = utils.temp_filename()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        f = utils.open_file(temp_filename)
+        f = os.fdopen(fd)
         prod_message = "".join(f.readlines())
         f.close()
         print "Prod message:"

@@ -29,6 +29,7 @@
 import psycopg2, sys, fcntl, os
 import apt_pkg
 import time
+import errno
 from daklib import database
 from daklib import utils
 
@@ -36,7 +37,7 @@ from daklib import utils
 
 Cnf = None
 projectB = None
-required_database_schema = 1
+required_database_schema = 3
 
 ################################################################################
 
@@ -63,7 +64,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
                                   name TEXT UNIQUE NOT NULL,
                                   value TEXT
                                 );""")
-            c.execute("INSERT INTO config VALUES ( nextval('config_id_seq'), 'db_revision', '0')");
+            c.execute("INSERT INTO config VALUES ( nextval('config_id_seq'), 'db_revision', '0')")
             self.db.commit()
 
         except psycopg2.ProgrammingError:
@@ -84,7 +85,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         try:
             c = self.db.cursor()
-            q = c.execute("SELECT value FROM config WHERE name = 'db_revision';");
+            q = c.execute("SELECT value FROM config WHERE name = 'db_revision';")
             return c.fetchone()[0]
 
         except psycopg2.ProgrammingError:

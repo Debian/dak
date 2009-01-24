@@ -107,9 +107,9 @@ def main ():
 
     # Retrieve current section/priority...
     oldsection, oldsourcesection, oldpriority = None, None, None
-    for type in ['source', 'binary']:
+    for packagetype in ['source', 'binary']:
         eqdsc = '!='
-        if type == 'source':
+        if packagetype == 'source':
             eqdsc = '='
         q = projectB.query("""
     SELECT priority.priority AS prio, section.section AS sect, override_type.type AS type
@@ -129,7 +129,7 @@ def main ():
             utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
 
         r = q.getresult()
-        if type == 'binary':
+        if packagetype == 'binary':
             oldsection = r[0][1]
             oldpriority = r[0][0]
         else:

@@ -182,8 +182,8 @@ SELECT s.source, s.version AS experimental, s2.version AS unstable
   FROM src_associations sa, source s, source s2, src_associations sa2
   WHERE sa.suite = %s AND sa2.suite = %d AND sa.source = s.id
    AND sa2.source = s2.id AND s.source = s2.source
-   AND versioncmp(s.version, s2.version) < 0""" % (experimental_id,
-                                                   database.get_suite_id("unstable")))
+   AND s.version < s2.version""" % (experimental_id,
+                                    database.get_suite_id("unstable")))
     ql = q.getresult()
     if ql:
         nviu_to_remove = []
@@ -377,7 +377,7 @@ def main ():
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = utils.temp_filename()
+        (fd, temp_filename) = utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if (result != 0):
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
@@ -429,7 +429,7 @@ def main ():
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
-            temp_filename = utils.temp_filename()
+            (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
                 sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))

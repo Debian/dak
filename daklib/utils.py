@@ -26,6 +26,7 @@ import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
        sys, tempfile, traceback, stat
 import apt_pkg
 import database
+import time
 from dak_exceptions import *
 
 ################################################################################
@@ -397,25 +398,24 @@ def parse_checksums(where, files, manifest, hashname):
     field = 'checksums-%s' % hashname
     if not field in manifest:
         return rejmsg
-    input = manifest[field]
-    for line in input.split('\n'):
+    for line in manifest[field].split('\n'):
         if not line:
             break
-        hash, size, file = line.strip().split(' ')
-        if not files.has_key(file):
+        checksum, size, checkfile = line.strip().split(' ')
+        if not files.has_key(checkfile):
         # TODO: check for the file's entry in the original files dict, not
         # the one modified by (auto)byhand and other weird stuff
         #    rejmsg.append("%s: not present in files but in checksums-%s in %s" %
         #        (file, hashname, where))
             continue
-        if not files[file]["size"] == size:
+        if not files[checkfile]["size"] == size:
             rejmsg.append("%s: size differs for files and checksums-%s entry "\
-                "in %s" % (file, hashname, where))
+                "in %s" % (checkfile, hashname, where))
             continue
-        files[file][hash_key(hashname)] = hash
+        files[checkfile][hash_key(hashname)] = checksum
     for f in files.keys():
         if not files[f].has_key(hash_key(hashname)):
-            rejmsg.append("%s: no entry in checksums-%s in %s" % (file,
+            rejmsg.append("%s: no entry in checksums-%s in %s" % (checkfile,
                 hashname, where))
     return rejmsg
 
@@ -569,8 +569,7 @@ switched to 'email (name)' format."""
 def send_mail (message, filename=""):
         # If we've been passed a string dump it into a temporary file
     if message:
-        filename = tempfile.mktemp()
-        fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
+        (fd, filename) = tempfile.mkstemp()
         os.write (fd, message)
         os.close (fd)
 
@@ -686,11 +685,11 @@ def regex_safe (s):
 
 # Perform a substition of template
 def TemplateSubst(map, filename):
-    file = open_file(filename)
-    template = file.read()
+    templatefile = open_file(filename)
+    template = templatefile.read()
     for x in map.keys():
         template = template.replace(x,map[x])
-    file.close()
+    templatefile.close()
     return template
 
 ################################################################################
@@ -786,13 +785,13 @@ def find_next_free (dest, too_many=100):
 ################################################################################
 
 def result_join (original, sep = '\t'):
-    list = []
+    resultlist = []
     for i in xrange(len(original)):
         if original[i] == None:
-            list.append("")
+            resultlist.append("")
         else:
-            list.append(original[i])
-    return sep.join(list)
+            resultlist.append(original[i])
+    return sep.join(resultlist)
 
 ################################################################################
 
@@ -1119,7 +1118,7 @@ on error."""
         return "%s: tainted filename" % (filename)
 
     # Invoke gpgv on the file
-    status_read, status_write = os.pipe();
+    status_read, status_write = os.pipe()
     cmd = "gpgv --status-fd %s --keyring /dev/null %s" % (status_write, filename)
     (_, status, _) = gpgv_get_status_output(cmd, status_read, status_write)
 
@@ -1191,7 +1190,7 @@ used."""
             return None
 
     # Build the command line
-    status_read, status_write = os.pipe();
+    status_read, status_write = os.pipe()
     cmd = "gpgv --status-fd %s %s %s %s" % (
         status_write, gpg_keyring_args(keyrings), sig_filename, data_filename)
 
@@ -1231,11 +1230,22 @@ used."""
     if keywords.has_key("NODATA"):
         reject("no signature found in %s." % (sig_filename))
         bad = 1
-    if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
-        args = keywords["KEYEXPIRED"]
+    if keywords.has_key("EXPKEYSIG"):
+        args = keywords["EXPKEYSIG"]
         if len(args) >= 1:
             key = args[0]
-        reject("The key (0x%s) used to sign %s has expired." % (key, sig_filename))
+        reject("Signature made by expired key 0x%s" % (key))
+        bad = 1
+    if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
+        args = keywords["KEYEXPIRED"]
+        expiredate=""
+        if len(args) >= 1:
+            timestamp = args[0]
+            if timestamp.count("T") == 0:
+                expiredate = time.strftime("%Y-%m-%d", time.gmtime(timestamp))
+            else:
+                expiredate = timestamp
+        reject("The key used to sign %s has expired on %s" % (sig_filename, expiredate))
         bad = 1
 
     if bad:
@@ -1348,26 +1358,16 @@ def clean_symlink (src, dest, root):
 
 ################################################################################
 
-def temp_filename(directory=None, dotprefix=None, perms=0700):
+def temp_filename(directory=None, prefix="dak", suffix=""):
     """Return a secure and unique filename by pre-creating it.
 If 'directory' is non-null, it will be the directory the file is pre-created in.
-If 'dotprefix' is non-null, the filename will be prefixed with a '.'."""
+If 'prefix' is non-null, the filename will be prefixed with it, default is dak.
+If 'suffix' is non-null, the filename will end with it.
 
-    if directory:
-        old_tempdir = tempfile.tempdir
-        tempfile.tempdir = directory
+Returns a pair (fd, name).
+"""
 
-    filename = tempfile.mktemp()
-
-    if dotprefix:
-        filename = "%s/.%s" % (os.path.dirname(filename), os.path.basename(filename))
-    fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, perms)
-    os.close(fd)
-
-    if directory:
-        tempfile.tempdir = old_tempdir
-
-    return filename
+    return tempfile.mkstemp(suffix, prefix, directory)
 
 ################################################################################
 
