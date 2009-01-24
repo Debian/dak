@@ -27,7 +27,7 @@ from debian_bundle import deb822
 from daklib import database
 from daklib import queue
 from daklib import utils
-from daklib.regexes import re_htmlescaping, html_escaping
+from daklib.regexes import re_html_escaping, html_escaping
 
 ################################################################################
 ### work around bug #487902 in debian-python 0.1.10

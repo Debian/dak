@@ -54,6 +54,7 @@ import apt_pkg
 from daklib import utils
 from daklib import database
 from daklib import logging
+from daklib.regexes import re_comments
 
 ################################################################################
 
@@ -118,7 +119,7 @@ def process_file (file, suite, component, type, action):
     start_time = time.time()
     projectB.query("BEGIN WORK")
     for line in file.readlines():
-        line = utils.re_comments.sub('', line).strip()
+        line = re_comments.sub('', line).strip()
         if line == "":
             continue
 

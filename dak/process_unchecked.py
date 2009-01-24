@@ -36,7 +36,9 @@ from daklib import queue
 from daklib import utils
 from daklib.dak_exceptions import *
 from daklib.regexes import re_valid_version, re_valid_pkg_name, re_changelog_versions, \
-                           re_strip_revision, re_strip_srcver, re_spacestrip
+                           re_strip_revision, re_strip_srcver, re_spacestrip, \
+                           re_isanum, re_noepoch, re_norevision, re_taint_free, \
+                           re_isadeb, re_extract_src_version, re_issource
 
 from types import *
 
@@ -242,13 +244,13 @@ def check_changes():
     # Ensure all the values in Closes: are numbers
     if changes.has_key("closes"):
         for i in changes["closes"].keys():
-            if queue.re_isanum.match (i) == None:
+            if re_isanum.match (i) == None:
                 reject("%s: `%s' from Closes field isn't a number." % (filename, i))
 
 
     # chopversion = no epoch; chopversion2 = no epoch and no revision (e.g. for .orig.tar.gz comparison)
-    changes["chopversion"] = utils.re_no_epoch.sub('', changes["version"])
-    changes["chopversion2"] = utils.re_no_revision.sub('', changes["chopversion"])
+    changes["chopversion"] = re_no_epoch.sub('', changes["version"])
+    changes["chopversion2"] = re_no_revision.sub('', changes["chopversion"])
 
     # Check there isn't already a changes file of the same name in one
     # of the queue directories.
@@ -389,7 +391,7 @@ def check_files():
             if not Cnf.has_key("Dir::Queue::%s" % (d)): continue
             if os.path.exists(Cnf["Dir::Queue::%s" % (d) ] + '/' + f):
                 reject("%s file already exists in the %s directory." % (f, d))
-        if not utils.re_taint_free.match(f):
+        if not re_taint_free.match(f):
             reject("!!WARNING!! tainted filename: '%s'." % (f))
         # Check the file is readable
         if os.access(f, os.R_OK) == 0:
@@ -407,7 +409,7 @@ def check_files():
             files[f]["byhand"] = 1
             files[f]["type"] = "byhand"
         # Checks for a binary package...
-        elif utils.re_isadeb.match(f):
+        elif re_isadeb.match(f):
             has_binaries = 1
             files[f]["type"] = "deb"
 
@@ -493,7 +495,7 @@ def check_files():
             source = files[f]["source"]
             source_version = ""
             if source.find("(") != -1:
-                m = utils.re_extract_src_version.match(source)
+                m = re_extract_src_version.match(source)
                 source = m.group(1)
                 source_version = m.group(2)
             if not source_version:
@@ -502,12 +504,12 @@ def check_files():
             files[f]["source version"] = source_version
 
             # Ensure the filename matches the contents of the .deb
-            m = utils.re_isadeb.match(f)
+            m = re_isadeb.match(f)
             #  package name
             file_package = m.group(1)
             if files[f]["package"] != file_package:
                 reject("%s: package part of filename (%s) does not match package name in the %s (%s)." % (f, file_package, files[f]["dbtype"], files[f]["package"]))
-            epochless_version = utils.re_no_epoch.sub('', control.Find("Version"))
+            epochless_version = re_no_epoch.sub('', control.Find("Version"))
             #  version
             file_version = m.group(2)
             if epochless_version != file_version:
@@ -527,7 +529,7 @@ def check_files():
                 # Check in the SQL database
                 if not Upload.source_exists(source_package, source_version, changes["distribution"].keys()):
                     # Check in one of the other directories
-                    source_epochless_version = utils.re_no_epoch.sub('', source_version)
+                    source_epochless_version = re_no_epoch.sub('', source_version)
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                     if os.path.exists(Cnf["Dir::Queue::Byhand"] + '/' + dsc_filename):
                         files[f]["byhand"] = 1
@@ -549,7 +551,7 @@ def check_files():
 
         # Checks for a source package...
         else:
-            m = utils.re_issource.match(f)
+            m = re_issource.match(f)
             if m:
                 has_source = 1
                 files[f]["package"] = m.group(1)
@@ -744,7 +746,7 @@ def check_dsc():
                 pass
 
     # Ensure the version number in the .dsc matches the version number in the .changes
-    epochless_dsc_version = utils.re_no_epoch.sub('', dsc["version"])
+    epochless_dsc_version = re_no_epoch.sub('', dsc["version"])
     changes_version = files[dsc_filename]["version"]
     if epochless_dsc_version != files[dsc_filename]["version"]:
         reject("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version))
@@ -752,7 +754,7 @@ def check_dsc():
     # Ensure there is a .tar.gz in the .dsc file
     has_tar = 0
     for f in dsc_files.keys():
-        m = utils.re_issource.match(f)
+        m = re_issource.match(f)
         if not m:
             reject("%s: %s in Files field not recognised as source." % (dsc_filename, f))
             continue
@@ -802,7 +804,7 @@ def get_changelog_versions(source_dir):
 
     # Create a symlink mirror of the source files in our temporary directory
     for f in files.keys():
-        m = utils.re_issource.match(f)
+        m = re_issource.match(f)
         if m:
             src = os.path.join(source_dir, f)
             # If a file is missing for whatever reason, give up.
@@ -832,7 +834,7 @@ def get_changelog_versions(source_dir):
         return
 
     # Get the upstream version
-    upstr_version = utils.re_no_epoch.sub('', dsc["version"])
+    upstr_version = re_no_epoch.sub('', dsc["version"])
     if re_strip_revision.search(upstr_version):
         upstr_version = re_strip_revision.sub('', upstr_version)
 
@@ -1170,7 +1172,7 @@ def action ():
 
     while prompt.find(answer) == -1:
         answer = utils.our_raw_input(prompt)
-        m = queue.re_default_answer.match(prompt)
+        m = re_default_answer.match(prompt)
         if answer == "":
             answer = m.group(1)
         answer = answer[:1].upper()

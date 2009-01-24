@@ -32,6 +32,7 @@ import pg, sys, os
 import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_no_epoch
 
 ################################################################################
 
@@ -91,7 +92,7 @@ def check_dep (depends, dep_type, check_archs, filename, files):
                             unsat = 0
                             break
                 # As part of the same .changes?
-                epochless_version = utils.re_no_epoch.sub('', version)
+                epochless_version = re_no_epoch.sub('', version)
                 dep_filename = "%s_%s_%s.deb" % (dep, epochless_version, arch)
                 if files.has_key(dep_filename):
                     if Options["debug"]:

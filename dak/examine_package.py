@@ -36,7 +36,9 @@ import errno, os, pg, re, sys, md5
 import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
-from daklib.regexes import *
+from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
+                           re_contrib, re_nonfree, re_localhost, re_newlinespace, \
+                           re_package, re_doc_directory
 
 ################################################################################
 
@@ -71,7 +73,7 @@ PACKAGE can be a .changes, .dsc, .deb or .udeb filename."""
 
 def escape_if_needed(s):
     if use_html:
-        return utils.re_html_escaping.sub(lambda x: utils.html_escaping.get(x.group(0)), s)
+        return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
     else:
         return s
 

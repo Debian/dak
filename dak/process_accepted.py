@@ -36,6 +36,7 @@ from daklib import logging
 from daklib import queue
 from daklib import utils
 from daklib.dak_exceptions import *
+from daklib.regexes import re_default_answer, re_issource, re_fdnic
 
 ###############################################################################
 
@@ -220,7 +221,7 @@ def action ():
 
     while prompt.find(answer) == -1:
         answer = utils.our_raw_input(prompt)
-        m = queue.re_default_answer.match(prompt)
+        m = re_default_answer.match(prompt)
         if answer == "":
             answer = m.group(1)
         answer = answer[:1].upper()
@@ -538,11 +539,11 @@ def stable_install (summary, short_summary):
     for file in files.keys():
         if files[file]["type"] == "deb":
             new_changelog.write("stable/%s/binary-%s/%s\n" % (files[file]["component"], files[file]["architecture"], file))
-        elif utils.re_issource.match(file):
+        elif re_issource.match(file):
             new_changelog.write("stable/%s/source/%s\n" % (files[file]["component"], file))
         else:
             new_changelog.write("%s\n" % (file))
-    chop_changes = queue.re_fdnic.sub("\n", changes["changes"])
+    chop_changes = re_fdnic.sub("\n", changes["changes"])
     new_changelog.write(chop_changes + '\n\n')
     if os.access(changelog_filename, os.R_OK) != 0:
         changelog = utils.open_file(changelog_filename)

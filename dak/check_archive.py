@@ -30,6 +30,7 @@ import commands, os, pg, stat, sys, time
 import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_issource
 
 ################################################################################
 
@@ -287,7 +288,7 @@ def check_missing_tar_gz_in_dsc():
         dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
         has_tar = 0
         for f in dsc_files.keys():
-            m = utils.re_issource.match(f)
+            m = re_issource.match(f)
             if not m:
                 utils.fubar("%s not recognised as source." % (f))
             ftype = m.group(3)
