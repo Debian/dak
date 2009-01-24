@@ -19,7 +19,9 @@
 
 ################################################################################
 
-import sys, time, types
+import sys
+import time
+import types
 
 ################################################################################
 
@@ -46,6 +48,7 @@ suite_version_cache = {}
 ################################################################################
 
 def init (config, sql):
+    """ database module init. Just sets two variables"""
     global Cnf, projectB
 
     Cnf = config
@@ -53,6 +56,11 @@ def init (config, sql):
 
 
 def do_query(q):
+    """
+    Executes a database query q. Writes statistics to stderr and returns
+    the result.
+
+    """
     sys.stderr.write("query: \"%s\" ... " % (q))
     before = time.time()
     r = projectB.query(q)
@@ -69,6 +77,7 @@ def do_query(q):
 ################################################################################
 
 def get_suite_id (suite):
+    """ Returns database suite_id for given suite, caches result. """
     global suite_id_cache
 
     if suite_id_cache.has_key(suite):
@@ -85,6 +94,7 @@ def get_suite_id (suite):
     return suite_id
 
 def get_section_id (section):
+    """ Returns database section_id for given section, caches result. """
     global section_id_cache
 
     if section_id_cache.has_key(section):
@@ -101,6 +111,7 @@ def get_section_id (section):
     return section_id
 
 def get_priority_id (priority):
+    """ Returns database priority_id for given priority, caches result. """
     global priority_id_cache
 
     if priority_id_cache.has_key(priority):
@@ -117,6 +128,7 @@ def get_priority_id (priority):
     return priority_id
 
 def get_override_type_id (type):
+    """ Returns database override_id for given override_type type, caches result. """
     global override_type_id_cache
 
     if override_type_id_cache.has_key(type):
@@ -133,6 +145,7 @@ def get_override_type_id (type):
     return override_type_id
 
 def get_architecture_id (architecture):
+    """ Returns database architecture_id for given architecture, caches result. """
     global architecture_id_cache
 
     if architecture_id_cache.has_key(architecture):
@@ -149,6 +162,7 @@ def get_architecture_id (architecture):
     return architecture_id
 
 def get_archive_id (archive):
+    """ Returns database archive_id for given archive, caches result. """
     global archive_id_cache
 
     archive = archive.lower()
@@ -167,6 +181,7 @@ def get_archive_id (archive):
     return archive_id
 
 def get_component_id (component):
+    """ Returns database component_id for given component, caches result. """
     global component_id_cache
 
     component = component.lower()
@@ -185,6 +200,18 @@ def get_component_id (component):
     return component_id
 
 def get_location_id (location, component, archive):
+    """
+    Returns database location_id for given combination of
+    location
+    component
+    archive.
+
+    The 3 parameters are the database ids returned by the respective
+    "get_foo_id" functions.
+
+    The result will be cached.
+
+    """
     global location_id_cache
 
     cache_key = location + '_' + component + '_' + location
@@ -208,6 +235,7 @@ def get_location_id (location, component, archive):
     return location_id
 
 def get_source_id (source, version):
+    """ Returns database source_id for given combination of source and version, caches result. """
     global source_id_cache
 
     cache_key = source + '_' + version + '_'
@@ -225,6 +253,7 @@ def get_source_id (source, version):
     return source_id
 
 def get_suite_version(source, suite):
+    """ Returns database version for a given source in a given suite, caches result. """
     global suite_version_cache
     cache_key = "%s_%s" % (source, suite)
 
@@ -250,6 +279,14 @@ def get_suite_version(source, suite):
 ################################################################################
 
 def get_or_set_maintainer_id (maintainer):
+    """
+    If maintainer does not have an entry in the maintainer table yet, create one
+    and return its id.
+    If maintainer already has an entry, simply return its id.
+
+    Result is cached.
+
+    """
     global maintainer_id_cache
 
     if maintainer_id_cache.has_key(maintainer):
@@ -267,6 +304,14 @@ def get_or_set_maintainer_id (maintainer):
 ################################################################################
 
 def get_or_set_keyring_id (keyring):
+    """
+    If keyring does not have an entry in the keyring table yet, create one
+    and return its id.
+    If keyring already has an entry, simply return its id.
+
+    Result is cached.
+
+    """
     global keyring_id_cache
 
     if keyring_id_cache.has_key(keyring):
@@ -284,6 +329,14 @@ def get_or_set_keyring_id (keyring):
 ################################################################################
 
 def get_or_set_uid_id (uid):
+    """
+    If uid does not have an entry in the uid table yet, create one
+    and return its id.
+    If uid already has an entry, simply return its id.
+
+    Result is cached.
+
+    """
     global uid_id_cache
 
     if uid_id_cache.has_key(uid):
@@ -301,6 +354,14 @@ def get_or_set_uid_id (uid):
 ################################################################################
 
 def get_or_set_fingerprint_id (fingerprint):
+    """
+    If fingerprintd does not have an entry in the fingerprint table yet, create one
+    and return its id.
+    If fingerprint already has an entry, simply return its id.
+
+    Result is cached.
+
+    """
     global fingerprint_id_cache
 
     if fingerprint_id_cache.has_key(fingerprint):
@@ -318,6 +379,25 @@ def get_or_set_fingerprint_id (fingerprint):
 ################################################################################
 
 def get_files_id (filename, size, md5sum, location_id):
+    """
+    Returns -1, -2 or the file_id for a given combination of
+    filename
+    size
+    md5sum
+    location_id.
+
+    The database is queried using filename and location_id, size and md5sum are for
+    extra checks.
+
+    Return values:
+    -1 - The given combination of arguments result in more (or less) than
+         one result from the database
+    -2 - The given size and md5sum do not match the values in the database
+    anything else is a file_id
+
+    Result is cached.
+
+    """
     global files_id_cache
 
     cache_key = "%s_%d" % (filename, location_id)
@@ -344,6 +424,14 @@ def get_files_id (filename, size, md5sum, location_id):
 ################################################################################
 
 def get_or_set_queue_id (queue):
+    """
+    If queue does not have an entry in the queue_name table yet, create one
+    and return its id.
+    If queue already has an entry, simply return its id.
+
+    Result is cached.
+
+    """
     global queue_id_cache
 
     if queue_id_cache.has_key(queue):
@@ -361,6 +449,12 @@ def get_or_set_queue_id (queue):
 ################################################################################
 
 def set_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
+    """
+    Insert a new entry into the files table.
+
+    Returns the new file_id
+
+    """
     global files_id_cache
 
     projectB.query("INSERT INTO files (filename, size, md5sum, sha1sum, sha256sum, location) VALUES ('%s', %d, '%s', '%s', '%s', %d)" % (filename, long(size), md5sum, sha1sum, sha256sum, location_id))
@@ -380,6 +474,7 @@ def set_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
 ################################################################################
 
 def get_maintainer (maintainer_id):
+    """ Return the name of the maintainer behind maintainer_id """
     global maintainer_cache
 
     if not maintainer_cache.has_key(maintainer_id):
@@ -391,9 +486,27 @@ def get_maintainer (maintainer_id):
 ################################################################################
 
 def get_suites(pkgname, src=False):
+    """ Return the suites in which pkgname is. If src is True, query for source package, else binary. """
     if src:
-        sql = "select suite_name from source, src_associations,suite where source.id=src_associations.source and source.source='%s' and src_associations.suite = suite.id"%pkgname
+        sql = """
+        SELECT suite_name
+        FROM source,
+             src_associations,
+             suite
+        WHERE source.id = src_associations.source
+        AND   source.source = '%s'
+        AND   src_associations.suite = suite.id
+        """ % (pkgname)
     else:
-        sql = "select suite_name from binaries, bin_associations,suite where binaries.id=bin_associations.bin and  package='%s' and bin_associations.suite = suite.id"%pkgname
+        sql = """
+        SELECT suite_name
+        FROM binaries,
+             bin_associations,
+             suite
+        WHERE binaries.id = bin_associations.bin
+        AND   package = '%s'
+        AND   bin_associations.suite = suite.id
+        """ % (pkgname)
+
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
