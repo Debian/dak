@@ -36,15 +36,12 @@
 
 ###############################################################################
 
-import commands, os, pg, re, sys, time
+import commands, os, pg, sys, time
 import apt_pkg
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import *
-
-###############################################################################
-
-re_arch_from_filename = re.compile(r"binary-[^/]+")
+from daklib.regexes import re_arch_from_filename
 
 ###############################################################################
 

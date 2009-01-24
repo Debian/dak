@@ -44,11 +44,7 @@ import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import *
-
-################################################################################
-
-re_strip_source_version = re.compile (r'\s+.*$')
-re_build_dep_arch = re.compile(r"\[[^]]+\]")
+from daklib.regexes import re_strip_source_version, re_build_dep_arch
 
 ################################################################################
 

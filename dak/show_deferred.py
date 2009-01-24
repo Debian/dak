@@ -27,6 +27,7 @@ from debian_bundle import deb822
 from daklib import database
 from daklib import queue
 from daklib import utils
+from daklib.regexes import re_htmlescaping, html_escaping
 
 ################################################################################
 ### work around bug #487902 in debian-python 0.1.10
@@ -40,8 +41,6 @@ deb822.Changes._multivalued_fields = {
 
 row_number = 1
 
-html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
-re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
 def html_escape(s):
     return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
 

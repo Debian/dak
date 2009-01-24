@@ -19,10 +19,11 @@
 
 ################################################################################
 
-import os, pg, re, sys
+import os, pg, sys
 import apt_pkg
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_isdeb
 
 ################################################################################
 
@@ -30,8 +31,6 @@ Cnf = None
 projectB = None
 Options = None
 pu = {}
-
-re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).u?deb$")
 
 ################################################################################
 

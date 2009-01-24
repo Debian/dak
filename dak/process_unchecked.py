@@ -35,17 +35,13 @@ from daklib import logging
 from daklib import queue
 from daklib import utils
 from daklib.dak_exceptions import *
+from daklib.regexes import re_valid_version, re_valid_pkg_name, re_changelog_versions, \
+                           re_strip_revision, re_strip_srcver, re_spacestrip
 
 from types import *
 
 ################################################################################
 
-re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:~]+$")
-re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$")
-re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
-re_strip_revision = re.compile(r"-([^-]+)$")
-re_strip_srcver = re.compile(r"\s+\(\S+\)$")
-re_spacestrip = re.compile('(\s)')
 
 ################################################################################
 

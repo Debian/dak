@@ -36,24 +36,7 @@ import errno, os, pg, re, sys, md5
 import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
-
-################################################################################
-
-re_package = re.compile(r"^(.+?)_.*")
-re_doc_directory = re.compile(r".*/doc/([^/]*).*")
-
-re_contrib = re.compile('^contrib/')
-re_nonfree = re.compile('^non\-free/')
-
-re_arch = re.compile("Architecture: .*")
-re_builddep = re.compile("Build-Depends: .*")
-re_builddepind = re.compile("Build-Depends-Indep: .*")
-
-re_localhost = re.compile("localhost\.localdomain")
-re_version = re.compile('^(.*)\((.*)\)')
-
-re_newlinespace = re.compile('\n')
-re_spacestrip = re.compile('(\s)')
+from daklib.regexes import *
 
 ################################################################################
 

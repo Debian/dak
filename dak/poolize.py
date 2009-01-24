@@ -29,13 +29,12 @@ import os, pg, re, stat, sys
 import apt_pkg, apt_inst
 import daklib.database
 import daklib.utils
+from daklib.regexes import re_isadeb
 
 ################################################################################
 
 Cnf = None
 projectB = None
-
-re_isadeb = re.compile (r"(.+?)_(.+?)(_(.+))?\.u?deb$")
 
 ################################################################################
 
