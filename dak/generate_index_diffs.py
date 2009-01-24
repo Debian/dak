@@ -237,17 +237,6 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
         if upd.filesizesha1 != oldsizesha1:
             print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
 
-    # XXX this should be usable now
-    #
-    #for d in upd.history.keys():
-    #    df = smartopen("%s/%s" % (outdir,d))
-    #    act_sha1size = sizesha1(df)
-    #    df.close()
-    #    exp_sha1size = upd.history[d][1]
-    #    if act_sha1size != exp_sha1size:
-    #        print "patch file %s seems to have changed! %s %s => %s %s" % \
-    #            (d,) + exp_sha1size + act_sha1size
-
     if Options.has_key("CanonicalPath"): upd.can_path=Options["CanonicalPath"]
 
     if os.path.exists(newfile): os.unlink(newfile)
