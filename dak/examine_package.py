@@ -455,11 +455,11 @@ def check_deb (suite, deb_filename):
 # Read a file, strip the signature and return the modified contents as
 # a string.
 def strip_pgp_signature (filename):
-    file = utils.open_file (filename)
+    inputfile = utils.open_file (filename)
     contents = ""
     inside_signature = 0
     skip_next = 0
-    for line in file.readlines():
+    for line in inputfile.readlines():
         if line[:-1] == "":
             continue
         if inside_signature:
@@ -477,7 +477,7 @@ def strip_pgp_signature (filename):
             inside_signature = 0
             continue
         contents += line
-    file.close()
+    inputfile.close()
     return contents
 
 def display_changes(suite, changes_filename):

@@ -156,6 +156,7 @@ class Upload:
         self.Cnf = Cnf
         self.accept_count = 0
         self.accept_bytes = 0L
+        self.reject_message = ""
         self.pkg = Pkg(changes = {}, dsc = {}, dsc_files = {}, files = {},
                        legacy_source_untouchable = {})
 
