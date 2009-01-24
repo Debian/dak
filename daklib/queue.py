@@ -507,7 +507,7 @@ distribution."""
                 filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
                                       changes_file[:-8]+".versions")
                 os.rename(temp_filename, filename)
-                os.chmod(filename, "0644")
+                os.chmod(filename, 0644)
 
             # Write out the binary -> source mapping.
             (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
@@ -523,7 +523,7 @@ distribution."""
             filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
                                   changes_file[:-8]+".debinfo")
             os.rename(temp_filename, filename)
-            os.chmod(filename, "0644")
+            os.chmod(filename, 0644)
 
         self.queue_build("accepted", Cnf["Dir::Queue::Accepted"])
 
