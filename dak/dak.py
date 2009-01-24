@@ -164,6 +164,8 @@ def init():
          "Split queue/done into a date-based hierarchy"),
         ("stats",
          "Generate statistics"),
+        ("bts-categorize",
+         "Categorize uncategorized bugs filed against ftp.debian.org"),
         ]
     return functionality
 
