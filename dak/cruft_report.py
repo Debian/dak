@@ -377,7 +377,7 @@ def main ():
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = utils.temp_filename()
+        (fd, temp_filename) = utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if (result != 0):
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
@@ -429,7 +429,7 @@ def main ():
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
-            temp_filename = utils.temp_filename()
+            (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
                 sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))

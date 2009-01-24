@@ -499,19 +499,18 @@ distribution."""
             if changes["architecture"].has_key("source") and \
                dsc.has_key("bts changelog"):
 
-                temp_filename = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"],
-                                                    dotprefix=1, perms=0644)
-                version_history = utils.open_file(temp_filename, 'w')
+                (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+                version_history = os.fdopen(temp_filename, 'w')
                 version_history.write(dsc["bts changelog"])
                 version_history.close()
                 filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
                                       changes_file[:-8]+".versions")
                 os.rename(temp_filename, filename)
+                os.chmod(filename, "0644")
 
             # Write out the binary -> source mapping.
-            temp_filename = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"],
-                                                dotprefix=1, perms=0644)
-            debinfo = utils.open_file(temp_filename, 'w')
+            (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+            debinfo = os.fdopen(temp_filename, 'w')
             for file_entry in file_keys:
                 f = files[file_entry]
                 if f["type"] == "deb":
@@ -523,6 +522,7 @@ distribution."""
             filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
                                   changes_file[:-8]+".debinfo")
             os.rename(temp_filename, filename)
+            os.chmod(filename, "0644")
 
         self.queue_build("accepted", Cnf["Dir::Queue::Accepted"])
 
@@ -670,7 +670,7 @@ distribution."""
         # If we weren't given a manual rejection message, spawn an
         # editor so the user can add one in...
         if manual and not reject_message:
-            temp_filename = utils.temp_filename()
+            (fd, temp_filename) = utils.temp_filename()
             editor = os.environ.get("EDITOR","vi")
             answer = 'E'
             while answer == 'E':

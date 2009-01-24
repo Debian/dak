@@ -477,7 +477,7 @@ def process_packages (filename, suite, component, archive):
 ###############################################################################
 
 def do_sources(sources, suite, component, server):
-    temp_filename = utils.temp_filename()
+    (fd, temp_filename) = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (sources, temp_filename))
     if (result != 0):
         utils.fubar("Gunzip invocation failed!\n%s" % (output), result)
