@@ -230,6 +230,7 @@ def sort_changes(changes_files):
 class Section_Completer:
     def __init__ (self):
         self.sections = []
+        self.matches = []
         q = projectB.query("SELECT section FROM section")
         for i in q.getresult():
             self.sections.append(i[0])
@@ -251,6 +252,7 @@ class Section_Completer:
 class Priority_Completer:
     def __init__ (self):
         self.priorities = []
+        self.matches = []
         q = projectB.query("SELECT priority FROM priority")
         for i in q.getresult():
             self.priorities.append(i[0])

@@ -235,8 +235,8 @@ def main ():
                 for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
                     if arch == "source":
                         filepath = "%s/%s/Sources" % (sec, arch)
-                        for file in compressnames("tree::%s" % (tree), "Sources", filepath):
-                            files.append(file)
+                        for cfile in compressnames("tree::%s" % (tree), "Sources", filepath):
+                            files.append(cfile)
                         add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
                     else:
                         disks = "%s/disks-%s" % (sec, arch)
@@ -247,8 +247,8 @@ def main ():
                                     files.append("%s/%s/md5sum.txt" % (disks, dir))
 
                         filepath = "%s/binary-%s/Packages" % (sec, arch)
-                        for file in compressnames("tree::%s" % (tree), "Packages", filepath):
-                            files.append(file)
+                        for cfile in compressnames("tree::%s" % (tree), "Packages", filepath):
+                            files.append(cfile)
                         add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
 
                     if arch == "source":
@@ -290,10 +290,10 @@ def main ():
 
                     for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
                         if arch != "source":  # always true
-                            for file in compressnames("tree::%s/%s" % (tree,dis),
+                            for cfile in compressnames("tree::%s/%s" % (tree,dis),
                                 "Packages",
                                 "%s/%s/binary-%s/Packages" % (dis, sec, arch)):
-                                files.append(file)
+                                files.append(cfile)
             elif AptCnf.has_key("tree::%s::FakeDI" % (tree)):
                 usetree = AptCnf["tree::%s::FakeDI" % (tree)]
                 sec = AptCnf["tree::%s/main::Sections" % (usetree)].split()[0]
@@ -302,14 +302,14 @@ def main ():
 
                 for arch in AptCnf["tree::%s/main::Architectures" % (usetree)].split():
                     if arch != "source":  # always true
-                        for file in compressnames("tree::%s/main" % (usetree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
-                            files.append(file)
+                        for cfile in compressnames("tree::%s/main" % (usetree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
+                            files.append(cfile)
 
         elif AptCnf.has_key("bindirectory::%s" % (tree)):
-            for file in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
-                files.append(file.replace(tree+"/","",1))
-            for file in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
-                files.append(file.replace(tree+"/","",1))
+            for cfile in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
+                files.append(cfile.replace(tree+"/","",1))
+            for cfile in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
+                files.append(cfile.replace(tree+"/","",1))
         else:
             print "ALERT: no tree/bindirectory for %s" % (tree)
 

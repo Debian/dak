@@ -29,6 +29,7 @@
 import psycopg2, sys, fcntl, os
 import apt_pkg
 import time
+import errno
 from daklib import database
 from daklib import utils
 
