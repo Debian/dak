@@ -23,8 +23,8 @@ dinstall.setUTCSeconds(00);
 function countdown()
 {
     var now = new Date();
-    var rest = Math.floor((dinstall - now)/1000) % 43200;
-    if(now>dinstall) rest+=43200;
+    var rest = Math.floor((dinstall - now)/1000) % 21600;
+    if(now>dinstall) rest+=21600;
     
     stunden = Math.floor(rest/3600);
     if (stunden < 10) stunden = "0" + stunden;
@@ -45,12 +45,13 @@ setInterval('countdown()',1000);
 
 <br><br>
 
-dinstall should run 07h 52min and 19h 52min or 07h 52min AM/PM (UTC)
+dinstall should run 4 times a day at 01:52, 07:52, 13:52, 19:52 (all times in UTC).
 
 <br><br>
 <font size="-2">Made by Eduard Bloch &lt;blade@debian.org&gt;
 <br>Small update to use 12h dinstall by Felipe Augusto van de Wiel (faw)
-<br>Please check this <a href="http://lists.debian.org/debian-cd/2006/11/msg00049.html">announcement</a> about dinstall twice daily.
+<br>Small update to use 6h dinstall by Mike O'Connor (stew)
+<br>Please check this <a href="http://lists.debian.org/debian-project/2008/12/msg00114.html">announcement</a> about dinstall every 6 hours.
 
 </BODY>
 

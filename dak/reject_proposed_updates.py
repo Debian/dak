@@ -123,12 +123,12 @@ def reject (reject_message = ""):
     # If we weren't given a manual rejection message, spawn an editor
     # so the user can add one in...
     if not reject_message:
-        temp_filename = utils.temp_filename()
+        (fd, temp_filename) = utils.temp_filename()
         editor = os.environ.get("EDITOR","vi")
         answer = 'E'
         while answer == 'E':
             os.system("%s %s" % (editor, temp_filename))
-            f = utils.open_file(temp_filename)
+            f = os.fdopen(fd)
             reject_message = "".join(f.readlines())
             f.close()
             print "Reject message:"

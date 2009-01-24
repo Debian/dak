@@ -55,14 +55,14 @@ $rss->channel(
 					 }
 			 );
 
-for (0..15) {
-  my $i = $_;
+my $num_to_display = 16;
+for my $removal (@removals ) {
   my ($null, $date, $ftpmaster, $body, $reason);
-  $removals[$i] =~ s/=========================================================================//g;
-  $removals[$i] =~ m/\[Date: ([^]]+)\] \[ftpmaster: ([^]]+)\]/;
+  $removal =~ s/=========================================================================//g;
+  $removal =~ m/\[Date: ([^]]+)\] \[ftpmaster: ([^]]+)\]/;
   $date = $1;
   $ftpmaster = $2;
-  ($null, $body) = split /\n/, $removals[$i], 2;
+  ($null, $body) = split /\n/, $removal, 2;
   chomp $body;
   $body =~ m/---- Reason ---.*\n(.*)/;
   $reason = $1;
@@ -77,5 +77,7 @@ for (0..15) {
 					   }
 				);
 
+  $num_to_display -= 1;
+  last unless $num_to_display;
 }
 print $rss->as_string;

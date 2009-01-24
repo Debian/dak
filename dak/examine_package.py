@@ -271,7 +271,7 @@ def read_control (filename):
 
     return (control, control_keys, section, depends, recommends, arch, maintainer)
 
-def read_changes_or_dsc (filename):
+def read_changes_or_dsc (suite, filename):
     dsc = {}
 
     dsc_file = utils.open_file(filename)
@@ -290,7 +290,7 @@ def read_changes_or_dsc (filename):
 
     for k in dsc.keys():
         if k in ("build-depends","build-depends-indep"):
-            dsc[k] = create_depends_string(split_depends(dsc[k]))
+            dsc[k] = create_depends_string(suite, split_depends(dsc[k]))
         elif k == "architecture":
             if (dsc["architecture"] != "any"):
                 dsc['architecture'] = colour_output(dsc["architecture"], 'arch')
@@ -307,10 +307,13 @@ def read_changes_or_dsc (filename):
     filecontents = '\n'.join(map(lambda x: format_field(x,dsc[x.lower()]), keysinorder))+'\n'
     return filecontents
 
-def create_depends_string (depends_tree):
-    # just look up unstable for now. possibly pull from .changes later
-    suite = "unstable"
+def create_depends_string (suite, depends_tree):
     result = ""
+    if suite == 'experimental':
+        suite_where = " in ('experimental','unstable')"
+    else:
+        suite_where = " ='%s'" % suite
+
     comma_count = 1
     for l in depends_tree:
         if (comma_count >= 2):
@@ -321,7 +324,7 @@ def create_depends_string (depends_tree):
                 result += " | "
             # doesn't do version lookup yet.
 
-            q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name='%s' ORDER BY b.version desc" % (d['name'], suite))
+            q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name %s ORDER BY b.version desc" % (d['name'], suite_where))
             ql = q.getresult()
             if ql:
                 i = ql[0]
@@ -345,7 +348,7 @@ def create_depends_string (depends_tree):
         comma_count += 1
     return result
 
-def output_deb_info(filename):
+def output_deb_info(suite, filename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
@@ -353,9 +356,9 @@ def output_deb_info(filename):
     to_print = ""
     for key in control_keys :
         if key == 'Depends':
-            field_value = create_depends_string(depends)
+            field_value = create_depends_string(suite, depends)
         elif key == 'Recommends':
-            field_value = create_depends_string(recommends)
+            field_value = create_depends_string(suite, recommends)
         elif key == 'Section':
             field_value = section
         elif key == 'Architecture':
@@ -411,12 +414,12 @@ def get_copyright (deb_filename):
         printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
     return res+formatted_text(cright)
 
-def check_dsc (dsc_filename):
-    (dsc) = read_changes_or_dsc(dsc_filename)
+def check_dsc (suite, dsc_filename):
+    (dsc) = read_changes_or_dsc(suite, dsc_filename)
     foldable_output(dsc_filename, "dsc", dsc, norow=True)
     foldable_output("lintian check for %s" % dsc_filename, "source-lintian", do_lintian(dsc_filename))
 
-def check_deb (deb_filename):
+def check_deb (suite, deb_filename):
     filename = os.path.basename(deb_filename)
     packagename = filename.split('_')[0]
 
@@ -427,7 +430,7 @@ def check_deb (deb_filename):
 
 
     foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
-                    output_deb_info(deb_filename), norow=True)
+                    output_deb_info(suite, deb_filename), norow=True)
 
     if is_a_udeb:
         foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
@@ -452,11 +455,11 @@ def check_deb (deb_filename):
 # Read a file, strip the signature and return the modified contents as
 # a string.
 def strip_pgp_signature (filename):
-    file = utils.open_file (filename)
+    inputfile = utils.open_file (filename)
     contents = ""
     inside_signature = 0
     skip_next = 0
-    for line in file.readlines():
+    for line in inputfile.readlines():
         if line[:-1] == "":
             continue
         if inside_signature:
@@ -474,23 +477,23 @@ def strip_pgp_signature (filename):
             inside_signature = 0
             continue
         contents += line
-    file.close()
+    inputfile.close()
     return contents
 
-def display_changes(changes_filename):
-    changes = read_changes_or_dsc(changes_filename)
+def display_changes(suite, changes_filename):
+    changes = read_changes_or_dsc(suite, changes_filename)
     foldable_output(changes_filename, "changes", changes, norow=True)
 
 def check_changes (changes_filename):
-    display_changes(changes_filename)
-
     changes = utils.parse_changes (changes_filename)
+    display_changes(changes['distribution'], changes_filename)
+
     files = utils.build_file_list(changes)
     for f in files.keys():
         if f.endswith(".deb") or f.endswith(".udeb"):
-            check_deb(f)
+            check_deb(changes['distribution'], f)
         if f.endswith(".dsc"):
-            check_dsc(f)
+            check_dsc(changes['distribution'], f)
         # else: => byhand
 
 def main ():
@@ -524,9 +527,11 @@ def main ():
                 if f.endswith(".changes"):
                     check_changes(f)
                 elif f.endswith(".deb") or f.endswith(".udeb"):
-                    check_deb(file)
+                    # default to unstable when we don't have a .changes file
+                    # perhaps this should be a command line option?
+                    check_deb('unstable', file)
                 elif f.endswith(".dsc"):
-                    check_dsc(f)
+                    check_dsc('unstable', f)
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (f))
             finally:

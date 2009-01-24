@@ -1,0 +1,72 @@
+Some small guidelines if you want to help coding
+------------------------------------------------
+
+First: I'm always happy to get patches for Dak. I like to merge
+enhancements, bugfixes, whatever. The more, the better.
+
+Now, to not annoy us all by coming up with small fixes to patches
+multiple times before I merge them, lets write down a few small
+guidelines we all should follow. Yes, the current dakV1 code sure won't
+follow this everywhere, but no need to have new code be the same. :)
+
+I very much prefer git trees to merge from over simple patches,
+especially if you do lots of changes. (No need for a full git tree for a
+one-off fix). Reason is simple - its much easier to work with. And it is
+also way better in terms of assigning who did what, who has to earn the
+praise. :)
+In case you have more than one feature you want me to merge, one branch
+per feature please. If the location of your git tree is stable and
+doesn't change every second day I'm also very grateful. :)
+
+
+Code related:
+
+- Use readable and self-speaking variable names.
+
+- Its 4 spaces per indentation. No tab.
+
+- You want to make sure to not add useless whitespaces. If your editor
+  doesn't hilight them, Git can help you with that, just set
+  [color "diff"]
+     new = green
+     old = red
+     frag = yellow
+     meta = cyan
+     commit = normal
+  in your ~/.gitconfig, and a git diff should hilight them.
+  Even better, if you enable the hook pre-commit in your copy of the dak
+  code (chmod +x most probably), git will refuse to commit such things.
+
+- Describe *every* function you write using a docstring. No matter how small.
+
+- Also describe every file.
+
+- Don't forget the Copyright/License header in a file. We expect GPLv2 :)
+
+- Don't write long functions. If it goes above a sane limit (like 50
+  lines) - split it up.
+
+- Look at / read http://www.python.org/dev/peps/pep-0008/
+
+
+VCS related:
+
+- History rewriting is considered bad.
+
+- Always have a "Signed-off-by" line in your commit. `git commit -s`
+  automatically does it for you. Alternatively you can enable the hook
+  "prepare-commit-msg, that should also do it for you.
+
+- Write good, meaningful, commit messages. We do not have a Changelog
+  file anymore, the git commit is *the* place to tell others what you
+  did.
+  Also, try to use the standard format used in the Git world:
+
+    First comes a summary line, of around 72 caracters at most.
+
+    Then, a blank line, and as many lines and paragraphs as needed
+    to describe the change in detail. Beware, though, of including
+    in the commit message explanations that would be better to have
+    as comments in the code itself!
+
+    Signed-off-by: Your Name <and@address.com>

@@ -156,6 +156,7 @@ class Upload:
         self.Cnf = Cnf
         self.accept_count = 0
         self.accept_bytes = 0L
+        self.reject_message = ""
         self.pkg = Pkg(changes = {}, dsc = {}, dsc_files = {}, files = {},
                        legacy_source_untouchable = {})
 
@@ -344,7 +345,7 @@ class Upload:
         if not changes.has_key("distribution") or not isinstance(changes["distribution"], DictType):
             changes["distribution"] = {}
 
-        override_summary ="";
+        override_summary =""
         file_keys = files.keys()
         file_keys.sort()
         for file_entry in file_keys:
@@ -499,19 +500,18 @@ distribution."""
             if changes["architecture"].has_key("source") and \
                dsc.has_key("bts changelog"):
 
-                temp_filename = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"],
-                                                    dotprefix=1, perms=0644)
-                version_history = utils.open_file(temp_filename, 'w')
+                (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+                version_history = os.fdopen(fd, 'w')
                 version_history.write(dsc["bts changelog"])
                 version_history.close()
                 filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
                                       changes_file[:-8]+".versions")
                 os.rename(temp_filename, filename)
+                os.chmod(filename, 0644)
 
             # Write out the binary -> source mapping.
-            temp_filename = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"],
-                                                dotprefix=1, perms=0644)
-            debinfo = utils.open_file(temp_filename, 'w')
+            (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+            debinfo = os.fdopen(fd, 'w')
             for file_entry in file_keys:
                 f = files[file_entry]
                 if f["type"] == "deb":
@@ -523,6 +523,7 @@ distribution."""
             filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
                                   changes_file[:-8]+".debinfo")
             os.rename(temp_filename, filename)
+            os.chmod(filename, 0644)
 
         self.queue_build("accepted", Cnf["Dir::Queue::Accepted"])
 
@@ -670,7 +671,7 @@ distribution."""
         # If we weren't given a manual rejection message, spawn an
         # editor so the user can add one in...
         if manual and not reject_message:
-            temp_filename = utils.temp_filename()
+            (fd, temp_filename) = utils.temp_filename()
             editor = os.environ.get("EDITOR","vi")
             answer = 'E'
             while answer == 'E':
@@ -1032,7 +1033,8 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     # for example, the package was in potato but had an -sa
                     # upload in woody.  So we need to choose the right one.
 
-                    x = ql[0]; # default to something sane in case we don't match any or have only one
+                    # default to something sane in case we don't match any or have only one
+                    x = ql[0]
 
                     if len(ql) > 1:
                         for i in ql:
@@ -1053,7 +1055,8 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     actual_size = os.stat(old_file)[stat.ST_SIZE]
                     found = old_file
                     suite_type = x[2]
-                    dsc_files[dsc_file]["files id"] = x[3]; # need this for updating dsc_files in install()
+                    # need this for updating dsc_files in install()
+                    dsc_files[dsc_file]["files id"] = x[3]
                     # See install() in process-accepted...
                     self.pkg.orig_tar_id = x[3]
                     self.pkg.orig_tar_gz = old_file

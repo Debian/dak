@@ -22,7 +22,8 @@
 
 ################################################################################
 
-import sys, os, popen2, tempfile, stat, time, pg
+import sys, os, stat, time, pg
+import gzip, bz2
 import apt_pkg
 from daklib import utils
 from daklib.dak_exceptions import *
@@ -77,43 +78,38 @@ def compressnames (tree,type,file):
             result.append(file + ".bz2")
     return result
 
-def create_temp_file (cmd):
-    f = tempfile.TemporaryFile()
-    r = popen2.popen2(cmd)
-    r[1].close()
-    r = r[0]
-    size = 0
-    while 1:
-        x = r.readline()
-        if not x:
-            r.close()
-            del x,r
-            break
-        f.write(x)
-        size += len(x)
-    f.flush()
-    f.seek(0)
-    return (size, f)
+decompressors = { 'zcat' : gzip.GzipFile,
+                  'bzip2' : bz2.BZ2File }
 
 def print_md5sha_files (tree, files, hashop):
     path = Cnf["Dir::Root"] + tree + "/"
     for name in files:
+        hashvalue = ""
+        hashlen = 0
         try:
             if name[0] == "<":
                 j = name.index("/")
                 k = name.index(">")
                 (cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
-                (size, file_handle) = create_temp_file("%s %s%s%s" %
-                    (cat, path, name, ext))
+                file_handle = decompressors[ cat ]( "%s%s%s" % (path, name, ext) )
+                contents = file_handle.read()
+                hashvalue = hashop(contents)
+                hashlen = len(contents)
             else:
-                size = os.stat(path + name)[stat.ST_SIZE]
-                file_handle = utils.open_file(path + name)
+                try:
+                    file_handle = utils.open_file(path + name)
+                    hashvalue = hashop(file_handle)
+                    hashlen = os.stat(path + name).st_size
+                except:
+                    raise
+                else:
+                    if file_handle:
+                        file_handle.close()
+
         except CantOpenError:
             print "ALERT: Couldn't open " + path + name
         else:
-            hash = hashop(file_handle)
-            file_handle.close()
-            out.write(" %s %8d %s\n" % (hash, size, name))
+            out.write(" %s %8d %s\n" % (hashvalue, hashlen, name))
 
 def print_md5_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.md5sum)
@@ -239,8 +235,8 @@ def main ():
                 for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
                     if arch == "source":
                         filepath = "%s/%s/Sources" % (sec, arch)
-                        for file in compressnames("tree::%s" % (tree), "Sources", filepath):
-                            files.append(file)
+                        for cfile in compressnames("tree::%s" % (tree), "Sources", filepath):
+                            files.append(cfile)
                         add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
                     else:
                         disks = "%s/disks-%s" % (sec, arch)
@@ -251,8 +247,8 @@ def main ():
                                     files.append("%s/%s/md5sum.txt" % (disks, dir))
 
                         filepath = "%s/binary-%s/Packages" % (sec, arch)
-                        for file in compressnames("tree::%s" % (tree), "Packages", filepath):
-                            files.append(file)
+                        for cfile in compressnames("tree::%s" % (tree), "Packages", filepath):
+                            files.append(cfile)
                         add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
 
                     if arch == "source":
@@ -294,10 +290,10 @@ def main ():
 
                     for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
                         if arch != "source":  # always true
-                            for file in compressnames("tree::%s/%s" % (tree,dis),
+                            for cfile in compressnames("tree::%s/%s" % (tree,dis),
                                 "Packages",
                                 "%s/%s/binary-%s/Packages" % (dis, sec, arch)):
-                                files.append(file)
+                                files.append(cfile)
             elif AptCnf.has_key("tree::%s::FakeDI" % (tree)):
                 usetree = AptCnf["tree::%s::FakeDI" % (tree)]
                 sec = AptCnf["tree::%s/main::Sections" % (usetree)].split()[0]
@@ -306,14 +302,14 @@ def main ():
 
                 for arch in AptCnf["tree::%s/main::Architectures" % (usetree)].split():
                     if arch != "source":  # always true
-                        for file in compressnames("tree::%s/main" % (usetree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
-                            files.append(file)
+                        for cfile in compressnames("tree::%s/main" % (usetree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
+                            files.append(cfile)
 
         elif AptCnf.has_key("bindirectory::%s" % (tree)):
-            for file in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
-                files.append(file.replace(tree+"/","",1))
-            for file in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
-                files.append(file.replace(tree+"/","",1))
+            for cfile in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
+                files.append(cfile.replace(tree+"/","",1))
+            for cfile in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
+                files.append(cfile.replace(tree+"/","",1))
         else:
             print "ALERT: no tree/bindirectory for %s" % (tree)
 
