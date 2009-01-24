@@ -23,19 +23,18 @@
 
 ################################################################################
 
-import os, pg, sys, time, errno, fcntl, tempfile, pwd, re
+import os, pg, sys, time, errno, fcntl, tempfile, pwd
 import apt_pkg
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
+from daklib.regexes import re_broken_package
 import yaml
 
 # Globals
 Cnf = None
 Options = None
 projectB = None
-
-re_broken_package = re.compile(r"[a-zA-Z]\w+\s+\-.*")
 
 ################################################################################
 

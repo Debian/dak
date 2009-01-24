@@ -44,6 +44,7 @@ from daklib import database
 from daklib import logging
 from daklib import queue
 from daklib import utils
+from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
 
 # Globals
 Cnf = None
@@ -82,7 +83,7 @@ def recheck():
             source_package = files[f]["source package"]
             if not Upload.pkg.changes["architecture"].has_key("source") \
                and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
-                source_epochless_version = utils.re_no_epoch.sub('', source_version)
+                source_epochless_version = re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                 found = 0
                 for q in ["Accepted", "Embargoed", "Unembargoed"]:
@@ -110,7 +111,7 @@ def recheck():
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.match(prompt)
+            m = re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -367,7 +368,7 @@ def edit_index (new, index):
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.match(prompt)
+            m = re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -437,7 +438,7 @@ def edit_overrides (new):
                 answer = answer[:1].upper()
             if answer == "E" or answer == "D":
                 got_answer = 1
-            elif queue.re_isanum.match (answer):
+            elif re_isanum.match (answer):
                 answer = int(answer)
                 if (answer < 1) or (answer > index):
                     print "%s is not a valid index (%s).  Please retry." % (answer, index_range(index))
@@ -474,7 +475,7 @@ def edit_note(note):
         answer = "XXX"
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.search(prompt)
+            m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -577,7 +578,7 @@ def prod_maintainer ():
         answer = "XXX"
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.search(prompt)
+            m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -664,7 +665,7 @@ def do_new():
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.search(prompt)
+            m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -773,7 +774,7 @@ def do_byhand():
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.search(prompt)
+            m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()

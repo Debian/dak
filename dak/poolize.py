@@ -29,13 +29,12 @@ import os, pg, re, stat, sys
 import apt_pkg, apt_inst
 import daklib.database
 import daklib.utils
+from daklib.regexes import re_isadeb, re_extract_src_version, re_no_epoch, re_issource
 
 ################################################################################
 
 Cnf = None
 projectB = None
-
-re_isadeb = re.compile (r"(.+?)_(.+?)(_(.+))?\.u?deb$")
 
 ################################################################################
 
@@ -84,17 +83,17 @@ def poolize (q, limit, verbose, no_action):
             package = control.Find("Package", "")
             source = control.Find("Source", package)
             if source.find("(") != -1:
-                m = daklib.utils.re_extract_src_version.match(source)
+                m = re_extract_src_version.match(source)
                 source = m.group(1)
             # If it's a binary, we need to also rename the file to include the architecture
             version = control.Find("Version", "")
             architecture = control.Find("Architecture", "")
             if package == "" or version == "" or architecture == "":
                 daklib.utils.fubar("%s: couldn't determine required information to rename .deb file." % (legacy_filename))
-            version = daklib.utils.re_no_epoch.sub('', version)
+            version = re_no_epoch.sub('', version)
             destination_filename = "%s_%s_%s.deb" % (package, version, architecture)
         else:
-            m = daklib.utils.re_issource.match(base_filename)
+            m = re_issource.match(base_filename)
             if m:
                 source = m.group(1)
             else:

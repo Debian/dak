@@ -29,6 +29,7 @@ import pg, sys
 import apt_pkg
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_comments
 
 ################################################################################
 
@@ -132,7 +133,7 @@ def main():
     for filename in extra_files:
         extrafile = utils.open_file(filename)
         for line in extrafile.readlines():
-            line = utils.re_comments.sub('', line).strip()
+            line = re_comments.sub('', line).strip()
             if line == "":
                 continue
             split = line.split()
