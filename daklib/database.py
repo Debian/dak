@@ -269,7 +269,7 @@ def get_component_id (component):
     Results are kept in a cache during runtime to minimize database queries.
 
     @type component: string
-    @param component: The name of the override type
+    @param component: The name of the component
 
     @rtype: int
     @return: the database id for the given component

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-""" Exception classes used in dak """
+"""
+Exception classes used in dak
 
-# Copyright (C) 2008  Mark Hymers <mhy@debian.org>
-
-################################################################################
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2008  Mark Hymers <mhy@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,17 +22,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-################################################################################
 
 class DakError(Exception):
-    """Base class for all simple errors in this module.
+    """
+    Base class for all simple errors in this module.
 
-    Attributes:
-
-       message -- explanation of the error
     """
 
     def __init__(self, message=""):
+        """
+        @type message: string
+        @param message: explanation of the error
+
+        """
         Exception.__init__(self)
         self.args = str(message)
         self.message = str(message)
@@ -40,6 +44,7 @@ class DakError(Exception):
 
 __all__ = ['DakError']
 
+# If you want to have a new exception in dak, add it here.
 dakerrors = {
     "ParseMaintError":     """Exception raised for errors in parsing a maintainer field.""",
     "ParseChangesError":   """Exception raised for errors in parsing a changes file.""",
@@ -53,7 +58,7 @@ dakerrors = {
     "NoFreeFilenameError": """Exception raised when no alternate filename was found.""",
     "TransitionsError":    """Exception raised when transitions file can't be parsed.""",
     "NoSourceFieldError":  """Exception raised - we cant find the source - wtf?"""
-}
+} #: All dak exceptions
 
 def construct_dak_exception(name, description):
     class Er(DakError):
