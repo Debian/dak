@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Debian Archive Kit Database Update Script
+""" Database Update Script - Remove unused versioncmp """
 # Copyright (C) 2008  Michael Casadevall <mcasadevall@debian.org>
 # Copyright (C) 2009  Joerg Jaspert <joerg@debian.org>
 

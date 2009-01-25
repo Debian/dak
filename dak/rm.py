@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# General purpose package removal tool for ftpmaster
+""" General purpose package removal tool for ftpmaster """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

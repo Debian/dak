@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:set et ts=4 sw=4:
 
-# Handles NEW and BYHAND packages
+""" Handles NEW and BYHAND packages """
 # Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

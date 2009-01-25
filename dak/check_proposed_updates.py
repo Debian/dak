@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Dependency check proposed-updates
+""" Dependency check proposed-updates """
 # Copyright (C) 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Generate Maintainers file used by e.g. the Debian Bug Tracking System
+""" Generate Maintainers file used by e.g. the Debian Bug Tracking System """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

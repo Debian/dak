@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Dump variables from a .dak file to stdout
+""" Dump variables from a .dak file to stdout """
 # Copyright (C) 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

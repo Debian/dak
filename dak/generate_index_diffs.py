@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
+""" generates partial package updates list"""
+
 ###########################################################
-# generates partial package updates list
 
 # idea and basic implementation by Anthony, some changes by Andreas
 # parts are stolen from 'dak generate-releases'

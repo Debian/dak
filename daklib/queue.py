@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:set et sw=4:
 
-# Queue utility functions for dak
+""" Queue utility functions for dak """
 # Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Create all the Release files
+""" Create all the Release files """
 
 # Copyright (C) 2001, 2002, 2006  Anthony Towns <ajt@debian.org>
 

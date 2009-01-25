@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# based on queue-report
+""" Overview of the DEFERRED queue, based on queue-report """
 #    Copyright (C) 2001, 2002, 2003, 2005, 2006  James Troup <james@nocrew.org>
 # Copyright (C) 2008 Thomas Viehmann <tv@beamnet.de>
 

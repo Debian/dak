@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Display, edit and check the release manager's transition file.
+""" Display, edit and check the release manager's transition file. """
 # Copyright (C) 2008 Joerg Jaspert <joerg@debian.org>
 
 # This program is free software; you can redistribute it and/or modify

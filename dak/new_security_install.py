@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Wrapper for Debian Security team
+""" Wrapper for Debian Security team """
 # Copyright (C) 2006  Anthony Towns <ajt@debian.org>
 
 # This program is free software; you can redistribute it and/or modify

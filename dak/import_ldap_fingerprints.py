@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Sync fingerprint and uid tables with a debian.org LDAP DB
+""" Sync fingerprint and uid tables with a debian.org LDAP DB """
 # Copyright (C) 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

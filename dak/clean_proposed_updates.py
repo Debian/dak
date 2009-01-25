@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Remove obsolete .changes files from proposed-updates
+""" Remove obsolete .changes files from proposed-updates """
 # Copyright (C) 2001, 2002, 2003, 2004, 2006, 2008  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

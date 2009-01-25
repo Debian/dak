@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Manually reject packages for proprosed-updates
+""" Manually reject packages for proprosed-updates """
 # Copyright (C) 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

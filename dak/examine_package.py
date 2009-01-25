@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Script to automate some parts of checking NEW packages
+""" Script to automate some parts of checking NEW packages """
 # Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

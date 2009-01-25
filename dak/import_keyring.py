@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Imports a keyring into the database
+""" Imports a keyring into the database """
 # Copyright (C) 2007  Anthony Towns <aj@erisian.com.au>
 
 # This program is free software; you can redistribute it and/or modify

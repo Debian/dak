@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Generate file lists used by apt-ftparchive to generate Packages and Sources files
+""" Generate file lists used by apt-ftparchive to generate Packages and Sources files """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

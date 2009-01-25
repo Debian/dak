@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Debian Archive Kit Database Update Script
+""" Database Update Script - Saner DM db schema """
 # Copyright (C) 2008  Michael Casadevall <mcasadevall@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
