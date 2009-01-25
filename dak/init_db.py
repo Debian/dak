@@ -183,7 +183,7 @@ class InitDB(object):
     def do_section(self):
         """Initalize the section table."""
 
-        c = projectB.cursor()
+        c = self.projectB.cursor()
         c.execute("DELETE FROM section")
 
         sect_add = "INSERT INTO section (section) VALUES (%s)"
