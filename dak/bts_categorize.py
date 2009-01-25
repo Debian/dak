@@ -3,7 +3,9 @@
 """
 bts -- manage bugs filed against ftp.debian.org
 
-Copyright 2009 Mike O'Connor <stew@vireo.org>
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2009 Mike O'Connor <stew@vireo.org>
+@license: GNU General Public License version 2 or later
 """
 
 #  This program is free software; you can redistribute it and/or modify it
