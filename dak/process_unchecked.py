@@ -37,7 +37,7 @@ from daklib import utils
 from daklib.dak_exceptions import *
 from daklib.regexes import re_valid_version, re_valid_pkg_name, re_changelog_versions, \
                            re_strip_revision, re_strip_srcver, re_spacestrip, \
-                           re_isanum, re_noepoch, re_norevision, re_taint_free, \
+                           re_isanum, re_no_epoch, re_no_revision, re_taint_free, \
                            re_isadeb, re_extract_src_version, re_issource
 
 from types import *
