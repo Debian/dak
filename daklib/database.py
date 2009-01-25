@@ -6,7 +6,7 @@
                  get_source_id, get_suite_version, get_files_id, get_maintainer, get_suites
 @group read/write: get_or_set*, set_files_id
 
-@contact: Debian FTPMaster <ftpmaster@debian.org>
+@contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 @copyright: 2009  Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
