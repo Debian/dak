@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 
-# DB access class
-# Copyright (C) 2008  Mark Hymers <mhy@debian.org>
+""" DB access class
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+@copyright: 2008-2009  Mark Hymers <mhy@debian.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,8 +59,7 @@ class Cache(object):
 
 class DBConn(Singleton):
     """
-    A DBConn object is a singleton containing
-    information about the connection to the SQL Database
+    database module init.
     """
     def __init__(self, *args, **kwargs):
         super(DBConn, self).__init__(*args, **kwargs)
@@ -79,7 +84,7 @@ class DBConn(Singleton):
 
     ## Cache functions
     def __init_caches(self):
-        self.caches = {'suite':         Cache(), 
+        self.caches = {'suite':         Cache(),
                        'section':       Cache(),
                        'priority':      Cache(),
                        'override_type': Cache(),
@@ -126,35 +131,133 @@ class DBConn(Singleton):
 
         if cachename is not None:
             self.caches[cachename].SetValue(values, res)
-            
+
         return res
-   
+
     def __get_id(self, retfield, table, qfield, value):
         query = "SELECT %s FROM %s WHERE %s = %%(value)s" % (retfield, table, qfield)
         return self.__get_single_id(query, {'value': value}, cachename=table)
 
     def get_suite_id(self, suite):
+        """
+        Returns database id for given C{suite}.
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type suite: string
+        @param suite: The name of the suite
+
+        @rtype: int
+        @return: the database id for the given suite
+
+        """
         return self.__get_id('id', 'suite', 'suite_name', suite)
 
     def get_section_id(self, section):
+        """
+        Returns database id for given C{section}.
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type section: string
+        @param section: The name of the section
+
+        @rtype: int
+        @return: the database id for the given section
+
+        """
         return self.__get_id('id', 'section', 'section', section)
 
     def get_priority_id(self, priority):
+        """
+        Returns database id for given C{priority}.
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type priority: string
+        @param priority: The name of the priority
+
+        @rtype: int
+        @return: the database id for the given priority
+
+        """
         return self.__get_id('id', 'priority', 'priority', priority)
 
     def get_override_type_id(self, override_type):
+        """
+        Returns database id for given override C{type}.
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type type: string
+        @param type: The name of the override type
+
+        @rtype: int
+        @return: the database id for the given override type
+
+        """
         return self.__get_id('id', 'override_type', 'override_type', override_type)
 
     def get_architecture_id(self, architecture):
+        """
+        Returns database id for given C{architecture}.
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type architecture: string
+        @param architecture: The name of the override type
+
+        @rtype: int
+        @return: the database id for the given architecture
+
+        """
         return self.__get_id('id', 'architecture', 'arch_string', architecture)
 
     def get_archive_id(self, archive):
+        """
+        returns database id for given c{archive}.
+        results are kept in a cache during runtime to minimize database queries.
+
+        @type archive: string
+        @param archive: the name of the override type
+
+        @rtype: int
+        @return: the database id for the given archive
+
+        """
         return self.__get_id('id', 'archive', 'lower(name)', archive)
 
     def get_component_id(self, component):
+        """
+        Returns database id for given C{component}.
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type component: string
+        @param component: The name of the override type
+
+        @rtype: int
+        @return: the database id for the given component
+
+        """
         return self.__get_id('id', 'component', 'lower(name)', component)
 
     def get_location_id(self, location, component, archive):
+        """
+        Returns database id for the location behind the given combination of
+          - B{location} - the path of the location, eg. I{/srv/ftp.debian.org/ftp/pool/}
+          - B{component} - the id of the component as returned by L{get_component_id}
+          - B{archive} - the id of the archive as returned by L{get_archive_id}
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type location: string
+        @param location: the path of the location
+
+        @type component: int
+        @param component: the id of the component
+
+        @type archive: int
+        @param archive: the id of the archive
+
+        @rtype: int
+        @return: the database id for the location
+
+        """
+
         archive_id = self.get_archive_id(archive)
 
         if not archive_id:
@@ -174,10 +277,44 @@ class DBConn(Singleton):
         return res
 
     def get_source_id(self, source, version):
+        """
+        Returns database id for the combination of C{source} and C{version}
+          - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
+          - B{version}
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type source: string
+        @param source: source package name
+
+        @type version: string
+        @param version: the source version
+
+        @rtype: int
+        @return: the database id for the source
+
+        """
         return self.__get_single_id("SELECT id FROM source s WHERE s.source=%(source)s AND s.version=%(version)s",
                                  {'source': source, 'version': version}, cachename='source')
 
     def get_suite_version(self, source, suite):
+        """
+        Returns database id for a combination of C{source} and C{suite}.
+
+          - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
+          - B{suite} - a suite name, eg. I{unstable}
+
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type source: string
+        @param source: source package name
+
+        @type suite: string
+        @param suite: the suite name
+
+        @rtype: string
+        @return: the version for I{source} in I{suite}
+
+        """
         return self.__get_single_id("""
         SELECT s.version FROM source s, suite su, src_associations sa
         WHERE sa.source=s.id
