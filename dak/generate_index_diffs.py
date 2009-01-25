@@ -256,7 +256,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 
         cmd = "diff --ed - %s | gzip -c -9 > %s.gz" % (newfile, difffile)
         # Do we need shell=True?
-        w = subprocess.Popen(cmd, shell=True, stdin=PIPE).stdin
+        w = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
 
         # I bet subprocess can do that better than this, but lets do little steps
         pipe_file(oldf, w)
