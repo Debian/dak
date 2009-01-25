@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # vim:set et ts=4 sw=4:
 
-""" Utility functions """
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+"""Utility functions
 
-################################################################################
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +22,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-################################################################################
-
-import codecs, commands, email.Header, os, pwd, re, select, socket, shutil, \
-       sys, tempfile, traceback, stat
+import codecs
+import commands
+import email.Header
+import os
+import pwd
+import select
+import socket
+import shutil
+import sys
+import tempfile
+import traceback
+import stat
 import apt_pkg
 import database
 import time
@@ -34,24 +44,40 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
 
 ################################################################################
 
-default_config = "/etc/dak/dak.conf"
-default_apt_config = "/etc/dak/apt.conf"
+default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
+default_apt_config = "/etc/dak/apt.conf" #: default apt config, not normally used
 
-alias_cache = None
-key_uid_email_cache = {}
+alias_cache = None        #: Cache for email alias checks
+key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 
 # (hashname, function, earliest_changes_version)
 known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
-                ("sha256", apt_pkg.sha256sum, (1, 8))]
+                ("sha256", apt_pkg.sha256sum, (1, 8))] #: hashes we accept for entries in .changes/.dsc
 
 ################################################################################
 
 def html_escape(s):
+    """ Escape html chars """
     return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
 
 ################################################################################
 
 def open_file(filename, mode='r'):
+    """
+    Open C{file}, return fileobject.
+
+    @type filename: string
+    @param filename: path/filename to open
+
+    @type mode: string
+    @param mode: open mode
+
+    @rtype: fileobject
+    @return: open fileobject
+
+    @raise CantOpenError: If IOError is raised by open, reraise it as CantOpenError.
+
+    """
     try:
         f = open(filename, mode)
     except IOError:
@@ -181,25 +207,26 @@ def parse_deb822(contents, signing_rules=0):
 ################################################################################
 
 def parse_changes(filename, signing_rules=0):
-    """Parses a changes file and returns a dictionary where each field is a
-key.  The mandatory first argument is the filename of the .changes
-file.
+    """
+    Parses a changes file and returns a dictionary where each field is a
+    key.  The mandatory first argument is the filename of the .changes
+    file.
 
-signing_rules is an optional argument:
+    signing_rules is an optional argument:
 
- o If signing_rules == -1, no signature is required.
- o If signing_rules == 0 (the default), a signature is required.
- o If signing_rules == 1, it turns on the same strict format checking
-   as dpkg-source.
+      - If signing_rules == -1, no signature is required.
+      - If signing_rules == 0 (the default), a signature is required.
+      - If signing_rules == 1, it turns on the same strict format checking
+        as dpkg-source.
 
-The rules for (signing_rules == 1)-mode are:
+    The rules for (signing_rules == 1)-mode are:
 
-  o The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
-    followed by any PGP header data and must end with a blank line.
+      - The PGP header consists of "-----BEGIN PGP SIGNED MESSAGE-----"
+        followed by any PGP header data and must end with a blank line.
 
-  o The data section must end with a blank line and must be followed by
-    "-----BEGIN PGP SIGNATURE-----".
-"""
+      - The data section must end with a blank line and must be followed by
+        "-----BEGIN PGP SIGNATURE-----".
+    """
 
     changes_in = open_file(filename)
     content = changes_in.read()
@@ -214,9 +241,11 @@ def hash_key(hashname):
 ################################################################################
 
 def create_hash(where, files, hashname, hashfunc):
-    """create_hash extends the passed files dict with the given hash by
+    """
+    create_hash extends the passed files dict with the given hash by
     iterating over all files on disk and passing them to the hashing
-    function given."""
+    function given.
+    """
 
     rejmsg = []
     for f in files.keys():
@@ -233,9 +262,11 @@ def create_hash(where, files, hashname, hashfunc):
 ################################################################################
 
 def check_hash(where, files, hashname, hashfunc):
-    """check_hash checks the given hash in the files dict against the actual
+    """
+    check_hash checks the given hash in the files dict against the actual
     files on disk.  The hash values need to be present consistently in
-    all file entries.  It does not modify its input in any way."""
+    all file entries.  It does not modify its input in any way.
+    """
 
     rejmsg = []
     for f in files.keys():
@@ -266,8 +297,10 @@ def check_hash(where, files, hashname, hashfunc):
 ################################################################################
 
 def check_size(where, files):
-    """check_size checks the file sizes in the passed files dict against the
-    files on disk."""
+    """
+    check_size checks the file sizes in the passed files dict against the
+    files on disk.
+    """
 
     rejmsg = []
     for f in files.keys():
@@ -289,8 +322,10 @@ def check_size(where, files):
 ################################################################################
 
 def check_hash_fields(what, manifest):
-    """check_hash_fields ensures that there are no checksum fields in the
-    given dict that we do not know about."""
+    """
+    check_hash_fields ensures that there are no checksum fields in the
+    given dict that we do not know about.
+    """
 
     rejmsg = []
     hashes = map(lambda x: x[0], known_hashes)
@@ -323,9 +358,11 @@ def _ensure_changes_hash(changes, format, version, files, hashname, hashfunc):
 # access the checksums easily.
 
 def _ensure_dsc_hash(dsc, dsc_files, hashname, hashfunc):
-    """ensure_dsc_hashes' task is to ensure that each and every *present* hash
+    """
+    ensure_dsc_hashes' task is to ensure that each and every *present* hash
     in the dsc is correct, i.e. identical to the changes file and if necessary
-    the pool.  The latter task is delegated to check_hash."""
+    the pool.  The latter task is delegated to check_hash.
+    """
 
     rejmsg = []
     if not dsc.has_key('Checksums-%s' % (hashname,)):
@@ -467,8 +504,10 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 ################################################################################
 
 def force_to_utf8(s):
-    """Forces a string to UTF-8.  If the string isn't already UTF-8,
-it's assumed to be ISO-8859-1."""
+    """
+    Forces a string to UTF-8.  If the string isn't already UTF-8,
+    it's assumed to be ISO-8859-1.
+    """
     try:
         unicode(s, 'utf-8')
         return s
@@ -477,8 +516,10 @@ it's assumed to be ISO-8859-1."""
         return latin1_s.encode('utf-8')
 
 def rfc2047_encode(s):
-    """Encodes a (header) string per RFC2047 if necessary.  If the
-string is neither ASCII nor UTF-8, it's assumed to be ISO-8859-1."""
+    """
+    Encodes a (header) string per RFC2047 if necessary.  If the
+    string is neither ASCII nor UTF-8, it's assumed to be ISO-8859-1.
+    """
     try:
         codecs.lookup('ascii')[1](s)
         return s
@@ -499,15 +540,18 @@ string is neither ASCII nor UTF-8, it's assumed to be ISO-8859-1."""
 #          incompatible!'
 
 def fix_maintainer (maintainer):
-    """Parses a Maintainer or Changed-By field and returns:
-  (1) an RFC822 compatible version,
-  (2) an RFC2047 compatible version,
-  (3) the name
-  (4) the email
+    """
+    Parses a Maintainer or Changed-By field and returns:
+      1. an RFC822 compatible version,
+      2. an RFC2047 compatible version,
+      3. the name
+      4. the email
 
-The name is forced to UTF-8 for both (1) and (3).  If the name field
-contains '.' or ',' (as allowed by Debian policy), (1) and (2) are
-switched to 'email (name)' format."""
+    The name is forced to UTF-8 for both 1. and 3..  If the name field
+    contains '.' or ',' (as allowed by Debian policy), 1. and 2. are
+    switched to 'email (name)' format.
+
+    """
     maintainer = maintainer.strip()
     if not maintainer:
         return ('', '', '', '')
@@ -545,9 +589,10 @@ switched to 'email (name)' format."""
 
 ################################################################################
 
-# sendmail wrapper, takes _either_ a message string or a file as arguments
 def send_mail (message, filename=""):
-        # If we've been passed a string dump it into a temporary file
+    """sendmail wrapper, takes _either_ a message string or a file as arguments"""
+
+    # If we've been passed a string dump it into a temporary file
     if message:
         (fd, filename) = tempfile.mkstemp()
         os.write (fd, message)
@@ -663,8 +708,8 @@ def regex_safe (s):
 
 ################################################################################
 
-# Perform a substition of template
 def TemplateSubst(map, filename):
+    """ Perform a substition of template """
     templatefile = open_file(filename)
     template = templatefile.read()
     for x in map.keys():
@@ -710,8 +755,8 @@ def cc_fix_changes (changes):
     for j in o.split():
         changes["architecture"][j] = 1
 
-# Sort by source name, source version, 'have source', and then by filename
 def changes_compare (a, b):
+    """ Sort by source name, source version, 'have source', and then by filename """
     try:
         a_changes = parse_changes(a)
     except:
@@ -789,18 +834,20 @@ def prefix_multi_line_string(str, prefix, include_blank_lines=0):
 ################################################################################
 
 def validate_changes_file_arg(filename, require_changes=1):
-    """'filename' is either a .changes or .dak file.  If 'filename' is a
-.dak file, it's changed to be the corresponding .changes file.  The
-function then checks if the .changes file a) exists and b) is
-readable and returns the .changes filename if so.  If there's a
-problem, the next action depends on the option 'require_changes'
-argument:
+    """
+    'filename' is either a .changes or .dak file.  If 'filename' is a
+    .dak file, it's changed to be the corresponding .changes file.  The
+    function then checks if the .changes file a) exists and b) is
+    readable and returns the .changes filename if so.  If there's a
+    problem, the next action depends on the option 'require_changes'
+    argument:
 
- o If 'require_changes' == -1, errors are ignored and the .changes
-                               filename is returned.
- o If 'require_changes' == 0, a warning is given and 'None' is returned.
- o If 'require_changes' == 1, a fatal error is raised.
-"""
+      - If 'require_changes' == -1, errors are ignored and the .changes
+        filename is returned.
+      - If 'require_changes' == 0, a warning is given and 'None' is returned.
+      - If 'require_changes' == 1, a fatal error is raised.
+
+    """
     error = None
 
     orig_filename = filename
@@ -859,8 +906,8 @@ def get_conf():
 
 ################################################################################
 
-# Handle -a, -c and -s arguments; returns them as SQL constraints
 def parse_args(Options):
+    """ Handle -a, -c and -s arguments; returns them as SQL constraints """
     # Process suite
     if Options["Suite"]:
         suite_ids_list = []
@@ -956,10 +1003,13 @@ def try_with_debug(function):
 
 ################################################################################
 
-# Function for use in sorting lists of architectures.
-# Sorts normally except that 'source' dominates all others.
-
 def arch_compare_sw (a, b):
+    """
+    Function for use in sorting lists of architectures.
+
+    Sorts normally except that 'source' dominates all others.
+    """
+
     if a == "source" and b == "source":
         return 0
     elif a == "source":
@@ -971,13 +1021,15 @@ def arch_compare_sw (a, b):
 
 ################################################################################
 
-# Split command line arguments which can be separated by either commas
-# or whitespace.  If dwim is set, it will complain about string ending
-# in comma since this usually means someone did 'dak ls -a i386, m68k
-# foo' or something and the inevitable confusion resulting from 'm68k'
-# being treated as an argument is undesirable.
-
 def split_args (s, dwim=1):
+    """
+    Split command line arguments which can be separated by either commas
+    or whitespace.  If dwim is set, it will complain about string ending
+    in comma since this usually means someone did 'dak ls -a i386, m68k
+    foo' or something and the inevitable confusion resulting from 'm68k'
+    being treated as an argument is undesirable.
+    """
+
     if s.find(",") == -1:
         return s.split()
     else:
@@ -991,9 +1043,12 @@ def Dict(**dict): return dict
 
 ########################################
 
-# Our very own version of commands.getouputstatus(), hacked to support
-# gpgv's status fd.
 def gpgv_get_status_output(cmd, status_read, status_write):
+    """
+    Our very own version of commands.getouputstatus(), hacked to support
+    gpgv's status fd.
+    """
+
     cmd = ['/bin/sh', '-c', cmd]
     p2cread, p2cwrite = os.pipe()
     c2pread, c2pwrite = os.pipe()
@@ -1083,9 +1138,11 @@ def process_gpgv_output(status):
 ################################################################################
 
 def retrieve_key (filename, keyserver=None, keyring=None):
-    """Retrieve the key that signed 'filename' from 'keyserver' and
-add it to 'keyring'.  Returns nothing on success, or an error message
-on error."""
+    """
+    Retrieve the key that signed 'filename' from 'keyserver' and
+    add it to 'keyring'.  Returns nothing on success, or an error message
+    on error.
+    """
 
     # Defaults for keyserver and keyring
     if not keyserver:
@@ -1135,18 +1192,20 @@ def gpg_keyring_args(keyrings=None):
 ################################################################################
 
 def check_signature (sig_filename, reject, data_filename="", keyrings=None, autofetch=None):
-    """Check the signature of a file and return the fingerprint if the
-signature is valid or 'None' if it's not.  The first argument is the
-filename whose signature should be checked.  The second argument is a
-reject function and is called when an error is found.  The reject()
-function must allow for two arguments: the first is the error message,
-the second is an optional prefix string.  It's possible for reject()
-to be called more than once during an invocation of check_signature().
-The third argument is optional and is the name of the files the
-detached signature applies to.  The fourth argument is optional and is
-a *list* of keyrings to use.  'autofetch' can either be None, True or
-False.  If None, the default behaviour specified in the config will be
-used."""
+    """
+    Check the signature of a file and return the fingerprint if the
+    signature is valid or 'None' if it's not.  The first argument is the
+    filename whose signature should be checked.  The second argument is a
+    reject function and is called when an error is found.  The reject()
+    function must allow for two arguments: the first is the error message,
+    the second is an optional prefix string.  It's possible for reject()
+    to be called more than once during an invocation of check_signature().
+    The third argument is optional and is the name of the files the
+    detached signature applies to.  The fourth argument is optional and is
+    a *list* of keyrings to use.  'autofetch' can either be None, True or
+    False.  If None, the default behaviour specified in the config will be
+    used.
+    """
 
     # Ensure the filename contains no shell meta-characters or other badness
     if not re_taint_free.match(sig_filename):
@@ -1327,9 +1386,11 @@ def wrap(paragraph, max_length, prefix=""):
 
 ################################################################################
 
-# Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
-# Returns fixed 'src'
 def clean_symlink (src, dest, root):
+    """
+    Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
+    Returns fixed 'src'
+    """
     src = src.replace(root, '', 1)
     dest = dest.replace(root, '', 1)
     dest = os.path.dirname(dest)
@@ -1339,21 +1400,21 @@ def clean_symlink (src, dest, root):
 ################################################################################
 
 def temp_filename(directory=None, prefix="dak", suffix=""):
-    """Return a secure and unique filename by pre-creating it.
-If 'directory' is non-null, it will be the directory the file is pre-created in.
-If 'prefix' is non-null, the filename will be prefixed with it, default is dak.
-If 'suffix' is non-null, the filename will end with it.
+    """
+    Return a secure and unique filename by pre-creating it.
+    If 'directory' is non-null, it will be the directory the file is pre-created in.
+    If 'prefix' is non-null, the filename will be prefixed with it, default is dak.
+    If 'suffix' is non-null, the filename will end with it.
 
-Returns a pair (fd, name).
-"""
+    Returns a pair (fd, name).
+    """
 
     return tempfile.mkstemp(suffix, prefix, directory)
 
 ################################################################################
 
-# checks if the user part of the email is listed in the alias file
-
 def is_email_alias(email):
+    """ checks if the user part of the email is listed in the alias file """
     global alias_cache
     if alias_cache == None:
         aliasfn = which_alias_file()
