@@ -1,0 +1,6 @@
+From: __DAK_ADDRESS__
+To: control@bugs.debian.org
+X-Debian: DAK
+
+user ftp.debian.org@packages.debian.org
+__COMMANDS__

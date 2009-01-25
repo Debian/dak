@@ -22,19 +22,19 @@
 ################################################################################
 ################################################################################
 
+import sys
+import re
+import logging
+log = logging.getLogger()
+
+import apt_pkg
+from daklib import utils
+from btsutils.debbugs import debbugs
+
 def usage():
     print """
 SYNOPSIS
-    dak bts-categorize [options] command
-
-COMMANDS
-    list-categories
-        List the currently defind categorizations for bugs
-
-    categorize
-        Find the bugs filed against ftp.debian.org which have no usertag
-        and see if we can categorize the bug by adding a usertag by matching
-        the subject against a list of regexps.
+    dak bts-categorize [options]
 
 OPTIONS
     -s
@@ -59,15 +59,6 @@ arguments = [('s','simulate','BtsCategorize::Options::Simulate'),
              ('v', 'verbose', 'BtsCategorize::Options::Verbose'),
              ('q', 'quiet', 'BtsCategorize::Options::Quiet'),
              ('h', 'help', 'BtsCategorize::Options::Help')]
-
-import sys
-import re
-import logging
-log = logging.getLogger()
-
-import apt_pkg
-from daklib import utils
-from btsutils.debbugs import debbugs
 
 class BugClassifier(object):
     """
@@ -130,22 +121,24 @@ class BugClassifier(object):
         for bug in bc.unclassified_bugs():
             controls += bc.classify_bug(bug)
 
-        if controls:
-            return 'user ftp.debian.org@packages.debian.org\n' + controls
+        return controls
 
 import smtplib
 import email.Message
 
-def send_email(body):
-    to = 'control@bugs.debian.org'
-    sender = 'ak@ries.debian.org'
-    message = email.Message.Message()
-    message["To"] = to
-    message["From"] = sender
-    message.set_payload(body)
-    mailServer = smtplib.SMTP('localhost')
-    mailServer.sendmail(sender, to, message.as_string())
-    mailServer.quit()
+def send_email(commands, simulate):
+    global Cnf
+
+    Subst = {'__COMMANDS__' : commands,
+             "__DAK_ADDRESS__": Cnf["Dinstall::MyAdminAddress"]}
+
+    bts_mail_message = utils.TemplateSubst(
+        Subst,Cnf["Dir::Templates"]+"/bts-categorize")
+
+    if simulate:
+        print bts_mail_message
+    else:
+        utils.send_mail( bts_mail_message )
 
 def main():
     """
@@ -183,10 +176,7 @@ def main():
     body = BugClassifier().email_text()
 
     if body:
-        if Options["Simulate"]:
-            print body
-        else:
-            send_email(body)
+        send_email(body, Options["Simulate"])
 
     else:
         log.info( "nothing to do" )

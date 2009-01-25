@@ -256,6 +256,9 @@ ts "reports"
 echo "Updating DM html page"
 $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
 
+echo "Categorizing uncategorized bugs filed against ftp.debian.org"
+dak bts-categorize
+
 ################################################################################
 
 # Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
