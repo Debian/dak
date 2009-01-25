@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:set et sw=4:
 
-# Queue utility functions for dak
+""" Queue utility functions for dak """
 # Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -24,17 +24,11 @@ import cPickle, errno, os, pg, re, stat, sys, time
 import apt_inst, apt_pkg
 import utils, database
 from dak_exceptions import *
+from regexes import re_default_answer, re_fdnic, re_bin_only_nmu
 
 from types import *
 
 ###############################################################################
-
-re_isanum = re.compile (r"^\d+$")
-re_default_answer = re.compile(r"\[(.*)\]")
-re_fdnic = re.compile(r"\n\n")
-re_bin_only_nmu = re.compile(r"\+b\d+$")
-
-################################################################################
 
 # Determine what parts in a .changes are NEW
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Manually reject packages for proprosed-updates
+""" Manually reject packages for proprosed-updates """
 # Copyright (C) 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@ from daklib import database
 from daklib import logging
 from daklib import queue
 from daklib import utils
+from daklib.regexes import re_default_answer
 
 ################################################################################
 
@@ -97,7 +98,7 @@ def main():
 
             while prompt.find(answer) == -1:
                 answer = utils.our_raw_input(prompt)
-                m = queue.re_default_answer.search(prompt)
+                m = re_default_answer.search(prompt)
                 if answer == "":
                     answer = m.group(1)
                 answer = answer[:1].upper()
@@ -137,7 +138,7 @@ def reject (reject_message = ""):
             answer = "XXX"
             while prompt.find(answer) == -1:
                 answer = utils.our_raw_input(prompt)
-                m = queue.re_default_answer.search(prompt)
+                m = re_default_answer.search(prompt)
                 if answer == "":
                     answer = m.group(1)
                 answer = answer[:1].upper()

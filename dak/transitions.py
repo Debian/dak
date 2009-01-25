@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Display, edit and check the release manager's transition file.
+""" Display, edit and check the release manager's transition file. """
 # Copyright (C) 2008 Joerg Jaspert <joerg@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -23,19 +23,18 @@
 
 ################################################################################
 
-import os, pg, sys, time, errno, fcntl, tempfile, pwd, re
+import os, pg, sys, time, errno, fcntl, tempfile, pwd
 import apt_pkg
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
+from daklib.regexes import re_broken_package
 import yaml
 
 # Globals
 Cnf = None
 Options = None
 projectB = None
-
-re_broken_package = re.compile(r"[a-zA-Z]\w+\s+\-.*")
 
 ################################################################################
 

@@ -1,4 +1,6 @@
-# Exception classes used in dak
+#!/usr/bin/env python
+
+""" Exception classes used in dak """
 
 # Copyright (C) 2008  Mark Hymers <mhy@debian.org>
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Sync fingerprint and uid tables with a debian.org LDAP DB
+""" Sync fingerprint and uid tables with a debian.org LDAP DB """
 # Copyright (C) 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -48,14 +48,12 @@ import commands, ldap, pg, re, sys
 import apt_pkg
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_gpg_fingerprint, re_debian_address
 
 ################################################################################
 
 Cnf = None
 projectB = None
-
-re_gpg_fingerprint = re.compile(r"^\s+Key fingerprint = (.*)$", re.MULTILINE)
-re_debian_address = re.compile(r"^.*<(.*)@debian\.org>$", re.MULTILINE)
 
 ################################################################################
 

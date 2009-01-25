@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Bulk manipulation of the overrides
+""" Bulk manipulation of the overrides """
 # Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -54,6 +54,7 @@ import apt_pkg
 from daklib import utils
 from daklib import database
 from daklib import logging
+from daklib.regexes import re_comments
 
 ################################################################################
 
@@ -118,7 +119,7 @@ def process_file (file, suite, component, type, action):
     start_time = time.time()
     projectB.query("BEGIN WORK")
     for line in file.readlines():
-        line = utils.re_comments.sub('', line).strip()
+        line = re_comments.sub('', line).strip()
         if line == "":
             continue
 

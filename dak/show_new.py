@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Output html for packages in NEW
+""" Output html for packages in NEW """
 # Copyright (C) 2007 Joerg Jaspert <joerg@debian.org>
 
 # This program is free software; you can redistribute it and/or modify

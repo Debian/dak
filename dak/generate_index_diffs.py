@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
+""" generates partial package updates list"""
+
 ###########################################################
-# generates partial package updates list
 
 # idea and basic implementation by Anthony, some changes by Andreas
 # parts are stolen from 'dak generate-releases'
@@ -253,11 +254,8 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
-        cmd = "diff --ed - %s | gzip -c -9 > %s.gz" % (newfile, difffile)
-        # Do we need shell=True?
-        w = subprocess.Popen(cmd, shell=True, stdin=PIPE).stdin
-
-        # I bet subprocess can do that better than this, but lets do little steps
+        w = os.popen("diff --ed - %s | gzip -c -9 > %s.gz" %
+                     (newfile, difffile), "w")
         pipe_file(oldf, w)
         oldf.close()
 

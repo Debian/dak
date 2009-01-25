@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:set et ts=4 sw=4:
 
-# Utility functions
+""" Utility functions """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 ################################################################################
@@ -28,31 +28,11 @@ import apt_pkg
 import database
 import time
 from dak_exceptions import *
+from regexes import re_html_escaping, html_escaping, re_single_line_field, \
+                    re_multi_line_field, re_srchasver, re_verwithext, \
+                    re_parse_maintainer, re_taint_free, re_gpg_uid
 
 ################################################################################
-
-re_comments = re.compile(r"\#.*")
-re_no_epoch = re.compile(r"^\d+\:")
-re_no_revision = re.compile(r"-[^-]+$")
-re_arch_from_filename = re.compile(r"/binary-[^/]+/")
-re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
-re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$")
-re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)$")
-
-re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)")
-re_multi_line_field = re.compile(r"^\s(.*)")
-re_taint_free = re.compile(r"^[-+~/\.\w]+$")
-
-re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>")
-re_gpg_uid = re.compile('^uid.*<([^>]*)>')
-
-re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
-re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
-
-re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
-
-html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
-re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
 
 default_config = "/etc/dak/dak.conf"
 default_apt_config = "/etc/dak/apt.conf"

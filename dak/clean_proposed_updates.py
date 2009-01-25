@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Remove obsolete .changes files from proposed-updates
+""" Remove obsolete .changes files from proposed-updates """
 # Copyright (C) 2001, 2002, 2003, 2004, 2006, 2008  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -19,10 +19,11 @@
 
 ################################################################################
 
-import os, pg, re, sys
+import os, pg, sys
 import apt_pkg
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_isdeb, re_isadeb, re_issource, re_no_epoch
 
 ################################################################################
 
@@ -30,8 +31,6 @@ Cnf = None
 projectB = None
 Options = None
 pu = {}
-
-re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).u?deb$")
 
 ################################################################################
 
@@ -56,7 +55,7 @@ def check_changes (filename):
         return
     num_files = len(files.keys())
     for f in files.keys():
-        if utils.re_isadeb.match(f):
+        if re_isadeb.match(f):
             m = re_isdeb.match(f)
             pkg = m.group(1)
             version = m.group(2)
@@ -64,7 +63,7 @@ def check_changes (filename):
             if Options["debug"]:
                 print "BINARY: %s ==> %s_%s_%s" % (f, pkg, version, arch)
         else:
-            m = utils.re_issource.match(f)
+            m = re_issource.match(f)
             if m:
                 pkg = m.group(1)
                 version = m.group(2)
@@ -86,7 +85,7 @@ def check_changes (filename):
             # FIXME
             utils.warn("%s doesn't seem to exist for %s in %s?? (from %s [%s])" % (pkg, arch, Options["suite"], f, filename))
             continue
-        pu_version = utils.re_no_epoch.sub('', pu[pkg][arch])
+        pu_version = re_no_epoch.sub('', pu[pkg][arch])
         if pu_version == version:
             if Options["verbose"]:
                 print "%s: ok" % (f)

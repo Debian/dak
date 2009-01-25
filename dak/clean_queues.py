@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Clean incoming of old unused files
+""" Clean incoming of old unused files """
 # Copyright (C) 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

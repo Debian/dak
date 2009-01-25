@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Generate file lists used by apt-ftparchive to generate Packages and Sources files
+""" Generate file lists used by apt-ftparchive to generate Packages and Sources files """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -82,7 +82,7 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
         if not packages.has_key(delete_unique_id):
             continue
         delete_version = version[0]
-        delete_id = packages[delete_unique_id]["id"]
+        delete_id = packages[delete_unique_id]["sourceid"]
         delete_arch = packages[delete_unique_id]["arch"]
         if not Cnf.Find("Suite::%s::Untouchable" % (suite)) or Options["Force"]:
             if Options["No-Delete"]:
@@ -264,7 +264,7 @@ def write_filelists(packages, dislocated_files):
         suite = packages[unique_id]["suite"]
         component = packages[unique_id]["component"]
         arch = packages[unique_id]["arch"]
-        packagetype = packages[unique_id]["type"]
+        packagetype = packages[unique_id]["filetype"]
         d.setdefault(suite, {})
         d[suite].setdefault(component, {})
         d[suite][component].setdefault(arch, {})

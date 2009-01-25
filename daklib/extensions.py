@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Utility functions for extensions
+""" Utility functions for extensions """
 # Copyright (C) 2008 Anthony Towns <ajt@dbeian.org>
 
 ################################################################################

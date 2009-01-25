@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Microscopic modification and query tool for overrides in projectb
+""" Microscopic modification and query tool for overrides in projectb """
 # Copyright (C) 2004, 2006  Daniel Silverstone <dsilvers@digital-scurf.org>
 
 # This program is free software; you can redistribute it and/or modify

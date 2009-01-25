@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# General purpose package removal tool for ftpmaster
+""" General purpose package removal tool for ftpmaster """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -44,11 +44,7 @@ import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import *
-
-################################################################################
-
-re_strip_source_version = re.compile (r'\s+.*$')
-re_build_dep_arch = re.compile(r"\[[^]]+\]")
+from daklib.regexes import re_strip_source_version, re_build_dep_arch
 
 ################################################################################
 

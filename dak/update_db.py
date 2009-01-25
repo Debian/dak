@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Debian Archive Kit Database Update Script
+""" Database Update Main Script """
 # Copyright (C) 2008  Michael Casadevall <mcasadevall@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 ################################################################################
 
     def update_db_to_zero(self):
-        # This function will attempt to update a pre-zero database schema to zero
+        """ This function will attempt to update a pre-zero database schema to zero """
 
         # First, do the sure thing, and create the configuration table
         try:

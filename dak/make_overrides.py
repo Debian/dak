@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Output override files for apt-ftparchive and indices/
+""" Output override files for apt-ftparchive and indices/ """
 # Copyright (C) 2000, 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
