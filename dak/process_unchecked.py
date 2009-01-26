@@ -323,13 +323,15 @@ def check_distributions():
 ################################################################################
 
 def check_deb_ar(filename):
-    """Sanity check the ar of a .deb, i.e. that there is:
+    """
+    Sanity check the ar of a .deb, i.e. that there is:
 
- o debian-binary
- o control.tar.gz
- o data.tar.gz or data.tar.bz2
+      1. debian-binary
+      2. control.tar.gz
+      3. data.tar.gz or data.tar.bz2
 
-in that order, and nothing else."""
+    in that order, and nothing else.
+    """
     cmd = "ar t %s" % (filename)
     (result, output) = commands.getstatusoutput(cmd)
     if result != 0:
