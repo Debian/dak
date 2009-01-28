@@ -19,7 +19,7 @@
 
 ################################################################################
 
-import sys, time, types
+import os, sys, time, types, apt_pkg
 
 ################################################################################
 
@@ -42,6 +42,11 @@ fingerprint_id_cache = {}
 queue_id_cache = {}
 uid_id_cache = {}
 suite_version_cache = {}
+suite_bin_version_cache = {}
+content_path_id_cache = {}
+content_file_id_cache = {}
+insert_contents_file_cache = {}
+cache_preloaded = False
 
 ################################################################################
 
@@ -224,7 +229,7 @@ def get_source_id (source, version):
 
     return source_id
 
-def get_suite_version(source, suite):
+def get_suite_version(source, suite, arch):
     global suite_version_cache
     cache_key = "%s_%s" % (source, suite)
 
@@ -246,6 +251,50 @@ def get_suite_version(source, suite):
     suite_version_cache[cache_key] = version
 
     return version
+
+def get_latest_binary_version_id(binary, section, suite, arch):
+    global suite_bin_version_cache
+    cache_key = "%s_%s_%s_%s" % (binary, section, suite, arch)
+    cache_key_all = "%s_%s_%s_%s" % (binary, section, suite, get_architecture_id("all"))
+
+    # Check for the cache hit for its arch, then arch all
+    if suite_bin_version_cache.has_key(cache_key):
+        return suite_bin_version_cache[cache_key]
+    if suite_bin_version_cache.has_key(cache_key_all):
+        return suite_bin_version_cache[cache_key_all]
+    if cache_preloaded == True:
+        return # package does not exist
+
+    q = projectB.query("SELECT DISTINCT b.id FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN override o ON (o.package=b.package) WHERE b.package = '%s' AND b.architecture = '%d' AND ba.suite = '%d' AND o.section = '%d'" % (binary, int(arch), int(suite), int(section)))
+
+    if not q.getresult():
+        return False
+
+    highest_bid = q.getresult()[0][0]
+
+    suite_bin_version_cache[cache_key] = highest_bid
+    return highest_bid
+
+def preload_binary_id_cache():
+    global suite_bin_version_cache, cache_preloaded
+
+    # Get suite info
+    q = projectB.query("SELECT id FROM suite")
+    suites = q.getresult()
+
+    # Get arch mappings
+    q = projectB.query("SELECT id FROM architecture")
+    arches = q.getresult()
+
+    for suite in suites:
+        for arch in arches:
+            q = projectB.query("SELECT DISTINCT b.id, b.package, o.section FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN override o ON (o.package=b.package) WHERE b.architecture = '%d' AND ba.suite = '%d'" % (int(arch[0]), int(suite[0])))
+
+            for bi in q.getresult():
+                cache_key = "%s_%s_%s_%s" % (bi[1], bi[2], suite[0], arch[0])
+                suite_bin_version_cache[cache_key] = int(bi[0])
+
+    cache_preloaded = True
 
 ################################################################################
 
@@ -397,3 +446,59 @@ def get_suites(pkgname, src=False):
         sql = "select suite_name from binaries, bin_associations,suite where binaries.id=bin_associations.bin and  package='%s' and bin_associations.suite = suite.id"%pkgname
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
+
+################################################################################
+
+def get_or_set_contents_file_id(file):
+    global content_file_id_cache
+
+    if not content_file_id_cache.has_key(file):
+        sql_select = "SELECT id FROM content_file_names WHERE file = '%s'" % file
+        q = projectB.query(sql_select)
+        if not q.getresult():
+            # since this can be called within a transaction, we can't use currval
+            q = projectB.query("INSERT INTO content_file_names VALUES (DEFAULT, '%s') RETURNING id" % (file))
+        content_file_id_cache[file] = int(q.getresult()[0][0])
+    return content_file_id_cache[file]
+
+################################################################################
+
+def get_or_set_contents_path_id(path):
+    global content_path_id_cache
+
+    if not content_path_id_cache.has_key(path):
+        sql_select = "SELECT id FROM content_file_paths WHERE path = '%s'" % path
+        q = projectB.query(sql_select)
+        if not q.getresult():
+            # since this can be called within a transaction, we can't use currval
+            q = projectB.query("INSERT INTO content_file_paths VALUES (DEFAULT, '%s') RETURNING id" % (path))
+        content_path_id_cache[path] = int(q.getresult()[0][0])
+    return content_path_id_cache[path]
+
+################################################################################
+
+def insert_content_path(bin_id, fullpath):
+    global insert_contents_file_cache
+    cache_key = "%s_%s" % (bin_id, fullpath)
+
+    # have we seen this contents before?
+    # probably only revelant during package import
+    if insert_contents_file_cache.has_key(cache_key):
+        return
+
+    # split the path into basename, and pathname
+    (path, file)  = os.path.split(fullpath)
+
+    # Get the necessary IDs ...
+    file_id = get_or_set_contents_file_id(file)
+    path_id = get_or_set_contents_path_id(path)
+
+    # Determine if we're inserting a duplicate row
+    q = projectB.query("SELECT 1 FROM content_associations WHERE binary_pkg = '%d' AND filepath = '%d' AND filename = '%d'" % (int(bin_id), path_id, file_id))
+    if q.getresult():
+        # Yes we are, return without doing the insert
+        return
+
+    # Put them into content_assiocations
+    projectB.query("INSERT INTO content_associations VALUES (DEFAULT, '%d', '%d', '%d')" % (bin_id, path_id, file_id))
+    return
