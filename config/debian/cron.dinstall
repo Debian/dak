@@ -174,7 +174,7 @@ ts "overrides"
 
 # Generate package / file mapping
 echo "Generating package / file mapping"
-dak make-pkg-file-mapping
+dak make-pkg-file-mapping | bzip2 -9 > $base/ftp/indices/package-file.map.bz2
 ts "pkg-file-mapping"
 
 # Generate Packages and Sources files
