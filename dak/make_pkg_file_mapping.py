@@ -1,25 +1,15 @@
 #!/usr/bin/env python
 
-import os
-import pg
-import sys
-from daklib import database
-from daklib import utils
+"""
+Prints out, for every file in the pool, which source package and version it
+belongs to and for binary packages additionally which arch, binary package
+and binary package version it has in a standard rfc2822-like format.
 
-################################################################################
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2009  Peter Palfrader <peter@palfrader.org>
+@license: GNU General Public License version 2 or later
+"""
 
-projectB = None #: database connection, pgobject
-
-################################################################################
-
-# Usage: dak make-pkg_file_mapping
-#
-# Prints out, for every file in the pool, which source package and version it
-# belongs to and for binary packages additionally which arch, binary package
-# and binary package version it has in a standard rfc2822-like format.
-
-# Copyright 2009 Peter Palfrader <peter@palfrader.org>
-#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -33,6 +23,23 @@ projectB = None #: database connection, pgobject
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+################################################################################
+
+# <arma> it's crypto -- think of it like magic if you like.
+
+################################################################################
+
+import os
+import pg
+import sys
+from daklib import database
+from daklib import utils
+
+################################################################################
+
+projectB = None #: database connection, pgobject
 
 ################################################################################
 
@@ -67,15 +74,15 @@ def build_mapping():
     ORDER BY source, version, package, bin_version
     """
 
-    for i in projectB.query(query_sources).getresult():
-        (source, version, path) = i
+    for row in projectB.query(query_sources).getresult():
+        (source, version, path) = row
         print "Path: %s"%path
         print "Source: %s"%source
         print "Source-Version: %s"%version
         print
 
-    for i in projectB.query(query_binaries).getresult():
-        (source, version, arch, path, bin, binv) = i
+    for row in projectB.query(query_binaries).getresult():
+        (source, version, arch, path, bin, binv) = row
         print "Path: %s"%path
         print "Source: %s"%source
         print "Source-Version: %s"%version
