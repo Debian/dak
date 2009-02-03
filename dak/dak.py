@@ -108,6 +108,8 @@ def init():
 
         ("make-suite-file-list",
          "Generate lists of packages per suite for apt-ftparchive"),
+        ("make-pkg-file-mapping",
+         "Generate package <-> file mapping"),
         ("generate-releases",
          "Generate Release files"),
         ("generate-index-diffs",
