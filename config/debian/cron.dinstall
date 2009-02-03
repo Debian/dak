@@ -119,15 +119,15 @@ if $(gpgv --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg timestamp.g
 			done
 		else
 			echo "ARRRR, bad guys, wrong files, ARRR"
-			echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail debian-l10n-devel@lists.alioth.debian.org
+			echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail -s "Don't you kids take anything. I'm watching you. I've got eye implants in the back of my head." debian-l10n-devel@lists.alioth.debian.org
 		fi
     else
 		echo "ARRRR, missing the timestamp ${TSTAMP} directory, not updating i18n, ARRR"
-		echo "Arf, Arf, Arf, missing the timestamp ${TSTAMP} directory, not updating i18n, arf, arf, arf" | mail debian-l10n-devel@lists.alioth.debian.org
+		echo "Arf, Arf, Arf, missing the timestamp ${TSTAMP} directory, not updating i18n, arf, arf, arf" | mail -s "Lisa, if you don't like your job you don't strike. You just go in every day and do it really half-assed. That's the American way." debian-l10n-devel@lists.alioth.debian.org
 	fi
 else
     echo "ARRRRRRR, could not verify our timestamp signature, ARRR. Don't mess with our files, i18n guys, ARRRRR."
-	echo "Arf, Arf, Arf, could not verify our timestamp signature, arf. Don't mess with our files, i18n guys, arf, arf, arf" | mail debian-l10n-devel@lists.alioth.debian.org
+	echo "Arf, Arf, Arf, could not verify our timestamp signature, arf. Don't mess with our files, i18n guys, arf, arf, arf" | mail -s "You can't keep blaming yourself. Just blame yourself once, and move on." debian-l10n-devel@lists.alioth.debian.org
 fi
 ts "i18n 1"
 
