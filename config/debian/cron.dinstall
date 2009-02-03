@@ -172,6 +172,10 @@ rm -f override.sid.all3
 for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
 ts "overrides"
 
+# Generate package / file mapping
+echo "Generating package / file mapping"
+dak make-pkg-file-mapping
+ts "pkg-file-mapping"
 
 # Generate Packages and Sources files
 echo "Generating Packages and Sources files"
