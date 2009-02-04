@@ -25,7 +25,7 @@ $(LOCAL)-LIBRARY := $(LIBRARY)
 
 # Install the command hooks
 headers: $($(LOCAL)-HEADERS)
-library: $(LIB)/lib$(LIBRARY).so $(LIB)/lib$(LIBRARY).so.$(MAJOR)
+library: $(LIB)/lib$(LIBRARY).so $(LIB)/lib$(LIBRARY).so.$(MAJOR) $(LIB)/lib$(LIBRARY).a
 clean: clean/$(LOCAL)
 veryclean: veryclean/$(LOCAL)
 
@@ -50,6 +50,12 @@ $(LIB)/lib$(LIBRARY).so.$(MAJOR).$(MINOR): $($(LOCAL)-HEADERS) $($(LOCAL)-OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(PICFLAGS) $(LFLAGS) -o $@ \
 	   $(LFLAGS_SO) $(SONAME_MAGIC)$($(@F)-SONAME) -shared \
 	   $(filter %.opic,$^) $($(@F)-SLIBS)
+
+$(LIB)/lib$(LIBRARY).a: $($(LOCAL)-HEADERS) $($(LOCAL)-OBJS)
+	-rm -f $(LIB)/lib$($(@F)-LIBRARY).a 2> /dev/null
+	echo Building static library $@
+	$(AR) rc $@ $(filter %.opic,$^)
+	ranlib $@
 
 # Compilation rules
 vpath %.cc $(SUBDIRS)
