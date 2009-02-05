@@ -218,20 +218,18 @@ def check_checksums():
             utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
         if size != db_size:
             utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
-        # Until the main database is filled, we need to not spit 500,000 warnings
-        # every time we scan the archive.  Yet another hack (TM) which can go away
-        # once this is all working
-        if db_sha1sum is not None and db_sha1sum != '':
-            f.seek(0)
-            sha1sum = apt_pkg.sha1sum(f)
-            if sha1sum != db_sha1sum:
-                utils.warn("**WARNING** sha1sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha1sum, db_sha1sum))
 
-        if db_sha256sum is not None and db_sha256sum != '':
-            f.seek(0)
-            sha256sum = apt_pkg.sha256sum(f)
-            if sha256sum != db_sha256sum:
-                utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, db_sha256sum))
+        # Check the sha1sum
+        f.seek(0)
+        sha1sum = apt_pkg.sha1sum(f)
+        if sha1sum != db_sha1sum:
+            utils.warn("**WARNING** sha1sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha1sum, db_sha1sum))
+
+        # Check the sha256sum
+        f.seek(0)
+        sha256sum = apt_pkg.sha256sum(f)
+        if sha256sum != db_sha256sum:
+            utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, db_sha256sum))
 
     print "Done."
 
