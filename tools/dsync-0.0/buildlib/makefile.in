@@ -14,9 +14,9 @@ BUILD:=$(shell pwd)
 export BUILD
 
 # Chain to the parent make to do the actual building
-.PHONY: headers library clean veryclean all binary program doc \
+.PHONY: headers library clean veryclean all binary program doc static \
         veryclean/local
-all headers library clean veryclean binary program doc:
+all headers library clean veryclean binary program doc static:
 	$(MAKE) -C $(SRCDIR) -f Makefile $@
 
 # Purge everything.
