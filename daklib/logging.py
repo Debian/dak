@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
-""" Logging functions """
-# Copyright (C) 2001, 2002, 2006  James Troup <james@nocrew.org>
+"""
+Logging functions
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2001, 2002, 2006  James Troup <james@nocrew.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +24,10 @@
 
 ################################################################################
 
-import os, pwd, time, sys
+import os
+import pwd
+import time
+import sys
 import utils
 
 ################################################################################

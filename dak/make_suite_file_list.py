@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
-""" Generate file lists used by apt-ftparchive to generate Packages and Sources files """
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+"""
+Generate file lists used by apt-ftparchive to generate Packages and Sources files
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +37,10 @@
 
 ################################################################################
 
-import copy, os, pg, sys
+import copy
+import os
+import pg
+import sys
 import apt_pkg
 from daklib import database
 from daklib import logging
@@ -41,10 +48,10 @@ from daklib import utils
 
 ################################################################################
 
-projectB = None
-Cnf = None
-Logger = None
-Options = None
+Cnf = None      #: Configuration, apt_pkg.Configuration
+projectB = None #: database connection, pgobject
+Logger = None   #: Logger object
+Options = None  #: Parsed CommandLine arguments
 
 ################################################################################
 
@@ -99,8 +106,8 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
 
 #####################################################
 
-# Per-suite&pkg: resolve arch-all, vs. arch-any, assumes only one arch-all
 def resolve_arch_all_vs_any(versions, packages):
+    """ Per-suite&pkg: resolve arch-all, vs. arch-any, assumes only one arch-all """
     arch_all_version = None
     arch_any_versions = copy.copy(versions)
     for i in arch_any_versions:
@@ -131,8 +138,8 @@ def resolve_arch_all_vs_any(versions, packages):
 
 #####################################################
 
-# Per-suite&pkg&arch: resolve duplicate versions
 def remove_duplicate_versions(versions, packages):
+    """ Per-suite&pkg&arch: resolve duplicate versions """
     # Sort versions into descending order
     versions.sort(version_cmp)
     dominant_versions = versions[0]

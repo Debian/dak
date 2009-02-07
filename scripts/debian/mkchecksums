@@ -10,6 +10,6 @@ md5list=$indices/md5sums
 echo -n "Creating md5 / dsync index file ... "
 
 cd "$ftpdir"
-dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
-dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
-dsync-flist -q link-dups $dsynclist || true
+${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
+${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
+${bindir}/dsync-flist -q link-dups $dsynclist || true

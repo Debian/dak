@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # vim:set et sw=4:
 
-"""Central repository of regexes for dak"""
-# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
-# Copyright (C) 2009  Mark Hymers <mhy@debian.org>
+"""
+Central repository of regexes for dak
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Mark Hymers <mhy@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

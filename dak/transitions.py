@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
-""" Display, edit and check the release manager's transition file. """
-# Copyright (C) 2008 Joerg Jaspert <joerg@debian.org>
+"""
+Display, edit and check the release manager's transition file.
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2008 Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +28,14 @@
 
 ################################################################################
 
-import os, pg, sys, time, errno, fcntl, tempfile, pwd
+import os
+import pg
+import sys
+import time
+import errno
+import fcntl
+import tempfile
+import pwd
 import apt_pkg
 from daklib import database
 from daklib import utils
@@ -32,9 +44,9 @@ from daklib.regexes import re_broken_package
 import yaml
 
 # Globals
-Cnf = None
-Options = None
-projectB = None
+Cnf = None      #: Configuration, apt_pkg.Configuration
+Options = None  #: Parsed CommandLine arguments
+projectB = None #: database connection, pgobject
 
 ################################################################################
 
@@ -42,6 +54,12 @@ projectB = None
 #### This may run within sudo !! ####
 #####################################
 def init():
+    """
+    Initialize. Sets up database connection, parses commandline arguments.
+
+    @attention: This function may run B{within sudo}
+
+    """
     global Cnf, Options, projectB
 
     apt_pkg.init()
@@ -99,6 +117,20 @@ Options:
 #### This may run within sudo !! ####
 #####################################
 def load_transitions(trans_file):
+    """
+    Parse a transition yaml file and check it for validity.
+
+    @attention: This function may run B{within sudo}
+
+    @type trans_file: string
+    @param trans_file: filename to parse
+
+    @rtype: dict or None
+    @return: validated dictionary of transition entries or None
+             if validation fails, empty string if reading C{trans_file}
+             returned something else than a dict
+
+    """
     # Parse the yaml file
     sourcefile = file(trans_file, 'r')
     sourcecontent = sourcefile.read()
@@ -184,6 +216,12 @@ def load_transitions(trans_file):
 #### This may run within sudo !! ####
 #####################################
 def lock_file(f):
+    """
+    Lock a file
+
+    @attention: This function may run B{within sudo}
+
+    """
     for retry in range(10):
         lock_fd = os.open(f, os.O_RDWR | os.O_CREAT)
         try:
@@ -205,11 +243,19 @@ def lock_file(f):
 #### This may run within sudo !! ####
 #####################################
 def write_transitions(from_trans):
-    """Update the active transitions file safely.
-       This function takes a parsed input file (which avoids invalid
-       files or files that may be be modified while the function is
-       active), and ensure the transitions file is updated atomically
-       to avoid locks."""
+    """
+    Update the active transitions file safely.
+    This function takes a parsed input file (which avoids invalid
+    files or files that may be be modified while the function is
+    active) and ensure the transitions file is updated atomically
+    to avoid locks.
+
+    @attention: This function may run B{within sudo}
+
+    @type from_trans: dict
+    @param from_trans: transitions dictionary, as returned by L{load_transitions}
+
+    """
 
     trans_file = Cnf["Dinstall::Reject::ReleaseTransitions"]
     trans_temp = trans_file + ".tmp"
@@ -231,8 +277,16 @@ def write_transitions(from_trans):
 #### This usually runs within sudo !! ####
 ##########################################
 def write_transitions_from_file(from_file):
-    """We have a file we think is valid; if we're using sudo, we invoke it
-       here, otherwise we just parse the file and call write_transitions"""
+    """
+    We have a file we think is valid; if we're using sudo, we invoke it
+    here, otherwise we just parse the file and call write_transitions
+
+    @attention: This function usually runs B{within sudo}
+
+    @type from_file: filename
+    @param from_file: filename of a transitions file
+
+    """
 
     # Lets check if from_file is in the directory we expect it to be in
     if not os.path.abspath(from_file).startswith(Cnf["Transitions::TempPath"]):
@@ -251,9 +305,20 @@ def write_transitions_from_file(from_file):
 ################################################################################
 
 def temp_transitions_file(transitions):
-    # NB: file is unlinked by caller, but fd is never actually closed.
-    # We need the chmod, as the file is (most possibly) copied from a
-    # sudo-ed script and would be unreadable if it has default mkstemp mode
+    """
+    Open a temporary file and dump the current transitions into it, so users
+    can edit them.
+
+    @type transitions: dict
+    @param transitions: current defined transitions
+
+    @rtype: string
+    @return: path of newly created tempfile
+
+    @note: NB: file is unlinked by caller, but fd is never actually closed.
+           We need the chmod, as the file is (most possibly) copied from a
+           sudo-ed script and would be unreadable if it has default mkstemp mode
+    """
 
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Transitions::TempPath"])
     os.chmod(path, 0644)
@@ -264,6 +329,7 @@ def temp_transitions_file(transitions):
 ################################################################################
 
 def edit_transitions():
+    """ Edit the defined transitions. """
     trans_file = Cnf["Dinstall::Reject::ReleaseTransitions"]
     edit_file = temp_transitions_file(load_transitions(trans_file))
 
@@ -321,6 +387,11 @@ def edit_transitions():
 ################################################################################
 
 def check_transitions(transitions):
+    """
+    Check if the defined transitions still apply and remove those that no longer do.
+    @note: Asks the user for confirmation first.
+
+    """
     to_dump = 0
     to_remove = []
     # Now look through all defined transitions
@@ -386,6 +457,28 @@ def check_transitions(transitions):
 ################################################################################
 
 def print_info(trans, source, expected, rm, reason, packages):
+    """
+    Print information about a single transition.
+
+    @type trans: string
+    @param trans: Transition name
+
+    @type source: string
+    @param source: Source package
+
+    @type expected: string
+    @param expected: Expected version in testing
+
+    @type rm: string
+    @param rm: Responsible RM
+
+    @type reason: string
+    @param reason: Reason
+
+    @type packages: list
+    @param packages: list of blocked packages
+
+    """
     print """Looking at transition: %s
 Source:      %s
 New Version: %s
@@ -398,6 +491,14 @@ Blocked Packages (total: %d): %s
 ################################################################################
 
 def transition_info(transitions):
+    """
+    Print information about all defined transitions.
+    Calls L{print_info} for every transition and then tells user if the transition is
+    still ongoing or if the expected version already hit testing.
+
+    @type transitions: dict
+    @param transitions: defined transitions
+    """
     for trans in transitions:
         t = transitions[trans]
         source = t["source"]
@@ -426,6 +527,12 @@ def transition_info(transitions):
 ################################################################################
 
 def main():
+    """
+    Prepare the work to be done, do basic checks.
+
+    @attention: This function may run B{within sudo}
+
+    """
     global Cnf
 
     #####################################

@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-""" Utility functions for extensions """
-# Copyright (C) 2008 Anthony Towns <ajt@dbeian.org>
+"""
+Utility functions for extensions
 
-################################################################################
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2008 Anthony Towns <ajt@dbeian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,15 +22,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-################################################################################
-
 dak_functions_to_replace = {}
 dak_replaced_functions = {}
 
-def replace_dak_function(module,name):
-    """Decorator to make a function replace a standard dak function
-       in a given module. The replaced function will be provided as
-       the first argument."""
+def replace_dak_function(module, name):
+    """
+    Decorator to make a function replace a standard dak function
+    in a given module.
+
+    @type module: string
+    @param module: name of module where replaced function is in
+
+    @type name: string
+    @param name: name of the function to replace
+    """
 
     def x(f):
         def myfunc(*a,**kw):

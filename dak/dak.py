@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-"""Wrapper to launch dak functionality"""
+"""
+Wrapper to launch dak functionality
+
+G{importgraph}
+
+"""
 # Copyright (C) 2005, 2006 Anthony Towns <ajt@debian.org>
 # Copyright (C) 2006 James Troup <james@nocrew.org>
 
@@ -103,6 +108,8 @@ def init():
 
         ("make-suite-file-list",
          "Generate lists of packages per suite for apt-ftparchive"),
+        ("make-pkg-file-mapping",
+         "Generate package <-> file mapping"),
         ("generate-releases",
          "Generate Release files"),
         ("generate-index-diffs",
@@ -162,6 +169,8 @@ def init():
          "Split queue/done into a date-based hierarchy"),
         ("stats",
          "Generate statistics"),
+        ("bts-categorize",
+         "Categorize uncategorized bugs filed against ftp.debian.org"),
         ]
     return functionality
 

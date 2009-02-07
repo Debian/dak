@@ -268,15 +268,15 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
         print "%s<br/>" % (dist)
     print "</td>"
     print "<td class=\"age\">%s</td>" % (last_mod)
-    (name, mail) = maint.split(":")
+    (name, mail) = maint.split(":", 1)
 
     print "<td class=\"upload-data\">"
     print "<span class=\"maintainer\">Maintainer: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
-    (name, mail) = changedby.split(":")
+    (name, mail) = changedby.split(":", 1)
     print "<span class=\"changed-by\">Changed-By: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
 
     try:
-        (login, domain) = sponsor.split("@")
+        (login, domain) = sponsor.split("@", 1)
         print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
     except:
         pass
@@ -455,10 +455,10 @@ def process_changes_files(changes_files, type, log):
             log.write("Last-Modified: " + str(int(time.time()) - int(last_modified)) + "\n")
             log.write("Queue: " + type + "\n")
 
-            (name, mail) = maint.split(":")
+            (name, mail) = maint.split(":", 1)
             log.write("Maintainer: " + name + " <"+mail+">" + "\n")
             if changedby:
-               (name, mail) = changedby.split(":")
+               (name, mail) = changedby.split(":", 1)
                log.write("Changed-By: " + name + " <"+mail+">" + "\n")
             if sponsor:
                log.write("Sponsored-By: " + sponsor + "\n")

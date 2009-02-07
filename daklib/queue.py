@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 # vim:set et sw=4:
 
-""" Queue utility functions for dak """
-# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+"""
+Queue utility functions for dak
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2001 - 2006 James Troup <james@nocrew.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +26,17 @@
 
 ###############################################################################
 
-import cPickle, errno, os, pg, re, stat, sys, time
-import apt_inst, apt_pkg
-import utils, database
+import cPickle
+import errno
+import os
+import pg
+import stat
+import sys
+import time
+import apt_inst
+import apt_pkg
+import utils
+import database
 from dak_exceptions import *
 from regexes import re_default_answer, re_fdnic, re_bin_only_nmu
 
@@ -33,6 +47,25 @@ from types import *
 # Determine what parts in a .changes are NEW
 
 def determine_new(changes, files, projectB, warn=1):
+    """
+    Determine what parts in a C{changes} file are NEW.
+
+    @type changes: Upload.Pkg.changes dict
+    @param changes: Changes dictionary
+
+    @type files: Upload.Pkg.files dict
+    @param files: Files dictionary
+
+    @type projectB: pgobject
+    @param projectB: DB handle
+
+    @type warn: bool
+    @param warn: Warn if overrides are added for (old)stable
+
+    @rtype: dict
+    @return: dictionary of NEW components.
+
+    """
     new = {}
 
     # Build up a list of potentially new things
@@ -95,11 +128,21 @@ def determine_new(changes, files, projectB, warn=1):
 
 ################################################################################
 
-def get_type(f):
+def get_type(file):
+    """
+    Get the file type of C{file}
+
+    @type file: dict
+    @param file: file entry
+
+    @rtype: string
+    @return: filetype
+
+    """
     # Determine the type
-    if f.has_key("dbtype"):
-        file_type = f["dbtype"]
-    elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
+    if file.has_key("dbtype"):
+        file_type = file["dbtype"]
+    elif file["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
         file_type = "dsc"
     else:
         utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (file_type))
@@ -113,9 +156,20 @@ def get_type(f):
 
 ################################################################################
 
-# check if section/priority values are valid
+
 
 def check_valid(new):
+    """
+    Check if section and priority for NEW packages exist in database.
+    Additionally does sanity checks:
+      - debian-installer packages have to be udeb (or source)
+      - non debian-installer packages can not be udeb
+      - source priority can only be assigned to dsc file types
+
+    @type new: dict
+    @param new: Dict of new packages with their section, priority and type.
+
+    """
     for pkg in new.keys():
         section = new[pkg]["section"]
         priority = new[pkg]["priority"]
@@ -133,9 +187,8 @@ def check_valid(new):
 
 ###############################################################################
 
-# Convenience wrapper to carry around all the package information in
-
 class Pkg:
+    """ Convenience wrapper to carry around all the package information """
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
@@ -145,8 +198,16 @@ class Pkg:
 ###############################################################################
 
 class Upload:
+    """
+    Everything that has to do with an upload processed.
 
+    """
     def __init__(self, Cnf):
+        """
+        Initialize various variables and the global substitution template mappings.
+        Also connect to the DB and initialize the Database module.
+
+        """
         self.Cnf = Cnf
         self.accept_count = 0
         self.accept_bytes = 0L
@@ -167,6 +228,7 @@ class Upload:
     ###########################################################################
 
     def init_vars (self):
+        """ Reset a number of entries from our Pkg object. """
         self.pkg.changes.clear()
         self.pkg.dsc.clear()
         self.pkg.files.clear()
@@ -179,6 +241,9 @@ class Upload:
     ###########################################################################
 
     def update_vars (self):
+        """
+        Update our Pkg object by reading a previously created cPickle .dak dumpfile.
+        """
         dump_filename = self.pkg.changes_file[:-8]+".dak"
         dump_file = utils.open_file(dump_filename)
         p = cPickle.Unpickler(dump_file)
@@ -196,11 +261,19 @@ class Upload:
 
     ###########################################################################
 
-    # This could just dump the dictionaries as is, but I'd like to
-    # avoid this so there's some idea of what process-accepted &
-    # process-new use from process-unchecked
 
     def dump_vars(self, dest_dir):
+        """
+        Dump our Pkg object into a cPickle file.
+
+        @type dest_dir: string
+        @param dest_dir: Path where the dumpfile should be stored
+
+        @note: This could just dump the dictionaries as is, but I'd like to avoid this so
+               there's some idea of what process-accepted & process-new use from
+               process-unchecked. (JT)
+
+        """
 
         changes = self.pkg.changes
         dsc = self.pkg.dsc
@@ -287,6 +360,8 @@ class Upload:
     # Set up the per-package template substitution mappings
 
     def update_subst (self, reject_message = ""):
+        """ Set up the per-package template substitution mappings """
+
         Subst = self.Subst
         changes = self.pkg.changes
         # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
@@ -329,6 +404,7 @@ class Upload:
     ###########################################################################
 
     def build_summaries(self):
+        """ Build a summary of changes the upload introduces. """
         changes = self.pkg.changes
         files = self.pkg.files
 
@@ -385,6 +461,20 @@ class Upload:
     ###########################################################################
 
     def close_bugs (self, summary, action):
+        """
+        Send mail to close bugs as instructed by the closes field in the changes file.
+        Also add a line to summary if any work was done.
+
+        @type summary: string
+        @param summary: summary text, as given by L{build_summaries}
+
+        @type action: bool
+        @param action: Set to false no real action will be done.
+
+        @rtype: string
+        @return: summary. If action was taken, extended by the list of closed bugs.
+
+        """
         changes = self.pkg.changes
         Subst = self.Subst
         Cnf = self.Cnf
@@ -420,6 +510,19 @@ distribution."""
     ###########################################################################
 
     def announce (self, short_summary, action):
+        """
+        Send an announce mail about a new upload.
+
+        @type short_summary: string
+        @param short_summary: Short summary text to include in the mail
+
+        @type action: bool
+        @param action: Set to false no real action will be done.
+
+        @rtype: string
+        @return: Textstring about action taken.
+
+        """
         Subst = self.Subst
         Cnf = self.Cnf
         changes = self.pkg.changes
@@ -454,6 +557,23 @@ distribution."""
     ###########################################################################
 
     def accept (self, summary, short_summary):
+        """
+        Accept an upload.
+
+        This moves all files referenced from the .changes into the I{accepted}
+        queue, sends the accepted mail, announces to lists, closes bugs and
+        also checks for override disparities. If enabled it will write out
+        the version history for the BTS Version Tracking and will finally call
+        L{queue_build}.
+
+        @type summary: string
+        @param summary: Summary text
+
+        @type short_summary: string
+        @param short_summary: Short summary
+
+        """
+
         Cnf = self.Cnf
         Subst = self.Subst
         files = self.pkg.files
@@ -524,6 +644,16 @@ distribution."""
     ###########################################################################
 
     def queue_build (self, queue, path):
+        """
+        Prepare queue_build database table used for incoming autobuild support.
+
+        @type queue: string
+        @param queue: queue name
+
+        @type path: string
+        @param path: path for the queue file entries/link destinations
+        """
+
         Cnf = self.Cnf
         Subst = self.Subst
         files = self.pkg.files
@@ -582,6 +712,16 @@ distribution."""
     ###########################################################################
 
     def check_override (self):
+        """
+        Checks override entries for validity. Mails "Override disparity" warnings,
+        if that feature is enabled.
+
+        Abandons the check if
+          - this is a non-sourceful upload
+          - override disparity checks are disabled
+          - mail sending is disabled
+
+        """
         Subst = self.Subst
         changes = self.pkg.changes
         files = self.pkg.files
@@ -620,10 +760,16 @@ distribution."""
     ###########################################################################
 
     def force_reject (self, files):
-        """Forcefully move files from the current directory to the
-           reject directory.  If any file already exists in the reject
-           directory it will be moved to the morgue to make way for
-           the new file."""
+        """
+        Forcefully move files from the current directory to the
+        reject directory.  If any file already exists in the reject
+        directory it will be moved to the morgue to make way for
+        the new file.
+
+        @type files: dict
+        @param files: file dictionary
+
+        """
 
         Cnf = self.Cnf
 
@@ -662,6 +808,19 @@ distribution."""
     ###########################################################################
 
     def do_reject (self, manual = 0, reject_message = ""):
+        """
+        Reject an upload. If called without a reject message or C{manual} is
+        true, spawn an editor so the user can write one.
+
+        @type manual: bool
+        @param manual: manual or automated rejection
+
+        @type reject_message: string
+        @param reject_message: A reject message
+
+        @return: 0
+
+        """
         # If we weren't given a manual rejection message, spawn an
         # editor so the user can add one in...
         if manual and not reject_message:
@@ -736,13 +895,26 @@ distribution."""
 
     ################################################################################
 
-    # Ensure that source exists somewhere in the archive for the binary
-    # upload being processed.
-    #
-    # (1) exact match                      => 1.0-3
-    # (2) Bin-only NMU                     => 1.0-3+b1 , 1.0-3.1+b1
-
     def source_exists (self, package, source_version, suites = ["any"]):
+        """
+        Ensure that source exists somewhere in the archive for the binary
+        upload being processed.
+          1. exact match     => 1.0-3
+          2. bin-only NMU    => 1.0-3+b1 , 1.0-3.1+b1
+
+        @type package: string
+        @param package: package source name
+
+        @type source_version: string
+        @param source_version: expected source version
+
+        @type suites: list
+        @param suites: list of suites to check in, default I{any}
+
+        @rtype: int
+        @return: returns 1 if a source with expected version is found, otherwise 0
+
+        """
         okay = 1
         for suite in suites:
             if suite == "any":
@@ -785,6 +957,27 @@ distribution."""
     ################################################################################
 
     def in_override_p (self, package, component, suite, binary_type, file):
+        """
+        Check if a package already has override entries in the DB
+
+        @type package: string
+        @param package: package name
+
+        @type component: string
+        @param component: database id of the component, as returned by L{database.get_component_id}
+
+        @type suite: int
+        @param suite: database id of the suite, as returned by L{database.get_suite_id}
+
+        @type binary_type: string
+        @param binary_type: type of the package
+
+        @type file: string
+        @param file: filename we check
+
+        @return: the database result. But noone cares anyway.
+
+        """
         files = self.pkg.files
 
         if binary_type == "": # must be source
@@ -824,6 +1017,16 @@ distribution."""
     ################################################################################
 
     def reject (self, str, prefix="Rejected: "):
+        """
+        Add C{str} to reject_message. Adds C{prefix}, by default "Rejected: "
+
+        @type str: string
+        @param str: Reject text
+
+        @type prefix: string
+        @param prefix: Prefix text, default Rejected:
+
+        """
         if str:
             # Unlike other rejects we add new lines first to avoid trailing
             # new lines when this message is passed back up to a caller.
@@ -834,6 +1037,7 @@ distribution."""
     ################################################################################
 
     def get_anyversion(self, query_result, suite):
+        """ """
         anyversion=None
         anysuite = [suite] + self.Cnf.ValueList("Suite::%s::VersionChecks::Enhances" % (suite))
         for (v, s) in query_result:
@@ -846,9 +1050,12 @@ distribution."""
 
     def cross_suite_version_check(self, query_result, file, new_version,
             sourceful=False):
-        """Ensure versions are newer than existing packages in target
+        """
+        Ensure versions are newer than existing packages in target
         suites and that cross-suite version checking rules as
-        set out in the conf file are satisfied."""
+        set out in the conf file are satisfied.
+
+        """
 
         # Check versions for each target suite
         for target_suite in self.pkg.changes["distribution"].keys():
@@ -911,6 +1118,9 @@ distribution."""
     ################################################################################
 
     def check_binary_against_db(self, file):
+        """
+
+        """
         self.reject_message = ""
         files = self.pkg.files
 
@@ -941,6 +1151,8 @@ SELECT b.id FROM binaries b, architecture a
     ################################################################################
 
     def check_source_against_db(self, file):
+        """
+        """
         self.reject_message = ""
         dsc = self.pkg.dsc
 
@@ -955,15 +1167,17 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
 
     ################################################################################
 
-    # **WARNING**
-    # NB: this function can remove entries from the 'files' index [if
-    # the .orig.tar.gz is a duplicate of the one in the archive]; if
-    # you're iterating over 'files' and call this function as part of
-    # the loop, be sure to add a check to the top of the loop to
-    # ensure you haven't just tried to dereference the deleted entry.
-    # **WARNING**
 
     def check_dsc_against_db(self, file):
+        """
+
+        @warning: NB: this function can remove entries from the 'files' index [if
+         the .orig.tar.gz is a duplicate of the one in the archive]; if
+         you're iterating over 'files' and call this function as part of
+         the loop, be sure to add a check to the top of the loop to
+         ensure you haven't just tried to dereference the deleted entry.
+
+        """
         self.reject_message = ""
         files = self.pkg.files
         dsc_files = self.pkg.dsc_files
@@ -1092,10 +1306,20 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
 
         return (self.reject_message, None)
 
-    def do_query(self, q):
-        sys.stderr.write("query: \"%s\" ... " % (q))
+    def do_query(self, query):
+        """
+        Executes a database query. Writes statistics / timing to stderr.
+
+        @type query: string
+        @param query: database query string, passed unmodified
+
+        @return: db result
+
+        @warning: The query is passed B{unmodified}, so be careful what you use this for.
+        """
+        sys.stderr.write("query: \"%s\" ... " % (query))
         before = time.time()
-        r = self.projectB.query(q)
+        r = self.projectB.query(query)
         time_diff = time.time()-before
         sys.stderr.write("took %.3f seconds.\n" % (time_diff))
         return r
