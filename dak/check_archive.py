@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
-""" Various different sanity checks """
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+""" Various different sanity checks
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,22 +30,28 @@
 
 ################################################################################
 
-import commands, os, pg, stat, sys, time
-import apt_pkg, apt_inst
+import commands
+import os
+import pg
+import stat
+import sys
+import time
+import apt_pkg
+import apt_inst
 from daklib import database
 from daklib import utils
 from daklib.regexes import re_issource
 
 ################################################################################
 
-Cnf = None
-projectB = None
-db_files = {}
-waste = 0.0
-excluded = {}
+Cnf = None                     #: Configuration, apt_pkg.Configuration
+projectB = None                #: database connection, pgobject
+db_files = {}                  #: Cache of filenames as known by the database
+waste = 0.0                    #: How many bytes are "wasted" by files not referenced in database
+excluded = {}                  #: List of files which are excluded from files check
 current_file = None
 future_files = {}
-current_time = time.time()
+current_time = time.time()     #: now()
 
 ################################################################################
 
@@ -69,6 +79,16 @@ The following MODEs are available:
 ################################################################################
 
 def process_dir (unused, dirname, filenames):
+    """
+    Process a directory and output every files name which is not listed already
+    in the C{filenames} or global C{excluded} dictionaries.
+
+    @type dirname: string
+    @param dirname: the directory to look at
+
+    @type filename: dict
+    @param filename: Known filenames to ignore
+    """
     global waste, db_files, excluded
 
     if dirname.find('/disks-') != -1 or dirname.find('upgrade-') != -1:
@@ -86,6 +106,10 @@ def process_dir (unused, dirname, filenames):
 ################################################################################
 
 def check_files():
+    """
+    Prepare the dictionary of existing filenames, then walk through the archive
+    pool/ directory to compare it.
+    """
     global db_files
 
     print "Building list of database files..."
@@ -121,6 +145,9 @@ def check_files():
 ################################################################################
 
 def check_dscs():
+    """
+    Parse every .dsc file in the archive and check for it's validity.
+    """
     count = 0
     suite = 'unstable'
     for component in Cnf.SubTree("Component").List():
@@ -143,6 +170,9 @@ def check_dscs():
 ################################################################################
 
 def check_override():
+    """
+    Check for missing overrides in stable and unstable.
+    """
     for suite in [ "stable", "unstable" ]:
         print suite
         print "-"*len(suite)
@@ -163,10 +193,13 @@ SELECT DISTINCT s.source FROM source s, src_associations sa
 
 ################################################################################
 
-# Ensure that the source files for any given package is all in one
-# directory so that 'apt-get source' works...
 
 def check_source_in_one_dir():
+    """
+    Ensure that the source files for any given package is all in one
+    directory so that 'apt-get source' works...
+    """
+
     # Not the most enterprising method, but hey...
     broken_count = 0
     q = projectB.query("SELECT id FROM source;")
@@ -196,6 +229,9 @@ SELECT l.path, f.filename FROM files f, dsc_files df, location l WHERE df.source
 ################################################################################
 
 def check_checksums():
+    """
+    Validate all files
+    """
     print "Getting file information from database..."
     q = projectB.query("SELECT l.path, f.filename, f.md5sum, f.sha1sum, f.sha256sum, f.size FROM files f, location l WHERE f.location = l.id")
     ql = q.getresult()
@@ -218,27 +254,20 @@ def check_checksums():
             utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
         if size != db_size:
             utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
-        # Until the main database is filled, we need to not spit 500,000 warnings
-        # every time we scan the archive.  Yet another hack (TM) which can go away
-        # once this is all working
-        if db_sha1sum is not None and db_sha1sum != '':
-            f.seek(0)
-            sha1sum = apt_pkg.sha1sum(f)
-            if sha1sum != db_sha1sum:
-                utils.warn("**WARNING** sha1sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha1sum, db_sha1sum))
+        f.seek(0)
+        sha1sum = apt_pkg.sha1sum(f)
+        if sha1sum != db_sha1sum:
+            utils.warn("**WARNING** sha1sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha1sum, db_sha1sum))
 
-        if db_sha256sum is not None and db_sha256sum != '':
-            f.seek(0)
-            sha256sum = apt_pkg.sha256sum(f)
-            if sha256sum != db_sha256sum:
-                utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, db_sha256sum))
+        f.seek(0)
+        sha256sum = apt_pkg.sha256sum(f)
+        if sha256sum != db_sha256sum:
+            utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, db_sha256sum))
 
     print "Done."
 
 ################################################################################
 #
-# Check all files for timestamps in the future; common from hardware
-# (e.g. alpha) which have far-future dates as their default dates.
 
 def Ent(Kind,Name,Link,Mode,UID,GID,Size,MTime,Major,Minor):
     global future_files
@@ -248,6 +277,11 @@ def Ent(Kind,Name,Link,Mode,UID,GID,Size,MTime,Major,Minor):
         print "%s: %s '%s','%s',%u,%u,%u,%u,%u,%u,%u" % (current_file, Kind,Name,Link,Mode,UID,GID,Size, MTime, Major, Minor)
 
 def check_timestamps():
+    """
+    Check all files for timestamps in the future; common from hardware
+    (e.g. alpha) which have far-future dates as their default dates.
+    """
+
     global current_file
 
     q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.deb$'")
@@ -269,6 +303,9 @@ def check_timestamps():
 ################################################################################
 
 def check_missing_tar_gz_in_dsc():
+    """
+    Ensure each .dsc lists a .tar.gz file
+    """
     count = 0
 
     print "Building list of database files..."
@@ -305,6 +342,9 @@ def check_missing_tar_gz_in_dsc():
 ################################################################################
 
 def validate_sources(suite, component):
+    """
+    Ensure files mentioned in Sources exist
+    """
     filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
     print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
@@ -343,6 +383,9 @@ def validate_sources(suite, component):
 ########################################
 
 def validate_packages(suite, component, architecture):
+    """
+    Ensure files mentioned in Packages exist
+    """
     filename = "%s/dists/%s/%s/binary-%s/Packages.gz" \
                % (Cnf["Dir::Root"], suite, component, architecture)
     print "Processing %s..." % (filename)
@@ -364,6 +407,9 @@ def validate_packages(suite, component, architecture):
 ########################################
 
 def check_indices_files_exist():
+    """
+    Ensure files mentioned in Packages & Sources exist
+    """
     for suite in [ "stable", "testing", "unstable" ]:
         for component in Cnf.ValueList("Suite::%s::Components" % (suite)):
             architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
@@ -378,6 +424,9 @@ def check_indices_files_exist():
 ################################################################################
 
 def check_files_not_symlinks():
+    """
+    Check files in the database aren't symlinks
+    """
     print "Building list of database files... ",
     before = time.time()
     q = projectB.query("SELECT l.path, f.filename, f.id FROM files f, location l WHERE f.location = l.id")
@@ -412,6 +461,7 @@ def chk_bd_process_dir (unused, dirname, filenames):
 ################################################################################
 
 def check_build_depends():
+    """ Validate build-dependencies of .dsc files in the archive """
     os.path.walk(Cnf["Dir::Root"], chk_bd_process_dir, None)
 
 ################################################################################
