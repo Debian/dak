@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Check for users with no packages in the archive
+""" Check for users with no packages in the archive """
 # Copyright (C) 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify

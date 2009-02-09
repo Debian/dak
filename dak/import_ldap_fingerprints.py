@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Sync fingerprint and uid tables with a debian.org LDAP DB
+""" Sync fingerprint and uid tables with a debian.org LDAP DB """
 # Copyright (C) 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -48,14 +48,12 @@ import commands, ldap, pg, re, sys
 import apt_pkg
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_gpg_fingerprint, re_debian_address
 
 ################################################################################
 
 Cnf = None
 projectB = None
-
-re_gpg_fingerprint = re.compile(r"^\s+Key fingerprint = (.*)$", re.MULTILINE)
-re_debian_address = re.compile(r"^.*<(.*)@debian\.org>$", re.MULTILINE)
 
 ################################################################################
 
@@ -151,7 +149,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                     print "Assigning %s to 0x%s." % (uid, fingerprint)
                 elif existing_uid == uid:
                     pass
-                elif '@' not in existing_ui:
+                elif '@' not in existing_uid:
                     q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
                     print "Promoting DM %s to DD %s with keyid 0x%s." % (existing_uid, uid, fingerprint)
                 else:

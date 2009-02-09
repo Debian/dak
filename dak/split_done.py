@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+""" Split queue/done into date based subdirectories """
 # Copyright (C) 2004, 2005, 2006  James Troup <james@nocrew.org>
+# Copyright (C) 2008  Joerg Jaspert <joerg@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

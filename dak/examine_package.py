@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Script to automate some parts of checking NEW packages
+""" Script to automate some parts of checking NEW packages """
 # Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -36,24 +36,9 @@ import errno, os, pg, re, sys, md5
 import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
-
-################################################################################
-
-re_package = re.compile(r"^(.+?)_.*")
-re_doc_directory = re.compile(r".*/doc/([^/]*).*")
-
-re_contrib = re.compile('^contrib/')
-re_nonfree = re.compile('^non\-free/')
-
-re_arch = re.compile("Architecture: .*")
-re_builddep = re.compile("Build-Depends: .*")
-re_builddepind = re.compile("Build-Depends-Indep: .*")
-
-re_localhost = re.compile("localhost\.localdomain")
-re_version = re.compile('^(.*)\((.*)\)')
-
-re_newlinespace = re.compile('\n')
-re_spacestrip = re.compile('(\s)')
+from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
+                           re_contrib, re_nonfree, re_localhost, re_newlinespace, \
+                           re_package, re_doc_directory
 
 ################################################################################
 
@@ -88,7 +73,7 @@ PACKAGE can be a .changes, .dsc, .deb or .udeb filename."""
 
 def escape_if_needed(s):
     if use_html:
-        return utils.re_html_escaping.sub(lambda x: utils.html_escaping.get(x.group(0)), s)
+        return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
     else:
         return s
 
@@ -455,11 +440,11 @@ def check_deb (suite, deb_filename):
 # Read a file, strip the signature and return the modified contents as
 # a string.
 def strip_pgp_signature (filename):
-    file = utils.open_file (filename)
+    inputfile = utils.open_file (filename)
     contents = ""
     inside_signature = 0
     skip_next = 0
-    for line in file.readlines():
+    for line in inputfile.readlines():
         if line[:-1] == "":
             continue
         if inside_signature:
@@ -477,7 +462,7 @@ def strip_pgp_signature (filename):
             inside_signature = 0
             continue
         contents += line
-    file.close()
+    inputfile.close()
     return contents
 
 def display_changes(suite, changes_filename):

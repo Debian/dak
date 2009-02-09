@@ -12,6 +12,10 @@ all headers library clean veryclean binary program doc:
 	$(MAKE) -C cmdline $@
 	$(MAKE) -C doc $@
 
+static:
+	$(MAKE) -C libdsync
+	LDFLAGS="-static" $(MAKE) -C cmdline
+
 # Some very common aliases
 .PHONY: maintainer-clean dist-clean distclean pristine sanity 
 maintainer-clean dist-clean distclean pristine sanity: veryclean

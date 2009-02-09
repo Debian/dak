@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Cruft checker and hole filler for overrides
+""" Cruft checker and hole filler for overrides """
 # Copyright (C) 2000, 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
 # Copyright (C) 2005  Jeroen van Wolffelaar <jeroen@wolffelaar.nl>
 

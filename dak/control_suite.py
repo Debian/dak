@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Manipulate suite tags
+""" Manipulate suite tags """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -275,8 +275,8 @@ def main ():
         utils.fubar("No action specified.")
 
     # Safety/Sanity check
-    if action == "set" and suite not in ["testing", "etch-m68k"]:
-        utils.fubar("Will not reset a suite other than testing.")
+    if action == "set" and suite not in ["testing", "etch-m68k", "lenny-r0"]:
+        utils.fubar("Will not reset suite %s" % (suite))
 
     if action == "list":
         get_list(suite)

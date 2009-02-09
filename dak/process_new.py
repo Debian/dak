@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:set et ts=4 sw=4:
 
-# Handles NEW and BYHAND packages
+""" Handles NEW and BYHAND packages """
 # Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@ from daklib import database
 from daklib import logging
 from daklib import queue
 from daklib import utils
+from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
 
 # Globals
 Cnf = None
@@ -82,7 +83,7 @@ def recheck():
             source_package = files[f]["source package"]
             if not Upload.pkg.changes["architecture"].has_key("source") \
                and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
-                source_epochless_version = utils.re_no_epoch.sub('', source_version)
+                source_epochless_version = re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                 found = 0
                 for q in ["Accepted", "Embargoed", "Unembargoed"]:
@@ -110,7 +111,7 @@ def recheck():
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.match(prompt)
+            m = re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -230,6 +231,7 @@ def sort_changes(changes_files):
 class Section_Completer:
     def __init__ (self):
         self.sections = []
+        self.matches = []
         q = projectB.query("SELECT section FROM section")
         for i in q.getresult():
             self.sections.append(i[0])
@@ -251,6 +253,7 @@ class Section_Completer:
 class Priority_Completer:
     def __init__ (self):
         self.priorities = []
+        self.matches = []
         q = projectB.query("SELECT priority FROM priority")
         for i in q.getresult():
             self.priorities.append(i[0])
@@ -309,8 +312,8 @@ def index_range (index):
 
 def edit_new (new):
     # Write the current data to a temporary file
-    temp_filename = utils.temp_filename()
-    temp_file = utils.open_file(temp_filename, 'w')
+    (fd, temp_filename) = utils.temp_filename()
+    temp_file = os.fdopen(fd, 'w')
     print_new (new, 0, temp_file)
     temp_file.close()
     # Spawn an editor on that file
@@ -365,7 +368,7 @@ def edit_index (new, index):
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.match(prompt)
+            m = re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -435,7 +438,7 @@ def edit_overrides (new):
                 answer = answer[:1].upper()
             if answer == "E" or answer == "D":
                 got_answer = 1
-            elif queue.re_isanum.match (answer):
+            elif re_isanum.match (answer):
                 answer = int(answer)
                 if (answer < 1) or (answer > index):
                     print "%s is not a valid index (%s).  Please retry." % (answer, index_range(index))
@@ -455,8 +458,8 @@ def edit_overrides (new):
 
 def edit_note(note):
     # Write the current data to a temporary file
-    temp_filename = utils.temp_filename()
-    temp_file = utils.open_file(temp_filename, 'w')
+    (fd, temp_filename) = utils.temp_filename()
+    temp_file = os.fdopen(fd, 'w')
     temp_file.write(note)
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")
@@ -472,7 +475,7 @@ def edit_note(note):
         answer = "XXX"
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.search(prompt)
+            m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -561,12 +564,12 @@ def add_overrides (new):
 
 def prod_maintainer ():
     # Here we prepare an editor and get them ready to prod...
-    temp_filename = utils.temp_filename()
+    (fd, temp_filename) = utils.temp_filename()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        f = utils.open_file(temp_filename)
+        f = os.fdopen(fd)
         prod_message = "".join(f.readlines())
         f.close()
         print "Prod message:"
@@ -575,7 +578,7 @@ def prod_maintainer ():
         answer = "XXX"
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.search(prompt)
+            m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -662,7 +665,7 @@ def do_new():
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.search(prompt)
+            m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
@@ -771,7 +774,7 @@ def do_byhand():
 
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
-            m = queue.re_default_answer.search(prompt)
+            m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()

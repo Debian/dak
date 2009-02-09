@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
-# Generate Maintainers file used by e.g. the Debian Bug Tracking System
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+"""
+Generate Maintainers file used by e.g. the Debian Bug Tracking System
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+@license: GNU General Public License version 2 or later
+
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,18 +30,20 @@
 
 ################################################################################
 
-import pg, sys
+import pg
+import sys
 import apt_pkg
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_comments
 
 ################################################################################
 
-projectB = None
-Cnf = None
-maintainer_from_source_cache = {}
-packages = {}
-fixed_maintainer_cache = {}
+Cnf = None                          #: Configuration, apt_pkg.Configuration
+projectB = None                     #: database connection, pgobject
+maintainer_from_source_cache = {}   #: caches the maintainer name <email> per source_id
+packages = {}                       #: packages data to write out
+fixed_maintainer_cache = {}         #: caches fixed ( L{daklib.utils.fix_maintainer} ) maintainer data
 
 ################################################################################
 
@@ -51,6 +58,15 @@ Generate an index of packages <=> Maintainers.
 ################################################################################
 
 def fix_maintainer (maintainer):
+    """
+    Fixup maintainer entry, cache the result.
+
+    @type maintainer: string
+    @param maintainer: A maintainer entry as passed to L{daklib.utils.fix_maintainer}
+
+    @rtype: tuple
+    @returns: fixed maintainer tuple
+    """
     global fixed_maintainer_cache
 
     if not fixed_maintainer_cache.has_key(maintainer):
@@ -59,9 +75,25 @@ def fix_maintainer (maintainer):
     return fixed_maintainer_cache[maintainer]
 
 def get_maintainer (maintainer):
+    """
+    Retrieves maintainer name from database, passes it through fix_maintainer and
+    passes on whatever that returns.
+
+    @type maintainer: int
+    @param maintainer: maintainer_id
+    """
     return fix_maintainer(database.get_maintainer(maintainer))
 
 def get_maintainer_from_source (source_id):
+    """
+    Returns maintainer name for given source_id.
+
+    @type source_id: int
+    @param source_id: source package id
+
+    @rtype: string
+    @return: maintainer name/email
+    """
     global maintainer_from_source_cache
 
     if not maintainer_from_source_cache.has_key(source_id):
@@ -130,9 +162,9 @@ def main():
 
     # Process any additional Maintainer files (e.g. from pseudo packages)
     for filename in extra_files:
-        file = utils.open_file(filename)
-        for line in file.readlines():
-            line = utils.re_comments.sub('', line).strip()
+        extrafile = utils.open_file(filename)
+        for line in extrafile.readlines():
+            line = re_comments.sub('', line).strip()
             if line == "":
                 continue
             split = line.split()
@@ -147,7 +179,7 @@ def main():
             if not packages.has_key(package) or version == '*' \
                or apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
                 packages[package] = { "maintainer": maintainer, "version": version }
-        file.close()
+        extrafile.close()
 
     package_keys = packages.keys()
     package_keys.sort()

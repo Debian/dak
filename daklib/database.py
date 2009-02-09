@@ -1,7 +1,16 @@
 #!/usr/bin/env python
 
-# DB access fucntions
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+""" DB access functions
+@group readonly: get_suite_id, get_section_id, get_priority_id, get_override_type_id,
+                 get_architecture_id, get_archive_id, get_component_id, get_location_id,
+                 get_source_id, get_suite_version, get_files_id, get_maintainer, get_suites
+@group read/write: get_or_set*, set_files_id
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,29 +28,31 @@
 
 ################################################################################
 
-import os, sys, time, types, apt_pkg
+import sys
+import time
+import types
 
 ################################################################################
 
-Cnf = None
-projectB = None
-suite_id_cache = {}
-section_id_cache = {}
-priority_id_cache = {}
-override_type_id_cache = {}
-architecture_id_cache = {}
-archive_id_cache = {}
-component_id_cache = {}
-location_id_cache = {}
-maintainer_id_cache = {}
-keyring_id_cache = {}
-source_id_cache = {}
-files_id_cache = {}
-maintainer_cache = {}
-fingerprint_id_cache = {}
-queue_id_cache = {}
-uid_id_cache = {}
-suite_version_cache = {}
+Cnf = None                    #: Configuration, apt_pkg.Configuration
+projectB = None               #: database connection, pgobject
+suite_id_cache = {}           #: cache for suites
+section_id_cache = {}         #: cache for sections
+priority_id_cache = {}        #: cache for priorities
+override_type_id_cache = {}   #: cache for overrides
+architecture_id_cache = {}    #: cache for architectures
+archive_id_cache = {}         #: cache for archives
+component_id_cache = {}       #: cache for components
+location_id_cache = {}        #: cache for locations
+maintainer_id_cache = {}      #: cache for maintainers
+keyring_id_cache = {}         #: cache for keyrings
+source_id_cache = {}          #: cache for sources
+files_id_cache = {}           #: cache for files
+maintainer_cache = {}         #: cache for maintainer names
+fingerprint_id_cache = {}     #: cache for fingerprints
+queue_id_cache = {}           #: cache for queues
+uid_id_cache = {}             #: cache for uids
+suite_version_cache = {}      #: cache for suite_versions (packages)
 suite_bin_version_cache = {}
 content_path_id_cache = {}
 content_file_id_cache = {}
@@ -51,16 +62,36 @@ cache_preloaded = False
 ################################################################################
 
 def init (config, sql):
+    """
+    database module init.
+
+    @type config: apt_pkg.Configuration
+    @param config: apt config, see U{http://apt.alioth.debian.org/python-apt-doc/apt_pkg/cache.html#Configuration}
+
+    @type sql: pgobject
+    @param sql: database connection
+
+    """
     global Cnf, projectB
 
     Cnf = config
     projectB = sql
 
 
-def do_query(q):
-    sys.stderr.write("query: \"%s\" ... " % (q))
+def do_query(query):
+    """
+    Executes a database query. Writes statistics / timing to stderr.
+
+    @type query: string
+    @param query: database query string, passed unmodified
+
+    @return: db result
+
+    @warning: The query is passed B{unmodified}, so be careful what you use this for.
+    """
+    sys.stderr.write("query: \"%s\" ... " % (query))
     before = time.time()
-    r = projectB.query(q)
+    r = projectB.query(query)
     time_diff = time.time()-before
     sys.stderr.write("took %.3f seconds.\n" % (time_diff))
     if type(r) is int:
@@ -74,6 +105,17 @@ def do_query(q):
 ################################################################################
 
 def get_suite_id (suite):
+    """
+    Returns database id for given C{suite}.
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type suite: string
+    @param suite: The name of the suite
+
+    @rtype: int
+    @return: the database id for the given suite
+
+    """
     global suite_id_cache
 
     if suite_id_cache.has_key(suite):
@@ -90,6 +132,17 @@ def get_suite_id (suite):
     return suite_id
 
 def get_section_id (section):
+    """
+    Returns database id for given C{section}.
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type section: string
+    @param section: The name of the section
+
+    @rtype: int
+    @return: the database id for the given section
+
+    """
     global section_id_cache
 
     if section_id_cache.has_key(section):
@@ -106,6 +159,17 @@ def get_section_id (section):
     return section_id
 
 def get_priority_id (priority):
+    """
+    Returns database id for given C{priority}.
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type priority: string
+    @param priority: The name of the priority
+
+    @rtype: int
+    @return: the database id for the given priority
+
+    """
     global priority_id_cache
 
     if priority_id_cache.has_key(priority):
@@ -122,6 +186,17 @@ def get_priority_id (priority):
     return priority_id
 
 def get_override_type_id (type):
+    """
+    Returns database id for given override C{type}.
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type type: string
+    @param type: The name of the override type
+
+    @rtype: int
+    @return: the database id for the given override type
+
+    """
     global override_type_id_cache
 
     if override_type_id_cache.has_key(type):
@@ -138,6 +213,17 @@ def get_override_type_id (type):
     return override_type_id
 
 def get_architecture_id (architecture):
+    """
+    Returns database id for given C{architecture}.
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type architecture: string
+    @param architecture: The name of the override type
+
+    @rtype: int
+    @return: the database id for the given architecture
+
+    """
     global architecture_id_cache
 
     if architecture_id_cache.has_key(architecture):
@@ -154,6 +240,17 @@ def get_architecture_id (architecture):
     return architecture_id
 
 def get_archive_id (archive):
+    """
+    Returns database id for given C{archive}.
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type archive: string
+    @param archive: The name of the override type
+
+    @rtype: int
+    @return: the database id for the given archive
+
+    """
     global archive_id_cache
 
     archive = archive.lower()
@@ -172,6 +269,17 @@ def get_archive_id (archive):
     return archive_id
 
 def get_component_id (component):
+    """
+    Returns database id for given C{component}.
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type component: string
+    @param component: The name of the component
+
+    @rtype: int
+    @return: the database id for the given component
+
+    """
     global component_id_cache
 
     component = component.lower()
@@ -190,6 +298,26 @@ def get_component_id (component):
     return component_id
 
 def get_location_id (location, component, archive):
+    """
+    Returns database id for the location behind the given combination of
+      - B{location} - the path of the location, eg. I{/srv/ftp.debian.org/ftp/pool/}
+      - B{component} - the id of the component as returned by L{get_component_id}
+      - B{archive} - the id of the archive as returned by L{get_archive_id}
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type location: string
+    @param location: the path of the location
+
+    @type component: int
+    @param component: the id of the component
+
+    @type archive: int
+    @param archive: the id of the archive
+
+    @rtype: int
+    @return: the database id for the location
+
+    """
     global location_id_cache
 
     cache_key = location + '_' + component + '_' + location
@@ -213,6 +341,22 @@ def get_location_id (location, component, archive):
     return location_id
 
 def get_source_id (source, version):
+    """
+    Returns database id for the combination of C{source} and C{version}
+      - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
+      - B{version}
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type source: string
+    @param source: source package name
+
+    @type version: string
+    @param version: the source version
+
+    @rtype: int
+    @return: the database id for the source
+
+    """
     global source_id_cache
 
     cache_key = source + '_' + version + '_'
@@ -229,7 +373,26 @@ def get_source_id (source, version):
 
     return source_id
 
-def get_suite_version(source, suite, arch):
+def get_suite_version(source, suite):
+    """
+    Returns database id for a combination of C{source} and C{suite}.
+
+      - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
+      - B{suite} - a suite name, eg. I{unstable}
+
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type source: string
+    @param source: source package name
+
+    @type suite: string
+    @param suite: the suite name
+
+    @rtype: string
+    @return: the version for I{source} in I{suite}
+
+    """
+
     global suite_version_cache
     cache_key = "%s_%s" % (source, suite)
 
@@ -299,6 +462,20 @@ def preload_binary_id_cache():
 ################################################################################
 
 def get_or_set_maintainer_id (maintainer):
+    """
+    If C{maintainer} does not have an entry in the maintainer table yet, create one
+    and return the new id.
+    If C{maintainer} already has an entry, simply return the existing id.
+
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type maintainer: string
+    @param maintainer: the maintainer name
+
+    @rtype: int
+    @return: the database id for the maintainer
+
+    """
     global maintainer_id_cache
 
     if maintainer_id_cache.has_key(maintainer):
@@ -316,6 +493,20 @@ def get_or_set_maintainer_id (maintainer):
 ################################################################################
 
 def get_or_set_keyring_id (keyring):
+    """
+    If C{keyring} does not have an entry in the C{keyrings} table yet, create one
+    and return the new id.
+    If C{keyring} already has an entry, simply return the existing id.
+
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type keyring: string
+    @param keyring: the keyring name
+
+    @rtype: int
+    @return: the database id for the keyring
+
+    """
     global keyring_id_cache
 
     if keyring_id_cache.has_key(keyring):
@@ -333,6 +524,21 @@ def get_or_set_keyring_id (keyring):
 ################################################################################
 
 def get_or_set_uid_id (uid):
+    """
+    If C{uid} does not have an entry in the uid table yet, create one
+    and return the new id.
+    If C{uid} already has an entry, simply return the existing id.
+
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type uid: string
+    @param uid: the uid.
+
+    @rtype: int
+    @return: the database id for the uid
+
+    """
+
     global uid_id_cache
 
     if uid_id_cache.has_key(uid):
@@ -350,6 +556,20 @@ def get_or_set_uid_id (uid):
 ################################################################################
 
 def get_or_set_fingerprint_id (fingerprint):
+    """
+    If C{fingerprint} does not have an entry in the fingerprint table yet, create one
+    and return the new id.
+    If C{fingerprint} already has an entry, simply return the existing id.
+
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type fingerprint: string
+    @param fingerprint: the fingerprint
+
+    @rtype: int
+    @return: the database id for the fingerprint
+
+    """
     global fingerprint_id_cache
 
     if fingerprint_id_cache.has_key(fingerprint):
@@ -367,6 +587,38 @@ def get_or_set_fingerprint_id (fingerprint):
 ################################################################################
 
 def get_files_id (filename, size, md5sum, location_id):
+    """
+    Returns -1, -2 or the file_id for filename, if its C{size} and C{md5sum} match an
+    existing copy.
+
+    The database is queried using the C{filename} and C{location_id}. If a file does exist
+    at that location, the existing size and md5sum are checked against the provided
+    parameters. A size or checksum mismatch returns -2. If more than one entry is
+    found within the database, a -1 is returned, no result returns None, otherwise
+    the file id.
+
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type filename: string
+    @param filename: the filename of the file to check against the DB
+
+    @type size: int
+    @param size: the size of the file to check against the DB
+
+    @type md5sum: string
+    @param md5sum: the md5sum of the file to check against the DB
+
+    @type location_id: int
+    @param location_id: the id of the location as returned by L{get_location_id}
+
+    @rtype: int / None
+    @return: Various return values are possible:
+               - -2: size/checksum error
+               - -1: more than one file found in database
+               - None: no file found in database
+               - int: file id
+
+    """
     global files_id_cache
 
     cache_key = "%s_%d" % (filename, location_id)
@@ -393,6 +645,20 @@ def get_files_id (filename, size, md5sum, location_id):
 ################################################################################
 
 def get_or_set_queue_id (queue):
+    """
+    If C{queue} does not have an entry in the queue table yet, create one
+    and return the new id.
+    If C{queue} already has an entry, simply return the existing id.
+
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type queue: string
+    @param queue: the queue name (no full path)
+
+    @rtype: int
+    @return: the database id for the queue
+
+    """
     global queue_id_cache
 
     if queue_id_cache.has_key(queue):
@@ -410,6 +676,31 @@ def get_or_set_queue_id (queue):
 ################################################################################
 
 def set_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
+    """
+    Insert a new entry into the files table and return its id.
+
+    @type filename: string
+    @param filename: the filename
+
+    @type size: int
+    @param size: the size in bytes
+
+    @type md5sum: string
+    @param md5sum: md5sum of the file
+
+    @type sha1sum: string
+    @param sha1sum: sha1sum of the file
+
+    @type sha256sum: string
+    @param sha256sum: sha256sum of the file
+
+    @type location_id: int
+    @param location_id: the id of the location as returned by L{get_location_id}
+
+    @rtype: int
+    @return: the database id for the new file
+
+    """
     global files_id_cache
 
     projectB.query("INSERT INTO files (filename, size, md5sum, sha1sum, sha256sum, location) VALUES ('%s', %d, '%s', '%s', '%s', %d)" % (filename, long(size), md5sum, sha1sum, sha256sum, location_id))
@@ -429,6 +720,18 @@ def set_files_id (filename, size, md5sum, sha1sum, sha256sum, location_id):
 ################################################################################
 
 def get_maintainer (maintainer_id):
+    """
+    Return the name of the maintainer behind C{maintainer_id}.
+
+    Results are kept in a cache during runtime to minimize database queries.
+
+    @type maintainer_id: int
+    @param maintainer_id: the id of the maintainer, eg. from L{get_or_set_maintainer_id}
+
+    @rtype: string
+    @return: the name of the maintainer
+
+    """
     global maintainer_cache
 
     if not maintainer_cache.has_key(maintainer_id):
@@ -440,10 +743,41 @@ def get_maintainer (maintainer_id):
 ################################################################################
 
 def get_suites(pkgname, src=False):
+    """
+    Return the suites in which C{pkgname} can be found. If C{src} is True query for source
+    package, else binary package.
+
+    @type pkgname: string
+    @param pkgname: name of the package
+
+    @type src: bool
+    @param src: if True look for source packages, false (default) looks for binary.
+
+    @rtype: list
+    @return: list of suites, or empty list if no match
+
+    """
     if src:
-        sql = "select suite_name from source, src_associations,suite where source.id=src_associations.source and source.source='%s' and src_associations.suite = suite.id"%pkgname
+        sql = """
+        SELECT suite_name
+        FROM source,
+             src_associations,
+             suite
+        WHERE source.id = src_associations.source
+        AND   source.source = '%s'
+        AND   src_associations.suite = suite.id
+        """ % (pkgname)
     else:
-        sql = "select suite_name from binaries, bin_associations,suite where binaries.id=bin_associations.bin and  package='%s' and bin_associations.suite = suite.id"%pkgname
+        sql = """
+        SELECT suite_name
+        FROM binaries,
+             bin_associations,
+             suite
+        WHERE binaries.id = bin_associations.bin
+        AND   package = '%s'
+        AND   bin_associations.suite = suite.id
+        """ % (pkgname)
+
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
 

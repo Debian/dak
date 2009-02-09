@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf8
 
-# Debian Archive Kit Database Update Script
+""" Database Update Script - debversion """
 # Copyright © 2008  Michael Casadevall <mcasadevall@debian.org>
 # Copyright © 2008  Roger Leigh <rleigh@debian.org>
 

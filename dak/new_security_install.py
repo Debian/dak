@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Wrapper for Debian Security team
+""" Wrapper for Debian Security team """
 # Copyright (C) 2006  Anthony Towns <ajt@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -20,13 +20,13 @@
 
 ################################################################################
 
+import apt_pkg, os, sys, pwd, time, commands
+
 from daklib import queue
 from daklib import logging
 from daklib import utils
 from daklib import database
-import apt_pkg, os, sys, pwd, time, re, commands
-
-re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$");
+from daklib.regexes import re_taint_free
 
 Cnf = None
 Options = None

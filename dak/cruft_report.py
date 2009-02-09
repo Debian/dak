@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Check for obsolete binary packages
+""" Check for obsolete binary packages """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -31,6 +31,7 @@ import commands, pg, os, sys, time, re
 import apt_pkg
 from daklib import database
 from daklib import utils
+from daklib.regexes import re_extract_src_version
 
 ################################################################################
 
@@ -377,7 +378,7 @@ def main ():
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        temp_filename = utils.temp_filename()
+        (fd, temp_filename) = utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if (result != 0):
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
@@ -429,7 +430,7 @@ def main ():
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
-            temp_filename = utils.temp_filename()
+            (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
                 sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
@@ -456,7 +457,7 @@ def main ():
                     bin2source[package]["version"] = version
                     bin2source[package]["source"] = source
                 if source.find("(") != -1:
-                    m = utils.re_extract_src_version.match(source)
+                    m = re_extract_src_version.match(source)
                     source = m.group(1)
                     version = m.group(2)
                 if not bin_pkgs.has_key(package):

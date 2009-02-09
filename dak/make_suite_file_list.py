@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
-# Generate file lists used by apt-ftparchive to generate Packages and Sources files
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+"""
+Generate file lists used by apt-ftparchive to generate Packages and Sources files
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +37,10 @@
 
 ################################################################################
 
-import copy, os, pg, sys
+import copy
+import os
+import pg
+import sys
 import apt_pkg
 from daklib import database
 from daklib import logging
@@ -41,10 +48,10 @@ from daklib import utils
 
 ################################################################################
 
-projectB = None
-Cnf = None
-Logger = None
-Options = None
+Cnf = None      #: Configuration, apt_pkg.Configuration
+projectB = None #: database connection, pgobject
+Logger = None   #: Logger object
+Options = None  #: Parsed CommandLine arguments
 
 ################################################################################
 
@@ -82,7 +89,7 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
         if not packages.has_key(delete_unique_id):
             continue
         delete_version = version[0]
-        delete_id = packages[delete_unique_id]["id"]
+        delete_id = packages[delete_unique_id]["sourceid"]
         delete_arch = packages[delete_unique_id]["arch"]
         if not Cnf.Find("Suite::%s::Untouchable" % (suite)) or Options["Force"]:
             if Options["No-Delete"]:
@@ -99,8 +106,8 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
 
 #####################################################
 
-# Per-suite&pkg: resolve arch-all, vs. arch-any, assumes only one arch-all
 def resolve_arch_all_vs_any(versions, packages):
+    """ Per-suite&pkg: resolve arch-all, vs. arch-any, assumes only one arch-all """
     arch_all_version = None
     arch_any_versions = copy.copy(versions)
     for i in arch_any_versions:
@@ -131,8 +138,8 @@ def resolve_arch_all_vs_any(versions, packages):
 
 #####################################################
 
-# Per-suite&pkg&arch: resolve duplicate versions
 def remove_duplicate_versions(versions, packages):
+    """ Per-suite&pkg&arch: resolve duplicate versions """
     # Sort versions into descending order
     versions.sort(version_cmp)
     dominant_versions = versions[0]
@@ -201,10 +208,10 @@ def write_legacy_mixed_filelist(suite, list, packages, dislocated_files):
     output = utils.open_file(filename, "w")
     # Generate the final list of files
     files = {}
-    for id in list:
-        path = packages[id]["path"]
-        filename = packages[id]["filename"]
-        file_id = packages[id]["file_id"]
+    for fileid in list:
+        path = packages[fileid]["path"]
+        filename = packages[fileid]["filename"]
+        file_id = packages[fileid]["file_id"]
         if suite == "stable" and dislocated_files.has_key(file_id):
             filename = dislocated_files[file_id]
         else:
@@ -217,8 +224,8 @@ def write_legacy_mixed_filelist(suite, list, packages, dislocated_files):
     keys = files.keys()
     keys.sort()
     # Write the list of files out
-    for file in keys:
-        output.write(file+'\n')
+    for outfile in keys:
+        output.write(outfile+'\n')
     output.close()
 
 ############################################################
@@ -234,11 +241,11 @@ def write_filelist(suite, component, arch, type, list, packages, dislocated_file
     output = utils.open_file(filename, "w")
     # Generate the final list of files
     files = {}
-    for id in list:
-        path = packages[id]["path"]
-        filename = packages[id]["filename"]
-        file_id = packages[id]["file_id"]
-        pkg = packages[id]["pkg"]
+    for fileid in list:
+        path = packages[fileid]["path"]
+        filename = packages[fileid]["filename"]
+        file_id = packages[fileid]["file_id"]
+        pkg = packages[fileid]["pkg"]
         if suite == "stable" and dislocated_files.has_key(file_id):
             filename = dislocated_files[file_id]
         else:
@@ -264,12 +271,12 @@ def write_filelists(packages, dislocated_files):
         suite = packages[unique_id]["suite"]
         component = packages[unique_id]["component"]
         arch = packages[unique_id]["arch"]
-        type = packages[unique_id]["type"]
+        packagetype = packages[unique_id]["filetype"]
         d.setdefault(suite, {})
         d[suite].setdefault(component, {})
         d[suite][component].setdefault(arch, {})
-        d[suite][component][arch].setdefault(type, [])
-        d[suite][component][arch][type].append(unique_id)
+        d[suite][component][arch].setdefault(packagetype, [])
+        d[suite][component][arch][packagetype].append(unique_id)
     # Flesh out the index
     if not Options["Suite"]:
         suites = Cnf.SubTree("Suite").List()
@@ -282,7 +289,6 @@ def write_filelists(packages, dislocated_files):
         else:
             components = utils.split_args(Options["Component"])
         udeb_components = Cnf.ValueList("Suite::%s::UdebComponents" % (suite))
-        udeb_components = udeb_components
         for component in components:
             d[suite].setdefault(component, {})
             if component in udeb_components:
@@ -299,8 +305,8 @@ def write_filelists(packages, dislocated_files):
                     types = [ "dsc" ]
                 else:
                     types = binary_types
-                for type in types:
-                    d[suite][component][arch].setdefault(type, [])
+                for packagetype in types:
+                    d[suite][component][arch].setdefault(packagetype, [])
     # Then walk it
     for suite in d.keys():
         if Cnf.has_key("Suite::%s::Components" % (suite)):
@@ -308,25 +314,25 @@ def write_filelists(packages, dislocated_files):
                 for arch in d[suite][component].keys():
                     if arch == "all":
                         continue
-                    for type in d[suite][component][arch].keys():
-                        list = d[suite][component][arch][type]
+                    for packagetype in d[suite][component][arch].keys():
+                        filelist = d[suite][component][arch][packagetype]
                         # If it's a binary, we need to add in the arch: all debs too
                         if arch != "source":
                             archall_suite = Cnf.get("Make-Suite-File-List::ArchAllMap::%s" % (suite))
                             if archall_suite:
-                                list.extend(d[archall_suite][component]["all"][type])
+                                filelist.extend(d[archall_suite][component]["all"][packagetype])
                             elif d[suite][component].has_key("all") and \
-                                     d[suite][component]["all"].has_key(type):
-                                list.extend(d[suite][component]["all"][type])
-                        write_filelist(suite, component, arch, type, list,
+                                     d[suite][component]["all"].has_key(packagetype):
+                                filelist.extend(d[suite][component]["all"][packagetype])
+                        write_filelist(suite, component, arch, packagetype, filelist,
                                        packages, dislocated_files)
         else: # legacy-mixed suite
-            list = []
+            filelist = []
             for component in d[suite].keys():
                 for arch in d[suite][component].keys():
-                    for type in d[suite][component][arch].keys():
-                        list.extend(d[suite][component][arch][type])
-            write_legacy_mixed_filelist(suite, list, packages, dislocated_files)
+                    for packagetype in d[suite][component][arch].keys():
+                        filelist.extend(d[suite][component][arch][packagetype])
+            write_legacy_mixed_filelist(suite, filelist, packages, dislocated_files)
 
 ################################################################################
 
@@ -369,13 +375,13 @@ SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name, f.id,
     packages = {}
     unique_id = 0
     for i in ql:
-        (id, pkg, arch, version, path, filename, component, file_id, suite, type) = i
+        (sourceid, pkg, arch, version, path, filename, component, file_id, suite, filetype) = i
         # 'id' comes from either 'binaries' or 'source', so it's not unique
         unique_id += 1
-        packages[unique_id] = Dict(id=id, pkg=pkg, arch=arch, version=version,
+        packages[unique_id] = Dict(sourceid=sourceid, pkg=pkg, arch=arch, version=version,
                                    path=path, filename=filename,
                                    component=component, file_id=file_id,
-                                   suite=suite, type = type)
+                                   suite=suite, filetype = filetype)
     cleanup(packages)
     write_filelists(packages, dislocated_files)
 

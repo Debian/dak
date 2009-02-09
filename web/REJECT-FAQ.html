@@ -1,0 +1,587 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta name="description" content="Reject FAQ for Debians NEW Queue" />
+  <meta name="generator" content="GNU/Emacs" />
+
+  <title>Reject FAQ for Debian's NEW-Queue</title>
+  <link type="text/css" rel="stylesheet" href="style.css" />
+  <link rel="shortcut icon" href="http://www.debian.org/favicon.ico" />
+</head>
+
+<body>
+  <div class="c1">
+    <a href="http://www.debian.org/"><img src=
+    "http://www.debian.org/logos/openlogo-nd-50.png" border="0" hspace="0"
+    vspace="0" alt="" /></a> <a href="http://www.debian.org/"><img src=
+    "http://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace=
+    "0" alt="Debian Project" /></a>
+  </div><br />
+
+  <table class="reddy" width="100%">
+    <tr>
+      <td class="reddy"><img src="http://www.debian.org/Pics/red-upperleft.png" align="left" border=
+      "0" hspace="0" vspace="0" alt="" width="15" height="16" /></td>
+
+      <td rowspan="2" class="reddy">Reject FAQ for Debian's NEW-Queue</td>
+
+      <td class="reddy"><img src="http://www.debian.org/Pics/red-upperright.png" align="right" border=
+      "0" hspace="0" vspace="0" alt="" width="16" height="16" /></td>
+    </tr>
+
+    <tr>
+      <td class="reddy"><img src="http://www.debian.org/Pics/red-lowerleft.png" align="left" border=
+      "0" hspace="0" vspace="0" alt="" width="16" height="16" /></td>
+
+      <td class="reddy"><img src=
+      "http://www.debian.org/Pics/red-lowerright.png" align="right" border=
+      "0" hspace="0" vspace="0" alt="" width="15" height="16" /></td>
+    </tr>
+  </table>
+
+  <h2>Introduction</h2>
+
+  <p class="text">NEW checking is about three things. In order of
+  priority:</p>
+
+  <ul>
+    <li>trying to keep the archive legal,</li>
+
+    <li>trying to keep the package namespace sane,</li>
+
+    <li>trying to reduce the number of bugs in Debian.</li>
+  </ul>
+
+  <p class="text">Not all QA issues will be noticed; we don't test
+  packages, but we do look through them and note problems that jump out at
+  us. Sometimes that'll result in a bug, sometimes it will result in an
+  email, sometimes it will result in a REJECT, depending on how serious the
+  issue seems.</p>
+
+  <p class="text">Of course this does not take away the developers
+  responsibility to do their own QA before upload. Its the maintainer who
+  is responsible for everything that happens with a bad package, not the
+  ftpteam!</p>
+
+  <p class="text">All items are things that <b>really</b> should never
+  happen anyway, but exist in some packages nonetheless. Visit this list
+  from time to time, as we may change points or add new ones.</p>
+
+  <p class="text">Note: This is a purely informational list, there may be
+  more reasons. If there is a third column it states the date when the
+  entry was added to this list.</p>
+
+  <p class="text">If you want to make it easy for us, then please state
+  <b>why</b> you've added a NEW binary package or renamed source. A simple
+  <i>New upstream</i> or <i>Fixed bug</i> isn't great.</p>
+
+  <table border="0">
+    <tr>
+      <th class="reject" colspan="3">Serious violations (direct rejects
+      even if we only find one point)</th>
+    </tr>
+
+    <tr>
+      <td>OpenSSL</td>
+
+      <td>You have a GPL program linking with OpenSSL. This is only ok if
+      upstream gave a license exception for this otherwise the two licenses
+      are incompatible. Visit <a href=
+      "http://www.openssl.org/support/faq.html#LEGAL2">the OpenSSL FAQ</a>
+      or/and <a href=
+      "http://www.gnome.org/~markmc/openssl-and-the-gpl.html">another
+      infotext</a> for more information.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>CDBS</td>
+
+      <td>
+        You have a cdbs package and for whatever reason turned on the
+        <i>play with my debian/control in a bad way</i> option. See
+        <a href="http://bugs.debian.org/311724">#311724</a> for a long text
+        on that matter.<br />
+        Small overview: The <i>DEB_AUTO_UPDATE_DEBIAN_CONTROL</i> option
+        turned on modifies Build-Depends, which doesn't affect the build
+        that's running. But it affects all following builds, which can be
+        NMU, buildd builds and worst case: security builds. You <b>DO
+        NOT</b> want to have such a build getting a different result
+        (except for the small changes intended with the build) just because
+        there is now another thing in the build-depends.<br />
+        Two solutions for this:
+
+        <ol>
+          <li>Think about it and set the Build-Depends yourself. That's
+          <b>easy</b> and you can check them in pbuilder.</li>
+
+          <li>Do this only in a special target in debian/rules that is
+          NEVER called automagically. So you can check what it did before
+          you start the real build.</li>
+        </ol>
+      </td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>PHP License</td>
+
+      <td>You have a PHP add-on package (any php script/"app"/thing, not
+      PHP itself) and its licensed only under the standard PHP license.
+      That license, up to the 3.x which is actually out, is not really
+      usable for anything else than PHP itself.
+	  <a href="http://lists.debian.org/debian-legal/2005/08/msg00128.html">I've
+      mailed</a> our -legal list about that and got only one response,
+      which basically supported my view on this. Basically this license
+      talks only about PHP, the PHP Group and <i>includes Zend Engine</i>,
+      so its not applicable to anything else. And even worse, older
+      versions include the nice ad-clause.<br />
+      One good solution here is to suggest a license change to your
+      upstream, as they clearly wanted a free one. LGPL or BSD seems to be
+      what they want.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>License</td>
+
+      <td>Be sure that you correctly document the license of the package.
+      We often find packages having a GPL COPYING file in the source, but
+      if one goes and looks at every file there are a few here and there
+      having different licenses in them, sometimes as bad as <i>You aren't
+      allowed to do anything with this file, and if you do we will send our
+      lawyers to you</i>. Of course it's hard to check a tarball with
+      thousands of files (think about X, KDE, Kernel or similar big
+      packages), but most of the tarballs aren't that big. Also not-nice is
+      a package, itself being GPL, having documentation licensed with a
+      non-free license, like the CC licenses. Makes the original tarball
+      non-free, this is one of the cases where you need to repackage it
+      (look in the archive for examples, mostly having .dfsg. in their
+      tarballs name).</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Transition</td>
+
+      <td>You <i>break</i> a transition. Like, in the past we had the
+		C++ one, but there might be any number of transitions running.
+<!--       Well, right at the moment it's the -->
+<!--       nice C++ ABI thing, but in the future it may be something else. For -->
+<!--       this C++ one it's basically - if you link against libstdc++5 you are -->
+<!--       out, <b>EXCEPT</b> if you declare a special Build-Depends on the -->
+<!--       right compiler to get this, which most people haven't done, it's -->
+<!--       nearly always not a part of the updated build environment.<br /> -->
+<!--       Also having dependencies on non-transitioned C++-libraries gets you -->
+<!--       rejected. I think most important libs are done, but until recently a -->
+<!--       nice candidate was libqt[whatever]c102. Watch out for c102 names in -->
+<!--       your Depends lines if you want to be sure. -->
+	  </td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Experimental Library</td>
+
+      <td>Also not good is to build against a version of a library only in
+      experimental, but uploading to unstable. We may not detect all of
+      that, but if it happens the package will be rejected.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Hijack</td>
+
+      <td>You try to hijack a package of an active maintainer ( or team).
+      Don't do that.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Package split</td>
+
+      <td>You split a package too much or in a broken way. Well, broken or
+      too much is a wide definition, so this is a case-by-case thing, but
+      you should really think about a split before you do it. For example
+      it doesn't make any sense to split a 50k arch:all package from a 250k
+      arch:any one. Or splitting a package for only one file, depending on
+      the main package. Yes, big dependency chains can be a reason. Or big
+      documentation splitted into one -doc package. The point there is
+      <b>big</b>.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>FTBFSIASW</td>
+
+      <td>Your package <b>fails to build from source in a sane way</b>. A
+      good example is behind  <a href="http://bugs.debian.org/300683">#300683</a>,
+	  but I can think of more creative ways to do it. Basically you need be able
+	  to build all .debs with only one call to debian/rules. Not two, not three.
+	  Not an extra script.<br />
+      This only includes .debs that should get uploaded. Stuff that's only
+      built by users for their local system doesn't matter.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+	<tr>
+	  <td>debian/control breakage #2</td>
+
+	  <td>Your package builds binary packages not listed in
+		debian/control.
+		While this is technically possible it is not allowed, all
+		binaries need to be listed in your control file *prior* to the
+		build (ie. that information needs to be included in the uploaded
+		source). This mostly happens to kernel-module packages.<br />
+
+		Now, if you follow Policy you have
+		<a href="http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-sourcecontrolfiles">
+		Section 5.2 (Source package control files -- debian/control)</a>
+		which says
+
+		<p class="text">
+		<cite>The debian/control file contains the most vital (and
+		version-independent) information about the source package and
+		about the binary packages it creates.<br />
+
+		The first paragraph of the control file contains information
+		about the source package in general. The subsequent sets each
+		describe a binary package that the source tree builds.
+		</cite>
+		</p>
+
+		Next location to look is
+		<a href="http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-debiansourcecontrolfiles"> 
+		Section 5.4 (Debian source control files -- .dsc)</a> which says
+
+		<p class="text">
+		<cite>The source package control file is generated by
+		dpkg-source when it builds the source archive, from other files
+		in the source package,
+		</cite>
+		</p>
+
+		which basically means that everything must be defined at the
+		beginning of the build.<br/>
+
+		Following the Binary reference we find
+		<a href="http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Binary">
+		Section 5.6.19 (Binary)</a> where the important part reads
+
+		<p class="text">
+		<cite>
+		When it appears in the .dsc file it is the list of binary
+		packages which a source package can produce. It does not
+		necessarily produce all of these binary packages for every
+		architecture. The source control file doesn't contain details of
+		which architectures are appropriate for which of the binary
+		packages.
+		</cite>
+		</p>
+
+		Putting all of that together you can simplify it with
+        <em>debian/control has to contain a list of binaries to be built
+        <b>before</b> the build-process starts, do not modify that in
+        the running build-process.</em>
+
+        <hr/>
+
+        Of course that makes life hard(er) for packages like kernel
+        modules. But not that much. There is nothing to say against a
+        target in <i>debian/rules</i> that generates the control file
+        for you, <b>IFF</b> this is only run manually. And if you run in
+        troubles with debhelper's -a you may want to read man debhelper(7) for
+        the -s switch.
+	  </td>
+
+	  <td>Feb 2006</td>
+	</tr>
+    <tr>
+      <td>Copyright</td>
+
+      <td>Your debian/copyright file must have at least the minimum needed
+      stuff. A good overview of what you need is behind
+      <a href="http://lists.debian.org/debian-devel-announce/2006/03/msg00023.html">this mail</a>.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>License II</td>
+      <td>If the upstream tarball does not include a copy of the license,
+	debian/copyright must document when and how the license information was
+	obtained (i.e. include "Downloaded by John Doe on 2008-12-24 from
+	http://example.net/license" or reproduce email correspondence including
+	some header) in addition to the reproducing the license itself.
+      In the past there were uploads where one couldn't
+      find the license statement in the tarball or on the website from
+      upstream, which is bad.
+      </td>
+      <td>Revised Dec 2008</td>
+     </tr>
+    <tr>
+      <td>License III</td>
+      <td>You need to list <b>all</b>
+      copyright information with all licenses in the copyright file itself. That one has
+      to be the single point of information. Only files you find in /usr/share/common-licenses
+      have a special exception here, everthing else needs to be fully included!</td>
+      <td>Revised Dec 2008</td>
+    </tr>
+
+    <tr>
+      <td>Non-Main</td>
+
+      <td>If you want your package in main it must <b>not</b>
+      (Build-)Depend: or Recommend: a package which isn't in main too.
+      That's what we have contrib for.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Package Content</td>
+
+      <td>You most probably want to have some content in your package. From
+      time to time we find packages which don't have any. An example is a
+      rename of a lib* package, but to miss updating the place where the
+      files are installed.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Policy Violation</td>
+
+      <td>It should really not violate policy, for example violating FHS.
+      Like installing libFOO.so in /usr/share, creating random new
+      /pathentries or any other obvious policy violation.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Contents of orig.tar.gz</td>
+
+      <td>If you rebuild the orig.tar.gz (in the few cases this is needed,
+      most of the times it is NOT) - be sure to not include .so/.a/other
+      compiled files. You should also exclude
+      .cvs/.svn/.whatever_your_version_control_system_has directories you
+      added.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Lintian</td>
+
+      <td>Lintian errors and warnings, without a good reason to ignore them
+      can get you a reject. Sometimes there are valid reasons, but then you
+      should either file a bug against lintian if it's generally wrong or
+      include an override in your package, giving a reason in the changelog
+      for it.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>rpath</td>
+
+      <td>Watch out if you include a rpath in your binaries. Most of the
+      time this is not what you want but it is easy to fix. See
+	  <a href="http://wiki.debian.org/RpathIssue">this Wiki</a> for
+      more.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Package name</td>
+
+      <td>Use the right package names. A lib should start with lib, a perl
+      module with lib and end with -perl, etc.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>Common license</td>
+
+      <td>Do not include a license that is in /usr/share/common-licenses
+      into your debian/copyright. That's a waste of space.</td>
+
+      <td>&nbsp;</td>
+    </tr>
+    
+    <tr>
+      <td>Renaming source for DFSG-removals</td>
+      
+      <td>Do not rename the source if you delete files that are not DFSG free.
+      Instead add a .dfsg. somewhere to the version part to mark it. Renaming the source
+      just confuses tools like the PTS who are source-package based, and also confuses
+      users who cant simply fetch sources anymore without looking what source package
+      it is first.
+      </td>
+      
+      <td>June 2006</td>
+    </tr>
+
+	<tr>
+	  <td>Wrong license pointer</td>
+
+	  <td>Be careful at what file in /usr/share/common-licenses you
+		point. (L)GPL is <b>only</b> correct if the licensing allows you
+		to chose "or any later" version. If it does not and you have a
+		licensing that does not give you that option you have to use the
+		versioned file (L)GPL-2 or -3.</td>
+	  <td>Januar 2008</td>
+	</tr>
+
+	<tr>
+	  <td>Symbol file wrong</td>
+
+	  <td>Your symbol file contains errors, as reported from lintian
+		with the two tags
+		<i>symbols-file-contains-current-version-with-debian-revision</i>
+		and <i>symbols-file-contains-debian-revision</i>.
+	  </td>
+	  <td>Januar 2008</td>
+	</tr>
+	<tr>
+	  <td>Source missing</td>
+	  <td>Your packages contains files that need source
+	      but do not have it. These include PDF and PS files in the documentation.</td>
+	  <td>December 2008</td>
+	</tr>
+  </table><br />
+  <br />
+
+  <table border="0">
+    <tr>
+      <th class="reject" colspan="3">Minor issues, sometimes also named
+      "Good packaging behavior". Not a single one is enough to get you a
+      REJECT, but if you collect multiple ones the probability rises:</th>
+    </tr>
+
+    <tr>
+      <td>Description</td>
+
+      <td>Have a good description for your package. Both short and long.
+      You should know what your package does but your users don't. So write
+      something that they know what they get <b>before</b> they install it.
+      A simple <b>XY, it does stuff</b> is nothing that should get
+      uploaded.</td>
+
+      <td>August 2005</td>
+    </tr>
+
+    <tr>
+      <td>Repackage orig.tar.gz</td>
+
+      <td>Do not repackage your orig.tar.gz unless you have to. If you need
+      to remove files due to license issues - OK. But for example to have
+      the directory in the tarball named pkgname-ver you DO NOT repackage.
+      dpkg-source completely doesn't care about that.</td>
+
+      <td>August 2005</td>
+    </tr>
+
+    <tr>
+      <td>Native/Non-Native</td>
+
+      <td>Be sure to look for native/non-native build. Its easy to build a
+      package native because you had a spelling error in the upstream
+      tarballs name. Simple solution: Whenever you have a -X in your
+      version number (ie a debian-revision) look if you have a .diff.gz
+      before you upload.</td>
+
+      <td>August 2005</td>
+    </tr>
+
+    <tr>
+      <td>Multiple versions</td>
+
+      <td>Do not add the third version of a lib/program. Get RID of them
+      instead. Always try to not have more than two version of a
+      library/program in, and that also only if its needed due to a hard
+      transition to the newer one.</td>
+
+      <td>August 2005</td>
+    </tr>
+
+    <tr>
+      <td>debian/rules</td>
+
+      <td>Have a clear debian/rules file. A bad example are the dh-make
+      templates. As the name says: they are templates. Edit them, test your
+      package and then delete the whole bunch of commands that are
+      commented out, make it hard to read and do not help. If you later
+      need anything: Type dh_[TAB][TAB] to see whats available.</td>
+
+      <td>August 2005</td>
+    </tr>
+
+    <tr>
+      <td>.ex files</td>
+
+      <td>Remove the .ex files from debian/. They are examples not meant to
+      stay around.</td>
+
+      <td>August 2005</td>
+    </tr>
+
+    <tr>
+      <td>Standards-Version</td>
+
+      <td>Standards-Version should be the latest available one, not any
+      ancient that may happen to get in with a template you use.</td>
+
+      <td>August 2005</td>
+    </tr>
+
+    <tr>
+      <td>Manpages</td>
+
+      <td>Write manpages. Yes. Really. Write them. Well. It's basically: If
+      your program/tool has a --help and --version commandline option you
+      can simply run
+	  <a href="http://packages.debian.org/help2man">help2man</a> and have a working
+      start. Such easy ones are near to a reject. Yes, there are things in
+      the archive where its hard to write manpages.</td>
+
+      <td>August 2005</td>
+    </tr>
+
+    <tr>
+      <td>Useless Settings</td>
+
+      <td>Having a "INSTALL_PROGRAM += -s" setting if nostrip option is set
+      while using dh_strip later. Useless, read man dh_strip please. There
+      may be other things like this, this is just a prominent example. If
+      they are there - remove them please.</td>
+
+      <td>August 2005</td>
+    </tr>
+  </table>
+
+  <p class="validate"><!-- hhmts start -->Last modified: Sat Dec 13 15:58:41 UTC 2008 <!-- hhmts end --></p>
+  <hr />
+  <a href="http://validator.w3.org/check?uri=referer">
+  <img border="0" src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Transitional"
+       height="31" width="88" /></a>
+  <a href="http://jigsaw.w3.org/css-validator/check/referer">
+  <img border="0" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!"
+       height="31" width="88" /></a>
+</body>
+</html>

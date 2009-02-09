@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Populate the DB
+""" Populate the DB """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -36,15 +36,13 @@
 
 ###############################################################################
 
-import commands, os, pg, re, sys, time
+import commands, os, pg, sys, time
 import apt_pkg
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import *
-
-###############################################################################
-
-re_arch_from_filename = re.compile(r"binary-[^/]+")
+from daklib.regexes import re_arch_from_filename, re_taint_free, re_no_epoch, \
+                           re_extract_src_version
 
 ###############################################################################
 
@@ -94,7 +92,7 @@ def reject (str, prefix="Rejected: "):
 ###############################################################################
 
 def check_signature (filename):
-    if not utils.re_taint_free.match(os.path.basename(filename)):
+    if not re_taint_free.match(os.path.basename(filename)):
         reject("!!WARNING!! tainted filename: '%s'." % (filename))
         return None
 
@@ -332,12 +330,12 @@ def process_sources (filename, suite, component, archive):
         package = Scanner.Section["package"]
         version = Scanner.Section["version"]
         directory = Scanner.Section["directory"]
-        dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)))
+        dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, re_no_epoch.sub('', version)))
         # Sometimes the Directory path is a lie; check in the pool
         if not os.path.exists(dsc_file):
             if directory.split('/')[0] == "dists":
                 directory = Cnf["Dir::PoolRoot"] + utils.poolify(package, component)
-                dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, utils.re_no_epoch.sub('', version)))
+                dsc_file = os.path.join(Cnf["Dir::Root"], directory, "%s_%s.dsc" % (package, re_no_epoch.sub('', version)))
         if not os.path.exists(dsc_file):
             utils.fubar("%s not found." % (dsc_file))
         install_date = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(dsc_file)))
@@ -355,7 +353,7 @@ def process_sources (filename, suite, component, archive):
         directory = poolify (directory, location)
         if directory != "" and not directory.endswith("/"):
             directory += '/'
-        no_epoch_version = utils.re_no_epoch.sub('', version)
+        no_epoch_version = re_no_epoch.sub('', version)
         # Add all files referenced by the .dsc to the files table
         ids = []
         for line in Scanner.Section["files"].split('\n'):
@@ -427,7 +425,7 @@ def process_packages (filename, suite, component, archive):
             source = Scanner.Section["source"]
         source_version = ""
         if source.find("(") != -1:
-            m = utils.re_extract_src_version.match(source)
+            m = re_extract_src_version.match(source)
             source = m.group(1)
             source_version = m.group(2)
         if not source_version:
@@ -477,7 +475,7 @@ def process_packages (filename, suite, component, archive):
 ###############################################################################
 
 def do_sources(sources, suite, component, server):
-    temp_filename = utils.temp_filename()
+    (fd, temp_filename) = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (sources, temp_filename))
     if (result != 0):
         utils.fubar("Gunzip invocation failed!\n%s" % (output), result)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Debian Archive Kit Database Update Script
+""" Database Update Main Script """
 # Copyright (C) 2008  Michael Casadevall <mcasadevall@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@
 import psycopg2, sys, fcntl, os
 import apt_pkg
 import time
+import errno
 from daklib import database
 from daklib import utils
 
@@ -52,7 +53,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 ################################################################################
 
     def update_db_to_zero(self):
-        # This function will attempt to update a pre-zero database schema to zero
+        """ This function will attempt to update a pre-zero database schema to zero """
 
         # First, do the sure thing, and create the configuration table
         try:
@@ -63,7 +64,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
                                   name TEXT UNIQUE NOT NULL,
                                   value TEXT
                                 );""")
-            c.execute("INSERT INTO config VALUES ( nextval('config_id_seq'), 'db_revision', '0')");
+            c.execute("INSERT INTO config VALUES ( nextval('config_id_seq'), 'db_revision', '0')")
             self.db.commit()
 
         except psycopg2.ProgrammingError:
@@ -84,7 +85,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         try:
             c = self.db.cursor()
-            q = c.execute("SELECT value FROM config WHERE name = 'db_revision';");
+            q = c.execute("SELECT value FROM config WHERE name = 'db_revision';")
             return c.fetchone()[0]
 
         except psycopg2.ProgrammingError:

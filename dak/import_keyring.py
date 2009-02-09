@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Imports a keyring into the database
+""" Imports a keyring into the database """
 # Copyright (C) 2007  Anthony Towns <aj@erisian.com.au>
 
 # This program is free software; you can redistribute it and/or modify
@@ -35,9 +35,9 @@ def get_uid_info():
     byname = {}
     byid = {}
     q = projectB.query("SELECT id, uid, name FROM uid")
-    for (id, uid, name) in q.getresult():
-        byname[uid] = (id, name)
-        byid[id] = (uid, name)
+    for (keyid, uid, name) in q.getresult():
+        byname[uid] = (keyid, name)
+        byid[keyid] = (uid, name)
     return (byname, byid)
 
 def get_fingerprint_info():
@@ -131,16 +131,16 @@ class Keyring:
             uid = entry["uid"][0]
             name = get_ldap_name(entry)
             fingerprints = entry["keyFingerPrint"]
-            id = None
+            keyid = None
             for f in fingerprints:
                 key = fpr_lookup.get(f, None)
                 if key not in keys: continue
                 keys[key]["uid"] = uid
 
-                if id != None: continue
-                id = database.get_or_set_uid_id(uid)
-                byuid[id] = (uid, name)
-                byname[uid] = (id, name)
+                if keyid != None: continue
+                keyid = database.get_or_set_uid_id(uid)
+                byuid[keyid] = (uid, name)
+                byname[uid] = (keyid, name)
 
         return (byname, byuid)
 
@@ -155,15 +155,15 @@ class Keyring:
                 keys[x]["uid"] = format % "invalid-uid"
             else:
                 uid = format % keys[x]["email"]
-                id = database.get_or_set_uid_id(uid)
-                byuid[id] = (uid, keys[x]["name"])
-                byname[uid] = (id, keys[x]["name"])
+                keyid = database.get_or_set_uid_id(uid)
+                byuid[keyid] = (uid, keys[x]["name"])
+                byname[uid] = (keyid, keys[x]["name"])
                 keys[x]["uid"] = uid
         if any_invalid:
             uid = format % "invalid-uid"
-            id = database.get_or_set_uid_id(uid)
-            byuid[id] = (uid, "ungeneratable user id")
-            byname[uid] = (id, "ungeneratable user id")
+            keyid = database.get_or_set_uid_id(uid)
+            byuid[keyid] = (uid, "ungeneratable user id")
+            byname[uid] = (keyid, "ungeneratable user id")
         return (byname, byuid)
 
 ################################################################################
@@ -237,14 +237,14 @@ def main():
     (db_uid_byname, db_uid_byid) = get_uid_info()
 
     ### Update full names of applicable users
-    for id in desuid_byid.keys():
-        uid = (id, desuid_byid[id][0])
-        name = desuid_byid[id][1]
-        oname = db_uid_byid[id][1]
+    for keyid in desuid_byid.keys():
+        uid = (keyid, desuid_byid[keyid][0])
+        name = desuid_byid[keyid][1]
+        oname = db_uid_byid[keyid][1]
         if name and oname != name:
             changes.append((uid[1], "Full name: %s" % (name)))
             projectB.query("UPDATE uid SET name = '%s' WHERE id = %s" %
-                (pg.escape_string(name), id))
+                (pg.escape_string(name), keyid))
 
     # The fingerprint table (fpr) points to a uid and a keyring.
     #   If the uid is being decided here (ldap/generate) we set it to it.
@@ -254,11 +254,11 @@ def main():
 
     fpr = {}
     for z in keyring.keys.keys():
-        id = db_uid_byname.get(keyring.keys[z].get("uid", None), [None])[0]
-        if id == None:
-            id = db_fin_info.get(keyring.keys[z]["fingerprints"][0], [None])[0]
+        keyid = db_uid_byname.get(keyring.keys[z].get("uid", None), [None])[0]
+        if keyid == None:
+            keyid = db_fin_info.get(keyring.keys[z]["fingerprints"][0], [None])[0]
         for y in keyring.keys[z]["fingerprints"]:
-            fpr[y] = (id,keyring_id)
+            fpr[y] = (keyid,keyring_id)
 
     # For any keys that used to be in this keyring, disassociate them.
     # We don't change the uid, leaving that for historical info; if
