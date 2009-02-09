@@ -99,41 +99,6 @@ class Urgency_Log:
 
 ###############################################################################
 
-def generate_contents_information(filename):
-    # Generate all the contents for the database
-    cmd = "ar t %s" % (filename)
-    (result, output) = commands.getstatusoutput(cmd)
-    if result != 0:
-        reject("%s: 'ar t' invocation failed." % (filename))
-        reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
-
-    # Ugh ... this is ugly ... Code ripped from process_unchecked.py
-    chunks = output.split('\n')
-    cmd = "ar x %s %s" % (filename, chunks[2])
-    (result, output) = commands.getstatusoutput(cmd)
-    if result != 0:
-        reject("%s: 'ar t' invocation failed." % (filename))
-        reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
-
-    # Got deb tarballs, now lets go through and determine what bits
-    # and pieces the deb had ...
-    if chunks[2] == "data.tar.gz":
-        data = tarfile.open("data.tar.gz", "r:gz")
-    elif data_tar == "data.tar.bz2":
-        data = tarfile.open("data.tar.bz2", "r:bz2")
-    else:
-        os.remove(chunks[2])
-        reject("couldn't find data.tar.*")
-
-    contents = []
-    for tarinfo in data:
-        if not tarinfo.isdir():
-            contents.append(tarinfo.name[2:])
-
-    os.remove(chunks[2])
-    return contents
-
-###############################################################################
 
 def reject (str, prefix="Rejected: "):
     global reject_message
@@ -394,7 +359,6 @@ def install ():
             source = files[file]["source package"]
             source_version = files[file]["source version"]
             filename = files[file]["pool name"] + file
-            contents = generate_contents_information(file)
             if not files[file].has_key("location id") or not files[file]["location id"]:
                 files[file]["location id"] = database.get_location_id(Cnf["Dir::Pool"],files[file]["component"],utils.where_am_i())
             if not files[file].has_key("files id") or not files[file]["files id"]:
@@ -410,6 +374,7 @@ def install ():
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
             # insert contents into the database
+            contents = utils.generate_contents_information(file)
             q = projectB.query("SELECT currval('binaries_id_seq')")
             bin_id = int(q.getresult()[0][0])
             for file in contents:
