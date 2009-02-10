@@ -71,6 +71,8 @@ def do_update(self):
                    INITCOND = ''
                    );""")
 
+        c.execute( "CREATE INDEX content_assocaitions_binary ON content_associations(binary_pkg)" )
+
         c.execute("UPDATE config SET value = '2' WHERE name = 'db_revision'")
         self.db.commit()
 

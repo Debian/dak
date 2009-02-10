@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 # vim:set et ts=4 sw=4:
 
-# Singleton pattern code
-# Copyright (C) 2008  Mark Hymers <mhy@debian.org>
+"""
+Singleton pattern code
 
-# Inspiration for this very simple ABC was taken from various documents /
-# tutorials / mailing lists.  This may not be thread safe but given that
-# (as I write) large chunks of dak aren't even type-safe, I'll live with
-# it for now
+Inspiration for this very simple ABC was taken from various documents /
+tutorials / mailing lists.  This may not be thread safe but given that
+(as I write) large chunks of dak aren't even type-safe, I'll live with
+it for now
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2008  Mark Hymers <mhy@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 ################################################################################
 

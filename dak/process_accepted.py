@@ -30,7 +30,7 @@
 ###############################################################################
 
 import errno, fcntl, os, sys, time, re
-import apt_pkg, tarfile, commands
+import apt_pkg, commands
 from daklib import database
 from daklib import logging
 from daklib import queue

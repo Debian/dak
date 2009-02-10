@@ -6,6 +6,7 @@
 @copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 @copyright: 2008-2009  Mark Hymers <mhy@debian.org>
 @copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@copyright: 2009  Mike O'Connor <stew@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -32,8 +33,8 @@
 
 ################################################################################
 
+import os
 import psycopg2
-from psycopg2.extras import DictCursor
 
 from Singleton import Singleton
 from Config import Config
@@ -70,7 +71,13 @@ class DBConn(Singleton):
 
     ## Connection functions
     def __createconn(self):
-        connstr = Config().GetDBConnString()
+        cnf = Config()
+        connstr = "dbname=%s" % cnf["DB::Name"]
+        if cnf["DB::Host"]:
+           connstr += " host=%s" % cnf["DB::Host"]
+        if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+           connstr += " port=%s" % cnf["DB::Port"]
+
         self.db_con = psycopg2.connect(connstr)
 
     def reconnect(self):
@@ -91,6 +98,8 @@ class DBConn(Singleton):
                        'architecture':  Cache(),
                        'archive':       Cache(),
                        'component':     Cache(),
+                       'content_path_names':     Cache(),
+                       'content_file_names':     Cache(),
                        'location':      Cache(lambda x: '%s_%s_%s' % (x['location'], x['component'], x['location'])),
                        'maintainer':    {}, # TODO
                        'keyring':       {}, # TODO
@@ -322,3 +331,84 @@ class DBConn(Singleton):
           AND su.suite_name=%(suite)s
           AND s.source=%(source)""", {'suite': suite, 'source': source}, cachename='suite_version')
 
+
+    def get_or_set_contents_file_id(self, filename):
+        """
+        Returns database id for given filename.
+
+        Results are kept in a cache during runtime to minimize database queries.
+        If no matching file is found, a row is inserted.
+
+        @type filename: string
+        @param filename: The filename
+
+        @rtype: int
+        @return: the database id for the given component
+        """
+        values={'value': filename}
+        query = "SELECT id FROM content_file_names WHERE file = %(value)s"
+        id = self.__get_single_id(query, values, cachename='content_file_names')
+        if not id:
+            c = self.db_con.cursor()
+            c.execute( "INSERT INTO content_file_names VALUES (DEFAULT, %(value)s) RETURNING id",
+                       values )
+
+            id = c.fetchone()[0]
+            self.caches['content_file_names'].SetValue(values, id)
+
+        return id
+
+    def get_or_set_contents_path_id(self, path):
+        """
+        Returns database id for given path.
+
+        Results are kept in a cache during runtime to minimize database queries.
+        If no matching file is found, a row is inserted.
+
+        @type path: string
+        @param path: The filename
+
+        @rtype: int
+        @return: the database id for the given component
+        """
+        values={'value': path}
+        query = "SELECT id FROM content_file_paths WHERE path = %(value)s"
+        id = self.__get_single_id(query, values, cachename='content_path_names')
+        if not id:
+            c = self.db_con.cursor()
+            c.execute( "INSERT INTO content_file_paths VALUES (DEFAULT, %(value)s) RETURNING id",
+                       values )
+
+            id = c.fetchone()[0]
+            self.caches['content_path_names'].SetValue(values, id)
+
+        return id
+
+    def insert_content_paths(self, bin_id, fullpaths):
+        """
+        Make sure given path is associated with given binary id
+
+        @type bin_id: int
+        @param bin_id: the id of the binary
+        @type fullpath: string
+        @param fullpath: the path of the file being associated with the binary
+        """
+
+        c = self.db_con.cursor()
+
+        for fullpath in fullpaths:
+            c.execute( "BEGIN WORK" )
+            (path, file) = os.path.split(fullpath)
+
+            # Get the necessary IDs ...
+            file_id = self.get_or_set_contents_file_id(file)
+            path_id = self.get_or_set_contents_path_id(path)
+
+            # Determine if we're inserting a duplicate row
+
+            c.execute("SELECT 1 FROM content_associations WHERE binary_pkg = '%d' AND filepath = '%d' AND filename = '%d'" % (int(bin_id), path_id, file_id))
+            if not c.fetchone():
+                # no, we are not, do the insert
+
+                c.execute("INSERT INTO content_associations VALUES (DEFAULT, '%d', '%d', '%d')" % (bin_id, path_id, file_id))
+        c.execute( "COMMIT" )

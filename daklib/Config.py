@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
-# Config access class
-# Copyright (C) 2008  Mark Hymers <mhy@debian.org>
+"""
+Config access class
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2008  Mark Hymers <mhy@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,14 +75,9 @@ class Config(Singleton):
     def _startup(self, *args, **kwargs):
         self._readconf()
 
+    def has_key(self, name):
+        return self.Cnf.has_key(name)
+
     def __getitem__(self, name):
         return self.Cnf[name]
 
-    def GetDBConnString(self):
-        s = "dbname=%s" % self.Cnf["DB::Name"]
-        if self.Cnf["DB::Host"]:
-            s += " host=%s" % self.Cnf["DB::Host"]
-        if self.Cnf["DB::Port"] and self.Cnf["DB::Port"] != "-1":
-            s += " port=%s" % self.Cnf["DB::Port"]
-
-        return s

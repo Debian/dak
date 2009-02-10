@@ -37,6 +37,7 @@ import stat
 import apt_pkg
 import database
 import time
+import tarfile
 from dak_exceptions import *
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
@@ -1468,7 +1469,7 @@ def generate_contents_information(filename):
         # and pieces the deb had ...
         if chunks[2] == "data.tar.gz":
             data = tarfile.open("data.tar.gz", "r:gz")
-        elif data_tar == "data.tar.bz2":
+        elif chunks[2] == "data.tar.bz2":
             data = tarfile.open("data.tar.bz2", "r:bz2")
         else:
             os.remove(chunks[2])
