@@ -2,9 +2,10 @@
 #
 # Executed after cron.unchecked
 
+ARCHS_oldstable="alpha amd64 arm hppa i386 ia64 mips mipsel powerpc sparc s390"
 ARCHS_stable="alpha amd64 arm hppa i386 ia64 mips mipsel powerpc sparc s390"
 ARCHS_testing="alpha amd64 armel hppa i386 ia64 mips mipsel powerpc sparc s390"
-DISTS="stable testing"
+DISTS="oldstable stable testing"
 SSH_SOCKET=~/.ssh/buildd.debian.org.socket
 
 set -e
