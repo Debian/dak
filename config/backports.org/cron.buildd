@@ -1,0 +1,10 @@
+#! /bin/bash -e
+
+# Executed hourly via cron, out of katie's crontab.
+# stolen from newraff and adjusted by aba on 2005-04-30
+#exit 0
+
+export SCRIPTVARS=/org/backports.org/dak-config/vars
+. $SCRIPTVARS
+ssh -i $base/s3kr1t/dot-ssh/id_rsa wanna-build@wanna-build.farm.ftbfs.de echo broken
+exit 0

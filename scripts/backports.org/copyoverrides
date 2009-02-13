@@ -1,0 +1,29 @@
+#! /bin/sh
+
+set -e
+. $SCRIPTVARS
+echo 'Copying override files into public view ...'
+
+for f in $copyoverrides ; do
+	cd $overridedir
+	chmod g+w override.$f
+
+	cd $indices
+	rm -f .newover-$f.gz
+	pc="`gzip 2>&1 -9nv <$overridedir/override.$f >.newover-$f.gz`"
+	set +e
+	nf=override.$f.gz
+	cmp -s .newover-$f.gz $nf
+	rc=$?
+	set -e
+        if [ $rc = 0 ]; then
+		rm -f .newover-$f.gz
+	elif [ $rc = 1 -o ! -f $nf ]; then
+		echo "   installing new $nf $pc"
+		mv -f .newover-$f.gz $nf
+		chmod g+w $nf
+	else
+		echo $? $pc
+		exit 1
+	fi
+done
