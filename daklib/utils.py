@@ -38,6 +38,7 @@ import apt_pkg
 import database
 import time
 import re
+import string
 import email as modemail
 from dak_exceptions import *
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
