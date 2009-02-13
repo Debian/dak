@@ -105,4 +105,5 @@ re_gpg_fingerprint = re.compile(r"^fpr:+(.*):$", re.MULTILINE);
 re_user_address = re.compile(r"^pub:.*<(.*)@.*>.*$", re.MULTILINE);
 re_user_mails = re.compile(r"^(pub|uid):[^rdin].*<(.*@.*)>.*$", re.MULTILINE);
 re_user_name = re.compile(r"^pub:.*:(.*)<.*$", re.MULTILINE);
+re_re_mark = re.compile(r'^RE:')
 

@@ -37,11 +37,12 @@ import stat
 import apt_pkg
 import database
 import time
+import re
 import email as modemail
 from dak_exceptions import *
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
-                    re_parse_maintainer, re_taint_free, re_gpg_uid
+                    re_parse_maintainer, re_taint_free, re_gpg_uid, re_re_mark
 
 ################################################################################
 
@@ -607,11 +608,10 @@ def send_mail (message, filename=""):
 
         whitelist = [];
         whitelist_in = open_file(Cnf["Dinstall::MailWhiteList"])
-        RE_mark = re.compile(r'^RE:')
         try:
             for line in whitelist_in:
-                if RE_mark.match(line):
-                    whitelist.append(re.compile(RE_mark.sub("", line.strip(), 1)))
+                if re_re_mark.match(line):
+                    whitelist.append(re.compile(re_re_mark.sub("", line.strip(), 1)))
                 else:
                     whitelist.append(re.compile(re.escape(line.strip())))
         finally:
