@@ -37,6 +37,7 @@ import stat
 import apt_pkg
 import database
 import time
+import email as modemail
 from dak_exceptions import *
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
@@ -597,6 +598,68 @@ def send_mail (message, filename=""):
         (fd, filename) = tempfile.mkstemp()
         os.write (fd, message)
         os.close (fd)
+
+    if Cnf.has_key("Dinstall::MailWhiteList") and \
+           Cnf["Dinstall::MailWhiteList"] != "":
+        message_in = open_file(filename)
+        message_raw = modemail.message_from_file(message_in)
+        message_in.close();
+
+        whitelist = [];
+        whitelist_in = open_file(Cnf["Dinstall::MailWhiteList"])
+        RE_mark = re.compile(r'^RE:')
+        try:
+            for line in whitelist_in:
+                if RE_mark.match(line):
+                    whitelist.append(re.compile(RE_mark.sub("", line.strip(), 1)))
+                else:
+                    whitelist.append(re.compile(re.escape(line.strip())))
+        finally:
+            whitelist_in.close()
+
+        # Fields to check.
+        fields = ["To", "Bcc", "Cc"]
+        for field in fields:
+            # Check each field
+            value = message_raw.get(field, None)
+            if value != None:
+                match = [];
+                for item in value.split(","):
+                    (rfc822_maint, rfc2047_maint, name, email) = fix_maintainer(item.strip())
+                    mail_whitelisted = 0
+                    for wr in whitelist:
+                        if wr.match(email):
+                            mail_whitelisted = 1
+                            break
+                    if not mail_whitelisted:
+                        print "Skipping %s since it's not in %s" % (item, Cnf["Dinstall::MailWhiteList"])
+                        continue
+                    match.append(item)
+
+                # Doesn't have any mail in whitelist so remove the header
+                if len(match) == 0:
+                    del message_raw[field]
+                else:
+                    message_raw.replace_header(field, string.join(match, ", "))
+
+        # Change message fields in order if we don't have a To header
+        if not message_raw.has_key("To"):
+            fields.reverse()
+            for field in fields:
+                if message_raw.has_key(field):
+                    message_raw[fields[-1]] = message_raw[field]
+                    del message_raw[field]
+                    break
+            else:
+                # Clean up any temporary files
+                # and return, as we removed all recipients.
+                if message:
+                    os.unlink (filename);
+                return;
+
+        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0700);
+        os.write (fd, message_raw.as_string(True));
+        os.close (fd);
 
     # Invoke sendmail
     (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
