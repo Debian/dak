@@ -7,6 +7,7 @@ Central repository of regexes for dak
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 @copyright: 2009  Mark Hymers <mhy@debian.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -97,3 +98,11 @@ re_build_dep_arch = re.compile(r"\[[^]]+\]")
 
 # From dak/transitions.py
 re_broken_package = re.compile(r"[a-zA-Z]\w+\s+\-.*")
+
+# From dak/add_user.py
+re_gpg_fingerprint = re.compile(r"^fpr:+(.*):$", re.MULTILINE);
+# The next one is dirty
+re_user_address = re.compile(r"^pub:.*<(.*)@.*>.*$", re.MULTILINE);
+re_user_mails = re.compile(r"^(pub|uid):[^rdin].*<(.*@.*)>.*$", re.MULTILINE);
+re_user_name = re.compile(r"^pub:.*:(.*)<.*$", re.MULTILINE);
+

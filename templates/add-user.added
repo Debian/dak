@@ -1,0 +1,18 @@
+From: __FROM_ADDRESS__
+To: __NEW_MAINTAINER__
+Subject: Account on __HOSTNAME__ activated
+
+Hi __UID__,
+
+your account on __HOSTNAME__ has just been activated. You are now able
+to upload packages there, using dput or dupload as you wish.
+The gpg-key you need to sign your packages with is key 0x__KEYID__
+with the fingerprint __PRIMARY_KEY__.
+
+__SUMMARY__
+
+This message was generated automatically; if you believe that there is
+a problem with it please contact the archive administrators by mailing
+__ADMIN_ADDRESS__.
+
+__DISTRO__ distribution maintenance software

@@ -171,6 +171,8 @@ def init():
          "Generate statistics"),
         ("bts-categorize",
          "Categorize uncategorized bugs filed against ftp.debian.org"),
+        ("add-user",
+         "Add a user to the archive"),
         ]
     return functionality
 
