@@ -86,8 +86,8 @@ def process_dir (unused, dirname, filenames):
     @type dirname: string
     @param dirname: the directory to look at
 
-    @type filename: dict
-    @param filename: Known filenames to ignore
+    @type filenames: dict
+    @param filenames: Known filenames to ignore
     """
     global waste, db_files, excluded
 
