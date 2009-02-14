@@ -107,7 +107,7 @@ if $(gpgv --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg timestamp.g
         # Lets check!
         if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
 			# Yay, worked, lets copy around
-			for dir in lenny sid; do
+			for dir in squeeze sid; do
 				if [ -d dists/${dir}/ ]; then
 					cd dists/${dir}/main/i18n
 					rsync -aq --delete --delete-after  . ${ftpdir}/dists/${dir}/main/i18n/.
@@ -282,8 +282,8 @@ echo "Exporting package data foo for i18n project"
 STAMP=$(date "+%Y%m%d%H%M")
 mkdir -p ${scriptdir}/i18n/${STAMP}
 cd ${scriptdir}/i18n/${STAMP}
-dak control-suite -l stable > etch
-dak control-suite -l testing > lenny
+dak control-suite -l stable > lenny
+dak control-suite -l testing > squeeze
 dak control-suite -l unstable > sid
 echo "${STAMP}" > timestamp
 gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 6070D3A1 --detach-sign -o timestamp.gpg timestamp
