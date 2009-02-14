@@ -474,6 +474,7 @@ def _do_Approve():
     print "Updating file lists for apt-ftparchive..."
     spawn("dak make-suite-file-list")
     print "Updating Packages and Sources files..."
+    spawn("/org/security.debian.org/dak/config/debian-security/map.sh")
     spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
     print "Updating Release files..."
     spawn("dak generate-releases")
