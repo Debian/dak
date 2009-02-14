@@ -87,7 +87,7 @@ done
 	done
 )
 
-(cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-lenny.list.gz) |
+(cat ../arch-i386.files ../arch-amd64.files; zcat suite-oldstable.list.gz suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-lenny.list.gz) |
    sort -u | poolfirst > ../typical.files
 
 rm -f $ARCHLIST
