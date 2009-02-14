@@ -91,9 +91,6 @@ ts "o-p-u-new"
 
 ################################################################################
 
-# Temporary until lenny is there
-dak control-suite -s lenny-r0 /srv/ftp.debian.org/misc/lenny-r0.txt
-
 echo "Synchronizing i18n package descriptions"
 # First sync their newest data
 cd ${scriptdir}/i18nsync
