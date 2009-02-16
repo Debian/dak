@@ -137,9 +137,15 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         for i in range (database_revision, required_database_schema):
             print "updating databse schema from " + str(database_revision) + " to " + str(i+1)
-            dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i+1)])
-            update_module = getattr(dakdb, "update"+str(i+1))
-            update_module.do_update(self)
+            try:
+                dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i+1)])
+                update_module = getattr(dakdb, "update"+str(i+1))
+                update_module.do_update(self)
+            except DBUpdateError, e:
+                # Seems the update did not work.
+                print "Was unable to update database schema from %s to %s." % (str(database_revision), str(i+1))
+                print "The error message received was %s" % (e)
+                utils.fubar("DB Schema upgrade failed")
             database_revision += 1
 
 ################################################################################
