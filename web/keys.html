@@ -115,16 +115,68 @@
         </div>
 
         <div id="revokation">
-            <h1>Key Revokation Procedure</h1>
+            <h1>Key Revocation Procedure</h1>
             <p>A revokation certificate for the archive key is produced at the time of the creation
-            of an archive key.  The program ssss (a Shamir's secret sharing scheme implementation)
-            is then used to produce 20 shares of which 10 are needed to recover the revokation cert.
+            of an archive key.  The program gfshare (package
+		  <a href="http://packages.debian.org/lenny/libgfshare-bin">libgfshare-bin</a>)
+		    (a Shamir's secret sharing scheme implementation) is then used to produce 12 shares of
+		    which 7 are needed to recover the revokation cert.
             This procedure is for use in emergencies only (such as losing ftp-master.debian.org and
             all of the backups, a hopefully unlikely event) as the key can normally be used to produce
             its own revokation certificate.</p>
         </div>
 
+		<div id="keysplit">
+		  <h1>Key Backup / Restore Procedure</h1>
+		  <p>After the creation of the archive key, the secret part of it will be backed up in one additional
+		  way. The program  gfshare (package
+		  <a href="http://packages.debian.org/lenny/libgfshare-bin">libgfshare-bin</a>)
+		  (a Shamir's secret sharing scheme implementation) is used to produce 14 shares of which 9 are needed
+		  to recover the secret key.</p>
         </div>
+
+		<div id="ssss">
+		  <h1>SSSS holders</h1>
+		  <p>The following people each hold one of the shares of the revocation certificate / private key.</p>
+		  <h2>Revocation shares</h2>
+		  <p>7 of those shares are needed to reproduce the revocation certificate</p>
+		  <table>
+			<tr><th>Debian uid</th><th>Name</th></tr>
+			<tr><td>sho</td><td>Samuel Hocevar</td></tr>
+			<tr><td>don</td><td>Don Armstrong</td></tr>
+			<tr><td>neilm</td><td>Neil McGovern</td></tr>
+			<tr><td>djpig</td><td>Frank Lichtenheld</td></tr>
+			<tr><td>jimmy</td><td>Jimmy Kaplowitz</td></tr>
+			<tr><td>killer</td><td>Kalle Kivimaa</td></tr>
+			<tr><td>shorty</td><td>Christian Kurz</td></tr>
+			<tr><td>noodles</td><td>Jonathan McDowell</td></tr>
+			<tr><td>rra</td><td>Russ Allbery</td></tr>
+			<tr><td>marga</td><td>Margarita Manterola</td></tr>
+			<tr><td>thijs</td><td>Thijs Kinkhorst</td></tr>
+			<tr><td>meike</td><td>Meike Reichle</td></tr>
+			<tr><td>miriam</td><td>Miriam Ruiz</td></tr>
+		  </table>
+
+		  <h2>Key shares</h2>
+		  <p>9 of those shares are needed to reproduce the secret key</p>
+		  <table>
+			<tr><th>Debian uid</th><th>Name</th></tr>
+			<tr><td>luk</td><td>Luk Claes</td></tr>
+			<tr><td>maxx</td><td>Martin Wuertele</td></tr>
+			<tr><td>myon</td><td>Christoph Berg</td></tr>
+			<tr><td>93sam</td><td>Steve McIntyre</td></tr>
+			<tr><td>bdale</td><td>Bdale Garbee,KBOG,,,</td></tr>
+			<tr><td>sgran</td><td>Stephen Gran</td></tr>
+			<tr><td>lukas</td><td>Lukas Geyer</td></tr>
+			<tr><td>dannf</td><td>Dann Frazier</td></tr>
+			<tr><td>weasel</td><td>Peter Palfrader</td></tr>
+			<tr><td>enrico</td><td>Enrico Zini</td></tr>
+			<tr><td>wouter</td><td>Wouter Verhelst</td></tr>
+			<tr><td>mhy</td><td>Mark Hymers</td></tr>
+			<tr><td>bzed</td><td>Bernd Zeimetz</td></tr>
+			<tr><td>stew</td><td>Mike O'Connor</td></tr>
+		</table>
+		</div>
     <hr />
     <address><a href="mailto:ftpmaster@ftp-master.debian.org">Debian FTP team</a></address>
 
