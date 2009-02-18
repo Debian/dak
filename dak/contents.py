@@ -42,8 +42,8 @@ import math
 import gzip
 import apt_pkg
 from daklib import utils
-from daklib.Config import Config
-from daklib.DBConn import DBConn
+from daklib.config import Config
+from daklib.dbconn import DBConn
 ################################################################################
 
 def usage (exit_code=0):
@@ -83,7 +83,6 @@ OPTIONS
 
 options_prefix = "Contents"
 options_prefix = "%s::Opitons" % options_prefix
-header_prefix = "%s::Header" % options_prefix
 
 log = logging.getLogger()
 
@@ -163,12 +162,14 @@ class Contents(object):
                     h = open(os.path.join( Config()["Dir::Templates"],
                                            Config()["Contents::Header"] ), "r")
                     self.header = h.read()
+                    print( "header: %s" % self.header )
                     h.close()
                 except:
                     log.error( "error openeing header file: %d\n%s" % (Config()["Contents::Header"],
                                                                        traceback.format_exc() ))
                     self.header = False
             else:
+                print( "no header" )
                 self.header = False
 
         return self.header
@@ -269,7 +270,6 @@ class Contents(object):
         # Get our suites, and the architectures
         for suite in [i.lower() for i in suites]:
             suite_id = DBConn().get_suite_id(suite)
-
             arch_list = self._arches(cursor, suite_id)
 
             arch_all_id = DBConn().get_architecture_id("all")
