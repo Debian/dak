@@ -41,3 +41,16 @@ bindirectory "lenny"
    Packages::Extensions ".deb .udeb";
 };
 
+bindirectory "squeeze"
+{
+   Packages "squeeze/Packages";
+   Sources "squeeze/Sources";
+   Contents " ";
+
+   BinOverride "override.squeeze.all3";
+   SrcOverride "override.squeeze.all3.src";
+   BinCacheDB "packages-accepted-squeeze.db";
+   PathPrefix "";
+   Packages::Extensions ".deb .udeb";
+};
+

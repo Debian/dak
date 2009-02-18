@@ -275,7 +275,7 @@ def main ():
         utils.fubar("No action specified.")
 
     # Safety/Sanity check
-    if action == "set" and suite not in ["testing", "etch-m68k", "lenny-r0"]:
+    if action == "set" and suite not in ["testing", "etch-m68k"]:
         utils.fubar("Will not reset suite %s" % (suite))
 
     if action == "list":

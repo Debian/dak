@@ -20,7 +20,9 @@
 
 ################################################################################
 
-import psycopg2, time
+import psycopg2
+import time
+from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 
@@ -36,6 +38,4 @@ def do_update(self):
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        print "FATAL: Unable to apply db update 3!"
-        print "Error Message: " + str(msg)
-        print "Database changes have been rolled back."
+        raise DBUpdateError, "Unable to appy versioncmp removal, rollback issued. Error message : %s" % (str(msg))

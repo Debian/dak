@@ -1,0 +1,45 @@
+# locations used by many scripts
+
+base=/org/backports.org
+ftpdir=$base/ftp/
+webdir=$base/web
+
+archs="alpha amd64 arm armel hppa hurd-i386 i386 ia64 m68k mips mipsel powerpc s390 sh sparc"
+
+masterdir=$base/dak/
+overridedir=$base/scripts/override
+extoverridedir=$scriptdir/external-overrides
+configdir=$base/dak/config/backports.org/
+scriptsdir=$base/dak/scripts/backports.org/
+
+queuedir=$base/queue
+unchecked=$queuedir/unchecked/
+accepted=$queuedir/accepted/
+done=$queuedir/done/
+over=$base/over/
+lockdir=$base/lock/
+incoming=$base/incoming
+
+dbdir=$base/database/
+indices=$ftpdir/indices
+
+ftpgroup=debadmin
+
+copyoverrides="lenny-backports.contrib lenny-backports.contrib.src lenny-backports.main lenny-backports.main.debian-installer lenny-backports.main.src lenny-backports.extra.contrib lenny-backports.extra.main"
+
+# Change this to your hostname
+uploadhost=localhost
+uploaddir=/pub/UploadQueue/
+
+# What components to support
+components="main contrib non-free"
+suites="lenny-backports"
+override_types="deb dsc udeb"
+
+# temporary fix only!
+# export TMP=/org/backports.org/tmp
+# export TEMP=/org/backports.org/tmp
+# export TMPDIR==/org/backports.org/tmp
+
+PATH=$masterdir:$PATH
+umask 022

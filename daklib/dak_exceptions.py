@@ -57,7 +57,8 @@ dakerrors = {
     "SendmailFailedError": """Exception raised when Sendmail invocation failed.""",
     "NoFreeFilenameError": """Exception raised when no alternate filename was found.""",
     "TransitionsError":    """Exception raised when transitions file can't be parsed.""",
-    "NoSourceFieldError":  """Exception raised - we cant find the source - wtf?"""
+    "NoSourceFieldError":  """Exception raised - we cant find the source - wtf?""",
+    "DBUpdateError":       """Exception raised - could not update the database"""
 } #: All dak exceptions
 
 def construct_dak_exception(name, description):

@@ -21,7 +21,9 @@
 
 ################################################################################
 
-import psycopg2, time
+import psycopg2
+import time
+from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 
@@ -393,6 +395,4 @@ $$
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        print "FATAL: Unable to apply debversion table update 2!"
-        print "Error Message: " + str(msg)
-        print "Database changes have been rolled back."
+        raise DBUpdateError, "Unable to appy debversion updates, rollback issued. Error message : %s" % (str(msg))
