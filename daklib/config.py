@@ -31,7 +31,7 @@ Config access class
 import apt_pkg
 import socket
 
-from Singleton import Singleton
+from singleton import Singleton
 
 ################################################################################
 

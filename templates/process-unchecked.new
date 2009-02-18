@@ -2,7 +2,7 @@ From: __DAK_ADDRESS__
 To: __MAINTAINER_TO__
 __BCC__
 X-Debian: DAK
-X-Debian-Package: __SOURCE__
+X-Debian-Package: __PACKAGE__
 Precedence: bulk
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"

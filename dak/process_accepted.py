@@ -374,12 +374,9 @@ def install ():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
-            # insert contents into the database
-            contents = utils.generate_contents_information(file)
-            q = projectB.query("SELECT currval('binaries_id_seq')")
-            bin_id = int(q.getresult()[0][0])
-            for file in contents:
-                database.insert_content_path(bin_id, file)
+
+            if not database.copy_temporary_contents(package, version, files[newfile]):
+                reject("Missing contents for package")
 
     # If the .orig.tar.gz is in a legacy directory we need to poolify
     # it, so that apt-get source (and anything else that goes by the

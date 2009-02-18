@@ -215,6 +215,7 @@ class Contents(object):
                                         WHERE ca.id IS NULL)""" );
         cursor.execute( "COMMIT" )
 
+
     def bootstrap(self):
         """
         scan the existing debs in the pool to populate the contents database tables

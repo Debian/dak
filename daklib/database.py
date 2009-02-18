@@ -54,9 +54,6 @@ queue_id_cache = {}           #: cache for queues
 uid_id_cache = {}             #: cache for uids
 suite_version_cache = {}      #: cache for suite_versions (packages)
 suite_bin_version_cache = {}
-content_path_id_cache = {}
-content_file_id_cache = {}
-insert_contents_file_cache = {}
 cache_preloaded = False
 
 ################################################################################
@@ -781,58 +778,45 @@ def get_suites(pkgname, src=False):
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
 
-################################################################################
-
-def get_or_set_contents_file_id(file):
-    global content_file_id_cache
-
-    if not content_file_id_cache.has_key(file):
-        sql_select = "SELECT id FROM content_file_names WHERE file = '%s'" % file
-        q = projectB.query(sql_select)
-        if not q.getresult():
-            # since this can be called within a transaction, we can't use currval
-            q = projectB.query("INSERT INTO content_file_names VALUES (DEFAULT, '%s') RETURNING id" % (file))
-        content_file_id_cache[file] = int(q.getresult()[0][0])
-    return content_file_id_cache[file]
 
 ################################################################################
 
-def get_or_set_contents_path_id(path):
-    global content_path_id_cache
+def copy_temporary_contents(package, version, deb):
+    """
+    copy the previously stored contents from the temp table to the permanant one
 
-    if not content_path_id_cache.has_key(path):
-        sql_select = "SELECT id FROM content_file_paths WHERE path = '%s'" % path
-        q = projectB.query(sql_select)
-        if not q.getresult():
-            # since this can be called within a transaction, we can't use currval
-            q = projectB.query("INSERT INTO content_file_paths VALUES (DEFAULT, '%s') RETURNING id" % (path))
-        content_path_id_cache[path] = int(q.getresult()[0][0])
-    return content_path_id_cache[path]
+    during process-unchecked, the deb should have been scanned and the
+    contents stored in temp_content_associations
+    """
 
-################################################################################
+    # first see if contents exist:
 
-def insert_content_path(bin_id, fullpath):
-    global insert_contents_file_cache
-    cache_key = "%s_%s" % (bin_id, fullpath)
+    exists = projectB.query("""SELECT 1 FROM temp_content_associations
+                               WHERE package='%s' LIMIT 1""" % package ).getresult()
 
-    # have we seen this contents before?
-    # probably only revelant during package import
-    if insert_contents_file_cache.has_key(cache_key):
-        return
+    if not exists:
+        # This should NOT happen.  We should have added contents
+        # during process-unchecked.  if it did, log an error, and send
+        # an email.
+        subst = {
+            "__PACKAGE__": package,
+            "__VERSION__": version,
+            "__DAK_ADDRESS__": Cnf["Dinstall::MyEmailAddress"]
+            }
 
-    # split the path into basename, and pathname
-    (path, file)  = os.path.split(fullpath)
+        message = utils.TemplateSubst(Subst, Cnf["Dir::Templates"]+"/bts-categorize")
+        utils.send_mail( message )
 
-    # Get the necessary IDs ...
-    file_id = get_or_set_contents_file_id(file)
-    path_id = get_or_set_contents_path_id(path)
+        exists = DBConn().insert_content_path(package, version, deb)
 
-    # Determine if we're inserting a duplicate row
-    q = projectB.query("SELECT 1 FROM content_associations WHERE binary_pkg = '%d' AND filepath = '%d' AND filename = '%d'" % (int(bin_id), path_id, file_id))
-    if q.getresult():
-        # Yes we are, return without doing the insert
-        return
+    if exists:
+        sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
+                 SELECT currval('binaries_id_seq'), filepath, filename FROM temp_content_associations
+                 WHERE package='%s'
+                     AND version='%s'""" % (package, version)
+        projectB.query(sql)
+        projectB.query("""DELETE from temp_content_associations
+                          WHERE package='%s'
+                            AND version='%s'""" % (package, version))
 
-    # Put them into content_assiocations
-    projectB.query("INSERT INTO content_associations VALUES (DEFAULT, '%d', '%d', '%d')" % (bin_id, path_id, file_id))
-    return
+    return exists

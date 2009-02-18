@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """ DB access class
 
@@ -35,9 +35,10 @@
 
 import os
 import psycopg2
+import traceback
 
-from Singleton import Singleton
-from Config import Config
+from singleton import Singleton
+from config import Config
 
 ################################################################################
 
@@ -104,7 +105,7 @@ class DBConn(Singleton):
                        'maintainer':    {}, # TODO
                        'keyring':       {}, # TODO
                        'source':        Cache(lambda x: '%s_%s_' % (x['source'], x['version'])),
-                       'files':         {}, # TODO
+                       'files':         Cache(lambda x: '%s_%s_' % (x['filename'], x['location'])),
                        'maintainer':    {}, # TODO
                        'fingerprint':   {}, # TODO
                        'queue':         {}, # TODO
@@ -277,8 +278,10 @@ class DBConn(Singleton):
         if component:
             component_id = self.get_component_id(component)
             if component_id:
-                res = self.__get_single_id("SELECT id FROM location WHERE path=%(location)s AND component=%(component)d AND archive=%(archive)d",
-                        {'location': location, 'archive': archive_id, 'component': component_id}, cachename='location')
+                res = self.__get_single_id("SELECT id FROM location WHERE path=%(location)s AND component=%(component)s AND archive=%(archive)s",
+                        {'location': location,
+                         'archive': int(archive_id),
+                         'component': component_id}, cachename='location')
         else:
             res = self.__get_single_id("SELECT id FROM location WHERE path=%(location)s AND archive=%(archive)d",
                     {'location': location, 'archive': archive_id, 'component': ''}, cachename='location')
@@ -330,6 +333,71 @@ class DBConn(Singleton):
           AND sa.suite=su.id
           AND su.suite_name=%(suite)s
           AND s.source=%(source)""", {'suite': suite, 'source': source}, cachename='suite_version')
+
+
+    def get_files_id (self, filename, size, md5sum, location_id):
+        """
+        Returns -1, -2 or the file_id for filename, if its C{size} and C{md5sum} match an
+        existing copy.
+
+        The database is queried using the C{filename} and C{location_id}. If a file does exist
+        at that location, the existing size and md5sum are checked against the provided
+        parameters. A size or checksum mismatch returns -2. If more than one entry is
+        found within the database, a -1 is returned, no result returns None, otherwise
+        the file id.
+
+        Results are kept in a cache during runtime to minimize database queries.
+
+        @type filename: string
+        @param filename: the filename of the file to check against the DB
+
+        @type size: int
+        @param size: the size of the file to check against the DB
+
+        @type md5sum: string
+        @param md5sum: the md5sum of the file to check against the DB
+
+        @type location_id: int
+        @param location_id: the id of the location as returned by L{get_location_id}
+
+        @rtype: int / None
+        @return: Various return values are possible:
+                   - -2: size/checksum error
+                   - -1: more than one file found in database
+                   - None: no file found in database
+                   - int: file id
+
+        """
+        values = {'filename' : filename,
+                  'location' : location_id}
+
+        res = self.caches['files'].GetValue( values )
+
+        if not res:
+            query = """SELECT id, size, md5sum
+                       FROM files
+                       WHERE filename = %(filename)s AND location = %(location)s"""
+
+            cursor = self.db_con.cursor()
+            cursor.execute( query, values )
+
+            if cursor.rowcount == 0:
+                res = None
+
+            elif cursor.rowcount != 1:
+                res = -1
+
+            else:
+                row = cursor.fetchone()
+
+                if row[1] != size or row[2] != md5sum:
+                    res =  -2
+
+                else:
+                    self.caches[cachename].SetValue(values, row[0])
+                    res = row[0]
+
+        return res
 
 
     def get_or_set_contents_file_id(self, filename):
@@ -384,7 +452,7 @@ class DBConn(Singleton):
 
         return id
 
-    def insert_content_paths(self, bin_id, fullpaths):
+    def insert_content_paths(self, package, fullpaths):
         """
         Make sure given path is associated with given binary id
 
@@ -392,23 +460,34 @@ class DBConn(Singleton):
         @param bin_id: the id of the binary
         @type fullpath: string
         @param fullpath: the path of the file being associated with the binary
+
+        @return True upon success
         """
 
         c = self.db_con.cursor()
 
-        for fullpath in fullpaths:
-            c.execute( "BEGIN WORK" )
-            (path, file) = os.path.split(fullpath)
+        c.execute("BEGIN WORK")
+        try:
 
-            # Get the necessary IDs ...
-            file_id = self.get_or_set_contents_file_id(file)
-            path_id = self.get_or_set_contents_path_id(path)
+                # Remove any already existing recorded files for this package
+            c.execute("""DELETE FROM temp_content_associations
+                         WHERE package=%(Package)s
+                         AND version=%(Version)s""", package )
 
-            # Determine if we're inserting a duplicate row
+            for fullpath in fullpaths:
+                (path, file) = os.path.split(fullpath)
 
-            c.execute("SELECT 1 FROM content_associations WHERE binary_pkg = '%d' AND filepath = '%d' AND filename = '%d'" % (int(bin_id), path_id, file_id))
-            if not c.fetchone():
-                # no, we are not, do the insert
+                # Get the necessary IDs ...
+                file_id = self.get_or_set_contents_file_id(file)
+                path_id = self.get_or_set_contents_path_id(path)
 
-                c.execute("INSERT INTO content_associations VALUES (DEFAULT, '%d', '%d', '%d')" % (bin_id, path_id, file_id))
-        c.execute( "COMMIT" )
+                c.execute("""INSERT INTO temp_content_associations
+                               (package, version, filepath, filename)
+                           VALUES (%%(Package)s, %%(Version)s, '%d', '%d')""" % (path_id, file_id),
+                          package )
+            c.execute("COMMIT")
+            return True
+        except:
+            traceback.print_exc()
+            c.execute("ROLLBACK")
+            return False

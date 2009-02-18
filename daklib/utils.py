@@ -1443,7 +1443,7 @@ def generate_contents_information(filename):
     Generate a list of flies contained in a .deb
 
     @type filename: string
-    @param filename: the path to a .deb
+    @param filename: the path to a data.tar.gz or data.tar.bz2
 
     @rtype: list
     @return: a list of files in the data.tar.* portion of the .deb
@@ -1481,6 +1481,7 @@ def generate_contents_information(filename):
 
     finally:
         if os.path.exists( chunks[2] ):
+            shutil.rmtree( chunks[2] )
             os.remove( chunks[2] )
 
     return contents

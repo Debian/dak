@@ -56,6 +56,14 @@ def do_update(self):
                     filename int4 not null references content_file_names(id) on delete cascade
                   );""")
 
+        c.execute("""CREATE TABLE temp_content_associations (
+                     id serial not null,
+                     package text not null,
+                     version debversion not null,
+                     filepath int4 not null references content_file_paths(id) on delete cascade,
+                     filename int4 not null references content_file_names(id) on delete cascade
+                   );""")
+
         c.execute("""CREATE FUNCTION comma_concat(text, text) RETURNS text
                    AS $_$select case
                    WHEN $2 is null or $2 = '' THEN $1
