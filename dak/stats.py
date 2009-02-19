@@ -33,6 +33,7 @@
 import pg, sys
 import apt_pkg
 from daklib import utils
+from daklib import database
 
 ################################################################################
 
