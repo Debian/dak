@@ -27,17 +27,18 @@ Database Update Script - Get suite_architectures table use sane values
 
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
+from daklib.utils import get_conf
 
 ################################################################################
 
 suites = {}  #: Cache of existing suites
 archs = {}   #: Cache of existing architectures
 
-
 def do_update(self):
     """ Execute the DB update """
 
     print "Lets make suite_architecture table use sane values"
+    Cnf = get_conf()
 
     query = "INSERT into suite_architectures (suite, architecture) VALUES (%s, %s)"  #: Update query
     try:
@@ -59,7 +60,7 @@ def do_update(self):
             architectures = Cnf.SubTree("Suite::" + suite).ValueList("Architectures")
             suite = suite.lower()
             for arch in architectures:
-                c.execute(query, suites[suite], archs[arch])
+                c.execute(query, [suites[suite], archs[arch]])
 
         self.db.commit()
 
