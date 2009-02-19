@@ -144,7 +144,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
             sys.exit(0)
 
         for i in range (database_revision, required_database_schema):
-            print "updating databse schema from " + str(database_revision) + " to " + str(i+1)
+            print "updating database schema from " + str(database_revision) + " to " + str(i+1)
             try:
                 dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i+1)])
                 update_module = getattr(dakdb, "update"+str(i+1))

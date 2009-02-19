@@ -62,6 +62,8 @@ def do_update(self):
             for arch in architectures:
                 c.execute(query, [suites[suite], archs[arch]])
 
+        c.execute("UPDATE config SET value = '4' WHERE name = 'db_revision'")
+
         self.db.commit()
 
     except psycopg2.ProgrammingError, msg:
