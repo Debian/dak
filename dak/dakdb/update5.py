@@ -42,8 +42,7 @@ def do_update(self):
         SELECT ba.suite, ba.bin, a.id AS arch
         FROM bin_associations ba
         JOIN binaries b ON ba.bin = b.id, architecture a
-        WHERE a.id > 2 AND (b.architecture = 2 OR b.architecture = a.id)
-        """
+        WHERE a.id > 2 AND (b.architecture = 2 OR b.architecture = a.id) """)
         c.execute("UPDATE config SET value = '5' WHERE name = 'db_revision'")
 
         self.db.commit()
