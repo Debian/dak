@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
-""" Database Update Main Script """
+""" Database Update Main Script
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
 # Copyright (C) 2008  Michael Casadevall <mcasadevall@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +30,10 @@
 
 ################################################################################
 
-import psycopg2, sys, fcntl, os
+import psycopg2
+import sys
+import fcntl
+import os
 import apt_pkg
 import time
 import errno
@@ -37,7 +44,7 @@ from daklib import utils
 
 Cnf = None
 projectB = None
-required_database_schema = 3
+required_database_schema = 4
 
 ################################################################################
 
