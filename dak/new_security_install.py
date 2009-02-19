@@ -386,7 +386,7 @@ def generate_advisory(template):
                                        ver, suite)
         adv += "%s\n%s\n\n" % (suite_header, "-"*len(suite_header))
 
-        arches = Cnf.ValueList("Suite::%s::Architectures" % suite)
+        arches = get_suite_architectures(suite)
         if "source" in arches:
             arches.remove("source")
         if "all" in arches:

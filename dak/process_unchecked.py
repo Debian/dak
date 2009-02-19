@@ -289,7 +289,7 @@ def check_distributions():
             (source, dest) = args[1:3]
             if changes["distribution"].has_key(source):
                 for arch in changes["architecture"].keys():
-                    if arch not in Cnf.ValueList("Suite::%s::Architectures" % (source)):
+                    if arch not in get_suite_architectures(source):
                         reject("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch),"")
                         del changes["distribution"][source]
                         changes["distribution"][dest] = 1
@@ -451,7 +451,7 @@ def check_files():
             default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
             architecture = control.Find("Architecture")
             upload_suite = changes["distribution"].keys()[0]
-            if architecture not in Cnf.ValueList("Suite::%s::Architectures" % (default_suite)) and architecture not in Cnf.ValueList("Suite::%s::Architectures" % (upload_suite)):
+            if architecture not in get_suite_architectures(default_suite) and architecture not in get_suite_architectures(upload_suite):
                 reject("Unknown architecture '%s'." % (architecture))
 
             # Ensure the architecture of the .deb is one of the ones

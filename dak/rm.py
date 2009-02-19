@@ -100,7 +100,7 @@ def reverse_depends_check(removals, suites, arches=None):
     if arches:
         all_arches = set(arches)
     else:
-        all_arches = set(Cnf.ValueList("Suite::%s::Architectures" % suites[0]))
+        all_arches = set(get_suite_architectures(suites[0]))
     all_arches -= set(["source", "all"])
     for architecture in all_arches:
         deps = {}

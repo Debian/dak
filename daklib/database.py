@@ -3,7 +3,8 @@
 """ DB access functions
 @group readonly: get_suite_id, get_section_id, get_priority_id, get_override_type_id,
                  get_architecture_id, get_archive_id, get_component_id, get_location_id,
-                 get_source_id, get_suite_version, get_files_id, get_maintainer, get_suites
+                 get_source_id, get_suite_version, get_files_id, get_maintainer, get_suites,
+                 get_suite_architectures
 @group read/write: get_or_set*, set_files_id
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
@@ -408,6 +409,33 @@ def get_suite_version(source, suite):
     suite_version_cache[cache_key] = version
 
     return version
+
+def get_suite_architectures(suite):
+    """
+    Returns list of architectures for C{suite}.
+
+    @type suite: string, int
+    @param suite: the suite name or the suite_id
+
+    @rtype: list
+    @return: the list of architectures for I{suite}
+    """
+
+    suite_id = None
+    if type(suite) == str:
+        suite_id = get_suite_id(suite)
+    elif type(suite) == int:
+        suite_id = suite
+    else:
+        return None
+
+    sql = """ SELECT a.arch_string FROM suite_architectures sa
+              JOIN architecture a ON (a.id = sa.architecture)
+              WHERE suite='%s' """ % (suite_id)
+
+    q = projectB.query(sql)
+    return map(lambda x: x[0], q.getresult())
+
 
 ################################################################################
 

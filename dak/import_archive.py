@@ -254,7 +254,7 @@ def update_suites ():
         for i in ("Version", "Origin", "Description"):
             if SubSec.has_key(i):
                 projectB.query("UPDATE suite SET %s = '%s' WHERE suite_name = '%s'" % (i.lower(), SubSec[i], suite.lower()))
-        for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
+        for architecture in get_suite_architectures(suite):
             architecture_id = database.get_architecture_id (architecture)
             projectB.query("INSERT INTO suite_architectures (suite, architecture) VALUES (currval('suite_id_seq'), %d)" % (architecture_id))
 
@@ -570,8 +570,7 @@ Please read the documentation before running this script.
                 udeb_components = map(lambda x: x+"/debian-installer",
                                       Cnf.ValueList("Suite::%s::UdebComponents" % suite))
                 for component in Cnf.SubTree("Component").List() + udeb_components:
-                    architectures = filter(utils.real_arch,
-                                           Cnf.ValueList("Suite::%s::Architectures" % (suite)))
+                    architectures = filter(utils.real_arch, get_suite_architectures(suite))
                     for architecture in architectures:
                         packages = Cnf["Dir::Root"] + "dists/" + Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/binary-' + architecture + '/Packages'
                         print 'Processing '+packages+'...'

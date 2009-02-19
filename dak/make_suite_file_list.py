@@ -296,7 +296,7 @@ def write_filelists(packages, dislocated_files):
             else:
                 binary_types = [ "deb" ]
             if not Options["Architecture"]:
-                architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
+                architectures = get_suite_architectures(suite)
             else:
                 architectures = utils.split_args(Options["Architectures"])
             for arch in [ i.lower() for i in architectures ]:

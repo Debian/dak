@@ -135,7 +135,7 @@ def do_suite():
         projectB.query("INSERT INTO suite (suite_name, version, origin, "
                        "description) VALUES ('%s', %s, %s, %s)"
                        % (suite.lower(), version, origin, description))
-        for architecture in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
+        for architecture in get_suite_architectures(suite):
             architecture_id = database.get_architecture_id (architecture)
             if architecture_id < 0:
                 utils.fubar("architecture '%s' not found in architecture"
