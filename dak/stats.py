@@ -179,7 +179,7 @@ SELECT suite, count(suite) FROM src_associations GROUP BY suite;""")
     for suite in suite_list:
         suite_id = suite_ids[suite]
         suite_arches[suite_id] = {}
-        for arch in get_suite_architectures(suite):
+        for arch in database.get_suite_architectures(suite):
             suite_arches[suite_id][arch] = ""
         suite_id_list.append(suite_id)
     output_list = [ output_format(i) for i in suite_list ]

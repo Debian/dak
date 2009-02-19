@@ -67,7 +67,7 @@ def main ():
     arch_all_id = database.get_architecture_id("all")
     dsc_type_id = database.get_override_type_id("dsc")
 
-    for arch in get_suite_architectures(src_suite_id):
+    for arch in database.get_suite_architectures(src_suite_id):
         if arch == "source":
             continue
 

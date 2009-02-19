@@ -412,7 +412,7 @@ def check_indices_files_exist():
     """
     for suite in [ "stable", "testing", "unstable" ]:
         for component in Cnf.ValueList("Suite::%s::Components" % (suite)):
-            architectures = get_suite_architectures(suite)
+            architectures = database.get_suite_architectures(suite)
             for arch in [ i.lower() for i in architectures ]:
                 if arch == "source":
                     validate_sources(suite, component)
