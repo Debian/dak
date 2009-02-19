@@ -39,6 +39,7 @@ import time
 import errno
 from daklib import database
 from daklib import utils
+from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 
