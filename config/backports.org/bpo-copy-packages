@@ -68,5 +68,5 @@ for suite in etch lenny; do
 ' Release
 
     rm -f ${base}/buildd/dists/${suite}-backports/Release.gpg
-    gpg --no-options --batch --no-tty --secret-keyring ${basedir}/s3kr1t/dot-gnupg/secring.gpg --output "Release.gpg" --armor --detach-sign "Release"
+    gpg --no-options --batch --no-tty --secret-keyring ${base}/s3kr1t/dot-gnupg/secring.gpg --output "Release.gpg" --armor --detach-sign "Release"
 done
