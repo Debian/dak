@@ -33,6 +33,7 @@
 import pg, sys
 import apt_pkg
 from daklib import utils
+from daklib import database
 
 ################################################################################
 
@@ -179,7 +180,7 @@ SELECT suite, count(suite) FROM src_associations GROUP BY suite;""")
     for suite in suite_list:
         suite_id = suite_ids[suite]
         suite_arches[suite_id] = {}
-        for arch in Cnf.ValueList("Suite::%s::Architectures" % (suite)):
+        for arch in database.get_suite_architectures(suite_id):
             suite_arches[suite_id][arch] = ""
         suite_id_list.append(suite_id)
     output_list = [ output_format(i) for i in suite_list ]
@@ -234,6 +235,7 @@ def main ():
     mode = args[0].lower()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    database.init(Cnf, projectB)
 
     if mode == "arch-space":
         per_arch_space_use()

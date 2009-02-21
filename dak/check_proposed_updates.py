@@ -242,7 +242,7 @@ def parse_packages():
     suite = "stable"
     stable = {}
     components = Cnf.ValueList("Suite::%s::Components" % (suite))
-    architectures = filter(utils.real_arch, Cnf.ValueList("Suite::%s::Architectures" % (suite)))
+    architectures = filter(utils.real_arch, database.get_suite_architectures(suite))
     for component in components:
         for architecture in architectures:
             filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suite, component, architecture)

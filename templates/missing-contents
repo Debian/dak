@@ -1,4 +1,5 @@
 From: __DAK_ADDRESS__
+To: __TO_ADDRESS__
 X-Debian: DAK
 X-Debian-Package: __PACKAGE__
 MIME-Version: 1.0

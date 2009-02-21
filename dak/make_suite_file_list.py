@@ -202,34 +202,6 @@ def cleanup(packages):
 
 ################################################################################
 
-def write_legacy_mixed_filelist(suite, list, packages, dislocated_files):
-    # Work out the filename
-    filename = os.path.join(Cnf["Dir::Lists"], "%s_-_all.list" % (suite))
-    output = utils.open_file(filename, "w")
-    # Generate the final list of files
-    files = {}
-    for fileid in list:
-        path = packages[fileid]["path"]
-        filename = packages[fileid]["filename"]
-        file_id = packages[fileid]["file_id"]
-        if suite == "stable" and dislocated_files.has_key(file_id):
-            filename = dislocated_files[file_id]
-        else:
-            filename = path + filename
-        if files.has_key(filename):
-            utils.warn("%s (in %s) is duplicated." % (filename, suite))
-        else:
-            files[filename] = ""
-    # Sort the files since apt-ftparchive doesn't
-    keys = files.keys()
-    keys.sort()
-    # Write the list of files out
-    for outfile in keys:
-        output.write(outfile+'\n')
-    output.close()
-
-############################################################
-
 def write_filelist(suite, component, arch, type, list, packages, dislocated_files):
     # Work out the filename
     if arch != "source":
@@ -296,7 +268,7 @@ def write_filelists(packages, dislocated_files):
             else:
                 binary_types = [ "deb" ]
             if not Options["Architecture"]:
-                architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
+                architectures = database.get_suite_architectures(suite)
             else:
                 architectures = utils.split_args(Options["Architectures"])
             for arch in [ i.lower() for i in architectures ]:
@@ -326,13 +298,8 @@ def write_filelists(packages, dislocated_files):
                                 filelist.extend(d[suite][component]["all"][packagetype])
                         write_filelist(suite, component, arch, packagetype, filelist,
                                        packages, dislocated_files)
-        else: # legacy-mixed suite
-            filelist = []
-            for component in d[suite].keys():
-                for arch in d[suite][component].keys():
-                    for packagetype in d[suite][component][arch].keys():
-                        filelist.extend(d[suite][component][arch][packagetype])
-            write_legacy_mixed_filelist(suite, filelist, packages, dislocated_files)
+        else: # something broken
+            utils.warn("Suite %s has no components." % (suite))
 
 ################################################################################
 

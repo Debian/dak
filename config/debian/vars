@@ -13,6 +13,7 @@ configdir=$base/dak/config/debian/
 scriptsdir=$base/dak/scripts/debian/
 dbdir=$base/database/
 lockdir=$base/lock/
+stagedir=$lockdir/stages
 overridedir=$scriptdir/override
 extoverridedir=$scriptdir/external-overrides
 logdir=$base/log/cron/

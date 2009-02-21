@@ -28,7 +28,18 @@
 
 ################################################################################
 
-import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceback, tarfile
+import commands
+import errno
+import fcntl
+import os
+import re
+import shutil
+import stat
+import sys
+import time
+import tempfile
+import traceback
+import tarfile
 import apt_inst, apt_pkg
 from debian_bundle import deb822
 from daklib.dbconn import DBConn
@@ -301,7 +312,7 @@ def check_distributions():
             (source, dest) = args[1:3]
             if changes["distribution"].has_key(source):
                 for arch in changes["architecture"].keys():
-                    if arch not in Cnf.ValueList("Suite::%s::Architectures" % (source)):
+                    if arch not in database.get_suite_architectures(source):
                         reject("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch),"")
                         del changes["distribution"][source]
                         changes["distribution"][dest] = 1
@@ -449,7 +460,7 @@ def check_files():
             default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
             architecture = control.Find("Architecture")
             upload_suite = changes["distribution"].keys()[0]
-            if architecture not in Cnf.ValueList("Suite::%s::Architectures" % (default_suite)) and architecture not in Cnf.ValueList("Suite::%s::Architectures" % (upload_suite)):
+            if architecture not in database.get_suite_architectures(default_suite) and architecture not in database.get_suite_architectures(upload_suite):
                 reject("Unknown architecture '%s'." % (architecture))
 
             # Ensure the architecture of the .deb is one of the ones

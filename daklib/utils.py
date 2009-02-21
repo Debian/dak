@@ -1346,7 +1346,10 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
         if len(args) >= 1:
             timestamp = args[0]
             if timestamp.count("T") == 0:
-                expiredate = time.strftime("%Y-%m-%d", time.gmtime(timestamp))
+                try:
+                    expiredate = time.strftime("%Y-%m-%d", time.gmtime(float(timestamp)))
+                except ValueError:
+                    expiredate = "unknown (%s)" % (timestamp)
             else:
                 expiredate = timestamp
         reject("The key used to sign %s has expired on %s" % (sig_filename, expiredate))

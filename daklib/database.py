@@ -3,7 +3,8 @@
 """ DB access functions
 @group readonly: get_suite_id, get_section_id, get_priority_id, get_override_type_id,
                  get_architecture_id, get_archive_id, get_component_id, get_location_id,
-                 get_source_id, get_suite_version, get_files_id, get_maintainer, get_suites
+                 get_source_id, get_suite_version, get_files_id, get_maintainer, get_suites,
+                 get_suite_architectures
 @group read/write: get_or_set*, set_files_id
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
@@ -47,6 +48,7 @@ location_id_cache = {}        #: cache for locations
 maintainer_id_cache = {}      #: cache for maintainers
 keyring_id_cache = {}         #: cache for keyrings
 source_id_cache = {}          #: cache for sources
+
 files_id_cache = {}           #: cache for files
 maintainer_cache = {}         #: cache for maintainer names
 fingerprint_id_cache = {}     #: cache for fingerprints
@@ -456,6 +458,32 @@ def preload_binary_id_cache():
 
     cache_preloaded = True
 
+def get_suite_architectures(suite):
+    """
+    Returns list of architectures for C{suite}.
+
+    @type suite: string, int
+    @param suite: the suite name or the suite_id
+
+    @rtype: list
+    @return: the list of architectures for I{suite}
+    """
+
+    suite_id = None
+    if type(suite) == str:
+        suite_id = get_suite_id(suite)
+    elif type(suite) == int:
+        suite_id = suite
+    else:
+        return None
+
+    sql = """ SELECT a.arch_string FROM suite_architectures sa
+              JOIN architecture a ON (a.id = sa.architecture)
+              WHERE suite='%s' """ % (suite_id)
+
+    q = projectB.query(sql)
+    return map(lambda x: x[0], q.getresult())
+
 ################################################################################
 
 def get_or_set_maintainer_id (maintainer):
@@ -801,10 +829,11 @@ def copy_temporary_contents(package, version, deb):
         subst = {
             "__PACKAGE__": package,
             "__VERSION__": version,
+            "__TO_ADDRESS__": Cnf["Dinstall::MyAdminAddress"]
             "__DAK_ADDRESS__": Cnf["Dinstall::MyEmailAddress"]
             }
 
-        message = utils.TemplateSubst(Subst, Cnf["Dir::Templates"]+"/bts-categorize")
+        message = utils.TemplateSubst(Subst, Cnf["Dir::Templates"]+"/missing-contents")
         utils.send_mail( message )
 
         exists = DBConn().insert_content_path(package, version, deb)

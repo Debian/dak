@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+
 """
-Database Update Script - Get suite_architectures table use sane values
+Database Update Script - Fix bin_assoc_by_arch view
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009  Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
+
 """
 
 # This program is free software; you can redistribute it and/or modify
@@ -25,45 +27,26 @@ Database Update Script - Get suite_architectures table use sane values
 
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
-from daklib.utils import get_conf
 
 ################################################################################
-
-suites = {}  #: Cache of existing suites
-archs = {}   #: Cache of existing architectures
 
 def do_update(self):
     """ Execute the DB update """
 
-    print "Lets make suite_architecture table use sane values"
-    Cnf = get_conf()
-
-    query = "INSERT into suite_architectures (suite, architecture) VALUES (%s, %s)"  #: Update query
+    print "Fixing bin_assoc_by_arch view"
     try:
         c = self.db.cursor()
-        c.execute("DELETE FROM suite_architectures;")
+        c.execute("DROP VIEW bin_assoc_by_arch")
 
-        c.execute("SELECT id, arch_string FROM architecture;")
-        a=c.fetchall()
-        for arch in a:
-            archs[arch[1]]=arch[0]
-
-        c.execute("SELECT id,suite_name FROM suite")
-        s=c.fetchall()
-        for suite in s:
-            suites[suite[1]]=suite[0]
-
-        for suite in Cnf.SubTree("Suite").List():
-            print "Processing suite %s" % (suite)
-            architectures = Cnf.SubTree("Suite::" + suite).ValueList("Architectures")
-            suite = suite.lower()
-            for arch in architectures:
-                c.execute(query, [suites[suite], archs[arch]])
-
-        c.execute("UPDATE config SET value = '4' WHERE name = 'db_revision'")
+        c.execute("""CREATE OR REPLACE VIEW bin_assoc_by_arch AS
+        SELECT ba.suite, ba.bin, a.id AS arch
+        FROM bin_associations ba
+        JOIN binaries b ON ba.bin = b.id, architecture a
+        WHERE a.id > 2 AND (b.architecture = 2 OR b.architecture = a.id) """)
+        c.execute("UPDATE config SET value = '5' WHERE name = 'db_revision'")
 
         self.db.commit()
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to apply sanity to suite_architecture table, rollback issued. Error message : %s" % (str(msg))
+        raise DBUpdateError, "Unable to recreate bin_assoc_by_arch view, rollback issued. Error message : %s" % (str(msg))

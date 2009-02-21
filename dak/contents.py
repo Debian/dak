@@ -88,14 +88,18 @@ log = logging.getLogger()
 
 ################################################################################
 
+# we unfortunately still have broken stuff in headers
 latin1_q = """SET CLIENT_ENCODING TO 'LATIN1'"""
 
+# get all the arches delivered for a given suite
+# this should probably exist somehere common
 arches_q = """PREPARE arches_q as
               SELECT s.architecture, a.arch_string
               FROM suite_architectures s
               JOIN architecture a ON (s.architecture=a.id)
                   WHERE suite = $1"""
 
+# find me the .deb for a given binary id
 debs_q = """PREPARE debs_q as
               SELECT b.id, f.filename FROM bin_assoc_by_arch baa
               JOIN binaries b ON baa.bin=b.id
@@ -103,11 +107,13 @@ debs_q = """PREPARE debs_q as
               WHERE suite = $1
                   AND arch = $2"""
 
+# ask if we already have contents associated with this binary
 olddeb_q = """PREPARE olddeb_q as
               SELECT 1 FROM content_associations
               WHERE binary_pkg = $1
               LIMIT 1"""
 
+# find me all of the contents for a given .deb
 contents_q = """PREPARE contents_q as
               SELECT (p.path||'/'||n.file) AS fn,
                       comma_separated_list(s.section||'/'||b.package)
@@ -126,6 +132,7 @@ contents_q = """PREPARE contents_q as
               GROUP BY fn
               ORDER BY fn"""
 
+# find me all of the contents for a given .udeb
 udeb_contents_q = """PREPARE udeb_contents_q as
               SELECT (p.path||'/'||n.file) as fn,
                       comma_separated_list(s.section||'/'||b.package)
@@ -144,6 +151,25 @@ udeb_contents_q = """PREPARE udeb_contents_q as
               GROUP BY fn
               ORDER BY fn"""
 
+# clear out all of the temporarily stored content associations
+# this should be run only after p-a has run.  after a p-a
+# run we should have either accepted or rejected every package
+# so there should no longer be anything in the queue
+remove_temp_contents_cruft_q = """DELETE FROM temp_content_associations"""
+
+# delete any filenames we are storing which have no binary associated with them
+remove_filename_cruft_q = """DELETE FROM content_file_names
+                             WHERE id IN (SELECT cfn.id FROM content_file_names cfn
+                                          LEFT JOIN content_associations ca
+                                            ON ca.filename=cfn.id
+                                          WHERE ca.id IS NULL)""" );
+
+# delete any paths we are storing which have no binary associated with them
+remove_filepath_cruft_q = """DELETE FROM content_file_paths
+                             WHERE id IN (SELECT cfn.id FROM content_file_paths cfn
+                                          LEFT JOIN content_associations ca
+                                             ON ca.filepath=cfn.id
+                                          WHERE ca.id IS NULL)"""
 class Contents(object):
     """
     Class capable of generating Contents-$arch.gz files
@@ -155,7 +181,12 @@ class Contents(object):
         self.header = None
 
     def _getHeader(self):
-        # Internal method to return the header for Contents.gz files
+        """
+        Internal method to return the header for Contents.gz files
+
+        This is boilerplate which explains the contents of the file and how
+        it can be used.
+        """
         if self.header == None:
             if Config().has_key("Contents::Header"):
                 try:
@@ -165,8 +196,8 @@ class Contents(object):
                     print( "header: %s" % self.header )
                     h.close()
                 except:
-                    log.error( "error openeing header file: %d\n%s" % (Config()["Contents::Header"],
-                                                                       traceback.format_exc() ))
+                    log.error( "error opening header file: %d\n%s" % (Config()["Contents::Header"],
+                                                                      traceback.format_exc() ))
                     self.header = False
             else:
                 print( "no header" )
@@ -178,7 +209,10 @@ class Contents(object):
     _goal_column = 54
 
     def _write_content_file(self, cursor, filename):
-        # Internal method for writing all the results to a given file
+        """
+        Internal method for writing all the results to a given file.
+        The cursor should have a result set generated from a query already.
+        """
         f = gzip.open(Config()["Dir::Root"] + filename, "w")
         try:
             header = self._getHeader()
@@ -200,20 +234,14 @@ class Contents(object):
 
     def cruft(self):
         """
-        remove files/paths from the DB which are no longer referenced by binaries
+        remove files/paths from the DB which are no longer referenced
+        by binaries and clean the temporary table
         """
         cursor = DBConn().cursor();
         cursor.execute( "BEGIN WORK" )
-        cursor.execute( """DELETE FROM content_file_names
-                           WHERE id IN (SELECT cfn.id FROM content_file_names cfn
-                                        LEFT JOIN content_associations ca
-                                            ON ca.filename=cfn.id
-                                        WHERE ca.id IS NULL)""" );
-        cursor.execute( """DELETE FROM content_file_paths
-                           WHERE id IN (SELECT cfn.id FROM content_file_paths cfn
-                                        LEFT JOIN content_associations ca
-                                            ON ca.filepath=cfn.id
-                                        WHERE ca.id IS NULL)""" );
+        cursor.execute( remove_temp_contents_cruft_q )
+        cursor.execute( remove_filename_cruft_q )
+        cursor.execute( remove_filepath_cruft_q )
         cursor.execute( "COMMIT" )
 
 
@@ -297,7 +325,9 @@ class Contents(object):
 ################################################################################
 
     def _suites(self):
-        # return a list of suites to operate on
+        """
+        return a list of suites to operate on
+        """
         if Config().has_key( "%s::%s" %(options_prefix,"Suite")):
             suites = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Suite")])
         else:
@@ -306,7 +336,9 @@ class Contents(object):
         return suites
 
     def _arches(self, cursor, suite):
-        # return a list of archs to operate on
+        """
+        return a list of archs to operate on
+        """
         arch_list = [ ]
         if Config().has_key( "%s::%s" %(options_prefix,"Arch")):
             archs = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Arch")])
@@ -349,7 +381,7 @@ def main():
         level=logging.DEBUG
 
 
-    logging.basicConfig( level=logging.DEBUG,
+    logging.basicConfig( level=level,
                          format='%(asctime)s %(levelname)s %(message)s',
                          stream = sys.stderr )
 

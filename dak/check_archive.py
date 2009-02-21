@@ -151,8 +151,6 @@ def check_dscs():
     count = 0
     suite = 'unstable'
     for component in Cnf.SubTree("Component").List():
-        if component == "mixed":
-            continue
         component = component.lower()
         list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component)
         list_file = utils.open_file(list_filename)
@@ -412,7 +410,7 @@ def check_indices_files_exist():
     """
     for suite in [ "stable", "testing", "unstable" ]:
         for component in Cnf.ValueList("Suite::%s::Components" % (suite)):
-            architectures = Cnf.ValueList("Suite::%s::Architectures" % (suite))
+            architectures = database.get_suite_architectures(suite)
             for arch in [ i.lower() for i in architectures ]:
                 if arch == "source":
                     validate_sources(suite, component)

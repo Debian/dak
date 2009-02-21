@@ -39,8 +39,13 @@
 
 ################################################################################
 
-import commands, os, pg, re, sys
-import apt_pkg, apt_inst
+import commands
+import os
+import pg
+import re
+import sys
+import apt_pkg
+import apt_inst
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import *
@@ -100,7 +105,7 @@ def reverse_depends_check(removals, suites, arches=None):
     if arches:
         all_arches = set(arches)
     else:
-        all_arches = set(Cnf.ValueList("Suite::%s::Architectures" % suites[0]))
+        all_arches = set(database.get_suite_architectures(suites[0]))
     all_arches -= set(["source", "all"])
     for architecture in all_arches:
         deps = {}

@@ -55,7 +55,7 @@ class InitDB(object):
         self.projectB = projectB
 
     def do_archive(self):
-        """Initalize the archive table."""
+        """initalize the archive table."""
 
         c = self.projectB.cursor()
         c.execute("DELETE FROM archive")
@@ -101,9 +101,6 @@ class InitDB(object):
         c = self.projectB.cursor()
         c.execute("DELETE FROM location")
 
-        loc_add_mixed = "INSERT INTO location (path, archive, type) " + \
-                        "VALUES (%s, %s, %s)"
-
         loc_add = "INSERT INTO location (path, component, archive, type) " + \
                   "VALUES (%s, %s, %s, %s)"
 
@@ -114,9 +111,7 @@ class InitDB(object):
                 utils.fubar("Archive '%s' for location '%s' not found."
                                    % (location_config["Archive"], location))
             location_type = location_config.get("type")
-            if location_type == "legacy-mixed":
-                c.execute(loc_add_mixed, [location, archive_id, location_config["type"]])
-            elif location_type == "legacy" or location_type == "pool":
+            if location_type == "pool":
                 for component in self.Cnf.SubTree("Component").List():
                     component_id = self.projectB.get_component_id(component)
                     c.execute(loc_add, [location, component_id, archive_id, location_type])
@@ -148,8 +143,8 @@ class InitDB(object):
                 architecture_id = self.projectB.get_architecture_id (architecture)
                 if architecture_id < 0:
                     utils.fubar("architecture '%s' not found in architecture"
-                                       " table for suite %s."
-                                   % (architecture, suite))
+                                " table for suite %s."
+                                % (architecture, suite))
                 c.execute(sa_add, [architecture_id])
 
         self.projectB.commit()

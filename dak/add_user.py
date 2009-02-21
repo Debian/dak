@@ -111,7 +111,7 @@ def main():
     global Cnf, projectB
     keyrings = None
 
-    Cnf = daklib.utils.get_conf()
+    Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Add-User::Options::Help"),
                  ('c',"create","Add-User::Options::Create"),
@@ -130,7 +130,7 @@ def main():
         usage()
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    daklib.database.init(Cnf, projectB)
+    database.init(Cnf, projectB)
 
     if not keyrings:
         keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
@@ -138,18 +138,18 @@ def main():
 # Ignore the PGP keyring for download of new keys. Ignore errors, if key is missing it will
 # barf with the next commands.
     cmd = "gpg --no-secmem-warning --no-default-keyring %s --recv-keys %s" \
-           % (daklib.utils.gpg_keyring_args(keyrings), Cnf["Add-User::Options::Key"])
+           % (utils.gpg_keyring_args(keyrings), Cnf["Add-User::Options::Key"])
     (result, output) = commands.getstatusoutput(cmd)
 
     cmd = "gpg --with-colons --no-secmem-warning --no-auto-check-trustdb --no-default-keyring %s --with-fingerprint --list-key %s" \
-           % (daklib.utils.gpg_keyring_args(keyrings),
+           % (utils.gpg_keyring_args(keyrings),
               Cnf["Add-User::Options::Key"])
     (result, output) = commands.getstatusoutput(cmd)
     m = re_gpg_fingerprint.search(output)
     if not m:
 	print output
-        daklib.utils.fubar("0x%s: (1) No fingerprint found in gpg output but it returned 0?\n%s" \
-					% (Cnf["Add-User::Options::Key"], daklib.utils.prefix_multi_line_string(output, \
+        utils.fubar("0x%s: (1) No fingerprint found in gpg output but it returned 0?\n%s" \
+					% (Cnf["Add-User::Options::Key"], utils.prefix_multi_line_string(output, \
 																				" [GPG output:] ")))
     primary_key = m.group(1)
     primary_key = primary_key.replace(" ","")
@@ -162,8 +162,8 @@ def main():
         u = re_user_address.search(output)
         if not u:
             print output
-            daklib.utils.fubar("0x%s: (2) No userid found in gpg output but it returned 0?\n%s" \
-                        % (Cnf["Add-User::Options::Key"], daklib.utils.prefix_multi_line_string(output, " [GPG output:] ")))
+            utils.fubar("0x%s: (2) No userid found in gpg output but it returned 0?\n%s" \
+                        % (Cnf["Add-User::Options::Key"], utils.prefix_multi_line_string(output, " [GPG output:] ")))
         uid = u.group(1)
         n = re_user_name.search(output)
         name = n.group(1)
@@ -180,7 +180,7 @@ def main():
     print "0x%s -> %s <%s> -> %s -> %s" % (Cnf["Add-User::Options::Key"], name, emails[0], uid, primary_key)
 
     prompt = "Add user %s with above data (y/N) ? " % (uid)
-    yn = daklib.utils.our_raw_input(prompt).lower()
+    yn = utils.our_raw_input(prompt).lower()
 
     if yn == "y":
 # Create an account for the user?
@@ -196,28 +196,28 @@ def main():
                          % (pwcrypt, name, uid)
               (result, output) = commands.getstatusoutput(cmd)
               if (result != 0):
-                   daklib.utils.fubar("Invocation of '%s' failed:\n%s\n" % (cmd, output), result)
+                   utils.fubar("Invocation of '%s' failed:\n%s\n" % (cmd, output), result)
               try:
                   summary+=createMail(uid, password, Cnf["Add-User::Options::Key"], Cnf["Dinstall::GPGKeyring"])
               except:
                   summary=""
-                  daklib.utils.warn("Could not prepare password information for mail, not sending password.")
+                  utils.warn("Could not prepare password information for mail, not sending password.")
 
 # Now add user to the database.
           projectB.query("BEGIN WORK")
-          uid_id = daklib.database.get_or_set_uid_id(uid)
+          uid_id = database.get_or_set_uid_id(uid)
           projectB.query('CREATE USER "%s"' % (uid))
           projectB.query("COMMIT WORK")
 # The following two are kicked out in rhona, so we don't set them. kelly adds
 # them as soon as she installs a package with unknown ones, so no problems to expect here.
 # Just leave the comment in, to not think about "Why the hell aren't they added" in
 # a year, if we ever touch uma again.
-#          maint_id = daklib.database.get_or_set_maintainer_id(name)
+#          maint_id = database.get_or_set_maintainer_id(name)
 #          projectB.query("INSERT INTO fingerprint (fingerprint, uid) VALUES ('%s', '%s')" % (primary_key, uid_id))
 
 # Lets add user to the email-whitelist file if its configured.
           if Cnf.has_key("Dinstall::MailWhiteList") and Cnf["Dinstall::MailWhiteList"] != "":
-              file = daklib.utils.open_file(Cnf["Dinstall::MailWhiteList"], "a")
+              file = utils.open_file(Cnf["Dinstall::MailWhiteList"], "a")
               for mail in emails:
                   file.write(mail+'\n')
               file.close()
@@ -228,7 +228,7 @@ def main():
 # Should we send mail to the newly added user?
           if Cnf.FindB("Add-User::SendEmail"):
               mail = name + "<" + emails[0] +">"
-              Upload = daklib.queue.Upload(Cnf)
+              Upload = queue.Upload(Cnf)
               Subst = Upload.Subst
               Subst["__NEW_MAINTAINER__"] = mail
               Subst["__UID__"] = uid
@@ -237,8 +237,8 @@ def main():
               Subst["__FROM_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
               Subst["__HOSTNAME__"] = Cnf["Dinstall::MyHost"]
               Subst["__SUMMARY__"] = summary
-              new_add_message = daklib.utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/add-user.added")
-              daklib.utils.send_mail(new_add_message)
+              new_add_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/add-user.added")
+              utils.send_mail(new_add_message)
 
     else:
           uid = None

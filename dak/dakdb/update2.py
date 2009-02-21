@@ -28,13 +28,11 @@ from daklib.dak_exceptions import DBUpdateError
 ################################################################################
 
 def do_update(self):
-vvvvvvvvvvvvvvvvvvvv
     print "Note: to be able to enable the the PL/Perl (plperl) procedural language, we do"
     print "need postgresql-plperl-$postgres-version installed. Make sure that this is the"
     print "case before you continue. Interrupt if it isn't, sleeping 5 seconds now."
     print "(We need to be database superuser for this to work!)"
     time.sleep (5)
-^^^^^^^^^^^^^^^^^^^^
 
     try:
         c = self.db.cursor()
