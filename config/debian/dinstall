@@ -223,7 +223,7 @@ function release() {
     dak generate-releases
 }
 
-function cleanup() {
+function dakcleanup() {
     log "Cleanup old packages/files"
     dak clean-suites
     dak clean-queues
@@ -583,7 +583,7 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="cleanup"
+    FUNC="dakcleanup"
     TIME="cleanup"
     ARGS=""
     ERR=""
