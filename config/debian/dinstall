@@ -64,6 +64,7 @@ function ts() {
 # Cleanup actions
 function cleanup() {
 	rm -f ${LOCK_DAILY}
+	rm -f ${LOCK_ACCEPTED}
 }
 
 # Setup the notice file to tell bad mirrors they used the wrong time
@@ -524,7 +525,7 @@ GO=(
 )
 stage $GO
 
-rm -f $LOCKAC
+rm -f "$LOCK_ACCEPTED"
 
 GO=(
     FUNC="msfl"
