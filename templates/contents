@@ -10,10 +10,11 @@ When a file is contained in more than one package, all packages are
 listed.  When a directory is contained in more than one package, only
 the first is listed.
 
-The best way to search quickly for a file is with the Unix `grep'
-utility, as in `grep <regular expression> CONTENTS':
+As all Contents files are shipped compressed, the best way to search quickly
+for a file is with the Unix `zgrep' utility, as in:
+  `zgrep <regular expression> CONTENTS.gz':
 
- $ grep nose Contents
+ $ zgrep nose Contents.gz
  etc/nosendfile                                          net/sendfile
  usr/X11R6/bin/noseguy                                   x11/xscreensaver
  usr/X11R6/man/man1/noseguy.1x.gz                        x11/xscreensaver
