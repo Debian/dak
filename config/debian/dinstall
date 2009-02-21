@@ -479,7 +479,7 @@ GO=(
     FUNC="updates"
     TIME="External Updates"
     ARGS=""
-    ERR=""
+    ERR="false"
 )
 stage $GO
 
