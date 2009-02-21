@@ -63,7 +63,6 @@ function ts() {
 
 # Cleanup actions
 function cleanup() {
-    savelog -c ${LOGROTATE} -j "$LOGFILE"
 	rm -f ${LOCK_DAILY}
 }
 
@@ -169,8 +168,8 @@ function accepted() {
     log "Processing queue/accepted"
     cd "$accepted"
     rm -f REPORT
-    dak process-accepted -pa *.changes | tee REPORT | \
-        mail -s "Install for $(date +"%D - %R")" ftpmaster@ftp-master.debian.org
+    dak process-accepted -pa *.changes > REPORT
+    cat REPORT | mail -s "Install for $(date +"%D - %R")" ftpmaster@ftp-master.debian.org
     chgrp debadmin REPORT
     chmod 664 REPORT
 }
@@ -733,6 +732,8 @@ GO=(
 stage $GO
 
 cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
+
+savelog -c ${LOGROTATE} -j "$LOGFILE"
 
 # Now, at the very (successful) end of dinstall, make sure we remove
 # our stage files, so the next dinstall run will do it all again.
