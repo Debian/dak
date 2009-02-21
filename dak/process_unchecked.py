@@ -186,6 +186,9 @@ def check_changes():
     except ParseChangesError, line:
         reject("%s: parse error, can't grok: %s." % (filename, line))
         return 0
+    except ChangesUnicodeError:
+        reject("%s: changes file not proper utf-8" % (filename))
+        return 0
 
     # Parse the Files field from the .changes into another dictionary
     try:
@@ -695,6 +698,9 @@ def check_dsc():
         reject("%s: parse error, can't grok: %s." % (dsc_filename, line))
     except InvalidDscError, line:
         reject("%s: syntax error on line %s." % (dsc_filename, line))
+    except ChangesUnicodeError:
+        reject("%s: dsc file not proper utf-8." % (dsc_filename))
+
     # Build up the file list of files mentioned by the .dsc
     try:
         dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1))
