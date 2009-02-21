@@ -31,7 +31,7 @@ if lockfile -r3 $LOCKFILE; then
 
     if [ ! -z "$changes" ]; then
 	echo "$timestamp": "$changes"  >> $report
-	dak process-unchecked -a $changes >> $report
+	dak process-unchecked -a -d "$unchecked" >> $report
 	echo "--" >> $report
 
 	# sync with debbugs
