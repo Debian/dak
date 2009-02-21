@@ -169,7 +169,7 @@ function accepted() {
     log "Processing queue/accepted"
     cd "$accepted"
     rm -f REPORT
-    dak process-accepted -pa *.changes > REPORT
+    dak process-accepted -pa -d /srv/ftp.debian.org/queue/accepted > REPORT
     cat REPORT | mail -s "Install for $(date +"%D - %R")" ftpmaster@ftp-master.debian.org
     chgrp debadmin REPORT
     chmod 664 REPORT

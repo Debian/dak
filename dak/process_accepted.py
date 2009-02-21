@@ -162,9 +162,11 @@ def init():
                  ('h',"help","Dinstall::Options::Help"),
                  ('n',"no-action","Dinstall::Options::No-Action"),
                  ('p',"no-lock", "Dinstall::Options::No-Lock"),
-                 ('s',"no-mail", "Dinstall::Options::No-Mail")]
+                 ('s',"no-mail", "Dinstall::Options::No-Mail"),
+                 ('d',"directory", "Dinstall::Options::Directory")]
 
-    for i in ["automatic", "help", "no-action", "no-lock", "no-mail", "version"]:
+    for i in ["automatic", "help", "no-action", "no-lock", "no-mail",
+              "version", "directory"]:
         if not Cnf.has_key("Dinstall::Options::%s" % (i)):
             Cnf["Dinstall::Options::%s" % (i)] = ""
 
@@ -173,6 +175,21 @@ def init():
 
     if Options["Help"]:
         usage()
+
+    # If we have a directory flag, use it to find our files
+    if Cnf["Dinstall::Options::Directory"] != "":
+        # Note that we clobber the list of files we were given in this case
+        # so warn if the user has done both
+        if len(changes_files) > 0:
+            utils.warn("Directory provided so ignoring files given on command line")
+
+        dir = Cnf["Dinstall::Options::Directory"]
+        try:
+            # Much of the rest of p-a depends on being in the right place
+            os.chdir(dir)
+            changes_files = [x for x in os.listdir(dir) if x.endswith('.changes')]
+        except OSError, e:
+            utils.fubar("Failed to read list from directory %s (%s)" % (dir, e))
 
     Upload = queue.Upload(Cnf)
     projectB = Upload.projectB
