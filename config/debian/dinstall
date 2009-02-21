@@ -103,11 +103,13 @@ function pgdump_pre() {
 	log "Creating pre-daily-cron-job backup of projectb database..."
 	pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 }
+
 function pgdump_post() {
 	log "Creating post-daily-cron-job backup of projectb database..."
+	cd $base/backup
 	POSTDUMP=$base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 	pg_dump projectb > $POSTDUMP
-	(cd $base/backup; ln -sf $POSTDUMP current)
+	ln -sf $POSTDUMP current
 }
 
 # Updating various files
@@ -273,7 +275,8 @@ function wb() {
 
 function expire() {
 	log "Expiring old database dumps..."
-	(cd $base/backup; $scriptsdir/expire_dumps -d . -p -f "dump_*")
+	cd $base/backup
+	$scriptsdir/expire_dumps -d . -p -f "dump_*"
 }
 
 function reports() {
@@ -342,13 +345,12 @@ function aptftpcleanup() {
 
 function compress() {
 	log "Compress old psql backups"
-	(cd $base/backup/
-        find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +1 |
-        while read dumpname; do
-            echo "Compressing $dumpname"
-            bzip2 -9v "$dumpname"
-        done
-	)
+	cd $base/backup/
+    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +1 |
+    while read dumpname; do
+        echo "Compressing $dumpname"
+        bzip2 -9v "$dumpname"
+    done
 }
 
 function logstats() {
@@ -392,6 +394,10 @@ function stage() {
 
 	debug "Now calling function ${FUNC}. Arguments: ${ARGS}. Timestamp: ${TS}"
 
+	# Make sure we are always at the same place. If a function wants to be elsewhere,
+	# it has to cd first!
+	cd ${configdir}
+
 	if [ "${ERR}" = "false"]; then
 		set +e
 	fi
@@ -399,6 +405,9 @@ function stage() {
 
 	# No matter what happened in the function, we make sure we have set -e default state back
 	set -e
+
+	# Make sure we are always at the same place.
+	cd ${configdir}
 
 	touch "${stagedir}/${FUNC}"
 
