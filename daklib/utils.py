@@ -234,6 +234,10 @@ def parse_changes(filename, signing_rules=0):
     changes_in = open_file(filename)
     content = changes_in.read()
     changes_in.close()
+    try:
+        unicode(content, 'utf-8')
+    except UnicodeError:
+        raise ChangesUnicodeError, "Changes file not proper utf-8"
     return parse_deb822(content, signing_rules)
 
 ################################################################################
@@ -1491,6 +1495,25 @@ def is_email_alias(email):
                 alias_cache.add(l.split(':')[0])
     uid = email.split('@')[0]
     return uid in alias_cache
+
+################################################################################
+
+def get_changes_files(dir):
+    """
+    Takes a directory and lists all .changes files in it (as well as chdir'ing
+    to the directory; this is due to broken behaviour on the part of p-u/p-a
+    when you're not in the right place)
+
+    Returns a list of filenames
+    """
+    try:
+        # Much of the rest of p-u/p-a depends on being in the right place
+        os.chdir(dir)
+        changes_files = [x for x in os.listdir(dir) if x.endswith('.changes')]
+    except OSError, e:
+        fubar("Failed to read list from directory %s (%s)" % (dir, e))
+
+    return changes_files
 
 ################################################################################
 

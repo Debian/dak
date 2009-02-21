@@ -161,6 +161,9 @@ def check_dscs():
             except InvalidDscError, line:
                 utils.warn("syntax error in .dsc file '%s', line %s." % (f, line))
                 count += 1
+            except ChangesUnicodeError:
+                utils.warn("found invalid changes file, not properly utf-8 encoded")
+                count += 1
 
     if count:
         utils.warn("Found %s invalid .dsc files." % (count))

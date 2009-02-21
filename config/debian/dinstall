@@ -63,7 +63,8 @@ function ts() {
 
 # Cleanup actions
 function cleanup() {
-    savelog -c ${LOGROTATE} -j "$LOGFILE"
+	rm -f ${LOCK_DAILY}
+	rm -f ${LOCK_ACCEPTED}
 }
 
 # Setup the notice file to tell bad mirrors they used the wrong time
@@ -166,10 +167,9 @@ function i18n1() {
 # Process the accepted queue
 function accepted() {
     log "Processing queue/accepted"
-    cd "$accepted"
-    rm -f REPORT
-    dak process-accepted -pa *.changes | tee REPORT | \
-        mail -s "Install for $(date +"%D - %R")" ftpmaster@ftp-master.debian.org
+    rm -f "$accepted/REPORT"
+    dak process-accepted -pa -d "$accepted" > "$accepted/REPORT"
+    cat REPORT | mail -s "Install for $(date +"%D - %R")" ftpmaster@ftp-master.debian.org
     chgrp debadmin REPORT
     chmod 664 REPORT
 }
@@ -223,7 +223,7 @@ function release() {
     dak generate-releases
 }
 
-function cleanup() {
+function dakcleanup() {
     log "Cleanup old packages/files"
     dak clean-suites
     dak clean-queues
@@ -384,7 +384,7 @@ function stage() {
     # it has to cd first!
     cd ${configdir}
 
-    if [ "${ERR}" = "false"]; then
+    if [ "${ERR}" = "false" ]; then
         set +e
     fi
     ${FUNC} ${ARGS}
@@ -407,7 +407,7 @@ function stage() {
 # We need logs.
 LOGFILE="$logdir/dinstall.log"
 
-exec > "$LOGFILE" 2>&1
+exec >> "$LOGFILE" 2>&1
 
 # usually we are not using debug logs. Set to 1 if you want them.
 DEBUG=0
@@ -478,7 +478,7 @@ GO=(
     FUNC="updates"
     TIME="External Updates"
     ARGS=""
-    ERR=""
+    ERR="false"
 )
 stage $GO
 
@@ -524,7 +524,7 @@ GO=(
 )
 stage $GO
 
-rm -f $LOCKAC
+rm -f "$LOCK_ACCEPTED"
 
 GO=(
     FUNC="msfl"
@@ -583,7 +583,7 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="cleanup"
+    FUNC="dakcleanup"
     TIME="cleanup"
     ARGS=""
     ERR=""
@@ -732,6 +732,8 @@ GO=(
 stage $GO
 
 cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
+
+savelog -c ${LOGROTATE} -j "$LOGFILE"
 
 # Now, at the very (successful) end of dinstall, make sure we remove
 # our stage files, so the next dinstall run will do it all again.

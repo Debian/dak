@@ -58,7 +58,8 @@ dakerrors = {
     "NoFreeFilenameError": """Exception raised when no alternate filename was found.""",
     "TransitionsError":    """Exception raised when transitions file can't be parsed.""",
     "NoSourceFieldError":  """Exception raised - we cant find the source - wtf?""",
-    "DBUpdateError":       """Exception raised - could not update the database"""
+    "DBUpdateError":       """Exception raised - could not update the database""",
+    "ChangesUnicodeError": """Exception raised - changes file not properly utf-8 encoded"""
 } #: All dak exceptions
 
 def construct_dak_exception(name, description):

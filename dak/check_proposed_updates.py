@@ -176,6 +176,9 @@ def check_changes (filename):
     try:
         changes = utils.parse_changes(filename)
         files = utils.build_file_list(changes)
+    except ChangesUnicodeError:
+        utils.warn("Improperly encoded changes file, not utf-8")
+        return
     except:
         utils.warn("Error parsing changes file '%s'" % (filename))
         return
