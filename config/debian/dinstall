@@ -385,6 +385,11 @@ function stage() {
     # it has to cd first!
     cd ${configdir}
 
+	if [ -f "${LOCK_STOP}" ]; then
+		log "${LOCK_STOP} exists, exiting immediately"
+		exit 42
+	fi
+
     if [ "${ERR}" = "false" ]; then
         set +e
     fi
@@ -397,6 +402,11 @@ function stage() {
     cd ${configdir}
 
     touch "${stagedir}/${FUNC}"
+
+	if [ -f "${LOCK_STOP}" ]; then
+		log "${LOCK_STOP} exists, exiting immediately"
+		exit 42
+	fi
 
     if [ -n "${TIME}" ]; then
         ts "${TIME}"
@@ -445,6 +455,10 @@ LOCK_ACCEPTED="$lockdir/unchecked.lock"
 # the Packages file updates completed sucessfully.  It's not a lock
 # from our point of view
 LOCK_BRITNEY="$lockdir/britney.lock"
+
+# If this file exists we exit immediately after the currently running
+# function is done
+LOCK_STOP="$lockdir/archive.stop"
 
 lockfile -l 3600 "${LOCK_DAILY}"
 trap cleanup EXIT ERR TERM HUP INT QUIT
