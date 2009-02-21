@@ -384,7 +384,7 @@ function stage() {
     # it has to cd first!
     cd ${configdir}
 
-    if [ "${ERR}" = "false"]; then
+    if [ "${ERR}" = "false" ]; then
         set +e
     fi
     ${FUNC} ${ARGS}
