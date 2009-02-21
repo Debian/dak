@@ -372,34 +372,12 @@ def install ():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
-    # If the .orig.tar.gz is in a legacy directory we need to poolify
-    # it, so that apt-get source (and anything else that goes by the
-    # "Directory:" field in the Sources.gz file) works.
-    orig_tar_id = Upload.pkg.orig_tar_id
-    orig_tar_location = Upload.pkg.orig_tar_location
-    legacy_source_untouchable = Upload.pkg.legacy_source_untouchable
-    if orig_tar_id and orig_tar_location == "legacy":
-        q = projectB.query("SELECT DISTINCT ON (f.id) l.path, f.filename, f.id as files_id, df.source, df.id as dsc_files_id, f.size, f.md5sum FROM files f, dsc_files df, location l WHERE df.source IN (SELECT source FROM dsc_files WHERE file = %s) AND f.id = df.file AND l.id = f.location AND (l.type = 'legacy' OR l.type = 'legacy-mixed')" % (orig_tar_id))
-        qd = q.dictresult()
-        for qid in qd:
-            # Is this an old upload superseded by a newer -sa upload?  (See check_dsc() for details)
-            if legacy_source_untouchable.has_key(qid["files_id"]):
-                continue
-            # First move the files to the new location
-            legacy_filename = qid["path"] + qid["filename"]
-            pool_location = utils.poolify (changes["source"], files[newfile]["component"])
-            pool_filename = pool_location + os.path.basename(qid["filename"])
-            destination = Cnf["Dir::Pool"] + pool_location
-            utils.move(legacy_filename, destination)
-            # Then Update the DB's files table
-            q = projectB.query("UPDATE files SET filename = '%s', location = '%s' WHERE id = '%s'" % (pool_filename, dsc_location_id, qid["files_id"]))
-
-    # If this is a sourceful diff only upload that is moving non-legacy
+    # If this is a sourceful diff only upload that is moving
     # cross-component we need to copy the .orig.tar.gz into the new
     # component too for the same reasons as above.
     #
     if changes["architecture"].has_key("source") and orig_tar_id and \
-       orig_tar_location != "legacy" and orig_tar_location != dsc_location_id:
+       orig_tar_location != dsc_location_id:
         q = projectB.query("SELECT l.path, f.filename, f.size, f.md5sum, f.sha1sum, f.sha256sum FROM files f, location l WHERE f.id = %s AND f.location = l.id" % (orig_tar_id))
         ql = q.getresult()[0]
         old_filename = ql[0] + ql[1]

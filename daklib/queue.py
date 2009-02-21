@@ -212,8 +212,7 @@ class Upload:
         self.accept_count = 0
         self.accept_bytes = 0L
         self.reject_message = ""
-        self.pkg = Pkg(changes = {}, dsc = {}, dsc_files = {}, files = {},
-                       legacy_source_untouchable = {})
+        self.pkg = Pkg(changes = {}, dsc = {}, dsc_files = {}, files = {})
 
         # Initialize the substitution template mapping global
         Subst = self.Subst = {}
@@ -233,7 +232,6 @@ class Upload:
         self.pkg.dsc.clear()
         self.pkg.files.clear()
         self.pkg.dsc_files.clear()
-        self.pkg.legacy_source_untouchable.clear()
         self.pkg.orig_tar_id = None
         self.pkg.orig_tar_location = ""
         self.pkg.orig_tar_gz = None
@@ -252,7 +250,6 @@ class Upload:
         self.pkg.dsc.update(p.load())
         self.pkg.files.update(p.load())
         self.pkg.dsc_files.update(p.load())
-        self.pkg.legacy_source_untouchable.update(p.load())
 
         self.pkg.orig_tar_id = p.load()
         self.pkg.orig_tar_location = p.load()
@@ -279,7 +276,6 @@ class Upload:
         dsc = self.pkg.dsc
         files = self.pkg.files
         dsc_files = self.pkg.dsc_files
-        legacy_source_untouchable = self.pkg.legacy_source_untouchable
         orig_tar_id = self.pkg.orig_tar_id
         orig_tar_location = self.pkg.orig_tar_location
 
@@ -351,7 +347,7 @@ class Upload:
                     d_dsc_files[file_entry][i] = dsc_files[file_entry][i]
 
         for i in [ d_changes, d_dsc, d_files, d_dsc_files,
-                   legacy_source_untouchable, orig_tar_id, orig_tar_location ]:
+                   orig_tar_id, orig_tar_location ]:
             p.dump(i)
         dump_file.close()
 
@@ -1181,7 +1177,6 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
         self.reject_message = ""
         files = self.pkg.files
         dsc_files = self.pkg.dsc_files
-        legacy_source_untouchable = self.pkg.legacy_source_untouchable
         self.pkg.orig_tar_gz = None
 
         # Try and find all files mentioned in the .dsc.  This has
@@ -1253,8 +1248,6 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                             actual_size = os.stat(old_file)[stat.ST_SIZE]
                             if actual_md5 == dsc_files[dsc_file]["md5sum"] and actual_size == int(dsc_files[dsc_file]["size"]):
                                 x = i
-                            else:
-                                legacy_source_untouchable[i[3]] = ""
 
                     old_file = x[0] + x[1]
                     old_file_fh = utils.open_file(old_file)
@@ -1268,10 +1261,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     # See install() in process-accepted...
                     self.pkg.orig_tar_id = x[3]
                     self.pkg.orig_tar_gz = old_file
-                    if suite_type == "legacy" or suite_type == "legacy-mixed":
-                        self.pkg.orig_tar_location = "legacy"
-                    else:
-                        self.pkg.orig_tar_location = x[4]
+                    self.pkg.orig_tar_location = x[4]
                 else:
                     # Not there? Check the queue directories...
 
