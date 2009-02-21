@@ -125,8 +125,6 @@ def main ():
         sys.stderr.write("Processing %s...\n" % (suite))
         override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)]
         for component in Cnf.SubTree("Component").List():
-            if component == "mixed":
-                continue # Ick
             for otype in Cnf.ValueList("OverrideType"):
                 if otype == "deb":
                     suffix = ""

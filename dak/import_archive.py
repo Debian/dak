@@ -233,13 +233,10 @@ def update_locations ():
         SubSec = Cnf.SubTree("Location::%s" % (location))
         archive_id = database.get_archive_id(SubSec["archive"])
         type = SubSec.Find("type")
-        if type == "legacy-mixed":
-            projectB.query("INSERT INTO location (path, archive, type) VALUES ('%s', %d, '%s')" % (location, archive_id, SubSec["type"]))
-        else:
-            for component in Cnf.SubTree("Component").List():
-                component_id = database.get_component_id(component)
-                projectB.query("INSERT INTO location (path, component, archive, type) VALUES ('%s', %d, %d, '%s')" %
-                               (location, component_id, archive_id, SubSec["type"]))
+        for component in Cnf.SubTree("Component").List():
+            component_id = database.get_component_id(component)
+            projectB.query("INSERT INTO location (path, component, archive, type) VALUES ('%s', %d, %d, '%s')" %
+                           (location, component_id, archive_id, SubSec["type"]))
 
 def update_architectures ():
     projectB.query("DELETE FROM architecture")
@@ -542,11 +539,7 @@ Please read the documentation before running this script.
         SubSec = Cnf.SubTree("Location::%s" % (location))
         server = SubSec["Archive"]
         type = Cnf.Find("Location::%s::Type" % (location))
-        if type == "legacy-mixed":
-            sources = location + 'Sources.gz'
-            suite = Cnf.Find("Location::%s::Suite" % (location))
-            do_sources(sources, suite, "",  server)
-        elif type == "legacy" or type == "pool":
+        if type == "pool":
             for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
                 for component in Cnf.SubTree("Component").List():
                     sources = Cnf["Dir::Root"] + "dists/" + Cnf["Suite::%s::CodeName" % (suite)] + '/' + component + '/source/' + 'Sources.gz'
@@ -560,12 +553,7 @@ Please read the documentation before running this script.
         SubSec = Cnf.SubTree("Location::%s" % (location))
         server = SubSec["Archive"]
         type = Cnf.Find("Location::%s::Type" % (location))
-        if type == "legacy-mixed":
-            packages = location + 'Packages'
-            suite = Cnf.Find("Location::%s::Suite" % (location))
-            print 'Processing '+location+'...'
-            process_packages (packages, suite, "", server)
-        elif type == "legacy" or type == "pool":
+        if type == "pool":
             for suite in Cnf.ValueList("Location::%s::Suites" % (location)):
                 udeb_components = map(lambda x: x+"/debian-installer",
                                       Cnf.ValueList("Suite::%s::UdebComponents" % suite))

@@ -331,8 +331,6 @@ def main ():
             utils.fubar("Couldn't find id's of all suites: %s" % suites)
 
         for component in Cnf.SubTree("Component").List():
-            if component == "mixed":
-                continue; # Ick
             # It is crucial for the dsc override creation based on binary
             # overrides that 'dsc' goes first
             otypes = Cnf.ValueList("OverrideType")

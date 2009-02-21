@@ -151,8 +151,6 @@ def check_dscs():
     count = 0
     suite = 'unstable'
     for component in Cnf.SubTree("Component").List():
-        if component == "mixed":
-            continue
         component = component.lower()
         list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component)
         list_file = utils.open_file(list_filename)

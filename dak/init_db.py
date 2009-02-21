@@ -106,11 +106,7 @@ def do_location():
             utils.fubar("Archive '%s' for location '%s' not found."
                                % (location_config["Archive"], location))
         location_type = location_config.get("type")
-        if location_type == "legacy-mixed":
-            projectB.query("INSERT INTO location (path, archive, type) VALUES "
-                           "('%s', %d, '%s')"
-                           % (location, archive_id, location_config["type"]))
-        elif location_type == "legacy" or location_type == "pool":
+        if location_type == "pool":
             for component in Cnf.SubTree("Component").List():
                 component_id = database.get_component_id(component)
                 projectB.query("INSERT INTO location (path, component, "
