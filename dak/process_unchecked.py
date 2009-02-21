@@ -98,13 +98,7 @@ def init():
         if len(changes_files) > 0:
             utils.warn("Directory provided so ignoring files given on command line")
 
-        dir = Cnf["Dinstall::Options::Directory"]
-        try:
-            # Much of the rest of p-u depends on being in the right place
-            os.chdir(dir)
-            changes_files = [x for x in os.listdir(dir) if x.endswith('.changes')]
-        except OSError, e:
-            utils.fubar("Failed to read list from directory %s (%s)" % (dir, e))
+        changes_files = utils.get_changes_files(Cnf["Dinstall::Options::Directory"])
 
     Upload = queue.Upload(Cnf)
 

@@ -1498,6 +1498,18 @@ def is_email_alias(email):
 
 ################################################################################
 
+def get_changes_files(dir):
+    try:
+        # Much of the rest of p-u/p-a depends on being in the right place
+        os.chdir(dir)
+        changes_files = [x for x in os.listdir(dir) if x.endswith('.changes')]
+    except OSError, e:
+        fubar("Failed to read list from directory %s (%s)" % (dir, e))
+
+    return changes_files
+
+################################################################################
+
 apt_pkg.init()
 
 Cnf = apt_pkg.newConfiguration()
