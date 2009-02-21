@@ -372,6 +372,9 @@ def install ():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
+    orig_tar_id = Upload.pkg.orig_tar_id
+    orig_tar_location = Upload.pkg.orig_tar_location
+
     # If this is a sourceful diff only upload that is moving
     # cross-component we need to copy the .orig.tar.gz into the new
     # component too for the same reasons as above.
