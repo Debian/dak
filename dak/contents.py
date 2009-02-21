@@ -155,7 +155,7 @@ udeb_contents_q = """PREPARE udeb_contents_q as
 # this should be run only after p-a has run.  after a p-a
 # run we should have either accepted or rejected every package
 # so there should no longer be anything in the queue
-remove_temp_contents_cruft_q = """DELETE FROM temp_content_associations"""
+remove_pending_contents_cruft_q = """DELETE FROM pending_content_associations"""
 
 # delete any filenames we are storing which have no binary associated with them
 remove_filename_cruft_q = """DELETE FROM content_file_names
@@ -239,7 +239,7 @@ class Contents(object):
         """
         cursor = DBConn().cursor();
         cursor.execute( "BEGIN WORK" )
-        cursor.execute( remove_temp_contents_cruft_q )
+        cursor.execute( remove_pending_contents_cruft_q )
         cursor.execute( remove_filename_cruft_q )
         cursor.execute( remove_filepath_cruft_q )
         cursor.execute( "COMMIT" )

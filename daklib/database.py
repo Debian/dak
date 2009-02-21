@@ -814,12 +814,12 @@ def copy_temporary_contents(package, version, deb):
     copy the previously stored contents from the temp table to the permanant one
 
     during process-unchecked, the deb should have been scanned and the
-    contents stored in temp_content_associations
+    contents stored in pending_content_associations
     """
 
     # first see if contents exist:
 
-    exists = projectB.query("""SELECT 1 FROM temp_content_associations
+    exists = projectB.query("""SELECT 1 FROM pending_content_associations
                                WHERE package='%s' LIMIT 1""" % package ).getresult()
 
     if not exists:
@@ -840,11 +840,11 @@ def copy_temporary_contents(package, version, deb):
 
     if exists:
         sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
-                 SELECT currval('binaries_id_seq'), filepath, filename FROM temp_content_associations
+                 SELECT currval('binaries_id_seq'), filepath, filename FROM pending_content_associations
                  WHERE package='%s'
                      AND version='%s'""" % (package, version)
         projectB.query(sql)
-        projectB.query("""DELETE from temp_content_associations
+        projectB.query("""DELETE from pending_content_associations
                           WHERE package='%s'
                             AND version='%s'""" % (package, version))
 

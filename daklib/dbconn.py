@@ -470,7 +470,7 @@ class DBConn(Singleton):
         try:
 
                 # Remove any already existing recorded files for this package
-            c.execute("""DELETE FROM temp_content_associations
+            c.execute("""DELETE FROM pending_content_associations
                          WHERE package=%(Package)s
                          AND version=%(Version)s""", package )
 
@@ -481,7 +481,7 @@ class DBConn(Singleton):
                 file_id = self.get_or_set_contents_file_id(file)
                 path_id = self.get_or_set_contents_path_id(path)
 
-                c.execute("""INSERT INTO temp_content_associations
+                c.execute("""INSERT INTO pending_content_associations
                                (package, version, filepath, filename)
                            VALUES (%%(Package)s, %%(Version)s, '%d', '%d')""" % (path_id, file_id),
                           package )
