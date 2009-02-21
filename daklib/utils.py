@@ -1499,6 +1499,13 @@ def is_email_alias(email):
 ################################################################################
 
 def get_changes_files(dir):
+    """
+    Takes a directory and lists all .changes files in it (as well as chdir'ing
+    to the directory; this is due to broken behaviour on the part of p-u/p-a
+    when you're not in the right place)
+
+    Returns a list of filenames
+    """
     try:
         # Much of the rest of p-u/p-a depends on being in the right place
         os.chdir(dir)
