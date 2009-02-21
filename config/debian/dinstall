@@ -64,6 +64,7 @@ function ts() {
 # Cleanup actions
 function cleanup() {
     savelog -c ${LOGROTATE} -j "$LOGFILE"
+	rm -f ${LOCK_DAILY}
 }
 
 # Setup the notice file to tell bad mirrors they used the wrong time
@@ -407,7 +408,7 @@ function stage() {
 # We need logs.
 LOGFILE="$logdir/dinstall.log"
 
-exec > "$LOGFILE" 2>&1
+exec >> "$LOGFILE" 2>&1
 
 # usually we are not using debug logs. Set to 1 if you want them.
 DEBUG=0
