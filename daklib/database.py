@@ -829,7 +829,7 @@ def copy_temporary_contents(package, version, deb):
         subst = {
             "__PACKAGE__": package,
             "__VERSION__": version,
-            "__TO_ADDRESS__": Cnf["Dinstall::MyAdminAddress"]
+            "__TO_ADDRESS__": Cnf["Dinstall::MyAdminAddress",
             "__DAK_ADDRESS__": Cnf["Dinstall::MyEmailAddress"]
             }
 
