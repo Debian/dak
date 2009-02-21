@@ -313,7 +313,7 @@ function i18n2() {
     ln -sfT ${scriptdir}/i18n/${STAMP} i18n
 
     cd ${scriptdir}
-    find ./i18n -mtime +2 -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+    find ./i18n -mindepth 1 -maxdepth 1 -mtime +2 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 }
 
 function stats() {
@@ -715,7 +715,7 @@ GO=(
 )
 stage $GO
 
-rm -f ${BRITNEYLOCK}
+rm -f ${LOCK_BRITNEY}
 
 GO=(
     FUNC="aptftpcleanup"
