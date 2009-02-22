@@ -123,7 +123,7 @@ def process_file (file, suite, component, type, action):
         if line == "":
             continue
 
-        maintainer_override = None
+        maintainer_override = ""
         if type == "dsc":
             split_line = line.split(None, 2)
             if len(split_line) == 2:
@@ -166,8 +166,7 @@ def process_file (file, suite, component, type, action):
             (old_priority_id, old_section_id, old_maintainer_override, old_priority, old_section) = original[package]
             if action == "add" or old_priority_id == priority_id and \
                old_section_id == section_id and \
-               ((old_maintainer_override == maintainer_override) or \
-                (old_maintainer_override == "" and maintainer_override == None)):
+               old_maintainer_override == maintainer_override:
                 # If it's unchanged or we're in 'add only' mode, ignore it
                 c_skipped += 1
                 continue
