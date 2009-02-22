@@ -82,7 +82,7 @@ def do_update(self):
 
         c.execute( "CREATE INDEX content_assocaitions_binary ON content_associations(binary_pkg)" )
 
-        c.execute("UPDATE config SET value = '2' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '6' WHERE name = 'db_revision'")
         self.db.commit()
 
         print "REMINDER: Remember to fully regenerate the Contents files before running import-contents"

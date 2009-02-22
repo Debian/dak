@@ -40,7 +40,8 @@ import time
 import tempfile
 import traceback
 import tarfile
-import apt_inst, apt_pkg
+import apt_inst
+import apt_pkg
 from debian_bundle import deb822
 from daklib.dbconn import DBConn
 from daklib.binary import Binary

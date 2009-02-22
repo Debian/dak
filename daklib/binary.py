@@ -30,6 +30,7 @@ import tempfile
 import tarfile
 import commands
 import traceback
+import atexit
 from debian_bundle import deb822
 from dbconn import DBConn
 
@@ -40,8 +41,17 @@ class Binary(object):
         self.chunks = None
 
     def __del__(self):
-        # we need to remove the temporary directory, if we created one
+        """
+        make sure we cleanup when we are garbage collected.
+        """
+        self.cleanup()
+
+    def _cleanup(self):
+        """
+        we need to remove the temporary directory, if we created one
+        """
         if self.tmpdir and os.path.exists(self.tmpdir):
+            self.tmpdir = None
             shutil.rmtree(self.tmpdir)
 
     def __scan_ar(self):
@@ -75,6 +85,7 @@ class Binary(object):
                     reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
                 else:
                     self.tmpdir = tmpdir
+                    atexit.register( self.cleanup )
 
             finally:
                 os.chdir( cwd )
@@ -123,8 +134,6 @@ class Binary(object):
                 os.chdir(self.tmpdir)
                 if self.chunks[1] == "control.tar.gz":
                     control = tarfile.open(os.path.join(self.tmpdir, "control.tar.gz" ), "r:gz")
-                elif self.chunks[1] == "control.tar.bz2":
-                    control = tarfile.open(os.path.join(self.tmpdir, "control.tar.bz2" ), "r:bz2")
 
                 pkg = deb822.Packages.iter_paragraphs( control.extractfile('./control') ).next()
 

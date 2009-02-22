@@ -308,18 +308,13 @@ class Contents(object):
 
             # The MORE fun part. Ok, udebs need their own contents files, udeb, and udeb-nf (not-free)
             # This is HORRIBLY debian specific :-/
-            # First off, udeb
-            section_id = DBConn().get_section_id('debian-installer') # all udebs should be here)
+            for section_id, fn_pattern in [("debian-installer","dists/%s/Contents-udeb.gz"),
+                                           ("non-free/debian-installer", "dists/%s/Contents-udeb-nf.gz")]
+
+            section_id = DBConn().get_section_id(section_id) # all udebs should be here)
             if section_id != -1:
                 cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d)" % (section_id, suite_id, suite_id))
-                self._write_content_file(cursor, "dists/%s/Contents-udeb.gz" % suite)
-
-            # Once more, with non-free
-            section_id = DBConn().get_section_id('non-free/debian-installer') # all udebs should be here)
-
-            if section_id != -1:
-                cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d)" % (section_id, suite_id, suite_id))
-                self._write_content_file(cursor, "dists/%s/Contents-udeb-nf.gz" % suite)
+                self._write_content_file(cursor, fn_pattern % suite)
 
 
 ################################################################################

@@ -1532,8 +1532,8 @@ def generate_contents_information(filename):
     """
     Generate a list of flies contained in a .deb
 
-    @type filename: string
-    @param filename: the path to a data.tar.gz or data.tar.bz2
+    @ptype filename: string
+    @param filename: the path to a .deb
 
     @rtype: list
     @return: a list of files in the data.tar.* portion of the .deb
