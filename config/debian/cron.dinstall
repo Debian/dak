@@ -67,6 +67,10 @@ function cleanup() {
 	rm -f ${LOCK_ACCEPTED}
 }
 
+########################################################################
+# the actual dinstall functions follow                                 #
+########################################################################
+
 # Setup the notice file to tell bad mirrors they used the wrong time
 function notice() {
     rm -f "$NOTICE"
@@ -340,7 +344,27 @@ function compress() {
 }
 
 function logstats() {
-    $masterdir/tools/logs.py "$LOGFILE"
+    $masterdir/tools/logs.py "$1"
+}
+
+# save timestamp when we start
+function savetimestamp() {
+	NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+	echo ${NOW} > "${dbdir}/dinstallstart"
+}
+
+function renamelogfile() {
+	if [ -f "${dbdir}/dinstallstart" ]; then
+		RENAMETO=$(cat "${dbdir}/dinstallstart")
+		mv "$LOGFILE" "$logdir/dinstall_${RENAMETO}.log"
+		logstats "$logdir/dinstall_${RENAMETO}.log"
+		bzip2 -9 "$logdir/dinstall_${RENAMETO}.log"
+	else
+		error "Problem, I don't know when dinstall started, unable to do log statistics."
+		NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+		mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+		bzip2 -9 "$logdir/dinstall_${NOW}.log"
+	fi
 }
 
 ########################################################################
@@ -463,6 +487,14 @@ lockfile -l 3600 "${LOCK_DAILY}"
 trap cleanup EXIT ERR TERM HUP INT QUIT
 
 touch "${LOCK_BRITNEY}"
+
+GO=(
+    FUNC="savetimestamp"
+    TIME=""
+    ARGS=""
+    ERR="false"
+)
+stage $GO
 
 GO=(
     FUNC="notice"
@@ -737,17 +769,16 @@ log "Daily cron scripts successful, all done"
 
 exec > /dev/null 2>&1
 
+cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
+
 GO=(
-    FUNC="logstats"
+    FUNC="renamelogfile"
     TIME=""
     ARGS=""
-    ERR=""
+    ERR="false"
 )
 stage $GO
 
-cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
-
-savelog -c ${LOGROTATE} -j "$LOGFILE"
 
 # Now, at the very (successful) end of dinstall, make sure we remove
 # our stage files, so the next dinstall run will do it all again.

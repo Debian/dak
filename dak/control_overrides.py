@@ -77,16 +77,18 @@ def usage (exit_code=0):
 
   -a, --add                add overrides (changes and deletions are ignored)
   -S, --set                set overrides
+  -C, --change             change overrides (additions and deletions are ignored)
   -l, --list               list overrides
 
   -q, --quiet              be less verbose
+  -n, --no-action          only list the action that would have been done
 
  starred (*) values are default"""
     sys.exit(exit_code)
 
 ################################################################################
 
-def process_file (file, suite, component, type, action):
+def process_file (file, suite, component, type, action, noaction=0):
     suite_id = database.get_suite_id(suite)
     if suite_id == -1:
         utils.fubar("Suite '%s' not recognised." % (suite))
@@ -117,13 +119,14 @@ def process_file (file, suite, component, type, action):
         original[i[0]] = i[1:]
 
     start_time = time.time()
-    projectB.query("BEGIN WORK")
+    if not noaction:
+        projectB.query("BEGIN WORK")
     for line in file.readlines():
         line = re_comments.sub('', line).strip()
         if line == "":
             continue
 
-        maintainer_override = None
+        maintainer_override = ""
         if type == "dsc":
             split_line = line.split(None, 2)
             if len(split_line) == 2:
@@ -166,8 +169,7 @@ def process_file (file, suite, component, type, action):
             (old_priority_id, old_section_id, old_maintainer_override, old_priority, old_section) = original[package]
             if action == "add" or old_priority_id == priority_id and \
                old_section_id == section_id and \
-               ((old_maintainer_override == maintainer_override) or \
-                (old_maintainer_override == "" and maintainer_override == None)):
+               old_maintainer_override == maintainer_override:
                 # If it's unchanged or we're in 'add only' mode, ignore it
                 c_skipped += 1
                 continue
@@ -175,8 +177,9 @@ def process_file (file, suite, component, type, action):
                 # If it's changed, delete the old one so we can
                 # reinsert it with the new information
                 c_updated += 1
-                projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
-                               % (suite_id, component_id, package, type_id))
+                if not noaction:
+                    projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
+                                   % (suite_id, component_id, package, type_id))
                 # Log changes
                 if old_priority_id != priority_id:
                     Logger.log(["changed priority",package,old_priority,priority])
@@ -185,30 +188,37 @@ def process_file (file, suite, component, type, action):
                 if old_maintainer_override != maintainer_override:
                     Logger.log(["changed maintainer override",package,old_maintainer_override,maintainer_override])
                 update_p = 1
+        elif action == "change":
+            # Ignore additions in 'change only' mode
+            c_skipped += 1
+            continue
         else:
             c_added += 1
             update_p = 0
 
-        if maintainer_override:
-            projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '%s')"
-                           % (suite_id, component_id, type_id, package, priority_id, section_id, maintainer_override))
-        else:
-            projectB.query("INSERT INTO override (suite, component, type, package, priority, section,maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')"
-                           % (suite_id, component_id, type_id, package, priority_id, section_id))
+        if not noaction:
+            if maintainer_override:
+                projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '%s')"
+                               % (suite_id, component_id, type_id, package, priority_id, section_id, maintainer_override))
+            else:
+                projectB.query("INSERT INTO override (suite, component, type, package, priority, section,maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')"
+                               % (suite_id, component_id, type_id, package, priority_id, section_id))
 
         if not update_p:
             Logger.log(["new override",suite,component,type,package,priority,section,maintainer_override])
 
-    if not action == "add":
+    if action == "set":
         # Delete any packages which were removed
         for package in original.keys():
             if not new.has_key(package):
-                projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
-                               % (suite_id, component_id, package, type_id))
+                if not noaction:
+                    projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
+                                   % (suite_id, component_id, package, type_id))
                 c_removed += 1
                 Logger.log(["removed override",suite,component,type,package])
 
-    projectB.query("COMMIT WORK")
+    if not noaction:
+        projectB.query("COMMIT WORK")
     if not Cnf["Control-Overrides::Options::Quiet"]:
         print "Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time()-start_time), c_updated, c_added, c_removed, c_skipped, c_error)
     Logger.log(["set complete",c_updated, c_added, c_removed, c_skipped, c_error])
@@ -250,10 +260,12 @@ def main ():
                  ('q', "quiet", "Control-Overrides::Options::Quiet"),
                  ('s', "suite", "Control-Overrides::Options::Suite", "HasArg"),
                  ('S', "set", "Control-Overrides::Options::Set"),
+                 ('C', "change", "Control-Overrides::Options::Change"),
+                 ('n', "no-action", "Control-Overrides::Options::No-Action"),
                  ('t', "type", "Control-Overrides::Options::Type", "HasArg")]
 
     # Default arguments
-    for i in [ "add", "help", "list", "quiet", "set" ]:
+    for i in [ "add", "help", "list", "quiet", "set", "change", "no-action" ]:
         if not Cnf.has_key("Control-Overrides::Options::%s" % (i)):
             Cnf["Control-Overrides::Options::%s" % (i)] = ""
     if not Cnf.has_key("Control-Overrides::Options::Component"):
@@ -272,7 +284,7 @@ def main ():
     database.init(Cnf, projectB)
 
     action = None
-    for i in [ "add", "list", "set" ]:
+    for i in [ "add", "list", "set", "change" ]:
         if Cnf["Control-Overrides::Options::%s" % (i)]:
             if action:
                 utils.fubar("Can not perform more than one action at once.")
@@ -288,12 +300,17 @@ def main ():
         if Cnf.has_key("Suite::%s::Untouchable" % suite) and Cnf["Suite::%s::Untouchable" % suite] != 0:
             utils.fubar("%s: suite is untouchable" % suite)
 
-        Logger = logging.Logger(Cnf, "control-overrides")
+        noaction = 0
+        if Cnf["Control-Overrides::Options::No-Action"]:
+            utils.warn("In No-Action Mode")
+            noaction = 1
+
+        Logger = logging.Logger(Cnf, "control-overrides", noaction)
         if file_list:
             for f in file_list:
-                process_file(utils.open_file(f), suite, component, otype, action)
+                process_file(utils.open_file(f), suite, component, otype, action, noaction)
         else:
-            process_file(sys.stdin, suite, component, otype, action)
+            process_file(sys.stdin, suite, component, otype, action, noaction)
         Logger.close()
 
 #######################################################################################
