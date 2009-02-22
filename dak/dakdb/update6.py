@@ -85,11 +85,6 @@ def do_update(self):
         c.execute("UPDATE config SET value = '6' WHERE name = 'db_revision'")
         self.db.commit()
 
-        print "REMINDER: Remember to fully regenerate the Contents files before running import-contents"
-        print ""
-        print "Pausing for five seconds ..."
-        time.sleep (5)
-
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
         raise DBUpdateError, "Unable to appy debversion updates, rollback issued. Error message : %s" % (str(msg))
