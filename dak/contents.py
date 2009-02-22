@@ -70,10 +70,10 @@ OPTIONS
         supress all output but errors
 
      -s, --suite={stable,testing,unstable,...}
-        only operate on a signle suite
+        only operate on a single suite
 
      -a, --arch={i386,amd64}
-        only operate on a signle architecture
+        only operate on a single architecture
 """
     sys.exit(exit_code)
 
@@ -82,7 +82,7 @@ OPTIONS
 # where in dak.conf all of our configuration will be stowed
 
 options_prefix = "Contents"
-options_prefix = "%s::Opitons" % options_prefix
+options_prefix = "%s::Options" % options_prefix
 
 log = logging.getLogger()
 
