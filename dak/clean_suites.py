@@ -39,6 +39,7 @@ Cnf = None
 Options = None
 now_date = None;     # mark newly "deleted" things as deleted "now"
 delete_date = None;  # delete things marked "deleted" earler than this
+max_delete = None
 
 ################################################################################
 
@@ -47,7 +48,8 @@ def usage (exit_code=0):
 Clean old packages from suites.
 
   -n, --no-action            don't do anything
-  -h, --help                 show this help and exit"""
+  -h, --help                 show this help and exit
+  -m, --maximum              maximum number of files to remove"""
     sys.exit(exit_code)
 
 ################################################################################
@@ -183,7 +185,7 @@ def clean_binaries():
 ########################################
 
 def clean():
-    global delete_date, now_date
+    global delete_date, now_date, max_delete
     count = 0
     size = 0
 
@@ -204,7 +206,11 @@ def clean():
         sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
 
     # Delete files from the pool
-    q = projectB.query("SELECT l.path, f.filename FROM location l, files f WHERE f.last_used <= '%s' AND l.id = f.location" % (delete_date))
+    query = "SELECT l.path, f.filename FROM location l, files f WHERE f.last_used <= '%s' AND l.id = f.location" % (delete_data)
+    if max_delete is not None:
+        query += " LIMIT %d" % maximum
+        sys.stdout.write("Limiting removals to %d" % Cnf["Clean-Suites::Options::Maximum"])
+
     for i in q.getresult():
         filename = i[0] + i[1]
         if not os.path.exists(filename):
@@ -321,22 +327,35 @@ def clean_queue_build():
 ################################################################################
 
 def main():
-    global Cnf, Options, projectB, delete_date, now_date
+    global Cnf, Options, projectB, delete_date, now_date, max_delete
 
     Cnf = utils.get_conf()
-    for i in ["Help", "No-Action" ]:
+    for i in ["Help", "No-Action", "Maximum" ]:
         if not Cnf.has_key("Clean-Suites::Options::%s" % (i)):
             Cnf["Clean-Suites::Options::%s" % (i)] = ""
 
     Arguments = [('h',"help","Clean-Suites::Options::Help"),
-                 ('n',"no-action","Clean-Suites::Options::No-Action")]
+                 ('n',"no-action","Clean-Suites::Options::No-Action"),
+                 ('m',"maximum","Clean-Suites::Options::Maximum", "HasArg")]
 
     apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     Options = Cnf.SubTree("Clean-Suites::Options")
 
+    if Cnf["Clean-Suites::Options::Maximum"] != "":
+        try:
+            # Only use Maximum if it's an integer
+            max_delete = int(Cnf["Clean-Suites::Options::Maximum"])
+            if max_delete < 1:
+                utils.fubar("If given, Maximum must be at least 1")
+        except ValueError, e:
+            utils.fubar("If given, Maximum must be an integer")
+    else:
+        max_delete = None
+
     if Options["Help"]:
         usage()
 
+    print max_delete
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
     now_date = time.strftime("%Y-%m-%d %H:%M")
