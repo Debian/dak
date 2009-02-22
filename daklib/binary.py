@@ -44,7 +44,7 @@ class Binary(object):
         """
         make sure we cleanup when we are garbage collected.
         """
-        self.cleanup()
+        self._cleanup()
 
     def _cleanup(self):
         """
@@ -85,7 +85,7 @@ class Binary(object):
                     reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
                 else:
                     self.tmpdir = tmpdir
-                    atexit.register( self.cleanup )
+                    atexit.register( self._cleanup )
 
             finally:
                 os.chdir( cwd )
