@@ -79,7 +79,7 @@ def init():
                  ('n',"no-action","Dinstall::Options::No-Action"),
                  ('p',"no-lock", "Dinstall::Options::No-Lock"),
                  ('s',"no-mail", "Dinstall::Options::No-Mail"),
-                 ('d',"directory", "Dinstall::Options::Directory")]
+                 ('d',"directory", "Dinstall::Options::Directory", "HasArg")]
 
     for i in ["automatic", "help", "no-action", "no-lock", "no-mail",
               "override-distribution", "version", "directory"]:
