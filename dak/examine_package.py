@@ -470,7 +470,10 @@ def display_changes(suite, changes_filename):
     foldable_output(changes_filename, "changes", changes, norow=True)
 
 def check_changes (changes_filename):
-    changes = utils.parse_changes (changes_filename)
+    try:
+        changes = utils.parse_changes (changes_filename)
+    except ChangesUnicodeError:
+        utils.warn("Encoding problem with changes file %s" % (changes_filename))
     display_changes(changes['distribution'], changes_filename)
 
     files = utils.build_file_list(changes)
