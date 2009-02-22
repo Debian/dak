@@ -355,7 +355,6 @@ def main():
     if Options["Help"]:
         usage()
 
-    print max_delete
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 
     now_date = time.strftime("%Y-%m-%d %H:%M")
