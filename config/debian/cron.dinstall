@@ -169,9 +169,9 @@ function accepted() {
     log "Processing queue/accepted"
     rm -f "$accepted/REPORT"
     dak process-accepted -pa -d "$accepted" > "$accepted/REPORT"
-    cat REPORT | mail -s "Install for $(date +"%D - %R")" ftpmaster@ftp-master.debian.org
-    chgrp debadmin REPORT
-    chmod 664 REPORT
+    cat "$accepted/REPORT" | mail -s "Install for $(date +"%D - %R")" ftpmaster@ftp-master.debian.org
+    chgrp debadmin "$accepted/REPORT"
+    chmod 664 "$accepted/REPORT"
 }
 
 function cruft() {
