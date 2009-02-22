@@ -452,6 +452,32 @@ class DBConn(Singleton):
 
         return id
 
+    def get_suite_architectures(self, suite):
+        """
+        Returns list of architectures for C{suite}.
+
+        @type suite: string, int
+        @param suite: the suite name or the suite_id
+
+        @rtype: list
+        @return: the list of architectures for I{suite}
+        """
+
+        suite_id = None
+        if type(suite) == str:
+            suite_id = self.get_suite_id(suite)
+        elif type(suite) == int:
+            suite_id = suite
+        else:
+            return None
+
+        c = self.db_con.cursor()
+        c.execute( """SELECT a.arch_string FROM suite_architectures sa
+                      JOIN architecture a ON (a.id = sa.architecture)
+                      WHERE suite='%s'""" % suite_id )
+
+        return map(lambda x: x[0], c.fetchall())
+
     def insert_content_paths(self, package, fullpaths):
         """
         Make sure given path is associated with given binary id
