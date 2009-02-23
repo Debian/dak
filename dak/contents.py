@@ -88,9 +88,6 @@ log = logging.getLogger()
 
 ################################################################################
 
-# we unfortunately still have broken stuff in headers
-latin1_q = """SET CLIENT_ENCODING TO 'LATIN1'"""
-
 # get all the arches delivered for a given suite
 # this should probably exist somehere common
 arches_q = """PREPARE arches_q as
@@ -252,7 +249,6 @@ class Contents(object):
         pooldir = Config()[ 'Dir::Pool' ]
 
         cursor = DBConn().cursor();
-        cursor.execute( latin1_q )
         cursor.execute( debs_q )
         cursor.execute( olddeb_q )
         cursor.execute( arches_q )
