@@ -28,32 +28,8 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 ########################################################################
 # Functions                                                            #
 ########################################################################
-# log something (basically echo it together with a timestamp)
-#
-# Set $PROGRAM to a string to have it added to the output.
-function log () {
-        if [ -z "${PROGRAM}" ]; then
-                echo "$(date +"%b %d %H:%M:%S") $(hostname -s) [$$] $@"
-        else
-                echo "$(date +"%b %d %H:%M:%S") $(hostname -s) ${PROGRAM}[$$]: $@"
-        fi
-}
-
-# log the message using log() but then also send a mail
-# to the address configured in MAILTO (if non-empty)
-function log_error () {
-        log "$@"
-        if [ -z "${MAILTO}" ]; then
-                echo "$@" | mail -e -s "[$PROGRAM@$(hostname -s)] ERROR [$$]" ${MAILTO}
-        fi
-}
-
-# debug log, only output when DEBUG=1
-function debug () {
-    if [ $DEBUG -eq 1 ]; then
-        log "$*"
-    fi
-}
+# common functions are "outsourced"
+. "${configdir}/common"
 
 # Timestamp. Used for dinstall stat graphs
 function ts() {
@@ -426,14 +402,14 @@ function stage() {
 
     touch "${stagedir}/${FUNC}"
 
+    if [ -n "${TIME}" ]; then
+        ts "${TIME}"
+    fi
+
 	if [ -f "${LOCK_STOP}" ]; then
 		log "${LOCK_STOP} exists, exiting immediately"
 		exit 42
 	fi
-
-    if [ -n "${TIME}" ]; then
-        ts "${TIME}"
-    fi
 }
 
 ########################################################################
@@ -461,8 +437,14 @@ fi
 # How many logfiles to keep
 LOGROTATE=${LOGROTATE:-400}
 
+# Marker for dinstall start
+DINSTALLSTART="${lockdir}/dinstallstart"
+# Marker for dinstall end
+DINSTALLEND="${lockdir}/dinstallend"
+
 # Timestamps start at -1. so first gets 0
 TS=-1
+touch "${DINSTALLSTART}"
 ts "startup"
 
 # Tell everyone we are doing some work
@@ -782,4 +764,5 @@ stage $GO
 
 # Now, at the very (successful) end of dinstall, make sure we remove
 # our stage files, so the next dinstall run will do it all again.
-rm -f "${stagedir}/*"
+rm -f ${stagedir}/*
+touch "${DINSTALLEND}"

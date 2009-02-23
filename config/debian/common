@@ -1,0 +1,26 @@
+# log something (basically echo it together with a timestamp)
+#
+# Set $PROGRAM to a string to have it added to the output.
+function log () {
+        if [ -z "${PROGRAM}" ]; then
+                echo "$(date +"%b %d %H:%M:%S") $(hostname -s) [$$] $@"
+        else
+                echo "$(date +"%b %d %H:%M:%S") $(hostname -s) ${PROGRAM}[$$]: $@"
+        fi
+}
+
+# log the message using log() but then also send a mail
+# to the address configured in MAILTO (if non-empty)
+function log_error () {
+        log "$@"
+        if [ -z "${MAILTO}" ]; then
+                echo "$@" | mail -e -s "[$PROGRAM@$(hostname -s)] ERROR [$$]" ${MAILTO}
+        fi
+}
+
+# debug log, only output when DEBUG=1
+function debug () {
+    if [ $DEBUG -eq 1 ]; then
+        log "$*"
+    fi
+}
