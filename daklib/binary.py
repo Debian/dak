@@ -142,7 +142,7 @@ class Binary(object):
                 elif self.chunks[2] == "data.tar.bz2":
                     data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
 
-                return DBConn().insert_content_paths(pkg, [ tarinfo.name for tarinfo in data if tarinfo.isdir()])
+                return DBConn().insert_content_paths(pkg, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
 
             except:
                 traceback.print_exc()
