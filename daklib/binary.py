@@ -51,8 +51,8 @@ class Binary(object):
         we need to remove the temporary directory, if we created one
         """
         if self.tmpdir and os.path.exists(self.tmpdir):
-            self.tmpdir = None
             shutil.rmtree(self.tmpdir)
+            self.tmpdir = None
 
     def __scan_ar(self):
         # get a list of the ar contents
