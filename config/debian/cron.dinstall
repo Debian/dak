@@ -767,7 +767,7 @@ stage $GO
 
 log "Daily cron scripts successful, all done"
 
-exec > /dev/null 2>&1
+exec > "$logdir/afterdinstall.log" 2>&1
 
 cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
 
