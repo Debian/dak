@@ -206,7 +206,7 @@ def clean():
         sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
 
     # Delete files from the pool
-    query = "SELECT l.path, f.filename FROM location l, files f WHERE f.last_used <= '%s' AND l.id = f.location" % (delete_data)
+    query = "SELECT l.path, f.filename FROM location l, files f WHERE f.last_used <= '%s' AND l.id = f.location" % (delete_date)
     if max_delete is not None:
         query += " LIMIT %d" % maximum
         sys.stdout.write("Limiting removals to %d" % Cnf["Clean-Suites::Options::Maximum"])
