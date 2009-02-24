@@ -26,6 +26,7 @@ import sys, os, stat, time, pg
 import gzip, bz2
 import apt_pkg
 from daklib import utils
+from daklib import database
 from daklib.dak_exceptions import *
 
 ################################################################################
@@ -176,6 +177,10 @@ def main ():
             if qs[0][0] != "-": version = qs[0][0]
             if qs[0][1]: description = qs[0][1]
 
+        architectures = database.get_suite_architectures(suite)
+        if architectures == None:
+            architectures = []
+
         if SuiteBlock.has_key("NotAutomatic"):
             notautomatic = "yes"
         else:
@@ -221,7 +226,7 @@ def main ():
 
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
-        out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, SuiteBlock.ValueList("Architectures")))))
+        out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, architectures))))
         if components:
             out.write("Components: %s\n" % (" ".join(components)))
 
