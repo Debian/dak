@@ -150,6 +150,7 @@ def main ():
     apt_pkg.ReadConfigFileISC(AptCnf, Options["Apt-Conf"])
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    database.init(Cnf, projectB)
 
     if not suites:
         suites = Cnf.SubTree("Suite").List()
