@@ -211,6 +211,7 @@ def clean():
         query += " LIMIT %d" % maximum
         sys.stdout.write("Limiting removals to %d" % Cnf["Clean-Suites::Options::Maximum"])
 
+    q=projectB.query(query)
     for i in q.getresult():
         filename = i[0] + i[1]
         if not os.path.exists(filename):
