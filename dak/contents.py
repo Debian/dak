@@ -191,14 +191,12 @@ class Contents(object):
                     h = open(os.path.join( Config()["Dir::Templates"],
                                            Config()["Contents::Header"] ), "r")
                     self.header = h.read()
-                    print( "header: %s" % self.header )
                     h.close()
                 except:
                     log.error( "error opening header file: %d\n%s" % (Config()["Contents::Header"],
                                                                       traceback.format_exc() ))
                     self.header = False
             else:
-                print( "no header" )
                 self.header = False
 
         return self.header
@@ -211,7 +209,11 @@ class Contents(object):
         Internal method for writing all the results to a given file.
         The cursor should have a result set generated from a query already.
         """
-        f = gzip.open(Config()["Dir::Root"] + filename, "w")
+        filepath = Config()["Contents::Root"] + filename
+        filedir = os.path.dirname(filepath)
+        if not os.path.isdir(filedir):
+            os.makedirs(filedir)
+        f = gzip.open(filepath, "w")
         try:
             header = self._getHeader()
 
@@ -224,7 +226,7 @@ class Contents(object):
                     return
 
                 num_tabs = max(1,
-                               int( math.ceil( (self._goal_column - len(contents[0])) / 8) ) )
+                               int(math.ceil((self._goal_column - len(contents[0])) / 8)))
                 f.write(contents[0] + ( '\t' * num_tabs ) + contents[-1] + "\n")
 
         finally:

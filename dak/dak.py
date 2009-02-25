@@ -173,8 +173,6 @@ def init():
          "Split queue/done into a date-based hierarchy"),
         ("stats",
          "Generate statistics"),
-        ("calculate-shasums",
-         "Calculate missing sha1sums and sha256sums"),
         ("bts-categorize",
          "Categorize uncategorized bugs filed against ftp.debian.org"),
         ("add-user",
