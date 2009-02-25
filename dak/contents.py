@@ -263,18 +263,21 @@ class Contents(object):
             for arch_id in arch_list:
                 cursor.execute( "EXECUTE debs_q(%d, %d)" % ( suite_id, arch_id[0] ) )
 
-                debs = cursor.fetchall()
                 count = 0
-                for deb in debs:
+                while True:
+                    deb = cursor.fetchone()
+                    if not deb:
+                        break
                     count += 1
-                    cursor.execute( "EXECUTE olddeb_q(%d)" % (deb[0] ) )
-                    old = cursor.fetchone()
+                    cursor1 = DBConn().cursor();
+                    cursor1.execute( "EXECUTE olddeb_q(%d)" % (deb[0] ) )
+                    old = cursor1.fetchone()
                     if old:
                         log.debug( "already imported: %s" % deb[1] )
                     else:
                         debfile = os.path.join( pooldir, deb[1] )
                         if os.path.exists( debfile ):
-                            Binary(f).scan_package( deb[0] )
+                            Binary(debfile).scan_package( deb[0] )
                         else:
                             log.error( "missing .deb: %s" % deb[1] )
 
