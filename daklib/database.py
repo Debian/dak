@@ -48,15 +48,12 @@ location_id_cache = {}        #: cache for locations
 maintainer_id_cache = {}      #: cache for maintainers
 keyring_id_cache = {}         #: cache for keyrings
 source_id_cache = {}          #: cache for sources
-
 files_id_cache = {}           #: cache for files
 maintainer_cache = {}         #: cache for maintainer names
 fingerprint_id_cache = {}     #: cache for fingerprints
 queue_id_cache = {}           #: cache for queues
 uid_id_cache = {}             #: cache for uids
 suite_version_cache = {}      #: cache for suite_versions (packages)
-suite_bin_version_cache = {}
-cache_preloaded = False
 
 ################################################################################
 
@@ -391,7 +388,6 @@ def get_suite_version(source, suite):
     @return: the version for I{source} in I{suite}
 
     """
-
     global suite_version_cache
     cache_key = "%s_%s" % (source, suite)
 
@@ -413,50 +409,6 @@ def get_suite_version(source, suite):
     suite_version_cache[cache_key] = version
 
     return version
-
-def get_latest_binary_version_id(binary, section, suite, arch):
-    global suite_bin_version_cache
-    cache_key = "%s_%s_%s_%s" % (binary, section, suite, arch)
-    cache_key_all = "%s_%s_%s_%s" % (binary, section, suite, get_architecture_id("all"))
-
-    # Check for the cache hit for its arch, then arch all
-    if suite_bin_version_cache.has_key(cache_key):
-        return suite_bin_version_cache[cache_key]
-    if suite_bin_version_cache.has_key(cache_key_all):
-        return suite_bin_version_cache[cache_key_all]
-    if cache_preloaded == True:
-        return # package does not exist
-
-    q = projectB.query("SELECT DISTINCT b.id FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN override o ON (o.package=b.package) WHERE b.package = '%s' AND b.architecture = '%d' AND ba.suite = '%d' AND o.section = '%d'" % (binary, int(arch), int(suite), int(section)))
-
-    if not q.getresult():
-        return False
-
-    highest_bid = q.getresult()[0][0]
-
-    suite_bin_version_cache[cache_key] = highest_bid
-    return highest_bid
-
-def preload_binary_id_cache():
-    global suite_bin_version_cache, cache_preloaded
-
-    # Get suite info
-    q = projectB.query("SELECT id FROM suite")
-    suites = q.getresult()
-
-    # Get arch mappings
-    q = projectB.query("SELECT id FROM architecture")
-    arches = q.getresult()
-
-    for suite in suites:
-        for arch in arches:
-            q = projectB.query("SELECT DISTINCT b.id, b.package, o.section FROM binaries b JOIN bin_associations ba ON (b.id = ba.bin) JOIN override o ON (o.package=b.package) WHERE b.architecture = '%d' AND ba.suite = '%d'" % (int(arch[0]), int(suite[0])))
-
-            for bi in q.getresult():
-                cache_key = "%s_%s_%s_%s" % (bi[1], bi[2], suite[0], arch[0])
-                suite_bin_version_cache[cache_key] = int(bi[0])
-
-    cache_preloaded = True
 
 def get_suite_architectures(suite):
     """
@@ -483,6 +435,7 @@ def get_suite_architectures(suite):
 
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
+
 
 ################################################################################
 
@@ -805,46 +758,3 @@ def get_suites(pkgname, src=False):
 
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
-
-
-################################################################################
-
-def copy_temporary_contents(package, version, deb):
-    """
-    copy the previously stored contents from the temp table to the permanant one
-
-    during process-unchecked, the deb should have been scanned and the
-    contents stored in pending_content_associations
-    """
-
-    # first see if contents exist:
-
-    exists = projectB.query("""SELECT 1 FROM pending_content_associations
-                               WHERE package='%s' LIMIT 1""" % package ).getresult()
-
-    if not exists:
-        # This should NOT happen.  We should have added contents
-        # during process-unchecked.  if it did, log an error, and send
-        # an email.
-        subst = {
-            "__PACKAGE__": package,
-            "__VERSION__": version,
-            "__TO_ADDRESS__": Cnf["Dinstall::MyAdminAddress"],
-            "__DAK_ADDRESS__": Cnf["Dinstall::MyEmailAddress"] }
-
-        message = utils.TemplateSubst(Subst, Cnf["Dir::Templates"]+"/missing-contents")
-        utils.send_mail( message )
-
-        exists = DBConn().insert_content_path(package, version, deb)
-
-    if exists:
-        sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
-                 SELECT currval('binaries_id_seq'), filepath, filename FROM pending_content_associations
-                 WHERE package='%s'
-                     AND version='%s'""" % (package, version)
-        projectB.query(sql)
-        projectB.query("""DELETE from pending_content_associations
-                          WHERE package='%s'
-                            AND version='%s'""" % (package, version))
-
-    return exists

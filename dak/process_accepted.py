@@ -29,13 +29,8 @@
 
 ###############################################################################
 
-import errno
-import fcntl
-import os
-import sys
-import time
-import re
-import apt_pkg, commands
+import errno, fcntl, os, sys, time, re
+import apt_pkg
 from daklib import database
 from daklib import logging
 from daklib import queue
@@ -102,9 +97,7 @@ class Urgency_Log:
         else:
             os.unlink(self.log_filename)
 
-
 ###############################################################################
-
 
 def reject (str, prefix="Rejected: "):
     global reject_message
@@ -390,9 +383,6 @@ def install ():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
-            if not database.copy_temporary_contents(package, version, files[newfile]):
-                reject("Missing contents for package")
-
     orig_tar_id = Upload.pkg.orig_tar_id
     orig_tar_location = Upload.pkg.orig_tar_location
 
@@ -436,6 +426,7 @@ def install ():
         utils.copy(pkg.changes_file, Cnf["Dir::Root"] + dest)
     for dest in copy_dot_dak.keys():
         utils.copy(Upload.pkg.changes_file[:-8]+".dak", dest)
+
     projectB.query("COMMIT WORK")
 
     # Move the .changes into the 'done' directory

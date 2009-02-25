@@ -45,7 +45,7 @@ from daklib.dak_exceptions import DBUpdateError
 
 Cnf = None
 projectB = None
-required_database_schema = 6
+required_database_schema = 5
 
 ################################################################################
 

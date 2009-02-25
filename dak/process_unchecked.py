@@ -28,23 +28,9 @@
 
 ################################################################################
 
-import commands
-import errno
-import fcntl
-import os
-import re
-import shutil
-import stat
-import sys
-import time
-import tempfile
-import traceback
-import tarfile
-import apt_inst
-import apt_pkg
-from debian_bundle import deb822
-from daklib.dbconn import DBConn
-from daklib.binary import Binary
+import commands, errno, fcntl, os, re, shutil, stat, sys, time, tempfile, traceback
+import apt_inst, apt_pkg
+from daklib import database
 from daklib import logging
 from daklib import queue
 from daklib import utils
@@ -142,16 +128,6 @@ def reject (str, prefix="Rejected: "):
     global reject_message
     if str:
         reject_message += prefix + str + "\n"
-
-################################################################################
-
-def create_tmpdir():
-    """
-    Create a temporary directory that can be used for unpacking files into for
-    checking
-    """
-    tmpdir = tempfile.mkdtemp()
-    return tmpdir
 
 ################################################################################
 
@@ -326,7 +302,7 @@ def check_distributions():
             (source, dest) = args[1:3]
             if changes["distribution"].has_key(source):
                 for arch in changes["architecture"].keys():
-                    if arch not in DBConn().get_suite_architectures(source):
+                    if arch not in database.get_suite_architectures(source):
                         reject("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch),"")
                         del changes["distribution"][source]
                         changes["distribution"][dest] = 1
@@ -356,6 +332,33 @@ def check_distributions():
     for suite in changes["distribution"].keys():
         if not Cnf.has_key("Suite::%s" % (suite)):
             reject("Unknown distribution `%s'." % (suite))
+
+################################################################################
+
+def check_deb_ar(filename):
+    """
+    Sanity check the ar of a .deb, i.e. that there is:
+
+      1. debian-binary
+      2. control.tar.gz
+      3. data.tar.gz or data.tar.bz2
+
+    in that order, and nothing else.
+    """
+    cmd = "ar t %s" % (filename)
+    (result, output) = commands.getstatusoutput(cmd)
+    if result != 0:
+        reject("%s: 'ar t' invocation failed." % (filename))
+        reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
+    chunks = output.split('\n')
+    if len(chunks) != 3:
+        reject("%s: found %d chunks, expected 3." % (filename, len(chunks)))
+    if chunks[0] != "debian-binary":
+        reject("%s: first chunk is '%s', expected 'debian-binary'." % (filename, chunks[0]))
+    if chunks[1] != "control.tar.gz":
+        reject("%s: second chunk is '%s', expected 'control.tar.gz'." % (filename, chunks[1]))
+    if chunks[2] not in [ "data.tar.bz2", "data.tar.gz" ]:
+        reject("%s: third chunk is '%s', expected 'data.tar.gz' or 'data.tar.bz2'." % (filename, chunks[2]))
 
 ################################################################################
 
@@ -396,19 +399,6 @@ def check_files():
     reprocess = 0
     has_binaries = 0
     has_source = 0
-
-    cursor = DBConn().cursor()
-    # Check for packages that have moved from one component to another
-    # STU: this should probably be changed to not join on architecture, suite tables but instead to used their cached name->id mappings from DBConn
-    cursor.execute("""PREPARE moved_pkg_q AS
-        SELECT c.name FROM binaries b, bin_associations ba, suite s, location l,
-                    component c, architecture a, files f
-        WHERE b.package = $1 AND s.suite_name = $2
-          AND (a.arch_string = $3 OR a.arch_string = 'all')
-          AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id
-          AND f.location = l.id
-          AND l.component = c.id
-          AND b.file = f.id""")
 
     for f in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
@@ -474,7 +464,7 @@ def check_files():
             default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
             architecture = control.Find("Architecture")
             upload_suite = changes["distribution"].keys()[0]
-            if architecture not in DBConn().get_suite_architectures(default_suite) and architecture not in DBConn().get_suite_architectures(upload_suite):
+            if architecture not in database.get_suite_architectures(default_suite) and architecture not in database.get_suite_architectures(upload_suite):
                 reject("Unknown architecture '%s'." % (architecture))
 
             # Ensure the architecture of the .deb is one of the ones
@@ -572,7 +562,7 @@ def check_files():
             # Check the version and for file overwrites
             reject(Upload.check_binary_against_db(f),"")
 
-            Binary(f).scan_package()
+            check_deb_ar(f)
 
         # Checks for a source package...
         else:
@@ -632,7 +622,7 @@ def check_files():
 
             # Validate the component
             component = files[f]["component"]
-            component_id = DBConn().get_component_id(component)
+            component_id = database.get_component_id(component)
             if component_id == -1:
                 reject("file '%s' has unknown component '%s'." % (f, component))
                 continue
@@ -647,14 +637,14 @@ def check_files():
 
             # Determine the location
             location = Cnf["Dir::Pool"]
-            location_id = DBConn().get_location_id(location, component, archive)
+            location_id = database.get_location_id (location, component, archive)
             if location_id == -1:
                 reject("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive))
             files[f]["location id"] = location_id
 
             # Check the md5sum & size against existing files (if any)
             files[f]["pool name"] = utils.poolify (changes["source"], files[f]["component"])
-            files_id = DBConn().get_files_id(files[f]["pool name"] + f, files[f]["size"], files[f]["md5sum"], files[f]["location id"])
+            files_id = database.get_files_id(files[f]["pool name"] + f, files[f]["size"], files[f]["md5sum"], files[f]["location id"])
             if files_id == -1:
                 reject("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (f))
             elif files_id == -2:
@@ -662,9 +652,16 @@ def check_files():
             files[f]["files id"] = files_id
 
             # Check for packages that have moved from one component to another
-            files[f]['suite'] = suite
-            cursor.execute("""EXECUTE moved_pkg_q( %(package)s, %(suite)s, %(architecture)s )""", ( files[f] ) )
-            ql = cursor.fetchone()
+            q = Upload.projectB.query("""
+SELECT c.name FROM binaries b, bin_associations ba, suite s, location l,
+                   component c, architecture a, files f
+ WHERE b.package = '%s' AND s.suite_name = '%s'
+   AND (a.arch_string = '%s' OR a.arch_string = 'all')
+   AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id
+   AND f.location = l.id AND l.component = c.id AND b.file = f.id"""
+                               % (files[f]["package"], suite,
+                                  files[f]["architecture"]))
+            ql = q.getresult()
             if ql:
                 files[f]["othercomponents"] = ql[0][0]
 
@@ -889,7 +886,13 @@ def check_source():
        or pkg.orig_tar_gz == -1:
         return
 
-    tmpdir = create_tmpdir()
+    # Create a temporary directory to extract the source into
+    if Options["No-Action"]:
+        tmpdir = tempfile.mkdtemp()
+    else:
+        # We're in queue/holding and can create a random directory.
+        tmpdir = "%s" % (os.getpid())
+        os.mkdir(tmpdir)
 
     # Move into the temporary directory
     cwd = os.getcwd()
@@ -1010,21 +1013,12 @@ def check_timestamps():
 ################################################################################
 
 def lookup_uid_from_fingerprint(fpr):
-    """
-    Return the uid,name,isdm for a given gpg fingerprint
-
-    @ptype fpr: string
-    @param fpr: a 40 byte GPG fingerprint
-
-    @return (uid, name, isdm)
-    """
-    cursor = DBConn().cursor()
-    cursor.execute( "SELECT u.uid, u.name, k.debian_maintainer FROM fingerprint f JOIN keyrings k ON (f.keyring=k.id), uid u WHERE f.uid = u.id AND f.fingerprint = '%s'" % (fpr))
-    qs = cursor.fetchone()
-    if qs:
-        return qs
-    else:
+    q = Upload.projectB.query("SELECT u.uid, u.name, k.debian_maintainer FROM fingerprint f JOIN keyrings k ON (f.keyring=k.id), uid u WHERE f.uid = u.id AND f.fingerprint = '%s'" % (fpr))
+    qs = q.getresult()
+    if len(qs) == 0:
         return (None, None, None)
+    else:
+        return qs[0]
 
 def check_signed_by_key():
     """Ensure the .changes is signed by an authorized uploader."""
@@ -1065,16 +1059,12 @@ def check_signed_by_key():
 
     if not sponsored and not may_nmu:
         source_ids = []
-        cursor.execute( "SELECT s.id, s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = %(source)s AND s.dm_upload_allowed = 'yes'", changes )
+        q = Upload.projectB.query("SELECT s.id, s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.dm_upload_allowed = 'yes'" % (changes["source"]))
 
         highest_sid, highest_version = None, None
 
         should_reject = True
-        while True:
-            si = cursor.fetchone()
-            if not si:
-                break
-
+        for si in q.getresult():
             if highest_version == None or apt_pkg.VersionCompare(si[1], highest_version) == 1:
                  highest_sid = si[0]
                  highest_version = si[1]
@@ -1082,14 +1072,8 @@ def check_signed_by_key():
         if highest_sid == None:
            reject("Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version" % changes["source"])
         else:
-
-            cursor.execute("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT su.maintainer FROM src_uploaders su JOIN source s ON (s.id = su.source) WHERE su.source = %s)" % (highest_sid))
-
-            while True:
-                m = cursor.fetchone()
-                if not m:
-                    break
-
+            q = Upload.projectB.query("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT su.maintainer FROM src_uploaders su JOIN source s ON (s.id = su.source) WHERE su.source = %s)" % (highest_sid))
+            for m in q.getresult():
                 (rfc822, rfc2047, name, email) = utils.fix_maintainer(m[0])
                 if email == uid_email or name == uid_name:
                     should_reject=False
@@ -1100,14 +1084,9 @@ def check_signed_by_key():
 
         for b in changes["binary"].keys():
             for suite in changes["distribution"].keys():
-                suite_id = DBConn().get_suite_id(suite)
-
-                cursor.execute("SELECT DISTINCT s.source FROM source s JOIN binaries b ON (s.id = b.source) JOIN bin_associations ba On (b.id = ba.bin) WHERE b.package = %(package)s AND ba.suite = %(suite)s" , {'package':b, 'suite':suite_id} )
-                while True:
-                    s = cursor.fetchone()
-                    if not s:
-                        break
-
+                suite_id = database.get_suite_id(suite)
+                q = Upload.projectB.query("SELECT DISTINCT s.source FROM source s JOIN binaries b ON (s.id = b.source) JOIN bin_associations ba On (b.id = ba.bin) WHERE b.package = '%s' AND ba.suite = %s" % (b, suite_id))
+                for s in q.getresult():
                     if s[0] != changes["source"]:
                         reject("%s may not hijack %s from source package %s in suite %s" % (uid, b, s, suite))
 
@@ -1251,9 +1230,11 @@ def move_to_dir (dest, perms=0660, changesperms=0664):
 ################################################################################
 
 def is_unembargo ():
-    cursor = DBConn().cursor()
-    cursor.execute( "SELECT package FROM disembargo WHERE package = %(source)s AND version = %(version)s", changes )
-    if cursor.fetchone():
+    q = Upload.projectB.query(
+      "SELECT package FROM disembargo WHERE package = '%s' AND version = '%s'" %
+      (changes["source"], changes["version"]))
+    ql = q.getresult()
+    if ql:
         return 1
 
     oldcwd = os.getcwd()
@@ -1265,9 +1246,9 @@ def is_unembargo ():
         if changes["architecture"].has_key("source"):
             if Options["No-Action"]: return 1
 
-            cursor.execute( "INSERT INTO disembargo (package, version) VALUES ('%(package)s', '%(version)s')",
-                            changes )
-            cursor.execute( "COMMIT" )
+            Upload.projectB.query(
+              "INSERT INTO disembargo (package, version) VALUES ('%s', '%s')" %
+              (changes["source"], changes["version"]))
             return 1
 
     return 0
@@ -1325,18 +1306,12 @@ def is_stableupdate ():
         return 0
 
     if not changes["architecture"].has_key("source"):
-        pusuite = DBConn().get_suite_id("proposed-updates")
-        cursor = DBConn().cursor()
-        cursor.execute( """SELECT 1 FROM source s
-                           JOIN src_associations sa ON (s.id = sa.source)
-                           WHERE s.source = %(source)s
-                              AND s.version = '%(version)s'
-                              AND sa.suite = %(suite)d""",
-                        {'source' : changes['source'],
-                         'version' : changes['version'],
-                         'suite' : pasuite})
-
-        if cursor.fetchone():
+        pusuite = database.get_suite_id("proposed-updates")
+        q = Upload.projectB.query(
+          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" %
+          (changes["source"], changes["version"], pusuite))
+        ql = q.getresult()
+        if ql:
             # source is already in proposed-updates so no need to hold
             return 0
 
@@ -1360,17 +1335,13 @@ def is_oldstableupdate ():
         return 0
 
     if not changes["architecture"].has_key("source"):
-        pusuite = DBConn().get_suite_id("oldstable-proposed-updates")
-        cursor = DBConn().cursor()
-        cursor.execute( """"SELECT 1 FROM source s
-                            JOIN src_associations sa ON (s.id = sa.source)
-                            WHERE s.source = %(source)s
-                              AND s.version = %(version)s
-                               AND sa.suite = %d""",
-                        {'source' : changes['source'],
-                         'version' : changes['version'],
-                         'suite' : pasuite})
-        if cursor.fetchone():
+        pusuite = database.get_suite_id("oldstable-proposed-updates")
+        q = Upload.projectB.query(
+          "SELECT S.source FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = '%s' AND s.version = '%s' AND sa.suite = %d" %
+          (changes["source"], changes["version"], pusuite))
+        ql = q.getresult()
+        if ql:
+            # source is already in oldstable-proposed-updates so no need to hold
             return 0
 
     return 1

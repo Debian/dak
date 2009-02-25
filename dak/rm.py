@@ -39,13 +39,8 @@
 
 ################################################################################
 
-import commands
-import os
-import pg
-import re
-import sys
-import apt_pkg
-import apt_inst
+import commands, os, pg, re, sys
+import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import *
