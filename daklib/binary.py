@@ -133,6 +133,8 @@ class Binary(object):
         rejected = not self.valid_deb()
         self.__unpack()
 
+        result = False
+
         if not rejected and self.tmpdir:
             cwd = os.getcwd()
             try:
@@ -147,18 +149,17 @@ class Binary(object):
                     data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
 
                 if bootstrap_id:
-                    return DBConn().insert_content_paths(bootstrap_id, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                    result = DBConn().insert_content_paths(bootstrap_id, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
                 else:
                     pkg = deb822.Packages.iter_paragraphs( control.extractfile('./control') ).next()
-                    return DBConn().insert_pending_content_paths(pkg, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                    result = DBConn().insert_pending_content_paths(pkg, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
 
             except:
                 traceback.print_exc()
+                result = False
 
-                return False
-
-            finally:
-                os.chdir( cwd )
+        os.chdir( cwd )
+        return result
 
 if __name__ == "__main__":
     Binary( "/srv/ftp.debian.org/queue/accepted/halevt_0.1.3-2_amd64.deb" ).scan_package()
