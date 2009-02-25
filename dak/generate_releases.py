@@ -26,6 +26,7 @@ import sys, os, stat, time, pg
 import gzip, bz2
 import apt_pkg
 from daklib import utils
+from daklib import database
 from daklib.dak_exceptions import *
 
 ################################################################################
@@ -149,6 +150,7 @@ def main ():
     apt_pkg.ReadConfigFileISC(AptCnf, Options["Apt-Conf"])
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    database.init(Cnf, projectB)
 
     if not suites:
         suites = Cnf.SubTree("Suite").List()
@@ -175,6 +177,10 @@ def main ():
         if len(qs) == 1:
             if qs[0][0] != "-": version = qs[0][0]
             if qs[0][1]: description = qs[0][1]
+
+        architectures = database.get_suite_architectures(suite)
+        if architectures == None:
+            architectures = []
 
         if SuiteBlock.has_key("NotAutomatic"):
             notautomatic = "yes"
@@ -221,7 +227,7 @@ def main ():
 
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
-        out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, SuiteBlock.ValueList("Architectures")))))
+        out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, architectures))))
         if components:
             out.write("Components: %s\n" % (" ".join(components)))
 
