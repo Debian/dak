@@ -478,7 +478,7 @@ class DBConn(Singleton):
 
         return map(lambda x: x[0], c.fetchall())
 
-    def insert_content_paths(self, package, fullpaths):
+    def insert_content_paths(self, bin_id, fullpaths):
         """
         Make sure given path is associated with given binary id
 
@@ -486,6 +486,42 @@ class DBConn(Singleton):
         @param bin_id: the id of the binary
         @type fullpath: string
         @param fullpath: the path of the file being associated with the binary
+
+        @return True upon success
+        """
+
+        c = self.db_con.cursor()
+
+        c.execute("BEGIN WORK")
+        try:
+
+            for fullpath in fullpaths:
+                (path, file) = os.path.split(fullpath)
+
+                # Get the necessary IDs ...
+                file_id = self.get_or_set_contents_file_id(file)
+                path_id = self.get_or_set_contents_path_id(path)
+
+                c.execute("""INSERT INTO content_associations
+                               (binary_pkg, filepath, filename)
+                           VALUES ( '%d', '%d', '%d')""" % (bin_id, path_id, file_id) )
+
+            c.execute("COMMIT")
+            return True
+        except:
+            traceback.print_exc()
+            c.execute("ROLLBACK")
+            return False
+
+    def insert_pending_content_paths(self, package, fullpaths):
+        """
+        Make sure given paths are temporarily associated with given
+        package
+
+        @type package: dict
+        @param package: the package to associate with should have been read in from the binary control file
+        @type fullpaths: list
+        @param fullpaths: the list of paths of the file being associated with the binary
 
         @return True upon success
         """

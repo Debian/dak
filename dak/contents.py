@@ -42,6 +42,7 @@ import math
 import gzip
 import apt_pkg
 from daklib import utils
+from daklib.binary import Binary
 from daklib.config import Config
 from daklib.dbconn import DBConn
 ################################################################################
@@ -159,7 +160,7 @@ remove_filename_cruft_q = """DELETE FROM content_file_names
                              WHERE id IN (SELECT cfn.id FROM content_file_names cfn
                                           LEFT JOIN content_associations ca
                                             ON ca.filename=cfn.id
-                                          WHERE ca.id IS NULL)""" );
+                                          WHERE ca.id IS NULL)"""
 
 # delete any paths we are storing which have no binary associated with them
 remove_filepath_cruft_q = """DELETE FROM content_file_paths
@@ -273,9 +274,7 @@ class Contents(object):
                     else:
                         debfile = os.path.join( pooldir, deb[1] )
                         if os.path.exists( debfile ):
-                            contents = utils.generate_contents_information( debfile )
-                            DBConn().insert_content_paths(deb[0], contents)
-                            log.info( "imported (%d/%d): %s" % (count,len(debs),deb[1] ) )
+                            Binary(f).scan_package( deb[0] )
                         else:
                             log.error( "missing .deb: %s" % deb[1] )
 
@@ -305,12 +304,12 @@ class Contents(object):
             # The MORE fun part. Ok, udebs need their own contents files, udeb, and udeb-nf (not-free)
             # This is HORRIBLY debian specific :-/
             for section_id, fn_pattern in [("debian-installer","dists/%s/Contents-udeb.gz"),
-                                           ("non-free/debian-installer", "dists/%s/Contents-udeb-nf.gz")]
+                                           ("non-free/debian-installer", "dists/%s/Contents-udeb-nf.gz")]:
 
-            section_id = DBConn().get_section_id(section_id) # all udebs should be here)
-            if section_id != -1:
-                cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d)" % (section_id, suite_id, suite_id))
-                self._write_content_file(cursor, fn_pattern % suite)
+                section_id = DBConn().get_section_id(section_id) # all udebs should be here)
+                if section_id != -1:
+                    cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d)" % (section_id, suite_id, suite_id))
+                    self._write_content_file(cursor, fn_pattern % suite)
 
 
 ################################################################################

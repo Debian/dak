@@ -115,13 +115,18 @@ class Binary(object):
 
         return not rejected
 
-    def scan_package(self):
+    def scan_package(self, bootstrap_id=0):
         """
         Unpack the .deb, do sanity checking, and gather info from it.
 
         Currently information gathering consists of getting the contents list. In
         the hopefully near future, it should also include gathering info from the
         control file.
+
+        @ptype bootstrap_id: int
+        @param bootstrap_id: the id of the binary these packages
+          should be associated or zero meaning we are not bootstrapping
+          so insert into a temporary table
 
         @return True if the deb is valid and contents were imported
         """
@@ -135,14 +140,17 @@ class Binary(object):
                 if self.chunks[1] == "control.tar.gz":
                     control = tarfile.open(os.path.join(self.tmpdir, "control.tar.gz" ), "r:gz")
 
-                pkg = deb822.Packages.iter_paragraphs( control.extractfile('./control') ).next()
 
                 if self.chunks[2] == "data.tar.gz":
                     data = tarfile.open(os.path.join(self.tmpdir, "data.tar.gz"), "r:gz")
                 elif self.chunks[2] == "data.tar.bz2":
                     data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
 
-                return DBConn().insert_content_paths(pkg, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                if bootstrap_id:
+                    return DBConn().insert_content_paths(bootstrap_id, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                else:
+                    pkg = deb822.Packages.iter_paragraphs( control.extractfile('./control') ).next()
+                    return DBConn().insert_pending_content_paths(pkg, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
 
             except:
                 traceback.print_exc()
@@ -151,9 +159,6 @@ class Binary(object):
 
             finally:
                 os.chdir( cwd )
-
-
-
 
 if __name__ == "__main__":
     Binary( "/srv/ftp.debian.org/queue/accepted/halevt_0.1.3-2_amd64.deb" ).scan_package()
