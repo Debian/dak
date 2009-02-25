@@ -285,7 +285,7 @@ class Contents(object):
 
     def generate(self):
         """
-        Generate Contents-$arch.gz files for every aviailable arch in each given suite.
+        Generate Contents-$arch.gz files for every available arch in each given suite.
         """
         cursor = DBConn().cursor();
 

@@ -37,7 +37,6 @@ import stat
 import apt_pkg
 import database
 import time
-import tarfile
 import re
 import string
 import email as modemail
