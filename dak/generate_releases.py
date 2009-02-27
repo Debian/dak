@@ -237,6 +237,13 @@ def main ():
         files = []
 
         if AptCnf.has_key("tree::%s" % (tree)):
+            if AptCnf.has_key("tree::%s::Contents" % (tree)):
+                pass
+            else:
+                for x in os.listdir("%s/%s" % (Cnf["Dir::Root"], tree)):
+                    if x.startswith('Contents-'):
+                        files.append(x)
+
             for sec in AptCnf["tree::%s::Sections" % (tree)].split():
                 for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
                     if arch == "source":
