@@ -91,14 +91,14 @@ log = logging.getLogger()
 
 # get all the arches delivered for a given suite
 # this should probably exist somehere common
-arches_q = """PREPARE arches_q as
+arches_q = """PREPARE arches_q(int) as
               SELECT s.architecture, a.arch_string
               FROM suite_architectures s
               JOIN architecture a ON (s.architecture=a.id)
                   WHERE suite = $1"""
 
 # find me the .deb for a given binary id
-debs_q = """PREPARE debs_q as
+debs_q = """PREPARE debs_q(int, int) as
               SELECT b.id, f.filename FROM bin_assoc_by_arch baa
               JOIN binaries b ON baa.bin=b.id
               JOIN files f ON b.file=f.id
@@ -106,13 +106,13 @@ debs_q = """PREPARE debs_q as
                   AND arch = $2"""
 
 # ask if we already have contents associated with this binary
-olddeb_q = """PREPARE olddeb_q as
+olddeb_q = """PREPARE olddeb_q(int) as
               SELECT 1 FROM content_associations
               WHERE binary_pkg = $1
               LIMIT 1"""
 
 # find me all of the contents for a given .deb
-contents_q = """PREPARE contents_q as
+contents_q = """PREPARE contents_q(int,int,int,int) as
               SELECT (p.path||'/'||n.file) AS fn,
                       comma_separated_list(s.section||'/'||b.package)
               FROM content_associations c
@@ -131,7 +131,7 @@ contents_q = """PREPARE contents_q as
               ORDER BY fn"""
 
 # find me all of the contents for a given .udeb
-udeb_contents_q = """PREPARE udeb_contents_q as
+udeb_contents_q = """PREPARE udeb_contents_q(int,int,int) as
               SELECT (p.path||'/'||n.file) as fn,
                       comma_separated_list(s.section||'/'||b.package)
               FROM content_associations c

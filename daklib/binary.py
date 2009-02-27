@@ -24,6 +24,21 @@ Functions related debian binary packages
 
 ################################################################################
 
+# <Ganneff> are we going the xorg way?
+# <Ganneff> a dak without a dak.conf?
+# <stew> automatically detect the wrong settings at runtime?
+# <Ganneff> yes!
+# <mhy> well, we'll probably always need dak.conf (how do you get the database setting
+# <mhy> but removing most of the config into the database seems sane
+# <Ganneff> mhy: dont spoil the fun
+# <Ganneff> mhy: and i know how. we nmap localhost and check all open ports
+# <Ganneff> maybe one answers to sql
+# <stew> we will discover projectb via avahi
+# <mhy> you're both sick
+# <mhy> really fucking sick
+
+################################################################################
+
 import os
 import shutil
 import tempfile
@@ -141,24 +156,23 @@ class Binary(object):
                 os.chdir(self.tmpdir)
                 if self.chunks[1] == "control.tar.gz":
                     control = tarfile.open(os.path.join(self.tmpdir, "control.tar.gz" ), "r:gz")
-
-
+                    control.extract('control', self.tmpdir )
                 if self.chunks[2] == "data.tar.gz":
                     data = tarfile.open(os.path.join(self.tmpdir, "data.tar.gz"), "r:gz")
                 elif self.chunks[2] == "data.tar.bz2":
                     data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
 
                 if bootstrap_id:
-                    result = DBConn().insert_content_paths(bootstrap_id, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                    result = DBConn().insert_content_paths(bootstrap_id, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
                 else:
-                    pkg = deb822.Packages.iter_paragraphs( control.extractfile('./control') ).next()
-                    result = DBConn().insert_pending_content_paths(pkg, [ tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                    pkg = deb822.Packages.iter_paragraphs(file(os.path.join(self.tmpdir,'control'))).next()
+                    result = DBConn().insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
 
             except:
                 traceback.print_exc()
                 result = False
 
-        os.chdir( cwd )
+        os.chdir(cwd)
         return result
 
 if __name__ == "__main__":
