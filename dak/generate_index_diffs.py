@@ -37,6 +37,7 @@ import tempfile
 import subprocess
 import time
 import apt_pkg
+import pg
 from daklib import utils
 from daklib import database
 
@@ -279,7 +280,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 
 
 def main():
-    global Cnf, Options, Logger
+    global Cnf, Options, Logger, projectB
 
     os.umask(0002)
 
@@ -309,6 +310,9 @@ def main():
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
 
     if Options.has_key("RootDir"): Cnf["Dir::Root"] = Options["RootDir"]
+
+    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    database.init(Cnf, projectB)
 
     if not suites:
         suites = Cnf.SubTree("Suite").List()
