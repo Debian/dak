@@ -536,10 +536,10 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         format = format[:2]
 
     if is_a_dsc:
-        # format = (1,0) are the only formats we currently accept,
         # format = (0,0) are missing format headers of which we still
         # have some in the archive.
-        if format != (1,0) and format != (0,0):
+        if format != (1,0) and format != (0,0) and \
+           format != (3,0,"quilt") and format != (3,0,"native"):
             raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
     else:
         if (format < (1,5) or format > (1,8)):
