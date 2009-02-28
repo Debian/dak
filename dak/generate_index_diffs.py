@@ -38,6 +38,7 @@ import subprocess
 import time
 import apt_pkg
 from daklib import utils
+from daklib import database
 
 ################################################################################
 
@@ -322,7 +323,9 @@ def main():
 
         suite = suite.lower()
 
-        architectures = SuiteBlock.ValueList("Architectures")
+        architectures = database.get_suite_architectures(suite)
+        if architectures == None:
+            architectures = []
 
         if SuiteBlock.has_key("Components"):
             components = SuiteBlock.ValueList("Components")
