@@ -74,9 +74,20 @@ function pgdump_pre() {
 function pgdump_post() {
     log "Creating post-daily-cron-job backup of projectb database..."
     cd $base/backup
-    POSTDUMP=$base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
-    pg_dump projectb > $POSTDUMP
-    ln -sf $POSTDUMP current
+    POSTDUMP=$(date +%Y.%m.%d-%H:%M:%S)
+    pg_dump projectb > $base/backup/dump_$POSTDUMP
+    pg_dumpall --globals-only > $base/backup/dumpall_$POSTDUMP
+    ln -sf $base/backup/dump_$POSTDUMP current
+    ln -sf $base/backup/dumpall_$POSTDUMP currentall
+}
+
+# Load the dak-dev projectb
+function pgdakdev() {
+    cd $base/backup
+    echo "drop database projectb" | psql -p 5433 template1
+	cat currentall | psql -p 5433 template1
+    createdb -p 5433 -T template0 projectb
+    fgrep -v '\connect' `cat current` | psql -p 5433 projectb
 }
 
 # Updating various files
@@ -660,6 +671,14 @@ GO=(
     TIME="pg_dump2"
     ARGS=""
     ERR=""
+)
+stage $GO
+
+GO=(
+	FUNC="pgdakdev"
+	TIME="dak-dev db"
+	ARGS=""
+	ERR="false"
 )
 stage $GO
 
