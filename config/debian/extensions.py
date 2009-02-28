@@ -2,7 +2,7 @@ import sys, os, textwrap
 
 import apt_pkg
 import daklib.utils, daklib.database
-import syck
+import yaml
 
 import daklib.extensions
 from daklib.extensions import replace_dak_function
@@ -30,8 +30,8 @@ def check_transition():
     sourcefile = file(transpath, 'r')
     sourcecontent = sourcefile.read()
     try:
-        transitions = syck.load(sourcecontent)
-    except syck.error, msg:
+        transitions = yaml.load(sourcecontent)
+    except yaml.YAMLError, msg:
         # This shouldn't happen, there is a wrapper to edit the file which
         # checks it, but we prefer to be safe than ending up rejecting
         # everything.

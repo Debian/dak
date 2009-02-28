@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # vim:set et ts=4 sw=4:
 
-""" Handles NEW and BYHAND packages """
-# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+""" Handles NEW and BYHAND packages
 
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+@license: GNU General Public License version 2 or later
+"""
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -37,7 +40,13 @@
 
 ################################################################################
 
-import copy, errno, os, readline, stat, sys, time
+import copy
+import errno
+import os
+import readline
+import stat
+import sys
+import time
 import apt_pkg, apt_inst
 import examine_package
 from daklib import database
@@ -47,10 +56,10 @@ from daklib import utils
 from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
 
 # Globals
-Cnf = None
+Cnf = None       #: Configuration, apt_pkg.Configuration
 Options = None
 Upload = None
-projectB = None
+projectB = None  #: database connection, pgobject
 Logger = None
 
 Priorities = None
@@ -727,6 +736,9 @@ def init():
             Cnf["Process-New::Options::%s" % (i)] = ""
 
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    if len(changes_files) == 0:
+        changes_files = utils.get_changes_files(Cnf["Dir::Queue::New"])
+
     Options = Cnf.SubTree("Process-New::Options")
 
     if Options["Help"]:
