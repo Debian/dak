@@ -736,7 +736,7 @@ def init():
             Cnf["Process-New::Options::%s" % (i)] = ""
 
     changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    if len(changes_files) == 0:
+    if len(changes_files) == 0 and not Cnf.get("Process-New::Options::Comments-Dir",""):
         changes_files = utils.get_changes_files(Cnf["Dir::Queue::New"])
 
     Options = Cnf.SubTree("Process-New::Options")
