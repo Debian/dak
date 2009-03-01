@@ -114,6 +114,7 @@ o If you have an existing archive:
      which are needed for this.  After changing all occurences of "projectb"
      to the name of your database (as defined in DB::Name) you can run:
          psql <DB::Name> < init_pool.sql
+   * Run 'dak update-db' to upgrade the database schema.
    * Run 'dak init-db': it will populate your database with the values from
      dak.conf and apt.conf.
    * Run 'psql <DB::Name> < add_constraints.sql'.

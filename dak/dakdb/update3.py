@@ -31,7 +31,12 @@ def do_update(self):
 
     try:
         c = self.db.cursor()
-        c.execute("DROP FUNCTION versioncmp(text, text);")
+        try:
+            # This might not exist on a fresh install, so don't fail
+            # needlessly
+            c.execute("DROP FUNCTION versioncmp(text, text);")
+        except:
+            pass
         c.execute("UPDATE config SET value = '3' WHERE name = 'db_revision'")
 
         self.db.commit()
