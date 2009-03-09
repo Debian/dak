@@ -354,6 +354,9 @@ function renamelogfile() {
 	fi
 }
 
+function testingsourcelist() {
+    dak ls -s testing -f heidi -r .| egrep 'source$' > ${webdir}/testing.list
+}
 ########################################################################
 ########################################################################
 
@@ -747,6 +750,13 @@ GO=(
     ERR="false"
 )
 stage $GO
+
+GO=(
+    FUNC="testingsourcelist"
+    TIME=""
+    ARGS=""
+    ERR="false"
+)
 
 rm -f ${LOCK_BRITNEY}
 
