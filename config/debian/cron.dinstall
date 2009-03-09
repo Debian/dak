@@ -87,7 +87,7 @@ function pgdakdev() {
     echo "drop database projectb" | psql -p 5433 template1
 	cat currentall | psql -p 5433 template1
     createdb -p 5433 -T template0 projectb
-    fgrep -v '\connect' `cat current` | psql -p 5433 projectb
+    fgrep -v '\connect' current | psql -p 5433 projectb
 }
 
 # Updating various files
