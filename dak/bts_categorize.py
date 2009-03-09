@@ -128,7 +128,7 @@ class BugClassifier(object):
 
             return controls
         except:
-            log.error("couldn't retrive bugs from soap interface: %s" % sys.exc_info()[0])
+            log.error("couldn't retreive bugs from soap interface: %s" % sys.exc_info()[0])
             return None
 
 def send_email(commands, simulate=False):
