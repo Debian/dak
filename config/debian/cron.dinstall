@@ -345,17 +345,19 @@ function maillogfile() {
 }
 
 function renamelogfile() {
-	if [ -f "${dbdir}/dinstallstart" ]; then
-		RENAMETO=$(cat "${dbdir}/dinstallstart")
-		mv "$LOGFILE" "$logdir/dinstall_${RENAMETO}.log"
-		logstats "$logdir/dinstall_${RENAMETO}.log"
-		bzip2 -9 "$logdir/dinstall_${RENAMETO}.log"
-	else
-		error "Problem, I don't know when dinstall started, unable to do log statistics."
-		NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-		mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
-		bzip2 -9 "$logdir/dinstall_${NOW}.log"
-	fi
+    if [ -f "${dbdir}/dinstallstart" ]; then
+        NOW=$(cat "${dbdir}/dinstallstart")
+        maillogfile
+    mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+        logstats "$logdir/dinstall_${NOW}.log"
+        bzip2 -9 "$logdir/dinstall_${NOW}.log"
+    else
+        error "Problem, I don't know when dinstall started, unable to do log statistics."
+        NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+        maillogfile
+        mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+        bzip2 -9 "$logdir/dinstall_${NOW}.log"
+    fi
 }
 
 function testingsourcelist() {
