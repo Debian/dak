@@ -404,10 +404,10 @@ function stage() {
     # it has to cd first!
     cd ${configdir}
 
-	if [ -f "${LOCK_STOP}" ]; then
-		log "${LOCK_STOP} exists, exiting immediately"
-		exit 42
-	fi
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
 
     if [ "${ERR}" = "false" ]; then
         set +e
@@ -426,10 +426,10 @@ function stage() {
         ts "${TIME}"
     fi
 
-	if [ -f "${LOCK_STOP}" ]; then
-		log "${LOCK_STOP} exists, exiting immediately"
-		exit 42
-	fi
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
 }
 
 ########################################################################
@@ -684,10 +684,10 @@ GO=(
 stage $GO
 
 GO=(
-	FUNC="pgdakdev"
-	TIME="dak-dev db"
-	ARGS=""
-	ERR="false"
+    FUNC="pgdakdev"
+    TIME="dak-dev db"
+    ARGS=""
+    ERR="false"
 )
 stage $GO
 
