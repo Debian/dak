@@ -340,6 +340,10 @@ function savetimestamp() {
 	echo ${NOW} > "${dbdir}/dinstallstart"
 }
 
+function maillogfile() {
+    cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
+}
+
 function renamelogfile() {
 	if [ -f "${dbdir}/dinstallstart" ]; then
 		RENAMETO=$(cat "${dbdir}/dinstallstart")
