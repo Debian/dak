@@ -43,6 +43,12 @@ function cleanup() {
 	rm -f ${LOCK_ACCEPTED}
 }
 
+# If we error out this one is called, *FOLLOWED* by cleanup above
+function onerror() {
+    ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
+    cat "$LOGFILE" | mail -s "ATTENTION ATTENTION! dinstall error at ${ERRDATE} (Be quiet, Brain, or I'll stab you with a Q-tip)" cron@ftp-master.debian.org
+}
+
 ########################################################################
 # the actual dinstall functions follow                                 #
 ########################################################################
@@ -486,7 +492,8 @@ LOCK_BRITNEY="$lockdir/britney.lock"
 LOCK_STOP="$lockdir/archive.stop"
 
 lockfile -l 3600 "${LOCK_DAILY}"
-trap cleanup EXIT ERR TERM HUP INT QUIT
+trap onerror ERR
+trap cleanup EXIT TERM HUP INT QUIT
 
 touch "${LOCK_BRITNEY}"
 
