@@ -713,7 +713,7 @@ GO=(
     FUNC="bts"
     TIME=""
     ARGS=""
-    ERR=""
+    ERR="false"
 )
 stage $GO
 
