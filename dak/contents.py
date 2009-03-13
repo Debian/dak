@@ -255,9 +255,9 @@ class Contents(object):
         pooldir = Config()[ 'Dir::Pool' ]
 
         cursor = DBConn().cursor();
-        cursor.execute( debs_q )
-        cursor.execute( olddeb_q )
-        cursor.execute( arches_q )
+        DBConn().prepare("debs_q",debs_q)
+        DBConn().prepare("olddeb_q",olddeb_q)
+        DBConn().prepare("arches_q",arches_q)
 
         suites = self._suites()
         for suite in [i.lower() for i in suites]:
@@ -292,9 +292,9 @@ class Contents(object):
         """
         cursor = DBConn().cursor();
 
-        cursor.execute( arches_q )
-        cursor.execute( contents_q )
-        cursor.execute( udeb_contents_q )
+        DBConn().prepare( "arches_q", arches_q )
+        DBConn().prepare( "contents_q", contents_q )
+        DBConn().prepare( "udeb_contents_q", udeb_contents_q )
 
         debtype_id=DBConn().get_override_type_id("deb")
         udebtype_id=DBConn().get_override_type_id("udeb")

@@ -113,6 +113,14 @@ class DBConn(Singleton):
                        'suite_version': Cache(lambda x: '%s_%s' % (x['source'], x['suite'])),
                       }
 
+        self.prepared_statements = {}
+
+    def prepare(self,name,statement):
+        if not self.prepared_statements.has_key(name):
+            c = self.cursor()
+            c.execute(statement)
+            self.prepared_statements[name] = statement
+
     def clear_caches(self):
         self.__init_caches()
 
