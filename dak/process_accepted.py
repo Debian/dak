@@ -390,8 +390,11 @@ def install ():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
-            if not database.copy_temporary_contents(package, version, filename, reject):
-                reject("Missing contents for package")
+            if not database.copy_temporary_contents(package, version, newfile, reject):
+                print "REJECT\n" + reject_message,
+                projectB.query("COMMIT WORK")
+                raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (package, newfile )
+
 
     orig_tar_id = Upload.pkg.orig_tar_id
     orig_tar_location = Upload.pkg.orig_tar_location

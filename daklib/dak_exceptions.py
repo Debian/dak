@@ -58,6 +58,7 @@ dakerrors = {
     "NoFreeFilenameError": """Exception raised when no alternate filename was found.""",
     "TransitionsError":    """Exception raised when transitions file can't be parsed.""",
     "NoSourceFieldError":  """Exception raised - we cant find the source - wtf?""",
+    "MissingContents":     """Exception raised - we could not determine contents for this deb""",
     "DBUpdateError":       """Exception raised - could not update the database""",
     "ChangesUnicodeError": """Exception raised - changes file not properly utf-8 encoded"""
 } #: All dak exceptions
