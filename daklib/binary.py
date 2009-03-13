@@ -110,7 +110,7 @@ class Binary(object):
         # a temporary directory
 
         if not self.tmpdir:
-            tmpdir = tempfile.mkdtemp()
+            tmpdir = utils.temp_dirname()
             cwd = os.getcwd()
             try:
                 os.chdir( tmpdir )
