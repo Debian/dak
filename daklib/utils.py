@@ -1494,7 +1494,7 @@ def temp_dirname(parent=None, prefix="dak", suffix=""):
     Returns a pathname to the new directory
     """
 
-    return tempfile.mkdtemp(suffix, prefix, directory)
+    return tempfile.mkdtemp(suffix, prefix, parent)
 
 ################################################################################
 
