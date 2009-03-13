@@ -142,10 +142,10 @@ class Binary(object):
         if self.chunks[0] != "debian-binary":
             rejected = True
             self.reject("%s: first chunk is '%s', expected 'debian-binary'." % (self.filename, self.chunks[0]))
-        if self.chunks[1] != "control.tar.gz":
+        if not rejected and self.chunks[1] != "control.tar.gz":
             rejected = True
             self.reject("%s: second chunk is '%s', expected 'control.tar.gz'." % (self.filename, self.chunks[1]))
-        if self.chunks[2] not in [ "data.tar.bz2", "data.tar.gz" ]:
+        if not rejected and self.chunks[2] not in [ "data.tar.bz2", "data.tar.gz" ]:
             rejected = True
             self.reject("%s: third chunk is '%s', expected 'data.tar.gz' or 'data.tar.bz2'." % (self.filename, self.chunks[2]))
 
