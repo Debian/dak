@@ -738,8 +738,6 @@ GO=(
 )
 stage $GO
 
-ulimit -m 90000 -d 90000 -s 10000 -v 200000
-
 GO=(
     FUNC="runparts"
     TIME="run-parts"
