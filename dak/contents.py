@@ -377,6 +377,14 @@ def main():
                 'cruft' : Contents.cruft,
                 }
 
+    args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments,sys.argv)
+
+    if (len(args) < 1) or not commands.has_key(args[0]):
+        usage()
+
+    if cnf.has_key("%s::%s" % (options_prefix,"Help")):
+        usage()
+
     level=logging.INFO
     if cnf.has_key("%s::%s" % (options_prefix,"Quiet")):
         level=logging.ERROR
@@ -388,14 +396,6 @@ def main():
     logging.basicConfig( level=level,
                          format='%(asctime)s %(levelname)s %(message)s',
                          stream = sys.stderr )
-
-    args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments,sys.argv)
-
-    if (len(args) < 1) or not commands.has_key(args[0]):
-        usage()
-
-    if cnf.has_key("%s::%s" % (options_prefix,"Help")):
-        usage()
 
     commands[args[0]](Contents())
 
