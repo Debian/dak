@@ -392,7 +392,7 @@ def install ():
 
             if not database.copy_temporary_contents(package, version, newfile, reject):
                 print "REJECT\n" + reject_message,
-                projectB.query("COMMIT WORK")
+                projectB.query("ROLLBACK")
                 raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (package, newfile )
 
 
