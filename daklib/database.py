@@ -33,7 +33,7 @@ import sys
 import time
 import types
 import utils
-from dbconn import DBConn
+from binary import Binary
 
 ################################################################################
 
@@ -811,7 +811,7 @@ def get_suites(pkgname, src=False):
 
 ################################################################################
 
-def copy_temporary_contents(package, version, deb):
+def copy_temporary_contents(package, version, deb, reject):
     """
     copy the previously stored contents from the temp table to the permanant one
 
@@ -837,7 +837,7 @@ def copy_temporary_contents(package, version, deb):
         message = utils.TemplateSubst(subst, Cnf["Dir::Templates"]+"/missing-contents")
         utils.send_mail( message )
 
-        exists = DBConn().insert_content_path(package, version, deb)
+        Binary(deb, reject).scan_package()
 
     if exists:
         sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
