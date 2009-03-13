@@ -56,7 +56,7 @@ def do_update(self):
             c.execute(query, [suite])
 
 
-        c.execute("ALTER TABLE suite ADD COLUMN announce text DEFAULT NOT NULL 'debian-devel-changes@lists.debian.org';")
+        c.execute("ALTER TABLE suite ADD COLUMN announce text NOT NULL DEFAULT 'debian-devel-changes@lists.debian.org';")
         query = "UPDATE suite SET announce = %s WHERE suite_name = %s"  #: Update query
         for suite in Cnf.SubTree("Suite").List():
             announce_list = Cnf.Find("Suite::%s::Announce" % (suite))
