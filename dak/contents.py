@@ -178,6 +178,9 @@ class Contents(object):
     def __init__(self):
         self.header = None
 
+    def reject(self, message):
+        log.error("E: %s" % message)
+
     def _getHeader(self):
         """
         Internal method to return the header for Contents.gz files
@@ -226,7 +229,7 @@ class Contents(object):
                     return
 
                 num_tabs = max(1,
-                               int(math.ceil((self._goal_column - len(contents[0])) / 8)))
+                               int(math.ceil((self._goal_column - len(contents[0])-1) / 8)))
                 f.write(contents[0] + ( '\t' * num_tabs ) + contents[-1] + "\n")
 
         finally:
@@ -279,7 +282,7 @@ class Contents(object):
                     else:
                         debfile = os.path.join( pooldir, deb[1] )
                         if os.path.exists( debfile ):
-                            Binary(debfile).scan_package( deb[0] )
+                            Binary(debfile, self.reject).scan_package( deb[0] )
                         else:
                             log.error( "missing .deb: %s" % deb[1] )
 

@@ -413,18 +413,22 @@ class DBConn(Singleton):
         @rtype: int
         @return: the database id for the given component
         """
-        values={'value': filename}
-        query = "SELECT id FROM content_file_names WHERE file = %(value)s"
-        id = self.__get_single_id(query, values, cachename='content_file_names')
-        if not id:
-            c = self.db_con.cursor()
-            c.execute( "INSERT INTO content_file_names VALUES (DEFAULT, %(value)s) RETURNING id",
-                       values )
+        try:
+            values={'value': filename}
+            query = "SELECT id FROM content_file_names WHERE file = %(value)s"
+            id = self.__get_single_id(query, values, cachename='content_file_names')
+            if not id:
+                c = self.db_con.cursor()
+                c.execute( "INSERT INTO content_file_names VALUES (DEFAULT, %(value)s) RETURNING id",
+                           values )
 
-            id = c.fetchone()[0]
-            self.caches['content_file_names'].SetValue(values, id)
+                id = c.fetchone()[0]
+                self.caches['content_file_names'].SetValue(values, id)
 
-        return id
+            return id
+        except:
+            traceback.print_exc()
+            raise
 
     def get_or_set_contents_path_id(self, path):
         """
@@ -439,18 +443,22 @@ class DBConn(Singleton):
         @rtype: int
         @return: the database id for the given component
         """
-        values={'value': path}
-        query = "SELECT id FROM content_file_paths WHERE path = %(value)s"
-        id = self.__get_single_id(query, values, cachename='content_path_names')
-        if not id:
-            c = self.db_con.cursor()
-            c.execute( "INSERT INTO content_file_paths VALUES (DEFAULT, %(value)s) RETURNING id",
-                       values )
+        try:
+            values={'value': path}
+            query = "SELECT id FROM content_file_paths WHERE path = %(value)s"
+            id = self.__get_single_id(query, values, cachename='content_path_names')
+            if not id:
+                c = self.db_con.cursor()
+                c.execute( "INSERT INTO content_file_paths VALUES (DEFAULT, %(value)s) RETURNING id",
+                           values )
 
-            id = c.fetchone()[0]
-            self.caches['content_path_names'].SetValue(values, id)
+                id = c.fetchone()[0]
+                self.caches['content_path_names'].SetValue(values, id)
 
-        return id
+            return id
+        except:
+            traceback.print_exc()
+            raise
 
     def get_suite_architectures(self, suite):
         """

@@ -40,6 +40,7 @@ Functions related debian binary packages
 ################################################################################
 
 import os
+import sys
 import shutil
 import tempfile
 import tarfile
@@ -48,12 +49,33 @@ import traceback
 import atexit
 from debian_bundle import deb822
 from dbconn import DBConn
+from config import Config
+import logging
+import utils
 
 class Binary(object):
-    def __init__(self, filename):
+    def __init__(self, filename, reject=None):
+        """
+        @ptype filename: string
+        @param filename: path of a .deb
+
+        @ptype reject: function
+        @param reject: a function to log reject messages to
+        """
         self.filename = filename
         self.tmpdir = None
         self.chunks = None
+        self.wrapped_reject = reject
+
+    def reject(self, message):
+        """
+        if we were given a reject function, send the reject message,
+        otherwise send it to stderr.
+        """
+        if self.wrapped_reject:
+            self.wrapped_reject(message)
+        else:
+            print >> sys.stderr, message
 
     def __del__(self):
         """
@@ -74,12 +96,11 @@ class Binary(object):
         if not self.chunks:
 
             cmd = "ar t %s" % (self.filename)
-
             (result, output) = commands.getstatusoutput(cmd)
             if result != 0:
                 rejected = True
-                reject("%s: 'ar t' invocation failed." % (self.filename))
-                reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
+                self.reject("%s: 'ar t' invocation failed." % (self.filename))
+                self.reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
             self.chunks = output.split('\n')
 
 
@@ -96,8 +117,8 @@ class Binary(object):
                 cmd = "ar x %s %s %s" % (os.path.join(cwd,self.filename), self.chunks[1], self.chunks[2])
                 (result, output) = commands.getstatusoutput(cmd)
                 if result != 0:
-                    reject("%s: '%s' invocation failed." % (filename, cmd))
-                    reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
+                    self.reject("%s: '%s' invocation failed." % (self.filename, cmd))
+                    self.reject(utils.prefix_multi_line_string(output, " [ar output:] "))
                 else:
                     self.tmpdir = tmpdir
                     atexit.register( self._cleanup )
@@ -117,16 +138,16 @@ class Binary(object):
         rejected = not self.chunks
         if len(self.chunks) != 3:
             rejected = True
-            reject("%s: found %d chunks, expected 3." % (self.filename, len(self.chunks)))
+            self.reject("%s: found %d chunks, expected 3." % (self.filename, len(self.chunks)))
         if self.chunks[0] != "debian-binary":
             rejected = True
-            reject("%s: first chunk is '%s', expected 'debian-binary'." % (self.filename, self.chunks[0]))
+            self.reject("%s: first chunk is '%s', expected 'debian-binary'." % (self.filename, self.chunks[0]))
         if self.chunks[1] != "control.tar.gz":
             rejected = True
-            reject("%s: second chunk is '%s', expected 'control.tar.gz'." % (self.filename, self.chunks[1]))
+            self.reject("%s: second chunk is '%s', expected 'control.tar.gz'." % (self.filename, self.chunks[1]))
         if self.chunks[2] not in [ "data.tar.bz2", "data.tar.gz" ]:
             rejected = True
-            reject("%s: third chunk is '%s', expected 'data.tar.gz' or 'data.tar.bz2'." % (self.filename, self.chunks[2]))
+            self.reject("%s: third chunk is '%s', expected 'data.tar.gz' or 'data.tar.bz2'." % (self.filename, self.chunks[2]))
 
         return not rejected
 
@@ -150,8 +171,8 @@ class Binary(object):
 
         result = False
 
+        cwd = os.getcwd()
         if not rejected and self.tmpdir:
-            cwd = os.getcwd()
             try:
                 os.chdir(self.tmpdir)
                 if self.chunks[1] == "control.tar.gz":
@@ -174,6 +195,48 @@ class Binary(object):
 
         os.chdir(cwd)
         return result
+
+    def check_utf8_package(self, package):
+        """
+        Unpack the .deb, do sanity checking, and gather info from it.
+
+        Currently information gathering consists of getting the contents list. In
+        the hopefully near future, it should also include gathering info from the
+        control file.
+
+        @ptype bootstrap_id: int
+        @param bootstrap_id: the id of the binary these packages
+          should be associated or zero meaning we are not bootstrapping
+          so insert into a temporary table
+
+        @return True if the deb is valid and contents were imported
+        """
+        rejected = not self.valid_deb()
+        self.__unpack()
+
+        if not rejected and self.tmpdir:
+            cwd = os.getcwd()
+            try:
+                os.chdir(self.tmpdir)
+                if self.chunks[1] == "control.tar.gz":
+                    control = tarfile.open(os.path.join(self.tmpdir, "control.tar.gz" ), "r:gz")
+                    control.extract('control', self.tmpdir )
+                if self.chunks[2] == "data.tar.gz":
+                    data = tarfile.open(os.path.join(self.tmpdir, "data.tar.gz"), "r:gz")
+                elif self.chunks[2] == "data.tar.bz2":
+                    data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
+
+                for tarinfo in data:
+                    try:
+                        unicode( tarinfo.name )
+                    except:
+                        print >> sys.stderr, "E: %s has non-unicode filename: %s" % (package,tarinfo.name)
+
+            except:
+                traceback.print_exc()
+                result = False
+
+            os.chdir(cwd)
 
 if __name__ == "__main__":
     Binary( "/srv/ftp.debian.org/queue/accepted/halevt_0.1.3-2_amd64.deb" ).scan_package()
