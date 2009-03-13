@@ -167,33 +167,34 @@ class Binary(object):
         @return True if the deb is valid and contents were imported
         """
         rejected = not self.valid_deb()
-        self.__unpack()
+        if not rejected:
+            self.__unpack()
 
-        result = False
+            result = False
 
-        cwd = os.getcwd()
-        if not rejected and self.tmpdir:
-            try:
-                os.chdir(self.tmpdir)
-                if self.chunks[1] == "control.tar.gz":
-                    control = tarfile.open(os.path.join(self.tmpdir, "control.tar.gz" ), "r:gz")
-                    control.extract('./control', self.tmpdir )
-                if self.chunks[2] == "data.tar.gz":
-                    data = tarfile.open(os.path.join(self.tmpdir, "data.tar.gz"), "r:gz")
-                elif self.chunks[2] == "data.tar.bz2":
-                    data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
+            cwd = os.getcwd()
+            if not rejected and self.tmpdir:
+                try:
+                    os.chdir(self.tmpdir)
+                    if self.chunks[1] == "control.tar.gz":
+                        control = tarfile.open(os.path.join(self.tmpdir, "control.tar.gz" ), "r:gz")
+                        control.extract('./control', self.tmpdir )
+                    if self.chunks[2] == "data.tar.gz":
+                        data = tarfile.open(os.path.join(self.tmpdir, "data.tar.gz"), "r:gz")
+                    elif self.chunks[2] == "data.tar.bz2":
+                        data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
 
-                if bootstrap_id:
-                    result = DBConn().insert_content_paths(bootstrap_id, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
-                else:
-                    pkgs = deb822.Packages.iter_paragraphs(file(os.path.join(self.tmpdir,'control')))
-                    pkg = pkgs.next()
-                    result = DBConn().insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                    if bootstrap_id:
+                        result = DBConn().insert_content_paths(bootstrap_id, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                    else:
+                        pkgs = deb822.Packages.iter_paragraphs(file(os.path.join(self.tmpdir,'control')))
+                        pkg = pkgs.next()
+                        result = DBConn().insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
 
-            except:
-                traceback.print_exc()
+                except:
+                    traceback.print_exc()
 
-        os.chdir(cwd)
+            os.chdir(cwd)
         return result
 
     def check_utf8_package(self, package):
