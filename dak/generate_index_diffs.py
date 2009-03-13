@@ -321,7 +321,7 @@ def main():
         print "Processing: " + suite
         SuiteBlock = Cnf.SubTree("Suite::" + suite)
 
-        if SuiteBlock.has_key("Untouchable"):
+        if database.get_suite_untouchable(suite)
             print "Skipping: " + suite + " (untouchable)"
             continue
 

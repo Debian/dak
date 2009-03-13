@@ -159,7 +159,7 @@ def main ():
         print "Processing: " + suite
         SuiteBlock = Cnf.SubTree("Suite::" + suite)
 
-        if SuiteBlock.has_key("Untouchable") and not Options["Force-Touch"]:
+        if database.get_suite_untouchable(suite) and not Options["Force-Touch"]:
             print "Skipping: " + suite + " (untouchable)"
             continue
 
