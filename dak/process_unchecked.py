@@ -389,7 +389,8 @@ def check_files():
     cursor = DBConn().cursor()
     # Check for packages that have moved from one component to another
     # STU: this should probably be changed to not join on architecture, suite tables but instead to used their cached name->id mappings from DBConn
-    cursor.execute("""PREPARE moved_pkg_q(text,text,text) AS
+    DBConn().prepare("moved_pkg_q", """
+        PREPARE moved_pkg_q(text,text,text) AS
         SELECT c.name FROM binaries b, bin_associations ba, suite s, location l,
                     component c, architecture a, files f
         WHERE b.package = $1 AND s.suite_name = $2
