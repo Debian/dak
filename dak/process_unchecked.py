@@ -1323,7 +1323,7 @@ def is_stableupdate ():
                               AND sa.suite = %(suite)d""",
                         {'source' : changes['source'],
                          'version' : changes['version'],
-                         'suite' : pasuite})
+                         'suite' : pusuite})
 
         if cursor.fetchone():
             # source is already in proposed-updates so no need to hold
@@ -1358,7 +1358,7 @@ def is_oldstableupdate ():
                                AND sa.suite = %d""",
                         {'source' : changes['source'],
                          'version' : changes['version'],
-                         'suite' : pasuite})
+                         'suite' : pusuite})
         if cursor.fetchone():
             return 0
 

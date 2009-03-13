@@ -123,14 +123,13 @@ contents_q = """PREPARE contents_q(int,int,int,int) as
               JOIN section s ON (s.id=o.section)
               WHERE (b.architecture = $1 OR b.architecture = $2)
                   AND ba.suite = $3
-                  AND o.suite = $4
+                  AND o.suite = $3
                   AND b.type = 'deb'
-                  AND o.type = '7'
+                  AND o.type = $4
               GROUP BY fn
               ORDER BY fn"""
 
-# find me all of the contents for a given .udeb
-udeb_contents_q = """PREPARE udeb_contents_q(int,int,int) as
+udeb_contents_q = """PREPARE udeb_contents_q(int,int,int,int,int) as
               SELECT (p.path||'/'||n.file) as fn,
                       comma_separated_list(s.section||'/'||b.package)
               FROM content_associations c
@@ -140,13 +139,15 @@ udeb_contents_q = """PREPARE udeb_contents_q(int,int,int) as
               JOIN bin_associations ba ON (b.id=ba.bin)
               JOIN override o ON (o.package=b.package)
               JOIN section s ON (s.id=o.section)
-              WHERE s.id = $1
-                  AND ba.suite = $2
-                  AND o.suite = $3
+              WHERE (b.architecture = $1 OR b.architecture = $2)
+                  AND s.id = $3
+                  AND ba.suite = $4
+                  AND o.suite = $4
                   AND b.type = 'udeb'
-                  AND o.type = '8'
+                  AND o.type = $5
               GROUP BY fn
               ORDER BY fn"""
+
 
 # clear out all of the temporarily stored content associations
 # this should be run only after p-a has run.  after a p-a
@@ -295,6 +296,9 @@ class Contents(object):
         cursor.execute( contents_q )
         cursor.execute( udeb_contents_q )
 
+        debtype_id=DBConn().get_override_type_id("deb")
+        udebtype_id=DBConn().get_override_type_id("udeb")
+
         suites = self._suites()
 
         # Get our suites, and the architectures
@@ -305,18 +309,20 @@ class Contents(object):
             arch_all_id = DBConn().get_architecture_id("all")
 
             for arch_id in arch_list:
-                cursor.execute( "EXECUTE contents_q(%d,%d,%d,%d)" % (arch_id[0], arch_all_id, suite_id, suite_id))
+                cursor.execute("EXECUTE contents_q(%d,%d,%d,%d)" % (arch_id[0], arch_all_id, suite_id, debtype_id))
                 self._write_content_file(cursor, "dists/%s/Contents-%s.gz" % (suite, arch_id[1]))
 
             # The MORE fun part. Ok, udebs need their own contents files, udeb, and udeb-nf (not-free)
             # This is HORRIBLY debian specific :-/
-            for section_id, fn_pattern in [("debian-installer","dists/%s/Contents-udeb.gz"),
-                                           ("non-free/debian-installer", "dists/%s/Contents-udeb-nf.gz")]:
+            for section, fn_pattern in [("debian-installer","dists/%s/Contents-udeb-%s.gz"),
+                                           ("non-free/debian-installer", "dists/%s/Contents-udeb-nf-%s.gz")]:
 
-                section_id = DBConn().get_section_id(section_id) # all udebs should be here)
-                if section_id != -1:
-                    cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d)" % (section_id, suite_id, suite_id))
-                    self._write_content_file(cursor, fn_pattern % suite)
+                for arch_id in arch_list:
+                    section_id = DBConn().get_section_id(section) # all udebs should be here)
+                    if section_id != -1:
+                        cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d,%d,%d)" % (arch_id[0], arch_all_id, section_id, suite_id, udebtype_id))
+
+                        self._write_content_file(cursor, fn_pattern % (suite, arch_id[1]))
 
 
 ################################################################################

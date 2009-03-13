@@ -202,7 +202,7 @@ class DBConn(Singleton):
         @return: the database id for the given override type
 
         """
-        return self.__get_id('id', 'override_type', 'override_type', override_type)
+        return self.__get_id('id', 'override_type', 'type', override_type)
 
     def get_architecture_id(self, architecture):
         """
