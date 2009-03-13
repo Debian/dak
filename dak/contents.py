@@ -242,9 +242,9 @@ class Contents(object):
         """
         cursor = DBConn().cursor();
         cursor.execute( "BEGIN WORK" )
-        DBConn().prepare("remove_pending_contents_cruft_q", remove_pending_contents_cruft_q)
-        DBConn().prepare("remove_filename_cruft_q", remove_filename_cruft_q)
-        DBConn().prepare("remove_filepath_cruft_q", remove_filepath_cruft_q)
+        cursor.execute( remove_pending_contents_cruft_q )
+        cursor.execute( remove_filename_cruft_q )
+        cursor.execute( remove_filepath_cruft_q )
         cursor.execute( "COMMIT" )
 
 
