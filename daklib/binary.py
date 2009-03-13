@@ -191,7 +191,6 @@ class Binary(object):
 
             except:
                 traceback.print_exc()
-                result = False
 
         os.chdir(cwd)
         return result

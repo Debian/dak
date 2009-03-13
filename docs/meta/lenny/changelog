@@ -1,0 +1,6 @@
+ftpmaster-lenny (1.0) unstable; urgency=low
+
+  * New "package", to help DSA
+
+ -- Joerg Jaspert <joerg@debian.org>  Mon, 09 Mar 2009 14:09:09 +0100
+

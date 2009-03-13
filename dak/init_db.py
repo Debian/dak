@@ -23,8 +23,8 @@ import psycopg2, sys
 import apt_pkg
 
 from daklib import utils
-from daklib.dbconn import DBConn
-from daklib.config import Config
+from daklib.DBConn import DBConn
+from daklib.Config import Config
 
 ################################################################################
 
