@@ -168,11 +168,11 @@ class Binary(object):
 
         @return True if the deb is valid and contents were imported
         """
+        result = False
         rejected = not self.valid_deb()
         if not rejected:
             self.__unpack()
 
-            result = False
 
             cwd = os.getcwd()
             if not rejected and self.tmpdir:
