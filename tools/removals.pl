@@ -71,7 +71,7 @@ for my $removal (@removals ) {
 
   $rss->add_item(title       => "$reason",
 				 link        => "http://ftp-master.debian.org/removals.txt?" . $link,
-				 description => qq[&lt;pre&gt;$body&lt;/pre&gt;],
+				 description => qq[<pre>$body</pre>],
 				 dc => {
 						creator => "$ftpmaster",
 					   }
