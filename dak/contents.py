@@ -278,8 +278,9 @@ class Contents(object):
                     cursor1.execute( "EXECUTE olddeb_q(%d)" % (deb[0] ) )
                     old = cursor1.fetchone()
                     if old:
-                        log.debug( "already imported: %s" % deb[1] )
+                        log.debug( "already imported: %s" % (deb[1]) )
                     else:
+                        log.debug( "scanning: %s" % (deb[1]) )
                         debfile = os.path.join( pooldir, deb[1] )
                         if os.path.exists( debfile ):
                             Binary(debfile, self.reject).scan_package( deb[0] )
