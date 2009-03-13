@@ -186,7 +186,8 @@ class Binary(object):
                 if bootstrap_id:
                     result = DBConn().insert_content_paths(bootstrap_id, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
                 else:
-                    pkg = deb822.Packages.iter_paragraphs(file(os.path.join(self.tmpdir,'control'))).next()
+                    pkgs = deb822.Packages.iter_paragraphs(file(os.path.join(self.tmpdir,'control')))
+                    pkg = pkgs.next()
                     result = DBConn().insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
 
             except:
