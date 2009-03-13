@@ -156,7 +156,7 @@ class Binary(object):
                 os.chdir(self.tmpdir)
                 if self.chunks[1] == "control.tar.gz":
                     control = tarfile.open(os.path.join(self.tmpdir, "control.tar.gz" ), "r:gz")
-                    control.extract('control', self.tmpdir )
+                    control.extract('./control', self.tmpdir )
                 if self.chunks[2] == "data.tar.gz":
                     data = tarfile.open(os.path.join(self.tmpdir, "data.tar.gz"), "r:gz")
                 elif self.chunks[2] == "data.tar.bz2":
