@@ -100,7 +100,7 @@ class Binary(object):
             if result != 0:
                 rejected = True
                 self.reject("%s: 'ar t' invocation failed." % (self.filename))
-                self.reject(utils.prefix_multi_line_string(output, " [ar output:] "), "")
+                self.reject(utils.prefix_multi_line_string(output, " [ar output:] "))
             self.chunks = output.split('\n')
 
 
