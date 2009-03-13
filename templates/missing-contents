@@ -1,0 +1,15 @@
+From: __DAK_ADDRESS__
+To: __TO_ADDRESS__
+X-Debian: DAK
+X-Debian-Package: __PACKAGE__
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+Subject: Missing contents for __PACKAGE__ in accepted queue
+
+While processing the accepted queue, I didn't have contents in the
+database for __PACKAGE__ version __VERSION__.  These contents should
+have been put into the database by process-unchecked when the package
+first arrived.
+
+This is probably stew's fault.
