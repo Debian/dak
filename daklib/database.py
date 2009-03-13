@@ -32,6 +32,7 @@
 import sys
 import time
 import types
+import utils
 
 ################################################################################
 
@@ -832,7 +833,7 @@ def copy_temporary_contents(package, version, deb):
             "__TO_ADDRESS__": Cnf["Dinstall::MyAdminAddress"],
             "__DAK_ADDRESS__": Cnf["Dinstall::MyEmailAddress"] }
 
-        message = utils.TemplateSubst(Subst, Cnf["Dir::Templates"]+"/missing-contents")
+        message = utils.TemplateSubst(subst, Cnf["Dir::Templates"]+"/missing-contents")
         utils.send_mail( message )
 
         exists = DBConn().insert_content_path(package, version, deb)
