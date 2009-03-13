@@ -36,7 +36,6 @@ Create all the contents files
 
 import sys
 import os
-import tempfile
 import logging
 import math
 import gzip
