@@ -72,10 +72,9 @@ class Binary(object):
         if we were given a reject function, send the reject message,
         otherwise send it to stderr.
         """
+        print >> sys.stderr, message
         if self.wrapped_reject:
             self.wrapped_reject(message)
-        else:
-            print >> sys.stderr, message
 
     def __del__(self):
         """
