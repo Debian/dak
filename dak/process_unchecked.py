@@ -37,7 +37,6 @@ import shutil
 import stat
 import sys
 import time
-import tempfile
 import traceback
 import tarfile
 import apt_inst
@@ -142,16 +141,6 @@ def reject (str, prefix="Rejected: "):
     global reject_message
     if str:
         reject_message += prefix + str + "\n"
-
-################################################################################
-
-def create_tmpdir():
-    """
-    Create a temporary directory that can be used for unpacking files into for
-    checking
-    """
-    tmpdir = tempfile.mkdtemp()
-    return tmpdir
 
 ################################################################################
 
@@ -889,7 +878,7 @@ def check_source():
        or pkg.orig_tar_gz == -1:
         return
 
-    tmpdir = create_tmpdir()
+    tmpdir = utils.temp_dirname()
 
     # Move into the temporary directory
     cwd = os.getcwd()
