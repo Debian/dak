@@ -48,7 +48,7 @@ def do_update(self):
         c.execute("ALTER TABLE suite ADD COLUMN untouchable BOOLEAN NOT NULL DEFAULT FALSE;")
         query = "UPDATE suite SET untouchable = TRUE WHERE suite_name = %s"  #: Update query
         for suite in Cnf.SubTree("Suite").List():
-            untouchable = Cnf.Find("Suite::%s::Announce" % (suite))
+            untouchable = Cnf.Find("Suite::%s::Untouchable" % (suite))
             if not untouchable:
                 continue
             print "[Untouchable] Processing suite %s" % (suite)
