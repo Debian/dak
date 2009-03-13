@@ -99,6 +99,7 @@ class Binary(object):
             (result, output) = commands.getstatusoutput(cmd)
             if result != 0:
                 rejected = True
+                print("%s: 'ar t' invocation failed." % (self.filename))
                 self.reject("%s: 'ar t' invocation failed." % (self.filename))
                 self.reject(utils.prefix_multi_line_string(output, " [ar output:] "))
             self.chunks = output.split('\n')
@@ -117,6 +118,7 @@ class Binary(object):
                 cmd = "ar x %s %s %s" % (os.path.join(cwd,self.filename), self.chunks[1], self.chunks[2])
                 (result, output) = commands.getstatusoutput(cmd)
                 if result != 0:
+                    print("%s: '%s' invocation failed." % (self.filename, cmd))
                     self.reject("%s: '%s' invocation failed." % (self.filename, cmd))
                     self.reject(utils.prefix_multi_line_string(output, " [ar output:] "))
                 else:
@@ -166,11 +168,11 @@ class Binary(object):
 
         @return True if the deb is valid and contents were imported
         """
+        result = False
         rejected = not self.valid_deb()
         if not rejected:
             self.__unpack()
 
-            result = False
 
             cwd = os.getcwd()
             if not rejected and self.tmpdir:
