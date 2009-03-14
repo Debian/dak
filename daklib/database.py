@@ -848,7 +848,7 @@ def copy_temporary_contents(package, version, arch, deb, reject):
 
     # first see if contents exist:
 
-    arch_id = database.get_architecture_id (architecture)
+    arch_id = get_architecture_id (architecture)
 
     exists = projectB.query("""SELECT 1 FROM pending_content_associations
                                WHERE package='%s'
