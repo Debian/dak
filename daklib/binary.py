@@ -138,11 +138,11 @@ class Binary(object):
         self.__scan_ar()
         rejected = not self.chunks
         if relaxed:
-            if en(self.chunks) < 3:
+            if len(self.chunks) < 3:
                 rejected = True
                 self.reject("%s: found %d chunks, expected at least 3." % (self.filename, len(self.chunks)))
         else:
-            if en(self.chunks) != 3:
+            if len(self.chunks) != 3:
                 rejected = True
                 self.reject("%s: found %d chunks, expected 3." % (self.filename, len(self.chunks)))
         if self.chunks[0] != "debian-binary":
