@@ -552,9 +552,9 @@ class DBConn(Singleton):
             c.execute("""DELETE FROM pending_content_associations
                          WHERE package=%(Package)s
                          AND version=%(Version)s
-                         AND arch_id=%(ArchID)s""", {'Package': package['Package'],
-                                                     'Version': package['Version'],
-                                                     'ArchID':  arch_id})
+                         AND architecture=%(ArchID)s""", {'Package': package['Package'],
+                                                          'Version': package['Version'],
+                                                          'ArchID':  arch_id})
 
             for fullpath in fullpaths:
                 (path, file) = os.path.split(fullpath)
