@@ -35,6 +35,7 @@
 
 import os
 import psycopg2
+import psycopg2.extras
 import traceback
 
 from singleton import Singleton
@@ -132,6 +133,17 @@ class DBConn(Singleton):
         return self.db_con.commit()
 
     ## Get functions
+    def __get_single_row(self, query, values):
+        c = self.db_con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        c.execute(query, values)
+
+        if c.rowcount < 1:
+            return None
+
+        res = c.fetchone()
+
+        return res
+
     def __get_single_id(self, query, values, cachename=None):
         # This is a bit of a hack but it's an internal function only
         if cachename is not None:
@@ -315,6 +327,17 @@ class DBConn(Singleton):
         """
         return self.__get_single_id("SELECT id FROM source s WHERE s.source=%(source)s AND s.version=%(version)s",
                                  {'source': source, 'version': version}, cachename='source')
+
+    def get_suite(self, suite):
+        if isinstance(suite, str):
+            suite_id = self.get_suite_id(suite.lower())
+        elif type(suite) == int:
+            suite_id = suite
+
+        print suite_id
+
+        return self.__get_single_row("SELECT * FROM suite WHERE id = %(id)s",
+                                     {'id': suite_id})
 
     def get_suite_version(self, source, suite):
         """
@@ -571,3 +594,32 @@ class DBConn(Singleton):
             traceback.print_exc()
             c.execute("ROLLBACK")
             return False
+
+################################################################################
+
+class Suite(object):
+    # This should be kept in sync with the suites table;
+    # we should probably just do introspection on the table
+    # (or maybe use an ORM)
+    _fieldnames = ['announce', 'changelogbase', 'codename', 'commentsdir',
+                   'copychanges', 'copydotdak', 'description', 'id',
+                   'label', 'notautomatic', 'origin', 'overridecodename',
+                   'overridesuite', 'policy_engine', 'priority', 'suite_name',
+                   'untouchable', 'validtime', 'version']
+
+    def __init_fields(self):
+        for k in self._fieldnames:
+            setattr(self, k, None)
+
+    def __init__(self, suite):
+        self.__init_fields()
+        if suite is not None:
+            db_conn = DBConn()
+            suite_data = db_conn.get_suite(suite)
+            print suite_data
+            if suite_data is not None:
+                for k in suite_data.keys():
+                    setattr(self, k, suite_data[k])
+
+
+
