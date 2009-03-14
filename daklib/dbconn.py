@@ -614,7 +614,6 @@ class Suite(object):
         if suite is not None:
             db_conn = DBConn()
             suite_data = db_conn.get_suite(suite)
-            print suite_data
             if suite_data is not None:
                 for k in suite_data.keys():
                     setattr(self, k, suite_data[k])
