@@ -562,7 +562,7 @@ def check_files():
             # Check the version and for file overwrites
             reject(Upload.check_binary_against_db(f),"")
 
-            Binary(f, reject).scan_package( )
+            Binary(f, reject).scan_package()
 
         # Checks for a source package...
         else:

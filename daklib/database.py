@@ -838,7 +838,7 @@ def get_suites(pkgname, src=False):
 
 ################################################################################
 
-def copy_temporary_contents(package, version, deb, reject):
+def copy_temporary_contents(package, version, arch, deb, reject):
     """
     copy the previously stored contents from the temp table to the permanant one
 
@@ -848,8 +848,13 @@ def copy_temporary_contents(package, version, deb, reject):
 
     # first see if contents exist:
 
+    arch_id = database.get_architecture_id (architecture)
+
     exists = projectB.query("""SELECT 1 FROM pending_content_associations
-                               WHERE package='%s' LIMIT 1""" % package ).getresult()
+                               WHERE package='%s'
+                               AND version='%s'
+                               AND architecture=%d LIMIT 1"""
+                            % package, version, arch_id ).getresult()
 
     if not exists:
         # This should NOT happen.  We should have added contents
@@ -858,6 +863,7 @@ def copy_temporary_contents(package, version, deb, reject):
         subst = {
             "__PACKAGE__": package,
             "__VERSION__": version,
+            "__ARCH__": arch,
             "__TO_ADDRESS__": Cnf["Dinstall::MyAdminAddress"],
             "__DAK_ADDRESS__": Cnf["Dinstall::MyEmailAddress"] }
 
@@ -870,10 +876,12 @@ def copy_temporary_contents(package, version, deb, reject):
         sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
                  SELECT currval('binaries_id_seq'), filepath, filename FROM pending_content_associations
                  WHERE package='%s'
-                     AND version='%s'""" % (package, version)
+                     AND version='%s'
+                     AND architecture=%d""" % (package, version, arch_id)
         projectB.query(sql)
         projectB.query("""DELETE from pending_content_associations
                           WHERE package='%s'
-                            AND version='%s'""" % (package, version))
+                            AND version='%s'
+                            AND architecture=%d""" % (package, version, arch_id))
 
     return exists
