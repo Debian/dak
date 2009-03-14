@@ -499,7 +499,7 @@ def get_suite_untouchable(suite):
 
     suite_id = None
     if type(suite) == str:
-        suite_id = get_suite_id(suite)
+        suite_id = get_suite_id(suite.lower())
     elif type(suite) == int:
         suite_id = suite
     else:
