@@ -548,11 +548,13 @@ class DBConn(Singleton):
         try:
             arch_id = self.get_architecture_id(package['Architecture'])
 
-                # Remove any already existing recorded files for this package
+            # Remove any already existing recorded files for this package
             c.execute("""DELETE FROM pending_content_associations
                          WHERE package=%(Package)s
                          AND version=%(Version)s
-                         AND arch_id=%d""" % arch_id, package )
+                         AND arch_id=%(ArchID)s""", {'Package': package['Package'],
+                                                     'Version': package['Version'],
+                                                     'ArchID':  arch_id})
 
             for fullpath in fullpaths:
                 (path, file) = os.path.split(fullpath)
