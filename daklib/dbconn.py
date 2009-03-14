@@ -567,11 +567,15 @@ class DBConn(Singleton):
 
         c.execute("BEGIN WORK")
         try:
+            arch_id = self.get_architecture_id(package['Architecture'])
 
-                # Remove any already existing recorded files for this package
+            # Remove any already existing recorded files for this package
             c.execute("""DELETE FROM pending_content_associations
                          WHERE package=%(Package)s
-                         AND version=%(Version)s""", package )
+                         AND version=%(Version)s
+                         AND architecture=%(ArchID)s""", {'Package': package['Package'],
+                                                          'Version': package['Version'],
+                                                          'ArchID':  arch_id})
 
             for fullpath in fullpaths:
                 (path, file) = os.path.split(fullpath)
@@ -583,9 +587,10 @@ class DBConn(Singleton):
                 path_id = self.get_or_set_contents_path_id(path)
 
                 c.execute("""INSERT INTO pending_content_associations
-                               (package, version, filepath, filename)
-                           VALUES (%%(Package)s, %%(Version)s, '%d', '%d')""" % (path_id, file_id),
-                          package )
+                               (package, version, architecture, filepath, filename)
+                            VALUES (%%(Package)s, %%(Version)s, '%d', '%d', '%d')"""
+                    % (arch_id, path_id, file_id), package )
+
             c.execute("COMMIT")
             return True
         except:

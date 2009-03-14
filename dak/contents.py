@@ -283,9 +283,9 @@ class Contents(object):
                         log.debug( "scanning: %s" % (deb[1]) )
                         debfile = os.path.join( pooldir, deb[1] )
                         if os.path.exists( debfile ):
-                            Binary(debfile, self.reject).scan_package( deb[0] )
+                            Binary(debfile, self.reject).scan_package(deb[0],True)
                         else:
-                            log.error( "missing .deb: %s" % deb[1] )
+                            log.error("missing .deb: %s" % deb[1])
 
     def generate(self):
         """

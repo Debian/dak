@@ -127,7 +127,7 @@ class Binary(object):
             finally:
                 os.chdir( cwd )
 
-    def valid_deb(self):
+    def valid_deb(self, relaxed=False):
         """
         Check deb contents making sure the .deb contains:
           1. debian-binary
@@ -137,9 +137,14 @@ class Binary(object):
         """
         self.__scan_ar()
         rejected = not self.chunks
-        if len(self.chunks) != 3:
-            rejected = True
-            self.reject("%s: found %d chunks, expected 3." % (self.filename, len(self.chunks)))
+        if relaxed:
+            if len(self.chunks) < 3:
+                rejected = True
+                self.reject("%s: found %d chunks, expected at least 3." % (self.filename, len(self.chunks)))
+        else:
+            if len(self.chunks) != 3:
+                rejected = True
+                self.reject("%s: found %d chunks, expected 3." % (self.filename, len(self.chunks)))
         if self.chunks[0] != "debian-binary":
             rejected = True
             self.reject("%s: first chunk is '%s', expected 'debian-binary'." % (self.filename, self.chunks[0]))
@@ -152,7 +157,7 @@ class Binary(object):
 
         return not rejected
 
-    def scan_package(self, bootstrap_id=0):
+    def scan_package(self, bootstrap_id=0, relaxed=False):
         """
         Unpack the .deb, do sanity checking, and gather info from it.
 
@@ -168,7 +173,7 @@ class Binary(object):
         @return True if the deb is valid and contents were imported
         """
         result = False
-        rejected = not self.valid_deb()
+        rejected = not self.valid_deb(relaxed)
         if not rejected:
             self.__unpack()
 
@@ -196,6 +201,7 @@ class Binary(object):
                     traceback.print_exc()
 
             os.chdir(cwd)
+        self._cleanup()
         return result
 
     def check_utf8_package(self, package):
@@ -213,7 +219,7 @@ class Binary(object):
 
         @return True if the deb is valid and contents were imported
         """
-        rejected = not self.valid_deb()
+        rejected = not self.valid_deb(True)
         self.__unpack()
 
         if not rejected and self.tmpdir:
@@ -240,6 +246,4 @@ class Binary(object):
 
             os.chdir(cwd)
 
-if __name__ == "__main__":
-    Binary( "/srv/ftp.debian.org/queue/accepted/halevt_0.1.3-2_amd64.deb" ).scan_package()
 
