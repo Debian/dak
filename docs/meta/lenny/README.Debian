@@ -1,0 +1,11 @@
+ftpmaster meta package for DSA
+
+
+This is a dummy package that makes Debian's package management
+system believe that certain packages needed for ftpmaster have
+to be installed. The intention is that DSA can easily see what
+needs to be there.
+
+If you, for whatever reason, need a package added to this meta-
+packages dependency list, contact ftpmaster@debian.org, NOT
+the Debian admins.

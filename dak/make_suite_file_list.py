@@ -91,7 +91,7 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
         delete_version = version[0]
         delete_id = packages[delete_unique_id]["sourceid"]
         delete_arch = packages[delete_unique_id]["arch"]
-        if not Cnf.Find("Suite::%s::Untouchable" % (suite)) or Options["Force"]:
+        if not database.get_suite_untouchable(suite) or Options["Force"]:
             if Options["No-Delete"]:
                 print "Would delete %s_%s_%s in %s in favour of %s_%s" % (pkg, delete_arch, delete_version, suite, dominant_version, dominant_arch)
             else:

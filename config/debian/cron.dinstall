@@ -43,6 +43,12 @@ function cleanup() {
 	rm -f ${LOCK_ACCEPTED}
 }
 
+# If we error out this one is called, *FOLLOWED* by cleanup above
+function onerror() {
+    ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
+    cat "$LOGFILE" | mail -s "ATTENTION ATTENTION! dinstall error at ${ERRDATE} (Be quiet, Brain, or I'll stab you with a Q-tip)" cron@ftp-master.debian.org
+}
+
 ########################################################################
 # the actual dinstall functions follow                                 #
 ########################################################################
@@ -74,9 +80,20 @@ function pgdump_pre() {
 function pgdump_post() {
     log "Creating post-daily-cron-job backup of projectb database..."
     cd $base/backup
-    POSTDUMP=$base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
-    pg_dump projectb > $POSTDUMP
-    ln -sf $POSTDUMP current
+    POSTDUMP=$(date +%Y.%m.%d-%H:%M:%S)
+    pg_dump projectb > $base/backup/dump_$POSTDUMP
+    pg_dumpall --globals-only > $base/backup/dumpall_$POSTDUMP
+    ln -sf $base/backup/dump_$POSTDUMP current
+    ln -sf $base/backup/dumpall_$POSTDUMP currentall
+}
+
+# Load the dak-dev projectb
+function pgdakdev() {
+    cd $base/backup
+    echo "drop database projectb" | psql -p 5433 template1
+	cat currentall | psql -p 5433 template1
+    createdb -p 5433 -T template0 projectb
+    fgrep -v '\connect' current | psql -p 5433 projectb
 }
 
 # Updating various files
@@ -267,9 +284,9 @@ function bts() {
 }
 
 function merkel2() {
-    # Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
+    # Push dak@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
     log "Trigger merkels projectb sync"
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1
+    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb dak@merkel.debian.org sleep 1
 }
 
 function runparts() {
@@ -329,20 +346,29 @@ function savetimestamp() {
 	echo ${NOW} > "${dbdir}/dinstallstart"
 }
 
-function renamelogfile() {
-	if [ -f "${dbdir}/dinstallstart" ]; then
-		RENAMETO=$(cat "${dbdir}/dinstallstart")
-		mv "$LOGFILE" "$logdir/dinstall_${RENAMETO}.log"
-		logstats "$logdir/dinstall_${RENAMETO}.log"
-		bzip2 -9 "$logdir/dinstall_${RENAMETO}.log"
-	else
-		error "Problem, I don't know when dinstall started, unable to do log statistics."
-		NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-		mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
-		bzip2 -9 "$logdir/dinstall_${NOW}.log"
-	fi
+function maillogfile() {
+    cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
 }
 
+function renamelogfile() {
+    if [ -f "${dbdir}/dinstallstart" ]; then
+        NOW=$(cat "${dbdir}/dinstallstart")
+        maillogfile
+    mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+        logstats "$logdir/dinstall_${NOW}.log"
+        bzip2 -9 "$logdir/dinstall_${NOW}.log"
+    else
+        error "Problem, I don't know when dinstall started, unable to do log statistics."
+        NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+        maillogfile
+        mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+        bzip2 -9 "$logdir/dinstall_${NOW}.log"
+    fi
+}
+
+function testingsourcelist() {
+    dak ls -s testing -f heidi -r .| egrep 'source$' > ${webdir}/testing.list
+}
 ########################################################################
 ########################################################################
 
@@ -384,10 +410,10 @@ function stage() {
     # it has to cd first!
     cd ${configdir}
 
-	if [ -f "${LOCK_STOP}" ]; then
-		log "${LOCK_STOP} exists, exiting immediately"
-		exit 42
-	fi
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
 
     if [ "${ERR}" = "false" ]; then
         set +e
@@ -406,10 +432,10 @@ function stage() {
         ts "${TIME}"
     fi
 
-	if [ -f "${LOCK_STOP}" ]; then
-		log "${LOCK_STOP} exists, exiting immediately"
-		exit 42
-	fi
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
 }
 
 ########################################################################
@@ -466,7 +492,8 @@ LOCK_BRITNEY="$lockdir/britney.lock"
 LOCK_STOP="$lockdir/archive.stop"
 
 lockfile -l 3600 "${LOCK_DAILY}"
-trap cleanup EXIT ERR TERM HUP INT QUIT
+trap onerror ERR
+trap cleanup EXIT TERM HUP INT QUIT
 
 touch "${LOCK_BRITNEY}"
 
@@ -664,6 +691,14 @@ GO=(
 stage $GO
 
 GO=(
+    FUNC="pgdakdev"
+    TIME="dak-dev db"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
+GO=(
     FUNC="expire"
     TIME="expire_dumps"
     ARGS=""
@@ -691,7 +726,7 @@ GO=(
     FUNC="bts"
     TIME=""
     ARGS=""
-    ERR=""
+    ERR="false"
 )
 stage $GO
 
@@ -702,8 +737,6 @@ GO=(
     ERR="false"
 )
 stage $GO
-
-ulimit -m 90000 -d 90000 -s 10000 -v 200000
 
 GO=(
     FUNC="runparts"
@@ -729,6 +762,13 @@ GO=(
 )
 stage $GO
 
+GO=(
+    FUNC="testingsourcelist"
+    TIME=""
+    ARGS=""
+    ERR="false"
+)
+
 rm -f ${LOCK_BRITNEY}
 
 GO=(
@@ -750,8 +790,6 @@ stage $GO
 log "Daily cron scripts successful, all done"
 
 exec > "$logdir/afterdinstall.log" 2>&1
-
-cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
 
 GO=(
     FUNC="renamelogfile"
