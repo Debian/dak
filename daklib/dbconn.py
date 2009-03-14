@@ -334,8 +334,6 @@ class DBConn(Singleton):
         elif type(suite) == int:
             suite_id = suite
 
-        print suite_id
-
         return self.__get_single_row("SELECT * FROM suite WHERE id = %(id)s",
                                      {'id': suite_id})
 
