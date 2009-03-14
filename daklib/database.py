@@ -854,7 +854,7 @@ def copy_temporary_contents(package, version, arch, deb, reject):
                                WHERE package='%s'
                                AND version='%s'
                                AND architecture=%d LIMIT 1"""
-                            % package, version, arch_id ).getresult()
+                            % (package, version, arch_id) ).getresult()
 
     if not exists:
         # This should NOT happen.  We should have added contents
