@@ -848,13 +848,13 @@ def copy_temporary_contents(package, version, arch, deb, reject):
 
     # first see if contents exist:
 
-    arch_id = database.get_architecture_id (architecture)
+    arch_id = get_architecture_id (arch)
 
     exists = projectB.query("""SELECT 1 FROM pending_content_associations
                                WHERE package='%s'
                                AND version='%s'
                                AND architecture=%d LIMIT 1"""
-                            % package, version, arch_id ).getresult()
+                            % (package, version, arch_id) ).getresult()
 
     if not exists:
         # This should NOT happen.  We should have added contents
