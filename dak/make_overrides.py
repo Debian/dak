@@ -118,7 +118,7 @@ def main ():
     database.init(Cnf, projectB)
 
     for suite in Cnf.SubTree("Check-Overrides::OverrideSuites").List():
-        if database.get_suite_untouchable(suite):
+        if database.get_suite_untouchable(suite.lower()):
             continue
         suite = suite.lower()
 
