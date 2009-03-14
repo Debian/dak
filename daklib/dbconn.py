@@ -546,7 +546,7 @@ class DBConn(Singleton):
 
         c.execute("BEGIN WORK")
         try:
-            arch_id = self.get_architecture_id(package[Architecture])
+            arch_id = self.get_architecture_id(package['Architecture'])
 
                 # Remove any already existing recorded files for this package
             c.execute("""DELETE FROM pending_content_associations

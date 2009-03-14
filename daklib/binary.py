@@ -141,7 +141,7 @@ class Binary(object):
             if en(self.chunks) < 3:
                 rejected = True
                 self.reject("%s: found %d chunks, expected at least 3." % (self.filename, len(self.chunks)))
-        else
+        else:
             if en(self.chunks) != 3:
                 rejected = True
                 self.reject("%s: found %d chunks, expected 3." % (self.filename, len(self.chunks)))
