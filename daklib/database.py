@@ -486,6 +486,33 @@ def get_suite_architectures(suite):
     q = projectB.query(sql)
     return map(lambda x: x[0], q.getresult())
 
+def get_suite_untouchable(suite):
+    """
+    Returns true if the C{suite} is untouchable, otherwise false.
+
+    @type suite: string, int
+    @param suite: the suite name or the suite_id
+
+    @rtype: boolean
+    @return: status of suite
+    """
+
+    suite_id = None
+    if type(suite) == str:
+        suite_id = get_suite_id(suite.lower())
+    elif type(suite) == int:
+        suite_id = suite
+    else:
+        return None
+
+    sql = """ SELECT untouchable FROM suite WHERE id='%s' """ % (suite_id)
+
+    q = projectB.query(sql)
+    if q.getresult()[0][0] == "f":
+        return False
+    else:
+        return True
+
 ################################################################################
 
 def get_or_set_maintainer_id (maintainer):

@@ -278,8 +278,9 @@ class Contents(object):
                     cursor1.execute( "EXECUTE olddeb_q(%d)" % (deb[0] ) )
                     old = cursor1.fetchone()
                     if old:
-                        log.debug( "already imported: %s" % deb[1] )
+                        log.debug( "already imported: %s" % (deb[1]) )
                     else:
+                        log.debug( "scanning: %s" % (deb[1]) )
                         debfile = os.path.join( pooldir, deb[1] )
                         if os.path.exists( debfile ):
                             Binary(debfile, self.reject).scan_package( deb[0] )
@@ -376,6 +377,14 @@ def main():
                 'cruft' : Contents.cruft,
                 }
 
+    args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments,sys.argv)
+
+    if (len(args) < 1) or not commands.has_key(args[0]):
+        usage()
+
+    if cnf.has_key("%s::%s" % (options_prefix,"Help")):
+        usage()
+
     level=logging.INFO
     if cnf.has_key("%s::%s" % (options_prefix,"Quiet")):
         level=logging.ERROR
@@ -387,14 +396,6 @@ def main():
     logging.basicConfig( level=level,
                          format='%(asctime)s %(levelname)s %(message)s',
                          stream = sys.stderr )
-
-    args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments,sys.argv)
-
-    if (len(args) < 1) or not commands.has_key(args[0]):
-        usage()
-
-    if cnf.has_key("%s::%s" % (options_prefix,"Help")):
-        usage()
 
     commands[args[0]](Contents())
 

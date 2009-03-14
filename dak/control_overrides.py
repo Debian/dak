@@ -297,7 +297,7 @@ def main ():
     if action == "list":
         list_overrides(suite, component, otype)
     else:
-        if Cnf.has_key("Suite::%s::Untouchable" % suite) and Cnf["Suite::%s::Untouchable" % suite] != 0:
+        if database.get_suite_untouchable(suite):
             utils.fubar("%s: suite is untouchable" % suite)
 
         noaction = 0
