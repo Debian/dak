@@ -1352,14 +1352,14 @@ def is_oldstableupdate ():
     if not changes["architecture"].has_key("source"):
         pusuite = DBConn().get_suite_id("oldstable-proposed-updates")
         cursor = DBConn().cursor()
-        cursor.execute( """"SELECT 1 FROM source s
-                            JOIN src_associations sa ON (s.id = sa.source)
-                            WHERE s.source = %(source)s
-                              AND s.version = %(version)s
-                               AND sa.suite = %(suite)s""",
-                        {'source' : changes['source'],
+        cursor.execute( """SELECT 1 FROM source s
+                           JOIN src_associations sa ON (s.id = sa.source)
+                           WHERE s.source = %(source)s
+                             AND s.version = %(version)s
+                             AND sa.suite = %(suite)s""",
+                        {'source' :  changes['source'],
                          'version' : changes['version'],
-                         'suite' : pusuite})
+                         'suite' :   pusuite})
         if cursor.fetchone():
             return 0
 
