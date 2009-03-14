@@ -1320,7 +1320,7 @@ def is_stableupdate ():
         cursor.execute( """SELECT 1 FROM source s
                            JOIN src_associations sa ON (s.id = sa.source)
                            WHERE s.source = %(source)s
-                              AND s.version = '%(version)s'
+                              AND s.version = %(version)s
                               AND sa.suite = %(suite)d""",
                         {'source' : changes['source'],
                          'version' : changes['version'],
