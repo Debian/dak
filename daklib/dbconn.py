@@ -514,6 +514,8 @@ class DBConn(Singleton):
             for fullpath in fullpaths:
                 (path, file) = os.path.split(fullpath)
 
+                if path.startswith( "./" ):
+                    path = path[2:]
                 # Get the necessary IDs ...
                 file_id = self.get_or_set_contents_file_id(file)
                 path_id = self.get_or_set_contents_path_id(path)
