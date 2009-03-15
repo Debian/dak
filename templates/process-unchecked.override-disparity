@@ -13,6 +13,15 @@ There are disparities between your recently accepted upload and the
 override file for the following file(s):
 
 __SUMMARY__
+
+Please note that a list of new sections were recently added to the
+archive: cli-mono, database, debug, fonts, gnu-r, gnustep, haskell,
+httpd, java, kernel, lisp, localizations, ocaml, php, ruby, vcs, video,
+xfce, zope.  At this time a script was used to reclassify packages into
+these sections.  If this is the case, please only reply to this email if
+the new section is inappropriate, otherwise please update your package
+at the next upload.
+
 Either the package or the override file is incorrect.  If you think
 the override is correct and the package wrong please fix the package
 so that this disparity is fixed in the next upload.  If you feel the
