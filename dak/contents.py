@@ -112,41 +112,33 @@ olddeb_q = """PREPARE olddeb_q(int) as
 
 # find me all of the contents for a given .deb
 contents_q = """PREPARE contents_q(int,int,int,int) as
+                SELECT (p.path||'/'||n.file) AS fn,
+                      comma_separated_list(s.section||'/'||b.package)
+              from content_associations c join content_file_paths p ON (c.filepath=p.id)
+              JOIN content_file_names n ON (c.filename=n.id)
+              JOIN binaries b ON (b.id=c.binary_pkg)
+              JOIN override o ON (o.package=b.package)
+              JOIN section s ON (s.id=o.section)
+              WHERE o.suite = $1 AND o.type = $2
+              AND b.id in (SELECT ba.bin from bin_associations ba join binaries b on b.id=ba.bin where (b.architecture=$3 or b.architecture=$4)and ba.suite=$1 and b.type='deb')
+              GROUP BY fn
+              ORDER BY fn;"""
+
+# find me all of the contents for a given .udeb
+udeb_contents_q = """PREPARE udeb_contents_q(int,int,int,int,int) as
               SELECT (p.path||'/'||n.file) AS fn,
                       comma_separated_list(s.section||'/'||b.package)
-              FROM content_associations c
-              JOIN content_file_paths p ON (c.filepath=p.id)
+              FROM content_file_paths p join content_associations c ON (c.filepath=p.id)
               JOIN content_file_names n ON (c.filename=n.id)
               JOIN binaries b ON (b.id=c.binary_pkg)
-              JOIN bin_associations ba ON (b.id=ba.bin)
               JOIN override o ON (o.package=b.package)
               JOIN section s ON (s.id=o.section)
-              WHERE (b.architecture = $1 OR b.architecture = $2)
-                  AND ba.suite = $3
-                  AND o.suite = $3
-                  AND b.type = 'deb'
-                  AND o.type = $4
+              WHERE o.suite = $1 AND o.type = $2
+              AND s.id = $3
+              AND b.id in (SELECT ba.bin from bin_associations ba join binaries b on b.id=ba.bin where (b.architecture=$3 or b.architecture=$4)and ba.suite=$1 and b.type='udeb')
               GROUP BY fn
-              ORDER BY fn"""
+              ORDER BY fn;"""
 
-udeb_contents_q = """PREPARE udeb_contents_q(int,int,int,int,int) as
-              SELECT (p.path||'/'||n.file) as fn,
-                      comma_separated_list(s.section||'/'||b.package)
-              FROM content_associations c
-              JOIN content_file_paths p ON (c.filepath=p.id)
-              JOIN content_file_names n ON (c.filename=n.id)
-              JOIN binaries b ON (b.id=c.binary_pkg)
-              JOIN bin_associations ba ON (b.id=ba.bin)
-              JOIN override o ON (o.package=b.package)
-              JOIN section s ON (s.id=o.section)
-              WHERE (b.architecture = $1 OR b.architecture = $2)
-                  AND s.id = $3
-                  AND ba.suite = $4
-                  AND o.suite = $4
-                  AND b.type = 'udeb'
-                  AND o.type = $5
-              GROUP BY fn
-              ORDER BY fn"""
 
 
 # clear out all of the temporarily stored content associations
@@ -228,9 +220,7 @@ class Contents(object):
                 if not contents:
                     return
 
-                num_tabs = max(1,
-                               int(math.ceil((self._goal_column - len(contents[0])-1) / 8)))
-                f.write(contents[0] + ( '\t' * num_tabs ) + contents[-1] + "\n")
+                f.write("%s\t%s\n" % contents )
 
         finally:
             f.close()
@@ -291,11 +281,11 @@ class Contents(object):
         """
         Generate Contents-$arch.gz files for every available arch in each given suite.
         """
-        cursor = DBConn().cursor();
+        cursor = DBConn().cursor()
 
-        DBConn().prepare( "arches_q", arches_q )
-        DBConn().prepare( "contents_q", contents_q )
-        DBConn().prepare( "udeb_contents_q", udeb_contents_q )
+        DBConn().prepare("arches_q", arches_q)
+        DBConn().prepare("contents_q", contents_q)
+        DBConn().prepare("udeb_contents_q", udeb_contents_q)
 
         debtype_id=DBConn().get_override_type_id("deb")
         udebtype_id=DBConn().get_override_type_id("udeb")
@@ -310,7 +300,7 @@ class Contents(object):
             arch_all_id = DBConn().get_architecture_id("all")
 
             for arch_id in arch_list:
-                cursor.execute("EXECUTE contents_q(%d,%d,%d,%d)" % (arch_id[0], arch_all_id, suite_id, debtype_id))
+                cursor.execute("EXECUTE contents_q(%d,%d,%d,%d)" % (suite_id, debtype_id, arch_all_id, arch_id[0] ))
                 self._write_content_file(cursor, "dists/%s/Contents-%s.gz" % (suite, arch_id[1]))
 
             # The MORE fun part. Ok, udebs need their own contents files, udeb, and udeb-nf (not-free)
@@ -321,7 +311,7 @@ class Contents(object):
                 for arch_id in arch_list:
                     section_id = DBConn().get_section_id(section) # all udebs should be here)
                     if section_id != -1:
-                        cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d,%d,%d)" % (arch_id[0], arch_all_id, section_id, suite_id, udebtype_id))
+                        cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d,%d,%d)" % (suite_id, udebtype_id, section_id, arch_id[0], arch_all_id))
 
                         self._write_content_file(cursor, fn_pattern % (suite, arch_id[1]))
 
@@ -361,6 +351,7 @@ class Contents(object):
         return arch_list
 
 ################################################################################
+
 
 def main():
     cnf = Config()
