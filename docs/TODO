@@ -1,6 +1,9 @@
 				 TODO
 				 ====
 
+* Implement autosigning, see ftpmaster_autosigning on ftp-master host in
+   text/.
+
 * Check TODO.old and move still-valid/useful entries over here.
 
 
