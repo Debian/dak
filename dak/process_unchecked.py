@@ -1321,7 +1321,7 @@ def is_stableupdate ():
                            JOIN src_associations sa ON (s.id = sa.source)
                            WHERE s.source = %(source)s
                               AND s.version = %(version)s
-                              AND sa.suite = %(suite)d""",
+                              AND sa.suite = %(suite)s""",
                         {'source' : changes['source'],
                          'version' : changes['version'],
                          'suite' : pusuite})

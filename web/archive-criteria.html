@@ -1,77 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
+  <head>
+    <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8" />
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <link rel="shortcut icon" href="http://www.debian.org/favicon.ico" />
+    <title>
+      Debian Archive criteria
+    </title>
+  </head>
+  <body id="ARCHIVE">
 
-<h1>Really crappy page documenting archive criteria</h1>
+    <div id="logo">
+      <a href="http://www.debian.org/">
+        <img src="http://www.debian.org/logos/openlogo-nd-50.png"
+        alt="debian logo" /></a>
+      <a href="http://www.debian.org/">
+        <img src="http://www.debian.org/Pics/debian.png"
+        alt="Debian Project" /></a>
+    </div>
+    <div id="titleblock">
 
-<h2>Architectures</h2>
+      <img src="http://www.debian.org/Pics/red-upperleft.png"
+      id="red-upperleft" alt="corner image"/>
 
-<p><b>Release candidates:</b> alpha, amd64, hppa, i386, ia64, mips, mipsel, powerpc
-<br><b>Release hopefuls:</b> arm, s390, sparc
+      <img src="http://www.debian.org/Pics/red-lowerleft.png"
+      id="red-lowerleft" alt="corner image"/>
+      <img src="http://www.debian.org/Pics/red-upperright.png"
+      id="red-upperright" alt="corner image"/>
+      <img src="http://www.debian.org/Pics/red-lowerright.png"
+      id="red-lowerright" alt="corner image"/>
+      <span class="title">
+	  Debian Archive criteria
+      </span>
+    </div>
 
-<p><b>Requalification expected:</b> m68k
-<br><b>Future linux ports:</b> armeb
-<br><b>New OS hopefuls:</b> <a href="http://wiki.debian.org/ArchiveQualification/kfreebsd-i386">kfreebsd-i386</a>, win32-i386
+	<h2>Definitions</h2>
+    <table class="DEFINITION">
+	  <thead>
+		<tr>
+		  <th>&nbsp;</th>
+		  <th>Example</th>
+		</tr>
+	  </thead>
+      <tbody>
+		<tr class="odd">
+		  <td>Architecture</td>
+		  <td>amd64, armel, alpha, m68k. Basically everything that uses
+    the Linux kernel.</td>
+		</tr>
+		<tr class="even">
+		  <td>OS</td>
+		  <td>hurd, opensolaris, kfreebsd. Ports that do not use the
+    Linux kernel, but their own.</td>
+		</tr>
+	  </tbody>
+	</table>
 
-<h2>Requirements for architectures</h2>
+	<p>
+	A new architecture has to follow the <em>Rules for new architectures</em>,
+	and answer all <em>Questions for new architectures</em>.
+	</p>
+	<p>
+	A new OS has to follow the <em>Rules for new architectures</em> and
+	answer all  <em>Questions for new architectures</em> as well as all
+	<em>Further questions for OSes</em>.
+	</p>
 
-<p>Examples: amd64, arm, armeb, m68k, s390, sparc
+	<p>To have the answers all at one location, please create a page below
+	<a href="http://wiki.debian.org/ArchiveQualification/">wiki.debian.org/ArchiveQualification/</a>.
+	</p>
 
-<ul>
-<li>Is port cursed?
-<li>Are machines available to general public?
-<li>Is full source available?
-<li>Is this architecture related to other architectures already in the archive,
-or that also should be considered, either now or in the future? Can the related
-architectures be supported in a single architecture (eg, with a biarch arrangement)?
-<li>Are there 3 or more developers (or n-ms) actively maintaining the port? Who are they?
-<li>What sort of architecture is this? Desktop/workstation? Mainframe/supercomputer? Embedded? Something else?
-<li>Does it have any users? If a desktop system, are there Debian admins who
-run Debian systems on the arch? If an embedded system are there real systems
-shipping that a Debian port will be useful for? If a mainframe system are there
-real systems with many users that a Debian port will be useful for? Who are they?
-<li>Is there kernel and toolchain support? At what level? Are the latest versions supported, or are
-legacy releases required for compatability with some hardware?
-<li>Has the ABI stabalised, or are there major ABI changes coming
-up? Is the ABI stable enough to ensure users will be able just "apt-get
-dist-upgrade" from one version to the next?
-<li>How do you install a system? (URL to a HOWTO)
-<li>Has a buildd been setup? How much of the archive has been built (count by
-source package, builds of old versions are fine for this case)?
-<li>What hardware is potentially available as a fast buildd?
-<li>Is there any corporate support of this arch, and the Debian port in particular?
-<li>Is there an example box developers can login to to see if it works?
-</ul>
+	<h1>Rules for existing architectures</h1>
 
-<p>It's also worth considering whether the port has any special
-requirements. If the port is mainly for embedded systems, it may be
-appropriate to have different installation or release arrangements
-compared to normal desktop/workstation architectures.
+	<ul>
+	  <li>If an architecture fails to be included in 2 successive
+	  official releases, it is moved out of the official archive (and
+	  away from the ftp-master.debian.org host).</li>
 
-<h2>Further requirements for OSes</h2>
+	  <li>If a removed architecture later can prove it will be able to
+	  make the next official release, it can be re-included into the
+	  official archive. This step additionally needs the acceptance of
+	  the Security, the Release and the Debian Admin Team. (It needs
+	  security autobuilders, porter machines, etc.)</li>
+	</ul>
 
-<p>Examples: hurd, opensolaris, kfreebsd
+	<h1>Rules for new architectures</h1>
+	<ul>
+	  <li>A newly included architecture has to be completely built using
+	  packages available in plain Debian sources.  External patches cannot
+	  be used.<li>
 
-<ul>
-<li>Are there existing comprehensive free distributions of this OS? If
-so, why is a Debian distribution useful?
-<li>What demonstrable benefits does this OS have over existing Debian OSes?
-<li>Does this system have a standard Unix API?
-<li>Does the OS support modern glibc and gcc?
-<li>What is the license on the kernel and libraries? Is it free? Is it GPL
-compatible? (Note that if it's not free, building software for it violates the
-Social Contract; and if it's not GPL compatible, GPL software such as dpkg can't be
-linked to it)
-<li>Does the OS build largely without source changes? If so, what proportion of
-the archive has built?
-</ul>
+	  <li>At the time of inclusion a minimal set of binary packages will be
+	  imported into the archive, just enough to get build-essential ready to
+	  go and an official buildd setup and running. Everything else will be
+	  rebuilt from scratch. As soon as enough is rebuilt to get the initial
+	  toolchain built using "native" Debian, this will be rebuilt too.</li>
 
-<p>It's worth thinking about whether it makes sense to integrate the
-port with Debian's Linux-based distribution -- having separate sources
-may not only reduce the impact on the release architectures, but also
-make it easier to do development on the new OS as well.
+	  <li>The packages imported from external source and used for the initial
+	  build run must be signed by one of the lead porters, who must be a DD.</li>
 
-<p>Note that if significant changes are needed to more than just a small
-number of packages, your porting team will not only need to provide
-patches for most of those changes and make sure they work, but also
-ensure they don't cause problems for existing ports.
+	  <li>There must be at least two machines ready to be maintained
+	  by the Debian System Administrators, so at the start of its
+	  lifetime there will be at least one buildd and one porter machine.</br />
+
+	  The inclusion into the archive will almost certainly happen before
+	  the machines are handed over to DSA, but this should happen as
+	  soon as feasible afterwards.
+
+	  (Note that this is the minimum to get into the archive. The release team
+	  may have additional requirements to allow the architecture to release, so
+	  there would normally need to be more machines, especially more buildds.)
+	  </li>
+	</ul>
+
+	<h1>Questions for new architectures</h1>
+	<ul>
+	  <!-- <li>Is port cursed?</li> -->
+	  <li>Are machines available to buy for the general public?</li>
+	  <li>Is full source available?</li>
+	  <li>Is this architecture related to other architectures already in
+	  the archive, or that also should be considered, either now or in
+	  the future? Can the related architectures be supported in a single
+	  architecture (eg, with a biarch arrangement)?</li>
+	  <li>Are there 3 or more developers (or NMs) actively maintaining
+	  the port? Who are they?</li>
+	  <li>What sort of architecture is this? Desktop/workstation?
+	  Mainframe/supercomputer? Embedded? Something else?</li>
+	  <li>Does it have any users? If a desktop system, are there Debian
+	  admins who run Debian systems on the arch? If an embedded system
+	  are there real systems shipping that a Debian port will be useful
+	  for? If a mainframe system are there real systems with many users
+	  that a Debian port will be useful for? Who are they?</li>
+	  <li>Is there kernel and toolchain support? At what level? Are the
+	  latest versions supported, or are legacy releases required for
+	  compatability with some hardware?</li>
+	  <li>Has the ABI stabalised, or are there major ABI changes coming
+	  up? Is the ABI stable enough to ensure users will be able just
+	  "apt-get dist-upgrade" from one version to the next?</li>
+	  <li>How do you install a system? (URL to a HOWTO)</li>
+	  <li>Has a buildd been setup? How much of the archive has been
+	  built (count by source package, builds of old versions are fine
+	  for this case)?</li>
+	  <li>What hardware is potentially available as a fast buildd?</li>
+	  <li>Is there an example box developers can login to to see if it
+	  works?</li>
+	</ul>
+
+	<p>It's also worth considering whether the port has any special
+	requirements. If the port is mainly for embedded systems, it may be
+	appropriate to have different installation or release arrangements
+	compared to normal desktop/workstation architectures.</p>
+
+	<h1>Further questions for OSes</h1>
+
+	<ul>
+	  <li>Are there existing comprehensive free distributions of this OS? If
+	  so, why is a Debian distribution useful?</li>
+	  <li>What demonstrable benefits does this OS have over existing
+	  Debian OSes?</li>
+	  <li>Does this system have a standard Unix API?</li>
+	  <li>Does the OS support modern glibc and gcc?</li>
+	  <li>What is the license on the kernel and core libraries? Is the license
+	  free? Is the license GPL compatible? (Note that if it's not free, distributing
+	  the software violates the Social Contract; and if it's not GPL compatible,
+	  GPL software such as dpkg can't be linked to it)</li>
+	  <li>Does the OS build largely without source changes? If so, what proportion of
+	  the archive has built?</li>
+	</ul>
+
+	<p>It's worth thinking about whether it makes sense to integrate the
+	port with Debian's Linux-based distribution -- having separate sources
+	may not only reduce the impact on the release architectures, but also
+	make it easier to do development on the new OS as well.</p>
+
+	<p>Note that if significant changes are needed to more than just a small
+	number of packages, your porting team will not only need to provide
+	patches for most of those changes and make sure they work, but also
+	ensure they don't cause problems for existing ports.</p>
 
 
-
+    <div class="footer">
+	  <p>
+      <a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10"
+        alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+      <a href="http://jigsaw.w3.org/css-validator/">
+        <img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss"
+        alt="Valid CSS!" />
+      </a>
+      </p>
+    </div> </body> </html>

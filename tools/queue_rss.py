@@ -5,6 +5,7 @@
 # Author: Filippo Giunchedi <filippo@debian.org>
 # Version: 0.4
 
+import cgi
 import os
 import os.path
 import cPickle
@@ -110,16 +111,19 @@ def add_rss_item(status, msg, direction):
         return False
 
     description = "<pre>Description: %s\nChanges: %s\n</pre>" % \
-            (utf2ascii(msg['Description']), utf2ascii(msg['Changes']))
+            (utf2ascii(cgi.escape(msg['Description'])), utf2ascii(cgi.escape(msg['Changes'])))
+
+    link = "http://ftp-master.debian.org/new/%s_%s.html" % \
+            (msg['Source'], msg['Version'])
 
     feed.items.insert(0,
         PyRSS2Gen.RSSItem(
             title,
             pubDate = pubdate,
             description = description,
-            author = utf2ascii(msg['Maintainer']),
-            link = "http://ftp-master.debian.org/new/%s_%s.html" % \
-                    (msg['Source'], msg['Version'])
+            author = utf2ascii(cgi.escape(msg['Maintainer'])),
+            link = link,
+            guid = link
         )
     )
 
