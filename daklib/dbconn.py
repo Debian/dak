@@ -398,11 +398,11 @@ class DBConn(Singleton):
             else:
                 row = cursor.fetchone()
 
-                if row[1] != size or row[2] != md5sum:
+                if row[1] != int(size) or row[2] != md5sum:
                     res =  -2
 
                 else:
-                    self.caches[cachename].SetValue(values, row[0])
+                    self.caches['files'].SetValue(values, row[0])
                     res = row[0]
 
         return res

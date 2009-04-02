@@ -1,23 +1,87 @@
 				 TODO
 				 ====
 
+Various
+-------
+* Implement autosigning, see ftpmaster_autosigning on ftp-master host in text/.
+
 * Check TODO.old and move still-valid/useful entries over here.
 
+* need a testsuite _badly_
 
 * database table "binaries" contains a  column 'type TEXT NOT
-   NULL'. This should be made a FK on override_type, as it only contains
-   deb/udeb strings.
+  NULL'. This should be made a FK on override_type, as it only contains
+  deb/udeb strings.
 
-- sql query to do the db work for it:
-   ALTER TABLE binaries ADD COLUMN new_type INT4 REFERENCES override_type(id);
-   UPDATE BINARIES SET new_type = 7 WHERE type = 'deb';
-   UPDATE BINARIES SET new_type = 8 WHERE type = 'udeb';
-   ALTER TABLE binaries DROP COLUMN type;
-   ALTER TABLE binaries RENAME COLUMN new_type TO type;
+  - sql query to do the db work for it:
+     ALTER TABLE binaries ADD COLUMN new_type INT4 REFERENCES override_type(id);
+     UPDATE BINARIES SET new_type = 7 WHERE type = 'deb';
+     UPDATE BINARIES SET new_type = 8 WHERE type = 'udeb';
+     ALTER TABLE binaries DROP COLUMN type;
+     ALTER TABLE binaries RENAME COLUMN new_type TO type;
 
-- needs updateX.py written and then the rest of the code changed to deal
-   with it.
+  - needs updateX.py written and then the rest of the code changed to deal
+     with it.
 
 * Checkout SQL Alchemy and probably use that for our database layer.
+
+* reject on > or < in a version constraint
+
+* use pythonX.Y-tarfile to check orig.tar.gz timestamps too.
+
+* the .dak stuff is fundamentally braindamaged for various reasons, it
+  should DIE. If we want to cache information - use a ("temporary")
+  database table and let p-a clean it up, e.g. like contents does.
+
+* security global mail overrides should special case buildd stuff so
+  that buildds get ACCEPTED mails. Or maybe send them at
+  new-security-install time. That way upload-security doesn't grow
+  boundlessly.
+
+* debianqueued sucks. Reimplement in a sane way.
+
+NEW processing
+--------------
+* 'dak process-new' allows you to edit the section and change the
+   component, but really shouldn't allow the component change.
+
+* 'dak process-new' doesn't do the right thing with -2 and -1 uploads,
+  as you can end up with the .orig.tar.gz not in the pool or belonging
+  to a wrong suite.
+
+* 'dak process-new' doesn't trap signals from 'dak examine-package' properly
+
+* 'dak queue-report' should footnote the actual notes, and also * the
+  versions with notes so we can see new versions since being noted...
+
+* <neuro> the orig was in NEW, the changes that caused it to be NEW
+  were pulled out in -2, and we end up with no orig in the archive :(
+
+
+
+Override handling
+-----------------
+* 'dak check-overrides' should remove the src-only override when a
+   binary+source override exists
+
+* override checks sucks; it needs to track changes made by the
+   maintainer and pass them onto ftpmaster instead of warning the maintainer.
+
+* Fix component handling in overrides
+
+
+Cruft
+-----
+* 'dak cruft-report' could do with overrides
+
+* cruft-report could spot "half-dropped" binaries. Like if a package
+  used to build A and B, but B is no longer built for half the
+  architectures.
+
+* cruft-report's NVIU check doesn't catch cases where source package
+   changed name, should check binaries too. [debian-devel@l.d.o,
+   2004-02-03]
+
+* 'dak cruft-report' doesn't look at debian-installer but should.
 
 
