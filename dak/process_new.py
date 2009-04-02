@@ -854,7 +854,7 @@ def move_to_holding(suite, queue_dir):
     	return
     Logger.log(["Moving to %s" % (suite,), Upload.pkg.changes_file])
     Upload.dump_vars(queue_dir)
-    move_to_dir(queue_dir)
+    move_to_dir(queue_dir, perms=0664)
     os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 
 def _accept():
