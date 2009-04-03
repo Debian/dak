@@ -306,6 +306,10 @@ def main ():
 
                     for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
                         if arch != "source":  # always true
+                            rel = "%s/%s/binary-%s/Release" % (dis, sec, arch)
+                            relpath = Cnf["Dir::Root"]+tree+"/"+rel
+                            write_release_file(relpath, suite, dis, origin, label, arch, version, suite_suffix, notautomatic)
+                            files.append(rel)
                             for cfile in compressnames("tree::%s/%s" % (tree,dis),
                                 "Packages",
                                 "%s/%s/binary-%s/Packages" % (dis, sec, arch)):
