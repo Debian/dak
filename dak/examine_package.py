@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 
-""" Script to automate some parts of checking NEW packages """
-# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+"""
+Script to automate some parts of checking NEW packages
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +38,12 @@
 
 ################################################################################
 
-import errno, os, pg, re, sys, md5
+import errno
+import os
+import pg
+import re
+import sys
+import md5
 import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
