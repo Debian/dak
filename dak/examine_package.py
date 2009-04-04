@@ -61,6 +61,7 @@ projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 database.init(Cnf, projectB)
 
 printed_copyrights = {}
+package_relations = {}
 
 # default is to not output html.
 use_html = 0
@@ -344,17 +345,37 @@ def create_depends_string (suite, depends_tree):
         comma_count += 1
     return result
 
+def output_package_relations ():
+    """
+    Output the package relations, if there is more than one package checked in this run.
+    """
+
+    if len(package_relations) < 2:
+        # Only list something if we have more than one binary to compare
+        return
+
+    to_print = ""
+    for package in package_relations:
+        for relation in package_relations[package]:
+            to_print += "%-15s: (%s) %s\n" % (package, relation, package_relations[package][relation])
+
+    foldable_output("Package relations", "relations", to_print)
+
 def output_deb_info(suite, filename, packagename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
         return formatted_text("no control info")
     to_print = ""
+    if not package_relations.has_key(packagename):
+        package_relations[packagename] = {}
     for key in control_keys :
         if key == 'Depends':
             field_value = create_depends_string(suite, depends)
+            package_relations[packagename][key] = field_value
         elif key == 'Recommends':
             field_value = create_depends_string(suite, recommends)
+            package_relations[packagename][key] = field_value
         elif key == 'Section':
             field_value = section
         elif key == 'Architecture':
@@ -534,6 +555,7 @@ def main ():
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (f))
             finally:
+                output_package_relations()
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()
