@@ -61,7 +61,7 @@ projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 database.init(Cnf, projectB)
 
 printed_copyrights = {}
-package_relations = {}
+package_relations = {}           #: Store relations of packages for later output
 
 # default is to not output html.
 use_html = 0
@@ -359,6 +359,7 @@ def output_package_relations ():
         for relation in package_relations[package]:
             to_print += "%-15s: (%s) %s\n" % (package, relation, package_relations[package][relation])
 
+    package_relations.clear()
     foldable_output("Package relations", "relations", to_print)
 
 def output_deb_info(suite, filename, packagename):
