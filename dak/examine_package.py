@@ -344,7 +344,7 @@ def create_depends_string (suite, depends_tree):
         comma_count += 1
     return result
 
-def output_deb_info(suite, filename):
+def output_deb_info(suite, filename, packagename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
@@ -426,7 +426,7 @@ def check_deb (suite, deb_filename):
 
 
     foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
-                    output_deb_info(suite, deb_filename), norow=True)
+                    output_deb_info(suite, deb_filename, packagename), norow=True)
 
     if is_a_udeb:
         foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
