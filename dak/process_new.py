@@ -516,6 +516,7 @@ def check_pkg ():
                     elif ftype == "dsc":
                         examine_package.check_dsc(changes['distribution'], f)
         finally:
+            examine_package.output_package_relations()
             sys.stdout = stdout_fd
     except IOError, e:
         if e.errno == errno.EPIPE:
