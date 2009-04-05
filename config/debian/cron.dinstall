@@ -289,6 +289,12 @@ function merkel2() {
     ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb dak@merkel.debian.org sleep 1
 }
 
+function merkel3() {
+    # Push dak@merkel to tell it to sync the dd accessible parts. Returns immediately, the sync runs detached
+    log "Trigger merkels dd accessible parts sync"
+    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_ddaccess dak@merkel.debian.org sleep 1
+}
+
 function runparts() {
     log "Using run-parts to run scripts in $base/scripts/distmnt"
     run-parts --report $base/scripts/distmnt
@@ -785,6 +791,14 @@ GO=(
     TIME="apt-ftparchive cleanup"
     ARGS=""
     ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="merkel3"
+    TIME="merkel ddaccessible sync"
+    ARGS=""
+    ERR="false"
 )
 stage $GO
 
