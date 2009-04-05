@@ -768,6 +768,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
+stage $GO
 
 rm -f ${LOCK_BRITNEY}
 
