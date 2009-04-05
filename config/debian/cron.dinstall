@@ -691,14 +691,6 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="pgdakdev"
-    TIME="dak-dev db"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-GO=(
     FUNC="expire"
     TIME="expire_dumps"
     ARGS=""
@@ -771,6 +763,14 @@ GO=(
 stage $GO
 
 rm -f ${LOCK_BRITNEY}
+
+GO=(
+    FUNC="pgdakdev"
+    TIME="dak-dev db"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
 
 GO=(
     FUNC="aptftpcleanup"
