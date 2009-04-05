@@ -74,7 +74,7 @@ function merkel1() {
 # Create the postgres dump files
 function pgdump_pre() {
     log "Creating pre-daily-cron-job backup of projectb database..."
-    pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+    pg_dump projectb > $base/backup/dump_pre_$(date +%Y.%m.%d-%H:%M:%S)
 }
 
 function pgdump_post() {
@@ -329,11 +329,19 @@ function aptftpcleanup() {
 function compress() {
     log "Compress old psql backups"
     cd $base/backup/
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +1 |
+    find -maxdepth 1 -mindepth 1 -type f -name 'dump_pre_*' -mtime +2 -print0 | xargs -0 --no-run-if-empty rm
+
+    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mmin 720 |
     while read dumpname; do
         echo "Compressing $dumpname"
         bzip2 -9v "$dumpname"
     done
+    find -maxdepth 1 -mindepth 1 -type f -name "dumpall_*" \! -name '*.bz2' \! -name '*.gz' -mmin 720 |
+    while read dumpname; do
+        echo "Compressing $dumpname"
+        bzip2 -9v "$dumpname"
+    done
+    finddup -l -d $base/backup
 }
 
 function logstats() {
