@@ -11,20 +11,9 @@
 Others
 ------
 
-  o 'dak check-overrides' should remove the src-only override when a
-    binary+source override exists
-
-  o reject on > or < in a version constraint
-
   o 'dak reject-proposed-updates' should only start an editor once to
     capture a message; it will usually be the same message for all
     files on the same command line.
-
-23:07 < aba> elmo: and, how about enhancing 'dak cruft-report' to spot half-dropped
-   binaries on one arch (i.e. package used to build A and B, but B is
-   no longer built on some archs)?
-
-  o tabnanny the source
 
   o drop map-unreleased
 
@@ -44,20 +33,10 @@ Others
   o 'dak ls' could do better sanity checking for -g/-G (e.g. not more
     than one suite, etc.)
 
-  o use python2.2-tarfile (once it's in stable?) to check orig.tar.gz
-    timestamps too.
-
   o need to decide on whether we're tying for most errors at once.. if
     so (probably) then make sure code doesn't assume variables exist and
     either way do something about checking error code of check_dsc and
     later functions so we skip later checks if they're bailing.
-
-  o the .dak stuff is fundamentally braindamaged, it's not versioned
-    so there's no way to change the format, yay me.  need to fix.
-    probably by putting a version var as the first thing and checking
-    that.. auto-upgrade at least from original format would be good.
-    might also be a good idea to put everything in one big dict after
-    that?
 
   o [?, wishlist, distant future] RFC2047-ing should be extended to
     all headers of mails sent out.
@@ -74,18 +53,10 @@ Others
     deal, upload can be retried once the source is in the archive, but
     still.
 
-  o security global mail overrides should special case buildd stuff so
-    that buildds get ACCEPTED mails (or maybe 'dak security-install' (?)), that way
-    upload-security doesn't grow boundlessly.
-
   o 'dak security-install' should upload sourceful packages first,
      otherwise with big packages (e.g. X) and esp. when source is !i386,
      half the arches can be uploaded without source, get copied into
      queue/unaccepted and promptly rejected.
-
-  o 'dak cruft-report's NVIU check doesn't catch cases where source
-     package changed name, should check binaries
-     too. [debian-devel@l.d.o, 2004-02-03]
 
   o cnf[Rm::logfile] is misnamed...
 
@@ -93,8 +64,6 @@ Others
    the form ---- BEGIN PGP MESSAGE --- <non -- BEGIN/END lines> --
    BEGIN PGP SIG -- END PGP MESSAGE -- with no lines before or after,
    and rejecting .changes that didn't match that
-
-  o 'dak cruft-report' should check for source packages not building any binaries
 
   o 'dak control-suite' should have a diff mode that accepts diff output!
 
@@ -107,8 +76,6 @@ Others
 
   o 'dak rm' should remove obsolete changes when removing from p-u, or
     at least warn.  or 'dak reject-proposed-updates' should handle it.
-
-  o need a testsuite _badly_
 
   o 'dak process-unchecked' crashes if run as a user in -n mode when
     orig.tar.gz is in queue/new...
@@ -127,9 +94,6 @@ Others
 
   o check_dsc_against_db's "delete an entry from files while you're
     not looking" habit is Evil and Bad.
-
-  o 'dak process-new' allows you to edit the section and change the
-    component, but really shouldn't.
 
   o 'dak rm' needs to, when not sending bug close mails, promote Cc: to
     To: and send the mail anyways.
@@ -177,23 +141,12 @@ Others
   o UrgencyLog stuff should minimize it's bombing out(?)
   o Log stuff should open the log file
 
-  o 'dak queue-report' should footnote the actual notes, and also *
-    the versions with notes so we can see new versions since being
-    noted...
-
-  o 'dak queue-report' should have alternative sorting options, including reverse
-    and without or without differentiaion.
-
   o 'dak import-users-from-passwd' should sync debadmin and ftpmaster (?)
 
   o <drow> Can't read file.:
   /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.dak.
   You assume that the filenames are relative to accepted/, might want
   to doc or fix that.
-
-  o <neuro> the orig was in NEW, the changes that caused it to be NEW
-    were pulled out in -2, and we end up with no orig in the archive
-    :(
 
   o SecurityQueueBuild doesn't handle the case of foo_3.3woody1 with a
    new .orig.tar.gz followed by a foo_3.3potato1 with the same
@@ -207,24 +160,9 @@ Others
 
   o permissions (paranoia, group write, etc.) configurability and overhaul
 
-  o remember duplicate copyrights in 'dak process-new' and skip them, per package
-
-  o <M>ove option for 'dak process-new' byhand proecessing
-
-  o 'dak cruft-report' could do with overrides
-
   o database.get_location_id should handle the lack of archive_id properly
 
   o the whole versioncmp thing should be documented
-
-  o 'dak process-new' doesn't do the right thing with -2 and -1 uploads, as you can
-    end up with the .orig.tar.gz not in the pool
-
-  o 'dak process-new' exits if you check twice (aj)
-
-  o 'dak process-new' doesn't trap signals from 'dak examine-package' properly
-
-  o queued and/or perl on sparc stable sucks - reimplement it.
 
   o aj's bin nmu changes
 
@@ -244,9 +182,6 @@ Others
   o dak doesn't recognise binonlyNMUs correctly in terms of telling
     who their source is; source-must-exist does, but the info is not
     propogated down.
-
-  o Fix BTS vs. dak sync issues by queueing(via BSMTP) BTS mail so
-    that it can be released on deman (e.g. ETRN to exim).
 
   o maintainers file needs overrides
 
@@ -329,9 +264,6 @@ Less Urgent
 
   o [Hard] Need to merge non-non-US and non-US DBs.
 
-  o experimental needs to auto clean (relative to unstable) [partial:
-   'dak cruft-report' warns about this]
-
   o Do a checkpc(1)-a-like which sanitizes a config files.
   o fix parse_changes()/build_file_list() to sanity check filenames
   o saftey check and/or rename debs so they match what they should be
@@ -350,11 +282,6 @@ Less Urgent
 
   o s/distribution/suite/g
 
-  o cron.weekly:
-     @ weekly postins to d-c (?)
-     @ backup of report (?)
-     @ backup of changes.tgz (?)
-
   o --help doesn't work without /etc/dak/dak.conf (or similar) at
     least existing.
 
@@ -364,15 +291,8 @@ Less Urgent
 
     o interrupting of stracing 'dak process-unchecked' causes exceptions errors from apt_inst calls
     o dependency checking (esp. stable) (partially done)
-    o override checks sucks; it needs to track changes made by the
-      maintainer and pass them onto ftpmaster instead of warning the
-      maintainer.
     o need to do proper rfc822 escaping of from lines (as opposed to s/\.//g)
     o Revisit linking of binary->source in install() in dak.
-    o Fix component handling in overrides (aj)
-    o Fix lack of entires in source overrides (aj)
-    o direport misreports things as section 'devel' (? we don't use direport)
-    o vrfy check of every Maintainer+Changed-By address; valid for 3 months.
     o binary-all should be done on a per-source, per-architecture package
       basis to avoid, e.g. the perl-modules problem.
     o a source-missing-diff check: if the version has a - in it, and it
@@ -405,11 +325,7 @@ Less Urgent
     o dak should validate multi-suite uploads; only possible valid one
       is "stable unstable"
     o cron.daily* should change umask (aj sucks)
-    o 'dak cruft-report' doesn't look at debian-installer but should.
-    o 'dak cruft-report' needs to check for binary-less source packages.
-    o 'dak cruft-report' could accept a suite argument (?)
     o byhand stuff should send notification
-    o 'dak poolize' should udpate db; move files, not the other way around [neuro]
     o 'dak rm' should update the stable changelog [joey]
     o update tagdb.dia
 
@@ -417,11 +333,9 @@ Less Urgent
 
     o drop rather dubious currval stuff (?)
     o rationalize os.path.join() usage
-    o 'dak cruft-report' also doesn't seem to warn about missing binary packages (??)
     o logging: hostname + pid ?
     o ANAIS should be done in dak (?)
     o Add an 'add' ability to 'dak rm' (? separate prog maybe)
-    o Replicate old dinstall report stuff (? needed ?)
     o Handle the case of 1:1.1 which would overwrite 1.1 (?)
     o maybe drop -r/--regex in 'dak ls', make it the default and
       implement -e/--exact (a la joey's "elmo")

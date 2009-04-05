@@ -121,6 +121,31 @@ def print_sha1_files (tree, files):
 def print_sha256_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.sha256sum)
 
+def write_release_file (relpath, suite, component, origin, label, arch, version="", suite_suffix="", notautomatic=""):
+    try:
+        if os.access(relpath, os.F_OK):
+            if os.stat(relpath).st_nlink > 1:
+                os.unlink(relpath)
+        release = open(relpath, "w")
+    except IOError:
+        utils.fubar("Couldn't write to " + relpath)
+
+    release.write("Archive: %s\n" % (suite))
+    if version != "":
+        release.write("Version: %s\n" % (version))
+
+    if suite_suffix:
+        release.write("Component: %s/%s\n" % (suite_suffix,component))
+    else:
+        release.write("Component: %s\n" % (component))
+
+    release.write("Origin: %s\n" % (origin))
+    release.write("Label: %s\n" % (label))
+    if notautomatic != "":
+        release.write("NotAutomatic: %s\n" % (notautomatic))
+    release.write("Architecture: %s\n" % (arch))
+    release.close()
+
 ################################################################################
 
 def main ():
@@ -269,29 +294,7 @@ def main ():
                     else:
                         rel = "%s/binary-%s/Release" % (sec, arch)
                     relpath = Cnf["Dir::Root"]+tree+"/"+rel
-
-                    try:
-                        if os.access(relpath, os.F_OK):
-                            if os.stat(relpath).st_nlink > 1:
-                                os.unlink(relpath)
-                        release = open(relpath, "w")
-                        #release = open(longsuite.replace("/","_") + "_" + arch + "_" + sec + "_Release", "w")
-                    except IOError:
-                        utils.fubar("Couldn't write to " + relpath)
-
-                    release.write("Archive: %s\n" % (suite))
-                    if version != "":
-                        release.write("Version: %s\n" % (version))
-                    if suite_suffix:
-                        release.write("Component: %s/%s\n" % (suite_suffix,sec))
-                    else:
-                        release.write("Component: %s\n" % (sec))
-                    release.write("Origin: %s\n" % (origin))
-                    release.write("Label: %s\n" % (label))
-                    if notautomatic != "":
-                        release.write("NotAutomatic: %s\n" % (notautomatic))
-                    release.write("Architecture: %s\n" % (arch))
-                    release.close()
+                    write_release_file(relpath, suite, sec, origin, label, arch, version, suite_suffix, notautomatic)
                     files.append(rel)
 
             if AptCnf.has_key("tree::%s/main" % (tree)):
@@ -303,6 +306,10 @@ def main ():
 
                     for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
                         if arch != "source":  # always true
+                            rel = "%s/%s/binary-%s/Release" % (dis, sec, arch)
+                            relpath = Cnf["Dir::Root"]+tree+"/"+rel
+                            write_release_file(relpath, suite, dis, origin, label, arch, version, suite_suffix, notautomatic)
+                            files.append(rel)
                             for cfile in compressnames("tree::%s/%s" % (tree,dis),
                                 "Packages",
                                 "%s/%s/binary-%s/Packages" % (dis, sec, arch)):
