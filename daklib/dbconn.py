@@ -38,7 +38,7 @@ import psycopg2
 import traceback
 
 from sqlalchemy import create_engine, Table, MetaData, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, mapper
 
 from singleton import Singleton
 from config import Config
@@ -62,6 +62,326 @@ class Cache(object):
 
 ################################################################################
 
+class Architecture(object):
+    def __init__(self, arch_id=None, arch_string=None, description=None):
+        self.arch_id = arch_id
+        self.arch_string = arch_string
+        self.description = description
+
+    def __repr__(self):
+        return '<Architecture %s>' % self.arch_string
+
+class Archive(object):
+    def __init__(self, archive_id=None, archive_name=None, origin_server=None,
+                 description=None):
+        self.archive_id = archive_id
+        self.archive_name = archive_name
+        self.origin_server = origin_server
+        self.description = description
+
+    def __repr__(self):
+        return '<Archive %s>' % self.name
+
+class BinAssociation(object):
+    def __init__(self, ba_id=None, suite_id=None, bin_id=None):
+        self.ba_id = ba_id
+        self.suite_id = suite_id
+        self.bin_id = bin_id
+
+    def __repr__(self):
+        return '<BinAssociation %s>' % self.ba_id
+
+class Binary(object):
+    def __init__(self, binary_id=None, package=None, version=None,
+                 maintainer_id=None, source_id=None, arch_id=None,
+                 file_id=None, filetype=None, fingerprint_id=None,
+                 install_date=None):
+        self.binary_id = binary_id
+        self.package = package
+        self.version = version
+        self.maintainer_id = maintainer_id
+        self.source_id = source_id
+        self.arch_id = arch_id
+        self.file_id = file_id
+        self.filetype = filetype
+        self.fingerprint_id = fingerprint_id
+        self.install_date = install_date
+
+    def __repr__(self):
+        return '<Binary %s (%s) %s>' % (self.package, self.version, self.arch_id)
+
+class Component(object):
+    def __init__(self, component_id=None, component_name=None,
+                 description=None, meets_dfsg=None,):
+        self.component_id = component_id
+        self.component_name = component_name
+        self.description = description
+        self.meets_dfsg = meets_dfsg
+
+    def __repr__(self):
+        return '<Component %s>' % self.component_name
+
+class DBConfig(object):
+    def __init__(self, config_id=None, name=None, value=None):
+        self.config_id = config_id
+        self.name = name
+        self.value = value
+
+    def __repr__(self):
+        return '<DBConfig %s>' % self.name
+
+class ContentFilename(object):
+    def __init__(self, cafilename_id=None, filename=None):
+        self.cafilename_id = cafilename_id
+        self.filename = filename
+
+    def __repr__(self):
+        return '<ContentFilename %s>' % self.filename
+
+class ContentFilepath(object):
+    def __init__(self, cafilepath_id=None, filepath=None):
+        self.cafilepath_id = cafilepath_id
+        self.filepath = filepath
+
+    def __repr__(self):
+        return '<ContentFilepath %s>' % self.filepath
+
+class ContentAssociations(object):
+    def __init__(self, binary_id=None, filename_id=None, filepath_id=None,
+                 ca_id=None):
+        self.binary_id = binary_id
+        self.filename_id = filename_id
+        self.filepath_id = filepath_id
+        self.ca_id = ca_id
+
+    def __repr__(self):
+        return '<ContentAssociation %s>' % self.ca_id
+
+class DSCFile(object):
+    def __init__(self, dscfile_id=None, source_id=None, file_id=None):
+        self.dscfile_id = dscfile_id
+        self.source_id = source_id
+        self.file_id = file_id
+
+    def __repr__(self):
+        return '<DSCFile %s>' % self.dscfile_id
+
+class PoolFile(object):
+    def __init__(self, file_id=None, filename=None, filesize=None,
+                 location_id=None, last_used=None, md5sum=None,
+                 sha1sum=None, sha256sum=None):
+        self.file_id = file_id
+        self.filename = filename
+        self.filesize = filesize
+        self.location_id = location_id
+        self.last_used = last_used
+        self.md5sum = md5sum
+        self.sha1sum = sha1sum
+        self.sha256sum = sha256sum
+
+    def __repr__(self):
+        return '<PoolFile %s>' % self.filename
+
+class Fingerprint(object):
+    def __init__(self, fingerprint_id=None, fingerprint=None,
+                 uid_id=None, keyring_id=None):
+        self.fingerprint_id = fingerprint_id
+        self.fingerprint = fingerprint
+        self.uid_id = uid_id
+        self.keyring_id = keyring_id
+
+    def __repr__(self):
+        return '<Fingerprint %s>' % self.fingerprint
+
+class Keyring(object):
+    def __init__(self, keyring_id=None, keyring_name=None,
+                 debian_maintainer=None):
+        self.keyring_id = keyring_id
+        self.keyring_name = keyring_name
+        self.debian_maintainer = debian_maintainer
+
+    def __repr__(self):
+        return '<Keyring %s>' % self.keyring_name
+
+class Location(object):
+    def __init__(self, location_id=None, path=None,
+                 component_id=None, archive_id=None,
+                 archive_type=None):
+        self.location_id = location_id
+        self.path = path
+        self.component_id = component_id
+        self.archive_id = archive_id
+        self.archive_type = archive_type
+
+    def __repr__(self):
+        return '<Location %s (%s)>' % (self.path, self.location_id)
+
+class Maintainer(object):
+    def __init__(self, maintainer_id=None, name=None):
+        self.maintainer_id = maintainer_id
+        self.name = name
+
+    def __repr__(self):
+        return '''<Maintainer '%s' (%s)>''' % (self.name, self.maintainer_id)
+
+class Override(object):
+    def __init__(self, package, suite_id=None, component_id=None,
+                 priority_id=None, section_id=None, overridetype_id=None,
+                 maintainer=None):
+        self.package = package
+        self.suite_id = suite_id
+        self.component_id = component_id
+        self.priority_id = priority_id
+        self.section_id = section_id
+        self.overridetype_id = overridetype_id
+        self.maintainer = maintainer
+
+    def __repr__(self):
+        return '<Override %s (%s)>' % (self.package, self.suite_id)
+
+class OverrideType(object):
+    def __init__(self, overridetype_id=None, overridetype=None):
+        self.overridetype_id = overridetype_id
+        self.overridetype = overridetype
+
+    def __repr__(self):
+        return '<OverrideType %s>' % self.overridetype
+
+class PendingContentAssociation(object):
+    def __init__(self, pca_id=None, package=None, version=None,
+                 filepath_id=None, filename_id=None):
+        self.pca_id = pca_id
+        self.package = package
+        self.version = version
+        self.filepath_id = filepath_id
+        self.filename_id = filename_id
+
+    def __repr__(self):
+        return '<PendingContentAssociation %s>' % self.pca_id
+
+class Priority(object):
+    def __init__(self, priority_id=None, priority=None, level=None):
+        self.priority_id = priority_id
+        self.priority = priority
+        self.level = level
+
+    def __repr__(self):
+        return '<Priority %s (%s)>' % (self.priority, self.priority_id)
+
+class Queue(object):
+    def __init__(self, queue_id=None, queue_name=None):
+        self.queue_id = queue_id
+        self.queue_name = queue_name
+
+    def __repr__(self):
+        return '<Queue %s>' % self.queue_name
+
+class QueueBuild(object):
+    def __init__(self, suite_id=None, queue_id=None, filename=None,
+                 in_queue=None, last_used=None):
+        self.suite_id = suite_id
+        self.queue_id = queue_id
+        self.filename = filename
+        self.in_queue = in_queue
+        self.last_used = last_used
+
+    def __repr__(self):
+        return '<QueueBuild %s (%s)>' % (self.filename, self.queue_id)
+
+class Section(object):
+    def __init__(self, section_id=None, section=None):
+        self.section_id = section_id
+        self.section = section
+
+    def __repr__(self):
+        return '<Section %s>' % self.section
+
+class Source(object):
+    def __init__(self, source_id=None, source=None, version=None,
+                 maintainer_id=None, file_id=None, fingerprint_id=None,
+                 install_date=None, changedby_id=None, dm_upload_allowed=None):
+        self.source_id = source_id
+        self.source = source
+        self.version = version
+        self.maintainer_id = maintainer_id
+        self.file_id = file_id
+        self.fingerprint_id = fingerprint_id
+        self.install_date = install_date
+        self.changedby_id = changedby_id
+        self.dm_upload_allowed = dm_upload_allowed
+
+    def __repr__(self):
+        return '<Source %s (%s)>' % (self.source, self.version)
+
+class SrcAssociation(object):
+    def __init__(self, sa_id=None, suite_id=None, source_id=None):
+        self.sa_id = sa_id
+        self.suite_id = suite_id
+        self.source_id = source_id
+
+    def __repr__(self):
+        return '<SrcAssociation %s>' % self.sa_id
+
+class SrcUploader(object):
+    def __init__(self, uploader_id=None, source_id=None, maintainer_id=None):
+        self.uploader_id = uploader_id
+        self.source_id = source_id
+        self.maintainer_id = maintainer_id
+
+    def __repr__(self):
+        return '<SrcUploader %s>' % self.uploader_id
+
+class Suite(object):
+    def __init__(self, suite_id=None, suite_name=None, version=None,
+                 origin=None, label=None, policy_engine=None,
+                 description=None, untouchable=None, announce=None,
+                 codename=None, overridecodename=None, validtime=None,
+                 priority=None, notautomatic=None, copychanges=None,
+                 copydotdak=None, commentsdir=None, overridesuite=None,
+                 changelogbase=None):
+
+        self.suite_id = suite_id
+        self.suite_name = suite_name
+        self.version = version
+        self.origin = origin
+        self.label = label
+        self.policy_engine = policy_engine
+        self.description = description
+        self.untouchable = untouchable
+        self.announce = announce
+        self.codename = codename
+        self.overridecodename = overridecodename
+        self.validtime = validtime
+        self.priority = priority
+        self.notautomatic = notautomatic
+        self.copychanges = copychanges
+        self.copydotdak = copydotdak
+        self.commentsdir = commentsdir
+        self.overridesuite = overridesuite
+        self.changelogbase = changelogbase
+
+    def __repr__(self):
+        return '<Suite %s>' % self.suite_name
+
+class SuiteArchitecture(object):
+    def __init__(self, suite_id=None, arch_id=None):
+        self.suite_id = suite_id
+        self.arch_id = arch_id
+
+    def __repr__(self):
+        return '<SuiteArchitecture (%s, %s)>' % (self.suite_id, self.arch_id)
+
+class Uid(object):
+    def __init__(self, uid_id=None, uid=None, name=None):
+        self.uid_id = uid_id
+        self.uid = uid
+        self.name = name
+
+    def __repr__(self):
+        return '<Uid %s (%s)>' % (self.uid, self.name)
+
+################################################################################
+
 class DBConn(Singleton):
     """
     database module init.
@@ -75,33 +395,156 @@ class DBConn(Singleton):
 
     def __setuptables(self):
         self.tbl_architecture = Table('architecture', self.db_meta, autoload=True)
+        mapper(Architecture, self.tbl_architecture,
+               properties = dict(arch_id = self.tbl_architecture.c.id))
+
         self.tbl_archive = Table('archive', self.db_meta, autoload=True)
+        mapper(Archive, self.tbl_archive,
+               properties = dict(archive_id = self.tbl_archive.c.id,
+                                 archive_name = self.tbl_archive.c.name))
+
         self.tbl_bin_associations = Table('bin_associations', self.db_meta, autoload=True)
+        mapper(BinAssociation, self.tbl_bin_associations,
+               properties = dict(ba_id = self.tbl_bin_associations.c.id,
+                                 suite_id = self.tbl_bin_associations.c.suite,
+                                 bin_id = self.tbl_bin_associations.c.bin))
+
         self.tbl_binaries = Table('binaries', self.db_meta, autoload=True)
+        mapper(Binary, self.tbl_binaries,
+               properties = dict(binary_id = self.tbl_binaries.c.id,
+                                 file_id = self.tbl_binaries.c.file,
+                                 filetype = self.tbl_binaries.c.type,
+                                 maintainer_id = self.tbl_binaries.c.maintainer,
+                                 source_id = self.tbl_binaries.c.source,
+                                 arch_id = self.tbl_binaries.c.architecture,
+                                 fingerprint_id = self.tbl_binaries.c.sig_fpr))
+
         self.tbl_component = Table('component', self.db_meta, autoload=True)
+        mapper(Component, self.tbl_component,
+               properties = dict(component_id = self.tbl_component.c.id,
+                                 component_name = self.tbl_component.c.name))
+
         self.tbl_config = Table('config', self.db_meta, autoload=True)
+        mapper(DBConfig, self.tbl_config,
+               properties = dict(config_id = self.tbl_config.c.id))
+
         self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
+        mapper(ContentAssociations, self.tbl_content_associations,
+               properties = dict(ca_id = self.tbl_content_associations.c.id,
+                                 filename_id = self.tbl_content_associations.c.filename,
+                                 filepath_id = self.tbl_content_associations.c.filepath,
+                                 binary_id   = self.tbl_content_associations.c.binary_pkg))
+
         self.tbl_content_file_names = Table('content_file_names', self.db_meta, autoload=True)
+        mapper(ContentFilename, self.tbl_content_file_names,
+               properties = dict(cafilename_id = self.tbl_content_file_names.c.id,
+                                 filename = self.tbl_content_file_names.c.file))
+
         self.tbl_content_file_paths = Table('content_file_paths', self.db_meta, autoload=True)
+        mapper(ContentFilepath, self.tbl_content_file_paths,
+               properties = dict(cafilepath_id = self.tbl_content_file_paths.c.id,
+                                 filepath = self.tbl_content_file_paths.c.path))
+
         self.tbl_dsc_files = Table('dsc_files', self.db_meta, autoload=True)
+        mapper(DSCFile, self.tbl_dsc_files,
+               properties = dict(dscfile_id = self.tbl_dsc_files.c.id,
+                                 source_id = self.tbl_dsc_files.c.source,
+                                 file_id = self.tbl_dsc_files.c.file))
+
         self.tbl_files = Table('files', self.db_meta, autoload=True)
+        mapper(PoolFile, self.tbl_files,
+               properties = dict(file_id = self.tbl_files.c.id,
+                                 filesize = self.tbl_files.c.size,
+                                 location_id = self.tbl_files.c.location))
+
         self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
+        mapper(Fingerprint, self.tbl_fingerprint,
+               properties = dict(fingerprint_id = self.tbl_fingerprint.c.id,
+                                 uid_id = self.tbl_fingerprint.c.uid,
+                                 keyring_id = self.tbl_fingerprint.c.keyring))
+
         self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
+        mapper(Keyring, self.tbl_keyrings,
+               properties = dict(keyring_name = self.tbl_keyrings.c.name,
+                                 keyring_id = self.tbl_keyrings.c.id))
+
         self.tbl_location = Table('location', self.db_meta, autoload=True)
+        mapper(Location, self.tbl_location,
+               properties = dict(location_id = self.tbl_location.c.id,
+                                 component_id = self.tbl_location.c.component,
+                                 archive_id = self.tbl_location.c.archive,
+                                 archive_type = self.tbl_location.c.type))
+
         self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
+        mapper(Maintainer, self.tbl_maintainer,
+               properties = dict(maintainer_id = self.tbl_maintainer.c.id))
+
         self.tbl_override = Table('override', self.db_meta, autoload=True)
+        mapper(Override, self.tbl_override,
+               properties = dict(suite_id = self.tbl_override.c.suite,
+                                 component_id = self.tbl_override.c.component,
+                                 priority_id = self.tbl_override.c.priority,
+                                 section_id = self.tbl_override.c.section,
+                                 overridetype_id = self.tbl_override.c.type))
+
         self.tbl_override_type = Table('override_type', self.db_meta, autoload=True)
+        mapper(OverrideType, self.tbl_override_type,
+               properties = dict(overridetype = self.tbl_override_type.c.type,
+                                 overridetype_id = self.tbl_override_type.c.id))
+
         self.tbl_pending_content_associations = Table('pending_content_associations', self.db_meta, autoload=True)
+        mapper(PendingContentAssociation, self.tbl_pending_content_associations,
+               properties = dict(pca_id = self.tbl_pending_content_associations.c.id,
+                                 filepath_id = self.tbl_pending_content_associations.c.filepath,
+                                 filename_id = self.tbl_pending_content_associations.c.filename))
+
         self.tbl_priority = Table('priority', self.db_meta, autoload=True)
+        mapper(Priority, self.tbl_priority,
+               properties = dict(priority_id = self.tbl_priority.c.id))
+
         self.tbl_queue = Table('queue', self.db_meta, autoload=True)
+        mapper(Queue, self.tbl_queue,
+               properties = dict(queue_id = self.tbl_queue.c.id))
+
         self.tbl_queue_build = Table('queue_build', self.db_meta, autoload=True)
+        mapper(QueueBuild, self.tbl_queue_build,
+               properties = dict(suite_id = self.tbl_queue_build.c.suite,
+                                 queue_id = self.tbl_queue_build.c.queue))
+
         self.tbl_section = Table('section', self.db_meta, autoload=True)
+        mapper(Section, self.tbl_section,
+               properties = dict(section_id = self.tbl_section.c.id))
+
         self.tbl_source = Table('source', self.db_meta, autoload=True)
+        mapper(Source, self.tbl_source,
+               properties = dict(source_id = self.tbl_source.c.id,
+                                 maintainer_id = self.tbl_source.c.maintainer,
+                                 file_id = self.tbl_source.c.file,
+                                 fingerprint_id = self.tbl_source.c.sig_fpr,
+                                 changedby_id = self.tbl_source.c.changedby))
+
         self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
+        mapper(SrcAssociation, self.tbl_src_associations,
+               properties = dict(sa_id = self.tbl_src_associations.c.id))
+
         self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
+        mapper(SrcUploader, self.tbl_src_uploaders,
+               properties = dict(uploader_id = self.tbl_src_uploaders.c.id,
+                                 source_id = self.tbl_src_uploaders.c.source,
+                                 maintainer_id = self.tbl_src_uploaders.c.maintainer))
+
         self.tbl_suite = Table('suite', self.db_meta, autoload=True)
+        mapper(Suite, self.tbl_suite,
+               properties = dict(suite_id = self.tbl_suite.c.id))
+
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
+        mapper(SuiteArchitecture, self.tbl_suite_architectures,
+               properties = dict(suite_id = self.tbl_suite_architectures.c.suite,
+                                 arch_id = self.tbl_suite_architectures.c.architecture))
+
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
+        mapper(Uid, self.tbl_uid,
+               properties = dict(uid_id = self.tbl_uid.c.id))
 
     ## Connection functions
     def __createconn(self):
