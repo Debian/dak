@@ -235,6 +235,12 @@ function buildd() {
     apt-ftparchive generate apt.conf.buildd
 }
 
+function buildd_dir() {
+    # Rebuilt the buildd dir to avoid long times of 403
+    log "Regenerating the buildd incoming dir"
+    make_buildd_dir
+}
+
 function scripts() {
     log "Running various scripts from $scriptsdir"
     cd $scriptsdir
@@ -582,6 +588,14 @@ GO=(
     TIME="accepted"
     ARGS=""
     ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="buildd_dir"
+    TIME="buildd_dir"
+    ARGS=""
+    ERR="false"
 )
 stage $GO
 
