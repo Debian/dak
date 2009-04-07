@@ -168,7 +168,7 @@ def parse_nfu(architecture):
 
         f.close()
     else:
-        utils.warn("No wanna-build dump file for architecture %s", architecture)
+        utils.warn("No wanna-build dump file for architecture %s" % architecture)
     return ret
 
 ################################################################################
