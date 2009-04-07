@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# $Id: ddtp_i18n_check.sh 1186 2008-08-12 18:31:25Z faw $
+# $Id: ddtp_i18n_check.sh 1670 2009-03-31 20:57:49Z nekral-guest $
 # 
 # Copyright (C) 2008, Felipe Augusto van de Wiel <faw@funlabs.org>
-# Copyright (C) 2008, Nicolas François <nicolas.francois@centraliens.net>
+# Copyright (C) 2008, 2009 Nicolas FranÃ§ois <nicolas.francois@centraliens.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,65 @@ export LC_ALL=C
 # Otherwise, list all the errors.
 DEBUG=0
 
+# When DRY_RUN=0, generate the compressed version of the Translation-*
+# files.
+DRY_RUN=0
+
+dists_parent_dir=""
+# If no argument indicates the PACKAGES_LISTS_DIR then use '.'
+PACKAGES_LISTS_DIR=""
+
+usage () {
+	echo "Usage: $0 [options] <dists_parent_dir> [<packages_lists_directory>]" >&2
+	echo "" >&2
+	echo "    --debug      Debug mode: do not stop after the first error" >&2
+	echo "    --dry-run    Do not generate the compressed version of the " >&2
+	echo "                 Translation files">&2
+	exit 1
+}
+
+# Parse options
+for opt; do
+	case "$opt" in
+		"--debug")
+			DEBUG=1
+			;;
+		"--dry-run")
+			DRY_RUN=1
+			;;
+		"-*")
+			usage
+			;;
+		"")
+			echo "Empty parameter" >&2
+			echo "" >&2
+			usage
+			;;
+		*)
+			if [ -z "$dists_parent_dir" ]; then
+				# Removing trailing /
+				dists_parent_dir=${opt%/}
+			elif [ -z "$PACKAGES_LISTS_DIR" ]; then
+				PACKAGES_LISTS_DIR=$opt
+			else
+				echo "$0: Invalid option: $opt" >&2
+				usage
+			fi
+			;;
+	esac
+done
+PACKAGES_LISTS_DIR=${opt:-.}
+
+if [ ! -d "$dists_parent_dir" ]; then
+	echo "missing dists_parent_dir, or not a directory" >&2
+	echo "" >&2
+	usage
+elif [ ! -d "$PACKAGES_LISTS_DIR" ]; then
+	echo "missing packages_lists_directory, or not a directory" >&2
+	echo "" >&2
+	usage
+fi
+
 #STABLE="lenny"
 TESTING="squeeze"
 UNSTABLE="sid"
@@ -34,16 +93,6 @@ TIMESTAMP="timestamp"
 # These special files must exist on the top of dists_parent_dir
 SPECIAL_FILES="$SHA256SUMS $TIMESTAMP $TIMESTAMP.gpg"
 
-usage () {
-	echo "Usage: $0 <dists_parent_dir> [<packages_lists_directory>]" >&2
-	exit 1
-}
-
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || [ ! -d $1 ]
-then
-	usage
-fi
-
 # Temporary working directory. We need a full path to reduce the
 # complexity of checking SHA256SUMS and cleaning/removing TMPDIR
 TEMP_WORK_DIR=$(mktemp -d -t ddtp_dinstall_tmpdir.XXXXXX)
@@ -52,24 +101,13 @@ TMP_WORK_DIR=$(pwd)
 cd "$OLDPWD"
 unset TEMP_WORK_DIR
 
-# If it's traped, something bad happened.
+# If it's trapped, something bad happened.
 trap_exit () {
 	rm -rf "$TMP_WORK_DIR"
-	rm -f "$dists_parent_dir"/dists/*/main/i18n/Translation-*.{bz2,gz}
+	rm -f "$dists_parent_dir"/dists/*/main/i18n/Translation-*.bz2
 	exit 1
 }
 trap trap_exit EXIT HUP INT QUIT TERM
-
-# If no argument indicates the PACKAGES_LISTS_DIR then use '.'
-PACKAGES_LISTS_DIR=${2:-.}
-
-if [ ! -d "$PACKAGES_LISTS_DIR" ]
-then
-	usage
-fi
-
-# Removing trailing /
-dists_parent_dir=${1%/}
 
 is_filename_okay () {
 	ifo_file="$1"
@@ -351,10 +389,10 @@ while read f; do
 		# We do not check if the md5 in Translation-$lang are
 		# correct.
 
-		# Now generate files
-		#   Compress the file
-		bzip2 -c "$f" > "$f.bz2"
-		gzip  -c "$f" > "$f.gz"
+		if [ "$DRY_RUN" = "0" ]; then
+			# Now generate the compressed files
+			bzip2 "$f"
+		fi
 	else
 		echo "Neither a file or directory: $f" >&2
 		exit 1

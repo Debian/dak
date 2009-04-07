@@ -33,8 +33,10 @@ G{importgraph}
 
 ################################################################################
 
-import sys, imp
-import daklib.utils, daklib.extensions
+import sys
+import imp
+import daklib.utils
+import daklib.extensions
 
 ################################################################################
 
@@ -112,6 +114,8 @@ def init():
          "Generate package <-> file mapping"),
         ("generate-releases",
          "Generate Release files"),
+        ("contents",
+         "Generate content files"),
         ("generate-index-diffs",
          "Generate .diff/Index files"),
         ("clean-suites",

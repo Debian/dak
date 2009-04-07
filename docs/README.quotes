@@ -344,3 +344,23 @@ Canadians: This is a lighthouse. Your call.
 <helix> elmo: I can't believe people pay you to fix computers
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<mhy> oh no, Ganneff has just corrected my english
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<mhy> I often wonder if we should use NSA bot or something instead and get dinstall to send emails telling us about its progress :-)
+<mhy> dinstall: I'm processing openoffice
+<mhy> dinstall: I'm choking, please help me
+<Ganneff> yeah. get floods in here, for 600 accepted packages.
+<mhy> hehe
+<Ganneff> im not sure the other opers will like it if i oper up the bot, just so it can flood faster
+<mhy> flood all debian related channels
+<mhy> just to be safe
+<Ganneff> /msg #debian-* dinstall: starting
+<Ganneff> more interesting would be the first message in #debian, the next in #d-devel, then #d-qa
+<Ganneff> and expect people to monitor all.
+<Ganneff> i bet we have enough debian channels to at least put the timestamps in seperate channels each
+<Ganneff> and if not  -  we can make it go multi-network
+<Ganneff> first oftc, then opn, then ircnet, then - we will find some. quakenet anyone?
+<mhy> I should know better than to give you ideas

@@ -122,10 +122,14 @@ class BugClassifier(object):
         controls = ""
 
         bc = BugClassifier()
-        for bug in bc.unclassified_bugs():
-            controls += bc.classify_bug(bug)
+        try:
+            for bug in bc.unclassified_bugs():
+                controls += bc.classify_bug(bug)
 
-        return controls
+            return controls
+        except:
+            log.error("couldn't retrieve bugs from soap interface: %s" % sys.exc_info()[0])
+            return None
 
 def send_email(commands, simulate=False):
     global Cnf

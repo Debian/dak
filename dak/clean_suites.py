@@ -208,8 +208,8 @@ def clean():
     # Delete files from the pool
     query = "SELECT l.path, f.filename FROM location l, files f WHERE f.last_used <= '%s' AND l.id = f.location" % (delete_date)
     if max_delete is not None:
-        query += " LIMIT %d" % maximum
-        sys.stdout.write("Limiting removals to %d" % Cnf["Clean-Suites::Options::Maximum"])
+        query += " LIMIT %d" % max_delete
+        sys.stdout.write("Limiting removals to %d\n" % max_delete)
 
     q=projectB.query(query)
     for i in q.getresult():

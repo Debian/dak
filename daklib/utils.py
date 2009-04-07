@@ -260,6 +260,7 @@ def create_hash(where, files, hashname, hashfunc):
             file_handle = open_file(f)
         except CantOpenError:
             rejmsg.append("Could not open file %s for checksumming" % (f))
+            continue
 
         files[f][hash_key(hashname)] = hashfunc(file_handle)
 
@@ -1484,6 +1485,20 @@ def temp_filename(directory=None, prefix="dak", suffix=""):
 
 ################################################################################
 
+def temp_dirname(parent=None, prefix="dak", suffix=""):
+    """
+    Return a secure and unique directory by pre-creating it.
+    If 'parent' is non-null, it will be the directory the directory is pre-created in.
+    If 'prefix' is non-null, the filename will be prefixed with it, default is dak.
+    If 'suffix' is non-null, the filename will end with it.
+
+    Returns a pathname to the new directory
+    """
+
+    return tempfile.mkdtemp(suffix, prefix, parent)
+
+################################################################################
+
 def is_email_alias(email):
     """ checks if the user part of the email is listed in the alias file """
     global alias_cache
@@ -1525,4 +1540,4 @@ apt_pkg.ReadConfigFileISC(Cnf,default_config)
 if which_conf_file() != default_config:
     apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
 
-################################################################################
+###############################################################################

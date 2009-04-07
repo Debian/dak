@@ -43,6 +43,12 @@ function cleanup() {
 	rm -f ${LOCK_ACCEPTED}
 }
 
+# If we error out this one is called, *FOLLOWED* by cleanup above
+function onerror() {
+    ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
+    cat "$LOGFILE" | mail -s "ATTENTION ATTENTION! dinstall error at ${ERRDATE} (Be quiet, Brain, or I'll stab you with a Q-tip)" cron@ftp-master.debian.org
+}
+
 ########################################################################
 # the actual dinstall functions follow                                 #
 ########################################################################
@@ -68,7 +74,7 @@ function merkel1() {
 # Create the postgres dump files
 function pgdump_pre() {
     log "Creating pre-daily-cron-job backup of projectb database..."
-    pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+    pg_dump projectb > $base/backup/dump_pre_$(date +%Y.%m.%d-%H:%M:%S)
 }
 
 function pgdump_post() {
@@ -87,7 +93,7 @@ function pgdakdev() {
     echo "drop database projectb" | psql -p 5433 template1
 	cat currentall | psql -p 5433 template1
     createdb -p 5433 -T template0 projectb
-    fgrep -v '\connect' `cat current` | psql -p 5433 projectb
+    fgrep -v '\connect' current | psql -p 5433 projectb
 }
 
 # Updating various files
@@ -216,7 +222,7 @@ function release() {
 
 function dakcleanup() {
     log "Cleanup old packages/files"
-    dak clean-suites
+    dak clean-suites -m 10000
     dak clean-queues
 }
 
@@ -227,6 +233,12 @@ function buildd() {
     psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE suite = 5 AND queue = 0 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
     symlinks -d /srv/incoming.debian.org/buildd > /dev/null
     apt-ftparchive generate apt.conf.buildd
+}
+
+function buildd_dir() {
+    # Rebuilt the buildd dir to avoid long times of 403
+    log "Regenerating the buildd incoming dir"
+    make_buildd_dir
 }
 
 function scripts() {
@@ -278,9 +290,15 @@ function bts() {
 }
 
 function merkel2() {
-    # Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
+    # Push dak@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
     log "Trigger merkels projectb sync"
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1
+    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb dak@merkel.debian.org sleep 1
+}
+
+function merkel3() {
+    # Push dak@merkel to tell it to sync the dd accessible parts. Returns immediately, the sync runs detached
+    log "Trigger merkels dd accessible parts sync"
+    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_ddaccess dak@merkel.debian.org sleep 1
 }
 
 function runparts() {
@@ -323,11 +341,19 @@ function aptftpcleanup() {
 function compress() {
     log "Compress old psql backups"
     cd $base/backup/
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +1 |
+    find -maxdepth 1 -mindepth 1 -type f -name 'dump_pre_*' -mtime +2 -print0 | xargs -0 --no-run-if-empty rm
+
+    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mmin 720 |
     while read dumpname; do
         echo "Compressing $dumpname"
         bzip2 -9v "$dumpname"
     done
+    find -maxdepth 1 -mindepth 1 -type f -name "dumpall_*" \! -name '*.bz2' \! -name '*.gz' -mmin 720 |
+    while read dumpname; do
+        echo "Compressing $dumpname"
+        bzip2 -9v "$dumpname"
+    done
+    finddup -l -d $base/backup
 }
 
 function logstats() {
@@ -340,20 +366,29 @@ function savetimestamp() {
 	echo ${NOW} > "${dbdir}/dinstallstart"
 }
 
-function renamelogfile() {
-	if [ -f "${dbdir}/dinstallstart" ]; then
-		RENAMETO=$(cat "${dbdir}/dinstallstart")
-		mv "$LOGFILE" "$logdir/dinstall_${RENAMETO}.log"
-		logstats "$logdir/dinstall_${RENAMETO}.log"
-		bzip2 -9 "$logdir/dinstall_${RENAMETO}.log"
-	else
-		error "Problem, I don't know when dinstall started, unable to do log statistics."
-		NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-		mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
-		bzip2 -9 "$logdir/dinstall_${NOW}.log"
-	fi
+function maillogfile() {
+    cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
 }
 
+function renamelogfile() {
+    if [ -f "${dbdir}/dinstallstart" ]; then
+        NOW=$(cat "${dbdir}/dinstallstart")
+        maillogfile
+    mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+        logstats "$logdir/dinstall_${NOW}.log"
+        bzip2 -9 "$logdir/dinstall_${NOW}.log"
+    else
+        error "Problem, I don't know when dinstall started, unable to do log statistics."
+        NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+        maillogfile
+        mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+        bzip2 -9 "$logdir/dinstall_${NOW}.log"
+    fi
+}
+
+function testingsourcelist() {
+    dak ls -s testing -f heidi -r .| egrep 'source$' > ${webdir}/testing.list
+}
 ########################################################################
 ########################################################################
 
@@ -395,10 +430,10 @@ function stage() {
     # it has to cd first!
     cd ${configdir}
 
-	if [ -f "${LOCK_STOP}" ]; then
-		log "${LOCK_STOP} exists, exiting immediately"
-		exit 42
-	fi
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
 
     if [ "${ERR}" = "false" ]; then
         set +e
@@ -417,10 +452,10 @@ function stage() {
         ts "${TIME}"
     fi
 
-	if [ -f "${LOCK_STOP}" ]; then
-		log "${LOCK_STOP} exists, exiting immediately"
-		exit 42
-	fi
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
 }
 
 ########################################################################
@@ -477,7 +512,8 @@ LOCK_BRITNEY="$lockdir/britney.lock"
 LOCK_STOP="$lockdir/archive.stop"
 
 lockfile -l 3600 "${LOCK_DAILY}"
-trap cleanup EXIT ERR TERM HUP INT QUIT
+trap onerror ERR
+trap cleanup EXIT TERM HUP INT QUIT
 
 touch "${LOCK_BRITNEY}"
 
@@ -552,6 +588,14 @@ GO=(
     TIME="accepted"
     ARGS=""
     ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="buildd_dir"
+    TIME="buildd_dir"
+    ARGS=""
+    ERR="false"
 )
 stage $GO
 
@@ -675,14 +719,6 @@ GO=(
 stage $GO
 
 GO=(
-	FUNC="pgdakdev"
-	TIME="dak-dev db"
-	ARGS=""
-	ERR="false"
-)
-stage $GO
-
-GO=(
     FUNC="expire"
     TIME="expire_dumps"
     ARGS=""
@@ -710,7 +746,7 @@ GO=(
     FUNC="bts"
     TIME=""
     ARGS=""
-    ERR=""
+    ERR="false"
 )
 stage $GO
 
@@ -721,8 +757,6 @@ GO=(
     ERR="false"
 )
 stage $GO
-
-ulimit -m 90000 -d 90000 -s 10000 -v 200000
 
 GO=(
     FUNC="runparts"
@@ -748,13 +782,37 @@ GO=(
 )
 stage $GO
 
+GO=(
+    FUNC="testingsourcelist"
+    TIME=""
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
 rm -f ${LOCK_BRITNEY}
+
+GO=(
+    FUNC="pgdakdev"
+    TIME="dak-dev db"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
 
 GO=(
     FUNC="aptftpcleanup"
     TIME="apt-ftparchive cleanup"
     ARGS=""
     ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="merkel3"
+    TIME="merkel ddaccessible sync"
+    ARGS=""
+    ERR="false"
 )
 stage $GO
 
@@ -769,8 +827,6 @@ stage $GO
 log "Daily cron scripts successful, all done"
 
 exec > "$logdir/afterdinstall.log" 2>&1
-
-cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
 
 GO=(
     FUNC="renamelogfile"

@@ -15,6 +15,9 @@ cd /srv/ftp.debian.org/mail/archive
 for m in mail bxamail; do
     if [ -f $m ]; then
         mv $m ${m}-$DATE
+        touch ${m}
+        chown dak:ftpteam ${m}
+        chmod 660 ${m}
         sleep 20
         gzip -9 ${m}-$DATE
         chgrp $ftpgroup ${m}-$DATE.gz

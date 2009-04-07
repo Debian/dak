@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-
 """
 Database Update Script - Get suite_architectures table use sane values
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009  Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
-
 """
 
 # This program is free software; you can redistribute it and/or modify
