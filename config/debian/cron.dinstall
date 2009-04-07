@@ -238,6 +238,7 @@ function buildd() {
 function buildd_dir() {
     # Rebuilt the buildd dir to avoid long times of 403
     log "Regenerating the buildd incoming dir"
+    STAMP=$(date "+%Y%m%d%H%M")
     make_buildd_dir
 }
 
