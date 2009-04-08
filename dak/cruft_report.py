@@ -168,7 +168,7 @@ def parse_nfu(architecture):
 
         f.close()
     else:
-        utils.warn("No wanna-build dump file for architecture %s", architecture)
+        utils.warn("No wanna-build dump file for architecture %s" % architecture)
     return ret
 
 ################################################################################
@@ -428,6 +428,8 @@ def main ():
     for component in check_components:
         architectures = filter(utils.real_arch, database.get_suite_architectures(suite))
         for architecture in architectures:
+	    if component == 'main/debian-installer' and re.match("kfreebsd", architecture):
+		continue
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
             (fd, temp_filename) = utils.temp_filename()
