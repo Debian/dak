@@ -74,7 +74,7 @@ function merkel1() {
 # Create the postgres dump files
 function pgdump_pre() {
     log "Creating pre-daily-cron-job backup of projectb database..."
-    pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+    pg_dump projectb > $base/backup/dump_pre_$(date +%Y.%m.%d-%H:%M:%S)
 }
 
 function pgdump_post() {
@@ -235,6 +235,13 @@ function buildd() {
     apt-ftparchive generate apt.conf.buildd
 }
 
+function buildd_dir() {
+    # Rebuilt the buildd dir to avoid long times of 403
+    log "Regenerating the buildd incoming dir"
+    STAMP=$(date "+%Y%m%d%H%M")
+    make_buildd_dir
+}
+
 function scripts() {
     log "Running various scripts from $scriptsdir"
     cd $scriptsdir
@@ -289,6 +296,12 @@ function merkel2() {
     ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb dak@merkel.debian.org sleep 1
 }
 
+function merkel3() {
+    # Push dak@merkel to tell it to sync the dd accessible parts. Returns immediately, the sync runs detached
+    log "Trigger merkels dd accessible parts sync"
+    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_ddaccess dak@merkel.debian.org sleep 1
+}
+
 function runparts() {
     log "Using run-parts to run scripts in $base/scripts/distmnt"
     run-parts --report $base/scripts/distmnt
@@ -318,6 +331,8 @@ function stats() {
     cd $configdir
     $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
     R --slave --vanilla < $base/misc/ftpstats.R
+    dak stats arch-space > $webdir/arch-space
+    dak stats pkg-nums > $webdir/pkg-nums
 }
 
 function aptftpcleanup() {
@@ -329,11 +344,19 @@ function aptftpcleanup() {
 function compress() {
     log "Compress old psql backups"
     cd $base/backup/
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +1 |
+    find -maxdepth 1 -mindepth 1 -type f -name 'dump_pre_*' -mtime +2 -print0 | xargs -0 --no-run-if-empty rm
+
+    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mmin 720 |
     while read dumpname; do
         echo "Compressing $dumpname"
         bzip2 -9v "$dumpname"
     done
+    find -maxdepth 1 -mindepth 1 -type f -name "dumpall_*" \! -name '*.bz2' \! -name '*.gz' -mmin 720 |
+    while read dumpname; do
+        echo "Compressing $dumpname"
+        bzip2 -9v "$dumpname"
+    done
+    finddup -l -d $base/backup
 }
 
 function logstats() {
@@ -572,6 +595,14 @@ GO=(
 stage $GO
 
 GO=(
+    FUNC="buildd_dir"
+    TIME="buildd_dir"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
+GO=(
     FUNC="cruft"
     TIME="cruft"
     ARGS=""
@@ -691,14 +722,6 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="pgdakdev"
-    TIME="dak-dev db"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-GO=(
     FUNC="expire"
     TIME="expire_dumps"
     ARGS=""
@@ -768,14 +791,31 @@ GO=(
     ARGS=""
     ERR="false"
 )
+stage $GO
 
 rm -f ${LOCK_BRITNEY}
+
+GO=(
+    FUNC="pgdakdev"
+    TIME="dak-dev db"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
 
 GO=(
     FUNC="aptftpcleanup"
     TIME="apt-ftparchive cleanup"
     ARGS=""
     ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="merkel3"
+    TIME="merkel ddaccessible sync"
+    ARGS=""
+    ERR="false"
 )
 stage $GO
 

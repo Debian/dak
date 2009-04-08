@@ -516,6 +516,7 @@ def check_pkg ():
                     elif ftype == "dsc":
                         examine_package.check_dsc(changes['distribution'], f)
         finally:
+            examine_package.output_package_relations()
             sys.stdout = stdout_fd
     except IOError, e:
         if e.errno == errno.EPIPE:
@@ -854,7 +855,7 @@ def move_to_holding(suite, queue_dir):
     	return
     Logger.log(["Moving to %s" % (suite,), Upload.pkg.changes_file])
     Upload.dump_vars(queue_dir)
-    move_to_dir(queue_dir)
+    move_to_dir(queue_dir, perms=0664)
     os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 
 def _accept():
