@@ -1014,7 +1014,7 @@ def lookup_uid_from_fingerprint(fpr):
     if qs:
         return qs
     else:
-        return (None, None, None)
+        return (None, None, False)
 
 def check_signed_by_key():
     """Ensure the .changes is signed by an authorized uploader."""
@@ -1024,17 +1024,22 @@ def check_signed_by_key():
         uid_name = ""
 
     # match claimed name with actual name:
-    if uid == None:
+    if uid is None:
+        # This is fundamentally broken but need us to refactor how we get
+        # the UIDs/Fingerprints in order for us to fix it properly
         uid, uid_email = changes["fingerprint"], uid
         may_nmu, may_sponsor = 1, 1
         # XXX by default new dds don't have a fingerprint/uid in the db atm,
         #     and can't get one in there if we don't allow nmu/sponsorship
-    elif is_dm is "t":
-        uid_email = uid
-        may_nmu, may_sponsor = 0, 0
-    else:
+    elif is_dm is False:
+        # If is_dm is False, we allow full upload rights
         uid_email = "%s@debian.org" % (uid)
         may_nmu, may_sponsor = 1, 1
+    else:
+        # Assume limited upload rights unless we've discovered otherwise
+        uid_email = uid
+        may_nmu, may_sponsor = 0, 0
+
 
     if uid_email in [changes["maintaineremail"], changes["changedbyemail"]]:
         sponsored = 0
