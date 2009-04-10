@@ -3,9 +3,6 @@
 
 Various
 -------
-* Fix process-accepted and oldstable point releases. It currently is a
-   mess even bigger than what we are used to normally. Like, removing
-   all the hardcoded stable/proposed-updates stuff.
 
 * Implement autosigning, see ftpmaster_autosigning on ftp-master host in text/.
 
