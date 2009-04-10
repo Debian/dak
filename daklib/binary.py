@@ -56,10 +56,10 @@ import utils
 class Binary(object):
     def __init__(self, filename, reject=None):
         """
-        @ptype filename: string
+        @type filename: string
         @param filename: path of a .deb
 
-        @ptype reject: function
+        @type reject: function
         @param reject: a function to log reject messages to
         """
         self.filename = filename
@@ -165,12 +165,12 @@ class Binary(object):
         the hopefully near future, it should also include gathering info from the
         control file.
 
-        @ptype bootstrap_id: int
+        @type bootstrap_id: int
         @param bootstrap_id: the id of the binary these packages
           should be associated or zero meaning we are not bootstrapping
           so insert into a temporary table
 
-        @return True if the deb is valid and contents were imported
+        @return: True if the deb is valid and contents were imported
         """
         result = False
         rejected = not self.valid_deb(relaxed)
@@ -212,12 +212,11 @@ class Binary(object):
         the hopefully near future, it should also include gathering info from the
         control file.
 
-        @ptype bootstrap_id: int
-        @param bootstrap_id: the id of the binary these packages
-          should be associated or zero meaning we are not bootstrapping
-          so insert into a temporary table
+        @type package: string
+        @param package: the name of the package to be checked
 
-        @return True if the deb is valid and contents were imported
+        @rtype: boolean
+        @return: True if the deb is valid and contents were imported
         """
         rejected = not self.valid_deb(True)
         self.__unpack()

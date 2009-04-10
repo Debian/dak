@@ -1003,10 +1003,10 @@ def lookup_uid_from_fingerprint(fpr):
     """
     Return the uid,name,isdm for a given gpg fingerprint
 
-    @ptype fpr: string
+    @type fpr: string
     @param fpr: a 40 byte GPG fingerprint
 
-    @return (uid, name, isdm)
+    @return: (uid, name, isdm)
     """
     cursor = DBConn().cursor()
     cursor.execute( "SELECT u.uid, u.name, k.debian_maintainer FROM fingerprint f JOIN keyrings k ON (f.keyring=k.id), uid u WHERE f.uid = u.id AND f.fingerprint = '%s'" % (fpr))

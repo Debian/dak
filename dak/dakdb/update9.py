@@ -2,11 +2,12 @@
 # coding=utf8
 
 """
-Debian Archive Kit Database Update Script
-Copyright © 2008  Michael Casadevall <mcasadevall@debian.org>
-Copyright © 2009  Mike O'Connor <stew@debian.org>
+Pending contents disinguished by arch
 
-Debian Archive Kit Database Update Script 8
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2008  Michael Casadevall <mcasadevall@debian.org>
+@copyright: 2009  Mike O'Connor <stew@debian.org>
+@license: GNU General Public License version 2 or later
 """
 
 # This program is free software; you can redistribute it and/or modify
