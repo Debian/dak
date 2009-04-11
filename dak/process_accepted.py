@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 
-""" Installs Debian packages from queue/accepted into the pool """
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+"""
+Installs Debian packages from queue/accepted into the pool
 
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+
+"""
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -218,7 +224,7 @@ def usage (exit_code=0):
 
 ###############################################################################
 
-def action ():
+def action (queue=""):
     (summary, short_summary) = Upload.build_summaries()
 
     (prompt, answer) = ("", "XXX")
@@ -250,7 +256,7 @@ def action ():
         if not installing_to_stable:
             install()
         else:
-            stable_install(summary, short_summary)
+            stable_install(summary, short_summary, queue)
     elif answer == 'Q':
         sys.exit(0)
 
@@ -488,10 +494,15 @@ def install ():
 
 ################################################################################
 
-def stable_install (summary, short_summary):
+def stable_install (summary, short_summary, fromsuite="proposed-updates"):
     global install_count
 
-    print "Installing to stable."
+    fromsuite = fromsuite.lower()
+    tosuite = "Stable"
+    if fromsuite == "oldstable-proposed-updates":
+        tosuite = "OldStable"
+
+    print "Installing from %s to %s." % (fromsuite, tosuite)
 
     # Begin a transaction; if we bomb out anywhere between here and
     # the COMMIT WORK below, the DB won't be changed.
@@ -507,9 +518,9 @@ def stable_install (summary, short_summary):
             if not ql:
                 utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s) in source table." % (package, version))
             source_id = ql[0][0]
-            suite_id = database.get_suite_id('proposed-updates')
+            suite_id = database.get_suite_id(fromsuite)
             projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id))
-            suite_id = database.get_suite_id('stable')
+            suite_id = database.get_suite_id(tosuite.lower())
             projectB.query("INSERT INTO src_associations (suite, source) VALUES ('%s', '%s')" % (suite_id, source_id))
 
     # Add the binaries to stable (and remove it/them from proposed-updates)
@@ -524,9 +535,9 @@ def stable_install (summary, short_summary):
                 utils.fubar("[INTERNAL ERROR] couldn't find '%s' (%s for %s architecture) in binaries table." % (package, version, architecture))
 
             binary_id = ql[0][0]
-            suite_id = database.get_suite_id('proposed-updates')
+            suite_id = database.get_suite_id(fromsuite)
             projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id))
-            suite_id = database.get_suite_id('stable')
+            suite_id = database.get_suite_id(tosuite.lower())
             projectB.query("INSERT INTO bin_associations (suite, bin) VALUES ('%s', '%s')" % (suite_id, binary_id))
 
     projectB.query("COMMIT WORK")
@@ -534,17 +545,17 @@ def stable_install (summary, short_summary):
     utils.move (pkg.changes_file, Cnf["Dir::Morgue"] + '/process-accepted/' + os.path.basename(pkg.changes_file))
 
     ## Update the Stable ChangeLog file
-    new_changelog_filename = Cnf["Dir::Root"] + Cnf["Suite::Stable::ChangeLogBase"] + ".ChangeLog"
-    changelog_filename = Cnf["Dir::Root"] + Cnf["Suite::Stable::ChangeLogBase"] + "ChangeLog"
+    new_changelog_filename = Cnf["Dir::Root"] + Cnf["Suite::%s::ChangeLogBase" % (tosuite)] + ".ChangeLog"
+    changelog_filename = Cnf["Dir::Root"] + Cnf["Suite::%s::ChangeLogBase" % (tosuite)] + "ChangeLog"
     if os.path.exists(new_changelog_filename):
         os.unlink (new_changelog_filename)
 
     new_changelog = utils.open_file(new_changelog_filename, 'w')
     for newfile in files.keys():
         if files[newfile]["type"] == "deb":
-            new_changelog.write("stable/%s/binary-%s/%s\n" % (files[newfile]["component"], files[newfile]["architecture"], newfile))
+            new_changelog.write("%s/%s/binary-%s/%s\n" % (tosuite.lower(), files[newfile]["component"], files[newfile]["architecture"], newfile))
         elif re_issource.match(newfile):
-            new_changelog.write("stable/%s/source/%s\n" % (files[newfile]["component"], newfile))
+            new_changelog.write("%s/%s/source/%s\n" % (tosuite.lower(), files[newfile]["component"], newfile))
         else:
             new_changelog.write("%s\n" % (newfile))
     chop_changes = re_fdnic.sub("\n", changes["changes"])
@@ -560,19 +571,19 @@ def stable_install (summary, short_summary):
     install_count += 1
 
     if not Options["No-Mail"] and changes["architecture"].has_key("source"):
-        Subst["__SUITE__"] = " into stable"
+        Subst["__SUITE__"] = " into %s" % (tosuite)
         Subst["__SUMMARY__"] = summary
         mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-accepted.install")
         utils.send_mail(mail_message)
         Upload.announce(short_summary, 1)
 
     # Finally remove the .dak file
-    dot_dak_file = os.path.join(Cnf["Suite::Proposed-Updates::CopyDotDak"], os.path.basename(Upload.pkg.changes_file[:-8]+".dak"))
+    dot_dak_file = os.path.join(Cnf["Suite::%s::CopyDotDak" % (fromsuite)], os.path.basename(Upload.pkg.changes_file[:-8]+".dak"))
     os.unlink(dot_dak_file)
 
 ################################################################################
 
-def process_it (changes_file):
+def process_it (changes_file, queue=""):
     global reject_message
 
     reject_message = ""
@@ -588,7 +599,7 @@ def process_it (changes_file):
     if installing_to_stable:
         old = Upload.pkg.changes_file
         Upload.pkg.changes_file = os.path.basename(old)
-        os.chdir(Cnf["Suite::Proposed-Updates::CopyDotDak"])
+        os.chdir(Cnf["Suite::%s::CopyDotDak" % (queue)])
 
     Upload.init_vars()
     Upload.update_vars()
@@ -598,7 +609,7 @@ def process_it (changes_file):
         Upload.pkg.changes_file = old
 
     check()
-    action()
+    action(queue)
 
     # Restore CWD
     os.chdir(pkg.directory)
@@ -620,7 +631,12 @@ def main():
         utils.fubar("Archive maintenance in progress.  Try again later.")
 
     # If running from within proposed-updates; assume an install to stable
-    if os.getcwd().find('proposed-updates') != -1:
+    queue = ""
+    if os.getenv('PWD').find('oldstable-proposed-updates') != -1:
+        queue = "Oldstable-Proposed-Updates"
+        installing_to_stable = 1
+    elif os.getenv('PWD').find('proposed-updates') != -1:
+        queue = "Proposed-Updates"
         installing_to_stable = 1
 
     # Obtain lock if not in no-action mode and initialize the log
@@ -650,7 +666,7 @@ def main():
     # Process the changes files
     for changes_file in changes_files:
         print "\n" + changes_file
-        process_it (changes_file)
+        process_it (changes_file, queue)
 
     if install_count:
         sets = "set"

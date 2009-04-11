@@ -1003,10 +1003,10 @@ def lookup_uid_from_fingerprint(fpr):
     """
     Return the uid,name,isdm for a given gpg fingerprint
 
-    @ptype fpr: string
+    @type fpr: string
     @param fpr: a 40 byte GPG fingerprint
 
-    @return (uid, name, isdm)
+    @return: (uid, name, isdm)
     """
     cursor = DBConn().cursor()
     cursor.execute( "SELECT u.uid, u.name, k.debian_maintainer FROM fingerprint f JOIN keyrings k ON (f.keyring=k.id), uid u WHERE f.uid = u.id AND f.fingerprint = '%s'" % (fpr))
@@ -1058,6 +1058,7 @@ def check_signed_by_key():
     if sponsored and not may_sponsor:
         reject("%s is not authorised to sponsor uploads" % (uid))
 
+    cursor = DBConn().cursor()
     if not sponsored and not may_nmu:
         source_ids = []
         cursor.execute( "SELECT s.id, s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = %(source)s AND s.dm_upload_allowed = 'yes'", changes )
