@@ -2,7 +2,7 @@
 # coding=utf8
 
 """
-Pending contents disinguished by arch
+Add constraints to src_uploaders
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009  Mark Hymers <mhy@debian.org>
@@ -25,9 +25,7 @@ Pending contents disinguished by arch
 
 ################################################################################
 
-# * Ganneff ponders how to best write the text to -devel. (need to tell em in
-#   case they find more bugs). "We fixed the fucking idiotic broken implementation
-#   to be less so" is probably not the nicest, even if perfect valid, way to say so
+# <mhy> oh no, Ganneff has just corrected my english
 
 ################################################################################
 
