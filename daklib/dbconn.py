@@ -63,319 +63,200 @@ class Cache(object):
 ################################################################################
 
 class Architecture(object):
-    def __init__(self, arch_id=None, arch_string=None, description=None):
-        self.arch_id = arch_id
-        self.arch_string = arch_string
-        self.description = description
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Architecture %s>' % self.arch_string
 
 class Archive(object):
-    def __init__(self, archive_id=None, archive_name=None, origin_server=None,
-                 description=None):
-        self.archive_id = archive_id
-        self.archive_name = archive_name
-        self.origin_server = origin_server
-        self.description = description
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Archive %s>' % self.name
 
 class BinAssociation(object):
-    def __init__(self, ba_id=None, suite_id=None, bin_id=None):
-        self.ba_id = ba_id
-        self.suite_id = suite_id
-        self.bin_id = bin_id
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<BinAssociation %s>' % self.ba_id
 
 class Binary(object):
-    def __init__(self, binary_id=None, package=None, version=None,
-                 maintainer_id=None, source_id=None, arch_id=None,
-                 file_id=None, filetype=None, fingerprint_id=None,
-                 install_date=None):
-        self.binary_id = binary_id
-        self.package = package
-        self.version = version
-        self.maintainer_id = maintainer_id
-        self.source_id = source_id
-        self.arch_id = arch_id
-        self.file_id = file_id
-        self.filetype = filetype
-        self.fingerprint_id = fingerprint_id
-        self.install_date = install_date
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
-        return '<Binary %s (%s) %s>' % (self.package, self.version, self.arch_id)
+        return '<Binary %s (%s) %s>' % (self.package, self.version, self.architecture)
+
+def binary_from_id(id):
+    return DBConn().session().query(Binary).filter_by(binary_id=id).one()
 
 class Component(object):
-    def __init__(self, component_id=None, component_name=None,
-                 description=None, meets_dfsg=None,):
-        self.component_id = component_id
-        self.component_name = component_name
-        self.description = description
-        self.meets_dfsg = meets_dfsg
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Component %s>' % self.component_name
 
 class DBConfig(object):
-    def __init__(self, config_id=None, name=None, value=None):
-        self.config_id = config_id
-        self.name = name
-        self.value = value
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<DBConfig %s>' % self.name
 
 class ContentFilename(object):
-    def __init__(self, cafilename_id=None, filename=None):
-        self.cafilename_id = cafilename_id
-        self.filename = filename
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<ContentFilename %s>' % self.filename
 
 class ContentFilepath(object):
-    def __init__(self, cafilepath_id=None, filepath=None):
-        self.cafilepath_id = cafilepath_id
-        self.filepath = filepath
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<ContentFilepath %s>' % self.filepath
 
 class ContentAssociations(object):
-    def __init__(self, binary_id=None, filename_id=None, filepath_id=None,
-                 ca_id=None):
-        self.binary_id = binary_id
-        self.filename_id = filename_id
-        self.filepath_id = filepath_id
-        self.ca_id = ca_id
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<ContentAssociation %s>' % self.ca_id
 
 class DSCFile(object):
-    def __init__(self, dscfile_id=None, source_id=None, file_id=None):
-        self.dscfile_id = dscfile_id
-        self.source_id = source_id
-        self.file_id = file_id
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<DSCFile %s>' % self.dscfile_id
 
 class PoolFile(object):
-    def __init__(self, file_id=None, filename=None, filesize=None,
-                 location_id=None, last_used=None, md5sum=None,
-                 sha1sum=None, sha256sum=None):
-        self.file_id = file_id
-        self.filename = filename
-        self.filesize = filesize
-        self.location_id = location_id
-        self.last_used = last_used
-        self.md5sum = md5sum
-        self.sha1sum = sha1sum
-        self.sha256sum = sha256sum
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<PoolFile %s>' % self.filename
 
 class Fingerprint(object):
-    def __init__(self, fingerprint_id=None, fingerprint=None,
-                 uid_id=None, keyring_id=None):
-        self.fingerprint_id = fingerprint_id
-        self.fingerprint = fingerprint
-        self.uid_id = uid_id
-        self.keyring_id = keyring_id
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Fingerprint %s>' % self.fingerprint
 
 class Keyring(object):
-    def __init__(self, keyring_id=None, keyring_name=None,
-                 debian_maintainer=None):
-        self.keyring_id = keyring_id
-        self.keyring_name = keyring_name
-        self.debian_maintainer = debian_maintainer
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Keyring %s>' % self.keyring_name
 
 class Location(object):
-    def __init__(self, location_id=None, path=None,
-                 component_id=None, archive_id=None,
-                 archive_type=None):
-        self.location_id = location_id
-        self.path = path
-        self.component_id = component_id
-        self.archive_id = archive_id
-        self.archive_type = archive_type
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Location %s (%s)>' % (self.path, self.location_id)
 
 class Maintainer(object):
-    def __init__(self, maintainer_id=None, name=None):
-        self.maintainer_id = maintainer_id
-        self.name = name
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '''<Maintainer '%s' (%s)>''' % (self.name, self.maintainer_id)
 
 class Override(object):
-    def __init__(self, package, suite_id=None, component_id=None,
-                 priority_id=None, section_id=None, overridetype_id=None,
-                 maintainer=None):
-        self.package = package
-        self.suite_id = suite_id
-        self.component_id = component_id
-        self.priority_id = priority_id
-        self.section_id = section_id
-        self.overridetype_id = overridetype_id
-        self.maintainer = maintainer
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Override %s (%s)>' % (self.package, self.suite_id)
 
 class OverrideType(object):
-    def __init__(self, overridetype_id=None, overridetype=None):
-        self.overridetype_id = overridetype_id
-        self.overridetype = overridetype
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<OverrideType %s>' % self.overridetype
 
 class PendingContentAssociation(object):
-    def __init__(self, pca_id=None, package=None, version=None,
-                 filepath_id=None, filename_id=None):
-        self.pca_id = pca_id
-        self.package = package
-        self.version = version
-        self.filepath_id = filepath_id
-        self.filename_id = filename_id
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<PendingContentAssociation %s>' % self.pca_id
 
 class Priority(object):
-    def __init__(self, priority_id=None, priority=None, level=None):
-        self.priority_id = priority_id
-        self.priority = priority
-        self.level = level
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Priority %s (%s)>' % (self.priority, self.priority_id)
 
 class Queue(object):
-    def __init__(self, queue_id=None, queue_name=None):
-        self.queue_id = queue_id
-        self.queue_name = queue_name
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Queue %s>' % self.queue_name
 
 class QueueBuild(object):
-    def __init__(self, suite_id=None, queue_id=None, filename=None,
-                 in_queue=None, last_used=None):
-        self.suite_id = suite_id
-        self.queue_id = queue_id
-        self.filename = filename
-        self.in_queue = in_queue
-        self.last_used = last_used
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<QueueBuild %s (%s)>' % (self.filename, self.queue_id)
 
 class Section(object):
-    def __init__(self, section_id=None, section=None):
-        self.section_id = section_id
-        self.section = section
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Section %s>' % self.section
 
 class Source(object):
-    def __init__(self, source_id=None, source=None, version=None,
-                 maintainer_id=None, file_id=None, fingerprint_id=None,
-                 install_date=None, changedby_id=None, dm_upload_allowed=None):
-        self.source_id = source_id
-        self.source = source
-        self.version = version
-        self.maintainer_id = maintainer_id
-        self.file_id = file_id
-        self.fingerprint_id = fingerprint_id
-        self.install_date = install_date
-        self.changedby_id = changedby_id
-        self.dm_upload_allowed = dm_upload_allowed
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Source %s (%s)>' % (self.source, self.version)
 
 class SrcAssociation(object):
-    def __init__(self, sa_id=None, suite_id=None, source_id=None):
-        self.sa_id = sa_id
-        self.suite_id = suite_id
-        self.source_id = source_id
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<SrcAssociation %s>' % self.sa_id
 
 class SrcUploader(object):
-    def __init__(self, uploader_id=None, source_id=None, maintainer_id=None):
-        self.uploader_id = uploader_id
-        self.source_id = source_id
-        self.maintainer_id = maintainer_id
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<SrcUploader %s>' % self.uploader_id
 
 class Suite(object):
-    def __init__(self, suite_id=None, suite_name=None, version=None,
-                 origin=None, label=None, policy_engine=None,
-                 description=None, untouchable=None, announce=None,
-                 codename=None, overridecodename=None, validtime=None,
-                 priority=None, notautomatic=None, copychanges=None,
-                 copydotdak=None, commentsdir=None, overridesuite=None,
-                 changelogbase=None):
-
-        self.suite_id = suite_id
-        self.suite_name = suite_name
-        self.version = version
-        self.origin = origin
-        self.label = label
-        self.policy_engine = policy_engine
-        self.description = description
-        self.untouchable = untouchable
-        self.announce = announce
-        self.codename = codename
-        self.overridecodename = overridecodename
-        self.validtime = validtime
-        self.priority = priority
-        self.notautomatic = notautomatic
-        self.copychanges = copychanges
-        self.copydotdak = copydotdak
-        self.commentsdir = commentsdir
-        self.overridesuite = overridesuite
-        self.changelogbase = changelogbase
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Suite %s>' % self.suite_name
 
 class SuiteArchitecture(object):
-    def __init__(self, suite_id=None, arch_id=None):
-        self.suite_id = suite_id
-        self.arch_id = arch_id
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<SuiteArchitecture (%s, %s)>' % (self.suite_id, self.arch_id)
 
 class Uid(object):
-    def __init__(self, uid_id=None, uid=None, name=None):
-        self.uid_id = uid_id
-        self.uid = uid
-        self.name = name
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         return '<Uid %s (%s)>' % (self.uid, self.name)
