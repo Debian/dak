@@ -38,10 +38,9 @@ import psycopg2
 import traceback
 
 from sqlalchemy import create_engine, Table, MetaData, select
-from sqlalchemy.orm import sessionmaker, mapper
+from sqlalchemy.orm import sessionmaker, mapper, relation
 
 from singleton import Singleton
-from config import Config
 
 ################################################################################
 
@@ -81,14 +80,14 @@ class BinAssociation(object):
         pass
 
     def __repr__(self):
-        return '<BinAssociation %s>' % self.ba_id
+        return '<BinAssociation %s (%s, %s)>' % (self.ba_id, self.binary, self.suite)
 
 class Binary(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
-        return '<Binary %s (%s) %s>' % (self.package, self.version, self.architecture)
+        return '<Binary %s (%s, %s)>' % (self.package, self.version, self.architecture)
 
 def binary_from_id(id):
     return DBConn().session().query(Binary).filter_by(binary_id=id).one()
@@ -231,7 +230,7 @@ class SrcAssociation(object):
         pass
 
     def __repr__(self):
-        return '<SrcAssociation %s>' % self.sa_id
+        return '<SrcAssociation %s (%s, %s)>' % (self.sa_id, self.source, self.suite)
 
 class SrcUploader(object):
     def __init__(self, *args, **kwargs):
@@ -276,159 +275,214 @@ class DBConn(Singleton):
 
     def __setuptables(self):
         self.tbl_architecture = Table('architecture', self.db_meta, autoload=True)
+        self.tbl_archive = Table('archive', self.db_meta, autoload=True)
+        self.tbl_bin_associations = Table('bin_associations', self.db_meta, autoload=True)
+        self.tbl_binaries = Table('binaries', self.db_meta, autoload=True)
+        self.tbl_component = Table('component', self.db_meta, autoload=True)
+        self.tbl_config = Table('config', self.db_meta, autoload=True)
+        self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
+        self.tbl_content_file_names = Table('content_file_names', self.db_meta, autoload=True)
+        self.tbl_content_file_paths = Table('content_file_paths', self.db_meta, autoload=True)
+        self.tbl_dsc_files = Table('dsc_files', self.db_meta, autoload=True)
+        self.tbl_files = Table('files', self.db_meta, autoload=True)
+        self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
+        self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
+        self.tbl_location = Table('location', self.db_meta, autoload=True)
+        self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
+        self.tbl_override = Table('override', self.db_meta, autoload=True)
+        self.tbl_override_type = Table('override_type', self.db_meta, autoload=True)
+        self.tbl_pending_content_associations = Table('pending_content_associations', self.db_meta, autoload=True)
+        self.tbl_priority = Table('priority', self.db_meta, autoload=True)
+        self.tbl_queue = Table('queue', self.db_meta, autoload=True)
+        self.tbl_queue_build = Table('queue_build', self.db_meta, autoload=True)
+        self.tbl_section = Table('section', self.db_meta, autoload=True)
+        self.tbl_source = Table('source', self.db_meta, autoload=True)
+        self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
+        self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
+        self.tbl_suite = Table('suite', self.db_meta, autoload=True)
+        self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
+        self.tbl_uid = Table('uid', self.db_meta, autoload=True)
+
+    def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
                properties = dict(arch_id = self.tbl_architecture.c.id))
 
-        self.tbl_archive = Table('archive', self.db_meta, autoload=True)
         mapper(Archive, self.tbl_archive,
                properties = dict(archive_id = self.tbl_archive.c.id,
                                  archive_name = self.tbl_archive.c.name))
 
-        self.tbl_bin_associations = Table('bin_associations', self.db_meta, autoload=True)
         mapper(BinAssociation, self.tbl_bin_associations,
                properties = dict(ba_id = self.tbl_bin_associations.c.id,
                                  suite_id = self.tbl_bin_associations.c.suite,
-                                 bin_id = self.tbl_bin_associations.c.bin))
+                                 suite = relation(Suite),
+                                 binary_id = self.tbl_bin_associations.c.bin,
+                                 binary = relation(Binary)))
 
-        self.tbl_binaries = Table('binaries', self.db_meta, autoload=True)
         mapper(Binary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
-                                 file_id = self.tbl_binaries.c.file,
-                                 filetype = self.tbl_binaries.c.type,
+                                 package = self.tbl_binaries.c.package,
+                                 version = self.tbl_binaries.c.version,
                                  maintainer_id = self.tbl_binaries.c.maintainer,
+                                 maintainer = relation(Maintainer),
                                  source_id = self.tbl_binaries.c.source,
+                                 source = relation(Source),
                                  arch_id = self.tbl_binaries.c.architecture,
-                                 fingerprint_id = self.tbl_binaries.c.sig_fpr))
+                                 architecture = relation(Architecture),
+                                 poolfile_id = self.tbl_binaries.c.file,
+                                 poolfile = relation(PoolFile),
+                                 binarytype = self.tbl_binaries.c.type,
+                                 fingerprint_id = self.tbl_binaries.c.sig_fpr,
+                                 fingerprint = relation(Fingerprint),
+                                 install_date = self.tbl_binaries.c.install_date,
+                                 binassociations = relation(BinAssociation,
+                                                            primaryjoin=(self.tbl_binaries.c.id==self.tbl_bin_associations.c.bin))))
 
-        self.tbl_component = Table('component', self.db_meta, autoload=True)
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
                                  component_name = self.tbl_component.c.name))
 
-        self.tbl_config = Table('config', self.db_meta, autoload=True)
         mapper(DBConfig, self.tbl_config,
                properties = dict(config_id = self.tbl_config.c.id))
 
-        self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
         mapper(ContentAssociations, self.tbl_content_associations,
                properties = dict(ca_id = self.tbl_content_associations.c.id,
                                  filename_id = self.tbl_content_associations.c.filename,
+                                 filename    = relation(ContentFilename),
                                  filepath_id = self.tbl_content_associations.c.filepath,
-                                 binary_id   = self.tbl_content_associations.c.binary_pkg))
+                                 filepath    = relation(ContentFilepath),
+                                 binary_id   = self.tbl_content_associations.c.binary_pkg,
+                                 binary      = relation(Binary)))
 
-        self.tbl_content_file_names = Table('content_file_names', self.db_meta, autoload=True)
+
         mapper(ContentFilename, self.tbl_content_file_names,
                properties = dict(cafilename_id = self.tbl_content_file_names.c.id,
                                  filename = self.tbl_content_file_names.c.file))
 
-        self.tbl_content_file_paths = Table('content_file_paths', self.db_meta, autoload=True)
         mapper(ContentFilepath, self.tbl_content_file_paths,
                properties = dict(cafilepath_id = self.tbl_content_file_paths.c.id,
                                  filepath = self.tbl_content_file_paths.c.path))
 
-        self.tbl_dsc_files = Table('dsc_files', self.db_meta, autoload=True)
         mapper(DSCFile, self.tbl_dsc_files,
                properties = dict(dscfile_id = self.tbl_dsc_files.c.id,
                                  source_id = self.tbl_dsc_files.c.source,
-                                 file_id = self.tbl_dsc_files.c.file))
+                                 source = relation(Source),
+                                 poolfile_id = self.tbl_dsc_files.c.file,
+                                 poolfile = relation(PoolFile)))
 
-        self.tbl_files = Table('files', self.db_meta, autoload=True)
         mapper(PoolFile, self.tbl_files,
                properties = dict(file_id = self.tbl_files.c.id,
                                  filesize = self.tbl_files.c.size,
-                                 location_id = self.tbl_files.c.location))
+                                 location_id = self.tbl_files.c.location,
+                                 location = relation(Location)))
 
-        self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
         mapper(Fingerprint, self.tbl_fingerprint,
                properties = dict(fingerprint_id = self.tbl_fingerprint.c.id,
                                  uid_id = self.tbl_fingerprint.c.uid,
-                                 keyring_id = self.tbl_fingerprint.c.keyring))
+                                 uid = relation(Uid),
+                                 keyring_id = self.tbl_fingerprint.c.keyring,
+                                 keyring = relation(Keyring)))
 
-        self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
                                  keyring_id = self.tbl_keyrings.c.id))
 
-        self.tbl_location = Table('location', self.db_meta, autoload=True)
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
                                  component_id = self.tbl_location.c.component,
+                                 component = relation(Component),
                                  archive_id = self.tbl_location.c.archive,
+                                 archive = relation(Archive),
                                  archive_type = self.tbl_location.c.type))
 
-        self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
         mapper(Maintainer, self.tbl_maintainer,
                properties = dict(maintainer_id = self.tbl_maintainer.c.id))
 
-        self.tbl_override = Table('override', self.db_meta, autoload=True)
         mapper(Override, self.tbl_override,
                properties = dict(suite_id = self.tbl_override.c.suite,
+                                 suite = relation(Suite),
                                  component_id = self.tbl_override.c.component,
+                                 component = relation(Component),
                                  priority_id = self.tbl_override.c.priority,
+                                 priority = relation(Priority),
                                  section_id = self.tbl_override.c.section,
-                                 overridetype_id = self.tbl_override.c.type))
+                                 section = relation(Section),
+                                 overridetype_id = self.tbl_override.c.type,
+                                 overridetype = relation(OverrideType)))
 
-        self.tbl_override_type = Table('override_type', self.db_meta, autoload=True)
         mapper(OverrideType, self.tbl_override_type,
                properties = dict(overridetype = self.tbl_override_type.c.type,
                                  overridetype_id = self.tbl_override_type.c.id))
 
-        self.tbl_pending_content_associations = Table('pending_content_associations', self.db_meta, autoload=True)
         mapper(PendingContentAssociation, self.tbl_pending_content_associations,
                properties = dict(pca_id = self.tbl_pending_content_associations.c.id,
                                  filepath_id = self.tbl_pending_content_associations.c.filepath,
-                                 filename_id = self.tbl_pending_content_associations.c.filename))
+                                 filepath = relation(ContentFilepath),
+                                 filename_id = self.tbl_pending_content_associations.c.filename,
+                                 filename = relation(ContentFilename)))
 
-        self.tbl_priority = Table('priority', self.db_meta, autoload=True)
         mapper(Priority, self.tbl_priority,
                properties = dict(priority_id = self.tbl_priority.c.id))
 
-        self.tbl_queue = Table('queue', self.db_meta, autoload=True)
         mapper(Queue, self.tbl_queue,
                properties = dict(queue_id = self.tbl_queue.c.id))
 
-        self.tbl_queue_build = Table('queue_build', self.db_meta, autoload=True)
         mapper(QueueBuild, self.tbl_queue_build,
                properties = dict(suite_id = self.tbl_queue_build.c.suite,
-                                 queue_id = self.tbl_queue_build.c.queue))
+                                 queue_id = self.tbl_queue_build.c.queue,
+                                 queue = relation(Queue)))
 
-        self.tbl_section = Table('section', self.db_meta, autoload=True)
         mapper(Section, self.tbl_section,
                properties = dict(section_id = self.tbl_section.c.id))
 
-        self.tbl_source = Table('source', self.db_meta, autoload=True)
         mapper(Source, self.tbl_source,
                properties = dict(source_id = self.tbl_source.c.id,
+                                 version = self.tbl_source.c.version,
                                  maintainer_id = self.tbl_source.c.maintainer,
-                                 file_id = self.tbl_source.c.file,
+                                 maintainer = relation(Maintainer,
+                                                       primaryjoin=(self.tbl_source.c.maintainer==self.tbl_maintainer.c.id)),
+                                 poolfile_id = self.tbl_source.c.file,
+                                 poolfile = relation(PoolFile),
                                  fingerprint_id = self.tbl_source.c.sig_fpr,
-                                 changedby_id = self.tbl_source.c.changedby))
+                                 fingerprint = relation(Fingerprint),
+                                 changedby_id = self.tbl_source.c.changedby,
+                                 changedby = relation(Maintainer,
+                                                      primaryjoin=(self.tbl_source.c.changedby==self.tbl_maintainer.c.id)),
+                                 srcfiles = relation(DSCFile,
+                                                     primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
+                                 srcassociations = relation(SrcAssociation,
+                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source))))
 
-        self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
         mapper(SrcAssociation, self.tbl_src_associations,
-               properties = dict(sa_id = self.tbl_src_associations.c.id))
+               properties = dict(sa_id = self.tbl_src_associations.c.id,
+                                 suite_id = self.tbl_src_associations.c.suite,
+                                 suite = relation(Suite),
+                                 source_id = self.tbl_src_associations.c.source,
+                                 source = relation(Source)))
 
-        self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
         mapper(SrcUploader, self.tbl_src_uploaders,
                properties = dict(uploader_id = self.tbl_src_uploaders.c.id,
                                  source_id = self.tbl_src_uploaders.c.source,
-                                 maintainer_id = self.tbl_src_uploaders.c.maintainer))
+                                 source = relation(Source,
+                                                   primaryjoin=(self.tbl_src_uploaders.c.source==self.tbl_source.c.id)),
+                                 maintainer_id = self.tbl_src_uploaders.c.maintainer,
+                                 maintainer = relation(Maintainer,
+                                                       primaryjoin=(self.tbl_src_uploaders.c.maintainer==self.tbl_maintainer.c.id))))
 
-        self.tbl_suite = Table('suite', self.db_meta, autoload=True)
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id))
 
-        self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
         mapper(SuiteArchitecture, self.tbl_suite_architectures,
                properties = dict(suite_id = self.tbl_suite_architectures.c.suite,
-                                 arch_id = self.tbl_suite_architectures.c.architecture))
+                                 suite = relation(Suite),
+                                 arch_id = self.tbl_suite_architectures.c.architecture,
+                                 architecture = relation(Architecture)))
 
-        self.tbl_uid = Table('uid', self.db_meta, autoload=True)
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id))
 
     ## Connection functions
     def __createconn(self):
+        from config import Config
         cnf = Config()
         if cnf["DB::Host"]:
             # TCP/IP
@@ -450,6 +504,7 @@ class DBConn(Singleton):
                                       transactional=True)
 
         self.__setuptables()
+        self.__setupmappers()
 
     def session(self):
         return self.db_smaker()
