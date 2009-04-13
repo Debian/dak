@@ -206,7 +206,7 @@ def do_nbs(real_nbs):
     output = "Not Built from Source\n"
     output += "---------------------\n\n"
 
-    nbs_to_remove = []
+    cmd_output = ""
     nbs_keys = real_nbs.keys()
     nbs_keys.sort()
     for source in nbs_keys:
@@ -216,21 +216,22 @@ def do_nbs(real_nbs):
         output += "      but no longer builds:\n"
         versions = real_nbs[source].keys()
         versions.sort(apt_pkg.VersionCompare)
+        all_packages = []
         for version in versions:
             packages = real_nbs[source][version].keys()
             packages.sort()
-            for pkg in packages:
-                nbs_to_remove.append(pkg)
+            all_packages.extend(packages)
             output += "        o %s: %s\n" % (version, ", ".join(packages))
+        if all_packages:
+            all_packages.sort()
+            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s\n\n" % (source, suite, " ".join(all_packages))
 
         output += "\n"
 
-    if nbs_to_remove:
+    if len(cmd_output):
         print output
-
-        print "Suggested command:"
-        print " dak rm -m \"[auto-cruft] NBS\" -s %s -b %s" % (suite, " ".join(nbs_to_remove))
-        print
+        print "Suggested commands:\n"
+        print cmd_output
 
 ################################################################################
 
