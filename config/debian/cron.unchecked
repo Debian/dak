@@ -5,6 +5,9 @@ set -u
 export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
+# common functions are "outsourced"
+. "${configdir}/common"
+
 LOCKDAILY=""
 LOCKFILE="$lockdir/unchecked.lock"
 NOTICE="$lockdir/daily.lock"
@@ -56,20 +59,7 @@ if lockfile -r3 $LOCKFILE; then
 		    cat override.sid.$i.src >> override.sid.all3.src
 		fi
 	    done
-	    cd $configdir
-	    apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
-
-	    cd  ${incoming}
-	    rm -f buildd/Release*
-	    apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd incoming" -o APT::FTPArchive::Release::Architectures="${archs}" release buildd > Release
-	    gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 6070D3A1 --detach-sign -o Release.gpg Release 
-		mv Release* buildd/.
-
-	    cd ${incoming}
-	    mkdir -p tree/${STAMP}
-	    cp -al ${incoming}/buildd/. tree/${STAMP}/
-	    ln -sfT tree/${STAMP} ${incoming}/builddweb
-	    find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+        make_buildd_dir
 
 	    . $configdir/cron.buildd
 	fi

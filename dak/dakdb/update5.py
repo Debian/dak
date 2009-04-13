@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Database Update Script - Fix bin_assoc_by_arch view
+Fix bin_assoc_by_arch view
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009  Joerg Jaspert <joerg@debian.org>

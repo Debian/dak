@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 
-""" Script to automate some parts of checking NEW packages """
-# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+"""
+Script to automate some parts of checking NEW packages
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +38,12 @@
 
 ################################################################################
 
-import errno, os, pg, re, sys, md5
+import errno
+import os
+import pg
+import re
+import sys
+import md5
 import apt_pkg, apt_inst
 from daklib import database
 from daklib import utils
@@ -50,6 +61,7 @@ projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
 database.init(Cnf, projectB)
 
 printed_copyrights = {}
+package_relations = {}           #: Store relations of packages for later output
 
 # default is to not output html.
 use_html = 0
@@ -333,17 +345,38 @@ def create_depends_string (suite, depends_tree):
         comma_count += 1
     return result
 
-def output_deb_info(suite, filename):
+def output_package_relations ():
+    """
+    Output the package relations, if there is more than one package checked in this run.
+    """
+
+    if len(package_relations) < 2:
+        # Only list something if we have more than one binary to compare
+        return
+
+    to_print = ""
+    for package in package_relations:
+        for relation in package_relations[package]:
+            to_print += "%-15s: (%s) %s\n" % (package, relation, package_relations[package][relation])
+
+    package_relations.clear()
+    foldable_output("Package relations", "relations", to_print)
+
+def output_deb_info(suite, filename, packagename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
         return formatted_text("no control info")
     to_print = ""
+    if not package_relations.has_key(packagename):
+        package_relations[packagename] = {}
     for key in control_keys :
         if key == 'Depends':
             field_value = create_depends_string(suite, depends)
+            package_relations[packagename][key] = field_value
         elif key == 'Recommends':
             field_value = create_depends_string(suite, recommends)
+            package_relations[packagename][key] = field_value
         elif key == 'Section':
             field_value = section
         elif key == 'Architecture':
@@ -415,7 +448,7 @@ def check_deb (suite, deb_filename):
 
 
     foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
-                    output_deb_info(suite, deb_filename), norow=True)
+                    output_deb_info(suite, deb_filename, packagename), norow=True)
 
     if is_a_udeb:
         foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
@@ -523,6 +556,7 @@ def main ():
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (f))
             finally:
+                output_package_relations()
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()

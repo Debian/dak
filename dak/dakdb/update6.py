@@ -2,11 +2,12 @@
 # coding=utf8
 
 """
-Debian Archive Kit Database Update Script
-Copyright © 2008  Michael Casadevall <mcasadevall@debian.org>
-Copyright © 2008  Roger Leigh <rleigh@debian.org>
+Adding content fields
 
-Debian Archive Kit Database Update Script 2
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2008  Michael Casadevall <mcasadevall@debian.org>
+@copyright: 2008  Roger Leigh <rleigh@debian.org>
+@license: GNU General Public License version 2 or later
 """
 
 # This program is free software; you can redistribute it and/or modify

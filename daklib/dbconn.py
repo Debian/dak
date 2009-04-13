@@ -203,8 +203,8 @@ class DBConn(Singleton):
         Returns database id for given override C{type}.
         Results are kept in a cache during runtime to minimize database queries.
 
-        @type type: string
-        @param type: The name of the override type
+        @type override_type: string
+        @param override_type: The name of the override type
 
         @rtype: int
         @return: the database id for the given override type
@@ -500,10 +500,10 @@ class DBConn(Singleton):
 
         @type bin_id: int
         @param bin_id: the id of the binary
-        @type fullpath: string
-        @param fullpath: the path of the file being associated with the binary
+        @type fullpaths: list
+        @param fullpaths: the list of paths of the file being associated with the binary
 
-        @return True upon success
+        @return: True upon success
         """
 
         c = self.db_con.cursor()
@@ -541,7 +541,7 @@ class DBConn(Singleton):
         @type fullpaths: list
         @param fullpaths: the list of paths of the file being associated with the binary
 
-        @return True upon success
+        @return: True upon success
         """
 
         c = self.db_con.cursor()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Database Update Script - Get suite_architectures table use sane values
+Get suite_architectures table use sane values
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009  Joerg Jaspert <joerg@debian.org>

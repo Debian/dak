@@ -201,7 +201,6 @@ def clean():
         before = time.time()
         sys.stdout.write("[Deleting from source table... ")
         projectB.query("DELETE FROM dsc_files WHERE EXISTS (SELECT 1 FROM source s, files f, dsc_files df WHERE f.last_used <= '%s' AND s.file = f.id AND s.id = df.source AND df.id = dsc_files.id)" % (delete_date))
-        projectB.query("DELETE FROM src_uploaders WHERE EXISTS (SELECT 1 FROM source s, files f WHERE f.last_used <= '%s' AND s.file = f.id AND s.id = src_uploaders.source)" % (delete_date))
         projectB.query("DELETE FROM source WHERE EXISTS (SELECT 1 FROM files WHERE source.file = files.id AND files.last_used <= '%s')" % (delete_date))
         sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
 
