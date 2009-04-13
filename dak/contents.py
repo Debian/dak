@@ -39,6 +39,8 @@ import os
 import logging
 import math
 import gzip
+import threading
+import Queue
 import apt_pkg
 from daklib import utils
 from daklib.binary import Binary
@@ -71,9 +73,6 @@ OPTIONS
 
      -s, --suite={stable,testing,unstable,...}
         only operate on a single suite
-
-     -a, --arch={i386,amd64}
-        only operate on a single architecture
 """
     sys.exit(exit_code)
 
@@ -111,18 +110,19 @@ olddeb_q = """PREPARE olddeb_q(int) as
               LIMIT 1"""
 
 # find me all of the contents for a given .deb
-contents_q = """PREPARE contents_q(int,int,int,int) as
+contents_q = """PREPARE contents_q(int,int,character varying(4)) as
                 SELECT (p.path||'/'||n.file) AS fn,
-                      comma_separated_list(s.section||'/'||b.package)
+                       s.section,
+                       b.package,
+                       b.architecture
               from content_associations c join content_file_paths p ON (c.filepath=p.id)
               JOIN content_file_names n ON (c.filename=n.id)
               JOIN binaries b ON (b.id=c.binary_pkg)
               JOIN override o ON (o.package=b.package)
               JOIN section s ON (s.id=o.section)
               WHERE o.suite = $1 AND o.type = $2
-              AND b.id in (SELECT ba.bin from bin_associations ba join binaries b on b.id=ba.bin where (b.architecture=$3 or b.architecture=$4)and ba.suite=$1 and b.type='deb')
-              GROUP BY fn
-              ORDER BY fn;"""
+              and b.type='$3'
+              ORDER BY fn"""
 
 # find me all of the contents for a given .udeb
 udeb_contents_q = """PREPARE udeb_contents_q(int,int,int,int,int) as
@@ -160,18 +160,55 @@ remove_filepath_cruft_q = """DELETE FROM content_file_paths
                                           LEFT JOIN content_associations ca
                                              ON ca.filepath=cfn.id
                                           WHERE ca.id IS NULL)"""
-class Contents(object):
-    """
-    Class capable of generating Contents-$arch.gz files
 
-    Usage GenerateContents().generateContents( ["main","contrib","non-free"] )
-    """
+class EndOfContents(object):
+    pass
 
-    def __init__(self):
-        self.header = None
+class GzippedContentWriter(object):
+    def __init__(self, suite, arch):
+        self.queue = Queue.Queue()
+        self.current_file = None
+        self.first_package = True
+        self.output = self.open_file("dists/%s/Contents-%s.gz" % (suite, arch))
+        self.thread = threading.Thread(target=self.write_thread,
+                                       name='Contents-%s writer'%arch)
 
-    def reject(self, message):
-        log.error("E: %s" % message)
+        self.thread.start()
+
+    def open_file(self, filename):
+        filepath = Config()["Contents::Root"] + filename
+        filedir = os.path.dirname(filepath)
+        if not os.path.isdir(filedir):
+            os.makedirs(filedir)
+        return gzip.open(filepath, "w")
+
+    def write(self, filename, section, package):
+        self.queue.put((file,section,package))
+
+
+    def write_thread(self):
+        while True:
+            print("hi, i'm a thread" );
+            next = self.queue.get()
+            print("GOT SOMEHTING FROM THE QUEUE" );
+            if isinstance(next, EndOfContents):
+                self.output.write('\n')
+                self.output.close()
+                break
+
+            (filename,section,package)=next
+            if next != current_file:
+                # this is the first file, so write the header first
+                if not current_file:
+                    self.output.write(self._getHeader)
+
+                self.output.write('\n%s\t' % filename)
+                self.first_package = True
+            if not first_package:
+                self.output.write(',')
+            else:
+                self.first_package=False
+            self.output.write('%s/%s' % (section,package))
 
     def _getHeader(self):
         """
@@ -196,8 +233,6 @@ class Contents(object):
 
         return self.header
 
-    # goal column for section column
-    _goal_column = 54
 
     def _write_content_file(self, cursor, filename):
         """
@@ -224,6 +259,25 @@ class Contents(object):
 
         finally:
             f.close()
+
+
+
+
+class Contents(object):
+    """
+    Class capable of generating Contents-$arch.gz files
+
+    Usage GenerateContents().generateContents( ["main","contrib","non-free"] )
+    """
+
+    def __init__(self):
+        self.header = None
+
+    def reject(self, message):
+        log.error("E: %s" % message)
+
+    # goal column for section column
+    _goal_column = 54
 
     def cruft(self):
         """
@@ -292,6 +346,7 @@ class Contents(object):
 
         suites = self._suites()
 
+
         # Get our suites, and the architectures
         for suite in [i.lower() for i in suites]:
             suite_id = DBConn().get_suite_id(suite)
@@ -299,21 +354,63 @@ class Contents(object):
 
             arch_all_id = DBConn().get_architecture_id("all")
 
+            file_writers = {}
+
             for arch_id in arch_list:
-                cursor.execute("EXECUTE contents_q(%d,%d,%d,%d)" % (suite_id, debtype_id, arch_all_id, arch_id[0] ))
-                self._write_content_file(cursor, "dists/%s/Contents-%s.gz" % (suite, arch_id[1]))
+                file_writers[arch_id] = GzippedContentWriter(suite, arch_id[1])
+
+
+            print("EXECUTE contents_q(%d,%d,'%s')" % (suite_id, debtype_id, 'deb'))
+#            cursor.execute("EXECUTE contents_q(%d,%d,'%s');" % (suite_id, debtype_id, 'deb'))
+            cursor.execute("""SELECT (p.path||'/'||n.file) AS fn,
+                       s.section,
+                       b.package,
+                       b.architecture
+              from content_associations c join content_file_paths p ON (c.filepath=p.id)
+              JOIN content_file_names n ON (c.filename=n.id)
+              JOIN binaries b ON (b.id=c.binary_pkg)
+              JOIN override o ON (o.package=b.package)
+              JOIN section s ON (s.id=o.section)
+              WHERE o.suite = %d AND o.type = %d
+              and b.type='deb'
+              ORDER BY fn""" % (suite_id, debtype_id))
+
+            while True:
+                r = cursor.fetchone()
+                print( "got contents: %s" % r )
+                if not r:
+                    print( "STU:END" );
+                    break
+
+                print( "STU:NOT END" );
+                filename, section, package, arch = r
+
+                if arch == arch_all_id:
+                    ## its arch all, so all contents files get it
+                    for writer in file_writers.values():
+                        writer.write(filename, section, package)
+
+                else:
+                    file_writers[arch].write(filename, section, package)
+
+            # close all the files
+            for writer in file_writers.values():
+                writer.close()
+
+
+#                self._write_content_file(cursor, "dists/%s/Contents-%s.gz" % (suite, arch_id[1]))
 
             # The MORE fun part. Ok, udebs need their own contents files, udeb, and udeb-nf (not-free)
             # This is HORRIBLY debian specific :-/
-            for section, fn_pattern in [("debian-installer","dists/%s/Contents-udeb-%s.gz"),
-                                           ("non-free/debian-installer", "dists/%s/Contents-udeb-nf-%s.gz")]:
+#             for section, fn_pattern in [("debian-installer","dists/%s/Contents-udeb-%s.gz"),
+#                                            ("non-free/debian-installer", "dists/%s/Contents-udeb-nf-%s.gz")]:
 
-                for arch_id in arch_list:
-                    section_id = DBConn().get_section_id(section) # all udebs should be here)
-                    if section_id != -1:
-                        cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d,%d,%d)" % (suite_id, udebtype_id, section_id, arch_id[0], arch_all_id))
+#                 for arch_id in arch_list:
+#                     section_id = DBConn().get_section_id(section) # all udebs should be here)
+#                     if section_id != -1:
+#                         cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d,%d,%d)" % (suite_id, udebtype_id, section_id, arch_id[0], arch_all_id))
 
-                        self._write_content_file(cursor, fn_pattern % (suite, arch_id[1]))
+#                         self._write_content_file(cursor, fn_pattern % (suite, arch_id[1]))
 
 
 ################################################################################
@@ -333,20 +430,15 @@ class Contents(object):
         """
         return a list of archs to operate on
         """
-        arch_list = [ ]
-        if Config().has_key( "%s::%s" %(options_prefix,"Arch")):
-            archs = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Arch")])
-            for arch_name in archs:
-                arch_list.append((DBConn().get_architecture_id(arch_name), arch_name))
-        else:
-            cursor.execute("EXECUTE arches_q(%d)" % (suite))
-            while True:
-                r = cursor.fetchone()
-                if not r:
-                    break
+        arch_list = []
+        cursor.execute("EXECUTE arches_q(%d)" % (suite))
+        while True:
+            r = cursor.fetchone()
+            if not r:
+                break
 
-                if r[1] != "source" and r[1] != "all":
-                    arch_list.append((r[0], r[1]))
+            if r[1] != "source" and r[1] != "all":
+                arch_list.append((r[0], r[1]))
 
         return arch_list
 
@@ -360,7 +452,6 @@ def main():
                  ('s',"suite", "%s::%s" % (options_prefix,"Suite"),"HasArg"),
                  ('q',"quiet", "%s::%s" % (options_prefix,"Quiet")),
                  ('v',"verbose", "%s::%s" % (options_prefix,"Verbose")),
-                 ('a',"arch", "%s::%s" % (options_prefix,"Arch"),"HasArg"),
                 ]
 
     commands = {'generate' : Contents.generate,
