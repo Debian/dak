@@ -882,9 +882,9 @@ def has_new_comment(package, version):
                             % (package, version) ).getresult()
 
     if not exists:
-        return false
+        return False
     else:
-        return true
+        return True
 
 def add_new_comment(package, version, comment, author):
     """
