@@ -55,6 +55,7 @@ from daklib import logging
 from daklib import queue
 from daklib import utils
 from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
+from daklib.dak_exceptions import CantOpenError
 
 # Globals
 Cnf = None       #: Configuration, apt_pkg.Configuration
@@ -113,7 +114,7 @@ def recheck():
 
     if reject_message.find("Rejected") != -1:
         answer = "XXX"
-        if Options["No-Action"] or Options["Automatic"]:
+        if Options["No-Action"] or Options["Automatic"] or Options["Trainee"]:
             answer = 'S'
 
         print "REJECT\n" + reject_message,
@@ -681,20 +682,20 @@ def do_new():
                 answer = m.group(1)
             answer = answer[:1].upper()
 
-        if answer == 'A':
+        if answer == 'A' and not Options["Trainee"]:
             done = add_overrides (new)
         elif answer == 'C':
             check_pkg()
-        elif answer == 'E':
+        elif answer == 'E' and not Options["Trainee"]:
             new = edit_overrides (new)
-        elif answer == 'M':
+        elif answer == 'M' and not Options["Trainee"]:
             aborted = Upload.do_reject(1, Options["Manual-Reject"])
             if not aborted:
                 os.unlink(Upload.pkg.changes_file[:-8]+".dak")
                 done = 1
         elif answer == 'N':
             edit_note(database.get_new_comments(changes.get("source", "")))
-        elif answer == 'P':
+        elif answer == 'P' and not Options["Trainee"]:
             prod_maintainer()
         elif answer == 'R':
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
@@ -717,6 +718,7 @@ def usage (exit_code=0):
   -C, --comments-dir=DIR    use DIR as comments-dir, for [o-]p-u-new
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
+  -t, --trainee             FTP Trainee mode
   -V, --version             display the version number and exit"""
     sys.exit(exit_code)
 
@@ -731,9 +733,10 @@ def init():
                  ('h',"help","Process-New::Options::Help"),
                  ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
+                 ('t',"trainee","Process-New::Options::Trainee"),
                  ('n',"no-action","Process-New::Options::No-Action")]
 
-    for i in ["automatic", "help", "manual-reject", "no-action", "version", "comments-dir"]:
+    for i in ["automatic", "help", "manual-reject", "no-action", "version", "comments-dir", "trainee"]:
         if not Cnf.has_key("Process-New::Options::%s" % (i)):
             Cnf["Process-New::Options::%s" % (i)] = ""
 
@@ -749,7 +752,10 @@ def init():
     Upload = queue.Upload(Cnf)
 
     if not Options["No-Action"]:
-        Logger = Upload.Logger = logging.Logger(Cnf, "process-new")
+        try:
+            Logger = Upload.Logger = logging.Logger(Cnf, "process-new")
+        except CantOpenError, e:
+            Options["Trainee"] = True
 
     projectB = Upload.projectB
 
