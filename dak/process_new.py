@@ -469,7 +469,9 @@ def edit_note(note):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
     temp_file = os.fdopen(fd, 'w')
-    temp_file.write(note)
+    if len(note) > 0:
+        for line in note:
+            temp_file.write(line)
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
