@@ -38,6 +38,7 @@ import copy, glob, os, stat, sys, time
 import apt_pkg
 import cgi
 from daklib import queue
+from daklib import database
 from daklib import utils
 from daklib.dak_exceptions import *
 
@@ -45,6 +46,7 @@ Cnf = None
 Upload = None
 direction = []
 row_number = 0
+projectB = None
 
 ################################################################################
 
@@ -327,7 +329,7 @@ def process_changes_files(changes_files, type, log):
             else:
                 if mtime < oldest:
                     oldest = mtime
-            have_note += (d.has_key("process-new note"))
+            have_note += (database.has_new_comment(d["source"], d["version"])
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -531,6 +533,7 @@ def main():
         usage()
 
     Upload = queue.Upload(Cnf)
+    projectB = Upload.projectB
 
     if Cnf.has_key("Queue-Report::Options::New"):
         header()

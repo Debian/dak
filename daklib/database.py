@@ -4,8 +4,9 @@
 @group readonly: get_suite_id, get_section_id, get_priority_id, get_override_type_id,
                  get_architecture_id, get_archive_id, get_component_id, get_location_id,
                  get_source_id, get_suite_version, get_files_id, get_maintainer, get_suites,
-                 get_suite_architectures
+                 get_suite_architectures, get_new_comments, has_new_comment
 @group read/write: get_or_set*, set_files_id
+@group writeonly: add_new_comment, delete_new_comments
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
@@ -838,6 +839,87 @@ def get_suites(pkgname, src=False):
 
 ################################################################################
 
+def get_new_comments(package):
+    """
+    Returns all the possible comments attached to C{package} in NEW. All versions.
+
+    @type package: string
+    @param package: name of the package
+
+    @rtype: list
+    @return: list of strings containing comments for all versions from all authors for package
+    """
+
+    comments = []
+    query = projectB.query(""" SELECT version, comment, author
+                               FROM new_comments
+                               WHERE package = '%s' """ % (package))
+
+    for row in query.getresult():
+        comments.append("\nAuthor: %s\nVersion: %s\n\n%s\n" % (row[2], row[0], row[1]))
+        comments.append("-"*72)
+
+    return comments
+
+def has_new_comment(package, version):
+    """
+    Returns true if the given combination of C{package}, C{version} has a comment.
+
+    @type package: string
+    @param package: name of the package
+
+    @type version: string
+    @param version: package version
+
+    @rtype: boolean
+    @return: true/false
+    """
+
+    exists = projectB.query("""SELECT 1 FROM new_comments
+                               WHERE package='%s'
+                               AND version='%s'
+                               LIMIT 1"""
+                            % (package, version) ).getresult()
+
+    if not exists:
+        return false
+    else:
+        return true
+
+def add_new_comment(package, version, comment, author):
+    """
+    Add a new comment for C{package}, C{version} written by C{author}
+
+    @type package: string
+    @param package: name of the package
+
+    @type version: string
+    @param version: package version
+
+    @type comment: string
+    @param comment: the comment
+
+    @type author: string
+    @param author: the authorname
+    """
+
+    projectB.query(""" INSERT INTO new_comments (package, version, comment, author)
+                       VALUES ('%s', '%s', '%s', '%s')
+    """ % (package, version, comment, author) )
+
+    return
+
+def delete_new_comments(package, version):
+    """
+    Delete a comment for C{package}, C{version}, if one exists
+    """
+
+    projectB.query(""" DELETE FROM new_comments
+                       WHERE package = '%s' AND version = '%s'
+    """ % (package, version))
+    return
+
+################################################################################
 def copy_temporary_contents(package, version, arch, deb, reject):
     """
     copy the previously stored contents from the temp table to the permanant one

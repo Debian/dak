@@ -5,6 +5,7 @@
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+@copyright: 2009 Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
 """
 # This program is free software; you can redistribute it and/or modify
@@ -219,7 +220,7 @@ def sort_changes(changes_files):
             mtime = os.stat(d["filename"])[stat.ST_MTIME]
             if mtime < oldest:
                 oldest = mtime
-            have_note += (d.has_key("process-new note"))
+            have_note += (database.has_new_comment(d["source"], d["version"])
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -301,11 +302,10 @@ def print_new (new, indexed, file=sys.stdout):
             line = "%-20s %-20s %-20s" % (pkg, priority, section)
         line = line.strip()+'\n'
         file.write(line)
-    note = Upload.pkg.changes.get("process-new note")
-    if note:
-        print "*"*75
-        print note
-        print "*"*75
+    note = database.get_new_comments(Upload.pkg.changes.get("source"))
+    if len(note) > 0:
+        for line in note:
+            print line
     return broken, note
 
 ################################################################################
@@ -494,8 +494,7 @@ def edit_note(note):
     elif answer == 'Q':
         end()
         sys.exit(0)
-    Upload.pkg.changes["process-new note"] = note
-    Upload.dump_vars(Cnf["Dir::Queue::New"])
+    database.add_new_comment(Upload.pkg.changes["source"], Upload.pkg.changes["version"], note, utils.whoami())
 
 ################################################################################
 
@@ -692,13 +691,13 @@ def do_new():
                 os.unlink(Upload.pkg.changes_file[:-8]+".dak")
                 done = 1
         elif answer == 'N':
-            edit_note(changes.get("process-new note", ""))
+            edit_note(database.get_new_comments(changes.get("source", "")))
         elif answer == 'P':
             prod_maintainer()
         elif answer == 'R':
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
-                del changes["process-new note"]
+                database.delete_new_comments(changes.get("source"), changes.get("version"))
         elif answer == 'S':
             done = 1
         elif answer == 'Q':
