@@ -380,6 +380,9 @@ class Contents(object):
 
                     filename, section, package, arch = r
 
+                    if not file_writers.has_key( arch ):
+                        continue
+
                     if arch == arch_all_id:
                         ## its arch all, so all contents files get it
                         for writer in file_writers.values():
