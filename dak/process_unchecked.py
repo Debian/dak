@@ -1483,7 +1483,7 @@ def acknowledge_new (summary, short_summary):
     Logger.log(["Moving to new", pkg.changes_file])
 
     Upload.dump_vars(Cnf["Dir::Queue::New"])
-    move_to_dir(Cnf["Dir::Queue::New"])
+    move_to_dir(Cnf["Dir::Queue::New"], perms=0640, changesperms=0644)
 
     if not Options["No-Mail"]:
         print "Sending new ack."
