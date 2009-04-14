@@ -220,7 +220,7 @@ def sort_changes(changes_files):
             mtime = os.stat(d["filename"])[stat.ST_MTIME]
             if mtime < oldest:
                 oldest = mtime
-            have_note += (database.has_new_comment(d["source"], d["version"])
+            have_note += (database.has_new_comment(d["source"], d["version"]))
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
