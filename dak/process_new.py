@@ -569,9 +569,14 @@ def add_overrides (new):
 
 ################################################################################
 
-def prod_maintainer ():
+def prod_maintainer (note):
     # Here we prepare an editor and get them ready to prod...
     (fd, temp_filename) = utils.temp_filename()
+    temp_file = os.fdopen(fd, 'w')
+    if len(note) > 0:
+        for line in note:
+            temp_file.write(line)
+    temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
