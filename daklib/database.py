@@ -851,12 +851,14 @@ def get_new_comments(package):
     """
 
     comments = []
-    query = projectB.query(""" SELECT version, comment, author
+    query = projectB.query(""" SELECT version, comment, author, notedate
                                FROM new_comments
-                               WHERE package = '%s' """ % (package))
+                               WHERE package = '%s'
+                               ORDER BY notedate
+                           """ % (package))
 
     for row in query.getresult():
-        comments.append("\nAuthor: %s\nVersion: %s\n\n%s\n" % (row[2], row[0], row[1]))
+        comments.append("\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s\n" % (row[2], row[0], row[4], row[1]))
         comments.append("-"*72)
 
     return comments

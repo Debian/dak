@@ -803,7 +803,7 @@ distribution."""
 
     ###########################################################################
 
-    def do_reject (self, manual = 0, reject_message = ""):
+    def do_reject (self, manual = 0, reject_message = "", note = ""):
         """
         Reject an upload. If called without a reject message or C{manual} is
         true, spawn an editor so the user can write one.
@@ -821,6 +821,11 @@ distribution."""
         # editor so the user can add one in...
         if manual and not reject_message:
             (fd, temp_filename) = utils.temp_filename()
+            temp_file = os.fdopen(fd, 'w')
+            if len(note) > 0:
+                for line in note:
+                    temp_file.write(line)
+            temp_file.close()
             editor = os.environ.get("EDITOR","vi")
             answer = 'E'
             while answer == 'E':

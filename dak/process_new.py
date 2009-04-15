@@ -469,19 +469,14 @@ def edit_overrides (new):
 def edit_note(note):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
-    temp_file = os.fdopen(fd, 'w')
-    if len(note) > 0:
-        for line in note:
-            temp_file.write(line)
-    temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
         temp_file = utils.open_file(temp_filename)
-        note = temp_file.read().rstrip()
+        newnote = temp_file.read().rstrip()
         temp_file.close()
-        print "Note:"
+        print "New Note:"
         print utils.prefix_multi_line_string(note,"  ")
         prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
@@ -689,14 +684,16 @@ def do_new():
         elif answer == 'E' and not Options["Trainee"]:
             new = edit_overrides (new)
         elif answer == 'M' and not Options["Trainee"]:
-            aborted = Upload.do_reject(1, Options["Manual-Reject"])
+            aborted = Upload.do_reject(manual=1,
+                                       reject_message=Options["Manual-Reject"],
+                                       note=database.get_new_comments(changes.get("source", "")))
             if not aborted:
                 os.unlink(Upload.pkg.changes_file[:-8]+".dak")
                 done = 1
         elif answer == 'N':
             edit_note(database.get_new_comments(changes.get("source", "")))
         elif answer == 'P' and not Options["Trainee"]:
-            prod_maintainer()
+            prod_maintainer(database.get_new_comments(changes.get("source", "")))
         elif answer == 'R':
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
