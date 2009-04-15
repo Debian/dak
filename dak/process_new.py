@@ -983,7 +983,7 @@ def end():
         sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))))
         Logger.log(["total",accept_count,accept_bytes])
 
-    if not Options["No-Action"]:
+    if not Options["No-Action"] and not Options["Trainee"]::
         Logger.close()
 
 ################################################################################
