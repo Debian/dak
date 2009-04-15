@@ -581,9 +581,9 @@ def prod_maintainer (note):
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        f = os.fdopen(fd)
-        prod_message = "".join(f.readlines())
-        f.close()
+        temp_fh = util.open_file(temp_filename)
+        prod_message = "".join(temp_fh.readlines())
+        temp_fh.close()
         print "Prod message:"
         print utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
         prompt = "[P]rod, Edit, Abandon, Quit ?"
