@@ -581,7 +581,7 @@ def prod_maintainer (note):
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        temp_fh = util.open_file(temp_filename)
+        temp_fh = utils.open_file(temp_filename)
         prod_message = "".join(temp_fh.readlines())
         temp_fh.close()
         print "Prod message:"
