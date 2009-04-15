@@ -755,7 +755,7 @@ def init():
         try:
             Logger = Upload.Logger = logging.Logger(Cnf, "process-new")
         except CantOpenError, e:
-            Options["Trainee"] = True
+            Options["Trainee"] = "Oh yes"
 
     projectB = Upload.projectB
 
