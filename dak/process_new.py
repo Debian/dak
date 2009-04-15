@@ -477,7 +477,7 @@ def edit_note(note):
         newnote = temp_file.read().rstrip()
         temp_file.close()
         print "New Note:"
-        print utils.prefix_multi_line_string(note,"  ")
+        print utils.prefix_multi_line_string(newnote,"  ")
         prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
@@ -492,7 +492,7 @@ def edit_note(note):
     elif answer == 'Q':
         end()
         sys.exit(0)
-    database.add_new_comment(Upload.pkg.changes["source"], Upload.pkg.changes["version"], note, utils.whoami())
+    database.add_new_comment(Upload.pkg.changes["source"], Upload.pkg.changes["version"], newnote, utils.whoami())
 
 ################################################################################
 
