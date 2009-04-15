@@ -594,12 +594,12 @@ def prod_maintainer (note):
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
-        os.unlink(temp_filename)
-        if answer == 'A':
-            return
-        elif answer == 'Q':
-            end()
-            sys.exit(0)
+    os.unlink(temp_filename)
+    if answer == 'A':
+        return
+    elif answer == 'Q':
+        end()
+        sys.exit(0)
     # Otherwise, do the proding...
     user_email_address = utils.whoami() + " <%s>" % (
         Cnf["Dinstall::MyAdminAddress"])
