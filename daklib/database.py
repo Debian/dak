@@ -858,7 +858,7 @@ def get_new_comments(package):
                            """ % (package))
 
     for row in query.getresult():
-        comments.append("\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s\n" % (row[2], row[0], row[4], row[1]))
+        comments.append("\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s\n" % (row[2], row[0], row[3], row[1]))
         comments.append("-"*72)
 
     return comments
