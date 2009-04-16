@@ -51,6 +51,7 @@ import stat
 import sys
 import time
 import contextlib
+import pwd
 import apt_pkg, apt_inst
 import examine_package
 from daklib import database
@@ -852,7 +853,8 @@ def lock_package(package):
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDONLY)
     except OSError, e:
         if e.errno == errno.EEXIST or e.errno == errno.EACCES:
-            raise AlreadyLockedError, e.errno
+            user = pwd.getpwuid(os.stat(path)[stat.ST_UID])[4].split(',')[0].replace('.', '')
+            raise AlreadyLockedError, user
 
     try:
         yield fd
@@ -999,7 +1001,7 @@ def do_pkg(changes_file):
             if not new and not byhand:
                 do_accept()
     except AlreadyLockedError, e:
-        print "Seems to be locked already, skipping..."
+        print "Seems to be locked by %s already, skipping..." % (e)
 
 ################################################################################
 
