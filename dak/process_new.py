@@ -48,6 +48,7 @@ import readline
 import stat
 import sys
 import time
+import contextlib
 import apt_pkg, apt_inst
 import examine_package
 from daklib import database
@@ -55,7 +56,7 @@ from daklib import logging
 from daklib import queue
 from daklib import utils
 from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
-from daklib.dak_exceptions import CantOpenError
+from daklib.dak_exceptions import CantOpenError, AlreadyLockedError
 
 # Globals
 Cnf = None       #: Configuration, apt_pkg.Configuration
@@ -834,6 +835,28 @@ def get_accept_lock():
             else:
                 raise
 
+
+@contextlib.contextmanager
+def lock_package(package):
+    """
+    Lock C{package} so that noone else jumps in processing it.
+
+    @type package: string
+    @param package: source package name to lock
+    """
+
+    path = os.path.join(Cnf["Process-New::LockDir"], package)
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDONLY)
+    except OSError, e:
+        if e.errno == errno.EEXIST or e.errno == errno.EACCES:
+            raise AlreadyLockedError, e.errno
+
+    try:
+        yield fd
+    finally:
+        os.unlink(path)
+
 def move_to_dir (dest, perms=0660, changesperms=0664):
     utils.move (Upload.pkg.changes_file, dest, perms=changesperms)
     file_keys = Upload.pkg.files.keys()
@@ -958,19 +981,23 @@ def do_pkg(changes_file):
     Upload.update_subst()
     files = Upload.pkg.files
 
-    if not recheck():
-        return
+    try:
+        with lock_package(Upload.pkg.changes["source"]):
+            if not recheck():
+                return
 
-    (new, byhand) = check_status(files)
-    if new or byhand:
-        if new:
-            do_new()
-        if byhand:
-            do_byhand()
-        (new, byhand) = check_status(files)
+            (new, byhand) = check_status(files)
+            if new or byhand:
+                if new:
+                    do_new()
+                if byhand:
+                    do_byhand()
+                (new, byhand) = check_status(files)
 
-    if not new and not byhand:
-        do_accept()
+            if not new and not byhand:
+                do_accept()
+    except AlreadyLockedError, e:
+        print "Seems to be locked already, skipping..."
 
 ################################################################################
 

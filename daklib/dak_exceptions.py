@@ -60,7 +60,8 @@ dakerrors = {
     "NoSourceFieldError":  """Exception raised - we cant find the source - wtf?""",
     "MissingContents":     """Exception raised - we could not determine contents for this deb""",
     "DBUpdateError":       """Exception raised - could not update the database""",
-    "ChangesUnicodeError": """Exception raised - changes file not properly utf-8 encoded"""
+    "ChangesUnicodeError": """Exception raised - changes file not properly utf-8 encoded""",
+    "AlreadyLockedError":  """Exception raised - package already locked by someone else"""
 } #: All dak exceptions
 
 def construct_dak_exception(name, description):
