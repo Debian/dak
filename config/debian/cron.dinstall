@@ -807,7 +807,7 @@ GO=(
     FUNC="aptftpcleanup"
     TIME="apt-ftparchive cleanup"
     ARGS=""
-    ERR=""
+    ERR="false"
 )
 stage $GO
 
