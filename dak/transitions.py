@@ -403,7 +403,7 @@ def check_transitions(transitions):
         # Will be None if nothing is in testing.
         current = database.get_suite_version(source, "testing")
 
-        print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
         if current == None:
             # No package in testing
@@ -456,7 +456,7 @@ def check_transitions(transitions):
 
 ################################################################################
 
-def print_info(trans, source, expected, rm, reason, packages):
+def get_info(trans, source, expected, rm, reason, packages):
     """
     Print information about a single transition.
 
@@ -479,21 +479,20 @@ def print_info(trans, source, expected, rm, reason, packages):
     @param packages: list of blocked packages
 
     """
-    print """Looking at transition: %s
+    return """Looking at transition: %s
 Source:      %s
 New Version: %s
 Responsible: %s
 Description: %s
 Blocked Packages (total: %d): %s
 """ % (trans, source, expected, rm, reason, len(packages), ", ".join(packages))
-    return
 
 ################################################################################
 
 def transition_info(transitions):
     """
     Print information about all defined transitions.
-    Calls L{print_info} for every transition and then tells user if the transition is
+    Calls L{get_info} for every transition and then tells user if the transition is
     still ongoing or if the expected version already hit testing.
 
     @type transitions: dict
@@ -507,7 +506,7 @@ def transition_info(transitions):
         # Will be None if nothing is in testing.
         current = database.get_suite_version(source, "testing")
 
-        print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
         if current == None:
             # No package in testing
