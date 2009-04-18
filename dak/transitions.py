@@ -465,7 +465,7 @@ def check_transitions(transitions):
                 subst['__DAK_ADDRESS__'] = Cnf["Dinstall::MyEmailAddress"]
                 subst['__BCC__'] = 'X-DAK: dak transitions'
                 if Cnf.has_key("Dinstall::Bcc"):
-                    subst["__BCC__"] += '\nBcc: %s' % Cnf["Dinstall:Bcc"]
+                    subst["__BCC__"] += '\nBcc: %s' % Cnf["Dinstall::Bcc"]
                 message = utils.TemplateSubst(subst,
                                               os.path.join(Cnf["Dir::Templates"], 'transition.removed'))
                 utils.send_mail(message)
