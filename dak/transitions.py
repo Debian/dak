@@ -394,8 +394,11 @@ def check_transitions(transitions):
     @note: Asks the user for confirmation first unless -a has been set.
 
     """
+    global Cnf
+
     to_dump = 0
     to_remove = []
+    info = {}
     # Now look through all defined transitions
     for trans in transitions:
         t = transitions[trans]
@@ -405,7 +408,8 @@ def check_transitions(transitions):
         # Will be None if nothing is in testing.
         current = database.get_suite_version(source, "testing")
 
-        print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        info[trans] = get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        print info[trans]
 
         if current == None:
             # No package in testing
@@ -447,11 +451,27 @@ def check_transitions(transitions):
             sys.exit(0)
         elif answer == 'y':
             print "Committing"
+            subst = {}
+            subst['__TRANSITION_MESSAGE__'] = "The following transitions were removed:\n"
             for remove in to_remove:
+                subst['__TRANSITION_MESSAGE__'] += info[remove] + '\n'
                 del transitions[remove]
 
             edit_file = temp_transitions_file(transitions)
             write_transitions_from_file(edit_file)
+
+            # If we have a mail address configured for transitions,
+            # send a notification
+            subst['__TRANSITION_EMAIL__'] = Cnf.get("Transitions::Notifications", "")
+            if subst['__TRANSITION_EMAIL__'] != "":
+                print "Sending notification to %s" % subst['__TRANSITION__EMAIL__']
+                subst['__DAK_ADDRESS__'] = Cnf["Dinstall::MyEmailAddress"]
+                subst['__BCC__'] = 'X-DAK: dak transitions'
+                if Cnf.has_key("Dinstall::Bcc"):
+                    subst["__BCC__"] += '\nBcc: %s' % Cnf["Dinstall:Bcc"]
+                message = utils.TemplateSubst(subst,
+                                              os.path.join(Cnf["Dir::Templates"], 'transition.removed'))
+                utils.send_mail(message)
 
             print "Done"
         else:
