@@ -457,14 +457,11 @@ def check_transitions(transitions):
                 subst['__TRANSITION_MESSAGE__'] += info[remove] + '\n'
                 del transitions[remove]
 
-            edit_file = temp_transitions_file(transitions)
-            write_transitions_from_file(edit_file)
-
             # If we have a mail address configured for transitions,
             # send a notification
             subst['__TRANSITION_EMAIL__'] = Cnf.get("Transitions::Notifications", "")
             if subst['__TRANSITION_EMAIL__'] != "":
-                print "Sending notification to %s" % subst['__TRANSITION__EMAIL__']
+                print "Sending notification to %s" % subst['__TRANSITION_EMAIL__']
                 subst['__DAK_ADDRESS__'] = Cnf["Dinstall::MyEmailAddress"]
                 subst['__BCC__'] = 'X-DAK: dak transitions'
                 if Cnf.has_key("Dinstall::Bcc"):
@@ -472,6 +469,9 @@ def check_transitions(transitions):
                 message = utils.TemplateSubst(subst,
                                               os.path.join(Cnf["Dir::Templates"], 'transition.removed'))
                 utils.send_mail(message)
+
+            edit_file = temp_transitions_file(transitions)
+            write_transitions_from_file(edit_file)
 
             print "Done"
         else:
