@@ -269,6 +269,12 @@ function expire() {
     $scriptsdir/expire_dumps -d . -p -f "dump_*"
 }
 
+function transitionsclean() {
+    log "Removing out of date transitions..."
+    cd $base
+    dak transitions -c -a
+}
+
 function reports() {
     # Send a report on NEW/BYHAND packages
     log "Nagging ftpteam about NEW/BYHAND packages"
@@ -724,6 +730,14 @@ stage $GO
 GO=(
     FUNC="expire"
     TIME="expire_dumps"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="transitionsclean"
+    TIME="transitionsclean"
     ARGS=""
     ERR=""
 )
