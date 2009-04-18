@@ -374,18 +374,15 @@ def get_source_in_suite(source, suite, session=None):
     @return: the version for I{source} in I{suite}
 
     """
-    ######## TODO UP TO HERE
     if session is None:
         session = DBConn().session()
-    q = session.query(Source).filter_by(source=source)
+    q = session.query(SrcAssociation)
+    q = q.join('source').filter_by(source=source)
+    q = q.join('suite').filter_by(suite_name=suite)
     if q.count() == 0:
         return None
-    return q.one()
-
-
-    return self.__get_id('source.version', s, {'suite': suite, 'source': source}, 'suite_version')
-
-
+    # ???: Maybe we should just return the SrcAssociation object instead
+    return q.one().source
 
 class SrcAssociation(object):
     def __init__(self, *args, **kwargs):
@@ -454,6 +451,9 @@ class DBConn(Singleton):
         super(DBConn, self).__init__(*args, **kwargs)
 
     def _startup(self, *args, **kwargs):
+        self.debug = False
+        if kwargs.has_key('debug'):
+            self.debug = True
         self.__createconn()
 
     def __setuptables(self):
@@ -679,7 +679,7 @@ class DBConn(Singleton):
             if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
 
-        self.db_pg   = create_engine(connstr)
+        self.db_pg   = create_engine(connstr, echo=self.debug)
         self.db_meta = MetaData()
         self.db_meta.bind = self.db_pg
         self.db_smaker = sessionmaker(bind=self.db_pg,
