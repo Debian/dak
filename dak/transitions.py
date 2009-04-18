@@ -66,14 +66,15 @@ def init():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('h',"help","Edit-Transitions::Options::Help"),
+    Arguments = [('a',"automatic","Edit-Transitions::Options::Automatic"),
+                 ('h',"help","Edit-Transitions::Options::Help"),
                  ('e',"edit","Edit-Transitions::Options::Edit"),
                  ('i',"import","Edit-Transitions::Options::Import", "HasArg"),
                  ('c',"check","Edit-Transitions::Options::Check"),
                  ('s',"sudo","Edit-Transitions::Options::Sudo"),
                  ('n',"no-action","Edit-Transitions::Options::No-Action")]
 
-    for i in ["help", "no-action", "edit", "import", "check", "sudo"]:
+    for i in ["automatic", "help", "no-action", "edit", "import", "check", "sudo"]:
         if not Cnf.has_key("Edit-Transitions::Options::%s" % (i)):
             Cnf["Edit-Transitions::Options::%s" % (i)] = ""
 
@@ -107,6 +108,7 @@ Options:
   -i, --import <file>       check and import transitions from file
   -c, --check               check the transitions file, remove outdated entries
   -S, --sudo                use sudo to update transitions file
+  -a, --automatic           don't prompt (only affects check).
   -n, --no-action           don't do anything (only affects check)"""
 
     sys.exit(exit_code)
@@ -389,11 +391,14 @@ def edit_transitions():
 def check_transitions(transitions):
     """
     Check if the defined transitions still apply and remove those that no longer do.
-    @note: Asks the user for confirmation first.
+    @note: Asks the user for confirmation first unless -a has been set.
 
     """
+    global Cnf
+
     to_dump = 0
     to_remove = []
+    info = {}
     # Now look through all defined transitions
     for trans in transitions:
         t = transitions[trans]
@@ -403,7 +408,8 @@ def check_transitions(transitions):
         # Will be None if nothing is in testing.
         current = database.get_suite_version(source, "testing")
 
-        print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        info[trans] = get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        print info[trans]
 
         if current == None:
             # No package in testing
@@ -432,6 +438,8 @@ def check_transitions(transitions):
 
         if Options["no-action"]:
             answer="n"
+        elif Options["automatic"]:
+            answer="y"
         else:
             answer = utils.our_raw_input(prompt).lower()
 
@@ -443,11 +451,27 @@ def check_transitions(transitions):
             sys.exit(0)
         elif answer == 'y':
             print "Committing"
+            subst = {}
+            subst['__TRANSITION_MESSAGE__'] = "The following transitions were removed:\n"
             for remove in to_remove:
+                subst['__TRANSITION_MESSAGE__'] += info[remove] + '\n'
                 del transitions[remove]
 
             edit_file = temp_transitions_file(transitions)
             write_transitions_from_file(edit_file)
+
+            # If we have a mail address configured for transitions,
+            # send a notification
+            subst['__TRANSITION_EMAIL__'] = Cnf.get("Transitions::Notifications", "")
+            if subst['__TRANSITION_EMAIL__'] != "":
+                print "Sending notification to %s" % subst['__TRANSITION__EMAIL__']
+                subst['__DAK_ADDRESS__'] = Cnf["Dinstall::MyEmailAddress"]
+                subst['__BCC__'] = 'X-DAK: dak transitions'
+                if Cnf.has_key("Dinstall::Bcc"):
+                    subst["__BCC__"] += '\nBcc: %s' % Cnf["Dinstall:Bcc"]
+                message = utils.TemplateSubst(subst,
+                                              os.path.join(Cnf["Dir::Templates"], 'transition.removed'))
+                utils.send_mail(message)
 
             print "Done"
         else:
@@ -456,7 +480,7 @@ def check_transitions(transitions):
 
 ################################################################################
 
-def print_info(trans, source, expected, rm, reason, packages):
+def get_info(trans, source, expected, rm, reason, packages):
     """
     Print information about a single transition.
 
@@ -479,21 +503,20 @@ def print_info(trans, source, expected, rm, reason, packages):
     @param packages: list of blocked packages
 
     """
-    print """Looking at transition: %s
+    return """Looking at transition: %s
 Source:      %s
 New Version: %s
 Responsible: %s
 Description: %s
 Blocked Packages (total: %d): %s
 """ % (trans, source, expected, rm, reason, len(packages), ", ".join(packages))
-    return
 
 ################################################################################
 
 def transition_info(transitions):
     """
     Print information about all defined transitions.
-    Calls L{print_info} for every transition and then tells user if the transition is
+    Calls L{get_info} for every transition and then tells user if the transition is
     still ongoing or if the expected version already hit testing.
 
     @type transitions: dict
@@ -507,7 +530,7 @@ def transition_info(transitions):
         # Will be None if nothing is in testing.
         current = database.get_suite_version(source, "testing")
 
-        print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
         if current == None:
             # No package in testing

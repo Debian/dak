@@ -1,0 +1,15 @@
+From: __DAK_ADDRESS__
+To: __TRANSITION_EMAIL__
+__BCC__
+X-Debian: DAK
+Precedence: bulk
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+Subject: Transitions Completed
+
+The following transitions are complete and have been removed
+from the transitions list:
+
+__TRANSITION_MESSAGE__
+
