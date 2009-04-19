@@ -761,6 +761,13 @@ def which_conf_file ():
 
 def which_apt_conf_file ():
     res = socket.gethostbyaddr(socket.gethostname())
+    # In case we allow local config files per user, try if one exists
+    if Cnf.FindB("Config::" + res[0] + "::AllowLocalConfig"):
+        homedir = os.getenv("HOME")
+        confpath = os.path.join(homedir, "/etc/dak.conf")
+        if os.path.exists(confpath):
+            apt_pkg.ReadConfigFileISC(Cnf,default_config)
+
     if Cnf.get("Config::" + res[0] + "::AptConfig"):
         return Cnf["Config::" + res[0] + "::AptConfig"]
     else:
