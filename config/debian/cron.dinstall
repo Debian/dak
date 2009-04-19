@@ -301,7 +301,7 @@ function merkel2() {
     log "Trigger merkel/flotows projectb sync"
     ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb dak@merkel.debian.org sleep 1
     # Also trigger flotow, the ftpmaster test box
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_flotow_projectb dak@flotow.debian.org sleep 1
+    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_flotow_projectb dak@flotow.debconf.org sleep 1
 }
 
 function merkel3() {
