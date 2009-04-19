@@ -750,7 +750,7 @@ def which_conf_file ():
         homedir = os.getenv("HOME")
         confpath = os.path.join(homedir, "/etc/dak.conf")
         if os.path.exists(confpath):
-            return confpath
+            apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
     # We are still in here, so there is no local config file or we do
     # not allow local files. Do the normal stuff.
