@@ -437,6 +437,15 @@ def check_files():
                 deb_file.close()
                 # Can't continue, none of the checks on control would work.
                 continue
+
+            # Check for mandantory "Description:"
+            deb_file.seek ( 0 )
+            try:
+                apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))["Description"] + '\n'
+            except:
+                reject("%s: Missing Description in binary package" % (f))
+                continue
+
             deb_file.close()
 
             # Check for mandatory fields
