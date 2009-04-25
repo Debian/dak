@@ -139,6 +139,24 @@ def get_binary_from_id(id, session=None):
         return None
     return q.one()
 
+def get_binaries_from_name(package, session=None):
+    """
+    Returns list of Binary objects for given C{package} name
+
+    @type package: str
+    @param package: Binary package name to search for
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: list of Binary objects for the given name (may be empty)
+    """
+    if session is None:
+        session = DBConn().session()
+    return session.query(Binary).filter_by(package=package).all()
+
 class Component(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -356,6 +374,24 @@ class Source(object):
 
     def __repr__(self):
         return '<Source %s (%s)>' % (self.source, self.version)
+
+def get_sources_from_name(source, session=None):
+    """
+    Returns list of Source objects for given C{source} name
+
+    @type source: str
+    @param source: Source package name to search for
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: list of Source objects for the given name (may be empty)
+    """
+    if session is None:
+        session = DBConn().session()
+    return session.query(Source).filter_by(source=source).all()
 
 def get_source_in_suite(source, suite, session=None):
     """
@@ -684,7 +720,7 @@ class DBConn(Singleton):
         self.db_meta.bind = self.db_pg
         self.db_smaker = sessionmaker(bind=self.db_pg,
                                       autoflush=True,
-                                      transactional=True)
+                                      autocommit=True)
 
         self.__setuptables()
         self.__setupmappers()
