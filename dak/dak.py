@@ -153,6 +153,8 @@ def init():
          "Syncs fingerprint and uid tables with Debian LDAP db"),
         ("import-users-from-passwd",
          "Sync PostgreSQL users with passwd file"),
+        ("admin",
+         "Perform administration on the dak database"),
         ("init-db",
          "Update the database to match the conf file"),
         ("update-db",
