@@ -40,6 +40,9 @@ import traceback
 from sqlalchemy import create_engine, Table, MetaData, select
 from sqlalchemy.orm import sessionmaker, mapper, relation
 
+# Don't remove this, we re-export the exceptions to scripts which import us
+from sqlalchemy.exc import *
+
 from singleton import Singleton
 
 ################################################################################
@@ -72,6 +75,29 @@ def get_architecture(architecture, session=None):
     if q.count() == 0:
         return None
     return q.one()
+
+def get_architecture_suites(architecture, session=None):
+    """
+    Returns list of Suite objects for given C{architecture} name
+
+    @type source: str
+    @param source: Architecture name to search for
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: list of Suite objects for the given name (may be empty)
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(Suite)
+    q = q.join(SuiteArchitecture)
+    q = q.join(Architecture).filter_by(arch_string=architecture).order_by('suite_name')
+    return q.all()
 
 class Archive(object):
     def __init__(self, *args, **kwargs):
@@ -469,6 +495,30 @@ class SuiteArchitecture(object):
 
     def __repr__(self):
         return '<SuiteArchitecture (%s, %s)>' % (self.suite_id, self.arch_id)
+
+def get_suite_architectures(suite, session=None):
+    """
+    Returns list of Architecture objects for given C{suite} name
+
+    @type source: str
+    @param source: Suite name to search for
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: list of Architecture objects for the given name (may be empty)
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(Architecture)
+    q = q.join(SuiteArchitecture)
+    q = q.join(Suite).filter_by(suite_name=suite).order_by('arch_string')
+    return q.all()
+
 
 class Uid(object):
     def __init__(self, *args, **kwargs):
@@ -892,31 +942,6 @@ def get_or_set_contents_path_id(self, path):
         traceback.print_exc()
         raise
 
-def get_suite_architectures(self, suite):
-    """
-    Returns list of architectures for C{suite}.
-
-    @type suite: string, int
-    @param suite: the suite name or the suite_id
-
-    @rtype: list
-    @return: the list of architectures for I{suite}
-    """
-
-    suite_id = None
-    if type(suite) == str:
-        suite_id = self.get_suite_id(suite)
-    elif type(suite) == int:
-        suite_id = suite
-    else:
-        return None
-
-    c = self.db_con.cursor()
-    c.execute( """SELECT a.arch_string FROM suite_architectures sa
-                  JOIN architecture a ON (a.id = sa.architecture)
-                  WHERE suite='%s'""" % suite_id )
-
-    return map(lambda x: x[0], c.fetchall())
 
 def insert_content_paths(self, bin_id, fullpaths):
     """
