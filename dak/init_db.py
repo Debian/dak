@@ -139,7 +139,7 @@ class InitDB(object):
             origin = sql_get(suite_config, "Origin")
             description = sql_get(suite_config, "Description")
             c.execute(suite_add, [suite.lower(), version, origin, description])
-            for architecture in self.Cnf.ValueList("Suite::%s::Architectures" % (suite)):
+            for architecture in self.Cnf.SubTree("Architectures").List():
                 architecture_id = self.projectB.get_architecture_id (architecture)
                 if architecture_id < 0:
                     utils.fubar("architecture '%s' not found in architecture"
