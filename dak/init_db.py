@@ -19,7 +19,7 @@
 
 ################################################################################
 
-import psycopg2, sys
+import sys
 import apt_pkg
 
 from daklib import utils
@@ -57,32 +57,35 @@ class InitDB(object):
     def do_archive(self):
         """initalize the archive table."""
 
-        c = self.projectB.cursor()
-        c.execute("DELETE FROM archive")
+        s = self.projectB.session()
+        s.begin()
+        s.execute("DELETE FROM archive")
         archive_add = "INSERT INTO archive (name, origin_server, description) VALUES (%s, %s, %s)"
         for name in self.Cnf.SubTree("Archive").List():
             archive_config = self.Cnf.SubTree("Archive::%s" % (name))
             origin_server = sql_get(archive_config, "OriginServer")
             description = sql_get(archive_config, "Description")
-            c.execute(archive_add, [name, origin_server, description])
-        self.projectB.commit()
+            s.execute(archive_add, [name, origin_server, description])
+        s.commit()
 
     def do_architecture(self):
         """Initalize the architecture table."""
 
-        c = self.projectB.cursor()
-        c.execute("DELETE FROM architecture")
+        s = self.projectB.session()
+        s.begin()
+        s.execute("DELETE FROM architecture")
         arch_add = "INSERT INTO architecture (arch_string, description) VALUES (%s, %s)"
         for arch in self.Cnf.SubTree("Architectures").List():
             description = self.Cnf["Architectures::%s" % (arch)]
-            c.execute(arch_add, [arch, description])
-        self.projectB.commit()
+            s.execute(arch_add, [arch, description])
+        s.commit()
 
     def do_component(self):
         """Initalize the component table."""
 
-        c = self.projectB.cursor()
-        c.execute("DELETE FROM component")
+        s = self.projectB.session()
+        s.begin()
+        s.execute("DELETE FROM component")
 
         comp_add = "INSERT INTO component (name, description, meets_dfsg) " + \
                    "VALUES (%s, %s, %s)"
@@ -91,15 +94,16 @@ class InitDB(object):
             component_config = self.Cnf.SubTree("Component::%s" % (name))
             description = sql_get(component_config, "Description")
             meets_dfsg = (component_config.get("MeetsDFSG").lower() == "true")
-            c.execute(comp_add, [name, description, meets_dfsg])
+            s.execute(comp_add, [name, description, meets_dfsg])
 
-        self.projectB.commit()
+        s.commit()
 
     def do_location(self):
         """Initalize the location table."""
 
-        c = self.projectB.cursor()
-        c.execute("DELETE FROM location")
+        s = self.projectB.session()
+        s.begin()
+        s.execute("DELETE FROM location")
 
         loc_add = "INSERT INTO location (path, component, archive, type) " + \
                   "VALUES (%s, %s, %s, %s)"
@@ -114,18 +118,19 @@ class InitDB(object):
             if location_type == "pool":
                 for component in self.Cnf.SubTree("Component").List():
                     component_id = self.projectB.get_component_id(component)
-                    c.execute(loc_add, [location, component_id, archive_id, location_type])
+                    s.execute(loc_add, [location, component_id, archive_id, location_type])
             else:
                 utils.fubar("E: type '%s' not recognised in location %s."
                                    % (location_type, location))
 
-        self.projectB.commit()
+        s.commit()
 
     def do_suite(self):
         """Initalize the suite table."""
 
-        c = self.projectB.cursor()
-        c.execute("DELETE FROM suite")
+        s = self.projectB.session()
+        s.begin()
+        s.execute("DELETE FROM suite")
 
         suite_add = "INSERT INTO suite (suite_name, version, origin, description) " + \
                     "VALUES (%s, %s, %s, %s)"
@@ -138,48 +143,51 @@ class InitDB(object):
             version = sql_get(suite_config, "Version")
             origin = sql_get(suite_config, "Origin")
             description = sql_get(suite_config, "Description")
-            c.execute(suite_add, [suite.lower(), version, origin, description])
-            for architecture in self.Cnf.SubTree("Architectures").List():
+            s.execute(suite_add, [suite.lower(), version, origin, description])
+            for architecture in self.Cnf.ValueList("Suite::%s::Architectures" % (suite)):
                 architecture_id = self.projectB.get_architecture_id (architecture)
                 if architecture_id < 0:
                     utils.fubar("architecture '%s' not found in architecture"
                                 " table for suite %s."
                                 % (architecture, suite))
-                c.execute(sa_add, [architecture_id])
+                s.execute(sa_add, [architecture_id])
 
-        self.projectB.commit()
+        s.commit()
 
     def do_override_type(self):
         """Initalize the override_type table."""
 
-        c = self.projectB.cursor()
-        c.execute("DELETE FROM override_type")
+        s = self.projectB.session()
+        s.begin()
+        s.execute("DELETE FROM override_type")
 
         over_add = "INSERT INTO override_type (type) VALUES (%s)"
 
         for override_type in self.Cnf.ValueList("OverrideType"):
-            c.execute(over_add, [override_type])
+            s.execute(over_add, [override_type])
 
-        self.projectB.commit()
+        s.commit()
 
     def do_priority(self):
         """Initialize the priority table."""
 
-        c = self.projectB.cursor()
-        c.execute("DELETE FROM priority")
+        s = self.projectB.session()
+        s.begin()
+        s.execute("DELETE FROM priority")
 
         prio_add = "INSERT INTO priority (priority, level) VALUES (%s, %s)"
 
         for priority in self.Cnf.SubTree("Priority").List():
-            c.execute(prio_add, [priority, self.Cnf["Priority::%s" % (priority)]])
+            s.execute(prio_add, [priority, self.Cnf["Priority::%s" % (priority)]])
 
-        self.projectB.commit()
+        s.commit()
 
     def do_section(self):
         """Initalize the section table."""
 
-        c = self.projectB.cursor()
-        c.execute("DELETE FROM section")
+        s = self.projectB.session()
+        s.begin()
+        s.execute("DELETE FROM section")
 
         sect_add = "INSERT INTO section (section) VALUES (%s)"
 
@@ -197,9 +205,9 @@ class InitDB(object):
                 else:
                     suffix = ""
             for section in self.Cnf.ValueList("Section"):
-                c.execute(sect_add, [prefix + section + suffix])
+                s.execute(sect_add, [prefix + section + suffix])
 
-        self.projectB.commit()
+        s.commit()
 
     def do_all(self):
         self.do_archive()
