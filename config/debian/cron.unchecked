@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 set -e
 set -u
@@ -19,7 +19,7 @@ STAMP=$(date "+%Y%m%d%H%M")
 cleanup() {
     rm -f "$LOCKFILE"
     if [ ! -z "$LOCKDAILY" ]; then
-	rm -f "$NOTICE"
+        rm -f "$NOTICE"
     fi
 }
 
@@ -33,37 +33,37 @@ if lockfile -r3 $LOCKFILE; then
     timestamp=$(date "+%Y-%m-%d %H:%M")
 
     if [ ! -z "$changes" ]; then
-	echo "$timestamp": "$changes"  >> $report
-	dak process-unchecked -a -d "$unchecked" >> $report
-	echo "--" >> $report
+        echo "$timestamp": "$changes"  >> $report
+        dak process-unchecked -a -d "$unchecked" >> $report
+        echo "--" >> $report
 
-	# sync with debbugs
-    rsync -aq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30" --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/ 2>/dev/null && touch $lockdir/synced_bts_version || true
+         # sync with debbugs
+        rsync -aq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30" --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/ 2>/dev/null && touch $lockdir/synced_bts_version || true
 
-	NOW=$(date +%s)
-	TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
-	DIFF=$(( NOW - TSTAMP ))
-	if [ $DIFF -ge 259200 ]; then
-		echo "Kids, you tried your best and you failed miserably. The lesson is, never try. (Homer Simpson)"
-	fi
+        NOW=$(date +%s)
+        TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
+        DIFF=$(( NOW - TSTAMP ))
+        if [ $DIFF -ge 259200 ]; then
+            echo "Kids, you tried your best and you failed miserably. The lesson is, never try. (Homer Simpson)"
+        fi
 
-	if lockfile -r3 $NOTICE; then
-	    LOCKDAILY="YES"
-	    psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
-	    cd $overridedir
-	    dak make-overrides &>/dev/null
-	    rm -f override.sid.all3 override.sid.all3.src
-	    for i in main contrib non-free main.debian-installer; do
-		cat override.sid.$i >> override.sid.all3
-		if [ "$i" != "main.debian-installer" ]; then
-		    cat override.sid.$i.src >> override.sid.all3.src
-		fi
-	    done
-        make_buildd_dir
+        if lockfile -r3 $NOTICE; then
+            LOCKDAILY="YES"
+            psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
+            cd $overridedir
+            dak make-overrides &>/dev/null
+            rm -f override.sid.all3 override.sid.all3.src
+            for i in main contrib non-free main.debian-installer; do
+                cat override.sid.$i >> override.sid.all3
+                if [ "$i" != "main.debian-installer" ]; then
+                    cat override.sid.$i.src >> override.sid.all3.src
+                fi
+            done
+            make_buildd_dir
 
-	    . $configdir/cron.buildd
-	fi
+            . $configdir/cron.buildd
+        fi
     else
-		echo "$timestamp": Nothing to do >> $report
+        echo "$timestamp": Nothing to do >> $report
     fi
 fi
