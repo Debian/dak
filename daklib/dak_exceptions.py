@@ -61,7 +61,8 @@ dakerrors = {
     "MissingContents":     """Exception raised - we could not determine contents for this deb""",
     "DBUpdateError":       """Exception raised - could not update the database""",
     "ChangesUnicodeError": """Exception raised - changes file not properly utf-8 encoded""",
-    "AlreadyLockedError":  """Exception raised - package already locked by someone else"""
+    "AlreadyLockedError":  """Exception raised - package already locked by someone else""",
+    "CantGetLockError":    """Exception raised - lockfile already in use"""
 } #: All dak exceptions
 
 def construct_dak_exception(name, description):

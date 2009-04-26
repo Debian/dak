@@ -23,6 +23,7 @@ unchecked=$queuedir/unchecked/
 accepted=$queuedir/accepted/
 mirrordir=$base/mirror/
 incoming=$base/incoming
+newstage=$queuedir/newstage/
 
 ftpgroup=debadmin
 

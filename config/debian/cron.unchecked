@@ -23,6 +23,25 @@ cleanup() {
     fi
 }
 
+# in case there is anything NEW processed, move it over into the accepted queue
+cd $newstage
+for file in $(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs); do
+    sed '1,/Files:/d' "${file}" | sed '/BEGIN PGP SIGNATURE/,$d' \
+        | while read notused1 notused2 notused3 notused4 NAME; do
+        if [ -z "${NAME}" ]; then
+            # Sometimes there is a newline after the Files:, ignore it
+            continue
+        fi
+        if [ -f "${NAME}" ]; then
+            mv --target-directory="${accepted}" "${NAME}"
+        else
+            log_error "Error, couldn't find file ${NAME} to move to ${accepted}"
+            exit 2
+        fi
+    done
+    mv --target-directory="${accepted}"  "${file}" "${file%%.changes}.dak"
+done
+
 # only run one cron.unchecked
 if lockfile -r3 $LOCKFILE; then
     trap cleanup 0

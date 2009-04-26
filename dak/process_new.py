@@ -59,7 +59,7 @@ from daklib import logging
 from daklib import queue
 from daklib import utils
 from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
-from daklib.dak_exceptions import CantOpenError, AlreadyLockedError
+from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
 
 # Globals
 Cnf = None       #: Configuration, apt_pkg.Configuration
@@ -687,7 +687,12 @@ def do_new():
             answer = answer[:1].upper()
 
         if answer == 'A' and not Options["Trainee"]:
-            done = add_overrides (new)
+            try:
+                check_daily_lock()
+                done = add_overrides (new)
+            except CantGetLockError:
+                print "Hello? Operator! Give me the number for 911!"
+                print "Dinstall in the locked area, cant process packages, come back later"
         elif answer == 'C':
             check_pkg()
         elif answer == 'E' and not Options["Trainee"]:
@@ -821,22 +826,18 @@ def do_byhand():
 
 ################################################################################
 
-def get_accept_lock():
-    retry = 0
-    while retry < 10:
-        try:
-            os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
-            retry = 10
-        except OSError, e:
-            if e.errno == errno.EACCES or e.errno == errno.EEXIST:
-                retry += 1
-                if (retry >= 10):
-                    utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
-                else:
-                    print("Unable to get accepted lock (try %d of 10)" % retry)
-                time.sleep(60)
-            else:
-                raise
+def check_daily_lock():
+    """
+    Raises CantGetLockError if the dinstall daily.lock exists.
+    """
+
+    try:
+        os.open(Cnf["Process-New::DinstallLockFile"],  os.O_RDONLY | os.O_CREAT | os.O_EXCL)
+    except OSError, e:
+        if e.errno == errno.EEXIST or e.errno == errno.EACCES:
+            raise CantGetLockError
+
+    os.unlink(Cnf["Process-New::DinstallLockFile"])
 
 
 @contextlib.contextmanager
@@ -898,7 +899,7 @@ def _accept():
     if Options["No-Action"]:
         return
     (summary, short_summary) = Upload.build_summaries()
-    Upload.accept(summary, short_summary)
+    Upload.accept(summary, short_summary, targetdir=Cnf["Dir::Queue::Newstage"])
     os.unlink(Upload.pkg.changes_file[:-8]+".dak")
 
 def do_accept_stableupdate(suite, q):
@@ -944,30 +945,25 @@ def do_accept_stableupdate(suite, q):
 def do_accept():
     print "ACCEPT"
     if not Options["No-Action"]:
-        get_accept_lock()
         (summary, short_summary) = Upload.build_summaries()
-    try:
-        if Cnf.FindB("Dinstall::SecurityQueueHandling"):
-            Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
-            move_to_dir(Cnf["Dir::Queue::Embargoed"])
-            Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
-            # Check for override disparities
-            Upload.Subst["__SUMMARY__"] = summary
-        else:
-            # Stable updates need to be copied to proposed-updates holding
-            # area instead of accepted.  Sourceful uploads need to go
-            # to it directly, binaries only if the source has not yet been
-            # accepted into p-u.
-            for suite, q in [("proposed-updates", "ProposedUpdates"),
-                    ("oldstable-proposed-updates", "OldProposedUpdates")]:
-                if not Upload.pkg.changes["distribution"].has_key(suite):
-                    continue
-                return do_accept_stableupdate(suite, q)
-            # Just a normal upload, accept it...
-            _accept()
-    finally:
-        if not Options["No-Action"]:
-            os.unlink(Cnf["Process-New::AcceptedLockFile"])
+    if Cnf.FindB("Dinstall::SecurityQueueHandling"):
+        Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
+        move_to_dir(Cnf["Dir::Queue::Embargoed"])
+        Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
+        # Check for override disparities
+        Upload.Subst["__SUMMARY__"] = summary
+    else:
+        # Stable updates need to be copied to proposed-updates holding
+        # area instead of accepted.  Sourceful uploads need to go
+        # to it directly, binaries only if the source has not yet been
+        # accepted into p-u.
+        for suite, q in [("proposed-updates", "ProposedUpdates"),
+                ("oldstable-proposed-updates", "OldProposedUpdates")]:
+            if not Upload.pkg.changes["distribution"].has_key(suite):
+                continue
+            return do_accept_stableupdate(suite, q)
+        # Just a normal upload, accept it...
+        _accept()
 
 def check_status(files):
     new = byhand = 0
@@ -984,6 +980,13 @@ def do_pkg(changes_file):
     Upload.update_vars()
     Upload.update_subst()
     files = Upload.pkg.files
+
+    try:
+        check_daily_lock()
+    except CantGetLockError:
+        print "Hello? Operator! Give me the number for 911!"
+        print "Dinstall in the locked area, cant process packages, come back later"
+        sys.exit(1)
 
     try:
         with lock_package(Upload.pkg.changes["source"]):
@@ -1100,6 +1103,7 @@ def main():
             if not changes_file:
                 continue
             print "\n" + changes_file
+
             do_pkg (changes_file)
 
     end()

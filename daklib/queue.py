@@ -552,7 +552,7 @@ distribution."""
 
     ###########################################################################
 
-    def accept (self, summary, short_summary):
+    def accept (self, summary, short_summary, targetdir=None):
         """
         Accept an upload.
 
@@ -577,16 +577,19 @@ distribution."""
         changes_file = self.pkg.changes_file
         dsc = self.pkg.dsc
 
+        if targetdir is None:
+            targetdir = Cnf["Dir::Queue::Accepted"]
+
         print "Accepting."
         self.Logger.log(["Accepting changes",changes_file])
 
-        self.dump_vars(Cnf["Dir::Queue::Accepted"])
+        self.dump_vars(targetdir)
 
         # Move all the files into the accepted directory
-        utils.move(changes_file, Cnf["Dir::Queue::Accepted"])
+        utils.move(changes_file, targetdir)
         file_keys = files.keys()
         for file_entry in file_keys:
-            utils.move(file_entry, Cnf["Dir::Queue::Accepted"])
+            utils.move(file_entry, targetdir)
             self.accept_bytes += float(files[file_entry]["size"])
         self.accept_count += 1
 
@@ -635,6 +638,18 @@ distribution."""
             os.rename(temp_filename, filename)
             os.chmod(filename, 0644)
 
+        # Its is Cnf["Dir::Queue::Accepted"] here, not targetdir!
+        # <Ganneff> we do call queue_build too
+        # <mhy> well yes, we'd have had to if we were inserting into accepted
+        # <Ganneff> now. thats database only.
+        # <mhy> urgh, that's going to get messy
+        # <Ganneff> so i make the p-n call to it *also* using accepted/
+        # <mhy> but then the packages will be in the queue_build table without the files being there
+        # <Ganneff> as the buildd queue is only regenerated whenever unchecked runs
+        # <mhy> ah, good point
+        # <Ganneff> so it will work out, as unchecked move it over
+        # <mhy> that's all completely sick
+        # <Ganneff> yes
         self.queue_build("accepted", Cnf["Dir::Queue::Accepted"])
 
     ###########################################################################
