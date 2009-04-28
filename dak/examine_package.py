@@ -44,7 +44,10 @@ import pg
 import re
 import sys
 import md5
-import apt_pkg, apt_inst
+import apt_pkg
+import apt_inst
+import shutil
+import commands
 from daklib import database
 from daklib import utils
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
@@ -432,10 +435,39 @@ def get_copyright (deb_filename):
         printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
     return res+formatted_text(cright)
 
+def get_readme_source (dsc_filename):
+    tempdir = utils.temp_dirname()
+    os.rmdir(tempdir)
+
+    cmd = "dpkg-source --no-check --no-copy -x %s %s" % (dsc_filename, tempdir)
+    (result, output) = commands.getstatusoutput(cmd)
+    if (result != 0):
+        res = "How is education supposed to make me feel smarter? Besides, every time I learn something new, it pushes some\n old stuff out of my brain. Remember when I took that home winemaking course, and I forgot how to drive?\n"
+        res += "Error, couldn't extract source, WTF?\n"
+        res += "'dpkg-source -x' failed. return code: %s.\n\n" % (result)
+        res += output
+        return res
+
+    path = os.path.join(tempdir, 'debian/README.source')
+    res = ""
+    if os.path.exists(path):
+        res += do_command("cat", path)
+    else:
+        res += "No README.source in this package"
+
+    try:
+        shutil.rmtree(tempdir)
+    except OSError, e:
+        if errno.errorcode[e.errno] != 'EACCES':
+            res += "%s: couldn't remove tmp dir %s for source tree." % (dsc_filename, tempdir)
+
+    return res
+
 def check_dsc (suite, dsc_filename):
     (dsc) = read_changes_or_dsc(suite, dsc_filename)
     foldable_output(dsc_filename, "dsc", dsc, norow=True)
     foldable_output("lintian check for %s" % dsc_filename, "source-lintian", do_lintian(dsc_filename))
+    foldable_output("README.source for %s" % dsc_filename, "source-readmesource", get_readme_source(dsc_filename))
 
 def check_deb (suite, deb_filename):
     filename = os.path.basename(deb_filename)
