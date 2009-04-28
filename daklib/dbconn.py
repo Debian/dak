@@ -168,7 +168,11 @@ class DBConn(Singleton):
         @return: the database id for the given suite
 
         """
-        return int(self.__get_id('id', 'suite', 'suite_name', suite))
+        suiteid = self.__get_id('id', 'suite', 'suite_name', suite)
+        if suiteid is None:
+            return None
+        else:
+            return int(suiteid)
 
     def get_section_id(self, section):
         """
