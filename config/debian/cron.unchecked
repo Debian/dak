@@ -82,6 +82,4 @@ do_unchecked
 if [ ! -z "$changes" ]; then
     sync_debbugs
     do_buildd
-else
-    echo "$timestamp": Nothing to do >> $report
 fi

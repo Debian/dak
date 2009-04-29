@@ -72,13 +72,13 @@ function do_unchecked () {
     report=$queuedir/REPORT
     timestamp=$(date "+%Y-%m-%d %H:%M")
 
-    echo "$timestamp": "$changes"  >> $report
+    echo "$timestamp": ${changes:-"Nothing to do"}  >> $report
     dak process-unchecked -a -d "$unchecked" >> $report
-    echo "--" >> $report
 }
 
 function sync_debbugs () {
     # sync with debbugs
+    echo "--" >> $report
     rsync -aq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30" --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/ 2>/dev/null && touch $lockdir/synced_bts_version || true
     NOW=$(date +%s)
     TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
