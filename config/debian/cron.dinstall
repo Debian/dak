@@ -400,6 +400,14 @@ function renamelogfile() {
 function testingsourcelist() {
     dak ls -s testing -f heidi -r .| egrep 'source$' > ${webdir}/testing.list
 }
+
+# do a last run of process-unchecked before dinstall is on.
+function process_unchecked() {
+    acceptnew
+    do_unchecked
+    sync_debbugs
+}
+
 ########################################################################
 ########################################################################
 
@@ -593,6 +601,15 @@ GO=(
 stage $GO
 
 lockfile "$LOCK_ACCEPTED"
+
+GO=(
+    FUNC="process_unchecked"
+    TIME=""
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
 
 GO=(
     FUNC="accepted"
