@@ -1585,7 +1585,10 @@ def main():
             changes_files.remove(f)
 
     if changes_files == []:
-        utils.fubar("Need at least one .changes file as an argument.")
+        if Cnf["Dinstall::Options::Directory"] == "":
+            utils.fubar("Need at least one .changes file as an argument.")
+        else:
+            sys.exit(0)
 
     # Check that we aren't going to clash with the daily cron job
 
