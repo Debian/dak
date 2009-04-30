@@ -71,9 +71,10 @@ function do_unchecked () {
     changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
     report=$queuedir/REPORT
     timestamp=$(date "+%Y-%m-%d %H:%M")
+    UNCHECKED_WITHOUT_LOCK=${UNCHECKED_WITHOUT_LOCK:-""}
 
     echo "$timestamp": ${changes:-"Nothing to do"}  >> $report
-    dak process-unchecked -a -d "$unchecked" >> $report
+    dak process-unchecked -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
 }
 
 function sync_debbugs () {

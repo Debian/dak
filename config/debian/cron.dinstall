@@ -403,7 +403,9 @@ function testingsourcelist() {
 
 # do a last run of process-unchecked before dinstall is on.
 function process_unchecked() {
+    log "Processing the unchecked queue"
     acceptnew
+    UNCHECKED_WITHOUT_LOCK="-p"
     do_unchecked
     sync_debbugs
 }
