@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
-""" Checks Debian packages from Incoming """
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+"""
+Checks Debian packages from Incoming
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
