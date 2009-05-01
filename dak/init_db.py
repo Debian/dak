@@ -23,7 +23,7 @@ import sys
 import apt_pkg
 
 from daklib import utils
-from daklib.dbconn import DBConn
+from daklib.dbconn import DBConn, Archive, Architecture, Component, Location, Suite, SuiteArchitecture, OverrideType, Priority, Section
 from daklib.config import Config
 
 ################################################################################
@@ -39,16 +39,6 @@ Initalizes some tables in the projectB database based on the config file.
 
 ################################################################################
 
-def sql_get (config, key):
-    """Return the value of config[key] or None if it doesn't exist."""
-
-    try:
-        return config[key]
-    except KeyError:
-        return None
-
-################################################################################
-
 class InitDB(object):
     def __init__(self, Cnf, projectB):
         self.Cnf = Cnf
@@ -57,71 +47,82 @@ class InitDB(object):
     def do_archive(self):
         """initalize the archive table."""
 
+        # Remove existing archives
         s = self.projectB.session()
-        s.begin()
-        s.execute("DELETE FROM archive")
-        archive_add = "INSERT INTO archive (name, origin_server, description) VALUES (%s, %s, %s)"
+        s.query(Archive).delete()
+
         for name in self.Cnf.SubTree("Archive").List():
-            archive_config = self.Cnf.SubTree("Archive::%s" % (name))
-            origin_server = sql_get(archive_config, "OriginServer")
-            description = sql_get(archive_config, "Description")
-            s.execute(archive_add, [name, origin_server, description])
+            a = Archive()
+            a.archive_name  = name
+            a.origin_server = self.Cnf.get("Archive::%s::OriginServer" % name, "")
+            a.description   = self.Cnf.get("Archive::%s::Description" % name,  "")
+            s.add(a)
+
         s.commit()
 
     def do_architecture(self):
         """Initalize the architecture table."""
 
+        # Remove existing architectures
         s = self.projectB.session()
-        s.begin()
-        s.execute("DELETE FROM architecture")
-        arch_add = "INSERT INTO architecture (arch_string, description) VALUES (%s, %s)"
+        s.query(Architecture).delete()
+
         for arch in self.Cnf.SubTree("Architectures").List():
-            description = self.Cnf["Architectures::%s" % (arch)]
-            s.execute(arch_add, [arch, description])
+            a = Architecture()
+            a.arch_string  = arch
+            a.description  = self.Cnf.get("Architecture::%s" % arch, "")
+            s.add(a)
+
         s.commit()
 
     def do_component(self):
         """Initalize the component table."""
 
+        # Remove existing components
         s = self.projectB.session()
-        s.begin()
-        s.execute("DELETE FROM component")
-
-        comp_add = "INSERT INTO component (name, description, meets_dfsg) " + \
-                   "VALUES (%s, %s, %s)"
+        s.query(Component).delete()
 
         for name in self.Cnf.SubTree("Component").List():
-            component_config = self.Cnf.SubTree("Component::%s" % (name))
-            description = sql_get(component_config, "Description")
-            meets_dfsg = (component_config.get("MeetsDFSG").lower() == "true")
-            s.execute(comp_add, [name, description, meets_dfsg])
+            c = Component()
+            c.component_name = name
+            c.description = self.Cnf.get("Component::%s::Description" % name, "")
+            c.meets_dfsg  = False
+            if self.Cnf.get("Component::%s::MeetsDFSG" % name, "false").lower() == 'true':
+                c.meets_dfsg = True
+            s.add(c)
 
         s.commit()
 
     def do_location(self):
         """Initalize the location table."""
 
+        # Remove existing locations
         s = self.projectB.session()
-        s.begin()
-        s.execute("DELETE FROM location")
-
-        loc_add = "INSERT INTO location (path, component, archive, type) " + \
-                  "VALUES (%s, %s, %s, %s)"
+        s.query(Location).delete()
 
         for location in self.Cnf.SubTree("Location").List():
-            location_config = self.Cnf.SubTree("Location::%s" % (location))
-            archive_id = self.projectB.get_archive_id(location_config["Archive"])
-            if archive_id == -1:
-                utils.fubar("Archive '%s' for location '%s' not found."
-                                   % (location_config["Archive"], location))
-            location_type = location_config.get("type")
-            if location_type == "pool":
-                for component in self.Cnf.SubTree("Component").List():
-                    component_id = self.projectB.get_component_id(component)
-                    s.execute(loc_add, [location, component_id, archive_id, location_type])
-            else:
-                utils.fubar("E: type '%s' not recognised in location %s."
-                                   % (location_type, location))
+            archive_name = self.Cnf.get("Location::%s::Archive" % location, "")
+            a = s.query(Archive).filter_by(archive_name=archive_name)
+            if a.count() < 1:
+                utils.fubar("E: Archive '%s' for location '%s' not found" % (archive_name, location))
+            archive_id = a.one().archive_id
+
+            location_type = self.Cnf.get("Location::%s::Type" % location, "")
+            if location_type != 'pool':
+                utils.fubar("E: type %s not recognised for location %s" % (location_type, location))
+
+            for component in self.Cnf.SubTree("Component").List():
+                c = s.query(Component).filter_by(component_name=component)
+                if c.count() < 1:
+                    utils.fubar("E: Can't find component %s for location %s" % (component, location))
+                component_id = c.one().component_id
+
+                l = Location()
+                l.path = location
+                l.archive_id = archive_id
+                l.component_id = component_id
+                l.archive_type = location_type
+                s.add(l)
 
         s.commit()
 
@@ -129,28 +130,23 @@ class InitDB(object):
         """Initalize the suite table."""
 
         s = self.projectB.session()
-        s.begin()
-        s.execute("DELETE FROM suite")
-
-        suite_add = "INSERT INTO suite (suite_name, version, origin, description) " + \
-                    "VALUES (%s, %s, %s, %s)"
-
-        sa_add = "INSERT INTO suite_architectures (suite, architecture) " + \
-                 "VALUES (currval('suite_id_seq'), %s)"
+        s.query(Suite).delete()
 
         for suite in self.Cnf.SubTree("Suite").List():
-            suite_config = self.Cnf.SubTree("Suite::%s" %(suite))
-            version = sql_get(suite_config, "Version")
-            origin = sql_get(suite_config, "Origin")
-            description = sql_get(suite_config, "Description")
-            s.execute(suite_add, [suite.lower(), version, origin, description])
+            su = Suite()
+            su.version     = self.Cnf.get("Suite::%s::Version" % suite, "-")
+            su.origin      = self.Cnf.get("Suite::%s::Origin" % suite, "")
+            su.description = self.Cnf.get("Suite::%s::Description" % suite, "")
+            s.add(su)
+
             for architecture in self.Cnf.ValueList("Suite::%s::Architectures" % (suite)):
-                architecture_id = self.projectB.get_architecture_id (architecture)
-                if architecture_id < 0:
-                    utils.fubar("architecture '%s' not found in architecture"
-                                " table for suite %s."
-                                % (architecture, suite))
-                s.execute(sa_add, [architecture_id])
+                sa = SuiteArchitecture()
+                sa.suite_id = su.suite_id
+                a = s.query(Architecture).filter_by(arch_string=architecture)
+                if a.count() < 1:
+                    utils.fubar("E: Architecture %s not found for suite %s" % (architecture, suite))
+                sa.arch_id = a.one().arch_id
+                s.add(sa)
 
         s.commit()
 
@@ -158,13 +154,12 @@ class InitDB(object):
         """Initalize the override_type table."""
 
         s = self.projectB.session()
-        s.begin()
-        s.execute("DELETE FROM override_type")
-
-        over_add = "INSERT INTO override_type (type) VALUES (%s)"
+        s.query(OverrideType).delete()
 
         for override_type in self.Cnf.ValueList("OverrideType"):
-            s.execute(over_add, [override_type])
+            ot = OverrideType()
+            ot.overridetype = override_type
+            s.add(ot)
 
         s.commit()
 
@@ -172,13 +167,13 @@ class InitDB(object):
         """Initialize the priority table."""
 
         s = self.projectB.session()
-        s.begin()
-        s.execute("DELETE FROM priority")
-
-        prio_add = "INSERT INTO priority (priority, level) VALUES (%s, %s)"
+        s.query(Priority).delete()
 
         for priority in self.Cnf.SubTree("Priority").List():
-            s.execute(prio_add, [priority, self.Cnf["Priority::%s" % (priority)]])
+            p = Priority()
+            p.priority = priority
+            p.level    = self.Cnf.get("Priority::%s", 0)
+            s.add(p)
 
         s.commit()
 
@@ -186,10 +181,7 @@ class InitDB(object):
         """Initalize the section table."""
 
         s = self.projectB.session()
-        s.begin()
-        s.execute("DELETE FROM section")
-
-        sect_add = "INSERT INTO section (section) VALUES (%s)"
+        s.query(Section).delete()
 
         for component in self.Cnf.SubTree("Component").List():
             if self.Cnf["Control-Overrides::ComponentPosition"] == "prefix":
@@ -204,8 +196,11 @@ class InitDB(object):
                     suffix = '/' + component
                 else:
                     suffix = ""
+
             for section in self.Cnf.ValueList("Section"):
-                s.execute(sect_add, [prefix + section + suffix])
+                sec = Section()
+                sec.section = prefix + section + suffix
+                s.add(sec)
 
         s.commit()
 
