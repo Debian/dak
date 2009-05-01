@@ -30,6 +30,7 @@ Adding process-new comments to the DB
 
 import psycopg2
 import time
+from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 

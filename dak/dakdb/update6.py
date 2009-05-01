@@ -33,6 +33,7 @@ Adding content fields
 
 import psycopg2
 import time
+from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 

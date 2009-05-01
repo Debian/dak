@@ -30,6 +30,7 @@ Adding a date field to the process-new notes
 
 import psycopg2
 import time
+from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 
