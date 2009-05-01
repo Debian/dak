@@ -92,7 +92,6 @@ def __architecture_add(d, args):
     if not dryrun:
         try:
             s = d.session()
-            s.begin()
             a = Architecture()
             a.arch_string = str(args[2]).lower()
             a.description = str(args[3])
@@ -119,7 +118,6 @@ def __architecture_rm(d, args):
     if not dryrun:
         try:
             s = d.session()
-            s.begin()
             a = get_architecture(args[2].lower(), s)
             if a is None:
                 die("E: Cannot find architecture %s" % args[2])
@@ -182,7 +180,6 @@ def __suite_architecture_add(d, args):
 
     if not dryrun:
         try:
-            s.begin()
             sa = SuiteArchitecture()
             sa.arch_id = arch.arch_id
             sa.suite_id = suite.suite_id
@@ -203,7 +200,6 @@ def __suite_architecture_rm(d, args):
     s = d.session()
     if not dryrun:
         try:
-            s.begin()
             sa = get_suite_architecture(args[2].lower(), args[3].lower(), s)
             if sa is None:
                 die("E: can't find suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower()))

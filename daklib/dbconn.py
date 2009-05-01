@@ -800,7 +800,7 @@ class DBConn(Singleton):
         self.db_meta.bind = self.db_pg
         self.db_smaker = sessionmaker(bind=self.db_pg,
                                       autoflush=True,
-                                      autocommit=True)
+                                      autocommit=False)
 
         self.__setuptables()
         self.__setupmappers()
