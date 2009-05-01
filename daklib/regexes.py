@@ -35,6 +35,7 @@ re_fdnic = re.compile(r"\n\n")
 re_bin_only_nmu = re.compile(r"\+b\d+$")
 
 re_comments = re.compile(r"\#.*")
+re_whitespace_comment = re.compile(r"^\s*(#|$)")
 re_no_epoch = re.compile(r"^\d+\:")
 re_no_revision = re.compile(r"-[^-]+$")
 re_arch_from_filename = re.compile(r"/binary-[^/]+/")

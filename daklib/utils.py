@@ -43,7 +43,8 @@ import email as modemail
 from dak_exceptions import *
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
-                    re_parse_maintainer, re_taint_free, re_gpg_uid, re_re_mark
+                    re_parse_maintainer, re_taint_free, re_gpg_uid, re_re_mark, \
+                    re_whitespace_comment
 
 ################################################################################
 
@@ -616,10 +617,11 @@ def send_mail (message, filename=""):
         whitelist_in = open_file(Cnf["Dinstall::MailWhiteList"])
         try:
             for line in whitelist_in:
-                if re_re_mark.match(line):
-                    whitelist.append(re.compile(re_re_mark.sub("", line.strip(), 1)))
-                else:
-                    whitelist.append(re.compile(re.escape(line.strip())))
+                if not re_whitespace_comment.match(line):
+                    if re_re_mark.match(line):
+                        whitelist.append(re.compile(re_re_mark.sub("", line.strip(), 1)))
+                    else:
+                        whitelist.append(re.compile(re.escape(line.strip())))
         finally:
             whitelist_in.close()
 
