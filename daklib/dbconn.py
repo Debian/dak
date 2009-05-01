@@ -230,7 +230,7 @@ class ContentFilepath(object):
     def __repr__(self):
         return '<ContentFilepath %s>' % self.filepath
 
-class ContentAssociations(object):
+class ContentAssociation(object):
     def __init__(self, *args, **kwargs):
         pass
 
@@ -643,7 +643,7 @@ class DBConn(Singleton):
         mapper(DBConfig, self.tbl_config,
                properties = dict(config_id = self.tbl_config.c.id))
 
-        mapper(ContentAssociations, self.tbl_content_associations,
+        mapper(ContentAssociation, self.tbl_content_associations,
                properties = dict(ca_id = self.tbl_content_associations.c.id,
                                  filename_id = self.tbl_content_associations.c.filename,
                                  filename    = relation(ContentFilename),
