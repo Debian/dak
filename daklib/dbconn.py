@@ -47,12 +47,18 @@ from singleton import Singleton
 
 ################################################################################
 
+__all__ = []
+
+################################################################################
+
 class Architecture(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Architecture %s>' % self.arch_string
+
+__all__.append('Architecture')
 
 def get_architecture(architecture, session=None):
     """
@@ -75,6 +81,8 @@ def get_architecture(architecture, session=None):
     if q.count() == 0:
         return None
     return q.one()
+
+__all__.append('get_architecture')
 
 def get_architecture_suites(architecture, session=None):
     """
@@ -99,12 +107,16 @@ def get_architecture_suites(architecture, session=None):
     q = q.join(Architecture).filter_by(arch_string=architecture).order_by('suite_name')
     return q.all()
 
+__all__.append('get_architecture_suites')
+
 class Archive(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Archive %s>' % self.name
+
+__all__.append('Archive')
 
 def get_archive(archive, session=None):
     """
@@ -129,6 +141,7 @@ def get_archive(archive, session=None):
         return None
     return q.one()
 
+__all__.append('get_archive')
 
 class BinAssociation(object):
     def __init__(self, *args, **kwargs):
@@ -137,12 +150,16 @@ class BinAssociation(object):
     def __repr__(self):
         return '<BinAssociation %s (%s, %s)>' % (self.ba_id, self.binary, self.suite)
 
+__all__.append('BinAssociation')
+
 class Binary(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Binary %s (%s, %s)>' % (self.package, self.version, self.architecture)
+
+__all__.append('Binary')
 
 def get_binary_from_id(id, session=None):
     """
@@ -165,6 +182,8 @@ def get_binary_from_id(id, session=None):
         return None
     return q.one()
 
+__all__.append('get_binary_from_id')
+
 def get_binaries_from_name(package, session=None):
     """
     Returns list of Binary objects for given C{package} name
@@ -183,12 +202,17 @@ def get_binaries_from_name(package, session=None):
         session = DBConn().session()
     return session.query(Binary).filter_by(package=package).all()
 
+__all__.append('get_binaries_from_name')
+
 class Component(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Component %s>' % self.component_name
+
+
+__all__.append('Component')
 
 def get_component(component, session=None):
     """
@@ -209,12 +233,16 @@ def get_component(component, session=None):
         return None
     return q.one()
 
+__all__.append('get_component')
+
 class DBConfig(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<DBConfig %s>' % self.name
+
+__all__.append('DBConfig')
 
 class ContentFilename(object):
     def __init__(self, *args, **kwargs):
@@ -223,12 +251,16 @@ class ContentFilename(object):
     def __repr__(self):
         return '<ContentFilename %s>' % self.filename
 
+__all__.append('ContentFilename')
+
 class ContentFilepath(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<ContentFilepath %s>' % self.filepath
+
+__all__.append('ContentFilepath')
 
 class ContentAssociation(object):
     def __init__(self, *args, **kwargs):
@@ -237,12 +269,16 @@ class ContentAssociation(object):
     def __repr__(self):
         return '<ContentAssociation %s>' % self.ca_id
 
+__all__.append('ContentAssociation')
+
 class DSCFile(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<DSCFile %s>' % self.dscfile_id
+
+__all__.append('DSCFile')
 
 class PoolFile(object):
     def __init__(self, *args, **kwargs):
@@ -251,12 +287,16 @@ class PoolFile(object):
     def __repr__(self):
         return '<PoolFile %s>' % self.filename
 
+__all__.append('PoolFile')
+
 class Fingerprint(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Fingerprint %s>' % self.fingerprint
+
+__all__.append('Fingerprint')
 
 class Keyring(object):
     def __init__(self, *args, **kwargs):
@@ -265,12 +305,16 @@ class Keyring(object):
     def __repr__(self):
         return '<Keyring %s>' % self.keyring_name
 
+__all__.append('Keyring')
+
 class Location(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Location %s (%s)>' % (self.path, self.location_id)
+
+__all__.append('Location')
 
 class Maintainer(object):
     def __init__(self, *args, **kwargs):
@@ -279,6 +323,8 @@ class Maintainer(object):
     def __repr__(self):
         return '''<Maintainer '%s' (%s)>''' % (self.name, self.maintainer_id)
 
+__all__.append('Maintainer')
+
 class Override(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -286,12 +332,16 @@ class Override(object):
     def __repr__(self):
         return '<Override %s (%s)>' % (self.package, self.suite_id)
 
+__all__.append('Override')
+
 class OverrideType(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<OverrideType %s>' % self.overridetype
+
+__all__.append('OverrideType')
 
 def get_override_type(override_type, session=None):
     """
@@ -315,6 +365,8 @@ def get_override_type(override_type, session=None):
         return None
     return q.one()
 
+__all__.append('get_override_type')
+
 class PendingContentAssociation(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -322,12 +374,16 @@ class PendingContentAssociation(object):
     def __repr__(self):
         return '<PendingContentAssociation %s>' % self.pca_id
 
+__all__.append('PendingContentAssociation')
+
 class Priority(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Priority %s (%s)>' % (self.priority, self.priority_id)
+
+__all__.append('Priority')
 
 def get_priority(priority, session=None):
     """
@@ -351,12 +407,16 @@ def get_priority(priority, session=None):
         return None
     return q.one()
 
+__all__.append('get_priority')
+
 class Queue(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Queue %s>' % self.queue_name
+
+__all__.append('Queue')
 
 class QueueBuild(object):
     def __init__(self, *args, **kwargs):
@@ -365,12 +425,16 @@ class QueueBuild(object):
     def __repr__(self):
         return '<QueueBuild %s (%s)>' % (self.filename, self.queue_id)
 
+__all__.append('QueueBuild')
+
 class Section(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Section %s>' % self.section
+
+__all__.append('Section')
 
 def get_section(section, session=None):
     """
@@ -394,12 +458,16 @@ def get_section(section, session=None):
         return None
     return q.one()
 
+__all__.append('get_section')
+
 class Source(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Source %s (%s)>' % (self.source, self.version)
+
+__all__.append('Source')
 
 def get_sources_from_name(source, session=None):
     """
@@ -418,6 +486,8 @@ def get_sources_from_name(source, session=None):
     if session is None:
         session = DBConn().session()
     return session.query(Source).filter_by(source=source).all()
+
+__all__.append('get_sources_from_name')
 
 def get_source_in_suite(source, suite, session=None):
     """
@@ -446,12 +516,16 @@ def get_source_in_suite(source, suite, session=None):
     # ???: Maybe we should just return the SrcAssociation object instead
     return q.one().source
 
+__all__.append('get_source_in_suite')
+
 class SrcAssociation(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<SrcAssociation %s (%s, %s)>' % (self.sa_id, self.source, self.suite)
+
+__all__.append('SrcAssociation')
 
 class SrcUploader(object):
     def __init__(self, *args, **kwargs):
@@ -460,12 +534,16 @@ class SrcUploader(object):
     def __repr__(self):
         return '<SrcUploader %s>' % self.uploader_id
 
+__all__.append('SrcUploader')
+
 class Suite(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Suite %s>' % self.suite_name
+
+__all__.append('Suite')
 
 def get_suite_architecture(suite, architecture, session=None):
     """
@@ -496,6 +574,7 @@ def get_suite_architecture(suite, architecture, session=None):
         return None
     return q.one()
 
+__all__.append('get_suite_architecture')
 
 def get_suite(suite, session=None):
     """
@@ -519,12 +598,16 @@ def get_suite(suite, session=None):
         return None
     return q.one()
 
+__all__.append('get_suite')
+
 class SuiteArchitecture(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<SuiteArchitecture (%s, %s)>' % (self.suite_id, self.arch_id)
+
+__all__.append('SuiteArchitecture')
 
 def get_suite_architectures(suite, session=None):
     """
@@ -549,6 +632,7 @@ def get_suite_architectures(suite, session=None):
     q = q.join(Suite).filter_by(suite_name=suite).order_by('arch_string')
     return q.all()
 
+__all__.append('get_suite_architectures')
 
 class Uid(object):
     def __init__(self, *args, **kwargs):
@@ -556,6 +640,8 @@ class Uid(object):
 
     def __repr__(self):
         return '<Uid %s (%s)>' % (self.uid, self.name)
+
+__all__.append('Uid')
 
 ################################################################################
 
