@@ -1159,7 +1159,7 @@ class DBConn(Singleton):
 
         mapper(SuiteArchitecture, self.tbl_suite_architectures,
                properties = dict(suite_id = self.tbl_suite_architectures.c.suite,
-                                 suite = relation(Suite),
+                                 suite = relation(Suite, backref='suitearchitectures'),
                                  arch_id = self.tbl_suite_architectures.c.architecture,
                                  architecture = relation(Architecture)))
 

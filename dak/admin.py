@@ -151,6 +151,13 @@ dispatch['a'] = architecture
 
 ################################################################################
 
+def __suite_architecture_list(d, args):
+    s = d.session()
+    suites = s.query(Suite).all()
+    for j in s.query(Suite).order_by('suite_name').all():
+        print j.suite_name + ' ' + \
+              ','.join([a.architecture.arch_string for a in j.suitearchitectures])
+
 def __suite_architecture_listarch(d, args):
     die_arglen(args, 3, "E: suite-architecture list-arch requires a suite")
     a = get_suite_architectures(args[2].lower())
@@ -222,7 +229,9 @@ def suite_architecture(command):
 
     mode = args[1].lower()
 
-    if mode == 'list-arch':
+    if mode == 'list':
+        __suite_architecture_list(d, args)
+    elif mode == 'list-arch':
         __suite_architecture_listarch(d, args)
     elif mode == 'list-suite':
         __suite_architecture_listsuite(d, args)
