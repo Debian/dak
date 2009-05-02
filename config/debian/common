@@ -57,7 +57,6 @@ function acceptnew () {
                 mv --target-directory="${accepted}" "${NAME}"
             else
                 log_error "Error, couldn't find file ${NAME} to move to ${accepted}"
-                exit 2
             fi
         done
         mv --target-directory="${accepted}"  "${file}" "${file%%.changes}.dak"
