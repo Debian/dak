@@ -908,12 +908,20 @@ class SuiteArchitecture(object):
 
 __all__.append('SuiteArchitecture')
 
-def get_suite_architectures(suite, session=None):
+def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     """
     Returns list of Architecture objects for given C{suite} name
 
     @type source: str
     @param source: Suite name to search for
+
+    @type skipsrc: boolean
+    @param skipsrc: Whether to skip returning the 'source' architecture entry
+    (Default False)
+
+    @type skipall: boolean
+    @param skipall: Whether to skip returning the 'all' architecture entry
+    (Default False)
 
     @type session: Session
     @param session: Optional SQL session object (a temporary one will be
@@ -928,7 +936,12 @@ def get_suite_architectures(suite, session=None):
 
     q = session.query(Architecture)
     q = q.join(SuiteArchitecture)
-    q = q.join(Suite).filter_by(suite_name=suite).order_by('arch_string')
+    q = q.join(Suite).filter_by(suite_name=suite)
+    if skipsrc:
+        q = q.filter(Architecture.arch_string != 'source')
+    if skipall:
+        q = q.filter(Architecture.arch_string != 'all')
+    q = q.order_by('arch_string')
     return q.all()
 
 __all__.append('get_suite_architectures')
