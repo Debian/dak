@@ -253,6 +253,40 @@ class ContentFilename(object):
 
 __all__.append('ContentFilename')
 
+def get_or_set_contents_file_id(filename, session=None):
+    """
+    Returns database id for given filename.
+
+    If no matching file is found, a row is inserted.
+
+    @type filename: string
+    @param filename: The filename
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: int
+    @return: the database id for the given component
+    """
+    if session is None:
+        session = DBConn().session()
+
+    try:
+        q = session.query(ContentFilename).filter_by(filename=filename)
+        if q.count() < 1:
+            cf = ContentFilename()
+            cf.filename = filename
+            session.add(cf)
+            return cf.cafilename_id
+        else:
+            return q.one().cafilename_id
+
+    except:
+        traceback.print_exc()
+        raise
+
+__all__.append('get_or_set_contents_file_id')
+
 class ContentFilepath(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -262,6 +296,40 @@ class ContentFilepath(object):
 
 __all__.append('ContentFilepath')
 
+def get_or_set_contents_path_id(filepath, session):
+    """
+    Returns database id for given path.
+
+    If no matching file is found, a row is inserted.
+
+    @type filename: string
+    @param filename: The filepath
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: int
+    @return: the database id for the given path
+    """
+    if session is None:
+        session = DBConn().session()
+
+    try:
+        q = session.query(ContentFilepath).filter_by(filepath=filepath)
+        if q.count() < 1:
+            cf = ContentFilepath()
+            cf.filepath = filepath
+            session.add(cf)
+            return cf.cafilepath_id
+        else:
+            return q.one().cafilepath_id
+
+    except:
+        traceback.print_exc()
+        raise
+
+__all__.append('get_or_set_contents_path_id')
+
 class ContentAssociation(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -270,6 +338,56 @@ class ContentAssociation(object):
         return '<ContentAssociation %s>' % self.ca_id
 
 __all__.append('ContentAssociation')
+
+def insert_content_paths(binary_id, fullpaths, session=None):
+    """
+    Make sure given path is associated with given binary id
+
+    @type binary_id: int
+    @param binary_id: the id of the binary
+    @type fullpaths: list
+    @param fullpaths: the list of paths of the file being associated with the binary
+    @type session: SQLAlchemy session
+    @param session: Optional SQLAlchemy session.  If this is passed, the caller
+    is responsible for ensuring a transaction has begun and committing the
+    results or rolling back based on the result code.  If not passed, a commit
+    will be performed at the end of the function
+
+    @return: True upon success
+    """
+
+    privatetrans = False
+
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    try:
+        for fullpath in fullpaths:
+            (path, file) = os.path.split(fullpath)
+
+            # Get the necessary IDs ...
+            ca = ContentAssociation()
+            ca.binary_id = binary_id
+            ca.filename_id = get_or_set_contents_file_id(file)
+            ca.filepath_id = get_or_set_contents_path_id(path)
+            session.add(ca)
+
+        # Only commit if we set up the session ourself
+        if privatetrans:
+            session.commit()
+
+        return True
+    except:
+        traceback.print_exc()
+
+        # Only rollback if we set up the session ourself
+        if privatetrans:
+            session.rollback()
+
+        return False
+
+__all__.append('insert_content_paths')
 
 class DSCFile(object):
     def __init__(self, *args, **kwargs):
@@ -288,6 +406,33 @@ class PoolFile(object):
         return '<PoolFile %s>' % self.filename
 
 __all__.append('PoolFile')
+
+def get_poolfile_by_name(filename, location_id=None, session=None):
+    """
+    Returns an array of PoolFile objects for the given filename and
+    (optionally) location_id
+
+    @type filename: string
+    @param filename: the filename of the file to check against the DB
+
+    @type location_id: int
+    @param location_id: the id of the location to look in (optional)
+
+    @rtype: array
+    @return: array of PoolFile objects
+    """
+
+    if session is not None:
+        session = DBConn().session()
+
+    q = session.query(PoolFile).filter_by(filename=filename)
+
+    if location_id is not None:
+        q = q.join(Location).filter_by(location_id=location_id)
+
+    return q.all()
+
+__all__.append('get_poolfile_by_name')
 
 class Fingerprint(object):
     def __init__(self, *args, **kwargs):
@@ -315,6 +460,42 @@ class Location(object):
         return '<Location %s (%s)>' % (self.path, self.location_id)
 
 __all__.append('Location')
+
+def get_location(location, component=None, archive=None, session=None):
+    """
+    Returns Location object for the given combination of location, component
+    and archive
+
+    @type location: string
+    @param location: the path of the location, e.g. I{/srv/ftp.debian.org/ftp/pool/}
+
+    @type component: string
+    @param component: the component name (if None, no restriction applied)
+
+    @type archive: string
+    @param archive_id: the archive name (if None, no restriction applied)
+
+    @rtype: Location / None
+    @return: Either a Location object or None if one can't be found
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(Location).filter_by(path=location)
+
+    if archive is not None:
+        q = q.join(Archive).filter_by(archive_name=archive)
+
+    if component is not None:
+        q = q.join(Component).filter_by(component_name=component)
+
+    if q.count() < 1:
+        return None
+    else:
+        return q.one()
+
+__all__.append('get_location')
 
 class Maintainer(object):
     def __init__(self, *args, **kwargs):
@@ -375,6 +556,72 @@ class PendingContentAssociation(object):
         return '<PendingContentAssociation %s>' % self.pca_id
 
 __all__.append('PendingContentAssociation')
+
+def insert_pending_content_paths(package, fullpaths, session=None):
+    """
+    Make sure given paths are temporarily associated with given
+    package
+
+    @type package: dict
+    @param package: the package to associate with should have been read in from the binary control file
+    @type fullpaths: list
+    @param fullpaths: the list of paths of the file being associated with the binary
+    @type session: SQLAlchemy session
+    @param session: Optional SQLAlchemy session.  If this is passed, the caller
+    is responsible for ensuring a transaction has begun and committing the
+    results or rolling back based on the result code.  If not passed, a commit
+    will be performed at the end of the function
+
+    @return: True upon success, False if there is a problem
+    """
+
+    privatetrans = False
+
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    try:
+        arch = get_architecture(package['Architecture'], session)
+        arch_id = arch.arch_id
+
+        # Remove any already existing recorded files for this package
+        q = session.query(PendingContentAssociation)
+        q = q.filter_by(package=package['Package'])
+        q = q.filter_by(version=package['Version'])
+        q = q.filter_by(architecture=arch_id)
+        q.delete()
+
+        # Insert paths
+        for fullpath in fullpaths:
+            (path, file) = os.path.split(fullpath)
+
+            if path.startswith( "./" ):
+                path = path[2:]
+
+            pca = PendingContentAssociation()
+            pca.package = package['Package']
+            pca.version = package['Version']
+            pca.filename_id = get_or_set_contents_file_id(file, session)
+            pca.filepath_id = get_or_set_contents_path_id(path, session)
+            pca.architecture = arch_id
+            session.add(pca)
+
+        # Only commit if we set up the session ourself
+        if privatetrans:
+            session.commit()
+
+        return True
+    except:
+        traceback.print_exc()
+
+        # Only rollback if we set up the session ourself
+        if privatetrans:
+            session.rollback()
+
+        return False
+
+__all__.append('insert_pending_content_paths')
 
 class Priority(object):
     def __init__(self, *args, **kwargs):
@@ -896,245 +1143,3 @@ class DBConn(Singleton):
 
 __all__.append('DBConn')
 
-
-    def get_location_id(self, location, component, archive):
-        """
-        Returns database id for the location behind the given combination of
-          - B{location} - the path of the location, eg. I{/srv/ftp.debian.org/ftp/pool/}
-          - B{component} - the id of the component as returned by L{get_component_id}
-          - B{archive} - the id of the archive as returned by L{get_archive_id}
-        Results are kept in a cache during runtime to minimize database queries.
-
-        @type location: string
-        @param location: the path of the location
-
-        @type component: int
-        @param component: the id of the component
-
-        @type archive: int
-        @param archive: the id of the archive
-
-        @rtype: int
-        @return: the database id for the location
-
-        """
-
-        archive_id = self.get_archive_id(archive)
-
-        if not archive_id:
-            return None
-
-        res = None
-
-        if component:
-            component_id = self.get_component_id(component)
-            if component_id:
-                res = self.__get_single_id("SELECT id FROM location WHERE path=%(location)s AND component=%(component)s AND archive=%(archive)s",
-                        {'location': location,
-                         'archive': int(archive_id),
-                         'component': component_id}, cachename='location')
-        else:
-            res = self.__get_single_id("SELECT id FROM location WHERE path=%(location)s AND archive=%(archive)d",
-                    {'location': location, 'archive': archive_id, 'component': ''}, cachename='location')
-
-        return res
-
-
-
-def get_files_id (self, filename, size, md5sum, location_id):
-    """
-    Returns -1, -2 or the file_id for filename, if its C{size} and C{md5sum} match an
-    existing copy.
-
-    The database is queried using the C{filename} and C{location_id}. If a file does exist
-    at that location, the existing size and md5sum are checked against the provided
-    parameters. A size or checksum mismatch returns -2. If more than one entry is
-    found within the database, a -1 is returned, no result returns None, otherwise
-    the file id.
-
-    @type filename: string
-    @param filename: the filename of the file to check against the DB
-
-    @type size: int
-    @param size: the size of the file to check against the DB
-
-    @type md5sum: string
-    @param md5sum: the md5sum of the file to check against the DB
-
-    @type location_id: int
-    @param location_id: the id of the location as returned by L{get_location_id}
-
-    @rtype: int / None
-    @return: Various return values are possible:
-               - -2: size/checksum error
-               - -1: more than one file found in database
-               - None: no file found in database
-               - int: file id
-
-    """
-    values = {'filename' : filename,
-              'location' : location_id}
-
-    if not res:
-        query = """SELECT id, size, md5sum
-                   FROM files
-                   WHERE filename = %(filename)s AND location = %(location)s"""
-
-        cursor = self.db_con.cursor()
-        cursor.execute( query, values )
-
-        if cursor.rowcount == 0:
-            res = None
-
-        elif cursor.rowcount != 1:
-            res = -1
-
-        else:
-            row = cursor.fetchone()
-
-            if row[1] != int(size) or row[2] != md5sum:
-                res =  -2
-
-            else:
-                res = row[0]
-
-    return res
-
-
-def get_or_set_contents_file_id(self, filename):
-    """
-    Returns database id for given filename.
-
-    If no matching file is found, a row is inserted.
-
-    @type filename: string
-    @param filename: The filename
-
-    @rtype: int
-    @return: the database id for the given component
-    """
-    try:
-        values={'value': filename}
-        query = "SELECT id FROM content_file_names WHERE file = %(value)s"
-        if not id:
-            c = self.db_con.cursor()
-            c.execute( "INSERT INTO content_file_names VALUES (DEFAULT, %(value)s) RETURNING id",
-                       values )
-
-            id = c.fetchone()[0]
-
-        return id
-    except:
-        traceback.print_exc()
-        raise
-
-def get_or_set_contents_path_id(self, path):
-    """
-    Returns database id for given path.
-
-    If no matching file is found, a row is inserted.
-
-    @type path: string
-    @param path: The filename
-
-    @rtype: int
-    @return: the database id for the given component
-    """
-    try:
-        values={'value': path}
-        query = "SELECT id FROM content_file_paths WHERE path = %(value)s"
-        if not id:
-            c = self.db_con.cursor()
-            c.execute( "INSERT INTO content_file_paths VALUES (DEFAULT, %(value)s) RETURNING id",
-                       values )
-
-            id = c.fetchone()[0]
-
-        return id
-    except:
-        traceback.print_exc()
-        raise
-
-
-def insert_content_paths(self, bin_id, fullpaths):
-    """
-    Make sure given path is associated with given binary id
-
-    @type bin_id: int
-    @param bin_id: the id of the binary
-    @type fullpaths: list
-    @param fullpaths: the list of paths of the file being associated with the binary
-
-    @return: True upon success
-    """
-
-    c = self.db_con.cursor()
-
-    c.execute("BEGIN WORK")
-    try:
-
-        for fullpath in fullpaths:
-            (path, file) = os.path.split(fullpath)
-
-            # Get the necessary IDs ...
-            file_id = self.get_or_set_contents_file_id(file)
-            path_id = self.get_or_set_contents_path_id(path)
-
-            c.execute("""INSERT INTO content_associations
-                           (binary_pkg, filepath, filename)
-                       VALUES ( '%d', '%d', '%d')""" % (bin_id, path_id, file_id) )
-
-        c.execute("COMMIT")
-        return True
-    except:
-        traceback.print_exc()
-        c.execute("ROLLBACK")
-        return False
-
-def insert_pending_content_paths(self, package, fullpaths):
-    """
-    Make sure given paths are temporarily associated with given
-    package
-
-    @type package: dict
-    @param package: the package to associate with should have been read in from the binary control file
-    @type fullpaths: list
-    @param fullpaths: the list of paths of the file being associated with the binary
-
-    @return: True upon success
-    """
-
-    c = self.db_con.cursor()
-
-    c.execute("BEGIN WORK")
-    try:
-        arch_id = self.get_architecture_id(package['Architecture'])
-
-        # Remove any already existing recorded files for this package
-        c.execute("""DELETE FROM pending_content_associations
-                     WHERE package=%(Package)s
-                     AND version=%(Version)s
-                     AND architecture=%(ArchID)s""", {'Package': package['Package'],
-                                                      'Version': package['Version'],
-                                                      'ArchID':  arch_id})
-
-        for fullpath in fullpaths:
-            (path, file) = os.path.split(fullpath)
-
-            if path.startswith( "./" ):
-                path = path[2:]
-            # Get the necessary IDs ...
-            file_id = self.get_or_set_contents_file_id(file)
-            path_id = self.get_or_set_contents_path_id(path)
-
-            c.execute("""INSERT INTO pending_content_associations
-                           (package, version, architecture, filepath, filename)
-                        VALUES (%%(Package)s, %%(Version)s, '%d', '%d', '%d')"""
-                % (arch_id, path_id, file_id), package )
-
-        c.execute("COMMIT")
-        return True
-    except:
-        traceback.print_exc()
-        c.execute("ROLLBACK")
-        return False
