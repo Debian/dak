@@ -894,10 +894,7 @@ class DBConn(Singleton):
     def session(self):
         return self.db_smaker()
 
-    def prepare(self,name,statement):
-        if not self.prepared_statements.has_key(name):
-            pgc.execute(statement)
-            self.prepared_statements[name] = statement
+__all__.append('DBConn')
 
 
     def get_location_id(self, location, component, archive):
