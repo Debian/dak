@@ -158,18 +158,18 @@ __all__.append('BinAssociation')
 
 ################################################################################
 
-class Binary(object):
+class DBBinary(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
-        return '<Binary %s (%s, %s)>' % (self.package, self.version, self.architecture)
+        return '<DBBinary %s (%s, %s)>' % (self.package, self.version, self.architecture)
 
-__all__.append('Binary')
+__all__.append('DBBinary')
 
 def get_binary_from_id(id, session=None):
     """
-    Returns Binary object for given C{id}
+    Returns DBBinary object for given C{id}
 
     @type id: int
     @param id: Id of the required binary
@@ -178,12 +178,12 @@ def get_binary_from_id(id, session=None):
     @param session: Optional SQLA session object (a temporary one will be
     generated if not supplied)
 
-    @rtype: Binary
-    @return: Binary object for the given binary (None if not present)
+    @rtype: DBBinary
+    @return: DBBinary object for the given binary (None if not present)
     """
     if session is None:
         session = DBConn().session()
-    q = session.query(Binary).filter_by(binary_id=id)
+    q = session.query(DBBinary).filter_by(binary_id=id)
     if q.count() == 0:
         return None
     return q.one()
@@ -192,21 +192,21 @@ __all__.append('get_binary_from_id')
 
 def get_binaries_from_name(package, session=None):
     """
-    Returns list of Binary objects for given C{package} name
+    Returns list of DBBinary objects for given C{package} name
 
     @type package: str
-    @param package: Binary package name to search for
+    @param package: DBBinary package name to search for
 
     @type session: Session
     @param session: Optional SQL session object (a temporary one will be
     generated if not supplied)
 
     @rtype: list
-    @return: list of Binary objects for the given name (may be empty)
+    @return: list of DBBinary objects for the given name (may be empty)
     """
     if session is None:
         session = DBConn().session()
-    return session.query(Binary).filter_by(package=package).all()
+    return session.query(DBBinary).filter_by(package=package).all()
 
 __all__.append('get_binaries_from_name')
 
@@ -751,38 +751,38 @@ __all__.append('get_section')
 
 ################################################################################
 
-class Source(object):
+class DBSource(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
-        return '<Source %s (%s)>' % (self.source, self.version)
+        return '<DBSource %s (%s)>' % (self.source, self.version)
 
-__all__.append('Source')
+__all__.append('DBSource')
 
 def get_sources_from_name(source, session=None):
     """
-    Returns list of Source objects for given C{source} name
+    Returns list of DBSource objects for given C{source} name
 
     @type source: str
-    @param source: Source package name to search for
+    @param source: DBSource package name to search for
 
     @type session: Session
     @param session: Optional SQL session object (a temporary one will be
     generated if not supplied)
 
     @rtype: list
-    @return: list of Source objects for the given name (may be empty)
+    @return: list of DBSource objects for the given name (may be empty)
     """
     if session is None:
         session = DBConn().session()
-    return session.query(Source).filter_by(source=source).all()
+    return session.query(DBSource).filter_by(source=source).all()
 
 __all__.append('get_sources_from_name')
 
 def get_source_in_suite(source, suite, session=None):
     """
-    Returns list of Source objects for a combination of C{source} and C{suite}.
+    Returns list of DBSource objects for a combination of C{source} and C{suite}.
 
       - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
       - B{suite} - a suite name, eg. I{unstable}
@@ -1002,16 +1002,16 @@ class DBConn(Singleton):
                                  suite_id = self.tbl_bin_associations.c.suite,
                                  suite = relation(Suite),
                                  binary_id = self.tbl_bin_associations.c.bin,
-                                 binary = relation(Binary)))
+                                 binary = relation(DBBinary)))
 
-        mapper(Binary, self.tbl_binaries,
+        mapper(DBBinary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
                                  package = self.tbl_binaries.c.package,
                                  version = self.tbl_binaries.c.version,
                                  maintainer_id = self.tbl_binaries.c.maintainer,
                                  maintainer = relation(Maintainer),
                                  source_id = self.tbl_binaries.c.source,
-                                 source = relation(Source),
+                                 source = relation(DBSource),
                                  arch_id = self.tbl_binaries.c.architecture,
                                  architecture = relation(Architecture),
                                  poolfile_id = self.tbl_binaries.c.file,
@@ -1037,7 +1037,7 @@ class DBConn(Singleton):
                                  filepath_id = self.tbl_content_associations.c.filepath,
                                  filepath    = relation(ContentFilepath),
                                  binary_id   = self.tbl_content_associations.c.binary_pkg,
-                                 binary      = relation(Binary)))
+                                 binary      = relation(DBBinary)))
 
 
         mapper(ContentFilename, self.tbl_content_file_names,
@@ -1051,7 +1051,7 @@ class DBConn(Singleton):
         mapper(DSCFile, self.tbl_dsc_files,
                properties = dict(dscfile_id = self.tbl_dsc_files.c.id,
                                  source_id = self.tbl_dsc_files.c.source,
-                                 source = relation(Source),
+                                 source = relation(DBSource),
                                  poolfile_id = self.tbl_dsc_files.c.file,
                                  poolfile = relation(PoolFile)))
 
@@ -1120,7 +1120,7 @@ class DBConn(Singleton):
         mapper(Section, self.tbl_section,
                properties = dict(section_id = self.tbl_section.c.id))
 
-        mapper(Source, self.tbl_source,
+        mapper(DBSource, self.tbl_source,
                properties = dict(source_id = self.tbl_source.c.id,
                                  version = self.tbl_source.c.version,
                                  maintainer_id = self.tbl_source.c.maintainer,
@@ -1143,12 +1143,12 @@ class DBConn(Singleton):
                                  suite_id = self.tbl_src_associations.c.suite,
                                  suite = relation(Suite),
                                  source_id = self.tbl_src_associations.c.source,
-                                 source = relation(Source)))
+                                 source = relation(DBSource)))
 
         mapper(SrcUploader, self.tbl_src_uploaders,
                properties = dict(uploader_id = self.tbl_src_uploaders.c.id,
                                  source_id = self.tbl_src_uploaders.c.source,
-                                 source = relation(Source,
+                                 source = relation(DBSource,
                                                    primaryjoin=(self.tbl_src_uploaders.c.source==self.tbl_source.c.id)),
                                  maintainer_id = self.tbl_src_uploaders.c.maintainer,
                                  maintainer = relation(Maintainer,
