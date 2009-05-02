@@ -48,7 +48,7 @@ import commands
 import traceback
 import atexit
 from debian_bundle import deb822
-from dbconn import DBConn
+from dbconn import insert_content_paths, insert_pending_content_paths
 from config import Config
 import logging
 import utils
@@ -157,7 +157,7 @@ class Binary(object):
 
         return not rejected
 
-    def scan_package(self, bootstrap_id=0, relaxed=False):
+    def scan_package(self, bootstrap_id=0, relaxed=False, session=None):
         """
         Unpack the .deb, do sanity checking, and gather info from it.
 
@@ -191,11 +191,11 @@ class Binary(object):
                         data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
 
                     if bootstrap_id:
-                        result = DBConn().insert_content_paths(bootstrap_id, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                        result = insert_content_paths(bootstrap_id, [tarinfo.name for tarinfo in data if not tarinfo.isdir()], session)
                     else:
                         pkgs = deb822.Packages.iter_paragraphs(file(os.path.join(self.tmpdir,'control')))
                         pkg = pkgs.next()
-                        result = DBConn().insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                        result = insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()], session)
 
                 except:
                     traceback.print_exc()
