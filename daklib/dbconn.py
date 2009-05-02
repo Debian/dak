@@ -109,6 +109,8 @@ def get_architecture_suites(architecture, session=None):
 
 __all__.append('get_architecture_suites')
 
+################################################################################
+
 class Archive(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -143,6 +145,8 @@ def get_archive(archive, session=None):
 
 __all__.append('get_archive')
 
+################################################################################
+
 class BinAssociation(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -151,6 +155,8 @@ class BinAssociation(object):
         return '<BinAssociation %s (%s, %s)>' % (self.ba_id, self.binary, self.suite)
 
 __all__.append('BinAssociation')
+
+################################################################################
 
 class Binary(object):
     def __init__(self, *args, **kwargs):
@@ -204,6 +210,8 @@ def get_binaries_from_name(package, session=None):
 
 __all__.append('get_binaries_from_name')
 
+################################################################################
+
 class Component(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -235,6 +243,8 @@ def get_component(component, session=None):
 
 __all__.append('get_component')
 
+################################################################################
+
 class DBConfig(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -243,6 +253,8 @@ class DBConfig(object):
         return '<DBConfig %s>' % self.name
 
 __all__.append('DBConfig')
+
+################################################################################
 
 class ContentFilename(object):
     def __init__(self, *args, **kwargs):
@@ -287,6 +299,8 @@ def get_or_set_contents_file_id(filename, session=None):
 
 __all__.append('get_or_set_contents_file_id')
 
+################################################################################
+
 class ContentFilepath(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -329,6 +343,8 @@ def get_or_set_contents_path_id(filepath, session):
         raise
 
 __all__.append('get_or_set_contents_path_id')
+
+################################################################################
 
 class ContentAssociation(object):
     def __init__(self, *args, **kwargs):
@@ -389,6 +405,8 @@ def insert_content_paths(binary_id, fullpaths, session=None):
 
 __all__.append('insert_content_paths')
 
+################################################################################
+
 class DSCFile(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -397,6 +415,8 @@ class DSCFile(object):
         return '<DSCFile %s>' % self.dscfile_id
 
 __all__.append('DSCFile')
+
+################################################################################
 
 class PoolFile(object):
     def __init__(self, *args, **kwargs):
@@ -434,6 +454,8 @@ def get_poolfile_by_name(filename, location_id=None, session=None):
 
 __all__.append('get_poolfile_by_name')
 
+################################################################################
+
 class Fingerprint(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -443,6 +465,8 @@ class Fingerprint(object):
 
 __all__.append('Fingerprint')
 
+################################################################################
+
 class Keyring(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -451,6 +475,8 @@ class Keyring(object):
         return '<Keyring %s>' % self.keyring_name
 
 __all__.append('Keyring')
+
+################################################################################
 
 class Location(object):
     def __init__(self, *args, **kwargs):
@@ -497,6 +523,8 @@ def get_location(location, component=None, archive=None, session=None):
 
 __all__.append('get_location')
 
+################################################################################
+
 class Maintainer(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -506,6 +534,8 @@ class Maintainer(object):
 
 __all__.append('Maintainer')
 
+################################################################################
+
 class Override(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -514,6 +544,8 @@ class Override(object):
         return '<Override %s (%s)>' % (self.package, self.suite_id)
 
 __all__.append('Override')
+
+################################################################################
 
 class OverrideType(object):
     def __init__(self, *args, **kwargs):
@@ -547,6 +579,8 @@ def get_override_type(override_type, session=None):
     return q.one()
 
 __all__.append('get_override_type')
+
+################################################################################
 
 class PendingContentAssociation(object):
     def __init__(self, *args, **kwargs):
@@ -623,6 +657,8 @@ def insert_pending_content_paths(package, fullpaths, session=None):
 
 __all__.append('insert_pending_content_paths')
 
+################################################################################
+
 class Priority(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -656,6 +692,8 @@ def get_priority(priority, session=None):
 
 __all__.append('get_priority')
 
+################################################################################
+
 class Queue(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -665,6 +703,8 @@ class Queue(object):
 
 __all__.append('Queue')
 
+################################################################################
+
 class QueueBuild(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -673,6 +713,8 @@ class QueueBuild(object):
         return '<QueueBuild %s (%s)>' % (self.filename, self.queue_id)
 
 __all__.append('QueueBuild')
+
+################################################################################
 
 class Section(object):
     def __init__(self, *args, **kwargs):
@@ -706,6 +748,8 @@ def get_section(section, session=None):
     return q.one()
 
 __all__.append('get_section')
+
+################################################################################
 
 class Source(object):
     def __init__(self, *args, **kwargs):
@@ -765,6 +809,8 @@ def get_source_in_suite(source, suite, session=None):
 
 __all__.append('get_source_in_suite')
 
+################################################################################
+
 class SrcAssociation(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -774,6 +820,8 @@ class SrcAssociation(object):
 
 __all__.append('SrcAssociation')
 
+################################################################################
+
 class SrcUploader(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -782,6 +830,8 @@ class SrcUploader(object):
         return '<SrcUploader %s>' % self.uploader_id
 
 __all__.append('SrcUploader')
+
+################################################################################
 
 class Suite(object):
     def __init__(self, *args, **kwargs):
@@ -847,6 +897,8 @@ def get_suite(suite, session=None):
 
 __all__.append('get_suite')
 
+################################################################################
+
 class SuiteArchitecture(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -880,6 +932,8 @@ def get_suite_architectures(suite, session=None):
     return q.all()
 
 __all__.append('get_suite_architectures')
+
+################################################################################
 
 class Uid(object):
     def __init__(self, *args, **kwargs):
