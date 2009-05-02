@@ -217,7 +217,7 @@ def __suite_architecture_rm(d, args):
         except SQLAlchemyError, e:
             die("E: Can't remove suite-architecture entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
 
-    print "Removed suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower()) 
+    print "Removed suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower())
 
 
 def suite_architecture(command):
