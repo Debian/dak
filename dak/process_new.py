@@ -101,7 +101,7 @@ def recheck():
                 source_epochless_version = re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                 found = 0
-                for q in ["Accepted", "Embargoed", "Unembargoed"]:
+                for q in ["Accepted", "Embargoed", "Unembargoed", "Newstage"]:
                     if Cnf.has_key("Dir::Queue::%s" % (q)):
                         if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
                             found = 1
