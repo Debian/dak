@@ -453,7 +453,7 @@ def get_readme_source (dsc_filename):
     if os.path.exists(path):
         res += do_command("cat", path)
     else:
-        res += "No README.source in this package"
+        res += "No README.source in this package\n\n"
 
     try:
         shutil.rmtree(tempdir)
