@@ -36,12 +36,15 @@ def do_update(self):
 
     try:
         c = self.db.cursor()
-        try:
-            # This might not exist on a fresh install, so don't fail
-            # needlessly
+        # The reason we try and check to see if it exists is that
+        # psycopg2 might leave the cursor invalid if the drop fails
+        c.execute("SELECT proname from pg_catalog.pg_proc WHERE proname = 'versioncmp'")
+        rows = c.fetchall()
+        if rows:
             c.execute("DROP FUNCTION versioncmp(text, text);")
-        except:
-            pass
+        else:
+            print "function already does not exist"
+
         c.execute("UPDATE config SET value = '3' WHERE name = 'db_revision'")
 
         self.db.commit()
