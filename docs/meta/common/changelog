@@ -1,0 +1,5 @@
+ftpmaster-common (1.0) unstable; urgency=low
+
+  * New "package", to document dak requirements
+
+ -- Allan Lyons <allan_lyons@wycliffe.ca>  Fri, 08 May 2009 09:09:09 -0600
