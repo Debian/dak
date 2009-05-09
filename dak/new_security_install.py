@@ -303,7 +303,10 @@ def remove_from_buildd(suites, filename):
         try:
             os.unlink(os.path.join(builddbase, s, filebase))
         except OSError, e:
-            utils.warn("Problem removing %s from buildd queue %s [%s]" % (filebase, s, str(e)))
+            pass
+            # About no value printing this warning - it only confuses the security team,
+            # yet makes no difference otherwise.
+            #utils.warn("Problem removing %s from buildd queue %s [%s]" % (filebase, s, str(e)))
 
 
 def generate_advisory(template):

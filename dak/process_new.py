@@ -811,9 +811,14 @@ def do_byhand():
             answer = answer[:1].upper()
 
         if answer == 'A':
-            done = 1
-            for f in byhand:
-                del files[f]
+            try:
+                check_daily_lock()
+                done = 1
+                for f in byhand:
+                    del files[f]
+            except CantGetLockError:
+                print "Hello? Operator! Give me the number for 911!"
+                print "Dinstall in the locked area, cant process packages, come back later"
         elif answer == 'M':
             Upload.do_reject(1, Options["Manual-Reject"])
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
@@ -982,13 +987,6 @@ def do_pkg(changes_file):
     files = Upload.pkg.files
 
     try:
-        check_daily_lock()
-    except CantGetLockError:
-        print "Hello? Operator! Give me the number for 911!"
-        print "Dinstall in the locked area, cant process packages, come back later"
-        sys.exit(1)
-
-    try:
         with lock_package(Upload.pkg.changes["source"]):
             if not recheck():
                 return
@@ -1002,7 +1000,12 @@ def do_pkg(changes_file):
                 (new, byhand) = check_status(files)
 
             if not new and not byhand:
-                do_accept()
+                try:
+                    check_daily_lock()
+                    do_accept()
+                except CantGetLockError:
+                    print "Hello? Operator! Give me the number for 911!"
+                    print "Dinstall in the locked area, cant process packages, come back later"
     except AlreadyLockedError, e:
         print "Seems to be locked by %s already, skipping..." % (e)
 
