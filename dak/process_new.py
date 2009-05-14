@@ -680,14 +680,7 @@ def do_new():
         prompt += "Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?"
 
         while prompt.find(answer) == -1:
-            try:
-                answer = utils.our_raw_input(prompt)
-            except IOError, e:
-                if e.errno == errno.EPIPE:
-                    utils.warn("[process_new] Caught EPIPE; skipping.")
-                    pass
-                else:
-                    raise
+            answer = utils.our_raw_input(prompt)
             m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
