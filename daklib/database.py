@@ -34,6 +34,7 @@ import sys
 import time
 import types
 import utils
+import pg
 from binary import Binary
 
 ################################################################################
@@ -907,7 +908,7 @@ def add_new_comment(package, version, comment, author):
 
     projectB.query(""" INSERT INTO new_comments (package, version, comment, author)
                        VALUES ('%s', '%s', '%s', '%s')
-    """ % (package, version, comment, author) )
+    """ % (package, version, pg.escape_string(comment), pg.escape_string(author)))
 
     return
 
