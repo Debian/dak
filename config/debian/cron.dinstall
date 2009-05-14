@@ -520,8 +520,11 @@ NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
 # lock cron.unchecked (it immediately exits when this exists)
 LOCK_DAILY="$lockdir/daily.lock"
 
-# Lock process-new and cron.unchecked from doing work
+# Lock cron.unchecked from doing work
 LOCK_ACCEPTED="$lockdir/unchecked.lock"
+
+# Lock process-new from doing work
+LOCK_NEW="$lockdir/processnew.lock"
 
 # This file is simply used to indicate to britney whether or not
 # the Packages file updates completed sucessfully.  It's not a lock
@@ -603,6 +606,7 @@ GO=(
 stage $GO
 
 lockfile "$LOCK_ACCEPTED"
+lockfile "$LOCK_NEW"
 
 GO=(
     FUNC="process_unchecked"
@@ -638,6 +642,7 @@ GO=(
 stage $GO
 
 rm -f "$LOCK_ACCEPTED"
+rm -f "$LOCK_NEW"
 
 GO=(
     FUNC="msfl"

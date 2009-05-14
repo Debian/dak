@@ -27,6 +27,7 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 
 LOCKDAILY=""
 LOCKFILE="$lockdir/unchecked.lock"
+LOCK_NEW="$lockdir/processnew.lock"
 NOTICE="$lockdir/daily.lock"
 
 if [ -e $NOTICE ]; then
@@ -71,7 +72,9 @@ function do_buildd () {
 # the actual unchecked functions follow                                #
 ########################################################################
 
+lockfile "$LOCK_NEW"
 acceptnew
+rm -f "$LOCK_NEW"
 
 # only run one cron.unchecked
 lockfile -r3 $LOCKFILE || exit 0
