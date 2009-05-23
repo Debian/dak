@@ -47,11 +47,12 @@ import tarfile
 import apt_inst
 import apt_pkg
 from debian_bundle import deb822
-from daklib.dbconn import DBConn
+from daklib.dbconn import *
 from daklib.binary import Binary
 from daklib import logging
 from daklib import queue
 from daklib import utils
+from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 from daklib.regexes import re_valid_version, re_valid_pkg_name, re_changelog_versions, \
                            re_strip_revision, re_strip_srcver, re_spacestrip, \
@@ -255,7 +256,7 @@ def check_changes():
     try:
         (changes["maintainer822"], changes["maintainer2047"],
          changes["maintainername"], changes["maintaineremail"]) = \
-         utils.fix_maintainer (changes["maintainer"])
+         fix_maintainer (changes["maintainer"])
     except ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
                % (filename, changes["maintainer"], msg))
@@ -264,7 +265,7 @@ def check_changes():
     try:
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
-         utils.fix_maintainer (changes.get("changed-by", ""))
+         fix_maintainer (changes.get("changed-by", ""))
     except ParseMaintError, msg:
         (changes["changedby822"], changes["changedby2047"],
          changes["changedbyname"], changes["changedbyemail"]) = \
@@ -320,7 +321,7 @@ def check_distributions():
             (source, dest) = args[1:3]
             if changes["distribution"].has_key(source):
                 for arch in changes["architecture"].keys():
-                    if arch not in DBConn().get_suite_architectures(source):
+                    if arch not in [ a.arch_string for a in get_suite_architectures(source) ]:
                         reject("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch),"")
                         del changes["distribution"][source]
                         changes["distribution"][dest] = 1
@@ -391,19 +392,7 @@ def check_files():
     has_binaries = 0
     has_source = 0
 
-    cursor = DBConn().cursor()
-    # Check for packages that have moved from one component to another
-    # STU: this should probably be changed to not join on architecture, suite tables but instead to used their cached name->id mappings from DBConn
-    DBConn().prepare("moved_pkg_q", """
-        PREPARE moved_pkg_q(text,text,text) AS
-        SELECT c.name FROM binaries b, bin_associations ba, suite s, location l,
-                    component c, architecture a, files f
-        WHERE b.package = $1 AND s.suite_name = $2
-          AND (a.arch_string = $3 OR a.arch_string = 'all')
-          AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id
-          AND f.location = l.id
-          AND l.component = c.id
-          AND b.file = f.id""")
+    s = DBConn().session()
 
     for f in file_keys:
         # Ensure the file does not already exist in one of the accepted directories
@@ -478,7 +467,8 @@ def check_files():
             default_suite = Cnf.get("Dinstall::DefaultSuite", "Unstable")
             architecture = control.Find("Architecture")
             upload_suite = changes["distribution"].keys()[0]
-            if architecture not in DBConn().get_suite_architectures(default_suite) and architecture not in DBConn().get_suite_architectures(upload_suite):
+            if      architecture not in [a.arch_string for a in get_suite_architectures(default_suite)] \
+                and architecture not in [a.arch_string for a in get_suite_architectures(upload_suite)]:
                 reject("Unknown architecture '%s'." % (architecture))
 
             # Ensure the architecture of the .deb is one of the ones
@@ -667,10 +657,9 @@ def check_files():
 
             # Check for packages that have moved from one component to another
             files[f]['suite'] = suite
-            cursor.execute("""EXECUTE moved_pkg_q( %(package)s, %(suite)s, %(architecture)s )""", ( files[f] ) )
-            ql = cursor.fetchone()
-            if ql:
-                files[f]["othercomponents"] = ql[0][0]
+            ql = get_binary_components(files[f]['package'], suite, files[f][architecture])
+            if ql.rowcount > 0:
+                files[f]["othercomponents"] = ql.fetchone()[0]
 
     # If the .changes file says it has source, it must have source.
     if changes["architecture"].has_key("source"):
@@ -750,7 +739,7 @@ def check_dsc():
 
     # Validate the Maintainer field
     try:
-        utils.fix_maintainer (dsc["maintainer"])
+        fix_maintainer (dsc["maintainer"])
     except ParseMaintError, msg:
         reject("%s: Maintainer field ('%s') failed to parse: %s" \
                % (dsc_filename, dsc["maintainer"], msg))
@@ -1014,28 +1003,33 @@ def check_timestamps():
 ################################################################################
 
 def lookup_uid_from_fingerprint(fpr):
-    """
-    Return the uid,name,isdm for a given gpg fingerprint
+    uid = None
+    uid_name = ""
+    # This is a stupid default, but see the comments below
+    is_dm = False
 
-    @type fpr: string
-    @param fpr: a 40 byte GPG fingerprint
+    user = get_uid_from_fingerprint(changes["fingerprint"])
 
-    @return: (uid, name, isdm)
-    """
-    cursor = DBConn().cursor()
-    cursor.execute( "SELECT u.uid, u.name, k.debian_maintainer FROM fingerprint f JOIN keyrings k ON (f.keyring=k.id), uid u WHERE f.uid = u.id AND f.fingerprint = '%s'" % (fpr))
-    qs = cursor.fetchone()
-    if qs:
-        return qs
-    else:
-        return (None, None, False)
+    if user is not None:
+        uid = user.uid
+        if user.name is None:
+            uid_name = ''
+        else:
+            uid_name = user.name
+
+        # Check the relevant fingerprint (which we have to have)
+        for f in uid.fingerprint:
+            if f.fingerprint == changes['fingerprint']:
+                is_dm = f.keyring.debian_maintainer
+                break
+
+    return (uid, uid_name, is_dm)
 
 def check_signed_by_key():
     """Ensure the .changes is signed by an authorized uploader."""
+    session = DBConn().session()
 
-    (uid, uid_name, is_dm) = lookup_uid_from_fingerprint(changes["fingerprint"])
-    if uid_name == None:
-        uid_name = ""
+    (uid, uid_name, is_dm) = lookup_uid_from_fingerprint(changes["fingerprint"], session=session)
 
     # match claimed name with actual name:
     if uid is None:
@@ -1072,53 +1066,39 @@ def check_signed_by_key():
     if sponsored and not may_sponsor:
         reject("%s is not authorised to sponsor uploads" % (uid))
 
-    cursor = DBConn().cursor()
     if not sponsored and not may_nmu:
-        source_ids = []
-        cursor.execute( "SELECT s.id, s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) WHERE s.source = %(source)s AND s.dm_upload_allowed = 'yes'", changes )
-
+        should_reject = True
         highest_sid, highest_version = None, None
 
-        should_reject = True
-        while True:
-            si = cursor.fetchone()
-            if not si:
-                break
+        # XXX: This reimplements in SQLA what existed before but it's fundamentally fucked
+        #      It ignores higher versions with the dm_upload_allowed flag set to false
+        #      I'm keeping the existing behaviour for now until I've gone back and
+        #      checked exactly what the GR says - mhy
+        for si in get_sources_from_name(source=changes['source'], dm_upload_allowed=True, session=session):
+            if highest_version is None or apt_pkg.VersionCompare(si.version, highest_version) == 1:
+                 highest_sid = si.source_id
+                 highest_version = si.version
 
-            if highest_version == None or apt_pkg.VersionCompare(si[1], highest_version) == 1:
-                 highest_sid = si[0]
-                 highest_version = si[1]
-
-        if highest_sid == None:
-           reject("Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version" % changes["source"])
+        if highest_sid is None:
+            reject("Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version" % changes["source"])
         else:
-
-            cursor.execute("SELECT m.name FROM maintainer m WHERE m.id IN (SELECT su.maintainer FROM src_uploaders su JOIN source s ON (s.id = su.source) WHERE su.source = %s)" % (highest_sid))
-
-            while True:
-                m = cursor.fetchone()
-                if not m:
-                    break
-
-                (rfc822, rfc2047, name, email) = utils.fix_maintainer(m[0])
+            for sup in s.query(SrcUploader).join(DBSource).filter_by(source_id=highest_sid)
+                (rfc822, rfc2047, name, email) = sup.maintainer.get_split_maintainer()
                 if email == uid_email or name == uid_name:
-                    should_reject=False
+                    should_reject = False
                     break
 
-        if should_reject == True:
+        if should_reject is True:
             reject("%s is not in Maintainer or Uploaders of source package %s" % (uid, changes["source"]))
 
         for b in changes["binary"].keys():
             for suite in changes["distribution"].keys():
-                suite_id = DBConn().get_suite_id(suite)
+                q = session.query(DBSource)
+                q = q.join(DBBinary).filter_by(package=b)
+                q = q.join(BinAssociation).join(Suite).filter_by(suite)
 
-                cursor.execute("SELECT DISTINCT s.source FROM source s JOIN binaries b ON (s.id = b.source) JOIN bin_associations ba On (b.id = ba.bin) WHERE b.package = %(package)s AND ba.suite = %(suite)s" , {'package':b, 'suite':suite_id} )
-                while True:
-                    s = cursor.fetchone()
-                    if not s:
-                        break
-
-                    if s[0] != changes["source"]:
+                for s in q.all():
+                    if s.source != changes["source"]:
                         reject("%s may not hijack %s from source package %s in suite %s" % (uid, b, s, suite))
 
         for f in files.keys():
@@ -1261,9 +1241,9 @@ def move_to_dir (dest, perms=0660, changesperms=0664):
 ################################################################################
 
 def is_unembargo ():
-    cursor = DBConn().cursor()
-    cursor.execute( "SELECT package FROM disembargo WHERE package = %(source)s AND version = %(version)s", changes )
-    if cursor.fetchone():
+    session = DBConn().session()
+    q = session.execute("SELECT package FROM disembargo WHERE package = :source AND version = :version", changes)
+    if q.rowcount > 0:
         return 1
 
     oldcwd = os.getcwd()
@@ -1273,11 +1253,12 @@ def is_unembargo ():
 
     if pkg.directory == disdir:
         if changes["architecture"].has_key("source"):
-            if Options["No-Action"]: return 1
+            if Options["No-Action"]:
+                return 1
 
-            cursor.execute( "INSERT INTO disembargo (package, version) VALUES ('%(package)s', '%(version)s')",
-                            changes )
-            cursor.execute( "COMMIT" )
+            session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)", changes)
+            session.commit()
+
             return 1
 
     return 0
@@ -1335,19 +1316,13 @@ def is_stableupdate ():
         return 0
 
     if not changes["architecture"].has_key("source"):
-        pusuite = DBConn().get_suite_id("proposed-updates")
-        cursor = DBConn().cursor()
-        cursor.execute( """SELECT 1 FROM source s
-                           JOIN src_associations sa ON (s.id = sa.source)
-                           WHERE s.source = %(source)s
-                              AND s.version = %(version)s
-                              AND sa.suite = %(suite)s""",
-                        {'source' : changes['source'],
-                         'version' : changes['version'],
-                         'suite' : pusuite})
+        s = DBConn().session()
+        q = s.query(SrcAssociation.sa_id)
+        q = q.join(Suite).filter_by(suite_name='proposed-updates')
+        q = q.join(DBSource).filter_by(source=changes['source'])
+        q = q.filter_by(version=changes['version']).limit(1)
 
-        if cursor.fetchone():
-            # source is already in proposed-updates so no need to hold
+        if q.count() < 1:
             return 0
 
     return 1
@@ -1370,17 +1345,13 @@ def is_oldstableupdate ():
         return 0
 
     if not changes["architecture"].has_key("source"):
-        pusuite = DBConn().get_suite_id("oldstable-proposed-updates")
-        cursor = DBConn().cursor()
-        cursor.execute( """SELECT 1 FROM source s
-                           JOIN src_associations sa ON (s.id = sa.source)
-                           WHERE s.source = %(source)s
-                             AND s.version = %(version)s
-                             AND sa.suite = %(suite)s""",
-                        {'source' :  changes['source'],
-                         'version' : changes['version'],
-                         'suite' :   pusuite})
-        if cursor.fetchone():
+        s = DBConn().session()
+        q = s.query(SrcAssociation.sa_id)
+        q = q.join(Suite).filter_by(suite_name='oldstable-proposed-updates')
+        q = q.join(DBSource).filter_by(source=changes['source'])
+        q = q.filter_by(version=changes['version']).limit(1)
+
+        if q.count() < 1:
             return 0
 
     return 1
