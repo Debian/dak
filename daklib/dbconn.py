@@ -210,6 +210,23 @@ def get_binaries_from_name(package, session=None):
 
 __all__.append('get_binaries_from_name')
 
+def get_binary_components(package, suitename, arch, session=None):
+# Check for packages that have moved from one component to another
+    query = """SELECT c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f
+    WHERE b.package=:package AND s.suite_name=:suitename
+      AND (a.arch_string = :arch OR a.arch_string = 'all')
+      AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id
+      AND f.location = l.id
+      AND l.component = c.id
+      AND b.file = f.id"""
+
+    vals = {'package': package, 'suitename': suitename, 'arch': arch}
+
+    if session is None:
+        session = DBConn().session()
+    return session.execute(query, vals)
+
+__all__.append('get_binary_components')
 ################################################################################
 
 class Component(object):
