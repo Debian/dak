@@ -255,7 +255,7 @@ function scripts() {
 function mirror() {
     echo "Regenerating \"public\" mirror/ hardlink fun"
     cd ${mirrordir}
-    rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
+    rsync -aH --link-dest ${ftpdir} --exclude Archive_Maintenance_In_Progress --delete --delete-after --ignore-errors ${ftpdir}/. .
 }
 
 function wb() {
