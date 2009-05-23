@@ -452,8 +452,9 @@ def check_transitions(transitions):
         elif answer == 'y':
             print "Committing"
             subst = {}
+            subst['__SUBJECT__'] = "Transitions completed: " + ", ".join(sorted(to_remove))
             subst['__TRANSITION_MESSAGE__'] = "The following transitions were removed:\n"
-            for remove in to_remove:
+            for remove in sorted(to_remove):
                 subst['__TRANSITION_MESSAGE__'] += info[remove] + '\n'
                 del transitions[remove]
 
