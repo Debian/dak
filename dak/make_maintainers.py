@@ -35,6 +35,7 @@ import sys
 import apt_pkg
 from daklib import database
 from daklib import utils
+from daklib import textutils
 from daklib.regexes import re_comments
 
 ################################################################################
@@ -43,7 +44,7 @@ Cnf = None                          #: Configuration, apt_pkg.Configuration
 projectB = None                     #: database connection, pgobject
 maintainer_from_source_cache = {}   #: caches the maintainer name <email> per source_id
 packages = {}                       #: packages data to write out
-fixed_maintainer_cache = {}         #: caches fixed ( L{daklib.utils.fix_maintainer} ) maintainer data
+fixed_maintainer_cache = {}         #: caches fixed ( L{daklib.textutils.fix_maintainer} ) maintainer data
 
 ################################################################################
 
@@ -62,7 +63,7 @@ def fix_maintainer (maintainer):
     Fixup maintainer entry, cache the result.
 
     @type maintainer: string
-    @param maintainer: A maintainer entry as passed to L{daklib.utils.fix_maintainer}
+    @param maintainer: A maintainer entry as passed to L{daklib.textutils.fix_maintainer}
 
     @rtype: tuple
     @returns: fixed maintainer tuple
@@ -70,7 +71,7 @@ def fix_maintainer (maintainer):
     global fixed_maintainer_cache
 
     if not fixed_maintainer_cache.has_key(maintainer):
-        fixed_maintainer_cache[maintainer] = utils.fix_maintainer(maintainer)[0]
+        fixed_maintainer_cache[maintainer] = textutils.fix_maintainer(maintainer)[0]
 
     return fixed_maintainer_cache[maintainer]
 

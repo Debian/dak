@@ -40,6 +40,7 @@ import cgi
 from daklib import queue
 from daklib import database
 from daklib import utils
+from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
 Cnf = None
@@ -365,7 +366,7 @@ def process_changes_files(changes_files, type, log):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
-                    utils.fix_maintainer (j["maintainer"])
+                    fix_maintainer (j["maintainer"])
                 except ParseMaintError, msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
@@ -375,7 +376,7 @@ def process_changes_files(changes_files, type, log):
                 try:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
-                     utils.fix_maintainer (j["changed-by"])
+                     fix_maintainer (j["changed-by"])
                 except ParseMaintError, msg:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \

@@ -41,6 +41,7 @@ import re
 import string
 import email as modemail
 from dak_exceptions import *
+from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
                     re_parse_maintainer, re_taint_free, re_gpg_uid, re_re_mark, \
@@ -509,92 +510,6 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         files[name][hashname] = md5
 
     return files
-
-################################################################################
-
-def force_to_utf8(s):
-    """
-    Forces a string to UTF-8.  If the string isn't already UTF-8,
-    it's assumed to be ISO-8859-1.
-    """
-    try:
-        unicode(s, 'utf-8')
-        return s
-    except UnicodeError:
-        latin1_s = unicode(s,'iso8859-1')
-        return latin1_s.encode('utf-8')
-
-def rfc2047_encode(s):
-    """
-    Encodes a (header) string per RFC2047 if necessary.  If the
-    string is neither ASCII nor UTF-8, it's assumed to be ISO-8859-1.
-    """
-    try:
-        codecs.lookup('ascii')[1](s)
-        return s
-    except UnicodeError:
-        pass
-    try:
-        codecs.lookup('utf-8')[1](s)
-        h = email.Header.Header(s, 'utf-8', 998)
-        return str(h)
-    except UnicodeError:
-        h = email.Header.Header(s, 'iso-8859-1', 998)
-        return str(h)
-
-################################################################################
-
-# <Culus> 'The standard sucks, but my tool is supposed to interoperate
-#          with it. I know - I'll fix the suckage and make things
-#          incompatible!'
-
-def fix_maintainer (maintainer):
-    """
-    Parses a Maintainer or Changed-By field and returns:
-      1. an RFC822 compatible version,
-      2. an RFC2047 compatible version,
-      3. the name
-      4. the email
-
-    The name is forced to UTF-8 for both 1. and 3..  If the name field
-    contains '.' or ',' (as allowed by Debian policy), 1. and 2. are
-    switched to 'email (name)' format.
-
-    """
-    maintainer = maintainer.strip()
-    if not maintainer:
-        return ('', '', '', '')
-
-    if maintainer.find("<") == -1:
-        email = maintainer
-        name = ""
-    elif (maintainer[0] == "<" and maintainer[-1:] == ">"):
-        email = maintainer[1:-1]
-        name = ""
-    else:
-        m = re_parse_maintainer.match(maintainer)
-        if not m:
-            raise ParseMaintError, "Doesn't parse as a valid Maintainer field."
-        name = m.group(1)
-        email = m.group(2)
-
-    # Get an RFC2047 compliant version of the name
-    rfc2047_name = rfc2047_encode(name)
-
-    # Force the name to be UTF-8
-    name = force_to_utf8(name)
-
-    if name.find(',') != -1 or name.find('.') != -1:
-        rfc822_maint = "%s (%s)" % (email, name)
-        rfc2047_maint = "%s (%s)" % (email, rfc2047_name)
-    else:
-        rfc822_maint = "%s <%s>" % (name, email)
-        rfc2047_maint = "%s <%s>" % (rfc2047_name, email)
-
-    if email.find("@") == -1 and email.find("buildd_") != 0:
-        raise ParseMaintError, "No @ found in email address part."
-
-    return (rfc822_maint, rfc2047_maint, name, email)
 
 ################################################################################
 
