@@ -6,10 +6,10 @@ Precedence: bulk
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-Subject: Transitions Completed
+Subject: __SUBJECT__
 
-The following transitions are complete and have been removed
-from the transitions list:
+Some transitions for which there was an upload block in place have been
+completed and the block has been automatically lifted:
 
 __TRANSITION_MESSAGE__
 
