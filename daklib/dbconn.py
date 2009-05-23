@@ -777,12 +777,16 @@ class DBSource(object):
 
 __all__.append('DBSource')
 
-def get_sources_from_name(source, session=None):
+def get_sources_from_name(source, dm_upload_allowed=None, session=None):
     """
     Returns list of DBSource objects for given C{source} name
 
     @type source: str
     @param source: DBSource package name to search for
+
+    @type dm_upload_allowed: bool
+    @param dm_upload_allowed: If None, no effect.  If True or False, only
+    return packages with that dm_upload_allowed setting
 
     @type session: Session
     @param session: Optional SQL session object (a temporary one will be
@@ -793,7 +797,12 @@ def get_sources_from_name(source, session=None):
     """
     if session is None:
         session = DBConn().session()
-    return session.query(DBSource).filter_by(source=source).all()
+
+    q = session.query(DBSource).filter_by(source=source)
+    if dm_upload_allowed is not None:
+        q = q.filter_by(dm_upload_allowed=dm_upload_allowed)
+
+    return q.all()
 
 __all__.append('get_sources_from_name')
 
