@@ -44,6 +44,7 @@ from sqlalchemy.orm import sessionmaker, mapper, relation
 from sqlalchemy.exc import *
 
 from singleton import Singleton
+from textutils import fix_maintainer
 
 ################################################################################
 
@@ -548,6 +549,12 @@ class Maintainer(object):
 
     def __repr__(self):
         return '''<Maintainer '%s' (%s)>''' % (self.name, self.maintainer_id)
+
+    def get_split_maintainer(self):
+        if not hasattr(self, 'name') or self.name is None:
+            return ('', '', '', '')
+
+        return fix_maintainer(self.name.strip())
 
 __all__.append('Maintainer')
 
