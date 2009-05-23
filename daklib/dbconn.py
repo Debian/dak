@@ -974,6 +974,20 @@ class Uid(object):
 
 __all__.append('Uid')
 
+def get_uid_from_fingerprint(fpr, session=None):
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(Uid)
+    q = q.join(Fingerprint).filter_by(fingerprint=fpr)
+
+    if q.count() != 1:
+        return None
+    else:
+        return q.one()
+
+__all__.append('get_uid_from_fingerprint')
+
 ################################################################################
 
 class DBConn(Singleton):
@@ -1194,7 +1208,8 @@ class DBConn(Singleton):
                                  architecture = relation(Architecture)))
 
         mapper(Uid, self.tbl_uid,
-               properties = dict(uid_id = self.tbl_uid.c.id))
+               properties = dict(uid_id = self.tbl_uid.c.id,
+                                 fingerprint = relation(Fingerprint)))
 
     ## Connection functions
     def __createconn(self):
