@@ -314,13 +314,16 @@ def get_or_set_contents_file_id(filename, session=None):
     @param filename: The filename
     @type session: SQLAlchemy
     @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
+    generated if not supplied).  If not passed, a commit will be performed at
+    the end of the function, otherwise the caller is responsible for commiting.
 
     @rtype: int
     @return: the database id for the given component
     """
+    privatetrans = False
     if session is None:
         session = DBConn().session()
+        privatetrans = True
 
     try:
         q = session.query(ContentFilename).filter_by(filename=filename)
@@ -328,6 +331,8 @@ def get_or_set_contents_file_id(filename, session=None):
             cf = ContentFilename()
             cf.filename = filename
             session.add(cf)
+            if privatetrans:
+                session.commit()
             return cf.cafilename_id
         else:
             return q.one().cafilename_id
@@ -412,13 +417,16 @@ def get_or_set_contents_path_id(filepath, session):
     @param filename: The filepath
     @type session: SQLAlchemy
     @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
+    generated if not supplied).  If not passed, a commit will be performed at
+    the end of the function, otherwise the caller is responsible for commiting.
 
     @rtype: int
     @return: the database id for the given path
     """
+    privatetrans = False
     if session is None:
         session = DBConn().session()
+        privatetrans = True
 
     try:
         q = session.query(ContentFilepath).filter_by(filepath=filepath)
@@ -426,6 +434,8 @@ def get_or_set_contents_path_id(filepath, session):
             cf = ContentFilepath()
             cf.filepath = filepath
             session.add(cf)
+            if privatetrans:
+                session.commit()
             return cf.cafilepath_id
         else:
             return q.one().cafilepath_id
@@ -459,7 +469,8 @@ def insert_content_paths(binary_id, fullpaths, session=None):
     @param session: Optional SQLAlchemy session.  If this is passed, the caller
     is responsible for ensuring a transaction has begun and committing the
     results or rolling back based on the result code.  If not passed, a commit
-    will be performed at the end of the function
+    will be performed at the end of the function, otherwise the caller is
+    responsible for commiting.
 
     @return: True upon success
     """
@@ -1063,6 +1074,77 @@ class Uid(object):
         return '<Uid %s (%s)>' % (self.uid, self.name)
 
 __all__.append('Uid')
+
+def add_database_user(uidname, session=None):
+    """
+    Adds a database user
+
+    @type uidname: string
+    @param uidname: The uid of the user to add
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied).  If not passed, a commit will be performed at
+    the end of the function, otherwise the caller is responsible for commiting.
+
+    @rtype: Uid
+    @return: the uid object for the given uidname
+    """
+    privatetrans = False
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    try:
+        session.execute("CREATE USER :uid", {'uid': uidname})
+        if privatetrans:
+            session.commit()
+    except:
+        traceback.print_exc()
+        raise
+
+__all__.append('add_database_user')
+
+def get_or_set_uid(uidname, session=None):
+    """
+    Returns uid object for given uidname.
+
+    If no matching uidname is found, a row is inserted.
+
+    @type uidname: string
+    @param uidname: The uid to add
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied).  If not passed, a commit will be performed at
+    the end of the function, otherwise the caller is responsible for commiting.
+
+    @rtype: Uid
+    @return: the uid object for the given uidname
+    """
+    privatetrans = False
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    try:
+        q = session.query(Uid).filter_by(uid=uidname)
+        if q.count() < 1:
+            uid = Uid()
+            uid.uid = uidname
+            session.add(uid)
+            if privatetrans:
+                session.commit()
+            return uid
+        else:
+            return q.one()
+
+    except:
+        traceback.print_exc()
+        raise
+
+__all__.append('get_or_set_uid')
+
 
 def get_uid_from_fingerprint(fpr, session=None):
     if session is None:
