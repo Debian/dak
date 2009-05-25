@@ -43,7 +43,7 @@ import time
 import re
 import apt_pkg, commands
 from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib import queue
 from daklib import utils
 from daklib.dak_exceptions import *
@@ -649,7 +649,7 @@ def main():
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-accepted' is already running.")
             else:
                 raise
-        Logger = Upload.Logger = logging.Logger(Cnf, "process-accepted")
+        Logger = Upload.Logger = daklog.Logger(Cnf, "process-accepted")
         if not installing_to_stable and Cnf.get("Dir::UrgencyLog"):
             Urgency_Logger = Urgency_Log(Cnf)
 

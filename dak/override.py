@@ -27,7 +27,7 @@
 
 import pg, sys
 import apt_pkg
-from daklib import logging
+from daklib import daklog
 from daklib import database
 from daklib import utils
 
@@ -202,7 +202,7 @@ def main ():
 
     game_over()
 
-    Logger = logging.Logger(Cnf, "override")
+    Logger = daklog.Logger(Cnf, "override")
 
     projectB.query("BEGIN WORK")
     # We're in "do it" mode, we have something to do... do it

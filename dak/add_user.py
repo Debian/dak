@@ -25,7 +25,7 @@ import time
 import os
 import apt_pkg
 from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib import queue
 from daklib import utils
 from daklib.regexes import re_gpg_fingerprint, re_user_address, re_user_mails, re_user_name

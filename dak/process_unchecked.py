@@ -49,7 +49,7 @@ import apt_pkg
 from debian_bundle import deb822
 from daklib.dbconn import *
 from daklib.binary import Binary
-from daklib import logging
+from daklib import daklog
 from daklib import queue
 from daklib import utils
 from daklib.textutils import fix_maintainer
@@ -1582,7 +1582,7 @@ def main():
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
             else:
                 raise
-        Logger = Upload.Logger = logging.Logger(Cnf, "process-unchecked")
+        Logger = Upload.Logger = daklog.Logger(Cnf, "process-unchecked")
 
     # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
     bcc = "X-DAK: dak process-unchecked\nX-Katie: $Revision: 1.65 $"

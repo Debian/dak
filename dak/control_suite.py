@@ -44,7 +44,7 @@
 import pg, sys
 import apt_pkg
 from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib import utils
 
 #######################################################################################
@@ -281,7 +281,7 @@ def main ():
     if action == "list":
         get_list(suite)
     else:
-        Logger = logging.Logger(Cnf, "control-suite")
+        Logger = daklog.Logger(Cnf, "control-suite")
         if file_list:
             for f in file_list:
                 process_file(utils.open_file(f), suite, action)

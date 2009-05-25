@@ -43,7 +43,7 @@ import pg
 import sys
 import apt_pkg
 from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib import utils
 
 ################################################################################
@@ -374,7 +374,7 @@ def main():
 
     projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
     database.init(Cnf, projectB)
-    Logger = logging.Logger(Cnf, "make-suite-file-list")
+    Logger = daklog.Logger(Cnf, "make-suite-file-list")
     do_da_do_da()
     Logger.close()
 

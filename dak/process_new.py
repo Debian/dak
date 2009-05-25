@@ -55,7 +55,7 @@ import pwd
 import apt_pkg, apt_inst
 import examine_package
 from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib import queue
 from daklib import utils
 from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
@@ -769,7 +769,7 @@ def init():
 
     if not Options["No-Action"]:
         try:
-            Logger = Upload.Logger = logging.Logger(Cnf, "process-new")
+            Logger = Upload.Logger = daklog.Logger(Cnf, "process-new")
         except CantOpenError, e:
             Options["Trainee"] = "True"
 

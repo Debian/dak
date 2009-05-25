@@ -22,7 +22,7 @@
 import os, pg, sys
 import apt_pkg
 from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib import queue
 from daklib import utils
 from daklib.regexes import re_default_answer
@@ -72,7 +72,7 @@ def main():
     database.init(Cnf, projectB)
 
     Upload = queue.Upload(Cnf)
-    Logger = Upload.Logger = logging.Logger(Cnf, "reject-proposed-updates")
+    Logger = Upload.Logger = daklog.Logger(Cnf, "reject-proposed-updates")
 
     bcc = "X-DAK: dak rejected-proposed-updates\nX-Katie: lauren $Revision: 1.4 $"
     if Cnf.has_key("Dinstall::Bcc"):

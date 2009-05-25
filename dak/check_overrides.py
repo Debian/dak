@@ -51,7 +51,7 @@
 import pg, sys, os
 import apt_pkg
 from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib import utils
 
 ################################################################################
@@ -291,9 +291,9 @@ def main ():
         priorities[i[0]] = i[1]
 
     if not Options["No-Action"]:
-        Logger = logging.Logger(Cnf, "check-overrides")
+        Logger = daklog.Logger(Cnf, "check-overrides")
     else:
-        Logger = logging.Logger(Cnf, "check-overrides", 1)
+        Logger = daklog.Logger(Cnf, "check-overrides", 1)
 
     gen_blacklist(Cnf["Dir::Queue::Accepted"])
 

@@ -53,7 +53,7 @@ import pg, sys, time
 import apt_pkg
 from daklib import utils
 from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib.regexes import re_comments
 
 ################################################################################
@@ -305,7 +305,7 @@ def main ():
             utils.warn("In No-Action Mode")
             noaction = 1
 
-        Logger = logging.Logger(Cnf, "control-overrides", noaction)
+        Logger = daklog.Logger(Cnf, "control-overrides", noaction)
         if file_list:
             for f in file_list:
                 process_file(utils.open_file(f), suite, component, otype, action, noaction)
