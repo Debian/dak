@@ -53,6 +53,12 @@ from dbconn import *
 from config import Config
 import utils
 
+################################################################################
+
+__all__ = []
+
+################################################################################
+
 class Binary(object):
     def __init__(self, filename, reject=None):
         """
