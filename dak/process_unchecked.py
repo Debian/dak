@@ -1082,7 +1082,7 @@ def check_signed_by_key():
         if highest_sid is None:
             reject("Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version" % changes["source"])
         else:
-            for sup in s.query(SrcUploader).join(DBSource).filter_by(source_id=highest_sid)
+            for sup in s.query(SrcUploader).join(DBSource).filter_by(source_id=highest_sid):
                 (rfc822, rfc2047, name, email) = sup.maintainer.get_split_maintainer()
                 if email == uid_email or name == uid_name:
                     should_reject = False
