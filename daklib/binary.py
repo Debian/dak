@@ -306,6 +306,7 @@ def copy_temporary_contents(package, version, archname, deb, reject, session=Non
         sql = """DELETE from pending_content_associations
                  WHERE package=:package AND version=:version AND architecture=:archid"""
         session.execute(sql, vals)
+        session.commit()
 
     return exists
 
