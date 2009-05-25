@@ -211,6 +211,27 @@ def get_binaries_from_name(package, session=None):
 
 __all__.append('get_binaries_from_name')
 
+def get_binary_from_name_suite(package, suitename, session=None):
+    ### For dak examine-package
+    ### XXX: Doesn't use object API yet
+    if session is None:
+        session = DBConn().session()
+
+    sql = """SELECT DISTINCT(b.package), b.version, c.name, su.suite_name
+             FROM binaries b, files fi, location l, component c, bin_associations ba, suite su
+             WHERE b.package=:package
+               AND b.file = fi.id
+               AND fi.location = l.id
+               AND l.component = c.id
+               AND ba.bin=b.id
+               AND ba.suite = su.id
+               AND su.suite_name=:suitename
+          ORDER BY b.version DESC"""
+
+    return session.execute(sql, {'package': package, 'suitename': suitename})
+
+__all__.append('get_binary_from_name_suite')
+
 def get_binary_components(package, suitename, arch, session=None):
 # Check for packages that have moved from one component to another
     query = """SELECT c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f
