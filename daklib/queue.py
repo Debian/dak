@@ -1315,21 +1315,3 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 self.reject("size for %s doesn't match %s." % (found, file))
 
         return (self.reject_message, None)
-
-    def do_query(self, query):
-        """
-        Executes a database query. Writes statistics / timing to stderr.
-
-        @type query: string
-        @param query: database query string, passed unmodified
-
-        @return: db result
-
-        @warning: The query is passed B{unmodified}, so be careful what you use this for.
-        """
-        sys.stderr.write("query: \"%s\" ... " % (query))
-        before = time.time()
-        r = self.projectB.query(query)
-        time_diff = time.time()-before
-        sys.stderr.write("took %.3f seconds.\n" % (time_diff))
-        return r

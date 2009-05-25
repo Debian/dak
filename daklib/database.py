@@ -79,31 +79,6 @@ def init (config, sql):
     Cnf = config
     projectB = sql
 
-
-def do_query(query):
-    """
-    Executes a database query. Writes statistics / timing to stderr.
-
-    @type query: string
-    @param query: database query string, passed unmodified
-
-    @return: db result
-
-    @warning: The query is passed B{unmodified}, so be careful what you use this for.
-    """
-    sys.stderr.write("query: \"%s\" ... " % (query))
-    before = time.time()
-    r = projectB.query(query)
-    time_diff = time.time()-before
-    sys.stderr.write("took %.3f seconds.\n" % (time_diff))
-    if type(r) is int:
-        sys.stderr.write("int result: %s\n" % (r))
-    elif type(r) is types.NoneType:
-        sys.stderr.write("result: None\n")
-    else:
-        sys.stderr.write("pgresult: %s\n" % (r.getresult()))
-    return r
-
 ################################################################################
 
 def get_suite_id (suite):
