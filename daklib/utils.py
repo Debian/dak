@@ -701,16 +701,6 @@ def which_alias_file():
 
 ################################################################################
 
-# Escape characters which have meaning to SQL's regex comparison operator ('~')
-# (woefully incomplete)
-
-def regex_safe (s):
-    s = s.replace('+', '\\\\+')
-    s = s.replace('.', '\\\\.')
-    return s
-
-################################################################################
-
 def TemplateSubst(map, filename):
     """ Perform a substition of template """
     templatefile = open_file(filename)
