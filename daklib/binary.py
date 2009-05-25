@@ -42,15 +42,15 @@ Functions related debian binary packages
 import os
 import sys
 import shutil
-import tempfile
 import tarfile
 import commands
 import traceback
 import atexit
+
 from debian_bundle import deb822
-from dbconn import insert_content_paths, insert_pending_content_paths
+
+from dbconn import *
 from config import Config
-import logging
 import utils
 
 class Binary(object):
@@ -245,4 +245,62 @@ class Binary(object):
 
             os.chdir(cwd)
 
+__all__.append('Binary')
 
+def copy_temporary_contents(package, version, archname, deb, reject, session=None):
+    """
+    copy the previously stored contents from the temp table to the permanant one
+
+    during process-unchecked, the deb should have been scanned and the
+    contents stored in pending_content_associations
+    """
+
+    # first see if contents exist:
+    cnf = Config()
+
+    if session is None:
+        session = DBConn().session()
+
+    arch = get_architecture(archname, session=session)
+
+    in_pcaq = """SELECT 1 FROM pending_content_associations
+                               WHERE package=:package
+                               AND version=:version
+                               AND architecture=:archid LIMIT 1"""
+
+    vals = {'package': package,
+            'version': version,
+            'archid': arch.arch_id}
+
+    exists = True
+    check = session.execute(in_pcaq, vals)
+
+    if check.rowcount > 0:
+        # This should NOT happen.  We should have added contents
+        # during process-unchecked.  if it did, log an error, and send
+        # an email.
+        subst = {
+            "__PACKAGE__": package,
+            "__VERSION__": version,
+            "__ARCH__": arch,
+            "__TO_ADDRESS__": cnf["Dinstall::MyAdminAddress"],
+            "__DAK_ADDRESS__": cnf["Dinstall::MyEmailAddress"] }
+
+        message = utils.TemplateSubst(subst, cnf["Dir::Templates"]+"/missing-contents")
+        utils.send_mail(message)
+
+        exists = Binary(deb, reject).scan_package()
+
+    if exists:
+        sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
+                 SELECT currval('binaries_id_seq'), filepath, filename FROM pending_content_associations
+                 WHERE package=:package AND version=:version AND architecture=:archid"""
+        session.execute(sql, vals)
+
+        sql = """DELETE from pending_content_associations
+                 WHERE package=:package AND version=:version AND architecture=:archid"""
+        session.execute(sql, vals)
+
+    return exists
+
+__all__.append('copy_temporary_contents')

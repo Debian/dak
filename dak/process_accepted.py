@@ -46,6 +46,7 @@ from daklib import database
 from daklib import daklog
 from daklib import queue
 from daklib import utils
+from daklib.binary import copy_temporary_contents
 from daklib.dak_exceptions import *
 from daklib.regexes import re_default_answer, re_issource, re_fdnic
 
@@ -396,7 +397,7 @@ def install ():
                 suite_id = database.get_suite_id(suite)
                 projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%d, currval('binaries_id_seq'))" % (suite_id))
 
-            if not database.copy_temporary_contents(package, version, architecture, newfile, reject):
+            if not copy_temporary_contents(package, version, architecture, newfile, reject):
                 print "REJECT\n" + reject_message,
                 projectB.query("ROLLBACK")
                 raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (package, newfile )
