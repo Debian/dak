@@ -35,7 +35,6 @@ import time
 import types
 import utils
 import pg
-from binary import Binary
 
 ################################################################################
 
