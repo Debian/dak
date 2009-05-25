@@ -58,6 +58,7 @@ from daklib.regexes import re_valid_version, re_valid_pkg_name, re_changelog_ver
                            re_strip_revision, re_strip_srcver, re_spacestrip, \
                            re_isanum, re_no_epoch, re_no_revision, re_taint_free, \
                            re_isadeb, re_extract_src_version, re_issource, re_default_answer
+from daklib.summarystats import SummaryStats
 
 from types import *
 
@@ -1604,8 +1605,8 @@ def main():
             if not Options["No-Action"]:
                 clean_holding()
 
-    accept_count = Upload.accept_count
-    accept_bytes = Upload.accept_bytes
+    accept_count = SummaryStats().accept_count
+    accept_bytes = SummaryStats().accept_bytes
     if accept_count:
         sets = "set"
         if accept_count > 1:

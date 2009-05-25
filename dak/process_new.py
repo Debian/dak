@@ -54,12 +54,14 @@ import contextlib
 import pwd
 import apt_pkg, apt_inst
 import examine_package
+
 from daklib import database
 from daklib import daklog
 from daklib import queue
 from daklib import utils
 from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
 from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
+from daklib.summarystats import SummaryStats
 
 # Globals
 Cnf = None       #: Configuration, apt_pkg.Configuration
@@ -1021,8 +1023,8 @@ def do_pkg(changes_file):
 ################################################################################
 
 def end():
-    accept_count = Upload.accept_count
-    accept_bytes = Upload.accept_bytes
+    accept_count = SummaryStats().accept_count
+    accept_bytes = SummaryStats().accept_bytes
 
     if accept_count:
         sets = "set"
