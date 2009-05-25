@@ -597,7 +597,7 @@ def get_override_type(override_type, session=None):
     """
     if session is None:
         session = DBConn().session()
-    q = session.query(Priority).filter_by(priority=priority)
+    q = session.query(OverrideType).filter_by(overridetype=override_type)
     if q.count() == 0:
         return None
     return q.one()
