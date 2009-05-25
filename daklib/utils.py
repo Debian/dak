@@ -35,11 +35,12 @@ import tempfile
 import traceback
 import stat
 import apt_pkg
-import database
 import time
 import re
 import string
 import email as modemail
+
+from dbconn import DBConn, get_architecture, get_component, get_suite
 from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
@@ -910,15 +911,19 @@ def get_conf():
 
 def parse_args(Options):
     """ Handle -a, -c and -s arguments; returns them as SQL constraints """
+    # XXX: This should go away and everything which calls it be converted
+    #      to use SQLA properly.  For now, we'll just fix it not to use
+    #      the old Pg interface though
+    session = DBConn().session()
     # Process suite
     if Options["Suite"]:
         suite_ids_list = []
-        for suite in split_args(Options["Suite"]):
-            suite_id = database.get_suite_id(suite)
-            if suite_id == -1:
-                warn("suite '%s' not recognised." % (suite))
+        for suitename in split_args(Options["Suite"]):
+            suite = get_suite(suitename, session=session)
+            if suite_id is None:
+                warn("suite '%s' not recognised." % (suitename))
             else:
-                suite_ids_list.append(suite_id)
+                suite_ids_list.append(suite.suite_id)
         if suite_ids_list:
             con_suites = "AND su.id IN (%s)" % ", ".join([ str(i) for i in suite_ids_list ])
         else:
@@ -929,12 +934,12 @@ def parse_args(Options):
     # Process component
     if Options["Component"]:
         component_ids_list = []
-        for component in split_args(Options["Component"]):
-            component_id = database.get_component_id(component)
-            if component_id == -1:
-                warn("component '%s' not recognised." % (component))
+        for componentname in split_args(Options["Component"]):
+            component = get_component(componentname, session=session)
+            if component is None:
+                warn("component '%s' not recognised." % (componentname))
             else:
-                component_ids_list.append(component_id)
+                component_ids_list.append(component.component_id)
         if component_ids_list:
             con_components = "AND c.id IN (%s)" % ", ".join([ str(i) for i in component_ids_list ])
         else:
@@ -944,18 +949,18 @@ def parse_args(Options):
 
     # Process architecture
     con_architectures = ""
+    check_source = 0
     if Options["Architecture"]:
         arch_ids_list = []
-        check_source = 0
-        for architecture in split_args(Options["Architecture"]):
-            if architecture == "source":
+        for archname in split_args(Options["Architecture"]):
+            if archname == "source":
                 check_source = 1
             else:
-                architecture_id = database.get_architecture_id(architecture)
-                if architecture_id == -1:
-                    warn("architecture '%s' not recognised." % (architecture))
+                arch = get_architecture(archname, session=session)
+                if arch is None:
+                    warn("architecture '%s' not recognised." % (archname))
                 else:
-                    arch_ids_list.append(architecture_id)
+                    arch_ids_list.append(arch.arch_id)
         if arch_ids_list:
             con_architectures = "AND a.id IN (%s)" % ", ".join([ str(i) for i in arch_ids_list ])
         else:
