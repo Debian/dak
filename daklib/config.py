@@ -78,6 +78,12 @@ class Config(Singleton):
     def has_key(self, name):
         return self.Cnf.has_key(name)
 
+    def Find(self, *args, **kwargs):
+        return self.Cnf.Find(*args, **kwargs)
+
+    def FindB(self, *args, **kwargs):
+        return self.Cnf.FindB(*args, **kwargs)
+
     def __getitem__(self, name):
         return self.Cnf[name]
 
