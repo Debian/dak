@@ -317,6 +317,59 @@ def get_or_set_contents_file_id(filename, session=None):
 
 __all__.append('get_or_set_contents_file_id')
 
+def get_contents(suite, overridetype, section=None, session=None):
+    """
+    Returns contents for a suite / overridetype combination, limiting
+    to a section if not None.
+
+    @type suite: Suite
+    @param suite: Suite object
+
+    @type overridetype: OverrideType
+    @param overridetype: OverrideType object
+
+    @type section: Section
+    @param section: Optional section object to limit results to
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: ResultsProxy
+    @return: ResultsProxy object set up to return tuples of (filename, section,
+    package, arch_id)
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    # find me all of the contents for a given suite
+    contents_q = """SELECT (p.path||'/'||n.file) AS fn,
+                            s.section,
+                            b.package,
+                            b.architecture
+                   FROM content_associations c join content_file_paths p ON (c.filepath=p.id)
+                   JOIN content_file_names n ON (c.filename=n.id)
+                   JOIN binaries b ON (b.id=c.binary_pkg)
+                   JOIN override o ON (o.package=b.package)
+                   JOIN section s ON (s.id=o.section)
+                   WHERE o.suite = :suiteid AND o.type = :overridetypeid
+                   AND b.type=:overridetypename"""
+
+    vals = {'suiteid': suite.suite_id,
+            'overridetypeid': overridetype.overridetype_id,
+            'overridetypename': overridetype.overridetype}
+
+    if section is not None:
+        contents_q += " AND s.id = :sectionid"
+        vals['sectionid'] = section.section_id
+
+    contents_q += " ORDER BY fn"
+
+    return session.execute(contents_q, vals)
+
+__all__.append('get_contents')
+
 ################################################################################
 
 class ContentFilepath(object):
