@@ -25,14 +25,14 @@
 import sys, os, stat, time, pg
 import gzip, bz2
 import apt_pkg
+
 from daklib import utils
-from daklib import database
 from daklib.dak_exceptions import *
+from daklib.dbconn import *
 
 ################################################################################
 
 Cnf = None
-projectB = None
 out = None
 AptCnf = None
 
@@ -149,7 +149,7 @@ def write_release_file (relpath, suite, component, origin, label, arch, version=
 ################################################################################
 
 def main ():
-    global Cnf, AptCnf, projectB, out
+    global Cnf, AptCnf, out
     out = sys.stdout
 
     Cnf = utils.get_conf()
@@ -174,38 +174,29 @@ def main ():
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf, Options["Apt-Conf"])
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
-
     if not suites:
         suites = Cnf.SubTree("Suite").List()
 
-    for suite in suites:
-        print "Processing: " + suite
+    for suitename in suites:
+        print "Processing: " + suitename
         SuiteBlock = Cnf.SubTree("Suite::" + suite)
+        suiteobj = get_suite(suitename)
 
-        if database.get_suite_untouchable(suite) and not Options["Force-Touch"]:
+        suite = suite.suite_name.lower()
+
+        if suite.untouchable and not Options["Force-Touch"]:
             print "Skipping: " + suite + " (untouchable)"
             continue
 
-        suite = suite.lower()
-
-        origin = SuiteBlock["Origin"]
-        label = SuiteBlock.get("Label", origin)
-        codename = SuiteBlock.get("CodeName", "")
-
+        origin = suite.origin
+        label = suite.label or suite.origin
+        codename = suite.codename or ""
         version = ""
-        description = ""
+        if suite.version and suite.version != '-':
+            version = suite.version
+        description = suite.description or ""
 
-        q = projectB.query("SELECT version, description FROM suite WHERE suite_name = '%s'" % (suite))
-        qs = q.getresult()
-        if len(qs) == 1:
-            if qs[0][0] != "-": version = qs[0][0]
-            if qs[0][1]: description = qs[0][1]
-
-        architectures = database.get_suite_architectures(suite)
-        if architectures == None:
-            architectures = []
+        architectures = get_suite_architectures(suite, skipall=True, skipsrc=True)
 
         if SuiteBlock.has_key("NotAutomatic"):
             notautomatic = "yes"
@@ -237,7 +228,7 @@ def main ():
         print Cnf["Dir::Root"] + tree + "/Release"
         out = open(Cnf["Dir::Root"] + tree + "/Release", "w")
 
-        out.write("Origin: %s\n" % (origin))
+        out.write("Origin: %s\n" % (suiteobj.origin))
         out.write("Label: %s\n" % (label))
         out.write("Suite: %s\n" % (suite))
         if version != "":
@@ -252,7 +243,7 @@ def main ():
 
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
-        out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, architectures))))
+        out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
         if components:
             out.write("Components: %s\n" % (" ".join(components)))
 
