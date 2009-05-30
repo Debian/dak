@@ -20,6 +20,10 @@
 set -e
 # make sure to only use defined variables
 set -u
+# ERR traps should be inherited from functions too. (And command
+# substitutions and subshells and whatnot, but for us the functions is
+# the important part here)
+set -E
 
 # import the general variable set.
 export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
