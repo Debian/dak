@@ -75,7 +75,7 @@ function do_buildd () {
 # the actual unchecked functions follow                                #
 ########################################################################
 
-lockfile "$LOCK_NEW"
+lockfile -r3 "$LOCK_NEW"
 acceptnew
 rm -f "$LOCK_NEW"
 
