@@ -65,6 +65,10 @@ Perform administrative work on the dak database.
                             If SUITELIST is given, add to each of the
                             suites at the same time
 
+  suite / s:
+     s list                 show a list of suites
+     s show SUITE           show config details for a suite
+
   suite-architecture / s-a:
      s-a list-suite ARCH    show the suites an ARCH is in
      s-a list-arch SUITE    show the architectures in a SUITE
@@ -151,9 +155,45 @@ dispatch['a'] = architecture
 
 ################################################################################
 
+def __suite_list(d, args):
+    s = d.session()
+    for j in s.query(Suite).order_by('suite_name').all():
+        print j.suite_name
+
+def __suite_show(d, args):
+    if len(args) < 2:
+        die("E: showing an suite entry requires a suite")
+
+    s = d.session()
+    su = get_suite(args[2].lower())
+    if su is None:
+        die("E: can't find suite entry for %s" % (args[2].lower()))
+
+    print su.details()
+
+def suite(command):
+    args = [str(x) for x in command]
+    Cnf = utils.get_conf()
+    d = DBConn()
+
+    die_arglen(args, 2, "E: suite needs at least a command")
+
+    mode = args[1].lower()
+
+    if mode == 'list':
+        __suite_list(d, args)
+    if mode == 'show':
+        __suite_show(d, args)
+    else:
+        die("E: suite-architecture command unknown")
+
+dispatch['suite'] = suite
+dispatch['s'] = suite
+
+################################################################################
+
 def __suite_architecture_list(d, args):
     s = d.session()
-    suites = s.query(Suite).all()
     for j in s.query(Suite).order_by('suite_name').all():
         print j.suite_name + ' ' + \
               ','.join([a.architecture.arch_string for a in j.suitearchitectures])
