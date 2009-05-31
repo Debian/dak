@@ -951,12 +951,41 @@ __all__.append('SrcUploader')
 
 ################################################################################
 
+SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
+                 ('SuiteID', 'suite_id'),
+                 ('Version', 'version'),
+                 ('Origin', 'origin'),
+                 ('Label', 'label'),
+                 ('Description', 'description'),
+                 ('Untouchable', 'untouchable'),
+                 ('Announce', 'announce'),
+                 ('Codename', 'codename'),
+                 ('OverrideCodename', 'overridecodename'),
+                 ('ValidTime', 'validtime'),
+                 ('Priority', 'priority'),
+                 ('NotAutomatic', 'notautomatic'),
+                 ('CopyChanges', 'copychanges'),
+                 ('CopyDotDak', 'copydotdak'),
+                 ('CommentsDir', 'commentsdir'),
+                 ('OverrideSuite', 'overridesuite'),
+                 ('ChangelogBase', 'changelogbase')]
+
+
 class Suite(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Suite %s>' % self.suite_name
+
+    def details(self):
+        ret = []
+        for disp, field in SUITE_FIELDS:
+            val = getattr(self, field, None)
+            if val is not None:
+                ret.append("%s: %s" % (disp, val))
+
+        return "\n".join(ret)
 
 __all__.append('Suite')
 
