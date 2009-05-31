@@ -22,7 +22,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import codecs
 import email.Header
 
 from dak_exceptions import *
@@ -47,18 +46,15 @@ def rfc2047_encode(s):
     Encodes a (header) string per RFC2047 if necessary.  If the
     string is neither ASCII nor UTF-8, it's assumed to be ISO-8859-1.
     """
-    try:
-        codecs.lookup('ascii')[1](s)
-        return s
-    except UnicodeError:
-        pass
-    try:
-        codecs.lookup('utf-8')[1](s)
-        h = email.Header.Header(s, 'utf-8', 998)
-        return str(h)
-    except UnicodeError:
-        h = email.Header.Header(s, 'iso-8859-1', 998)
-        return str(h)
+    for enc in ['ascii', 'utf-8', 'iso-8859-1']:
+        try:
+            h = email.Header.Header(s, enc, 998)
+            return str(h)
+        except UnicodeError:
+            pass
+
+    # If we get here, we're boned beyond belief
+    return ''
 
 ################################################################################
 
