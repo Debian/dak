@@ -182,10 +182,10 @@ def suite(command):
 
     if mode == 'list':
         __suite_list(d, args)
-    if mode == 'show':
+    elif mode == 'show':
         __suite_show(d, args)
     else:
-        die("E: suite-architecture command unknown")
+        die("E: suite command unknown")
 
 dispatch['suite'] = suite
 dispatch['s'] = suite
