@@ -74,7 +74,9 @@ Packages are currently being installed and indices rebuilt.
 Maintenance is automatic, starting at 01|07|13|19:52 UTC,
 and ending about an hour later.  This file is then removed.
 
-You should not mirror the archive during this period.
+You should not mirror the archive during this period. If you find this
+file on a Debian mirror please have a nice talk with the admin. They
+are doing something wrong.
 EOF
 }
 
@@ -429,7 +431,7 @@ function process_unchecked() {
 # Function to save which stage we are in, so we can restart an interrupted
 # dinstall. Or even run actions in parallel, if we dare to, by simply
 # backgrounding the call to this function. But that should only really be
-# done for things we dont care much about.
+# done for things we don't care much about.
 #
 # This should be called with the first argument being an array, with the
 # members
