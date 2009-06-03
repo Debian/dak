@@ -59,7 +59,7 @@ function cleanup() {
 # If we error out this one is called, *FOLLOWED* by cleanup above
 function onerror() {
     ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
-    cat "$LOGFILE" | mail -s "ATTENTION ATTENTION! dinstall error at ${ERRDATE} (Be quiet, Brain, or I'll stab you with a Q-tip)" cron@ftp-master.debian.org
+    cat "${STAGEFILE}.log" | mail -s "ATTENTION ATTENTION! dinstall error at ${ERRDATE} in ${STAGEFILE} - (Be quiet, Brain, or I'll stab you with a Q-tip)" cron@ftp-master.debian.org
 }
 
 ########################################################################
@@ -446,8 +446,9 @@ function stage() {
     ARGS='GO[@]'
     local "${!ARGS}"
 
-    if [ -f "${stagedir}/${FUNC}" ]; then
-        stamptime=$(/usr/bin/stat -c %Z "${stagedir}/${FUNC}")
+    STAGEFILE="${stagedir}/${FUNC}"
+    if [ -f "${STAGEFILE}" ]; then
+        stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
         unixtime=$(date +%s)
         difference=$(( $unixtime - $stamptime ))
         if [ ${difference} -ge 14400 ]; then
@@ -463,6 +464,11 @@ function stage() {
     # Make sure we are always at the same place. If a function wants to be elsewhere,
     # it has to cd first!
     cd ${configdir}
+
+    # Now redirect the output into $STAGEFILE.log. In case it errors out somewhere our
+    # errorhandler trap can then mail the contents of $STAGEFILE.log only, instead of a whole
+    # dinstall logfile. Short error mails ftw!
+    exec >> "${STAGEFILE}.log" 2>&1
 
     if [ -f "${LOCK_STOP}" ]; then
         log "${LOCK_STOP} exists, exiting immediately"
@@ -480,11 +486,19 @@ function stage() {
     # Make sure we are always at the same place.
     cd ${configdir}
 
-    touch "${stagedir}/${FUNC}"
+    touch "${STAGEFILE}"
 
     if [ -n "${TIME}" ]; then
         ts "${TIME}"
     fi
+
+    # And the output goes back to the normal logfile
+    exec >> "$LOGFILE" 2>&1
+
+    # Now we should make sure that we have a usable dinstall.log, so append the $STAGEFILE.log
+    # to it.
+    cat "${STAGEFILE}.log" >> "${LOGFILE}"
+    rm -f "${STAGEFILE}.log"
 
     if [ -f "${LOCK_STOP}" ]; then
         log "${LOCK_STOP} exists, exiting immediately"
