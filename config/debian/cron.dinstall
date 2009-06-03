@@ -592,7 +592,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="pgdump_pre"
@@ -870,7 +870,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="aptftpcleanup"
