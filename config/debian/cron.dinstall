@@ -16,6 +16,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+# Homer: Are you saying you're never going to eat any animal again? What
+#        about bacon?
+# Lisa: No.
+# Homer: Ham?
+# Lisa: No.
+# Homer: Pork chops?
+# Lisa: Dad, those all come from the same animal.
+# Homer: Heh heh heh. Ooh, yeah, right, Lisa. A wonderful, magical animal.
+
 # exit on errors
 set -e
 # make sure to only use defined variables
