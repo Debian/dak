@@ -46,8 +46,7 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 
 # Timestamp. Used for dinstall stat graphs
 function ts() {
-        TS=$(($TS+1));
-        echo "Archive maintenance timestamp $TS ($1): $(date +%H:%M:%S)"
+        echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
 }
 
 # Cleanup actions
@@ -538,8 +537,6 @@ DINSTALLSTART="${lockdir}/dinstallstart"
 # Marker for dinstall end
 DINSTALLEND="${lockdir}/dinstallend"
 
-# Timestamps start at -1. so first gets 0
-TS=-1
 touch "${DINSTALLSTART}"
 ts "startup"
 
