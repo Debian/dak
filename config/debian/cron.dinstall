@@ -436,7 +436,7 @@ function process_unchecked() {
 # members
 #  - FUNC - the function name to call
 #  - ARGS - Possible arguments to hand to the function. Can be the empty string
-#  - TS   - The timestamp name. Can be the empty string
+#  - TIME - The timestamp name. Can be the empty string
 #  - ERR  - if this is the string false, then the call will be surrounded by
 #           set +e ... set -e calls, so errors in the function do not exit
 #           dinstall. Can be the empty string, meaning true.
@@ -460,7 +460,7 @@ function stage() {
         return
     fi
 
-    debug "Now calling function ${FUNC}. Arguments: ${ARGS}. Timestamp: ${TS}"
+    debug "Now calling function ${FUNC}. Arguments: ${ARGS}. Timestamp: ${TIME}"
 
     # Make sure we are always at the same place. If a function wants to be elsewhere,
     # it has to cd first!
