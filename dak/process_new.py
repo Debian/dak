@@ -935,7 +935,7 @@ def do_accept_stableupdate(suite, q):
         elif is_source_in_queue_dir(Cnf["Dir::Queue::Newstage"]):
             # It's in newstage.  Accept into the holding area
             print "Binary-only upload, source in newstage."
-            move_to_holding(suite, Cnf["Dir::Queue::Newstage"])
+            _accept()
         else:
             # No case applicable.  Bail out.  Return will cause the upload
             # to be skipped.
