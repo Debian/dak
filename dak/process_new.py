@@ -225,7 +225,7 @@ def sort_changes(changes_files):
             mtime = os.stat(d["filename"])[stat.ST_MTIME]
             if mtime < oldest:
                 oldest = mtime
-            have_note += (database.has_new_comment(d["source"], d["version"]))
+            have_note += (database.has_new_comment(d["source"], d["version"], True))
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -496,7 +496,8 @@ def edit_note(note):
     elif answer == 'Q':
         end()
         sys.exit(0)
-    database.add_new_comment(Upload.pkg.changes["source"], Upload.pkg.changes["version"], newnote, utils.whoami())
+
+    database.add_new_comment(Upload.pkg.changes["source"], Upload.pkg.changes["version"], newnote, utils.whoami(), Options["Trainee"])
 
 ################################################################################
 
@@ -766,7 +767,7 @@ def init():
         try:
             Logger = Upload.Logger = logging.Logger(Cnf, "process-new")
         except CantOpenError, e:
-            Options["Trainee"] = "Oh yes"
+            Options["Trainee"] = True
 
     projectB = Upload.projectB
 

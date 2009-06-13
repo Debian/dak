@@ -864,9 +864,10 @@ def get_new_comments(package):
 
     return comments
 
-def has_new_comment(package, version):
+def has_new_comment(package, version, ignore_trainee=False):
     """
     Returns true if the given combination of C{package}, C{version} has a comment.
+    If C{ignore_trainee} is true, comments from a trainee are ignored.
 
     @type package: string
     @param package: name of the package
@@ -874,22 +875,30 @@ def has_new_comment(package, version):
     @type version: string
     @param version: package version
 
+    @type version: boolean
+    @param version: ignore trainee comments
+
     @rtype: boolean
     @return: true/false
     """
 
+    trainee=""
+    if ignore_trainee:
+        trainee='AND trainee=false'
+
     exists = projectB.query("""SELECT 1 FROM new_comments
                                WHERE package='%s'
                                AND version='%s'
+                               %s
                                LIMIT 1"""
-                            % (package, version) ).getresult()
+                            % (package, version, trainee) ).getresult()
 
     if not exists:
         return False
     else:
         return True
 
-def add_new_comment(package, version, comment, author):
+def add_new_comment(package, version, comment, author, trainee=False):
     """
     Add a new comment for C{package}, C{version} written by C{author}
 
@@ -904,11 +913,14 @@ def add_new_comment(package, version, comment, author):
 
     @type author: string
     @param author: the authorname
+
+    @type trainee: boolean
+    @param trainee: trainee comment
     """
 
-    projectB.query(""" INSERT INTO new_comments (package, version, comment, author)
-                       VALUES ('%s', '%s', '%s', '%s')
-    """ % (package, version, pg.escape_string(comment), pg.escape_string(author)))
+    projectB.query(""" INSERT INTO new_comments (package, version, comment, author, trainee)
+                       VALUES ('%s', '%s', '%s', '%s', '%s')
+    """ % (package, version, pg.escape_string(comment), pg.escape_string(author), trainee))
 
     return
 
