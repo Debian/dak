@@ -497,7 +497,7 @@ def edit_note(note):
         end()
         sys.exit(0)
 
-    database.add_new_comment(Upload.pkg.changes["source"], Upload.pkg.changes["version"], newnote, utils.whoami(), Options["Trainee"])
+    database.add_new_comment(Upload.pkg.changes["source"], Upload.pkg.changes["version"], newnote, utils.whoami(), bool(Options["Trainee"]))
 
 ################################################################################
 
@@ -767,7 +767,7 @@ def init():
         try:
             Logger = Upload.Logger = logging.Logger(Cnf, "process-new")
         except CantOpenError, e:
-            Options["Trainee"] = True
+            Options["Trainee"] = "True"
 
     projectB = Upload.projectB
 
