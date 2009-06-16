@@ -33,7 +33,7 @@ function make_buildd_dir () {
 	cd  ${incoming}
 	rm -f buildd/Release*
 	apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd incoming" -o APT::FTPArchive::Release::Architectures="${archs}" release buildd > Release
-	gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 6070D3A1 --detach-sign -o Release.gpg Release
+	gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o Release.gpg Release
 	mv Release* buildd/.
 
 	cd ${incoming}
