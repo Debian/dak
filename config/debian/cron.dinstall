@@ -58,7 +58,17 @@ function cleanup() {
 # If we error out this one is called, *FOLLOWED* by cleanup above
 function onerror() {
     ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
-    cat "${STAGEFILE}.log" | mail -s "ATTENTION ATTENTION! dinstall error at ${ERRDATE} in ${STAGEFILE} - (Be quiet, Brain, or I'll stab you with a Q-tip)" cron@ftp-master.debian.org
+    error=${ERR:-"false"}
+
+    subject="ATTENTION ATTENTION!"
+    if [ "${error}" = "false" ]; then
+        subject="${subject} (continued)"
+    else
+        subject="${subject} (interrupted)"
+    fi
+    subject="${subject} dinstall error at ${ERRDATE} in ${STAGEFILE} - (Be quiet, Brain, or I'll stab you with a Q-tip)"
+
+    cat "${STAGEFILE}.log" | mail -s "${subject}" -a "X-Debian: DAK" cron@ftp-master.debian.org
 }
 
 ########################################################################
