@@ -58,7 +58,6 @@ function cleanup() {
 # If we error out this one is called, *FOLLOWED* by cleanup above
 function onerror() {
     ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
-    error=${ERR:-"false"}
 
     subject="ATTENTION ATTENTION!"
     if [ "${error}" = "false" ]; then
@@ -457,6 +456,8 @@ function stage() {
     ARGS='GO[@]'
     local "${!ARGS}"
 
+    error=${ERR:-"false"}
+
     STAGEFILE="${stagedir}/${FUNC}"
     if [ -f "${STAGEFILE}" ]; then
         stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
@@ -486,7 +487,7 @@ function stage() {
         exit 42
     fi
 
-    if [ "${ERR}" = "false" ]; then
+    if [ "${error}" = "false" ]; then
         set +e
     fi
     ${FUNC} ${ARGS}
