@@ -934,6 +934,16 @@ def delete_new_comments(package, version):
     """ % (package, version))
     return
 
+def delete_all_new_comments(package):
+    """
+    Delete all comments for C{package}, if they exist
+    """
+
+    projectB.query(""" DELETE FROM new_comments
+                       WHERE package = '%s'
+    """ % (package))
+    return
+
 ################################################################################
 def copy_temporary_contents(package, version, arch, deb, reject):
     """

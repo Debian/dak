@@ -676,7 +676,7 @@ def do_new():
             print "W: [!] marked entries must be fixed before package can be processed."
         if note:
             print "W: note must be removed before package can be processed."
-            prompt += "Remove note, "
+            prompt += "RemOve all notes, Remove note, "
 
         prompt += "Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?"
 
@@ -713,6 +713,10 @@ def do_new():
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
                 database.delete_new_comments(changes.get("source"), changes.get("version"))
+        elif answer == 'O' and not Options["Trainee"]:
+            confirm = utils.our_raw_input("Really clear all notes (y/N)? ").lower()
+            if confirm == "y":
+                database.delete_all_new_comments(changes.get("source"))
         elif answer == 'S':
             done = 1
         elif answer == 'Q':
