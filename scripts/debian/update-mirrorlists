@@ -9,9 +9,9 @@ prog=$scriptdir/mirrorlist/mirror_list.pl
 masterlist=$scriptdir/mirrorlist/Mirrors.masterlist
 
 test ! -f $HOME/.cvspass && \
-	echo ":pserver:anonymous@cvs.debian.org:/cvs/webwml A" > $HOME/.cvspass
-grep -q "cvs.debian.org:/cvs/webwml" ~/.cvspass || \
-	echo ":pserver:anonymous@cvs.debian.org:/cvs/webwml A" >> $HOME/.cvspass
+	echo ":pserver:anonymous@cvs.alioth.debian.org:/cvsroot/webwml A" > $HOME/.cvspass
+grep -q "cvs.alioth.debian.org:/cvs/webwml" ~/.cvspass || \
+	echo ":pserver:anonymous@cvs.alioth.debian.org:/cvsroot/webwml A" >> $HOME/.cvspass
 
 cd $(dirname $masterlist)
 cvs update
