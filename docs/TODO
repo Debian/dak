@@ -4,6 +4,29 @@
 Various
 -------
 
+* Lintian based automated rejects
+ - Have a set of lintian tags each package *must* not have. If it does
+   -> reject.
+ - If a tag is overriden by the maintainer, do not reject, but put it
+   into NEW. If the override is ok note that in a table and dont act on
+   it for any future uploads of this package anymore.
+ - possibly have two classes of tags. one for "shouldnt happen by
+   accident" and one "shouldnt happen". the first gets ignored from us
+   if overwritten in the package, the second only us can overwrite.
+ - its a suite option in dak, not active for all at once.
+
+* Throw away all DD uploaded .debs. (Depend on "Lintian based automated
+   rejects")
+  - Depends on the lintian based automated rejects, we do want correct
+   .debs uploaded. Ubuntu nicely demonstrated the quality loss if people
+   can just upload anything without even having to get one build
+   running.
+  - Need a way to define a build-architecture for arch_all debs. Some of
+   them can only be build on certain architectures.
+   A control file header build-architecture: YXY should do it.
+  - its a suite option, not active for all at once.
+  - should have all buildd machines under dsa control
+
 * Implement autosigning, see ftpmaster_autosigning on ftp-master host in text/.
 
 * Check TODO.old and move still-valid/useful entries over here.
