@@ -76,7 +76,7 @@ $pidfile = "$queued_dir/pid";
 $upload_method = "ftp";
 
 # name of target host (ignored on copy method)
-$target = "ftp.upload.debian.org";
+$target = "ftp-master.debian.org";
 
 # login name on target host (for ssh, always 'ftp' for ftp, ignored for copy)
 $targetlogin = "ftp";
