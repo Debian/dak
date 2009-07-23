@@ -36,21 +36,51 @@ import time
 import apt_inst
 import apt_pkg
 import utils
-import database
+from types import *
 
 from dak_exceptions import *
 from changes import *
 from regexes import re_default_answer, re_fdnic, re_bin_only_nmu
 from config import Config
+from dbconn import *
 from summarystats import SummaryStats
-
-from types import *
 
 ###############################################################################
 
+def get_type(f, session=None):
+    """
+    Get the file type of C{f}
+
+    @type f: dict
+    @param f: file entry from Changes object
+
+    @rtype: string
+    @return: filetype
+
+    """
+    if session is None:
+        session = DBConn().session()
+
+    # Determine the type
+    if f.has_key("dbtype"):
+        file_type = file["dbtype"]
+    elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
+        file_type = "dsc"
+    else:
+        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (file_type))
+
+    # Validate the override type
+    type_id = get_override_type(file_type, session)
+    if type_id is None:
+        utils.fubar("invalid type (%s) for new.  Say wha?" % (file_type))
+
+    return file_type
+
+################################################################################
+
 # Determine what parts in a .changes are NEW
 
-def determine_new(changes, files, projectB, warn=1):
+def determine_new(changes, files, warn=1):
     """
     Determine what parts in a C{changes} file are NEW.
 
@@ -59,9 +89,6 @@ def determine_new(changes, files, projectB, warn=1):
 
     @type files: Upload.Pkg.files dict
     @param files: Files dictionary
-
-    @type projectB: pgobject
-    @param projectB: DB handle
 
     @type warn: bool
     @param warn: Warn if overrides are added for (old)stable
@@ -72,9 +99,10 @@ def determine_new(changes, files, projectB, warn=1):
     """
     new = {}
 
+    session = DBConn().session()
+
     # Build up a list of potentially new things
-    for file_entry in files.keys():
-        f = files[file_entry]
+    for name, f in files.items():
         # Skip byhand elements
         if f["type"] == "byhand":
             continue
@@ -86,6 +114,7 @@ def determine_new(changes, files, projectB, warn=1):
 
         if file_type == "dsc":
             priority = "source"
+
         if not new.has_key(pkg):
             new[pkg] = {}
             new[pkg]["priority"] = priority
@@ -102,28 +131,25 @@ def determine_new(changes, files, projectB, warn=1):
                     new[pkg]["section"] = section
                     new[pkg]["type"] = file_type
                     new[pkg]["component"] = component
-        new[pkg]["files"].append(file_entry)
+
+        new[pkg]["files"].append(name)
+
         if f.has_key("othercomponents"):
             new[pkg]["othercomponents"] = f["othercomponents"]
 
     for suite in changes["suite"].keys():
-        suite_id = database.get_suite_id(suite)
         for pkg in new.keys():
-            component_id = database.get_component_id(new[pkg]["component"])
-            type_id = database.get_override_type_id(new[pkg]["type"])
-            q = projectB.query("SELECT package FROM override WHERE package = '%s' AND suite = %s AND component = %s AND type = %s" % (pkg, suite_id, component_id, type_id))
-            ql = q.getresult()
-            if ql:
+            ql = get_override(pkg, suite, new[pkg]["component"], new[pkg]["type"], session)
+            if len(ql) > 0:
                 for file_entry in new[pkg]["files"]:
                     if files[file_entry].has_key("new"):
                         del files[file_entry]["new"]
                 del new[pkg]
 
     if warn:
-        if changes["suite"].has_key("stable"):
-            print "WARNING: overrides will be added for stable!"
-            if changes["suite"].has_key("oldstable"):
-                print "WARNING: overrides will be added for OLDstable!"
+        for s in ['stable', 'oldstable']:
+            if changes["suite"].has_key(s):
+                print "WARNING: overrides will be added for %s!" % s
         for pkg in new.keys():
             if new[pkg].has_key("othercomponents"):
                 print "WARNING: %s already present in %s distribution." % (pkg, new[pkg]["othercomponents"])
@@ -131,36 +157,6 @@ def determine_new(changes, files, projectB, warn=1):
     return new
 
 ################################################################################
-
-def get_type(file):
-    """
-    Get the file type of C{file}
-
-    @type file: dict
-    @param file: file entry
-
-    @rtype: string
-    @return: filetype
-
-    """
-    # Determine the type
-    if file.has_key("dbtype"):
-        file_type = file["dbtype"]
-    elif file["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
-        file_type = "dsc"
-    else:
-        utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (file_type))
-
-    # Validate the override type
-    type_id = database.get_override_type_id(file_type)
-    if type_id == -1:
-        utils.fubar("invalid type (%s) for new.  Say wha?" % (file_type))
-
-    return file_type
-
-################################################################################
-
-
 
 def check_valid(new):
     """
@@ -175,19 +171,34 @@ def check_valid(new):
 
     """
     for pkg in new.keys():
-        section = new[pkg]["section"]
-        priority = new[pkg]["priority"]
+        section_name = new[pkg]["section"]
+        priority_name = new[pkg]["priority"]
         file_type = new[pkg]["type"]
-        new[pkg]["section id"] = database.get_section_id(section)
-        new[pkg]["priority id"] = database.get_priority_id(new[pkg]["priority"])
-        # Sanity checks
-        di = section.find("debian-installer") != -1
-        if (di and file_type not in ("udeb", "dsc")) or (not di and file_type == "udeb"):
+
+        section = get_section(section_name)
+        if section is None:
             new[pkg]["section id"] = -1
+        else:
+            new[pkg]["section id"] = section.section_id
+
+        priority = get_priority(priority_name)
+        if priority is None:
+            new[pkg]["priority id"] = -1
+        else:
+            new[pkg]["priority id"] = priority.priority_id
+
+        # Sanity checks
+        di = section_name.find("debian-installer") != -1
+
+        # If d-i, we must be udeb and vice-versa
+        if     (di and file_type not in ("udeb", "dsc")) or \
+           (not di and file_type == "udeb"):
+            new[pkg]["section id"] = -1
+
+        # If dsc we need to be source and vice-versa
         if (priority == "source" and file_type != "dsc") or \
            (priority != "source" and file_type == "dsc"):
             new[pkg]["priority id"] = -1
-
 
 ###############################################################################
 
@@ -197,12 +208,6 @@ class Upload(object):
 
     """
     def __init__(self):
-        """
-        Initialize various variables and the global substitution template mappings.
-        Also connect to the DB and initialize the Database module.
-
-        """
-
         self.pkg = Changes()
         self.reset()
 
@@ -220,7 +225,7 @@ class Upload(object):
         self.Subst["__DAK_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
 
         self.reject_message = ""
-        self.changes.reset()
+        self.pkg.reset()
 
     ###########################################################################
     def update_subst(self, reject_message = ""):
@@ -690,10 +695,10 @@ distribution."""
         @param package: package name
 
         @type component: string
-        @param component: database id of the component, as returned by L{database.get_component_id}
+        @param component: database id of the component
 
         @type suite: int
-        @param suite: database id of the suite, as returned by L{database.get_suite_id}
+        @param suite: database id of the suite
 
         @type binary_type: string
         @param binary_type: type of the package
