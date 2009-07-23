@@ -194,12 +194,18 @@ def get_binary_from_id(id, session=None):
 
 __all__.append('get_binary_from_id')
 
-def get_binaries_from_name(package, session=None):
+def get_binaries_from_name(package, version=None, architecture=None, session=None):
     """
     Returns list of DBBinary objects for given C{package} name
 
     @type package: str
     @param package: DBBinary package name to search for
+
+    @type version: str or None
+    @param version: Version to search for (or None)
+
+    @type package: str, list or None
+    @param package: Architectures to limit to (or None if no limit)
 
     @type session: Session
     @param session: Optional SQL session object (a temporary one will be
@@ -210,9 +216,41 @@ def get_binaries_from_name(package, session=None):
     """
     if session is None:
         session = DBConn().session()
-    return session.query(DBBinary).filter_by(package=package).all()
+
+    q = session.query(DBBinary).filter_by(package=package)
+
+    if version is not None:
+        q = q.filter_by(version=version)
+
+    if architecture is not None:
+        if not isinstance(architecture, list):
+            architecture = [architecture]
+        q = q.join(Architecture).filter(Architecture.arch_string.in_(architecture))
+
+    return q.all()
 
 __all__.append('get_binaries_from_name')
+
+def get_binaries_from_source_id(source_id, session=None):
+    """
+    Returns list of DBBinary objects for given C{source_id}
+
+    @type source_id: int
+    @param source_id: source_id to search for
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: list of DBBinary objects for the given name (may be empty)
+    """
+    if session is None:
+        session = DBConn().session()
+    return session.query(DBBinary).filter_by(source_id=source_id).all()
+
+__all__.append('get_binaries_from_source_id')
+
 
 def get_binary_from_name_suite(package, suitename, session=None):
     ### For dak examine-package
@@ -252,6 +290,7 @@ def get_binary_components(package, suitename, arch, session=None):
     return session.execute(query, vals)
 
 __all__.append('get_binary_components')
+
 ################################################################################
 
 class Component(object):
@@ -1249,12 +1288,15 @@ def source_exists(source, source_version, suites = ["any"], session=None):
 
 __all__.append('source_exists')
 
-def get_sources_from_name(source, dm_upload_allowed=None, session=None):
+def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=None):
     """
-    Returns list of DBSource objects for given C{source} name
+    Returns list of DBSource objects for given C{source} name and other parameters
 
     @type source: str
     @param source: DBSource package name to search for
+
+    @type source: str or None
+    @param source: DBSource version name to search for or None if not applicable
 
     @type dm_upload_allowed: bool
     @param dm_upload_allowed: If None, no effect.  If True or False, only
@@ -1271,6 +1313,10 @@ def get_sources_from_name(source, dm_upload_allowed=None, session=None):
         session = DBConn().session()
 
     q = session.query(DBSource).filter_by(source=source)
+
+    if version is not None:
+        q = q.filter_by(version=version)
+
     if dm_upload_allowed is not None:
         q = q.filter_by(dm_upload_allowed=dm_upload_allowed)
 
