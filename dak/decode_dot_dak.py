@@ -28,7 +28,7 @@
 
 import sys
 import apt_pkg
-from daklib import queue
+from daklib.changes import Changes
 from daklib import utils
 
 ################################################################################
@@ -55,77 +55,13 @@ def main():
     if Options["Help"]:
         usage()
 
-    k = queue.Upload(Cnf)
+
     for arg in sys.argv[1:]:
         arg = utils.validate_changes_file_arg(arg,require_changes=-1)
-        k.pkg.changes_file = arg
-        print "%s:" % (arg)
-        k.init_vars()
-        k.update_vars()
-
-        changes = k.pkg.changes
-        print " Changes:"
-        # Mandatory changes fields
-        for i in [ "source", "version", "maintainer", "urgency", "changedby822",
-                   "changedby2047", "changedbyname", "maintainer822",
-                   "maintainer2047", "maintainername", "maintaineremail",
-                   "fingerprint", "changes" ]:
-            print "  %s: %s" % (i.capitalize(), changes[i])
-            del changes[i]
-        # Mandatory changes lists
-        for i in [ "distribution", "architecture", "closes" ]:
-            print "  %s: %s" % (i.capitalize(), " ".join(changes[i].keys()))
-            del changes[i]
-        # Optional changes fields
-        for i in [ "changed-by", "filecontents", "format", "adv id" ]:
-            if changes.has_key(i):
-                print "  %s: %s" % (i.capitalize(), changes[i])
-                del changes[i]
-        print
-        if changes:
-            utils.warn("changes still has following unrecognised keys: %s" % (changes.keys()))
-
-        dsc = k.pkg.dsc
-        print " Dsc:"
-        for i in [ "source", "version", "maintainer", "fingerprint", "uploaders",
-                   "bts changelog" ]:
-            if dsc.has_key(i):
-                print "  %s: %s" % (i.capitalize(), dsc[i])
-                del dsc[i]
-        print
-        if dsc:
-            utils.warn("dsc still has following unrecognised keys: %s" % (dsc.keys()))
-
-        files = k.pkg.files
-        print " Files:"
-        for f in files.keys():
-            print "  %s:" % (f)
-            for i in [ "package", "version", "architecture", "type", "size",
-                       "md5sum", "sha1sum", "sha256sum", "component", "location id",
-                       "source package", "source version", "maintainer", "dbtype",
-                       "files id", "new", "section", "priority", "pool name" ]:
-                if files[f].has_key(i):
-                    print "   %s: %s" % (i.capitalize(), files[f][i])
-                    del files[f][i]
-            if files[f]:
-                utils.warn("files[%s] still has following unrecognised keys: %s" % (f, files[f].keys()))
-        print
-
-        dsc_files = k.pkg.dsc_files
-        print " Dsc Files:"
-        for f in dsc_files.keys():
-            print "  %s:" % (f)
-            # Mandatory fields
-            for i in [ "size", "md5sum" ]:
-                print "   %s: %s" % (i.capitalize(), dsc_files[f][i])
-                del dsc_files[f][i]
-            # Optional fields
-            for i in [ "files id" ]:
-                if dsc_files[f].has_key(i):
-                    print "   %s: %s" % (i.capitalize(), dsc_files[f][i])
-                    del dsc_files[f][i]
-            if dsc_files[f]:
-                utils.warn("dsc_files[%s] still has following unrecognised keys: %s" % (f, dsc_files[f].keys()))
+        k = Changes()
+        k.load_dot_dak(arg)
+        print arg
+        print k
 
 ################################################################################
 

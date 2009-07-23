@@ -287,4 +287,103 @@ class Changes(object):
 
         dump_file.close()
 
+    def unknown_files_fields(self, name):
+        return sorted(list( set(self.files[name].keys()) -
+                            set(CHANGESFIELDS_FILES)))
+
+    def unknown_changes_fields(self):
+        return sorted(list( set(self.changes.keys()) -
+                            set(CHANGESFIELDS_MANDATORY + CHANGESFIELDS_OPTIONAL)))
+
+    def unknown_dsc_fields(self):
+        return sorted(list( set(self.dsc.keys()) -
+                            set(CHANGESFIELDS_DSC)))
+
+    def unknown_dsc_files_fields(self, name):
+        return sorted(list( set(self.dsc_files[name].keys()) -
+                            set(CHANGESFIELDS_DSCFILES_MANDATORY + CHANGESFIELDS_DSCFILES_OPTIONAL)))
+
+    def str_files(self):
+        r = []
+        for name, entry in self.files.items():
+            r.append("  %s:" % (name))
+            for i in CHANGESFIELDS_FILES:
+                if entry.has_key(i):
+                    r.append("   %s: %s" % (i.capitalize(), entry[i]))
+            xfields = self.unknown_files_fields(name)
+            if len(xfields) > 0:
+                r.append("files[%s] still has following unrecognised keys: %s" % (name, ", ".join(xfields)))
+
+        return r
+
+    def str_changes(self):
+        r = []
+        for i in CHANGESFIELDS_MANDATORY:
+            val = self.changes[i]
+            if isinstance(val, list):
+                val = " ".join(val)
+            elif isinstance(val, dict):
+                val = " ".join(val.keys())
+            r.append('  %s: %s' % (i.capitalize(), val))
+
+        for i in CHANGESFIELDS_OPTIONAL:
+            if self.changes.has_key(i):
+                r.append('  %s: %s' % (i.capitalize(), self.changes[i]))
+
+        xfields = self.unknown_changes_fields()
+        if len(xfields) > 0:
+            r.append("Warning: changes still has the following unrecognised fields: %s" % ", ".join(xfields))
+
+        return r
+
+    def str_dsc(self):
+        r = []
+        for i in CHANGESFIELDS_DSC:
+            if self.dsc.has_key(i):
+                r.append('  %s: %s' % (i.capitalize(), self.dsc[i]))
+
+        xfields = self.unknown_dsc_fields()
+        if len(xfields) > 0:
+            r.append("Warning: dsc still has the following unrecognised fields: %s" % ", ".join(xfields))
+
+        return r
+
+    def str_dsc_files(self):
+        r = []
+        for name, entry in self.dsc_files.items():
+            r.append("  %s:" % (name))
+            for i in CHANGESFIELDS_DSCFILES_MANDATORY:
+                r.append("   %s: %s" % (i.capitalize(), entry[i]))
+            for i in CHANGESFIELDS_DSCFILES_OPTIONAL:
+                if entry.has_key(i):
+                    r.append("   %s: %s" % (i.capitalize(), entry[i]))
+            xfields = self.unknown_dsc_files_fields(name)
+            if len(xfields) > 0:
+                r.append("dsc_files[%s] still has following unrecognised keys: %s" % (name, ", ".join(xfields)))
+
+        return r
+
+    def __str__(self):
+        r = []
+
+        r.append(" Changes:")
+        r += self.str_changes()
+
+        r.append("")
+
+        r.append(" Dsc:")
+        r += self.str_dsc()
+
+        r.append("")
+
+        r.append(" Files:")
+        r += self.str_files()
+
+        r.append("")
+
+        r.append(" Dsc Files:")
+        r += self.str_dsc_files()
+
+        return "\n".join(r)
+
 __all__.append('Changes')
