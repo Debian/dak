@@ -43,6 +43,9 @@ from sqlalchemy.orm import sessionmaker, mapper, relation
 # Don't remove this, we re-export the exceptions to scripts which import us
 from sqlalchemy.exc import *
 
+# Only import Config until Queue stuff is changed to store its config
+# in the database
+from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
 
@@ -557,6 +560,27 @@ def get_poolfile_by_name(filename, location_id=None, session=None):
 
 __all__.append('get_poolfile_by_name')
 
+def get_poolfile_like_name(filename, session=None):
+    """
+    Returns an array of PoolFile objects which are like the given name
+
+    @type filename: string
+    @param filename: the filename of the file to check against the DB
+
+    @rtype: array
+    @return: array of PoolFile objects
+    """
+
+    if session is not None:
+        session = DBConn().session()
+
+    # TODO: There must be a way of properly using bind parameters with %FOO%
+    q = session.query(PoolFile).filter(PoolFile.filename.like('%%%s%%' % filename))
+
+    return q.all()
+
+__all__.append('get_poolfile_like_name')
+
 ################################################################################
 
 class Fingerprint(object):
@@ -653,6 +677,56 @@ class Override(object):
         return '<Override %s (%s)>' % (self.package, self.suite_id)
 
 __all__.append('Override')
+
+def get_override(package, suite=None, component=None, overridetype=None, session=None):
+    """
+    Returns Override object for the given parameters
+
+    @type package: string
+    @param package: The name of the package
+
+    @type suite: string, list or None
+    @param suite: The name of the suite (or suites if a list) to limit to.  If
+                  None, don't limit.  Defaults to None.
+
+    @type component: string, list or None
+    @param component: The name of the component (or components if a list) to
+                      limit to.  If None, don't limit.  Defaults to None.
+
+    @type overridetype: string, list or None
+    @param overridetype: The name of the overridetype (or overridetypes if a list) to
+                         limit to.  If None, don't limit.  Defaults to None.
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: A (possibly empty) list of Override objects will be returned
+
+    """
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(Override)
+    q = q.filter_by(package=package)
+
+    if suite is not None:
+        if not isinstance(suite, list): suite = [suite]
+        q = q.join(Suite).filter(Suite.suite_name.in_(suite))
+
+    if component is not None:
+        if not isinstance(component, list): component = [component]
+        q = q.join(Component).filter(Component.component_name.in_(component))
+
+    if overridetype is not None:
+        if not isinstance(overridetype, list): overridetype = [overridetype]
+        q = q.join(OverrideType).filter(OverrideType.overridetype.in_(overridetype))
+
+    return q.all()
+
+__all__.append('get_override')
+
 
 ################################################################################
 
@@ -810,7 +884,142 @@ class Queue(object):
     def __repr__(self):
         return '<Queue %s>' % self.queue_name
 
+    def autobuild_upload(self, changes, srcpath, session=None):
+        """
+        Update queue_build database table used for incoming autobuild support.
+
+        @type changes: Changes
+        @param changes: changes object for the upload to process
+
+        @type srcpath: string
+        @param srcpath: path for the queue file entries/link destinations
+
+        @type session: SQLAlchemy session
+        @param session: Optional SQLAlchemy session.  If this is passed, the
+        caller is responsible for ensuring a transaction has begun and
+        committing the results or rolling back based on the result code.  If
+        not passed, a commit will be performed at the end of the function,
+        otherwise the caller is responsible for commiting.
+
+        @rtype: NoneType or string
+        @return: None if the operation failed, a string describing the error if not
+        """
+
+        localcommit = False
+        if session is None:
+            session = DBConn().session()
+            localcommit = True
+
+        # TODO: Remove by moving queue config into the database
+        conf = Config()
+
+        for suitename in changes.changes["distribution"].keys():
+            # TODO: Move into database as:
+            #       buildqueuedir TEXT DEFAULT NULL (i.e. NULL is no build)
+            #       buildqueuecopy BOOLEAN NOT NULL DEFAULT FALSE (i.e. default is symlink)
+            #       This also gets rid of the SecurityQueueBuild hack below
+            if suitename not in conf.ValueList("Dinstall::QueueBuildSuites"):
+                continue
+
+            # Find suite object
+            s = get_suite(suitename, session)
+            if s is None:
+                return "INTERNAL ERROR: Could not find suite %s" % suitename
+
+            # TODO: Get from database as above
+            dest_dir = conf["Dir::QueueBuild"]
+
+            # TODO: Move into database as above
+            if conf.FindB("Dinstall::SecurityQueueBuild"):
+                dest_dir = os.path.join(dest_dir, suitename)
+
+            for file_entry in changes.files.keys():
+                src = os.path.join(srcpath, file_entry)
+                dest = os.path.join(dest_dir, file_entry)
+
+                # TODO: Move into database as above
+                if Cnf.FindB("Dinstall::SecurityQueueBuild"):
+                    # Copy it since the original won't be readable by www-data
+                    utils.copy(src, dest)
+                else:
+                    # Create a symlink to it
+                    os.symlink(src, dest)
+
+                qb = QueueBuild()
+                qb.suite_id = s.suite_id
+                qb.queue_id = self.queue_id
+                qb.filename = dest
+                qb.in_queue = True
+
+                session.add(qb)
+
+            # If the .orig.tar.gz is in the pool, create a symlink to
+            # it (if one doesn't already exist)
+            if changes.orig_tar_id:
+                # Determine the .orig.tar.gz file name
+                for dsc_file in changes.dsc_files.keys():
+                    if dsc_file.endswith(".orig.tar.gz"):
+                        filename = dsc_file
+
+                dest = os.path.join(dest_dir, filename)
+
+                # If it doesn't exist, create a symlink
+                if not os.path.exists(dest):
+                    q = session.execute("SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id",
+                                        {'id': changes.orig_tar_id})
+                    res = q.fetchone()
+                    if not res:
+                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (changes.orig_tar_id)
+
+                    src = os.path.join(res[0], res[1])
+                    os.symlink(src, dest)
+
+                    # Add it to the list of packages for later processing by apt-ftparchive
+                    qb = QueueBuild()
+                    qb.suite_id = s.suite_id
+                    qb.queue_id = self.queue_id
+                    qb.filename = dest
+                    qb.in_queue = True
+                    session.add(qb)
+
+                # If it does, update things to ensure it's not removed prematurely
+                else:
+                    qb = get_queue_build(dest, suite_id, session)
+                    if qb is None:
+                        qb.in_queue = True
+                        qb.last_used = None
+                        session.add(qb)
+
+        if localcommit:
+            session.commit()
+
+        return None
+
 __all__.append('Queue')
+
+def get_queue(queuename, session=None):
+    """
+    Returns Queue object for given C{queue name}.
+
+    @type queuename: string
+    @param queuename: The name of the queue
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: Queue
+    @return: Queue object for the given queue
+
+    """
+    if session is None:
+        session = DBConn().session()
+    q = session.query(Queue).filter_by(queue_name=queuename)
+    if q.count() == 0:
+        return None
+    return q.one()
+
+__all__.append('get_queue')
 
 ################################################################################
 
@@ -822,6 +1031,33 @@ class QueueBuild(object):
         return '<QueueBuild %s (%s)>' % (self.filename, self.queue_id)
 
 __all__.append('QueueBuild')
+
+def get_queue_build(filename, suite_id, session=None):
+    """
+    Returns QueueBuild object for given C{filename} and C{suite id}.
+
+    @type filename: string
+    @param filename: The name of the file
+
+    @type suiteid: int
+    @param suiteid: Suite ID
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: Queue
+    @return: Queue object for the given queue
+
+    """
+    if session is None:
+        session = DBConn().session()
+    q = session.query(QueueBuild).filter_by(filename=filename).filter_by(suite_id=suite_id)
+    if q.count() == 0:
+        return None
+    return q.one()
+
+__all__.append('get_queue_build')
 
 ################################################################################
 
@@ -868,6 +1104,76 @@ class DBSource(object):
         return '<DBSource %s (%s)>' % (self.source, self.version)
 
 __all__.append('DBSource')
+
+def source_exists(source, source_version, suites = ["any"], session=None):
+    """
+    Ensure that source exists somewhere in the archive for the binary
+    upload being processed.
+      1. exact match     => 1.0-3
+      2. bin-only NMU    => 1.0-3+b1 , 1.0-3.1+b1
+
+    @type package: string
+    @param package: package source name
+
+    @type source_version: string
+    @param source_version: expected source version
+
+    @type suites: list
+    @param suites: list of suites to check in, default I{any}
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: int
+    @return: returns 1 if a source with expected version is found, otherwise 0
+
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    cnf = Config()
+
+    for suite in suites:
+        q = session.query(DBSource).filter_by(source=source)
+        if suite != "any":
+            # source must exist in suite X, or in some other suite that's
+            # mapped to X, recursively... silent-maps are counted too,
+            # unreleased-maps aren't.
+            maps = cnf.ValueList("SuiteMappings")[:]
+            maps.reverse()
+            maps = [ m.split() for m in maps ]
+            maps = [ (x[1], x[2]) for x in maps
+                            if x[0] == "map" or x[0] == "silent-map" ]
+            s = [suite]
+            for x in maps:
+                if x[1] in s and x[0] not in s:
+                    s.append(x[0])
+
+            q = q.join(SrcAssociation).join(Suite)
+            q = q.filter(Suite.suite_name.in_(s))
+
+        # Reduce the query results to a list of version numbers
+        ql = [ j.version for j in q.all() ]
+
+        # Try (1)
+        if source_version in ql:
+            continue
+
+        # Try (2)
+        from daklib.regexes import re_bin_only_nmu
+        orig_source_version = re_bin_only_nmu.sub('', source_version)
+        if orig_source_version in ql:
+            continue
+
+        # No source found so return not ok
+        return 0
+
+    # We're good
+    return 1
+
+__all__.append('source_exists')
 
 def get_sources_from_name(source, dm_upload_allowed=None, session=None):
     """
@@ -1360,7 +1666,7 @@ class DBConn(Singleton):
         mapper(QueueBuild, self.tbl_queue_build,
                properties = dict(suite_id = self.tbl_queue_build.c.suite,
                                  queue_id = self.tbl_queue_build.c.queue,
-                                 queue = relation(Queue)))
+                                 queue = relation(Queue, backref='queuebuild')))
 
         mapper(Section, self.tbl_section,
                properties = dict(section_id = self.tbl_section.c.id))
@@ -1442,4 +1748,5 @@ class DBConn(Singleton):
         return self.db_smaker()
 
 __all__.append('DBConn')
+
 
