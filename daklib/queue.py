@@ -37,8 +37,12 @@ import apt_inst
 import apt_pkg
 import utils
 import database
+
 from dak_exceptions import *
+from changes import *
 from regexes import re_default_answer, re_fdnic, re_bin_only_nmu
+from config import Config
+from summarystats import SummaryStats
 
 from types import *
 
@@ -187,263 +191,95 @@ def check_valid(new):
 
 ###############################################################################
 
-class Pkg:
-    """ Convenience wrapper to carry around all the package information """
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
-
-    def update(self, **kwds):
-        self.__dict__.update(kwds)
-
-###############################################################################
-
-class Upload:
+class Upload(object):
     """
     Everything that has to do with an upload processed.
 
     """
-    def __init__(self, Cnf):
+    def __init__(self):
         """
         Initialize various variables and the global substitution template mappings.
         Also connect to the DB and initialize the Database module.
 
         """
-        self.Cnf = Cnf
-        self.accept_count = 0
-        self.accept_bytes = 0L
+
+        self.pkg = Changes()
+        self.reset()
+
+    ###########################################################################
+
+    def reset (self):
+        """ Reset a number of internal variables."""
+
+       # Initialize the substitution template map
+        cnf = Config()
+        self.Subst = {}
+        self.Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
+        self.Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
+        self.Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
+        self.Subst["__DAK_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
+
         self.reject_message = ""
-        self.pkg = Pkg(changes = {}, dsc = {}, dsc_files = {}, files = {})
-
-        # Initialize the substitution template mapping global
-        Subst = self.Subst = {}
-        Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
-        Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"]
-        Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
-        Subst["__DAK_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
-
-        self.projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-        database.init(Cnf, self.projectB)
+        self.changes.reset()
 
     ###########################################################################
-
-    def init_vars (self):
-        """ Reset a number of entries from our Pkg object. """
-        self.pkg.changes.clear()
-        self.pkg.dsc.clear()
-        self.pkg.files.clear()
-        self.pkg.dsc_files.clear()
-        self.pkg.orig_tar_id = None
-        self.pkg.orig_tar_location = ""
-        self.pkg.orig_tar_gz = None
-
-    ###########################################################################
-
-    def update_vars (self):
-        """
-        Update our Pkg object by reading a previously created cPickle .dak dumpfile.
-        """
-        dump_filename = self.pkg.changes_file[:-8]+".dak"
-        dump_file = utils.open_file(dump_filename)
-        p = cPickle.Unpickler(dump_file)
-
-        self.pkg.changes.update(p.load())
-        self.pkg.dsc.update(p.load())
-        self.pkg.files.update(p.load())
-        self.pkg.dsc_files.update(p.load())
-
-        self.pkg.orig_tar_id = p.load()
-        self.pkg.orig_tar_location = p.load()
-
-        dump_file.close()
-
-    ###########################################################################
-
-
-    def dump_vars(self, dest_dir):
-        """
-        Dump our Pkg object into a cPickle file.
-
-        @type dest_dir: string
-        @param dest_dir: Path where the dumpfile should be stored
-
-        @note: This could just dump the dictionaries as is, but I'd like to avoid this so
-               there's some idea of what process-accepted & process-new use from
-               process-unchecked. (JT)
-
-        """
-
-        changes = self.pkg.changes
-        dsc = self.pkg.dsc
-        files = self.pkg.files
-        dsc_files = self.pkg.dsc_files
-        orig_tar_id = self.pkg.orig_tar_id
-        orig_tar_location = self.pkg.orig_tar_location
-
-        dump_filename = os.path.join(dest_dir,self.pkg.changes_file[:-8] + ".dak")
-        dump_file = utils.open_file(dump_filename, 'w')
-        try:
-            os.chmod(dump_filename, 0664)
-        except OSError, e:
-            # chmod may fail when the dumpfile is not owned by the user
-            # invoking dak (like e.g. when NEW is processed by a member
-            # of ftpteam)
-            if errno.errorcode[e.errno] == 'EPERM':
-                perms = stat.S_IMODE(os.stat(dump_filename)[stat.ST_MODE])
-                # security precaution, should never happen unless a weird
-                # umask is set anywhere
-                if perms & stat.S_IWOTH:
-                    utils.fubar("%s is world writable and chmod failed." % \
-                        (dump_filename,))
-                # ignore the failed chmod otherwise as the file should
-                # already have the right privileges and is just, at worst,
-                # unreadable for world
-            else:
-                raise
-
-        p = cPickle.Pickler(dump_file, 1)
-        d_changes = {}
-        d_dsc = {}
-        d_files = {}
-        d_dsc_files = {}
-
-        ## files
-        for file_entry in files.keys():
-            d_files[file_entry] = {}
-            for i in [ "package", "version", "architecture", "type", "size",
-                       "md5sum", "sha1sum", "sha256sum", "component",
-                       "location id", "source package", "source version",
-                       "maintainer", "dbtype", "files id", "new",
-                       "section", "priority", "othercomponents",
-                       "pool name", "original component" ]:
-                if files[file_entry].has_key(i):
-                    d_files[file_entry][i] = files[file_entry][i]
-        ## changes
-        # Mandatory changes fields
-        for i in [ "distribution", "source", "architecture", "version",
-                   "maintainer", "urgency", "fingerprint", "changedby822",
-                   "changedby2047", "changedbyname", "maintainer822",
-                   "maintainer2047", "maintainername", "maintaineremail",
-                   "closes", "changes" ]:
-            d_changes[i] = changes[i]
-        # Optional changes fields
-        for i in [ "changed-by", "filecontents", "format", "process-new note", "adv id", "distribution-version",
-                   "sponsoremail" ]:
-            if changes.has_key(i):
-                d_changes[i] = changes[i]
-        ## dsc
-        for i in [ "source", "version", "maintainer", "fingerprint",
-                   "uploaders", "bts changelog", "dm-upload-allowed" ]:
-            if dsc.has_key(i):
-                d_dsc[i] = dsc[i]
-        ## dsc_files
-        for file_entry in dsc_files.keys():
-            d_dsc_files[file_entry] = {}
-            # Mandatory dsc_files fields
-            for i in [ "size", "md5sum" ]:
-                d_dsc_files[file_entry][i] = dsc_files[file_entry][i]
-            # Optional dsc_files fields
-            for i in [ "files id" ]:
-                if dsc_files[file_entry].has_key(i):
-                    d_dsc_files[file_entry][i] = dsc_files[file_entry][i]
-
-        for i in [ d_changes, d_dsc, d_files, d_dsc_files,
-                   orig_tar_id, orig_tar_location ]:
-            p.dump(i)
-        dump_file.close()
-
-    ###########################################################################
-
-    # Set up the per-package template substitution mappings
-
-    def update_subst (self, reject_message = ""):
+    def update_subst(self, reject_message = ""):
         """ Set up the per-package template substitution mappings """
 
-        Subst = self.Subst
-        changes = self.pkg.changes
-        # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
-        if not changes.has_key("architecture") or not isinstance(changes["architecture"], DictType):
-            changes["architecture"] = { "Unknown" : "" }
-        # and maintainer2047 may not exist.
-        if not changes.has_key("maintainer2047"):
-            changes["maintainer2047"] = self.Cnf["Dinstall::MyEmailAddress"]
+        cnf = Config()
 
-        Subst["__ARCHITECTURE__"] = " ".join(changes["architecture"].keys())
-        Subst["__CHANGES_FILENAME__"] = os.path.basename(self.pkg.changes_file)
-        Subst["__FILE_CONTENTS__"] = changes.get("filecontents", "")
+        # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
+        if not self.pkg.changes.has_key("architecture") or not \
+           isinstance(changes["architecture"], DictType):
+            self.pkg.changes["architecture"] = { "Unknown" : "" }
+
+        # and maintainer2047 may not exist.
+        if not self.pkg.changes.has_key("maintainer2047"):
+            self.pkg.changes["maintainer2047"] = cnf["Dinstall::MyEmailAddress"]
+
+        self.Subst["__ARCHITECTURE__"] = " ".join(self.pkg.changes["architecture"].keys())
+        self.Subst["__CHANGES_FILENAME__"] = os.path.basename(self.pkg.changes_file)
+        self.Subst["__FILE_CONTENTS__"] = self.pkg.changes.get("filecontents", "")
 
         # For source uploads the Changed-By field wins; otherwise Maintainer wins.
-        if changes["architecture"].has_key("source") and changes["changedby822"] != "" and (changes["changedby822"] != changes["maintainer822"]):
-            Subst["__MAINTAINER_FROM__"] = changes["changedby2047"]
-            Subst["__MAINTAINER_TO__"] = "%s, %s" % (changes["changedby2047"],
-                                                     changes["maintainer2047"])
-            Subst["__MAINTAINER__"] = changes.get("changed-by", "Unknown")
+        if self.pkg.changes["architecture"].has_key("source") and \
+           self.pkg.changes["changedby822"] != "" and \
+           (self.pkg.changes["changedby822"] != self.pkg.changes["maintainer822"]):
+
+            self.Subst["__MAINTAINER_FROM__"] = self.pkg.changes["changedby2047"]
+            self.Subst["__MAINTAINER_TO__"] = "%s, %s" % (self.pkg.changes["changedby2047"], changes["maintainer2047"])
+            self.Subst["__MAINTAINER__"] = self.pkg.changes.get("changed-by", "Unknown")
         else:
-            Subst["__MAINTAINER_FROM__"] = changes["maintainer2047"]
-            Subst["__MAINTAINER_TO__"] = changes["maintainer2047"]
-            Subst["__MAINTAINER__"] = changes.get("maintainer", "Unknown")
+            self.Subst["__MAINTAINER_FROM__"] = self.pkg.changes["maintainer2047"]
+            self.Subst["__MAINTAINER_TO__"] = self.pkg.changes["maintainer2047"]
+            self.Subst["__MAINTAINER__"] = self.pkg.changes.get("maintainer", "Unknown")
 
-        if "sponsoremail" in changes:
-            Subst["__MAINTAINER_TO__"] += ", %s"%changes["sponsoremail"]
+        if "sponsoremail" in self.pkg.changes:
+            self.Subst["__MAINTAINER_TO__"] += ", %s" % self.pkg.changes["sponsoremail"]
 
-        if self.Cnf.has_key("Dinstall::TrackingServer") and changes.has_key("source"):
-            Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (changes["source"], self.Cnf["Dinstall::TrackingServer"])
+        if cnf.has_key("Dinstall::TrackingServer") and self.pkg.changes.has_key("source"):
+            self.Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::TrackingServer"])
 
         # Apply any global override of the Maintainer field
-        if self.Cnf.get("Dinstall::OverrideMaintainer"):
-            Subst["__MAINTAINER_TO__"] = self.Cnf["Dinstall::OverrideMaintainer"]
-            Subst["__MAINTAINER_FROM__"] = self.Cnf["Dinstall::OverrideMaintainer"]
+        if cnf.get("Dinstall::OverrideMaintainer"):
+            self.Subst["__MAINTAINER_TO__"] = cnf["Dinstall::OverrideMaintainer"]
+            self.Subst["__MAINTAINER_FROM__"] = cnf["Dinstall::OverrideMaintainer"]
 
-        Subst["__REJECT_MESSAGE__"] = reject_message
-        Subst["__SOURCE__"] = changes.get("source", "Unknown")
-        Subst["__VERSION__"] = changes.get("version", "Unknown")
+        self.Subst["__REJECT_MESSAGE__"] = self.reject_message
+        self.Subst["__SOURCE__"] = self.pkg.changes.get("source", "Unknown")
+        self.Subst["__VERSION__"] = self.pkg.changes.get("version", "Unknown")
 
     ###########################################################################
 
     def build_summaries(self):
         """ Build a summary of changes the upload introduces. """
-        changes = self.pkg.changes
-        files = self.pkg.files
 
-        byhand = summary = new = ""
-
-        # changes["distribution"] may not exist in corner cases
-        # (e.g. unreadable changes files)
-        if not changes.has_key("distribution") or not isinstance(changes["distribution"], DictType):
-            changes["distribution"] = {}
-
-        override_summary =""
-        file_keys = files.keys()
-        file_keys.sort()
-        for file_entry in file_keys:
-            if files[file_entry].has_key("byhand"):
-                byhand = 1
-                summary += file_entry + " byhand\n"
-            elif files[file_entry].has_key("new"):
-                new = 1
-                summary += "(new) %s %s %s\n" % (file_entry, files[file_entry]["priority"], files[file_entry]["section"])
-                if files[file_entry].has_key("othercomponents"):
-                    summary += "WARNING: Already present in %s distribution.\n" % (files[file_entry]["othercomponents"])
-                if files[file_entry]["type"] == "deb":
-                    deb_fh = utils.open_file(file_entry)
-                    summary += apt_pkg.ParseSection(apt_inst.debExtractControl(deb_fh))["Description"] + '\n'
-                    deb_fh.close()
-            else:
-                files[file_entry]["pool name"] = utils.poolify (changes.get("source",""), files[file_entry]["component"])
-                destination = self.Cnf["Dir::PoolRoot"] + files[file_entry]["pool name"] + file_entry
-                summary += file_entry + "\n  to " + destination + "\n"
-                if not files[file_entry].has_key("type"):
-                    files[file_entry]["type"] = "unknown"
-                if files[file_entry]["type"] in ["deb", "udeb", "dsc"]:
-                    # (queue/unchecked), there we have override entries already, use them
-                    # (process-new), there we dont have override entries, use the newly generated ones.
-                    override_prio = files[file_entry].get("override priority", files[file_entry]["priority"])
-                    override_sect = files[file_entry].get("override section", files[file_entry]["section"])
-                    override_summary += "%s - %s %s\n" % (file_entry, override_prio, override_sect)
+        (byhand, new, summary, override_summary) = self.pkg.file_summary()
 
         short_summary = summary
 
         # This is for direport's benefit...
-        f = re_fdnic.sub("\n .\n", changes.get("changes",""))
+        f = re_fdnic.sub("\n .\n", self.pkg.changes.get("changes", ""))
 
         if byhand or new:
             summary += "Changes: " + f
@@ -456,7 +292,7 @@ class Upload:
 
     ###########################################################################
 
-    def close_bugs (self, summary, action):
+    def close_bugs(self, summary, action):
         """
         Send mail to close bugs as instructed by the closes field in the changes file.
         Also add a line to summary if any work was done.
@@ -471,11 +307,10 @@ class Upload:
         @return: summary. If action was taken, extended by the list of closed bugs.
 
         """
-        changes = self.pkg.changes
-        Subst = self.Subst
-        Cnf = self.Cnf
 
-        bugs = changes["closes"].keys()
+        template = os.path.join(Config()["Dir::Templates"], 'process-unchecked.bug-close')
+
+        bugs = self.pkg.changes["closes"].keys()
 
         if not bugs:
             return summary
@@ -485,27 +320,33 @@ class Upload:
         for bug in bugs:
             summary += "%s " % (bug)
             if action:
-                Subst["__BUG_NUMBER__"] = bug
-                if changes["distribution"].has_key("stable"):
-                    Subst["__STABLE_WARNING__"] = """
+                self.Subst["__BUG_NUMBER__"] = bug
+                if self.pkg.changes["distribution"].has_key("stable"):
+                    self.Subst["__STABLE_WARNING__"] = """
 Note that this package is not part of the released stable Debian
 distribution.  It may have dependencies on other unreleased software,
 or other instabilities.  Please take care if you wish to install it.
 The update will eventually make its way into the next released Debian
 distribution."""
                 else:
-                    Subst["__STABLE_WARNING__"] = ""
-                    mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.bug-close")
-                    utils.send_mail (mail_message)
+                    self.Subst["__STABLE_WARNING__"] = ""
+                    mail_message = utils.TemplateSubst(self.Subst, template)
+                    utils.send_mail(mail_message)
+
+                # Clear up after ourselves
+                del self.Subst["__BUG_NUMBER__"]
+                del self.Subst["__STABLE_WARNING__"]
+
         if action:
-            self.Logger.log(["closing bugs"]+bugs)
+            self.Logger.log(["closing bugs"] + bugs)
+
         summary += "\n"
 
         return summary
 
     ###########################################################################
 
-    def announce (self, short_summary, action):
+    def announce(self, short_summary, action):
         """
         Send an announce mail about a new upload.
 
@@ -519,34 +360,44 @@ distribution."""
         @return: Textstring about action taken.
 
         """
-        Subst = self.Subst
-        Cnf = self.Cnf
-        changes = self.pkg.changes
+
+        cnf = Config()
+        announcetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.announce')
 
         # Only do announcements for source uploads with a recent dpkg-dev installed
-        if float(changes.get("format", 0)) < 1.6 or not changes["architecture"].has_key("source"):
+        if float(self.pkg.changes.get("format", 0)) < 1.6 or not \
+           self.pkg.changes["architecture"].has_key("source"):
             return ""
 
         lists_done = {}
         summary = ""
-        Subst["__SHORT_SUMMARY__"] = short_summary
 
-        for dist in changes["distribution"].keys():
+        self.Subst["__SHORT_SUMMARY__"] = short_summary
+
+        for dist in self.pkg.changes["distribution"].keys():
             announce_list = Cnf.Find("Suite::%s::Announce" % (dist))
             if announce_list == "" or lists_done.has_key(announce_list):
                 continue
+
             lists_done[announce_list] = 1
             summary += "Announcing to %s\n" % (announce_list)
 
             if action:
-                Subst["__ANNOUNCE_LIST_ADDRESS__"] = announce_list
-                if Cnf.get("Dinstall::TrackingServer") and changes["architecture"].has_key("source"):
-                    Subst["__ANNOUNCE_LIST_ADDRESS__"] = Subst["__ANNOUNCE_LIST_ADDRESS__"] + "\nBcc: %s@%s" % (changes["source"], Cnf["Dinstall::TrackingServer"])
-                mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.announce")
-                utils.send_mail (mail_message)
+                self.Subst["__ANNOUNCE_LIST_ADDRESS__"] = announce_list
+                if cnf.get("Dinstall::TrackingServer") and \
+                   self.pkg.changes["architecture"].has_key("source"):
+                    trackingsendto = "Bcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::TrackingServer"])
+                    self.Subst["__ANNOUNCE_LIST_ADDRESS__"] += "\n" + trackingsendto
 
-        if Cnf.FindB("Dinstall::CloseBugs"):
+                mail_message = utils.TemplateSubst(self.Subst, announcetemplate)
+                utils.send_mail(mail_message)
+
+                del self.Subst["__ANNOUNCE_LIST_ADDRESS__"]
+
+        if cnf.FindB("Dinstall::CloseBugs"):
             summary = self.close_bugs(summary, action)
+
+        del self.Subst["__SHORT_SUMMARY__"]
 
         return summary
 
@@ -570,71 +421,68 @@ distribution."""
 
         """
 
-        Cnf = self.Cnf
-        Subst = self.Subst
-        files = self.pkg.files
-        changes = self.pkg.changes
-        changes_file = self.pkg.changes_file
-        dsc = self.pkg.dsc
+        cnf = Config()
+        stats = SummaryStats()
+
+        accepttemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted')
 
         if targetdir is None:
-            targetdir = Cnf["Dir::Queue::Accepted"]
+            targetdir = cnf["Dir::Queue::Accepted"]
 
         print "Accepting."
-        self.Logger.log(["Accepting changes",changes_file])
+        self.Logger.log(["Accepting changes", self.pkg.changes_file])
 
-        self.dump_vars(targetdir)
+        self.write_dot_dak(targetdir)
 
         # Move all the files into the accepted directory
-        utils.move(changes_file, targetdir)
-        file_keys = files.keys()
-        for file_entry in file_keys:
-            utils.move(file_entry, targetdir)
-            self.accept_bytes += float(files[file_entry]["size"])
-        self.accept_count += 1
+        utils.move(self.pkg.changes_file, targetdir)
+
+        for name, entry in sorted(self.pkg.files.items()):
+            utils.move(name, targetdir)
+            stats.accept_bytes += float(entry["size"])
+
+        stats.accept_count += 1
 
         # Send accept mail, announce to lists, close bugs and check for
         # override disparities
-        if not Cnf["Dinstall::Options::No-Mail"]:
-            Subst["__SUITE__"] = ""
-            Subst["__SUMMARY__"] = summary
-            mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/process-unchecked.accepted")
+        if not cnf["Dinstall::Options::No-Mail"]:
+            self.Subst["__SUITE__"] = ""
+            self.Subst["__SUMMARY__"] = summary
+            mail_message = utils.TemplateSubst(self.Subst, accepttemplate)
             utils.send_mail(mail_message)
             self.announce(short_summary, 1)
 
-
         ## Helper stuff for DebBugs Version Tracking
-        if Cnf.Find("Dir::Queue::BTSVersionTrack"):
+        if cnf.Find("Dir::Queue::BTSVersionTrack"):
             # ??? once queue/* is cleared on *.d.o and/or reprocessed
             # the conditionalization on dsc["bts changelog"] should be
             # dropped.
 
             # Write out the version history from the changelog
-            if changes["architecture"].has_key("source") and \
-               dsc.has_key("bts changelog"):
+            if self.pkg.changes["architecture"].has_key("source") and \
+               self.pkg.dsc.has_key("bts changelog"):
 
-                (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+                (fd, temp_filename) = utils.temp_filename(cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
                 version_history = os.fdopen(fd, 'w')
-                version_history.write(dsc["bts changelog"])
+                version_history.write(self.pkg.dsc["bts changelog"])
                 version_history.close()
-                filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
-                                      changes_file[:-8]+".versions")
+                filename = "%s/%s" % (cnf["Dir::Queue::BTSVersionTrack"],
+                                      self.pkg.changes_file[:-8]+".versions")
                 os.rename(temp_filename, filename)
                 os.chmod(filename, 0644)
 
             # Write out the binary -> source mapping.
-            (fd, temp_filename) = utils.temp_filename(Cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+            (fd, temp_filename) = utils.temp_filename(cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
             debinfo = os.fdopen(fd, 'w')
-            for file_entry in file_keys:
-                f = files[file_entry]
-                if f["type"] == "deb":
-                    line = " ".join([f["package"], f["version"],
-                                     f["architecture"], f["source package"],
-                                     f["source version"]])
+            for name, entry in sorted(self.pkg.files.items()):
+                if entry["type"] == "deb":
+                    line = " ".join([entry["package"], entry["version"],
+                                     entry["architecture"], entry["source package"],
+                                     entry["source version"]])
                     debinfo.write(line+"\n")
             debinfo.close()
-            filename = "%s/%s" % (Cnf["Dir::Queue::BTSVersionTrack"],
-                                  changes_file[:-8]+".debinfo")
+            filename = "%s/%s" % (cnf["Dir::Queue::BTSVersionTrack"],
+                                  self.pkg.changes_file[:-8]+".debinfo")
             os.rename(temp_filename, filename)
             os.chmod(filename, 0644)
 
@@ -650,77 +498,12 @@ distribution."""
         # <Ganneff> so it will work out, as unchecked move it over
         # <mhy> that's all completely sick
         # <Ganneff> yes
-        self.queue_build("accepted", Cnf["Dir::Queue::Accepted"])
 
-    ###########################################################################
+        # This routine returns None on success or an error on failure
+        res = get_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
+        if res:
+            utils.fubar(res)
 
-    def queue_build (self, queue, path):
-        """
-        Prepare queue_build database table used for incoming autobuild support.
-
-        @type queue: string
-        @param queue: queue name
-
-        @type path: string
-        @param path: path for the queue file entries/link destinations
-        """
-
-        Cnf = self.Cnf
-        Subst = self.Subst
-        files = self.pkg.files
-        changes = self.pkg.changes
-        changes_file = self.pkg.changes_file
-        dsc = self.pkg.dsc
-        file_keys = files.keys()
-
-        ## Special support to enable clean auto-building of queued packages
-        queue_id = database.get_or_set_queue_id(queue)
-
-        self.projectB.query("BEGIN WORK")
-        for suite in changes["distribution"].keys():
-            if suite not in Cnf.ValueList("Dinstall::QueueBuildSuites"):
-                continue
-            suite_id = database.get_suite_id(suite)
-            dest_dir = Cnf["Dir::QueueBuild"]
-            if Cnf.FindB("Dinstall::SecurityQueueBuild"):
-                dest_dir = os.path.join(dest_dir, suite)
-            for file_entry in file_keys:
-                src = os.path.join(path, file_entry)
-                dest = os.path.join(dest_dir, file_entry)
-                if Cnf.FindB("Dinstall::SecurityQueueBuild"):
-                    # Copy it since the original won't be readable by www-data
-                    utils.copy(src, dest)
-                else:
-                    # Create a symlink to it
-                    os.symlink(src, dest)
-                # Add it to the list of packages for later processing by apt-ftparchive
-                self.projectB.query("INSERT INTO queue_build (suite, queue, filename, in_queue) VALUES (%s, %s, '%s', 't')" % (suite_id, queue_id, dest))
-            # If the .orig.tar.gz is in the pool, create a symlink to
-            # it (if one doesn't already exist)
-            if self.pkg.orig_tar_id:
-                # Determine the .orig.tar.gz file name
-                for dsc_file in self.pkg.dsc_files.keys():
-                    if dsc_file.endswith(".orig.tar.gz"):
-                        filename = dsc_file
-                dest = os.path.join(dest_dir, filename)
-                # If it doesn't exist, create a symlink
-                if not os.path.exists(dest):
-                    # Find the .orig.tar.gz in the pool
-                    q = self.projectB.query("SELECT l.path, f.filename from location l, files f WHERE f.id = %s and f.location = l.id" % (self.pkg.orig_tar_id))
-                    ql = q.getresult()
-                    if not ql:
-                        utils.fubar("[INTERNAL ERROR] Couldn't find id %s in files table." % (self.pkg.orig_tar_id))
-                    src = os.path.join(ql[0][0], ql[0][1])
-                    os.symlink(src, dest)
-                    # Add it to the list of packages for later processing by apt-ftparchive
-                    self.projectB.query("INSERT INTO queue_build (suite, queue, filename, in_queue) VALUES (%s, %s, '%s', 't')" % (suite_id, queue_id, dest))
-                # if it does, update things to ensure it's not removed prematurely
-                else:
-                    self.projectB.query("UPDATE queue_build SET in_queue = 't', last_used = NULL WHERE filename = '%s' AND suite = %s" % (dest, suite_id))
-
-        self.projectB.query("COMMIT WORK")
-
-    ###########################################################################
 
     def check_override (self):
         """
@@ -728,49 +511,33 @@ distribution."""
         if that feature is enabled.
 
         Abandons the check if
-          - this is a non-sourceful upload
           - override disparity checks are disabled
           - mail sending is disabled
-
         """
-        Subst = self.Subst
-        changes = self.pkg.changes
-        files = self.pkg.files
-        Cnf = self.Cnf
+
+        cnf = Config()
 
         # Abandon the check if:
-        #  a) it's a non-sourceful upload
-        #  b) override disparity checks have been disabled
-        #  c) we're not sending mail
-        if not changes["architecture"].has_key("source") or \
-           not Cnf.FindB("Dinstall::OverrideDisparityCheck") or \
-           Cnf["Dinstall::Options::No-Mail"]:
+        #  a) override disparity checks have been disabled
+        #  b) we're not sending mail
+        if not cnf.FindB("Dinstall::OverrideDisparityCheck") or \
+           cnf["Dinstall::Options::No-Mail"]:
             return
 
-        summary = ""
-        file_keys = files.keys()
-        file_keys.sort()
-        for file_entry in file_keys:
-            if not files[file_entry].has_key("new") and files[file_entry]["type"] == "deb":
-                section = files[file_entry]["section"]
-                override_section = files[file_entry]["override section"]
-                if section.lower() != override_section.lower() and section != "-":
-                    summary += "%s: package says section is %s, override says %s.\n" % (file_entry, section, override_section)
-                priority = files[file_entry]["priority"]
-                override_priority = files[file_entry]["override priority"]
-                if priority != override_priority and priority != "-":
-                    summary += "%s: package says priority is %s, override says %s.\n" % (file_entry, priority, override_priority)
+        summary = self.pkg.check_override()
 
         if summary == "":
             return
 
-        Subst["__SUMMARY__"] = summary
-        mail_message = utils.TemplateSubst(Subst,self.Cnf["Dir::Templates"]+"/process-unchecked.override-disparity")
+        overridetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.override-disparity')
+
+        self.Subst["__SUMMARY__"] = summary
+        mail_message = utils.TemplateSubst(self.Subst, overridetemplate)
         utils.send_mail(mail_message)
+        del self.Subst["__SUMMARY__"]
 
     ###########################################################################
-
-    def force_reject (self, files):
+    def force_reject(self, reject_files):
         """
         Forcefully move files from the current directory to the
         reject directory.  If any file already exists in the reject
@@ -782,19 +549,21 @@ distribution."""
 
         """
 
-        Cnf = self.Cnf
+        cnf = Config()
 
-        for file_entry in files:
+        for file_entry in reject_files:
             # Skip any files which don't exist or which we don't have permission to copy.
-            if os.access(file_entry,os.R_OK) == 0:
+            if os.access(file_entry, os.R_OK) == 0:
                 continue
-            dest_file = os.path.join(Cnf["Dir::Queue::Reject"], file_entry)
+
+            dest_file = os.path.join(cnf["Dir::Queue::Reject"], file_entry)
+
             try:
-                dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
+                dest_fd = os.open(dest_file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
             except OSError, e:
                 # File exists?  Let's try and move it to the morgue
-                if errno.errorcode[e.errno] == 'EEXIST':
-                    morgue_file = os.path.join(Cnf["Dir::Morgue"],Cnf["Dir::MorgueReject"],file_entry)
+                if e.errno == errno.EEXIST:
+                    morgue_file = os.path.join(cnf["Dir::Morgue"], cnf["Dir::MorgueReject"], file_entry)
                     try:
                         morgue_file = utils.find_next_free(morgue_file)
                     except NoFreeFilenameError:
@@ -817,8 +586,7 @@ distribution."""
             os.close(dest_fd)
 
     ###########################################################################
-
-    def do_reject (self, manual = 0, reject_message = "", note = ""):
+    def do_reject (self, manual=0, reject_message="", note=""):
         """
         Reject an upload. If called without a reject message or C{manual} is
         true, spawn an editor so the user can write one.
@@ -866,15 +634,13 @@ distribution."""
 
         print "Rejecting.\n"
 
-        Cnf = self.Cnf
-        Subst = self.Subst
-        pkg = self.pkg
+        cnf = Config()
 
-        reason_filename = pkg.changes_file[:-8] + ".reason"
-        reason_filename = Cnf["Dir::Queue::Reject"] + '/' + reason_filename
+        reason_filename = self.pkg.changes_file[:-8] + ".reason"
+        reason_filename = os.path.join(cnf["Dir::Queue::Reject"], reason_filename)
 
         # Move all the files into the reject directory
-        reject_files = pkg.files.keys() + [pkg.changes_file]
+        reject_files = self.pkg.files.keys() + [self.pkg.changes_file]
         self.force_reject(reject_files)
 
         # If we fail here someone is probably trying to exploit the race
@@ -883,96 +649,40 @@ distribution."""
             os.unlink(reason_filename)
         reason_fd = os.open(reason_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
 
+        rej_template = os.path.join(cnf["Dir::Templates"], "queue.rejected")
+
         if not manual:
-            Subst["__REJECTOR_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
-            Subst["__MANUAL_REJECT_MESSAGE__"] = ""
-            Subst["__CC__"] = "X-DAK-Rejection: automatic (moo)\nX-Katie-Rejection: automatic (moo)"
+            self.Subst["__REJECTOR_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
+            self.Subst["__MANUAL_REJECT_MESSAGE__"] = ""
+            self.Subst["__CC__"] = "X-DAK-Rejection: automatic (moo)\nX-Katie-Rejection: automatic (moo)"
             os.write(reason_fd, reject_message)
-            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/queue.rejected")
+            reject_mail_message = utils.TemplateSubst(self.Subst, rej_template)
         else:
             # Build up the rejection email
-            user_email_address = utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"])
-
-            Subst["__REJECTOR_ADDRESS__"] = user_email_address
-            Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
-            Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
-            reject_mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/queue.rejected")
+            user_email_address = utils.whoami() + " <%s>" % (cnf["Dinstall::MyAdminAddress"])
+            self.Subst["__REJECTOR_ADDRESS__"] = user_email_address
+            self.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
+            self.Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
+            reject_mail_message = utils.TemplateSubst(self.Subst, rej_template)
             # Write the rejection email out as the <foo>.reason file
             os.write(reason_fd, reject_mail_message)
+
+        del self.Subst["__REJECTOR_ADDRESS__"]
+        del self.Subst["__MANUAL_REJECT_MESSAGE__"]
+        del self.Subst["__CC__"]
 
         os.close(reason_fd)
 
         # Send the rejection mail if appropriate
-        if not Cnf["Dinstall::Options::No-Mail"]:
+        if not cnf["Dinstall::Options::No-Mail"]:
             utils.send_mail(reject_mail_message)
 
         self.Logger.log(["rejected", pkg.changes_file])
+
         return 0
 
     ################################################################################
-
-    def source_exists (self, package, source_version, suites = ["any"]):
-        """
-        Ensure that source exists somewhere in the archive for the binary
-        upload being processed.
-          1. exact match     => 1.0-3
-          2. bin-only NMU    => 1.0-3+b1 , 1.0-3.1+b1
-
-        @type package: string
-        @param package: package source name
-
-        @type source_version: string
-        @param source_version: expected source version
-
-        @type suites: list
-        @param suites: list of suites to check in, default I{any}
-
-        @rtype: int
-        @return: returns 1 if a source with expected version is found, otherwise 0
-
-        """
-        okay = 1
-        for suite in suites:
-            if suite == "any":
-                que = "SELECT s.version FROM source s WHERE s.source = '%s'" % \
-                    (package)
-            else:
-                # source must exist in suite X, or in some other suite that's
-                # mapped to X, recursively... silent-maps are counted too,
-                # unreleased-maps aren't.
-                maps = self.Cnf.ValueList("SuiteMappings")[:]
-                maps.reverse()
-                maps = [ m.split() for m in maps ]
-                maps = [ (x[1], x[2]) for x in maps
-                                if x[0] == "map" or x[0] == "silent-map" ]
-                s = [suite]
-                for x in maps:
-                    if x[1] in s and x[0] not in s:
-                        s.append(x[0])
-
-                que = "SELECT s.version FROM source s JOIN src_associations sa ON (s.id = sa.source) JOIN suite su ON (sa.suite = su.id) WHERE s.source = '%s' AND (%s)" % (package, " OR ".join(["su.suite_name = '%s'" % a for a in s]))
-            q = self.projectB.query(que)
-
-            # Reduce the query results to a list of version numbers
-            ql = [ i[0] for i in q.getresult() ]
-
-            # Try (1)
-            if source_version in ql:
-                continue
-
-            # Try (2)
-            orig_source_version = re_bin_only_nmu.sub('', source_version)
-            if orig_source_version in ql:
-                continue
-
-            # No source found...
-            okay = 0
-            break
-        return okay
-
-    ################################################################################
-
-    def in_override_p (self, package, component, suite, binary_type, file):
+    def in_override_p(self, package, component, suite, binary_type, file, session=None):
         """
         Check if a package already has override entries in the DB
 
@@ -994,7 +704,11 @@ distribution."""
         @return: the database result. But noone cares anyway.
 
         """
-        files = self.pkg.files
+
+        cnf = Config()
+
+        if session is None:
+            session = DBConn().session()
 
         if binary_type == "": # must be source
             file_type = "dsc"
@@ -1002,36 +716,25 @@ distribution."""
             file_type = binary_type
 
         # Override suite name; used for example with proposed-updates
-        if self.Cnf.Find("Suite::%s::OverrideSuite" % (suite)) != "":
-            suite = self.Cnf["Suite::%s::OverrideSuite" % (suite)]
+        if cnf.Find("Suite::%s::OverrideSuite" % (suite)) != "":
+            suite = cnf["Suite::%s::OverrideSuite" % (suite)]
 
-        # Avoid <undef> on unknown distributions
-        suite_id = database.get_suite_id(suite)
-        if suite_id == -1:
-            return None
-        component_id = database.get_component_id(component)
-        type_id = database.get_override_type_id(file_type)
+        result = get_override(package, suite, component, file_type, session)
 
-        q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND type = %s AND o.section = s.id AND o.priority = p.id"
-                           % (package, suite_id, component_id, type_id))
-        result = q.getresult()
         # If checking for a source package fall back on the binary override type
-        if file_type == "dsc" and not result:
-            deb_type_id = database.get_override_type_id("deb")
-            udeb_type_id = database.get_override_type_id("udeb")
-            q = self.projectB.query("SELECT s.section, p.priority FROM override o, section s, priority p WHERE package = '%s' AND suite = %s AND component = %s AND (type = %s OR type = %s) AND o.section = s.id AND o.priority = p.id"
-                               % (package, suite_id, component_id, deb_type_id, udeb_type_id))
-            result = q.getresult()
+        if file_type == "dsc" and len(result) < 1:
+            result = get_override(package, suite, component, ['deb', 'udeb'], session)
 
         # Remember the section and priority so we can check them later if appropriate
-        if result:
-            files[file]["override section"] = result[0][0]
-            files[file]["override priority"] = result[0][1]
+        if len(result) > 0:
+            result = result[0]
+            self.pkg.files[file]["override section"] = result.section.section
+            self.pkg.files[file]["override priority"] = result.priority.priority
+            return result
 
-        return result
+        return None
 
     ################################################################################
-
     def reject (self, str, prefix="Rejected: "):
         """
         Add C{str} to reject_message. Adds C{prefix}, by default "Rejected: "
@@ -1051,51 +754,69 @@ distribution."""
             self.reject_message += prefix + str
 
     ################################################################################
+    def get_anyversion(self, sv_list, suite):
+        """
+        @type sv_list: list
+        @param sv_list: list of (suite, version) tuples to check
 
-    def get_anyversion(self, query_result, suite):
-        """ """
-        anyversion=None
+        @type suite: string
+        @param suite: suite name
+
+        Description: TODO
+        """
+        anyversion = None
         anysuite = [suite] + self.Cnf.ValueList("Suite::%s::VersionChecks::Enhances" % (suite))
-        for (v, s) in query_result:
+        for (s, v) in sv_list:
             if s in [ x.lower() for x in anysuite ]:
                 if not anyversion or apt_pkg.VersionCompare(anyversion, v) <= 0:
-                    anyversion=v
+                    anyversion = v
+
         return anyversion
 
     ################################################################################
 
-    def cross_suite_version_check(self, query_result, file, new_version,
-            sourceful=False):
+    def cross_suite_version_check(self, sv_list, file, new_version, sourceful=False):
         """
+        @type sv_list: list
+        @param sv_list: list of (suite, version) tuples to check
+
+        @type file: string
+        @param file: XXX
+
+        @type new_version: string
+        @param new_version: XXX
+
         Ensure versions are newer than existing packages in target
         suites and that cross-suite version checking rules as
         set out in the conf file are satisfied.
-
         """
+
+        cnf = Config()
 
         # Check versions for each target suite
         for target_suite in self.pkg.changes["distribution"].keys():
-            must_be_newer_than = [ i.lower() for i in self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeNewerThan" % (target_suite)) ]
-            must_be_older_than = [ i.lower() for i in self.Cnf.ValueList("Suite::%s::VersionChecks::MustBeOlderThan" % (target_suite)) ]
+            must_be_newer_than = [ i.lower() for i in cnf.ValueList("Suite::%s::VersionChecks::MustBeNewerThan" % (target_suite)) ]
+            must_be_older_than = [ i.lower() for i in cnf.ValueList("Suite::%s::VersionChecks::MustBeOlderThan" % (target_suite)) ]
+
             # Enforce "must be newer than target suite" even if conffile omits it
             if target_suite not in must_be_newer_than:
                 must_be_newer_than.append(target_suite)
-            for entry in query_result:
-                existent_version = entry[0]
-                suite = entry[1]
-                if suite in must_be_newer_than and sourceful and \
-                   apt_pkg.VersionCompare(new_version, existent_version) < 1:
-                    self.reject("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
-                if suite in must_be_older_than and \
-                   apt_pkg.VersionCompare(new_version, existent_version) > -1:
-                    ch = self.pkg.changes
-                    cansave = 0
-                    if ch.get('distribution-version', {}).has_key(suite):
-                    # we really use the other suite, ignoring the conflicting one ...
-                        addsuite = ch["distribution-version"][suite]
 
-                        add_version = self.get_anyversion(query_result, addsuite)
-                        target_version = self.get_anyversion(query_result, target_suite)
+            for (suite, existent_version) in sv_list:
+                vercmp = apt_pkg.VersionCompare(new_version, existent_version)
+
+                if suite in must_be_newer_than and sourceful and vercmp < 1:
+                    self.reject("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+
+                if suite in must_be_older_than and vercmp > -1:
+                    cansave = 0
+
+                    if self.pkg.changes.get('distribution-version', {}).has_key(suite):
+                        # we really use the other suite, ignoring the conflicting one ...
+                        addsuite = self.pkg.changes["distribution-version"][suite]
+
+                        add_version = self.get_anyversion(sv_list, addsuite)
+                        target_version = self.get_anyversion(sv_list, target_suite)
 
                         if not add_version:
                             # not add_version can only happen if we map to a suite
@@ -1133,57 +854,56 @@ distribution."""
 
     ################################################################################
 
-    def check_binary_against_db(self, file):
+    def check_binary_against_db(self, file, session=None):
         """
 
         """
+
+        if session is None:
+            session = DBConn().session()
+
         self.reject_message = ""
-        files = self.pkg.files
 
         # Ensure version is sane
-        q = self.projectB.query("""
-SELECT b.version, su.suite_name FROM binaries b, bin_associations ba, suite su,
-                                     architecture a
- WHERE b.package = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all')
-   AND ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id"""
-                                % (files[file]["package"],
-                                   files[file]["architecture"]))
-        self.cross_suite_version_check(q.getresult(), file,
-            files[file]["version"], sourceful=False)
+        q = session.query(BinAssociation)
+        q = q.join(DBBinary).filter(DBBinary.package==self.pkg.files[file]["package"])
+        q = q.join(Architecture).filter(Architecture.arch_string.in_([self.pkg.files[file]["architecture"], 'all']))
+
+        self.cross_suite_version_check([ (x.suite.suite_name, x.binary.version) for x in q.all() ],
+                                       file, files[file]["version"], sourceful=False)
 
         # Check for any existing copies of the file
-        q = self.projectB.query("""
-SELECT b.id FROM binaries b, architecture a
- WHERE b.package = '%s' AND b.version = '%s' AND a.arch_string = '%s'
-   AND a.id = b.architecture"""
-                                % (files[file]["package"],
-                                   files[file]["version"],
-                                   files[file]["architecture"]))
-        if q.getresult():
+        q = session.query(DBBinary).filter_by(files[file]["package"])
+        q = q.filter_by(version=files[file]["version"])
+        q = q.join(Architecture).filter_by(arch_string=files[file]["architecture"])
+
+        if q.count() > 0:
             self.reject("%s: can not overwrite existing copy already in the archive." % (file))
 
         return self.reject_message
 
     ################################################################################
 
-    def check_source_against_db(self, file):
+    def check_source_against_db(self, file, session=None):
         """
         """
+        if session is None:
+            session = DBConn().session()
+
         self.reject_message = ""
-        dsc = self.pkg.dsc
+        source = self.pkg.dsc.get("source")
+        version = self.pkg.dsc.get("version")
 
         # Ensure version is sane
-        q = self.projectB.query("""
-SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
- WHERE s.source = '%s' AND sa.source = s.id AND sa.suite = su.id""" % (dsc.get("source")))
-        self.cross_suite_version_check(q.getresult(), file, dsc.get("version"),
-            sourceful=True)
+        q = session.query(SrcAssociation)
+        q = q.join(DBSource).filter(DBSource.source==source)
+
+        self.cross_suite_version_check([ (x.suite.suite_name, x.source.version) for x in q.all() ],
+                                       file, version, sourceful=True)
 
         return self.reject_message
 
     ################################################################################
-
-
     def check_dsc_against_db(self, file):
         """
 
@@ -1195,8 +915,6 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
 
         """
         self.reject_message = ""
-        files = self.pkg.files
-        dsc_files = self.pkg.dsc_files
         self.pkg.orig_tar_gz = None
 
         # Try and find all files mentioned in the .dsc.  This has
@@ -1204,18 +922,19 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
         # locations of an .orig.tar.gz.
         # The ordering on the select is needed to pick the newest orig
         # when it exists in multiple places.
-        for dsc_file in dsc_files.keys():
+        for dsc_name, dsc_entry in self.pkg.dsc_files.items():
             found = None
-            if files.has_key(dsc_file):
-                actual_md5 = files[dsc_file]["md5sum"]
-                actual_size = int(files[dsc_file]["size"])
-                found = "%s in incoming" % (dsc_file)
+            if self.pkg.files.has_key(dsc_name):
+                actual_md5 = self.pkg.files[dsc_name]["md5sum"]
+                actual_size = int(self.pkg.files[dsc_name]["size"])
+                found = "%s in incoming" % (dsc_name)
+
                 # Check the file does not already exist in the archive
-                q = self.projectB.query("SELECT f.size, f.md5sum, l.path, f.filename FROM files f, location l WHERE f.filename LIKE '%%%s%%' AND l.id = f.location ORDER BY f.id DESC" % (dsc_file))
-                ql = q.getresult()
+                ql = get_poolfile_like_name(dsc_name)
+
                 # Strip out anything that isn't '%s' or '/%s$'
                 for i in ql:
-                    if i[3] != dsc_file and i[3][-(len(dsc_file)+1):] != '/'+dsc_file:
+                    if not i.filename.endswith(dsc_name):
                         ql.remove(i)
 
                 # "[dak] has not broken them.  [dak] has fixed a
@@ -1227,31 +946,36 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                 # the same name and version.)"
                 #                        -- ajk@ on d-devel@l.d.o
 
-                if ql:
+                if len(ql) > 0:
                     # Ignore exact matches for .orig.tar.gz
                     match = 0
-                    if dsc_file.endswith(".orig.tar.gz"):
+                    if dsc_name.endswith(".orig.tar.gz"):
                         for i in ql:
-                            if files.has_key(dsc_file) and \
-                               int(files[dsc_file]["size"]) == int(i[0]) and \
-                               files[dsc_file]["md5sum"] == i[1]:
-                                self.reject("ignoring %s, since it's already in the archive." % (dsc_file), "Warning: ")
-                                del files[dsc_file]
-                                self.pkg.orig_tar_gz = i[2] + i[3]
+                            if self.pkg.files.has_key(dsc_name) and \
+                               int(self.pkg.files[dsc_name]["size"]) == int(i.filesize) and \
+                               self.pkg.files[dsc_name]["md5sum"] == i.md5sum:
+                                self.reject("ignoring %s, since it's already in the archive." % (dsc_name), "Warning: ")
+                                # TODO: Don't delete the entry, just mark it as not needed
+                                # This would fix the stupidity of changing something we often iterate over
+                                # whilst we're doing it
+                                del files[dsc_name]
+                                self.pkg.orig_tar_gz = os.path.join(i.location.path, i.filename)
                                 match = 1
 
                     if not match:
-                        self.reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_file))
-            elif dsc_file.endswith(".orig.tar.gz"):
+                        self.reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_name))
+
+            elif dsc_name.endswith(".orig.tar.gz"):
                 # Check in the pool
-                q = self.projectB.query("SELECT l.path, f.filename, l.type, f.id, l.id FROM files f, location l WHERE f.filename LIKE '%%%s%%' AND l.id = f.location" % (dsc_file))
-                ql = q.getresult()
+                ql = get_poolfile_like_name(dsc_name)
+
                 # Strip out anything that isn't '%s' or '/%s$'
+                # TODO: Shouldn't we just search for things which end with our string explicitly in the SQL?
                 for i in ql:
-                    if i[1] != dsc_file and i[1][-(len(dsc_file)+1):] != '/'+dsc_file:
+                    if not i.filename.endswith(dsc_name):
                         ql.remove(i)
 
-                if ql:
+                if len(ql) > 0:
                     # Unfortunately, we may get more than one match here if,
                     # for example, the package was in potato but had an -sa
                     # upload in woody.  So we need to choose the right one.
@@ -1261,57 +985,50 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
 
                     if len(ql) > 1:
                         for i in ql:
-                            old_file = i[0] + i[1]
+                            old_file = os.path.join(i.location.path, i.filename)
                             old_file_fh = utils.open_file(old_file)
                             actual_md5 = apt_pkg.md5sum(old_file_fh)
                             old_file_fh.close()
                             actual_size = os.stat(old_file)[stat.ST_SIZE]
-                            if actual_md5 == dsc_files[dsc_file]["md5sum"] and actual_size == int(dsc_files[dsc_file]["size"]):
+                            if actual_md5 == dsc_entry["md5sum"] and actual_size == int(dsc_entry["size"]):
                                 x = i
 
-                    old_file = x[0] + x[1]
+                    old_file = os.path.join(i.location.path, i.filename)
                     old_file_fh = utils.open_file(old_file)
                     actual_md5 = apt_pkg.md5sum(old_file_fh)
                     old_file_fh.close()
                     actual_size = os.stat(old_file)[stat.ST_SIZE]
                     found = old_file
-                    suite_type = x[2]
+                    suite_type = f.location.archive_type
                     # need this for updating dsc_files in install()
-                    dsc_files[dsc_file]["files id"] = x[3]
+                    dsc_entry["files id"] = f.file_id
                     # See install() in process-accepted...
-                    self.pkg.orig_tar_id = x[3]
+                    self.pkg.orig_tar_id = f.file_id
                     self.pkg.orig_tar_gz = old_file
-                    self.pkg.orig_tar_location = x[4]
+                    self.pkg.orig_tar_location = f.location.location_id
                 else:
+                    # TODO: Record the queues and info in the DB so we don't hardcode all this crap
                     # Not there? Check the queue directories...
-
-                    in_unchecked = os.path.join(self.Cnf["Dir::Queue::Unchecked"],dsc_file)
-                    # See process_it() in 'dak process-unchecked' for explanation of this
-                    # in_unchecked check dropped by ajt 2007-08-28, how did that
-                    # ever make sense?
-                    if os.path.exists(in_unchecked) and False:
-                        return (self.reject_message, in_unchecked)
-                    else:
-                        for directory in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
-                            in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (directory)],dsc_file)
-                            if os.path.exists(in_otherdir):
-                                in_otherdir_fh = utils.open_file(in_otherdir)
-                                actual_md5 = apt_pkg.md5sum(in_otherdir_fh)
-                                in_otherdir_fh.close()
-                                actual_size = os.stat(in_otherdir)[stat.ST_SIZE]
-                                found = in_otherdir
-                                self.pkg.orig_tar_gz = in_otherdir
+                    for directory in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+                        in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (directory)], dsc_name)
+                        if os.path.exists(in_otherdir):
+                            in_otherdir_fh = utils.open_file(in_otherdir)
+                            actual_md5 = apt_pkg.md5sum(in_otherdir_fh)
+                            in_otherdir_fh.close()
+                            actual_size = os.stat(in_otherdir)[stat.ST_SIZE]
+                            found = in_otherdir
+                            self.pkg.orig_tar_gz = in_otherdir
 
                     if not found:
-                        self.reject("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_file))
+                        self.reject("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_name))
                         self.pkg.orig_tar_gz = -1
                         continue
             else:
-                self.reject("%s refers to %s, but I can't find it in the queue." % (file, dsc_file))
+                self.reject("%s refers to %s, but I can't find it in the queue." % (file, dsc_name))
                 continue
-            if actual_md5 != dsc_files[dsc_file]["md5sum"]:
+            if actual_md5 != dsc_entry["md5sum"]:
                 self.reject("md5sum for %s doesn't match %s." % (found, file))
-            if actual_size != int(dsc_files[dsc_file]["size"]):
+            if actual_size != int(dsc_entry["size"]):
                 self.reject("size for %s doesn't match %s." % (found, file))
 
         return (self.reject_message, None)
