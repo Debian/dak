@@ -21,9 +21,10 @@
 
 import os, pg, sys
 import apt_pkg
-from daklib import database
+
+from daklib.dbconn import *
 from daklib import daklog
-from daklib import queue
+from daklib.queue import Upload
 from daklib import utils
 from daklib.regexes import re_default_answer
 
@@ -32,8 +33,6 @@ from daklib.regexes import re_default_answer
 # Globals
 Cnf = None
 Options = None
-projectB = None
-Upload = None
 Logger = None
 
 ################################################################################
@@ -50,7 +49,7 @@ Manually reject the .CHANGES file(s).
 ################################################################################
 
 def main():
-    global Cnf, Logger, Options, projectB, Upload
+    global Cnf, Logger, Options
 
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Reject-Proposed-Updates::Options::Help"),
@@ -68,27 +67,28 @@ def main():
     if not arguments:
         utils.fubar("need at least one .changes filename as an argument.")
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    # Initialise database
+    dbconn = DBConn()
 
-    Upload = queue.Upload(Cnf)
-    Logger = Upload.Logger = daklog.Logger(Cnf, "reject-proposed-updates")
+    Logger = daklog.Logger(Cnf, "reject-proposed-updates")
 
     bcc = "X-DAK: dak rejected-proposed-updates\nX-Katie: lauren $Revision: 1.4 $"
-    if Cnf.has_key("Dinstall::Bcc"):
-        Upload.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
-    else:
-        Upload.Subst["__BCC__"] = bcc
 
     for arg in arguments:
         arg = utils.validate_changes_file_arg(arg)
-        Upload.pkg.changes_file = arg
-        Upload.init_vars()
         cwd = os.getcwd()
         os.chdir(Cnf["Suite::Proposed-Updates::CopyDotDak"])
-        Upload.update_vars()
+
+        u = Upload()
+        u = load_dot_dak(arg)
+
+        if Cnf.has_key("Dinstall::Bcc"):
+            u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
+        else:
+            u.Subst["__BCC__"] = bcc
+        u.update_subst()
+
         os.chdir(cwd)
-        Upload.update_subst()
 
         print arg
         done = 0
@@ -104,7 +104,7 @@ def main():
                 answer = answer[:1].upper()
 
             if answer == 'M':
-                aborted = reject(Options["Manual-Reject"])
+                aborted = reject(u, Options["Manual-Reject"])
                 if not aborted:
                     done = 1
             elif answer == 'S':
@@ -116,10 +116,10 @@ def main():
 
 ################################################################################
 
-def reject (reject_message = ""):
-    files = Upload.pkg.files
-    dsc = Upload.pkg.dsc
-    changes_file = Upload.pkg.changes_file
+def reject (u, reject_message = ""):
+    files = u.pkg.files
+    dsc = u.pkg.dsc
+    changes_file = u.pkg.changes_file
 
     # If we weren't given a manual rejection message, spawn an editor
     # so the user can add one in...
@@ -151,7 +151,7 @@ def reject (reject_message = ""):
     print "Rejecting.\n"
 
     # Reject the .changes file
-    Upload.force_reject([changes_file])
+    u.force_reject([changes_file])
 
     # Setup the .reason file
     reason_filename = changes_file[:-8] + ".reason"
@@ -166,51 +166,59 @@ def reject (reject_message = ""):
     # Build up the rejection email
     user_email_address = utils.whoami() + " <%s>" % (Cnf["Dinstall::MyAdminAddress"])
 
-    Upload.Subst["__REJECTOR_ADDRESS__"] = user_email_address
-    Upload.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
-    Upload.Subst["__STABLE_REJECTOR__"] = Cnf["Reject-Proposed-Updates::StableRejector"]
-    Upload.Subst["__STABLE_MAIL__"] = Cnf["Reject-Proposed-Updates::StableMail"]
-    Upload.Subst["__MORE_INFO_URL__"] = Cnf["Reject-Proposed-Updates::MoreInfoURL"]
-    Upload.Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
-    reject_mail_message = utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/reject-proposed-updates.rejected")
+    u.Subst["__REJECTOR_ADDRESS__"] = user_email_address
+    u.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
+    u.Subst["__STABLE_REJECTOR__"] = Cnf["Reject-Proposed-Updates::StableRejector"]
+    u.Subst["__STABLE_MAIL__"] = Cnf["Reject-Proposed-Updates::StableMail"]
+    u.Subst["__MORE_INFO_URL__"] = Cnf["Reject-Proposed-Updates::MoreInfoURL"]
+    u.Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
+    reject_mail_message = utils.TemplateSubst(u.Subst, Cnf["Dir::Templates"]+"/reject-proposed-updates.rejected")
 
     # Write the rejection email out as the <foo>.reason file
     os.write(reject_fd, reject_mail_message)
     os.close(reject_fd)
 
-    # Remove the packages from proposed-updates
-    suite_id = database.get_suite_id('proposed-updates')
+    session = DBConn().session()
 
-    projectB.query("BEGIN WORK")
+    # Remove the packages from proposed-updates
+    suite_name = 'proposed-updates'
+
     # Remove files from proposed-updates suite
     for f in files.keys():
         if files[f]["type"] == "dsc":
             package = dsc["source"]
             version = dsc["version"];  # NB: not files[f]["version"], that has no epoch
-            q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
-            ql = q.getresult()
-            if not ql:
+
+            source = get_sources_from_name(package, version, session=session)
+            if len(source) != 1:
                 utils.fubar("reject: Couldn't find %s_%s in source table." % (package, version))
-            source_id = ql[0][0]
-            projectB.query("DELETE FROM src_associations WHERE suite = '%s' AND source = '%s'" % (suite_id, source_id))
+
+            source = source[0]
+
+            for sa in source.srcassociations:
+                if sa.suite.suite_name == suite_name:
+                    session.delete(sa)
+
         elif files[f]["type"] == "deb":
             package = files[f]["package"]
             version = files[f]["version"]
             architecture = files[f]["architecture"]
-            q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
-            ql = q.getresult()
+
+            binary = get_binaries_from_name(package, version [architecture, 'all'])
 
             # Horrible hack to work around partial replacement of
             # packages with newer versions (from different source
             # packages).  This, obviously, should instead check for a
             # newer version of the package and only do the
             # warn&continue thing if it finds one.
-            if not ql:
+            if len(binary) != 1:
                 utils.warn("reject: Couldn't find %s_%s_%s in binaries table." % (package, version, architecture))
             else:
-                binary_id = ql[0][0]
-                projectB.query("DELETE FROM bin_associations WHERE suite = '%s' AND bin = '%s'" % (suite_id, binary_id))
-    projectB.query("COMMIT WORK")
+                for ba in binary[0].binassociations:
+                    if ba.suite.suite_name == suite_name:
+                        session.delete(ba)
+
+    session.commit()
 
     # Send the rejection mail if appropriate
     if not Options["No-Mail"]:
