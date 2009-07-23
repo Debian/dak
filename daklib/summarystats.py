@@ -30,7 +30,7 @@ from singleton import Singleton
 
 ###############################################################################
 
-class SummaryStats(Singleton)
+class SummaryStats(Singleton):
     def __init__(self, *args, **kwargs):
         super(SummaryStats, self).__init__(*args, **kwargs)
 
