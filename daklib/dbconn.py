@@ -669,6 +669,80 @@ __all__.append('Maintainer')
 
 ################################################################################
 
+class NewComment(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '''<NewComment for '%s %s' (%s)>''' % (self.package, self.version, self.comment_id)
+
+__all__.append('NewComment')
+
+def has_new_comment(package, version, session=None):
+    """
+    Returns true if the given combination of C{package}, C{version} has a comment.
+
+    @type package: string
+    @param package: name of the package
+
+    @type version: string
+    @param version: package version
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: boolean
+    @return: true/false
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(NewComment)
+    q = q.filter_by(package=package)
+    q = q.filter_by(version=version)
+    return q.count() > 0
+
+__all__.append('has_new_comment')
+
+def get_new_comments(package=None, version=None, comment_id=None, session=None):
+    """
+    Returns (possibly empty) list of NewComment objects for the given
+    parameters
+
+    @type package: string (optional)
+    @param package: name of the package
+
+    @type version: string (optional)
+    @param version: package version
+
+    @type comment_id: int (optional)
+    @param comment_id: An id of a comment
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: A (possibly empty) list of NewComment objects will be returned
+
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(NewComment)
+    if package is not None: q = q.filter_by(package=package)
+    if version is not None: q = q.filter_by(version=version)
+    if comment_id is not None: q = q.filter_by(comment_id=comment_id)
+
+    return q.all()
+
+__all__.append('get_new_comments')
+
+################################################################################
+
 class Override(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1526,6 +1600,7 @@ class DBConn(Singleton):
         self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
         self.tbl_location = Table('location', self.db_meta, autoload=True)
         self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
+        self.tbl_new_comments = Table('new_comments', self.db_meta, autoload=True)
         self.tbl_override = Table('override', self.db_meta, autoload=True)
         self.tbl_override_type = Table('override_type', self.db_meta, autoload=True)
         self.tbl_pending_content_associations = Table('pending_content_associations', self.db_meta, autoload=True)
@@ -1633,6 +1708,9 @@ class DBConn(Singleton):
 
         mapper(Maintainer, self.tbl_maintainer,
                properties = dict(maintainer_id = self.tbl_maintainer.c.id))
+
+        mapper(NewComment, self.tbl_new_comments,
+               properties = dict(comment_id = self.tbl_new_comments.c.id))
 
         mapper(Override, self.tbl_override,
                properties = dict(suite_id = self.tbl_override.c.suite,
