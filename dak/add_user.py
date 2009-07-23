@@ -26,7 +26,6 @@ import os
 import apt_pkg
 
 from daklib import daklog
-from daklib import queue
 from daklib import utils
 from daklib.dbconn import DBConn, add_database_user, get_or_set_uid
 from daklib.regexes import re_gpg_fingerprint, re_user_address, re_user_mails, re_user_name
@@ -229,8 +228,7 @@ def main():
 # Should we send mail to the newly added user?
           if Cnf.FindB("Add-User::SendEmail"):
               mail = name + "<" + emails[0] +">"
-              Upload = queue.Upload(Cnf)
-              Subst = Upload.Subst
+              Subst = {}
               Subst["__NEW_MAINTAINER__"] = mail
               Subst["__UID__"] = uid
               Subst["__KEYID__"] = Cnf["Add-User::Options::Key"]
