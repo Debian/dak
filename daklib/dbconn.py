@@ -171,6 +171,24 @@ class DBBinary(object):
 
 __all__.append('DBBinary')
 
+def get_suites_binary_in(package, session=None):
+    """
+    Returns list of Suite objects which given C{package} name is in
+
+    @type source: str
+    @param source: DBBinary package name to search for
+
+    @rtype: list
+    @return: list of Suite objects for the given package
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    return session.query(Suite).join(BinAssociation).join(DBBinary).filter_by(package=package).all()
+
+__all__.append('get_suites_binary_in')
+
 def get_binary_from_id(id, session=None):
     """
     Returns DBBinary object for given C{id}
@@ -1287,6 +1305,24 @@ def source_exists(source, source_version, suites = ["any"], session=None):
     return 1
 
 __all__.append('source_exists')
+
+def get_suites_source_in(source, session=None):
+    """
+    Returns list of Suite objects which given C{source} name is in
+
+    @type source: str
+    @param source: DBSource package name to search for
+
+    @rtype: list
+    @return: list of Suite objects for the given source
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    return session.query(Suite).join(SrcAssociation).join(DBSource).filter_by(source=source).all()
+
+__all__.append('get_suites_source_in')
 
 def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=None):
     """
