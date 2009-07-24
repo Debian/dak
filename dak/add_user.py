@@ -34,8 +34,6 @@ from daklib.regexes import re_gpg_fingerprint, re_user_address, re_user_mails, r
 
 Cnf = None
 Logger = None
-Upload = None
-Subst = None
 
 ################################################################################
 
