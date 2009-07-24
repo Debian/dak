@@ -37,7 +37,7 @@ import fcntl
 import tempfile
 import pwd
 import apt_pkg
-from daklib import database
+from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
 from daklib.regexes import re_broken_package
@@ -46,7 +46,6 @@ import yaml
 # Globals
 Cnf = None      #: Configuration, apt_pkg.Configuration
 Options = None  #: Parsed CommandLine arguments
-projectB = None #: database connection, pgobject
 
 ################################################################################
 
@@ -60,7 +59,7 @@ def init():
     @attention: This function may run B{within sudo}
 
     """
-    global Cnf, Options, projectB
+    global Cnf, Options
 
     apt_pkg.init()
 
@@ -92,8 +91,8 @@ def init():
         print "Non-dak user: %s" % username
         Options["sudo"] = "y"
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    # Initialise DB connection
+    DBConn()
 
 ################################################################################
 
@@ -399,22 +398,26 @@ def check_transitions(transitions):
     to_dump = 0
     to_remove = []
     info = {}
+
+    session = DBConn().session()
+
     # Now look through all defined transitions
     for trans in transitions:
         t = transitions[trans]
         source = t["source"]
         expected = t["new"]
 
-        # Will be None if nothing is in testing.
-        current = database.get_suite_version(source, "testing")
+        # Will be an empty list if nothing is in testing.
+        sources = get_source_in_suite(source, "testing", session)
 
         info[trans] = get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
         print info[trans]
 
-        if current == None:
+        if len(sources) < 1:
             # No package in testing
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
+            current = sources[0].version
             compare = apt_pkg.VersionCompare(current, expected)
             if compare < 0:
                 # This is still valid, the current version in database is older than
@@ -528,15 +531,16 @@ def transition_info(transitions):
         source = t["source"]
         expected = t["new"]
 
-        # Will be None if nothing is in testing.
-        current = database.get_suite_version(source, "testing")
+        # Will be empty list if nothing is in testing.
+        sources = get_suite_version(source, "testing")
 
         print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
-        if current == None:
+        if len(sources) < 1:
             # No package in testing
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
+            current = sources[0].version
             compare = apt_pkg.VersionCompare(current, expected)
             print "Apt compare says: %s" % (compare)
             if compare < 0:
