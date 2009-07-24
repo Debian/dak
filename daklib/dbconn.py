@@ -59,6 +59,18 @@ class Architecture(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def __eq__(self, val):
+        if isinstance(val, str):
+            return (self.arch_string== val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
+    def __ne__(self, val):
+        if isinstance(val, str):
+            return (self.arch_string != val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
     def __repr__(self):
         return '<Architecture %s>' % self.arch_string
 
@@ -314,6 +326,18 @@ __all__.append('get_binary_components')
 class Component(object):
     def __init__(self, *args, **kwargs):
         pass
+
+    def __eq__(self, val):
+        if isinstance(val, str):
+            return (self.component_name == val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
+    def __ne__(self, val):
+        if isinstance(val, str):
+            return (self.component_name != val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
 
     def __repr__(self):
         return '<Component %s>' % self.component_name
@@ -977,6 +1001,18 @@ class Priority(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def __eq__(self, val):
+        if isinstance(val, str):
+            return (self.priority == val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
+    def __ne__(self, val):
+        if isinstance(val, str):
+            return (self.priority != val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
     def __repr__(self):
         return '<Priority %s (%s)>' % (self.priority, self.priority_id)
 
@@ -1195,6 +1231,18 @@ __all__.append('get_queue_build')
 class Section(object):
     def __init__(self, *args, **kwargs):
         pass
+
+    def __eq__(self, val):
+        if isinstance(val, str):
+            return (self.section == val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
+    def __ne__(self, val):
+        if isinstance(val, str):
+            return (self.section != val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
 
     def __repr__(self):
         return '<Section %s>' % self.section
@@ -1440,6 +1488,18 @@ class Suite(object):
     def __repr__(self):
         return '<Suite %s>' % self.suite_name
 
+    def __eq__(self, val):
+        if isinstance(val, str):
+            return (self.suite_name == val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
+    def __ne__(self, val):
+        if isinstance(val, str):
+            return (self.suite_name != val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
     def details(self):
         ret = []
         for disp, field in SUITE_FIELDS:
@@ -1560,6 +1620,18 @@ __all__.append('get_suite_architectures')
 class Uid(object):
     def __init__(self, *args, **kwargs):
         pass
+
+    def __eq__(self, val):
+        if isinstance(val, str):
+            return (self.uid == val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
+
+    def __ne__(self, val):
+        if isinstance(val, str):
+            return (self.uid != val)
+        # This signals to use the normal comparison operator
+        return NotImplemented
 
     def __repr__(self):
         return '<Uid %s (%s)>' % (self.uid, self.name)
