@@ -40,10 +40,12 @@ from types import *
 
 from dak_exceptions import *
 from changes import *
-from regexes import re_default_answer, re_fdnic, re_bin_only_nmu
+from regexes import re_default_answer, re_fdnic, re_bin_only_nmu, re_strip_srcver, re_valid_pkg_name, re_isanum, re_no_epoch, re_no_revision
 from config import Config
 from dbconn import *
 from summarystats import SummaryStats
+from utils import parse_changes
+from textutils import fix_maintainer
 
 ###############################################################################
 
@@ -216,7 +218,7 @@ class Upload(object):
     def reset (self):
         """ Reset a number of internal variables."""
 
-       # Initialize the substitution template map
+        # Initialize the substitution template map
         cnf = Config()
         self.Subst = {}
         self.Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
@@ -224,11 +226,31 @@ class Upload(object):
         self.Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
         self.Subst["__DAK_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
 
-        self.reject_message = ""
+        self.rejects = []
+        self.warnings = []
+        self.notes = []
+
         self.pkg.reset()
 
+    def package_info(self):
+        msg = ''
+
+        if len(self.rejects) > 0:
+            msg += "Reject Reasons:\n"
+            msg += "\n".join(self.rejects)
+
+        if len(self.warnings) > 0:
+            msg += "Warnings:\n"
+            msg += "\n".join(self.warnings)
+
+        if len(self.notes) > 0:
+            msg += "Notes:\n"
+            msg += "\n".join(self.notes)
+
+        return msg
+
     ###########################################################################
-    def update_subst(self, reject_message = ""):
+    def update_subst(self):
         """ Set up the per-package template substitution mappings """
 
         cnf = Config()
@@ -270,9 +292,179 @@ class Upload(object):
             self.Subst["__MAINTAINER_TO__"] = cnf["Dinstall::OverrideMaintainer"]
             self.Subst["__MAINTAINER_FROM__"] = cnf["Dinstall::OverrideMaintainer"]
 
-        self.Subst["__REJECT_MESSAGE__"] = self.reject_message
+        self.Subst["__REJECT_MESSAGE__"] = self.package_info()
         self.Subst["__SOURCE__"] = self.pkg.changes.get("source", "Unknown")
         self.Subst["__VERSION__"] = self.pkg.changes.get("version", "Unknown")
+
+    ###########################################################################
+    def load_changes(self, filename):
+        """
+        @rtype boolean
+        @rvalue: whether the changes file was valid or not.  We may want to
+                 reject even if this is True (see what gets put in self.rejects).
+                 This is simply to prevent us even trying things later which will
+                 fail because we couldn't properly parse the file.
+        """
+        self.pkg.changes_file = filename
+
+        # Parse the .changes field into a dictionary
+        try:
+            self.pkg.changes.update(parse_changes(filename))
+        except CantOpenError:
+            self.rejects.append("%s: can't read file." % (filename))
+            return False
+        except ParseChangesError, line:
+            self.rejects.append("%s: parse error, can't grok: %s." % (filename, line))
+            return False
+        except ChangesUnicodeError:
+            self.rejects.append("%s: changes file not proper utf-8" % (filename))
+            return False
+
+        # Parse the Files field from the .changes into another dictionary
+        try:
+            self.pkg.files.update(build_file_list(self.pkg.changes))
+        except ParseChangesError, line:
+            self.rejects.append("%s: parse error, can't grok: %s." % (filename, line))
+            return False
+        except UnknownFormatError, format:
+            self.rejects.append("%s: unknown format '%s'." % (filename, format))
+            return False
+
+        # Check for mandatory fields
+        for i in ("distribution", "source", "binary", "architecture",
+                  "version", "maintainer", "files", "changes", "description"):
+            if not self.pkg.changes.has_key(i):
+                # Avoid undefined errors later
+                self.rejects.append("%s: Missing mandatory field `%s'." % (filename, i))
+                return False
+
+        # Strip a source version in brackets from the source field
+        if re_strip_srcver.search(self.pkg.changes["source"]):
+            self.pkg.changes["source"] = re_strip_srcver.sub('', self.pkg.changes["source"])
+
+        # Ensure the source field is a valid package name.
+        if not re_valid_pkg_name.match(self.pkg.changes["source"]):
+            self.rejects.append("%s: invalid source name '%s'." % (filename, self.pkg.changes["source"]))
+
+        # Split multi-value fields into a lower-level dictionary
+        for i in ("architecture", "distribution", "binary", "closes"):
+            o = self.pkg.changes.get(i, "")
+            if o != "":
+                del self.pkg.changes[i]
+
+            self.pkg.changes[i] = {}
+
+            for j in o.split():
+                self.pkg.changes[i][j] = 1
+
+        # Fix the Maintainer: field to be RFC822/2047 compatible
+        try:
+            (self.pkg.changes["maintainer822"],
+             self.pkg.changes["maintainer2047"],
+             self.pkg.changes["maintainername"],
+             self.pkg.changes["maintaineremail"]) = \
+                   fix_maintainer (self.pkg.changes["maintainer"])
+        except ParseMaintError, msg:
+            self.rejects.append("%s: Maintainer field ('%s') failed to parse: %s" \
+                   % (filename, changes["maintainer"], msg))
+
+        # ...likewise for the Changed-By: field if it exists.
+        try:
+            (self.pkg.changes["changedby822"],
+             self.pkg.changes["changedby2047"],
+             self.pkg.changes["changedbyname"],
+             self.pkg.changes["changedbyemail"]) = \
+                   fix_maintainer (self.pkg.changes.get("changed-by", ""))
+        except ParseMaintError, msg:
+            self.pkg.changes["changedby822"] = ""
+            self.pkg.changes["changedby2047"] = ""
+            self.pkg.changes["changedbyname"] = ""
+            self.pkg.changes["changedbyemail"] = ""
+
+            self.rejects.append("%s: Changed-By field ('%s') failed to parse: %s" \
+                   % (filename, changes["changed-by"], msg))
+
+        # Ensure all the values in Closes: are numbers
+        if self.pkg.changes.has_key("closes"):
+            for i in self.pkg.changes["closes"].keys():
+                if re_isanum.match (i) == None:
+                    self.rejects.append(("%s: `%s' from Closes field isn't a number." % (filename, i)))
+
+        # chopversion = no epoch; chopversion2 = no epoch and no revision (e.g. for .orig.tar.gz comparison)
+        self.pkg.changes["chopversion"] = re_no_epoch.sub('', self.pkg.changes["version"])
+        self.pkg.changes["chopversion2"] = re_no_revision.sub('', self.pkg.changes["chopversion"])
+
+        # Check there isn't already a changes file of the same name in one
+        # of the queue directories.
+        base_filename = os.path.basename(filename)
+        for d in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
+            if os.path.exists(os.path.join(Cnf["Dir::Queue::%s" % (d) ], base_filename):
+                self.rejects.append("%s: a file with this name already exists in the %s directory." % (base_filename, d))
+
+        # Check the .changes is non-empty
+        if not self.pkg.files:
+            self.rejects.append("%s: nothing to do (Files field is empty)." % (base_filename))
+            return False
+
+        # Changes was syntactically valid even if we'll reject
+        return True
+
+    ###########################################################################
+
+    def check_distributions(self):
+        "Check and map the Distribution field"
+
+        Cnf = Config()
+
+        # Handle suite mappings
+        for m in Cnf.ValueList("SuiteMappings"):
+            args = m.split()
+            mtype = args[0]
+            if mtype == "map" or mtype == "silent-map":
+                (source, dest) = args[1:3]
+                if self.pkg.changes["distribution"].has_key(source):
+                    del self.pkg.changes["distribution"][source]
+                    self.pkg.changes["distribution"][dest] = 1
+                    if mtype != "silent-map":
+                        self.notes.append("Mapping %s to %s." % (source, dest))
+                if self.pkg.changes.has_key("distribution-version"):
+                    if self.pkg.changes["distribution-version"].has_key(source):
+                        self.pkg.changes["distribution-version"][source]=dest
+            elif mtype == "map-unreleased":
+                (source, dest) = args[1:3]
+                if self.pkg.changes["distribution"].has_key(source):
+                    for arch in self.pkg.changes["architecture"].keys():
+                        if arch not in [ arch_string for a in get_suite_architectures(source) ]:
+                            self.notes.append("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch))
+                            del self.pkg.changes["distribution"][source]
+                            self.pkg.changes["distribution"][dest] = 1
+                            break
+            elif mtype == "ignore":
+                suite = args[1]
+                if self.pkg.changes["distribution"].has_key(suite):
+                    del self.pkg.changes["distribution"][suite]
+                    self.warnings.append("Ignoring %s as a target suite." % (suite))
+            elif mtype == "reject":
+                suite = args[1]
+                if self.pkg.changes["distribution"].has_key(suite):
+                    self.rejects.append("Uploads to %s are not accepted." % (suite))
+            elif mtype == "propup-version":
+                # give these as "uploaded-to(non-mapped) suites-to-add-when-upload-obsoletes"
+                #
+                # changes["distribution-version"] looks like: {'testing': 'testing-proposed-updates'}
+                if self.pkg.changes["distribution"].has_key(args[1]):
+                    self.pkg.changes.setdefault("distribution-version", {})
+                    for suite in args[2:]:
+                        self.pkg.changes["distribution-version"][suite] = suite
+
+        # Ensure there is (still) a target distribution
+        if len(self.pkg.changes["distribution"].keys()) < 1:
+            self.rejects.append("No valid distribution remaining.")
+
+        # Ensure target distributions exist
+        for suite in self.pkg.changes["distribution"].keys():
+            if not Cnf.has_key("Suite::%s" % (suite)):
+                self.rejects.append("Unknown distribution `%s'." % (suite))
 
     ###########################################################################
 
@@ -740,25 +932,6 @@ distribution."""
         return None
 
     ################################################################################
-    def reject (self, str, prefix="Rejected: "):
-        """
-        Add C{str} to reject_message. Adds C{prefix}, by default "Rejected: "
-
-        @type str: string
-        @param str: Reject text
-
-        @type prefix: string
-        @param prefix: Prefix text, default Rejected:
-
-        """
-        if str:
-            # Unlike other rejects we add new lines first to avoid trailing
-            # new lines when this message is passed back up to a caller.
-            if self.reject_message:
-                self.reject_message += "\n"
-            self.reject_message += prefix + str
-
-    ################################################################################
     def get_anyversion(self, sv_list, suite):
         """
         @type sv_list: list
@@ -811,7 +984,7 @@ distribution."""
                 vercmp = apt_pkg.VersionCompare(new_version, existent_version)
 
                 if suite in must_be_newer_than and sourceful and vercmp < 1:
-                    self.reject("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+                    self.rejects.append("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
 
                 if suite in must_be_older_than and vercmp > -1:
                     cansave = 0
@@ -833,7 +1006,7 @@ distribution."""
                             # than complaining. either way, this isn't a REJECT issue
                             #
                             # And - we really should complain to the dorks who configured dak
-                            self.reject("%s is mapped to, but not enhanced by %s - adding anyways" % (suite, addsuite), "Warning: ")
+                            self.warnings.append("%s is mapped to, but not enhanced by %s - adding anyways" % (suite, addsuite))
                             self.pkg.changes.setdefault("propdistribution", {})
                             self.pkg.changes["propdistribution"][addsuite] = 1
                             cansave = 1
@@ -841,21 +1014,21 @@ distribution."""
                             # not targets_version is true when the package is NEW
                             # we could just stick with the "...old version..." REJECT
                             # for this, I think.
-                            self.reject("Won't propogate NEW packages.")
+                            self.rejects.append("Won't propogate NEW packages.")
                         elif apt_pkg.VersionCompare(new_version, add_version) < 0:
                             # propogation would be redundant. no need to reject though.
-                            self.reject("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite), "Warning: ")
+                            self.warnings.append("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
                             cansave = 1
                         elif apt_pkg.VersionCompare(new_version, add_version) > 0 and \
                              apt_pkg.VersionCompare(add_version, target_version) >= 0:
                             # propogate!!
-                            self.reject("Propogating upload to %s" % (addsuite), "Warning: ")
+                            self.warnings.append("Propogating upload to %s" % (addsuite))
                             self.pkg.changes.setdefault("propdistribution", {})
                             self.pkg.changes["propdistribution"][addsuite] = 1
                             cansave = 1
 
                     if not cansave:
-                        self.reject("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+                        self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
 
     ################################################################################
 
@@ -866,8 +1039,6 @@ distribution."""
 
         if session is None:
             session = DBConn().session()
-
-        self.reject_message = ""
 
         # Ensure version is sane
         q = session.query(BinAssociation)
@@ -883,9 +1054,7 @@ distribution."""
         q = q.join(Architecture).filter_by(arch_string=files[file]["architecture"])
 
         if q.count() > 0:
-            self.reject("%s: can not overwrite existing copy already in the archive." % (file))
-
-        return self.reject_message
+            self.rejects.append("%s: can not overwrite existing copy already in the archive." % (file))
 
     ################################################################################
 
@@ -895,7 +1064,6 @@ distribution."""
         if session is None:
             session = DBConn().session()
 
-        self.reject_message = ""
         source = self.pkg.dsc.get("source")
         version = self.pkg.dsc.get("version")
 
@@ -905,8 +1073,6 @@ distribution."""
 
         self.cross_suite_version_check([ (x.suite.suite_name, x.source.version) for x in q.all() ],
                                        file, version, sourceful=True)
-
-        return self.reject_message
 
     ################################################################################
     def check_dsc_against_db(self, file):
@@ -919,7 +1085,6 @@ distribution."""
          ensure you haven't just tried to dereference the deleted entry.
 
         """
-        self.reject_message = ""
         self.pkg.orig_tar_gz = None
 
         # Try and find all files mentioned in the .dsc.  This has
@@ -959,7 +1124,7 @@ distribution."""
                             if self.pkg.files.has_key(dsc_name) and \
                                int(self.pkg.files[dsc_name]["size"]) == int(i.filesize) and \
                                self.pkg.files[dsc_name]["md5sum"] == i.md5sum:
-                                self.reject("ignoring %s, since it's already in the archive." % (dsc_name), "Warning: ")
+                                self.warnings.append("ignoring %s, since it's already in the archive." % (dsc_name))
                                 # TODO: Don't delete the entry, just mark it as not needed
                                 # This would fix the stupidity of changing something we often iterate over
                                 # whilst we're doing it
@@ -968,7 +1133,7 @@ distribution."""
                                 match = 1
 
                     if not match:
-                        self.reject("can not overwrite existing copy of '%s' already in the archive." % (dsc_name))
+                        self.rejects.append("can not overwrite existing copy of '%s' already in the archive." % (dsc_name))
 
             elif dsc_name.endswith(".orig.tar.gz"):
                 # Check in the pool
@@ -1025,15 +1190,14 @@ distribution."""
                             self.pkg.orig_tar_gz = in_otherdir
 
                     if not found:
-                        self.reject("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_name))
+                        self.rejects.append("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_name))
                         self.pkg.orig_tar_gz = -1
                         continue
             else:
-                self.reject("%s refers to %s, but I can't find it in the queue." % (file, dsc_name))
+                self.rejects.append("%s refers to %s, but I can't find it in the queue." % (file, dsc_name))
                 continue
             if actual_md5 != dsc_entry["md5sum"]:
-                self.reject("md5sum for %s doesn't match %s." % (found, file))
+                self.rejects.append("md5sum for %s doesn't match %s." % (found, file))
             if actual_size != int(dsc_entry["size"]):
-                self.reject("size for %s doesn't match %s." % (found, file))
+                self.rejects.append("size for %s doesn't match %s." % (found, file))
 
-        return (self.reject_message, None)
