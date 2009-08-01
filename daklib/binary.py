@@ -72,6 +72,8 @@ class Binary(object):
         self.tmpdir = None
         self.chunks = None
         self.wrapped_reject = reject
+        # Store rejects for later use
+        self.rejects = []
 
     def reject(self, message):
         """
@@ -79,6 +81,7 @@ class Binary(object):
         otherwise send it to stderr.
         """
         print >> sys.stderr, message
+        self.rejects.append(message)
         if self.wrapped_reject:
             self.wrapped_reject(message)
 
