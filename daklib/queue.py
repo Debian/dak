@@ -40,8 +40,9 @@ from types import *
 
 from dak_exceptions import *
 from changes import *
-from regexes import re_default_answer, re_fdnic, re_bin_only_nmu, re_strip_srcver, re_valid_pkg_name, re_isanum, re_no_epoch, re_no_revision
+from regexes import *
 from config import Config
+from holding import Holding
 from dbconn import *
 from summarystats import SummaryStats
 from utils import parse_changes
@@ -201,6 +202,50 @@ def check_valid(new):
         if (priority == "source" and file_type != "dsc") or \
            (priority != "source" and file_type == "dsc"):
             new[pkg]["priority id"] = -1
+
+###############################################################################
+
+def lookup_uid_from_fingerprint(fpr, session):
+    uid = None
+    uid_name = ""
+    # This is a stupid default, but see the comments below
+    is_dm = False
+
+    user = get_uid_from_fingerprint(changes["fingerprint"], session)
+
+    if user is not None:
+        uid = user.uid
+        if user.name is None:
+            uid_name = ''
+        else:
+            uid_name = user.name
+
+        # Check the relevant fingerprint (which we have to have)
+        for f in uid.fingerprint:
+            if f.fingerprint == changes['fingerprint']:
+                is_dm = f.keyring.debian_maintainer
+                break
+
+    return (uid, uid_name, is_dm)
+
+###############################################################################
+
+# Used by Upload.check_timestamps
+class TarTime(object):
+    def __init__(self, future_cutoff, past_cutoff):
+        self.reset()
+        self.future_cutoff = future_cutoff
+        self.past_cutoff = past_cutoff
+
+    def reset(self):
+        self.future_files = {}
+        self.ancient_files = {}
+
+    def callback(self, Kind, Name, Link, Mode, UID, GID, Size, MTime, Major, Minor):
+        if MTime > self.future_cutoff:
+            self.future_files[Name] = MTime
+        if MTime < self.past_cutoff:
+            self.ancient_files[Name] = MTime
 
 ###############################################################################
 
@@ -468,6 +513,815 @@ class Upload(object):
 
     ###########################################################################
 
+    def binary_file_checks(self, f, session):
+        cnf = Config()
+        entry = self.pkg.files[f]
+
+        # Extract package control information
+        deb_file = utils.open_file(f)
+        try:
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))
+        except:
+            self.rejects.append("%s: debExtractControl() raised %s." % (f, sys.exc_type))
+            deb_file.close()
+            # Can't continue, none of the checks on control would work.
+            return
+
+        # Check for mandantory "Description:"
+        deb_file.seek(0)
+        try:
+            apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))["Description"] + '\n'
+        except:
+            self.rejects.append("%s: Missing Description in binary package" % (f))
+            return
+
+        deb_file.close()
+
+        # Check for mandatory fields
+        for field in [ "Package", "Architecture", "Version" ]:
+            if control.Find(field) == None:
+                # Can't continue
+                self.rejects.append("%s: No %s field in control." % (f, field))
+                return
+
+        # Ensure the package name matches the one give in the .changes
+        if not self.pkg.changes["binary"].has_key(control.Find("Package", "")):
+            self.rejects.append("%s: control file lists name as `%s', which isn't in changes file." % (f, control.Find("Package", "")))
+
+        # Validate the package field
+        package = control.Find("Package")
+        if not re_valid_pkg_name.match(package):
+            self.rejects.append("%s: invalid package name '%s'." % (f, package))
+
+        # Validate the version field
+        version = control.Find("Version")
+        if not re_valid_version.match(version):
+            self.rejects.append("%s: invalid version number '%s'." % (f, version))
+
+        # Ensure the architecture of the .deb is one we know about.
+        default_suite = cnf.get("Dinstall::DefaultSuite", "Unstable")
+        architecture = control.Find("Architecture")
+        upload_suite = self.pkg.changes["distribution"].keys()[0]
+
+        if      architecture not in [a.arch_string for a in get_suite_architectures(default_suite, session)] \
+            and architecture not in [a.arch_string for a in get_suite_architectures(upload_suite, session)]:
+            self.rejects.append("Unknown architecture '%s'." % (architecture))
+
+        # Ensure the architecture of the .deb is one of the ones
+        # listed in the .changes.
+        if not self.pkg.changes["architecture"].has_key(architecture):
+            self.rejects.append("%s: control file lists arch as `%s', which isn't in changes file." % (f, architecture))
+
+        # Sanity-check the Depends field
+        depends = control.Find("Depends")
+        if depends == '':
+            self.rejects.append("%s: Depends field is empty." % (f))
+
+        # Sanity-check the Provides field
+        provides = control.Find("Provides")
+        if provides:
+            provide = re_spacestrip.sub('', provides)
+            if provide == '':
+                self.rejects.append("%s: Provides field is empty." % (f))
+            prov_list = provide.split(",")
+            for prov in prov_list:
+                if not re_valid_pkg_name.match(prov):
+                    self.rejects.append("%s: Invalid Provides field content %s." % (f, prov))
+
+        # Check the section & priority match those given in the .changes (non-fatal)
+        if     control.Find("Section") and entry["section"] != "" \
+           and entry["section"] != control.Find("Section"):
+            self.warnings.append("%s control file lists section as `%s', but changes file has `%s'." % \
+                                (f, control.Find("Section", ""), entry["section"]))
+        if control.Find("Priority") and entry["priority"] != "" \
+           and entry["priority"] != control.Find("Priority"):
+            self.warnings.append("%s control file lists priority as `%s', but changes file has `%s'." % \
+                                (f, control.Find("Priority", ""), entry["priority"]))
+
+        entry["package"] = package
+        entry["architecture"] = architecture
+        entry["version"] = version
+        entry["maintainer"] = control.Find("Maintainer", "")
+
+        if f.endswith(".udeb"):
+            files[f]["dbtype"] = "udeb"
+        elif f.endswith(".deb"):
+            files[f]["dbtype"] = "deb"
+        else:
+            self.rejects.append("%s is neither a .deb or a .udeb." % (f))
+
+        entry["source"] = control.Find("Source", entry["package"])
+
+        # Get the source version
+        source = entry["source"]
+        source_version = ""
+
+        if source.find("(") != -1:
+            m = re_extract_src_version.match(source)
+            source = m.group(1)
+            source_version = m.group(2)
+
+        if not source_version:
+            source_version = files[f]["version"]
+
+        entry["source package"] = source
+        entry["source version"] = source_version
+
+        # Ensure the filename matches the contents of the .deb
+        m = re_isadeb.match(f)
+
+        #  package name
+        file_package = m.group(1)
+        if entry["package"] != file_package:
+            self.rejects.append("%s: package part of filename (%s) does not match package name in the %s (%s)." % \
+                                (f, file_package, entry["dbtype"], entry["package"]))
+        epochless_version = re_no_epoch.sub('', control.Find("Version"))
+
+        #  version
+        file_version = m.group(2)
+        if epochless_version != file_version:
+            self.rejects.append("%s: version part of filename (%s) does not match package version in the %s (%s)." % \
+                                (f, file_version, entry["dbtype"], epochless_version))
+
+        #  architecture
+        file_architecture = m.group(3)
+        if entry["architecture"] != file_architecture:
+            self.rejects.append("%s: architecture part of filename (%s) does not match package architecture in the %s (%s)." % \
+                                (f, file_architecture, entry["dbtype"], entry["architecture"]))
+
+        # Check for existent source
+        source_version = entry["source version"]
+        source_package = entry["source package"]
+        if self.pkg.changes["architecture"].has_key("source"):
+            if source_version != self.pkg.changes["version"]:
+                self.rejects.append("source version (%s) for %s doesn't match changes version %s." % \
+                                    (source_version, f, self.pkg.changes["version"]))
+        else:
+            # Check in the SQL database
+            if not source_exists(source_package, source_version, self.pkg.changes["distribution"].keys(), session):
+                # Check in one of the other directories
+                source_epochless_version = re_no_epoch.sub('', source_version)
+                dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
+                if os.path.exists(os.path.join(cnf["Dir::Queue::Byhand"], dsc_filename)):
+                    entry["byhand"] = 1
+                elif os.path.exists(os.path.join(cnf["Dir::Queue::New"], dsc_filename)):
+                    entry["new"] = 1
+                else:
+                    dsc_file_exists = False
+                    for myq in ["Accepted", "Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
+                        if cnf.has_key("Dir::Queue::%s" % (myq)):
+                            if os.path.exists(os.path.join(cnf["Dir::Queue::" + myq], dsc_filename)):
+                                dsc_file_exists = True
+                                break
+
+                    if not dsc_file_exists:
+                        self.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, f))
+
+        # Check the version and for file overwrites
+        self.check_binary_against_db(f, session)
+
+        b = Binary(f).scan_package()
+        if len(b.rejects) > 0:
+            for j in b.rejects:
+                self.rejects.append(j)
+
+    def source_file_checks(self, f, session):
+        entry = self.pkg.files[f]
+
+        m = re_issource.match(f)
+        if not m:
+            return
+
+        entry["package"] = m.group(1)
+        entry["version"] = m.group(2)
+        entry["type"] = m.group(3)
+
+        # Ensure the source package name matches the Source filed in the .changes
+        if self.pkg.changes["source"] != entry["package"]:
+            self.rejects.append("%s: changes file doesn't say %s for Source" % (f, entry["package"]))
+
+        # Ensure the source version matches the version in the .changes file
+        if entry["type"] == "orig.tar.gz":
+            changes_version = self.pkg.changes["chopversion2"]
+        else:
+            changes_version = self.pkg.changes["chopversion"]
+
+        if changes_version != entry["version"]:
+            self.rejects.append("%s: should be %s according to changes file." % (f, changes_version))
+
+        # Ensure the .changes lists source in the Architecture field
+        if not self.pkg.changes["architecture"].has_key("source"):
+            self.rejects.append("%s: changes file doesn't list `source' in Architecture field." % (f))
+
+        # Check the signature of a .dsc file
+        if entry["type"] == "dsc":
+            # check_signature returns either:
+            #  (None, [list, of, rejects]) or (signature, [])
+            (self.pkg.dsc["fingerprint"], rejects) = utils.check_signature(f)
+            for j in rejects:
+                self.rejects.append(j)
+
+        entry["architecture"] = "source"
+
+    def per_suite_file_checks(self, f, suite, session):
+        cnf = Config()
+        entry = self.pkg.files[f]
+
+        # Skip byhand
+        if entry.has_key("byhand"):
+            return
+
+        # Handle component mappings
+        for m in cnf.ValueList("ComponentMappings"):
+            (source, dest) = m.split()
+            if entry["component"] == source:
+                entry["original component"] = source
+                entry["component"] = dest
+
+        # Ensure the component is valid for the target suite
+        if cnf.has_key("Suite:%s::Components" % (suite)) and \
+           entry["component"] not in cnf.ValueList("Suite::%s::Components" % (suite)):
+            self.rejects.append("unknown component `%s' for suite `%s'." % (entry["component"], suite))
+            return
+
+        # Validate the component
+        component = entry["component"]
+        if not get_component(component, session):
+            self.rejects.append("file '%s' has unknown component '%s'." % (f, component))
+            return
+
+        # See if the package is NEW
+        if not self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), f, session):
+            entry["new"] = 1
+
+        # Validate the priority
+        if entry["priority"].find('/') != -1:
+            self.rejects.append("file '%s' has invalid priority '%s' [contains '/']." % (f, entry["priority"]))
+
+        # Determine the location
+        location = cnf["Dir::Pool"]
+        l = get_location(location, component, archive, session)
+        if l is None:
+            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive))
+            entry["location id"] = -1
+        else:
+            entry["location id"] = l.location_id
+
+        # Check the md5sum & size against existing files (if any)
+        entry["pool name"] = utils.poolify(self.pkg.changes["source"], entry["component"])
+
+        found, poolfile = check_poolfile(os.path.join(entry["pool name"], f),
+                                         entry["size"], entry["md5sum"], entry["location id"])
+
+        if found is None:
+            self.rejects.append("INTERNAL ERROR, get_files_id() returned multiple matches for %s." % (f))
+        elif found is False and poolfile is not None:
+            self.rejects.append("md5sum and/or size mismatch on existing copy of %s." % (f))
+        else:
+            if poolfile is None:
+                entry["files id"] = None
+            else:
+                entry["files id"] = poolfile.file_id
+
+        # Check for packages that have moved from one component to another
+        entry['suite'] = suite
+        res = get_binary_components(files[f]['package'], suite, entry["architecture"], session)
+        if res.rowcount > 0:
+            entry["othercomponents"] = res.fetchone()[0]
+
+    def check_files(self, action=True):
+        archive = utils.where_am_i()
+        file_keys = self.pkg.files.keys()
+        holding = Holding()
+        cnf = Config()
+
+        # XXX: As far as I can tell, this can no longer happen - see
+        #      comments by AJ in old revisions - mhy
+        # if reprocess is 2 we've already done this and we're checking
+        # things again for the new .orig.tar.gz.
+        # [Yes, I'm fully aware of how disgusting this is]
+        if action and self.reprocess < 2:
+            cwd = os.getcwd()
+            os.chdir(self.pkg.directory)
+            for f in file_keys:
+                ret = holding.copy_to_holding(f)
+                if ret is not None:
+                    # XXX: Should we bail out here or try and continue?
+                    self.rejects.append(ret)
+
+            os.chdir(cwd)
+
+        # Check there isn't already a .changes or .dak file of the same name in
+        # the proposed-updates "CopyChanges" or "CopyDotDak" storage directories.
+        # [NB: this check must be done post-suite mapping]
+        base_filename = os.path.basename(self.pkg.changes_file)
+        dot_dak_filename = base_filename[:-8] + ".dak"
+
+        for suite in self.pkg.changes["distribution"].keys():
+            copychanges = "Suite::%s::CopyChanges" % (suite)
+            if cnf.has_key(copychanges) and \
+                   os.path.exists(os.path.join(cnf[copychanges], base_filename)):
+                self.rejects.append("%s: a file with this name already exists in %s" \
+                           % (base_filename, cnf[copychanges]))
+
+            copy_dot_dak = "Suite::%s::CopyDotDak" % (suite)
+            if cnf.has_key(copy_dot_dak) and \
+                   os.path.exists(os.path.join(cnf[copy_dot_dak], dot_dak_filename)):
+                self.rejects.append("%s: a file with this name already exists in %s" \
+                           % (dot_dak_filename, Cnf[copy_dot_dak]))
+
+        self.reprocess = 0
+        has_binaries = False
+        has_source = False
+
+        s = DBConn().session()
+
+        for f, entry in self.pkg.files.items():
+            # Ensure the file does not already exist in one of the accepted directories
+            for d in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+                if not cnf.has_key("Dir::Queue::%s" % (d)): continue
+                if os.path.exists(cnf["Dir::Queue::%s" % (d) ] + '/' + f):
+                    self.rejects.append("%s file already exists in the %s directory." % (f, d))
+
+            if not re_taint_free.match(f):
+                self.rejects.append("!!WARNING!! tainted filename: '%s'." % (f))
+
+            # Check the file is readable
+            if os.access(f, os.R_OK) == 0:
+                # When running in -n, copy_to_holding() won't have
+                # generated the reject_message, so we need to.
+                if action:
+                    if os.path.exists(f):
+                        self.rejects.append("Can't read `%s'. [permission denied]" % (f))
+                    else:
+                        self.rejects.append("Can't read `%s'. [file not found]" % (f))
+                entry["type"] = "unreadable"
+                continue
+
+            # If it's byhand skip remaining checks
+            if entry["section"] == "byhand" or entry["section"][:4] == "raw-":
+                entry["byhand"] = 1
+                entry["type"] = "byhand"
+
+            # Checks for a binary package...
+            elif re_isadeb.match(f):
+                has_binaries = True
+                entry["type"] = "deb"
+
+                # This routine appends to self.rejects/warnings as appropriate
+                self.binary_file_checks(f, session)
+
+            # Checks for a source package...
+            elif re_issource.match(f)
+                has_source = True
+
+                # This routine appends to self.rejects/warnings as appropriate
+                self.source_file_checks(f, session)
+
+            # Not a binary or source package?  Assume byhand...
+            else:
+                entry["byhand"] = 1
+                entry["type"] = "byhand"
+
+            # Per-suite file checks
+            entry["oldfiles"] = {}
+            for suite in self.pkg.changes["distribution"].keys():
+                self.per_suite_file_checks(f, suite, session)
+
+        # If the .changes file says it has source, it must have source.
+        if self.pkg.changes["architecture"].has_key("source"):
+            if not has_source:
+                self.rejects.append("no source found and Architecture line in changes mention source.")
+
+            if not has_binaries and cnf.FindB("Dinstall::Reject::NoSourceOnly"):
+                self.rejects.append("source only uploads are not supported.")
+
+    ###########################################################################
+    def check_dsc(self, action=True):
+        """Returns bool indicating whether or not the source changes are valid"""
+        # Ensure there is source to check
+        if not self.pkg.changes["architecture"].has_key("source"):
+            return True
+
+        # Find the .dsc
+        dsc_filename = None
+        for f, entry in self.pkg.files.items():
+            if entry["type"] == "dsc":
+                if dsc_filename:
+                    self.rejects.append("can not process a .changes file with multiple .dsc's.")
+                    return False
+                else:
+                    dsc_filename = f
+
+        # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
+        if not dsc_filename:
+            self.rejects.append("source uploads must contain a dsc file")
+            return False
+
+        # Parse the .dsc file
+        try:
+            self.pkg.dsc.update(utils.parse_changes(dsc_filename, signing_rules=1))
+        except CantOpenError:
+            # if not -n copy_to_holding() will have done this for us...
+            if not action:
+                self.rejects.append("%s: can't read file." % (dsc_filename))
+        except ParseChangesError, line:
+            self.rejects.append("%s: parse error, can't grok: %s." % (dsc_filename, line))
+        except InvalidDscError, line:
+            self.rejects.append("%s: syntax error on line %s." % (dsc_filename, line))
+        except ChangesUnicodeError:
+            self.rejects.append("%s: dsc file not proper utf-8." % (dsc_filename))
+
+        # Build up the file list of files mentioned by the .dsc
+        try:
+            self.pkg.dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1))
+        except NoFilesFieldError:
+            self.rejects.append("%s: no Files: field." % (dsc_filename))
+            return False
+        except UnknownFormatError, format:
+            self.rejects.append("%s: unknown format '%s'." % (dsc_filename, format))
+            return False
+        except ParseChangesError, line:
+            self.rejects.append("%s: parse error, can't grok: %s." % (dsc_filename, line))
+            return False
+
+        # Enforce mandatory fields
+        for i in ("format", "source", "version", "binary", "maintainer", "architecture", "files"):
+            if not self.pkg.dsc.has_key(i):
+                self.rejects.append("%s: missing mandatory field `%s'." % (dsc_filename, i))
+                return False
+
+        # Validate the source and version fields
+        if not re_valid_pkg_name.match(self.pkg.dsc["source"]):
+            self.rejects.append("%s: invalid source name '%s'." % (dsc_filename, self.pkg.dsc["source"]))
+        if not re_valid_version.match(dsc["version"]):
+            self.rejects.append("%s: invalid version number '%s'." % (dsc_filename, self.pkg.dsc["version"]))
+
+        # Bumping the version number of the .dsc breaks extraction by stable's
+        # dpkg-source.  So let's not do that...
+        if self.pkg.dsc["format"] != "1.0":
+            self.rejects.append("%s: incompatible 'Format' version produced by a broken version of dpkg-dev 1.9.1{3,4}." % (dsc_filename))
+
+        # Validate the Maintainer field
+        try:
+            # We ignore the return value
+            fix_maintainer(self.pkg.dsc["maintainer"])
+        except ParseMaintError, msg:
+            self.rejects.append("%s: Maintainer field ('%s') failed to parse: %s" \
+                                 % (dsc_filename, self.pkg.dsc["maintainer"], msg))
+
+        # Validate the build-depends field(s)
+        for field_name in [ "build-depends", "build-depends-indep" ]:
+            field = self.pkg.dsc.get(field_name)
+            if field:
+                # Check for broken dpkg-dev lossage...
+                if field.startswith("ARRAY"):
+                    self.rejects.append("%s: invalid %s field produced by a broken version of dpkg-dev (1.10.11)" % \
+                                        (dsc_filename, field_name.title()))
+
+                # Have apt try to parse them...
+                try:
+                    apt_pkg.ParseSrcDepends(field)
+                except:
+                    self.rejects.append("%s: invalid %s field (can not be parsed by apt)." % (dsc_filename, field_name.title()))
+
+        # Ensure the version number in the .dsc matches the version number in the .changes
+        epochless_dsc_version = re_no_epoch.sub('', self.pkg.dsc["version"])
+        changes_version = self.pkg.files[dsc_filename]["version"]
+
+        if epochless_dsc_version != self.pkg.files[dsc_filename]["version"]:
+            self.rejects.append("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version))
+
+        # Ensure there is a .tar.gz in the .dsc file
+        has_tar = False
+        for f in dsc_files.keys():
+            m = re_issource.match(f)
+            if not m:
+                self.rejects.append("%s: %s in Files field not recognised as source." % (dsc_filename, f))
+                continue
+            ftype = m.group(3)
+            if ftype == "orig.tar.gz" or ftype == "tar.gz":
+                has_tar = True
+
+        if not has_tar:
+            self.rejects.append("%s: no .tar.gz or .orig.tar.gz in 'Files' field." % (dsc_filename))
+
+        # Ensure source is newer than existing source in target suites
+        self.check_source_against_db(dsc_filename, session)
+
+        self.check_dsc_against_db(dsc_filename)
+
+        return True
+
+    ###########################################################################
+
+    def get_changelog_versions(self, source_dir):
+        """Extracts a the source package and (optionally) grabs the
+        version history out of debian/changelog for the BTS."""
+
+        cnf = Config()
+
+        # Find the .dsc (again)
+        dsc_filename = None
+        for f in self.files.keys():
+            if files[f]["type"] == "dsc":
+                dsc_filename = f
+
+        # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
+        if not dsc_filename:
+            return
+
+        # Create a symlink mirror of the source files in our temporary directory
+        for f in self.files.keys():
+            m = re_issource.match(f)
+            if m:
+                src = os.path.join(source_dir, f)
+                # If a file is missing for whatever reason, give up.
+                if not os.path.exists(src):
+                    return
+                ftype = m.group(3)
+                if ftype == "orig.tar.gz" and self.pkg.orig_tar_gz:
+                    continue
+                dest = os.path.join(os.getcwd(), f)
+                os.symlink(src, dest)
+
+        # If the orig.tar.gz is not a part of the upload, create a symlink to the
+        # existing copy.
+        if self.pkg.orig_tar_gz:
+            dest = os.path.join(os.getcwd(), os.path.basename(self.pkg.orig_tar_gz))
+            os.symlink(self.pkg.orig_tar_gz, dest)
+
+        # Extract the source
+        cmd = "dpkg-source -sn -x %s" % (dsc_filename)
+        (result, output) = commands.getstatusoutput(cmd)
+        if (result != 0):
+            self.rejects.append("'dpkg-source -x' failed for %s [return code: %s]." % (dsc_filename, result))
+            self.rejects.append(utils.prefix_multi_line_string(output, " [dpkg-source output:] "), "")
+            return
+
+        if not cnf.Find("Dir::Queue::BTSVersionTrack"):
+            return
+
+        # Get the upstream version
+        upstr_version = re_no_epoch.sub('', dsc["version"])
+        if re_strip_revision.search(upstr_version):
+            upstr_version = re_strip_revision.sub('', upstr_version)
+
+        # Ensure the changelog file exists
+        changelog_filename = "%s-%s/debian/changelog" % (self.pkg.dsc["source"], upstr_version)
+        if not os.path.exists(changelog_filename):
+            self.rejects.append("%s: debian/changelog not found in extracted source." % (dsc_filename))
+            return
+
+        # Parse the changelog
+        self.pkg.dsc["bts changelog"] = ""
+        changelog_file = utils.open_file(changelog_filename)
+        for line in changelog_file.readlines():
+            m = re_changelog_versions.match(line)
+            if m:
+                self.pkg.dsc["bts changelog"] += line
+        changelog_file.close()
+
+        # Check we found at least one revision in the changelog
+        if not self.pkg.dsc["bts changelog"]:
+            self.rejects.append("%s: changelog format not recognised (empty version tree)." % (dsc_filename))
+
+    def check_source(self):
+        # XXX: I'm fairly sure reprocess == 2 can never happen
+        #      AJT disabled the is_incoming check years ago - mhy
+        #      We should probably scrap or rethink the whole reprocess thing
+        # Bail out if:
+        #    a) there's no source
+        # or b) reprocess is 2 - we will do this check next time when orig.tar.gz is in 'files'
+        # or c) the orig.tar.gz is MIA
+        if not self.pkg.changes["architecture"].has_key("source") or self.reprocess == 2 \
+           or self.pkg.orig_tar_gz == -1:
+            return
+
+        tmpdir = utils.temp_dirname()
+
+        # Move into the temporary directory
+        cwd = os.getcwd()
+        os.chdir(tmpdir)
+
+        # Get the changelog version history
+        self.get_changelog_versions(cwd)
+
+        # Move back and cleanup the temporary tree
+        os.chdir(cwd)
+
+        try:
+            shutil.rmtree(tmpdir)
+        except OSError, e:
+            if e.errno != errno.EACCES:
+                utils.fubar("%s: couldn't remove tmp dir for source tree." % (self.pkg.dsc["source"]))
+
+            self.rejects.append("%s: source tree could not be cleanly removed." % (self.pkg.dsc["source"]))
+            # We probably have u-r or u-w directories so chmod everything
+            # and try again.
+            cmd = "chmod -R u+rwx %s" % (tmpdir)
+            result = os.system(cmd)
+            if result != 0:
+                utils.fubar("'%s' failed with result %s." % (cmd, result))
+            shutil.rmtree(tmpdir)
+        except:
+            utils.fubar("%s: couldn't remove tmp dir for source tree." % (self.pkg.dsc["source"]))
+
+    ###########################################################################
+    def ensure_hashes(self):
+        # Make sure we recognise the format of the Files: field in the .changes
+        format = self.pkg.changes.get("format", "0.0").split(".", 1)
+        if len(format) == 2:
+            format = int(format[0]), int(format[1])
+        else:
+            format = int(float(format[0])), 0
+
+        # We need to deal with the original changes blob, as the fields we need
+        # might not be in the changes dict serialised into the .dak anymore.
+        orig_changes = parse_deb822(self.pkg.changes['filecontents'])
+
+        # Copy the checksums over to the current changes dict.  This will keep
+        # the existing modifications to it intact.
+        for field in orig_changes:
+            if field.startswith('checksums-'):
+                self.pkg.changes[field] = orig_changes[field]
+
+        # Check for unsupported hashes
+        for j in utils.check_hash_fields(".changes", self.pkg.changes):
+            self.rejects.append(j)
+
+        for j in utils.check_hash_fields(".dsc", self.pkg.dsc):
+            self.rejects.append(j)
+
+        # We have to calculate the hash if we have an earlier changes version than
+        # the hash appears in rather than require it exist in the changes file
+        for hashname, hashfunc, version in utils.known_hashes:
+            # TODO: Move _ensure_changes_hash into this class
+            for j in utils._ensure_changes_hash(self.pkg.changes, format, version, self.pkg.files, hashname, hashfunc):
+                self.rejects.append(j)
+            if "source" in self.pkg.changes["architecture"]:
+                # TODO: Move _ensure_dsc_hash into this class
+                for j in utils._ensure_dsc_hash(self.pkg.dsc, self.pkg.dsc_files, hashname, hashfunc))
+                    self.rejects.append(j)
+
+    def check_hashes():
+        for m in utils.check_hash(".changes", self.pkg.files, "md5", apt_pkg.md5sum):
+            self.rejects.append(m)
+
+        for m in utils.check_size(".changes", self.pkg.files):
+            self.rejects.append(m)
+
+        for m in utils.check_hash(".dsc", self.pkg.dsc_files, "md5", apt_pkg.md5sum):
+            self.rejects.append(m)
+
+        for m in utils.check_size(".dsc", self.pkg.dsc_files):
+            self.rejects.append(m)
+
+        for m in utils.ensure_hashes(self.pkg.changes, dsc, files, dsc_files):
+            self.rejects.append(m)
+
+    ###########################################################################
+    def check_urgency(self):
+        cnf = Config()
+        if self.pkg.changes["architecture"].has_key("source"):
+            if not self.pkg.changes.has_key("urgency"):
+                self.pkg.changes["urgency"] = cnf["Urgency::Default"]
+            self.pkg.changes["urgency"] = self.pkg.changes["urgency"].lower()
+            if self.pkg.changes["urgency"] not in cnf.ValueList("Urgency::Valid"):
+                self.warnings.append("%s is not a valid urgency; it will be treated as %s by testing." % \
+                                     (self.pkg.changes["urgency"], cnf["Urgency::Default"]))
+                self.pkg.changes["urgency"] = cnf["Urgency::Default"]
+
+    ###########################################################################
+
+    # Sanity check the time stamps of files inside debs.
+    # [Files in the near future cause ugly warnings and extreme time
+    #  travel can cause errors on extraction]
+
+    def check_timestamps(self):
+        future_cutoff = time.time() + int(Cnf["Dinstall::FutureTimeTravelGrace"])
+        past_cutoff = time.mktime(time.strptime(Cnf["Dinstall::PastCutoffYear"],"%Y"))
+        tar = TarTime(future_cutoff, past_cutoff)
+
+        for filename, entry in self.pkg.files.keys():
+            if entry["type"] == "deb":
+                tar.reset()
+                try:
+                    deb_file = utils.open_file(filename)
+                    apt_inst.debExtract(deb_file, tar.callback, "control.tar.gz")
+                    deb_file.seek(0)
+                    try:
+                        apt_inst.debExtract(deb_file, tar.callback, "data.tar.gz")
+                    except SystemError, e:
+                        # If we can't find a data.tar.gz, look for data.tar.bz2 instead.
+                        if not re.search(r"Cannot f[ui]nd chunk data.tar.gz$", str(e)):
+                            raise
+                        deb_file.seek(0)
+                        apt_inst.debExtract(deb_file,tar.callback,"data.tar.bz2")
+
+                    deb_file.close()
+
+                    future_files = tar.future_files.keys()
+                    if future_files:
+                        num_future_files = len(future_files)
+                        future_file = future_files[0]
+                        future_date = tar.future_files[future_file]
+                        self.rejects.append("%s: has %s file(s) with a time stamp too far into the future (e.g. %s [%s])."
+                               % (filename, num_future_files, future_file, time.ctime(future_date)))
+
+                    ancient_files = tar.ancient_files.keys()
+                    if ancient_files:
+                        num_ancient_files = len(ancient_files)
+                        ancient_file = ancient_files[0]
+                        ancient_date = tar.ancient_files[ancient_file]
+                        self.rejects.append("%s: has %s file(s) with a time stamp too ancient (e.g. %s [%s])."
+                               % (filename, num_ancient_files, ancient_file, time.ctime(ancient_date)))
+                except:
+                    self.rejects.append("%s: deb contents timestamp check failed [%s: %s]" % (filename, sys.exc_type, sys.exc_value))
+
+    ###########################################################################
+    def check_signed_by_key(self):
+        """Ensure the .changes is signed by an authorized uploader."""
+        session = DBConn().session()
+
+        (uid, uid_name, is_dm) = lookup_uid_from_fingerprint(self.pkg.changes["fingerprint"], session=session)
+
+        # match claimed name with actual name:
+        if uid is None:
+            # This is fundamentally broken but need us to refactor how we get
+            # the UIDs/Fingerprints in order for us to fix it properly
+            uid, uid_email = self.pkg.changes["fingerprint"], uid
+            may_nmu, may_sponsor = 1, 1
+            # XXX by default new dds don't have a fingerprint/uid in the db atm,
+            #     and can't get one in there if we don't allow nmu/sponsorship
+        elif is_dm is False:
+            # If is_dm is False, we allow full upload rights
+            uid_email = "%s@debian.org" % (uid)
+            may_nmu, may_sponsor = 1, 1
+        else:
+            # Assume limited upload rights unless we've discovered otherwise
+            uid_email = uid
+            may_nmu, may_sponsor = 0, 0
+
+        if uid_email in [self.pkg.changes["maintaineremail"], self.pkg.changes["changedbyemail"]]:
+            sponsored = 0
+        elif uid_name in [self.pkg.changes["maintainername"], self.pkg.changes["changedbyname"]]:
+            sponsored = 0
+            if uid_name == "": sponsored = 1
+        else:
+            sponsored = 1
+            if ("source" in self.pkg.changes["architecture"] and
+                uid_email and utils.is_email_alias(uid_email)):
+                sponsor_addresses = utils.gpg_get_key_addresses(self.pkg.changes["fingerprint"])
+                if (self.pkg.changes["maintaineremail"] not in sponsor_addresses and
+                    self.pkg.changes["changedbyemail"] not in sponsor_addresses):
+                    self.pkg.changes["sponsoremail"] = uid_email
+
+        if sponsored and not may_sponsor:
+            self.rejects.append("%s is not authorised to sponsor uploads" % (uid))
+
+        if not sponsored and not may_nmu:
+            should_reject = True
+            highest_sid, highest_version = None, None
+
+            # XXX: This reimplements in SQLA what existed before but it's fundamentally fucked
+            #      It ignores higher versions with the dm_upload_allowed flag set to false
+            #      I'm keeping the existing behaviour for now until I've gone back and
+            #      checked exactly what the GR says - mhy
+            for si in get_sources_from_name(source=self.pkg.changes['source'], dm_upload_allowed=True, session=session):
+                if highest_version is None or apt_pkg.VersionCompare(si.version, highest_version) == 1:
+                     highest_sid = si.source_id
+                     highest_version = si.version
+
+            if highest_sid is None:
+                self.rejects.append("Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version" % self.pkg.changes["source"])
+            else:
+                for sup in session.query(SrcUploader).join(DBSource).filter_by(source_id=highest_sid):
+                    (rfc822, rfc2047, name, email) = sup.maintainer.get_split_maintainer()
+                    if email == uid_email or name == uid_name:
+                        should_reject = False
+                        break
+
+            if should_reject is True:
+                self.rejects.append("%s is not in Maintainer or Uploaders of source package %s" % (uid, self.pkg.changes["source"]))
+
+            for b in self.pkg.changes["binary"].keys():
+                for suite in self.pkg.changes["distribution"].keys():
+                    q = session.query(DBSource)
+                    q = q.join(DBBinary).filter_by(package=b)
+                    q = q.join(BinAssociation).join(Suite).filter_by(suite)
+
+                    for s in q.all():
+                        if s.source != self.pkg.changes["source"]:
+                            self.rejects.append("%s may not hijack %s from source package %s in suite %s" % (uid, b, s, suite))
+
+            for f in self.pkg.files.keys():
+                if self.pkg.files[f].has_key("byhand"):
+                    self.rejects.append("%s may not upload BYHAND file %s" % (uid, f))
+                if self.pkg.files[f].has_key("new"):
+                    self.rejects.append("%s may not upload NEW file %s" % (uid, f))
+
+    ###########################################################################
     def build_summaries(self):
         """ Build a summary of changes the upload introduces. """
 
@@ -702,7 +1556,7 @@ distribution."""
             utils.fubar(res)
 
 
-    def check_override (self):
+    def check_override(self):
         """
         Checks override entries for validity. Mails "Override disparity" warnings,
         if that feature is enabled.
@@ -734,6 +1588,32 @@ distribution."""
         del self.Subst["__SUMMARY__"]
 
     ###########################################################################
+
+    def remove(self, dir=None):
+        """
+        Used (for instance) in p-u to remove the package from unchecked
+        """
+        if dir is None:
+            os.chdir(self.pkg.directory)
+        else:
+            os.chdir(dir)
+
+        for f in self.pkg.files.keys():
+            os.unlink(f)
+        os.unlink(self.pkg.changes_file)
+
+    ###########################################################################
+
+    def move_to_dir (self, dest, perms=0660, changesperms=0664):
+        """
+        Move files to dest with certain perms/changesperms
+        """
+        utils.move(self.pkg.changes_file, dest, perms=changesperms)
+        for f in self.pkg.files.keys():
+            utils.move(f, dest, perms=perms)
+
+    ###########################################################################
+
     def force_reject(self, reject_files):
         """
         Forcefully move files from the current directory to the
@@ -1031,12 +1911,7 @@ distribution."""
                         self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
 
     ################################################################################
-
     def check_binary_against_db(self, file, session=None):
-        """
-
-        """
-
         if session is None:
             session = DBConn().session()
 
@@ -1201,3 +2076,27 @@ distribution."""
             if actual_size != int(dsc_entry["size"]):
                 self.rejects.append("size for %s doesn't match %s." % (found, file))
 
+    ################################################################################
+    # If any file of an upload has a recent mtime then chances are good
+    # the file is still being uploaded.
+
+    def upload_too_new(self):
+        cnf = Config()
+        too_new = False
+        # Move back to the original directory to get accurate time stamps
+        cwd = os.getcwd()
+        os.chdir(self.pkg.directory)
+        file_list = self.pkg.files.keys()
+        file_list.extend(self.pkg.dsc_files.keys())
+        file_list.append(self.pkg.changes_file)
+        for f in file_list:
+            try:
+                last_modified = time.time()-os.path.getmtime(f)
+                if last_modified < int(cnf["Dinstall::SkipTime"]):
+                    too_new = True
+                    break
+            except:
+                pass
+
+        os.chdir(cwd)
+        return too_new

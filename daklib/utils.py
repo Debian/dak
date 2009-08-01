@@ -386,41 +386,6 @@ def _ensure_dsc_hash(dsc, dsc_files, hashname, hashfunc):
 
 ################################################################################
 
-def ensure_hashes(changes, dsc, files, dsc_files):
-    rejmsg = []
-
-    # Make sure we recognise the format of the Files: field in the .changes
-    format = changes.get("format", "0.0").split(".", 1)
-    if len(format) == 2:
-        format = int(format[0]), int(format[1])
-    else:
-        format = int(float(format[0])), 0
-
-    # We need to deal with the original changes blob, as the fields we need
-    # might not be in the changes dict serialised into the .dak anymore.
-    orig_changes = parse_deb822(changes['filecontents'])
-
-    # Copy the checksums over to the current changes dict.  This will keep
-    # the existing modifications to it intact.
-    for field in orig_changes:
-        if field.startswith('checksums-'):
-            changes[field] = orig_changes[field]
-
-    # Check for unsupported hashes
-    rejmsg.extend(check_hash_fields(".changes", changes))
-    rejmsg.extend(check_hash_fields(".dsc", dsc))
-
-    # We have to calculate the hash if we have an earlier changes version than
-    # the hash appears in rather than require it exist in the changes file
-    for hashname, hashfunc, version in known_hashes:
-        rejmsg.extend(_ensure_changes_hash(changes, format, version, files,
-            hashname, hashfunc))
-        if "source" in changes["architecture"]:
-            rejmsg.extend(_ensure_dsc_hash(dsc, dsc_files, hashname,
-                hashfunc))
-
-    return rejmsg
-
 def parse_checksums(where, files, manifest, hashname):
     rejmsg = []
     field = 'checksums-%s' % hashname
@@ -1188,7 +1153,7 @@ def gpg_keyring_args(keyrings=None):
 
 ################################################################################
 
-def check_signature (sig_filename, reject, data_filename="", keyrings=None, autofetch=None):
+def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=None):
     """
     Check the signature of a file and return the fingerprint if the
     signature is valid or 'None' if it's not.  The first argument is the
@@ -1204,14 +1169,16 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
     used.
     """
 
+    rejects = []
+
     # Ensure the filename contains no shell meta-characters or other badness
     if not re_taint_free.match(sig_filename):
-        reject("!!WARNING!! tainted signature filename: '%s'." % (sig_filename))
-        return None
+        rejects.append("!!WARNING!! tainted signature filename: '%s'." % (sig_filename))
+        return (None, rejects)
 
     if data_filename and not re_taint_free.match(data_filename):
-        reject("!!WARNING!! tainted data filename: '%s'." % (data_filename))
-        return None
+        rejects.append("!!WARNING!! tainted data filename: '%s'." % (data_filename))
+        return (None, rejects)
 
     if not keyrings:
         keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
@@ -1222,8 +1189,8 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
     if autofetch:
         error_msg = retrieve_key(sig_filename)
         if error_msg:
-            reject(error_msg)
-            return None
+            rejects.append(error_msg)
+            return (None, rejects)
 
     # Build the command line
     status_read, status_write = os.pipe()
@@ -1238,40 +1205,32 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
 
     # If we failed to parse the status-fd output, let's just whine and bail now
     if internal_error:
-        reject("internal error while performing signature check on %s." % (sig_filename))
-        reject(internal_error, "")
-        reject("Please report the above errors to the Archive maintainers by replying to this mail.", "")
-        return None
+        rejects.append("internal error while performing signature check on %s." % (sig_filename))
+        rejects.append(internal_error, "")
+        rejects.append("Please report the above errors to the Archive maintainers by replying to this mail.", "")
+        return (None, rejects)
 
-    bad = ""
     # Now check for obviously bad things in the processed output
     if keywords.has_key("KEYREVOKED"):
-        reject("The key used to sign %s has been revoked." % (sig_filename))
-        bad = 1
+        rejects.append("The key used to sign %s has been revoked." % (sig_filename))
     if keywords.has_key("BADSIG"):
-        reject("bad signature on %s." % (sig_filename))
-        bad = 1
+        rejects.append("bad signature on %s." % (sig_filename))
     if keywords.has_key("ERRSIG") and not keywords.has_key("NO_PUBKEY"):
-        reject("failed to check signature on %s." % (sig_filename))
-        bad = 1
+        rejects.append("failed to check signature on %s." % (sig_filename))
     if keywords.has_key("NO_PUBKEY"):
         args = keywords["NO_PUBKEY"]
         if len(args) >= 1:
             key = args[0]
-        reject("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, sig_filename))
-        bad = 1
+        rejects.append("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, sig_filename))
     if keywords.has_key("BADARMOR"):
-        reject("ASCII armour of signature was corrupt in %s." % (sig_filename))
-        bad = 1
+        rejects.append("ASCII armour of signature was corrupt in %s." % (sig_filename))
     if keywords.has_key("NODATA"):
-        reject("no signature found in %s." % (sig_filename))
-        bad = 1
+        rejects.append("no signature found in %s." % (sig_filename))
     if keywords.has_key("EXPKEYSIG"):
         args = keywords["EXPKEYSIG"]
         if len(args) >= 1:
             key = args[0]
-        reject("Signature made by expired key 0x%s" % (key))
-        bad = 1
+        rejects.append("Signature made by expired key 0x%s" % (key))
     if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
         args = keywords["KEYEXPIRED"]
         expiredate=""
@@ -1284,38 +1243,33 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
                     expiredate = "unknown (%s)" % (timestamp)
             else:
                 expiredate = timestamp
-        reject("The key used to sign %s has expired on %s" % (sig_filename, expiredate))
-        bad = 1
+        rejects.append("The key used to sign %s has expired on %s" % (sig_filename, expiredate))
 
-    if bad:
-        return None
+    if len(rejects) > 0:
+        return (None, rejects)
 
     # Next check gpgv exited with a zero return code
     if exit_status:
-        reject("gpgv failed while checking %s." % (sig_filename))
+        rejects.append("gpgv failed while checking %s." % (sig_filename))
         if status.strip():
-            reject(prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
+            rejects.append(prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
         else:
-            reject(prefix_multi_line_string(output, " [GPG output:] "), "")
-        return None
+            rejects.append(prefix_multi_line_string(output, " [GPG output:] "), "")
+        return (None, rejects)
 
     # Sanity check the good stuff we expect
     if not keywords.has_key("VALIDSIG"):
-        reject("signature on %s does not appear to be valid [No VALIDSIG]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No VALIDSIG]." % (sig_filename))
     else:
         args = keywords["VALIDSIG"]
         if len(args) < 1:
-            reject("internal error while checking signature on %s." % (sig_filename))
-            bad = 1
+            rejects.append("internal error while checking signature on %s." % (sig_filename))
         else:
             fingerprint = args[0]
     if not keywords.has_key("GOODSIG"):
-        reject("signature on %s does not appear to be valid [No GOODSIG]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No GOODSIG]." % (sig_filename))
     if not keywords.has_key("SIG_ID"):
-        reject("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
 
     # Finally ensure there's not something we don't recognise
     known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
@@ -1324,13 +1278,12 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
-            reject("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], sig_filename))
-            bad = 1
+            rejects.append("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], sig_filename))
 
-    if bad:
-        return None
+    if len(rejects) > 0:
+        return (None, rejects)
     else:
-        return fingerprint
+        return (fingerprint, [])
 
 ################################################################################
 
