@@ -614,6 +614,53 @@ class PoolFile(object):
 
 __all__.append('PoolFile')
 
+def check_poolfile(filename, filesize, md5sum, location_id, session=None):
+    """
+    Returns a tuple:
+     (ValidFileFound [boolean or None], PoolFile object or None)
+
+    @type filename: string
+    @param filename: the filename of the file to check against the DB
+
+    @type filesize: int
+    @param filesize: the size of the file to check against the DB
+
+    @type md5sum: string
+    @param md5sum: the md5sum of the file to check against the DB
+
+    @type location_id: int
+    @param location_id: the id of the location to look in
+
+    @rtype: tuple
+    @return: Tuple of length 2.
+             If more than one file found with that name:
+                    (None,  None)
+             If valid pool file found: (True, PoolFile object)
+             If valid pool file not found:
+                    (False, None) if no file found
+                    (False, PoolFile object) if file found with size/md5sum mismatch
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(PoolFile).filter_by(filename=filename)
+    q = q.join(Location).filter_by(location_id=location_id)
+
+    if q.count() > 1:
+        return (None, None)
+    if q.count() < 1:
+        return (False, None)
+
+    obj = q.one()
+    if obj.md5sum != md5sum or obj.filesize != filesize:
+        return (False, obj)
+
+    return (True, obj)
+
+__all__.append('check_poolfile')
+
+
 def get_poolfile_by_name(filename, location_id=None, session=None):
     """
     Returns an array of PoolFile objects for the given filename and
@@ -629,7 +676,7 @@ def get_poolfile_by_name(filename, location_id=None, session=None):
     @return: array of PoolFile objects
     """
 
-    if session is not None:
+    if session is None:
         session = DBConn().session()
 
     q = session.query(PoolFile).filter_by(filename=filename)
@@ -652,7 +699,7 @@ def get_poolfile_like_name(filename, session=None):
     @return: array of PoolFile objects
     """
 
-    if session is not None:
+    if session is None:
         session = DBConn().session()
 
     # TODO: There must be a way of properly using bind parameters with %FOO%
