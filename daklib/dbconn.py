@@ -603,6 +603,41 @@ class DSCFile(object):
 
 __all__.append('DSCFile')
 
+def get_dscfiles(dscfile_id=None, source_id=None, poolfile_id=None, session=None):
+    """
+    Returns a list of DSCFiles which may be empty
+
+    @type dscfile_id: int (optional)
+    @param dscfile_id: the dscfile_id of the DSCFiles to find
+
+    @type source_id: int (optional)
+    @param source_id: the source id related to the DSCFiles to find
+
+    @type poolfile_id: int (optional)
+    @param poolfile_id: the poolfile id related to the DSCFiles to find
+
+    @rtype: list
+    @return: Possibly empty list of DSCFiles
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(DSCFile)
+
+    if dscfile_id is not None:
+        q = q.filter_by(dscfile_id=dscfile_id)
+
+    if source_id is not None:
+        q = q.filter_by(source_id=source_id)
+
+    if poolfile_id is not None:
+        q = q.filter_by(poolfile_id=poolfile_id)
+
+    return q.all()
+
+__all__.append('get_dscfiles')
+
 ################################################################################
 
 class PoolFile(object):
@@ -659,6 +694,29 @@ def check_poolfile(filename, filesize, md5sum, location_id, session=None):
     return (True, obj)
 
 __all__.append('check_poolfile')
+
+def get_poolfile_by_id(file_id, session=None):
+    """
+    Returns a PoolFile objects or None for the given id
+
+    @type file_id: int
+    @param file_id: the id of the file to look for
+
+    @rtype: PoolFile or None
+    @return: either the PoolFile object or None
+    """
+
+    if session is None:
+        session = DBConn().session()
+
+    q = session.query(PoolFile).filter_by(file_id=file_id)
+
+    if q.count() > 0:
+        return q.one()
+
+    return None
+
+__all__.append('get_poolfile_by_id')
 
 
 def get_poolfile_by_name(filename, location_id=None, session=None):
