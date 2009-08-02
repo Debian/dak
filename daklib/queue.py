@@ -443,7 +443,7 @@ class Upload(object):
         # of the queue directories.
         base_filename = os.path.basename(filename)
         for d in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
-            if os.path.exists(os.path.join(Cnf["Dir::Queue::%s" % (d) ], base_filename):
+            if os.path.exists(os.path.join(Cnf["Dir::Queue::%s" % (d) ], base_filename)):
                 self.rejects.append("%s: a file with this name already exists in the %s directory." % (base_filename, d))
 
         # Check the .changes is non-empty
@@ -872,7 +872,7 @@ class Upload(object):
                 self.binary_file_checks(f, session)
 
             # Checks for a source package...
-            elif re_issource.match(f)
+            elif re_issource.match(f):
                 has_source = True
 
                 # This routine appends to self.rejects/warnings as appropriate
@@ -1161,7 +1161,7 @@ class Upload(object):
                 self.rejects.append(j)
             if "source" in self.pkg.changes["architecture"]:
                 # TODO: Move _ensure_dsc_hash into this class
-                for j in utils._ensure_dsc_hash(self.pkg.dsc, self.pkg.dsc_files, hashname, hashfunc))
+                for j in utils._ensure_dsc_hash(self.pkg.dsc, self.pkg.dsc_files, hashname, hashfunc):
                     self.rejects.append(j)
 
     def check_hashes():
