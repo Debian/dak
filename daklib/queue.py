@@ -1950,7 +1950,7 @@ distribution."""
                                        file, version, sourceful=True)
 
     ################################################################################
-    def check_dsc_against_db(self, file):
+    def check_dsc_against_db(self, file, session=None):
         """
 
         @warning: NB: this function can remove entries from the 'files' index [if
@@ -1960,6 +1960,10 @@ distribution."""
          ensure you haven't just tried to dereference the deleted entry.
 
         """
+
+        if session is None:
+            session = DBConn().session()
+
         self.pkg.orig_tar_gz = None
 
         # Try and find all files mentioned in the .dsc.  This has
@@ -2012,7 +2016,7 @@ distribution."""
 
             elif dsc_name.endswith(".orig.tar.gz"):
                 # Check in the pool
-                ql = get_poolfile_like_name(dsc_name)
+                ql = get_poolfile_like_name(dsc_name, session)
 
                 # Strip out anything that isn't '%s' or '/%s$'
                 # TODO: Shouldn't we just search for things which end with our string explicitly in the SQL?
