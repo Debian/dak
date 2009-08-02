@@ -243,6 +243,7 @@ def package_to_queue(u, summary, short_summary, queue, perms=0660, build=True, a
     # Send accept mail, announce to lists and close bugs
     if announce and not cnf["Dinstall::Options::No-Mail"]:
         template = os.path.join(cnf["Dir::Templates"], announce)
+        u.update_subst()
         u.Subst["__SUITE__"] = ""
         mail_message = utils.TemplateSubst(u.Subst, template)
         utils.send_mail(mail_message)
@@ -434,6 +435,7 @@ def process_it(changes_file):
     cnf = Config()
 
     u = Upload()
+    u.pkg.changes_file = changes_file
 
     # Some defaults in case we can't fully process the .changes file
     u.pkg.changes["maintainer2047"] = cnf["Dinstall::MyEmailAddress"]
