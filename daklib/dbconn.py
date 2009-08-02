@@ -720,6 +720,49 @@ class Fingerprint(object):
 
 __all__.append('Fingerprint')
 
+def get_or_set_fingerprint(fpr, session=None):
+    """
+    Returns Fingerprint object for given fpr.
+
+    If no matching fpr is found, a row is inserted.
+
+    @type fpr: string
+    @param fpr: The fpr to find / add
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied).  If not passed, a commit will be performed at
+    the end of the function, otherwise the caller is responsible for commiting.
+    A flush will be performed either way.
+
+    @rtype: Fingerprint
+    @return: the Fingerprint object for the given fpr
+    """
+    privatetrans = False
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    try:
+        q = session.query(Fingerprint).filter_by(fingerprint=fpr)
+        if q.count() < 1:
+            fingerprint = Fingerprint()
+            fingerprint.fingerprint = fpr
+            session.add(fingerprint)
+            if privatetrans:
+                session.commit()
+            else:
+                session.flush()
+            return fingerprint
+        else:
+            return q.one()
+
+    except:
+        traceback.print_exc()
+        raise
+
+__all__.append('get_or_set_fingerprint')
+
 ################################################################################
 
 class Keyring(object):
@@ -794,6 +837,49 @@ class Maintainer(object):
         return fix_maintainer(self.name.strip())
 
 __all__.append('Maintainer')
+
+def get_or_set_maintainer(name, session=None):
+    """
+    Returns Maintainer object for given maintainer name.
+
+    If no matching maintainer name is found, a row is inserted.
+
+    @type name: string
+    @param name: The maintainer name to add
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied).  If not passed, a commit will be performed at
+    the end of the function, otherwise the caller is responsible for commiting.
+    A flush will be performed either way.
+
+    @rtype: Maintainer
+    @return: the Maintainer object for the given maintainer
+    """
+    privatetrans = False
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    try:
+        q = session.query(Maintainer).filter_by(name=name)
+        if q.count() < 1:
+            maintainer = Maintainer()
+            maintainer.name = name
+            session.add(maintainer)
+            if privatetrans:
+                session.commit()
+            else:
+                session.flush()
+            return maintainer
+        else:
+            return q.one()
+
+    except:
+        traceback.print_exc()
+        raise
+
+__all__.append('get_or_set_maintainer')
 
 ################################################################################
 
@@ -1745,6 +1831,8 @@ def get_or_set_uid(uidname, session=None):
             session.add(uid)
             if privatetrans:
                 session.commit()
+            else:
+                session.flush()
             return uid
         else:
             return q.one()
