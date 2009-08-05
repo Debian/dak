@@ -1292,7 +1292,7 @@ SELECT s.version, su.suite_name FROM source s, src_associations sa, suite su
                     if os.path.exists(in_unchecked) and False:
                         return (self.reject_message, in_unchecked)
                     else:
-                        for directory in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates" ]:
+                        for directory in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
                             in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (directory)],dsc_file)
                             if os.path.exists(in_otherdir):
                                 in_otherdir_fh = utils.open_file(in_otherdir)
