@@ -25,15 +25,22 @@ at the next upload.
 Either the package or the override file is incorrect.  If you think
 the override is correct and the package wrong please fix the package
 so that this disparity is fixed in the next upload.  If you feel the
-override is incorrect then please reply to this mail and explain why.
-Please INCLUDE the list of packages as seen above, or we won't be able
-to deal with your mail due to missing information.
+override is incorrect then please file a bug against ftp.debian.org and
+explain why. Please INCLUDE the list of packages as seen above, or we
+won't be able to deal with your request due to missing information.
 
-[NB: this is an automatically generated mail; if you replied to one
-like it before and have not received a response yet, please ignore
-this mail.  Your reply needs to be processed by a human and will be in
-due course, but until then the installer will send these automated
-mails; sorry.]
+Please make sure that the subject of the bug you file follows the
+following format:
+
+Subject: override: BINARY1:section/priority, [...], BINARYX:section/priority
+
+Include the justification for the change in the body of the mail please.
+
+
+[NB: this is an automatically generated mail; if you already filed a bug
+and have not received a response yet, please ignore this mail.  Your bug
+needs to be processed by a human and will be in due course, but until
+then the installer will send these automated mails; sorry.]
 
 --
 __DISTRO__ distribution maintenance software
