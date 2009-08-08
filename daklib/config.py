@@ -83,3 +83,5 @@ class Config(Singleton):
     def __getitem__(self, name):
         return self.Cnf[name]
 
+    def __setitem__(self, name, value):
+        self.Cnf[name] = value
