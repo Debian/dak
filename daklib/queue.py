@@ -2081,6 +2081,99 @@ distribution."""
                 self.rejects.append("size for %s doesn't match %s." % (found, file))
 
     ################################################################################
+    def accepted_checks(self, overwrite_checks=True, session=None):
+        # Recheck anything that relies on the database; since that's not
+        # frozen between accept and our run time when called from p-a.
+
+        # overwrite_checks is set to False when installing to stable/oldstable
+
+        if session is None:
+            session = DBConn().session()
+
+        propogate={}
+        nopropogate={}
+
+        for checkfile in self.pkg.files.keys():
+            # The .orig.tar.gz can disappear out from under us is it's a
+            # duplicate of one in the archive.
+            if not self.pkg.files.has_key(checkfile):
+                continue
+
+            entry = self.pkg.files[checkfile]
+
+            # Check that the source still exists
+            if entry["type"] == "deb":
+                source_version = entry["source version"]
+                source_package = entry["source package"]
+                if not self.pkg.changes["architecture"].has_key("source") \
+                   and not source_exists(source_package, source_version,  self.pkg.changes["distribution"].keys()):
+                    self.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, checkfile))
+
+            # Version and file overwrite checks
+            if overwrite_checks:
+                if entry["type"] == "deb":
+                    self.check_binary_against_db(checkfile, session)
+                elif entry["type"] == "dsc":
+                    self.check_source_against_db(checkfile, session)
+                    self.check_dsc_against_db(dsc_filename, session)
+
+            # propogate in the case it is in the override tables:
+            for suite in self.pkg.changes.get("propdistribution", {}).keys():
+                if self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), checkfile):
+                    propogate[suite] = 1
+                else:
+                    nopropogate[suite] = 1
+
+        for suite in propogate.keys():
+            if suite in nopropogate:
+                continue
+            self.pkg.changes["distribution"][suite] = 1
+
+        for checkfile in self.pkg.files.keys():
+            # Check the package is still in the override tables
+            for suite in self.pkg.changes["distribution"].keys():
+                if not self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), checkfile):
+                    self.rejects.append("%s is NEW for %s." % (checkfile, suite))
+
+    ################################################################################
+    # This is not really a reject, but an unaccept, but since a) the code for
+    # that is non-trivial (reopen bugs, unannounce etc.), b) this should be
+    # extremely rare, for now we'll go with whining at our admin folks...
+
+    def do_unaccept(self):
+        cnf = Config()
+
+        self.Subst["__REJECTOR_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
+        self.Subst["__REJECT_MESSAGE__"] = self.package_info()
+        self.Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
+        self.Subst["__BCC__"] = "X-DAK: dak process-accepted\nX-Katie: $Revision: 1.18 $"
+        if cnf.has_key("Dinstall::Bcc"):
+            self.Subst["__BCC__"] += "\nBcc: %s" % (cnf["Dinstall::Bcc"])
+
+        template = os.path.join(cnf["Dir::Templates"], "process-accepted.unaccept")
+
+        reject_mail_message = utils.TemplateSubst(self.Subst, template)
+
+        # Write the rejection email out as the <foo>.reason file
+        reason_filename = os.path.basename(self.pkg.changes_file[:-8]) + ".reason"
+        reject_filename = os.path.join(cnf["Dir::Queue::Reject"], reason_filename)
+
+        # If we fail here someone is probably trying to exploit the race
+        # so let's just raise an exception ...
+        if os.path.exists(reject_filename):
+            os.unlink(reject_filename)
+
+        fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
+        os.write(fd, reject_mail_message)
+        os.close(fd)
+
+        utils.send_mail(reject_mail_message)
+
+        del self.Subst["__REJECTOR_ADDRESS__"]
+        del self.Subst["__REJECT_MESSAGE__"]
+        del self.Subst["__CC__"]
+
+    ################################################################################
     # If any file of an upload has a recent mtime then chances are good
     # the file is still being uploaded.
 
