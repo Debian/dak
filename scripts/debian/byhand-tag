@@ -1,5 +1,8 @@
 #!/bin/sh -ue
 
+export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
 # Tarball to read, compressed with gzip
 INPUT="${1:?"Usage: $0 filename"}"
 
@@ -38,7 +41,7 @@ mv "$OUTNONFREE"        "$TARGET"tag.non-free
 
 chmod 644 "$TARGET"tag "$TARGET"tag.contrib "$TARGET"tag.non-free
 
-(cd $TARGET && ./mk-extra-overrides.sh)
+(cd $TARGET && $scriptsdir/mk-extra-overrides.sh)
 
 trap - EXIT
 
