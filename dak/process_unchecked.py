@@ -59,6 +59,7 @@ from daklib.dak_exceptions import *
 from daklib.regexes import re_default_answer
 from daklib.summarystats import SummaryStats
 from daklib.holding import Holding
+from daklib.config import Config
 
 from types import *
 
@@ -90,7 +91,7 @@ def init():
               "override-distribution", "version", "directory"]:
         cnf["Dinstall::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.ParseCommandLine(cnf, Arguments, sys.argv)
+    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.SubTree("Dinstall::Options")
 
     if Options["Help"]:

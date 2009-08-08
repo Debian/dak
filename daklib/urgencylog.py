@@ -26,6 +26,9 @@ Urgency Logger class for dak
 
 ###############################################################################
 
+import os
+import time
+
 from singleton import Singleton
 from config import Config
 from utils import warn, open_file, move

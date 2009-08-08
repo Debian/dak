@@ -52,6 +52,7 @@ from daklib.dak_exceptions import *
 from daklib.regexes import re_default_answer, re_issource, re_fdnic
 from daklib.urgencylog import UrgencyLog
 from daklib.summarystats import SummaryStats
+from daklib.config import Config
 
 ###############################################################################
 
@@ -79,7 +80,7 @@ def init():
         if not cnf.has_key("Dinstall::Options::%s" % (i)):
             cnf["Dinstall::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.ParseCommandLine(cnf, Arguments, sys.argv)
+    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.SubTree("Dinstall::Options")
 
     if Options["Help"]:
@@ -684,7 +685,7 @@ def main():
 
     if not Options["No-Action"]:
         Logger.close()
-        if log_urg:
+        if log_urgency:
             UrgencyLog().close()
 
 ###############################################################################
