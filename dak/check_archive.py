@@ -38,14 +38,14 @@ import sys
 import time
 import apt_pkg
 import apt_inst
-from daklib import database
+
+from daklib.dbconn import *
 from daklib import utils
 from daklib.regexes import re_issource
+from daklib.config import Config
 
 ################################################################################
 
-Cnf = None                     #: Configuration, apt_pkg.Configuration
-projectB = None                #: database connection, pgobject
 db_files = {}                  #: Cache of filenames as known by the database
 waste = 0.0                    #: How many bytes are "wasted" by files not referenced in database
 excluded = {}                  #: List of files which are excluded from files check
@@ -112,23 +112,25 @@ def check_files():
     """
     global db_files
 
+    cnf = Config()
+
     print "Building list of database files..."
-    q = projectB.query("SELECT l.path, f.filename, f.last_used FROM files f, location l WHERE f.location = l.id ORDER BY l.path, f.filename")
-    ql = q.getresult()
+    q = DBConn().session().query(PoolFile).join(Location).order_by('path', 'location')
 
     print "Missing files:"
     db_files.clear()
-    for i in ql:
-        filename = os.path.abspath(i[0] + i[1])
+
+    for f in q.all():
+        filename = os.path.abspath(f.location.path, f.filename)
         db_files[filename] = ""
         if os.access(filename, os.R_OK) == 0:
-            if i[2]:
-                print "(last used: %s) %s" % (i[2], filename)
+            if f.last_used:
+                print "(last used: %s) %s" % (f.last_used, filename)
             else:
                 print "%s" % (filename)
 
 
-    filename = Cnf["Dir::Override"]+'override.unreferenced'
+    filename = os.path.join(cnf["Dir::Override"], 'override.unreferenced')
     if os.path.exists(filename):
         f = utils.open_file(filename)
         for filename in f.readlines():
@@ -137,7 +139,7 @@ def check_files():
 
     print "Existent files not in db:"
 
-    os.path.walk(Cnf["Dir::Root"]+'pool/', process_dir, None)
+    os.path.walk(cnf["Dir::Root"] + 'pool/', process_dir, None)
 
     print
     print "%s wasted..." % (utils.size_type(waste))
@@ -148,12 +150,17 @@ def check_dscs():
     """
     Parse every .dsc file in the archive and check for it's validity.
     """
+
+    cnf = Config()
+
     count = 0
     suite = 'unstable'
-    for component in Cnf.SubTree("Component").List():
+
+    for component in cnf.SubTree("Component").List():
         component = component.lower()
-        list_filename = '%s%s_%s_source.list' % (Cnf["Dir::Lists"], suite, component)
+        list_filename = '%s%s_%s_source.list' % (cnf["Dir::Lists"], suite, component)
         list_file = utils.open_file(list_filename)
+
         for line in list_file.readlines():
             f = line[:-1]
             try:
@@ -174,23 +181,29 @@ def check_override():
     """
     Check for missing overrides in stable and unstable.
     """
-    for suite in [ "stable", "unstable" ]:
-        print suite
-        print "-"*len(suite)
+    session = DBConn().session()
+
+    for suite_name in [ "stable", "unstable" ]:
+        print suite_name
+        print "-" * len(suite_name)
         print
-        suite_id = database.get_suite_id(suite)
-        q = projectB.query("""
+        suite = get_suite(suite)
+        q = s.execute("""
 SELECT DISTINCT b.package FROM binaries b, bin_associations ba
- WHERE b.id = ba.bin AND ba.suite = %s AND NOT EXISTS
-       (SELECT 1 FROM override o WHERE o.suite = %s AND o.package = b.package)"""
-                           % (suite_id, suite_id))
-        print q
-        q = projectB.query("""
+ WHERE b.id = ba.bin AND ba.suite = :suiteid AND NOT EXISTS
+       (SELECT 1 FROM override o WHERE o.suite = :suiteid AND o.package = b.package)"""
+                          % {'suiteid': suite.suite_id})
+
+        for j in q:
+            print j[0]
+
+        q = s.execute("""
 SELECT DISTINCT s.source FROM source s, src_associations sa
-  WHERE s.id = sa.source AND sa.suite = %s AND NOT EXISTS
-       (SELECT 1 FROM override o WHERE o.suite = %s and o.package = s.source)"""
-                           % (suite_id, suite_id))
-        print q
+  WHERE s.id = sa.source AND sa.suite = :suiteid AND NOT EXISTS
+       (SELECT 1 FROM override o WHERE o.suite = :suiteid and o.package = s.source)"""
+                          % {'suiteid': suite.suite_id})
+        for j in q:
+            print j[0]
 
 ################################################################################
 
@@ -203,67 +216,70 @@ def check_source_in_one_dir():
 
     # Not the most enterprising method, but hey...
     broken_count = 0
-    q = projectB.query("SELECT id FROM source;")
-    for i in q.getresult():
-        source_id = i[0]
-        q2 = projectB.query("""
-SELECT l.path, f.filename FROM files f, dsc_files df, location l WHERE df.source = %s AND f.id = df.file AND l.id = f.location"""
-                            % (source_id))
+
+    session = DBConn().session()
+
+    q = session.query(DBSource)
+    for s in q.all():
         first_path = ""
         first_filename = ""
-        broken = 0
-        for j in q2.getresult():
-            filename = j[0] + j[1]
+        broken = False
+
+        qf = session.query(PoolFile).join(Location).join(DSCFile).filter_by(source_id=s.source_id)
+        for f in qf.all():
+            # 0: path
+            # 1: filename
+            filename = os.path.join(f.location.path, f.filename)
             path = os.path.dirname(filename)
+
             if first_path == "":
                 first_path = path
                 first_filename = filename
             elif first_path != path:
                 symlink = path + '/' + os.path.basename(first_filename)
                 if not os.path.exists(symlink):
-                    broken = 1
-                    print "WOAH, we got a live one here... %s [%s] {%s}" % (filename, source_id, symlink)
+                    broken = True
+                    print "WOAH, we got a live one here... %s [%s] {%s}" % (filename, s.source_id, symlink)
         if broken:
             broken_count += 1
+
     print "Found %d source packages where the source is not all in one directory." % (broken_count)
 
 ################################################################################
-
 def check_checksums():
     """
     Validate all files
     """
     print "Getting file information from database..."
-    q = projectB.query("SELECT l.path, f.filename, f.md5sum, f.sha1sum, f.sha256sum, f.size FROM files f, location l WHERE f.location = l.id")
-    ql = q.getresult()
+    q = DBConn().session().query(PoolFile)
 
     print "Checking file checksums & sizes..."
-    for i in ql:
-        filename = os.path.abspath(i[0] + i[1])
-        db_md5sum = i[2]
-        db_sha1sum = i[3]
-        db_sha256sum = i[4]
-        db_size = int(i[5])
+    for f in q:
+        filename = os.path.abspath(os.path.join(f.location.path, f.filename))
+
         try:
-            f = utils.open_file(filename)
+            fi = utils.open_file(filename)
         except:
             utils.warn("can't open '%s'." % (filename))
             continue
-        md5sum = apt_pkg.md5sum(f)
-        size = os.stat(filename)[stat.ST_SIZE]
-        if md5sum != db_md5sum:
-            utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, db_md5sum))
-        if size != db_size:
-            utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, db_size))
-        f.seek(0)
-        sha1sum = apt_pkg.sha1sum(f)
-        if sha1sum != db_sha1sum:
-            utils.warn("**WARNING** sha1sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha1sum, db_sha1sum))
 
-        f.seek(0)
-        sha256sum = apt_pkg.sha256sum(f)
-        if sha256sum != db_sha256sum:
-            utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, db_sha256sum))
+        size = os.stat(filename)[stat.ST_SIZE]
+        if size != f.filesize:
+            utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, f.filesize))
+
+        md5sum = apt_pkg.md5sum(fi)
+        if md5sum != f.md5sum:
+            utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, f.md5sum))
+
+        fi.seek(0)
+        sha1sum = apt_pkg.sha1sum(fi)
+        if sha1sum != f.sha1sum:
+            utils.warn("**WARNING** sha1sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha1sum, f.sha1sum))
+
+        fi.seek(0)
+        sha256sum = apt_pkg.sha256sum(fi)
+        if sha256sum != f.sha256sum:
+            utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, f.sha256sum))
 
     print "Done."
 
@@ -285,12 +301,13 @@ def check_timestamps():
 
     global current_file
 
-    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.deb$'")
-    ql = q.getresult()
+    q = DBConn().session().query(PoolFile).filter(PoolFile.filename.like('.deb$'))
+
     db_files.clear()
     count = 0
-    for i in ql:
-        filename = os.path.abspath(i[0] + i[1])
+
+    for pf in q.all():
+        filename = os.path.abspath(os.path.join(pf.location.path, pf.filename))
         if os.access(filename, os.R_OK):
             f = utils.open_file(filename)
             current_file = filename
@@ -299,6 +316,7 @@ def check_timestamps():
             f.seek(0)
             apt_inst.debExtract(f, Ent, "data.tar.gz")
             count += 1
+
     print "Checked %d files (out of %d)." % (count, len(db_files.keys()))
 
 ################################################################################
@@ -310,21 +328,25 @@ def check_missing_tar_gz_in_dsc():
     count = 0
 
     print "Building list of database files..."
-    q = projectB.query("SELECT l.path, f.filename FROM files f, location l WHERE f.location = l.id AND f.filename ~ '.dsc$'")
-    ql = q.getresult()
-    if ql:
+    q = DBConn().session().query(PoolFile).filter(PoolFile.filename.like('.dsc$'))
+
+    if q.count() > 0:
         print "Checking %d files..." % len(ql)
     else:
         print "No files to check."
-    for i in ql:
-        filename = os.path.abspath(i[0] + i[1])
+
+    for pf in q.all():
+        filename = os.path.abspath(os.path.join(pf.location.path + pf.filename))
+
         try:
             # NB: don't enforce .dsc syntax
             dsc = utils.parse_changes(filename)
         except:
             utils.fubar("error parsing .dsc file '%s'." % (filename))
+
         dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
         has_tar = 0
+
         for f in dsc_files.keys():
             m = re_issource.match(f)
             if not m:
@@ -332,6 +354,7 @@ def check_missing_tar_gz_in_dsc():
             ftype = m.group(3)
             if ftype == "orig.tar.gz" or ftype == "tar.gz":
                 has_tar = 1
+
         if not has_tar:
             utils.warn("%s has no .tar.gz in the .dsc file." % (f))
             count += 1
@@ -430,12 +453,10 @@ def check_files_not_symlinks():
     """
     print "Building list of database files... ",
     before = time.time()
-    q = projectB.query("SELECT l.path, f.filename, f.id FROM files f, location l WHERE f.location = l.id")
-    print "done. (%d seconds)" % (int(time.time()-before))
-    q_files = q.getresult()
+    q = DBConn().session().query(PoolFile).filter(PoolFile.filename.like('.dsc$'))
 
-    for i in q_files:
-        filename = os.path.normpath(i[0] + i[1])
+    for pf in q.all():
+        filename = os.path.abspath(os.path.join(pf.location.path, pf.filename))
         if os.access(filename, os.R_OK) == 0:
             utils.warn("%s: doesn't exist." % (filename))
         else:
@@ -463,22 +484,23 @@ def chk_bd_process_dir (unused, dirname, filenames):
 
 def check_build_depends():
     """ Validate build-dependencies of .dsc files in the archive """
-    os.path.walk(Cnf["Dir::Root"], chk_bd_process_dir, None)
+    os.path.walk(cnf["Dir::Root"], chk_bd_process_dir, None)
 
 ################################################################################
 
 def main ():
-    global Cnf, projectB, db_files, waste, excluded
+    global db_files, waste, excluded
 
-    Cnf = utils.get_conf()
+    cnf = Config()
+
     Arguments = [('h',"help","Check-Archive::Options::Help")]
     for i in [ "help" ]:
-        if not Cnf.has_key("Check-Archive::Options::%s" % (i)):
-            Cnf["Check-Archive::Options::%s" % (i)] = ""
+        if not cnf.has_key("Check-Archive::Options::%s" % (i)):
+            cnf["Check-Archive::Options::%s" % (i)] = ""
 
-    args = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    args = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Check-Archive::Options")
+    Options = cnf.SubTree("Check-Archive::Options")
     if Options["Help"]:
         usage()
 
@@ -490,8 +512,8 @@ def main ():
         usage(1)
     mode = args[0].lower()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    # Initialize DB
+    DBConn()
 
     if mode == "checksums":
         check_checksums()
