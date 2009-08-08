@@ -20,15 +20,11 @@
 
 ################################################################################
 
-import pg, sys
+import sys
 import apt_pkg
-from daklib import database
-from daklib import utils
 
-################################################################################
-
-Cnf = None
-projectB = None
+from daklib.dbconn import *
+from daklib.config import Config
 
 ################################################################################
 
@@ -42,57 +38,51 @@ Looks for fixable descrepancies between stable and unstable.
 ################################################################################
 
 def main ():
-    global Cnf, projectB
-
-    Cnf = utils.get_conf()
+    cnf = Config()
     Arguments = [('h',"help","Compare-Suites::Options::Help")]
+
     for i in [ "help" ]:
-        if not Cnf.has_key("Compare-Suites::Options::%s" % (i)):
-            Cnf["Compare-Suites::Options::%s" % (i)] = ""
+        if not cnf.has_key("Compare-Suites::Options::%s" % (i)):
+            cnf["Compare-Suites::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Compare-Suites::Options")
+    Options = cnf.SubTree("Compare-Suites::Options")
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
-    src_suite = "stable"
-    dst_suite = "unstable"
+    src_suite = get_suite("stable")
+    dst_suite = get_suite("unstable")
 
-    src_suite_id = database.get_suite_id(src_suite)
-    dst_suite_id = database.get_suite_id(dst_suite)
-    arch_all_id = database.get_architecture_id("all")
-    dsc_type_id = database.get_override_type_id("dsc")
+    arch_all = get_architecture("all")
+    dsc_type = get_override_type("dsc")
 
-    for arch in database.get_suite_architectures(src_suite_id):
-        if arch == "source":
-            continue
-
-        # Arch: all doesn't work; consider packages which go from
-        # arch: all to arch: any, e.g. debconf... needs more checks
-        # and thought later.
-
-        if arch == "all":
-            continue
-        arch_id = database.get_architecture_id(arch)
-        q = projectB.query("""
+    # Arch: all doesn't work; consider packages which go from
+    # arch: all to arch: any, e.g. debconf... needs more checks
+    # and thought later.
+    for arch in get_suite_architectures(src_suite.suite_name, skipsrc=True, skipall=True):
+        q = session.execute("""
 SELECT b_src.package, b_src.version, a.arch_string
   FROM binaries b_src, bin_associations ba, override o, architecture a
-  WHERE ba.bin = b_src.id AND ba.suite = %s AND b_src.architecture = %s
+  WHERE ba.bin = b_src.id AND ba.suite = :src_suite_id AND b_src.architecture = :arch_id
         AND a.id = b_src.architecture AND o.package = b_src.package
-        AND o.suite = %s AND o.type != %s AND NOT EXISTS
+        AND o.suite = :dst_suite_id AND o.type != :arch_id AND NOT EXISTS
     (SELECT 1 FROM bin_associations ba2, binaries b_dst
        WHERE ba2.bin = b_dst.id AND b_dst.package = b_src.package
-             AND (b_dst.architecture = %s OR b_dst.architecture = %s)
-             AND ba2.suite = %s AND EXISTS
+             AND (b_dst.architecture = :arch_id OR b_dst.architecture = :arch_all_id)
+             AND ba2.suite = :dst_suite_id AND EXISTS
                (SELECT 1 FROM bin_associations ba3, binaries b2
-                  WHERE ba3.bin = b2.id AND ba3.suite = %s AND b2.package = b_dst.package))
+                  WHERE ba3.bin = b2.id AND ba3.suite = :dst_suite_id AND b2.package = b_dst.package))
 ORDER BY b_src.package;"""
-                           % (src_suite_id, arch_id, dst_suite_id, dsc_type_id, arch_id, arch_all_id, dst_suite_id, dst_suite_id))
-        for i in q.getresult():
+              % {'src_suite_id': src_suite.suite_id,
+                  'arch_id': arch.arch_id,
+                  'dst_suite_id': dst_suite.suite_id,
+                  'dsc_type_id': dsc_type.overridetype_id,
+                  'arch_all_id': arch_all.arch_id})
+
+        for i in q.fetchall():
             print " ".join(i)
 
 #######################################################################################
