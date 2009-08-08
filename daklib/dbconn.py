@@ -1390,15 +1390,15 @@ class QueueBuild(object):
 
 __all__.append('QueueBuild')
 
-def get_queue_build(filename, suite_id, session=None):
+def get_queue_build(filename, suite, session=None):
     """
-    Returns QueueBuild object for given C{filename} and C{suite id}.
+    Returns QueueBuild object for given C{filename} and C{suite}.
 
     @type filename: string
     @param filename: The name of the file
 
-    @type suiteid: int
-    @param suiteid: Suite ID
+    @type suiteid: int or str
+    @param suiteid: Suite name or ID
 
     @type session: Session
     @param session: Optional SQLA session object (a temporary one will be
@@ -1410,7 +1410,12 @@ def get_queue_build(filename, suite_id, session=None):
     """
     if session is None:
         session = DBConn().session()
-    q = session.query(QueueBuild).filter_by(filename=filename).filter_by(suite_id=suite_id)
+    if isinstance(suite, int):
+        q = session.query(QueueBuild).filter_by(filename=filename).filter_by(suite_id=suite)
+    else:
+        q = session.query(QueueBuild).filter_by(filename=filename)
+        q = q.join(Suite).filter_by(suite_name=suite)
+
     if q.count() == 0:
         return None
     return q.one()
