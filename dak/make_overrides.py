@@ -29,17 +29,13 @@ Output override files for apt-ftparchive and indices/
 
 ################################################################################
 
-import pg
+import os
 import sys
 import apt_pkg
-from daklib import database
+
+from daklib.dbconn import *
+from daklib.config import Config
 from daklib import utils
-
-################################################################################
-
-Cnf = None       #: Configuration, apt_pkg.Configuration
-projectB = None  #: database connection, pgobject
-override = {}    #: override data to write out
 
 ################################################################################
 
@@ -52,91 +48,102 @@ Outputs the override tables to text files.
 
 ################################################################################
 
-def do_list(output_file, suite, component, otype):
+def do_list(output_file, suite, component, otype, session):
     """
     Fetch override data for suite from the database and dump it.
 
     @type output_file: fileobject
     @param output_file: where to write the overrides to
 
-    @type suite: string
-    @param suite: The name of the suite
+    @type suite: Suite object
+    @param suite: A suite object describing the Suite
 
-    @type component: string
+    @type component: Component object
     @param component: The name of the component
 
-    @type otype: string
-    @param otype: type of override. deb/udeb/dsc
+    @type otype: OverrideType object
+    @param otype: object of type of override. deb/udeb/dsc
+
+    @type session: SQLA Session
+    @param session: the database session in use
 
     """
-    global override
+    # Here's a nice example of why the object API isn't always the
+    # right answer.  On my laptop, the object version of the code
+    # takes 1:45, the 'dumb' tuple-based one takes 0:16 - mhy
 
-    suite_id = database.get_suite_id(suite)
-    if suite_id == -1:
-        utils.fubar("Suite '%s' not recognised." % (suite))
+    if otype.overridetype == "dsc":
+        #q = session.query(Override).filter_by(suite_id = suite.suite_id)
+        #q = q.filter_by(component_id = component.component_id)
+        #q = q.filter_by(overridetype_id = otype.overridetype_id)
+        #q = q.join(Section).order_by(Section.section, Override.package)
+        #for o in q.all():
+        #    dat = (o.package, o.section.section, o.maintainer)
+        #    output_file.write(utils.result_join(dat) + '\n')
+        q = session.execute("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite.suite_id, component.component_id, otype.overridetype_id))
+        for i in q.fetchall():
+            output_file.write(utils.result_join(i) + '\n')
 
-    component_id = database.get_component_id(component)
-    if component_id == -1:
-        utils.fubar("Component '%s' not recognised." % (component))
-
-    otype_id = database.get_override_type_id(otype)
-    if otype_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (otype))
-
-    override.setdefault(suite, {})
-    override[suite].setdefault(component, {})
-    override[suite][component].setdefault(otype, {})
-
-    if otype == "dsc":
-        q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, otype_id))
-        for i in q.getresult():
-            override[suite][component][otype][i[0]] = i
-            output_file.write(utils.result_join(i)+'\n')
     else:
-        q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, otype_id))
-        for i in q.getresult():
-            i = i[:-1]; # Strip the priority level
-            override[suite][component][otype][i[0]] = i
-            output_file.write(utils.result_join(i)+'\n')
+        #q = session.query(Override).filter_by(suite_id = suite.suite_id)
+        #q = q.filter_by(component_id = component.component_id)
+        #q = q.filter_by(overridetype_id = otype.overridetype_id)
+        #q = q.join(Priority).join(Section).order_by(Section.section, Priority.level, Override.package)
+        #for o in q.all():
+        #    dat = (o.package, o.priority.priority, o.section.section, o.maintainer)
+        #    output_file.write(utils.result_join(dat) + '\n')
+        q = session.execute("SELECT o.package, p.priority, s.section, o.maintainer FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite.suite_id, component.component_id, otype.overridetype_id))
+        for i in q.fetchall():
+            output_file.write(utils.result_join(i) + '\n')
 
 ################################################################################
 
 def main ():
-    global Cnf, projectB, override
-
-    Cnf = utils.get_conf()
+    cnf = Config()
     Arguments = [('h',"help","Make-Overrides::Options::Help")]
     for i in [ "help" ]:
-        if not Cnf.has_key("Make-Overrides::Options::%s" % (i)):
-            Cnf["Make-Overrides::Options::%s" % (i)] = ""
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Make-Overrides::Options")
+        if not cnf.has_key("Make-Overrides::Options::%s" % (i)):
+            cnf["Make-Overrides::Options::%s" % (i)] = ""
+    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Make-Overrides::Options")
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    d = DBConn()
+    session = d.session()
 
-    for suite in Cnf.SubTree("Check-Overrides::OverrideSuites").List():
-        if database.get_suite_untouchable(suite):
+    for suite_name in cnf.SubTree("Check-Overrides::OverrideSuites").List():
+        suite = get_suite(suite_name.lower(), session)
+        if not suite:
+            utils.fubar('Suite %s not found' % suite_name)
+        if suite.untouchable:
             continue
-        suite = suite.lower()
 
-        sys.stderr.write("Processing %s...\n" % (suite))
-        override_suite = Cnf["Suite::%s::OverrideCodeName" % (suite)]
-        for component in Cnf.SubTree("Component").List():
-            for otype in Cnf.ValueList("OverrideType"):
-                if otype == "deb":
+        sys.stderr.write("Processing %s...\n" % (suite.suite_name))
+        override_suite = cnf["Suite::%s::OverrideCodeName" % (suite_name)]
+
+        for component_name in cnf.SubTree("Component").List():
+            component = get_component(component_name, session)
+            if not component:
+                utils.fubar('Component %s not found' % component_name)
+
+            for otype_name in cnf.ValueList("OverrideType"):
+                otype = get_override_type(otype_name, session)
+                if not otype:
+                    utils.fubar('OverrideType %s not found' % otype_name)
+
+                if otype_name == "deb":
                     suffix = ""
-                elif otype == "udeb":
+                elif otype_name == "udeb":
                     if component == "contrib":
                         continue # Ick2
                     suffix = ".debian-installer"
-                elif otype == "dsc":
+                elif otype_name == "dsc":
                     suffix = ".src"
-                filename = "%s/override.%s.%s%s" % (Cnf["Dir::Override"], override_suite, component, suffix)
+
+                filename = os.path.join(cnf["Dir::Override"], "override.%s.%s%s" % (override_suite, component.component_name, suffix))
                 output_file = utils.open_file(filename, 'w')
-                do_list(output_file, suite, component, otype)
+                do_list(output_file, suite, component, otype, session)
                 output_file.close()
 
 ################################################################################
