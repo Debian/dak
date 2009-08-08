@@ -5,8 +5,23 @@
 
 x="build-essential tag task"
 opath="/org/ftp.debian.org/scripts/override"
+apath="/org/ftp.debian.org/ftp/dists"
 
-for s in squeeze sid; do
+if [ ! -d "$apath" ]; then
+  echo "$0: invalid path to archive" >&2
+  exit 1
+elif [ ! -L "$apath/testing" ]; then
+  echo "$0: symlink for testing suite does not exist >&2"
+  exit 1
+fi
+
+codename_testing="$(basename "$(readlink "$apath/testing")")"
+if [ -z "$codename_testing" ] || [ ! -d "$apath/$codename_testing" ]; then
+  echo "$0: invalid codename for testing suite ('$codename_testing')" >&2
+  exit 1
+fi
+
+for s in "$codename_testing" sid; do
   for c in main contrib non-free; do
     echo "Making $opath/override.$s.extra.$c"
     if [ "$c" = "main" ]; then
