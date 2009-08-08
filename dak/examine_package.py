@@ -355,6 +355,7 @@ def output_package_relations ():
 
     if len(package_relations) < 2:
         # Only list something if we have more than one binary to compare
+        package_relations.clear()
         return
 
     to_print = ""
