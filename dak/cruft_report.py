@@ -23,22 +23,22 @@
 #   you might as well write some letters to God about how unfair entropy
 #   is while you're at it.'' -- 20020802143104.GA5628@azure.humbug.org.au
 
-## TODO:  fix NBS looping for version, implement Dubious NBS, fix up output of duplicate source package stuff, improve experimental ?, add overrides, avoid ANAIS for duplicated packages
+## TODO:  fix NBS looping for version, implement Dubious NBS, fix up output of
+##        duplicate source package stuff, improve experimental ?, add overrides,
+##        avoid ANAIS for duplicated packages
 
 ################################################################################
 
-import commands, pg, os, sys, time, re
+import commands, os, sys, time, re
 import apt_pkg
-from daklib import database
+
+from daklib.config import Config
+from daklib.dbconn import *
 from daklib import utils
 from daklib.regexes import re_extract_src_version
 
 ################################################################################
 
-Cnf = None
-projectB = None
-suite = "unstable" # Default
-suite_id = None
 no_longer_in_suite = {}; # Really should be static to add_nbs, but I'm lazy
 
 source_binaries = {}
@@ -58,13 +58,15 @@ Check for obsolete or duplicated packages.
 
 ################################################################################
 
-def add_nbs(nbs_d, source, version, package):
+def add_nbs(nbs_d, source, version, package, suite_id, session):
     # Ensure the package is still in the suite (someone may have already removed it)
     if no_longer_in_suite.has_key(package):
         return
     else:
-        q = projectB.query("SELECT b.id FROM binaries b, bin_associations ba WHERE ba.bin = b.id AND ba.suite = %s AND b.package = '%s' LIMIT 1" % (suite_id, package))
-        if not q.getresult():
+        q = session.execute("""SELECT b.id FROM binaries b, bin_associations ba
+                                WHERE ba.bin = b.id AND ba.suite = :suite_id
+                                  AND b.package = suite_id LIMIT 1""" % (suite_id, package))
+        if not q.fetchall():
             no_longer_in_suite[package] = ""
             return
 
@@ -75,7 +77,7 @@ def add_nbs(nbs_d, source, version, package):
 ################################################################################
 
 # Check for packages built on architectures they shouldn't be.
-def do_anais(architecture, binaries_list, source):
+def do_anais(architecture, binaries_list, source, session):
     if architecture == "any" or architecture == "all":
         return ""
 
@@ -84,10 +86,13 @@ def do_anais(architecture, binaries_list, source):
     for arch in architecture.split():
         architectures[arch.strip()] = ""
     for binary in binaries_list:
-        q = projectB.query("SELECT a.arch_string, b.version FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id AND b.package = '%s'" % (suite_id, binary))
-        ql = q.getresult()
+        q = session.execute("""SELECT a.arch_string, b.version
+                                FROM binaries b, bin_associations ba, architecture a
+                               WHERE ba.suite = :suiteid AND ba.bin = b.id
+                                 AND b.architecture = a.id AND b.package = :package""",
+                             {'suiteid': suite_id, 'package': binary})
         versions = []
-        for i in ql:
+        for i in q.fetchall():
             arch = i[0]
             version = i[1]
             if architectures.has_key(arch):
@@ -147,12 +152,13 @@ def do_nfu(nfu_packages):
         print
 
 def parse_nfu(architecture):
+    cnf = Config()
     # utils/hpodder_1.1.5.0: Not-For-Us [optional:out-of-date]
     r = re.compile("^\w+/([^_]+)_.*: Not-For-Us")
 
     ret = set()
     
-    filename = "%s/%s-all.txt" % (Cnf["Cruft-Report::Options::Wanna-Build-Dump"], architecture)
+    filename = "%s/%s-all.txt" % (cnf["Cruft-Report::Options::Wanna-Build-Dump"], architecture)
 
     # Not all architectures may have a wanna-build dump, so we want to ignore missin
     # files
@@ -173,31 +179,37 @@ def parse_nfu(architecture):
 
 ################################################################################
 
-def do_nviu():
-    experimental_id = database.get_suite_id("experimental")
-    if experimental_id == -1:
+def do_newer_version(lowersuite_name, highersuite_name, code, session):
+    lowersuite = get_suite(lowersuite_name, session)
+    if not lowersuite:
         return
-    # Check for packages in experimental obsoleted by versions in unstable
-    q = projectB.query("""
-SELECT s.source, s.version AS experimental, s2.version AS unstable
+
+    highersuite = get_suite(highersuite_name, session)
+    if not highersuite:
+        return
+
+    # Check for packages in $highersuite obsoleted by versions in $lowersuite
+    q = session.execute("""
+SELECT s.source, s.version AS lower, s2.version AS higher
   FROM src_associations sa, source s, source s2, src_associations sa2
-  WHERE sa.suite = %s AND sa2.suite = %d AND sa.source = s.id
+  WHERE sa.suite = :highersuite_id AND sa2.suite = :lowersuite_id AND sa.source = s.id
    AND sa2.source = s2.id AND s.source = s2.source
-   AND s.version < s2.version""" % (experimental_id,
-                                    database.get_suite_id("unstable")))
-    ql = q.getresult()
+   AND s.version < s2.version""" % {'lowersuite_id': lowersuite.suite_id,
+                                    'highersuite_id': highersuite.suite_id})
+    ql = q.fetchall()
     if ql:
-        nviu_to_remove = []
-        print "Newer version in unstable"
-        print "-------------------------"
+        nv_to_remove = []
+        print "Newer version in %s" % lowersuite.suite_name
+        print "-----------------" + "-" * len(lowersuite.suite_name)
         print
         for i in ql:
-            (source, experimental_version, unstable_version) = i
-            print " o %s (%s, %s)" % (source, experimental_version, unstable_version)
-            nviu_to_remove.append(source)
+            (source, higher_version, lower_version) = i
+            print " o %s (%s, %s)" % (source, higher_version, lower_version)
+            nv_to_remove.append(source)
         print
         print "Suggested command:"
-        print " dak rm -m \"[auto-cruft] NVIU\" -s experimental %s" % (" ".join(nviu_to_remove))
+        print " dak rm -m \"[auto-cruft] %s\" -s %s %s" % (code, highersuite.suite_name,
+                                                           " ".join(nv_to_remove))
         print
 
 ################################################################################
@@ -300,16 +312,16 @@ def do_obsolete_source(duplicate_bins, bin2source):
         print " dak rm -S -p -m \"[auto-cruft] obsolete source package\" %s" % (" ".join(to_remove))
         print
 
-def get_suite_binaries():
+def get_suite_binaries(suite, session):
     # Initalize a large hash table of all binary packages
     binaries = {}
-    before = time.time()
 
-    sys.stderr.write("[Getting a list of binary packages in %s..." % (suite))
-    q = projectB.query("SELECT distinct b.package FROM binaries b, bin_associations ba WHERE ba.suite = %s AND ba.bin = b.id" % (suite_id))
-    ql = q.getresult()
-    sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
-    for i in ql:
+    print "Getting a list of binary packages in %s..." % suite.suite_name
+    q = session.execute("""SELECT distinct b.package
+                             FROM binaries b, bin_associations ba
+                            WHERE ba.suite = :suiteid AND ba.bin = b.id""",
+                           {'suiteid': suite.suite_id})
+    for i in q.fetchall():
         binaries[i[0]] = ""
 
     return binaries
@@ -317,28 +329,28 @@ def get_suite_binaries():
 ################################################################################
 
 def main ():
-    global Cnf, projectB, suite, suite_id, source_binaries, source_versions
+    global suite, suite_id, source_binaries, source_versions
 
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('h',"help","Cruft-Report::Options::Help"),
                  ('m',"mode","Cruft-Report::Options::Mode", "HasArg"),
                  ('s',"suite","Cruft-Report::Options::Suite","HasArg"),
                  ('w',"wanna-build-dump","Cruft-Report::Options::Wanna-Build-Dump","HasArg")]
     for i in [ "help" ]:
-        if not Cnf.has_key("Cruft-Report::Options::%s" % (i)):
-            Cnf["Cruft-Report::Options::%s" % (i)] = ""
-    Cnf["Cruft-Report::Options::Suite"] = Cnf["Dinstall::DefaultSuite"]
+        if not cnf.has_key("Cruft-Report::Options::%s" % (i)):
+            cnf["Cruft-Report::Options::%s" % (i)] = ""
+    cnf["Cruft-Report::Options::Suite"] = cnf["Dinstall::DefaultSuite"]
 
-    if not Cnf.has_key("Cruft-Report::Options::Mode"):
-        Cnf["Cruft-Report::Options::Mode"] = "daily"
+    if not cnf.has_key("Cruft-Report::Options::Mode"):
+        cnf["Cruft-Report::Options::Mode"] = "daily"
 
-    if not Cnf.has_key("Cruft-Report::Options::Wanna-Build-Dump"):
-        Cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp.debian.org/scripts/nfu"
+    if not cnf.has_key("Cruft-Report::Options::Wanna-Build-Dump"):
+        cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp.debian.org/scripts/nfu"
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Cruft-Report::Options")
+    Options = cnf.SubTree("Cruft-Report::Options")
     if Options["Help"]:
         usage()
 
@@ -351,8 +363,7 @@ def main ():
         utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
         usage(1)
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
     bin_pkgs = {}
     src_pkgs = {}
@@ -366,18 +377,18 @@ def main ():
 
     nfu_packages = {}
 
-    suite = Options["Suite"]
-    suite_id = database.get_suite_id(suite)
+    suite = get_suite(Options["Suite"].lower(), session)
+    suite_id = suite.suite_id
 
     bin_not_built = {}
 
     if "bnb" in checks:
-        bins_in_suite = get_suite_binaries()
+        bins_in_suite = get_suite_binaries(suite)
 
     # Checks based on the Sources files
-    components = Cnf.ValueList("Suite::%s::Components" % (suite))
+    components = cnf.ValueList("Suite::%s::Components" % (suite))
     for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite.suite_name, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
         (fd, temp_filename) = utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
@@ -401,7 +412,7 @@ def main ():
                         bin_not_built[source][binary] = ""
 
             if "anais" in checks:
-                anais_output += do_anais(architecture, binaries_list, source)
+                anais_output += do_anais(architecture, binaries_list, source, session)
 
             # Check for duplicated packages and build indices for checking "no source" later
             source_index = component + '/' + source
@@ -424,14 +435,17 @@ def main ():
 
     # Checks based on the Packages files
     check_components = components[:]
-    if suite != "experimental":
+    if suite.suite_name != "experimental":
         check_components.append('main/debian-installer');
+
     for component in check_components:
-        architectures = filter(utils.real_arch, database.get_suite_architectures(suite))
+        architectures = [ a.arch_string for a in get_suite_architectures(suite.suite_name,
+                                                                         skipsrc=True, skipall=True,
+                                                                         session=session) ]
         for architecture in architectures:
-	    if component == 'main/debian-installer' and re.match("kfreebsd", architecture):
-		continue
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suite, component, architecture)
+            if component == 'main/debian-installer' and re.match("kfreebsd", architecture):
+                continue
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suite.suite_name, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
             (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
@@ -497,12 +511,12 @@ def main ():
             latest_version = versions.pop()
             source_version = source_versions.get(source,"0")
             if apt_pkg.VersionCompare(latest_version, source_version) == 0:
-                add_nbs(dubious_nbs, source, latest_version, package)
+                add_nbs(dubious_nbs, source, latest_version, package, suite_id, session)
             else:
-                add_nbs(real_nbs, source, latest_version, package)
+                add_nbs(real_nbs, source, latest_version, package, suite_id, session)
 
     if "nviu" in checks:
-        do_nviu()
+        do_newer_version('unstable', 'experimental', 'NVIU', session)
 
     if "nbs" in checks:
         do_nbs(real_nbs)
