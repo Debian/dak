@@ -32,7 +32,6 @@
 
 import commands
 import os
-import pg
 import stat
 import sys
 import time
@@ -194,7 +193,7 @@ SELECT DISTINCT b.package FROM binaries b, bin_associations ba
        (SELECT 1 FROM override o WHERE o.suite = :suiteid AND o.package = b.package)"""
                           % {'suiteid': suite.suite_id})
 
-        for j in q:
+        for j in q.fetchall():
             print j[0]
 
         q = s.execute("""
@@ -202,7 +201,7 @@ SELECT DISTINCT s.source FROM source s, src_associations sa
   WHERE s.id = sa.source AND sa.suite = :suiteid AND NOT EXISTS
        (SELECT 1 FROM override o WHERE o.suite = :suiteid and o.package = s.source)"""
                           % {'suiteid': suite.suite_id})
-        for j in q:
+        for j in q.fetchall():
             print j[0]
 
 ################################################################################
