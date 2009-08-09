@@ -34,12 +34,8 @@ and binary package version it has in a standard rfc2822-like format.
 import os
 import pg
 import sys
-from daklib import database
-from daklib import utils
 
-################################################################################
-
-projectB = None #: database connection, pgobject
+from daklib.dbconn import *
 
 ################################################################################
 
@@ -74,14 +70,16 @@ def build_mapping():
     ORDER BY source, version, package, bin_version
     """
 
-    for row in projectB.query(query_sources).getresult():
+    session = DBConn().session()
+
+    for row in session.execute(query_sources).fetchall():
         (source, version, path) = row
         print "Path: %s"%path
         print "Source: %s"%source
         print "Source-Version: %s"%version
         print
 
-    for row in projectB.query(query_binaries).getresult():
+    for row in session.execute(query_binaries).fetchall():
         (source, version, arch, path, bin, binv) = row
         print "Path: %s"%path
         print "Source: %s"%source
@@ -94,10 +92,7 @@ def build_mapping():
 ################################################################################
 
 def main():
-    global projectB
-
-    Cnf = utils.get_conf()
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    DBConn()
     build_mapping()
 
 #########################################################################################
