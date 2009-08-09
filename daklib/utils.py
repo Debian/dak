@@ -875,8 +875,8 @@ def parse_args(Options):
         suite_ids_list = []
         for suitename in split_args(Options["Suite"]):
             suite = get_suite(suitename, session=session)
-            if suite_id is None:
-                warn("suite '%s' not recognised." % (suitename))
+            if suite.suite_id is None:
+                warn("suite '%s' not recognised." % (suite.suite_name))
             else:
                 suite_ids_list.append(suite.suite_id)
         if suite_ids_list:
