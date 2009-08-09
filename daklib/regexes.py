@@ -44,7 +44,7 @@ re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$")
 
 re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)$")
 
-re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)")
+re_single_line_field = re.compile(r"^(\S*?)\s*:\s*(.*)")
 re_multi_line_field = re.compile(r"^\s(.*)")
 re_taint_free = re.compile(r"^[-+~/\.\w]+$")
 
