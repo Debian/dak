@@ -19,7 +19,7 @@
 
 ################################################################################
 
-import os, pg, sys
+import os, sys
 import apt_pkg
 
 from daklib.dbconn import *
