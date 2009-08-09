@@ -18,7 +18,6 @@ add his key to the GPGKeyring
 # I know what I say. I dont know python and I wrote it. So go and read some other stuff.
 
 import commands
-import pg
 import re
 import sys
 import time
