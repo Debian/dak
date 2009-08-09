@@ -1233,6 +1233,29 @@ def get_priority(priority, session=None):
 
 __all__.append('get_priority')
 
+def get_priorities(session=None):
+    """
+    Returns dictionary of priority names -> id mappings
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: dictionary
+    @return: dictionary of priority names -> id mappings
+    """
+    if session is None:
+        session = DBConn().session()
+
+    ret = {}
+    q = session.query(Priority)
+    for x in q.all():
+        ret[x.priority] = x.priority_id
+
+    return ret
+
+__all__.append('get_priorities')
+
 ################################################################################
 
 class Queue(object):
@@ -1468,6 +1491,29 @@ def get_section(section, session=None):
     return q.one()
 
 __all__.append('get_section')
+
+def get_sections(session=None):
+    """
+    Returns dictionary of section names -> id mappings
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: dictionary
+    @return: dictionary of section names -> id mappings
+    """
+    if session is None:
+        session = DBConn().session()
+
+    ret = {}
+    q = session.query(Section)
+    for x in q.all():
+        ret[x.section] = x.section_id
+
+    return ret
+
+__all__.append('get_sections')
 
 ################################################################################
 
