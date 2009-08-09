@@ -22,7 +22,7 @@
 
 ################################################################################
 
-import sys, os, stat, time, pg
+import sys, os, stat, time
 import gzip, bz2
 import apt_pkg
 
