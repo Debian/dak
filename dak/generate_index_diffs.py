@@ -37,7 +37,7 @@ import tempfile
 import subprocess
 import time
 import apt_pkg
-import pg
+
 from daklib import utils
 from daklib.dbconn import get_suite
 
