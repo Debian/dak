@@ -40,7 +40,6 @@ Script to automate some parts of checking NEW packages
 
 import errno
 import os
-import pg
 import re
 import sys
 import md5
