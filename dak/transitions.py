@@ -29,7 +29,6 @@ Display, edit and check the release manager's transition file.
 ################################################################################
 
 import os
-import pg
 import sys
 import time
 import errno
@@ -37,6 +36,7 @@ import fcntl
 import tempfile
 import pwd
 import apt_pkg
+
 from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
