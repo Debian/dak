@@ -28,18 +28,17 @@
 
 ################################################################################
 
-import os, pg, stat, sys, time
+import os, stat, sys, time
 import apt_pkg
+from datetime import datetime, timedelta
+
+from daklib.config import Config
+from daklib.dbconn import *
 from daklib import utils
 
 ################################################################################
 
-projectB = None
-Cnf = None
 Options = None
-now_date = None;     # mark newly "deleted" things as deleted "now"
-delete_date = None;  # delete things marked "deleted" earler than this
-max_delete = None
 
 ################################################################################
 
@@ -54,49 +53,44 @@ Clean old packages from suites.
 
 ################################################################################
 
-def check_binaries():
-    global delete_date, now_date
-
+def check_binaries(now_date, delete_date, max_delete, session):
     print "Checking for orphaned binary packages..."
 
     # Get the list of binary packages not in a suite and mark them for
     # deletion.
-    q = projectB.query("""
+
+    # TODO: This can be a single SQL UPDATE statement
+    q = session.execute("""
 SELECT b.file FROM binaries b, files f
  WHERE f.last_used IS NULL AND b.file = f.id
    AND NOT EXISTS (SELECT 1 FROM bin_associations ba WHERE ba.bin = b.id)""")
-    ql = q.getresult()
 
-    projectB.query("BEGIN WORK")
-    for i in ql:
-        file_id = i[0]
-        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s AND last_used IS NULL" % (now_date, file_id))
-    projectB.query("COMMIT WORK")
+    for i in q.fetchall():
+        session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid AND last_used IS NULL",
+                        {'lastused': now_date, 'fileid': i[0]})
+    session.commit()
 
     # Check for any binaries which are marked for eventual deletion
     # but are now used again.
-    q = projectB.query("""
+
+    # TODO: This can be a single SQL UPDATE statement
+    q = session.execute("""
 SELECT b.file FROM binaries b, files f
    WHERE f.last_used IS NOT NULL AND f.id = b.file
     AND EXISTS (SELECT 1 FROM bin_associations ba WHERE ba.bin = b.id)""")
-    ql = q.getresult()
 
-    projectB.query("BEGIN WORK")
-    for i in ql:
-        file_id = i[0]
-        projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (file_id))
-    projectB.query("COMMIT WORK")
+    for i in q.fetchall():
+        session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid", {'fileid': i[0]})
+    session.commit()
 
 ########################################
 
-def check_sources():
-    global delete_date, now_date
-
+def check_sources(now_date, delete_date, max_delete, session):
     print "Checking for orphaned source packages..."
 
     # Get the list of source packages not in a suite and not used by
     # any binaries.
-    q = projectB.query("""
+    q = session.execute("""
 SELECT s.id, s.file FROM source s, files f
   WHERE f.last_used IS NULL AND s.file = f.id
     AND NOT EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id)
@@ -106,28 +100,33 @@ SELECT s.id, s.file FROM source s, files f
     ####      have been marked for deletion (so the delay between bins go
     ####      byebye and sources go byebye is 0 instead of StayOfExecution)
 
-    ql = q.getresult()
-
-    projectB.query("BEGIN WORK")
-    for i in ql:
+    for i in q.fetchall():
         source_id = i[0]
         dsc_file_id = i[1]
 
         # Mark the .dsc file for deletion
-        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s AND last_used IS NULL" % (now_date, dsc_file_id))
+        session.execute("""UPDATE files SET last_used = :last_used
+                                    WHERE id = :dscfileid AND last_used IS NULL""",
+                        {'last_used': now_date, 'dscfileid': dsc_file_id})
+
         # Mark all other files references by .dsc too if they're not used by anyone else
-        x = projectB.query("SELECT f.id FROM files f, dsc_files d WHERE d.source = %s AND d.file = f.id" % (source_id))
-        for j in x.getresult():
+        x = session.execute("""SELECT f.id FROM files f, dsc_files d
+                              WHERE d.source = :sourceid AND d.file = f.id""",
+                             {'sourceid': source_id})
+        for j in x.fetchall():
             file_id = j[0]
-            y = projectB.query("SELECT id FROM dsc_files d WHERE d.file = %s" % (file_id))
-            if len(y.getresult()) == 1:
-                projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s AND last_used IS NULL" % (now_date, file_id))
-    projectB.query("COMMIT WORK")
+            y = session.execute("SELECT id FROM dsc_files d WHERE d.file = :fileid", {'fileid': file_id})
+            if len(y.fetchall()) == 1:
+                session.execute("""UPDATE files SET last_used = :lastused
+                                  WHERE id = :fileid AND last_used IS NULL""",
+                                {'lastused': now_date, 'fileid': file_id})
+
+    session.commit()
 
     # Check for any sources which are marked for deletion but which
     # are now used again.
 
-    q = projectB.query("""
+    q = session.execute("""
 SELECT f.id FROM source s, files f, dsc_files df
   WHERE f.last_used IS NOT NULL AND s.id = df.source AND df.file = f.id
     AND ((EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id))
@@ -136,40 +135,47 @@ SELECT f.id FROM source s, files f, dsc_files df
     #### XXX: this should also handle deleted binaries specially (ie, not
     ####      reinstate sources because of them
 
-    ql = q.getresult()
     # Could be done in SQL; but left this way for hysterical raisins
     # [and freedom to innovate don'cha know?]
-    projectB.query("BEGIN WORK")
-    for i in ql:
-        file_id = i[0]
-        projectB.query("UPDATE files SET last_used = NULL WHERE id = %s" % (file_id))
-    projectB.query("COMMIT WORK")
+    for i in q.fetchall():
+        session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid",
+                        {'fileid': i[0]})
+
+    session.commit()
 
 ########################################
 
-def check_files():
-    global delete_date, now_date
-
+def check_files(now_date, delete_date, max_delete, session):
     # FIXME: this is evil; nothing should ever be in this state.  if
     # they are, it's a bug and the files should not be auto-deleted.
-
-    return
+    # XXX: In that case, remove the stupid return to later and actually
+    #      *TELL* us rather than silently ignore it - mhy
 
     print "Checking for unused files..."
-    q = projectB.query("""
-SELECT id FROM files f
+    q = session.execute("""
+SELECT id, filename FROM files f
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.file = f.id)
-    AND NOT EXISTS (SELECT 1 FROM dsc_files df WHERE df.file = f.id)""")
+    AND NOT EXISTS (SELECT 1 FROM dsc_files df WHERE df.file = f.id)
+    ORDER BY filename""")
 
-    projectB.query("BEGIN WORK")
-    for i in q.getresult():
-        file_id = i[0]
-        projectB.query("UPDATE files SET last_used = '%s' WHERE id = %s" % (now_date, file_id))
-    projectB.query("COMMIT WORK")
+    ql = q.fetchall()
+    if len(ql) > 0:
+        print "WARNING: check_files found something it shouldn't"
+        for x in ql:
+            print x
 
-def clean_binaries():
-    global delete_date, now_date
+    # NOW return, the code below is left as an example of what was
+    # evidently done at some point in the past
+    return
 
+#    for i in q.fetchall():
+#        file_id = i[0]
+#        session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
+#                        {'lastused': now_date, 'fileid': file_id})
+#
+#    session.commit()
+
+def clean_binaries(now_date, delete_date, max_delete, session):
     # We do this here so that the binaries we remove will have their
     # source also removed (if possible).
 
@@ -177,41 +183,53 @@ def clean_binaries():
     #      buys anything keeping this separate
     print "Cleaning binaries from the DB..."
     if not Options["No-Action"]:
-        before = time.time()
-        sys.stdout.write("[Deleting from binaries table... ")
-        projectB.query("DELETE FROM binaries WHERE EXISTS (SELECT 1 FROM files WHERE binaries.file = files.id AND files.last_used <= '%s')" % (delete_date))
-        sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
+        print "Deleting from binaries table... "
+        session.execute("""DELETE FROM binaries WHERE EXISTS
+                              (SELECT 1 FROM files WHERE binaries.file = files.id
+                                         AND files.last_used <= :deldate)""",
+                           {'deldate': delete_date})
 
 ########################################
 
-def clean():
-    global delete_date, now_date, max_delete
+def clean(now_date, delete_date, max_delete, session):
+    cnf = Config()
+
     count = 0
     size = 0
 
     print "Cleaning out packages..."
 
-    date = time.strftime("%Y-%m-%d")
-    dest = Cnf["Dir::Morgue"] + '/' + Cnf["Clean-Suites::MorgueSubDir"] + '/' + date
+    cur_date = now_date.strftime("%Y-%m-%d")
+    dest = os.path.join(cnf["Dir::Morgue"], cnf["Clean-Suites::MorgueSubDir"], cur_date)
     if not os.path.exists(dest):
         os.mkdir(dest)
 
     # Delete from source
     if not Options["No-Action"]:
-        before = time.time()
-        sys.stdout.write("[Deleting from source table... ")
-        projectB.query("DELETE FROM dsc_files WHERE EXISTS (SELECT 1 FROM source s, files f, dsc_files df WHERE f.last_used <= '%s' AND s.file = f.id AND s.id = df.source AND df.id = dsc_files.id)" % (delete_date))
-        projectB.query("DELETE FROM source WHERE EXISTS (SELECT 1 FROM files WHERE source.file = files.id AND files.last_used <= '%s')" % (delete_date))
-        sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
+        print "Deleting from source table... "
+        session.execute("""DELETE FROM dsc_files
+                            WHERE EXISTS
+                               (SELECT 1 FROM source s, files f, dsc_files df
+                                 WHERE f.last_used <= :deletedate
+                                   AND s.file = f.id AND s.id = df.source
+                                   AND df.id = dsc_files.id)""", {'deletedate': delete_date})
+        session.execute("""DELETE FROM source
+                            WHERE EXISTS
+                               (SELECT 1 FROM files
+                                 WHERE source.file = files.id
+                                   AND files.last_used <= :deletedate)""", {'deletedate': delete_date})
+
+        session.commit()
 
     # Delete files from the pool
-    query = "SELECT l.path, f.filename FROM location l, files f WHERE f.last_used <= '%s' AND l.id = f.location" % (delete_date)
+    query = """SELECT l.path, f.filename FROM location l, files f
+              WHERE f.last_used <= :deletedate AND l.id = f.location"""
     if max_delete is not None:
         query += " LIMIT %d" % max_delete
-        sys.stdout.write("Limiting removals to %d\n" % max_delete)
+        print "Limiting removals to %d" % max_delete
 
-    q=projectB.query(query)
-    for i in q.getresult():
+    q = session.execute(query, {'deletedate': delete_date})
+    for i in q.fetchall():
         filename = i[0] + i[1]
         if not os.path.exists(filename):
             utils.warn("can not find '%s'." % (filename))
@@ -240,111 +258,127 @@ def clean():
             utils.fubar("%s is neither symlink nor file?!" % (filename))
 
     # Delete from the 'files' table
+    # XXX: I've a horrible feeling that the max_delete stuff breaks here - mhy
+    # TODO: Change it so we do the DELETEs as we go; it'll be slower but
+    #       more reliable
     if not Options["No-Action"]:
-        before = time.time()
-        sys.stdout.write("[Deleting from files table... ")
-        projectB.query("DELETE FROM files WHERE last_used <= '%s'" % (delete_date))
-        sys.stdout.write("done. (%d seconds)]\n" % (int(time.time()-before)))
+        print "Deleting from files table... "
+        session.execute("DELETE FROM files WHERE last_used <= :deletedate", {'deletedate': delete_date})
+        session.commit()
+
     if count > 0:
-        sys.stderr.write("Cleaned %d files, %s.\n" % (count, utils.size_type(size)))
+        print "Cleaned %d files, %s." % (count, utils.size_type(size))
 
 ################################################################################
 
-def clean_maintainers():
+def clean_maintainers(now_date, delete_date, max_delete, session):
     print "Cleaning out unused Maintainer entries..."
 
-    q = projectB.query("""
+    # TODO Replace this whole thing with one SQL statement
+    q = session.execute("""
 SELECT m.id FROM maintainer m
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.maintainer = m.id)
     AND NOT EXISTS (SELECT 1 FROM source s WHERE s.maintainer = m.id OR s.changedby = m.id)
     AND NOT EXISTS (SELECT 1 FROM src_uploaders u WHERE u.maintainer = m.id)""")
-    ql = q.getresult()
 
     count = 0
-    projectB.query("BEGIN WORK")
-    for i in ql:
+
+    for i in q.fetchall():
         maintainer_id = i[0]
         if not Options["No-Action"]:
-            projectB.query("DELETE FROM maintainer WHERE id = %s" % (maintainer_id))
+            session.execute("DELETE FROM maintainer WHERE id = :maint", {'maint': maintainer_id})
             count += 1
-    projectB.query("COMMIT WORK")
+
+    if not Options["No-Action"]:
+        session.commit()
 
     if count > 0:
-        sys.stderr.write("Cleared out %d maintainer entries.\n" % (count))
+        print "Cleared out %d maintainer entries." % (count)
 
 ################################################################################
 
-def clean_fingerprints():
+def clean_fingerprints(now_date, delete_date, max_delete, session):
     print "Cleaning out unused fingerprint entries..."
 
-    q = projectB.query("""
+    # TODO Replace this whole thing with one SQL statement
+    q = session.execute("""
 SELECT f.id FROM fingerprint f
   WHERE f.keyring IS NULL
     AND NOT EXISTS (SELECT 1 FROM binaries b WHERE b.sig_fpr = f.id)
     AND NOT EXISTS (SELECT 1 FROM source s WHERE s.sig_fpr = f.id)""")
-    ql = q.getresult()
 
     count = 0
-    projectB.query("BEGIN WORK")
-    for i in ql:
+
+    for i in q.fetchall():
         fingerprint_id = i[0]
         if not Options["No-Action"]:
-            projectB.query("DELETE FROM fingerprint WHERE id = %s" % (fingerprint_id))
+            session.execute("DELETE FROM fingerprint WHERE id = :fpr", {'fpr': fingerprint_id})
             count += 1
-    projectB.query("COMMIT WORK")
+
+    if not Options["No-Action"]:
+        session.commit()
 
     if count > 0:
-        sys.stderr.write("Cleared out %d fingerprint entries.\n" % (count))
+        print "Cleared out %d fingerprint entries." % (count)
 
 ################################################################################
 
-def clean_queue_build():
-    global now_date
+def clean_queue_build(now_date, delete_date, max_delete, session):
 
-    if not Cnf.ValueList("Dinstall::QueueBuildSuites") or Options["No-Action"]:
+    cnf = Config()
+
+    if not cnf.ValueList("Dinstall::QueueBuildSuites") or Options["No-Action"]:
         return
 
     print "Cleaning out queue build symlinks..."
 
-    our_delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Clean-Suites::QueueBuildStayOfExecution"])))
+    our_delete_date = now_date - timedelta(seconds = int(cnf["Clean-Suites::QueueBuildStayOfExecution"]))
     count = 0
 
-    q = projectB.query("SELECT filename FROM queue_build WHERE last_used <= '%s'" % (our_delete_date))
-    for i in q.getresult():
+    q = session.execute("SELECT filename FROM queue_build WHERE last_used <= :deletedate",
+                        {'deletedate': our_delete_date})
+    for i in q.fetchall():
         filename = i[0]
         if not os.path.exists(filename):
             utils.warn("%s (from queue_build) doesn't exist." % (filename))
             continue
-        if not Cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(filename):
+
+        if not cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(filename):
             utils.fubar("%s (from queue_build) should be a symlink but isn't." % (filename))
+
         os.unlink(filename)
         count += 1
-    projectB.query("DELETE FROM queue_build WHERE last_used <= '%s'" % (our_delete_date))
+
+    session.execute("DELETE FROM queue_build WHERE last_used <= :deletedate",
+                    {'deletedate': our_delete_date})
+
+    session.commit()
 
     if count:
-        sys.stderr.write("Cleaned %d queue_build files.\n" % (count))
+        print "Cleaned %d queue_build files." % (count)
 
 ################################################################################
 
 def main():
-    global Cnf, Options, projectB, delete_date, now_date, max_delete
+    global Options
 
-    Cnf = utils.get_conf()
+    cnf = Config()
+
     for i in ["Help", "No-Action", "Maximum" ]:
-        if not Cnf.has_key("Clean-Suites::Options::%s" % (i)):
-            Cnf["Clean-Suites::Options::%s" % (i)] = ""
+        if not cnf.has_key("Clean-Suites::Options::%s" % (i)):
+            cnf["Clean-Suites::Options::%s" % (i)] = ""
 
     Arguments = [('h',"help","Clean-Suites::Options::Help"),
                  ('n',"no-action","Clean-Suites::Options::No-Action"),
                  ('m',"maximum","Clean-Suites::Options::Maximum", "HasArg")]
 
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Clean-Suites::Options")
+    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Clean-Suites::Options")
 
-    if Cnf["Clean-Suites::Options::Maximum"] != "":
+    if cnf["Clean-Suites::Options::Maximum"] != "":
         try:
             # Only use Maximum if it's an integer
-            max_delete = int(Cnf["Clean-Suites::Options::Maximum"])
+            max_delete = int(cnf["Clean-Suites::Options::Maximum"])
             if max_delete < 1:
                 utils.fubar("If given, Maximum must be at least 1")
         except ValueError, e:
@@ -355,19 +389,19 @@ def main():
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    session = DBConn().session()
 
-    now_date = time.strftime("%Y-%m-%d %H:%M")
-    delete_date = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time()-int(Cnf["Clean-Suites::StayOfExecution"])))
+    now_date = datetime.now()
+    delete_date = now_date - timedelta(seconds=int(cnf['Clean-Suites::StayOfExecution']))
 
-    check_binaries()
-    clean_binaries()
-    check_sources()
-    check_files()
-    clean()
-    clean_maintainers()
-    clean_fingerprints()
-    clean_queue_build()
+    check_binaries(now_date, delete_date, max_delete, session)
+    clean_binaries(now_date, delete_date, max_delete, session)
+    check_sources(now_date, delete_date, max_delete, session)
+    check_files(now_date, delete_date, max_delete, session)
+    clean(now_date, delete_date, max_delete, session)
+    clean_maintainers(now_date, delete_date, max_delete, session)
+    clean_fingerprints(now_date, delete_date, max_delete, session)
+    clean_queue_build(now_date, delete_date, max_delete, session)
 
 ################################################################################
 
