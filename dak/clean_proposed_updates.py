@@ -19,16 +19,16 @@
 
 ################################################################################
 
-import os, pg, sys
+import os, sys
 import apt_pkg
-from daklib import database
+
+from daklib.dbconn import *
+from daklib.config import Config
 from daklib import utils
 from daklib.regexes import re_isdeb, re_isadeb, re_issource, re_no_epoch
 
 ################################################################################
 
-Cnf = None
-projectB = None
 Options = None
 pu = {}
 
@@ -47,6 +47,8 @@ Need either changes files or an admin.txt file with a '.joey' suffix."""
 ################################################################################
 
 def check_changes (filename):
+    cnf = Config()
+
     try:
         changes = utils.parse_changes(filename)
         files = utils.build_file_list(changes)
@@ -97,7 +99,7 @@ def check_changes (filename):
     new_num_files = len(files.keys())
     if new_num_files == 0:
         print "%s: no files left, superseded by %s" % (filename, pu_version)
-        dest = Cnf["Dir::Morgue"] + "/misc/"
+        dest = cnf["Dir::Morgue"] + "/misc/"
         if not Options["no-action"]:
             utils.move(filename, dest)
     elif new_num_files < num_files:
@@ -109,10 +111,12 @@ def check_changes (filename):
 ################################################################################
 
 def check_joey (filename):
+    cnf = Config()
+
     f = utils.open_file(filename)
 
     cwd = os.getcwd()
-    os.chdir("%s/dists/%s" % (Cnf["Dir::Root"]), Options["suite"])
+    os.chdir("%s/dists/%s" % (cnf["Dir::Root"]), Options["suite"])
 
     for line in f.readlines():
         line = line.rstrip()
@@ -135,19 +139,19 @@ def check_joey (filename):
 def init_pu ():
     global pu
 
-    q = projectB.query("""
+    q = DBConn().session().execute("""
 SELECT b.package, b.version, a.arch_string
   FROM bin_associations ba, binaries b, suite su, architecture a
   WHERE b.id = ba.bin AND ba.suite = su.id
-    AND su.suite_name = '%s' AND a.id = b.architecture
+    AND su.suite_name = :suite_name AND a.id = b.architecture
 UNION SELECT s.source, s.version, 'source'
   FROM src_associations sa, source s, suite su
   WHERE s.id = sa.source AND sa.suite = su.id
-    AND su.suite_name = '%s'
+    AND su.suite_name = :suite_name
 ORDER BY package, version, arch_string
-""" % (Options["suite"], Options["suite"]))
-    ql = q.getresult()
-    for i in ql:
+""" % {'suite_name': Options["suite"]})
+
+    for i in q.all():
         pkg = i[0]
         version = i[1]
         arch = i[2]
@@ -156,9 +160,9 @@ ORDER BY package, version, arch_string
         pu[pkg][arch] = version
 
 def main ():
-    global Cnf, projectB, Options
+    global Options
 
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('d', "debug", "Clean-Proposed-Updates::Options::Debug"),
                  ('v', "verbose", "Clean-Proposed-Updates::Options::Verbose"),
@@ -166,23 +170,22 @@ def main ():
                  ('s', "suite", "Clean-Proposed-Updates::Options::Suite", "HasArg"),
                  ('n', "no-action", "Clean-Proposed-Updates::Options::No-Action"),]
     for i in [ "debug", "verbose", "help", "no-action" ]:
-        if not Cnf.has_key("Clean-Proposed-Updates::Options::%s" % (i)):
-            Cnf["Clean-Proposed-Updates::Options::%s" % (i)] = ""
+        if not cnf.has_key("Clean-Proposed-Updates::Options::%s" % (i)):
+            cnf["Clean-Proposed-Updates::Options::%s" % (i)] = ""
 
     # suite defaults to proposed-updates
-    if not Cnf.has_key("Clean-Proposed-Updates::Options::Suite"):
-        Cnf["Clean-Proposed-Updates::Options::Suite"] = "proposed-updates"
+    if not cnf.has_key("Clean-Proposed-Updates::Options::Suite"):
+        cnf["Clean-Proposed-Updates::Options::Suite"] = "proposed-updates"
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Clean-Proposed-Updates::Options")
+    arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Clean-Proposed-Updates::Options")
 
     if Options["Help"]:
         usage(0)
     if not arguments:
         utils.fubar("need at least one package name as an argument.")
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    DBConn()
 
     init_pu()
 
