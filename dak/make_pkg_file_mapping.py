@@ -32,7 +32,6 @@ and binary package version it has in a standard rfc2822-like format.
 ################################################################################
 
 import os
-import pg
 import sys
 
 from daklib.dbconn import *
