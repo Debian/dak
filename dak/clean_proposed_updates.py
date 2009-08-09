@@ -151,7 +151,7 @@ UNION SELECT s.source, s.version, 'source'
 ORDER BY package, version, arch_string
 """ % {'suite_name': Options["suite"]})
 
-    for i in q.all():
+    for i in q.fetchall():
         pkg = i[0]
         version = i[1]
         arch = i[2]
