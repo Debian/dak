@@ -65,7 +65,7 @@
 		<div id="ftpteam">
             <h1>The ftpmaster team</h1>
 
-            <p>The members of ftpmaster currently are divided into two groups, FTP Master and FTP Assistants.</p>
+	    <p>The members of ftpmaster currently are divided into three groups, FTP Master,FTP Assistants and FTP Trainee.</p>
             <p>Members of FTP Master are:</p>
             <ul>
                 <li>Joerg Jaspert</li>
@@ -83,6 +83,26 @@
             
             <p>This information (and more like it) is available from
             <a href="http://www.debian.org/intro/organization">Debian's Organizational Structure</a>.</p>
+
+	    <p>The FTP Master role, unix group <tt>debadmin</tt>, is responsible for:</p>
+	    <ul>
+		    <li>Keep the archive running</li>
+		    <li>Keep the archive legal</li>
+		    <li>Support the teams that depend on it (Release, Security, soon backports/volatile)</li>
+		    <li>Keep the archive uptodate with the requirements of the project</li>
+	    </ul>
+
+	    <p>The FTP Assistent role, unix group <tt>ftpteam</tt>, created in 2005,
+	    allows the addition of people to the FTP Team without having to hand out
+	    full FTP Master rights. It allows</p>
+	    <ul>
+		    <li>to process NEW,</li>
+		    <li>to handle overrides,</li>
+		    <li>to remove packages.</li>
+	    </ul>
+
+	    <p>The FTP Trainee role, group <tt>ftptrainee</tt>, was created in 2008 to allow easy training and testing of future team members.</p>
+            <p>Trainees can look at NEW and do the usual package checks, but they can not actually accept or reject a package. Instead they leave a note, which an Assistant or Master reads and acts on.</p>
         </div>
 
         <div id="dak">
