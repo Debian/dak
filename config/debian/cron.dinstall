@@ -212,7 +212,7 @@ function fingerprints() {
     dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
     OUTFILE=$(mktemp)
-    dak import-keyring --generate-users /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
+    dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
 
     if [ -s "${OUTFILE}" ]; then
         /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
