@@ -478,7 +478,7 @@ function stage() {
     ARGS='GO[@]'
     local "${!ARGS}"
 
-    error=${ERR:-"false"}
+    error=${ERR:-"true"}
 
     STAGEFILE="${stagedir}/${FUNC}"
     if [ -f "${STAGEFILE}" ]; then
