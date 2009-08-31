@@ -429,14 +429,14 @@ function maillogfile() {
 function renamelogfile() {
     if [ -f "${dbdir}/dinstallstart" ]; then
         NOW=$(cat "${dbdir}/dinstallstart")
-        maillogfile
+#        maillogfile
         mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
         logstats "$logdir/dinstall_${NOW}.log"
         bzip2 -9 "$logdir/dinstall_${NOW}.log"
     else
         error "Problem, I don't know when dinstall started, unable to do log statistics."
         NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-        maillogfile
+#        maillogfile
         mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
         bzip2 -9 "$logdir/dinstall_${NOW}.log"
     fi
