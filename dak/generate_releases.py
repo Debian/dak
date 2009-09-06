@@ -59,6 +59,24 @@ def add_tiffani (files, path, indexstem):
         #print "ALERT: there was a tiffani file %s" % (filepath)
         files.append(index)
 
+def gen_i18n_index (files, tree, sec):
+    path = Cnf["Dir::Root"] + tree + "/"
+    i18n_path = "%s/i18n" % (sec)
+    if os.path.exists("%s/%s" % (path, i18n_path)):
+        index = "%s/Index" % (i18n_path)
+        out = open("%s/%s" % (path, index), "w")
+        out.write("SHA1:\n")
+        for x in os.listdir("%s/%s" % (path, i18n_path)):
+            if x.startswith('Translation-'):
+                f = open("%s/%s/%s" % (path, i18n_path, x), "r")
+                size = os.fstat(f.fileno())[6]
+                f.seek(0)
+                sha1sum = apt_pkg.sha1sum(f)
+                f.close()
+                out.write(" %s %7d %s\n" % (sha1sum, size, x))
+        out.close()
+        files.append(index)
+
 def compressnames (tree,type,file):
     compress = AptCnf.get("%s::%s::Compress" % (tree,type), AptCnf.get("Default::%s::Compress" % (type), ". gzip"))
     result = []
@@ -296,6 +314,7 @@ def main ():
                     relpath = Cnf["Dir::Root"]+tree+"/"+rel
                     write_release_file(relpath, suite, sec, origin, label, arch, version, suite_suffix, notautomatic)
                     files.append(rel)
+                gen_i18n_index(files, tree, sec)
 
             if AptCnf.has_key("tree::%s/main" % (tree)):
                 for dis in ["main", "contrib", "non-free"]:
