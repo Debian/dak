@@ -929,7 +929,8 @@ def check_urgency ():
     if changes["architecture"].has_key("source"):
         if not changes.has_key("urgency"):
             changes["urgency"] = Cnf["Urgency::Default"]
-        changes["urgency"] = changes["urgency"].lower()
+        # Urgency may be followed by space & comment (policy 5.6.17)
+        changes["urgency"] = changes["urgency"].split(" ")[0].lower();
         if changes["urgency"] not in Cnf.ValueList("Urgency::Valid"):
             reject("%s is not a valid urgency; it will be treated as %s by testing." % (changes["urgency"], Cnf["Urgency::Default"]), "Warning: ")
             changes["urgency"] = Cnf["Urgency::Default"]
