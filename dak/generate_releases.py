@@ -285,7 +285,10 @@ def main ():
             else:
                 for x in os.listdir("%s/%s" % (Cnf["Dir::Root"], tree)):
                     if x.startswith('Contents-'):
-                        files.append(x)
+                        if x.endswith('.diff'):
+                            files.append("%s/Index" % (x))
+                        else:
+                            files.append(x)
 
             for sec in AptCnf["tree::%s::Sections" % (tree)].split():
                 for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
