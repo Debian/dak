@@ -552,6 +552,7 @@ def do_bxa_notification():
 def add_overrides (new):
     changes = Upload.pkg.changes
     files = Upload.pkg.files
+    srcpkg = changes.get("source")
 
     projectB.query("BEGIN WORK")
     for suite in changes["suite"].keys():
@@ -561,6 +562,7 @@ def add_overrides (new):
             type_id = database.get_override_type_id(new[pkg]["type"])
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
+            Logger.log(["%s overrides" % (srcpkg), suite, new[pkg]["component"], new[pkg]["type"], new[pkg]["priority"], new[pkg]["section"]])
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')" % (suite_id, component_id, type_id, pkg, priority_id, section_id))
             for f in new[pkg]["files"]:
                 if files[f].has_key("new"):
