@@ -23,6 +23,8 @@ use Socket qw( PF_INET AF_INET SOCK_STREAM );
 use Config;
 use Sys::Hostname;
 
+setlocale(&POSIX::LC_ALL, "C");
+
 # ---------------------------------------------------------------------------
 #								configuration
 # ---------------------------------------------------------------------------
