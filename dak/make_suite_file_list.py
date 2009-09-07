@@ -267,7 +267,7 @@ def write_filelists(packages, dislocated_files):
                 binary_types = [ "deb", "udeb" ]
             else:
                 binary_types = [ "deb" ]
-            if not Options["Architecture"]:
+            if not Options["Architectures"]:
                 architectures = database.get_suite_architectures(suite)
             else:
                 architectures = utils.split_args(Options["Architectures"])
