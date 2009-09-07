@@ -21,10 +21,11 @@ master archive (__MASTER_ARCHIVE__) and will not propagate to any
 mirrors (__PRIMARY_MIRROR__ included) until the next cron.daily run at the
 earliest.
 
-Packages are never removed from testing by hand.  Testing tracks
+Packages are usually not removed from testing by hand. Testing tracks
 unstable and will automatically remove packages which were removed
 from unstable when removing them from testing causes no dependency
-problems.
+problems. The release team can force a removal from testing if it is
+really needed, please contact them if this should be the case.
 
 Bugs which have been reported against this package are not automatically
 removed from the Bug Tracking System.  Please check all open bugs and
