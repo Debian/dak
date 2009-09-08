@@ -267,10 +267,10 @@ def write_filelists(packages, dislocated_files):
                 binary_types = [ "deb", "udeb" ]
             else:
                 binary_types = [ "deb" ]
-            if not Options["Architectures"]:
+            if not Options["Architecture"]:
                 architectures = database.get_suite_architectures(suite)
             else:
-                architectures = utils.split_args(Options["Architectures"])
+                architectures = utils.split_args(Options["Architecture"])
             for arch in [ i.lower() for i in architectures ]:
                 d[suite][component].setdefault(arch, {})
                 if arch == "source":
