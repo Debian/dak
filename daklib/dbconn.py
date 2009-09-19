@@ -417,6 +417,9 @@ def get_or_set_contents_file_id(filename, session=None):
             session.add(cf)
             if privatetrans:
                 session.commit()
+                session.close()
+            else:
+                session.flush()
             return cf.cafilename_id
         else:
             return q.one().cafilename_id
@@ -491,7 +494,7 @@ class ContentFilepath(object):
 
 __all__.append('ContentFilepath')
 
-def get_or_set_contents_path_id(filepath, session):
+def get_or_set_contents_path_id(filepath, session=None):
     """
     Returns database id for given path.
 
@@ -520,6 +523,9 @@ def get_or_set_contents_path_id(filepath, session):
             session.add(cf)
             if privatetrans:
                 session.commit()
+                session.close()
+            else:
+                session.flush()
             return cf.cafilepath_id
         else:
             return q.one().cafilepath_id
@@ -566,27 +572,40 @@ def insert_content_paths(binary_id, fullpaths, session=None):
         privatetrans = True
 
     try:
+        # Insert paths
+        pathcache = {}
         for fullpath in fullpaths:
+            # Get the necessary IDs ...
             (path, file) = os.path.split(fullpath)
 
-            # Get the necessary IDs ...
+            filepath_id = get_or_set_contents_path_id(path, session)
+            filename_id = get_or_set_contents_file_id(file, session)
+
+            pathcache[fullpath] = (filepath_id, filename_id)
+
+        for fullpath, dat in pathcache.items():
             ca = ContentAssociation()
             ca.binary_id = binary_id
-            ca.filename_id = get_or_set_contents_file_id(file)
-            ca.filepath_id = get_or_set_contents_path_id(path)
+            ca.filepath_id = dat[0]
+            ca.filename_id = dat[1]
             session.add(ca)
 
         # Only commit if we set up the session ourself
         if privatetrans:
             session.commit()
+            session.close()
+        else:
+            session.flush()
 
         return True
+
     except:
         traceback.print_exc()
 
         # Only rollback if we set up the session ourself
         if privatetrans:
             session.rollback()
+            session.close()
 
         return False
 
@@ -1156,23 +1175,32 @@ def insert_pending_content_paths(package, fullpaths, session=None):
         q.delete()
 
         # Insert paths
+        pathcache = {}
         for fullpath in fullpaths:
             (path, file) = os.path.split(fullpath)
 
             if path.startswith( "./" ):
                 path = path[2:]
 
+            filepath_id = get_or_set_contents_path_id(path, session)
+            filename_id = get_or_set_contents_file_id(file, session)
+
+            pathcache[fullpath] = (filepath_id, filename_id)
+
+        for fullpath, dat in pathcache.items():
             pca = PendingContentAssociation()
             pca.package = package['Package']
             pca.version = package['Version']
-            pca.filename_id = get_or_set_contents_file_id(file, session)
-            pca.filepath_id = get_or_set_contents_path_id(path, session)
+            pca.filepath_id = dat[0]
+            pca.filename_id = dat[1]
             pca.architecture = arch_id
             session.add(pca)
 
         # Only commit if we set up the session ourself
         if privatetrans:
             session.commit()
+        else:
+            session.flush()
 
         return True
     except:
@@ -1319,7 +1347,7 @@ class Queue(object):
                 dest = os.path.join(dest_dir, file_entry)
 
                 # TODO: Move into database as above
-                if Cnf.FindB("Dinstall::SecurityQueueBuild"):
+                if conf.FindB("Dinstall::SecurityQueueBuild"):
                     # Copy it since the original won't be readable by www-data
                     utils.copy(src, dest)
                 else:

@@ -150,7 +150,6 @@ class Changes(object):
         or the text of a warning if there are
         """
 
-        conf = Config()
         summary = ""
 
         # Abandon the check if it's a non-sourceful upload
@@ -166,7 +165,7 @@ class Changes(object):
                                                                                             entry["override section"])
 
                 if entry["priority"] != "-":
-                    if entry["priority"] != entry["override_priority"]:
+                    if entry["priority"] != entry["override priority"]:
                         summary += "%s: package says priority is %s, override says %s.\n" % (name,
                                                                                              entry["priority"],
                                                                                              entry["override priority"])

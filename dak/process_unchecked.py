@@ -52,7 +52,7 @@ from debian_bundle import deb822
 from daklib.dbconn import *
 from daklib.binary import Binary
 from daklib import daklog
-from daklib import queue
+from daklib.queue import *
 from daklib import utils
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
@@ -433,10 +433,16 @@ def acknowledge_new(u, summary, short_summary):
 # the .changes file.
 
 def process_it(changes_file):
+    global Logger
+
     cnf = Config()
+
+    holding = Holding()
 
     u = Upload()
     u.pkg.changes_file = changes_file
+    u.pkg.directory = os.getcwd()
+    u.logger = Logger
 
     # Some defaults in case we can't fully process the .changes file
     u.pkg.changes["maintainer2047"] = cnf["Dinstall::MyEmailAddress"]
@@ -466,18 +472,19 @@ def process_it(changes_file):
 
             # Absolutize the filename to avoid the requirement of being in the
             # same directory as the .changes file.
-            copy_to_holding(os.path.abspath(changes_file))
+            holding.copy_to_holding(os.path.abspath(changes_file))
 
             # Relativize the filename so we use the copy in holding
             # rather than the original...
             changespath = os.path.basename(u.pkg.changes_file)
 
-        changes["fingerprint"] = utils.check_signature(changespath, reject)
+        (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changespath)
 
-        if changes["fingerprint"]:
+        if u.pkg.changes["fingerprint"]:
             valid_changes_p = u.load_changes(changespath)
         else:
             valid_changes_p = False
+	    u.rejects.extend(rejects)
 
         if valid_changes_p:
             while u.reprocess:

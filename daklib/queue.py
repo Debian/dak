@@ -36,6 +36,8 @@ import time
 import apt_inst
 import apt_pkg
 import utils
+import commands
+import shutil
 from types import *
 
 from dak_exceptions import *
@@ -47,6 +49,7 @@ from dbconn import *
 from summarystats import SummaryStats
 from utils import parse_changes
 from textutils import fix_maintainer
+from binary import Binary
 
 ###############################################################################
 
@@ -211,7 +214,7 @@ def lookup_uid_from_fingerprint(fpr, session):
     # This is a stupid default, but see the comments below
     is_dm = False
 
-    user = get_uid_from_fingerprint(changes["fingerprint"], session)
+    user = get_uid_from_fingerprint(fpr, session)
 
     if user is not None:
         uid = user.uid
@@ -221,8 +224,8 @@ def lookup_uid_from_fingerprint(fpr, session):
             uid_name = user.name
 
         # Check the relevant fingerprint (which we have to have)
-        for f in uid.fingerprint:
-            if f.fingerprint == changes['fingerprint']:
+        for f in user.fingerprint:
+            if f.fingerprint == fpr:
                 is_dm = f.keyring.debian_maintainer
                 break
 
@@ -255,6 +258,7 @@ class Upload(object):
 
     """
     def __init__(self):
+        self.logger = None
         self.pkg = Changes()
         self.reset()
 
@@ -350,6 +354,7 @@ class Upload(object):
                  This is simply to prevent us even trying things later which will
                  fail because we couldn't properly parse the file.
         """
+        Cnf = Config()
         self.pkg.changes_file = filename
 
         # Parse the .changes field into a dictionary
@@ -367,7 +372,7 @@ class Upload(object):
 
         # Parse the Files field from the .changes into another dictionary
         try:
-            self.pkg.files.update(build_file_list(self.pkg.changes))
+            self.pkg.files.update(utils.build_file_list(self.pkg.changes))
         except ParseChangesError, line:
             self.rejects.append("%s: parse error, can't grok: %s." % (filename, line))
             return False
@@ -604,9 +609,9 @@ class Upload(object):
         entry["maintainer"] = control.Find("Maintainer", "")
 
         if f.endswith(".udeb"):
-            files[f]["dbtype"] = "udeb"
+            self.pkg.files[f]["dbtype"] = "udeb"
         elif f.endswith(".deb"):
-            files[f]["dbtype"] = "deb"
+            self.pkg.files[f]["dbtype"] = "deb"
         else:
             self.rejects.append("%s is neither a .deb or a .udeb." % (f))
 
@@ -622,7 +627,7 @@ class Upload(object):
             source_version = m.group(2)
 
         if not source_version:
-            source_version = files[f]["version"]
+            source_version = self.pkg.files[f]["version"]
 
         entry["source package"] = source
         entry["source version"] = source_version
@@ -680,7 +685,8 @@ class Upload(object):
         # Check the version and for file overwrites
         self.check_binary_against_db(f, session)
 
-        b = Binary(f).scan_package()
+        b = Binary(f)
+        b.scan_package()
         if len(b.rejects) > 0:
             for j in b.rejects:
                 self.rejects.append(j)
@@ -726,6 +732,7 @@ class Upload(object):
     def per_suite_file_checks(self, f, suite, session):
         cnf = Config()
         entry = self.pkg.files[f]
+        archive = utils.where_am_i()
 
         # Skip byhand
         if entry.has_key("byhand"):
@@ -760,7 +767,7 @@ class Upload(object):
 
         # Determine the location
         location = cnf["Dir::Pool"]
-        l = get_location(location, component, archive, session)
+        l = get_location(location, entry["component"], archive, session)
         if l is None:
             self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive))
             entry["location id"] = -1
@@ -785,7 +792,7 @@ class Upload(object):
 
         # Check for packages that have moved from one component to another
         entry['suite'] = suite
-        res = get_binary_components(files[f]['package'], suite, entry["architecture"], session)
+        res = get_binary_components(self.pkg.files[f]['package'], suite, entry["architecture"], session)
         if res.rowcount > 0:
             entry["othercomponents"] = res.fetchone()[0]
 
@@ -834,7 +841,7 @@ class Upload(object):
         has_binaries = False
         has_source = False
 
-        s = DBConn().session()
+        session = DBConn().session()
 
         for f, entry in self.pkg.files.items():
             # Ensure the file does not already exist in one of the accepted directories
@@ -934,7 +941,7 @@ class Upload(object):
 
         # Build up the file list of files mentioned by the .dsc
         try:
-            self.pkg.dsc_files.update(utils.build_file_list(dsc, is_a_dsc=1))
+            self.pkg.dsc_files.update(utils.build_file_list(self.pkg.dsc, is_a_dsc=1))
         except NoFilesFieldError:
             self.rejects.append("%s: no Files: field." % (dsc_filename))
             return False
@@ -954,7 +961,7 @@ class Upload(object):
         # Validate the source and version fields
         if not re_valid_pkg_name.match(self.pkg.dsc["source"]):
             self.rejects.append("%s: invalid source name '%s'." % (dsc_filename, self.pkg.dsc["source"]))
-        if not re_valid_version.match(dsc["version"]):
+        if not re_valid_version.match(self.pkg.dsc["version"]):
             self.rejects.append("%s: invalid version number '%s'." % (dsc_filename, self.pkg.dsc["version"]))
 
         # Bumping the version number of the .dsc breaks extraction by stable's
@@ -994,7 +1001,7 @@ class Upload(object):
 
         # Ensure there is a .tar.gz in the .dsc file
         has_tar = False
-        for f in dsc_files.keys():
+        for f in self.pkg.dsc_files.keys():
             m = re_issource.match(f)
             if not m:
                 self.rejects.append("%s: %s in Files field not recognised as source." % (dsc_filename, f))
@@ -1007,7 +1014,7 @@ class Upload(object):
             self.rejects.append("%s: no .tar.gz or .orig.tar.gz in 'Files' field." % (dsc_filename))
 
         # Ensure source is newer than existing source in target suites
-        self.check_source_against_db(dsc_filename, session)
+        self.check_source_against_db(dsc_filename)
 
         self.check_dsc_against_db(dsc_filename)
 
@@ -1023,8 +1030,8 @@ class Upload(object):
 
         # Find the .dsc (again)
         dsc_filename = None
-        for f in self.files.keys():
-            if files[f]["type"] == "dsc":
+        for f in self.pkg.files.keys():
+            if self.pkg.files[f]["type"] == "dsc":
                 dsc_filename = f
 
         # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
@@ -1032,7 +1039,7 @@ class Upload(object):
             return
 
         # Create a symlink mirror of the source files in our temporary directory
-        for f in self.files.keys():
+        for f in self.pkg.files.keys():
             m = re_issource.match(f)
             if m:
                 src = os.path.join(source_dir, f)
@@ -1063,7 +1070,7 @@ class Upload(object):
             return
 
         # Get the upstream version
-        upstr_version = re_no_epoch.sub('', dsc["version"])
+        upstr_version = re_no_epoch.sub('', self.pkg.dsc["version"])
         if re_strip_revision.search(upstr_version):
             upstr_version = re_strip_revision.sub('', upstr_version)
 
@@ -1114,6 +1121,7 @@ class Upload(object):
             shutil.rmtree(tmpdir)
         except OSError, e:
             if e.errno != errno.EACCES:
+                print "foobar"
                 utils.fubar("%s: couldn't remove tmp dir for source tree." % (self.pkg.dsc["source"]))
 
             self.rejects.append("%s: source tree could not be cleanly removed." % (self.pkg.dsc["source"]))
@@ -1124,7 +1132,8 @@ class Upload(object):
             if result != 0:
                 utils.fubar("'%s' failed with result %s." % (cmd, result))
             shutil.rmtree(tmpdir)
-        except:
+        except Exception, e:
+            print "foobar2 (%s)" % e
             utils.fubar("%s: couldn't remove tmp dir for source tree." % (self.pkg.dsc["source"]))
 
     ###########################################################################
@@ -1138,7 +1147,7 @@ class Upload(object):
 
         # We need to deal with the original changes blob, as the fields we need
         # might not be in the changes dict serialised into the .dak anymore.
-        orig_changes = parse_deb822(self.pkg.changes['filecontents'])
+        orig_changes = utils.parse_deb822(self.pkg.changes['filecontents'])
 
         # Copy the checksums over to the current changes dict.  This will keep
         # the existing modifications to it intact.
@@ -1164,7 +1173,7 @@ class Upload(object):
                 for j in utils._ensure_dsc_hash(self.pkg.dsc, self.pkg.dsc_files, hashname, hashfunc):
                     self.rejects.append(j)
 
-    def check_hashes():
+    def check_hashes(self):
         for m in utils.check_hash(".changes", self.pkg.files, "md5", apt_pkg.md5sum):
             self.rejects.append(m)
 
@@ -1177,8 +1186,7 @@ class Upload(object):
         for m in utils.check_size(".dsc", self.pkg.dsc_files):
             self.rejects.append(m)
 
-        for m in utils.ensure_hashes(self.pkg.changes, dsc, files, dsc_files):
-            self.rejects.append(m)
+        self.ensure_hashes()
 
     ###########################################################################
     def check_urgency(self):
@@ -1199,11 +1207,13 @@ class Upload(object):
     #  travel can cause errors on extraction]
 
     def check_timestamps(self):
+        Cnf = Config()
+
         future_cutoff = time.time() + int(Cnf["Dinstall::FutureTimeTravelGrace"])
         past_cutoff = time.mktime(time.strptime(Cnf["Dinstall::PastCutoffYear"],"%Y"))
         tar = TarTime(future_cutoff, past_cutoff)
 
-        for filename, entry in self.pkg.files.keys():
+        for filename, entry in self.pkg.files.items():
             if entry["type"] == "deb":
                 tar.reset()
                 try:
@@ -1388,8 +1398,8 @@ distribution."""
                 del self.Subst["__BUG_NUMBER__"]
                 del self.Subst["__STABLE_WARNING__"]
 
-        if action:
-            self.Logger.log(["closing bugs"] + bugs)
+        if action and self.logger:
+            self.logger.log(["closing bugs"] + bugs)
 
         summary += "\n"
 
@@ -1426,7 +1436,7 @@ distribution."""
         self.Subst["__SHORT_SUMMARY__"] = short_summary
 
         for dist in self.pkg.changes["distribution"].keys():
-            announce_list = Cnf.Find("Suite::%s::Announce" % (dist))
+            announce_list = cnf.Find("Suite::%s::Announce" % (dist))
             if announce_list == "" or lists_done.has_key(announce_list):
                 continue
 
@@ -1481,9 +1491,10 @@ distribution."""
             targetdir = cnf["Dir::Queue::Accepted"]
 
         print "Accepting."
-        self.Logger.log(["Accepting changes", self.pkg.changes_file])
+	if self.logger:
+            self.logger.log(["Accepting changes", self.pkg.changes_file])
 
-        self.write_dot_dak(targetdir)
+        self.pkg.write_dot_dak(targetdir)
 
         # Move all the files into the accepted directory
         utils.move(self.pkg.changes_file, targetdir)
@@ -1754,7 +1765,8 @@ distribution."""
         if not cnf["Dinstall::Options::No-Mail"]:
             utils.send_mail(reject_mail_message)
 
-        self.Logger.log(["rejected", pkg.changes_file])
+	if self.logger:
+            self.logger.log(["rejected", pkg.changes_file])
 
         return 0
 
@@ -1921,12 +1933,12 @@ distribution."""
         q = q.join(Architecture).filter(Architecture.arch_string.in_([self.pkg.files[file]["architecture"], 'all']))
 
         self.cross_suite_version_check([ (x.suite.suite_name, x.binary.version) for x in q.all() ],
-                                       file, files[file]["version"], sourceful=False)
+                                       file, self.pkg.files[file]["version"], sourceful=False)
 
         # Check for any existing copies of the file
-        q = session.query(DBBinary).filter_by(files[file]["package"])
-        q = q.filter_by(version=files[file]["version"])
-        q = q.join(Architecture).filter_by(arch_string=files[file]["architecture"])
+        q = session.query(DBBinary).filter_by(package=self.pkg.files[file]["package"])
+        q = q.filter_by(version=self.pkg.files[file]["version"])
+        q = q.join(Architecture).filter_by(arch_string=self.pkg.files[file]["architecture"])
 
         if q.count() > 0:
             self.rejects.append("%s: can not overwrite existing copy already in the archive." % (file))
@@ -2007,7 +2019,7 @@ distribution."""
                                 # TODO: Don't delete the entry, just mark it as not needed
                                 # This would fix the stupidity of changing something we often iterate over
                                 # whilst we're doing it
-                                del files[dsc_name]
+                                del self.pkg.files[dsc_name]
                                 self.pkg.orig_tar_gz = os.path.join(i.location.path, i.filename)
                                 match = 1
 

@@ -28,6 +28,7 @@ Simple singleton class for storing info about Holding directory
 
 import os
 from errno import ENOENT, EEXIST, EACCES
+import shutil
 
 from singleton import Singleton
 from config import Config
@@ -74,7 +75,7 @@ class Holding(Singleton):
 
         return None
 
-    def clean(self, filename):
+    def clean(self):
         cwd = os.getcwd()
         os.chdir(self.holding_dir)
         for f in self.in_holding.keys():
