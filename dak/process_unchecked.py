@@ -214,6 +214,8 @@ def package_to_suite(u, suite):
     if not u.pkg.changes["distribution"].has_key(suite):
         return False
 
+    ret = True
+
     if not u.pkg.changes["architecture"].has_key("source"):
         s = DBConn().session()
         q = s.query(SrcAssociation.sa_id)
@@ -222,9 +224,11 @@ def package_to_suite(u, suite):
         q = q.filter_by(version=u.pkg.changes['version']).limit(1)
 
         if q.count() < 1:
-            return False
+            ret = False
 
-    return True
+        s.close()
+
+    return ret
 
 def package_to_queue(u, summary, short_summary, queue, perms=0660, build=True, announce=None):
     cnf = Config()
@@ -258,6 +262,7 @@ def is_unembargo(u):
 
     q = session.execute("SELECT package FROM disembargo WHERE package = :source AND version = :version", u.pkg.changes)
     if q.rowcount > 0:
+        session.close()
         return True
 
     oldcwd = os.getcwd()
@@ -265,15 +270,19 @@ def is_unembargo(u):
     disdir = os.getcwd()
     os.chdir(oldcwd)
 
+    ret = False
+
     if u.pkg.directory == disdir:
         if u.pkg.changes["architecture"].has_key("source"):
             if not Options["No-Action"]:
                 session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)", u.pkg.changes)
                 session.commit()
 
-            return True
+            ret = True
 
-    return False
+    session.close()
+
+    return ret
 
 def queue_unembargo(u, summary, short_summary):
     return package_to_queue(u, summary, short_summary, "Unembargoed",
