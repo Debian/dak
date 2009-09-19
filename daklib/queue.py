@@ -1765,8 +1765,8 @@ distribution."""
         if not cnf["Dinstall::Options::No-Mail"]:
             utils.send_mail(reject_mail_message)
 
-	if self.logger:
-            self.logger.log(["rejected", pkg.changes_file])
+        if self.logger:
+            self.logger.log(["rejected", self.pkg.changes_file])
 
         return 0
 
