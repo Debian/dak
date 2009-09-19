@@ -1319,7 +1319,7 @@ class Upload(object):
                 for suite in self.pkg.changes["distribution"].keys():
                     q = session.query(DBSource)
                     q = q.join(DBBinary).filter_by(package=b)
-                    q = q.join(BinAssociation).join(Suite).filter_by(suite)
+                    q = q.join(BinAssociation).join(Suite).filter_by(suite_name=suite)
 
                     for s in q.all():
                         if s.source != self.pkg.changes["source"]:
