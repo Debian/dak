@@ -2068,6 +2068,8 @@ distribution."""
                     # TODO: Record the queues and info in the DB so we don't hardcode all this crap
                     # Not there? Check the queue directories...
                     for directory in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+                        if not Cnf.has_key("Dir::Queue::%s" % (directory)):
+                            continue
                         in_otherdir = os.path.join(Cnf["Dir::Queue::%s" % (directory)], dsc_name)
                         if os.path.exists(in_otherdir):
                             in_otherdir_fh = utils.open_file(in_otherdir)
