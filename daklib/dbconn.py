@@ -1579,7 +1579,7 @@ class Queue(object):
 
                 # If it does, update things to ensure it's not removed prematurely
                 else:
-                    qb = get_queue_build(dest, suite_id, session)
+                    qb = get_queue_build(dest, s.suite_id, session)
                     if qb is None:
                         qb.in_queue = True
                         qb.last_used = None

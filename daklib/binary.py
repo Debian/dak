@@ -264,14 +264,16 @@ def copy_temporary_contents(package, version, archname, deb, reject, session=Non
     contents stored in pending_content_associations
     """
 
-    # first see if contents exist:
     cnf = Config()
 
+    privatetrans = False
     if session is None:
         session = DBConn().session()
+        privatetrans = True
 
     arch = get_architecture(archname, session=session)
 
+    # first see if contents exist:
     in_pcaq = """SELECT 1 FROM pending_content_associations
                                WHERE package=:package
                                AND version=:version
@@ -281,7 +283,7 @@ def copy_temporary_contents(package, version, archname, deb, reject, session=Non
             'version': version,
             'archid': arch.arch_id}
 
-    exists = True
+    exists = None
     check = session.execute(in_pcaq, vals)
 
     if check.rowcount > 0:
@@ -310,6 +312,9 @@ def copy_temporary_contents(package, version, archname, deb, reject, session=Non
                  WHERE package=:package AND version=:version AND architecture=:archid"""
         session.execute(sql, vals)
         session.commit()
+
+    if privatetrans:
+        session.close()
 
     return exists
 

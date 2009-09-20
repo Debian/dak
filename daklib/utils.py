@@ -671,7 +671,7 @@ def TemplateSubst(map, filename):
     templatefile = open_file(filename)
     template = templatefile.read()
     for x in map.keys():
-        template = template.replace(x,map[x])
+        template = template.replace(x, str(map[x]))
     templatefile.close()
     return template
 
