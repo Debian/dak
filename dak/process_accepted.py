@@ -111,7 +111,7 @@ def usage (exit_code=0):
 
 ###############################################################################
 
-def action (u, stable_queue=None, log_urgency=True):
+def action (u, stable_queue=None, log_urgency=True, session=None):
     (summary, short_summary) = u.build_summaries()
     pi = u.package_info()
 
@@ -319,7 +319,7 @@ def add_deb_to_db(u, filename, session):
     session.flush()
 
     # Deal with contents
-    contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, fullpath, None, session)
+    contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, os.path.basename(filename), None, session)
     if not contents:
         print "REJECT\nCould not determine contents of package %s" % bin.package
         session.rollback()
@@ -390,7 +390,7 @@ def install(u, session, log_urgency=True):
     # Copy the .changes file across for suite which need it.
     copy_changes = {}
     copy_dot_dak = {}
-    for suite_name in changes["distribution"].keys():
+    for suite_name in u.pkg.changes["distribution"].keys():
         if cnf.has_key("Suite::%s::CopyChanges" % (suite_name)):
             copy_changes[cnf["Suite::%s::CopyChanges" % (suite_name)]] = ""
         # and the .dak file...
@@ -622,8 +622,8 @@ def process_it(changes_file, stable_queue, log_urgency, session):
     if stable_queue:
         u.pkg.changes_file = old
 
-    u.accepted_checks(overwrite_checks, True, session)
-    action(u, stable_queue, log_urgency)
+    u.accepted_checks(overwrite_checks, session)
+    action(u, stable_queue, log_urgency, session)
 
     # Restore CWD
     os.chdir(u.prevdir)

@@ -486,7 +486,7 @@ class Upload(object):
                 (source, dest) = args[1:3]
                 if self.pkg.changes["distribution"].has_key(source):
                     for arch in self.pkg.changes["architecture"].keys():
-                        if arch not in [ arch_string for a in get_suite_architectures(source) ]:
+                        if arch not in [ a.arch_string for a in get_suite_architectures(source) ]:
                             self.notes.append("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch))
                             del self.pkg.changes["distribution"][source]
                             self.pkg.changes["distribution"][dest] = 1
@@ -740,6 +740,16 @@ class Upload(object):
         if entry.has_key("byhand"):
             return
 
+        # Check we have fields we need to do these checks
+        oktogo = True
+        for m in ['component', 'package', 'priority', 'size', 'md5sum']:
+            if not entry.has_key(m):
+                self.rejects.append("file '%s' does not have field %s set" % (f, m))
+                oktogo = False
+
+        if not oktogo:
+            return
+
         # Handle component mappings
         for m in cnf.ValueList("ComponentMappings"):
             (source, dest) = m.split()
@@ -754,8 +764,7 @@ class Upload(object):
             return
 
         # Validate the component
-        component = entry["component"]
-        if not get_component(component, session):
+        if not get_component(entry["component"], session):
             self.rejects.append("file '%s' has unknown component '%s'." % (f, component))
             return
 
