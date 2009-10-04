@@ -452,6 +452,7 @@ def process_it(changes_file):
     u.pkg.changes_file = changes_file
     u.pkg.directory = os.getcwd()
     u.logger = Logger
+    origchanges = os.path.join(u.pkg.directory, u.pkg.changes_file)
 
     # Some defaults in case we can't fully process the .changes file
     u.pkg.changes["maintainer2047"] = cnf["Dinstall::MyEmailAddress"]
@@ -481,7 +482,7 @@ def process_it(changes_file):
 
             # Absolutize the filename to avoid the requirement of being in the
             # same directory as the .changes file.
-            holding.copy_to_holding(os.path.abspath(changes_file))
+            holding.copy_to_holding(origchanges)
 
             # Relativize the filename so we use the copy in holding
             # rather than the original...
