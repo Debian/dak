@@ -427,6 +427,7 @@ def acknowledge_new(u, summary, short_summary):
     if not Options["No-Mail"]:
         print "Sending new ack."
         template = os.path.join(cnf["Dir::Templates"], 'process-unchecked.new')
+        u.update_subst()
         u.Subst["__SUMMARY__"] = summary
         new_ack_message = utils.TemplateSubst(u.Subst, template)
         utils.send_mail(new_ack_message)
@@ -495,7 +496,7 @@ def process_it(changes_file):
             valid_changes_p = u.load_changes(changespath)
         else:
             valid_changes_p = False
-	    u.rejects.extend(rejects)
+            u.rejects.extend(rejects)
 
         if valid_changes_p:
             while u.reprocess:

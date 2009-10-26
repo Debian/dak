@@ -1474,6 +1474,7 @@ class Upload(object):
         for bug in bugs:
             summary += "%s " % (bug)
             if action:
+                self.update_subst()
                 self.Subst["__BUG_NUMBER__"] = bug
                 if self.pkg.changes["distribution"].has_key("stable"):
                     self.Subst["__STABLE_WARNING__"] = """
@@ -1484,8 +1485,8 @@ The update will eventually make its way into the next released Debian
 distribution."""
                 else:
                     self.Subst["__STABLE_WARNING__"] = ""
-                    mail_message = utils.TemplateSubst(self.Subst, template)
-                    utils.send_mail(mail_message)
+                mail_message = utils.TemplateSubst(self.Subst, template)
+                utils.send_mail(mail_message)
 
                 # Clear up after ourselves
                 del self.Subst["__BUG_NUMBER__"]
@@ -1537,6 +1538,7 @@ distribution."""
             summary += "Announcing to %s\n" % (announce_list)
 
             if action:
+                self.update_subst()
                 self.Subst["__ANNOUNCE_LIST_ADDRESS__"] = announce_list
                 if cnf.get("Dinstall::TrackingServer") and \
                    self.pkg.changes["architecture"].has_key("source"):
@@ -1601,6 +1603,7 @@ distribution."""
         # Send accept mail, announce to lists, close bugs and check for
         # override disparities
         if not cnf["Dinstall::Options::No-Mail"]:
+            self.update_subst()
             self.Subst["__SUITE__"] = ""
             self.Subst["__SUMMARY__"] = summary
             mail_message = utils.TemplateSubst(self.Subst, accepttemplate)
@@ -1686,6 +1689,7 @@ distribution."""
 
         overridetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.override-disparity')
 
+        self.update_subst()
         self.Subst["__SUMMARY__"] = summary
         mail_message = utils.TemplateSubst(self.Subst, overridetemplate)
         utils.send_mail(mail_message)
@@ -1832,6 +1836,7 @@ distribution."""
 
         rej_template = os.path.join(cnf["Dir::Templates"], "queue.rejected")
 
+        self.update_subst()
         if not manual:
             self.Subst["__REJECTOR_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
             self.Subst["__MANUAL_REJECT_MESSAGE__"] = ""
@@ -2243,6 +2248,7 @@ distribution."""
     def do_unaccept(self):
         cnf = Config()
 
+        self.update_subst()
         self.Subst["__REJECTOR_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
         self.Subst["__REJECT_MESSAGE__"] = self.package_info()
         self.Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
