@@ -198,8 +198,12 @@ def main ():
     for suitename in suites:
         print "Processing: " + suitename
         SuiteBlock = Cnf.SubTree("Suite::" + suitename)
-        suiteobj = get_suite(suitename)
+        suiteobj = get_suite(suitename.lower())
+        if not suiteobj:
+            print "ALERT: Cannot find suite %s!" % (suitename.lower())
+            continue
 
+        # Use the canonical name
         suite = suiteobj.suite_name.lower()
 
         if suiteobj.untouchable and not Options["Force-Touch"]:
