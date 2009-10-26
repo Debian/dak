@@ -142,7 +142,7 @@ def set_suite(file, suite, session):
     for key in desired.keys():
         if not current.has_key(key):
             (package, version, architecture) = key.split()
-            pkid = get_id (package, version, architecture)
+            pkid = get_id (package, version, architecture, session)
             if not pkid:
                 continue
             if architecture == "source":
@@ -175,7 +175,7 @@ def process_file(file, suite, action, session):
 
         (package, version, architecture) = split_line
 
-        pkid = get_id(package, version, architecture)
+        pkid = get_id(package, version, architecture, session)
         if not pkid:
             continue
 
