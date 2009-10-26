@@ -457,7 +457,7 @@ def main ():
 
     maintainer_list = []
     for maintainer_id in maintainers.keys():
-        maintainer_list.append(get_maintainer(maintainer_id))
+        maintainer_list.append(get_maintainer(maintainer_id).name)
     summary = ""
     removals = d.keys()
     removals.sort()

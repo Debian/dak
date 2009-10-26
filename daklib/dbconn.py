@@ -1095,15 +1095,16 @@ def get_or_set_maintainer(name, session=None):
 
 __all__.append('get_or_set_maintainer')
 
-def get_maintainer(maintainer_id, session=True):
+def get_maintainer(maintainer_id, session=None):
     """
-    Return the name of the maintainer behind C{maintainer_id}.
+    Return the name of the maintainer behind C{maintainer_id} or None if that
+    maintainer_id is invalid.
 
     @type maintainer_id: int
     @param maintainer_id: the id of the maintainer
 
-    @rtype: string
-    @return: the name of the maintainer
+    @rtype: Maintainer
+    @return: the Maintainer with this C{maintainer_id}
     """
 
     privatetrans = False
@@ -1112,7 +1113,7 @@ def get_maintainer(maintainer_id, session=True):
         privatetrans = True
 
     try:
-        return session.query(Maintainer).get(maintainer_id).name
+        return session.query(Maintainer).get(maintainer_id)
     finally:
         if privatetrans:
             session.close()
