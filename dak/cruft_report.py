@@ -65,7 +65,8 @@ def add_nbs(nbs_d, source, version, package, suite_id, session):
     else:
         q = session.execute("""SELECT b.id FROM binaries b, bin_associations ba
                                 WHERE ba.bin = b.id AND ba.suite = :suite_id
-                                  AND b.package = suite_id LIMIT 1""" % (suite_id, package))
+                                  AND b.package = :package LIMIT 1""" % {'suite_id': suite_id,
+                                                                         'package': package})
         if not q.fetchall():
             no_longer_in_suite[package] = ""
             return
