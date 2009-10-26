@@ -406,16 +406,16 @@ def check_transitions(transitions):
         expected = t["new"]
 
         # Will be an empty list if nothing is in testing.
-        sources = get_source_in_suite(source, "testing", session)
+        sourceobj = get_source_in_suite(source, "testing", session)
 
         info[trans] = get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
         print info[trans]
 
-        if len(sources) < 1:
+        if sourceobj is None:
             # No package in testing
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
-            current = sources[0].version
+            current = sourceobj.version
             compare = apt_pkg.VersionCompare(current, expected)
             if compare < 0:
                 # This is still valid, the current version in database is older than
