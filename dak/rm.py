@@ -106,7 +106,7 @@ def reverse_depends_check(removals, suites, arches=None):
     if arches:
         all_arches = set(arches)
     else:
-        all_arches = set(database.get_suite_architectures(suites[0]))
+        all_arches = set(get_suite_architectures(suites[0]))
     all_arches -= set(["source", "all"])
     for architecture in all_arches:
         deps = {}
@@ -457,7 +457,7 @@ def main ():
 
     maintainer_list = []
     for maintainer_id in maintainers.keys():
-        maintainer_list.append(database.get_maintainer(maintainer_id))
+        maintainer_list.append(get_maintainer(maintainer_id))
     summary = ""
     removals = d.keys()
     removals.sort()
@@ -506,8 +506,8 @@ def main ():
     logfile.write("----------------------------------------------\n")
     logfile.flush()
 
-    dsc_type_id = database.get_override_type_id('dsc')
-    deb_type_id = database.get_override_type_id('deb')
+    dsc_type_id = get_override_type('dsc')
+    deb_type_id = get_override_type('deb')
 
     # Do the actual deletion
     print "Deleting...",
