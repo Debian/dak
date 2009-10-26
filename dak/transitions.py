@@ -532,25 +532,24 @@ def transition_info(transitions):
         source = t["source"]
         expected = t["new"]
 
-        # Will be empty list if nothing is in testing.
-        sources = get_source_in_suite(source, "testing", session)
+        # Will be None if nothing is in testing.
+        source = get_source_in_suite(source, "testing", session)
 
         print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
-        if len(sources) < 1:
+        if source is None:
             # No package in testing
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
-            current = sources[0].version
-            compare = apt_pkg.VersionCompare(current, expected)
+            compare = apt_pkg.VersionCompare(source.version, expected)
             print "Apt compare says: %s" % (compare)
             if compare < 0:
                 # This is still valid, the current version in database is older than
                 # the new version we wait for
-                print "This transition is still ongoing, we currently have version %s" % (current)
+                print "This transition is still ongoing, we currently have version %s" % (source.version)
             else:
                 print "This transition is over, the target package reached testing, should be removed"
-                print "%s wanted version: %s, has %s" % (source, expected, current)
+                print "%s wanted version: %s, has %s" % (source, expected, source.version)
         print "-------------------------------------------------------------------------"
 
 ################################################################################
