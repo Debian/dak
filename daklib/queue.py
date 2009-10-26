@@ -72,7 +72,7 @@ def get_type(f, session):
     """
     # Determine the type
     if f.has_key("dbtype"):
-        file_type = file["dbtype"]
+        file_type = f["dbtype"]
     elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
         file_type = "dsc"
     else:
