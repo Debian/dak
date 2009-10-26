@@ -1320,7 +1320,7 @@ class Upload(object):
                         sourcepkg, trans)
 
                     if current is not None:
-                        currentlymsg = "at version %s" % (current)
+                        currentlymsg = "at version %s" % (current.version)
                     else:
                         currentlymsg = "not present in testing"
 
@@ -1333,7 +1333,7 @@ Release Team, and %s is the Release-Team member responsible for it.
 Please mail debian-release@lists.debian.org or contact %s directly if you
 need further assistance.  You might want to upload to experimental until this
 transition is done."""
-                            % (source.source, currentlymsg, expected,t["rm"], t["rm"])))
+                            % (source, currentlymsg, expected,t["rm"], t["rm"])))
 
                     self.rejects.append(rejectmsg)
                     return
