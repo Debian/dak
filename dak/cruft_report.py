@@ -65,7 +65,7 @@ def add_nbs(nbs_d, source, version, package, suite_id, session):
     else:
         q = session.execute("""SELECT b.id FROM binaries b, bin_associations ba
                                 WHERE ba.bin = b.id AND ba.suite = :suite_id
-                                  AND b.package = :package LIMIT 1""" % {'suite_id': suite_id,
+                                  AND b.package = :package LIMIT 1""", {'suite_id': suite_id,
                                                                          'package': package})
         if not q.fetchall():
             no_longer_in_suite[package] = ""
@@ -195,7 +195,7 @@ SELECT s.source, s.version AS lower, s2.version AS higher
   FROM src_associations sa, source s, source s2, src_associations sa2
   WHERE sa.suite = :highersuite_id AND sa2.suite = :lowersuite_id AND sa.source = s.id
    AND sa2.source = s2.id AND s.source = s2.source
-   AND s.version < s2.version""" % {'lowersuite_id': lowersuite.suite_id,
+   AND s.version < s2.version""", {'lowersuite_id': lowersuite.suite_id,
                                     'highersuite_id': highersuite.suite_id})
     ql = q.fetchall()
     if ql:
@@ -237,7 +237,7 @@ def do_nbs(real_nbs):
             output += "        o %s: %s\n" % (version, ", ".join(packages))
         if all_packages:
             all_packages.sort()
-            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s\n\n" % (source, suite, " ".join(all_packages))
+            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s\n\n" % (source, suite.suite_name, " ".join(all_packages))
 
         output += "\n"
 
@@ -380,16 +380,17 @@ def main ():
 
     suite = get_suite(Options["Suite"].lower(), session)
     suite_id = suite.suite_id
+    suite_name = suite.suite_name.lower()
 
     bin_not_built = {}
 
     if "bnb" in checks:
-        bins_in_suite = get_suite_binaries(suite, session)
+        bins_in_suite = get_suite_binaries(suite_name, session)
 
     # Checks based on the Sources files
-    components = cnf.ValueList("Suite::%s::Components" % (suite))
+    components = cnf.ValueList("Suite::%s::Components" % (suite_name))
     for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite.suite_name, component)
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite_name, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
         (fd, temp_filename) = utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
@@ -436,17 +437,17 @@ def main ():
 
     # Checks based on the Packages files
     check_components = components[:]
-    if suite.suite_name != "experimental":
+    if suite_name != "experimental":
         check_components.append('main/debian-installer');
 
     for component in check_components:
-        architectures = [ a.arch_string for a in get_suite_architectures(suite.suite_name,
+        architectures = [ a.arch_string for a in get_suite_architectures(suite_name,
                                                                          skipsrc=True, skipall=True,
                                                                          session=session) ]
         for architecture in architectures:
             if component == 'main/debian-installer' and re.match("kfreebsd", architecture):
                 continue
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suite.suite_name, component, architecture)
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suite_name, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
             (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
