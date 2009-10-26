@@ -531,18 +531,18 @@ def check_pkg (upload):
 
 ## FIXME: horribly Debian specific
 
-# def do_bxa_notification():
-#     files = Upload.pkg.files
-#     summary = ""
-#     for f in files.keys():
-#         if files[f]["type"] == "deb":
-#             control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(f)))
-#             summary += "\n"
-#             summary += "Package: %s\n" % (control.Find("Package"))
-#             summary += "Description: %s\n" % (control.Find("Description"))
-#     Upload.Subst["__BINARY_DESCRIPTIONS__"] = summary
-#     bxa_mail = utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/process-new.bxa_notification")
-#     utils.send_mail(bxa_mail)
+def do_bxa_notification():
+    files = upload.pkg.files
+    summary = ""
+    for f in files.keys():
+        if files[f]["type"] == "deb":
+            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(f)))
+            summary += "\n"
+            summary += "Package: %s\n" % (control.Find("Package"))
+            summary += "Description: %s\n" % (control.Find("Description"))
+    upload.Subst["__BINARY_DESCRIPTIONS__"] = summary
+    bxa_mail = utils.TemplateSubst(upload.Subst,Config()["Dir::Templates"]+"/process-new.bxa_notification")
+    utils.send_mail(bxa_mail)
 
 ################################################################################
 
@@ -568,8 +568,8 @@ def add_overrides (new, upload, session):
 
     session.commit()
 
-#     if Cnf.FindB("Dinstall::BXANotify"):
-#         do_bxa_notification()
+    if Config().FindB("Dinstall::BXANotify"):
+        do_bxa_notification(upload)
 
 ################################################################################
 
