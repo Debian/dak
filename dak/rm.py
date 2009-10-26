@@ -106,7 +106,7 @@ def reverse_depends_check(removals, suites, arches=None):
     if arches:
         all_arches = set(arches)
     else:
-        all_arches = set(get_suite_architectures(suites[0]))
+        all_arches = set([x.arch_string for x in get_suite_architectures(suites[0])])
     all_arches -= set(["source", "all"])
     for architecture in all_arches:
         deps = {}
