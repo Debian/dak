@@ -353,7 +353,7 @@ class Upload(object):
     ###########################################################################
     def load_changes(self, filename):
         """
-        @rtype boolean
+        @rtype: boolean
         @rvalue: whether the changes file was valid or not.  We may want to
                  reject even if this is True (see what gets put in self.rejects).
                  This is simply to prevent us even trying things later which will

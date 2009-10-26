@@ -157,7 +157,7 @@ __all__.append('Archive')
 
 def get_archive(archive, session=None):
     """
-    returns database id for given c{archive}.
+    returns database id for given C{archive}.
 
     @type archive: string
     @param archive: the name of the arhive
@@ -2142,7 +2142,7 @@ def get_suite(suite, session=None):
     generated if not supplied)
 
     @rtype: Suite
-    @return: Suite object for the requested suite name (None if not presenT)
+    @return: Suite object for the requested suite name (None if not present)
 
     """
     privatetrans = False
