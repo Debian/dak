@@ -131,8 +131,6 @@ def init():
          "Override cruft checks"),
         ("check-proposed-updates",
          "Dependency checking for proposed-updates"),
-        ("compare-suites",
-         "Show fixable discrepencies between suites"),
         ("control-overrides",
          "Manipulate/list override entries in bulk"),
         ("control-suite",
