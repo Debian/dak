@@ -511,7 +511,7 @@ New Version: %s
 Responsible: %s
 Description: %s
 Blocked Packages (total: %d): %s
-""" % (trans, source.package, expected, rm, reason, len(packages), ", ".join(packages))
+""" % (trans, source.source, expected, rm, reason, len(packages), ", ".join(packages))
 
 ################################################################################
 
