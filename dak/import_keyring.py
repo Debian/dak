@@ -241,7 +241,7 @@ def main():
     for keyid in desuid_byid.keys():
         uid = (keyid, desuid_byid[keyid][0])
         name = desuid_byid[keyid][1]
-        oname = db_uid_byid[keyid][1]
+        oname = db_uid_byname[keyid][1]
         if name and oname != name:
             changes.append((uid[1], "Full name: %s" % (name)))
             session.execute("UPDATE uid SET name = :name WHERE id = :keyid",
