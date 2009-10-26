@@ -147,9 +147,11 @@ SELECT f.id FROM source s, files f, dsc_files df
 
 def check_files(now_date, delete_date, max_delete, session):
     # FIXME: this is evil; nothing should ever be in this state.  if
-    # they are, it's a bug and the files should not be auto-deleted.
-    # XXX: In that case, remove the stupid return to later and actually
-    #      *TELL* us rather than silently ignore it - mhy
+    # they are, it's a bug.
+
+    # However, we've discovered it happens sometimes so we print a huge warning
+    # and then mark the file for deletion.  This probably masks a bug somwhere
+    # else but is better than collecting cruft forever
 
     print "Checking for unused files..."
     q = session.execute("""
@@ -163,17 +165,10 @@ SELECT id, filename FROM files f
         print "WARNING: check_files found something it shouldn't"
         for x in ql:
             print x
+            session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
+                            {'lastused': now_date, 'fileid': x[0]})
 
-    # NOW return, the code below is left as an example of what was
-    # evidently done at some point in the past
-    return
-
-#    for i in q.fetchall():
-#        file_id = i[0]
-#        session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
-#                        {'lastused': now_date, 'fileid': file_id})
-#
-#    session.commit()
+        session.commit()
 
 def clean_binaries(now_date, delete_date, max_delete, session):
     # We do this here so that the binaries we remove will have their
