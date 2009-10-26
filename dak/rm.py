@@ -43,6 +43,7 @@ import commands
 import os
 import re
 import sys
+import gzip
 import apt_pkg
 import apt_inst
 
@@ -115,11 +116,7 @@ def reverse_depends_check(removals, suites, arches=None):
         for component in components:
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suites[0], component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-            (fd, temp_filename) = utils.temp_filename()
-            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
-            if (result != 0):
-                utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
-            packages = utils.open_file(temp_filename)
+            packages = gzip.open(filename, 'rb')
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find("Package")
@@ -149,7 +146,6 @@ def reverse_depends_check(removals, suites, arches=None):
                             virtual_packages[virtual_pkg] += 1
                 p2c[package] = component
             packages.close()
-            os.unlink(temp_filename)
 
         # If a virtual package is only provided by the to-be-removed
         # packages, treat the virtual package as to-be-removed too.
@@ -200,12 +196,7 @@ def reverse_depends_check(removals, suites, arches=None):
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suites[0], component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        (fd, temp_filename) = utils.temp_filename()
-        result, output = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
-        if result != 0:
-            sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
-            sys.exit(result)
-        sources = utils.open_file(temp_filename, "r")
+        sources = gzip.open(filename, 'rb')
         Sources = apt_pkg.ParseTagFile(sources)
         while Sources.Step():
             source = Sources.Section.Find("Package")
