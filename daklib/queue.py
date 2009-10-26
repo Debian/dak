@@ -690,11 +690,12 @@ class Upload(object):
         # Check the version and for file overwrites
         self.check_binary_against_db(f, session)
 
-        b = Binary(f)
-        b.scan_package()
-        if len(b.rejects) > 0:
-            for j in b.rejects:
-                self.rejects.append(j)
+        # Temporarily disable contents generation until we change the table storage layout
+        #b = Binary(f)
+        #b.scan_package()
+        #if len(b.rejects) > 0:
+        #    for j in b.rejects:
+        #        self.rejects.append(j)
 
     def source_file_checks(self, f, session):
         entry = self.pkg.files[f]
