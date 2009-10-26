@@ -39,7 +39,7 @@ import time
 import apt_pkg
 
 from daklib import utils
-from daklib.dbconn import get_suite
+from daklib.dbconn import get_suite, get_suite_architectures
 
 ################################################################################
 
