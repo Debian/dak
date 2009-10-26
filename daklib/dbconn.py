@@ -2029,6 +2029,17 @@ __all__.append('SrcAssociation')
 
 ################################################################################
 
+class SrcFormat(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<SrcFormat %s>' % (self.format_name)
+
+__all__.append('SrcFormat')
+
+################################################################################
+
 class SrcUploader(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2226,6 +2237,51 @@ __all__.append('get_suite_architectures')
 
 ################################################################################
 
+class SuiteSrcFormat(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<SuiteSrcFormat (%s, %s)>' % (self.suite_id, self.src_format_id)
+
+__all__.append('SuiteSrcFormat')
+
+def get_suite_src_formats(suite, session=None):
+    """
+    Returns list of allowed SrcFormat for C{suite}.
+
+    @type suite: str
+    @param suite: Suite name to search for
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: the list of allowed source formats for I{suite}
+    """
+
+    privatetrans = False
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    q = session.query(SrcFormat)
+    q = q.join(SuiteSrcFormat)
+    q = q.join(Suite).filter_by(suite_name=suite)
+    q = q.order_by('format_name')
+
+    ret = q.all()
+
+    if privatetrans:
+        session.close()
+
+    return ret
+
+__all__.append('get_suite_src_formats')
+
+################################################################################
+
 class Uid(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2383,9 +2439,11 @@ class DBConn(Singleton):
         self.tbl_section = Table('section', self.db_meta, autoload=True)
         self.tbl_source = Table('source', self.db_meta, autoload=True)
         self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
+        self.tbl_src_format = Table('src_format', self.db_meta, autoload=True)
         self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
         self.tbl_suite = Table('suite', self.db_meta, autoload=True)
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
+        self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
 
     def __setupmappers(self):
@@ -2547,6 +2605,10 @@ class DBConn(Singleton):
                                  source_id = self.tbl_src_associations.c.source,
                                  source = relation(DBSource)))
 
+        mapper(SrcFormat, self.tbl_src_format,
+               properties = dict(src_format_id = self.tbl_src_format.c.id,
+                                 format_name = self.tbl_src_format.c.format_name))
+
         mapper(SrcUploader, self.tbl_src_uploaders,
                properties = dict(uploader_id = self.tbl_src_uploaders.c.id,
                                  source_id = self.tbl_src_uploaders.c.source,
@@ -2564,6 +2626,12 @@ class DBConn(Singleton):
                                  suite = relation(Suite, backref='suitearchitectures'),
                                  arch_id = self.tbl_suite_architectures.c.architecture,
                                  architecture = relation(Architecture)))
+
+        mapper(SuiteSrcFormat, self.tbl_suite_src_formats,
+               properties = dict(suite_id = self.tbl_suite_src_formats.c.suite,
+                                 suite = relation(Suite, backref='suitesrcformats'),
+                                 src_format_id = self.tbl_suite_src_formats.c.src_format,
+                                 src_format = relation(SrcFormat)))
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
