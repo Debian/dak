@@ -139,7 +139,7 @@ def resolve_arch_all_vs_any(versions, packages, session):
 
 #####################################################
 
-def remove_duplicate_versions(versions, packages):
+def remove_duplicate_versions(versions, packages, session):
     """ Per-suite&pkg&arch: resolve duplicate versions """
     # Sort versions into descending order
     versions.sort(version_cmp)
@@ -157,7 +157,7 @@ def remove_duplicate_versions(versions, packages):
         delete_col = "bin"
     # Remove all but the highest
     delete_packages(dominated_versions, pkg, arch, suite,
-                    dominant_version, delete_table, delete_col, packages)
+                    dominant_version, delete_table, delete_col, packages, session)
     return [dominant_versions]
 
 ################################################################################
@@ -180,7 +180,7 @@ def cleanup(packages, session):
             for arch in d[suite][pkg].keys():
                 versions = d[suite][pkg][arch]
                 if len(versions) > 1:
-                    d[suite][pkg][arch] = remove_duplicate_versions(versions, packages)
+                    d[suite][pkg][arch] = remove_duplicate_versions(versions, packages, session)
 
     # Arch: all -> any and vice versa
     for suite in d.keys():
