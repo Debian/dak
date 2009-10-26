@@ -524,13 +524,16 @@ def transition_info(transitions):
     @type transitions: dict
     @param transitions: defined transitions
     """
+
+    session = DBConn().session()
+
     for trans in transitions:
         t = transitions[trans]
         source = t["source"]
         expected = t["new"]
 
         # Will be empty list if nothing is in testing.
-        sources = get_suite_version(source, "testing")
+        sources = get_source_in_suite(source, "testing", session)
 
         print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
