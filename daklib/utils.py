@@ -45,8 +45,8 @@ from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
-                    re_parse_maintainer, re_taint_free, re_gpg_uid, re_re_mark, \
-                    re_whitespace_comment
+                    re_parse_maintainer, re_taint_free, re_gpg_uid, \
+                    re_re_mark, re_whitespace_comment, re_issource
 
 ################################################################################
 
@@ -328,6 +328,100 @@ def check_size(where, files):
         if size != actual_size:
             rejmsg.append("%s: actual file size (%s) does not match size (%s) in %s"
                    % (f, actual_size, size, where))
+    return rejmsg
+
+################################################################################
+
+def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
+    """
+    Verify that the files listed in the Files field of the .dsc are
+    those expected given the announced Format.
+
+    @type dsc_filename: string
+    @param dsc_filename: path of .dsc file
+
+    @type dsc: dict
+    @param dsc: the content of the .dsc parsed by C{parse_changes()}
+
+    @type dsc_files: dict
+    @param dsc_files: the file list returned by C{build_file_list()}
+
+    @rtype: list
+    @return: all errors detected
+    """
+    rejmsg = []
+
+    # Parse the file if needed
+    if dsc == None:
+        dsc = parse_changes(dsc_filename, signing_rules=1);
+    if dsc_files == None:
+        dsc_files = build_file_list(dsc, is_a_dsc=1)
+
+    # Ensure .dsc lists proper set of source files according to the format
+    # announced
+    has_native_tar = 0
+    has_native_tar_gz = 0
+    has_orig_tar = 0
+    has_orig_tar_gz = 0
+    has_more_orig_tar = 0
+    has_debian_tar = 0
+    has_debian_diff = 0
+    for f in dsc_files.keys():
+        m = re_issource.match(f)
+        if not m:
+            rejmsg.append("%s: %s in Files field not recognised as source."
+                          % (dsc_filename, f))
+            continue
+        ftype = m.group(3)
+        if ftype == "orig.tar.gz":
+            has_orig_tar_gz += 1
+            has_orig_tar += 1
+        elif ftype == "diff.gz":
+            has_debian_diff += 1
+        elif ftype == "tar.gz":
+            has_native_tar_gz += 1
+            has_native_tar += 1
+        elif re.match(r"debian\.tar\.(gz|bz2|lzma)", ftype):
+            has_debian_tar += 1
+        elif re.match(r"orig\.tar\.(gz|bz2|lzma)", ftype):
+            has_orig_tar += 1
+        elif re.match(r"tar\.(gz|bz2|lzma)", ftype):
+            has_native_tar += 1
+        elif re.match(r"orig-.+\.tar\.(gz|bz2|lzma)", ftype):
+            has_more_orig_tar += 1
+        else:
+            reject("%s: unexpected source file '%s'" % (dsc_filename, f))
+    if has_orig_tar > 1:
+        rejmsg.append("%s: lists multiple .orig tarballs." % (dsc_filename))
+    if has_native_tar > 1:
+        rejmsg.append("%s: lists multiple native tarballs." % (dsc_filename))
+    if has_debian_tar > 1 or has_debian_diff > 1:
+        rejmsg.append("%s: lists multiple debian diff/tarballs." % (dsc_filename))
+    if dsc["format"] == "1.0":
+        if not (has_native_tar_gz or (has_orig_tar_gz and has_debian_diff)):
+            rejmsg.append("%s: no .tar.gz or .orig.tar.gz+.diff.gz in "
+                          "'Files' field." % (dsc_filename))
+        if (has_orig_tar_gz != has_orig_tar) or \
+           (has_native_tar_gz != has_native_tar) or \
+           has_debian_tar or has_more_orig_tar:
+            rejmsg.append("%s: contains source files not allowed in format 1.0"
+                          % (dsc_filename))
+    elif re.match(r"3\.\d+ \(native\)", dsc["format"]):
+        if not has_native_tar:
+            rejmsg.append("%s: lack required files for format 3.x (native)."
+                          % (dsc_filename))
+        if has_orig_tar or has_debian_diff or has_debian_tar or \
+           has_more_orig_tar:
+            rejmsg.append("%s: contains source files not allowed in "
+                          "format '3.x (native)'" % (dsc_filename))
+    elif re.match(r"3\.\d+ \(quilt\)", dsc["format"]):
+        if not(has_orig_tar and has_debian_tar):
+            rejmsg.append("%s: lack required files for format "
+                          "'3.x (quilt)'." % (dsc_filename))
+        if has_debian_diff or has_native_tar:
+            rejmsg.append("%s: contains source files not allowed in format "
+                          "3.x (quilt)" % (dsc_filename))
+
     return rejmsg
 
 ################################################################################
