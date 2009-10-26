@@ -123,6 +123,8 @@ def usage (exit_code=0):
 ################################################################################
 
 def action(u):
+    cnf = Config()
+
     # changes["distribution"] may not exist in corner cases
     # (e.g. unreadable changes files)
     if not u.pkg.changes.has_key("distribution") or not isinstance(u.pkg.changes["distribution"], DictType):
