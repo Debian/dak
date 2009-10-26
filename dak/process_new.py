@@ -691,6 +691,10 @@ def do_new():
                 answer = m.group(1)
             answer = answer[:1].upper()
 
+        if answer in ( 'A', 'E', 'M', 'O', 'R' ) and Options["Trainee"]:
+            utils.warn("Trainees can't do that")
+            continue
+
         if answer == 'A' and not Options["Trainee"]:
             try:
                 check_daily_lock()
