@@ -314,7 +314,7 @@ def main():
         suites = Cnf.SubTree("Suite").List()
 
     for suitename in suites:
-        print "Processing: " + suite
+        print "Processing: " + suitename
         SuiteBlock = Cnf.SubTree("Suite::" + suitename)
 
         suiteobj = get_suite(suitename.lower())
