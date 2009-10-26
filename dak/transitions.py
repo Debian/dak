@@ -511,7 +511,7 @@ New Version: %s
 Responsible: %s
 Description: %s
 Blocked Packages (total: %d): %s
-""" % (trans, source.source, expected, rm, reason, len(packages), ", ".join(packages))
+""" % (trans, source, expected, rm, reason, len(packages), ", ".join(packages))
 
 ################################################################################
 
@@ -533,23 +533,23 @@ def transition_info(transitions):
         expected = t["new"]
 
         # Will be None if nothing is in testing.
-        source = get_source_in_suite(source, "testing", session)
+        sourceobj = get_source_in_suite(source, "testing", session)
 
         print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
-        if source is None:
+        if sourceobj is None:
             # No package in testing
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
-            compare = apt_pkg.VersionCompare(source.version, expected)
+            compare = apt_pkg.VersionCompare(sourceobj.version, expected)
             print "Apt compare says: %s" % (compare)
             if compare < 0:
                 # This is still valid, the current version in database is older than
                 # the new version we wait for
-                print "This transition is still ongoing, we currently have version %s" % (source.version)
+                print "This transition is still ongoing, we currently have version %s" % (sourceobj.version)
             else:
                 print "This transition is over, the target package reached testing, should be removed"
-                print "%s wanted version: %s, has %s" % (source.source, expected, source.version)
+                print "%s wanted version: %s, has %s" % (source, expected, sourceobj.version)
         print "-------------------------------------------------------------------------"
 
 ################################################################################
