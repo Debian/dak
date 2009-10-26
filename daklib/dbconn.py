@@ -159,7 +159,7 @@ class Archive(object):
         pass
 
     def __repr__(self):
-        return '<Archive %s>' % self.name
+        return '<Archive %s>' % self.archive_name
 
 __all__.append('Archive')
 
