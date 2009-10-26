@@ -549,7 +549,7 @@ def transition_info(transitions):
                 print "This transition is still ongoing, we currently have version %s" % (source.version)
             else:
                 print "This transition is over, the target package reached testing, should be removed"
-                print "%s wanted version: %s, has %s" % (source, expected, source.version)
+                print "%s wanted version: %s, has %s" % (source.source, expected, source.version)
         print "-------------------------------------------------------------------------"
 
 ################################################################################
