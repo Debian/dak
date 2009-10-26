@@ -223,9 +223,7 @@ def get_suites_binary_in(package, session=None):
     @return: list of Suite objects for the given package
     """
 
-    ret = session.query(Suite).join(BinAssociation).join(DBBinary).filter_by(package=package).all()
-
-    return ret
+    return session.query(Suite).join(BinAssociation).join(DBBinary).filter_by(package=package).all()
 
 __all__.append('get_suites_binary_in')
 
@@ -308,9 +306,7 @@ def get_binaries_from_source_id(source_id, session=None):
     @return: list of DBBinary objects for the given name (may be empty)
     """
 
-    ret = session.query(DBBinary).filter_by(source_id=source_id).all()
-
-    return ret
+    return session.query(DBBinary).filter_by(source_id=source_id).all()
 
 __all__.append('get_binaries_from_source_id')
 
@@ -330,9 +326,7 @@ def get_binary_from_name_suite(package, suitename, session=None):
                AND su.suite_name=:suitename
           ORDER BY b.version DESC"""
 
-    ret = session.execute(sql, {'package': package, 'suitename': suitename})
-
-    return ret
+    return session.execute(sql, {'package': package, 'suitename': suitename})
 
 __all__.append('get_binary_from_name_suite')
 
@@ -349,9 +343,7 @@ def get_binary_components(package, suitename, arch, session=None):
 
     vals = {'package': package, 'suitename': suitename, 'arch': arch}
 
-    ret = session.execute(query, vals)
-
-    return ret
+    return session.execute(query, vals)
 
 __all__.append('get_binary_components')
 
@@ -513,9 +505,7 @@ def get_contents(suite, overridetype, section=None, session=None):
 
     contents_q += " ORDER BY fn"
 
-    ret = session.execute(contents_q, vals)
-
-    return ret
+    return session.execute(contents_q, vals)
 
 __all__.append('get_contents')
 
@@ -686,9 +676,7 @@ def get_dscfiles(dscfile_id=None, source_id=None, poolfile_id=None, session=None
     if poolfile_id is not None:
         q = q.filter_by(poolfile_id=poolfile_id)
 
-    ret = q.all()
-
-    return ret
+    return q.all()
 
 __all__.append('get_dscfiles')
 
@@ -795,9 +783,7 @@ def get_poolfile_by_name(filename, location_id=None, session=None):
     if location_id is not None:
         q = q.join(Location).filter_by(location_id=location_id)
 
-    ret = q.all()
-
-    return ret
+    return q.all()
 
 __all__.append('get_poolfile_by_name')
 
@@ -816,9 +802,7 @@ def get_poolfile_like_name(filename, session=None):
     # TODO: There must be a way of properly using bind parameters with %FOO%
     q = session.query(PoolFile).filter(PoolFile.filename.like('%%%s%%' % filename))
 
-    ret = q.all()
-
-    return ret
+    return q.all()
 
 __all__.append('get_poolfile_like_name')
 
@@ -1088,9 +1072,7 @@ def has_new_comment(package, version, session=None):
     q = q.filter_by(package=package)
     q = q.filter_by(version=version)
 
-    ret = q.count() > 0
-
-    return ret
+    return bool(q.count() > 0)
 
 __all__.append('has_new_comment')
 
@@ -1122,9 +1104,7 @@ def get_new_comments(package=None, version=None, comment_id=None, session=None):
     if version is not None: q = q.filter_by(version=version)
     if comment_id is not None: q = q.filter_by(comment_id=comment_id)
 
-    ret = q.all()
-
-    return ret
+    return q.all()
 
 __all__.append('get_new_comments')
 
@@ -1182,9 +1162,7 @@ def get_override(package, suite=None, component=None, overridetype=None, session
         if not isinstance(overridetype, list): overridetype = [overridetype]
         q = q.join(OverrideType).filter(OverrideType.overridetype.in_(overridetype))
 
-    ret = q.all()
-
-    return ret
+    return q.all()
 
 __all__.append('get_override')
 
@@ -1222,8 +1200,6 @@ def get_override_type(override_type, session=None):
         return q.one()
     except NoResultFound:
         return None
-
-    return ret
 
 __all__.append('get_override_type')
 
@@ -1737,9 +1713,7 @@ def get_suites_source_in(source, session=None):
     @return: list of Suite objects for the given source
     """
 
-    ret = session.query(Suite).join(SrcAssociation).join(DBSource).filter_by(source=source).all()
-
-    return ret
+    return session.query(Suite).join(SrcAssociation).join(DBSource).filter_by(source=source).all()
 
 __all__.append('get_suites_source_in')
 
@@ -1774,9 +1748,7 @@ def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=
     if dm_upload_allowed is not None:
         q = q.filter_by(dm_upload_allowed=dm_upload_allowed)
 
-    ret = q.all()
-
-    return ret
+    return q.all()
 
 __all__.append('get_sources_from_name')
 
@@ -1987,9 +1959,7 @@ def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
 
     q = q.order_by('arch_string')
 
-    ret = q.all()
-
-    return ret
+    return q.all()
 
 __all__.append('get_suite_architectures')
 
