@@ -1327,13 +1327,13 @@ class Upload(object):
                     rejectmsg += "Transition description: %s\n\n" % (t["reason"])
 
                     rejectmsg += "\n".join(textwrap.wrap("""Your package
-    is part of a testing transition designed to get %s migrated (it is
-    currently %s, we need version %s).  This transition is managed by the
-    Release Team, and %s is the Release-Team member responsible for it.
-    Please mail debian-release@lists.debian.org or contact %s directly if you
-    need further assistance.  You might want to upload to experimental until this
-    transition is done."""
-                            % (source, currentlymsg, expected,t["rm"], t["rm"])))
+is part of a testing transition designed to get %s migrated (it is
+currently %s, we need version %s).  This transition is managed by the
+Release Team, and %s is the Release-Team member responsible for it.
+Please mail debian-release@lists.debian.org or contact %s directly if you
+need further assistance.  You might want to upload to experimental until this
+transition is done."""
+                            % (source.source, currentlymsg, expected,t["rm"], t["rm"])))
 
                     self.rejects.append(rejectmsg)
                     return
