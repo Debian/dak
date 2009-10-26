@@ -40,6 +40,7 @@ import apt_pkg
 import cgi
 
 from daklib import utils
+from daklib.changes import Changes
 from daklib.dbconn import DBConn, has_new_comment
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
@@ -280,7 +281,8 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     try:
         (login, domain) = sponsor.split("@", 1)
         print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
-    except:
+    except Exception, e:
+        print "WARNING: Exception %s" % e
         pass
 
     print "<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint)
@@ -304,8 +306,9 @@ def process_changes_files(changes_files, type, log):
             c.load_dot_dak(filename)
             cache[filename] = copy(c.changes)
             cache[filename]["filename"] = filename
-        except:
-            break
+        except Exception, e:
+            print "WARNING: Exception %s" % e
+            continue
     # Divide the .changes into per-source groups
     per_source = {}
     for filename in cache.keys():
