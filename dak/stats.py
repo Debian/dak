@@ -198,7 +198,7 @@ def number_of_packages():
         output = output + arch.center(longest_arch)+" |"
         for suite_id in suite_id_list:
             if suite_arches[suite_id].has_key(arch):
-                count = repr(d[suite_id][arch_id])
+                count = "%d" % d[suite_id][arch_id]
             else:
                 count = "-"
             output = output + count.rjust(longest_suite)+" |"
