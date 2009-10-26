@@ -320,7 +320,7 @@ def main():
         suiteobj = get_suite(suitename.lower())
 
         # Use the canonical version of the suite name
-        suite = suite.suite_name
+        suite = suiteobj.suite_name
 
         if suiteobj.untouchable:
             print "Skipping: " + suite + " (untouchable)"
