@@ -384,7 +384,7 @@ def main ():
     bin_not_built = {}
 
     if "bnb" in checks:
-        bins_in_suite = get_suite_binaries(suite.suite_name, session)
+        bins_in_suite = get_suite_binaries(suite, session)
 
     # Checks based on the Sources files
     components = cnf.ValueList("Suite::%s::Components" % (suite))
