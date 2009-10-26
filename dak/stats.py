@@ -129,12 +129,6 @@ def output_format(suite):
         output_suite.append(word[0])
     return "-".join(output_suite)
 
-# Obvious query with GROUP BY and mapped names                  -> 50 seconds
-# GROUP BY but ids instead of suite/architecture names          -> 28 seconds
-# Simple query                                                  -> 14 seconds
-# Simple query into large dictionary + processing               -> 21 seconds
-# Simple query into large pre-created dictionary + processing   -> 18 seconds
-
 def number_of_packages():
     arches = {}
     arch_ids = {}
@@ -158,13 +152,14 @@ def number_of_packages():
     # Get the raw data for binaries
     # Simultate 'GROUP by suite, architecture' with a dictionary
     # XXX: Why don't we just get the DB to do this?
-    for i in session.query(BinAssociation):
-        suite_id = i.suite_id
-        arch_id = i.binary.arch_id
-        d[suite_id][arch_id] = d[suite_id][arch_id] + 1
+    for i in session.execute("""SELECT suite, architecture, COUNT(suite)
+                                FROM bin_associations
+                           LEFT JOIN binaries ON bin = binaries.id
+                            GROUP BY suite, architecture""").fetchall():
+        d[ i[0] ][ i[1] ] = i[2]
     # Get the raw data for source
     arch_id = arch_ids["source"]
-    for i in session.execute('SELECT suite, COUNT(suite) FROM src_associations GROUP BY suite').all():
+    for i in session.execute('SELECT suite, COUNT(suite) FROM src_associations GROUP BY suite').fetchall():
         (suite_id, count) = i
         d[suite_id][arch_id] = d[suite_id][arch_id] + count
     ## Print the results
