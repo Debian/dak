@@ -197,22 +197,22 @@ def main ():
 
     for suitename in suites:
         print "Processing: " + suitename
-        SuiteBlock = Cnf.SubTree("Suite::" + suite)
+        SuiteBlock = Cnf.SubTree("Suite::" + suitename)
         suiteobj = get_suite(suitename)
 
-        suite = suite.suite_name.lower()
+        suite = suiteobj.suite_name.lower()
 
-        if suite.untouchable and not Options["Force-Touch"]:
+        if suiteobj.untouchable and not Options["Force-Touch"]:
             print "Skipping: " + suite + " (untouchable)"
             continue
 
-        origin = suite.origin
-        label = suite.label or suite.origin
-        codename = suite.codename or ""
+        origin = suiteobj.origin
+        label = suiteobj.label or suiteobj.origin
+        codename = suiteobj.codename or ""
         version = ""
-        if suite.version and suite.version != '-':
-            version = suite.version
-        description = suite.description or ""
+        if suiteobj.version and suiteobj.version != '-':
+            version = suiteobj.version
+        description = suiteobj.description or ""
 
         architectures = get_suite_architectures(suite, skipall=True, skipsrc=True)
 
