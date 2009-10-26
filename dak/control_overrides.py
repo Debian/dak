@@ -138,7 +138,7 @@ def process_file(file, suite, component, otype, mode, action, session):
         if line == "":
             continue
 
-        maintainer_override = ""
+        maintainer_override = None
         if otype == "dsc":
             split_line = line.split(None, 2)
             if len(split_line) == 2:
