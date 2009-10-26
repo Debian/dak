@@ -1095,6 +1095,30 @@ def get_or_set_maintainer(name, session=None):
 
 __all__.append('get_or_set_maintainer')
 
+def get_maintainer(maintainer_id, session=True):
+    """
+    Return the name of the maintainer behind C{maintainer_id}.
+
+    @type maintainer_id: int
+    @param maintainer_id: the id of the maintainer
+
+    @rtype: string
+    @return: the name of the maintainer
+    """
+
+    privatetrans = False
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    try:
+        return session.query(Maintainer).get(maintainer_id).name
+    finally:
+        if privatetrans:
+            session.close()
+
+__all__.append('get_maintainer')
+
 ################################################################################
 
 class NewComment(object):
