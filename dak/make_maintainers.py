@@ -30,20 +30,20 @@ Generate Maintainers file used by e.g. the Debian Bug Tracking System
 
 ################################################################################
 
-import pg
 import sys
 import apt_pkg
-from daklib import database
+
+from daklib.config import Config
+from daklib.dbconn import *
 from daklib import utils
+from daklib import textutils
 from daklib.regexes import re_comments
 
 ################################################################################
 
-Cnf = None                          #: Configuration, apt_pkg.Configuration
-projectB = None                     #: database connection, pgobject
 maintainer_from_source_cache = {}   #: caches the maintainer name <email> per source_id
 packages = {}                       #: packages data to write out
-fixed_maintainer_cache = {}         #: caches fixed ( L{daklib.utils.fix_maintainer} ) maintainer data
+fixed_maintainer_cache = {}         #: caches fixed ( L{daklib.textutils.fix_maintainer} ) maintainer data
 
 ################################################################################
 
@@ -62,7 +62,7 @@ def fix_maintainer (maintainer):
     Fixup maintainer entry, cache the result.
 
     @type maintainer: string
-    @param maintainer: A maintainer entry as passed to L{daklib.utils.fix_maintainer}
+    @param maintainer: A maintainer entry as passed to L{daklib.textutils.fix_maintainer}
 
     @rtype: tuple
     @returns: fixed maintainer tuple
@@ -70,11 +70,11 @@ def fix_maintainer (maintainer):
     global fixed_maintainer_cache
 
     if not fixed_maintainer_cache.has_key(maintainer):
-        fixed_maintainer_cache[maintainer] = utils.fix_maintainer(maintainer)[0]
+        fixed_maintainer_cache[maintainer] = textutils.fix_maintainer(maintainer)[0]
 
     return fixed_maintainer_cache[maintainer]
 
-def get_maintainer (maintainer):
+def get_maintainer(maintainer, session):
     """
     Retrieves maintainer name from database, passes it through fix_maintainer and
     passes on whatever that returns.
@@ -82,9 +82,10 @@ def get_maintainer (maintainer):
     @type maintainer: int
     @param maintainer: maintainer_id
     """
-    return fix_maintainer(database.get_maintainer(maintainer))
+    q = session.execute("SELECT name FROM maintainer WHERE id = :id", {'id': maintainer}).fetchall()
+    return fix_maintainer(q[0][0])
 
-def get_maintainer_from_source (source_id):
+def get_maintainer_from_source(source_id, session):
     """
     Returns maintainer name for given source_id.
 
@@ -97,8 +98,10 @@ def get_maintainer_from_source (source_id):
     global maintainer_from_source_cache
 
     if not maintainer_from_source_cache.has_key(source_id):
-        q = projectB.query("SELECT m.name FROM maintainer m, source s WHERE s.id = %s and s.maintainer = m.id" % (source_id))
-        maintainer = q.getresult()[0][0]
+        q = session.execute("""SELECT m.name FROM maintainer m, source s
+                                WHERE s.id = :sourceid AND s.maintainer = m.id""",
+                            {'sourceid': source_id})
+        maintainer = q.fetchall()[0][0]
         maintainer_from_source_cache[source_id] = fix_maintainer(maintainer)
 
     return maintainer_from_source_cache[source_id]
@@ -106,31 +109,32 @@ def get_maintainer_from_source (source_id):
 ################################################################################
 
 def main():
-    global Cnf, projectB
-
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('h',"help","Make-Maintainers::Options::Help")]
-    if not Cnf.has_key("Make-Maintainers::Options::Help"):
-        Cnf["Make-Maintainers::Options::Help"] = ""
+    if not cnf.has_key("Make-Maintainers::Options::Help"):
+        cnf["Make-Maintainers::Options::Help"] = ""
 
-    extra_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Make-Maintainers::Options")
+    extra_files = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Make-Maintainers::Options")
 
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
-    for suite in Cnf.SubTree("Suite").List():
+    for suite in cnf.SubTree("Suite").List():
         suite = suite.lower()
-        suite_priority = int(Cnf["Suite::%s::Priority" % (suite)])
+        suite_priority = int(cnf["Suite::%s::Priority" % (suite)])
 
         # Source packages
-        q = projectB.query("SELECT s.source, s.version, m.name FROM src_associations sa, source s, suite su, maintainer m WHERE su.suite_name = '%s' AND sa.suite = su.id AND sa.source = s.id AND m.id = s.maintainer" % (suite))
-        sources = q.getresult()
-        for source in sources:
+        q = session.execute("""SELECT s.source, s.version, m.name
+                                 FROM src_associations sa, source s, suite su, maintainer m
+                                WHERE su.suite_name = :suite_name
+                                  AND sa.suite = su.id AND sa.source = s.id
+                                  AND m.id = s.maintainer""",
+                                {'suite_name': suite})
+        for source in q.fetchall():
             package = source[0]
             version = source[1]
             maintainer = fix_maintainer(source[2])
@@ -142,17 +146,20 @@ def main():
                 packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
 
         # Binary packages
-        q = projectB.query("SELECT b.package, b.source, b.maintainer, b.version FROM bin_associations ba, binaries b, suite s WHERE s.suite_name = '%s' AND ba.suite = s.id AND ba.bin = b.id" % (suite))
-        binaries = q.getresult()
-        for binary in binaries:
+        q = session.execute("""SELECT b.package, b.source, b.maintainer, b.version
+                                 FROM bin_associations ba, binaries b, suite s
+                                WHERE s.suite_name = :suite_name
+                                  AND ba.suite = s.id AND ba.bin = b.id""",
+                               {'suite_name': suite})
+        for binary in q.fetchall():
             package = binary[0]
             source_id = binary[1]
             version = binary[3]
             # Use the source maintainer first; falling back on the binary maintainer as a last resort only
             if source_id:
-                maintainer = get_maintainer_from_source(source_id)
+                maintainer = get_maintainer_from_source(source_id, session)
             else:
-                maintainer = get_maintainer(binary[2])
+                maintainer = get_maintainer(binary[2], session)
             if packages.has_key(package):
                 if packages[package]["priority"] <= suite_priority:
                     if apt_pkg.VersionCompare(packages[package]["version"], version) < 0:

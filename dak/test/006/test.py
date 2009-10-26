@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Test utils.fix_maintainer()
+# Test textutils.fix_maintainer()
 # Copyright (C) 2004, 2006  James Troup <james@nocrew.org>
 
 # This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@ import os, sys
 
 sys.path.append(os.path.abspath('../../'))
 
-import utils
+import textutils
 
 ################################################################################
 
@@ -35,7 +35,7 @@ def fail(message):
 ################################################################################
 
 def check_valid(s, xa, xb, xc, xd):
-    (a, b, c, d) = utils.fix_maintainer(s)
+    (a, b, c, d) = textutils.fix_maintainer(s)
     if a != xa:
         fail("rfc822_maint: %s (returned) != %s (expected [From: '%s']" % (a, xa, s))
     if b != xb:
@@ -47,7 +47,7 @@ def check_valid(s, xa, xb, xc, xd):
 
 def check_invalid(s):
     try:
-        utils.fix_maintainer(s)
+        textutils.fix_maintainer(s)
         fail("%s was parsed successfully but is expected to be invalid." % (s))
     except utils.ParseMaintError, unused:
         pass

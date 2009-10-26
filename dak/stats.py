@@ -30,15 +30,16 @@
 
 ################################################################################
 
-import pg, sys
+import sys
 import apt_pkg
+
 from daklib import utils
-from daklib import database
+from daklib.dbconn import DBConn, get_suite_architectures, Suite, Architecture, \
+                          BinAssociation
 
 ################################################################################
 
 Cnf = None
-projectB = None
 
 ################################################################################
 
@@ -59,14 +60,17 @@ The following MODEs are available:
 ################################################################################
 
 def per_arch_space_use():
-    q = projectB.query("""
-SELECT a.arch_string as Architecture, sum(f.size)
+    session = DBConn().session()
+    q = session.execute("""
+SELECT a.arch_string as Architecture, sum(f.size) AS sum
   FROM files f, binaries b, architecture a
   WHERE a.id=b.architecture AND f.id=b.file
-  GROUP BY a.arch_string""")
-    print q
-    q = projectB.query("SELECT sum(size) FROM files WHERE filename ~ '.(diff.gz|tar.gz|dsc)$'")
-    print q
+  GROUP BY a.arch_string ORDER BY sum""").fetchall()
+    for j in q:
+        print "%-15.15s %s" % (j[0], j[1])
+    print
+    q = session.execute("SELECT sum(size) FROM files WHERE filename ~ '.(diff.gz|tar.gz|dsc)$'").fetchall()
+    print "%-15.15s %s" % ("Source", q[0][0])
 
 ################################################################################
 
@@ -137,38 +141,30 @@ def number_of_packages():
     suites = {}
     suite_ids = {}
     d = {}
+    session = DBConn().session()
     # Build up suite mapping
-    q = projectB.query("SELECT id, suite_name FROM suite")
-    suite_ql = q.getresult()
-    for i in suite_ql:
-        (sid, name) = i
-        suites[sid] = name
-        suite_ids[name] = sid
+    for i in session.query(Suite).all():
+        suites[i.suite_id] = i.suite_name
+        suite_ids[i.suite_name] = i.suite_id
     # Build up architecture mapping
-    q = projectB.query("SELECT id, arch_string FROM architecture")
-    for i in q.getresult():
-        (aid, name) = i
-        arches[aid] = name
-        arch_ids[name] = aid
+    for i in session.query(Architecture).all():
+        arches[i.arch_id] = i.arch_string
+        arch_ids[i.arch_string] = i.arch_id
     # Pre-create the dictionary
     for suite_id in suites.keys():
         d[suite_id] = {}
         for arch_id in arches.keys():
             d[suite_id][arch_id] = 0
     # Get the raw data for binaries
-    q = projectB.query("""
-SELECT ba.suite, b.architecture
-  FROM binaries b, bin_associations ba
- WHERE b.id = ba.bin""")
     # Simultate 'GROUP by suite, architecture' with a dictionary
-    for i in q.getresult():
-        (suite_id, arch_id) = i
+    # XXX: Why don't we just get the DB to do this?
+    for i in session.query(BinAssociation):
+        suite_id = i.suite_id
+        arch_id = i.binary.arch_id
         d[suite_id][arch_id] = d[suite_id][arch_id] + 1
     # Get the raw data for source
     arch_id = arch_ids["source"]
-    q = projectB.query("""
-SELECT suite, count(suite) FROM src_associations GROUP BY suite;""")
-    for i in q.getresult():
+    for i in session.execute('SELECT suite, COUNT(suite) FROM src_associations GROUP BY suite').all():
         (suite_id, count) = i
         d[suite_id][arch_id] = d[suite_id][arch_id] + count
     ## Print the results
@@ -180,8 +176,8 @@ SELECT suite, count(suite) FROM src_associations GROUP BY suite;""")
     for suite in suite_list:
         suite_id = suite_ids[suite]
         suite_arches[suite_id] = {}
-        for arch in database.get_suite_architectures(suite_id):
-            suite_arches[suite_id][arch] = ""
+        for arch in get_suite_architectures(suite):
+            suite_arches[suite_id][arch.arch_string] = ""
         suite_id_list.append(suite_id)
     output_list = [ output_format(i) for i in suite_list ]
     longest_suite = longest(output_list)
@@ -212,7 +208,7 @@ SELECT suite, count(suite) FROM src_associations GROUP BY suite;""")
 ################################################################################
 
 def main ():
-    global Cnf, projectB
+    global Cnf
 
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Stats::Options::Help")]
@@ -233,9 +229,6 @@ def main ():
         utils.warn("dak stats accepts only one MODE argument")
         usage(1)
     mode = args[0].lower()
-
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
 
     if mode == "arch-space":
         per_arch_space_use()

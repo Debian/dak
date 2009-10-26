@@ -39,17 +39,16 @@ Generate file lists used by apt-ftparchive to generate Packages and Sources file
 
 import copy
 import os
-import pg
 import sys
 import apt_pkg
-from daklib import database
-from daklib import logging
+
+from daklib.dbconn import *
+from daklib.config import Config
+from daklib import daklog
 from daklib import utils
 
 ################################################################################
 
-Cnf = None      #: Configuration, apt_pkg.Configuration
-projectB = None #: database connection, pgobject
 Logger = None   #: Logger object
 Options = None  #: Parsed CommandLine arguments
 
@@ -82,8 +81,9 @@ def version_cmp(a, b):
 #####################################################
 
 def delete_packages(delete_versions, pkg, dominant_arch, suite,
-                    dominant_version, delete_table, delete_col, packages):
-    suite_id = database.get_suite_id(suite)
+                    dominant_version, delete_table, delete_col, packages, session):
+    suite_o = get_suite(suite.lower(), session)
+    suite_id = suite_o.suite_id
     for version in delete_versions:
         delete_unique_id = version[1]
         if not packages.has_key(delete_unique_id):
@@ -91,12 +91,13 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
         delete_version = version[0]
         delete_id = packages[delete_unique_id]["sourceid"]
         delete_arch = packages[delete_unique_id]["arch"]
-        if not database.get_suite_untouchable(suite) or Options["Force"]:
+        if Options["Force"] or not suite_o.untouchable:
             if Options["No-Delete"]:
                 print "Would delete %s_%s_%s in %s in favour of %s_%s" % (pkg, delete_arch, delete_version, suite, dominant_version, dominant_arch)
             else:
                 Logger.log(["dominated", pkg, delete_arch, delete_version, dominant_version, dominant_arch])
-                projectB.query("DELETE FROM %s WHERE suite = %s AND %s = %s" % (delete_table, suite_id, delete_col, delete_id))
+                # TODO: Fix properly
+                session.execute("DELETE FROM %s WHERE suite = :suiteid AND %s = :delid" % (delete_table, delete_col), {'suiteid': suite_id, 'delid': delete_id})
             del packages[delete_unique_id]
         else:
             if Options["No-Delete"]:
@@ -106,7 +107,7 @@ def delete_packages(delete_versions, pkg, dominant_arch, suite,
 
 #####################################################
 
-def resolve_arch_all_vs_any(versions, packages):
+def resolve_arch_all_vs_any(versions, packages, session):
     """ Per-suite&pkg: resolve arch-all, vs. arch-any, assumes only one arch-all """
     arch_all_version = None
     arch_any_versions = copy.copy(versions)
@@ -129,12 +130,12 @@ def resolve_arch_all_vs_any(versions, packages):
     if apt_pkg.VersionCompare(highest_arch_any_version, arch_all_version) < 1:
         # arch: all dominates
         delete_packages(arch_any_versions, pkg, "all", suite,
-                        arch_all_version, delete_table, delete_col, packages)
+                        arch_all_version, delete_table, delete_col, packages, session)
     else:
         # arch: any dominates
         delete_packages(arch_all_versions, pkg, "any", suite,
                         highest_arch_any_version, delete_table, delete_col,
-                        packages)
+                        packages, session)
 
 #####################################################
 
@@ -161,7 +162,7 @@ def remove_duplicate_versions(versions, packages):
 
 ################################################################################
 
-def cleanup(packages):
+def cleanup(packages, session):
     # Build up the index used by the clean up functions
     d = {}
     for unique_id in packages.keys():
@@ -198,18 +199,20 @@ def cleanup(packages):
                 for arch in arches.keys():
                     if arch != "source":
                         versions.extend(d[suite][pkg][arch])
-                resolve_arch_all_vs_any(versions, packages)
+                resolve_arch_all_vs_any(versions, packages, session)
 
 ################################################################################
 
 def write_filelist(suite, component, arch, type, list, packages, dislocated_files):
+    cnf = Config()
+
     # Work out the filename
     if arch != "source":
         if type == "udeb":
             arch = "debian-installer_binary-%s" % (arch)
         elif type == "deb":
             arch = "binary-%s" % (arch)
-    filename = os.path.join(Cnf["Dir::Lists"], "%s_%s_%s.list" % (suite, component, arch))
+    filename = os.path.join(cnf["Dir::Lists"], "%s_%s_%s.list" % (suite, component, arch))
     output = utils.open_file(filename, "w")
     # Generate the final list of files
     files = {}
@@ -236,8 +239,10 @@ def write_filelist(suite, component, arch, type, list, packages, dislocated_file
 
 ################################################################################
 
-def write_filelists(packages, dislocated_files):
+def write_filelists(packages, dislocated_files, session):
     # Build up the index to iterate over
+    cnf = Config()
+
     d = {}
     for unique_id in packages.keys():
         suite = packages[unique_id]["suite"]
@@ -251,16 +256,16 @@ def write_filelists(packages, dislocated_files):
         d[suite][component][arch][packagetype].append(unique_id)
     # Flesh out the index
     if not Options["Suite"]:
-        suites = Cnf.SubTree("Suite").List()
+        suites = cnf.SubTree("Suite").List()
     else:
         suites = utils.split_args(Options["Suite"])
     for suite in [ i.lower() for i in suites ]:
         d.setdefault(suite, {})
         if not Options["Component"]:
-            components = Cnf.ValueList("Suite::%s::Components" % (suite))
+            components = cnf.ValueList("Suite::%s::Components" % (suite))
         else:
             components = utils.split_args(Options["Component"])
-        udeb_components = Cnf.ValueList("Suite::%s::UdebComponents" % (suite))
+        udeb_components = cnf.ValueList("Suite::%s::UdebComponents" % (suite))
         for component in components:
             d[suite].setdefault(component, {})
             if component in udeb_components:
@@ -268,7 +273,7 @@ def write_filelists(packages, dislocated_files):
             else:
                 binary_types = [ "deb" ]
             if not Options["Architecture"]:
-                architectures = database.get_suite_architectures(suite)
+                architectures = [ a.arch_string for a in get_suite_architectures(suite, session=session) ]
             else:
                 architectures = utils.split_args(Options["Architecture"])
             for arch in [ i.lower() for i in architectures ]:
@@ -281,7 +286,7 @@ def write_filelists(packages, dislocated_files):
                     d[suite][component][arch].setdefault(packagetype, [])
     # Then walk it
     for suite in d.keys():
-        if Cnf.has_key("Suite::%s::Components" % (suite)):
+        if cnf.has_key("Suite::%s::Components" % (suite)):
             for component in d[suite].keys():
                 for arch in d[suite][component].keys():
                     if arch == "all":
@@ -290,7 +295,7 @@ def write_filelists(packages, dislocated_files):
                         filelist = d[suite][component][arch][packagetype]
                         # If it's a binary, we need to add in the arch: all debs too
                         if arch != "source":
-                            archall_suite = Cnf.get("Make-Suite-File-List::ArchAllMap::%s" % (suite))
+                            archall_suite = cnf.get("Make-Suite-File-List::ArchAllMap::%s" % (suite))
                             if archall_suite:
                                 filelist.extend(d[archall_suite][component]["all"][packagetype])
                             elif d[suite][component].has_key("all") and \
@@ -309,7 +314,7 @@ def do_da_do_da():
     if Options["Suite"]:
         suites = utils.split_args(Options["Suite"])
         for suite in suites:
-            archall_suite = Cnf.get("Make-Suite-File-List::ArchAllMap::%s" % (suite))
+            archall_suite = cnf.get("Make-Suite-File-List::ArchAllMap::%s" % (suite))
             if archall_suite and archall_suite not in suites:
                 utils.warn("Adding %s as %s maps Arch: all from it." % (archall_suite, suite))
                 suites.append(archall_suite)
@@ -318,7 +323,12 @@ def do_da_do_da():
     (con_suites, con_architectures, con_components, check_source) = \
                  utils.parse_args(Options)
 
+    session = DBConn().session()
+
     dislocated_files = {}
+
+    # TODO: Fix this properly
+    query_args = {'con_suites': con_suites, 'con_architectures': con_architectures, 'con_components': con_components}
 
     query = """
 SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name,
@@ -327,7 +337,7 @@ SELECT b.id, b.package, a.arch_string, b.version, l.path, f.filename, c.name,
        component c, suite su
   WHERE b.id = ba.bin AND b.file = f.id AND b.architecture = a.id
     AND f.location = l.id AND l.component = c.id AND ba.suite = su.id
-    %s %s %s""" % (con_suites, con_architectures, con_components)
+    %(con_suites)s %(con_architectures)s %(con_components)s""" % query_args
     if check_source:
         query += """
 UNION
@@ -335,29 +345,32 @@ SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name, f.id,
        su.suite_name, 'dsc'
   FROM source s, src_associations sa, files f, location l, component c, suite su
   WHERE s.id = sa.source AND s.file = f.id AND f.location = l.id
-    AND l.component = c.id AND sa.suite = su.id %s %s""" % (con_suites, con_components)
-    q = projectB.query(query)
-    ql = q.getresult()
+    AND l.component = c.id AND sa.suite = su.id %(con_suites)s %(con_components)s""" % query_args
+
     # Build up the main index of packages
     packages = {}
     unique_id = 0
-    for i in ql:
+
+    q = session.execute(query)
+    for i in q.fetchall():
         (sourceid, pkg, arch, version, path, filename, component, file_id, suite, filetype) = i
+
         # 'id' comes from either 'binaries' or 'source', so it's not unique
         unique_id += 1
         packages[unique_id] = Dict(sourceid=sourceid, pkg=pkg, arch=arch, version=version,
                                    path=path, filename=filename,
                                    component=component, file_id=file_id,
                                    suite=suite, filetype = filetype)
-    cleanup(packages)
-    write_filelists(packages, dislocated_files)
+    cleanup(packages, session)
+    session.commit()
+    write_filelists(packages, dislocated_files, session)
 
 ################################################################################
 
 def main():
-    global Cnf, projectB, Options, Logger
+    global Options, Logger
 
-    Cnf = utils.get_conf()
+    cnf = Config()
     Arguments = [('a', "architecture", "Make-Suite-File-List::Options::Architecture", "HasArg"),
                  ('c', "component", "Make-Suite-File-List::Options::Component", "HasArg"),
                  ('h', "help", "Make-Suite-File-List::Options::Help"),
@@ -365,16 +378,16 @@ def main():
                  ('f', "force", "Make-Suite-File-List::Options::Force"),
                  ('s', "suite", "Make-Suite-File-List::Options::Suite", "HasArg")]
     for i in ["architecture", "component", "help", "no-delete", "suite", "force" ]:
-        if not Cnf.has_key("Make-Suite-File-List::Options::%s" % (i)):
-            Cnf["Make-Suite-File-List::Options::%s" % (i)] = ""
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Make-Suite-File-List::Options")
+        if not cnf.has_key("Make-Suite-File-List::Options::%s" % (i)):
+            cnf["Make-Suite-File-List::Options::%s" % (i)] = ""
+    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Make-Suite-File-List::Options")
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
-    Logger = logging.Logger(Cnf, "make-suite-file-list")
+    DBConn()
+
+    Logger = daklog.Logger(cnf.Cnf, "make-suite-file-list")
     do_da_do_da()
     Logger.close()
 

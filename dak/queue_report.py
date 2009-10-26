@@ -34,19 +34,19 @@
 
 ################################################################################
 
-import copy, glob, os, stat, sys, time
+from copy import copy
+import glob, os, stat, sys, time
 import apt_pkg
 import cgi
-from daklib import queue
-from daklib import database
+
 from daklib import utils
+from daklib.dbconn import DBConn, has_new_comment
+from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
 Cnf = None
-Upload = None
 direction = []
 row_number = 0
-projectB = None
 
 ################################################################################
 
@@ -300,10 +300,9 @@ def process_changes_files(changes_files, type, log):
     # Read in all the .changes files
     for filename in changes_files:
         try:
-            Upload.pkg.changes_file = filename
-            Upload.init_vars()
-            Upload.update_vars()
-            cache[filename] = copy.copy(Upload.pkg.changes)
+            c = Changes()
+            c.load_dot_dak(filename)
+            cache[filename] = copy(c.changes)
             cache[filename]["filename"] = filename
         except:
             break
@@ -329,7 +328,7 @@ def process_changes_files(changes_files, type, log):
             else:
                 if mtime < oldest:
                     oldest = mtime
-            have_note += (database.has_new_comment(d["source"], d["version"]))
+            have_note += has_new_comment(d["source"], d["version"])
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -365,7 +364,7 @@ def process_changes_files(changes_files, type, log):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
-                    utils.fix_maintainer (j["maintainer"])
+                    fix_maintainer (j["maintainer"])
                 except ParseMaintError, msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
@@ -375,7 +374,7 @@ def process_changes_files(changes_files, type, log):
                 try:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
-                     utils.fix_maintainer (j["changed-by"])
+                     fix_maintainer (j["changed-by"])
                 except ParseMaintError, msg:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
@@ -513,7 +512,7 @@ def process_changes_files(changes_files, type, log):
 ################################################################################
 
 def main():
-    global Cnf, Upload
+    global Cnf
 
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Queue-Report::Options::Help"),
@@ -532,11 +531,11 @@ def main():
     if Options["Help"]:
         usage()
 
-    Upload = queue.Upload(Cnf)
-    projectB = Upload.projectB
-
     if Cnf.has_key("Queue-Report::Options::New"):
         header()
+
+    # Initialize db so we can get the NEW comments
+    dbconn = DBConn()
 
     directories = [ ]
 

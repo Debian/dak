@@ -44,16 +44,13 @@
 
 ################################################################################
 
-import commands, ldap, pg, re, sys
+import commands, ldap, re, sys
 import apt_pkg
-from daklib import database
+
+from daklib.config import Config
+from daklib.dbconn import *
 from daklib import utils
 from daklib.regexes import re_gpg_fingerprint, re_debian_address
-
-################################################################################
-
-Cnf = None
-projectB = None
 
 ################################################################################
 
@@ -80,84 +77,81 @@ def get_ldap_name(entry):
     name += get_ldap_value(entry, "sn")
     return name.rstrip()
 
-def escape_string(str):
-    return str.replace("'", "\\'")
-
 def main():
-    global Cnf, projectB
-
-    Cnf = utils.get_conf()
+    cnf = Config()
     Arguments = [('h',"help","Import-LDAP-Fingerprints::Options::Help")]
     for i in [ "help" ]:
-        if not Cnf.has_key("Import-LDAP-Fingerprints::Options::%s" % (i)):
-            Cnf["Import-LDAP-Fingerprints::Options::%s" % (i)] = ""
+        if not cnf.has_key("Import-LDAP-Fingerprints::Options::%s" % (i)):
+            cnf["Import-LDAP-Fingerprints::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Import-LDAP-Fingerprints::Options")
+    Options = cnf.SubTree("Import-LDAP-Fingerprints::Options")
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
-    LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
-    LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
+    LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
+    LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
     l = ldap.open(LDAPServer)
     l.simple_bind_s("","")
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
-                       "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Import-Users-From-Passwd::ValidGID"]),
+                       "(&(keyfingerprint=*)(gidnumber=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
                        ["uid", "keyfingerprint", "cn", "mn", "sn"])
 
 
-    projectB.query("BEGIN WORK")
-
+    # Our database session is already in a transaction
 
     # Sync LDAP with DB
     db_fin_uid = {}
     db_uid_name = {}
     ldap_fin_uid_id = {}
-    q = projectB.query("""
+    q = session.execute("""
 SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
  UNION SELECT f.fingerprint, f.id, null FROM fingerprint f where f.uid is null""")
-    for i in q.getresult():
+    for i in q.fetchall():
         (fingerprint, fingerprint_id, uid) = i
         db_fin_uid[fingerprint] = (uid, fingerprint_id)
 
-    q = projectB.query("SELECT id, name FROM uid")
-    for i in q.getresult():
+    q = session.execute("SELECT id, name FROM uid")
+    for i in q.fetchall():
         (uid, name) = i
         db_uid_name[uid] = name
 
     for i in Attrs:
         entry = i[1]
         fingerprints = entry["keyFingerPrint"]
-        uid = entry["uid"][0]
+        uid_name = entry["uid"][0]
         name = get_ldap_name(entry)
-        uid_id = database.get_or_set_uid_id(uid)
+        uid = get_or_set_uid(uid_name, session)
+        uid_id = uid.uid_id
 
         if not db_uid_name.has_key(uid_id) or db_uid_name[uid_id] != name:
-            q = projectB.query("UPDATE uid SET name = '%s' WHERE id = %d" % (escape_string(name), uid_id))
-            print "Assigning name of %s as %s" % (uid, name)
+            session.execute("UPDATE uid SET name = :name WHERE id = :uidid", {'name': name, 'uidid': uid_id})
+            print "Assigning name of %s as %s" % (uid_name, name)
 
         for fingerprint in fingerprints:
-            ldap_fin_uid_id[fingerprint] = (uid, uid_id)
+            ldap_fin_uid_id[fingerprint] = (uid_name, uid_id)
             if db_fin_uid.has_key(fingerprint):
                 (existing_uid, fingerprint_id) = db_fin_uid[fingerprint]
                 if not existing_uid:
-                    q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
-                    print "Assigning %s to 0x%s." % (uid, fingerprint)
-                elif existing_uid == uid:
+                    session.execute("UPDATE fingerprint SET uid = :uidid WHERE id = :fprid",
+                                    {'uidid': uid_id, 'fprid': fingerprint_id})
+                    print "Assigning %s to 0x%s." % (uid_name, fingerprint)
+                elif existing_uid == uid_name:
                     pass
                 elif '@' not in existing_uid:
-                    q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
-                    print "Promoting DM %s to DD %s with keyid 0x%s." % (existing_uid, uid, fingerprint)
+                    session.execute("UPDATE fingerprint SET uid = :uidid WHERE id = :fprid",
+                                    {'uidid': uid_id, 'fprid': fingerprint_id})
+                    print "Promoting DM %s to DD %s with keyid 0x%s." % (existing_uid, uid_name, fingerprint)
                 else:
-                    utils.warn("%s has %s in LDAP, but projectB says it should be %s." % (uid, fingerprint, existing_uid))
+                    utils.warn("%s has %s in LDAP, but database says it should be %s." % \
+                               (uid_name, fingerprint, existing_uid))
 
     # Try to update people who sign with non-primary key
-    q = projectB.query("SELECT fingerprint, id FROM fingerprint WHERE uid is null")
-    for i in q.getresult():
+    q = session.execute("SELECT fingerprint, id FROM fingerprint WHERE uid is null")
+    for i in q.fetchall():
         (fingerprint, fingerprint_id) = i
         cmd = "gpg --no-default-keyring %s --fingerprint %s" \
               % (utils.gpg_keyring_args(), fingerprint)
@@ -166,24 +160,26 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
             m = re_gpg_fingerprint.search(output)
             if not m:
                 print output
-                utils.fubar("0x%s: No fingerprint found in gpg output but it returned 0?\n%s" % (fingerprint, utils.prefix_multi_line_string(output, " [GPG output:] ")))
+                utils.fubar("0x%s: No fingerprint found in gpg output but it returned 0?\n%s" % \
+                            (fingerprint, utils.prefix_multi_line_string(output, " [GPG output:] ")))
             primary_key = m.group(1)
             primary_key = primary_key.replace(" ","")
             if not ldap_fin_uid_id.has_key(primary_key):
                 utils.warn("0x%s (from 0x%s): no UID found in LDAP" % (primary_key, fingerprint))
             else:
                 (uid, uid_id) = ldap_fin_uid_id[primary_key]
-                q = projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
+                session.execute("UPDATE fingerprint SET uid = :uid WHERE id = :fprid",
+                                {'uid': uid_id, 'fprid': fingerprint_id})
                 print "Assigning %s to 0x%s." % (uid, fingerprint)
         else:
             extra_keyrings = ""
-            for keyring in Cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):
+            for keyring in cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):
                 extra_keyrings += " --keyring=%s" % (keyring)
             cmd = "gpg %s %s --list-key %s" \
                   % (utils.gpg_keyring_args(), extra_keyrings, fingerprint)
             (result, output) = commands.getstatusoutput(cmd)
             if result != 0:
-                cmd = "gpg --keyserver=%s --allow-non-selfsigned-uid --recv-key %s" % (Cnf["Import-LDAP-Fingerprints::KeyServer"], fingerprint)
+                cmd = "gpg --keyserver=%s --allow-non-selfsigned-uid --recv-key %s" % (cnf["Import-LDAP-Fingerprints::KeyServer"], fingerprint)
                 (result, output) = commands.getstatusoutput(cmd)
                 if result != 0:
                     print "0x%s: NOT found on keyserver." % (fingerprint)
@@ -223,12 +219,16 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                     prompt = "Map to %s - %s (y/N) ? " % (uid, name.replace("  "," "))
                     yn = utils.our_raw_input(prompt).lower()
                     if yn == "y":
-                        uid_id = database.get_or_set_uid_id(uid)
-                        projectB.query("UPDATE fingerprint SET uid = %s WHERE id = %s" % (uid_id, fingerprint_id))
+                        uid_o = get_or_set_uid(uid, session=session)
+                        uid_id = uid_o.uid_id
+                        session.execute("UPDATE fingerprint SET uid = :uidid WHERE id = :fprid",
+                                        {'uidid': uid_id, 'fprid': fingerprint_id})
                         print "Assigning %s to 0x%s." % (uid, fingerprint)
                     else:
                         uid = None
-    projectB.query("COMMIT WORK")
+
+    # Commit it all
+    session.commit()
 
 ############################################################
 

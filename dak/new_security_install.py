@@ -23,7 +23,7 @@
 import apt_pkg, os, sys, pwd, time, commands
 
 from daklib import queue
-from daklib import logging
+from daklib import daklog
 from daklib import utils
 from daklib import database
 from daklib.regexes import re_taint_free
@@ -76,7 +76,7 @@ def init():
     if Options["No-Action"]:
         Options["Sudo"] = ""
     if not Options["Sudo"] and not Options["No-Action"]:
-        Logger = Upload.Logger = logging.Logger(Cnf, "new-security-install")
+        Logger = Upload.Logger = daklog.Logger(Cnf, "new-security-install")
 
     return arguments
 

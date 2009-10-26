@@ -45,7 +45,8 @@ import apt_pkg
 from daklib import utils
 from daklib.binary import Binary
 from daklib.config import Config
-from daklib.dbconn import DBConn
+from daklib.dbconn import *
+
 ################################################################################
 
 def usage (exit_code=0):
@@ -86,92 +87,6 @@ options_prefix = "%s::Options" % options_prefix
 log = logging.getLogger()
 
 ################################################################################
-
-# get all the arches delivered for a given suite
-# this should probably exist somehere common
-arches_q = """PREPARE arches_q(int) as
-              SELECT s.architecture, a.arch_string
-              FROM suite_architectures s
-              JOIN architecture a ON (s.architecture=a.id)
-                  WHERE suite = $1"""
-
-# find me the .deb for a given binary id
-debs_q = """PREPARE debs_q(int, int) as
-              SELECT b.id, f.filename FROM bin_assoc_by_arch baa
-              JOIN binaries b ON baa.bin=b.id
-              JOIN files f ON b.file=f.id
-              WHERE suite = $1
-                  AND arch = $2"""
-
-# ask if we already have contents associated with this binary
-olddeb_q = """PREPARE olddeb_q(int) as
-              SELECT 1 FROM content_associations
-              WHERE binary_pkg = $1
-              LIMIT 1"""
-
-# find me all of the contents for a given .deb
-contents_q = """PREPARE contents_q(int,int) as
-                SELECT (p.path||'/'||n.file) AS fn,
-                        s.section,
-                        b.package,
-                        b.architecture
-               FROM content_associations c join content_file_paths p ON (c.filepath=p.id)
-               JOIN content_file_names n ON (c.filename=n.id)
-               JOIN binaries b ON (b.id=c.binary_pkg)
-               JOIN override o ON (o.package=b.package)
-               JOIN section s ON (s.id=o.section)
-               WHERE o.suite = $1 AND o.type = $2
-               AND b.type='deb'
-               ORDER BY fn"""
-
-# find me all of the contents for a given .udeb
-udeb_contents_q = """PREPARE udeb_contents_q(int,int,int) as
-              SELECT (p.path||'/'||n.file) AS fn,
-                        s.section,
-                        b.package,
-                        b.architecture
-               FROM content_associations c join content_file_paths p ON (c.filepath=p.id)
-               JOIN content_file_names n ON (c.filename=n.id)
-               JOIN binaries b ON (b.id=c.binary_pkg)
-               JOIN override o ON (o.package=b.package)
-               JOIN section s ON (s.id=o.section)
-               WHERE o.suite = $1 AND o.type = $2
-               AND s.id = $3
-               AND b.type='udeb'
-               ORDER BY fn"""
-
-#               FROM content_file_paths p join content_associations c ON (c.filepath=p.id)
-#               JOIN content_file_names n ON (c.filename=n.id)
-#               JOIN binaries b ON (b.id=c.binary_pkg)
-#               JOIN override o ON (o.package=b.package)
-#               JOIN section s ON (s.id=o.section)
-#               WHERE o.suite = $1 AND o.type = $2
-#               AND s.id = $3
-#               AND b.id in (SELECT ba.bin from bin_associations ba join binaries b on b.id=ba.bin where (b.architecture=$3 or b.architecture=$4)and ba.suite=$1 and b.type='udeb')
-#               GROUP BY fn
-#               ORDER BY fn;"""
-
-
-
-# clear out all of the temporarily stored content associations
-# this should be run only after p-a has run.  after a p-a
-# run we should have either accepted or rejected every package
-# so there should no longer be anything in the queue
-remove_pending_contents_cruft_q = """DELETE FROM pending_content_associations"""
-
-# delete any filenames we are storing which have no binary associated with them
-remove_filename_cruft_q = """DELETE FROM content_file_names
-                             WHERE id IN (SELECT cfn.id FROM content_file_names cfn
-                                          LEFT JOIN content_associations ca
-                                            ON ca.filename=cfn.id
-                                          WHERE ca.id IS NULL)"""
-
-# delete any paths we are storing which have no binary associated with them
-remove_filepath_cruft_q = """DELETE FROM content_file_paths
-                             WHERE id IN (SELECT cfn.id FROM content_file_paths cfn
-                                          LEFT JOIN content_associations ca
-                                             ON ca.filepath=cfn.id
-                                          WHERE ca.id IS NULL)"""
 
 class EndOfContents(object):
     """
@@ -278,8 +193,6 @@ class GzippedContentWriter(object):
 class Contents(object):
     """
     Class capable of generating Contents-$arch.gz files
-
-    Usage GenerateContents().generateContents( ["main","contrib","non-free"] )
     """
 
     def __init__(self):
@@ -288,20 +201,34 @@ class Contents(object):
     def reject(self, message):
         log.error("E: %s" % message)
 
-    # goal column for section column
-    _goal_column = 54
-
     def cruft(self):
         """
         remove files/paths from the DB which are no longer referenced
         by binaries and clean the temporary table
         """
-        cursor = DBConn().cursor();
-        cursor.execute( "BEGIN WORK" )
-        cursor.execute( remove_pending_contents_cruft_q )
-        cursor.execute( remove_filename_cruft_q )
-        cursor.execute( remove_filepath_cruft_q )
-        cursor.execute( "COMMIT" )
+        s = DBConn().session()
+
+        # clear out all of the temporarily stored content associations
+        # this should be run only after p-a has run.  after a p-a
+        # run we should have either accepted or rejected every package
+        # so there should no longer be anything in the queue
+        s.query(PendingContentAssociation).delete()
+
+        # delete any filenames we are storing which have no binary associated
+        # with them
+        cafq = s.query(ContentAssociation.filename_id).distinct()
+        cfq = s.query(ContentFilename)
+        cfq = cfq.filter(~ContentFilename.cafilename_id.in_(cafq))
+        cfq.delete()
+
+        # delete any paths we are storing which have no binary associated with
+        # them
+        capq = s.query(ContentAssociation.filepath_id).distinct()
+        cpq = s.query(ContentFilepath)
+        cpq = cpq.filter(~ContentFilepath.cafilepath_id.in_(capq))
+        cpq.delete()
+
+        s.commit()
 
 
     def bootstrap(self):
@@ -310,169 +237,79 @@ class Contents(object):
         """
         pooldir = Config()[ 'Dir::Pool' ]
 
-        cursor = DBConn().cursor();
-        DBConn().prepare("debs_q",debs_q)
-        DBConn().prepare("olddeb_q",olddeb_q)
-        DBConn().prepare("arches_q",arches_q)
+        s = DBConn().session()
 
-        suites = self._suites()
-        for suite in [i.lower() for i in suites]:
-            suite_id = DBConn().get_suite_id(suite)
-
-            arch_list = self._arches(cursor, suite_id)
-            arch_all_id = DBConn().get_architecture_id("all")
-            for arch_id in arch_list:
-                cursor.execute( "EXECUTE debs_q(%d, %d)" % ( suite_id, arch_id[0] ) )
-
-                count = 0
-                while True:
-                    deb = cursor.fetchone()
-                    if not deb:
-                        break
-                    count += 1
-                    cursor1 = DBConn().cursor();
-                    cursor1.execute( "EXECUTE olddeb_q(%d)" % (deb[0] ) )
-                    old = cursor1.fetchone()
-                    if old:
-                        log.debug( "already imported: %s" % (deb[1]) )
+        for suite in s.query(Suite).all():
+            for arch in get_suite_architectures(suite.suite_name, skipsrc=True, skipall=True, session=s):
+                q = s.query(BinAssociation).join(Suite)
+                q = q.join(Suite).filter_by(suite_name=suite.suite_name)
+                q = q.join(DBBinary).join(Architecture).filter_by(arch.arch_string)
+                for ba in q:
+                    filename = ba.binary.poolfile.filename
+                    # Check for existing contents
+                    existingq = s.query(ContentAssociations).filter_by(binary_pkg=ba.binary_id).limit(1)
+                    if existingq.count() > 0:
+                        log.debug( "already imported: %s" % (filename))
                     else:
-                        log.debug( "scanning: %s" % (deb[1]) )
-                        debfile = os.path.join( pooldir, deb[1] )
-                        if os.path.exists( debfile ):
-                            Binary(debfile, self.reject).scan_package(deb[0],True)
+                        # We don't have existing contents so import them
+                        log.debug( "scanning: %s" % (filename) )
+                        debfile = os.path.join(pooldir, filename)
+                        if os.path.exists(debfile):
+                            Binary(debfile, self.reject).scan_package(ba.binary_id, True)
                         else:
-                            log.error("missing .deb: %s" % deb[1])
+                            log.error("missing .deb: %s" % filename)
+
 
     def generate(self):
         """
         Generate Contents-$arch.gz files for every available arch in each given suite.
         """
-        cursor = DBConn().cursor()
+        session = DBConn().session()
 
-        DBConn().prepare("arches_q", arches_q)
-        DBConn().prepare("contents_q", contents_q)
-        DBConn().prepare("udeb_contents_q", udeb_contents_q)
+        arch_all_id = get_architecture("all", session).arch_id
 
-        debtype_id=DBConn().get_override_type_id("deb")
-        udebtype_id=DBConn().get_override_type_id("udeb")
+        # The MORE fun part. Ok, udebs need their own contents files, udeb, and udeb-nf (not-free)
+        # This is HORRIBLY debian specific :-/
+        for dtype, section, fn_pattern in \
+              [('deb',  None,                        "dists/%s/Contents-%s.gz"),
+               ('udeb', "debian-installer",          "dists/%s/Contents-udeb-%s.gz"),
+               ('udeb', "non-free/debian-installer", "dists/%s/Contents-udeb-nf-%s.gz")]:
 
-        arch_all_id = DBConn().get_architecture_id("all")
-        suites = self._suites()
+            overridetype = get_override_type(dtype, session)
 
+            # For udebs, we only look in certain sections (see the for loop above)
+            if section is not None:
+                section = get_section(section, session)
 
-        # Get our suites, and the architectures
-        for suite in [i.lower() for i in suites]:
-            suite_id = DBConn().get_suite_id(suite)
-            arch_list = self._arches(cursor, suite_id)
+            # Get our suites
+            for suite in which_suites():
+                # Which architectures do we need to work on
+                arch_list = get_suite_architectures(suite.suite_name, skipsrc=True, skipall=True, session=session)
 
-            file_writers = {}
+                # Set up our file writer dictionary
+                file_writers = {}
+                try:
+                    # One file writer per arch
+                    for arch in arch_list:
+                        file_writers[arch.arch_id] = GzippedContentWriter(fn_pattern % (suite, arch.arch_string))
 
-            try:
-                for arch_id in arch_list:
-                    file_writers[arch_id[0]] = GzippedContentWriter("dists/%s/Contents-%s.gz" % (suite, arch_id[1]))
+                    for r in get_suite_contents(suite, overridetype, section, session=session).fetchall():
+                        filename, section, package, arch_id = r
 
-                cursor.execute("EXECUTE contents_q(%d,%d);" % (suite_id, debtype_id))
+                        if arch_id == arch_all_id:
+                            # It's arch all, so all contents files get it
+                            for writer in file_writers.values():
+                                writer.write(filename, section, package)
+                        else:
+                            if file_writers.has_key(arch_id):
+                                file_writers[arch_id].write(filename, section, package)
 
-                while True:
-                    r = cursor.fetchone()
-                    if not r:
-                        break
-
-                    filename, section, package, arch = r
-
-                    if not file_writers.has_key( arch ):
-                        continue
-
-                    if arch == arch_all_id:
-                        ## its arch all, so all contents files get it
-                        for writer in file_writers.values():
-                            writer.write(filename, section, package)
-
-                    else:
-                        file_writers[arch].write(filename, section, package)
-
-            finally:
-                # close all the files
-                for writer in file_writers.values():
-                    writer.finish()
-
-
-            # The MORE fun part. Ok, udebs need their own contents files, udeb, and udeb-nf (not-free)
-            # This is HORRIBLY debian specific :-/
-        for section, fn_pattern in [("debian-installer","dists/%s/Contents-udeb-%s.gz"),
-                                    ("non-free/debian-installer", "dists/%s/Contents-udeb-nf-%s.gz")]:
-
-            section_id = DBConn().get_section_id(section) # all udebs should be here)
-            if section_id != -1:
-
-                # Get our suites, and the architectures
-                for suite in [i.lower() for i in suites]:
-                    suite_id = DBConn().get_suite_id(suite)
-                    arch_list = self._arches(cursor, suite_id)
-
-                    file_writers = {}
-
-                    try:
-                        for arch_id in arch_list:
-                            file_writers[arch_id[0]] = GzippedContentWriter(fn_pattern % (suite, arch_id[1]))
-
-                        cursor.execute("EXECUTE udeb_contents_q(%d,%d,%d)" % (suite_id, udebtype_id, section_id))
-
-                        while True:
-                            r = cursor.fetchone()
-                            if not r:
-                                break
-
-                            filename, section, package, arch = r
-
-                            if not file_writers.has_key( arch ):
-                                continue
-
-                            if arch == arch_all_id:
-                                ## its arch all, so all contents files get it
-                                for writer in file_writers.values():
-                                    writer.write(filename, section, package)
-
-                            else:
-                                file_writers[arch].write(filename, section, package)
-                    finally:
-                        # close all the files
-                        for writer in file_writers.values():
-                            writer.finish()
-
-
+                finally:
+                    # close all the files
+                    for writer in file_writers.values():
+                        writer.finish()
 
 ################################################################################
-
-    def _suites(self):
-        """
-        return a list of suites to operate on
-        """
-        if Config().has_key( "%s::%s" %(options_prefix,"Suite")):
-            suites = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Suite")])
-        else:
-            suites = Config().SubTree("Suite").List()
-
-        return suites
-
-    def _arches(self, cursor, suite):
-        """
-        return a list of archs to operate on
-        """
-        arch_list = []
-        cursor.execute("EXECUTE arches_q(%d)" % (suite))
-        while True:
-            r = cursor.fetchone()
-            if not r:
-                break
-
-            if r[1] != "source" and r[1] != "all":
-                arch_list.append((r[0], r[1]))
-
-        return arch_list
-
-################################################################################
-
 
 def main():
     cnf = Config()
@@ -509,6 +346,18 @@ def main():
                          stream = sys.stderr )
 
     commands[args[0]](Contents())
+
+def which_suites(session):
+    """
+    return a list of suites to operate on
+    """
+    if Config().has_key( "%s::%s" %(options_prefix,"Suite")):
+        suites = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Suite")])
+    else:
+        suites = Config().SubTree("Suite").List()
+
+    return [get_suite(s.lower(), session) for s in suites]
+
 
 if __name__ == '__main__':
     main()

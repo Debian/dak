@@ -35,12 +35,14 @@ import tempfile
 import traceback
 import stat
 import apt_pkg
-import database
 import time
 import re
 import string
 import email as modemail
+
+from dbconn import DBConn, get_architecture, get_component, get_suite
 from dak_exceptions import *
+from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
                     re_parse_maintainer, re_taint_free, re_gpg_uid, re_re_mark, \
@@ -384,41 +386,6 @@ def _ensure_dsc_hash(dsc, dsc_files, hashname, hashfunc):
 
 ################################################################################
 
-def ensure_hashes(changes, dsc, files, dsc_files):
-    rejmsg = []
-
-    # Make sure we recognise the format of the Files: field in the .changes
-    format = changes.get("format", "0.0").split(".", 1)
-    if len(format) == 2:
-        format = int(format[0]), int(format[1])
-    else:
-        format = int(float(format[0])), 0
-
-    # We need to deal with the original changes blob, as the fields we need
-    # might not be in the changes dict serialised into the .dak anymore.
-    orig_changes = parse_deb822(changes['filecontents'])
-
-    # Copy the checksums over to the current changes dict.  This will keep
-    # the existing modifications to it intact.
-    for field in orig_changes:
-        if field.startswith('checksums-'):
-            changes[field] = orig_changes[field]
-
-    # Check for unsupported hashes
-    rejmsg.extend(check_hash_fields(".changes", changes))
-    rejmsg.extend(check_hash_fields(".dsc", dsc))
-
-    # We have to calculate the hash if we have an earlier changes version than
-    # the hash appears in rather than require it exist in the changes file
-    for hashname, hashfunc, version in known_hashes:
-        rejmsg.extend(_ensure_changes_hash(changes, format, version, files,
-            hashname, hashfunc))
-        if "source" in changes["architecture"]:
-            rejmsg.extend(_ensure_dsc_hash(dsc, dsc_files, hashname,
-                hashfunc))
-
-    return rejmsg
-
 def parse_checksums(where, files, manifest, hashname):
     rejmsg = []
     field = 'checksums-%s' % hashname
@@ -427,7 +394,12 @@ def parse_checksums(where, files, manifest, hashname):
     for line in manifest[field].split('\n'):
         if not line:
             break
-        checksum, size, checkfile = line.strip().split(' ')
+        clist = line.strip().split(' ')
+        if len(clist) == 3:
+            checksum, size, checkfile = clist
+        else:
+            rejmsg.append("Cannot parse checksum line [%s]" % (line))
+            continue
         if not files.has_key(checkfile):
         # TODO: check for the file's entry in the original files dict, not
         # the one modified by (auto)byhand and other weird stuff
@@ -509,92 +481,6 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         files[name][hashname] = md5
 
     return files
-
-################################################################################
-
-def force_to_utf8(s):
-    """
-    Forces a string to UTF-8.  If the string isn't already UTF-8,
-    it's assumed to be ISO-8859-1.
-    """
-    try:
-        unicode(s, 'utf-8')
-        return s
-    except UnicodeError:
-        latin1_s = unicode(s,'iso8859-1')
-        return latin1_s.encode('utf-8')
-
-def rfc2047_encode(s):
-    """
-    Encodes a (header) string per RFC2047 if necessary.  If the
-    string is neither ASCII nor UTF-8, it's assumed to be ISO-8859-1.
-    """
-    try:
-        codecs.lookup('ascii')[1](s)
-        return s
-    except UnicodeError:
-        pass
-    try:
-        codecs.lookup('utf-8')[1](s)
-        h = email.Header.Header(s, 'utf-8', 998)
-        return str(h)
-    except UnicodeError:
-        h = email.Header.Header(s, 'iso-8859-1', 998)
-        return str(h)
-
-################################################################################
-
-# <Culus> 'The standard sucks, but my tool is supposed to interoperate
-#          with it. I know - I'll fix the suckage and make things
-#          incompatible!'
-
-def fix_maintainer (maintainer):
-    """
-    Parses a Maintainer or Changed-By field and returns:
-      1. an RFC822 compatible version,
-      2. an RFC2047 compatible version,
-      3. the name
-      4. the email
-
-    The name is forced to UTF-8 for both 1. and 3..  If the name field
-    contains '.' or ',' (as allowed by Debian policy), 1. and 2. are
-    switched to 'email (name)' format.
-
-    """
-    maintainer = maintainer.strip()
-    if not maintainer:
-        return ('', '', '', '')
-
-    if maintainer.find("<") == -1:
-        email = maintainer
-        name = ""
-    elif (maintainer[0] == "<" and maintainer[-1:] == ">"):
-        email = maintainer[1:-1]
-        name = ""
-    else:
-        m = re_parse_maintainer.match(maintainer)
-        if not m:
-            raise ParseMaintError, "Doesn't parse as a valid Maintainer field."
-        name = m.group(1)
-        email = m.group(2)
-
-    # Get an RFC2047 compliant version of the name
-    rfc2047_name = rfc2047_encode(name)
-
-    # Force the name to be UTF-8
-    name = force_to_utf8(name)
-
-    if name.find(',') != -1 or name.find('.') != -1:
-        rfc822_maint = "%s (%s)" % (email, name)
-        rfc2047_maint = "%s (%s)" % (email, rfc2047_name)
-    else:
-        rfc822_maint = "%s <%s>" % (name, email)
-        rfc2047_maint = "%s <%s>" % (rfc2047_name, email)
-
-    if email.find("@") == -1 and email.find("buildd_") != 0:
-        raise ParseMaintError, "No @ found in email address part."
-
-    return (rfc822_maint, rfc2047_maint, name, email)
 
 ################################################################################
 
@@ -785,22 +671,12 @@ def which_alias_file():
 
 ################################################################################
 
-# Escape characters which have meaning to SQL's regex comparison operator ('~')
-# (woefully incomplete)
-
-def regex_safe (s):
-    s = s.replace('+', '\\\\+')
-    s = s.replace('.', '\\\\.')
-    return s
-
-################################################################################
-
 def TemplateSubst(map, filename):
     """ Perform a substition of template """
     templatefile = open_file(filename)
     template = templatefile.read()
     for x in map.keys():
-        template = template.replace(x,map[x])
+        template = template.replace(x, str(map[x]))
     templatefile.close()
     return template
 
@@ -998,15 +874,19 @@ def get_conf():
 
 def parse_args(Options):
     """ Handle -a, -c and -s arguments; returns them as SQL constraints """
+    # XXX: This should go away and everything which calls it be converted
+    #      to use SQLA properly.  For now, we'll just fix it not to use
+    #      the old Pg interface though
+    session = DBConn().session()
     # Process suite
     if Options["Suite"]:
         suite_ids_list = []
-        for suite in split_args(Options["Suite"]):
-            suite_id = database.get_suite_id(suite)
-            if suite_id == -1:
-                warn("suite '%s' not recognised." % (suite))
+        for suitename in split_args(Options["Suite"]):
+            suite = get_suite(suitename, session=session)
+            if suite.suite_id is None:
+                warn("suite '%s' not recognised." % (suite.suite_name))
             else:
-                suite_ids_list.append(suite_id)
+                suite_ids_list.append(suite.suite_id)
         if suite_ids_list:
             con_suites = "AND su.id IN (%s)" % ", ".join([ str(i) for i in suite_ids_list ])
         else:
@@ -1017,12 +897,12 @@ def parse_args(Options):
     # Process component
     if Options["Component"]:
         component_ids_list = []
-        for component in split_args(Options["Component"]):
-            component_id = database.get_component_id(component)
-            if component_id == -1:
-                warn("component '%s' not recognised." % (component))
+        for componentname in split_args(Options["Component"]):
+            component = get_component(componentname, session=session)
+            if component is None:
+                warn("component '%s' not recognised." % (componentname))
             else:
-                component_ids_list.append(component_id)
+                component_ids_list.append(component.component_id)
         if component_ids_list:
             con_components = "AND c.id IN (%s)" % ", ".join([ str(i) for i in component_ids_list ])
         else:
@@ -1032,18 +912,18 @@ def parse_args(Options):
 
     # Process architecture
     con_architectures = ""
+    check_source = 0
     if Options["Architecture"]:
         arch_ids_list = []
-        check_source = 0
-        for architecture in split_args(Options["Architecture"]):
-            if architecture == "source":
+        for archname in split_args(Options["Architecture"]):
+            if archname == "source":
                 check_source = 1
             else:
-                architecture_id = database.get_architecture_id(architecture)
-                if architecture_id == -1:
-                    warn("architecture '%s' not recognised." % (architecture))
+                arch = get_architecture(archname, session=session)
+                if arch is None:
+                    warn("architecture '%s' not recognised." % (archname))
                 else:
-                    arch_ids_list.append(architecture_id)
+                    arch_ids_list.append(arch.arch_id)
         if arch_ids_list:
             con_architectures = "AND a.id IN (%s)" % ", ".join([ str(i) for i in arch_ids_list ])
         else:
@@ -1281,7 +1161,7 @@ def gpg_keyring_args(keyrings=None):
 
 ################################################################################
 
-def check_signature (sig_filename, reject, data_filename="", keyrings=None, autofetch=None):
+def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=None):
     """
     Check the signature of a file and return the fingerprint if the
     signature is valid or 'None' if it's not.  The first argument is the
@@ -1297,14 +1177,16 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
     used.
     """
 
+    rejects = []
+
     # Ensure the filename contains no shell meta-characters or other badness
     if not re_taint_free.match(sig_filename):
-        reject("!!WARNING!! tainted signature filename: '%s'." % (sig_filename))
-        return None
+        rejects.append("!!WARNING!! tainted signature filename: '%s'." % (sig_filename))
+        return (None, rejects)
 
     if data_filename and not re_taint_free.match(data_filename):
-        reject("!!WARNING!! tainted data filename: '%s'." % (data_filename))
-        return None
+        rejects.append("!!WARNING!! tainted data filename: '%s'." % (data_filename))
+        return (None, rejects)
 
     if not keyrings:
         keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
@@ -1315,8 +1197,8 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
     if autofetch:
         error_msg = retrieve_key(sig_filename)
         if error_msg:
-            reject(error_msg)
-            return None
+            rejects.append(error_msg)
+            return (None, rejects)
 
     # Build the command line
     status_read, status_write = os.pipe()
@@ -1331,40 +1213,32 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
 
     # If we failed to parse the status-fd output, let's just whine and bail now
     if internal_error:
-        reject("internal error while performing signature check on %s." % (sig_filename))
-        reject(internal_error, "")
-        reject("Please report the above errors to the Archive maintainers by replying to this mail.", "")
-        return None
+        rejects.append("internal error while performing signature check on %s." % (sig_filename))
+        rejects.append(internal_error, "")
+        rejects.append("Please report the above errors to the Archive maintainers by replying to this mail.", "")
+        return (None, rejects)
 
-    bad = ""
     # Now check for obviously bad things in the processed output
     if keywords.has_key("KEYREVOKED"):
-        reject("The key used to sign %s has been revoked." % (sig_filename))
-        bad = 1
+        rejects.append("The key used to sign %s has been revoked." % (sig_filename))
     if keywords.has_key("BADSIG"):
-        reject("bad signature on %s." % (sig_filename))
-        bad = 1
+        rejects.append("bad signature on %s." % (sig_filename))
     if keywords.has_key("ERRSIG") and not keywords.has_key("NO_PUBKEY"):
-        reject("failed to check signature on %s." % (sig_filename))
-        bad = 1
+        rejects.append("failed to check signature on %s." % (sig_filename))
     if keywords.has_key("NO_PUBKEY"):
         args = keywords["NO_PUBKEY"]
         if len(args) >= 1:
             key = args[0]
-        reject("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, sig_filename))
-        bad = 1
+        rejects.append("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, sig_filename))
     if keywords.has_key("BADARMOR"):
-        reject("ASCII armour of signature was corrupt in %s." % (sig_filename))
-        bad = 1
+        rejects.append("ASCII armour of signature was corrupt in %s." % (sig_filename))
     if keywords.has_key("NODATA"):
-        reject("no signature found in %s." % (sig_filename))
-        bad = 1
+        rejects.append("no signature found in %s." % (sig_filename))
     if keywords.has_key("EXPKEYSIG"):
         args = keywords["EXPKEYSIG"]
         if len(args) >= 1:
             key = args[0]
-        reject("Signature made by expired key 0x%s" % (key))
-        bad = 1
+        rejects.append("Signature made by expired key 0x%s" % (key))
     if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
         args = keywords["KEYEXPIRED"]
         expiredate=""
@@ -1377,38 +1251,33 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
                     expiredate = "unknown (%s)" % (timestamp)
             else:
                 expiredate = timestamp
-        reject("The key used to sign %s has expired on %s" % (sig_filename, expiredate))
-        bad = 1
+        rejects.append("The key used to sign %s has expired on %s" % (sig_filename, expiredate))
 
-    if bad:
-        return None
+    if len(rejects) > 0:
+        return (None, rejects)
 
     # Next check gpgv exited with a zero return code
     if exit_status:
-        reject("gpgv failed while checking %s." % (sig_filename))
+        rejects.append("gpgv failed while checking %s." % (sig_filename))
         if status.strip():
-            reject(prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
+            rejects.append(prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
         else:
-            reject(prefix_multi_line_string(output, " [GPG output:] "), "")
-        return None
+            rejects.append(prefix_multi_line_string(output, " [GPG output:] "), "")
+        return (None, rejects)
 
     # Sanity check the good stuff we expect
     if not keywords.has_key("VALIDSIG"):
-        reject("signature on %s does not appear to be valid [No VALIDSIG]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No VALIDSIG]." % (sig_filename))
     else:
         args = keywords["VALIDSIG"]
         if len(args) < 1:
-            reject("internal error while checking signature on %s." % (sig_filename))
-            bad = 1
+            rejects.append("internal error while checking signature on %s." % (sig_filename))
         else:
             fingerprint = args[0]
     if not keywords.has_key("GOODSIG"):
-        reject("signature on %s does not appear to be valid [No GOODSIG]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No GOODSIG]." % (sig_filename))
     if not keywords.has_key("SIG_ID"):
-        reject("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
 
     # Finally ensure there's not something we don't recognise
     known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
@@ -1417,13 +1286,12 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
-            reject("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], sig_filename))
-            bad = 1
+            rejects.append("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], sig_filename))
 
-    if bad:
-        return None
+    if len(rejects) > 0:
+        return (None, rejects)
     else:
-        return fingerprint
+        return (fingerprint, [])
 
 ################################################################################
 

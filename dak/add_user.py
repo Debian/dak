@@ -18,25 +18,21 @@ add his key to the GPGKeyring
 # I know what I say. I dont know python and I wrote it. So go and read some other stuff.
 
 import commands
-import pg
 import re
 import sys
 import time
 import os
 import apt_pkg
-from daklib import database
-from daklib import logging
-from daklib import queue
+
+from daklib import daklog
 from daklib import utils
+from daklib.dbconn import DBConn, add_database_user, get_or_set_uid
 from daklib.regexes import re_gpg_fingerprint, re_user_address, re_user_mails, re_user_name
 
 ################################################################################
 
 Cnf = None
-projectB = None
 Logger = None
-Upload = None
-Subst = None
 
 ################################################################################
 
@@ -108,7 +104,7 @@ Additionally there is now an account created for you.
 ################################################################################
 
 def main():
-    global Cnf, projectB
+    global Cnf
     keyrings = None
 
     Cnf = utils.get_conf()
@@ -129,8 +125,7 @@ def main():
     if Options["help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
     if not keyrings:
         keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
@@ -204,16 +199,18 @@ def main():
                   utils.warn("Could not prepare password information for mail, not sending password.")
 
 # Now add user to the database.
-          projectB.query("BEGIN WORK")
-          uid_id = database.get_or_set_uid_id(uid)
-          projectB.query('CREATE USER "%s"' % (uid))
-          projectB.query("COMMIT WORK")
+          # Note that we provide a session, so we're responsible for committing
+          uidobj = get_or_set_uid(uid, session=session)
+          uid_id = uidobj.uid_id
+          add_database_user(uid)
+          session.commit()
 # The following two are kicked out in rhona, so we don't set them. kelly adds
 # them as soon as she installs a package with unknown ones, so no problems to expect here.
 # Just leave the comment in, to not think about "Why the hell aren't they added" in
 # a year, if we ever touch uma again.
 #          maint_id = database.get_or_set_maintainer_id(name)
-#          projectB.query("INSERT INTO fingerprint (fingerprint, uid) VALUES ('%s', '%s')" % (primary_key, uid_id))
+#          session.execute("INSERT INTO fingerprint (fingerprint, uid) VALUES (:fingerprint, uid)",
+#                          {'fingerprint': primary_key, 'uid': uid_id})
 
 # Lets add user to the email-whitelist file if its configured.
           if Cnf.has_key("Dinstall::MailWhiteList") and Cnf["Dinstall::MailWhiteList"] != "":
@@ -228,8 +225,7 @@ def main():
 # Should we send mail to the newly added user?
           if Cnf.FindB("Add-User::SendEmail"):
               mail = name + "<" + emails[0] +">"
-              Upload = queue.Upload(Cnf)
-              Subst = Upload.Subst
+              Subst = {}
               Subst["__NEW_MAINTAINER__"] = mail
               Subst["__UID__"] = uid
               Subst["__KEYID__"] = Cnf["Add-User::Options::Key"]

@@ -24,8 +24,7 @@ import sys, os, re, time
 import apt_pkg
 import tempfile
 from debian_bundle import deb822
-from daklib import database
-from daklib import queue
+from daklib.dbconn import *
 from daklib import utils
 from daklib.regexes import re_html_escaping, html_escaping
 
@@ -135,13 +134,15 @@ def get_upload_data(changesfn):
     uploader = re.sub(r'^\s*(\S.*)\s+<.*>',r'\1',uploader)
     if Cnf.has_key("Show-Deferred::LinkPath"):
         isnew = 0
-        suites = database.get_suites(achanges['source'],src=1)
+        suites = get_suites_source_in(achanges['source'])
         if 'unstable' not in suites and 'experimental' not in suites:
             isnew = 1
+
         for b in achanges['binary'].split():
-            suites = database.get_suites(b)
+            suites = get_suites_binary_in(b)
             if 'unstable' not in suites and 'experimental' not in suites:
                 isnew = 1
+
         if not isnew:
             # we don't link .changes because we don't want other people to
             # upload it with the existing signature.
@@ -201,7 +202,7 @@ def usage (exit_code=0):
     sys.exit(exit_code)
 
 def init():
-    global Cnf, Options, Upload, projectB
+    global Cnf, Options
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Show-Deferred::Options::Help"),
                  ("p","link-path","Show-Deferred::LinkPath","HasArg"),
@@ -218,8 +219,10 @@ def init():
     Options = Cnf.SubTree("Show-Deferred::Options")
     if Options["help"]:
         usage()
-    Upload = queue.Upload(Cnf)
-    projectB = Upload.projectB
+
+    # Initialise database connection
+    DBConn()
+
     return args
 
 def main():
