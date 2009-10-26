@@ -394,7 +394,12 @@ def parse_checksums(where, files, manifest, hashname):
     for line in manifest[field].split('\n'):
         if not line:
             break
-        checksum, size, checkfile = line.strip().split(' ')
+        clist = line.strip().split(' ')
+        if len(clist) == 3:
+            checksum, size, checkfile = clist
+        else:
+            rejmsg.append("Cannot parse checksum line [%s]" % (line))
+            continue
         if not files.has_key(checkfile):
         # TODO: check for the file's entry in the original files dict, not
         # the one modified by (auto)byhand and other weird stuff
@@ -671,7 +676,7 @@ def TemplateSubst(map, filename):
     templatefile = open_file(filename)
     template = templatefile.read()
     for x in map.keys():
-        template = template.replace(x,map[x])
+        template = template.replace(x, str(map[x]))
     templatefile.close()
     return template
 

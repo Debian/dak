@@ -44,7 +44,7 @@ import re
 import apt_pkg, commands
 
 from daklib import daklog
-from daklib import queue
+from daklib.queue import *
 from daklib import utils
 from daklib.dbconn import *
 from daklib.binary import copy_temporary_contents
@@ -111,7 +111,7 @@ def usage (exit_code=0):
 
 ###############################################################################
 
-def action (u, stable_queue=None, log_urgency=True):
+def action (u, stable_queue=None, log_urgency=True, session=None):
     (summary, short_summary) = u.build_summaries()
     pi = u.package_info()
 
@@ -145,7 +145,7 @@ def action (u, stable_queue=None, log_urgency=True):
         if stable_queue:
             stable_install(u, summary, short_summary, stable_queue, log_urgency)
         else:
-            install(u, log_urgency)
+            install(u, session, log_urgency)
     elif answer == 'Q':
         sys.exit(0)
 
@@ -173,8 +173,8 @@ def add_dsc_to_db(u, filename, session):
     source.source = u.pkg.dsc["source"]
     source.version = u.pkg.dsc["version"] # NB: not files[file]["version"], that has no epoch
     source.maintainer_id = get_or_set_maintainer(u.pkg.dsc["maintainer"], session).maintainer_id
-    source.changedby_id = get_or_set_maintainer(u.pkg.dsc["changed-by"], session).maintainer_id
-    source.fingerprint_id = get_or_set_fingerprint(u.pkg.dsc["fingerprint"], session).fingerprint_id
+    source.changedby_id = get_or_set_maintainer(u.pkg.changes["changed-by"], session).maintainer_id
+    source.fingerprint_id = get_or_set_fingerprint(u.pkg.changes["fingerprint"], session).fingerprint_id
     source.install_date = datetime.now().date()
 
     dsc_component = entry["component"]
@@ -206,7 +206,7 @@ def add_dsc_to_db(u, filename, session):
     dscfile.poolfile_id = entry["files id"]
     session.add(dscfile)
 
-    for dsc_file, dentry in u.pkg.dsc_files.keys():
+    for dsc_file, dentry in u.pkg.dsc_files.items():
         df = DSCFile()
         df.source_id = source.source_id
 
@@ -214,8 +214,16 @@ def add_dsc_to_db(u, filename, session):
         # files id is stored in dsc_files by check_dsc().
         files_id = dentry.get("files id", None)
 
+        # Find the entry in the files hash
+        # TODO: Bail out here properly
+        dfentry = None
+        for f, e in u.pkg.files.items():
+            if f == dsc_file:
+                dfentry = e
+                break
+
         if files_id is None:
-            filename = dentry["pool name"] + dsc_file
+            filename = dfentry["pool name"] + dsc_file
 
             (found, obj) = check_poolfile(filename, dentry["size"], dentry["md5sum"], dsc_location_id)
             # FIXME: needs to check for -1/-2 and or handle exception
@@ -224,6 +232,9 @@ def add_dsc_to_db(u, filename, session):
 
             # If still not found, add it
             if files_id is None:
+                # HACK: Force sha1sum etc into dentry
+                dentry["sha1sum"] = dfentry["sha1sum"]
+                dentry["sha256sum"] = dfentry["sha256sum"]
                 poolfile = add_poolfile(filename, dentry, dsc_location_id, session)
                 files_id = poolfile.file_id
 
@@ -233,7 +244,7 @@ def add_dsc_to_db(u, filename, session):
     session.flush()
 
     # Add the src_uploaders to the DB
-    uploader_ids = [maintainer_id]
+    uploader_ids = [source.maintainer_id]
     if u.pkg.dsc.has_key("uploaders"):
         for up in u.pkg.dsc["uploaders"].split(","):
             up = up.strip()
@@ -249,7 +260,7 @@ def add_dsc_to_db(u, filename, session):
 
         su = SrcUploader()
         su.maintainer_id = up
-        su.source_id = source_id
+        su.source_id = source.source_id
         session.add(su)
 
     session.flush()
@@ -275,6 +286,7 @@ def add_deb_to_db(u, filename, session):
 
     # Find poolfile id
     filename = entry["pool name"] + filename
+    fullpath = os.path.join(cnf["Dir::Pool"], filename)
     if not entry.get("location id", None):
         entry["location id"] = get_location(cnf["Dir::Pool"], entry["component"], utils.where_am_i(), session).location_id
 
@@ -285,7 +297,7 @@ def add_deb_to_db(u, filename, session):
     bin.poolfile_id = entry["files id"]
 
     # Find source id
-    bin_sources = get_sources_from_name(entry["source package"], entry["source version"])
+    bin_sources = get_sources_from_name(entry["source package"], entry["source version"], session=session)
     if len(bin_sources) != 1:
         raise NoSourceFieldError, "Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
                                   (bin.package, bin.version, bin.architecture.arch_string,
@@ -302,28 +314,25 @@ def add_deb_to_db(u, filename, session):
         ba = BinAssociation()
         ba.binary_id = bin.binary_id
         ba.suite_id = get_suite(suite_name).suite_id
-        session.add(sa)
+        session.add(ba)
 
     session.flush()
 
     # Deal with contents
-    contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, filename, reject=None)
+    contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, os.path.basename(filename), None, session)
     if not contents:
-        print "REJECT\n" + "\n".join(contents.rejects)
+        print "REJECT\nCould not determine contents of package %s" % bin.package
         session.rollback()
         raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
 
 
-def install(u, log_urgency=True):
+def install(u, session, log_urgency=True):
     cnf = Config()
     summarystats = SummaryStats()
 
     print "Installing."
 
-    Logger.log(["installing changes",pkg.changes_file])
-
-    # Begin a transaction; if we bomb out anywhere between here and the COMMIT WORK below, the DB will not be changed.
-    session = DBConn().session()
+    Logger.log(["installing changes", u.pkg.changes_file])
 
     # Ensure that we have all the hashes we need below.
     u.ensure_hashes()
@@ -334,12 +343,12 @@ def install(u, log_urgency=True):
         return
 
     # Add the .dsc file to the DB first
-    for newfile in u.pkg.files.keys():
+    for newfile, entry in u.pkg.files.items():
         if entry["type"] == "dsc":
             dsc_component, dsc_location_id = add_dsc_to_db(u, newfile, session)
 
     # Add .deb / .udeb files to the DB (type is always deb, dbtype is udeb/deb)
-    for newfile in u.pkg.files.keys():
+    for newfile, entry in u.pkg.files.items():
         if entry["type"] == "deb":
             add_deb_to_db(u, newfile, session)
 
@@ -381,7 +390,7 @@ def install(u, log_urgency=True):
     # Copy the .changes file across for suite which need it.
     copy_changes = {}
     copy_dot_dak = {}
-    for suite_name in changes["distribution"].keys():
+    for suite_name in u.pkg.changes["distribution"].keys():
         if cnf.has_key("Suite::%s::CopyChanges" % (suite_name)):
             copy_changes[cnf["Suite::%s::CopyChanges" % (suite_name)]] = ""
         # and the .dak file...
@@ -463,9 +472,8 @@ def install(u, log_urgency=True):
     summarystats.accept_count += 1
 
 ################################################################################
-### XXX: UP TO HERE
 
-def stable_install(u, summary, short_summary, fromsuite_name="proposed-updates"):
+def stable_install(u, session, summary, short_summary, fromsuite_name="proposed-updates"):
     summarystats = SummaryStats()
 
     fromsuite_name = fromsuite_name.lower()
@@ -477,10 +485,6 @@ def stable_install(u, summary, short_summary, fromsuite_name="proposed-updates")
 
     fromsuite = get_suite(fromsuite_name)
     tosuite = get_suite(tosuite_name)
-
-    # Begin a transaction; if we bomb out anywhere between here and
-    # the COMMIT WORK below, the DB won't be changed.
-    session = DBConn().session()
 
     # Add the source to stable (and remove it from proposed-updates)
     for newfile, entry in u.pkg.files.items():
@@ -591,7 +595,7 @@ def stable_install(u, summary, short_summary, fromsuite_name="proposed-updates")
 
 ################################################################################
 
-def process_it(changes_file, stable_queue=None, log_urgency=True):
+def process_it(changes_file, stable_queue, log_urgency, session):
     cnf = Config()
     u = Upload()
 
@@ -612,14 +616,14 @@ def process_it(changes_file, stable_queue=None, log_urgency=True):
         # overwrite_checks should not be performed if installing to stable
         overwrite_checks = False
 
-    u.load_dot_dak(cfile)
+    u.pkg.load_dot_dak(cfile)
     u.update_subst()
 
     if stable_queue:
         u.pkg.changes_file = old
 
-    u.accepted_checks(overwrite_checks)
-    action(u, stable_queue, log_urgency)
+    u.accepted_checks(overwrite_checks, session)
+    action(u, stable_queue, log_urgency, session)
 
     # Restore CWD
     os.chdir(u.prevdir)
@@ -670,10 +674,13 @@ def main():
     # Sort the .changes files so that we process sourceful ones first
     changes_files.sort(utils.changes_compare)
 
+
     # Process the changes files
     for changes_file in changes_files:
         print "\n" + changes_file
-        process_it(changes_file, stable_queue, log_urgency)
+        session = DBConn().session()
+        process_it(changes_file, stable_queue, log_urgency, session)
+        session.close()
 
     if summarystats.accept_count:
         sets = "set"

@@ -53,20 +53,20 @@ from binary import Binary
 
 ###############################################################################
 
-def get_type(f, session=None):
+def get_type(f, session):
     """
     Get the file type of C{f}
 
     @type f: dict
     @param f: file entry from Changes object
 
+    @type session: SQLA Session
+    @param session: SQL Alchemy session object
+
     @rtype: string
     @return: filetype
 
     """
-    if session is None:
-        session = DBConn().session()
-
     # Determine the type
     if f.has_key("dbtype"):
         file_type = file["dbtype"]
@@ -115,7 +115,7 @@ def determine_new(changes, files, warn=1):
         pkg = f["package"]
         priority = f["priority"]
         section = f["section"]
-        file_type = get_type(f)
+        file_type = get_type(f, session)
         component = f["component"]
 
         if file_type == "dsc":
@@ -159,6 +159,8 @@ def determine_new(changes, files, warn=1):
         for pkg in new.keys():
             if new[pkg].has_key("othercomponents"):
                 print "WARNING: %s already present in %s distribution." % (pkg, new[pkg]["othercomponents"])
+
+    session.close()
 
     return new
 
@@ -306,7 +308,7 @@ class Upload(object):
 
         # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
         if not self.pkg.changes.has_key("architecture") or not \
-           isinstance(changes["architecture"], DictType):
+           isinstance(self.pkg.changes["architecture"], DictType):
             self.pkg.changes["architecture"] = { "Unknown" : "" }
 
         # and maintainer2047 may not exist.
@@ -323,7 +325,7 @@ class Upload(object):
            (self.pkg.changes["changedby822"] != self.pkg.changes["maintainer822"]):
 
             self.Subst["__MAINTAINER_FROM__"] = self.pkg.changes["changedby2047"]
-            self.Subst["__MAINTAINER_TO__"] = "%s, %s" % (self.pkg.changes["changedby2047"], changes["maintainer2047"])
+            self.Subst["__MAINTAINER_TO__"] = "%s, %s" % (self.pkg.changes["changedby2047"], self.pkg.changes["maintainer2047"])
             self.Subst["__MAINTAINER__"] = self.pkg.changes.get("changed-by", "Unknown")
         else:
             self.Subst["__MAINTAINER_FROM__"] = self.pkg.changes["maintainer2047"]
@@ -484,7 +486,7 @@ class Upload(object):
                 (source, dest) = args[1:3]
                 if self.pkg.changes["distribution"].has_key(source):
                     for arch in self.pkg.changes["architecture"].keys():
-                        if arch not in [ arch_string for a in get_suite_architectures(source) ]:
+                        if arch not in [ a.arch_string for a in get_suite_architectures(source) ]:
                             self.notes.append("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch))
                             del self.pkg.changes["distribution"][source]
                             self.pkg.changes["distribution"][dest] = 1
@@ -738,6 +740,16 @@ class Upload(object):
         if entry.has_key("byhand"):
             return
 
+        # Check we have fields we need to do these checks
+        oktogo = True
+        for m in ['component', 'package', 'priority', 'size', 'md5sum']:
+            if not entry.has_key(m):
+                self.rejects.append("file '%s' does not have field %s set" % (f, m))
+                oktogo = False
+
+        if not oktogo:
+            return
+
         # Handle component mappings
         for m in cnf.ValueList("ComponentMappings"):
             (source, dest) = m.split()
@@ -752,8 +764,7 @@ class Upload(object):
             return
 
         # Validate the component
-        component = entry["component"]
-        if not get_component(component, session):
+        if not get_component(entry["component"], session):
             self.rejects.append("file '%s' has unknown component '%s'." % (f, component))
             return
 
@@ -895,6 +906,8 @@ class Upload(object):
             for suite in self.pkg.changes["distribution"].keys():
                 self.per_suite_file_checks(f, suite, session)
 
+        session.close()
+
         # If the .changes file says it has source, it must have source.
         if self.pkg.changes["architecture"].has_key("source"):
             if not has_source:
@@ -1014,9 +1027,10 @@ class Upload(object):
             self.rejects.append("%s: no .tar.gz or .orig.tar.gz in 'Files' field." % (dsc_filename))
 
         # Ensure source is newer than existing source in target suites
-        self.check_source_against_db(dsc_filename)
-
-        self.check_dsc_against_db(dsc_filename)
+        session = DBConn().session()
+        self.check_source_against_db(dsc_filename, session)
+        self.check_dsc_against_db(dsc_filename, session)
+        session.close()
 
         return True
 
@@ -1331,6 +1345,8 @@ class Upload(object):
                 if self.pkg.files[f].has_key("new"):
                     self.rejects.append("%s may not upload NEW file %s" % (uid, f))
 
+        session.close()
+
     ###########################################################################
     def build_summaries(self):
         """ Build a summary of changes the upload introduces. """
@@ -1491,7 +1507,7 @@ distribution."""
             targetdir = cnf["Dir::Queue::Accepted"]
 
         print "Accepting."
-	if self.logger:
+        if self.logger:
             self.logger.log(["Accepting changes", self.pkg.changes_file])
 
         self.pkg.write_dot_dak(targetdir)
@@ -1771,7 +1787,7 @@ distribution."""
         return 0
 
     ################################################################################
-    def in_override_p(self, package, component, suite, binary_type, file, session=None):
+    def in_override_p(self, package, component, suite, binary_type, file, session):
         """
         Check if a package already has override entries in the DB
 
@@ -1795,9 +1811,6 @@ distribution."""
         """
 
         cnf = Config()
-
-        if session is None:
-            session = DBConn().session()
 
         if binary_type == "": # must be source
             file_type = "dsc"
@@ -1834,8 +1847,9 @@ distribution."""
 
         Description: TODO
         """
+        Cnf = Config()
         anyversion = None
-        anysuite = [suite] + self.Cnf.ValueList("Suite::%s::VersionChecks::Enhances" % (suite))
+        anysuite = [suite] + Cnf.ValueList("Suite::%s::VersionChecks::Enhances" % (suite))
         for (s, v) in sv_list:
             if s in [ x.lower() for x in anysuite ]:
                 if not anyversion or apt_pkg.VersionCompare(anyversion, v) <= 0:
@@ -1923,10 +1937,7 @@ distribution."""
                         self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
 
     ################################################################################
-    def check_binary_against_db(self, file, session=None):
-        if session is None:
-            session = DBConn().session()
-
+    def check_binary_against_db(self, file, session):
         # Ensure version is sane
         q = session.query(BinAssociation)
         q = q.join(DBBinary).filter(DBBinary.package==self.pkg.files[file]["package"])
@@ -1945,12 +1956,9 @@ distribution."""
 
     ################################################################################
 
-    def check_source_against_db(self, file, session=None):
+    def check_source_against_db(self, file, session):
         """
         """
-        if session is None:
-            session = DBConn().session()
-
         source = self.pkg.dsc.get("source")
         version = self.pkg.dsc.get("version")
 
@@ -1962,7 +1970,7 @@ distribution."""
                                        file, version, sourceful=True)
 
     ################################################################################
-    def check_dsc_against_db(self, file, session=None):
+    def check_dsc_against_db(self, file, session):
         """
 
         @warning: NB: this function can remove entries from the 'files' index [if
@@ -1973,9 +1981,7 @@ distribution."""
 
         """
 
-        if session is None:
-            session = DBConn().session()
-
+        Cnf = Config()
         self.pkg.orig_tar_gz = None
 
         # Try and find all files mentioned in the .dsc.  This has
@@ -1991,7 +1997,7 @@ distribution."""
                 found = "%s in incoming" % (dsc_name)
 
                 # Check the file does not already exist in the archive
-                ql = get_poolfile_like_name(dsc_name)
+                ql = get_poolfile_like_name(dsc_name, session)
 
                 # Strip out anything that isn't '%s' or '/%s$'
                 for i in ql:
@@ -2060,18 +2066,20 @@ distribution."""
                     old_file_fh.close()
                     actual_size = os.stat(old_file)[stat.ST_SIZE]
                     found = old_file
-                    suite_type = f.location.archive_type
+                    suite_type = x.location.archive_type
                     # need this for updating dsc_files in install()
-                    dsc_entry["files id"] = f.file_id
+                    dsc_entry["files id"] = x.file_id
                     # See install() in process-accepted...
-                    self.pkg.orig_tar_id = f.file_id
+                    self.pkg.orig_tar_id = x.file_id
                     self.pkg.orig_tar_gz = old_file
-                    self.pkg.orig_tar_location = f.location.location_id
+                    self.pkg.orig_tar_location = x.location.location_id
                 else:
                     # TODO: Record the queues and info in the DB so we don't hardcode all this crap
                     # Not there? Check the queue directories...
                     for directory in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
-                        in_otherdir = os.path.join(self.Cnf["Dir::Queue::%s" % (directory)], dsc_name)
+                        if not Cnf.has_key("Dir::Queue::%s" % (directory)):
+                            continue
+                        in_otherdir = os.path.join(Cnf["Dir::Queue::%s" % (directory)], dsc_name)
                         if os.path.exists(in_otherdir):
                             in_otherdir_fh = utils.open_file(in_otherdir)
                             actual_md5 = apt_pkg.md5sum(in_otherdir_fh)
@@ -2093,17 +2101,20 @@ distribution."""
                 self.rejects.append("size for %s doesn't match %s." % (found, file))
 
     ################################################################################
-    def accepted_checks(self, overwrite_checks=True, session=None):
+    def accepted_checks(self, overwrite_checks, session):
         # Recheck anything that relies on the database; since that's not
         # frozen between accept and our run time when called from p-a.
 
         # overwrite_checks is set to False when installing to stable/oldstable
 
-        if session is None:
-            session = DBConn().session()
-
         propogate={}
         nopropogate={}
+
+        # Find the .dsc (again)
+        dsc_filename = None
+        for f in self.pkg.files.keys():
+            if self.pkg.files[f]["type"] == "dsc":
+                dsc_filename = f
 
         for checkfile in self.pkg.files.keys():
             # The .orig.tar.gz can disappear out from under us is it's a
@@ -2131,7 +2142,7 @@ distribution."""
 
             # propogate in the case it is in the override tables:
             for suite in self.pkg.changes.get("propdistribution", {}).keys():
-                if self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), checkfile):
+                if self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), checkfile, session):
                     propogate[suite] = 1
                 else:
                     nopropogate[suite] = 1
@@ -2144,7 +2155,7 @@ distribution."""
         for checkfile in self.pkg.files.keys():
             # Check the package is still in the override tables
             for suite in self.pkg.changes["distribution"].keys():
-                if not self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), checkfile):
+                if not self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), checkfile, session):
                     self.rejects.append("%s is NEW for %s." % (checkfile, suite))
 
     ################################################################################
