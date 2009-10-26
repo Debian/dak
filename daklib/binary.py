@@ -300,7 +300,8 @@ def copy_temporary_contents(package, version, archname, deb, reject, session=Non
         message = utils.TemplateSubst(subst, cnf["Dir::Templates"]+"/missing-contents")
         utils.send_mail(message)
 
-        exists = Binary(deb, reject).scan_package()
+        # Temporarily disable contents storage until we re-do the table layout
+        #exists = Binary(deb, reject).scan_package()
 
     if exists:
         sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
