@@ -506,8 +506,8 @@ def main ():
     logfile.write("----------------------------------------------\n")
     logfile.flush()
 
-    dsc_type_id = get_override_type('dsc')
-    deb_type_id = get_override_type('deb')
+    dsc_type_id = get_override_type('dsc', session)
+    deb_type_id = get_override_type('deb', session)
 
     # Do the actual deletion
     print "Deleting...",
