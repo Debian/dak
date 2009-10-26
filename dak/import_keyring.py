@@ -140,7 +140,7 @@ class Keyring(object):
                 keys[key]["uid"] = uid
 
                 if keyid != None: continue
-                keyid = database.get_or_set_uid_id(uid)
+                keyid = get_or_set_uid_id(uid).uid
                 byuid[keyid] = (uid, name)
                 byname[uid] = (keyid, name)
 
@@ -157,13 +157,13 @@ class Keyring(object):
                 keys[x]["uid"] = format % "invalid-uid"
             else:
                 uid = format % keys[x]["email"]
-                keyid = database.get_or_set_uid_id(uid)
+                keyid = get_or_set_uid(uid).uid
                 byuid[keyid] = (uid, keys[x]["name"])
                 byname[uid] = (keyid, keys[x]["name"])
                 keys[x]["uid"] = uid
         if any_invalid:
             uid = format % "invalid-uid"
-            keyid = database.get_or_set_uid_id(uid)
+            keyid = get_or_set_uid_id(uid).uid
             byuid[keyid] = (uid, "ungeneratable user id")
             byname[uid] = (keyid, "ungeneratable user id")
         return (byname, byuid)
