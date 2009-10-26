@@ -227,8 +227,9 @@ def main():
 
         is_dm = cnf["Import-Keyring::"+keyringname+"::Debian-Maintainer"]
 
-    keyring_id = database.get_or_set_keyring_id(
-                        keyringname.split("/")[-1])
+    keyring_id = get_or_set_keyring(
+        keyringname.split("/")[-1], session,
+    ).keyring_id
 
     ### Generate new uid entries if they're needed (from LDAP or the keyring)
     (desuid_byname, desuid_byid) = keyring.generate_desired_users()
