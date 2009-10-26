@@ -104,7 +104,7 @@ class GzippedContentWriter(object):
 
     def __init__(self, filename):
         """
-        @ptype filename: string
+        @type filename: string
         @param filename: the name of the file to write to
         """
         self.queue = Queue.Queue()

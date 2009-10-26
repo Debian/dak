@@ -554,6 +554,7 @@ def do_bxa_notification():
 def add_overrides (new):
     changes = Upload.pkg.changes
     files = Upload.pkg.files
+    srcpkg = changes.get("source")
 
     projectB.query("BEGIN WORK")
     for suite in changes["suite"].keys():
@@ -563,6 +564,7 @@ def add_overrides (new):
             type_id = database.get_override_type_id(new[pkg]["type"])
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
+            Logger.log(["%s overrides" % (srcpkg), suite, new[pkg]["component"], new[pkg]["type"], new[pkg]["priority"], new[pkg]["section"]])
             projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')" % (suite_id, component_id, type_id, pkg, priority_id, section_id))
             for f in new[pkg]["files"]:
                 if files[f].has_key("new"):
@@ -693,6 +695,7 @@ def do_new():
             try:
                 check_daily_lock()
                 done = add_overrides (new)
+                Logger.log([utils.getusername(), "NEW ACCEPT: %s" % (Upload.pkg.changes_file)])
             except CantGetLockError:
                 print "Hello? Operator! Give me the number for 911!"
                 print "Dinstall in the locked area, cant process packages, come back later"
@@ -705,12 +708,14 @@ def do_new():
                                        reject_message=Options["Manual-Reject"],
                                        note=database.get_new_comments(changes.get("source", "")))
             if not aborted:
+                Logger.log([utils.getusername(), "NEW REJECT: %s" % (Upload.pkg.changes_file)])
                 os.unlink(Upload.pkg.changes_file[:-8]+".dak")
                 done = 1
         elif answer == 'N':
             edit_note(database.get_new_comments(changes.get("source", "")))
         elif answer == 'P' and not Options["Trainee"]:
             prod_maintainer(database.get_new_comments(changes.get("source", "")))
+            Logger.log([utils.getusername(), "NEW PROD: %s" % (Upload.pkg.changes_file)])
         elif answer == 'R' and not Options["Trainee"]:
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
@@ -823,10 +828,12 @@ def do_byhand():
                 done = 1
                 for f in byhand:
                     del files[f]
+                Logger.log([utils.getusername(), "BYHAND ACCEPT: %s" % (Upload.pkg.changes_file)])
             except CantGetLockError:
                 print "Hello? Operator! Give me the number for 911!"
                 print "Dinstall in the locked area, cant process packages, come back later"
         elif answer == 'M':
+            Logger.log([utils.getusername(), "BYHAND REJECT: %s" % (Upload.pkg.changes_file)])
             Upload.do_reject(1, Options["Manual-Reject"])
             os.unlink(Upload.pkg.changes_file[:-8]+".dak")
             done = 1
@@ -929,10 +936,12 @@ def do_accept_stableupdate(suite, q):
             # writing this means that it is installed, so put it into
             # accepted.
             print "Binary-only upload, source installed."
+            Logger.log([utils.getusername(), "PUNEW ACCEPT: %s" % (Upload.pkg.changes_file)])
             _accept()
         elif is_source_in_queue_dir(Cnf["Dir::Queue::Accepted"]):
             # The source is in accepted, the binary cleared NEW: accept it.
             print "Binary-only upload, source in accepted."
+            Logger.log([utils.getusername(), "PUNEW ACCEPT: %s" % (Upload.pkg.changes_file)])
             _accept()
         elif is_source_in_queue_dir(Cnf["Dir::Queue::New"]):
             # It's in NEW.  We expect the source to land in p-u holding
@@ -942,6 +951,7 @@ def do_accept_stableupdate(suite, q):
         elif is_source_in_queue_dir(Cnf["Dir::Queue::Newstage"]):
             # It's in newstage.  Accept into the holding area
             print "Binary-only upload, source in newstage."
+            Logger.log([utils.getusername(), "PUNEW ACCEPT: %s" % (Upload.pkg.changes_file)])
             _accept()
         else:
             # No case applicable.  Bail out.  Return will cause the upload
@@ -1031,7 +1041,7 @@ def end():
         if accept_count > 1:
             sets = "sets"
         sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))))
-        Logger.log(["total",accept_count,accept_bytes])
+        Logger.log([utils.getusername(), "total",accept_count,accept_bytes])
 
     if not Options["No-Action"] and not Options["Trainee"]:
         Logger.close()

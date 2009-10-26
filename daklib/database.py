@@ -849,8 +849,8 @@ def has_new_comment(package, version, ignore_trainee=False):
     @type version: string
     @param version: package version
 
-    @type version: boolean
-    @param version: ignore trainee comments
+    @type ignore_trainee: boolean
+    @param ignore_trainee: ignore trainee comments
 
     @rtype: boolean
     @return: true/false

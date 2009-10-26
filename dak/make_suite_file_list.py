@@ -275,7 +275,7 @@ def write_filelists(packages, dislocated_files, session):
             if not Options["Architecture"]:
                 architectures = [ a.arch_string for a in get_suite_architectures(suite, session=session) ]
             else:
-                architectures = utils.split_args(Options["Architectures"])
+                architectures = utils.split_args(Options["Architecture"])
             for arch in [ i.lower() for i in architectures ]:
                 d[suite][component].setdefault(arch, {})
                 if arch == "source":

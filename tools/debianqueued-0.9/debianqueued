@@ -21,6 +21,9 @@ use Net::Ping;
 use Net::FTP;
 use Socket qw( PF_INET AF_INET SOCK_STREAM );
 use Config;
+use Sys::Hostname;
+
+setlocale(&POSIX::LC_ALL, "C");
 
 # ---------------------------------------------------------------------------
 #								configuration
@@ -60,6 +63,8 @@ $conf::target = "localhost" if $conf::upload_method eq "copy";
 package main;
 
 ( $main::progname = $0 ) =~ s,.*/,,;
+
+($main::hostname, undef, undef, undef, undef) = gethostbyname(hostname());
 
 my %packages = ();
 
@@ -135,7 +140,7 @@ if ( !@ARGV ) {
     POSIX::sigsuspend($sigset);
     waitpid( $pid, WNOHANG );
     if ( kill( 0, $pid ) ) {
-      print "Daemon started in background (pid $pid)\n";
+      print "Daemon (on $main::hostname) started in background (pid $pid)\n";
       exit 0;
     } else {
       exit 1;
@@ -165,9 +170,7 @@ my $parent_pid = $ARGV[1];
 
 do {
   my $version;
-  ( $version =
-'Release: 0.9 $Revision: 1.51 $ $Date: 1999/07/08 09:43:21 $ $Author: ftplinux $'
-  ) =~ s/\$ ?//g;
+  ( $version = 'Release: 0.95' ) =~ s/\$ ?//g;
   print "debianqueued $version\n";
 };
 
@@ -329,7 +332,7 @@ open( STDERR, ">&LOG" )
   or die "$main::progname: Can't redirect stderr to $conf::logfile: $!\n";
 
 # ok, from this point usually no "die" anymore, stderr is gone!
-msg( "log", "daemon (pid $$) started\n" );
+msg( "log", "daemon (pid $$) (on $main::hostname) started\n" );
 
 # initialize variables used by send_status before launching the status daemon
 $main::dstat = "i";
@@ -1208,7 +1211,9 @@ outer_loop: while (<COMMANDS>) {
           $selecteddelayed = $1;
           s,^DELAYED/[0-9]+-day/,,;
         }
-        if ( $origword eq "--searchdirs" ) {
+        if (m,(^|/)\*,) {
+          msg("mail,log", "$_: filename component cannot start with a wildcard\n");
+        } elsif ( $origword eq "--searchdirs" ) {
           $selecteddelayed = -2;
         } elsif (m,/,) {
           msg(
@@ -2339,7 +2344,7 @@ __MESSAGE__
   }
 
   $message .= "\n$text";
-  $message .= "\nGreetings,\n\n\tYour Debian queue daemon\n";
+  $message .= "\nGreetings,\n\n\tYour Debian queue daemon (running on host $main::hostname)\n";
 
   my $mail = Email::Send->new;
   for (qw[Sendmail SMTP]) {

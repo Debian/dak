@@ -691,6 +691,9 @@ def warn(msg):
 def whoami ():
     return pwd.getpwuid(os.getuid())[4].split(',')[0].replace('.', '')
 
+def getusername ():
+    return pwd.getpwuid(os.getuid())[0]
+
 ################################################################################
 
 def size_type (c):

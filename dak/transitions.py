@@ -84,9 +84,7 @@ def init():
     if Options["help"]:
         usage()
 
-    whoami = os.getuid()
-    whoamifull = pwd.getpwuid(whoami)
-    username = whoamifull[0]
+    username = utils.getusername()
     if username != "dak":
         print "Non-dak user: %s" % username
         Options["sudo"] = "y"
