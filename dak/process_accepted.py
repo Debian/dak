@@ -318,12 +318,12 @@ def add_deb_to_db(u, filename, session):
 
     session.flush()
 
-    # Deal with contents
-    contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, os.path.basename(filename), None, session)
-    if not contents:
-        print "REJECT\nCould not determine contents of package %s" % bin.package
-        session.rollback()
-        raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
+    # Deal with contents - disabled for now
+    #contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, os.path.basename(filename), None, session)
+    #if not contents:
+    #    print "REJECT\nCould not determine contents of package %s" % bin.package
+    #    session.rollback()
+    #    raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
 
 
 def install(u, session, log_urgency=True):
