@@ -981,6 +981,42 @@ class Keyring(object):
 
 __all__.append('Keyring')
 
+def get_or_set_keyring(keyring, session=None):
+    """
+    If C{keyring} does not have an entry in the C{keyrings} table yet, create one
+    and return the new Keyring
+    If C{keyring} already has an entry, simply return the existing Keyring
+
+    @type keyring: string
+    @param keyring: the keyring name
+
+    @rtype: Keyring
+    @return: the Keyring object for this keyring
+
+    """
+    privatetrans = False
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    try:
+        obj = session.query(Keyring).filter_by(keyring_name=keyring).first()
+
+        if obj is None:
+            obj = Keyring(keyring_name=keyring)
+            session.add(obj)
+            if privatetrans:
+                session.commit()
+            else:
+                session.flush()
+
+        return obj
+    finally:
+        if privatetrans:
+            session.close()
+
+__all__.append('get_or_set_keyring')
+
 ################################################################################
 
 class Location(object):
