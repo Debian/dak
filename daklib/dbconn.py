@@ -44,6 +44,7 @@ from sqlalchemy.orm import sessionmaker, mapper, relation
 
 # Don't remove this, we re-export the exceptions to scripts which import us
 from sqlalchemy.exc import *
+from sqlalchemy.orm.exc import NoResultFound
 
 # Only import Config until Queue stuff is changed to store its config
 # in the database
@@ -117,12 +118,10 @@ def get_architecture(architecture, session=None):
 
     q = session.query(Architecture).filter_by(arch_string=architecture)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_architecture')
 
@@ -183,12 +182,10 @@ def get_archive(archive, session=None):
 
     q = session.query(Archive).filter_by(archive_name=archive)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_archive')
 
@@ -250,12 +247,10 @@ def get_binary_from_id(id, session=None):
 
     q = session.query(DBBinary).filter_by(binary_id=id)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_binary_from_id')
 
@@ -400,12 +395,10 @@ def get_component(component, session=None):
 
     q = session.query(Component).filter_by(component_name=component)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_component')
 
@@ -453,7 +446,10 @@ def get_or_set_contents_file_id(filename, session=None):
         privatetrans = True
 
     q = session.query(ContentFilename).filter_by(filename=filename)
-    if q.count() < 1:
+
+    try:
+        ret = q.one().cafilename_id
+    except NoResultFound:
         cf = ContentFilename()
         cf.filename = filename
         session.add(cf)
@@ -462,8 +458,6 @@ def get_or_set_contents_file_id(filename, session=None):
         else:
             session.flush()
         ret = cf.cafilename_id
-    else:
-        ret = q.one().cafilename_id
 
     if privatetrans:
         session.close()
@@ -558,7 +552,10 @@ def get_or_set_contents_path_id(filepath, session=None):
         privatetrans = True
 
     q = session.query(ContentFilepath).filter_by(filepath=filepath)
-    if q.count() < 1:
+
+    try:
+        ret = q.one().cafilepath_id
+    except NoResultFound:
         cf = ContentFilepath()
         cf.filepath = filepath
         session.add(cf)
@@ -567,8 +564,6 @@ def get_or_set_contents_path_id(filepath, session=None):
         else:
             session.flush()
         ret = cf.cafilepath_id
-    else:
-        ret = q.one().cafilepath_id
 
     if privatetrans:
         session.close()
@@ -771,12 +766,10 @@ def get_poolfile_by_id(file_id, session=None):
 
     q = session.query(PoolFile).filter_by(file_id=file_id)
 
-    if q.count() > 0:
-        ret = q.one()
-    else:
-        ret = None
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_poolfile_by_id')
 
@@ -864,7 +857,10 @@ def get_or_set_fingerprint(fpr, session=None):
         privatetrans = True
 
     q = session.query(Fingerprint).filter_by(fingerprint=fpr)
-    if q.count() < 1:
+
+    try:
+        ret = q.one()
+    except NoResultFound:
         fingerprint = Fingerprint()
         fingerprint.fingerprint = fpr
         session.add(fingerprint)
@@ -873,8 +869,6 @@ def get_or_set_fingerprint(fpr, session=None):
         else:
             session.flush()
         ret = fingerprint
-    else:
-        ret = q.one()
 
     if privatetrans:
         session.close()
@@ -968,12 +962,10 @@ def get_location(location, component=None, archive=None, session=None):
     if component is not None:
         q = q.join(Component).filter_by(component_name=component)
 
-    if q.count() < 1:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_location')
 
@@ -1018,7 +1010,9 @@ def get_or_set_maintainer(name, session=None):
         privatetrans = True
 
     q = session.query(Maintainer).filter_by(name=name)
-    if q.count() < 1:
+    try:
+        ret = q.one()
+    except NoResultFound:
         maintainer = Maintainer()
         maintainer.name = name
         session.add(maintainer)
@@ -1027,8 +1021,6 @@ def get_or_set_maintainer(name, session=None):
         else:
             session.flush()
         ret = maintainer
-    else:
-        ret = q.one()
 
     if privatetrans:
         session.close()
@@ -1226,10 +1218,10 @@ def get_override_type(override_type, session=None):
 
     q = session.query(OverrideType).filter_by(overridetype=override_type)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
     return ret
 
@@ -1364,12 +1356,10 @@ def get_priority(priority, session=None):
 
     q = session.query(Priority).filter_by(priority=priority)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_priority')
 
@@ -1535,12 +1525,11 @@ def get_queue(queuename, session=None):
     """
 
     q = session.query(Queue).filter_by(queue_name=queuename)
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
 
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_queue')
 
@@ -1580,12 +1569,10 @@ def get_queue_build(filename, suite, session=None):
         q = session.query(QueueBuild).filter_by(filename=filename)
         q = q.join(Suite).filter_by(suite_name=suite)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_queue_build')
 
@@ -1629,12 +1616,11 @@ def get_section(section, session=None):
     """
 
     q = session.query(Section).filter_by(section=section)
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
 
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_section')
 
@@ -1817,13 +1803,10 @@ def get_source_in_suite(source, suite, session=None):
     q = q.join('source').filter_by(source=source)
     q = q.join('suite').filter_by(suite_name=suite)
 
-    if q.count() == 0:
-        ret =  None
-    else:
-        # ???: Maybe we should just return the SrcAssociation object instead
-        ret = q.one().source
-
-    return ret
+    try:
+        return q.one().source
+    except NoResultFound:
+        return None
 
 __all__.append('get_source_in_suite')
 
@@ -1925,12 +1908,10 @@ def get_suite_architecture(suite, architecture, session=None):
     q = q.join(Architecture).filter_by(arch_string=architecture)
     q = q.join(Suite).filter_by(suite_name=suite)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_suite_architecture')
 
@@ -1952,12 +1933,10 @@ def get_suite(suite, session=None):
 
     q = session.query(Suite).filter_by(suite_name=suite)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_suite')
 
@@ -2091,7 +2070,9 @@ def get_or_set_uid(uidname, session=None):
 
     q = session.query(Uid).filter_by(uid=uidname)
 
-    if q.count() < 1:
+    try:
+        ret = q.one()
+    except NoResultFound:
         uid = Uid()
         uid.uid = uidname
         session.add(uid)
@@ -2100,8 +2081,6 @@ def get_or_set_uid(uidname, session=None):
         else:
             session.flush()
         ret = uid
-    else:
-        ret = q.one()
 
     if privatetrans:
         session.close()
@@ -2115,12 +2094,10 @@ def get_uid_from_fingerprint(fpr, session=None):
     q = session.query(Uid)
     q = q.join(Fingerprint).filter_by(fingerprint=fpr)
 
-    if q.count() != 1:
-        ret = None
-    else:
-        ret = q.one()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_uid_from_fingerprint')
 
