@@ -209,14 +209,14 @@ def clean(now_date, delete_date, max_delete, session):
     # Delete from source
     print "Deleting from source table... "
     q = session.execute("""
-SELECT df.id, s.id, f.filename FROM source s, files f, dsc_files df
+SELECT s.id, f.filename FROM source s, files f
   WHERE f.last_used <= :deletedate
-        AND s.file = f.id AND s.id = df.source""", {'deletedate': delete_date})
+        AND s.file = f.id""", {'deletedate': delete_date})
     for s in q.fetchall():
-        Logger.log(["delete source", s[2]])
+        Logger.log(["delete source", s[1], s[0]])
         if not Options["No-Action"]:
-            session.execute("DELETE FROM dsc_files WHERE id = :dsc_id", {"dscid":s[0]})
-            session.execute("DELETE FROM source WHERE id = :s_id", {"s_id":s[1]})
+            session.execute("DELETE FROM dsc_files WHERE source = :s_id", {"s_id":s[0]})
+            session.execute("DELETE FROM source WHERE id = :s_id", {"s_id":s[0]})
 
     if not Options["No-Action"]:
         session.commit()
