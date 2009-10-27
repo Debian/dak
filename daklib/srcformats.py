@@ -7,6 +7,7 @@ class SourceFormat(type):
         klass = super(SourceFormat, cls).__new__(cls, name, bases, attrs)
         srcformats.append(klass)
 
+        assert str(klass.name)
         klass.re_format = re.compile(klass.format)
 
         return klass
@@ -14,6 +15,7 @@ class SourceFormat(type):
 class FormatOne(object):
     __metaclass__ = SourceFormat
 
+    name = '1.0'
     format = r'1.0'
 
     @classmethod
@@ -23,28 +25,30 @@ class FormatOne(object):
         if (orig_tar_gz != orig_tar) or \
            (native_tar_gz != native_tar) or \
            debian_tar or more_orig_tar:
-            yield "contains source files not allowed in format 1.0"
+            yield "contains source files not allowed in format %s" % cls.name
 
 class FormatThree(object):
     __metaclass__ = SourceFormat
 
+    name = '3.x (native)'
     format = r'3\.\d+ \(native\)'
 
     @classmethod
     def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
         if not native_tar:
-            yield "lack required files for format 3.x (native)."
+            yield "lack required files for format %s" % cls.name
         if orig_tar or debian_diff or debian_tar or more_orig_tar:
-            yield "contains source files not allowed in format '3.x (native)'"
+            yield "contains source files not allowed in format %s" % cls.name
 
 class FormatThreeQuilt(object):
     __metaclass__ = SourceFormat
 
+    name = '3.x (quilt)'
     format = r'3\.\d+ \(quilt\)'
 
     @classmethod
     def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
         if not(orig_tar and debian_tar):
-            yield "lack required files for format '3.x (quilt)'."
+            yield "lack required files for format %s" % cls.name
         if debian_diff or native_tar:
-            yield "contains source files not allowed in format 3.x (quilt)"
+            yield "contains source files not allowed in format %s" % cls.name
