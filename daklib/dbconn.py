@@ -59,21 +59,42 @@ __all__ = ['IntegrityError', 'SQLAlchemyError']
 ################################################################################
 
 def session_wrapper(fn):
+    """
+    Wrapper around common ".., session=None):" handling. If the wrapped
+    function is called without passing 'session', we create a local one
+    and destroy it when the function ends.
+
+    Also attaches a commit_or_flush method to the session; if we created a
+    local session, this is a synonym for session.commit(), otherwise it is a
+    synonym for session.flush().
+    """
+
     def wrapped(*args, **kwargs):
         private_transaction = False
-        session = kwargs.get('session')
 
-        # No session specified as last argument or in kwargs, create one.
-        if session is None and len(args) <= len(getargspec(fn)[0]) - 1:
-            private_transaction = True
-            kwargs['session'] = DBConn().session()
+        # Find the session object
+        try:
+            session = kwargs['session']
+        except KeyError:
+            if len(args) <= len(getargspec(fn)[0]) - 1:
+                # No session specified as last argument or in kwargs
+                private_transaction = True
+                session = kwargs['session'] = DBConn().session()
+            else:
+                # Session is last argument in args
+                session = args[-1]
+
+        if private_transaction:
+            session.commit_or_flush = session.commit
+        else:
+            session.commit_or_flush = session.flush
 
         try:
             return fn(*args, **kwargs)
         finally:
             if private_transaction:
                 # We created a session; close it.
-                kwargs['session'].close()
+                session.close()
 
     wrapped.__doc__ = fn.__doc__
     wrapped.func_name = fn.func_name
@@ -419,6 +440,7 @@ class ContentFilename(object):
 
 __all__.append('ContentFilename')
 
+@session_wrapper
 def get_or_set_contents_file_id(filename, session=None):
     """
     Returns database id for given filename.
@@ -435,10 +457,6 @@ def get_or_set_contents_file_id(filename, session=None):
     @rtype: int
     @return: the database id for the given component
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(ContentFilename).filter_by(filename=filename)
 
@@ -448,14 +466,8 @@ def get_or_set_contents_file_id(filename, session=None):
         cf = ContentFilename()
         cf.filename = filename
         session.add(cf)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = cf.cafilename_id
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -523,6 +535,7 @@ class ContentFilepath(object):
 
 __all__.append('ContentFilepath')
 
+@session_wrapper
 def get_or_set_contents_path_id(filepath, session=None):
     """
     Returns database id for given path.
@@ -539,10 +552,6 @@ def get_or_set_contents_path_id(filepath, session=None):
     @rtype: int
     @return: the database id for the given path
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(ContentFilepath).filter_by(filepath=filepath)
 
@@ -552,14 +561,8 @@ def get_or_set_contents_path_id(filepath, session=None):
         cf = ContentFilepath()
         cf.filepath = filepath
         session.add(cf)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = cf.cafilepath_id
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -820,6 +823,7 @@ class Fingerprint(object):
 
 __all__.append('Fingerprint')
 
+@session_wrapper
 def get_or_set_fingerprint(fpr, session=None):
     """
     Returns Fingerprint object for given fpr.
@@ -838,10 +842,6 @@ def get_or_set_fingerprint(fpr, session=None):
     @rtype: Fingerprint
     @return: the Fingerprint object for the given fpr
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Fingerprint).filter_by(fingerprint=fpr)
 
@@ -851,14 +851,8 @@ def get_or_set_fingerprint(fpr, session=None):
         fingerprint = Fingerprint()
         fingerprint.fingerprint = fpr
         session.add(fingerprint)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = fingerprint
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -875,6 +869,7 @@ class Keyring(object):
 
 __all__.append('Keyring')
 
+@session_wrapper
 def get_or_set_keyring(keyring, session=None):
     """
     If C{keyring} does not have an entry in the C{keyrings} table yet, create one
@@ -886,28 +881,17 @@ def get_or_set_keyring(keyring, session=None):
 
     @rtype: Keyring
     @return: the Keyring object for this keyring
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
+
+    q = session.query(Keyring).filter_by(keyring_name=keyring)
 
     try:
-        obj = session.query(Keyring).filter_by(keyring_name=keyring).first()
-
-        if obj is None:
-            obj = Keyring(keyring_name=keyring)
-            session.add(obj)
-            if privatetrans:
-                session.commit()
-            else:
-                session.flush()
-
+        return q.one()
+    except NoResultFound:
+        obj = Keyring(keyring_name=keyring)
+        session.add(obj)
+        session.commit_or_flush()
         return obj
-    finally:
-        if privatetrans:
-            session.close()
 
 __all__.append('get_or_set_keyring')
 
@@ -973,6 +957,7 @@ class Maintainer(object):
 
 __all__.append('Maintainer')
 
+@session_wrapper
 def get_or_set_maintainer(name, session=None):
     """
     Returns Maintainer object for given maintainer name.
@@ -991,10 +976,6 @@ def get_or_set_maintainer(name, session=None):
     @rtype: Maintainer
     @return: the Maintainer object for the given maintainer
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Maintainer).filter_by(name=name)
     try:
@@ -1003,19 +984,14 @@ def get_or_set_maintainer(name, session=None):
         maintainer = Maintainer()
         maintainer.name = name
         session.add(maintainer)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = maintainer
-
-    if privatetrans:
-        session.close()
 
     return ret
 
 __all__.append('get_or_set_maintainer')
 
+@session_wrapper
 def get_maintainer(maintainer_id, session=None):
     """
     Return the name of the maintainer behind C{maintainer_id} or None if that
@@ -1028,16 +1004,7 @@ def get_maintainer(maintainer_id, session=None):
     @return: the Maintainer with this C{maintainer_id}
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
-    try:
-        return session.query(Maintainer).get(maintainer_id)
-    finally:
-        if privatetrans:
-            session.close()
+    return session.query(Maintainer).get(maintainer_id)
 
 __all__.append('get_maintainer')
 
@@ -1990,6 +1957,7 @@ class Uid(object):
 
 __all__.append('Uid')
 
+@session_wrapper
 def add_database_user(uidname, session=None):
     """
     Adds a database user
@@ -2006,19 +1974,12 @@ def add_database_user(uidname, session=None):
     @return: the uid object for the given uidname
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     session.execute("CREATE USER :uid", {'uid': uidname})
-
-    if privatetrans:
-        session.commit()
-        session.close()
+    session.commit_or_flush()
 
 __all__.append('add_database_user')
 
+@session_wrapper
 def get_or_set_uid(uidname, session=None):
     """
     Returns uid object for given uidname.
@@ -2037,11 +1998,6 @@ def get_or_set_uid(uidname, session=None):
     @return: the uid object for the given uidname
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(Uid).filter_by(uid=uidname)
 
     try:
@@ -2050,14 +2006,8 @@ def get_or_set_uid(uidname, session=None):
         uid = Uid()
         uid.uid = uidname
         session.add(uid)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = uid
-
-    if privatetrans:
-        session.close()
 
     return ret
 
