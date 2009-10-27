@@ -288,7 +288,7 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 # we can copy
                 packages[package] = 1
                 Logger.log(["copying missing override", osuite, component,
-                    type, package, priorities[i[1]], sections[i[2]], i[3]])
+                    otype, package, priorities[i[1]], sections[i[2]], i[3]])
                 if not Options["No-Action"]:
                     session.execute("""INSERT INTO override (package, suite, component,
                                                              priority, section, type, maintainer)
