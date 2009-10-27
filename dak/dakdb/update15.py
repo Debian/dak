@@ -43,7 +43,7 @@ def do_update(self):
             CREATE TABLE src_format (
                     id SERIAL PRIMARY KEY,
                     format_name TEXT NOT NULL,
-                    unique (format_name)
+                    UNIQUE (format_name)
             )
         """)
         c.execute("INSERT INTO src_format (format_name) VALUES('1.0')")
@@ -52,9 +52,9 @@ def do_update(self):
 
         c.execute("""
             CREATE TABLE suite_src_formats (
-                    suite INT4 NOT NULL,
-                    src_format INT4 NOT NULL,
-                    unique (suite, src_format)
+                    suite INT4 NOT NULL REFERENCES suite(id),
+                    src_format INT4 NOT NULL REFERENCES src_format(id),
+                    PRIMARY KEY (suite, src_format)
             )
         """)
 
