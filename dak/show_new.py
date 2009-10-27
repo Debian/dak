@@ -32,6 +32,7 @@ import examine_package
 
 from daklib.queue import determine_new, check_valid
 from daklib import utils
+from daklib.regexes import re_source_ext
 
 # Globals
 Cnf = None
@@ -160,8 +161,9 @@ def do_pkg(changes_file):
         filestoexamine = []
         for pkg in new.keys():
             for fn in new[pkg]["files"]:
-                if ( c.files[fn].has_key("new") and not
-                     c.files[fn]["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2"] ):
+                if (c.files[fn].has_key("new") and
+                    (c.files[fn]["type"] == "dsc" or
+                     not re_source_ext.match(c.files[fn]["type"]))):
                     filestoexamine.append(fn)
 
         html_header(c.changes["source"], filestoexamine)

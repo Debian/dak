@@ -1410,23 +1410,26 @@ class Queue(object):
 
                 session.add(qb)
 
-            # If the .orig.tar.gz is in the pool, create a symlink to
-            # it (if one doesn't already exist)
-            if changes.orig_tar_id:
-                # Determine the .orig.tar.gz file name
-                for dsc_file in changes.dsc_files.keys():
-                    if dsc_file.endswith(".orig.tar.gz"):
-                        filename = dsc_file
-
-                dest = os.path.join(dest_dir, filename)
+            # If the .orig tarballs are in the pool, create a symlink to
+            # them (if one doesn't already exist)
+            for dsc_file in changes.dsc_files.keys():
+                # Skip all files except orig tarballs
+                if not re_is_orig_source.match(dsc_file):
+                    continue
+                # Skip orig files not identified in the pool
+                if not (changes.orig_files.has_key(dsc_file) and
+                        changes.orig_files[dsc_file].has_key("id")):
+                    continue
+                orig_file_id = changes.orig_files[dsc_file]["id"]
+                dest = os.path.join(dest_dir, dsc_file)
 
                 # If it doesn't exist, create a symlink
                 if not os.path.exists(dest):
                     q = session.execute("SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id",
-                                        {'id': changes.orig_tar_id})
+                                        {'id': orig_file_id})
                     res = q.fetchone()
                     if not res:
-                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (changes.orig_tar_id)
+                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (orig_file_id)
 
                     src = os.path.join(res[0], res[1])
                     os.symlink(src, dest)
@@ -1766,6 +1769,17 @@ __all__.append('SrcAssociation')
 
 ################################################################################
 
+class SrcFormat(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<SrcFormat %s>' % (self.format_name)
+
+__all__.append('SrcFormat')
+
+################################################################################
+
 class SrcUploader(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1936,6 +1950,42 @@ __all__.append('get_suite_architectures')
 
 ################################################################################
 
+class SuiteSrcFormat(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<SuiteSrcFormat (%s, %s)>' % (self.suite_id, self.src_format_id)
+
+__all__.append('SuiteSrcFormat')
+
+@session_wrapper
+def get_suite_src_formats(suite, session=None):
+    """
+    Returns list of allowed SrcFormat for C{suite}.
+
+    @type suite: str
+    @param suite: Suite name to search for
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: the list of allowed source formats for I{suite}
+    """
+
+    q = session.query(SrcFormat)
+    q = q.join(SuiteSrcFormat)
+    q = q.join(Suite).filter_by(suite_name=suite)
+    q = q.order_by('format_name')
+
+    return q.all()
+
+__all__.append('get_suite_src_formats')
+
+################################################################################
+
 class Uid(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2066,9 +2116,11 @@ class DBConn(Singleton):
         self.tbl_section = Table('section', self.db_meta, autoload=True)
         self.tbl_source = Table('source', self.db_meta, autoload=True)
         self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
+        self.tbl_src_format = Table('src_format', self.db_meta, autoload=True)
         self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
         self.tbl_suite = Table('suite', self.db_meta, autoload=True)
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
+        self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
 
     def __setupmappers(self):
@@ -2230,6 +2282,10 @@ class DBConn(Singleton):
                                  source_id = self.tbl_src_associations.c.source,
                                  source = relation(DBSource)))
 
+        mapper(SrcFormat, self.tbl_src_format,
+               properties = dict(src_format_id = self.tbl_src_format.c.id,
+                                 format_name = self.tbl_src_format.c.format_name))
+
         mapper(SrcUploader, self.tbl_src_uploaders,
                properties = dict(uploader_id = self.tbl_src_uploaders.c.id,
                                  source_id = self.tbl_src_uploaders.c.source,
@@ -2247,6 +2303,12 @@ class DBConn(Singleton):
                                  suite = relation(Suite, backref='suitearchitectures'),
                                  arch_id = self.tbl_suite_architectures.c.architecture,
                                  architecture = relation(Architecture)))
+
+        mapper(SuiteSrcFormat, self.tbl_suite_src_formats,
+               properties = dict(suite_id = self.tbl_suite_src_formats.c.suite,
+                                 suite = relation(Suite, backref='suitesrcformats'),
+                                 src_format_id = self.tbl_suite_src_formats.c.src_format,
+                                 src_format = relation(SrcFormat)))
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,

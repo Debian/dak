@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import unittest
 
 import os, sys
@@ -29,3 +31,6 @@ class re_single_line_field(unittest.TestCase):
         self.assertEqual(self.MATCH(': ::').groups(), ('', '::'))
         self.assertEqual(self.MATCH('Foo::bar').groups(), ('Foo', ':bar'))
         self.assertEqual(self.MATCH('Foo: :bar').groups(), ('Foo', ':bar'))
+
+if __name__ == '__main__':
+    unittest.main()

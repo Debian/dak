@@ -45,8 +45,11 @@ from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
-                    re_parse_maintainer, re_taint_free, re_gpg_uid, re_re_mark, \
-                    re_whitespace_comment
+                    re_parse_maintainer, re_taint_free, re_gpg_uid, \
+                    re_re_mark, re_whitespace_comment, re_issource
+
+from srcformats import srcformats
+from collections import defaultdict
 
 ################################################################################
 
@@ -332,6 +335,83 @@ def check_size(where, files):
 
 ################################################################################
 
+def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
+    """
+    Verify that the files listed in the Files field of the .dsc are
+    those expected given the announced Format.
+
+    @type dsc_filename: string
+    @param dsc_filename: path of .dsc file
+
+    @type dsc: dict
+    @param dsc: the content of the .dsc parsed by C{parse_changes()}
+
+    @type dsc_files: dict
+    @param dsc_files: the file list returned by C{build_file_list()}
+
+    @rtype: list
+    @return: all errors detected
+    """
+    rejmsg = []
+
+    # Parse the file if needed
+    if dsc is None:
+        dsc = parse_changes(dsc_filename, signing_rules=1);
+
+    if dsc_files is None:
+        dsc_files = build_file_list(dsc, is_a_dsc=1)
+
+    # Ensure .dsc lists proper set of source files according to the format
+    # announced
+    has = defaultdict(lambda: 0)
+
+    ftype_lookup = (
+        (r'orig.tar.gz',               ('orig_tar_gz', 'orig_tar')),
+        (r'diff.gz',                   ('debian_diff',)),
+        (r'tar.gz',                    ('native_tar_gz', 'native_tar')),
+        (r'debian\.tar\.(gz|bz2)',     ('debian_tar',)),
+        (r'orig\.tar\.(gz|bz2)',       ('orig_tar',)),
+        (r'tar\.(gz|bz2)',             ('native_tar',)),
+        (r'orig-.+\.tar\.(gz|bz2)',    ('more_orig_tar',)),
+    )
+
+    for f in dsc_files.keys():
+        m = re_issource.match(f)
+        if not m:
+            rejmsg.append("%s: %s in Files field not recognised as source."
+                          % (dsc_filename, f))
+            continue
+
+        # Populate 'has' dictionary by resolving keys in lookup table
+        matched = False
+        for regex, keys in ftype_lookup:
+            if re.match(regex, m.group(3)):
+                matched = True
+                for key in keys:
+                    has[key] += 1
+                break
+
+        # File does not match anything in lookup table; reject
+        if not matched:
+            reject("%s: unexpected source file '%s'" % (dsc_filename, f))
+
+    # Check for multiple files
+    for file_type in ('orig_tar', 'native_tar', 'debian_tar', 'debian_diff'):
+        if has[file_type] > 1:
+            rejmsg.append("%s: lists multiple %s" % (dsc_filename, file_type))
+
+    # Source format specific tests
+    for format in srcformats:
+        if format.re_format.match(dsc['format']):
+            rejmsg.extend([
+                '%s: %s' % (dsc_filename, x) for x in format.reject_msgs(has)
+            ])
+            break
+
+    return rejmsg
+
+################################################################################
+
 def check_hash_fields(what, manifest):
     """
     check_hash_fields ensures that there are no checksum fields in the
@@ -442,10 +522,10 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         format = format[:2]
 
     if is_a_dsc:
-        # format = (1,0) are the only formats we currently accept,
         # format = (0,0) are missing format headers of which we still
         # have some in the archive.
-        if format != (1,0) and format != (0,0):
+        if format != (1,0) and format != (0,0) and \
+           format != (3,0,"quilt") and format != (3,0,"native"):
             raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
     else:
         if (format < (1,5) or format > (1,8)):

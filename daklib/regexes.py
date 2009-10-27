@@ -42,7 +42,11 @@ re_arch_from_filename = re.compile(r"/binary-[^/]+/")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
 re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$")
 
-re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)$")
+orig_source_ext_re = r"orig(?:-.+)?\.tar\.(?:gz|bz2)"
+re_orig_source_ext = re.compile(orig_source_ext_re + "$")
+re_source_ext = re.compile("(" + orig_source_ext_re + r"|debian\.tar\.(?:gz|bz2)|diff\.gz|tar\.(?:gz|bz2)|dsc)$")
+re_issource = re.compile(r"(.+)_(.+?)\." + re_source_ext.pattern)
+re_is_orig_source = re.compile (r"(.+)_(.+?)\.orig(?:-.+)?\.tar\.(?:gz|bz2)$")
 
 re_single_line_field = re.compile(r"^(\S*?)\s*:\s*(.*)")
 re_multi_line_field = re.compile(r"^\s(.*)")
