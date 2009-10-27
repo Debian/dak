@@ -34,7 +34,6 @@ import time
 import errno
 import fcntl
 import tempfile
-import pwd
 import apt_pkg
 
 from daklib.dbconn import *

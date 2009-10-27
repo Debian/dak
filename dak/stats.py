@@ -34,8 +34,7 @@ import sys
 import apt_pkg
 
 from daklib import utils
-from daklib.dbconn import DBConn, get_suite_architectures, Suite, Architecture, \
-                          BinAssociation
+from daklib.dbconn import DBConn, get_suite_architectures, Suite, Architecture
 
 ################################################################################
 

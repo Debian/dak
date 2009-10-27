@@ -39,6 +39,7 @@ import time
 import re
 import string
 import email as modemail
+import subprocess
 
 from dbconn import DBConn, get_architecture, get_component, get_suite
 from dak_exceptions import *
@@ -62,6 +63,20 @@ key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 # (hashname, function, earliest_changes_version)
 known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
                 ("sha256", apt_pkg.sha256sum, (1, 8))] #: hashes we accept for entries in .changes/.dsc
+
+import commands
+def dak_getstatusoutput(cmd):
+    pipe = subprocess.Popen(cmd, shell=True, universal_newlines=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    output = str.join("", pipe.stdout.readlines())
+
+    ret = pipe.wait()
+    if ret is None:
+        ret = 0
+
+    return ret, output
+commands.getstatusoutput = dak_getstatusoutput
 
 ################################################################################
 

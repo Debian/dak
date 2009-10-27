@@ -25,7 +25,6 @@ import apt_pkg
 
 from daklib import utils
 from daklib.dbconn import *
-from daklib.config import Config
 
 ################################################################################
 
