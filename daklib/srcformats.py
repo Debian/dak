@@ -19,12 +19,12 @@ class FormatOne(object):
     format = r'1.0'
 
     @classmethod
-    def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
-        if not (native_tar_gz or (orig_tar_gz and debian_diff)):
+    def reject_msgs(cls, has):
+        if not (has['native_tar_gz'] or (has['orig_tar_gz'] and has['debian_diff'])):
             yield "no .tar.gz or .orig.tar.gz+.diff.gz in 'Files' field."
-        if (orig_tar_gz != orig_tar) or \
-           (native_tar_gz != native_tar) or \
-           debian_tar or more_orig_tar:
+        if (has['orig_tar_gz'] != has['orig_tar']) or \
+           (has['native_tar_gz'] != has['native_tar']) or \
+           has['debian_tar'] or has['more_orig_tar']:
             yield "contains source files not allowed in format %s" % cls.name
 
 class FormatThree(object):
@@ -34,10 +34,10 @@ class FormatThree(object):
     format = r'3\.\d+ \(native\)'
 
     @classmethod
-    def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
-        if not native_tar:
+    def reject_msgs(cls, has):
+        if not has['native_tar']:
             yield "lack of required files for format %s" % cls.name
-        if orig_tar or debian_diff or debian_tar or more_orig_tar:
+        if has['orig_tar'] or has['debian_diff'] or has['debian_tar'] or has['more_orig_tar']:
             yield "contains source files not allowed in format %s" % cls.name
 
 class FormatThreeQuilt(object):
@@ -47,8 +47,8 @@ class FormatThreeQuilt(object):
     format = r'3\.\d+ \(quilt\)'
 
     @classmethod
-    def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
-        if not(orig_tar and debian_tar):
+    def reject_msgs(cls, has):
+        if not (has['orig_tar'] and has['debian_tar']):
             yield "lack of required files for format %s" % cls.name
-        if debian_diff or native_tar:
+        if has['debian_diff'] or has['native_tar']:
             yield "contains source files not allowed in format %s" % cls.name

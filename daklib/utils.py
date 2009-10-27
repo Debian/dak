@@ -49,6 +49,7 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_re_mark, re_whitespace_comment, re_issource
 
 from srcformats import srcformats
+from collections import defaultdict
 
 ################################################################################
 
@@ -362,13 +363,8 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
 
     # Ensure .dsc lists proper set of source files according to the format
     # announced
-    has_native_tar = 0
-    has_native_tar_gz = 0
-    has_orig_tar = 0
-    has_orig_tar_gz = 0
-    has_more_orig_tar = 0
-    has_debian_tar = 0
-    has_debian_diff = 0
+    has = defaultdict(lambda: 0)
+
     for f in dsc_files.keys():
         m = re_issource.match(f)
         if not m:
@@ -377,42 +373,35 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
             continue
         ftype = m.group(3)
         if ftype == "orig.tar.gz":
-            has_orig_tar_gz += 1
-            has_orig_tar += 1
+            has['orig_tar_gz'] += 1
+            has['orig_tar'] += 1
         elif ftype == "diff.gz":
-            has_debian_diff += 1
+            has['debian_diff'] += 1
         elif ftype == "tar.gz":
-            has_native_tar_gz += 1
-            has_native_tar += 1
+            has['native_tar_gz'] += 1
+            has['native_tar'] += 1
         elif re.match(r"debian\.tar\.(gz|bz2|lzma)", ftype):
-            has_debian_tar += 1
+            has['debian_tar'] += 1
         elif re.match(r"orig\.tar\.(gz|bz2|lzma)", ftype):
-            has_orig_tar += 1
+            has['orig_tar'] += 1
         elif re.match(r"tar\.(gz|bz2|lzma)", ftype):
-            has_native_tar += 1
+            has['native_tar'] += 1
         elif re.match(r"orig-.+\.tar\.(gz|bz2|lzma)", ftype):
-            has_more_orig_tar += 1
+            has['more_orig_tar'] += 1
         else:
             reject("%s: unexpected source file '%s'" % (dsc_filename, f))
-    if has_orig_tar > 1:
+    if has['orig_tar'] > 1:
         rejmsg.append("%s: lists multiple .orig tarballs." % (dsc_filename))
-    if has_native_tar > 1:
+    if has['native_tar'] > 1:
         rejmsg.append("%s: lists multiple native tarballs." % (dsc_filename))
-    if has_debian_tar > 1 or has_debian_diff > 1:
+    if has['debian_tar'] > 1 or has['debian_diff'] > 1:
         rejmsg.append("%s: lists multiple debian diff/tarballs." % (dsc_filename))
 
     for format in srcformats:
         if format.re_format.match(dsc['format']):
-            msgs = format.reject_msgs(
-                has_native_tar,
-                has_native_tar_gz,
-                has_debian_tar,
-                has_debian_diff,
-                has_orig_tar,
-                has_orig_tar_gz,
-                has_more_orig_tar
-            )
-            rejmsg.extend(['%s: %s' % (dsc_filename, x) for x in msgs])
+            rejmsg.extend([
+                '%s: %s' % (dsc_filename, x) for x in format.reject_msgs(has)
+            ])
             break
 
     return rejmsg
