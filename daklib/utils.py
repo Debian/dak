@@ -354,9 +354,10 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
     rejmsg = []
 
     # Parse the file if needed
-    if dsc == None:
+    if dsc is None:
         dsc = parse_changes(dsc_filename, signing_rules=1);
-    if dsc_files == None:
+
+    if dsc_files is None:
         dsc_files = build_file_list(dsc, is_a_dsc=1)
 
     # Ensure .dsc lists proper set of source files according to the format
