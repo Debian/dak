@@ -973,6 +973,14 @@ def do_pkg(changes_file, session):
     u = Upload()
     u.pkg.load_dot_dak(changes_file)
     u.update_subst()
+
+    cnf = Config()
+    bcc = "X-DAK: dak process-new\nX-Katie: lisa $Revision: 1.31 $"
+    if cnf.has_key("Dinstall::Bcc"):
+        u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
+    else:
+        u.Subst["__BCC__"] = bcc
+
     files = u.pkg.files
 
     try:
@@ -1110,11 +1118,6 @@ def main():
 
     # Kill me now? **FIXME**
     cnf["Dinstall::Options::No-Mail"] = ""
-#    bcc = "X-DAK: dak process-new\nX-Katie: lisa $Revision: 1.31 $"
-#    if cnf.has_key("Dinstall::Bcc"):
-#        Upload.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
-#    else:
-#        Upload.Subst["__BCC__"] = bcc
 
 #     commentsdir = cnf.get("Process-New::Options::Comments-Dir","")
 #     if commentsdir:
