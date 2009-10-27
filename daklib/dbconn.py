@@ -63,23 +63,38 @@ def session_wrapper(fn):
     Wrapper around common ".., session=None):" handling. If the wrapped
     function is called without passing 'session', we create a local one
     and destroy it when the function ends.
+
+    Also attaches a commit_or_flush method to the session; if we created a
+    local session, this is a synonym for session.commit(), otherwise it is a
+    synonym for session.flush().
     """
 
     def wrapped(*args, **kwargs):
         private_transaction = False
-        session = kwargs.get('session')
 
-        # No session specified as last argument or in kwargs, create one.
-        if session is None and len(args) <= len(getargspec(fn)[0]) - 1:
-            private_transaction = True
-            kwargs['session'] = DBConn().session()
+        # Find the session object
+        try:
+            session = kwargs['session']
+        except KeyError:
+            if len(args) <= len(getargspec(fn)[0]) - 1:
+                # No session specified as last argument or in kwargs
+                private_transaction = True
+                session = kwargs['session'] = DBConn().session()
+            else:
+                # Session is last argument in args
+                session = args[-1]
+
+        if private_transaction:
+            session.commit_or_flush = session.commit
+        else:
+            session.commit_or_flush = session.flush
 
         try:
             return fn(*args, **kwargs)
         finally:
             if private_transaction:
                 # We created a session; close it.
-                kwargs['session'].close()
+                session.close()
 
     wrapped.__doc__ = fn.__doc__
     wrapped.func_name = fn.func_name
