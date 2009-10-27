@@ -38,6 +38,7 @@ import utils
 import commands
 import shutil
 import textwrap
+import tempfile
 from types import *
 
 import yaml
@@ -1193,6 +1194,91 @@ class Upload(object):
             self.rejects.append(m)
 
         self.ensure_hashes()
+
+    ###########################################################################
+    def check_lintian(self):
+        # Only check some distributions
+        valid_dist = False
+        for dist in ('unstable', 'experimental'):
+            if dist in self.pkg.changes['distribution']:
+                valid_dist = True
+                break
+
+        if not valid_dist:
+            return
+
+        cnf = Config()
+        tagfile = cnf("Dinstall::LintianTags")
+        # Parse the yaml file
+        sourcefile = file(tagfile, 'r')
+        sourcecontent = sourcefile.read()
+        sourcefile.close()
+        try:
+            lintiantags = yaml.load(sourcecontent)['lintian']
+        except yaml.YAMLError, msg:
+            utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
+            return
+
+        # Now setup the input file for lintian. lintian wants "one tag per line" only,
+        # so put it together like it. We put all types of tags in one file and then sort
+        # through lintians output later to see if its a fatal tag we detected, or not.
+        # So we only run lintian once on all tags, even if we might reject on some, but not
+        # reject on others.
+        # Additionally build up a set of tags
+        tags = set()
+        (fd, temp_filename) = utils.temp_filename()
+        temptagfile = os.fdopen(fd, 'w')
+        for tagtype in lintiantags:
+            for tag in lintiantags[tagtype]:
+                temptagfile.write("%s\n" % tag)
+                tags.add(tag)
+        temptagfile.close()
+
+        # So now we should look at running lintian at the .changes file, capturing output
+        # to then parse it.
+        command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
+        (result, output) = commands.getstatusoutput(cmd)
+        # We are done with lintian, remove our tempfile
+        os.unlink(temp_filename)
+        if (result != 0):
+            self.rejects.append("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
+            self.rejects.append(utils.prefix_multi_line_string(output, " [possible output:] "), "")
+            return
+
+        if len(output) == 0:
+            return
+
+        # We have output of lintian, this package isn't clean. Lets parse it and see if we
+        # are having a victim for a reject.
+        # W: tzdata: binary-without-manpage usr/sbin/tzconfig
+        for line in output.split('\n'):
+            m = re_parse_lintian.match(line)
+            if m is None:
+                continue
+
+            etype = m.group(1)
+            epackage = m.group(2)
+            etag = m.group(3)
+            etext = m.group(4)
+
+            # So lets check if we know the tag at all.
+            if etag not in tags:
+                continue
+
+            if etype == 'O':
+                # We know it and it is overriden. Check that override is allowed.
+                if etag in lintiantags['warning']:
+                    # The tag is overriden, and it is allowed to be overriden.
+                    # Don't add a reject message.
+                elif etag in lintiantags['error']:
+                    # The tag is overriden - but is not allowed to be
+                    self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
+            else:
+                # Tag is known, it is not overriden, direct reject.
+                self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
+                # Now tell if they *might* override it.
+                if etag in lintiantags['warning']:
+                    self.rejects.append("%s: If you have a good reason, you may override this lintian tag. Laziness to fix your crap is NOT A GOOD REASON, sod off" % (epackage))
 
     ###########################################################################
     def check_urgency(self):
