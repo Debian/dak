@@ -1279,7 +1279,7 @@ class Upload(object):
                 # Tag is known, it is not overriden, direct reject.
                 self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
                 # Now tell if they *might* override it.
-                if etag in lintiantags['wayout']:
+                if etag in lintiantags['warning']:
                     self.rejects.append("%s: If you have a good reason, you may override this lintian tag. Laziness to fix your crap is NOT A GOOD REASON, sod off" % (epackage))
 
     ###########################################################################
