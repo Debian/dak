@@ -1069,7 +1069,7 @@ class Upload(object):
         (result, output) = commands.getstatusoutput(cmd)
         if (result != 0):
             self.rejects.append("'dpkg-source -x' failed for %s [return code: %s]." % (dsc_filename, result))
-            self.rejects.append(utils.prefix_multi_line_string(output, " [dpkg-source output:] "), "")
+            self.rejects.append(utils.prefix_multi_line_string(output, " [dpkg-source output:] "))
             return
 
         if not cnf.Find("Dir::Queue::BTSVersionTrack"):
@@ -1242,7 +1242,7 @@ class Upload(object):
         os.unlink(temp_filename)
         if (result != 0):
             self.rejects.append("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
-            self.rejects.append(utils.prefix_multi_line_string(output, " [possible output:] "), "")
+            self.rejects.append(utils.prefix_multi_line_string(output, " [possible output:] "))
             return
 
         if len(output) == 0:
