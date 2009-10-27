@@ -84,6 +84,7 @@ def session_wrapper(fn):
                 # Session is last argument in args
                 session = args[-1]
                 if session is None:
+                    args = list(args)
                     session = args[-1] = DBConn().session()
                     private_transaction = True
 
