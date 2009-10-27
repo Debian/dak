@@ -36,7 +36,7 @@ class FormatThree(object):
     @classmethod
     def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
         if not native_tar:
-            yield "lack required files for format %s" % cls.name
+            yield "lack of required files for format %s" % cls.name
         if orig_tar or debian_diff or debian_tar or more_orig_tar:
             yield "contains source files not allowed in format %s" % cls.name
 
@@ -49,6 +49,6 @@ class FormatThreeQuilt(object):
     @classmethod
     def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
         if not(orig_tar and debian_tar):
-            yield "lack required files for format %s" % cls.name
+            yield "lack of required files for format %s" % cls.name
         if debian_diff or native_tar:
             yield "contains source files not allowed in format %s" % cls.name
