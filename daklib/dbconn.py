@@ -48,7 +48,6 @@ from sqlalchemy.orm.exc import NoResultFound
 
 # Only import Config until Queue stuff is changed to store its config
 # in the database
-import utils
 from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
@@ -1427,6 +1426,7 @@ class Queue(object):
                 # TODO: Move into database as above
                 if conf.FindB("Dinstall::SecurityQueueBuild"):
                     # Copy it since the original won't be readable by www-data
+                    import utils
                     utils.copy(src, dest)
                 else:
                     # Create a symlink to it
