@@ -192,7 +192,7 @@ class Changes(object):
 
         next_obj = p.load()
         if isinstance(next_obj, dict):
-            self.pkg.orig_files.update(next_obj)
+            self.orig_files.update(next_obj)
         else:
             # Auto-convert old dak files to new format supporting
             # multiple tarballs
