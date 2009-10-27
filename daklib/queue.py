@@ -72,7 +72,7 @@ def get_type(f, session):
     """
     # Determine the type
     if f.has_key("dbtype"):
-        file_type = file["dbtype"]
+        file_type = f["dbtype"]
     elif re_source_ext.match(f["type"]):
         file_type = "dsc"
     else:
