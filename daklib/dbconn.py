@@ -75,6 +75,9 @@ def session_wrapper(fn):
                 # We created a session; close it.
                 kwargs['session'].close()
 
+    wrapped.__doc__ = fn.__doc__
+    wrapped.func_name = fn.func_name
+
     return wrapped
 
 ################################################################################
