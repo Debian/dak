@@ -365,30 +365,34 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
     # announced
     has = defaultdict(lambda: 0)
 
+    ftype_lookup = (
+        (r'orig.tar.gz',                    ('orig_tar_gz', 'orig_tar')),
+        (r'diff.gz',                        ('debian_diff',)),
+        (r'tar.gz',                         ('native_tar_gz', 'native_tar')),
+        (r'debian\.tar\.(gz|bz2|lzma)',     ('debian_tar',)),
+        (r'orig\.tar\.(gz|bz2|lzma)',       ('orig_tar',)),
+        (r'tar\.(gz|bz2|lzma)',             ('native_tar',)),
+        (r'orig-.+\.tar\.(gz|bz2|lzma)',    ('more_orig_tar',)),
+    )
+
     for f in dsc_files.keys():
         m = re_issource.match(f)
         if not m:
             rejmsg.append("%s: %s in Files field not recognised as source."
                           % (dsc_filename, f))
             continue
-        ftype = m.group(3)
-        if ftype == "orig.tar.gz":
-            has['orig_tar_gz'] += 1
-            has['orig_tar'] += 1
-        elif ftype == "diff.gz":
-            has['debian_diff'] += 1
-        elif ftype == "tar.gz":
-            has['native_tar_gz'] += 1
-            has['native_tar'] += 1
-        elif re.match(r"debian\.tar\.(gz|bz2|lzma)", ftype):
-            has['debian_tar'] += 1
-        elif re.match(r"orig\.tar\.(gz|bz2|lzma)", ftype):
-            has['orig_tar'] += 1
-        elif re.match(r"tar\.(gz|bz2|lzma)", ftype):
-            has['native_tar'] += 1
-        elif re.match(r"orig-.+\.tar\.(gz|bz2|lzma)", ftype):
-            has['more_orig_tar'] += 1
-        else:
+
+        # Populate 'has' dictionary by resolving keys in lookup table
+        matched = False
+        for regex, keys in ftype_lookup:
+            if re.match(regex, m.group(3)):
+                matched = True
+                for key in keys:
+                    has[key] += 1
+                break
+
+        # File does not match anything in lookup table; reject
+        if not matched:
             reject("%s: unexpected source file '%s'" % (dsc_filename, f))
 
     # Check for multiple files
