@@ -1216,7 +1216,7 @@ class Upload(object):
         sourcecontent = sourcefile.read()
         sourcefile.close()
         try:
-            lintiantags = yaml.load(sourcecontent)
+            lintiantags = yaml.load(sourcecontent)['lintian']
         except yaml.YAMLError, msg:
             utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
             return
