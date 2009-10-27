@@ -1246,38 +1246,40 @@ class Upload(object):
             self.rejects.append(utils.prefix_multi_line_string(output, " [possible output:] "), "")
             return
 
-        if len(output) > 0:
-            # We have output of lintian, this package isn't clean. Lets parse it and see if we
-            # are having a victim for a reject.
-            # W: tzdata: binary-without-manpage usr/sbin/tzconfig
-            for line in output.split('\n'):
-                m = re_parse_lintian.match(line)
-                if m is None:
-                    continue
+        if len(output) == 0:
+            return
 
-                etype = m.group(1)
-                epackage = m.group(2)
-                etag = m.group(3)
-                etext = m.group(4)
+        # We have output of lintian, this package isn't clean. Lets parse it and see if we
+        # are having a victim for a reject.
+        # W: tzdata: binary-without-manpage usr/sbin/tzconfig
+        for line in output.split('\n'):
+            m = re_parse_lintian.match(line)
+            if m is None:
+                continue
 
-                # So lets check if we know the tag at all.
-                if etag not in tags:
-                    continue
+            etype = m.group(1)
+            epackage = m.group(2)
+            etag = m.group(3)
+            etext = m.group(4)
 
-                if etype == 'O':
-                    # We know it and it is overriden. Check that override is allowed.
-                    if lintiantags['warning'][etag]:
-                        # The tag is overriden, and it is allowed to be overriden.
-                        # Don't add a reject message.
-                    elif lintiantags['error'][etag]:
-                        # The tag is overriden - but is not allowed to be
-                        self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
-                else:
-                    # Tag is known, it is not overriden, direct reject.
-                    self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
-                    # Now tell if they *might* override it.
-                    if lintiantags['wayout'][etag]:
-                        self.rejects.append("%s: If you have a good reason, you may override this lintian tag. Laziness to fix your crap is NOT A GOOD REASON, sod off" % (epackage))
+            # So lets check if we know the tag at all.
+            if etag not in tags:
+                continue
+
+            if etype == 'O':
+                # We know it and it is overriden. Check that override is allowed.
+                if lintiantags['warning'][etag]:
+                    # The tag is overriden, and it is allowed to be overriden.
+                    # Don't add a reject message.
+                elif lintiantags['error'][etag]:
+                    # The tag is overriden - but is not allowed to be
+                    self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
+            else:
+                # Tag is known, it is not overriden, direct reject.
+                self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
+                # Now tell if they *might* override it.
+                if lintiantags['wayout'][etag]:
+                    self.rejects.append("%s: If you have a good reason, you may override this lintian tag. Laziness to fix your crap is NOT A GOOD REASON, sod off" % (epackage))
 
     ###########################################################################
     def check_urgency(self):
