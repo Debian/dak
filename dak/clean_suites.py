@@ -263,6 +263,7 @@ SELECT s.id, f.filename FROM source s, files f
         session.commit()
 
     if count > 0:
+        Logger.log(["total", count, utils.size_type(size)])
         print "Cleaned %d files, %s." % (count, utils.size_type(size))
 
 ################################################################################
@@ -290,6 +291,7 @@ SELECT m.id, m.name FROM maintainer m
         session.commit()
 
     if count > 0:
+        Logger.log(["total", count])
         print "Cleared out %d maintainer entries." % (count)
 
 ################################################################################
@@ -317,6 +319,7 @@ SELECT f.id, f.fingerprint FROM fingerprint f
         session.commit()
 
     if count > 0:
+        Logger.log(["total", count])
         print "Cleared out %d fingerprint entries." % (count)
 
 ################################################################################
@@ -351,6 +354,7 @@ def clean_queue_build(now_date, delete_date, max_delete, session):
         session.commit()
 
     if count:
+        Logger.log(["total", count])
         print "Cleaned %d queue_build files." % (count)
 
 ################################################################################
