@@ -1464,9 +1464,10 @@ class Queue(object):
 __all__.append('Queue')
 
 @session_wrapper
-def get_queue(queuename, session=None):
+def get_or_set_queue(queuename, session=None):
     """
-    Returns Queue object for given C{queue name}.
+    Returns Queue object for given C{queue name}, creating it if it does not
+    exist.
 
     @type queuename: string
     @param queuename: The name of the queue
@@ -1482,11 +1483,17 @@ def get_queue(queuename, session=None):
     q = session.query(Queue).filter_by(queue_name=queuename)
 
     try:
-        return q.one()
+        ret = q.one()
     except NoResultFound:
-        return None
+        queue = Queue()
+        queue.queue_name = queuename
+        session.add(queue)
+        session.commit_or_flush()
+        ret = queue
 
-__all__.append('get_queue')
+    return ret
+
+__all__.append('get_or_set_queue')
 
 ################################################################################
 

@@ -1734,7 +1734,7 @@ distribution."""
         # <Ganneff> yes
 
         # This routine returns None on success or an error on failure
-        res = get_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
+        res = get_or_set_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
         if res:
             utils.fubar(res)
 
