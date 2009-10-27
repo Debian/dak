@@ -17,7 +17,7 @@ class SourceFormat(type):
 
     @classmethod
     def reject_msgs(cls, has):
-        if len(cls.required) != len([x for x in requires if has[x]]):
+        if len(cls.requires) != len([x for x in cls.requires if has[x]]):
             yield "lack of required files for format %s" % cls.name
 
         for key in cls.disallowed:
