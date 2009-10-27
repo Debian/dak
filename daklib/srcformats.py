@@ -8,47 +8,56 @@ class SourceFormat(type):
         srcformats.append(klass)
 
         assert str(klass.name)
+        assert iter(klass.requires)
+        assert iter(klass.disallowed)
+
         klass.re_format = re.compile(klass.format)
 
         return klass
 
-class FormatOne(object):
+    @classmethod
+    def reject_msgs(cls, has):
+        if len(cls.required) != len([x for x in requires if has[x]]):
+            yield "lack of required files for format %s" % cls.name
+
+        for key in cls.disallowed:
+            if has[key]:
+                yield "contains source files not allowed in format %s" % cls.name
+
+class FormatOne(SourceFormat):
     __metaclass__ = SourceFormat
 
     name = '1.0'
     format = r'1.0'
+
+    requires = ()
+    disallowed = ('debian_tar', 'more_orig_tar')
 
     @classmethod
     def reject_msgs(cls, has):
         if not (has['native_tar_gz'] or (has['orig_tar_gz'] and has['debian_diff'])):
             yield "no .tar.gz or .orig.tar.gz+.diff.gz in 'Files' field."
         if (has['orig_tar_gz'] != has['orig_tar']) or \
-           (has['native_tar_gz'] != has['native_tar']) or \
-           has['debian_tar'] or has['more_orig_tar']:
+           (has['native_tar_gz'] != has['native_tar']):
             yield "contains source files not allowed in format %s" % cls.name
 
-class FormatThree(object):
+        for msg in super(FormatOne, cls).reject_msgs(has):
+            yield msg
+
+class FormatThree(SourceFormat):
     __metaclass__ = SourceFormat
 
     name = '3.x (native)'
     format = r'3\.\d+ \(native\)'
 
-    @classmethod
-    def reject_msgs(cls, has):
-        if not has['native_tar']:
-            yield "lack of required files for format %s" % cls.name
-        if has['orig_tar'] or has['debian_diff'] or has['debian_tar'] or has['more_orig_tar']:
-            yield "contains source files not allowed in format %s" % cls.name
+    requires = ('native_tar',)
+    disallowed = ('orig_tar', 'debian_diff', 'debian_tar', 'more_orig_tar')
 
-class FormatThreeQuilt(object):
+class FormatThreeQuilt(SourceFormat):
     __metaclass__ = SourceFormat
 
     name = '3.x (quilt)'
     format = r'3\.\d+ \(quilt\)'
 
-    @classmethod
-    def reject_msgs(cls, has):
-        if not (has['orig_tar'] and has['debian_tar']):
-            yield "lack of required files for format %s" % cls.name
-        if has['debian_diff'] or has['native_tar']:
-            yield "contains source files not allowed in format %s" % cls.name
+    requires = ('orig_tar', 'debian_tar')
+    disallowed = ('debian_diff', 'native_tar')
