@@ -1418,6 +1418,7 @@ class Queue(object):
             # them (if one doesn't already exist)
             for dsc_file in changes.dsc_files.keys():
                 # Skip all files except orig tarballs
+                from daklib.regexes import re_is_orig_source
                 if not re_is_orig_source.match(dsc_file):
                     continue
                 # Skip orig files not identified in the pool
