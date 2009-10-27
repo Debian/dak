@@ -224,7 +224,10 @@ def package_to_suite(u, suite):
         q = q.join(DBSource).filter_by(source=u.pkg.changes['source'])
         q = q.filter_by(version=u.pkg.changes['version']).limit(1)
 
-        if q.count() < 1:
+        # NB: Careful, this logic isn't what you would think it is
+        # Source is already in {old-,}proposed-updates so no need to hold
+        # Instead, we don't move to the holding area, we just do an ACCEPT
+        if q.count() > 0:
             ret = False
 
         s.close()
