@@ -167,9 +167,9 @@ SELECT id, filename FROM files f
 
     ql = q.fetchall()
     if len(ql) > 0:
-        print "WARNING: check_files found something it shouldn't"
+        utils.warn("check_files found something it shouldn't")
         for x in ql:
-            print x
+            utils.warn("orphaned file: %s" % x)
             Logger.log(["set lastused", x[1], "ORPHANED FILE"])
             session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
                             {'lastused': now_date, 'fileid': x[0]})
