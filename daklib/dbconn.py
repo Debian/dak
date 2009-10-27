@@ -37,11 +37,14 @@ import os
 import psycopg2
 import traceback
 
+from inspect import getargspec
+
 from sqlalchemy import create_engine, Table, MetaData, select
 from sqlalchemy.orm import sessionmaker, mapper, relation
 
 # Don't remove this, we re-export the exceptions to scripts which import us
 from sqlalchemy.exc import *
+from sqlalchemy.orm.exc import NoResultFound
 
 # Only import Config until Queue stuff is changed to store its config
 # in the database
@@ -52,6 +55,30 @@ from textutils import fix_maintainer
 ################################################################################
 
 __all__ = ['IntegrityError', 'SQLAlchemyError']
+
+################################################################################
+
+def session_wrapper(fn):
+    def wrapped(*args, **kwargs):
+        private_transaction = False
+        session = kwargs.get('session')
+
+        # No session specified as last argument or in kwargs, create one.
+        if session is None and len(args) <= len(getargspec(fn)[0]) - 1:
+            private_transaction = True
+            kwargs['session'] = DBConn().session()
+
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            if private_transaction:
+                # We created a session; close it.
+                kwargs['session'].close()
+
+    wrapped.__doc__ = fn.__doc__
+    wrapped.func_name = fn.func_name
+
+    return wrapped
 
 ################################################################################
 
@@ -76,6 +103,7 @@ class Architecture(object):
 
 __all__.append('Architecture')
 
+@session_wrapper
 def get_architecture(architecture, session=None):
     """
     Returns database id for given C{architecture}.
@@ -89,28 +117,18 @@ def get_architecture(architecture, session=None):
 
     @rtype: Architecture
     @return: Architecture object for the given arch (None if not present)
-
     """
-    privatetrans = False
-
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Architecture).filter_by(arch_string=architecture)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_architecture')
 
+@session_wrapper
 def get_architecture_suites(architecture, session=None):
     """
     Returns list of Suite objects for given C{architecture} name
@@ -125,20 +143,12 @@ def get_architecture_suites(architecture, session=None):
     @rtype: list
     @return: list of Suite objects for the given name (may be empty)
     """
-    privatetrans = False
-
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Suite)
     q = q.join(SuiteArchitecture)
     q = q.join(Architecture).filter_by(arch_string=architecture).order_by('suite_name')
 
     ret = q.all()
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -151,10 +161,11 @@ class Archive(object):
         pass
 
     def __repr__(self):
-        return '<Archive %s>' % self.name
+        return '<Archive %s>' % self.archive_name
 
 __all__.append('Archive')
 
+@session_wrapper
 def get_archive(archive, session=None):
     """
     returns database id for given c{archive}.
@@ -172,22 +183,12 @@ def get_archive(archive, session=None):
     """
     archive = archive.lower()
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(Archive).filter_by(archive_name=archive)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_archive')
 
@@ -213,6 +214,7 @@ class DBBinary(object):
 
 __all__.append('DBBinary')
 
+@session_wrapper
 def get_suites_binary_in(package, session=None):
     """
     Returns list of Suite objects which given C{package} name is in
@@ -224,19 +226,11 @@ def get_suites_binary_in(package, session=None):
     @return: list of Suite objects for the given package
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
-    ret = session.query(Suite).join(BinAssociation).join(DBBinary).filter_by(package=package).all()
-
-    session.close()
-
-    return ret
+    return session.query(Suite).join(BinAssociation).join(DBBinary).filter_by(package=package).all()
 
 __all__.append('get_suites_binary_in')
 
+@session_wrapper
 def get_binary_from_id(id, session=None):
     """
     Returns DBBinary object for given C{id}
@@ -251,25 +245,17 @@ def get_binary_from_id(id, session=None):
     @rtype: DBBinary
     @return: DBBinary object for the given binary (None if not present)
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(DBBinary).filter_by(binary_id=id)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_binary_from_id')
 
+@session_wrapper
 def get_binaries_from_name(package, version=None, architecture=None, session=None):
     """
     Returns list of DBBinary objects for given C{package} name
@@ -290,10 +276,6 @@ def get_binaries_from_name(package, version=None, architecture=None, session=Non
     @rtype: list
     @return: list of DBBinary objects for the given name (may be empty)
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(DBBinary).filter_by(package=package)
 
@@ -307,13 +289,11 @@ def get_binaries_from_name(package, version=None, architecture=None, session=Non
 
     ret = q.all()
 
-    if privatetrans:
-        session.close()
-
     return ret
 
 __all__.append('get_binaries_from_name')
 
+@session_wrapper
 def get_binaries_from_source_id(source_id, session=None):
     """
     Returns list of DBBinary objects for given C{source_id}
@@ -328,29 +308,15 @@ def get_binaries_from_source_id(source_id, session=None):
     @rtype: list
     @return: list of DBBinary objects for the given name (may be empty)
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
-    ret = session.query(DBBinary).filter_by(source_id=source_id).all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
-
+    return session.query(DBBinary).filter_by(source_id=source_id).all()
 
 __all__.append('get_binaries_from_source_id')
 
-
+@session_wrapper
 def get_binary_from_name_suite(package, suitename, session=None):
     ### For dak examine-package
     ### XXX: Doesn't use object API yet
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     sql = """SELECT DISTINCT(b.package), b.version, c.name, su.suite_name
              FROM binaries b, files fi, location l, component c, bin_associations ba, suite su
@@ -363,15 +329,11 @@ def get_binary_from_name_suite(package, suitename, session=None):
                AND su.suite_name=:suitename
           ORDER BY b.version DESC"""
 
-    ret = session.execute(sql, {'package': package, 'suitename': suitename})
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return session.execute(sql, {'package': package, 'suitename': suitename})
 
 __all__.append('get_binary_from_name_suite')
 
+@session_wrapper
 def get_binary_components(package, suitename, arch, session=None):
     # Check for packages that have moved from one component to another
     query = """SELECT c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f
@@ -384,17 +346,7 @@ def get_binary_components(package, suitename, arch, session=None):
 
     vals = {'package': package, 'suitename': suitename, 'arch': arch}
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
-    ret = session.execute(query, vals)
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return session.execute(query, vals)
 
 __all__.append('get_binary_components')
 
@@ -422,6 +374,7 @@ class Component(object):
 
 __all__.append('Component')
 
+@session_wrapper
 def get_component(component, session=None):
     """
     Returns database id for given C{component}.
@@ -435,22 +388,12 @@ def get_component(component, session=None):
     """
     component = component.lower()
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(Component).filter_by(component_name=component)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_component')
 
@@ -498,7 +441,10 @@ def get_or_set_contents_file_id(filename, session=None):
         privatetrans = True
 
     q = session.query(ContentFilename).filter_by(filename=filename)
-    if q.count() < 1:
+
+    try:
+        ret = q.one().cafilename_id
+    except NoResultFound:
         cf = ContentFilename()
         cf.filename = filename
         session.add(cf)
@@ -507,8 +453,6 @@ def get_or_set_contents_file_id(filename, session=None):
         else:
             session.flush()
         ret = cf.cafilename_id
-    else:
-        ret = q.one().cafilename_id
 
     if privatetrans:
         session.close()
@@ -517,6 +461,7 @@ def get_or_set_contents_file_id(filename, session=None):
 
 __all__.append('get_or_set_contents_file_id')
 
+@session_wrapper
 def get_contents(suite, overridetype, section=None, session=None):
     """
     Returns contents for a suite / overridetype combination, limiting
@@ -539,11 +484,6 @@ def get_contents(suite, overridetype, section=None, session=None):
     @return: ResultsProxy object set up to return tuples of (filename, section,
     package, arch_id)
     """
-
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     # find me all of the contents for a given suite
     contents_q = """SELECT (p.path||'/'||n.file) AS fn,
@@ -568,12 +508,7 @@ def get_contents(suite, overridetype, section=None, session=None):
 
     contents_q += " ORDER BY fn"
 
-    ret = session.execute(contents_q, vals)
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return session.execute(contents_q, vals)
 
 __all__.append('get_contents')
 
@@ -610,7 +545,10 @@ def get_or_set_contents_path_id(filepath, session=None):
         privatetrans = True
 
     q = session.query(ContentFilepath).filter_by(filepath=filepath)
-    if q.count() < 1:
+
+    try:
+        ret = q.one().cafilepath_id
+    except NoResultFound:
         cf = ContentFilepath()
         cf.filepath = filepath
         session.add(cf)
@@ -619,8 +557,6 @@ def get_or_set_contents_path_id(filepath, session=None):
         else:
             session.flush()
         ret = cf.cafilepath_id
-    else:
-        ret = q.one().cafilepath_id
 
     if privatetrans:
         session.close()
@@ -714,6 +650,7 @@ class DSCFile(object):
 
 __all__.append('DSCFile')
 
+@session_wrapper
 def get_dscfiles(dscfile_id=None, source_id=None, poolfile_id=None, session=None):
     """
     Returns a list of DSCFiles which may be empty
@@ -731,11 +668,6 @@ def get_dscfiles(dscfile_id=None, source_id=None, poolfile_id=None, session=None
     @return: Possibly empty list of DSCFiles
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(DSCFile)
 
     if dscfile_id is not None:
@@ -747,12 +679,7 @@ def get_dscfiles(dscfile_id=None, source_id=None, poolfile_id=None, session=None
     if poolfile_id is not None:
         q = q.filter_by(poolfile_id=poolfile_id)
 
-    ret = q.all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return q.all()
 
 __all__.append('get_dscfiles')
 
@@ -767,6 +694,7 @@ class PoolFile(object):
 
 __all__.append('PoolFile')
 
+@session_wrapper
 def check_poolfile(filename, filesize, md5sum, location_id, session=None):
     """
     Returns a tuple:
@@ -794,11 +722,6 @@ def check_poolfile(filename, filesize, md5sum, location_id, session=None):
                     (False, PoolFile object) if file found with size/md5sum mismatch
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(PoolFile).filter_by(filename=filename)
     q = q.join(Location).filter_by(location_id=location_id)
 
@@ -816,13 +739,11 @@ def check_poolfile(filename, filesize, md5sum, location_id, session=None):
     if ret is None:
         ret = (True, obj)
 
-    if privatetrans:
-        session.close()
-
     return ret
 
 __all__.append('check_poolfile')
 
+@session_wrapper
 def get_poolfile_by_id(file_id, session=None):
     """
     Returns a PoolFile objects or None for the given id
@@ -834,26 +755,17 @@ def get_poolfile_by_id(file_id, session=None):
     @return: either the PoolFile object or None
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(PoolFile).filter_by(file_id=file_id)
 
-    if q.count() > 0:
-        ret = q.one()
-    else:
-        ret = None
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_poolfile_by_id')
 
 
+@session_wrapper
 def get_poolfile_by_name(filename, location_id=None, session=None):
     """
     Returns an array of PoolFile objects for the given filename and
@@ -869,25 +781,16 @@ def get_poolfile_by_name(filename, location_id=None, session=None):
     @return: array of PoolFile objects
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(PoolFile).filter_by(filename=filename)
 
     if location_id is not None:
         q = q.join(Location).filter_by(location_id=location_id)
 
-    ret = q.all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return q.all()
 
 __all__.append('get_poolfile_by_name')
 
+@session_wrapper
 def get_poolfile_like_name(filename, session=None):
     """
     Returns an array of PoolFile objects which are like the given name
@@ -899,20 +802,10 @@ def get_poolfile_like_name(filename, session=None):
     @return: array of PoolFile objects
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     # TODO: There must be a way of properly using bind parameters with %FOO%
     q = session.query(PoolFile).filter(PoolFile.filename.like('%%%s%%' % filename))
 
-    ret = q.all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return q.all()
 
 __all__.append('get_poolfile_like_name')
 
@@ -951,7 +844,10 @@ def get_or_set_fingerprint(fpr, session=None):
         privatetrans = True
 
     q = session.query(Fingerprint).filter_by(fingerprint=fpr)
-    if q.count() < 1:
+
+    try:
+        ret = q.one()
+    except NoResultFound:
         fingerprint = Fingerprint()
         fingerprint.fingerprint = fpr
         session.add(fingerprint)
@@ -960,8 +856,6 @@ def get_or_set_fingerprint(fpr, session=None):
         else:
             session.flush()
         ret = fingerprint
-    else:
-        ret = q.one()
 
     if privatetrans:
         session.close()
@@ -1028,6 +922,7 @@ class Location(object):
 
 __all__.append('Location')
 
+@session_wrapper
 def get_location(location, component=None, archive=None, session=None):
     """
     Returns Location object for the given combination of location, component
@@ -1046,11 +941,6 @@ def get_location(location, component=None, archive=None, session=None):
     @return: Either a Location object or None if one can't be found
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(Location).filter_by(path=location)
 
     if archive is not None:
@@ -1059,15 +949,10 @@ def get_location(location, component=None, archive=None, session=None):
     if component is not None:
         q = q.join(Component).filter_by(component_name=component)
 
-    if q.count() < 1:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_location')
 
@@ -1112,7 +997,9 @@ def get_or_set_maintainer(name, session=None):
         privatetrans = True
 
     q = session.query(Maintainer).filter_by(name=name)
-    if q.count() < 1:
+    try:
+        ret = q.one()
+    except NoResultFound:
         maintainer = Maintainer()
         maintainer.name = name
         session.add(maintainer)
@@ -1121,8 +1008,6 @@ def get_or_set_maintainer(name, session=None):
         else:
             session.flush()
         ret = maintainer
-    else:
-        ret = q.one()
 
     if privatetrans:
         session.close()
@@ -1167,6 +1052,7 @@ class NewComment(object):
 
 __all__.append('NewComment')
 
+@session_wrapper
 def has_new_comment(package, version, session=None):
     """
     Returns true if the given combination of C{package}, C{version} has a comment.
@@ -1185,24 +1071,15 @@ def has_new_comment(package, version, session=None):
     @return: true/false
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(NewComment)
     q = q.filter_by(package=package)
     q = q.filter_by(version=version)
 
-    ret = q.count() > 0
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return bool(q.count() > 0)
 
 __all__.append('has_new_comment')
 
+@session_wrapper
 def get_new_comments(package=None, version=None, comment_id=None, session=None):
     """
     Returns (possibly empty) list of NewComment objects for the given
@@ -1223,25 +1100,14 @@ def get_new_comments(package=None, version=None, comment_id=None, session=None):
 
     @rtype: list
     @return: A (possibly empty) list of NewComment objects will be returned
-
     """
-
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(NewComment)
     if package is not None: q = q.filter_by(package=package)
     if version is not None: q = q.filter_by(version=version)
     if comment_id is not None: q = q.filter_by(comment_id=comment_id)
 
-    ret = q.all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return q.all()
 
 __all__.append('get_new_comments')
 
@@ -1256,6 +1122,7 @@ class Override(object):
 
 __all__.append('Override')
 
+@session_wrapper
 def get_override(package, suite=None, component=None, overridetype=None, session=None):
     """
     Returns Override object for the given parameters
@@ -1281,12 +1148,7 @@ def get_override(package, suite=None, component=None, overridetype=None, session
 
     @rtype: list
     @return: A (possibly empty) list of Override objects will be returned
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Override)
     q = q.filter_by(package=package)
@@ -1303,12 +1165,7 @@ def get_override(package, suite=None, component=None, overridetype=None, session
         if not isinstance(overridetype, list): overridetype = [overridetype]
         q = q.join(OverrideType).filter(OverrideType.overridetype.in_(overridetype))
 
-    ret = q.all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return q.all()
 
 __all__.append('get_override')
 
@@ -1324,6 +1181,7 @@ class OverrideType(object):
 
 __all__.append('OverrideType')
 
+@session_wrapper
 def get_override_type(override_type, session=None):
     """
     Returns OverrideType object for given C{override type}.
@@ -1337,24 +1195,14 @@ def get_override_type(override_type, session=None):
 
     @rtype: int
     @return: the database id for the given override type
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(OverrideType).filter_by(overridetype=override_type)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_override_type')
 
@@ -1469,6 +1317,7 @@ class Priority(object):
 
 __all__.append('Priority')
 
+@session_wrapper
 def get_priority(priority, session=None):
     """
     Returns Priority object for given C{priority name}.
@@ -1482,27 +1331,18 @@ def get_priority(priority, session=None):
 
     @rtype: Priority
     @return: Priority object for the given priority
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Priority).filter_by(priority=priority)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_priority')
 
+@session_wrapper
 def get_priorities(session=None):
     """
     Returns dictionary of priority names -> id mappings
@@ -1514,18 +1354,11 @@ def get_priorities(session=None):
     @rtype: dictionary
     @return: dictionary of priority names -> id mappings
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     ret = {}
     q = session.query(Priority)
     for x in q.all():
         ret[x.priority] = x.priority_id
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -1596,6 +1429,7 @@ class Queue(object):
                 # TODO: Move into database as above
                 if conf.FindB("Dinstall::SecurityQueueBuild"):
                     # Copy it since the original won't be readable by www-data
+                    import utils
                     utils.copy(src, dest)
                 else:
                     # Create a symlink to it
@@ -1657,6 +1491,7 @@ class Queue(object):
 
 __all__.append('Queue')
 
+@session_wrapper
 def get_queue(queuename, session=None):
     """
     Returns Queue object for given C{queue name}.
@@ -1670,23 +1505,14 @@ def get_queue(queuename, session=None):
 
     @rtype: Queue
     @return: Queue object for the given queue
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Queue).filter_by(queue_name=queuename)
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
 
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_queue')
 
@@ -1701,6 +1527,7 @@ class QueueBuild(object):
 
 __all__.append('QueueBuild')
 
+@session_wrapper
 def get_queue_build(filename, suite, session=None):
     """
     Returns QueueBuild object for given C{filename} and C{suite}.
@@ -1717,12 +1544,7 @@ def get_queue_build(filename, suite, session=None):
 
     @rtype: Queue
     @return: Queue object for the given queue
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     if isinstance(suite, int):
         q = session.query(QueueBuild).filter_by(filename=filename).filter_by(suite_id=suite)
@@ -1730,15 +1552,10 @@ def get_queue_build(filename, suite, session=None):
         q = session.query(QueueBuild).filter_by(filename=filename)
         q = q.join(Suite).filter_by(suite_name=suite)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_queue_build')
 
@@ -1765,6 +1582,7 @@ class Section(object):
 
 __all__.append('Section')
 
+@session_wrapper
 def get_section(section, session=None):
     """
     Returns Section object for given C{section name}.
@@ -1778,26 +1596,18 @@ def get_section(section, session=None):
 
     @rtype: Section
     @return: Section object for the given section name
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Section).filter_by(section=section)
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
 
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_section')
 
+@session_wrapper
 def get_sections(session=None):
     """
     Returns dictionary of section names -> id mappings
@@ -1809,18 +1619,11 @@ def get_sections(session=None):
     @rtype: dictionary
     @return: dictionary of section names -> id mappings
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     ret = {}
     q = session.query(Section)
     for x in q.all():
         ret[x.section] = x.section_id
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -1837,6 +1640,7 @@ class DBSource(object):
 
 __all__.append('DBSource')
 
+@session_wrapper
 def source_exists(source, source_version, suites = ["any"], session=None):
     """
     Ensure that source exists somewhere in the archive for the binary
@@ -1861,11 +1665,6 @@ def source_exists(source, source_version, suites = ["any"], session=None):
     @return: returns 1 if a source with expected version is found, otherwise 0
 
     """
-
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     cnf = Config()
     ret = 1
@@ -1905,13 +1704,11 @@ def source_exists(source, source_version, suites = ["any"], session=None):
         # No source found so return not ok
         ret = 0
 
-    if privatetrans:
-        session.close()
-
     return ret
 
 __all__.append('source_exists')
 
+@session_wrapper
 def get_suites_source_in(source, session=None):
     """
     Returns list of Suite objects which given C{source} name is in
@@ -1923,20 +1720,11 @@ def get_suites_source_in(source, session=None):
     @return: list of Suite objects for the given source
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
-    ret = session.query(Suite).join(SrcAssociation).join(DBSource).filter_by(source=source).all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return session.query(Suite).join(SrcAssociation).join(DBSource).filter_by(source=source).all()
 
 __all__.append('get_suites_source_in')
 
+@session_wrapper
 def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=None):
     """
     Returns list of DBSource objects for given C{source} name and other parameters
@@ -1958,10 +1746,6 @@ def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=
     @rtype: list
     @return: list of DBSource objects for the given name (may be empty)
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(DBSource).filter_by(source=source)
 
@@ -1971,15 +1755,11 @@ def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=
     if dm_upload_allowed is not None:
         q = q.filter_by(dm_upload_allowed=dm_upload_allowed)
 
-    ret = q.all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return q.all()
 
 __all__.append('get_sources_from_name')
 
+@session_wrapper
 def get_source_in_suite(source, suite, session=None):
     """
     Returns list of DBSource objects for a combination of C{source} and C{suite}.
@@ -1997,25 +1777,15 @@ def get_source_in_suite(source, suite, session=None):
     @return: the version for I{source} in I{suite}
 
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(SrcAssociation)
     q = q.join('source').filter_by(source=source)
     q = q.join('suite').filter_by(suite_name=suite)
 
-    if q.count() == 0:
-        ret =  None
-    else:
-        # ???: Maybe we should just return the SrcAssociation object instead
-        ret = q.one().source
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one().source
+    except NoResultFound:
+        return None
 
 __all__.append('get_source_in_suite')
 
@@ -2104,6 +1874,7 @@ class Suite(object):
 
 __all__.append('Suite')
 
+@session_wrapper
 def get_suite_architecture(suite, architecture, session=None):
     """
     Returns a SuiteArchitecture object given C{suite} and ${arch} or None if it
@@ -2123,27 +1894,18 @@ def get_suite_architecture(suite, architecture, session=None):
     @return: the SuiteArchitecture object or None
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(SuiteArchitecture)
     q = q.join(Architecture).filter_by(arch_string=architecture)
     q = q.join(Suite).filter_by(suite_name=suite)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_suite_architecture')
 
+@session_wrapper
 def get_suite(suite, session=None):
     """
     Returns Suite object for given C{suite name}.
@@ -2157,24 +1919,14 @@ def get_suite(suite, session=None):
 
     @rtype: Suite
     @return: Suite object for the requested suite name (None if not presenT)
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Suite).filter_by(suite_name=suite)
 
-    if q.count() == 0:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_suite')
 
@@ -2189,6 +1941,7 @@ class SuiteArchitecture(object):
 
 __all__.append('SuiteArchitecture')
 
+@session_wrapper
 def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     """
     Returns list of Architecture objects for given C{suite} name
@@ -2212,11 +1965,6 @@ def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     @return: list of Architecture objects for the given name (may be empty)
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(Architecture)
     q = q.join(SuiteArchitecture)
     q = q.join(Suite).filter_by(suite_name=suite)
@@ -2229,12 +1977,7 @@ def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
 
     q = q.order_by('arch_string')
 
-    ret = q.all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return q.all()
 
 __all__.append('get_suite_architectures')
 
@@ -2360,7 +2103,9 @@ def get_or_set_uid(uidname, session=None):
 
     q = session.query(Uid).filter_by(uid=uidname)
 
-    if q.count() < 1:
+    try:
+        ret = q.one()
+    except NoResultFound:
         uid = Uid()
         uid.uid = uidname
         session.add(uid)
@@ -2369,8 +2114,6 @@ def get_or_set_uid(uidname, session=None):
         else:
             session.flush()
         ret = uid
-    else:
-        ret = q.one()
 
     if privatetrans:
         session.close()
@@ -2379,25 +2122,15 @@ def get_or_set_uid(uidname, session=None):
 
 __all__.append('get_or_set_uid')
 
-
+@session_wrapper
 def get_uid_from_fingerprint(fpr, session=None):
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(Uid)
     q = q.join(Fingerprint).filter_by(fingerprint=fpr)
 
-    if q.count() != 1:
-        ret = None
-    else:
-        ret = q.one()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
 
 __all__.append('get_uid_from_fingerprint')
 
