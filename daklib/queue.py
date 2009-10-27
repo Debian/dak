@@ -71,7 +71,7 @@ def get_type(f, session):
     """
     # Determine the type
     if f.has_key("dbtype"):
-        file_type = file["dbtype"]
+        file_type = f["dbtype"]
     elif re_source_ext.match(f["type"]):
         file_type = "dsc"
     else:
@@ -998,11 +998,6 @@ class Upload(object):
         for field_name in [ "build-depends", "build-depends-indep" ]:
             field = self.pkg.dsc.get(field_name)
             if field:
-                # Check for broken dpkg-dev lossage...
-                if field.startswith("ARRAY"):
-                    self.rejects.append("%s: invalid %s field produced by a broken version of dpkg-dev (1.10.11)" % \
-                                        (dsc_filename, field_name.title()))
-
                 # Have apt try to parse them...
                 try:
                     apt_pkg.ParseSrcDepends(field)
