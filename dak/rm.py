@@ -41,7 +41,6 @@
 
 import commands
 import os
-import re
 import sys
 import apt_pkg
 import apt_inst

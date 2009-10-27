@@ -40,14 +40,12 @@ import fcntl
 import os
 import sys
 from datetime import datetime
-import re
-import apt_pkg, commands
+import apt_pkg
 
 from daklib import daklog
 from daklib.queue import *
 from daklib import utils
 from daklib.dbconn import *
-from daklib.binary import copy_temporary_contents
 from daklib.dak_exceptions import *
 from daklib.regexes import re_default_answer, re_issource, re_fdnic
 from daklib.urgencylog import UrgencyLog

@@ -22,7 +22,6 @@
 
 import sys, os, re, time
 import apt_pkg
-import tempfile
 from debian_bundle import deb822
 from daklib.dbconn import *
 from daklib import utils

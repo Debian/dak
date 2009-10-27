@@ -37,7 +37,6 @@ Create all the contents files
 import sys
 import os
 import logging
-import math
 import gzip
 import threading
 import Queue

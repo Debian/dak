@@ -34,23 +34,14 @@ Checks Debian packages from Incoming
 
 ################################################################################
 
-import commands
 import errno
 import fcntl
 import os
-import re
-import shutil
-import stat
 import sys
-import time
 import traceback
-import tarfile
-import apt_inst
 import apt_pkg
-from debian_bundle import deb822
 
 from daklib.dbconn import *
-from daklib.binary import Binary
 from daklib import daklog
 from daklib.queue import *
 from daklib import utils

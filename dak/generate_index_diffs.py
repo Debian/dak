@@ -34,7 +34,6 @@
 import sys
 import os
 import tempfile
-import subprocess
 import time
 import apt_pkg
 

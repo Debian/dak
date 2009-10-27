@@ -44,7 +44,7 @@
 
 ################################################################################
 
-import commands, ldap, re, sys
+import commands, ldap, sys
 import apt_pkg
 
 from daklib.config import Config

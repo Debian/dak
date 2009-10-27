@@ -40,7 +40,6 @@ import apt_inst
 
 from daklib.dbconn import *
 from daklib import utils
-from daklib.regexes import re_issource
 from daklib.config import Config
 
 ################################################################################

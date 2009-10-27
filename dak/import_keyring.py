@@ -24,7 +24,6 @@ import apt_pkg, ldap, email.Utils
 
 from daklib.config import Config
 from daklib.dbconn import *
-from daklib import utils
 
 
 # Globals

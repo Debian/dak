@@ -18,13 +18,9 @@ add his key to the GPGKeyring
 # I know what I say. I dont know python and I wrote it. So go and read some other stuff.
 
 import commands
-import re
 import sys
-import time
-import os
 import apt_pkg
 
-from daklib import daklog
 from daklib import utils
 from daklib.dbconn import DBConn, add_database_user, get_or_set_uid
 from daklib.regexes import re_gpg_fingerprint, re_user_address, re_user_mails, re_user_name
