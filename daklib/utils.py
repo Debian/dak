@@ -48,6 +48,8 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_parse_maintainer, re_taint_free, re_gpg_uid, \
                     re_re_mark, re_whitespace_comment, re_issource
 
+from srcformats import srcformats
+
 ################################################################################
 
 default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
@@ -397,30 +399,20 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
         rejmsg.append("%s: lists multiple native tarballs." % (dsc_filename))
     if has_debian_tar > 1 or has_debian_diff > 1:
         rejmsg.append("%s: lists multiple debian diff/tarballs." % (dsc_filename))
-    if dsc["format"] == "1.0":
-        if not (has_native_tar_gz or (has_orig_tar_gz and has_debian_diff)):
-            rejmsg.append("%s: no .tar.gz or .orig.tar.gz+.diff.gz in "
-                          "'Files' field." % (dsc_filename))
-        if (has_orig_tar_gz != has_orig_tar) or \
-           (has_native_tar_gz != has_native_tar) or \
-           has_debian_tar or has_more_orig_tar:
-            rejmsg.append("%s: contains source files not allowed in format 1.0"
-                          % (dsc_filename))
-    elif re.match(r"3\.\d+ \(native\)", dsc["format"]):
-        if not has_native_tar:
-            rejmsg.append("%s: lack required files for format 3.x (native)."
-                          % (dsc_filename))
-        if has_orig_tar or has_debian_diff or has_debian_tar or \
-           has_more_orig_tar:
-            rejmsg.append("%s: contains source files not allowed in "
-                          "format '3.x (native)'" % (dsc_filename))
-    elif re.match(r"3\.\d+ \(quilt\)", dsc["format"]):
-        if not(has_orig_tar and has_debian_tar):
-            rejmsg.append("%s: lack required files for format "
-                          "'3.x (quilt)'." % (dsc_filename))
-        if has_debian_diff or has_native_tar:
-            rejmsg.append("%s: contains source files not allowed in format "
-                          "3.x (quilt)" % (dsc_filename))
+
+    for format in srcformats:
+        if format.re_format.match(dsc['format']):
+            rejmsg.extend(format.reject_msgs(
+                dsc_filename,
+                has_native_tar,
+                has_native_tar_gz,
+                has_debian_tar,
+                has_debian_diff,
+                has_orig_tar,
+                has_orig_tar_gz,
+                has_more_orig_tar
+            ))
+            break
 
     return rejmsg
 
