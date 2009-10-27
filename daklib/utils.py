@@ -402,8 +402,7 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
 
     for format in srcformats:
         if format.re_format.match(dsc['format']):
-            rejmsg.extend(format.reject_msgs(
-                dsc_filename,
+            msgs = format.reject_msgs(
                 has_native_tar,
                 has_native_tar_gz,
                 has_debian_tar,
@@ -411,7 +410,8 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
                 has_orig_tar,
                 has_orig_tar_gz,
                 has_more_orig_tar
-            ))
+            )
+            rejmsg.extend(['%s: %s' % (dsc_filename, x) for x in msgs])
             break
 
     return rejmsg
