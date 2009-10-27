@@ -211,8 +211,7 @@ def clean(now_date, delete_date, max_delete, session):
     q = session.execute("""
 SELECT df.id, s.id, f.filename FROM source s, files f, dsc_files df
   WHERE f.last_used <= :deletedate
-        AND s.file = f.id AND s.id = df.source
-        AND df.id = dsc_files.id)""", {'deletedate': delete_date})
+        AND s.file = f.id AND s.id = df.source""", {'deletedate': delete_date})
     for s in q.fetchall():
         Logger.log(["delete source", s[2]])
         if not Options["No-Action"]:
