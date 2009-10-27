@@ -1225,14 +1225,14 @@ class Upload(object):
         # through lintians output later to see if its a fatal tag we detected, or not.
         # So we only run lintian once on all tags, even if we might reject on some, but not
         # reject on others.
-        # Additionally built up a hash of tags
-        tags = {}
+        # Additionally build up a set of tags
+        tags = set()
         (fd, temp_filename) = utils.temp_filename()
         temptagfile = os.fdopen(fd, 'w')
         for tagtype in lintiantags:
             for tag in lintiantags[tagtype]:
                 temptagfile.write(tag)
-                tags[tag]=1
+                tags.add(tag)
         temptagfile.close()
 
         # So now we should look at running lintian at the .changes file, capturing output
@@ -1259,7 +1259,7 @@ class Upload(object):
                     etext = m.group(4)
 
                     # So lets check if we know the tag at all.
-                    if tags.has_key(etag):
+                    if etag in tags:
                         if etype == 'O':
                             # We know it and it is overriden. Check that override is allowed.
                             if lintiantags['warning'][etag]:
