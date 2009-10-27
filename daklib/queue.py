@@ -1270,6 +1270,7 @@ class Upload(object):
                 if etag in lintiantags['warning']:
                     # The tag is overriden, and it is allowed to be overriden.
                     # Don't add a reject message.
+                    pass
                 elif etag in lintiantags['error']:
                     # The tag is overriden - but is not allowed to be
                     self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
