@@ -62,7 +62,7 @@ def do_update(self):
         c.execute("SELECT id FROM suite")
         suites = c.fetchall()
         for s in suites:
-            c.execute("INSERT INTO suite_src_formats (suite, src_format) VALUES('%s', '%s')" % (s[0], '1.0'))
+            c.execute("INSERT INTO suite_src_formats (suite, src_format) VALUES(%s, %s)", (s[0], '1.0'))
 
         print "Authorize all other formats on tpu, unstable & experimental by default"
         c.execute("SELECT id FROM suite WHERE suite_name IN ('testing-proposed-updates', 'unstable', 'experimental')")
@@ -71,7 +71,7 @@ def do_update(self):
         formats = c.fetchall()
         for s in suites:
             for f in formats:
-                c.execute("INSERT INTO suite_src_formats (suite, src_format) VALUES('%s', '%s')" % (s[0], f[0]))
+                c.execute("INSERT INTO suite_src_formats (suite, src_format) VALUES(%s, %s)", (s[0], f[0]))
 
         c.execute("UPDATE config SET value = '15' WHERE name = 'db_revision'")
         self.db.commit()
