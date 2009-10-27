@@ -29,7 +29,7 @@
 
 ################################################################################
 
-import commands, os, sys, time, re
+import commands, os, sys, re
 import apt_pkg
 
 from daklib.config import Config
