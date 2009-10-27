@@ -74,7 +74,7 @@ SELECT b.file, f.filename FROM binaries b, files f
 
     # Check for any binaries which are marked for eventual deletion
     # but are now used again.
-      
+
     q = session.execute("""
 SELECT b.file, f.filename FROM binaries b, files f
    WHERE f.last_used IS NOT NULL AND f.id = b.file
@@ -86,7 +86,7 @@ SELECT b.file, f.filename FROM binaries b, files f
     session.commit()
 
 ########################################
-  
+
 def check_sources(now_date, delete_date, max_delete, session):
     print "Checking for orphaned source packages..."
 
@@ -142,7 +142,7 @@ SELECT f.id, f.filename FROM source s, files f, dsc_files df
     ####      reinstate sources because of them
 
     for i in q.fetchall():
-        Logger.log(["unset lastused", i[1]]) 
+        Logger.log(["unset lastused", i[1]])
         session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid",
                         {'fileid': i[0]})
 
@@ -254,7 +254,7 @@ SELECT s.id, f.filename FROM source s, files f
 
             if not Options["No-Action"]:
                 session.delete(pf)
-            
+
         else:
             utils.fubar("%s is neither symlink nor file?!" % (filename))
 
