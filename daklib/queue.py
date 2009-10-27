@@ -1269,17 +1269,17 @@ class Upload(object):
 
             if etype == 'O':
                 # We know it and it is overriden. Check that override is allowed.
-                if lintiantags['warning'][etag]:
+                if etag in lintiantags['warning']:
                     # The tag is overriden, and it is allowed to be overriden.
                     # Don't add a reject message.
-                elif lintiantags['error'][etag]:
+                elif etag in lintiantags['error']:
                     # The tag is overriden - but is not allowed to be
                     self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
             else:
                 # Tag is known, it is not overriden, direct reject.
                 self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
                 # Now tell if they *might* override it.
-                if lintiantags['wayout'][etag]:
+                if etag in lintiantags['wayout']:
                     self.rejects.append("%s: If you have a good reason, you may override this lintian tag. Laziness to fix your crap is NOT A GOOD REASON, sod off" % (epackage))
 
     ###########################################################################
