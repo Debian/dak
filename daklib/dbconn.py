@@ -65,7 +65,7 @@ def session_wrapper(fn):
         session = kwargs.get('session')
 
         # No session specified as last argument or in kwargs, create one.
-        if session is None and len(args) == len(getargspec(fn)[0]) - 1:
+        if session is None or len(args) == len(getargspec(fn)[0]) - 1:
             private_transaction = True
             kwargs['session'] = DBConn().session()
 
