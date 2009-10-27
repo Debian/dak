@@ -1232,7 +1232,7 @@ class Upload(object):
         temptagfile = os.fdopen(fd, 'w')
         for tagtype in lintiantags:
             for tag in lintiantags[tagtype]:
-                temptagfile.write(tag)
+                temptagfile.write("%s\n" % tag)
                 tags.add(tag)
         temptagfile.close()
 
