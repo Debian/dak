@@ -50,7 +50,7 @@ from config import Config
 from holding import Holding
 from dbconn import *
 from summarystats import SummaryStats
-from utils import parse_changes
+from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
 from binary import Binary
 
@@ -73,7 +73,7 @@ def get_type(f, session):
     # Determine the type
     if f.has_key("dbtype"):
         file_type = file["dbtype"]
-    elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
+    elif re_source_ext.match(f["type"]):
         file_type = "dsc"
     else:
         utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (file_type))
@@ -713,7 +713,7 @@ class Upload(object):
             self.rejects.append("%s: changes file doesn't say %s for Source" % (f, entry["package"]))
 
         # Ensure the source version matches the version in the .changes file
-        if entry["type"] == "orig.tar.gz":
+        if re_is_orig_source.match(f):
             changes_version = self.pkg.changes["chopversion2"]
         else:
             changes_version = self.pkg.changes["chopversion"]
@@ -921,7 +921,7 @@ class Upload(object):
                 self.rejects.append("source only uploads are not supported.")
 
     ###########################################################################
-    def check_dsc(self, action=True):
+    def check_dsc(self, action=True, session=None):
         """Returns bool indicating whether or not the source changes are valid"""
         # Ensure there is source to check
         if not self.pkg.changes["architecture"].has_key("source"):
@@ -981,10 +981,11 @@ class Upload(object):
         if not re_valid_version.match(self.pkg.dsc["version"]):
             self.rejects.append("%s: invalid version number '%s'." % (dsc_filename, self.pkg.dsc["version"]))
 
-        # Bumping the version number of the .dsc breaks extraction by stable's
-        # dpkg-source.  So let's not do that...
-        if self.pkg.dsc["format"] != "1.0":
-            self.rejects.append("%s: incompatible 'Format' version produced by a broken version of dpkg-dev 1.9.1{3,4}." % (dsc_filename))
+        # Only a limited list of source formats are allowed in each suite
+        for dist in self.pkg.changes["distribution"].keys():
+            allowed = [ x.format_name for x in get_suite_src_formats(dist, session) ]
+            if self.pkg.dsc["format"] not in allowed:
+                self.rejects.append("%s: source format '%s' not allowed in %s (accepted: %s) " % (dsc_filename, self.pkg.dsc["format"], dist, ", ".join(allowed)))
 
         # Validate the Maintainer field
         try:
@@ -1016,19 +1017,8 @@ class Upload(object):
         if epochless_dsc_version != self.pkg.files[dsc_filename]["version"]:
             self.rejects.append("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version))
 
-        # Ensure there is a .tar.gz in the .dsc file
-        has_tar = False
-        for f in self.pkg.dsc_files.keys():
-            m = re_issource.match(f)
-            if not m:
-                self.rejects.append("%s: %s in Files field not recognised as source." % (dsc_filename, f))
-                continue
-            ftype = m.group(3)
-            if ftype == "orig.tar.gz" or ftype == "tar.gz":
-                has_tar = True
-
-        if not has_tar:
-            self.rejects.append("%s: no .tar.gz or .orig.tar.gz in 'Files' field." % (dsc_filename))
+        # Ensure the Files field contain only what's expected
+        self.rejects.extend(check_dsc_files(dsc_filename, self.pkg.dsc, self.pkg.dsc_files))
 
         # Ensure source is newer than existing source in target suites
         session = DBConn().session()
