@@ -222,7 +222,7 @@ SELECT df.id, s.id, f.filename FROM source s, files f, dsc_files df
         session.commit()
 
     # Delete files from the pool
-    old_files = session.query(PoolFile).filter(last_used <= delete_date)
+    old_files = session.query(PoolFile).filter(PoolFile.last_used <= delete_date)
     if max_delete is not None:
         old_files = old_files.limit(max_delete)
         print "Limiting removals to %d" % max_delete
@@ -332,7 +332,7 @@ def clean_queue_build(now_date, delete_date, max_delete, session):
     our_delete_date = now_date - timedelta(seconds = int(cnf["Clean-Suites::QueueBuildStayOfExecution"]))
     count = 0
 
-    for qf in session.query(QueueBuild).filter(last_used <= our_delete_date):
+    for qf in session.query(QueueBuild).filter(QueueBuild.last_used <= our_delete_date):
         if not os.path.exists(qf.filename):
             utils.warn("%s (from queue_build) doesn't exist." % (qf.filename))
             continue
