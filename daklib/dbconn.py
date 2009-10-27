@@ -48,6 +48,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 # Only import Config until Queue stuff is changed to store its config
 # in the database
+import utils
 from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
