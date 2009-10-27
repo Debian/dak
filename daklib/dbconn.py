@@ -59,6 +59,12 @@ __all__ = ['IntegrityError', 'SQLAlchemyError']
 ################################################################################
 
 def session_wrapper(fn):
+    """
+    Wrapper around common ".., session=None):" handling. If the wrapped
+    function is called without passing 'session', we create a local one
+    and destroy it when the function ends.
+    """
+
     def wrapped(*args, **kwargs):
         private_transaction = False
         session = kwargs.get('session')
