@@ -353,7 +353,7 @@ class Upload(object):
     ###########################################################################
     def load_changes(self, filename):
         """
-        @rtype boolean
+        @rtype: boolean
         @rvalue: whether the changes file was valid or not.  We may want to
                  reject even if this is True (see what gets put in self.rejects).
                  This is simply to prevent us even trying things later which will
@@ -1843,7 +1843,7 @@ distribution."""
             user_email_address = utils.whoami() + " <%s>" % (cnf["Dinstall::MyAdminAddress"])
             self.Subst["__REJECTOR_ADDRESS__"] = user_email_address
             self.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
-            self.Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
+            self.Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
             reject_mail_message = utils.TemplateSubst(self.Subst, rej_template)
             # Write the rejection email out as the <foo>.reason file
             os.write(reason_fd, reject_mail_message)
