@@ -839,15 +839,6 @@ def do_accept(upload):
         # Just a normal upload, accept it...
         _accept(upload)
 
-def check_status(files):
-    new = byhand = 0
-    for f in files.keys():
-        if files[f]["type"] == "byhand":
-            byhand = 1
-        elif files[f].has_key("new"):
-            new = 1
-    return (new, byhand)
-
 def do_pkg(changes_file, session):
     u = Upload()
     u.pkg.load_dot_dak(changes_file)

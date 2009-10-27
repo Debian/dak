@@ -238,6 +238,17 @@ def lookup_uid_from_fingerprint(fpr, session):
 
 ###############################################################################
 
+def check_status(files):
+    new = byhand = 0
+    for f in files.keys():
+        if files[f]["type"] == "byhand":
+            byhand = 1
+        elif files[f].has_key("new"):
+            new = 1
+    return (new, byhand)
+
+###############################################################################
+
 # Used by Upload.check_timestamps
 class TarTime(object):
     def __init__(self, future_cutoff, past_cutoff):
