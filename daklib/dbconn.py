@@ -39,7 +39,7 @@ import traceback
 
 from inspect import getargspec
 
-from sqlalchemy import create_engine, Table, MetaData, select
+from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker, mapper, relation
 
 # Don't remove this, we re-export the exceptions to scripts which import us
