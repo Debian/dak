@@ -1609,23 +1609,26 @@ class Queue(object):
 
                 session.add(qb)
 
-            # If the .orig.tar.gz is in the pool, create a symlink to
-            # it (if one doesn't already exist)
-            if changes.orig_tar_id:
-                # Determine the .orig.tar.gz file name
-                for dsc_file in changes.dsc_files.keys():
-                    if dsc_file.endswith(".orig.tar.gz"):
-                        filename = dsc_file
-
-                dest = os.path.join(dest_dir, filename)
+            # If the .orig tarballs are in the pool, create a symlink to
+            # them (if one doesn't already exist)
+            for dsc_file in changes.dsc_files.keys():
+                # Skip all files except orig tarballs
+                if not re_is_orig_source.match(dsc_file):
+                    continue
+                # Skip orig files not identified in the pool
+                if not (changes.orig_files.has_key(dsc_file) and
+                        changes.orig_files[dsc_file].has_key("id")):
+                    continue
+                orig_file_id = changes.orig_files[dsc_file]["id"]
+                dest = os.path.join(dest_dir, dsc_file)
 
                 # If it doesn't exist, create a symlink
                 if not os.path.exists(dest):
                     q = session.execute("SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id",
-                                        {'id': changes.orig_tar_id})
+                                        {'id': orig_file_id})
                     res = q.fetchone()
                     if not res:
-                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (changes.orig_tar_id)
+                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (orig_file_id)
 
                     src = os.path.join(res[0], res[1])
                     os.symlink(src, dest)

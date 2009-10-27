@@ -210,7 +210,7 @@ def add_dsc_to_db(u, filename, session):
         df = DSCFile()
         df.source_id = source.source_id
 
-        # If the .orig.tar.gz is already in the pool, it's
+        # If the .orig tarball is already in the pool, it's
         # files id is stored in dsc_files by check_dsc().
         files_id = dentry.get("files id", None)
 
@@ -353,32 +353,37 @@ def install(u, session, log_urgency=True):
             add_deb_to_db(u, newfile, session)
 
     # If this is a sourceful diff only upload that is moving
-    # cross-component we need to copy the .orig.tar.gz into the new
+    # cross-component we need to copy the .orig files into the new
     # component too for the same reasons as above.
-    #
-    if u.pkg.changes["architecture"].has_key("source") and u.pkg.orig_tar_id and \
-       u.pkg.orig_tar_location != dsc_location_id:
+    if u.pkg.changes["architecture"].has_key("source"):
+        for orig_file in u.pkg.orig_files.keys():
+            if not u.pkg.orig_files[orig_file].has_key("id"):
+                continue # Skip if it's not in the pool
+            orig_file_id = u.pkg.orig_files[orig_file]["id"]
+            if u.pkg.orig_files[orig_file]["location"] == dsc_location_id:
+                continue # Skip if the location didn't change
 
-        oldf = get_poolfile_by_id(u.pkg.orig_tar_id, session)
-        old_filename = os.path.join(oldf.location.path, oldf.filename)
-        old_dat = {'size': oldf.filesize,   'md5sum': oldf.md5sum,
-                   'sha1sum': oldf.sha1sum, 'sha256sum': oldf.sha256sum}
+            # Do the move
+            oldf = get_poolfile_by_id(orig_file_id, session)
+            old_filename = os.path.join(oldf.location.path, oldf.filename)
+            old_dat = {'size': oldf.filesize,   'md5sum': oldf.md5sum,
+                       'sha1sum': oldf.sha1sum, 'sha256sum': oldf.sha256sum}
 
-        new_filename = os.path.join(utils.poolify(u.pkg.changes["source"], dsc_component), os.path.basename(old_filename))
+            new_filename = os.path.join(utils.poolify(u.pkg.changes["source"], dsc_component), os.path.basename(old_filename))
 
-        # TODO: Care about size/md5sum collisions etc
-        (found, newf) = check_poolfile(new_filename, file_size, file_md5sum, dsc_location_id, session)
+            # TODO: Care about size/md5sum collisions etc
+            (found, newf) = check_poolfile(new_filename, file_size, file_md5sum, dsc_location_id, session)
 
-        if newf is None:
-            utils.copy(old_filename, os.path.join(cnf["Dir::Pool"], new_filename))
-            newf = add_poolfile(new_filename, old_dat, dsc_location_id, session)
+            if newf is None:
+                utils.copy(old_filename, os.path.join(cnf["Dir::Pool"], new_filename))
+                newf = add_poolfile(new_filename, old_dat, dsc_location_id, session)
 
-            # TODO: Check that there's only 1 here
-            source = get_sources_from_name(u.pkg.changes["source"], u.pkg.changes["version"])[0]
-            dscf = get_dscfiles(source_id = source.source_id, poolfile_id=u.pkg.orig_tar_id, session=session)[0]
-            dscf.poolfile_id = newf.file_id
-            session.add(dscf)
-            session.flush()
+                # TODO: Check that there's only 1 here
+                source = get_sources_from_name(u.pkg.changes["source"], u.pkg.changes["version"])[0]
+                dscf = get_dscfiles(source_id=source.source_id, poolfile_id=orig_file_id, session=session)[0]
+                dscf.poolfile_id = newf.file_id
+                session.add(dscf)
+                session.flush()
 
     # Install the files into the pool
     for newfile, entry in u.pkg.files.items():
@@ -452,15 +457,17 @@ def install(u, session, log_urgency=True):
                     os.unlink(dest)
                 os.symlink(src, dest)
 
-        # Update last_used on any non-upload .orig.tar.gz symlink
-        if u.pkg.orig_tar_id:
+        # Update last_used on any non-uploaded .orig symlink
+        for orig_file in u.pkg.orig_files.keys():
             # Determine the .orig.tar.gz file name
-            for dsc_file in u.pkg.dsc_files.keys():
-                if dsc_file.endswith(".orig.tar.gz"):
-                    u.pkg.orig_tar_gz = os.path.join(dest_dir, dsc_file)
+            if not u.pkg.orig_files[orig_file].has_key("id"):
+                continue # Skip files not in the pool
+            # XXX: do we really want to update the orig_files dict here
+            # instead of using a temporary variable?
+            u.pkg.orig_files[orig_file]["path"] = os.path.join(dest_dir, orig_file)
 
             # Remove it from the list of packages for later processing by apt-ftparchive
-            qb = get_queue_build(u.pkg.orig_tar_gz, suite.suite_id, session)
+            qb = get_queue_build(u.pkg.orig_files[orig_file]["path"], suite.suite_id, session)
             if qb:
                 qb.in_queue = False
                 qb.last_used = now_date

@@ -1055,16 +1055,19 @@ class Upload(object):
                 if not os.path.exists(src):
                     return
                 ftype = m.group(3)
-                if ftype == "orig.tar.gz" and self.pkg.orig_tar_gz:
+                if re_is_orig_source.match(f) and pkg.orig_files.has_key(f) and \
+                   pkg.orig_files[f].has_key("path"):
                     continue
                 dest = os.path.join(os.getcwd(), f)
                 os.symlink(src, dest)
 
-        # If the orig.tar.gz is not a part of the upload, create a symlink to the
-        # existing copy.
-        if self.pkg.orig_tar_gz:
-            dest = os.path.join(os.getcwd(), os.path.basename(self.pkg.orig_tar_gz))
-            os.symlink(self.pkg.orig_tar_gz, dest)
+        # If the orig files are not a part of the upload, create symlinks to the
+        # existing copies.
+        for orig_file in self.pkg.orig_files.keys():
+            if not self.pkg.orig_files[orig_file].has_key("path"):
+                continue
+            dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
+            os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
 
         # Extract the source
         cmd = "dpkg-source -sn -x %s" % (dsc_filename)
@@ -1107,10 +1110,11 @@ class Upload(object):
         #      We should probably scrap or rethink the whole reprocess thing
         # Bail out if:
         #    a) there's no source
-        # or b) reprocess is 2 - we will do this check next time when orig.tar.gz is in 'files'
-        # or c) the orig.tar.gz is MIA
+        # or b) reprocess is 2 - we will do this check next time when orig
+        #       tarball is in 'files'
+        # or c) the orig files are MIA
         if not self.pkg.changes["architecture"].has_key("source") or self.reprocess == 2 \
-           or self.pkg.orig_tar_gz == -1:
+           or len(self.pkg.orig_files) == 0:
             return
 
         tmpdir = utils.temp_dirname()
@@ -2047,7 +2051,7 @@ distribution."""
         """
 
         @warning: NB: this function can remove entries from the 'files' index [if
-         the .orig.tar.gz is a duplicate of the one in the archive]; if
+         the orig tarball is a duplicate of the one in the archive]; if
          you're iterating over 'files' and call this function as part of
          the loop, be sure to add a check to the top of the loop to
          ensure you haven't just tried to dereference the deleted entry.
@@ -2055,7 +2059,8 @@ distribution."""
         """
 
         Cnf = Config()
-        self.pkg.orig_tar_gz = None
+        self.pkg.orig_files = {} # XXX: do we need to clear it?
+        orig_files = self.pkg.orig_files
 
         # Try and find all files mentioned in the .dsc.  This has
         # to work harder to cope with the multiple possible
@@ -2089,7 +2094,7 @@ distribution."""
                 if len(ql) > 0:
                     # Ignore exact matches for .orig.tar.gz
                     match = 0
-                    if dsc_name.endswith(".orig.tar.gz"):
+                    if re_is_orig_source.match(dsc_name):
                         for i in ql:
                             if self.pkg.files.has_key(dsc_name) and \
                                int(self.pkg.files[dsc_name]["size"]) == int(i.filesize) and \
@@ -2099,13 +2104,15 @@ distribution."""
                                 # This would fix the stupidity of changing something we often iterate over
                                 # whilst we're doing it
                                 del self.pkg.files[dsc_name]
-                                self.pkg.orig_tar_gz = os.path.join(i.location.path, i.filename)
+                                if not orig_files.has_key(dsc_name):
+                                    orig_files[dsc_name] = {}
+                                orig_files[dsc_name]["path"] = os.path.join(i.location.path, i.filename)
                                 match = 1
 
                     if not match:
                         self.rejects.append("can not overwrite existing copy of '%s' already in the archive." % (dsc_name))
 
-            elif dsc_name.endswith(".orig.tar.gz"):
+            elif re_is_orig_source.match(dsc_name):
                 # Check in the pool
                 ql = get_poolfile_like_name(dsc_name, session)
 
@@ -2143,9 +2150,11 @@ distribution."""
                     # need this for updating dsc_files in install()
                     dsc_entry["files id"] = x.file_id
                     # See install() in process-accepted...
-                    self.pkg.orig_tar_id = x.file_id
-                    self.pkg.orig_tar_gz = old_file
-                    self.pkg.orig_tar_location = x.location.location_id
+                    if not orig_files.has_key(dsc_name):
+                        orig_files[dsc_name] = {}
+                    orig_files[dsc_name]["id"] = x.file_id
+                    orig_files[dsc_name]["path"] = old_file
+                    orig_files[dsc_name]["location"] = x.location.location_id
                 else:
                     # TODO: Record the queues and info in the DB so we don't hardcode all this crap
                     # Not there? Check the queue directories...
@@ -2159,11 +2168,12 @@ distribution."""
                             in_otherdir_fh.close()
                             actual_size = os.stat(in_otherdir)[stat.ST_SIZE]
                             found = in_otherdir
-                            self.pkg.orig_tar_gz = in_otherdir
+                            if not orig_files.has_key(dsc_name):
+                                orig_files[dsc_name] = {}
+                            orig_files[dsc_name]["path"] = in_otherdir
 
                     if not found:
                         self.rejects.append("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_name))
-                        self.pkg.orig_tar_gz = -1
                         continue
             else:
                 self.rejects.append("%s refers to %s, but I can't find it in the queue." % (file, dsc_name))
