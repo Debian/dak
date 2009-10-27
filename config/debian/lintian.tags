@@ -1,21 +1,23 @@
 lintian:
-  wayout:
+  warning:
     - statically-linked-binary
-  nowayout:
-    - copyright-lists-upstream-authors-with-dh_make-boilerplate
-    - section-is-dh_make-template
     - arch-independent-package-contains-binary-or-object
     - arch-dependent-file-in-usr-share
-    - usr-share-doc-symlink-without-dependency
     - missing-build-dependency
+    - arch-dependent-file-in-usr-share
+    - missing-dependency-on-libc
+    - usr-share-doc-symlink-without-dependency
+    - binary-with-bad-dynamic-table
+    - usr-share-doc-symlink-without-dependency
+    - mknod-in-maintainer-script
+  error:
+    - binary-in-etc
+    - missing-dependency-on-perlapi
+    - copyright-lists-upstream-authors-with-dh_make-boilerplate
+    - section-is-dh_make-template
     - package-installs-python-pyc
     - library-in-debug-or-profile-should-not-be-stripped
-    - arch-dependent-file-in-usr-share
-    - binary-in-etc
     - binary-file-compressed-with-upx
-    - binary-with-bad-dynamic-table
-    - missing-dependency-on-libc
-    - missing-dependency-on-perlapi
     - html-changelog-without-text-version
     - file-in-usr-marked-as-conffile
     - build-info-in-binary-control-file-section
@@ -27,7 +29,6 @@ lintian:
     - copyright-refers-to-old-directory
     - copyright-file-compressed
     - copyright-file-is-symlink
-    - usr-share-doc-symlink-without-dependency
     - usr-share-doc-symlink-to-foreign-package
     - old-style-copyright-file
     - copyright-refers-to-incorrect-directory
@@ -52,7 +53,6 @@ lintian:
     - maintainer-address-malformed
     - maintainer-address-is-on-localhost
     - uploader-name-missing
-    - uploader-address-missing
     - uploader-address-malformed
     - uploader-address-is-on-localhost
     - no-source-field
@@ -63,11 +63,9 @@ lintian:
     - build-depends-on-build-essential
     - executable-in-usr-share-doc
     - symlink-has-too-many-up-segments
-    - patch-modifying-debian-files
     - debian-rules-is-symlink
     - debian-rules-not-a-makefile
     - debian-rules-missing-required-target
-    - mknod-in-maintainer-script
     - maintainer-script-removes-device-files
     - no-standards-version-field
     - invalid-standards-version

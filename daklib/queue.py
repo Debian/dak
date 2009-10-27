@@ -39,6 +39,7 @@ import utils
 import commands
 import shutil
 import textwrap
+import tempfile
 from types import *
 
 import yaml
@@ -1205,6 +1206,77 @@ class Upload(object):
             self.rejects.append(m)
 
         self.ensure_hashes()
+
+    ###########################################################################
+    def check_lintian(self):
+        cnf = Config()
+        tagfile = cnf("Dinstall::LintianTags")
+        # Parse the yaml file
+        sourcefile = file(tagfile, 'r')
+        sourcecontent = sourcefile.read()
+        try:
+            lintiantags = yaml.load(sourcecontent)
+        except yaml.YAMLError, msg:
+            utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
+            return
+
+        # Now setup the input file for lintian. lintian wants "one tag per line" only,
+        # so put it together like it. We put all types of tags in one file and then sort
+        # through lintians output later to see if its a fatal tag we detected, or not.
+        # So we only run lintian once on all tags, even if we might reject on some, but not
+        # reject on others.
+        # Additionally built up a hash of tags
+        tags = {}
+        (fd, temp_filename) = utils.temp_filename()
+        temptagfile = os.fdopen(fd, 'w')
+        for tagtype in lintiantags:
+            for tag in lintiantags[tagtype]:
+                temptagfile.write(tag)
+                tags[tag]=1
+        temptagfile.close()
+
+        # So now we should look at running lintian at the .changes file, capturing output
+        # to then parse it.
+        command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
+        (result, output) = commands.getstatusoutput(cmd)
+        # We are done with lintian, remove our tempfile
+        os.unlink(temp_filename)
+        if (result != 0):
+            self.rejects.append("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
+            self.rejects.append(utils.prefix_multi_line_string(output, " [possible output:] "), "")
+            return
+
+        if len(output) > 0:
+            # We have output of lintian, this package isn't clean. Lets parse it and see if we
+            # are having a victim for a reject.
+            # W: tzdata: binary-without-manpage usr/sbin/tzconfig
+            for line in output.split('\n'):
+                m = re_parse_lintian.match(line)
+                if m:
+                    etype = m.group(1)
+                    epackage = m.group(2)
+                    etag = m.group(3)
+                    etext = m.group(4)
+
+                    # So lets check if we know the tag at all.
+                    if tags.has_key(etag):
+                        if etype == 'O':
+                            # We know it and it is overriden. Check that override is allowed.
+                            if lintiantags['warning'][etag]:
+                                # The tag is overriden, and it is allowed to be overriden.
+                                # Continue as if it isnt there.
+                                next
+                            elif lintiantags['error'][etag]:
+                                # The tag is overriden - but is not allowed to be
+                                self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
+                                return
+                        else:
+                            # Tag is known, it is not overriden, direct reject.
+                            self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
+                            # Now tell if they *might* override it.
+                            if lintiantags['wayout'][etag]:
+                                self.rejects.append("%s: If you have a good reason, you may override this lintian tag. Laziness to fix your crap is NOT A GOOD REASON, sod off" % (epackage))
+                            return
 
     ###########################################################################
     def check_urgency(self):
