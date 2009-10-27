@@ -26,7 +26,6 @@ Queue utility functions for dak
 
 ###############################################################################
 
-import cPickle
 import errno
 import os
 import pg

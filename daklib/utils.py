@@ -22,7 +22,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import codecs
 import commands
 import email.Header
 import os
@@ -46,8 +45,8 @@ from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_verwithext, \
-                    re_parse_maintainer, re_taint_free, re_gpg_uid, \
-                    re_re_mark, re_whitespace_comment, re_issource
+                    re_taint_free, re_gpg_uid, re_re_mark, \
+                    re_whitespace_comment, re_issource
 
 from srcformats import srcformats
 from collections import defaultdict
