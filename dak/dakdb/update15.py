@@ -61,7 +61,7 @@ def do_update(self):
         print "Authorize format 1.0 on all suites by default"
         c.execute("SELECT id FROM suite")
         suites = c.fetchall()
-        c.execute("SELECT id FROM src_format WHERE format_name == '1.0'")
+        c.execute("SELECT id FROM src_format WHERE format_name = '1.0'")
         formats = c.fetchall()
         for s in suites:
             c.execute("INSERT INTO suite_src_formats (suite, src_format) VALUES(%s, %s)", (s[0], f[0]))
