@@ -48,7 +48,6 @@ from sqlalchemy.orm.exc import NoResultFound
 
 # Only import Config until Queue stuff is changed to store its config
 # in the database
-import utils
 from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
@@ -65,7 +64,7 @@ def session_wrapper(fn):
         session = kwargs.get('session')
 
         # No session specified as last argument or in kwargs, create one.
-        if session is None and len(args) == len(getargspec(fn)[0]) - 1:
+        if session is None or len(args) == len(getargspec(fn)[0]) - 1:
             private_transaction = True
             kwargs['session'] = DBConn().session()
 
@@ -1427,6 +1426,7 @@ class Queue(object):
                 # TODO: Move into database as above
                 if conf.FindB("Dinstall::SecurityQueueBuild"):
                     # Copy it since the original won't be readable by www-data
+                    import utils
                     utils.copy(src, dest)
                 else:
                     # Create a symlink to it
