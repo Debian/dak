@@ -17,12 +17,12 @@ class FormatOne(object):
     format = r'1.0'
 
     @classmethod
-    def reject_msgs(cls, has_native_tar, has_native_tar_gz, has_debian_tar, has_debian_diff, has_orig_tar, has_orig_tar_gz, has_more_orig_tar):
-        if not (has_native_tar_gz or (has_orig_tar_gz and has_debian_diff)):
+    def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
+        if not (native_tar_gz or (orig_tar_gz and debian_diff)):
             yield "no .tar.gz or .orig.tar.gz+.diff.gz in 'Files' field."
-        if (has_orig_tar_gz != has_orig_tar) or \
-           (has_native_tar_gz != has_native_tar) or \
-           has_debian_tar or has_more_orig_tar:
+        if (orig_tar_gz != orig_tar) or \
+           (native_tar_gz != native_tar) or \
+           debian_tar or more_orig_tar:
             yield "contains source files not allowed in format 1.0"
 
 class FormatThree(object):
@@ -31,10 +31,10 @@ class FormatThree(object):
     format = r'3\.\d+ \(native\)'
 
     @classmethod
-    def reject_msgs(cls, has_native_tar, has_native_tar_gz, has_debian_tar, has_debian_diff, has_orig_tar, has_orig_tar_gz, has_more_orig_tar):
-        if not has_native_tar:
+    def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
+        if not native_tar:
             yield "lack required files for format 3.x (native)."
-        if has_orig_tar or has_debian_diff or has_debian_tar or has_more_orig_tar:
+        if orig_tar or debian_diff or debian_tar or more_orig_tar:
             yield "contains source files not allowed in format '3.x (native)'"
 
 class FormatThreeQuilt(object):
@@ -43,8 +43,8 @@ class FormatThreeQuilt(object):
     format = r'3\.\d+ \(quilt\)'
 
     @classmethod
-    def reject_msgs(cls, has_native_tar, has_native_tar_gz, has_debian_tar, has_debian_diff, has_orig_tar, has_orig_tar_gz, has_more_orig_tar):
-        if not(has_orig_tar and has_debian_tar):
+    def reject_msgs(cls, native_tar, native_tar_gz, debian_tar, debian_diff, orig_tar, orig_tar_gz, more_orig_tar):
+        if not(orig_tar and debian_tar):
             yield "lack required files for format '3.x (quilt)'."
-        if has_debian_diff or has_native_tar:
+        if debian_diff or native_tar:
             yield "contains source files not allowed in format 3.x (quilt)"
