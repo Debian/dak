@@ -1209,6 +1209,16 @@ class Upload(object):
 
     ###########################################################################
     def check_lintian(self):
+        # Only check some distributions
+        valid_dist = False
+        for dist in ('unstable', 'experimental'):
+            if dist in self.pkg.changes['distribution']:
+                valid_dist = True
+                break
+
+        if not valid_dist:
+            return
+
         cnf = Config()
         tagfile = cnf("Dinstall::LintianTags")
         # Parse the yaml file
