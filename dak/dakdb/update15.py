@@ -58,10 +58,15 @@ def do_update(self):
             )
         """)
 
-        print "Authorize all formats on all suites by default"
-        c.execute("SELECT id FROM suite")
+        print "Authorize format 1.0 on all suites by default"
         suites = c.fetchall()
-        c.execute("SELECT id FROM src_format")
+        for s in suites:
+            c.execute("INSERT INTO suite_src_formats (suite, src_format) VALUES('%s', '%s')" % (s[0], '1.0'))
+
+        print "Authorize all other formats on tpu, unstable & experimental by default"
+        c.execute("SELECT id FROM suite WHERE suite_name IN ('testing-proposed-updates', 'unstable', 'experimental')")
+        suites = c.fetchall()
+        c.execute("SELECT id FROM src_format WHERE format_name != '1.0'")
         formats = c.fetchall()
         for s in suites:
             for f in formats:
