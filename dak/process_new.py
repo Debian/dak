@@ -745,7 +745,6 @@ def usage (exit_code=0):
     print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -h, --help                show this help and exit.
-  -C, --comments-dir=DIR    use DIR as comments-dir, for [o-]p-u-new
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
   -t, --trainee             FTP Trainee mode
@@ -847,39 +846,6 @@ def lock_package(package):
     finally:
         os.unlink(path)
 
-# def move_to_dir (upload, dest, perms=0660, changesperms=0664):
-#     utils.move (upload.pkg.changes_file, dest, perms=changesperms)
-#     file_keys = upload.pkg.files.keys()
-#     for f in file_keys:
-#         utils.move (f, dest, perms=perms)
-
-# def is_source_in_queue_dir(qdir):
-#     entries = [ x for x in os.listdir(qdir) if x.startswith(Upload.pkg.changes["source"])
-#                 and x.endswith(".changes") ]
-#     for entry in entries:
-#         # read the .dak
-#         u = queue.Upload(Cnf)
-#         u.pkg.changes_file = os.path.join(qdir, entry)
-#         u.update_vars()
-#         if not u.pkg.changes["architecture"].has_key("source"):
-#             # another binary upload, ignore
-#             continue
-#         if Upload.pkg.changes["version"] != u.pkg.changes["version"]:
-#             # another version, ignore
-#             continue
-#         # found it!
-#         return True
-#     return False
-
-# def move_to_holding(suite, queue_dir):
-#     print "Moving to %s holding area." % (suite.upper(),)
-#     if Options["No-Action"]:
-#     	return
-#     Logger.log(["Moving to %s" % (suite,), Upload.pkg.changes_file])
-#     Upload.dump_vars(queue_dir)
-#     move_to_dir(queue_dir, perms=0664)
-#     os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-
 def _accept(upload):
     if Options["No-Action"]:
         return
@@ -887,76 +853,19 @@ def _accept(upload):
     upload.accept(summary, short_summary, targetdir=Config()["Dir::Queue::Newstage"])
     os.unlink(upload.pkg.changes_file[:-8]+".dak")
 
-# def do_accept_stableupdate(upload,suite, q):
-#     cnf = Config()
-#     queue_dir = cnf["Dir::Queue::%s" % (q,)]
-#     if not upload.pkg.changes["architecture"].has_key("source"):
-#         # It is not a sourceful upload.  So its source may be either in p-u
-#         # holding, in new, in accepted or already installed.
-#         if is_source_in_queue_dir(queue_dir):
-#             # It's in p-u holding, so move it there.
-#             print "Binary-only upload, source in %s." % (q,)
-#             move_to_holding(suite, queue_dir)
-#         elif Upload.source_exists(Upload.pkg.changes["source"],
-#                 Upload.pkg.changes["version"]):
-#             # dak tells us that there is source available.  At time of
-#             # writing this means that it is installed, so put it into
-#             # accepted.
-#             print "Binary-only upload, source installed."
-#             Logger.log([utils.getusername(), "PUNEW ACCEPT: %s" % (Upload.pkg.changes_file)])
-#             _accept()
-#         elif is_source_in_queue_dir(Cnf["Dir::Queue::Accepted"]):
-#             # The source is in accepted, the binary cleared NEW: accept it.
-#             print "Binary-only upload, source in accepted."
-#             Logger.log([utils.getusername(), "PUNEW ACCEPT: %s" % (Upload.pkg.changes_file)])
-#             _accept()
-#         elif is_source_in_queue_dir(Cnf["Dir::Queue::New"]):
-#             # It's in NEW.  We expect the source to land in p-u holding
-#             # pretty soon.
-#             print "Binary-only upload, source in new."
-#             move_to_holding(suite, queue_dir)
-#         elif is_source_in_queue_dir(Cnf["Dir::Queue::Newstage"]):
-#             # It's in newstage.  Accept into the holding area
-#             print "Binary-only upload, source in newstage."
-#             Logger.log([utils.getusername(), "PUNEW ACCEPT: %s" % (Upload.pkg.changes_file)])
-#             _accept()
-#         else:
-#             # No case applicable.  Bail out.  Return will cause the upload
-#             # to be skipped.
-#             print "ERROR"
-#             print "Stable update failed.  Source not found."
-#             return
-#     else:
-#         # We are handling a sourceful upload.  Move to accepted if currently
-#         # in p-u holding and to p-u holding otherwise.
-#         if is_source_in_queue_dir(queue_dir):
-#             print "Sourceful upload in %s, accepting." % (q,)
-#             _accept()
-#         else:
-#             move_to_holding(suite, queue_dir)
-
 def do_accept(upload):
     print "ACCEPT"
     cnf = Config()
     if not Options["No-Action"]:
         (summary, short_summary) = upload.build_summaries()
-#     if cnf.FindB("Dinstall::SecurityQueueHandling"):
-#         upload.dump_vars(cnf["Dir::Queue::Embargoed"])
-#         move_to_dir(cnf["Dir::Queue::Embargoed"])
-#         upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
-#         # Check for override disparities
-#         upload.Subst["__SUMMARY__"] = summary
-#     else:
-        # Stable updates need to be copied to proposed-updates holding
-        # area instead of accepted.  Sourceful uploads need to go
-        # to it directly, binaries only if the source has not yet been
-        # accepted into p-u.
-        for suite, q in [("proposed-updates", "ProposedUpdates"),
-                ("oldstable-proposed-updates", "OldProposedUpdates")]:
-            if not upload.pkg.changes["distribution"].has_key(suite):
-                continue
-            utils.fubar("stable accept not supported yet")
-#            return do_accept_stableupdate(suite, q)
+
+    if cnf.FindB("Dinstall::SecurityQueueHandling"):
+         upload.dump_vars(cnf["Dir::Queue::Embargoed"])
+         upload.move_to_dir(cnf["Dir::Queue::Embargoed"])
+         upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
+         # Check for override disparities
+         upload.Subst["__SUMMARY__"] = summary
+    else:
         # Just a normal upload, accept it...
         _accept(upload)
 
@@ -1024,58 +933,6 @@ def end():
 
 ################################################################################
 
-# def do_comments(dir, opref, npref, line, fn):
-#     for comm in [ x for x in os.listdir(dir) if x.startswith(opref) ]:
-#         lines = open("%s/%s" % (dir, comm)).readlines()
-#         if len(lines) == 0 or lines[0] != line + "\n": continue
-#         changes_files = [ x for x in os.listdir(".") if x.startswith(comm[7:]+"_")
-#                                 and x.endswith(".changes") ]
-#         changes_files = sort_changes(changes_files)
-#         for f in changes_files:
-#             f = utils.validate_changes_file_arg(f, 0)
-#             if not f: continue
-#             print "\n" + f
-#             fn(f, "".join(lines[1:]))
-
-#         if opref != npref and not Options["No-Action"]:
-#             newcomm = npref + comm[len(opref):]
-#             os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
-
-# ################################################################################
-
-# def comment_accept(changes_file, comments):
-#     Upload.pkg.changes_file = changes_file
-#     Upload.init_vars()
-#     Upload.update_vars()
-#     Upload.update_subst()
-#     files = Upload.pkg.files
-
-#     if not recheck():
-#         return # dak wants to REJECT, crap
-
-#     (new, byhand) = check_status(files)
-#     if not new and not byhand:
-#         do_accept()
-
-# ################################################################################
-
-# def comment_reject(changes_file, comments):
-#     Upload.pkg.changes_file = changes_file
-#     Upload.init_vars()
-#     Upload.update_vars()
-#     Upload.update_subst()
-
-#     if not recheck():
-#         pass # dak has its own reasons to reject as well, which is fine
-
-#     reject(comments)
-#     print "REJECT\n" + reject_message,
-#     if not Options["No-Action"]:
-#         Upload.do_reject(0, reject_message)
-#         os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-
-################################################################################
-
 def main():
     global Options, Logger, Sections, Priorities
 
@@ -1084,17 +941,16 @@ def main():
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
                  ('h',"help","Process-New::Options::Help"),
-                 ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
                  ('t',"trainee","Process-New::Options::Trainee"),
                  ('n',"no-action","Process-New::Options::No-Action")]
 
-    for i in ["automatic", "help", "manual-reject", "no-action", "version", "comments-dir", "trainee"]:
+    for i in ["automatic", "help", "manual-reject", "no-action", "version", "trainee"]:
         if not cnf.has_key("Process-New::Options::%s" % (i)):
             cnf["Process-New::Options::%s" % (i)] = ""
 
     changes_files = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
-    if len(changes_files) == 0 and not cnf.get("Process-New::Options::Comments-Dir",""):
+    if len(changes_files) == 0:
         changes_files = utils.get_changes_files(cnf["Dir::Queue::New"])
 
     Options = cnf.SubTree("Process-New::Options")
@@ -1119,22 +975,13 @@ def main():
     # Kill me now? **FIXME**
     cnf["Dinstall::Options::No-Mail"] = ""
 
-#     commentsdir = cnf.get("Process-New::Options::Comments-Dir","")
-#     if commentsdir:
-#        if changes_files != []:
-#            sys.stderr.write("Can't specify any changes files if working with comments-dir")
-#            sys.exit(1)
-#        do_comments(commentsdir, "ACCEPT.", "ACCEPTED.", "OK", comment_accept)
-#        do_comments(commentsdir, "REJECT.", "REJECTED.", "NOTOK", comment_reject)
-#     else:
-    if True:
-        for changes_file in changes_files:
-            changes_file = utils.validate_changes_file_arg(changes_file, 0)
-            if not changes_file:
-                continue
-            print "\n" + changes_file
+    for changes_file in changes_files:
+        changes_file = utils.validate_changes_file_arg(changes_file, 0)
+        if not changes_file:
+            continue
+        print "\n" + changes_file
 
-            do_pkg (changes_file, session)
+        do_pkg (changes_file, session)
 
     end()
 
