@@ -1992,6 +1992,7 @@ class SuiteSrcFormat(object):
 
 __all__.append('SuiteSrcFormat')
 
+@session_wrapper
 def get_suite_src_formats(suite, session=None):
     """
     Returns list of allowed SrcFormat for C{suite}.
@@ -2007,22 +2008,12 @@ def get_suite_src_formats(suite, session=None):
     @return: the list of allowed source formats for I{suite}
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(SrcFormat)
     q = q.join(SuiteSrcFormat)
     q = q.join(Suite).filter_by(suite_name=suite)
     q = q.order_by('format_name')
 
-    ret = q.all()
-
-    if privatetrans:
-        session.close()
-
-    return ret
+    return q.all()
 
 __all__.append('get_suite_src_formats')
 
