@@ -77,37 +77,7 @@ Sections = None
 ################################################################################
 
 def recheck(upload, session):
-    files = upload.pkg.files
-
-    cnf = Config()
-    for f in files.keys():
-        # The .orig.tar.gz can disappear out from under us is it's a
-        # duplicate of one in the archive.
-        if not files.has_key(f):
-            continue
-        # Check that the source still exists
-        if files[f]["type"] == "deb":
-            source_version = files[f]["source version"]
-            source_package = files[f]["source package"]
-            if not upload.pkg.changes["architecture"].has_key("source") \
-               and not upload.source_exists(source_package, source_version, upload.pkg.changes["distribution"].keys()):
-                source_epochless_version = re_no_epoch.sub('', source_version)
-                dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
-                found = 0
-                for q in ["Accepted", "Embargoed", "Unembargoed", "Newstage"]:
-                    if cnf.has_key("Dir::Queue::%s" % (q)):
-                        if os.path.exists(cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
-                            found = 1
-                if not found:
-                    upload.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, f))
-
-        # Version and file overwrite checks
-        if files[f]["type"] == "deb":
-            upload.check_binary_against_db(f, session)
-        elif files[f]["type"] == "dsc":
-            upload.check_source_against_db(f, session)
-            upload.check_dsc_against_db(f, session)
-
+    upload.recheck()
     if len(upload.rejects) > 0:
         answer = "XXX"
         if Options["No-Action"] or Options["Automatic"] or Options["Trainee"]:

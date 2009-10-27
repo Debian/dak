@@ -2184,6 +2184,44 @@ distribution."""
                 self.rejects.append("size for %s doesn't match %s." % (found, file))
 
     ################################################################################
+    # This is used by process-new and process-holding to recheck a changes file
+    # at the time we're running.  It mainly wraps various other internal functions
+    # and is similar to accepted_checks - these should probably be tidied up
+    # and combined
+    def recheck(self, session):
+        cnf = Config()
+        for f in self.pkg.files.keys():
+            # The .orig.tar.gz can disappear out from under us is it's a
+            # duplicate of one in the archive.
+            if not self.pkg.files.has_key(f):
+                continue
+
+            entry = self.pkg.files[f]
+
+            # Check that the source still exists
+            if entry["type"] == "deb":
+                source_version = entry["source version"]
+                source_package = entry["source package"]
+                if not self.pkg.changes["architecture"].has_key("source") \
+                   and not source_exists(source_package, source_version, self.pkg.changes["distribution"].keys(), session):
+                    source_epochless_version = re_no_epoch.sub('', source_version)
+                    dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
+                    found = False
+                    for q in ["Accepted", "Embargoed", "Unembargoed", "Newstage"]:
+                        if cnf.has_key("Dir::Queue::%s" % (q)):
+                            if os.path.exists(cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
+                                found = True
+                    if not found:
+                        self.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, f))
+
+            # Version and file overwrite checks
+            if entry["type"] == "deb":
+                self.check_binary_against_db(f, session)
+            elif entry["type"] == "dsc":
+                self.check_source_against_db(f, session)
+                self.check_dsc_against_db(f, session)
+
+    ################################################################################
     def accepted_checks(self, overwrite_checks, session):
         # Recheck anything that relies on the database; since that's not
         # frozen between accept and our run time when called from p-a.
