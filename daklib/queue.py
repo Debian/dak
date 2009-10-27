@@ -1214,6 +1214,7 @@ class Upload(object):
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
+        sourcefile.close()
         try:
             lintiantags = yaml.load(sourcecontent)
         except yaml.YAMLError, msg:
