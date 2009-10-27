@@ -390,13 +390,13 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
             has['more_orig_tar'] += 1
         else:
             reject("%s: unexpected source file '%s'" % (dsc_filename, f))
-    if has['orig_tar'] > 1:
-        rejmsg.append("%s: lists multiple .orig tarballs." % (dsc_filename))
-    if has['native_tar'] > 1:
-        rejmsg.append("%s: lists multiple native tarballs." % (dsc_filename))
-    if has['debian_tar'] > 1 or has['debian_diff'] > 1:
-        rejmsg.append("%s: lists multiple debian diff/tarballs." % (dsc_filename))
 
+    # Check for multiple files
+    for file_type in ('orig_tar', 'native_tar', 'debian_tar', 'debian_diff'):
+        if has[file_type] > 1:
+            rejmsg.append("%s: lists multiple %s" % (dsc_filename, file_type))
+
+    # Source format specific tests
     for format in srcformats:
         if format.re_format.match(dsc['format']):
             rejmsg.extend([
