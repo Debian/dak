@@ -83,6 +83,9 @@ def session_wrapper(fn):
             else:
                 # Session is last argument in args
                 session = args[-1]
+                if session is None:
+                    session = args[-1] = DBConn().session()
+                    private_transaction = True
 
         if private_transaction:
             session.commit_or_flush = session.commit
