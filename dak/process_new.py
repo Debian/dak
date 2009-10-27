@@ -531,7 +531,7 @@ def check_pkg (upload):
 
 ## FIXME: horribly Debian specific
 
-def do_bxa_notification():
+def do_bxa_notification(upload):
     files = upload.pkg.files
     summary = ""
     for f in files.keys():
@@ -560,7 +560,7 @@ def add_overrides (new, upload, session):
             section_id = new[pkg]["section id"]
             Logger.log(["%s overrides" % (srcpkg), suite, new[pkg]["component"], new[pkg]["type"], new[pkg]["priority"], new[pkg]["section"]])
             session.execute("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (:sid, :cid, :tid, :pkg, :pid, :sectid, '')",
-                            { 'sid': suite.suiteid, 'cid': component_id, 'tid':type_id, 'pkg': pkg, 'pid': priority_id, 'sectid': section_id})
+                            { 'sid': suite_id, 'cid': component_id, 'tid':type_id, 'pkg': pkg, 'pid': priority_id, 'sectid': section_id})
             for f in new[pkg]["files"]:
                 if files[f].has_key("new"):
                     del files[f]["new"]
