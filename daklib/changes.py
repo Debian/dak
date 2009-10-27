@@ -191,8 +191,8 @@ class Changes(object):
         self.dsc_files.update(p.load())
 
         next_obj = p.load()
-        if type(next_obj) is DictType:
-            self.pkg.orig_files.update(next_obj)
+        if isinstance(next_obj, dict):
+            self.orig_files.update(next_obj)
         else:
             # Auto-convert old dak files to new format supporting
             # multiple tarballs
