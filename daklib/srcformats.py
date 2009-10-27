@@ -37,6 +37,8 @@ class FormatOne(SourceFormat):
     def reject_msgs(cls, has):
         if not (has['native_tar_gz'] or (has['orig_tar_gz'] and has['debian_diff'])):
             yield "no .tar.gz or .orig.tar.gz+.diff.gz in 'Files' field."
+        if has['native_tar_gz'] and has['debian_diff']:
+            yield "native package with diff makes no sense"
         if (has['orig_tar_gz'] != has['orig_tar']) or \
            (has['native_tar_gz'] != has['native_tar']):
             yield "contains source files not allowed in format %s" % cls.name

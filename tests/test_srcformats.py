@@ -53,6 +53,11 @@ class FormatOneTestCase(SourceFormatTestCase):
             'native_tar_gz': 1,
             'more_orig_tar': 1,
         })
+        self.assertRejected({
+            'native_tar': 1,
+            'native_tar_gz': 1,
+            'debian_diff': 1,
+        })
 
 class FormatTreeTestCase(SourceFormatTestCase):
     fmt = srcformats.FormatThree
