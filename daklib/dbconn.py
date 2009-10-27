@@ -73,9 +73,9 @@ def session_wrapper(fn):
         private_transaction = False
 
         # Find the session object
-        try:
-            session = kwargs['session']
-        except KeyError:
+        session = kwargs.get('session')
+
+        if session is None:
             if len(args) <= len(getargspec(fn)[0]) - 1:
                 # No session specified as last argument or in kwargs
                 private_transaction = True
