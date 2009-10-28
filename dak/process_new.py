@@ -829,15 +829,15 @@ def do_accept(upload):
     if not Options["No-Action"]:
         (summary, short_summary) = upload.build_summaries()
 
-    if cnf.FindB("Dinstall::SecurityQueueHandling"):
-         upload.dump_vars(cnf["Dir::Queue::Embargoed"])
-         upload.move_to_dir(cnf["Dir::Queue::Embargoed"])
-         upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
-         # Check for override disparities
-         upload.Subst["__SUMMARY__"] = summary
-    else:
-        # Just a normal upload, accept it...
-        _accept(upload)
+        if cnf.FindB("Dinstall::SecurityQueueHandling"):
+            upload.dump_vars(cnf["Dir::Queue::Embargoed"])
+            upload.move_to_dir(cnf["Dir::Queue::Embargoed"])
+            upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
+            # Check for override disparities
+            upload.Subst["__SUMMARY__"] = summary
+        else:
+            # Just a normal upload, accept it...
+            _accept(upload)
 
 def do_pkg(changes_file, session):
     u = Upload()
