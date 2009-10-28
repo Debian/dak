@@ -1045,8 +1045,8 @@ class Upload(object):
                 if not os.path.exists(src):
                     return
                 ftype = m.group(3)
-                if re_is_orig_source.match(f) and pkg.orig_files.has_key(f) and \
-                   pkg.orig_files[f].has_key("path"):
+                if re_is_orig_source.match(f) and self.pkg.orig_files.has_key(f) and \
+                   self.pkg.orig_files[f].has_key("path"):
                     continue
                 dest = os.path.join(os.getcwd(), f)
                 os.symlink(src, dest)
