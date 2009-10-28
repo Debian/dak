@@ -47,7 +47,7 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
                     re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource
 
-from srcformats import srcformats, get_format_from_string
+from srcformats import get_format_from_string
 from collections import defaultdict
 
 ################################################################################
@@ -416,12 +416,15 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
             rejmsg.append("%s: lists multiple %s" % (dsc_filename, file_type))
 
     # Source format specific tests
-    for format in srcformats:
-        if format.re_format.match(dsc['format']):
-            rejmsg.extend([
-                '%s: %s' % (dsc_filename, x) for x in format.reject_msgs(has)
-            ])
-            break
+    try:
+        format = get_format_from_string(dsc['format'])
+        rejmsg.extend([
+            '%s: %s' % (dsc_filename, x) for x in format.reject_msgs(has)
+        ])
+
+    except UnknownFormatError:
+        # Not an error here for now
+        pass
 
     return rejmsg
 
