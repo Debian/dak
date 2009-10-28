@@ -497,7 +497,7 @@ def process_it(changes_file):
                 u.check_distributions()
                 u.check_files(not Options["No-Action"])
                 valid_dsc_p = u.check_dsc(not Options["No-Action"])
-                if valid_dsc_p:
+                if valid_dsc_p and not Options["No-Action"]:
                     u.check_source()
                     u.check_lintian()
                 u.check_hashes()

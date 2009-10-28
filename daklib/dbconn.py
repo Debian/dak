@@ -1414,46 +1414,25 @@ class Queue(object):
 
                 session.add(qb)
 
-            # If the .orig tarballs are in the pool, create a symlink to
-            # them (if one doesn't already exist)
-            for dsc_file in changes.dsc_files.keys():
-                # Skip all files except orig tarballs
-                from daklib.regexes import re_is_orig_source
-                if not re_is_orig_source.match(dsc_file):
-                    continue
-                # Skip orig files not identified in the pool
-                if not (changes.orig_files.has_key(dsc_file) and
-                        changes.orig_files[dsc_file].has_key("id")):
-                    continue
-                orig_file_id = changes.orig_files[dsc_file]["id"]
-                dest = os.path.join(dest_dir, dsc_file)
+            exists, symlinked = utils.ensure_orig_files(changes, dest, session)
 
-                # If it doesn't exist, create a symlink
-                if not os.path.exists(dest):
-                    q = session.execute("SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id",
-                                        {'id': orig_file_id})
-                    res = q.fetchone()
-                    if not res:
-                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (orig_file_id)
+            # Add symlinked files to the list of packages for later processing
+            # by apt-ftparchive
+            for filename in symlinked:
+                qb = QueueBuild()
+                qb.suite_id = s.suite_id
+                qb.queue_id = self.queue_id
+                qb.filename = filename
+                qb.in_queue = True
+                session.add(qb)
 
-                    src = os.path.join(res[0], res[1])
-                    os.symlink(src, dest)
-
-                    # Add it to the list of packages for later processing by apt-ftparchive
-                    qb = QueueBuild()
-                    qb.suite_id = s.suite_id
-                    qb.queue_id = self.queue_id
-                    qb.filename = dest
+            # Update files to ensure they are not removed prematurely
+            for filename in exists:
+                qb = get_queue_build(filename, s.suite_id, session)
+                if qb is None:
                     qb.in_queue = True
+                    qb.last_used = None
                     session.add(qb)
-
-                # If it does, update things to ensure it's not removed prematurely
-                else:
-                    qb = get_queue_build(dest, s.suite_id, session)
-                    if qb is None:
-                        qb.in_queue = True
-                        qb.last_used = None
-                        session.add(qb)
 
         if privatetrans:
             session.commit()
