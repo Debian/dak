@@ -5,6 +5,19 @@ from dak_exceptions import UnknownFormatError
 
 srcformats = []
 
+def get_format_from_string(txt):
+    """
+    Returns the SourceFormat class that corresponds to the specified .changes
+    Format value. If the string does not match any class, UnknownFormatError
+    is raised.
+    """
+
+    for format in srcformats:
+        if format.re_format.match(txt):
+            return format
+
+    raise UnknownFormatError, "Unknown format %r" % txt
+
 def parse_format(txt):
     """
     Parse a .changes Format string into a tuple representation for easy

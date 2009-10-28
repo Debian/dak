@@ -186,5 +186,27 @@ class ValidateFormatThreeQuiltTestCase(ValidateFormatTestCase):
         self.assertInvalid((0, 0))
         self.assertInvalid((3, 0, 'native'))
 
+class FormatFromStringTestCase(unittest.TestCase):
+    def assertFormat(self, txt, klass):
+        self.assertEqual(srcformats.get_format_from_string(txt), klass)
+
+    def assertInvalid(self, txt):
+        self.assertRaises(
+            UnknownFormatError,
+            lambda: srcformats.get_format_from_string(txt),
+        )
+
+    def testFormats(self):
+        self.assertFormat('1.0', srcformats.FormatOne)
+        self.assertFormat('3.0 (native)', srcformats.FormatThree)
+        self.assertFormat('3.0 (quilt)', srcformats.FormatThreeQuilt)
+
+    def testInvalidFormats(self):
+        self.assertInvalid('')
+        self.assertInvalid('.')
+        self.assertInvalid('3.0 (cvs)')
+        self.assertInvalid(' 1.0 ')
+        self.assertInvalid('8.4 (hardy)')
+
 if __name__ == '__main__':
     unittest.main()
