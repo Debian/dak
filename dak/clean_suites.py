@@ -359,6 +359,33 @@ def clean_queue_build(now_date, delete_date, max_delete, session):
 
 ################################################################################
 
+def clean_empty_directories(session):
+    """
+    Removes empty directories from pool directories.
+    """
+
+    count = 0
+
+    cursor = session.execute(
+        "SELECT DISTINCT(path) FROM location WHERE type = :type",
+        {'type': 'pool'},
+    )
+    bases = [x[0] for x in cursor.fetchall()]
+
+    for base in bases:
+        for dirpath, dirnames, filenames in os.walk(base, topdown=False):
+            if not filenames and not dirnames:
+                to_remove = os.path.join(base, dirpath)
+                if not Options["No-Action"]:
+                    Logger.log(["removing directory", to_remove])
+                    os.removedirs(to_remove)
+                count += 1
+
+    if count:
+        Logger.log(["total removed directories", count])
+
+################################################################################
+
 def main():
     global Options, Logger
 
@@ -404,6 +431,7 @@ def main():
     clean_maintainers(now_date, delete_date, max_delete, session)
     clean_fingerprints(now_date, delete_date, max_delete, session)
     clean_queue_build(now_date, delete_date, max_delete, session)
+    clean_empty_directories(session)
 
     Logger.close()
 
