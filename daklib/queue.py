@@ -1025,7 +1025,7 @@ class Upload(object):
 
     ###########################################################################
 
-    def ensure_all_source_exists(self, dest_dir=None):
+    def ensure_all_source_exists(self, source_dir, dest_dir=None):
         """
         Ensure that dest_dir contains all the orig tarballs for the specified
         changes. If it does not, symlink them into place.
@@ -1045,10 +1045,10 @@ class Upload(object):
                 if not os.path.exists(src):
                     return
                 ftype = m.group(3)
-                if re_is_orig_source.match(f) and pkg.orig_files.has_key(f) and \
-                   pkg.orig_files[f].has_key("path"):
+                if re_is_orig_source.match(f) and self.pkg.orig_files.has_key(f) and \
+                   self.pkg.orig_files[f].has_key("path"):
                     continue
-                dest = os.path.join(os.getcwd(), f)
+                dest = os.path.join(dest_dir, f)
                 os.symlink(src, dest)
 
         # If the orig files are not a part of the upload, create symlinks to the
@@ -1077,7 +1077,7 @@ class Upload(object):
         if not dsc_filename:
             return
 
-        self.ensure_all_source_exists()
+        self.ensure_all_source_exists(source_dir)
 
         # Extract the source
         cmd = "dpkg-source -sn -x %s" % (dsc_filename)
