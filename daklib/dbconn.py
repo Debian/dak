@@ -377,6 +377,22 @@ __all__.append('get_binary_components')
 
 ################################################################################
 
+class BinaryACL(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+__all__.append('BinaryACL')
+
+################################################################################
+
+class BinaryACLMap(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+__all__.append('BinaryACLMap')
+
+################################################################################
+
 class Component(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1770,6 +1786,14 @@ __all__.append('get_source_in_suite')
 
 ################################################################################
 
+class SourceACL(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+__all__.append('SourceACL')
+
+################################################################################
+
 class SrcAssociation(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2089,6 +2113,14 @@ __all__.append('get_uid_from_fingerprint')
 
 ################################################################################
 
+class UploadBlock(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+__all__.append('UploadBlock')
+
+################################################################################
+
 class DBConn(Singleton):
     """
     database module init.
@@ -2107,6 +2139,8 @@ class DBConn(Singleton):
         self.tbl_archive = Table('archive', self.db_meta, autoload=True)
         self.tbl_bin_associations = Table('bin_associations', self.db_meta, autoload=True)
         self.tbl_binaries = Table('binaries', self.db_meta, autoload=True)
+        self.tbl_binary_acl = Table('binary_acl', self.db_meta, autoload=True)
+        self.tbl_binary_acl_map = Table('binary_acl_map', self.db_meta, autoload=True)
         self.tbl_component = Table('component', self.db_meta, autoload=True)
         self.tbl_config = Table('config', self.db_meta, autoload=True)
         self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
@@ -2127,6 +2161,7 @@ class DBConn(Singleton):
         self.tbl_queue_build = Table('queue_build', self.db_meta, autoload=True)
         self.tbl_section = Table('section', self.db_meta, autoload=True)
         self.tbl_source = Table('source', self.db_meta, autoload=True)
+        self.tbl_source_acl = Table('source_acl', self.db_meta, autoload=True)
         self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
         self.tbl_src_format = Table('src_format', self.db_meta, autoload=True)
         self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
@@ -2134,6 +2169,7 @@ class DBConn(Singleton):
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
         self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
+        self.tbl_upload_blocks = Table('upload_blocks', self.db_meta, autoload=True)
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
@@ -2168,6 +2204,12 @@ class DBConn(Singleton):
                                  install_date = self.tbl_binaries.c.install_date,
                                  binassociations = relation(BinAssociation,
                                                             primaryjoin=(self.tbl_binaries.c.id==self.tbl_bin_associations.c.bin))))
+
+        mapper(BinaryACL, self.tbl_binary_acl,
+               properties = dict(binary_acl_id = self.tbl_binary_acl.c.id))
+
+        mapper(BinaryACLMap, self.tbl_binary_acl_map,
+               properties = dict(binary_acl_map_id = self.tbl_binary_acl_map.c.id))
 
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
@@ -2287,6 +2329,9 @@ class DBConn(Singleton):
                                  srcassociations = relation(SrcAssociation,
                                                             primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source))))
 
+        mapper(SourceACL, self.tbl_source_acl,
+               properties = dict(source_acl_id = self.tbl_source_acl.c.id))
+
         mapper(SrcAssociation, self.tbl_src_associations,
                properties = dict(sa_id = self.tbl_src_associations.c.id,
                                  suite_id = self.tbl_src_associations.c.suite,
@@ -2325,6 +2370,9 @@ class DBConn(Singleton):
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
                                  fingerprint = relation(Fingerprint)))
+
+        mapper(UploadBlock, self.tbl_upload_blocks,
+               properties = dict(upload_block_id = self.tbl_upload_blocks.c.id))
 
     ## Connection functions
     def __createconn(self):
