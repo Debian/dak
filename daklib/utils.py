@@ -1504,8 +1504,8 @@ apt_pkg.init()
 Cnf = apt_pkg.newConfiguration()
 apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
-#if which_conf_file() != default_config:
-#    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
+if which_conf_file() != default_config:
+    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
 
 ###############################################################################
 
