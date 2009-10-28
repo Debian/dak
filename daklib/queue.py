@@ -1208,7 +1208,7 @@ class Upload(object):
             return
 
         cnf = Config()
-        tagfile = cnf("Dinstall::LintianTags")
+        tagfile = cnf["Dinstall::LintianTags"]
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
