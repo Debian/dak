@@ -30,3 +30,16 @@ def parse_format(txt):
         format = format[:2]
 
     return format
+
+def validate_changes_format(format, field):
+    """
+    Validate a tuple-representation of a .changes Format: field. Raises
+    UnknownFormatError if the field is invalid, otherwise return type is
+    undefined.
+    """
+
+    if (format < (1, 5) or format > (1, 8)):
+        raise UnknownFormatError, repr(format)
+
+    if field != 'files' and format < (1, 8):
+        raise UnknownFormatError, repr(format)
