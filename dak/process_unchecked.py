@@ -499,7 +499,7 @@ def process_it(changes_file):
                 valid_dsc_p = u.check_dsc(not Options["No-Action"])
                 if valid_dsc_p:
                     u.check_source()
-                    # u.check_lintian()
+                    u.check_lintian()
                 u.check_hashes()
                 u.check_urgency()
                 u.check_timestamps()
