@@ -5,6 +5,36 @@ from dak_exceptions import UnknownFormatError
 
 srcformats = []
 
+def parse_format(txt):
+    """
+    Parse a .changes Format string into a tuple representation for easy
+    comparison.
+
+    >>> parse_format('1.0')
+    (1, 0)
+    >>> parse_format('8.4 (hardy)')
+    (8, 4, 'hardy')
+
+    If the format doesn't match these forms, raises UnknownFormatError.
+    """
+
+    format = re_verwithext.search(txt)
+
+    if format is None:
+        raise UnknownFormatError, txt
+
+    format = format.groups()
+
+    if format[1] is None:
+        format = int(float(format[0])), 0, format[2]
+    else:
+        format = int(format[0]), int(format[1]), format[2]
+
+    if format[2] is None:
+        format = format[:2]
+
+    return format
+
 class SourceFormat(type):
     def __new__(cls, name, bases, attrs):
         klass = super(SourceFormat, cls).__new__(cls, name, bases, attrs)
@@ -26,25 +56,6 @@ class SourceFormat(type):
         for key in cls.disallowed:
             if has[key]:
                 yield "contains source files not allowed in format %s" % cls.name
-
-    @classmethod
-    def parse_format(cls, txt):
-        format = re_verwithext.search(txt)
-
-        if format is None:
-            raise UnknownFormatError, txt
-
-        format = format.groups()
-
-        if format[1] is None:
-            format = int(float(format[0])), 0, format[2]
-        else:
-            format = int(format[0]), int(format[1]), format[2]
-
-        if format[2] is None:
-            format = format[:2]
-
-        return format
 
     @classmethod
     def validate_format(cls, format, is_a_dsc=False, field='files'):

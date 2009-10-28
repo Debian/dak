@@ -105,28 +105,27 @@ class FormatTreeQuiltTestCase(SourceFormatTestCase):
 
 ##
 
-class ParseFormat(unittest.TestCase):
-    def assertFormat(self, input, expected, **kwargs):
-        format = srcformats.SourceFormat.parse_format(input)
-        self.assertEqual(format, expected)
-        srcformats.SourceFormat.validate_format(format, **kwargs)
+class ParseFormatTestCase(unittest.TestCase):
+    def assertParse(self, format, expected):
+        self.assertEqual(srcformats.parse_format(format), expected)
 
-    def assertInvalidFormat(self, input, **kwargs):
-        try:
-            format = srcformats.SourceFormat.parse_format(input)
-            srcformats.SourceFormat.validate_format(format, **kwargs)
-        except UnknownFormatError:
-            return
+    def assertParseFail(self, format):
+        self.assertRaises(
+            UnknownFormatError,
+            lambda: srcformats.parse_format(format)
+        )
+
+    def testParse(self):
+        self.assertParse('1.0', (1, 0))
 
     def testEmpty(self):
-        self.assertInvalidFormat('')
-        self.assertInvalidFormat(' ')
-        self.assertInvalidFormat('  ')
+        self.assertParseFail('')
+        self.assertParseFail(' ')
+        self.assertParseFail('  ')
 
-    def testBroken(self):
-        self.assertInvalidFormat('.0')
-        self.assertInvalidFormat('.1')
-        self.assertInvalidFormat('format')
+    def textText(self):
+        self.assertParse('1.2 (three)', (1, 2, 'three'))
+        self.assertParseFail('0.0 ()')
 
 class ParseSourceFormat(ParseFormat):
     def assertFormat(self, *args, **kwargs):
