@@ -845,7 +845,7 @@ def do_pkg(changes_file, session):
     u.update_subst()
 
     cnf = Config()
-    bcc = "X-DAK: dak process-new\nX-Katie: lisa $Revision: 1.31 $"
+    bcc = "X-DAK: dak process-new"
     if cnf.has_key("Dinstall::Bcc"):
         u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
     else:
