@@ -1269,7 +1269,9 @@ class Upload(object):
 
         def log(*txt):
             if self.logger:
-                self.logger.log([self.pkg.changes_file, "check_lintian", *txt])
+                args = [self.pkg.changes_file, "check_lintian"]
+                args.extend(txt)
+                self.logger.log(args)
 
         # We have output of lintian, this package isn't clean. Lets parse it and see if we
         # are having a victim for a reject.
