@@ -1267,6 +1267,10 @@ class Upload(object):
         if len(output) == 0:
             return
 
+        def log(*txt):
+            if self.logger:
+                self.logger.log([self.pkg.changes_file, "check_lintian", *txt])
+
         # We have output of lintian, this package isn't clean. Lets parse it and see if we
         # are having a victim for a reject.
         # W: tzdata: binary-without-manpage usr/sbin/tzconfig
@@ -1293,9 +1297,11 @@ class Upload(object):
                 elif etag in lintiantags['error']:
                     # The tag is overriden - but is not allowed to be
                     self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
+                    log("overidden tag is overridden", etag)
             else:
                 # Tag is known, it is not overriden, direct reject.
                 self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
+                log("auto rejecting", etag)
                 # Now tell if they *might* override it.
                 if etag in lintiantags['warning']:
                     self.rejects.append("%s: If you have a good reason, you may override this lintian tag." % (epackage))
