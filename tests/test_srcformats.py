@@ -108,7 +108,6 @@ class FormatTreeQuiltTestCase(SourceFormatTestCase):
 
 class ValidateFormatTestCase(unittest.TestCase):
     def assertValid(self, format, **kwargs):
-        kwargs['is_a_dsc'] = kwargs.get('is_a_dsc', True)
         self.fmt.validate_format(format, **kwargs)
 
     def assertInvalid(self, *args, **kwargs):
@@ -116,32 +115,6 @@ class ValidateFormatTestCase(unittest.TestCase):
             UnknownFormatError,
             lambda: self.assertValid(*args, **kwargs),
         )
-
-class ValidateFormatOneTestCase(ValidateFormatTestCase):
-    fmt = srcformats.FormatOne
-
-    def testValid(self):
-        self.assertValid((1, 0))
-
-    def testInvalid(self):
-        self.assertInvalid((0, 1))
-        self.assertInvalid((3, 0, 'quilt'))
-
-    ##
-
-    def testBinary(self):
-        self.assertValid((1, 5), is_a_dsc=False)
-        self.assertInvalid((1, 0), is_a_dsc=False)
-
-    def testRange(self):
-        self.assertInvalid((1, 3), is_a_dsc=False)
-        self.assertValid((1, 5), is_a_dsc=False)
-        self.assertValid((1, 8), is_a_dsc=False)
-        self.assertInvalid((1, 9), is_a_dsc=False)
-
-    def testFilesField(self):
-        self.assertInvalid((1, 7), is_a_dsc=False, field='notfiles')
-        self.assertValid((1, 8), is_a_dsc=False, field='notfiles')
 
 class ValidateFormatThreeTestCase(ValidateFormatTestCase):
     fmt = srcformats.FormatThree
