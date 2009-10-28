@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from collections import defaultdict
 
 from daklib import srcformats
+from daklib.formats import parse_format
 from daklib.dak_exceptions import UnknownFormatError
 
 class SourceFormatTestCase(unittest.TestCase):
@@ -107,12 +108,12 @@ class FormatTreeQuiltTestCase(SourceFormatTestCase):
 
 class ParseFormatTestCase(unittest.TestCase):
     def assertParse(self, format, expected):
-        self.assertEqual(srcformats.parse_format(format), expected)
+        self.assertEqual(parse_format(format), expected)
 
     def assertParseFail(self, format):
         self.assertRaises(
             UnknownFormatError,
-            lambda: srcformats.parse_format(format)
+            lambda: parse_format(format)
         )
 
     def testParse(self):
