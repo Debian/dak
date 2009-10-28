@@ -25,18 +25,18 @@
 
 ################################################################################
 
-import copy, os, sys, time
+from copy import copy
+import os, sys, time
 import apt_pkg
 import examine_package
-from daklib import database
-from daklib import queue
+
+from daklib.queue import determine_new, check_valid
 from daklib import utils
+from daklib.regexes import re_source_ext
 
 # Globals
 Cnf = None
 Options = None
-Upload = None
-projectB = None
 sources = set()
 
 
@@ -140,20 +140,19 @@ def html_footer():
 
 
 def do_pkg(changes_file):
-    Upload.pkg.changes_file = changes_file
-    Upload.init_vars()
-    Upload.update_vars()
-    files = Upload.pkg.files
-    changes = Upload.pkg.changes
+    c = Changes()
+    c.load_dot_dak(changes_file)
+    files = c.files
+    changes = c.changes
 
-    changes["suite"] = copy.copy(changes["distribution"])
-    distribution = changes["distribution"].keys()[0]
+    c.changes["suite"] = copy(c.changes["distribution"])
+    distribution = c.changes["distribution"].keys()[0]
     # Find out what's new
-    new = queue.determine_new(changes, files, projectB, 0)
+    new = determine_new(c.changes, c.files, 0)
 
     stdout_fd = sys.stdout
 
-    htmlname = changes["source"] + "_" + changes["version"] + ".html"
+    htmlname = c.changes["source"] + "_" + c.changes["version"] + ".html"
     sources.add(htmlname)
     # do not generate html output if that source/version already has one.
     if not os.path.exists(os.path.join(Cnf["Show-New::HTMLPath"],htmlname)):
@@ -162,14 +161,15 @@ def do_pkg(changes_file):
         filestoexamine = []
         for pkg in new.keys():
             for fn in new[pkg]["files"]:
-                if ( files[fn].has_key("new") and not
-                     files[fn]["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2"] ):
+                if (c.files[fn].has_key("new") and
+                    (c.files[fn]["type"] == "dsc" or
+                     not re_source_ext.match(c.files[fn]["type"]))):
                     filestoexamine.append(fn)
 
-        html_header(changes["source"], filestoexamine)
+        html_header(c.changes["source"], filestoexamine)
 
-        queue.check_valid(new)
-        examine_package.display_changes( distribution, Upload.pkg.changes_file)
+        check_valid(new)
+        examine_package.display_changes( distribution, changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
             examine_package.check_dsc(distribution, fn)
@@ -193,7 +193,7 @@ def usage (exit_code=0):
 ################################################################################
 
 def init():
-    global Cnf, Options, Upload, projectB
+    global Cnf, Options
 
     Cnf = utils.get_conf()
 
@@ -209,10 +209,6 @@ def init():
 
     if Options["help"]:
         usage()
-
-    Upload = queue.Upload(Cnf)
-
-    projectB = Upload.projectB
 
     return changes_files
 

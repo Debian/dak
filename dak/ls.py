@@ -32,16 +32,12 @@ Display information about package(s) (suite, version, etc.)
 ################################################################################
 
 import os
-import pg
 import sys
 import apt_pkg
-from daklib import database
+
+from daklib.config import Config
+from daklib.dbconn import *
 from daklib import utils
-
-################################################################################
-
-Cnf = None       #: Configuration, apt_pkg.Configuration
-projectB = None  #: database connection, pgobject
 
 ################################################################################
 
@@ -66,9 +62,7 @@ ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 ################################################################################
 
 def main ():
-    global Cnf, projectB
-
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('a', "architecture", "Ls::Options::Architecture", "HasArg"),
                  ('b', "binarytype", "Ls::Options::BinaryType", "HasArg"),
@@ -83,22 +77,21 @@ def main ():
     for i in [ "architecture", "binarytype", "component", "format",
                "greaterorequal", "greaterthan", "regex", "suite",
                "source-and-binary", "help" ]:
-        if not Cnf.has_key("Ls::Options::%s" % (i)):
-            Cnf["Ls::Options::%s" % (i)] = ""
+        if not cnf.has_key("Ls::Options::%s" % (i)):
+            cnf["Ls::Options::%s" % (i)] = ""
 
-    packages = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Ls::Options")
+    packages = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Ls::Options")
 
     if Options["Help"]:
         usage()
     if not packages:
         utils.fubar("need at least one package name as an argument.")
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
     # If cron.daily is running; warn the user that our output might seem strange
-    if os.path.exists(os.path.join(Cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
+    if os.path.exists(os.path.join(cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
         utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
 
     # Handle buildd maintenance helper options
@@ -130,33 +123,34 @@ def main ():
     if Options["Source-And-Binary"]:
         new_packages = []
         for package in packages:
-            q = projectB.query("SELECT DISTINCT b.package FROM binaries b, bin_associations ba, suite su, source s WHERE b.source = s.id AND su.id = ba.suite AND b.id = ba.bin AND s.source %s '%s' %s" % (comparison_operator, package, con_suites))
-            new_packages.extend([ i[0] for i in q.getresult() ])
+            q = session.execute("SELECT DISTINCT b.package FROM binaries b, bin_associations ba, suite su, source s WHERE b.source = s.id AND su.id = ba.suite AND b.id = ba.bin AND s.source %s :package %s" % (comparison_operator, con_suites),
+                                {'package': package})
+            new_packages.extend([ i[0] for i in q.fetchall() ])
             if package not in new_packages:
                 new_packages.append(package)
         packages = new_packages
 
     results = 0
     for package in packages:
-        q = projectB.query("""
+        q = session.execute("""
 SELECT b.package, b.version, a.arch_string, su.suite_name, c.name, m.name
   FROM binaries b, architecture a, suite su, bin_associations ba,
        files f, location l, component c, maintainer m
- WHERE b.package %s '%s' AND a.id = b.architecture AND su.id = ba.suite
+ WHERE b.package %s :package AND a.id = b.architecture AND su.id = ba.suite
    AND b.id = ba.bin AND b.file = f.id AND f.location = l.id
    AND l.component = c.id AND b.maintainer = m.id %s %s %s
-""" % (comparison_operator, package, con_suites, con_architectures, con_bintype))
-        ql = q.getresult()
+""" % (comparison_operator, con_suites, con_architectures, con_bintype), {'package': package})
+        ql = q.fetchall()
         if check_source:
-            q = projectB.query("""
+            q = session.execute("""
 SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
   FROM source s, suite su, src_associations sa, files f, location l,
        component c, maintainer m
- WHERE s.source %s '%s' AND su.id = sa.suite AND s.id = sa.source
+ WHERE s.source %s :package AND su.id = sa.suite AND s.id = sa.source
    AND s.file = f.id AND f.location = l.id AND l.component = c.id
    AND s.maintainer = m.id %s
-""" % (comparison_operator, package, con_suites))
-            ql.extend(q.getresult())
+""" % (comparison_operator, con_suites), {'package': package})
+            ql.extend(q.fetchall())
         d = {}
         highver = {}
         for i in ql:

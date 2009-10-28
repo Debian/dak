@@ -37,15 +37,14 @@ import os
 import apt_pkg
 import time
 import errno
-from daklib import database
+
 from daklib import utils
 from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 
 Cnf = None
-projectB = None
-required_database_schema = 14
+required_database_schema = 15
 
 ################################################################################
 
@@ -86,8 +85,6 @@ Updates dak's database schema to the lastest version. You should disable crontab
 ################################################################################
 
     def get_db_rev(self):
-        global projectB
-
         # We keep database revision info the config table
         # Try and access it
 
@@ -160,7 +157,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 ################################################################################
 
     def init (self):
-        global Cnf, projectB
+        global Cnf
 
         Cnf = utils.get_conf()
         arguments = [('h', "help", "Update-DB::Options::Help")]

@@ -42,16 +42,22 @@ Functions related debian binary packages
 import os
 import sys
 import shutil
-import tempfile
 import tarfile
 import commands
 import traceback
 import atexit
+
 from debian_bundle import deb822
-from dbconn import DBConn
+
+from dbconn import *
 from config import Config
-import logging
 import utils
+
+################################################################################
+
+__all__ = []
+
+################################################################################
 
 class Binary(object):
     def __init__(self, filename, reject=None):
@@ -66,6 +72,8 @@ class Binary(object):
         self.tmpdir = None
         self.chunks = None
         self.wrapped_reject = reject
+        # Store rejects for later use
+        self.rejects = []
 
     def reject(self, message):
         """
@@ -73,6 +81,7 @@ class Binary(object):
         otherwise send it to stderr.
         """
         print >> sys.stderr, message
+        self.rejects.append(message)
         if self.wrapped_reject:
             self.wrapped_reject(message)
 
@@ -157,7 +166,7 @@ class Binary(object):
 
         return not rejected
 
-    def scan_package(self, bootstrap_id=0, relaxed=False):
+    def scan_package(self, bootstrap_id=0, relaxed=False, session=None):
         """
         Unpack the .deb, do sanity checking, and gather info from it.
 
@@ -191,11 +200,11 @@ class Binary(object):
                         data = tarfile.open(os.path.join(self.tmpdir, "data.tar.bz2" ), "r:bz2")
 
                     if bootstrap_id:
-                        result = DBConn().insert_content_paths(bootstrap_id, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                        result = insert_content_paths(bootstrap_id, [tarinfo.name for tarinfo in data if not tarinfo.isdir()], session)
                     else:
                         pkgs = deb822.Packages.iter_paragraphs(file(os.path.join(self.tmpdir,'control')))
                         pkg = pkgs.next()
-                        result = DBConn().insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()])
+                        result = insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()], session)
 
                 except:
                     traceback.print_exc()
@@ -245,4 +254,69 @@ class Binary(object):
 
             os.chdir(cwd)
 
+__all__.append('Binary')
 
+def copy_temporary_contents(package, version, archname, deb, reject, session=None):
+    """
+    copy the previously stored contents from the temp table to the permanant one
+
+    during process-unchecked, the deb should have been scanned and the
+    contents stored in pending_content_associations
+    """
+
+    cnf = Config()
+
+    privatetrans = False
+    if session is None:
+        session = DBConn().session()
+        privatetrans = True
+
+    arch = get_architecture(archname, session=session)
+
+    # first see if contents exist:
+    in_pcaq = """SELECT 1 FROM pending_content_associations
+                               WHERE package=:package
+                               AND version=:version
+                               AND architecture=:archid LIMIT 1"""
+
+    vals = {'package': package,
+            'version': version,
+            'archid': arch.arch_id}
+
+    exists = None
+    check = session.execute(in_pcaq, vals)
+
+    if check.rowcount > 0:
+        # This should NOT happen.  We should have added contents
+        # during process-unchecked.  if it did, log an error, and send
+        # an email.
+        subst = {
+            "__PACKAGE__": package,
+            "__VERSION__": version,
+            "__ARCH__": arch,
+            "__TO_ADDRESS__": cnf["Dinstall::MyAdminAddress"],
+            "__DAK_ADDRESS__": cnf["Dinstall::MyEmailAddress"] }
+
+        message = utils.TemplateSubst(subst, cnf["Dir::Templates"]+"/missing-contents")
+        utils.send_mail(message)
+
+        # Temporarily disable contents storage until we re-do the table layout
+        #exists = Binary(deb, reject).scan_package()
+
+    if exists:
+        sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
+                 SELECT currval('binaries_id_seq'), filepath, filename FROM pending_content_associations
+                 WHERE package=:package AND version=:version AND architecture=:archid"""
+        session.execute(sql, vals)
+
+        sql = """DELETE from pending_content_associations
+                 WHERE package=:package AND version=:version AND architecture=:archid"""
+        session.execute(sql, vals)
+        session.commit()
+
+    if privatetrans:
+        session.close()
+
+    return exists
+
+__all__.append('copy_temporary_contents')

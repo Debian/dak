@@ -49,17 +49,17 @@
 
 ################################################################################
 
-import pg, sys, time
+import sys, time
 import apt_pkg
+
+from daklib.dbconn import *
+from daklib.config import Config
 from daklib import utils
-from daklib import database
-from daklib import logging
+from daklib import daklog
 from daklib.regexes import re_comments
 
 ################################################################################
 
-Cnf = None
-projectB = None
 Logger = None
 
 ################################################################################
@@ -88,18 +88,23 @@ def usage (exit_code=0):
 
 ################################################################################
 
-def process_file (file, suite, component, type, action, noaction=0):
-    suite_id = database.get_suite_id(suite)
-    if suite_id == -1:
+def process_file(file, suite, component, otype, mode, action, session):
+    cnf = Config()
+
+    s = get_suite(suite, session=session)
+    if s is None:
         utils.fubar("Suite '%s' not recognised." % (suite))
+    suite_id = s.suite_id
 
-    component_id = database.get_component_id(component)
-    if component_id == -1:
+    c = get_component(component, session=session)
+    if c is None:
         utils.fubar("Component '%s' not recognised." % (component))
+    component_id = c.component_id
 
-    type_id = database.get_override_type_id(type)
-    if type_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)" % (type))
+    o = get_override_type(otype)
+    if o is None:
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc.)" % (otype))
+    type_id = o.overridetype_id
 
     # --set is done mostly internal for performance reasons; most
     # invocations of --set will be updates and making people wait 2-3
@@ -113,21 +118,28 @@ def process_file (file, suite, component, type, action, noaction=0):
     c_removed = 0
     c_error = 0
 
-    q = projectB.query("SELECT o.package, o.priority, o.section, o.maintainer, p.priority, s.section FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s and o.priority = p.id and o.section = s.id"
-                       % (suite_id, component_id, type_id))
-    for i in q.getresult():
+    q = session.execute("""SELECT o.package, o.priority, o.section, o.maintainer, p.priority, s.section
+                           FROM override o, priority p, section s
+                           WHERE o.suite = :suiteid AND o.component = :componentid AND o.type = :typeid
+                             and o.priority = p.id and o.section = s.id""",
+                           {'suiteid': suite_id, 'componentid': component_id, 'typeid': type_id})
+    for i in q.fetchall():
         original[i[0]] = i[1:]
 
     start_time = time.time()
-    if not noaction:
-        projectB.query("BEGIN WORK")
+
+    section_cache = get_sections(session)
+    priority_cache = get_priorities(session)
+
+    # Our session is already in a transaction
+
     for line in file.readlines():
         line = re_comments.sub('', line).strip()
         if line == "":
             continue
 
-        maintainer_override = ""
-        if type == "dsc":
+        maintainer_override = None
+        if otype == "dsc":
             split_line = line.split(None, 2)
             if len(split_line) == 2:
                 (package, section) = split_line
@@ -149,25 +161,29 @@ def process_file (file, suite, component, type, action, noaction=0):
                 c_error += 1
                 continue
 
-        section_id = database.get_section_id(section)
-        if section_id == -1:
+        if not section_cache.has_key(section):
             utils.warn("'%s' is not a valid section. ['%s' in suite %s, component %s]." % (section, package, suite, component))
             c_error += 1
             continue
-        priority_id = database.get_priority_id(priority)
-        if priority_id == -1:
+
+        section_id = section_cache[section]
+
+        if not priority_cache.has_key(priority):
             utils.warn("'%s' is not a valid priority. ['%s' in suite %s, component %s]." % (priority, package, suite, component))
             c_error += 1
             continue
+
+        priority_id = priority_cache[priority]
 
         if new.has_key(package):
             utils.warn("Can't insert duplicate entry for '%s'; ignoring all but the first. [suite %s, component %s]" % (package, suite, component))
             c_error += 1
             continue
         new[package] = ""
+
         if original.has_key(package):
             (old_priority_id, old_section_id, old_maintainer_override, old_priority, old_section) = original[package]
-            if action == "add" or old_priority_id == priority_id and \
+            if mode == "add" or old_priority_id == priority_id and \
                old_section_id == section_id and \
                old_maintainer_override == maintainer_override:
                 # If it's unchanged or we're in 'add only' mode, ignore it
@@ -177,18 +193,21 @@ def process_file (file, suite, component, type, action, noaction=0):
                 # If it's changed, delete the old one so we can
                 # reinsert it with the new information
                 c_updated += 1
-                if not noaction:
-                    projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
-                                   % (suite_id, component_id, package, type_id))
+                if action:
+                    session.execute("""DELETE FROM override WHERE suite = :suite AND component = :component
+                                                              AND package = :package AND type = :typeid""",
+                                    {'suite': suite_id,  'component': component_id,
+                                     'package': package, 'typeid': type_id})
+
                 # Log changes
                 if old_priority_id != priority_id:
-                    Logger.log(["changed priority",package,old_priority,priority])
+                    Logger.log(["changed priority", package, old_priority, priority])
                 if old_section_id != section_id:
-                    Logger.log(["changed section",package,old_section,section])
+                    Logger.log(["changed section", package, old_section, section])
                 if old_maintainer_override != maintainer_override:
-                    Logger.log(["changed maintainer override",package,old_maintainer_override,maintainer_override])
+                    Logger.log(["changed maintainer override", package, old_maintainer_override, maintainer_override])
                 update_p = 1
-        elif action == "change":
+        elif mode == "change":
             # Ignore additions in 'change only' mode
             c_skipped += 1
             continue
@@ -196,63 +215,89 @@ def process_file (file, suite, component, type, action, noaction=0):
             c_added += 1
             update_p = 0
 
-        if not noaction:
-            if maintainer_override:
-                projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '%s')"
-                               % (suite_id, component_id, type_id, package, priority_id, section_id, maintainer_override))
+        if action:
+            if not maintainer_override:
+                m_o = None
             else:
-                projectB.query("INSERT INTO override (suite, component, type, package, priority, section,maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')"
-                               % (suite_id, component_id, type_id, package, priority_id, section_id))
+                m_o = maintainer_override
+            session.execute("""INSERT INTO override (suite, component, type, package,
+                                                     priority, section, maintainer)
+                                             VALUES (:suiteid, :componentid, :typeid,
+                                                     :package, :priorityid, :sectionid,
+                                                     :maintainer)""",
+                              {'suiteid': suite_id, 'componentid': component_id,
+                               'typeid':  type_id,  'package': package,
+                               'priorityid': priority_id, 'sectionid': section_id,
+                               'maintainer': m_o})
 
         if not update_p:
-            Logger.log(["new override",suite,component,type,package,priority,section,maintainer_override])
+            Logger.log(["new override", suite, component, otype, package,priority,section,maintainer_override])
 
-    if action == "set":
+    if mode == "set":
         # Delete any packages which were removed
         for package in original.keys():
             if not new.has_key(package):
-                if not noaction:
-                    projectB.query("DELETE FROM override WHERE suite = %s AND component = %s AND package = '%s' AND type = %s"
-                                   % (suite_id, component_id, package, type_id))
+                if action:
+                    session.execute("""DELETE FROM override
+                                       WHERE suite = :suiteid AND component = :componentid
+                                         AND package = :package AND type = :typeid""",
+                                    {'suiteid': suite_id, 'componentid': component_id,
+                                     'package': package, 'typeid': type_id})
                 c_removed += 1
-                Logger.log(["removed override",suite,component,type,package])
+                Logger.log(["removed override", suite, component, otype, package])
 
-    if not noaction:
-        projectB.query("COMMIT WORK")
-    if not Cnf["Control-Overrides::Options::Quiet"]:
+    if action:
+        session.commit()
+
+    if not cnf["Control-Overrides::Options::Quiet"]:
         print "Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time()-start_time), c_updated, c_added, c_removed, c_skipped, c_error)
-    Logger.log(["set complete",c_updated, c_added, c_removed, c_skipped, c_error])
+
+    Logger.log(["set complete", c_updated, c_added, c_removed, c_skipped, c_error])
 
 ################################################################################
 
-def list_overrides(suite, component, type):
-    suite_id = database.get_suite_id(suite)
-    if suite_id == -1:
+def list_overrides(suite, component, otype, session):
+    dat = {}
+    s = get_suite(suite, session)
+    if s is None:
         utils.fubar("Suite '%s' not recognised." % (suite))
 
-    component_id = database.get_component_id(component)
-    if component_id == -1:
+    dat['suiteid'] = s.suite_id
+
+    c = get_component(component, session)
+    if c is None:
         utils.fubar("Component '%s' not recognised." % (component))
 
-    type_id = database.get_override_type_id(type)
-    if type_id == -1:
-        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (type))
+    dat['componentid'] = c.component_id
 
-    if type == "dsc":
-        q = projectB.query("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite_id, component_id, type_id))
-        for i in q.getresult():
+    o = get_override_type(otype)
+    if o is None:
+        utils.fubar("Type '%s' not recognised. (Valid types are deb, udeb and dsc)" % (otype))
+
+    dat['typeid'] = o.overridetype_id
+
+    if otype == "dsc":
+        q = session.execute("""SELECT o.package, s.section, o.maintainer FROM override o, section s
+                                WHERE o.suite = :suiteid AND o.component = :componentid
+                                  AND o.type = :typeid AND o.section = s.id
+                             ORDER BY s.section, o.package""", dat)
+        for i in q.fetchall():
             print utils.result_join(i)
     else:
-        q = projectB.query("SELECT o.package, p.priority, s.section, o.maintainer, p.level FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite_id, component_id, type_id))
-        for i in q.getresult():
+        q = session.execute("""SELECT o.package, p.priority, s.section, o.maintainer, p.level
+                                 FROM override o, priority p, section s
+                                WHERE o.suite = :suiteid AND o.component = :componentid
+                                  AND o.type = :typeid AND o.priority = p.id AND o.section = s.id
+                             ORDER BY s.section, p.level, o.package""", dat)
+        for i in q.fetchall():
             print utils.result_join(i[:-1])
 
 ################################################################################
 
 def main ():
-    global Cnf, projectB, Logger
+    global Logger
 
-    Cnf = utils.get_conf()
+    cnf = Config()
     Arguments = [('a', "add", "Control-Overrides::Options::Add"),
                  ('c', "component", "Control-Overrides::Options::Component", "HasArg"),
                  ('h', "help", "Control-Overrides::Options::Help"),
@@ -266,51 +311,54 @@ def main ():
 
     # Default arguments
     for i in [ "add", "help", "list", "quiet", "set", "change", "no-action" ]:
-        if not Cnf.has_key("Control-Overrides::Options::%s" % (i)):
-            Cnf["Control-Overrides::Options::%s" % (i)] = ""
-    if not Cnf.has_key("Control-Overrides::Options::Component"):
-        Cnf["Control-Overrides::Options::Component"] = "main"
-    if not Cnf.has_key("Control-Overrides::Options::Suite"):
-        Cnf["Control-Overrides::Options::Suite"] = "unstable"
-    if not Cnf.has_key("Control-Overrides::Options::Type"):
-        Cnf["Control-Overrides::Options::Type"] = "deb"
+        if not cnf.has_key("Control-Overrides::Options::%s" % (i)):
+            cnf["Control-Overrides::Options::%s" % (i)] = ""
+    if not cnf.has_key("Control-Overrides::Options::Component"):
+        cnf["Control-Overrides::Options::Component"] = "main"
+    if not cnf.has_key("Control-Overrides::Options::Suite"):
+        cnf["Control-Overrides::Options::Suite"] = "unstable"
+    if not cnf.has_key("Control-Overrides::Options::Type"):
+        cnf["Control-Overrides::Options::Type"] = "deb"
 
-    file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    file_list = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
-    if Cnf["Control-Overrides::Options::Help"]:
+    if cnf["Control-Overrides::Options::Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
-    action = None
+    mode = None
     for i in [ "add", "list", "set", "change" ]:
-        if Cnf["Control-Overrides::Options::%s" % (i)]:
-            if action:
+        if cnf["Control-Overrides::Options::%s" % (i)]:
+            if mode:
                 utils.fubar("Can not perform more than one action at once.")
-            action = i
+            mode = i
 
-    (suite, component, otype) = (Cnf["Control-Overrides::Options::Suite"],
-                                 Cnf["Control-Overrides::Options::Component"],
-                                 Cnf["Control-Overrides::Options::Type"])
+    # Need an action...
+    if mode is None:
+        utils.fubar("No action specified.")
 
-    if action == "list":
-        list_overrides(suite, component, otype)
+    (suite, component, otype) = (cnf["Control-Overrides::Options::Suite"],
+                                 cnf["Control-Overrides::Options::Component"],
+                                 cnf["Control-Overrides::Options::Type"])
+
+    if mode == "list":
+        list_overrides(suite, component, otype, session)
     else:
-        if database.get_suite_untouchable(suite):
+        if get_suite(suite).untouchable:
             utils.fubar("%s: suite is untouchable" % suite)
 
-        noaction = 0
-        if Cnf["Control-Overrides::Options::No-Action"]:
+        action = True
+        if cnf["Control-Overrides::Options::No-Action"]:
             utils.warn("In No-Action Mode")
-            noaction = 1
+            action = False
 
-        Logger = logging.Logger(Cnf, "control-overrides", noaction)
+        Logger = daklog.Logger(cnf.Cnf, "control-overrides", mode)
         if file_list:
             for f in file_list:
-                process_file(utils.open_file(f), suite, component, otype, action, noaction)
+                process_file(utils.open_file(f), suite, component, otype, mode, action, session)
         else:
-            process_file(sys.stdin, suite, component, otype, action, noaction)
+            process_file(sys.stdin, suite, component, otype, mode, action, session)
         Logger.close()
 
 #######################################################################################

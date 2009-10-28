@@ -34,49 +34,7 @@ G{importgraph}
 ################################################################################
 
 import sys
-import imp
 import daklib.utils
-import daklib.extensions
-
-################################################################################
-
-class UserExtension:
-    def __init__(self, user_extension = None):
-        if user_extension:
-            m = imp.load_source("dak_userext", user_extension)
-            d = m.__dict__
-        else:
-            m, d = None, {}
-        self.__dict__["_module"] = m
-        self.__dict__["_d"] = d
-
-    def __getattr__(self, a):
-        if a in self.__dict__: return self.__dict__[a]
-        if a[0] == "_": raise AttributeError, a
-        return self._d.get(a, None)
-
-    def __setattr__(self, a, v):
-        self._d[a] = v
-
-################################################################################
-
-class UserExtension:
-    def __init__(self, user_extension = None):
-        if user_extension:
-            m = imp.load_source("dak_userext", user_extension)
-            d = m.__dict__
-        else:
-            m, d = None, {}
-        self.__dict__["_module"] = m
-        self.__dict__["_d"] = d
-
-    def __getattr__(self, a):
-        if a in self.__dict__: return self.__dict__[a]
-        if a[0] == "_": raise AttributeError, a
-        return self._d.get(a, None)
-
-    def __setattr__(self, a, v):
-        self._d[a] = v
 
 ################################################################################
 
@@ -131,8 +89,6 @@ def init():
          "Override cruft checks"),
         ("check-proposed-updates",
          "Dependency checking for proposed-updates"),
-        ("compare-suites",
-         "Show fixable discrepencies between suites"),
         ("control-overrides",
          "Manipulate/list override entries in bulk"),
         ("control-suite",
@@ -145,14 +101,14 @@ def init():
          "Show information useful for NEW processing"),
         ("find-null-maintainers",
          "Check for users with no packages in the archive"),
-        ("import-archive",
-         "Populate SQL database based from an archive tree"),
         ("import-keyring",
          "Populate fingerprint/uid table based on a new/updated keyring"),
         ("import-ldap-fingerprints",
          "Syncs fingerprint and uid tables with Debian LDAP db"),
         ("import-users-from-passwd",
          "Sync PostgreSQL users with passwd file"),
+        ("admin",
+         "Perform administration on the dak database"),
         ("init-db",
          "Update the database to match the conf file"),
         ("update-db",
@@ -165,8 +121,6 @@ def init():
          "Generates override files"),
         ("poolize",
          "Move packages from dists/ to pool/"),
-        ("reject-proposed-updates",
-         "Manually reject from proposed-updates"),
         ("new-security-install",
          "New way to install a security upload into the archive"),
         ("split-done",
@@ -197,13 +151,6 @@ Available commands:"""
 
 def main():
     """Launch dak functionality."""
-
-    Cnf = daklib.utils.get_conf()
-
-    if Cnf.has_key("Dinstall::UserExtensions"):
-        userext = UserExtension(Cnf["Dinstall::UserExtensions"])
-    else:
-        userext = UserExtension()
 
     functionality = init()
     modules = [ command for (command, _) in functionality ]
@@ -241,12 +188,6 @@ def main():
 
     # Invoke the module
     module = __import__(cmdname.replace("-","_"))
-
-    module.dak_userext = userext
-    userext.dak_module = module
-
-    daklib.extensions.init(cmdname, module, userext)
-    if userext.init is not None: userext.init(cmdname)
 
     module.main()
 

@@ -28,16 +28,16 @@
 
 ################################################################################
 
-import pg, sys, os
+import sys, os
 import apt_pkg, apt_inst
-from daklib import database
+
+from daklib.dbconn import *
+from daklib.config import Config
 from daklib import utils
 from daklib.regexes import re_no_epoch
 
 ################################################################################
 
-Cnf = None
-projectB = None
 Options = None
 stable = {}
 stable_virtual = {}
@@ -173,6 +173,8 @@ def pass_fail (filename, result):
 ################################################################################
 
 def check_changes (filename):
+    cnf = Config()
+
     try:
         changes = utils.parse_changes(filename)
         files = utils.build_file_list(changes)
@@ -188,7 +190,7 @@ def check_changes (filename):
     # Move to the pool directory
     cwd = os.getcwd()
     f = files.keys()[0]
-    pool_dir = Cnf["Dir::Pool"] + '/' + utils.poolify(changes["source"], files[f]["component"])
+    pool_dir = cnf["Dir::Pool"] + '/' + utils.poolify(changes["source"], files[f]["component"])
     os.chdir(pool_dir)
 
     changes_result = 0
@@ -214,10 +216,12 @@ def check_deb (filename):
 ################################################################################
 
 def check_joey (filename):
+    cnf = Config()
+
     f = utils.open_file(filename)
 
     cwd = os.getcwd()
-    os.chdir("%s/dists/proposed-updates" % (Cnf["Dir::Root"]))
+    os.chdir("%s/dists/proposed-updates" % (cnf["Dir::Root"]))
 
     for line in f.readlines():
         line = line.rstrip()
@@ -241,14 +245,16 @@ def check_joey (filename):
 def parse_packages():
     global stable, stable_virtual, architectures
 
+    cnf = Config()
+
     # Parse the Packages files (since it's a sub-second operation on auric)
     suite = "stable"
     stable = {}
-    components = Cnf.ValueList("Suite::%s::Components" % (suite))
-    architectures = filter(utils.real_arch, database.get_suite_architectures(suite))
+    components = cnf.ValueList("Suite::%s::Components" % (suite))
+    architectures = [ a.arch_string for a in get_suite_architectures(suite, skipsrc=True, skipall=True) ]
     for component in components:
         for architecture in architectures:
-            filename = "%s/dists/%s/%s/binary-%s/Packages" % (Cnf["Dir::Root"], suite, component, architecture)
+            filename = "%s/dists/%s/%s/binary-%s/Packages" % (cnf["Dir::Root"], suite, component, architecture)
             packages = utils.open_file(filename, 'r')
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
@@ -269,28 +275,27 @@ def parse_packages():
 ################################################################################
 
 def main ():
-    global Cnf, projectB, Options
+    global Options
 
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('d', "debug", "Check-Proposed-Updates::Options::Debug"),
                  ('q',"quiet","Check-Proposed-Updates::Options::Quiet"),
                  ('v',"verbose","Check-Proposed-Updates::Options::Verbose"),
                  ('h',"help","Check-Proposed-Updates::Options::Help")]
     for i in [ "debug", "quiet", "verbose", "help" ]:
-        if not Cnf.has_key("Check-Proposed-Updates::Options::%s" % (i)):
-            Cnf["Check-Proposed-Updates::Options::%s" % (i)] = ""
+        if not cnf.has_key("Check-Proposed-Updates::Options::%s" % (i)):
+            cnf["Check-Proposed-Updates::Options::%s" % (i)] = ""
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Check-Proposed-Updates::Options")
+    arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Check-Proposed-Updates::Options")
 
     if Options["Help"]:
         usage(0)
     if not arguments:
         utils.fubar("need at least one package name as an argument.")
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    DBConn()
 
     print "Parsing packages files...",
     parse_packages()

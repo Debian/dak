@@ -1211,7 +1211,9 @@ outer_loop: while (<COMMANDS>) {
           $selecteddelayed = $1;
           s,^DELAYED/[0-9]+-day/,,;
         }
-        if ( $origword eq "--searchdirs" ) {
+        if (m,(^|/)\*,) {
+          msg("mail,log", "$_: filename component cannot start with a wildcard\n");
+        } elsif ( $origword eq "--searchdirs" ) {
           $selecteddelayed = -2;
         } elsif (m,/,) {
           msg(

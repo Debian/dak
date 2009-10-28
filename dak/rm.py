@@ -41,21 +41,19 @@
 
 import commands
 import os
-import pg
-import re
 import sys
 import apt_pkg
 import apt_inst
-from daklib import database
+
+from daklib.config import Config
+from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
 from daklib.regexes import re_strip_source_version, re_build_dep_arch
 
 ################################################################################
 
-Cnf = None
 Options = None
-projectB = None
 
 ################################################################################
 
@@ -97,22 +95,24 @@ def game_over():
 ################################################################################
 
 def reverse_depends_check(removals, suites, arches=None):
+    cnf = Config()
+
     print "Checking reverse dependencies..."
-    components = Cnf.ValueList("Suite::%s::Components" % suites[0])
+    components = cnf.ValueList("Suite::%s::Components" % suites[0])
     dep_problem = 0
     p2c = {}
     all_broken = {}
     if arches:
         all_arches = set(arches)
     else:
-        all_arches = set(database.get_suite_architectures(suites[0]))
+        all_arches = set([x.arch_string for x in get_suite_architectures(suites[0])])
     all_arches -= set(["source", "all"])
     for architecture in all_arches:
         deps = {}
         sources = {}
         virtual_packages = {}
         for component in components:
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (Cnf["Dir::Root"], suites[0], component, architecture)
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suites[0], component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
             (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
@@ -197,7 +197,7 @@ def reverse_depends_check(removals, suites, arches=None):
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
     all_broken.clear()
     for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suites[0], component)
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suites[0], component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
         (fd, temp_filename) = utils.temp_filename()
         result, output = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
@@ -252,9 +252,9 @@ def reverse_depends_check(removals, suites, arches=None):
 ################################################################################
 
 def main ():
-    global Cnf, Options, projectB
+    global Options
 
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('h',"help","Rm::Options::Help"),
                  ('a',"architecture","Rm::Options::Architecture", "HasArg"),
@@ -273,19 +273,18 @@ def main ():
     for i in [ "architecture", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
                "source-only" ]:
-        if not Cnf.has_key("Rm::Options::%s" % (i)):
-            Cnf["Rm::Options::%s" % (i)] = ""
-    if not Cnf.has_key("Rm::Options::Suite"):
-        Cnf["Rm::Options::Suite"] = "unstable"
+        if not cnf.has_key("Rm::Options::%s" % (i)):
+            cnf["Rm::Options::%s" % (i)] = ""
+    if not cnf.has_key("Rm::Options::Suite"):
+        cnf["Rm::Options::Suite"] = "unstable"
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Rm::Options")
+    arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Rm::Options")
 
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
     # Sanity check options
     if not arguments:
@@ -317,12 +316,12 @@ def main ():
     carbon_copy = []
     for copy_to in utils.split_args(Options.get("Carbon-Copy")):
         if copy_to.isdigit():
-            carbon_copy.append(copy_to + "@" + Cnf["Dinstall::BugServer"])
+            carbon_copy.append(copy_to + "@" + cnf["Dinstall::BugServer"])
         elif copy_to == 'package':
             for package in arguments:
-                carbon_copy.append(package + "@" + Cnf["Dinstall::PackagesServer"])
-                if Cnf.has_key("Dinstall::TrackingServer"):
-                    carbon_copy.append(package + "@" + Cnf["Dinstall::TrackingServer"])
+                carbon_copy.append(package + "@" + cnf["Dinstall::PackagesServer"])
+                if cnf.has_key("Dinstall::TrackingServer"):
+                    carbon_copy.append(package + "@" + cnf["Dinstall::TrackingServer"])
         elif '@' in copy_to:
             carbon_copy.append(copy_to)
         else:
@@ -343,9 +342,9 @@ def main ():
     suites_list = utils.join_with_commas_and(suites)
     if not Options["No-Action"]:
         for suite in suites:
-            suite_id = database.get_suite_id(suite)
-            if suite_id != -1:
-                suite_ids_list.append(suite_id)
+            s = get_suite(suite, session=session)
+            if s is not None:
+                suite_ids_list.append(s.suite_id)
             if suite == "stable":
                 print "**WARNING** About to remove from the stable suite!"
                 print "This should only be done just prior to a (point) release and not at"
@@ -374,24 +373,27 @@ def main ():
     # latter is a nasty mess, but very nice from a UI perspective so
     # we try to support it.
 
+    # XXX: TODO: This all needs converting to use placeholders or the object
+    #            API. It's an SQL injection dream at the moment
+
     if Options["Binary-Only"]:
         # Binary-only
-        q = projectB.query("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures))
-        for i in q.getresult():
+        q = session.execute("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures))
+        for i in q.fetchall():
             to_remove.append(i)
     else:
         # Source-only
         source_packages = {}
-        q = projectB.query("SELECT l.path, f.filename, s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, files f, location l, component c WHERE sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components))
-        for i in q.getresult():
+        q = session.execute("SELECT l.path, f.filename, s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, files f, location l, component c WHERE sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components))
+        for i in q.fetchall():
             source_packages[i[2]] = i[:2]
             to_remove.append(i[2:])
         if not Options["Source-Only"]:
             # Source + Binary
             binary_packages = {}
             # First get a list of binary package names we suspect are linked to the source
-            q = projectB.query("SELECT DISTINCT b.package FROM binaries b, source s, src_associations sa, suite su, files f, location l, component c WHERE b.source = s.id AND sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components))
-            for i in q.getresult():
+            q = session.execute("SELECT DISTINCT b.package FROM binaries b, source s, src_associations sa, suite su, files f, location l, component c WHERE b.source = s.id AND sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components))
+            for i in q.fetchall():
                 binary_packages[i[0]] = ""
             # Then parse each .dsc that we found earlier to see what binary packages it thinks it produces
             for i in source_packages.keys():
@@ -409,8 +411,8 @@ def main ():
             # source package and if so add it to the list of packages
             # to be removed.
             for package in binary_packages.keys():
-                q = projectB.query("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package))
-                for i in q.getresult():
+                q = session.execute("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package))
+                for i in q.fetchall():
                     filename = "/".join(i[:2])
                     control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename)))
                     source = control.Find("Source", control.Find("Package"))
@@ -454,7 +456,7 @@ def main ():
 
     maintainer_list = []
     for maintainer_id in maintainers.keys():
-        maintainer_list.append(database.get_maintainer(maintainer_id))
+        maintainer_list.append(get_maintainer(maintainer_id).name)
     summary = ""
     removals = d.keys()
     removals.sort()
@@ -493,7 +495,7 @@ def main ():
     date = commands.getoutput('date -R')
 
     # Log first; if it all falls apart I want a record that we at least tried.
-    logfile = utils.open_file(Cnf["Rm::LogFile"], 'a')
+    logfile = utils.open_file(cnf["Rm::LogFile"], 'a')
     logfile.write("=========================================================================\n")
     logfile.write("[Date: %s] [ftpmaster: %s]\n" % (date, whoami))
     logfile.write("Removed the following packages from %s:\n\n%s" % (suites_list, summary))
@@ -503,23 +505,25 @@ def main ():
     logfile.write("----------------------------------------------\n")
     logfile.flush()
 
-    dsc_type_id = database.get_override_type_id('dsc')
-    deb_type_id = database.get_override_type_id('deb')
+    dsc_type_id = get_override_type('dsc', session).overridetype_id
+    deb_type_id = get_override_type('deb', session).overridetype_id
 
     # Do the actual deletion
     print "Deleting...",
     sys.stdout.flush()
-    projectB.query("BEGIN WORK")
+
     for i in to_remove:
         package = i[0]
         architecture = i[2]
         package_id = i[3]
         for suite_id in suite_ids_list:
             if architecture == "source":
-                projectB.query("DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id))
+                session.execute("DELETE FROM src_associations WHERE source = :packageid AND suite = :suiteid",
+                                {'packageid': package_id, 'suiteid': suite_id})
                 #print "DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id)
             else:
-                projectB.query("DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id))
+                session.execute("DELETE FROM bin_associations WHERE bin = :packageid AND suite = :suiteid",
+                                {'packageid': package_id, 'suiteid': suite_id})
                 #print "DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id)
             # Delete from the override file
             if not Options["Partial"]:
@@ -527,39 +531,40 @@ def main ():
                     type_id = dsc_type_id
                 else:
                     type_id = deb_type_id
-                projectB.query("DELETE FROM override WHERE package = '%s' AND type = %s AND suite = %s %s" % (package, type_id, suite_id, over_con_components))
-    projectB.query("COMMIT WORK")
+                # TODO: Again, fix this properly to remove the remaining non-bind argument
+                session.execute("DELETE FROM override WHERE package = :package AND type = :typeid AND suite = :suiteid %s" % (over_con_components), {'package': package, 'typeid': type_id, 'suiteid': suite_id})
+    session.commit()
     print "done."
 
     # Send the bug closing messages
     if Options["Done"]:
         Subst = {}
-        Subst["__RM_ADDRESS__"] = Cnf["Rm::MyEmailAddress"]
-        Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"]
+        Subst["__RM_ADDRESS__"] = cnf["Rm::MyEmailAddress"]
+        Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
         bcc = []
-        if Cnf.Find("Dinstall::Bcc") != "":
-            bcc.append(Cnf["Dinstall::Bcc"])
-        if Cnf.Find("Rm::Bcc") != "":
-            bcc.append(Cnf["Rm::Bcc"])
+        if cnf.Find("Dinstall::Bcc") != "":
+            bcc.append(cnf["Dinstall::Bcc"])
+        if cnf.Find("Rm::Bcc") != "":
+            bcc.append(cnf["Rm::Bcc"])
         if bcc:
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak rm\nX-Katie: melanie"
+        Subst["__CC__"] = "X-DAK: dak rm"
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
         Subst["__SUITE_LIST__"] = suites_list
         Subst["__SUMMARY__"] = summary
-        Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
-        Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
+        Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
+        Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = whoami
         whereami = utils.where_am_i()
-        Archive = Cnf.SubTree("Archive::%s" % (whereami))
+        Archive = cnf.SubTree("Archive::%s" % (whereami))
         Subst["__MASTER_ARCHIVE__"] = Archive["OriginServer"]
         Subst["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"]
         for bug in utils.split_args(Options["Done"]):
             Subst["__BUG_NUMBER__"] = bug
-            mail_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/rm.bug-close")
+            mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close")
             utils.send_mail(mail_message)
 
     logfile.write("=========================================================================\n")

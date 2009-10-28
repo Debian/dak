@@ -41,16 +41,16 @@
 
 #######################################################################################
 
-import pg, sys
+import sys
 import apt_pkg
-from daklib import database
-from daklib import logging
+
+from daklib.config import Config
+from daklib.dbconn import *
+from daklib import daklog
 from daklib import utils
 
 #######################################################################################
 
-Cnf = None
-projectB = None
 Logger = None
 
 ################################################################################
@@ -69,38 +69,51 @@ Display or alter the contents of a suite using FILE(s), or stdin.
 
 #######################################################################################
 
-def get_id (package, version, architecture):
+def get_id(package, version, architecture, session):
     if architecture == "source":
-        q = projectB.query("SELECT id FROM source WHERE source = '%s' AND version = '%s'" % (package, version))
+        q = session.execute("SELECT id FROM source WHERE source = :package AND version = :version",
+                            {'package': package, 'version': version})
     else:
-        q = projectB.query("SELECT b.id FROM binaries b, architecture a WHERE b.package = '%s' AND b.version = '%s' AND (a.arch_string = '%s' OR a.arch_string = 'all') AND b.architecture = a.id" % (package, version, architecture))
+        q = session.execute("""SELECT b.id FROM binaries b, architecture a
+                                WHERE b.package = :package AND b.version = :version
+                                  AND (a.arch_string = :arch OR a.arch_string = 'all')
+                                  AND b.architecture = a.id""",
+                               {'package': package, 'version': version, 'arch': architecture})
 
-    ql = q.getresult()
-    if not ql:
+    ql = q.fetchall()
+    if len(ql) < 1:
         utils.warn("Couldn't find '%s_%s_%s'." % (package, version, architecture))
         return None
+
     if len(ql) > 1:
         utils.warn("Found more than one match for '%s_%s_%s'." % (package, version, architecture))
         return None
+
     return ql[0][0]
 
 #######################################################################################
 
-def set_suite (file, suite_id):
+def set_suite(file, suite, session):
+    suite_id = suite.suite_id
     lines = file.readlines()
 
-    projectB.query("BEGIN WORK")
+    # Our session is already in a transaction
 
     # Build up a dictionary of what is currently in the suite
     current = {}
-    q = projectB.query("SELECT b.package, b.version, a.arch_string, ba.id FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id))
-    ql = q.getresult()
-    for i in ql:
+    q = session.execute("""SELECT b.package, b.version, a.arch_string, ba.id
+                             FROM binaries b, bin_associations ba, architecture a
+                            WHERE ba.suite = :suiteid
+                              AND ba.bin = b.id AND b.architecture = a.id""", {'suiteid': suite_id})
+    for i in q.fetchall():
         key = " ".join(i[:3])
         current[key] = i[3]
-    q = projectB.query("SELECT s.source, s.version, sa.id FROM source s, src_associations sa WHERE sa.suite = %s AND sa.source = s.id" % (suite_id))
-    ql = q.getresult()
-    for i in ql:
+
+    q = session.execute("""SELECT s.source, s.version, sa.id
+                             FROM source s, src_associations sa
+                            WHERE sa.suite = :suiteid
+                              AND sa.source = s.id""", {'suiteid': suite_id})
+    for i in q.fetchall():
         key = " ".join(i[:2]) + " source"
         current[key] = i[2]
 
@@ -120,40 +133,40 @@ def set_suite (file, suite_id):
             (package, version, architecture) = key.split()
             pkid = current[key]
             if architecture == "source":
-                q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (pkid))
+                session.execute("""DELETE FROM src_associations WHERE id = :pkid""", {'pkid': pkid})
             else:
-                q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (pkid))
+                session.execute("""DELETE FROM bin_associations WHERE id = :pkid""", {'pkid': pkid})
             Logger.log(["removed", key, pkid])
 
     # Check to see which packages need added and add them
     for key in desired.keys():
         if not current.has_key(key):
             (package, version, architecture) = key.split()
-            pkid = get_id (package, version, architecture)
+            pkid = get_id (package, version, architecture, session)
             if not pkid:
                 continue
             if architecture == "source":
-                q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, pkid))
+                session.execute("""INSERT INTO src_associations (suite, source)
+                                        VALUES (:suiteid, :pkid)""", {'suiteid': suite_id, 'pkid': pkid})
             else:
-                q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, pkid))
+                session.execute("""INSERT INTO bin_associations (suite, bin)
+                                        VALUES (:suiteid, :pkid)""", {'suiteid': suite_id, 'pkid': pkid})
             Logger.log(["added", key, pkid])
 
-    projectB.query("COMMIT WORK")
+    session.commit()
 
 #######################################################################################
 
-def process_file (file, suite, action):
-
-    suite_id = database.get_suite_id(suite)
-
+def process_file(file, suite, action, session):
     if action == "set":
-        set_suite (file, suite_id)
+        set_suite(file, suite, session)
         return
+
+    suite_id = suite.suite_id
 
     lines = file.readlines()
 
-    projectB.query("BEGIN WORK")
-
+    # Our session is already in a transaction
     for line in lines:
         split_line = line.strip().split()
         if len(split_line) != 3:
@@ -162,77 +175,91 @@ def process_file (file, suite, action):
 
         (package, version, architecture) = split_line
 
-        pkid = get_id(package, version, architecture)
+        pkid = get_id(package, version, architecture, session)
         if not pkid:
             continue
 
         if architecture == "source":
-            # Find the existing assoications ID, if any
-            q = projectB.query("SELECT id FROM src_associations WHERE suite = %s and source = %s" % (suite_id, pkid))
-            ql = q.getresult()
-            if not ql:
-                assoication_id = None
+            # Find the existing association ID, if any
+            q = session.execute("""SELECT id FROM src_associations
+                                    WHERE suite = :suiteid and source = :pkid""",
+                                    {'suiteid': suite_id, 'pkid': pkid})
+            ql = q.fetchall()
+            if len(ql) < 1:
+                association_id = None
             else:
-                assoication_id = ql[0][0]
-            # Take action
-            if action == "add":
-                if assoication_id:
-                    utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
-                    continue
-                else:
-                    q = projectB.query("INSERT INTO src_associations (suite, source) VALUES (%s, %s)" % (suite_id, pkid))
-            elif action == "remove":
-                if assoication_id == None:
-                    utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
-                    continue
-                else:
-                    q = projectB.query("DELETE FROM src_associations WHERE id = %s" % (assoication_id))
-        else:
-            # Find the existing assoications ID, if any
-            q = projectB.query("SELECT id FROM bin_associations WHERE suite = %s and bin = %s" % (suite_id, pkid))
-            ql = q.getresult()
-            if not ql:
-                assoication_id = None
-            else:
-                assoication_id = ql[0][0]
-            # Take action
-            if action == "add":
-                if assoication_id:
-                    utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
-                    continue
-                else:
-                    q = projectB.query("INSERT INTO bin_associations (suite, bin) VALUES (%s, %s)" % (suite_id, pkid))
-            elif action == "remove":
-                if assoication_id == None:
-                    utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
-                    continue
-                else:
-                    q = projectB.query("DELETE FROM bin_associations WHERE id = %s" % (assoication_id))
+                association_id = ql[0][0]
 
-    projectB.query("COMMIT WORK")
+            # Take action
+            if action == "add":
+                if association_id:
+                    utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
+                    continue
+                else:
+                    session.execute("""INSERT INTO src_associations (suite, source)
+                                            VALUES (:suiteid, :pkid)""",
+                                       {'suiteid': suite_id, 'pkid': pkid})
+            elif action == "remove":
+                if association_id == None:
+                    utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    continue
+                else:
+                    session.execute("""DELETE FROM src_associations WHERE id = :pkid""", {'pkid': association_id})
+        else:
+            # Find the existing associations ID, if any
+            q = session.execute("""SELECT id FROM bin_associations
+                                    WHERE suite = :suiteid and bin = :pkid""",
+                                    {'suiteid': suite_id, 'pkid': pkid})
+            ql = q.fetchall()
+            if len(ql) < 1:
+                association_id = None
+            else:
+                association_id = ql[0][0]
+
+            # Take action
+            if action == "add":
+                if association_id:
+                    utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
+                    continue
+                else:
+                    session.execute("""INSERT INTO bin_associations (suite, bin)
+                                            VALUES (%s, %s)""",
+                                       {'suiteid': suite_id, 'pkid': pkid})
+            elif action == "remove":
+                if association_id == None:
+                    utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
+                    continue
+                else:
+                    session.execute("""DELETE FROM bin_associations WHERE id = :pkid""", {'pkid': association_id})
+
+    session.commit()
 
 #######################################################################################
 
-def get_list (suite):
-    suite_id = database.get_suite_id(suite)
+def get_list(suite, session):
+    suite_id = suite.suite_id
     # List binaries
-    q = projectB.query("SELECT b.package, b.version, a.arch_string FROM binaries b, bin_associations ba, architecture a WHERE ba.suite = %s AND ba.bin = b.id AND b.architecture = a.id" % (suite_id))
-    ql = q.getresult()
-    for i in ql:
+    q = session.execute("""SELECT b.package, b.version, a.arch_string
+                             FROM binaries b, bin_associations ba, architecture a
+                            WHERE ba.suite = :suiteid
+                              AND ba.bin = b.id AND b.architecture = a.id""", {'suiteid': suite_id})
+    for i in q.fetchall():
         print " ".join(i)
 
     # List source
-    q = projectB.query("SELECT s.source, s.version FROM source s, src_associations sa WHERE sa.suite = %s AND sa.source = s.id" % (suite_id))
-    ql = q.getresult()
-    for i in ql:
+    q = session.execute("""SELECT s.source, s.version
+                             FROM source s, src_associations sa
+                            WHERE sa.suite = :suiteid
+                              AND sa.source = s.id""", {'suiteid': suite_id})
+    for i in q.fetchall():
         print " ".join(i) + " source"
 
 #######################################################################################
 
 def main ():
-    global Cnf, projectB, Logger
+    global Logger
 
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('a',"add","Control-Suite::Options::Add", "HasArg"),
                  ('h',"help","Control-Suite::Options::Help"),
@@ -241,30 +268,29 @@ def main ():
                  ('s',"set", "Control-Suite::Options::Set", "HasArg")]
 
     for i in ["add", "help", "list", "remove", "set", "version" ]:
-        if not Cnf.has_key("Control-Suite::Options::%s" % (i)):
-            Cnf["Control-Suite::Options::%s" % (i)] = ""
+        if not cnf.has_key("Control-Suite::Options::%s" % (i)):
+            cnf["Control-Suite::Options::%s" % (i)] = ""
 
     try:
-        file_list = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv);
+        file_list = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv);
     except SystemError, e:
         print "%s\n" % e
         usage(1)
-    Options = Cnf.SubTree("Control-Suite::Options")
+    Options = cnf.SubTree("Control-Suite::Options")
 
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"],int(Cnf["DB::Port"]))
-
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
     action = None
 
     for i in ("add", "list", "remove", "set"):
-        if Cnf["Control-Suite::Options::%s" % (i)] != "":
-            suite = Cnf["Control-Suite::Options::%s" % (i)]
-            if database.get_suite_id(suite) == -1:
-                utils.fubar("Unknown suite '%s'." %(suite))
+        if cnf["Control-Suite::Options::%s" % (i)] != "":
+            suite_name = cnf["Control-Suite::Options::%s" % (i)]
+            suite = get_suite(suite_name, session=session)
+            if suite is None:
+                utils.fubar("Unknown suite '%s'." % (suite_name))
             else:
                 if action:
                     utils.fubar("Can only perform one action at a time.")
@@ -275,18 +301,19 @@ def main ():
         utils.fubar("No action specified.")
 
     # Safety/Sanity check
-    if action == "set" and suite not in ["testing", "etch-m68k"]:
-        utils.fubar("Will not reset suite %s" % (suite))
+    # XXX: This should be stored in the database
+    if action == "set" and suite_name not in ["testing", "etch-m68k"]:
+        utils.fubar("Will not reset suite %s" % (suite_name))
 
     if action == "list":
-        get_list(suite)
+        get_list(suite, session)
     else:
-        Logger = logging.Logger(Cnf, "control-suite")
+        Logger = daklog.Logger(cnf.Cnf, "control-suite")
         if file_list:
             for f in file_list:
-                process_file(utils.open_file(f), suite, action)
+                process_file(utils.open_file(f), suite, action, session)
         else:
-            process_file(sys.stdin, suite, action)
+            process_file(sys.stdin, suite, action, session)
         Logger.close()
 
 #######################################################################################

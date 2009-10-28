@@ -40,7 +40,6 @@ Script to automate some parts of checking NEW packages
 
 import errno
 import os
-import pg
 import re
 import sys
 import md5
@@ -48,8 +47,9 @@ import apt_pkg
 import apt_inst
 import shutil
 import commands
-from daklib import database
+
 from daklib import utils
+from daklib.dbconn import DBConn, get_binary_from_name_suite
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory
@@ -57,11 +57,7 @@ from daklib.regexes import html_escaping, re_html_escaping, re_version, re_space
 ################################################################################
 
 Cnf = None
-projectB = None
-
 Cnf = utils.get_conf()
-projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-database.init(Cnf, projectB)
 
 printed_copyrights = {}
 package_relations = {}           #: Store relations of packages for later output
@@ -315,6 +311,7 @@ def create_depends_string (suite, depends_tree):
         suite_where = " ='%s'" % suite
 
     comma_count = 1
+    session = DBConn().session()
     for l in depends_tree:
         if (comma_count >= 2):
             result += ", "
@@ -324,10 +321,9 @@ def create_depends_string (suite, depends_tree):
                 result += " | "
             # doesn't do version lookup yet.
 
-            q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name %s ORDER BY b.version desc" % (d['name'], suite_where))
-            ql = q.getresult()
-            if ql:
-                i = ql[0]
+            res = get_binary_from_name_suite(d['name'], suite_where)
+            if res.rowcount > 0:
+                i = res.fetchone()
 
                 adepends = d['name']
                 if d['version'] != '' :
@@ -551,7 +547,7 @@ def check_changes (changes_filename):
         # else: => byhand
 
 def main ():
-    global Cnf, projectB, db_files, waste, excluded
+    global Cnf, db_files, waste, excluded
 
 #    Cnf = utils.get_conf()
 

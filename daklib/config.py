@@ -71,6 +71,8 @@ class Config(Singleton):
         self.get = self.Cnf.get
         self.SubTree = self.Cnf.SubTree
         self.ValueList = self.Cnf.ValueList
+        self.Find = self.Cnf.Find
+        self.FindB = self.Cnf.FindB
 
     def _startup(self, *args, **kwargs):
         self._readconf()
@@ -81,3 +83,5 @@ class Config(Singleton):
     def __getitem__(self, name):
         return self.Cnf[name]
 
+    def __setitem__(self, name, value):
+        self.Cnf[name] = value
