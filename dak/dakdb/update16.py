@@ -100,10 +100,10 @@ def do_update(self):
 
         ## NULL means no source upload access (i.e. any upload containing source
         ## will be rejected)
-        c.execute("ALTER TABLE fingerprint ADD COLUMN source_acl INT4 REFERENCES source_acl(id) DEFAULT NULL")
+        c.execute("ALTER TABLE fingerprint ADD COLUMN source_acl_id INT4 REFERENCES source_acl(id) DEFAULT NULL")
 
         ## NULL means no binary upload access
-        c.execute("ALTER TABLE fingerprint ADD COLUMN binary_acl INT4 REFERENCES binary_acl(id) DEFAULT NULL")
+        c.execute("ALTER TABLE fingerprint ADD COLUMN binary_acl_id INT4 REFERENCES binary_acl(id) DEFAULT NULL")
 
         # Blockage table (replaces the hard coded stuff we used to have in extensions)
         print "Adding blockage table"

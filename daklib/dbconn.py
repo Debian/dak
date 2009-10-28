@@ -381,6 +381,9 @@ class BinaryACL(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def __repr__(self):
+        return '<BinaryACL %s>' % self.binary_acl_id
+
 __all__.append('BinaryACL')
 
 ################################################################################
@@ -388,6 +391,9 @@ __all__.append('BinaryACL')
 class BinaryACLMap(object):
     def __init__(self, *args, **kwargs):
         pass
+
+    def __repr__(self):
+        return '<BinaryACLMap %s>' % self.binary_acl_map_id
 
 __all__.append('BinaryACLMap')
 
@@ -1790,6 +1796,9 @@ class SourceACL(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def __repr__(self):
+        return '<SourceACL %s>' % self.source_acl_id
+
 __all__.append('SourceACL')
 
 ################################################################################
@@ -2117,6 +2126,9 @@ class UploadBlock(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def __repr__(self):
+        return '<UploadBlock %s (%s)>' % (self.source, self.upload_block_id)
+
 __all__.append('UploadBlock')
 
 ################################################################################
@@ -2209,7 +2221,9 @@ class DBConn(Singleton):
                properties = dict(binary_acl_id = self.tbl_binary_acl.c.id))
 
         mapper(BinaryACLMap, self.tbl_binary_acl_map,
-               properties = dict(binary_acl_map_id = self.tbl_binary_acl_map.c.id))
+               properties = dict(binary_acl_map_id = self.tbl_binary_acl_map.c.id,
+                                 fingerprint = relation(Fingerprint, backref="binary_acl_map"),
+                                 architecture = relation(Architecture)))
 
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
@@ -2254,7 +2268,9 @@ class DBConn(Singleton):
                                  uid_id = self.tbl_fingerprint.c.uid,
                                  uid = relation(Uid),
                                  keyring_id = self.tbl_fingerprint.c.keyring,
-                                 keyring = relation(Keyring)))
+                                 keyring = relation(Keyring),
+                                 source_acl = relation(SourceACL),
+                                 binary_acl = relation(BinaryACL)))
 
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
@@ -2372,7 +2388,9 @@ class DBConn(Singleton):
                                  fingerprint = relation(Fingerprint)))
 
         mapper(UploadBlock, self.tbl_upload_blocks,
-               properties = dict(upload_block_id = self.tbl_upload_blocks.c.id))
+               properties = dict(upload_block_id = self.tbl_upload_blocks.c.id,
+                                 fingerprint = relation(Fingerprint, backref="uploadblocks"),
+                                 uid = relation(Uid, backref="uploadblocks")))
 
     ## Connection functions
     def __createconn(self):
