@@ -28,7 +28,7 @@ class SourceFormat(type):
                 yield "contains source files not allowed in format %s" % cls.name
 
     @classmethod
-    def parse_format(cls, txt, is_a_dsc=False, field='files'):
+    def parse_format(cls, txt):
         format = re_verwithext.search(txt)
 
         if format is None:
@@ -44,17 +44,19 @@ class SourceFormat(type):
         if format[2] is None:
             format = format[:2]
 
+        return format
+
+    @classmethod
+    def validate_format(cls, format, is_a_dsc=False, field='files'):
         if is_a_dsc:
             if format != (1,0) and \
                format != (3,0,"quilt") and format != (3,0,"native"):
-                raise UnknownFormatError, txt
+                raise UnknownFormatError, repr(format)
         else:
             if (format < (1,5) or format > (1,8)):
-                raise UnknownFormatError, txt
+                raise UnknownFormatError, repr(format)
             if field != "files" and format < (1,8):
-                raise UnknownFormatError, txt
-
-        return format
+                raise UnknownFormatError, repr(format)
 
 class FormatOne(SourceFormat):
     __metaclass__ = SourceFormat

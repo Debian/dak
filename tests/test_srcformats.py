@@ -107,16 +107,16 @@ class FormatTreeQuiltTestCase(SourceFormatTestCase):
 
 class ParseFormat(unittest.TestCase):
     def assertFormat(self, input, expected, **kwargs):
-        self.assertEqual(
-            srcformats.SourceFormat.parse_format(input, **kwargs),
-            expected,
-        )
+        format = srcformats.SourceFormat.parse_format(input)
+        self.assertEqual(format, expected)
+        srcformats.SourceFormat.validate_format(format, **kwargs)
 
     def assertInvalidFormat(self, input, **kwargs):
-        self.assertRaises(
-            UnknownFormatError,
-            lambda: srcformats.SourceFormat.parse_format(input, **kwargs),
-        )
+        try:
+            format = srcformats.SourceFormat.parse_format(input)
+            srcformats.SourceFormat.validate_format(format, **kwargs)
+        except UnknownFormatError:
+            return
 
     def testEmpty(self):
         self.assertInvalidFormat('')
