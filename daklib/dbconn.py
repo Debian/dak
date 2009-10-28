@@ -51,7 +51,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
-from daklib.utils import ensure_orig_files
+from utils import ensure_orig_files
 
 ################################################################################
 
