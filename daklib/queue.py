@@ -1225,7 +1225,10 @@ class Upload(object):
         self.ensure_all_source_exists()
 
         cnf = Config()
-        tagfile = cnf["Dinstall::LintianTags"]
+        tagfile = cnf.get("Dinstall::LintianTags")
+        if tagfile is None:
+            # We don't have a tagfile, so just don't do anything.
+            return
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
@@ -1932,7 +1935,7 @@ distribution."""
         if not manual:
             self.Subst["__REJECTOR_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
             self.Subst["__MANUAL_REJECT_MESSAGE__"] = ""
-            self.Subst["__CC__"] = "X-DAK-Rejection: automatic (moo)\nX-Katie-Rejection: automatic (moo)"
+            self.Subst["__CC__"] = "X-DAK-Rejection: automatic (moo)"
             os.write(reason_fd, reject_message)
             reject_mail_message = utils.TemplateSubst(self.Subst, rej_template)
         else:
@@ -2350,7 +2353,7 @@ distribution."""
         self.Subst["__REJECTOR_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
         self.Subst["__REJECT_MESSAGE__"] = self.package_info()
         self.Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
-        self.Subst["__BCC__"] = "X-DAK: dak process-accepted\nX-Katie: $Revision: 1.18 $"
+        self.Subst["__BCC__"] = "X-DAK: dak process-accepted"
         if cnf.has_key("Dinstall::Bcc"):
             self.Subst["__BCC__"] += "\nBcc: %s" % (cnf["Dinstall::Bcc"])
 

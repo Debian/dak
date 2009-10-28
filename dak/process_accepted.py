@@ -582,7 +582,7 @@ def stable_install(u, session, summary, short_summary, fromsuite_name="proposed-
     if not Options["No-Mail"] and u.pkg.changes["architecture"].has_key("source"):
         u.Subst["__SUITE__"] = " into %s" % (tosuite)
         u.Subst["__SUMMARY__"] = summary
-        u.Subst["__BCC__"] = "X-DAK: dak process-accepted\nX-Katie: $Revision: 1.18 $"
+        u.Subst["__BCC__"] = "X-DAK: dak process-accepted"
 
         if cnf.has_key("Dinstall::Bcc"):
             u.Subst["__BCC__"] += "\nBcc: %s" % (cnf["Dinstall::Bcc"])

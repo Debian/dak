@@ -455,7 +455,7 @@ def process_it(changes_file):
     u.pkg.changes["changedby2047"] = cnf["Dinstall::MyEmailAddress"]
 
     # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
-    bcc = "X-DAK: dak process-unchecked\nX-Katie: $Revision: 1.65 $"
+    bcc = "X-DAK: dak process-unchecked"
     if cnf.has_key("Dinstall::Bcc"):
         u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
     else:
