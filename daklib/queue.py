@@ -1222,6 +1222,8 @@ class Upload(object):
         if not valid_dist:
             return
 
+        self.ensure_all_source_exists()
+
         cnf = Config()
         tagfile = cnf["Dinstall::LintianTags"]
         # Parse the yaml file
