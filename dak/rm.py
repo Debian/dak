@@ -550,7 +550,7 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak rm\nX-Katie: melanie"
+        Subst["__CC__"] = "X-DAK: dak rm"
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
         Subst["__SUITE_LIST__"] = suites_list
