@@ -529,7 +529,8 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         raise NoFilesFieldError
 
     # Validate .changes Format: field
-    validate_changes_format(parse_format(changes['format']), field)
+    if not is_a_dsc:
+        validate_changes_format(parse_format(changes['format']), field)
 
     includes_section = (not is_a_dsc) and field == "files"
 
