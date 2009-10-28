@@ -39,15 +39,6 @@ class SourceFormat(type):
             if has[key]:
                 yield "contains source files not allowed in format %s" % cls.name
 
-    @classmethod
-    def validate_format(cls, format, is_a_dsc=False, field='files'):
-        """
-        Raises UnknownFormatError if the specified format tuple is not valid for
-        this format (for example, the format (1, 0) is not valid for the
-        "3.0 (quilt)" format). Return value is undefined in all other cases.
-        """
-        pass
-
 class FormatOne(SourceFormat):
     __metaclass__ = SourceFormat
 
@@ -70,19 +61,6 @@ class FormatOne(SourceFormat):
         for msg in super(FormatOne, cls).reject_msgs(has):
             yield msg
 
-    @classmethod
-    def validate_format(cls, format, is_a_dsc=False, field='files'):
-        msg = "Invalid format %s definition: %r" % (cls.name, format)
-
-        if is_a_dsc:
-            if format != (1, 0):
-                raise UnknownFormatError, msg
-        else:
-            if (format < (1,5) or format > (1,8)):
-                raise UnknownFormatError, msg
-            if field != "files" and format < (1,8):
-                raise UnknownFormatError, msg
-
 class FormatThree(SourceFormat):
     __metaclass__ = SourceFormat
 
@@ -92,12 +70,6 @@ class FormatThree(SourceFormat):
     requires = ('native_tar',)
     disallowed = ('orig_tar', 'debian_diff', 'debian_tar', 'more_orig_tar')
 
-    @classmethod
-    def validate_format(cls, format, **kwargs):
-        if format != (3, 0, 'native'):
-            raise UnknownFormatError, "Invalid format %s definition: %r" % \
-                (cls.name, format)
-
 class FormatThreeQuilt(SourceFormat):
     __metaclass__ = SourceFormat
 
@@ -106,9 +78,3 @@ class FormatThreeQuilt(SourceFormat):
 
     requires = ('orig_tar', 'debian_tar')
     disallowed = ('debian_diff', 'native_tar')
-
-    @classmethod
-    def validate_format(cls, format, **kwargs):
-        if format != (3, 0, 'quilt'):
-            raise UnknownFormatError, "Invalid format %s definition: %r" % \
-                (cls.name, format)

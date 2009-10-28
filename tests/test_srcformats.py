@@ -104,40 +104,6 @@ class FormatTreeQuiltTestCase(SourceFormatTestCase):
             'native_tar': 1,
         })
 
-##
-
-class ValidateFormatTestCase(unittest.TestCase):
-    def assertValid(self, format, **kwargs):
-        self.fmt.validate_format(format, **kwargs)
-
-    def assertInvalid(self, *args, **kwargs):
-        self.assertRaises(
-            UnknownFormatError,
-            lambda: self.assertValid(*args, **kwargs),
-        )
-
-class ValidateFormatThreeTestCase(ValidateFormatTestCase):
-    fmt = srcformats.FormatThree
-
-    def testValid(self):
-        self.assertValid((3, 0, 'native'))
-
-    def testInvalid(self):
-        self.assertInvalid((1, 0))
-        self.assertInvalid((0, 0))
-        self.assertInvalid((3, 0, 'quilt'))
-
-class ValidateFormatThreeQuiltTestCase(ValidateFormatTestCase):
-    fmt = srcformats.FormatThreeQuilt
-
-    def testValid(self):
-        self.assertValid((3, 0, 'quilt'))
-
-    def testInvalid(self):
-        self.assertInvalid((1, 0))
-        self.assertInvalid((0, 0))
-        self.assertInvalid((3, 0, 'native'))
-
 class FormatFromStringTestCase(unittest.TestCase):
     def assertFormat(self, txt, klass):
         self.assertEqual(srcformats.get_format_from_string(txt), klass)
