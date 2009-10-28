@@ -1,5 +1,8 @@
 import re
 
+from regexes import re_verwithext
+from dak_exceptions import UnknownFormatError
+
 srcformats = []
 
 class SourceFormat(type):
@@ -23,6 +26,34 @@ class SourceFormat(type):
         for key in cls.disallowed:
             if has[key]:
                 yield "contains source files not allowed in format %s" % cls.name
+
+    @classmethod
+    def parse_format(cls, txt, is_a_dsc=False, field='files'):
+        format = re_verwithext.search(txt)
+        if not format:
+            raise UnknownFormatError, txt
+
+        format = format.groups()
+        if format[1] == None:
+            format = int(float(format[0])), 0, format[2]
+        else:
+            format = int(format[0]), int(format[1]), format[2]
+        if format[2] == None:
+            format = format[:2]
+
+        if is_a_dsc:
+            # format = (0,0) are missing format headers of which we still
+            # have some in the archive.
+            if format != (1,0) and format != (0,0) and \
+               format != (3,0,"quilt") and format != (3,0,"native"):
+                raise UnknownFormatError, txt
+        else:
+            if (format < (1,5) or format > (1,8)):
+                raise UnknownFormatError, txt
+            if field != "files" and format < (1,8):
+                raise UnknownFormatError, txt
+
+        return format
 
 class FormatOne(SourceFormat):
     __metaclass__ = SourceFormat

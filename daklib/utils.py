@@ -44,9 +44,8 @@ from dbconn import DBConn, get_architecture, get_component, get_suite
 from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
-                    re_multi_line_field, re_srchasver, re_verwithext, \
-                    re_taint_free, re_gpg_uid, re_re_mark, \
-                    re_whitespace_comment, re_issource
+                    re_multi_line_field, re_srchasver, re_taint_free, \
+                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource
 
 from srcformats import srcformats
 from collections import defaultdict
@@ -524,30 +523,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     if not changes.has_key(field):
         raise NoFilesFieldError
 
-    # Make sure we recognise the format of the Files: field
-    format = re_verwithext.search(changes.get("format", "0.0"))
-    if not format:
-        raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
-
-    format = format.groups()
-    if format[1] == None:
-        format = int(float(format[0])), 0, format[2]
-    else:
-        format = int(format[0]), int(format[1]), format[2]
-    if format[2] == None:
-        format = format[:2]
-
-    if is_a_dsc:
-        # format = (0,0) are missing format headers of which we still
-        # have some in the archive.
-        if format != (1,0) and format != (0,0) and \
-           format != (3,0,"quilt") and format != (3,0,"native"):
-            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
-    else:
-        if (format < (1,5) or format > (1,8)):
-            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
-        if field != "files" and format < (1,8):
-            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
+    format = SourceFormat.parse_format(changes.get["format"], field, is_a_dsc)
 
     includes_section = (not is_a_dsc) and field == "files"
 
