@@ -127,51 +127,64 @@ class ParseFormatTestCase(unittest.TestCase):
         self.assertParse('1.2 (three)', (1, 2, 'three'))
         self.assertParseFail('0.0 ()')
 
-class ParseSourceFormat(ParseFormat):
-    def assertFormat(self, *args, **kwargs):
+class ValidateFormatTestCase(unittest.TestCase):
+    def assertValid(self, format, **kwargs):
         kwargs['is_a_dsc'] = kwargs.get('is_a_dsc', True)
-        super(ParseSourceFormat, self).assertFormat(*args, **kwargs)
+        self.fmt.validate_format(format, **kwargs)
 
-    def assertInvalidFormat(self, *args, **kwargs):
-        kwargs['is_a_dsc'] = kwargs.get('is_a_dsc', True)
-        super(ParseSourceFormat, self).assertInvalidFormat(*args, **kwargs)
+    def assertInvalid(self, *args, **kwargs):
+        self.assertRaises(
+            UnknownFormatError,
+            lambda: self.assertValid(*args, **kwargs),
+        )
 
-    def testSimple(self):
-        self.assertFormat('1.0', (1, 0))
+class ValidateFormatOneTestCase(ValidateFormatTestCase):
+    fmt = srcformats.FormatOne
 
-    def testZero(self):
-        self.assertInvalidFormat('0.0')
+    def testValid(self):
+        self.assertValid((1, 0))
 
-    def testNative(self):
-        self.assertFormat('3.0 (native)', (3, 0, 'native'))
+    def testInvalid(self):
+        self.assertInvalid((0, 1))
+        self.assertInvalid((3, 0, 'quilt'))
 
-    def testQuilt(self):
-        self.assertFormat('3.0 (quilt)', (3, 0, 'quilt'))
+    ##
 
-    def testUnknownThree(self):
-        self.assertInvalidFormat('3.0 (cvs)')
-
-class ParseBinaryFormat(ParseFormat):
-    def assertFormat(self, *args, **kwargs):
-        kwargs['is_a_dsc'] = kwargs.get('is_a_dsc', False)
-        super(ParseBinaryFormat, self).assertFormat(*args, **kwargs)
-
-    def assertInvalidFormat(self, *args, **kwargs):
-        kwargs['is_a_dsc'] = kwargs.get('is_a_dsc', False)
-        super(ParseBinaryFormat, self).assertInvalidFormat(*args, **kwargs)
-
-    def testSimple(self):
-        self.assertFormat('1.5', (1, 5))
+    def testBinary(self):
+        self.assertValid((1, 5), is_a_dsc=False)
+        self.assertInvalid((1, 0), is_a_dsc=False)
 
     def testRange(self):
-        self.assertInvalidFormat('1.0')
-        self.assertFormat('1.5', (1, 5))
-        self.assertFormat('1.8', (1, 8))
-        self.assertInvalidFormat('1.9')
+        self.assertInvalid((1, 3), is_a_dsc=False)
+        self.assertValid((1, 5), is_a_dsc=False)
+        self.assertValid((1, 8), is_a_dsc=False)
+        self.assertInvalid((1, 9), is_a_dsc=False)
 
     def testFilesField(self):
-        self.assertInvalidFormat('1.7', field='notfiles')
-        self.assertFormat('1.8', (1, 8), field='notfiles')
+        self.assertInvalid((1, 7), is_a_dsc=False, field='notfiles')
+        self.assertValid((1, 8), is_a_dsc=False, field='notfiles')
+
+class ValidateFormatThreeTestCase(ValidateFormatTestCase):
+    fmt = srcformats.FormatThree
+
+    def testValid(self):
+        self.assertValid((3, 0, 'native'))
+
+    def testInvalid(self):
+        self.assertInvalid((1, 0))
+        self.assertInvalid((0, 0))
+        self.assertInvalid((3, 0, 'quilt'))
+
+class ValidateFormatThreeQuiltTestCase(ValidateFormatTestCase):
+    fmt = srcformats.FormatThreeQuilt
+
+    def testValid(self):
+        self.assertValid((3, 0, 'quilt'))
+
+    def testInvalid(self):
+        self.assertInvalid((1, 0))
+        self.assertInvalid((0, 0))
+        self.assertInvalid((3, 0, 'native'))
 
 if __name__ == '__main__':
     unittest.main()
