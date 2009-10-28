@@ -53,8 +53,7 @@ from collections import defaultdict
 
 ################################################################################
 
-#default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
-default_config = "/home/stew/etc/dak/dak.conf"     #: default dak config, defines host properties
+default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
 default_apt_config = "/etc/dak/apt.conf" #: default apt config, not normally used
 
 alias_cache = None        #: Cache for email alias checks
