@@ -106,28 +106,6 @@ class FormatTreeQuiltTestCase(SourceFormatTestCase):
 
 ##
 
-class ParseFormatTestCase(unittest.TestCase):
-    def assertParse(self, format, expected):
-        self.assertEqual(parse_format(format), expected)
-
-    def assertParseFail(self, format):
-        self.assertRaises(
-            UnknownFormatError,
-            lambda: parse_format(format)
-        )
-
-    def testParse(self):
-        self.assertParse('1.0', (1, 0))
-
-    def testEmpty(self):
-        self.assertParseFail('')
-        self.assertParseFail(' ')
-        self.assertParseFail('  ')
-
-    def textText(self):
-        self.assertParse('1.2 (three)', (1, 2, 'three'))
-        self.assertParseFail('0.0 ()')
-
 class ValidateFormatTestCase(unittest.TestCase):
     def assertValid(self, format, **kwargs):
         kwargs['is_a_dsc'] = kwargs.get('is_a_dsc', True)
