@@ -230,6 +230,17 @@ __all__.append('BinAssociation')
 
 ################################################################################
 
+class BinContents(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<BinContents (%s, %s)>' % (self.binary, self.filename)
+
+__all__.append('BinContents')
+
+################################################################################
+
 class DBBinary(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -435,15 +446,6 @@ __all__.append('DBConfig')
 
 ################################################################################
 
-class ContentFilename(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<ContentFilename %s>' % self.filename
-
-__all__.append('ContentFilename')
-
 @session_wrapper
 def get_or_set_contents_file_id(filename, session=None):
     """
@@ -610,28 +612,14 @@ def insert_content_paths(binary_id, fullpaths, session=None):
         # Insert paths
         pathcache = {}
         for fullpath in fullpaths:
-            # Get the necessary IDs ...
-            (path, file) = os.path.split(fullpath)
+            if fullpath.startswith( './' ):
+                fullpath = fullpath[2:]
+            
+            session.execute( "INSERT INTO bin_contents ( file, binary_id ) VALUES ( :filename, :id )", { 'filename': fullpath, 'id': binary_id}  )
 
-            filepath_id = get_or_set_contents_path_id(path, session)
-            filename_id = get_or_set_contents_file_id(file, session)
-
-            pathcache[fullpath] = (filepath_id, filename_id)
-
-        for fullpath, dat in pathcache.items():
-            ca = ContentAssociation()
-            ca.binary_id = binary_id
-            ca.filepath_id = dat[0]
-            ca.filename_id = dat[1]
-            session.add(ca)
-
-        # Only commit if we set up the session ourself
+        session.commit()
         if privatetrans:
-            session.commit()
             session.close()
-        else:
-            session.flush()
-
         return True
 
     except:
@@ -2129,6 +2117,7 @@ class DBConn(Singleton):
                                  binary_id = self.tbl_bin_associations.c.bin,
                                  binary = relation(DBBinary)))
 
+
         mapper(DBBinary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
                                  package = self.tbl_binaries.c.package,
@@ -2154,24 +2143,6 @@ class DBConn(Singleton):
 
         mapper(DBConfig, self.tbl_config,
                properties = dict(config_id = self.tbl_config.c.id))
-
-        mapper(ContentAssociation, self.tbl_content_associations,
-               properties = dict(ca_id = self.tbl_content_associations.c.id,
-                                 filename_id = self.tbl_content_associations.c.filename,
-                                 filename    = relation(ContentFilename),
-                                 filepath_id = self.tbl_content_associations.c.filepath,
-                                 filepath    = relation(ContentFilepath),
-                                 binary_id   = self.tbl_content_associations.c.binary_pkg,
-                                 binary      = relation(DBBinary)))
-
-
-        mapper(ContentFilename, self.tbl_content_file_names,
-               properties = dict(cafilename_id = self.tbl_content_file_names.c.id,
-                                 filename = self.tbl_content_file_names.c.file))
-
-        mapper(ContentFilepath, self.tbl_content_file_paths,
-               properties = dict(cafilepath_id = self.tbl_content_file_paths.c.id,
-                                 filepath = self.tbl_content_file_paths.c.path))
 
         mapper(DSCFile, self.tbl_dsc_files,
                properties = dict(dscfile_id = self.tbl_dsc_files.c.id,
@@ -2226,13 +2197,6 @@ class DBConn(Singleton):
         mapper(OverrideType, self.tbl_override_type,
                properties = dict(overridetype = self.tbl_override_type.c.type,
                                  overridetype_id = self.tbl_override_type.c.id))
-
-        mapper(PendingContentAssociation, self.tbl_pending_content_associations,
-               properties = dict(pca_id = self.tbl_pending_content_associations.c.id,
-                                 filepath_id = self.tbl_pending_content_associations.c.filepath,
-                                 filepath = relation(ContentFilepath),
-                                 filename_id = self.tbl_pending_content_associations.c.filename,
-                                 filename = relation(ContentFilename)))
 
         mapper(Priority, self.tbl_priority,
                properties = dict(priority_id = self.tbl_priority.c.id))
