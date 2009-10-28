@@ -1552,4 +1552,4 @@ def ensure_orig_files(changes, dest_dir, session):
         os.symlink(src, dest)
         symlinked.append(dest)
 
-    return files
+    return (exists, symlinked)
