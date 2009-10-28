@@ -45,8 +45,7 @@ from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
-                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
-                    re_is_orig_source
+                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource
 
 from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
@@ -1507,50 +1506,3 @@ apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
 if which_conf_file() != default_config:
     apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
-
-###############################################################################
-
-def ensure_orig_files(changes, dest_dir, session):
-    """
-    Ensure that dest_dir contains all the orig tarballs for the specified
-    changes. If it does not, symlink them into place.
-
-    Returns a 2-tuple (already_exists, symlinked) containing a list of files
-    that were already there and a list of files that were symlinked into place.
-    """
-
-    exists, symlinked = [], []
-
-    for dsc_file in changes.dsc_files:
-
-        # Skip all files that are not orig tarballs
-        if not re_is_orig_source.match(dsc_file):
-            continue
-
-        # Skip orig files not identified in the pool
-        if not (dsc_file in changes.orig_files and
-                'id' in changes.orig_files[dsc_file]):
-            continue
-
-        dest = os.path.join(dest_dir, dsc_file)
-
-        if os.path.exists(dest):
-            exists.append(dest)
-            continue
-
-        orig_file_id = changes.orig_files[dsc_file]['id']
-
-        c = session.execute(
-            'SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id',
-            {'id': orig_file_id}
-        )
-
-        res = c.fetchone()
-        if not res:
-            return "[INTERNAL ERROR] Couldn't find id %s in files table." % orig_file_id
-
-        src = os.path.join(res[0], res[1])
-        os.symlink(src, dest)
-        symlinked.append(dest)
-
-    return (exists, symlinked)
