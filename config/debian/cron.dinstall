@@ -638,7 +638,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="punew"
@@ -662,7 +662,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 lockfile "$LOCK_ACCEPTED"
 lockfile "$LOCK_NEW"
@@ -717,7 +717,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="overrides"
@@ -797,7 +797,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 rm -f "${NOTICE}"
 rm -f "${LOCK_DAILY}"
@@ -810,7 +810,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="expire"
@@ -818,7 +818,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="transitionsclean"
@@ -826,7 +826,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="reports"
@@ -834,7 +834,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="dm"
@@ -842,7 +842,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="bts"
@@ -850,7 +850,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="merkel2"
@@ -858,7 +858,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="runparts"
@@ -882,7 +882,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="testingsourcelist"
@@ -908,7 +908,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="merkel3"
@@ -916,7 +916,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="compress"
