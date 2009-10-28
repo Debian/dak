@@ -1240,10 +1240,9 @@ class Upload(object):
         (result, output) = commands.getstatusoutput(command)
         # We are done with lintian, remove our tempfile
         os.unlink(temp_filename)
-        if (result != 0):
-            self.rejects.append("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
-            self.rejects.append(utils.prefix_multi_line_string(output, " [possible output:] "))
-            return
+        if (result == 2):
+            utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
+            utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
 
         if len(output) == 0:
             return
