@@ -30,15 +30,18 @@ class SourceFormat(type):
     @classmethod
     def parse_format(cls, txt, is_a_dsc=False, field='files'):
         format = re_verwithext.search(txt)
-        if not format:
+
+        if format is None:
             raise UnknownFormatError, txt
 
         format = format.groups()
-        if format[1] == None:
+
+        if format[1] is None:
             format = int(float(format[0])), 0, format[2]
         else:
             format = int(format[0]), int(format[1]), format[2]
-        if format[2] == None:
+
+        if format[2] is None:
             format = format[:2]
 
         if is_a_dsc:
