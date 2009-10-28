@@ -63,6 +63,8 @@ key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
                 ("sha256", apt_pkg.sha256sum, (1, 8))] #: hashes we accept for entries in .changes/.dsc
 
+# Monkeypatch commands.getstatusoutput as it returns a "0" exit code in
+# all situations under lenny's Python.
 import commands
 def dak_getstatusoutput(cmd):
     pipe = subprocess.Popen(cmd, shell=True, universal_newlines=True,

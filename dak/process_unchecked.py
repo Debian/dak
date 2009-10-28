@@ -235,7 +235,7 @@ def package_to_queue(u, summary, short_summary, queue, perms=0660, build=True, a
     u.pkg.write_dot_dak(dir)
     u.move_to_dir(dir, perms=perms)
     if build:
-        get_queue(queue.lower()).autobuild_upload(u.pkg, dir)
+        get_or_set_queue(queue.lower()).autobuild_upload(u.pkg, dir)
 
     # Check for override disparities
     u.check_override()
@@ -499,7 +499,7 @@ def process_it(changes_file):
                 valid_dsc_p = u.check_dsc(not Options["No-Action"])
                 if valid_dsc_p:
                     u.check_source()
-                    # u.check_lintian()
+                    u.check_lintian()
                 u.check_hashes()
                 u.check_urgency()
                 u.check_timestamps()
