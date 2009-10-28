@@ -26,7 +26,6 @@ Queue utility functions for dak
 
 ###############################################################################
 
-import cPickle
 import errno
 import os
 import pg
@@ -39,6 +38,7 @@ import utils
 import commands
 import shutil
 import textwrap
+import tempfile
 from types import *
 
 import yaml
@@ -50,7 +50,7 @@ from config import Config
 from holding import Holding
 from dbconn import *
 from summarystats import SummaryStats
-from utils import parse_changes
+from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
 from binary import Binary
 
@@ -73,7 +73,7 @@ def get_type(f, session):
     # Determine the type
     if f.has_key("dbtype"):
         file_type = f["dbtype"]
-    elif f["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2", "dsc" ]:
+    elif re_source_ext.match(f["type"]):
         file_type = "dsc"
     else:
         utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (file_type))
@@ -724,7 +724,7 @@ class Upload(object):
             self.rejects.append("%s: changes file doesn't say %s for Source" % (f, entry["package"]))
 
         # Ensure the source version matches the version in the .changes file
-        if entry["type"] == "orig.tar.gz":
+        if re_is_orig_source.match(f):
             changes_version = self.pkg.changes["chopversion2"]
         else:
             changes_version = self.pkg.changes["chopversion"]
@@ -932,7 +932,7 @@ class Upload(object):
                 self.rejects.append("source only uploads are not supported.")
 
     ###########################################################################
-    def check_dsc(self, action=True):
+    def check_dsc(self, action=True, session=None):
         """Returns bool indicating whether or not the source changes are valid"""
         # Ensure there is source to check
         if not self.pkg.changes["architecture"].has_key("source"):
@@ -992,10 +992,11 @@ class Upload(object):
         if not re_valid_version.match(self.pkg.dsc["version"]):
             self.rejects.append("%s: invalid version number '%s'." % (dsc_filename, self.pkg.dsc["version"]))
 
-        # Bumping the version number of the .dsc breaks extraction by stable's
-        # dpkg-source.  So let's not do that...
-        if self.pkg.dsc["format"] != "1.0":
-            self.rejects.append("%s: incompatible 'Format' version produced by a broken version of dpkg-dev 1.9.1{3,4}." % (dsc_filename))
+        # Only a limited list of source formats are allowed in each suite
+        for dist in self.pkg.changes["distribution"].keys():
+            allowed = [ x.format_name for x in get_suite_src_formats(dist, session) ]
+            if self.pkg.dsc["format"] not in allowed:
+                self.rejects.append("%s: source format '%s' not allowed in %s (accepted: %s) " % (dsc_filename, self.pkg.dsc["format"], dist, ", ".join(allowed)))
 
         # Validate the Maintainer field
         try:
@@ -1009,11 +1010,6 @@ class Upload(object):
         for field_name in [ "build-depends", "build-depends-indep" ]:
             field = self.pkg.dsc.get(field_name)
             if field:
-                # Check for broken dpkg-dev lossage...
-                if field.startswith("ARRAY"):
-                    self.rejects.append("%s: invalid %s field produced by a broken version of dpkg-dev (1.10.11)" % \
-                                        (dsc_filename, field_name.title()))
-
                 # Have apt try to parse them...
                 try:
                     apt_pkg.ParseSrcDepends(field)
@@ -1027,19 +1023,8 @@ class Upload(object):
         if epochless_dsc_version != self.pkg.files[dsc_filename]["version"]:
             self.rejects.append("version ('%s') in .dsc does not match version ('%s') in .changes." % (epochless_dsc_version, changes_version))
 
-        # Ensure there is a .tar.gz in the .dsc file
-        has_tar = False
-        for f in self.pkg.dsc_files.keys():
-            m = re_issource.match(f)
-            if not m:
-                self.rejects.append("%s: %s in Files field not recognised as source." % (dsc_filename, f))
-                continue
-            ftype = m.group(3)
-            if ftype == "orig.tar.gz" or ftype == "tar.gz":
-                has_tar = True
-
-        if not has_tar:
-            self.rejects.append("%s: no .tar.gz or .orig.tar.gz in 'Files' field." % (dsc_filename))
+        # Ensure the Files field contain only what's expected
+        self.rejects.extend(check_dsc_files(dsc_filename, self.pkg.dsc, self.pkg.dsc_files))
 
         # Ensure source is newer than existing source in target suites
         session = DBConn().session()
@@ -1076,23 +1061,26 @@ class Upload(object):
                 if not os.path.exists(src):
                     return
                 ftype = m.group(3)
-                if ftype == "orig.tar.gz" and self.pkg.orig_tar_gz:
+                if re_is_orig_source.match(f) and pkg.orig_files.has_key(f) and \
+                   pkg.orig_files[f].has_key("path"):
                     continue
                 dest = os.path.join(os.getcwd(), f)
                 os.symlink(src, dest)
 
-        # If the orig.tar.gz is not a part of the upload, create a symlink to the
-        # existing copy.
-        if self.pkg.orig_tar_gz:
-            dest = os.path.join(os.getcwd(), os.path.basename(self.pkg.orig_tar_gz))
-            os.symlink(self.pkg.orig_tar_gz, dest)
+        # If the orig files are not a part of the upload, create symlinks to the
+        # existing copies.
+        for orig_file in self.pkg.orig_files.keys():
+            if not self.pkg.orig_files[orig_file].has_key("path"):
+                continue
+            dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
+            os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
 
         # Extract the source
         cmd = "dpkg-source -sn -x %s" % (dsc_filename)
         (result, output) = commands.getstatusoutput(cmd)
         if (result != 0):
             self.rejects.append("'dpkg-source -x' failed for %s [return code: %s]." % (dsc_filename, result))
-            self.rejects.append(utils.prefix_multi_line_string(output, " [dpkg-source output:] "), "")
+            self.rejects.append(utils.prefix_multi_line_string(output, " [dpkg-source output:] "))
             return
 
         if not cnf.Find("Dir::Queue::BTSVersionTrack"):
@@ -1128,10 +1116,11 @@ class Upload(object):
         #      We should probably scrap or rethink the whole reprocess thing
         # Bail out if:
         #    a) there's no source
-        # or b) reprocess is 2 - we will do this check next time when orig.tar.gz is in 'files'
-        # or c) the orig.tar.gz is MIA
+        # or b) reprocess is 2 - we will do this check next time when orig
+        #       tarball is in 'files'
+        # or c) the orig files are MIA
         if not self.pkg.changes["architecture"].has_key("source") or self.reprocess == 2 \
-           or self.pkg.orig_tar_gz == -1:
+           or len(self.pkg.orig_files) == 0:
             return
 
         tmpdir = utils.temp_dirname()
@@ -1216,6 +1205,94 @@ class Upload(object):
             self.rejects.append(m)
 
         self.ensure_hashes()
+
+    ###########################################################################
+    def check_lintian(self):
+        # Only check some distributions
+        valid_dist = False
+        for dist in ('unstable', 'experimental'):
+            if dist in self.pkg.changes['distribution']:
+                valid_dist = True
+                break
+
+        if not valid_dist:
+            return
+
+        cnf = Config()
+        tagfile = cnf.get("Dinstall::LintianTags")
+        if tagfile is None:
+            # We don't have a tagfile, so just don't do anything.
+            return
+        # Parse the yaml file
+        sourcefile = file(tagfile, 'r')
+        sourcecontent = sourcefile.read()
+        sourcefile.close()
+        try:
+            lintiantags = yaml.load(sourcecontent)['lintian']
+        except yaml.YAMLError, msg:
+            utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
+            return
+
+        # Now setup the input file for lintian. lintian wants "one tag per line" only,
+        # so put it together like it. We put all types of tags in one file and then sort
+        # through lintians output later to see if its a fatal tag we detected, or not.
+        # So we only run lintian once on all tags, even if we might reject on some, but not
+        # reject on others.
+        # Additionally build up a set of tags
+        tags = set()
+        (fd, temp_filename) = utils.temp_filename()
+        temptagfile = os.fdopen(fd, 'w')
+        for tagtype in lintiantags:
+            for tag in lintiantags[tagtype]:
+                temptagfile.write("%s\n" % tag)
+                tags.add(tag)
+        temptagfile.close()
+
+        # So now we should look at running lintian at the .changes file, capturing output
+        # to then parse it.
+        command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
+        (result, output) = commands.getstatusoutput(command)
+        # We are done with lintian, remove our tempfile
+        os.unlink(temp_filename)
+        if (result == 2):
+            utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
+            utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
+
+        if len(output) == 0:
+            return
+
+        # We have output of lintian, this package isn't clean. Lets parse it and see if we
+        # are having a victim for a reject.
+        # W: tzdata: binary-without-manpage usr/sbin/tzconfig
+        for line in output.split('\n'):
+            m = re_parse_lintian.match(line)
+            if m is None:
+                continue
+
+            etype = m.group(1)
+            epackage = m.group(2)
+            etag = m.group(3)
+            etext = m.group(4)
+
+            # So lets check if we know the tag at all.
+            if etag not in tags:
+                continue
+
+            if etype == 'O':
+                # We know it and it is overriden. Check that override is allowed.
+                if etag in lintiantags['warning']:
+                    # The tag is overriden, and it is allowed to be overriden.
+                    # Don't add a reject message.
+                    pass
+                elif etag in lintiantags['error']:
+                    # The tag is overriden - but is not allowed to be
+                    self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
+            else:
+                # Tag is known, it is not overriden, direct reject.
+                self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
+                # Now tell if they *might* override it.
+                if etag in lintiantags['warning']:
+                    self.rejects.append("%s: If you have a good reason, you may override this lintian tag." % (epackage))
 
     ###########################################################################
     def check_urgency(self):
@@ -1670,7 +1747,7 @@ distribution."""
         # <Ganneff> yes
 
         # This routine returns None on success or an error on failure
-        res = get_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
+        res = get_or_set_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
         if res:
             utils.fubar(res)
 
@@ -2068,7 +2145,7 @@ distribution."""
         """
 
         @warning: NB: this function can remove entries from the 'files' index [if
-         the .orig.tar.gz is a duplicate of the one in the archive]; if
+         the orig tarball is a duplicate of the one in the archive]; if
          you're iterating over 'files' and call this function as part of
          the loop, be sure to add a check to the top of the loop to
          ensure you haven't just tried to dereference the deleted entry.
@@ -2076,7 +2153,8 @@ distribution."""
         """
 
         Cnf = Config()
-        self.pkg.orig_tar_gz = None
+        self.pkg.orig_files = {} # XXX: do we need to clear it?
+        orig_files = self.pkg.orig_files
 
         # Try and find all files mentioned in the .dsc.  This has
         # to work harder to cope with the multiple possible
@@ -2110,7 +2188,7 @@ distribution."""
                 if len(ql) > 0:
                     # Ignore exact matches for .orig.tar.gz
                     match = 0
-                    if dsc_name.endswith(".orig.tar.gz"):
+                    if re_is_orig_source.match(dsc_name):
                         for i in ql:
                             if self.pkg.files.has_key(dsc_name) and \
                                int(self.pkg.files[dsc_name]["size"]) == int(i.filesize) and \
@@ -2120,13 +2198,15 @@ distribution."""
                                 # This would fix the stupidity of changing something we often iterate over
                                 # whilst we're doing it
                                 del self.pkg.files[dsc_name]
-                                self.pkg.orig_tar_gz = os.path.join(i.location.path, i.filename)
+                                if not orig_files.has_key(dsc_name):
+                                    orig_files[dsc_name] = {}
+                                orig_files[dsc_name]["path"] = os.path.join(i.location.path, i.filename)
                                 match = 1
 
                     if not match:
                         self.rejects.append("can not overwrite existing copy of '%s' already in the archive." % (dsc_name))
 
-            elif dsc_name.endswith(".orig.tar.gz"):
+            elif re_is_orig_source.match(dsc_name):
                 # Check in the pool
                 ql = get_poolfile_like_name(dsc_name, session)
 
@@ -2164,9 +2244,11 @@ distribution."""
                     # need this for updating dsc_files in install()
                     dsc_entry["files id"] = x.file_id
                     # See install() in process-accepted...
-                    self.pkg.orig_tar_id = x.file_id
-                    self.pkg.orig_tar_gz = old_file
-                    self.pkg.orig_tar_location = x.location.location_id
+                    if not orig_files.has_key(dsc_name):
+                        orig_files[dsc_name] = {}
+                    orig_files[dsc_name]["id"] = x.file_id
+                    orig_files[dsc_name]["path"] = old_file
+                    orig_files[dsc_name]["location"] = x.location.location_id
                 else:
                     # TODO: Record the queues and info in the DB so we don't hardcode all this crap
                     # Not there? Check the queue directories...
@@ -2180,11 +2262,12 @@ distribution."""
                             in_otherdir_fh.close()
                             actual_size = os.stat(in_otherdir)[stat.ST_SIZE]
                             found = in_otherdir
-                            self.pkg.orig_tar_gz = in_otherdir
+                            if not orig_files.has_key(dsc_name):
+                                orig_files[dsc_name] = {}
+                            orig_files[dsc_name]["path"] = in_otherdir
 
                     if not found:
                         self.rejects.append("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_name))
-                        self.pkg.orig_tar_gz = -1
                         continue
             else:
                 self.rejects.append("%s refers to %s, but I can't find it in the queue." % (file, dsc_name))

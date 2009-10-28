@@ -39,7 +39,7 @@ import traceback
 
 from inspect import getargspec
 
-from sqlalchemy import create_engine, Table, MetaData, select
+from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker, mapper, relation
 
 # Don't remove this, we re-export the exceptions to scripts which import us
@@ -59,21 +59,46 @@ __all__ = ['IntegrityError', 'SQLAlchemyError']
 ################################################################################
 
 def session_wrapper(fn):
+    """
+    Wrapper around common ".., session=None):" handling. If the wrapped
+    function is called without passing 'session', we create a local one
+    and destroy it when the function ends.
+
+    Also attaches a commit_or_flush method to the session; if we created a
+    local session, this is a synonym for session.commit(), otherwise it is a
+    synonym for session.flush().
+    """
+
     def wrapped(*args, **kwargs):
         private_transaction = False
+
+        # Find the session object
         session = kwargs.get('session')
 
-        # No session specified as last argument or in kwargs, create one.
-        if session is None and len(args) <= len(getargspec(fn)[0]) - 1:
-            private_transaction = True
-            kwargs['session'] = DBConn().session()
+        if session is None:
+            if len(args) <= len(getargspec(fn)[0]) - 1:
+                # No session specified as last argument or in kwargs
+                private_transaction = True
+                session = kwargs['session'] = DBConn().session()
+            else:
+                # Session is last argument in args
+                session = args[-1]
+                if session is None:
+                    args = list(args)
+                    session = args[-1] = DBConn().session()
+                    private_transaction = True
+
+        if private_transaction:
+            session.commit_or_flush = session.commit
+        else:
+            session.commit_or_flush = session.flush
 
         try:
             return fn(*args, **kwargs)
         finally:
             if private_transaction:
                 # We created a session; close it.
-                kwargs['session'].close()
+                session.close()
 
     wrapped.__doc__ = fn.__doc__
     wrapped.func_name = fn.func_name
@@ -419,6 +444,7 @@ class ContentFilename(object):
 
 __all__.append('ContentFilename')
 
+@session_wrapper
 def get_or_set_contents_file_id(filename, session=None):
     """
     Returns database id for given filename.
@@ -435,10 +461,6 @@ def get_or_set_contents_file_id(filename, session=None):
     @rtype: int
     @return: the database id for the given component
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(ContentFilename).filter_by(filename=filename)
 
@@ -448,14 +470,8 @@ def get_or_set_contents_file_id(filename, session=None):
         cf = ContentFilename()
         cf.filename = filename
         session.add(cf)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = cf.cafilename_id
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -523,6 +539,7 @@ class ContentFilepath(object):
 
 __all__.append('ContentFilepath')
 
+@session_wrapper
 def get_or_set_contents_path_id(filepath, session=None):
     """
     Returns database id for given path.
@@ -539,10 +556,6 @@ def get_or_set_contents_path_id(filepath, session=None):
     @rtype: int
     @return: the database id for the given path
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(ContentFilepath).filter_by(filepath=filepath)
 
@@ -552,14 +565,8 @@ def get_or_set_contents_path_id(filepath, session=None):
         cf = ContentFilepath()
         cf.filepath = filepath
         session.add(cf)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = cf.cafilepath_id
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -820,6 +827,7 @@ class Fingerprint(object):
 
 __all__.append('Fingerprint')
 
+@session_wrapper
 def get_or_set_fingerprint(fpr, session=None):
     """
     Returns Fingerprint object for given fpr.
@@ -838,10 +846,6 @@ def get_or_set_fingerprint(fpr, session=None):
     @rtype: Fingerprint
     @return: the Fingerprint object for the given fpr
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Fingerprint).filter_by(fingerprint=fpr)
 
@@ -851,14 +855,8 @@ def get_or_set_fingerprint(fpr, session=None):
         fingerprint = Fingerprint()
         fingerprint.fingerprint = fpr
         session.add(fingerprint)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = fingerprint
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -875,6 +873,7 @@ class Keyring(object):
 
 __all__.append('Keyring')
 
+@session_wrapper
 def get_or_set_keyring(keyring, session=None):
     """
     If C{keyring} does not have an entry in the C{keyrings} table yet, create one
@@ -886,28 +885,17 @@ def get_or_set_keyring(keyring, session=None):
 
     @rtype: Keyring
     @return: the Keyring object for this keyring
-
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
+
+    q = session.query(Keyring).filter_by(keyring_name=keyring)
 
     try:
-        obj = session.query(Keyring).filter_by(keyring_name=keyring).first()
-
-        if obj is None:
-            obj = Keyring(keyring_name=keyring)
-            session.add(obj)
-            if privatetrans:
-                session.commit()
-            else:
-                session.flush()
-
+        return q.one()
+    except NoResultFound:
+        obj = Keyring(keyring_name=keyring)
+        session.add(obj)
+        session.commit_or_flush()
         return obj
-    finally:
-        if privatetrans:
-            session.close()
 
 __all__.append('get_or_set_keyring')
 
@@ -973,6 +961,7 @@ class Maintainer(object):
 
 __all__.append('Maintainer')
 
+@session_wrapper
 def get_or_set_maintainer(name, session=None):
     """
     Returns Maintainer object for given maintainer name.
@@ -991,10 +980,6 @@ def get_or_set_maintainer(name, session=None):
     @rtype: Maintainer
     @return: the Maintainer object for the given maintainer
     """
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
 
     q = session.query(Maintainer).filter_by(name=name)
     try:
@@ -1003,19 +988,14 @@ def get_or_set_maintainer(name, session=None):
         maintainer = Maintainer()
         maintainer.name = name
         session.add(maintainer)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = maintainer
-
-    if privatetrans:
-        session.close()
 
     return ret
 
 __all__.append('get_or_set_maintainer')
 
+@session_wrapper
 def get_maintainer(maintainer_id, session=None):
     """
     Return the name of the maintainer behind C{maintainer_id} or None if that
@@ -1028,16 +1008,7 @@ def get_maintainer(maintainer_id, session=None):
     @return: the Maintainer with this C{maintainer_id}
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
-    try:
-        return session.query(Maintainer).get(maintainer_id)
-    finally:
-        if privatetrans:
-            session.close()
+    return session.query(Maintainer).get(maintainer_id)
 
 __all__.append('get_maintainer')
 
@@ -1443,23 +1414,27 @@ class Queue(object):
 
                 session.add(qb)
 
-            # If the .orig.tar.gz is in the pool, create a symlink to
-            # it (if one doesn't already exist)
-            if changes.orig_tar_id:
-                # Determine the .orig.tar.gz file name
-                for dsc_file in changes.dsc_files.keys():
-                    if dsc_file.endswith(".orig.tar.gz"):
-                        filename = dsc_file
-
-                dest = os.path.join(dest_dir, filename)
+            # If the .orig tarballs are in the pool, create a symlink to
+            # them (if one doesn't already exist)
+            for dsc_file in changes.dsc_files.keys():
+                # Skip all files except orig tarballs
+                from daklib.regexes import re_is_orig_source
+                if not re_is_orig_source.match(dsc_file):
+                    continue
+                # Skip orig files not identified in the pool
+                if not (changes.orig_files.has_key(dsc_file) and
+                        changes.orig_files[dsc_file].has_key("id")):
+                    continue
+                orig_file_id = changes.orig_files[dsc_file]["id"]
+                dest = os.path.join(dest_dir, dsc_file)
 
                 # If it doesn't exist, create a symlink
                 if not os.path.exists(dest):
                     q = session.execute("SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id",
-                                        {'id': changes.orig_tar_id})
+                                        {'id': orig_file_id})
                     res = q.fetchone()
                     if not res:
-                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (changes.orig_tar_id)
+                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (orig_file_id)
 
                     src = os.path.join(res[0], res[1])
                     os.symlink(src, dest)
@@ -1489,9 +1464,10 @@ class Queue(object):
 __all__.append('Queue')
 
 @session_wrapper
-def get_queue(queuename, session=None):
+def get_or_set_queue(queuename, session=None):
     """
-    Returns Queue object for given C{queue name}.
+    Returns Queue object for given C{queue name}, creating it if it does not
+    exist.
 
     @type queuename: string
     @param queuename: The name of the queue
@@ -1507,11 +1483,17 @@ def get_queue(queuename, session=None):
     q = session.query(Queue).filter_by(queue_name=queuename)
 
     try:
-        return q.one()
+        ret = q.one()
     except NoResultFound:
-        return None
+        queue = Queue()
+        queue.queue_name = queuename
+        session.add(queue)
+        session.commit_or_flush()
+        ret = queue
 
-__all__.append('get_queue')
+    return ret
+
+__all__.append('get_or_set_queue')
 
 ################################################################################
 
@@ -1799,6 +1781,17 @@ __all__.append('SrcAssociation')
 
 ################################################################################
 
+class SrcFormat(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<SrcFormat %s>' % (self.format_name)
+
+__all__.append('SrcFormat')
+
+################################################################################
+
 class SrcUploader(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1969,6 +1962,42 @@ __all__.append('get_suite_architectures')
 
 ################################################################################
 
+class SuiteSrcFormat(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<SuiteSrcFormat (%s, %s)>' % (self.suite_id, self.src_format_id)
+
+__all__.append('SuiteSrcFormat')
+
+@session_wrapper
+def get_suite_src_formats(suite, session=None):
+    """
+    Returns list of allowed SrcFormat for C{suite}.
+
+    @type suite: str
+    @param suite: Suite name to search for
+
+    @type session: Session
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: list
+    @return: the list of allowed source formats for I{suite}
+    """
+
+    q = session.query(SrcFormat)
+    q = q.join(SuiteSrcFormat)
+    q = q.join(Suite).filter_by(suite_name=suite)
+    q = q.order_by('format_name')
+
+    return q.all()
+
+__all__.append('get_suite_src_formats')
+
+################################################################################
+
 class Uid(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1990,6 +2019,7 @@ class Uid(object):
 
 __all__.append('Uid')
 
+@session_wrapper
 def add_database_user(uidname, session=None):
     """
     Adds a database user
@@ -2006,19 +2036,12 @@ def add_database_user(uidname, session=None):
     @return: the uid object for the given uidname
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     session.execute("CREATE USER :uid", {'uid': uidname})
-
-    if privatetrans:
-        session.commit()
-        session.close()
+    session.commit_or_flush()
 
 __all__.append('add_database_user')
 
+@session_wrapper
 def get_or_set_uid(uidname, session=None):
     """
     Returns uid object for given uidname.
@@ -2037,11 +2060,6 @@ def get_or_set_uid(uidname, session=None):
     @return: the uid object for the given uidname
     """
 
-    privatetrans = False
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
     q = session.query(Uid).filter_by(uid=uidname)
 
     try:
@@ -2050,14 +2068,8 @@ def get_or_set_uid(uidname, session=None):
         uid = Uid()
         uid.uid = uidname
         session.add(uid)
-        if privatetrans:
-            session.commit()
-        else:
-            session.flush()
+        session.commit_or_flush()
         ret = uid
-
-    if privatetrans:
-        session.close()
 
     return ret
 
@@ -2116,9 +2128,11 @@ class DBConn(Singleton):
         self.tbl_section = Table('section', self.db_meta, autoload=True)
         self.tbl_source = Table('source', self.db_meta, autoload=True)
         self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
+        self.tbl_src_format = Table('src_format', self.db_meta, autoload=True)
         self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
         self.tbl_suite = Table('suite', self.db_meta, autoload=True)
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
+        self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
 
     def __setupmappers(self):
@@ -2280,6 +2294,10 @@ class DBConn(Singleton):
                                  source_id = self.tbl_src_associations.c.source,
                                  source = relation(DBSource)))
 
+        mapper(SrcFormat, self.tbl_src_format,
+               properties = dict(src_format_id = self.tbl_src_format.c.id,
+                                 format_name = self.tbl_src_format.c.format_name))
+
         mapper(SrcUploader, self.tbl_src_uploaders,
                properties = dict(uploader_id = self.tbl_src_uploaders.c.id,
                                  source_id = self.tbl_src_uploaders.c.source,
@@ -2297,6 +2315,12 @@ class DBConn(Singleton):
                                  suite = relation(Suite, backref='suitearchitectures'),
                                  arch_id = self.tbl_suite_architectures.c.architecture,
                                  architecture = relation(Architecture)))
+
+        mapper(SuiteSrcFormat, self.tbl_suite_src_formats,
+               properties = dict(suite_id = self.tbl_suite_src_formats.c.suite,
+                                 suite = relation(Suite, backref='suitesrcformats'),
+                                 src_format_id = self.tbl_suite_src_formats.c.src_format,
+                                 src_format = relation(SrcFormat)))
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,

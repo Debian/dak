@@ -665,7 +665,7 @@ def do_new(upload, session):
             try:
                 check_daily_lock()
                 done = add_overrides (new, upload, session)
-                Logger.log([utils.getusername(), "NEW ACCEPT: %s" % (upload.pkg.changes_file)])
+                Logger.log(["NEW ACCEPT: %s" % (upload.pkg.changes_file)])
             except CantGetLockError:
                 print "Hello? Operator! Give me the number for 911!"
                 print "Dinstall in the locked area, cant process packages, come back later"
@@ -678,7 +678,7 @@ def do_new(upload, session):
                                        reject_message=Options["Manual-Reject"],
                                        note=get_new_comments(changes.get("source", ""), session=session))
             if not aborted:
-                Logger.log([utils.getusername(), "NEW REJECT: %s" % (upload.pkg.changes_file)])
+                Logger.log(["NEW REJECT: %s" % (upload.pkg.changes_file)])
                 os.unlink(upload.pkg.changes_file[:-8]+".dak")
                 done = 1
         elif answer == 'N':
@@ -687,7 +687,7 @@ def do_new(upload, session):
         elif answer == 'P' and not Options["Trainee"]:
             prod_maintainer(get_new_comments(changes.get("source", ""), session=session),
                             upload)
-            Logger.log([utils.getusername(), "NEW PROD: %s" % (upload.pkg.changes_file)])
+            Logger.log(["NEW PROD: %s" % (upload.pkg.changes_file)])
         elif answer == 'R' and not Options["Trainee"]:
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
@@ -761,12 +761,12 @@ def do_byhand(upload, session):
                 done = 1
                 for f in byhand:
                     del files[f]
-                Logger.log([utils.getusername(), "BYHAND ACCEPT: %s" % (upload.pkg.changes_file)])
+                Logger.log(["BYHAND ACCEPT: %s" % (upload.pkg.changes_file)])
             except CantGetLockError:
                 print "Hello? Operator! Give me the number for 911!"
                 print "Dinstall in the locked area, cant process packages, come back later"
         elif answer == 'M':
-            Logger.log([utils.getusername(), "BYHAND REJECT: %s" % (upload.pkg.changes_file)])
+            Logger.log(["BYHAND REJECT: %s" % (upload.pkg.changes_file)])
             upload.do_reject(manual=1, reject_message=Options["Manual-Reject"])
             os.unlink(upload.pkg.changes_file[:-8]+".dak")
             done = 1
@@ -887,7 +887,7 @@ def end():
         if accept_count > 1:
             sets = "sets"
         sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))))
-        Logger.log([utils.getusername(), "total",accept_count,accept_bytes])
+        Logger.log(["total",accept_count,accept_bytes])
 
     if not Options["No-Action"] and not Options["Trainee"]:
         Logger.close()

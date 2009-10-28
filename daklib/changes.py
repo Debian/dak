@@ -76,6 +76,10 @@ CHANGESFIELDS_DSCFILES_OPTIONAL = [ "files id" ]
 
 __all__.append('CHANGESFIELDS_DSCFILES_OPTIONAL')
 
+CHANGESFIELDS_ORIGFILES = [ "id", "location" ]
+
+__all__.append('CHANGESFIELDS_ORIGFILES')
+
 ###############################################################################
 
 class Changes(object):
@@ -91,10 +95,7 @@ class Changes(object):
         self.dsc = {}
         self.files = {}
         self.dsc_files = {}
-
-        self.orig_tar_id = None
-        self.orig_tar_location = ""
-        self.orig_tar_gz = None
+        self.orig_files = {}
 
     def file_summary(self):
         # changes["distribution"] may not exist in corner cases
@@ -189,8 +190,24 @@ class Changes(object):
         self.files.update(p.load())
         self.dsc_files.update(p.load())
 
-        self.orig_tar_id = p.load()
-        self.orig_tar_location = p.load()
+        next_obj = p.load()
+        if isinstance(next_obj, dict):
+            self.orig_files.update(next_obj)
+        else:
+            # Auto-convert old dak files to new format supporting
+            # multiple tarballs
+            orig_tar_gz = None
+            for dsc_file in self.dsc_files.keys():
+                if dsc_file.endswith(".orig.tar.gz"):
+                    orig_tar_gz = dsc_file
+            self.orig_files[orig_tar_gz] = {}
+            if next_obj != None:
+                self.orig_files[orig_tar_gz]["id"] = next_obj
+            next_obj = p.load()
+            if next_obj != None and next_obj != "":
+                self.orig_files[orig_tar_gz]["location"] = next_obj
+            if len(self.orig_files[orig_tar_gz]) == 0:
+                del self.orig_files[orig_tar_gz]
 
         dump_file.close()
 
@@ -240,6 +257,17 @@ class Changes(object):
 
         return ret
 
+    def sanitised_orig_files(self):
+        ret = {}
+        for name, entry in self.orig_files.items():
+            ret[name] = {}
+            # Optional orig_files fields
+            for i in CHANGESFIELDS_ORIGFILES:
+                if entry.has_key(i):
+                    ret[name][i] = entry[i]
+
+        return ret
+
     def write_dot_dak(self, dest_dir):
         """
         Dump ourself into a cPickle file.
@@ -281,8 +309,7 @@ class Changes(object):
         p.dump(self.sanitised_dsc())
         p.dump(self.sanitised_files())
         p.dump(self.sanitised_dsc_files())
-        p.dump(self.orig_tar_id)
-        p.dump(self.orig_tar_location)
+        p.dump(self.sanitised_orig_files())
 
         dump_file.close()
 

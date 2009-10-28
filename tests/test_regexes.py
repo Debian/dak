@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import unittest
 
 import os, sys
@@ -29,3 +31,33 @@ class re_single_line_field(unittest.TestCase):
         self.assertEqual(self.MATCH(': ::').groups(), ('', '::'))
         self.assertEqual(self.MATCH('Foo::bar').groups(), ('Foo', ':bar'))
         self.assertEqual(self.MATCH('Foo: :bar').groups(), ('Foo', ':bar'))
+
+class re_parse_lintian(unittest.TestCase):
+    MATCH = regexes.re_parse_lintian.match
+
+    def testBinary(self):
+        self.assertEqual(
+            self.MATCH('W: pkgname: some-tag path/to/file').groups(),
+            ('W', 'pkgname', 'some-tag', 'path/to/file')
+        )
+
+    def testBinaryNoDescription(self):
+        self.assertEqual(
+            self.MATCH('W: pkgname: some-tag').groups(),
+            ('W', 'pkgname', 'some-tag', '')
+        )
+
+    def testSource(self):
+        self.assertEqual(
+            self.MATCH('W: pkgname source: some-tag').groups(),
+            ('W', 'pkgname source', 'some-tag', '')
+        )
+
+    def testSourceNoDescription(self):
+        self.assertEqual(
+            self.MATCH('W: pkgname source: some-tag path/to/file').groups(),
+            ('W', 'pkgname source', 'some-tag', 'path/to/file')
+        )
+
+if __name__ == '__main__':
+    unittest.main()

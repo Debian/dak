@@ -35,10 +35,12 @@ from datetime import datetime, timedelta
 from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
+from daklib import daklog
 
 ################################################################################
 
 Options = None
+Logger = None
 
 ################################################################################
 
@@ -59,13 +61,13 @@ def check_binaries(now_date, delete_date, max_delete, session):
     # Get the list of binary packages not in a suite and mark them for
     # deletion.
 
-    # TODO: This can be a single SQL UPDATE statement
     q = session.execute("""
-SELECT b.file FROM binaries b, files f
+SELECT b.file, f.filename FROM binaries b, files f
  WHERE f.last_used IS NULL AND b.file = f.id
    AND NOT EXISTS (SELECT 1 FROM bin_associations ba WHERE ba.bin = b.id)""")
 
     for i in q.fetchall():
+        Logger.log(["set lastused", i[1]])
         session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid AND last_used IS NULL",
                         {'lastused': now_date, 'fileid': i[0]})
     session.commit()
@@ -73,13 +75,13 @@ SELECT b.file FROM binaries b, files f
     # Check for any binaries which are marked for eventual deletion
     # but are now used again.
 
-    # TODO: This can be a single SQL UPDATE statement
     q = session.execute("""
-SELECT b.file FROM binaries b, files f
+SELECT b.file, f.filename FROM binaries b, files f
    WHERE f.last_used IS NOT NULL AND f.id = b.file
     AND EXISTS (SELECT 1 FROM bin_associations ba WHERE ba.bin = b.id)""")
 
     for i in q.fetchall():
+        Logger.log(["unset lastused", i[1]])
         session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid", {'fileid': i[0]})
     session.commit()
 
@@ -91,7 +93,7 @@ def check_sources(now_date, delete_date, max_delete, session):
     # Get the list of source packages not in a suite and not used by
     # any binaries.
     q = session.execute("""
-SELECT s.id, s.file FROM source s, files f
+SELECT s.id, s.file, f.filename FROM source s, files f
   WHERE f.last_used IS NULL AND s.file = f.id
     AND NOT EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id)
     AND NOT EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id)""")
@@ -103,20 +105,24 @@ SELECT s.id, s.file FROM source s, files f
     for i in q.fetchall():
         source_id = i[0]
         dsc_file_id = i[1]
+        dsc_fname = i[2]
 
         # Mark the .dsc file for deletion
+        Logger.log(["set lastused", dsc_fname])
         session.execute("""UPDATE files SET last_used = :last_used
                                     WHERE id = :dscfileid AND last_used IS NULL""",
                         {'last_used': now_date, 'dscfileid': dsc_file_id})
 
         # Mark all other files references by .dsc too if they're not used by anyone else
-        x = session.execute("""SELECT f.id FROM files f, dsc_files d
+        x = session.execute("""SELECT f.id, f.filename FROM files f, dsc_files d
                               WHERE d.source = :sourceid AND d.file = f.id""",
                              {'sourceid': source_id})
         for j in x.fetchall():
             file_id = j[0]
+            file_name = j[1]
             y = session.execute("SELECT id FROM dsc_files d WHERE d.file = :fileid", {'fileid': file_id})
             if len(y.fetchall()) == 1:
+                Logger.log(["set lastused", file_name])
                 session.execute("""UPDATE files SET last_used = :lastused
                                   WHERE id = :fileid AND last_used IS NULL""",
                                 {'lastused': now_date, 'fileid': file_id})
@@ -127,7 +133,7 @@ SELECT s.id, s.file FROM source s, files f
     # are now used again.
 
     q = session.execute("""
-SELECT f.id FROM source s, files f, dsc_files df
+SELECT f.id, f.filename FROM source s, files f, dsc_files df
   WHERE f.last_used IS NOT NULL AND s.id = df.source AND df.file = f.id
     AND ((EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id))
       OR (EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id)))""")
@@ -135,9 +141,8 @@ SELECT f.id FROM source s, files f, dsc_files df
     #### XXX: this should also handle deleted binaries specially (ie, not
     ####      reinstate sources because of them
 
-    # Could be done in SQL; but left this way for hysterical raisins
-    # [and freedom to innovate don'cha know?]
     for i in q.fetchall():
+        Logger.log(["unset lastused", i[1]])
         session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid",
                         {'fileid': i[0]})
 
@@ -158,13 +163,15 @@ def check_files(now_date, delete_date, max_delete, session):
 SELECT id, filename FROM files f
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.file = f.id)
     AND NOT EXISTS (SELECT 1 FROM dsc_files df WHERE df.file = f.id)
+    AND last_used IS NULL
     ORDER BY filename""")
 
     ql = q.fetchall()
     if len(ql) > 0:
-        print "WARNING: check_files found something it shouldn't"
+        utils.warn("check_files found something it shouldn't")
         for x in ql:
-            print x
+            utils.warn("orphaned file: %s" % x)
+            Logger.log(["set lastused", x[1], "ORPHANED FILE"])
             session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
                             {'lastused': now_date, 'fileid': x[0]})
 
@@ -177,12 +184,13 @@ def clean_binaries(now_date, delete_date, max_delete, session):
     # XXX: why doesn't this remove the files here as well? I don't think it
     #      buys anything keeping this separate
     print "Cleaning binaries from the DB..."
+    print "Deleting from binaries table... "
+    for bin in session.query(DBBinary).join(DBBinary.poolfile).filter(PoolFile.last_used <= delete_date):
+        Logger.log(["delete binary", bin.poolfile.filename])
+        if not Options["No-Action"]:
+            session.delete(bin)
     if not Options["No-Action"]:
-        print "Deleting from binaries table... "
-        session.execute("""DELETE FROM binaries WHERE EXISTS
-                              (SELECT 1 FROM files WHERE binaries.file = files.id
-                                         AND files.last_used <= :deldate)""",
-                           {'deldate': delete_date})
+        session.commit()
 
 ########################################
 
@@ -200,41 +208,37 @@ def clean(now_date, delete_date, max_delete, session):
         os.mkdir(dest)
 
     # Delete from source
-    if not Options["No-Action"]:
-        print "Deleting from source table... "
-        session.execute("""DELETE FROM dsc_files
-                            WHERE EXISTS
-                               (SELECT 1 FROM source s, files f, dsc_files df
-                                 WHERE f.last_used <= :deletedate
-                                   AND s.file = f.id AND s.id = df.source
-                                   AND df.id = dsc_files.id)""", {'deletedate': delete_date})
-        session.execute("""DELETE FROM source
-                            WHERE EXISTS
-                               (SELECT 1 FROM files
-                                 WHERE source.file = files.id
-                                   AND files.last_used <= :deletedate)""", {'deletedate': delete_date})
+    print "Deleting from source table... "
+    q = session.execute("""
+SELECT s.id, f.filename FROM source s, files f
+  WHERE f.last_used <= :deletedate
+        AND s.file = f.id""", {'deletedate': delete_date})
+    for s in q.fetchall():
+        Logger.log(["delete source", s[1], s[0]])
+        if not Options["No-Action"]:
+            session.execute("DELETE FROM dsc_files WHERE source = :s_id", {"s_id":s[0]})
+            session.execute("DELETE FROM source WHERE id = :s_id", {"s_id":s[0]})
 
+    if not Options["No-Action"]:
         session.commit()
 
     # Delete files from the pool
-    query = """SELECT l.path, f.filename FROM location l, files f
-              WHERE f.last_used <= :deletedate AND l.id = f.location"""
+    old_files = session.query(PoolFile).filter(PoolFile.last_used <= delete_date)
     if max_delete is not None:
-        query += " LIMIT %d" % max_delete
+        old_files = old_files.limit(max_delete)
         print "Limiting removals to %d" % max_delete
 
-    q = session.execute(query, {'deletedate': delete_date})
-    for i in q.fetchall():
-        filename = i[0] + i[1]
+    for pf in old_files:
+        filename = os.path.join(pf.location.path, pf.filename)
         if not os.path.exists(filename):
             utils.warn("can not find '%s'." % (filename))
             continue
+        Logger.log(["delete pool file", filename])
         if os.path.isfile(filename):
             if os.path.islink(filename):
                 count += 1
-                if Options["No-Action"]:
-                    print "Removing symlink %s..." % (filename)
-                else:
+                Logger.log(["delete symlink", filename])
+                if not Options["No-Action"]:
                     os.unlink(filename)
             else:
                 size += os.stat(filename)[stat.ST_SIZE]
@@ -245,23 +249,21 @@ def clean(now_date, delete_date, max_delete, session):
                 if os.path.exists(dest_filename):
                     dest_filename = utils.find_next_free(dest_filename)
 
-                if Options["No-Action"]:
-                    print "Cleaning %s -> %s ..." % (filename, dest_filename)
-                else:
+                Logger.log(["move to morgue", filename, dest_filename])
+                if not Options["No-Action"]:
                     utils.move(filename, dest_filename)
+
+            if not Options["No-Action"]:
+                session.delete(pf)
+
         else:
             utils.fubar("%s is neither symlink nor file?!" % (filename))
 
-    # Delete from the 'files' table
-    # XXX: I've a horrible feeling that the max_delete stuff breaks here - mhy
-    # TODO: Change it so we do the DELETEs as we go; it'll be slower but
-    #       more reliable
     if not Options["No-Action"]:
-        print "Deleting from files table... "
-        session.execute("DELETE FROM files WHERE last_used <= :deletedate", {'deletedate': delete_date})
         session.commit()
 
     if count > 0:
+        Logger.log(["total", count, utils.size_type(size)])
         print "Cleaned %d files, %s." % (count, utils.size_type(size))
 
 ################################################################################
@@ -271,7 +273,7 @@ def clean_maintainers(now_date, delete_date, max_delete, session):
 
     # TODO Replace this whole thing with one SQL statement
     q = session.execute("""
-SELECT m.id FROM maintainer m
+SELECT m.id, m.name FROM maintainer m
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.maintainer = m.id)
     AND NOT EXISTS (SELECT 1 FROM source s WHERE s.maintainer = m.id OR s.changedby = m.id)
     AND NOT EXISTS (SELECT 1 FROM src_uploaders u WHERE u.maintainer = m.id)""")
@@ -280,14 +282,16 @@ SELECT m.id FROM maintainer m
 
     for i in q.fetchall():
         maintainer_id = i[0]
+        Logger.log(["delete maintainer", i[1]])
         if not Options["No-Action"]:
             session.execute("DELETE FROM maintainer WHERE id = :maint", {'maint': maintainer_id})
-            count += 1
+        count += 1
 
     if not Options["No-Action"]:
         session.commit()
 
     if count > 0:
+        Logger.log(["total", count])
         print "Cleared out %d maintainer entries." % (count)
 
 ################################################################################
@@ -297,7 +301,7 @@ def clean_fingerprints(now_date, delete_date, max_delete, session):
 
     # TODO Replace this whole thing with one SQL statement
     q = session.execute("""
-SELECT f.id FROM fingerprint f
+SELECT f.id, f.fingerprint FROM fingerprint f
   WHERE f.keyring IS NULL
     AND NOT EXISTS (SELECT 1 FROM binaries b WHERE b.sig_fpr = f.id)
     AND NOT EXISTS (SELECT 1 FROM source s WHERE s.sig_fpr = f.id)""")
@@ -306,14 +310,16 @@ SELECT f.id FROM fingerprint f
 
     for i in q.fetchall():
         fingerprint_id = i[0]
+        Logger.log(["delete fingerprint", i[1]])
         if not Options["No-Action"]:
             session.execute("DELETE FROM fingerprint WHERE id = :fpr", {'fpr': fingerprint_id})
-            count += 1
+        count += 1
 
     if not Options["No-Action"]:
         session.commit()
 
     if count > 0:
+        Logger.log(["total", count])
         print "Cleared out %d fingerprint entries." % (count)
 
 ################################################################################
@@ -330,32 +336,58 @@ def clean_queue_build(now_date, delete_date, max_delete, session):
     our_delete_date = now_date - timedelta(seconds = int(cnf["Clean-Suites::QueueBuildStayOfExecution"]))
     count = 0
 
-    q = session.execute("SELECT filename FROM queue_build WHERE last_used <= :deletedate",
-                        {'deletedate': our_delete_date})
-    for i in q.fetchall():
-        filename = i[0]
-        if not os.path.exists(filename):
-            utils.warn("%s (from queue_build) doesn't exist." % (filename))
+    for qf in session.query(QueueBuild).filter(QueueBuild.last_used <= our_delete_date):
+        if not os.path.exists(qf.filename):
+            utils.warn("%s (from queue_build) doesn't exist." % (qf.filename))
             continue
 
-        if not cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(filename):
-            utils.fubar("%s (from queue_build) should be a symlink but isn't." % (filename))
+        if not cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(qf.filename):
+            utils.fubar("%s (from queue_build) should be a symlink but isn't." % (qf.filename))
 
-        os.unlink(filename)
+        Logger.log(["delete queue build", qf.filename])
+        if not Options["No-Action"]:
+            os.unlink(qf.filename)
+            session.delete(qf)
         count += 1
 
-    session.execute("DELETE FROM queue_build WHERE last_used <= :deletedate",
-                    {'deletedate': our_delete_date})
-
-    session.commit()
+    if not Options["No-Action"]:
+        session.commit()
 
     if count:
+        Logger.log(["total", count])
         print "Cleaned %d queue_build files." % (count)
 
 ################################################################################
 
+def clean_empty_directories(session):
+    """
+    Removes empty directories from pool directories.
+    """
+
+    count = 0
+
+    cursor = session.execute(
+        "SELECT DISTINCT(path) FROM location WHERE type = :type",
+        {'type': 'pool'},
+    )
+    bases = [x[0] for x in cursor.fetchall()]
+
+    for base in bases:
+        for dirpath, dirnames, filenames in os.walk(base, topdown=False):
+            if not filenames and not dirnames:
+                to_remove = os.path.join(base, dirpath)
+                if not Options["No-Action"]:
+                    Logger.log(["removing directory", to_remove])
+                    os.removedirs(to_remove)
+                count += 1
+
+    if count:
+        Logger.log(["total removed directories", count])
+
+################################################################################
+
 def main():
-    global Options
+    global Options, Logger
 
     cnf = Config()
 
@@ -384,6 +416,8 @@ def main():
     if Options["Help"]:
         usage()
 
+    Logger = daklog.Logger(cnf, "clean-suites", debug=Options["No-Action"])
+
     session = DBConn().session()
 
     now_date = datetime.now()
@@ -397,6 +431,9 @@ def main():
     clean_maintainers(now_date, delete_date, max_delete, session)
     clean_fingerprints(now_date, delete_date, max_delete, session)
     clean_queue_build(now_date, delete_date, max_delete, session)
+    clean_empty_directories(session)
+
+    Logger.close()
 
 ################################################################################
 

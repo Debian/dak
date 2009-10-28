@@ -40,7 +40,6 @@ import apt_inst
 
 from daklib.dbconn import *
 from daklib import utils
-from daklib.regexes import re_issource
 from daklib.config import Config
 
 ################################################################################
@@ -68,7 +67,7 @@ The following MODEs are available:
   missing-overrides  - check for missing overrides
   source-in-one-dir  - ensure the source for each package is in one directory
   timestamps         - check for future timestamps in .deb's
-  tar-gz-in-dsc      - ensure each .dsc lists a .tar.gz file
+  files-in-dsc       - ensure each .dsc references appropriate Files
   validate-indices   - ensure files mentioned in Packages & Sources exist
   files-not-symlinks - check files in the database aren't symlinks
   validate-builddeps - validate build-dependencies of .dsc files in the archive
@@ -320,9 +319,10 @@ def check_timestamps():
 
 ################################################################################
 
-def check_missing_tar_gz_in_dsc():
+def check_files_in_dsc():
     """
-    Ensure each .dsc lists a .tar.gz file
+    Ensure each .dsc lists appropriate files in its Files field (according
+    to the format announced in its Format field).
     """
     count = 0
 
@@ -343,19 +343,11 @@ def check_missing_tar_gz_in_dsc():
         except:
             utils.fubar("error parsing .dsc file '%s'." % (filename))
 
-        dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
-        has_tar = 0
+        reasons = utils.check_dsc_files(filename, dsc)
+        for r in reasons:
+            utils.warn(r)
 
-        for f in dsc_files.keys():
-            m = re_issource.match(f)
-            if not m:
-                utils.fubar("%s not recognised as source." % (f))
-            ftype = m.group(3)
-            if ftype == "orig.tar.gz" or ftype == "tar.gz":
-                has_tar = 1
-
-        if not has_tar:
-            utils.warn("%s has no .tar.gz in the .dsc file." % (f))
+        if len(reasons) > 0:
             count += 1
 
     if count:
@@ -526,8 +518,8 @@ def main ():
         check_source_in_one_dir()
     elif mode == "timestamps":
         check_timestamps()
-    elif mode == "tar-gz-in-dsc":
-        check_missing_tar_gz_in_dsc()
+    elif mode == "files-in-dsc":
+        check_files_in_dsc()
     elif mode == "validate-indices":
         check_indices_files_exist()
     elif mode == "files-not-symlinks":

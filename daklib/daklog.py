@@ -58,13 +58,12 @@ class Logger:
             logfile = utils.open_file(logfilename, 'a')
             os.umask(umask)
         self.logfile = logfile
-        # Log the start of the program
-        user = pwd.getpwuid(os.getuid())[0]
-        self.log(["program start", user])
+        self.log(["program start"])
 
     def log (self, details):
         "Log an event"
-        # Prepend the timestamp and program name
+        # Prepend timestamp, program name, and user name
+        details.insert(0, utils.getusername())
         details.insert(0, self.program)
         timestamp = time.strftime("%Y%m%d%H%M%S")
         details.insert(0, timestamp)

@@ -37,7 +37,6 @@
 from copy import copy
 import glob, os, stat, sys, time
 import apt_pkg
-import cgi
 
 from daklib import utils
 from daklib.changes import Changes
