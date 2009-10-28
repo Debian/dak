@@ -375,14 +375,14 @@ def clean_empty_directories(session):
     for base in bases:
         for dirpath, dirnames, filenames in os.walk(base, topdown=False):
             if not filenames and not dirnames:
+                to_remove = os.path.join(base, dirpath)
                 if not Options["No-Action"]:
-                    os.removedirs(os.path.join(base, dirpath))
+                    Logger.log(["removing directory", to_remove])
+                    os.removedirs(to_remove)
                 count += 1
 
     if count:
-        Logger.log(["total", count])
-        print "Cleaned %d empty directories from %d location(s)" % \
-            (count, len(bases))
+        Logger.log(["total removed directories", count])
 
 ################################################################################
 
