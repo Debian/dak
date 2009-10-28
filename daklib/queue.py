@@ -1237,7 +1237,7 @@ class Upload(object):
         # So now we should look at running lintian at the .changes file, capturing output
         # to then parse it.
         command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
-        (result, output) = commands.getstatusoutput(cmd)
+        (result, output) = commands.getstatusoutput(command)
         # We are done with lintian, remove our tempfile
         os.unlink(temp_filename)
         if (result != 0):
