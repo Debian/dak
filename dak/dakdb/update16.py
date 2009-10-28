@@ -123,6 +123,23 @@ def do_update(self):
         c.execute("GRANT ALL ON upload_blocks TO ftpmaster")
         c.execute("GRANT USAGE ON upload_blocks_id_seq TO ftpmaster")
 
+        c.execute("ALTER TABLE keyrings ADD COLUMN default_source_acl_id INT4 REFERENCES source_acl (id) DEFAULT NULL")
+        c.execute("ALTER TABLE keyrings ADD COLUMN default_binary_acl_id INT4 REFERENCES binary_acl (id) DEFAULT NULL")
+
+        # Default ACLs for keyrings
+        c.execute("""
+        CREATE TABLE keyring_acl_map (
+              id SERIAL PRIMARY KEY,
+              keyring_id      INT4 REFERENCES keyrings (id) NOT NULL,
+              architecture_id INT4 REFERENCES architecture (id) NOT NULL,
+
+              UNIQUE (keyring_id, architecture_id)
+        )""")
+
+        c.execute("GRANT SELECT ON keyring_acl_map TO public")
+        c.execute("GRANT ALL ON keyring_acl_map TO ftpmaster")
+        c.execute("GRANT USAGE ON keyring_acl_map_id_seq TO ftpmaster")
+
         print "Updating config version"
         c.execute("UPDATE config SET value = '16' WHERE name = 'db_revision'")
         self.db.commit()
