@@ -48,7 +48,8 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
 
 ################################################################################
 
-default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
+#default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
+default_config = "/home/stew/etc/dak/dak.conf"     #: default dak config, defines host properties
 default_apt_config = "/etc/dak/apt.conf" #: default apt config, not normally used
 
 alias_cache = None        #: Cache for email alias checks
@@ -1558,7 +1559,7 @@ apt_pkg.init()
 Cnf = apt_pkg.newConfiguration()
 apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
-if which_conf_file() != default_config:
-    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
+#if which_conf_file() != default_config:
+#    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
 
 ###############################################################################

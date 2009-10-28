@@ -73,7 +73,8 @@ class DBConn(Singleton):
     ## Connection functions
     def __createconn(self):
         cnf = Config()
-        connstr = "dbname=%s" % cnf["DB::Name"]
+        connstr = "dbname=%s" % "projectbstew" #cnf["DB::Name"]
+        print( "connstr: %s "% connstr)
         if cnf["DB::Host"]:
            connstr += " host=%s" % cnf["DB::Host"]
         if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
@@ -524,7 +525,8 @@ class DBConn(Singleton):
                 file_id = self.get_or_set_contents_file_id(file)
                 path_id = self.get_or_set_contents_path_id(path)
 
-                c.execute("""INSERT INTO content_associations
+                c.execute("""INSERT INTO deb_contents
+                
                                (binary_pkg, filepath, filename)
                            VALUES ( '%d', '%d', '%d')""" % (bin_id, path_id, file_id) )
 
