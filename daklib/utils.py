@@ -47,7 +47,7 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
                     re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource
 
-from srcformats import srcformats
+from srcformats import srcformats, get_format_from_string
 from collections import defaultdict
 
 ################################################################################
@@ -523,8 +523,9 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     if not changes.has_key(field):
         raise NoFilesFieldError
 
-    format = SourceFormat.parse_format(changes.get["format"])
-    SourceFormat.validate_format(format, is_a_dsc=False, field='files')
+    # Get SourceFormat object for this Format and validate it
+    format = get_format_from_string(changes.get['format'])
+    format.validate_format(is_a_dsc=is_a_dsc, field=field)
 
     includes_section = (not is_a_dsc) and field == "files"
 
