@@ -44,7 +44,7 @@ from daklib.dak_exceptions import DBUpdateError
 ################################################################################
 
 Cnf = None
-required_database_schema = 15
+required_database_schema = 17
 
 ################################################################################
 
@@ -177,12 +177,12 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         self.update_db()
 
-        try:
-            lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT)
-            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except IOError, e:
-            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
-                utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
+#STU        try:
+#STU            lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT)
+#STU            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+#STU        except IOError, e:
+#STU            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
+#STU                utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
 
 
 ################################################################################

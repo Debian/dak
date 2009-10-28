@@ -55,8 +55,8 @@ COMMANDS
     generate
         generate Contents-$arch.gz files
 
-    bootstrap
-        scan the debs in the existing pool and load contents in the the database
+    bootstrap_bin
+        scan the debs in the existing pool and load contents into the bin_contents table
 
     cruft
         remove files/paths which are no longer referenced by a binary
@@ -230,6 +230,34 @@ class Contents(object):
         s.commit()
 
 
+    def bootstrap_bin(self):
+        """
+        scan the existing debs in the pool to populate the bin_contents table
+        """
+        pooldir = Config()[ 'Dir::Pool' ]
+
+        s = DBConn().session()
+
+        #        for binary in s.query(DBBinary).all() ):
+        binary = s.query(DBBinary).first()
+        if binary:
+            filename = binary.poolfile.filename
+             # Check for existing contents
+            existingq = s.execute( "select 1 from bin_contents where binary_id=:id", {'id':binary.binary_id} );
+            if existingq.fetchone():
+                log.debug( "already imported: %s" % (filename))
+            else:
+                # We don't have existing contents so import them
+                log.debug( "scanning: %s" % (filename) )
+
+                debfile = os.path.join(pooldir, filename)
+                if os.path.exists(debfile):
+                    Binary(debfile, self.reject).scan_package(binary.binary_id, True)
+                else:
+                    log.error("missing .deb: %s" % filename)
+
+
+
     def bootstrap(self):
         """
         scan the existing debs in the pool to populate the contents database tables
@@ -320,7 +348,7 @@ def main():
                 ]
 
     commands = {'generate' : Contents.generate,
-                'bootstrap' : Contents.bootstrap,
+                'bootstrap_bin' : Contents.bootstrap_bin,
                 'cruft' : Contents.cruft,
                 }
 
