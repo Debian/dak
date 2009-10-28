@@ -1025,21 +1025,16 @@ class Upload(object):
 
     ###########################################################################
 
-    def get_changelog_versions(self, source_dir):
-        """Extracts a the source package and (optionally) grabs the
-        version history out of debian/changelog for the BTS."""
+    def ensure_all_source_exists(self, dest_dir=None):
+        """
+        Ensure that dest_dir contains all the orig tarballs for the specified
+        changes. If it does not, symlink them into place.
 
-        cnf = Config()
+        If dest_dir is None, populate the current directory.
+        """
 
-        # Find the .dsc (again)
-        dsc_filename = None
-        for f in self.pkg.files.keys():
-            if self.pkg.files[f]["type"] == "dsc":
-                dsc_filename = f
-
-        # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
-        if not dsc_filename:
-            return
+        if dest_dir is None:
+            dest_dir = os.getcwd()
 
         # Create a symlink mirror of the source files in our temporary directory
         for f in self.pkg.files.keys():
@@ -1063,6 +1058,26 @@ class Upload(object):
                 continue
             dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
             os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
+
+    ###########################################################################
+
+    def get_changelog_versions(self, source_dir):
+        """Extracts a the source package and (optionally) grabs the
+        version history out of debian/changelog for the BTS."""
+
+        cnf = Config()
+
+        # Find the .dsc (again)
+        dsc_filename = None
+        for f in self.pkg.files.keys():
+            if self.pkg.files[f]["type"] == "dsc":
+                dsc_filename = f
+
+        # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
+        if not dsc_filename:
+            return
+
+        self.ensure_all_source_exists()
 
         # Extract the source
         cmd = "dpkg-source -sn -x %s" % (dsc_filename)
