@@ -51,7 +51,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
-from utils import ensure_orig_files
 
 ################################################################################
 
@@ -1415,6 +1414,7 @@ class Queue(object):
 
                 session.add(qb)
 
+            from utils import ensure_orig_files
             exists, symlinked = ensure_orig_files(changes, dest, session)
 
             # Add symlinked files to the list of packages for later processing
