@@ -528,7 +528,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         raise NoFilesFieldError
 
     # Get SourceFormat object for this Format and validate it
-    format = get_format_from_string(changes.get['format'])
+    format = get_format_from_string(changes['format'])
     format.validate_format(is_a_dsc=is_a_dsc, field=field)
 
     includes_section = (not is_a_dsc) and field == "files"
