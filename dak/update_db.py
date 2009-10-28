@@ -107,10 +107,9 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         try:
             # Build a connect string
-#            connect_str = "dbname=%s"% (Cnf["DB::Name"])
-            connect_str = "dbname=%s"% "projectbstew"
-#            if Cnf["DB::Host"] != '': connect_str += " host=%s" % (Cnf["DB::Host"])
-#            if Cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(Cnf["DB::Port"]))
+            connect_str = "dbname=%s"% (Cnf["DB::Name"])
+            if Cnf["DB::Host"] != '': connect_str += " host=%s" % (Cnf["DB::Host"])
+            if Cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(Cnf["DB::Port"]))
 
             self.db = psycopg2.connect(connect_str)
 
