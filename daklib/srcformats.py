@@ -42,9 +42,7 @@ class SourceFormat(type):
             format = format[:2]
 
         if is_a_dsc:
-            # format = (0,0) are missing format headers of which we still
-            # have some in the archive.
-            if format != (1,0) and format != (0,0) and \
+            if format != (1,0) and \
                format != (3,0,"quilt") and format != (3,0,"native"):
                 raise UnknownFormatError, txt
         else:

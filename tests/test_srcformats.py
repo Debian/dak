@@ -141,7 +141,7 @@ class ParseSourceFormat(ParseFormat):
         self.assertFormat('1.0', (1, 0))
 
     def testZero(self):
-        self.assertFormat('0.0', (0, 0))
+        self.assertInvalidFormat('0.0')
 
     def testNative(self):
         self.assertFormat('3.0 (native)', (3, 0, 'native'))
