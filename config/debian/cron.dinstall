@@ -355,9 +355,12 @@ function merkel3() {
     ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_ddaccess dak@merkel.debian.org sleep 1
 }
 
-function runparts() {
-    log "Using run-parts to run scripts in $base/scripts/distmnt"
-    run-parts --report $base/scripts/distmnt
+function mirrorpush() {
+    log "Starting the mirrorpush"
+    date -u > /srv/ftp.debian.org/web/mirrorstart
+    echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
+    echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
+    sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
 }
 
 function i18n2() {
@@ -861,8 +864,8 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="runparts"
-    TIME="run-parts"
+    FUNC="mirrorpush"
+    TIME="mirrorpush"
     ARGS=""
     ERR="false"
 )
