@@ -34,6 +34,7 @@
 ################################################################################
 
 import os
+import re
 import psycopg2
 import traceback
 
@@ -913,20 +914,139 @@ __all__.append('get_or_set_fingerprint')
 
 ################################################################################
 
+# Helper routine for Keyring class
+def get_ldap_name(entry):
+    name = []
+    for k in ["cn", "mn", "sn"]:
+        ret = entry.get(k)
+        if ret and ret[0] != "" and ret[0] != "-":
+            name.append(ret[0])
+    return " ".join(name)
+
+################################################################################
+
 class Keyring(object):
+    gpg_invocation = "gpg --no-default-keyring --keyring %s" +\
+                     " --with-colons --fingerprint --fingerprint"
+
+    keys = {}
+    fpr_lookup = {}
+
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Keyring %s>' % self.keyring_name
 
+    def de_escape_gpg_str(self, str):
+        esclist = re.split(r'(\\x..)', str)
+        for x in range(1,len(esclist),2):
+            esclist[x] = "%c" % (int(esclist[x][2:],16))
+        return "".join(esclist)
+
+    def load_keys(self, keyring):
+        import email.Utils
+
+        if not self.keyring_id:
+            raise Exception('Must be initialized with database information')
+
+        k = os.popen(self.gpg_invocation % keyring, "r")
+        key = None
+        signingkey = False
+
+        for line in k.xreadlines():
+            field = line.split(":")
+            if field[0] == "pub":
+                key = field[4]
+                (name, addr) = email.Utils.parseaddr(field[9])
+                name = re.sub(r"\s*[(].*[)]", "", name)
+                if name == "" or addr == "" or "@" not in addr:
+                    name = field[9]
+                    addr = "invalid-uid"
+                name = self.de_escape_gpg_str(name)
+                self.keys[key] = {"email": addr}
+                if name != "":
+                    self.keys[key]["name"] = name
+                self.keys[key]["aliases"] = [name]
+                self.keys[key]["fingerprints"] = []
+                signingkey = True
+            elif key and field[0] == "sub" and len(field) >= 12:
+                signingkey = ("s" in field[11])
+            elif key and field[0] == "uid":
+                (name, addr) = email.Utils.parseaddr(field[9])
+                if name and name not in self.keys[key]["aliases"]:
+                    self.keys[key]["aliases"].append(name)
+            elif signingkey and field[0] == "fpr":
+                self.keys[key]["fingerprints"].append(field[9])
+                self.fpr_lookup[field[9]] = key
+
+    def import_users_from_ldap(self, session):
+        import ldap
+        cnf = Config()
+
+        LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
+        LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
+
+        l = ldap.open(LDAPServer)
+        l.simple_bind_s("","")
+        Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
+               "(&(keyfingerprint=*)(gidnumber=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
+               ["uid", "keyfingerprint", "cn", "mn", "sn"])
+
+        ldap_fin_uid_id = {}
+
+        byuid = {}
+        byname = {}
+
+        for i in Attrs:
+            entry = i[1]
+            uid = entry["uid"][0]
+            name = get_ldap_name(entry)
+            fingerprints = entry["keyFingerPrint"]
+            keyid = None
+            for f in fingerprints:
+                key = self.fpr_lookup.get(f, None)
+                if key not in self.keys:
+                    continue
+                self.keys[key]["uid"] = uid
+
+                if keyid != None:
+                    continue
+                keyid = get_or_set_uid(uid, session).uid_id
+                byuid[keyid] = (uid, name)
+                byname[uid] = (keyid, name)
+
+        return (byname, byuid)
+
+    def generate_users_from_keyring(self, format, session):
+        byuid = {}
+        byname = {}
+        any_invalid = False
+        for x in self.keys.keys():
+            if self.keys[x]["email"] == "invalid-uid":
+                any_invalid = True
+                self.keys[x]["uid"] = format % "invalid-uid"
+            else:
+                uid = format % self.keys[x]["email"]
+                keyid = get_or_set_uid(uid, session).uid_id
+                byuid[keyid] = (uid, self.keys[x]["name"])
+                byname[uid] = (keyid, self.keys[x]["name"])
+                self.keys[x]["uid"] = uid
+
+        if any_invalid:
+            uid = format % "invalid-uid"
+            keyid = get_or_set_uid(uid, session).uid_id
+            byuid[keyid] = (uid, "ungeneratable user id")
+            byname[uid] = (keyid, "ungeneratable user id")
+
+        return (byname, byuid)
+
 __all__.append('Keyring')
 
 @session_wrapper
-def get_or_set_keyring(keyring, session=None):
+def get_keyring(keyring, session=None):
     """
-    If C{keyring} does not have an entry in the C{keyrings} table yet, create one
-    and return the new Keyring
+    If C{keyring} does not have an entry in the C{keyrings} table yet, return None
     If C{keyring} already has an entry, simply return the existing Keyring
 
     @type keyring: string
@@ -941,12 +1061,9 @@ def get_or_set_keyring(keyring, session=None):
     try:
         return q.one()
     except NoResultFound:
-        obj = Keyring(keyring_name=keyring)
-        session.add(obj)
-        session.commit_or_flush()
-        return obj
+        return None
 
-__all__.append('get_or_set_keyring')
+__all__.append('get_keyring')
 
 ################################################################################
 
