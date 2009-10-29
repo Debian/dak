@@ -202,6 +202,8 @@ def main():
         print msg
         logger.log([msg])
         sys.exit(1)
+    except SystemExit:
+        pass
     except:
         for line in traceback.format_exc().split('\n')[:-1]:
             logger.log(['exception', line])
