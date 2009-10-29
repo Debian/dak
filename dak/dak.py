@@ -39,6 +39,7 @@ import daklib.utils
 
 from daklib.daklog import Logger
 from daklib.config import Config
+from daklib.dak_exceptions import CantOpenError
 
 ################################################################################
 
@@ -156,7 +157,11 @@ Available commands:"""
 def main():
     """Launch dak functionality."""
 
-    logger = Logger(Config(), 'dak top-level', print_starting=False)
+
+    try:
+        logger = Logger(Config(), 'dak top-level', print_starting=False)
+    except CantOpenError:
+        logger = None
 
     functionality = init()
     modules = [ command for (command, _) in functionality ]
@@ -200,13 +205,15 @@ def main():
     except KeyboardInterrupt:
         msg = 'KeyboardInterrupt caught; exiting'
         print msg
-        logger.log([msg])
+        if logger:
+            logger.log([msg])
         sys.exit(1)
     except SystemExit:
         pass
     except:
-        for line in traceback.format_exc().split('\n')[:-1]:
-            logger.log(['exception', line])
+        if logger:
+            for line in traceback.format_exc().split('\n')[:-1]:
+                logger.log(['exception', line])
         raise
 
 ################################################################################
