@@ -1212,7 +1212,7 @@ class Upload(object):
         # Try and find all orig mentioned in the .dsc
         target_dir = '.'
         for filename, entry in self.pkg.dsc_files.iteritems():
-            if re_is_orig_source.match(filename):
+            if not re_is_orig_source.match(filename):
                 # File is not an orig; ignore
                 continue
 
