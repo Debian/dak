@@ -1234,10 +1234,11 @@ class Upload(object):
                 os.symlink(path, os.path.join(target_dir, filename))
                 return True
 
+            session = DBConn().session()
             found = False
 
             # Look in the pool
-            for poolfile in get_poolfile_like_name('/%s' % filename):
+            for poolfile in get_poolfile_like_name('/%s' % filename, session):
                 poolfile_path = os.path.join(
                     poolfile.location.path, poolfile.filename
                 )
@@ -1245,6 +1246,8 @@ class Upload(object):
                 if symlink_if_valid(poolfile_path):
                     found = True
                     break
+
+            session.close()
 
             if found:
                 continue
