@@ -357,9 +357,9 @@ def main ():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = [ "nbs", "nviu", "obsolete source" ]
+        checks = [ "nbs", "nviu", "nvit", "obsolete source" ]
     elif Options["Mode"] == "full":
-        checks = [ "nbs", "nviu", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
+        checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
     else:
         utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
         usage(1)
@@ -519,6 +519,9 @@ def main ():
 
     if "nviu" in checks:
         do_newer_version('unstable', 'experimental', 'NVIU', session)
+
+    if "nvit" in checks:
+        do_newer_version('testing', 'testing-proposed-updates', 'NVIT', session)
 
     if "nbs" in checks:
         do_nbs(real_nbs)
