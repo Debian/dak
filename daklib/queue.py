@@ -298,7 +298,7 @@ class Upload(object):
         )
 
         msg = ''
-        for title, messages in reasons:
+        for title, messages in msgs:
             if messages:
                 msg += '\n\n%s:\n%s' % (title, '\n'.join(messages))
 
