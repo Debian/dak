@@ -113,7 +113,7 @@ def recheck(upload, session):
         if Options["No-Action"] or Options["Automatic"] or Options["Trainee"]:
             answer = 'S'
 
-        print "REJECT\n" + upload.rejects.join("\n"),
+        print "REJECT\n" + '\n'.join(upload.rejects)
         prompt = "[R]eject, Skip, Quit ?"
 
         while prompt.find(answer) == -1:
