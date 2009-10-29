@@ -1263,11 +1263,11 @@ class Upload(object):
                 'OldProposedUpdates', 'Embargoed', 'Unembargoed')
 
             for queue in queues:
-                if 'Dir::Queue::%s' % directory not in cnf:
+                if 'Dir::Queue::%s' % queue not in cnf:
                     continue
 
                 queuefile_path = os.path.join(
-                    cnf['Dir::Queue::%s' % directory], filename
+                    cnf['Dir::Queue::%s' % queue], filename
                 )
 
                 if not os.path.exists(queuefile_path):
