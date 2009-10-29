@@ -1284,6 +1284,10 @@ class Upload(object):
     def check_lintian(self):
         cnf = Config()
 
+        # Don't reject binary uploads
+        if not self.pkg.changes['architecture'].has_key('source'):
+            return
+
         # Only check some distributions
         valid_dist = False
         for dist in ('unstable', 'experimental'):
