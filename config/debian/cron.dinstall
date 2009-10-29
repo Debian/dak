@@ -197,9 +197,6 @@ function accepted() {
 function cruft() {
     log "Checking for cruft in overrides"
     dak check-overrides
-
-    log "Fixing symlinks in $ftpdir"
-    symlinks -d -r $ftpdir
 }
 
 function msfl() {
