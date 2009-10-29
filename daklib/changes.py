@@ -183,11 +183,12 @@ class Changes(object):
             session = DBConn().session()
             privatetrans = True
 
-        session.query(KnownChange).filter(changesfile=self.changes_file).delete()
+        session.delete(get_knownchange(self.changes_file, session))
 
         if privatetrans:
             session.commit()
             session.close()
+            
     def add_known_changes(self, queue, session=None):
         cnf = Config()
 

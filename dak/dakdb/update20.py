@@ -137,6 +137,7 @@ def do_update(self):
                             count += 1
                             print "Directory %s, file %7d, failures %3d. (%s)" % (dirpath[-10:], count, failure, changesfile)
                             changes = Changes()
+                            changes.changes_file = changesfile
                             changesfile = os.path.join(dirpath, changesfile)
                             changes.changes = parse_changes(changesfile, signing_rules=-1)
                             changes.changes["fingerprint"], = check_signature(changesfile)
