@@ -1214,6 +1214,16 @@ class Upload(object):
             # We don't have a tagfile, so just don't do anything.
             return
 
+        # Parse the yaml file
+        sourcefile = file(tagfile, 'r')
+        sourcecontent = sourcefile.read()
+        sourcefile.close()
+        try:
+            lintiantags = yaml.load(sourcecontent)['lintian']
+        except yaml.YAMLError, msg:
+            utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
+            return
+
         # Try and find all orig mentioned in the .dsc
         target_dir = '.'
         symlinked = []
@@ -1280,16 +1290,6 @@ class Upload(object):
 
                 if symlink_if_valid(queuefile_path):
                     break
-
-        # Parse the yaml file
-        sourcefile = file(tagfile, 'r')
-        sourcecontent = sourcefile.read()
-        sourcefile.close()
-        try:
-            lintiantags = yaml.load(sourcecontent)['lintian']
-        except yaml.YAMLError, msg:
-            utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
-            return
 
         # Now setup the input file for lintian. lintian wants "one tag per line" only,
         # so put it together like it. We put all types of tags in one file and then sort
