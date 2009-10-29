@@ -124,7 +124,7 @@ def recheck(upload, session):
             answer = answer[:1].upper()
 
         if answer == 'R':
-            upload.do_reject(manual=0, reject_message=upload.rejects.join("\n"))
+            upload.do_reject(manual=0, reject_message='\n'.join(upload.rejects))
             os.unlink(upload.pkg.changes_file[:-8]+".dak")
             return 0
         elif answer == 'S':
