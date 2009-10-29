@@ -1182,6 +1182,91 @@ class Upload(object):
         self.ensure_hashes()
 
     ###########################################################################
+
+    def ensure_orig(self, target_dir='.', session=None):
+        """
+        Ensures that all orig files mentioned in the changes file are present
+        in target_dir. If they do not exist, they are symlinked into place.
+
+        An list containing the symlinks that were created are returned (so they
+        can be removed).
+        """
+
+        symlinked = []
+        cnf = Config()
+
+        for filename, entry in self.pkg.dsc_files.iteritems():
+            if not re_is_orig_source.match(filename):
+                # File is not an orig; ignore
+                continue
+
+            if os.path.exists(filename):
+                # File exists, no need to continue
+                continue
+
+            def symlink_if_valid(path):
+                f = utils.open_file(path)
+                md5sum = apt_pkg.md5sum(f)
+                f.close()
+
+                fingerprint = (os.stat(path)[stat.ST_SIZE], md5sum)
+                expected = (int(entry['size']), entry['md5sum'])
+
+                if fingerprint != expected:
+                    return False
+
+                dest = os.path.join(target_dir, filename)
+
+                os.symlink(path, dest)
+                symlinked.append(dest)
+
+                return True
+
+            session_ = session
+            if session is None:
+                session_ = DBConn().session()
+
+            found = False
+
+            # Look in the pool
+            for poolfile in get_poolfile_like_name('/%s' % filename, session_):
+                poolfile_path = os.path.join(
+                    poolfile.location.path, poolfile.filename
+                )
+
+                if symlink_if_valid(poolfile_path):
+                    found = True
+                    break
+
+            if session is None:
+                session_.close()
+
+            if found:
+                continue
+
+            # Look in some other queues for the file
+            queues = ('Accepted', 'New', 'Byhand', 'ProposedUpdates',
+                'OldProposedUpdates', 'Embargoed', 'Unembargoed')
+
+            for queue in queues:
+                if not cnf.get('Dir::Queue::%s' % queue):
+                    continue
+
+                queuefile_path = os.path.join(
+                    cnf['Dir::Queue::%s' % queue], filename
+                )
+
+                if not os.path.exists(queuefile_path):
+                    # Does not exist in this queue
+                    continue
+
+                if symlink_if_valid(queuefile_path):
+                    break
+
+        return symlinked
+
+    ###########################################################################
+
     def check_lintian(self):
         cnf = Config()
 
@@ -1211,71 +1296,7 @@ class Upload(object):
             return
 
         # Try and find all orig mentioned in the .dsc
-        target_dir = '.'
-        symlinked = []
-        for filename, entry in self.pkg.dsc_files.iteritems():
-            if not re_is_orig_source.match(filename):
-                # File is not an orig; ignore
-                continue
-
-            if os.path.exists(filename):
-                # File exists, no need to continue
-                continue
-
-            def symlink_if_valid(path):
-                f = utils.open_file(path)
-                md5sum = apt_pkg.md5sum(f)
-                f.close()
-
-                fingerprint = (os.stat(path)[stat.ST_SIZE], md5sum)
-                expected = (int(entry['size']), entry['md5sum'])
-
-                if fingerprint != expected:
-                    return False
-
-                dest = os.path.join(target_dir, filename)
-
-                os.symlink(path, dest)
-                symlinked.append(dest)
-
-                return True
-
-            session = DBConn().session()
-            found = False
-
-            # Look in the pool
-            for poolfile in get_poolfile_like_name('/%s' % filename, session):
-                poolfile_path = os.path.join(
-                    poolfile.location.path, poolfile.filename
-                )
-
-                if symlink_if_valid(poolfile_path):
-                    found = True
-                    break
-
-            session.close()
-
-            if found:
-                continue
-
-            # Look in some other queues for the file
-            queues = ('Accepted', 'New', 'Byhand', 'ProposedUpdates',
-                'OldProposedUpdates', 'Embargoed', 'Unembargoed')
-
-            for queue in queues:
-                if 'Dir::Queue::%s' % directory not in cnf:
-                    continue
-
-                queuefile_path = os.path.join(
-                    cnf['Dir::Queue::%s' % directory], filename
-                )
-
-                if not os.path.exists(queuefile_path):
-                    # Does not exist in this queue
-                    continue
-
-                if symlink_if_valid(queuefile_path):
-                    break
+        symlinked = self.ensure_orig()
 
         # Now setup the input file for lintian. lintian wants "one tag per line" only,
         # so put it together like it. We put all types of tags in one file and then sort
