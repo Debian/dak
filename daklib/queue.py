@@ -452,9 +452,8 @@ class Upload(object):
         # Check there isn't already a changes file of the same name in one
         # of the queue directories.
         base_filename = os.path.basename(filename)
-        for d in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
-            if os.path.exists(os.path.join(Cnf["Dir::Queue::%s" % (d) ], base_filename)):
-                self.rejects.append("%s: a file with this name already exists in the %s directory." % (base_filename, d))
+        if get_knownchange(base_filename):
+            self.rejects.append("%s: a file with this name already exists." % (base_filename))
 
         # Check the .changes is non-empty
         if not self.pkg.files:

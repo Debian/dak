@@ -901,6 +901,41 @@ __all__.append('get_or_set_keyring')
 
 ################################################################################
 
+class KnownChange(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<KnownChange %s>' % self.changesname
+
+__all__.append('KnownChange')
+
+@session_wrapper
+def get_knownchange(filename, session=None):
+    """
+    returns knownchange object for given C{filename}.
+
+    @type archive: string
+    @param archive: the name of the arhive
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: Archive
+    @return: Archive object for the given name (None if not present)
+
+    """
+    q = session.query(KnownChange).filter_by(changesname=filename)
+
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
+
+__all__.append('get_knownchange')
+
+################################################################################
 class Location(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2116,6 +2151,7 @@ class DBConn(Singleton):
         self.tbl_files = Table('files', self.db_meta, autoload=True)
         self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
         self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
+        self.tbl_known_changes = Table('known_changes', self.db_meta, autoload=True)
         self.tbl_location = Table('location', self.db_meta, autoload=True)
         self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
         self.tbl_new_comments = Table('new_comments', self.db_meta, autoload=True)
@@ -2217,6 +2253,9 @@ class DBConn(Singleton):
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
                                  keyring_id = self.tbl_keyrings.c.id))
+
+        mapper(KnownChange, self.tbl_known_changes,
+               properties = dict(known_change_id = self.tbl_known_changes.c.id))
 
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
