@@ -38,7 +38,7 @@ class Logger:
     logfile = None
     program = None
 
-    def __init__ (self, Cnf, program, debug=0):
+    def __init__ (self, Cnf, program, debug=0, print_starting=True):
         "Initialize a new Logger object"
         self.Cnf = Cnf
         self.program = program
@@ -58,7 +58,8 @@ class Logger:
             logfile = utils.open_file(logfilename, 'a')
             os.umask(umask)
         self.logfile = logfile
-        self.log(["program start"])
+        if print_starting:
+            self.log(["program start"])
 
     def log (self, details):
         "Log an event"
