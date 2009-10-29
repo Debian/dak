@@ -173,6 +173,49 @@ class Changes(object):
 
         return summary
 
+    def remove_known_changes(self, session=None):
+        if session is None:
+            session = DBConn().session()
+            privatetrans = True
+
+        session.query(KnownChange).filter(changesfile=self.changes_file).delete()
+
+        if privatetrans:
+            session.commit()
+            session.close()
+    def add_known_changes(self, queue, session=None):
+        cnf = Config()
+
+        if session is None:
+            session = DBConn().session()
+            privatetrans = True
+
+        dirpath = cnf["Dir::Queue::%s" % (queue) ]
+        changesfile = os.path.join(dirpath, self.changes_file)
+        filetime = datetime.datetime.fromtimestamp(os.path.getctime(changesfile))
+
+        session.execute(
+            """INSERT INTO known_changes
+              (changesname, seen, source, binaries, architecture, version,
+              distribution, urgency, maintainer, fingerprint, changedby, date)
+              VALUES (:changesfile,:filetime,:source,:binary, :architecture,
+              :version,:distribution,:urgency,'maintainer,:changedby,:date)""",
+              { 'changesfile':changesfile,
+                'filetime':filetime,
+                'source':self.changes["source"],
+                'binary':self.changes["binary"],
+                'architecture':self.changes["architecture"],
+                'version':self.changes["version"],
+                'distribution':self.changes["distribution"],
+                'urgency':self.changes["urgency"],
+                'maintainer':self.changes["maintainer"],
+                'fingerprint':self.changes["fingerprint"],
+                'changedby':self.changes["changed-by"],
+                'date':self.changes["date"]} )
+
+        if privatetrans:
+            session.commit()
+            session.close()
 
     def load_dot_dak(self, changesfile):
         """

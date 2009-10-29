@@ -800,6 +800,7 @@ def do_byhand(upload, session):
             Logger.log(["BYHAND REJECT: %s" % (upload.pkg.changes_file)])
             upload.do_reject(manual=1, reject_message=Options["Manual-Reject"])
             os.unlink(upload.pkg.changes_file[:-8]+".dak")
+            upload.pkg.remove_known_changes()
             done = 1
         elif answer == 'S':
             done = 1

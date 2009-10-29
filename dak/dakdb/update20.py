@@ -105,6 +105,7 @@ def do_update(self):
                     distribution TEXT NOT NULL,
                     urgency TEXT NOT NULL,
                     maintainer TEXT NOT NULL,
+                    fingerprint TEXT NOT NULL,
                     changedby TEXT NOT NULL,
                     date TEXT NOT NULL,
                     UNIQUE (changesname)
@@ -135,8 +136,10 @@ def do_update(self):
                         try:
                             count += 1
                             print "Directory %s, file %7d, failures %3d. (%s)" % (dirpath[-10:], count, failure, changesfile)
-                            changes = parse_changes(os.path.join(dirpath, changesfile), signing_rules=-1)
-                            (changes["fingerprint"], _) = check_signature(os.path.join(dirpath, changesfile))
+                            changes = Changes()
+                            changesfile = os.path.join(dirpath, changesfile)
+                            changes.changes = parse_changes(changesfile, signing_rules=-1)
+                            (changes.changes["fingerprint"], _) = check_signature(changesfile))
                         except InvalidDscError, line:
                             warn("syntax error in .dsc file '%s', line %s." % (f, line))
                             failure += 1
@@ -144,8 +147,10 @@ def do_update(self):
                             warn("found invalid changes file, not properly utf-8 encoded")
                             failure += 1
 
-                        filetime = datetime.datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, changesfile)))
-                        c.execute("INSERT INTO known_changes(changesname, seen, source, binaries, architecture, version, distribution, urgency, maintainer, changedby, date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" , [changesfile, filetime, changes["source"], changes["binary"], changes["architecture"], changes["version"], changes["distribution"], changes["urgency"], changes["maintainer"], changes["changed-by"], changes["date"]])
+                        changes.add_known_changes(directory)
+
+        c.execute("GRANT ALL ON known_changes TO ftpmaster;")
+        c.execute("GRANT SELECT ON known_changes TO public;")
 
         c.execute("UPDATE config SET value = '20' WHERE name = 'db_revision'")
         self.db.commit()
