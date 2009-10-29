@@ -1025,42 +1025,6 @@ class Upload(object):
 
     ###########################################################################
 
-    def ensure_all_source_exists(self, source_dir, dest_dir=None):
-        """
-        Ensure that dest_dir contains all the orig tarballs for the specified
-        changes. If it does not, symlink them into place.
-
-        If dest_dir is None, populate the current directory.
-        """
-
-        if dest_dir is None:
-            dest_dir = os.getcwd()
-
-        # Create a symlink mirror of the source files in our temporary directory
-        for f in self.pkg.files.keys():
-            m = re_issource.match(f)
-            if m:
-                src = os.path.join(source_dir, f)
-                # If a file is missing for whatever reason, give up.
-                if not os.path.exists(src):
-                    return
-                ftype = m.group(3)
-                if re_is_orig_source.match(f) and self.pkg.orig_files.has_key(f) and \
-                   self.pkg.orig_files[f].has_key("path"):
-                    continue
-                dest = os.path.join(dest_dir, f)
-                os.symlink(src, dest)
-
-        # If the orig files are not a part of the upload, create symlinks to the
-        # existing copies.
-        for orig_file in self.pkg.orig_files.keys():
-            if not self.pkg.orig_files[orig_file].has_key("path"):
-                continue
-            dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
-            os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
-
-    ###########################################################################
-
     def get_changelog_versions(self, source_dir):
         """Extracts a the source package and (optionally) grabs the
         version history out of debian/changelog for the BTS."""
@@ -1077,7 +1041,28 @@ class Upload(object):
         if not dsc_filename:
             return
 
-        self.ensure_all_source_exists(source_dir)
+        # Create a symlink mirror of the source files in our temporary directory
+        for f in self.pkg.files.keys():
+            m = re_issource.match(f)
+            if m:
+                src = os.path.join(source_dir, f)
+                # If a file is missing for whatever reason, give up.
+                if not os.path.exists(src):
+                    return
+                ftype = m.group(3)
+                if re_is_orig_source.match(f) and self.pkg.orig_files.has_key(f) and \
+                   self.pkg.orig_files[f].has_key("path"):
+                    continue
+                dest = os.path.join(os.getcwd(), f)
+                os.symlink(src, dest)
+
+        # If the orig files are not a part of the upload, create symlinks to the
+        # existing copies.
+        for orig_file in self.pkg.orig_files.keys():
+            if not self.pkg.orig_files[orig_file].has_key("path"):
+                continue
+            dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
+            os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
 
         # Extract the source
         cmd = "dpkg-source -sn -x %s" % (dsc_filename)
