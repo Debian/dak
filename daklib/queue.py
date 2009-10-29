@@ -287,19 +287,20 @@ class Upload(object):
         self.pkg.reset()
 
     def package_info(self):
+        """
+        Format various messages from this Upload to send to the maintainer.
+        """
+
+        msgs = (
+            ('Reject Reasons', self.rejects),
+            ('Warnings', self.warnings),
+            ('Notes', self.notes),
+        )
+
         msg = ''
-
-        if len(self.rejects) > 0:
-            msg += "Reject Reasons:\n"
-            msg += "\n".join(self.rejects)
-
-        if len(self.warnings) > 0:
-            msg += "Warnings:\n"
-            msg += "\n".join(self.warnings)
-
-        if len(self.notes) > 0:
-            msg += "Notes:\n"
-            msg += "\n".join(self.notes)
+        for title, messages in reasons:
+            if messages:
+                msg += '\n\n%s:\n%s' % (title, '\n'.join(messages))
 
         return msg
 
