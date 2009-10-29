@@ -133,6 +133,8 @@ def do_update(self):
         c.execute("ALTER TABLE keyrings ADD COLUMN default_binary_reject BOOLEAN NOT NULL DEFAULT TRUE")
         # Set up keyring priorities
         c.execute("ALTER TABLE keyrings ADD COLUMN priority INT4 NOT NULL DEFAULT 100")
+        # And then we don't need the DM stuff any more
+        c.execute("ALTER TABLE keyrings DROP COLUMN debian_maintainer")
 
         # Default ACLs for keyrings
         c.execute("""
