@@ -1209,6 +1209,11 @@ class Upload(object):
         if not valid_dist:
             return
 
+        tagfile = cnf.get("Dinstall::LintianTags")
+        if tagfile is None:
+            # We don't have a tagfile, so just don't do anything.
+            return
+
         # Try and find all orig mentioned in the .dsc
         target_dir = '.'
         symlinked = []
@@ -1276,10 +1281,6 @@ class Upload(object):
                 if symlink_if_valid(queuefile_path):
                     break
 
-        tagfile = cnf.get("Dinstall::LintianTags")
-        if tagfile is None:
-            # We don't have a tagfile, so just don't do anything.
-            return
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
