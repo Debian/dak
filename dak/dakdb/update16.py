@@ -131,6 +131,8 @@ def do_update(self):
         c.execute("ALTER TABLE keyrings ADD COLUMN default_source_acl_id INT4 REFERENCES source_acl (id) DEFAULT NULL")
         c.execute("ALTER TABLE keyrings ADD COLUMN default_binary_acl_id INT4 REFERENCES binary_acl (id) DEFAULT NULL")
         c.execute("ALTER TABLE keyrings ADD COLUMN default_binary_reject BOOLEAN NOT NULL DEFAULT TRUE")
+        # Set up keyring priorities
+        c.execute("ALTER TABLE keyrings ADD COLUMN priority INT4 NOT NULL DEFAULT 100")
 
         # Default ACLs for keyrings
         c.execute("""
@@ -156,6 +158,7 @@ def do_update(self):
                                          default_binary_acl_id = (SELECT id FROM binary_acl WHERE access_level = 'full')
                                      WHERE name = 'debian-maintainers.gpg'""")
 
+        c.execute("""UPDATE keyrings SET priority = 90 WHERE name = 'debian-maintainers.gpg'""")
 
         # Initialize the existing keys
         c.execute("""UPDATE fingerprint SET binary_acl_id = (SELECT default_binary_acl_id FROM keyrings
