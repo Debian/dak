@@ -48,6 +48,7 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
                     re_is_orig_source
 
+from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
 from collections import defaultdict
 
@@ -527,9 +528,8 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     if not changes.has_key(field):
         raise NoFilesFieldError
 
-    # Get SourceFormat object for this Format and validate it
-    format = get_format_from_string(changes['format'])
-    format.validate_format(is_a_dsc=is_a_dsc, field=field)
+    # Validate .changes Format: field
+    validate_changes_format(parse_format(changes['format']), field)
 
     includes_section = (not is_a_dsc) and field == "files"
 
@@ -1508,8 +1508,8 @@ apt_pkg.init()
 Cnf = apt_pkg.newConfiguration()
 apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
-#if which_conf_file() != default_config:
-#    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
+if which_conf_file() != default_config:
+    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
 
 ###############################################################################
 

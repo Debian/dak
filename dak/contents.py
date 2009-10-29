@@ -238,9 +238,7 @@ class Contents(object):
 
         s = DBConn().session()
 
-        #        for binary in s.query(DBBinary).all() ):
-        binary = s.query(DBBinary).first()
-        if binary:
+        for binary in s.query(DBBinary).all() ):
             filename = binary.poolfile.filename
              # Check for existing contents
             existingq = s.execute( "select 1 from bin_contents where binary_id=:id", {'id':binary.binary_id} );
