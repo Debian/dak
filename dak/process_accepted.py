@@ -311,17 +311,24 @@ def add_deb_to_db(u, filename, session):
     for suite_name in u.pkg.changes["distribution"].keys():
         ba = BinAssociation()
         ba.binary_id = bin.binary_id
-        ba.suite_id = get_suite(suite_name).suite_id
+        suite = get_suite(suite_name)
+        ba.suite_id = suite.suite_id
+
+        component_id = bin.poolfile.location.component_id;
+        component_id = bin.poolfile.location.component_id;
+
+        contents = copy_temporary_contents(bin os.path.basename(filename), None, session)
+        if not contents:
+            print "REJECT\nCould not determine contents of package %s" % bin.package
+            session.rollback()
+            raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
+
+                                                     
         session.add(ba)
+
 
     session.flush()
 
-    # Deal with contents - disabled for now
-    #contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, os.path.basename(filename), None, session)
-    #if not contents:
-    #    print "REJECT\nCould not determine contents of package %s" % bin.package
-    #    session.rollback()
-    #    raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
 
 
 def install(u, session, log_urgency=True):
