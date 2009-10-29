@@ -290,15 +290,15 @@ class Upload(object):
         msg = ''
 
         if len(self.rejects) > 0:
-            msg += "Reject Reasons:\n"
+            msg += "\n\nReject Reasons:\n"
             msg += "\n".join(self.rejects)
 
         if len(self.warnings) > 0:
-            msg += "Warnings:\n"
+            msg += "\n\nWarnings:\n"
             msg += "\n".join(self.warnings)
 
         if len(self.notes) > 0:
-            msg += "Notes:\n"
+            msg += "\n\nNotes:\n"
             msg += "\n".join(self.notes)
 
         return msg
