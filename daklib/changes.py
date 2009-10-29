@@ -29,6 +29,9 @@ Changes class for dak
 
 import os
 import stat
+import time
+
+import datetime
 from cPickle import Unpickler, Pickler
 from errno import EPERM
 
@@ -36,6 +39,8 @@ from apt_inst import debExtractControl
 from apt_pkg import ParseSection
 
 from utils import open_file, fubar, poolify
+from config import *
+from dbconn import *
 
 ###############################################################################
 
@@ -199,7 +204,7 @@ class Changes(object):
               (changesname, seen, source, binaries, architecture, version,
               distribution, urgency, maintainer, fingerprint, changedby, date)
               VALUES (:changesfile,:filetime,:source,:binary, :architecture,
-              :version,:distribution,:urgency,'maintainer,:changedby,:date)""",
+              :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
               { 'changesfile':changesfile,
                 'filetime':filetime,
                 'source':self.changes["source"],

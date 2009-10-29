@@ -65,14 +65,14 @@ def check_signature (sig_filename, data_filename=""):
     # If we failed to parse the status-fd output, let's just whine and bail now
     if internal_error:
         warn("Couldn't parse signature")
-        return (None, rejects)
+        return None
 
     # usually one would check for bad things here. We, however, do not care.
 
     # Next check gpgv exited with a zero return code
     if exit_status:
         warn("Couldn't parse signature")
-        return (None, rejects)
+        return None
 
     # Sanity check the good stuff we expect
     if not keywords.has_key("VALIDSIG"):
@@ -84,7 +84,7 @@ def check_signature (sig_filename, data_filename=""):
         else:
             fingerprint = args[0]
 
-    return (fingerprint, [])
+    return fingerprint
 
 ################################################################################
 
@@ -139,7 +139,8 @@ def do_update(self):
                             changes = Changes()
                             changesfile = os.path.join(dirpath, changesfile)
                             changes.changes = parse_changes(changesfile, signing_rules=-1)
-                            (changes.changes["fingerprint"], _) = check_signature(changesfile))
+                            changes.changes["fingerprint"], = check_signature(changesfile)
+                            changes.add_known_changes(directory)
                         except InvalidDscError, line:
                             warn("syntax error in .dsc file '%s', line %s." % (f, line))
                             failure += 1
@@ -147,7 +148,6 @@ def do_update(self):
                             warn("found invalid changes file, not properly utf-8 encoded")
                             failure += 1
 
-                        changes.add_known_changes(directory)
 
         c.execute("GRANT ALL ON known_changes TO ftpmaster;")
         c.execute("GRANT SELECT ON known_changes TO public;")
