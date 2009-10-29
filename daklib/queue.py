@@ -1197,6 +1197,8 @@ class Upload(object):
 
     ###########################################################################
     def check_lintian(self):
+        cnf = Config()
+
         # Only check some distributions
         valid_dist = False
         for dist in ('unstable', 'experimental'):
@@ -1207,9 +1209,65 @@ class Upload(object):
         if not valid_dist:
             return
 
-        self.ensure_all_source_exists()
+        # Try and find all orig mentioned in the .dsc
+        target_dir = '.'
+        for filename, entry in self.pkg.dsc_files.iteritems():
+            if re_is_orig_source.match(filename):
+                # File is not an orig; ignore
+                continue
 
-        cnf = Config()
+            if os.path.exists(filename):
+                # File exists, no need to continue
+                continue
+
+            def symlink_if_valid(path):
+                f = utils.open_file(path)
+                md5sum = apt_pkg.md5sum(f)
+                f.close()
+
+                fingerprint = (os.stat(path)[stat.ST_SIZE], md5sum)
+                expected = (int(entry['size']), entry['md5sum'])
+
+                if fingerprint != expected:
+                    return False
+
+                os.symlink(path, os.path.join(target_dir, filename))
+                return True
+
+            found = False
+
+            # Look in the pool
+            for poolfile in get_poolfile_like_name('/%s' % filename):
+                poolfile_path = os.path.join(
+                    poolfile.location.path, poolfile.filename
+                )
+
+                if symlink_if_valid(poolfile_path):
+                    found = True
+                    break
+
+            if found:
+                continue
+
+            # Look in some other queues for the file
+            queues = ('Accepted', 'New', 'Byhand', 'ProposedUpdates',
+                'OldProposedUpdates', 'Embargoed', 'Unembargoed')
+
+            for queue in queues:
+                if 'Dir::Queue::%s' % directory not in cnf:
+                    continue
+
+                queuefile_path = os.path.join(
+                    cnf['Dir::Queue::%s' % directory], filename
+                )
+
+                if not os.path.exists(queuefile_path):
+                    # Does not exist in this queue
+                    continue
+
+                if symlink_if_valid(queuefile_path):
+                    break
+
         tagfile = cnf.get("Dinstall::LintianTags")
         if tagfile is None:
             # We don't have a tagfile, so just don't do anything.
