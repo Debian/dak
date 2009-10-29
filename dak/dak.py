@@ -156,7 +156,7 @@ Available commands:"""
 def main():
     """Launch dak functionality."""
 
-    logger = Logger(Config(), 'dak top-level')
+    logger = Logger(Config(), 'dak top-level', print_starting=False)
 
     functionality = init()
     modules = [ command for (command, _) in functionality ]
