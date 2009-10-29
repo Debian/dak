@@ -904,14 +904,6 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="aptftpcleanup"
-    TIME="apt-ftparchive cleanup"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
     FUNC="merkel3"
     TIME="merkel ddaccessible sync"
     ARGS=""
@@ -924,6 +916,14 @@ GO=(
     TIME="compress"
     ARGS=""
     ERR=""
+)
+stage $GO &
+
+GO=(
+    FUNC="aptftpcleanup"
+    TIME="apt-ftparchive cleanup"
+    ARGS=""
+    ERR="false"
 )
 stage $GO
 
