@@ -58,9 +58,9 @@ def do_update(self):
         """)
 
         ## Can upload all packages
-        c.execute("INSERT INTO source_acl (id, access_level) VALUES (1, 'full')")
+        c.execute("INSERT INTO source_acl (access_level) VALUES ('full')")
         ## Can upload only packages marked as DM upload allowed
-        c.execute("INSERT INTO source_acl (id, access_level) VALUES (2, 'dm')")
+        c.execute("INSERT INTO source_acl (access_level) VALUES ('dm')")
 
         c.execute("GRANT SELECT ON source_acl TO public")
         c.execute("GRANT ALL ON source_acl TO ftpmaster")
@@ -76,9 +76,9 @@ def do_update(self):
         """)
 
         ## Can upload any architectures of binary packages
-        c.execute("INSERT INTO binary_acl (id, access_level) VALUES (1, 'full')")
+        c.execute("INSERT INTO binary_acl (access_level) VALUES ('full')")
         ## Can upload debs where architectures are based on the map table binary_acl_map
-        c.execute("INSERT INTO binary_acl (id, access_level) VALUES (2, 'map')")
+        c.execute("INSERT INTO binary_acl (access_level) VALUES ('map')")
 
         c.execute("GRANT SELECT ON binary_acl TO public")
         c.execute("GRANT ALL ON binary_acl TO ftpmaster")
@@ -105,6 +105,11 @@ def do_update(self):
         ## NULL means no binary upload access
         c.execute("ALTER TABLE fingerprint ADD COLUMN binary_acl_id INT4 REFERENCES binary_acl(id) DEFAULT NULL")
 
+        ## TRUE here means that if the person doesn't have binary upload permissions for
+        ## an architecture, we'll reject the .changes.  FALSE means that we'll simply
+        ## dispose of those particular binaries
+        c.execute("ALTER TABLE fingerprint ADD COLUMN binary_reject BOOLEAN NOT NULL DEFAULT TRUE")
+
         # Blockage table (replaces the hard coded stuff we used to have in extensions)
         print "Adding blockage table"
         c.execute("""
@@ -125,6 +130,7 @@ def do_update(self):
 
         c.execute("ALTER TABLE keyrings ADD COLUMN default_source_acl_id INT4 REFERENCES source_acl (id) DEFAULT NULL")
         c.execute("ALTER TABLE keyrings ADD COLUMN default_binary_acl_id INT4 REFERENCES binary_acl (id) DEFAULT NULL")
+        c.execute("ALTER TABLE keyrings ADD COLUMN default_binary_reject BOOLEAN NOT NULL DEFAULT TRUE")
 
         # Default ACLs for keyrings
         c.execute("""
@@ -139,6 +145,24 @@ def do_update(self):
         c.execute("GRANT SELECT ON keyring_acl_map TO public")
         c.execute("GRANT ALL ON keyring_acl_map TO ftpmaster")
         c.execute("GRANT USAGE ON keyring_acl_map_id_seq TO ftpmaster")
+
+        # Set up some default stuff; default to old behaviour
+        print "Setting up some defaults"
+
+        c.execute("""UPDATE keyrings SET default_source_acl_id = (SELECT id FROM source_acl WHERE access_level = 'full'),
+                                         default_binary_acl_id = (SELECT id FROM binary_acl WHERE access_level = 'full')""")
+
+        c.execute("""UPDATE keyrings SET default_source_acl_id = (SELECT id FROM source_acl WHERE access_level = 'dm'),
+                                         default_binary_acl_id = (SELECT id FROM binary_acl WHERE access_level = 'full')
+                                     WHERE name = 'debian-maintainers.gpg'""")
+
+
+        # Initialize the existing keys
+        c.execute("""UPDATE fingerprint SET binary_acl_id = (SELECT default_binary_acl_id FROM keyrings
+                                                              WHERE keyrings.id = fingerprint.keyring)""")
+
+        c.execute("""UPDATE fingerprint SET source_acl_id = (SELECT default_source_acl_id FROM keyrings
+                                                              WHERE keyrings.id = fingerprint.keyring)""")
 
         print "Updating config version"
         c.execute("UPDATE config SET value = '16' WHERE name = 'db_revision'")

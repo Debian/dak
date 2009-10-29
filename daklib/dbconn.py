@@ -850,6 +850,33 @@ class Fingerprint(object):
 __all__.append('Fingerprint')
 
 @session_wrapper
+def get_fingerprint(fpr, session=None):
+    """
+    Returns Fingerprint object for given fpr.
+
+    @type fpr: string
+    @param fpr: The fpr to find / add
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied).
+
+    @rtype: Fingerprint
+    @return: the Fingerprint object for the given fpr or None
+    """
+
+    q = session.query(Fingerprint).filter_by(fingerprint=fpr)
+
+    try:
+        ret = q.one()
+    except NoResultFound:
+        ret = None
+
+    return ret
+
+__all__.append('get_fingerprint')
+
+@session_wrapper
 def get_or_set_fingerprint(fpr, session=None):
     """
     Returns Fingerprint object for given fpr.
@@ -920,6 +947,17 @@ def get_or_set_keyring(keyring, session=None):
         return obj
 
 __all__.append('get_or_set_keyring')
+
+################################################################################
+
+class KeyringACLMap(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<KeyringACLMap %s>' % self.keyring_acl_map_id
+
+__all__.append('KeyringACLMap')
 
 ################################################################################
 
@@ -2162,6 +2200,7 @@ class DBConn(Singleton):
         self.tbl_files = Table('files', self.db_meta, autoload=True)
         self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
         self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
+        self.tbl_keyring_acl_map = Table('keyring_acl_map', self.db_meta, autoload=True)
         self.tbl_location = Table('location', self.db_meta, autoload=True)
         self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
         self.tbl_new_comments = Table('new_comments', self.db_meta, autoload=True)
@@ -2276,6 +2315,11 @@ class DBConn(Singleton):
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
                                  keyring_id = self.tbl_keyrings.c.id))
 
+        mapper(KeyringACLMap, self.tbl_keyring_acl_map,
+               properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
+                                 keyring = relation(Keyring, backref="keyring_acl_map"),
+                                 architecture = relation(Architecture)))
+
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
                                  component_id = self.tbl_location.c.component,
@@ -2343,7 +2387,8 @@ class DBConn(Singleton):
                                  srcfiles = relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  srcassociations = relation(SrcAssociation,
-                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source))))
+                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source)),
+                                 srcuploaders = relation(SrcUploader)))
 
         mapper(SourceACL, self.tbl_source_acl,
                properties = dict(source_acl_id = self.tbl_source_acl.c.id))
