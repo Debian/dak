@@ -710,20 +710,24 @@ def where_am_i ():
         return res[0]
 
 def which_conf_file ():
-    res = socket.gethostbyaddr(socket.gethostname())
-    # In case we allow local config files per user, try if one exists
-    if Cnf.FindB("Config::" + res[0] + "::AllowLocalConfig"):
-        homedir = os.getenv("HOME")
-        confpath = os.path.join(homedir, "/etc/dak.conf")
-        if os.path.exists(confpath):
-            apt_pkg.ReadConfigFileISC(Cnf,default_config)
-
-    # We are still in here, so there is no local config file or we do
-    # not allow local files. Do the normal stuff.
-    if Cnf.get("Config::" + res[0] + "::DakConfig"):
-        return Cnf["Config::" + res[0] + "::DakConfig"]
+    if os.getenv("DAK_CONFIG"):
+        print(os.getenv("DAK_CONFIG"))
+        return os.getenv("DAK_CONFIG")
     else:
-        return default_config
+        res = socket.gethostbyaddr(socket.gethostname())
+        # In case we allow local config files per user, try if one exists
+        if Cnf.FindB("Config::" + res[0] + "::AllowLocalConfig"):
+            homedir = os.getenv("HOME")
+            confpath = os.path.join(homedir, "/etc/dak.conf")
+            if os.path.exists(confpath):
+                apt_pkg.ReadConfigFileISC(Cnf,default_config)
+
+        # We are still in here, so there is no local config file or we do
+        # not allow local files. Do the normal stuff.
+        if Cnf.get("Config::" + res[0] + "::DakConfig"):
+            return Cnf["Config::" + res[0] + "::DakConfig"]
+        else:
+            return default_config
 
 def which_apt_conf_file ():
     res = socket.gethostbyaddr(socket.gethostname())
