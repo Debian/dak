@@ -1209,8 +1209,24 @@ class Upload(object):
         if not valid_dist:
             return
 
+        tagfile = cnf.get("Dinstall::LintianTags")
+        if tagfile is None:
+            # We don't have a tagfile, so just don't do anything.
+            return
+
+        # Parse the yaml file
+        sourcefile = file(tagfile, 'r')
+        sourcecontent = sourcefile.read()
+        sourcefile.close()
+        try:
+            lintiantags = yaml.load(sourcecontent)['lintian']
+        except yaml.YAMLError, msg:
+            utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
+            return
+
         # Try and find all orig mentioned in the .dsc
         target_dir = '.'
+        symlinked = []
         for filename, entry in self.pkg.dsc_files.iteritems():
             if not re_is_orig_source.match(filename):
                 # File is not an orig; ignore
@@ -1231,7 +1247,11 @@ class Upload(object):
                 if fingerprint != expected:
                     return False
 
-                os.symlink(path, os.path.join(target_dir, filename))
+                dest = os.path.join(target_dir, filename)
+
+                os.symlink(path, dest)
+                symlinked.append(dest)
+
                 return True
 
             session = DBConn().session()
@@ -1271,20 +1291,6 @@ class Upload(object):
                 if symlink_if_valid(queuefile_path):
                     break
 
-        tagfile = cnf.get("Dinstall::LintianTags")
-        if tagfile is None:
-            # We don't have a tagfile, so just don't do anything.
-            return
-        # Parse the yaml file
-        sourcefile = file(tagfile, 'r')
-        sourcecontent = sourcefile.read()
-        sourcefile.close()
-        try:
-            lintiantags = yaml.load(sourcecontent)['lintian']
-        except yaml.YAMLError, msg:
-            utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
-            return
-
         # Now setup the input file for lintian. lintian wants "one tag per line" only,
         # so put it together like it. We put all types of tags in one file and then sort
         # through lintians output later to see if its a fatal tag we detected, or not.
@@ -1304,8 +1310,12 @@ class Upload(object):
         # to then parse it.
         command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
         (result, output) = commands.getstatusoutput(command)
-        # We are done with lintian, remove our tempfile
+
+        # We are done with lintian, remove our tempfile and any symlinks we created
         os.unlink(temp_filename)
+        for symlink in symlinked:
+            os.unlink(symlink)
+
         if (result == 2):
             utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
             utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
