@@ -1025,42 +1025,6 @@ class Upload(object):
 
     ###########################################################################
 
-    def ensure_all_source_exists(self, source_dir, dest_dir=None):
-        """
-        Ensure that dest_dir contains all the orig tarballs for the specified
-        changes. If it does not, symlink them into place.
-
-        If dest_dir is None, populate the current directory.
-        """
-
-        if dest_dir is None:
-            dest_dir = os.getcwd()
-
-        # Create a symlink mirror of the source files in our temporary directory
-        for f in self.pkg.files.keys():
-            m = re_issource.match(f)
-            if m:
-                src = os.path.join(source_dir, f)
-                # If a file is missing for whatever reason, give up.
-                if not os.path.exists(src):
-                    return
-                ftype = m.group(3)
-                if re_is_orig_source.match(f) and self.pkg.orig_files.has_key(f) and \
-                   self.pkg.orig_files[f].has_key("path"):
-                    continue
-                dest = os.path.join(dest_dir, f)
-                os.symlink(src, dest)
-
-        # If the orig files are not a part of the upload, create symlinks to the
-        # existing copies.
-        for orig_file in self.pkg.orig_files.keys():
-            if not self.pkg.orig_files[orig_file].has_key("path"):
-                continue
-            dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
-            os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
-
-    ###########################################################################
-
     def get_changelog_versions(self, source_dir):
         """Extracts a the source package and (optionally) grabs the
         version history out of debian/changelog for the BTS."""
@@ -1077,7 +1041,28 @@ class Upload(object):
         if not dsc_filename:
             return
 
-        self.ensure_all_source_exists(source_dir)
+        # Create a symlink mirror of the source files in our temporary directory
+        for f in self.pkg.files.keys():
+            m = re_issource.match(f)
+            if m:
+                src = os.path.join(source_dir, f)
+                # If a file is missing for whatever reason, give up.
+                if not os.path.exists(src):
+                    return
+                ftype = m.group(3)
+                if re_is_orig_source.match(f) and self.pkg.orig_files.has_key(f) and \
+                   self.pkg.orig_files[f].has_key("path"):
+                    continue
+                dest = os.path.join(os.getcwd(), f)
+                os.symlink(src, dest)
+
+        # If the orig files are not a part of the upload, create symlinks to the
+        # existing copies.
+        for orig_file in self.pkg.orig_files.keys():
+            if not self.pkg.orig_files[orig_file].has_key("path"):
+                continue
+            dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
+            os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
 
         # Extract the source
         cmd = "dpkg-source -sn -x %s" % (dsc_filename)
@@ -1212,6 +1197,8 @@ class Upload(object):
 
     ###########################################################################
     def check_lintian(self):
+        cnf = Config()
+
         # Only check some distributions
         valid_dist = False
         for dist in ('unstable', 'experimental'):
@@ -1222,9 +1209,65 @@ class Upload(object):
         if not valid_dist:
             return
 
-        self.ensure_all_source_exists()
+        # Try and find all orig mentioned in the .dsc
+        target_dir = '.'
+        for filename, entry in self.pkg.dsc_files.iteritems():
+            if re_is_orig_source.match(filename):
+                # File is not an orig; ignore
+                continue
 
-        cnf = Config()
+            if os.path.exists(filename):
+                # File exists, no need to continue
+                continue
+
+            def symlink_if_valid(path):
+                f = utils.open_file(path)
+                md5sum = apt_pkg.md5sum(f)
+                f.close()
+
+                fingerprint = (os.stat(path)[stat.ST_SIZE], md5sum)
+                expected = (int(entry['size']), entry['md5sum'])
+
+                if fingerprint != expected:
+                    return False
+
+                os.symlink(path, os.path.join(target_dir, filename))
+                return True
+
+            found = False
+
+            # Look in the pool
+            for poolfile in get_poolfile_like_name('/%s' % filename):
+                poolfile_path = os.path.join(
+                    poolfile.location.path, poolfile.filename
+                )
+
+                if symlink_if_valid(poolfile_path):
+                    found = True
+                    break
+
+            if found:
+                continue
+
+            # Look in some other queues for the file
+            queues = ('Accepted', 'New', 'Byhand', 'ProposedUpdates',
+                'OldProposedUpdates', 'Embargoed', 'Unembargoed')
+
+            for queue in queues:
+                if 'Dir::Queue::%s' % directory not in cnf:
+                    continue
+
+                queuefile_path = os.path.join(
+                    cnf['Dir::Queue::%s' % directory], filename
+                )
+
+                if not os.path.exists(queuefile_path):
+                    # Does not exist in this queue
+                    continue
+
+                if symlink_if_valid(queuefile_path):
+                    break
+
         tagfile = cnf.get("Dinstall::LintianTags")
         if tagfile is None:
             # We don't have a tagfile, so just don't do anything.
@@ -1269,9 +1312,7 @@ class Upload(object):
 
         def log(*txt):
             if self.logger:
-                args = [self.pkg.changes_file, "check_lintian"]
-                args.extend(txt)
-                self.logger.log(args)
+                self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
 
         # We have output of lintian, this package isn't clean. Lets parse it and see if we
         # are having a victim for a reject.

@@ -34,7 +34,11 @@ G{importgraph}
 ################################################################################
 
 import sys
+import traceback
 import daklib.utils
+
+from daklib.daklog import Logger
+from daklib.config import Config
 
 ################################################################################
 
@@ -152,6 +156,8 @@ Available commands:"""
 def main():
     """Launch dak functionality."""
 
+    logger = Logger(Config(), 'dak top-level')
+
     functionality = init()
     modules = [ command for (command, _) in functionality ]
 
@@ -189,7 +195,17 @@ def main():
     # Invoke the module
     module = __import__(cmdname.replace("-","_"))
 
-    module.main()
+    try:
+        module.main()
+    except KeyboardInterrupt:
+        msg = 'KeyboardInterrupt caught; exiting'
+        print msg
+        logger.log([msg])
+        sys.exit(1)
+    except:
+        for line in traceback.format_exc().split('\n')[:-1]:
+            logger.log(['exception', line])
+        raise
 
 ################################################################################
 
