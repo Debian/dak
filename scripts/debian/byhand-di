@@ -95,6 +95,10 @@ mv "$TMPDIR/installer-$ARCH/current"  "$TARGET"
 find "$TARGET/$VERSION" -type d -exec chmod 755 {} +
 find "$TARGET/$VERSION" -type f -exec chmod 644 {} +
 
+# Make sure nothing symlinks outside of the ftpdir
+# Shouldnt happen, but better be sure.
+symlinks -d -r /srv/ftp.debian.org/ftp
+
 trap - EXIT
 cleanup
 

@@ -57,6 +57,9 @@ apt-ftparchive -q clean apt.conf.buildd
 echo "Update wanna-build database dump"
 /org/ftp.debian.org/scripts/nfu/get-w-b-db
 
+echo "Fixing symlinks in $ftpdir"
+symlinks -d -r $ftpdir
+
 echo "Finally, all is done, compressing logfile"
 exec > /dev/null 2>&1
 

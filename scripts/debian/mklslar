@@ -26,11 +26,11 @@ if [ -r ${filename}.gz ] ; then
   mv -f ${filename}.gz $filename.old.gz
   mv -f .$filename.new $filename
   rm -f $filename.patch.gz
-  zcat $filename.old.gz | diff -u - $filename | gzip -9cfn - >$filename.patch.gz
+  zcat $filename.old.gz | diff -u - $filename | gzip --rsyncable -9cfn - >$filename.patch.gz
   rm -f $filename.old.gz
 else
   mv -f .$filename.new $filename
 fi
 
-gzip -9cfN $filename >$filename.gz
+gzip --rsyncable -9cfN $filename >$filename.gz
 rm -f $filename

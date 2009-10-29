@@ -1036,8 +1036,8 @@ class Upload(object):
                 if not os.path.exists(src):
                     return
                 ftype = m.group(3)
-                if re_is_orig_source.match(f) and pkg.orig_files.has_key(f) and \
-                   pkg.orig_files[f].has_key("path"):
+                if re_is_orig_source.match(f) and self.pkg.orig_files.has_key(f) and \
+                   self.pkg.orig_files[f].has_key("path"):
                     continue
                 dest = os.path.join(os.getcwd(), f)
                 os.symlink(src, dest)
@@ -1183,6 +1183,8 @@ class Upload(object):
 
     ###########################################################################
     def check_lintian(self):
+        cnf = Config()
+
         # Only check some distributions
         valid_dist = False
         for dist in ('unstable', 'experimental'):
@@ -1193,11 +1195,11 @@ class Upload(object):
         if not valid_dist:
             return
 
-        cnf = Config()
         tagfile = cnf.get("Dinstall::LintianTags")
         if tagfile is None:
             # We don't have a tagfile, so just don't do anything.
             return
+
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
@@ -1207,6 +1209,73 @@ class Upload(object):
         except yaml.YAMLError, msg:
             utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
             return
+
+        # Try and find all orig mentioned in the .dsc
+        target_dir = '.'
+        symlinked = []
+        for filename, entry in self.pkg.dsc_files.iteritems():
+            if not re_is_orig_source.match(filename):
+                # File is not an orig; ignore
+                continue
+
+            if os.path.exists(filename):
+                # File exists, no need to continue
+                continue
+
+            def symlink_if_valid(path):
+                f = utils.open_file(path)
+                md5sum = apt_pkg.md5sum(f)
+                f.close()
+
+                fingerprint = (os.stat(path)[stat.ST_SIZE], md5sum)
+                expected = (int(entry['size']), entry['md5sum'])
+
+                if fingerprint != expected:
+                    return False
+
+                dest = os.path.join(target_dir, filename)
+
+                os.symlink(path, dest)
+                symlinked.append(dest)
+
+                return True
+
+            session = DBConn().session()
+            found = False
+
+            # Look in the pool
+            for poolfile in get_poolfile_like_name('/%s' % filename, session):
+                poolfile_path = os.path.join(
+                    poolfile.location.path, poolfile.filename
+                )
+
+                if symlink_if_valid(poolfile_path):
+                    found = True
+                    break
+
+            session.close()
+
+            if found:
+                continue
+
+            # Look in some other queues for the file
+            queues = ('Accepted', 'New', 'Byhand', 'ProposedUpdates',
+                'OldProposedUpdates', 'Embargoed', 'Unembargoed')
+
+            for queue in queues:
+                if 'Dir::Queue::%s' % directory not in cnf:
+                    continue
+
+                queuefile_path = os.path.join(
+                    cnf['Dir::Queue::%s' % directory], filename
+                )
+
+                if not os.path.exists(queuefile_path):
+                    # Does not exist in this queue
+                    continue
+
+                if symlink_if_valid(queuefile_path):
+                    break
 
         # Now setup the input file for lintian. lintian wants "one tag per line" only,
         # so put it together like it. We put all types of tags in one file and then sort
@@ -1227,14 +1296,22 @@ class Upload(object):
         # to then parse it.
         command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
         (result, output) = commands.getstatusoutput(command)
-        # We are done with lintian, remove our tempfile
+
+        # We are done with lintian, remove our tempfile and any symlinks we created
         os.unlink(temp_filename)
+        for symlink in symlinked:
+            os.unlink(symlink)
+
         if (result == 2):
             utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
             utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
 
         if len(output) == 0:
             return
+
+        def log(*txt):
+            if self.logger:
+                self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
 
         # We have output of lintian, this package isn't clean. Lets parse it and see if we
         # are having a victim for a reject.
@@ -1262,9 +1339,11 @@ class Upload(object):
                 elif etag in lintiantags['error']:
                     # The tag is overriden - but is not allowed to be
                     self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
+                    log("overidden tag is overridden", etag)
             else:
                 # Tag is known, it is not overriden, direct reject.
                 self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
+                log("auto rejecting", etag)
                 # Now tell if they *might* override it.
                 if etag in lintiantags['warning']:
                     self.rejects.append("%s: If you have a good reason, you may override this lintian tag." % (epackage))
