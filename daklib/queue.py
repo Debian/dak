@@ -38,6 +38,7 @@ import commands
 import shutil
 import textwrap
 from types import *
+from sqlalchemy.sql.expression import desc
 
 import yaml
 
