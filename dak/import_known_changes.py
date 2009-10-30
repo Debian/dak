@@ -144,7 +144,7 @@ class OneAtATime(object):
 
         assert( not self.next_in_line )
         self.next_in_line = next
-        self.next_lock.notify()
+        self.next_lock.notifyAll()
         self.next_lock.release()
 
     def dequeue(self):
@@ -157,7 +157,7 @@ class OneAtATime(object):
         result = self.next_in_line
 
         self.next_in_line = None
-        self.next_lock.notify()
+        self.next_lock.notifyAll()
         self.next_lock.release()
 
         if isinstance(result, EndOfChanges):
