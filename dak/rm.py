@@ -492,7 +492,7 @@ def main ():
     game_over()
 
     whoami = utils.whoami()
-    date = commands.getoutput('date -R')
+    date = commands.getoutput('date -R').strip()
 
     # Log first; if it all falls apart I want a record that we at least tried.
     logfile = utils.open_file(cnf["Rm::LogFile"], 'a')
@@ -554,7 +554,10 @@ def main ():
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
         Subst["__SUITE_LIST__"] = suites_list
-        Subst["__SUMMARY__"] = summary
+        summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (summary, Options["Reason"])
+        summarymail += "----------------------------------------------\n"
+        Subst["__SUMMARY__"] = summarymail
+        Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
         Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = whoami
