@@ -248,11 +248,15 @@ class Binary(object):
                     except:
                         print >> sys.stderr, "E: %s has non-unicode filename: %s" % (package,tarinfo.name)
 
+                result = True
+
             except:
                 traceback.print_exc()
                 result = False
 
             os.chdir(cwd)
+
+        return result
 
 __all__.append('Binary')
 

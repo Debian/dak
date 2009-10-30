@@ -28,7 +28,6 @@ Queue utility functions for dak
 
 import errno
 import os
-import pg
 import stat
 import sys
 import time
@@ -38,7 +37,6 @@ import utils
 import commands
 import shutil
 import textwrap
-import tempfile
 from types import *
 
 import yaml
@@ -298,7 +296,7 @@ class Upload(object):
 
         # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
         if not self.pkg.changes.has_key("architecture") or not \
-           isinstance(self.pkg.changes["architecture"], DictType):
+           isinstance(self.pkg.changes["architecture"], dict):
             self.pkg.changes["architecture"] = { "Unknown" : "" }
 
         # and maintainer2047 may not exist.
@@ -408,7 +406,7 @@ class Upload(object):
                    fix_maintainer (self.pkg.changes["maintainer"])
         except ParseMaintError, msg:
             self.rejects.append("%s: Maintainer field ('%s') failed to parse: %s" \
-                   % (filename, changes["maintainer"], msg))
+                   % (filename, self.pkg.changes["maintainer"], msg))
 
         # ...likewise for the Changed-By: field if it exists.
         try:
@@ -755,7 +753,7 @@ class Upload(object):
 
         # Validate the component
         if not get_component(entry["component"], session):
-            self.rejects.append("file '%s' has unknown component '%s'." % (f, component))
+            self.rejects.append("file '%s' has unknown component '%s'." % (f, entry["component"]))
             return
 
         # See if the package is NEW
@@ -770,7 +768,7 @@ class Upload(object):
         location = cnf["Dir::Pool"]
         l = get_location(location, entry["component"], archive, session)
         if l is None:
-            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive))
+            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (entry["component"], archive))
             entry["location id"] = -1
         else:
             entry["location id"] = l.location_id
@@ -1565,10 +1563,10 @@ class Upload(object):
         rej = False
         for f in self.pkg.files.keys():
             if self.pkg.files[f].has_key("byhand"):
-                self.rejects.append("%s may not upload BYHAND file %s" % (uid, f))
+                self.rejects.append("%s may not upload BYHAND file %s" % (fpr.uid.uid, f))
                 rej = True
             if self.pkg.files[f].has_key("new"):
-                self.rejects.append("%s may not upload NEW file %s" % (uid, f))
+                self.rejects.append("%s may not upload NEW file %s" % (fpr.uid.uid, f))
                 rej = True
 
         if rej:
@@ -1978,14 +1976,14 @@ distribution."""
 
     ###########################################################################
 
-    def remove(self, dir=None):
+    def remove(self, from_dir=None):
         """
         Used (for instance) in p-u to remove the package from unchecked
         """
-        if dir is None:
+        if from_dir is None:
             os.chdir(self.pkg.directory)
         else:
-            os.chdir(dir)
+            os.chdir(from_dir)
 
         for f in self.pkg.files.keys():
             os.unlink(f)
@@ -2150,7 +2148,7 @@ distribution."""
         return 0
 
     ################################################################################
-    def in_override_p(self, package, component, suite, binary_type, file, session):
+    def in_override_p(self, package, component, suite, binary_type, filename, session):
         """
         Check if a package already has override entries in the DB
 
@@ -2166,8 +2164,8 @@ distribution."""
         @type binary_type: string
         @param binary_type: type of the package
 
-        @type file: string
-        @param file: filename we check
+        @type filename: string
+        @param filename: filename we check
 
         @return: the database result. But noone cares anyway.
 
@@ -2193,8 +2191,8 @@ distribution."""
         # Remember the section and priority so we can check them later if appropriate
         if len(result) > 0:
             result = result[0]
-            self.pkg.files[file]["override section"] = result.section.section
-            self.pkg.files[file]["override priority"] = result.priority.priority
+            self.pkg.files[filename]["override section"] = result.section.section
+            self.pkg.files[filename]["override priority"] = result.priority.priority
             return result
 
         return None
@@ -2222,13 +2220,13 @@ distribution."""
 
     ################################################################################
 
-    def cross_suite_version_check(self, sv_list, file, new_version, sourceful=False):
+    def cross_suite_version_check(self, sv_list, filename, new_version, sourceful=False):
         """
         @type sv_list: list
         @param sv_list: list of (suite, version) tuples to check
 
-        @type file: string
-        @param file: XXX
+        @type filename: string
+        @param filename: XXX
 
         @type new_version: string
         @param new_version: XXX
@@ -2253,7 +2251,7 @@ distribution."""
                 vercmp = apt_pkg.VersionCompare(new_version, existent_version)
 
                 if suite in must_be_newer_than and sourceful and vercmp < 1:
-                    self.rejects.append("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+                    self.rejects.append("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
 
                 if suite in must_be_older_than and vercmp > -1:
                     cansave = 0
@@ -2286,7 +2284,7 @@ distribution."""
                             self.rejects.append("Won't propogate NEW packages.")
                         elif apt_pkg.VersionCompare(new_version, add_version) < 0:
                             # propogation would be redundant. no need to reject though.
-                            self.warnings.append("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+                            self.warnings.append("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
                             cansave = 1
                         elif apt_pkg.VersionCompare(new_version, add_version) > 0 and \
                              apt_pkg.VersionCompare(add_version, target_version) >= 0:
@@ -2297,29 +2295,29 @@ distribution."""
                             cansave = 1
 
                     if not cansave:
-                        self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+                        self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
 
     ################################################################################
-    def check_binary_against_db(self, file, session):
+    def check_binary_against_db(self, filename, session):
         # Ensure version is sane
         q = session.query(BinAssociation)
-        q = q.join(DBBinary).filter(DBBinary.package==self.pkg.files[file]["package"])
-        q = q.join(Architecture).filter(Architecture.arch_string.in_([self.pkg.files[file]["architecture"], 'all']))
+        q = q.join(DBBinary).filter(DBBinary.package==self.pkg.files[filename]["package"])
+        q = q.join(Architecture).filter(Architecture.arch_string.in_([self.pkg.files[filename]["architecture"], 'all']))
 
         self.cross_suite_version_check([ (x.suite.suite_name, x.binary.version) for x in q.all() ],
-                                       file, self.pkg.files[file]["version"], sourceful=False)
+                                       filename, self.pkg.files[filename]["version"], sourceful=False)
 
         # Check for any existing copies of the file
-        q = session.query(DBBinary).filter_by(package=self.pkg.files[file]["package"])
-        q = q.filter_by(version=self.pkg.files[file]["version"])
-        q = q.join(Architecture).filter_by(arch_string=self.pkg.files[file]["architecture"])
+        q = session.query(DBBinary).filter_by(package=self.pkg.files[filename]["package"])
+        q = q.filter_by(version=self.pkg.files[filename]["version"])
+        q = q.join(Architecture).filter_by(arch_string=self.pkg.files[filename]["architecture"])
 
         if q.count() > 0:
-            self.rejects.append("%s: can not overwrite existing copy already in the archive." % (file))
+            self.rejects.append("%s: can not overwrite existing copy already in the archive." % filename)
 
     ################################################################################
 
-    def check_source_against_db(self, file, session):
+    def check_source_against_db(self, filename, session):
         """
         """
         source = self.pkg.dsc.get("source")
@@ -2330,10 +2328,10 @@ distribution."""
         q = q.join(DBSource).filter(DBSource.source==source)
 
         self.cross_suite_version_check([ (x.suite.suite_name, x.source.version) for x in q.all() ],
-                                       file, version, sourceful=True)
+                                       filename, version, sourceful=True)
 
     ################################################################################
-    def check_dsc_against_db(self, file, session):
+    def check_dsc_against_db(self, filename, session):
         """
 
         @warning: NB: this function can remove entries from the 'files' index [if
@@ -2459,15 +2457,15 @@ distribution."""
                             orig_files[dsc_name]["path"] = in_otherdir
 
                     if not found:
-                        self.rejects.append("%s refers to %s, but I can't find it in the queue or in the pool." % (file, dsc_name))
+                        self.rejects.append("%s refers to %s, but I can't find it in the queue or in the pool." % (filename, dsc_name))
                         continue
             else:
-                self.rejects.append("%s refers to %s, but I can't find it in the queue." % (file, dsc_name))
+                self.rejects.append("%s refers to %s, but I can't find it in the queue." % (filename, dsc_name))
                 continue
             if actual_md5 != dsc_entry["md5sum"]:
-                self.rejects.append("md5sum for %s doesn't match %s." % (found, file))
+                self.rejects.append("md5sum for %s doesn't match %s." % (found, filename))
             if actual_size != int(dsc_entry["size"]):
-                self.rejects.append("size for %s doesn't match %s." % (found, file))
+                self.rejects.append("size for %s doesn't match %s." % (found, filename))
 
     ################################################################################
     # This is used by process-new and process-holding to recheck a changes file

@@ -152,9 +152,9 @@ def advisory_info():
     svs = srcverarches.keys()
     svs.sort()
     for sv in svs:
-        as = srcverarches[sv].keys()
-        as.sort()
-        print " %s (%s)" % (sv, ", ".join(as))
+        as_ = srcverarches[sv].keys()
+        as_.sort()
+        print " %s (%s)" % (sv, ", ".join(as_))
 
 def prompt(opts, default):
     p = ""

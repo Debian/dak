@@ -36,7 +36,6 @@ import stat
 import apt_pkg
 import time
 import re
-import string
 import email as modemail
 import subprocess
 
@@ -45,8 +44,7 @@ from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
-                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
-                    re_is_orig_source
+                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource
 
 from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
@@ -64,9 +62,9 @@ key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
                 ("sha256", apt_pkg.sha256sum, (1, 8))] #: hashes we accept for entries in .changes/.dsc
 
-# Monkeypatch commands.getstatusoutput as it returns a "0" exit code in
-# all situations under lenny's Python.
-import commands
+# Monkeypatch commands.getstatusoutput as it may not return the correct exit
+# code in lenny's Python. This also affects commands.getoutput and
+# commands.getstatus.
 def dak_getstatusoutput(cmd):
     pipe = subprocess.Popen(cmd, shell=True, universal_newlines=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -558,7 +556,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
         (section, component) = extract_component_from_section(section)
 
-        files[name] = Dict(size=size, section=section,
+        files[name] = dict(size=size, section=section,
                            priority=priority, component=component)
         files[name][hashname] = md5
 
@@ -616,7 +614,7 @@ def send_mail (message, filename=""):
                 if len(match) == 0:
                     del message_raw[field]
                 else:
-                    message_raw.replace_header(field, string.join(match, ", "))
+                    message_raw.replace_header(field, ', '.join(match))
 
         # Change message fields in order if we don't have a To header
         if not message_raw.has_key("To"):
@@ -757,12 +755,12 @@ def which_alias_file():
 
 ################################################################################
 
-def TemplateSubst(map, filename):
+def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
     templatefile = open_file(filename)
     template = templatefile.read()
-    for x in map.keys():
-        template = template.replace(x, str(map[x]))
+    for k, v in subst_map.iteritems():
+        template = template.replace(k, str(v))
     templatefile.close()
     return template
 
@@ -1095,10 +1093,6 @@ def split_args (s, dwim=1):
 
 ################################################################################
 
-def Dict(**dict): return dict
-
-########################################
-
 def gpgv_get_status_output(cmd, status_read, status_write):
     """
     Our very own version of commands.getouputstatus(), hacked to support
@@ -1366,7 +1360,7 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
         rejects.append("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
 
     # Finally ensure there's not something we don't recognise
-    known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+    known_keywords = dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
                           SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
                           NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="")
 
@@ -1488,7 +1482,7 @@ def is_email_alias(email):
 
 ################################################################################
 
-def get_changes_files(dir):
+def get_changes_files(from_dir):
     """
     Takes a directory and lists all .changes files in it (as well as chdir'ing
     to the directory; this is due to broken behaviour on the part of p-u/p-a
@@ -1498,10 +1492,10 @@ def get_changes_files(dir):
     """
     try:
         # Much of the rest of p-u/p-a depends on being in the right place
-        os.chdir(dir)
-        changes_files = [x for x in os.listdir(dir) if x.endswith('.changes')]
+        os.chdir(from_dir)
+        changes_files = [x for x in os.listdir(from_dir) if x.endswith('.changes')]
     except OSError, e:
-        fubar("Failed to read list from directory %s (%s)" % (dir, e))
+        fubar("Failed to read list from directory %s (%s)" % (from_dir, e))
 
     return changes_files
 

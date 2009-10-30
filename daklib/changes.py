@@ -29,7 +29,6 @@ Changes class for dak
 
 import os
 import stat
-import time
 
 import datetime
 from cPickle import Unpickler, Pickler
@@ -189,16 +188,25 @@ class Changes(object):
             session.commit()
             session.close()
 
-    def add_known_changes(self, queue, session=None):
-        cnf = Config()
 
+    def mark_missing_fields(self):
+        """add "missing" in fields which we will require for the known_changes table"""
+        for key in ['urgency', 'maintainer', 'fingerprint', 'changed-by' ]:
+            if (not self.changes.has_key(key)) or (not self.changes[key]):
+                self.changes[key]='missing'
+
+    def add_known_changes(self, dirpath, session=None):
+        """add "missing" in fields which we will require for the known_changes table"""
+        cnf = Config()
+        privatetrans = False
         if session is None:
             session = DBConn().session()
             privatetrans = True
 
-        dirpath = cnf["Dir::Queue::%s" % (queue) ]
         changesfile = os.path.join(dirpath, self.changes_file)
         filetime = datetime.datetime.fromtimestamp(os.path.getctime(changesfile))
+
+        self.mark_missing_fields()
 
         session.execute(
             """INSERT INTO known_changes
@@ -206,7 +214,7 @@ class Changes(object):
               distribution, urgency, maintainer, fingerprint, changedby, date)
               VALUES (:changesfile,:filetime,:source,:binary, :architecture,
               :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
-              { 'changesfile':changesfile,
+              { 'changesfile':self.changes_file,
                 'filetime':filetime,
                 'source':self.changes["source"],
                 'binary':self.changes["binary"],
