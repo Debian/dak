@@ -845,6 +845,39 @@ def get_poolfile_like_name(filename, session=None):
 
 __all__.append('get_poolfile_like_name')
 
+@session_wrapper
+def add_poolfile(filename, datadict, location_id, session=None):
+    """
+    Add a new file to the pool
+
+    @type filename: string
+    @param filename: filename
+
+    @type datadict: dict
+    @param datadict: dict with needed data
+
+    @type location_id: int
+    @param location_id: database id of the location
+
+    @rtype: PoolFile
+    @return: the PoolFile object created
+    """
+    poolfile = PoolFile()
+    poolfile.filename = filename
+    poolfile.filesize = datadict["size"]
+    poolfile.md5sum = datadict["md5sum"]
+    poolfile.sha1sum = datadict["sha1sum"]
+    poolfile.sha256sum = datadict["sha256sum"]
+    poolfile.location_id = location_id
+
+    session.add(poolfile)
+    # Flush to get a file id (NB: This is not a commit)
+    session.flush()
+
+    return poolfile
+
+__all__.append('add_poolfile')
+
 ################################################################################
 
 class Fingerprint(object):
@@ -1985,6 +2018,173 @@ def get_source_in_suite(source, suite, session=None):
         return None
 
 __all__.append('get_source_in_suite')
+
+################################################################################
+
+@session_wrapper
+def add_dsc_to_db(u, filename, session=None):
+    entry = u.pkg.files[filename]
+    source = DBSource()
+
+    source.source = u.pkg.dsc["source"]
+    source.version = u.pkg.dsc["version"] # NB: not files[file]["version"], that has no epoch
+    source.maintainer_id = get_or_set_maintainer(u.pkg.dsc["maintainer"], session).maintainer_id
+    source.changedby_id = get_or_set_maintainer(u.pkg.changes["changed-by"], session).maintainer_id
+    source.fingerprint_id = get_or_set_fingerprint(u.pkg.changes["fingerprint"], session).fingerprint_id
+    source.install_date = datetime.now().date()
+
+    dsc_component = entry["component"]
+    dsc_location_id = entry["location id"]
+
+    source.dm_upload_allowed = (u.pkg.dsc.get("dm-upload-allowed", '') == "yes")
+
+    # Set up a new poolfile if necessary
+    if not entry.has_key("files id") or not entry["files id"]:
+        filename = entry["pool name"] + filename
+        poolfile = add_poolfile(filename, entry, dsc_location_id, session)
+        entry["files id"] = poolfile.file_id
+
+    source.poolfile_id = entry["files id"]
+    session.add(source)
+    session.flush()
+
+    for suite_name in u.pkg.changes["distribution"].keys():
+        sa = SrcAssociation()
+        sa.source_id = source.source_id
+        sa.suite_id = get_suite(suite_name).suite_id
+        session.add(sa)
+
+    session.flush()
+
+    # Add the source files to the DB (files and dsc_files)
+    dscfile = DSCFile()
+    dscfile.source_id = source.source_id
+    dscfile.poolfile_id = entry["files id"]
+    session.add(dscfile)
+
+    for dsc_file, dentry in u.pkg.dsc_files.items():
+        df = DSCFile()
+        df.source_id = source.source_id
+
+        # If the .orig tarball is already in the pool, it's
+        # files id is stored in dsc_files by check_dsc().
+        files_id = dentry.get("files id", None)
+
+        # Find the entry in the files hash
+        # TODO: Bail out here properly
+        dfentry = None
+        for f, e in u.pkg.files.items():
+            if f == dsc_file:
+                dfentry = e
+                break
+
+        if files_id is None:
+            filename = dfentry["pool name"] + dsc_file
+
+            (found, obj) = check_poolfile(filename, dentry["size"], dentry["md5sum"], dsc_location_id)
+            # FIXME: needs to check for -1/-2 and or handle exception
+            if found and obj is not None:
+                files_id = obj.file_id
+
+            # If still not found, add it
+            if files_id is None:
+                # HACK: Force sha1sum etc into dentry
+                dentry["sha1sum"] = dfentry["sha1sum"]
+                dentry["sha256sum"] = dfentry["sha256sum"]
+                poolfile = add_poolfile(filename, dentry, dsc_location_id, session)
+                files_id = poolfile.file_id
+
+        df.poolfile_id = files_id
+        session.add(df)
+
+    session.flush()
+
+    # Add the src_uploaders to the DB
+    uploader_ids = [source.maintainer_id]
+    if u.pkg.dsc.has_key("uploaders"):
+        for up in u.pkg.dsc["uploaders"].split(","):
+            up = up.strip()
+            uploader_ids.append(get_or_set_maintainer(up, session).maintainer_id)
+
+    added_ids = {}
+    for up in uploader_ids:
+        if added_ids.has_key(up):
+            utils.warn("Already saw uploader %s for source %s" % (up, source.source))
+            continue
+
+        added_ids[u]=1
+
+        su = SrcUploader()
+        su.maintainer_id = up
+        su.source_id = source.source_id
+        session.add(su)
+
+    session.flush()
+
+    return dsc_component, dsc_location_id
+
+__all__.append('add_dsc_to_db')
+
+@session_wrapper
+def add_deb_to_db(u, filename, session=None):
+    """
+    Contrary to what you might expect, this routine deals with both
+    debs and udebs.  That info is in 'dbtype', whilst 'type' is
+    'deb' for both of them
+    """
+    cnf = Config()
+    entry = u.pkg.files[filename]
+
+    bin = DBBinary()
+    bin.package = entry["package"]
+    bin.version = entry["version"]
+    bin.maintainer_id = get_or_set_maintainer(entry["maintainer"], session).maintainer_id
+    bin.fingerprint_id = get_or_set_fingerprint(u.pkg.changes["fingerprint"], session).fingerprint_id
+    bin.arch_id = get_architecture(entry["architecture"], session).arch_id
+    bin.binarytype = entry["dbtype"]
+
+    # Find poolfile id
+    filename = entry["pool name"] + filename
+    fullpath = os.path.join(cnf["Dir::Pool"], filename)
+    if not entry.get("location id", None):
+        entry["location id"] = get_location(cnf["Dir::Pool"], entry["component"], utils.where_am_i(), session).location_id
+
+    if not entry.get("files id", None):
+        poolfile = add_poolfile(filename, entry, entry["location id"], session)
+        entry["files id"] = poolfile.file_id
+
+    bin.poolfile_id = entry["files id"]
+
+    # Find source id
+    bin_sources = get_sources_from_name(entry["source package"], entry["source version"], session=session)
+    if len(bin_sources) != 1:
+        raise NoSourceFieldError, "Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
+                                  (bin.package, bin.version, bin.architecture.arch_string,
+                                   filename, bin.binarytype, u.pkg.changes["fingerprint"])
+
+    bin.source_id = bin_sources[0].source_id
+
+    # Add and flush object so it has an ID
+    session.add(bin)
+    session.flush()
+
+    # Add BinAssociations
+    for suite_name in u.pkg.changes["distribution"].keys():
+        ba = BinAssociation()
+        ba.binary_id = bin.binary_id
+        ba.suite_id = get_suite(suite_name).suite_id
+        session.add(ba)
+
+    session.flush()
+
+    # Deal with contents - disabled for now
+    #contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, os.path.basename(filename), None, session)
+    #if not contents:
+    #    print "REJECT\nCould not determine contents of package %s" % bin.package
+    #    session.rollback()
+    #    raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
+
+__all__.append('add_deb_to_db')
 
 ################################################################################
 
