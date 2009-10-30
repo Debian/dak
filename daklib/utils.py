@@ -755,12 +755,12 @@ def which_alias_file():
 
 ################################################################################
 
-def TemplateSubst(map, filename):
+def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
     templatefile = open_file(filename)
     template = templatefile.read()
-    for x in map.keys():
-        template = template.replace(x, str(map[x]))
+    for x in subst_map.keys():
+        template = template.replace(x, str(subst_map[x]))
     templatefile.close()
     return template
 
