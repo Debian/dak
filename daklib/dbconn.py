@@ -40,8 +40,10 @@ import traceback
 
 from inspect import getargspec
 
+import sqlalchemy
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker, mapper, relation
+from sqlalchemy import types as sqltypes
 
 # Don't remove this, we re-export the exceptions to scripts which import us
 from sqlalchemy.exc import *
@@ -52,6 +54,22 @@ from sqlalchemy.orm.exc import NoResultFound
 from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
+
+################################################################################
+
+# Patch in support for the debversion field type so that it works during
+# reflection
+
+class DebVersion(sqltypes.Text):
+    def get_col_spec(self):
+        return "DEBVERSION"
+
+sa_major_version = sqlalchemy.__version__[0:3]
+if sa_major_version == "0.5":
+        from sqlalchemy.databases import postgres
+        postgres.ischema_names['debversion'] = DebVersion
+else:
+        raise Exception("dak isn't ported to SQLA versions != 0.5 yet.  See daklib/dbconn.py")
 
 ################################################################################
 

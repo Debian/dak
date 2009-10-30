@@ -102,7 +102,7 @@ def init():
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: dinstall [OPTION]... [CHANGES]...
+    print """Usage: dak process-unchecked [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -h, --help                show this help and exit.
   -n, --no-action           don't do anything
