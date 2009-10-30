@@ -1819,12 +1819,12 @@ distribution."""
 
     ###########################################################################
 
-    def accept (self, summary, short_summary, targetdir=None):
+    def accept (self, summary, short_summary, session):
         """
         Accept an upload.
 
-        This moves all files referenced from the .changes into the I{accepted}
-        queue, sends the accepted mail, announces to lists, closes bugs and
+        This moves all files referenced from the .changes into the pool,
+        sends the accepted mail, announces to lists, closes bugs and
         also checks for override disparities. If enabled it will write out
         the version history for the BTS Version Tracking and will finally call
         L{queue_build}.
@@ -1834,31 +1834,84 @@ distribution."""
 
         @type short_summary: string
         @param short_summary: Short summary
-
         """
 
         cnf = Config()
         stats = SummaryStats()
 
-        accepttemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted')
+        print "Installing."
+        Logger.log(["installing changes", u.pkg.changes_file])
 
-        if targetdir is None:
-            targetdir = cnf["Dir::Queue::Accepted"]
+        # Add the .dsc file to the DB first
+        for newfile, entry in u.pkg.files.items():
+            if entry["type"] == "dsc":
+                dsc_component, dsc_location_id = add_dsc_to_db(u, newfile, session)
 
-        print "Accepting."
-        if self.logger:
-            self.logger.log(["Accepting changes", self.pkg.changes_file])
+        # Add .deb / .udeb files to the DB (type is always deb, dbtype is udeb/deb)
+        for newfile, entry in u.pkg.files.items():
+            if entry["type"] == "deb":
+                add_deb_to_db(u, newfile, session)
 
-        self.pkg.write_dot_dak(targetdir)
+        # If this is a sourceful diff only upload that is moving
+        # cross-component we need to copy the .orig files into the new
+        # component too for the same reasons as above.
+        if u.pkg.changes["architecture"].has_key("source"):
+            for orig_file in u.pkg.orig_files.keys():
+                if not u.pkg.orig_files[orig_file].has_key("id"):
+                    continue # Skip if it's not in the pool
+                orig_file_id = u.pkg.orig_files[orig_file]["id"]
+                if u.pkg.orig_files[orig_file]["location"] == dsc_location_id:
+                    continue # Skip if the location didn't change
 
-        # Move all the files into the accepted directory
-        utils.move(self.pkg.changes_file, targetdir)
+                # Do the move
+                oldf = get_poolfile_by_id(orig_file_id, session)
+                old_filename = os.path.join(oldf.location.path, oldf.filename)
+                old_dat = {'size': oldf.filesize,   'md5sum': oldf.md5sum,
+                           'sha1sum': oldf.sha1sum, 'sha256sum': oldf.sha256sum}
 
-        for name, entry in sorted(self.pkg.files.items()):
-            utils.move(name, targetdir)
-            stats.accept_bytes += float(entry["size"])
+                new_filename = os.path.join(utils.poolify(u.pkg.changes["source"], dsc_component), os.path.basename(old_filename))
 
-        stats.accept_count += 1
+                # TODO: Care about size/md5sum collisions etc
+                (found, newf) = check_poolfile(new_filename, file_size, file_md5sum, dsc_location_id, session)
+
+                if newf is None:
+                    utils.copy(old_filename, os.path.join(cnf["Dir::Pool"], new_filename))
+                    newf = add_poolfile(new_filename, old_dat, dsc_location_id, session)
+
+                    # TODO: Check that there's only 1 here
+                    source = get_sources_from_name(u.pkg.changes["source"], u.pkg.changes["version"])[0]
+                    dscf = get_dscfiles(source_id=source.source_id, poolfile_id=orig_file_id, session=session)[0]
+                    dscf.poolfile_id = newf.file_id
+                    session.add(dscf)
+                    session.flush()
+
+        # Install the files into the pool
+        for newfile, entry in u.pkg.files.items():
+            destination = os.path.join(cnf["Dir::Pool"], entry["pool name"], newfile)
+            utils.move(newfile, destination)
+            Logger.log(["installed", newfile, entry["type"], entry["size"], entry["architecture"]])
+            summarystats.accept_bytes += float(entry["size"])
+
+        # Copy the .changes file across for suite which need it.
+        copy_changes = {}
+        for suite_name in u.pkg.changes["distribution"].keys():
+            if cnf.has_key("Suite::%s::CopyChanges" % (suite_name)):
+                copy_changes[cnf["Suite::%s::CopyChanges" % (suite_name)]] = ""
+
+        for dest in copy_changes.keys():
+            utils.copy(u.pkg.changes_file, os.path.join(cnf["Dir::Root"], dest))
+
+        # We're done - commit the database changes
+        session.commit()
+        # Our SQL session will automatically start a new transaction after
+        # the last commit
+
+        # Move the .changes into the 'done' directory
+        utils.move(u.pkg.changes_file,
+                   os.path.join(cnf["Dir::Queue::Done"], os.path.basename(u.pkg.changes_file)))
+
+        if u.pkg.changes["architecture"].has_key("source") and log_urgency:
+            UrgencyLog().log(u.pkg.dsc["source"], u.pkg.dsc["version"], u.pkg.changes["urgency"])
 
         # Send accept mail, announce to lists, close bugs and check for
         # override disparities
@@ -1904,24 +1957,16 @@ distribution."""
             os.rename(temp_filename, filename)
             os.chmod(filename, 0644)
 
-        # Its is Cnf["Dir::Queue::Accepted"] here, not targetdir!
-        # <Ganneff> we do call queue_build too
-        # <mhy> well yes, we'd have had to if we were inserting into accepted
-        # <Ganneff> now. thats database only.
-        # <mhy> urgh, that's going to get messy
-        # <Ganneff> so i make the p-n call to it *also* using accepted/
-        # <mhy> but then the packages will be in the queue_build table without the files being there
-        # <Ganneff> as the buildd queue is only regenerated whenever unchecked runs
-        # <mhy> ah, good point
-        # <Ganneff> so it will work out, as unchecked move it over
-        # <mhy> that's all completely sick
-        # <Ganneff> yes
+        # auto-build queue
+#        res = get_or_set_queue('buildd', session).autobuild_upload(self.pkg, session)
+#        if res:
+#            utils.fubar(res)
+#            now_date = datetime.now()
 
-        # This routine returns None on success or an error on failure
-        res = get_or_set_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
-        if res:
-            utils.fubar(res)
+        session.commit()
 
+        # Finally...
+        summarystats.accept_count += 1
 
     def check_override(self):
         """
