@@ -28,6 +28,7 @@ Config access class
 
 ################################################################################
 
+import os
 import apt_pkg
 import socket
 
@@ -37,10 +38,9 @@ from singleton import Singleton
 
 default_config = "/etc/dak/dak.conf" #: default dak config, defines host properties
 
-def which_conf_file(Cnf):
-    res = socket.gethostbyaddr(socket.gethostname())
-    if Cnf.get("Config::" + res[0] + "::DakConfig"):
-        return Cnf["Config::" + res[0] + "::DakConfig"]
+def which_conf_file():
+    if os.getenv("DAK_CONFIG"):
+        return os.getenv("DAK_CONFIG")
     else:
         return default_config
 
@@ -57,7 +57,7 @@ class Config(Singleton):
 
         self.Cnf = apt_pkg.newConfiguration()
 
-        apt_pkg.ReadConfigFileISC(self.Cnf, default_config)
+        apt_pkg.ReadConfigFileISC(self.Cnf, which_conf_file())
 
         # Check whether our dak.conf was the real one or
         # just a pointer to our main one

@@ -191,10 +191,12 @@ def action(u):
         os.chdir(u.pkg.directory)
         u.do_reject(0, pi)
     elif answer == 'A':
+        u.pkg.add_known_changes( "Accepted" )
         u.accept(summary, short_summary)
         u.check_override()
         u.remove()
     elif answer == queuekey:
+        u.pkg.add_known_changes( qu )
         queue_info[qu]["process"](u, summary, short_summary)
         u.remove()
     elif answer == 'Q':
