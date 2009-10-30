@@ -154,4 +154,4 @@ def do_update(self):
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to apply known_changes update 18, rollback issued. Error message
+        raise DBUpdateError, "Unable to apply knownchanges update 18, rollback issued. Error message : %s" % (str(msg))
