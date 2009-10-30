@@ -35,7 +35,7 @@ from singleton import Singleton
 
 ################################################################################
 
-default_config = "/etc/dak/dak.conf"
+default_config = "/etc/dak/dak.conf" #: default dak config, defines host properties
 
 def which_conf_file(Cnf):
     res = socket.gethostbyaddr(socket.gethostname())
