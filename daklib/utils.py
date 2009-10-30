@@ -1487,7 +1487,7 @@ def is_email_alias(email):
 
 ################################################################################
 
-def get_changes_files(dir):
+def get_changes_files(from_dir):
     """
     Takes a directory and lists all .changes files in it (as well as chdir'ing
     to the directory; this is due to broken behaviour on the part of p-u/p-a
@@ -1497,10 +1497,10 @@ def get_changes_files(dir):
     """
     try:
         # Much of the rest of p-u/p-a depends on being in the right place
-        os.chdir(dir)
-        changes_files = [x for x in os.listdir(dir) if x.endswith('.changes')]
+        os.chdir(from_dir)
+        changes_files = [x for x in os.listdir(from_dir) if x.endswith('.changes')]
     except OSError, e:
-        fubar("Failed to read list from directory %s (%s)" % (dir, e))
+        fubar("Failed to read list from directory %s (%s)" % (from_dir, e))
 
     return changes_files
 
