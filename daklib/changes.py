@@ -197,24 +197,31 @@ class Changes(object):
 
         self.mark_missing_fields()
 
+        multivalues = {}
+        for key in ("distribution", "architecture", "binary"):
+            if isinstance(self.changes[key], dict):
+                multivalues[key] = ", ".join(self.changes[key].keys())
+            else:
+                multivalues[key] = self.changes[key].keys()
+
         session.execute(
             """INSERT INTO known_changes
               (changesname, seen, source, binaries, architecture, version,
               distribution, urgency, maintainer, fingerprint, changedby, date)
               VALUES (:changesfile,:filetime,:source,:binary, :architecture,
               :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
-              { 'changesfile':self.changes_file,
-                'filetime':filetime,
-                'source':self.changes["source"],
-                'binary':self.changes["binary"],
-                'architecture':self.changes["architecture"],
-                'version':self.changes["version"],
-                'distribution':self.changes["distribution"],
-                'urgency':self.changes["urgency"],
-                'maintainer':self.changes["maintainer"],
-                'fingerprint':self.changes["fingerprint"],
-                'changedby':self.changes["changed-by"],
-                'date':self.changes["date"]} )
+              { 'changesfile':  self.changes_file,
+                'filetime':     filetime,
+                'source':       self.changes["source"],
+                'binary':       multivalues["binary"],
+                'architecture': multivalues["architecture"],
+                'version':      self.changes["version"],
+                'distribution': multivalues["distribution"],
+                'urgency':      self.changes["urgency"],
+                'maintainer':   self.changes["maintainer"],
+                'fingerprint':  self.changes["fingerprint"],
+                'changedby':    self.changes["changed-by"],
+                'date':         self.changes["date"]} )
 
     def unknown_files_fields(self, name):
         return sorted(list( set(self.files[name].keys()) -
