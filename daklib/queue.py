@@ -1978,14 +1978,14 @@ distribution."""
 
     ###########################################################################
 
-    def remove(self, dir=None):
+    def remove(self, from_dir=None):
         """
         Used (for instance) in p-u to remove the package from unchecked
         """
-        if dir is None:
+        if from_dir is None:
             os.chdir(self.pkg.directory)
         else:
-            os.chdir(dir)
+            os.chdir(from_dir)
 
         for f in self.pkg.files.keys():
             os.unlink(f)
