@@ -755,7 +755,7 @@ class Upload(object):
 
         # Validate the component
         if not get_component(entry["component"], session):
-            self.rejects.append("file '%s' has unknown component '%s'." % (f, component))
+            self.rejects.append("file '%s' has unknown component '%s'." % (f, entry["component"]))
             return
 
         # See if the package is NEW
@@ -770,7 +770,7 @@ class Upload(object):
         location = cnf["Dir::Pool"]
         l = get_location(location, entry["component"], archive, session)
         if l is None:
-            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (component, archive))
+            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (entry["component"], archive))
             entry["location id"] = -1
         else:
             entry["location id"] = l.location_id
