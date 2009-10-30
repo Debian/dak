@@ -255,13 +255,11 @@ class ImportThread(threading.Thread):
             except ChangesUnicodeError:
                 warn("found invalid changes file, not properly utf-8 encoded")
 
-                
+
             except KeyboardInterrupt:
                 print("Caught C-c; on ImportThread. terminating.")
                 self.parent.plsDie()
                 sys.exit(1)
-                print("STUSTUSTUSTUSTU")
-                return
             except:
                 traceback.print_exc()
                 self.parent.plsDie()
@@ -293,7 +291,7 @@ class ImportKnownChanges(object):
 
         self.threads=[]
         sys.exit(1)
-        
+
 
 def main():
     cnf = Config()
@@ -332,7 +330,7 @@ def main():
     ImportKnownChanges(num_threads)
 
 
-        
+
 
 if __name__ == '__main__':
     main()
