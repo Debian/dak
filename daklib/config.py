@@ -39,10 +39,7 @@ from singleton import Singleton
 default_config = "/etc/dak/dak.conf" #: default dak config, defines host properties
 
 def which_conf_file():
-    if os.getenv("DAK_CONFIG"):
-        return os.getenv("DAK_CONFIG")
-    else:
-        return default_config
+    return os.getenv("DAK_CONFIG", default_config)
 
 class Config(Singleton):
     """
