@@ -1565,10 +1565,10 @@ class Upload(object):
         rej = False
         for f in self.pkg.files.keys():
             if self.pkg.files[f].has_key("byhand"):
-                self.rejects.append("%s may not upload BYHAND file %s" % (uid, f))
+                self.rejects.append("%s may not upload BYHAND file %s" % (fpr.uid.uid, f))
                 rej = True
             if self.pkg.files[f].has_key("new"):
-                self.rejects.append("%s may not upload NEW file %s" % (uid, f))
+                self.rejects.append("%s may not upload NEW file %s" % (fpr.uid.uid, f))
                 rej = True
 
         if rej:
