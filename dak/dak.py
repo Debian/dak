@@ -66,10 +66,8 @@ def init():
 
         ("process-new",
          "Process NEW and BYHAND packages"),
-        ("process-unchecked",
+        ("process-upload",
          "Process packages in queue/unchecked"),
-        ("process-accepted",
-         "Install packages into the pool"),
 
         ("make-suite-file-list",
          "Generate lists of packages per suite for apt-ftparchive"),
