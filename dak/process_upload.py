@@ -133,13 +133,14 @@ import sys
 import apt_pkg
 
 from daklib import daklog
-#from daklib.queue import *
+from daklib.queue import *
 from daklib import utils
 from daklib.dbconn import *
 #from daklib.dak_exceptions import *
 #from daklib.regexes import re_default_answer, re_issource, re_fdnic
 from daklib.urgencylog import UrgencyLog
 from daklib.summarystats import SummaryStats
+from daklib.holding import Holding
 from daklib.config import Config
 
 ###############################################################################
@@ -158,6 +159,88 @@ def usage (exit_code=0):
   -s, --no-mail             don't send any mail
   -V, --version             display the version number and exit"""
     sys.exit(exit_code)
+
+###############################################################################
+
+def process_it(changes_file):
+    global Logger
+
+    cnf = Config()
+
+    holding = Holding()
+
+    u = Upload()
+    u.pkg.changes_file = changes_file
+    u.pkg.directory = os.getcwd()
+    u.logger = Logger
+    origchanges = os.path.join(u.pkg.directory, u.pkg.changes_file)
+
+    # Some defaults in case we can't fully process the .changes file
+    u.pkg.changes["maintainer2047"] = cnf["Dinstall::MyEmailAddress"]
+    u.pkg.changes["changedby2047"] = cnf["Dinstall::MyEmailAddress"]
+
+    # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
+    bcc = "X-DAK: dak process-unchecked"
+    if cnf.has_key("Dinstall::Bcc"):
+        u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
+    else:
+        u.Subst["__BCC__"] = bcc
+
+    # Remember where we are so we can come back after cd-ing into the
+    # holding directory.  TODO: Fix this stupid hack
+    u.prevdir = os.getcwd()
+
+    # TODO: Figure out something better for this (or whether it's even
+    #       necessary - it seems to have been for use when we were
+    #       still doing the is_unchecked check; reprocess = 2)
+    u.reprocess = 1
+
+    try:
+        # If this is the Real Thing(tm), copy things into a private
+        # holding directory first to avoid replacable file races.
+        if not Options["No-Action"]:
+            os.chdir(cnf["Dir::Queue::Holding"])
+
+            # Absolutize the filename to avoid the requirement of being in the
+            # same directory as the .changes file.
+            holding.copy_to_holding(origchanges)
+
+            # Relativize the filename so we use the copy in holding
+            # rather than the original...
+            changespath = os.path.basename(u.pkg.changes_file)
+
+        (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changespath)
+
+        if u.pkg.changes["fingerprint"]:
+            valid_changes_p = u.load_changes(changespath)
+        else:
+            valid_changes_p = False
+            u.rejects.extend(rejects)
+
+        if valid_changes_p:
+            while u.reprocess:
+                u.check_distributions()
+                u.check_files(not Options["No-Action"])
+                valid_dsc_p = u.check_dsc(not Options["No-Action"])
+                if valid_dsc_p and not Options["No-Action"]:
+                    u.check_source()
+                    u.check_lintian()
+                u.check_hashes()
+                u.check_urgency()
+                u.check_timestamps()
+                u.check_signed_by_key()
+
+        action(u)
+
+    except (SystemExit, KeyboardInterrupt):
+        raise
+
+    except:
+        print "ERROR"
+        traceback.print_exc(file=sys.stderr)
+
+    # Restore previous WD
+    os.chdir(u.prevdir)
 
 ###############################################################################
 
@@ -234,6 +317,7 @@ def main():
     for changes_file in changes_files:
         print "\n" + changes_file
         session = DBConn().session()
+        process_it(changes_file)
         session.close()
 
     if summarystats.accept_count:
