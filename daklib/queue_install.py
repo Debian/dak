@@ -260,12 +260,12 @@ def is_new(u):
 def acknowledge_new(u, summary, short_summary):
     cnf = Config()
 
-    print "Moving to NEW holding area."
+    print "Moving to NEW queue."
     u.logger.log(["Moving to new", u.pkg.changes_file])
 
     u.move_to_dir(cnf["Dir::Queue::New"], perms=0640, changesperms=0644)
 
-    if not Options["No-Mail"]:
+    if not cnf["Dinstall::Options::No-Mail"]:
         print "Sending new ack."
         template = os.path.join(cnf["Dir::Templates"], 'process-unchecked.new')
         u.update_subst()

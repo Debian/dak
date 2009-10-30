@@ -39,6 +39,7 @@ import shutil
 import textwrap
 from types import *
 from sqlalchemy.sql.expression import desc
+from sqlalchemy.orm.exc import NoResultFound
 
 import yaml
 
@@ -47,6 +48,7 @@ from changes import *
 from regexes import *
 from config import Config
 from holding import Holding
+from urgencylog import UrgencyLog
 from dbconn import *
 from summarystats import SummaryStats
 from utils import parse_changes, check_dsc_files
@@ -1841,27 +1843,27 @@ distribution."""
         stats = SummaryStats()
 
         print "Installing."
-        Logger.log(["installing changes", u.pkg.changes_file])
+        self.logger.log(["installing changes", self.pkg.changes_file])
 
         # Add the .dsc file to the DB first
-        for newfile, entry in u.pkg.files.items():
+        for newfile, entry in self.pkg.files.items():
             if entry["type"] == "dsc":
-                dsc_component, dsc_location_id = add_dsc_to_db(u, newfile, session)
+                dsc_component, dsc_location_id = add_dsc_to_db(self, newfile, session)
 
         # Add .deb / .udeb files to the DB (type is always deb, dbtype is udeb/deb)
-        for newfile, entry in u.pkg.files.items():
+        for newfile, entry in self.pkg.files.items():
             if entry["type"] == "deb":
-                add_deb_to_db(u, newfile, session)
+                add_deb_to_db(self, newfile, session)
 
         # If this is a sourceful diff only upload that is moving
         # cross-component we need to copy the .orig files into the new
         # component too for the same reasons as above.
-        if u.pkg.changes["architecture"].has_key("source"):
-            for orig_file in u.pkg.orig_files.keys():
-                if not u.pkg.orig_files[orig_file].has_key("id"):
+        if self.pkg.changes["architecture"].has_key("source"):
+            for orig_file in self.pkg.orig_files.keys():
+                if not self.pkg.orig_files[orig_file].has_key("id"):
                     continue # Skip if it's not in the pool
-                orig_file_id = u.pkg.orig_files[orig_file]["id"]
-                if u.pkg.orig_files[orig_file]["location"] == dsc_location_id:
+                orig_file_id = self.pkg.orig_files[orig_file]["id"]
+                if self.pkg.orig_files[orig_file]["location"] == dsc_location_id:
                     continue # Skip if the location didn't change
 
                 # Do the move
@@ -1870,7 +1872,7 @@ distribution."""
                 old_dat = {'size': oldf.filesize,   'md5sum': oldf.md5sum,
                            'sha1sum': oldf.sha1sum, 'sha256sum': oldf.sha256sum}
 
-                new_filename = os.path.join(utils.poolify(u.pkg.changes["source"], dsc_component), os.path.basename(old_filename))
+                new_filename = os.path.join(utils.poolify(self.pkg.changes["source"], dsc_component), os.path.basename(old_filename))
 
                 # TODO: Care about size/md5sum collisions etc
                 (found, newf) = check_poolfile(new_filename, file_size, file_md5sum, dsc_location_id, session)
@@ -1880,27 +1882,27 @@ distribution."""
                     newf = add_poolfile(new_filename, old_dat, dsc_location_id, session)
 
                     # TODO: Check that there's only 1 here
-                    source = get_sources_from_name(u.pkg.changes["source"], u.pkg.changes["version"])[0]
+                    source = get_sources_from_name(self.pkg.changes["source"], self.pkg.changes["version"])[0]
                     dscf = get_dscfiles(source_id=source.source_id, poolfile_id=orig_file_id, session=session)[0]
                     dscf.poolfile_id = newf.file_id
                     session.add(dscf)
                     session.flush()
 
         # Install the files into the pool
-        for newfile, entry in u.pkg.files.items():
+        for newfile, entry in self.pkg.files.items():
             destination = os.path.join(cnf["Dir::Pool"], entry["pool name"], newfile)
             utils.move(newfile, destination)
-            Logger.log(["installed", newfile, entry["type"], entry["size"], entry["architecture"]])
-            summarystats.accept_bytes += float(entry["size"])
+            self.logger.log(["installed", newfile, entry["type"], entry["size"], entry["architecture"]])
+            stats.accept_bytes += float(entry["size"])
 
         # Copy the .changes file across for suite which need it.
         copy_changes = {}
-        for suite_name in u.pkg.changes["distribution"].keys():
+        for suite_name in self.pkg.changes["distribution"].keys():
             if cnf.has_key("Suite::%s::CopyChanges" % (suite_name)):
                 copy_changes[cnf["Suite::%s::CopyChanges" % (suite_name)]] = ""
 
         for dest in copy_changes.keys():
-            utils.copy(u.pkg.changes_file, os.path.join(cnf["Dir::Root"], dest))
+            utils.copy(self.pkg.changes_file, os.path.join(cnf["Dir::Root"], dest))
 
         # We're done - commit the database changes
         session.commit()
@@ -1908,11 +1910,11 @@ distribution."""
         # the last commit
 
         # Move the .changes into the 'done' directory
-        utils.move(u.pkg.changes_file,
-                   os.path.join(cnf["Dir::Queue::Done"], os.path.basename(u.pkg.changes_file)))
+        utils.move(self.pkg.changes_file,
+                   os.path.join(cnf["Dir::Queue::Done"], os.path.basename(self.pkg.changes_file)))
 
-        if u.pkg.changes["architecture"].has_key("source") and log_urgency:
-            UrgencyLog().log(u.pkg.dsc["source"], u.pkg.dsc["version"], u.pkg.changes["urgency"])
+        if self.pkg.changes["architecture"].has_key("source") and cnf.get("Dir::UrgencyLog"):
+            UrgencyLog().log(self.pkg.dsc["source"], self.pkg.dsc["version"], self.pkg.changes["urgency"])
 
         # Send accept mail, announce to lists, close bugs and check for
         # override disparities
@@ -1920,7 +1922,8 @@ distribution."""
             self.update_subst()
             self.Subst["__SUITE__"] = ""
             self.Subst["__SUMMARY__"] = summary
-            mail_message = utils.TemplateSubst(self.Subst, accepttemplate)
+            mail_message = utils.TemplateSubst(self.Subst,
+                                               os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted'))
             utils.send_mail(mail_message)
             self.announce(short_summary, 1)
 
@@ -1967,7 +1970,7 @@ distribution."""
         session.commit()
 
         # Finally...
-        summarystats.accept_count += 1
+        stats.accept_count += 1
 
     def check_override(self):
         """
