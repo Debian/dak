@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 
-import unittest
-
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from base_test import DakTestCase
 
 from daklib import regexes
 
-class re_single_line_field(unittest.TestCase):
+class re_single_line_field(DakTestCase):
     MATCH = regexes.re_single_line_field.match
 
     def testSimple(self):
@@ -32,7 +29,7 @@ class re_single_line_field(unittest.TestCase):
         self.assertEqual(self.MATCH('Foo::bar').groups(), ('Foo', ':bar'))
         self.assertEqual(self.MATCH('Foo: :bar').groups(), ('Foo', ':bar'))
 
-class re_parse_lintian(unittest.TestCase):
+class re_parse_lintian(DakTestCase):
     MATCH = regexes.re_parse_lintian.match
 
     def testBinary(self):

@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-import unittest
+from base_test import DakTestCase
 
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import unittest
 
 from daklib.formats import parse_format, validate_changes_format
 from daklib.dak_exceptions import UnknownFormatError
 
-class ParseFormatTestCase(unittest.TestCase):
+class ParseFormatTestCase(DakTestCase):
     def assertParse(self, format, expected):
         self.assertEqual(parse_format(format), expected)
 
@@ -30,7 +29,7 @@ class ParseFormatTestCase(unittest.TestCase):
         self.assertParse('1.2 (three)', (1, 2, 'three'))
         self.assertParseFail('0.0 ()')
 
-class ValidateChangesFormat(unittest.TestCase):
+class ValidateChangesFormat(DakTestCase):
     def assertValid(self, changes, field='files'):
         validate_changes_format(changes, field)
 
@@ -56,3 +55,6 @@ class ValidateChangesFormat(unittest.TestCase):
     def testFilesField(self):
         self.assertInvalid((1, 7), field='notfiles')
         self.assertValid((1, 8), field='notfiles')
+
+if __name__ == '__main__':
+    unittest.main()
