@@ -37,6 +37,7 @@ import os
 import re
 import psycopg2
 import traceback
+import datetime
 
 from inspect import getargspec
 
@@ -728,6 +729,10 @@ class PoolFile(object):
     def __repr__(self):
         return '<PoolFile %s>' % self.filename
 
+    @property
+    def fullpath(self):
+        return os.path.join(self.location.path, self.filename)
+
 __all__.append('PoolFile')
 
 @session_wrapper
@@ -1119,6 +1124,18 @@ def get_knownchange(filename, session=None):
 __all__.append('get_knownchange')
 
 ################################################################################
+
+class KnownChangePendingFile(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<KnownChangePendingFile %s>' % self.known_change_pending_file_id
+
+__all__.append('KnownChangePendingFile')
+
+################################################################################
+
 class Location(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1562,127 +1579,55 @@ class Queue(object):
     def __repr__(self):
         return '<Queue %s>' % self.queue_name
 
-    def autobuild_upload(self, changes, srcpath, session=None):
-        """
-        Update queue_build database table used for incoming autobuild support.
+    def add_file_from_pool(self, poolfile):
+        """Copies a file into the pool.  Assumes that the PoolFile object is
+        attached to the same SQLAlchemy session as the Queue object is.
 
-        @type changes: Changes
-        @param changes: changes object for the upload to process
+        The caller is responsible for committing after calling this function."""
+        poolfile_basename = poolfile.filename[poolfile.filename.rindex(os.sep)+1:]
 
-        @type srcpath: string
-        @param srcpath: path for the queue file entries/link destinations
+        # Check if we have a file of this name or this ID already
+        for f in self.queuefiles:
+            if f.fileid is not None and f.fileid == poolfile.file_id or \
+               f.poolfile.filename == poolfile_basename:
+                   # In this case, update the QueueFile entry so we
+                   # don't remove it too early
+                   f.lastused = datetime.now()
+                   DBConn().session().object_session(pf).add(f)
+                   return f
 
-        @type session: SQLAlchemy session
-        @param session: Optional SQLAlchemy session.  If this is passed, the
-        caller is responsible for ensuring a transaction has begun and
-        committing the results or rolling back based on the result code.  If
-        not passed, a commit will be performed at the end of the function,
-        otherwise the caller is responsible for commiting.
+        # Prepare QueueFile object
+        qf = QueueFile()
+        qf.queue_id = self.queue_id
+        qf.lastused = datetime.now()
+        qf.filename = dest
 
-        @rtype: NoneType or string
-        @return: None if the operation failed, a string describing the error if not
-        """
+        targetpath = qf.fullpath
+        queuepath = os.path.join(self.path, poolfile_basename)
 
-        privatetrans = False
-        if session is None:
-            session = DBConn().session()
-            privatetrans = True
+        try:
+            if self.copy_pool_files:
+                # We need to copy instead of symlink
+                import utils
+                utils.copy(targetfile, queuepath)
+                # NULL in the fileid field implies a copy
+                qf.fileid = None
+            else:
+                os.symlink(targetfile, queuepath)
+                qf.fileid = poolfile.file_id
+        except OSError:
+            return None
 
-        # TODO: Remove by moving queue config into the database
-        conf = Config()
+        # Get the same session as the PoolFile is using and add the qf to it
+        DBConn().session().object_session(poolfile).add(qf)
 
-        for suitename in changes.changes["distribution"].keys():
-            # TODO: Move into database as:
-            #       buildqueuedir TEXT DEFAULT NULL (i.e. NULL is no build)
-            #       buildqueuecopy BOOLEAN NOT NULL DEFAULT FALSE (i.e. default is symlink)
-            #       This also gets rid of the SecurityQueueBuild hack below
-            if suitename not in conf.ValueList("Dinstall::QueueBuildSuites"):
-                continue
+        return qf
 
-            # Find suite object
-            s = get_suite(suitename, session)
-            if s is None:
-                return "INTERNAL ERROR: Could not find suite %s" % suitename
-
-            # TODO: Get from database as above
-            dest_dir = conf["Dir::QueueBuild"]
-
-            # TODO: Move into database as above
-            if conf.FindB("Dinstall::SecurityQueueBuild"):
-                dest_dir = os.path.join(dest_dir, suitename)
-
-            for file_entry in changes.files.keys():
-                src = os.path.join(srcpath, file_entry)
-                dest = os.path.join(dest_dir, file_entry)
-
-                # TODO: Move into database as above
-                if conf.FindB("Dinstall::SecurityQueueBuild"):
-                    # Copy it since the original won't be readable by www-data
-                    import utils
-                    utils.copy(src, dest)
-                else:
-                    # Create a symlink to it
-                    os.symlink(src, dest)
-
-                qb = QueueBuild()
-                qb.suite_id = s.suite_id
-                qb.queue_id = self.queue_id
-                qb.filename = dest
-                qb.in_queue = True
-
-                session.add(qb)
-
-            # If the .orig tarballs are in the pool, create a symlink to
-            # them (if one doesn't already exist)
-            for dsc_file in changes.dsc_files.keys():
-                # Skip all files except orig tarballs
-                from daklib.regexes import re_is_orig_source
-                if not re_is_orig_source.match(dsc_file):
-                    continue
-                # Skip orig files not identified in the pool
-                if not (changes.orig_files.has_key(dsc_file) and
-                        changes.orig_files[dsc_file].has_key("id")):
-                    continue
-                orig_file_id = changes.orig_files[dsc_file]["id"]
-                dest = os.path.join(dest_dir, dsc_file)
-
-                # If it doesn't exist, create a symlink
-                if not os.path.exists(dest):
-                    q = session.execute("SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id",
-                                        {'id': orig_file_id})
-                    res = q.fetchone()
-                    if not res:
-                        return "[INTERNAL ERROR] Couldn't find id %s in files table." % (orig_file_id)
-
-                    src = os.path.join(res[0], res[1])
-                    os.symlink(src, dest)
-
-                    # Add it to the list of packages for later processing by apt-ftparchive
-                    qb = QueueBuild()
-                    qb.suite_id = s.suite_id
-                    qb.queue_id = self.queue_id
-                    qb.filename = dest
-                    qb.in_queue = True
-                    session.add(qb)
-
-                # If it does, update things to ensure it's not removed prematurely
-                else:
-                    qb = get_queue_build(dest, s.suite_id, session)
-                    if qb is None:
-                        qb.in_queue = True
-                        qb.last_used = None
-                        session.add(qb)
-
-        if privatetrans:
-            session.commit()
-            session.close()
-
-        return None
 
 __all__.append('Queue')
 
 @session_wrapper
-def get_or_set_queue(queuename, session=None):
+def get_queue(queuename, session=None):
     """
     Returns Queue object for given C{queue name}, creating it if it does not
     exist.
@@ -1701,60 +1646,22 @@ def get_or_set_queue(queuename, session=None):
     q = session.query(Queue).filter_by(queue_name=queuename)
 
     try:
-        ret = q.one()
-    except NoResultFound:
-        queue = Queue()
-        queue.queue_name = queuename
-        session.add(queue)
-        session.commit_or_flush()
-        ret = queue
-
-    return ret
-
-__all__.append('get_or_set_queue')
-
-################################################################################
-
-class QueueBuild(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<QueueBuild %s (%s)>' % (self.filename, self.queue_id)
-
-__all__.append('QueueBuild')
-
-@session_wrapper
-def get_queue_build(filename, suite, session=None):
-    """
-    Returns QueueBuild object for given C{filename} and C{suite}.
-
-    @type filename: string
-    @param filename: The name of the file
-
-    @type suiteid: int or str
-    @param suiteid: Suite name or ID
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: Queue
-    @return: Queue object for the given queue
-    """
-
-    if isinstance(suite, int):
-        q = session.query(QueueBuild).filter_by(filename=filename).filter_by(suite_id=suite)
-    else:
-        q = session.query(QueueBuild).filter_by(filename=filename)
-        q = q.join(Suite).filter_by(suite_name=suite)
-
-    try:
         return q.one()
     except NoResultFound:
         return None
 
-__all__.append('get_queue_build')
+__all__.append('get_queue')
+
+################################################################################
+
+class QueueFile(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<QueueFile %s (%s)>' % (self.filename, self.queue_id)
+
+__all__.append('QueueFile')
 
 ################################################################################
 
@@ -2354,6 +2261,8 @@ class DBConn(Singleton):
         self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
         self.tbl_content_file_names = Table('content_file_names', self.db_meta, autoload=True)
         self.tbl_content_file_paths = Table('content_file_paths', self.db_meta, autoload=True)
+        self.tbl_changes_pending_files = Table('changes_pending_files', self.db_meta, autoload=True)
+        self.tbl_changes_pool_files = Table('changes_pool_files', self.db_meta, autoload=True)
         self.tbl_dsc_files = Table('dsc_files', self.db_meta, autoload=True)
         self.tbl_files = Table('files', self.db_meta, autoload=True)
         self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
@@ -2368,7 +2277,7 @@ class DBConn(Singleton):
         self.tbl_pending_content_associations = Table('pending_content_associations', self.db_meta, autoload=True)
         self.tbl_priority = Table('priority', self.db_meta, autoload=True)
         self.tbl_queue = Table('queue', self.db_meta, autoload=True)
-        self.tbl_queue_build = Table('queue_build', self.db_meta, autoload=True)
+        self.tbl_queue_files = Table('queue_files', self.db_meta, autoload=True)
         self.tbl_section = Table('section', self.db_meta, autoload=True)
         self.tbl_source = Table('source', self.db_meta, autoload=True)
         self.tbl_source_acl = Table('source_acl', self.db_meta, autoload=True)
@@ -2378,6 +2287,7 @@ class DBConn(Singleton):
         self.tbl_suite = Table('suite', self.db_meta, autoload=True)
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
         self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
+        self.tbl_suite_queue_copy = Table('suite_queue_copy', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
         self.tbl_upload_blocks = Table('upload_blocks', self.db_meta, autoload=True)
 
@@ -2458,7 +2368,14 @@ class DBConn(Singleton):
                                  keyring_id = self.tbl_keyrings.c.id))
 
         mapper(KnownChange, self.tbl_known_changes,
-               properties = dict(known_change_id = self.tbl_known_changes.c.id))
+               properties = dict(known_change_id = self.tbl_known_changes.c.id,
+                                 poolfiles = relation(PoolFile,
+                                                      secondary=self.tbl_changes_pool_files,
+                                                      backref="changeslinks"),
+                                 files = relation(KnownChangePendingFile, backref="changesfile")))
+
+        mapper(KnownChangePendingFile, self.tbl_changes_pending_files,
+               properties = dict(known_change_pending_file_id = self.tbl_changes_pending_files.id))
 
         mapper(KeyringACLMap, self.tbl_keyring_acl_map,
                properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
@@ -2501,10 +2418,9 @@ class DBConn(Singleton):
         mapper(Queue, self.tbl_queue,
                properties = dict(queue_id = self.tbl_queue.c.id))
 
-        mapper(QueueBuild, self.tbl_queue_build,
-               properties = dict(suite_id = self.tbl_queue_build.c.suite,
-                                 queue_id = self.tbl_queue_build.c.queue,
-                                 queue = relation(Queue, backref='queuebuild')))
+        mapper(QueueFile, self.tbl_queue_files,
+               properties = dict(queue = relation(Queue, backref='queuefiles'),
+                                 poolfile = relation(PoolFile, backref='queueinstances')))
 
         mapper(Section, self.tbl_section,
                properties = dict(section_id = self.tbl_section.c.id))
@@ -2553,7 +2469,8 @@ class DBConn(Singleton):
 
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id,
-                                 policy_queue = relation(Queue)))
+                                 policy_queue = relation(Queue),
+                                 copy_queues = relation(Queue, secondary=self.tbl_suite_queue_copy)))
 
         mapper(SuiteArchitecture, self.tbl_suite_architectures,
                properties = dict(suite_id = self.tbl_suite_architectures.c.suite,

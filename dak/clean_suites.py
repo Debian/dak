@@ -163,6 +163,7 @@ def check_files(now_date, delete_date, max_delete, session):
 SELECT id, filename FROM files f
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.file = f.id)
     AND NOT EXISTS (SELECT 1 FROM dsc_files df WHERE df.file = f.id)
+    AND NOT EXISTS (SELECT 1 FROM changes_pool_files cpf WHERE cpf.fileid = f.id)
     AND last_used IS NULL
     ORDER BY filename""")
 
