@@ -45,8 +45,7 @@ from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
-                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
-                    re_is_orig_source
+                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource
 
 from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
