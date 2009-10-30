@@ -815,28 +815,28 @@ class Upload(object):
 
             os.chdir(cwd)
 
-        # Check there isn't already a .changes file of the same name in
-        # the proposed-updates "CopyChanges" storage directories.
+        # check we already know the changes file
         # [NB: this check must be done post-suite mapping]
         base_filename = os.path.basename(self.pkg.changes_file)
 
-        for suite in self.pkg.changes["distribution"].keys():
-            copychanges = "Suite::%s::CopyChanges" % (suite)
-            if cnf.has_key(copychanges) and \
-                   os.path.exists(os.path.join(cnf[copychanges], base_filename)):
-                self.rejects.append("%s: a file with this name already exists in %s" \
-                           % (base_filename, cnf[copychanges]))
+        session = DBConn().session()
+
+        try:
+            changes = session.query(KnownChange).filter_by(changesname=base_filename).one()
+            if not changes.approved_for:
+                self.rejects.append("%s file already known to dak" % base_filename)
+        except NoResultFound, e:
+            # not known, good
+            pass
 
         has_binaries = False
         has_source = False
 
-        session = DBConn().session()
-
         for f, entry in self.pkg.files.items():
             # Ensure the file does not already exist in one of the accepted directories
-            for d in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+            for d in [ "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
                 if not cnf.has_key("Dir::Queue::%s" % (d)): continue
-                if os.path.exists(cnf["Dir::Queue::%s" % (d) ] + '/' + f):
+                if os.path.exists(os.path.join(cnf["Dir::Queue::%s" % (d) ], f)):
                     self.rejects.append("%s file already exists in the %s directory." % (f, d))
 
             if not re_taint_free.match(f):
