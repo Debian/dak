@@ -769,7 +769,7 @@ def check_poolfile(filename, filesize, md5sum, location_id, session=None):
         ret = (False, None)
     else:
         obj = q.one()
-        if obj.md5sum != md5sum or obj.filesize != filesize:
+        if obj.md5sum != md5sum or obj.filesize != int(filesize):
             ret = (False, obj)
 
     if ret is None:
