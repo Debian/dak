@@ -217,20 +217,24 @@ def action(u):
             answer = m.group(1)
         answer = answer[:1].upper()
 
+    session = DBConn().session()
+
     if answer == 'R':
         os.chdir(u.pkg.directory)
         u.do_reject(0, pi)
     elif answer == 'A':
-        u.pkg.add_known_changes(holding.holding_dir)
-        u.accept(summary, short_summary)
+        u.pkg.add_known_changes(holding.holding_dir, session)
+        u.accept(summary, short_summary, session)
         u.check_override()
         u.remove()
     elif answer == queuekey:
-        u.pkg.add_known_changes(holding.holding_dir)
-        QueueInfo[qu]["process"](u, summary, short_summary)
+        u.pkg.add_known_changes(holding.holding_dir, session)
+        QueueInfo[qu]["process"](u, summary, short_summary, session)
         u.remove()
     elif answer == 'Q':
         sys.exit(0)
+
+    session.commit()
 
 ###############################################################################
 

@@ -127,7 +127,7 @@ def is_unembargo(u):
 
     return ret
 
-def queue_unembargo(u, summary, short_summary):
+def queue_unembargo(u, summary, short_summary, session=None):
     return package_to_queue(u, summary, short_summary, "Unembargoed",
                             perms=0660, build=True, announce='process-unchecked.accepted')
 
@@ -137,7 +137,7 @@ def is_embargo(u):
     # if embargoed queues are enabled always embargo
     return True
 
-def queue_embargo(u, summary, short_summary):
+def queue_embargo(u, summary, short_summary, session=None):
     return package_to_queue(u, summary, short_summary, "Unembargoed",
                             perms=0660, build=True, announce='process-unchecked.accepted')
 
@@ -146,7 +146,7 @@ def queue_embargo(u, summary, short_summary):
 def is_stableupdate(u):
     return package_to_suite(u, 'proposed-updates')
 
-def do_stableupdate(u, summary, short_summary):
+def do_stableupdate(u, summary, short_summary, session=None):
     return package_to_queue(u, summary, short_summary, "ProposedUpdates",
                             perms=0664, build=False, announce=None)
 
@@ -155,7 +155,7 @@ def do_stableupdate(u, summary, short_summary):
 def is_oldstableupdate(u):
     return package_to_suite(u, 'oldstable-proposed-updates')
 
-def do_oldstableupdate(u, summary, short_summary):
+def do_oldstableupdate(u, summary, short_summary, session=None):
     return package_to_queue(u, summary, short_summary, "OldProposedUpdates",
                             perms=0664, build=False, announce=None)
 
@@ -200,7 +200,7 @@ def is_autobyhand(u):
 
     return any_auto and all_auto
 
-def do_autobyhand(u, summary, short_summary):
+def do_autobyhand(u, summary, short_summary, session=None):
     print "Attempting AUTOBYHAND."
     byhandleft = True
     for f, entry in u.pkg.files.items():
@@ -230,12 +230,10 @@ def do_autobyhand(u, summary, short_summary):
             byhandleft = True
 
     if byhandleft:
-        do_byhand(u, summary, short_summary)
+        do_byhand(u, summary, short_summary, session)
     else:
-        u.accept(summary, short_summary)
+        u.accept(summary, short_summary, session)
         u.check_override()
-        # XXX: We seem to be missing a u.remove() here
-        #      This might explain why we get byhand leftovers in unchecked - mhy
 
 ################################################################################
 
@@ -245,7 +243,7 @@ def is_byhand(u):
             return True
     return False
 
-def do_byhand(u, summary, short_summary):
+def do_byhand(u, summary, short_summary, session=None):
     return package_to_queue(u, summary, short_summary, "Byhand",
                             perms=0660, build=False, announce=None)
 
@@ -257,7 +255,7 @@ def is_new(u):
             return True
     return False
 
-def acknowledge_new(u, summary, short_summary):
+def acknowledge_new(u, summary, short_summary, session=None):
     cnf = Config()
 
     print "Moving to NEW queue."

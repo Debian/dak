@@ -1821,8 +1821,8 @@ distribution."""
         return summary
 
     ###########################################################################
-
-    def accept (self, summary, short_summary, session):
+    @session_wrapper
+    def accept (self, summary, short_summary, session=None):
         """
         Accept an upload.
 
