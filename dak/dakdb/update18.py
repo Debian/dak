@@ -127,23 +127,23 @@ def do_update(self):
                 print "Looking into %s" % (checkdir)
                 for filename in os.listdir(checkdir):
                     if not filename.endswith(".changes"):
-                            # Only interested in changes files.
-                            continue
-                        try:
-                            count += 1
-                            print "Directory %s, file %7d, failures %3d. (%s)" % (directory, count, failure, filename)
-                            changes = Changes()
-                            changes.changes_file = filename
-                            changesfile = os.path.join(checkdir, filename)
-                            changes.changes = parse_changes(changesfile, signing_rules=-1)
-                            changes.changes["fingerprint"], = check_signature(changesfile)
-                            changes.add_known_changes(directory)
-                        except InvalidDscError, line:
-                            warn("syntax error in .dsc file '%s', line %s." % (f, line))
-                            failure += 1
-                        except ChangesUnicodeError:
-                            warn("found invalid changes file, not properly utf-8 encoded")
-                            failure += 1
+                        # Only interested in changes files.
+                        continue
+                    try:
+                        count += 1
+                        print "Directory %s, file %7d, failures %3d. (%s)" % (directory, count, failure, filename)
+                        changes = Changes()
+                        changes.changes_file = filename
+                        changesfile = os.path.join(checkdir, filename)
+                        changes.changes = parse_changes(changesfile, signing_rules=-1)
+                        changes.changes["fingerprint"], = check_signature(changesfile)
+                        changes.add_known_changes(directory)
+                    except InvalidDscError, line:
+                        warn("syntax error in .dsc file '%s', line %s." % (f, line))
+                        failure += 1
+                    except ChangesUnicodeError:
+                        warn("found invalid changes file, not properly utf-8 encoded")
+                        failure += 1
 
 
         c.execute("GRANT ALL ON known_changes TO ftpmaster;")
