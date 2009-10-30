@@ -611,11 +611,16 @@ def insert_content_paths(binary_id, fullpaths, session=None):
     try:
         # Insert paths
         pathcache = {}
-        for fullpath in fullpaths:
-            if fullpath.startswith( './' ):
-                fullpath = fullpath[2:]
 
-            session.execute( "INSERT INTO bin_contents ( file, binary_id ) VALUES ( :filename, :id )", { 'filename': fullpath, 'id': binary_id}  )
+        def generate_path_dicts():
+            for fullpath in fullpaths:
+                if fullpath.startswith( './' ):
+                    fullpath = fullpath[2:]
+
+                yield {'fulename':fullpath, 'id': binary_id }
+
+        session.execute( "INSERT INTO bin_contents ( file, binary_id ) VALUES ( :filename, :id )",
+                         generate_path_dicts() )
 
         session.commit()
         if privatetrans:
@@ -1244,7 +1249,7 @@ def insert_pending_content_paths(package,
             pca.file = fullpath
             pca.architecture = arch_id
 
-            if isudeb: 
+            if isudeb:
                 pca.type = 8 # gross
             else:
                 pca.type = 7 # also gross
