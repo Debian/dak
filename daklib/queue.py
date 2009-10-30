@@ -2426,6 +2426,7 @@ distribution."""
                                 # This would fix the stupidity of changing something we often iterate over
                                 # whilst we're doing it
                                 del self.pkg.files[dsc_name]
+                                dsc_entry["files id"] = i.file_id
                                 if not orig_files.has_key(dsc_name):
                                     orig_files[dsc_name] = {}
                                 orig_files[dsc_name]["path"] = os.path.join(i.location.path, i.filename)
