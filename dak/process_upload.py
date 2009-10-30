@@ -149,11 +149,25 @@ Logger = None
 
 ###############################################################################
 
-def init():
-    global Options
+def usage (exit_code=0):
+    print """Usage: dak process-upload [OPTION]... [CHANGES]...
+  -a, --automatic           automatic run
+  -h, --help                show this help and exit.
+  -n, --no-action           don't do anything
+  -p, --no-lock             don't check lockfile !! for cron.daily only !!
+  -s, --no-mail             don't send any mail
+  -V, --version             display the version number and exit"""
+    sys.exit(exit_code)
 
-    # Initialize config and connection to db
+###############################################################################
+
+def main():
+    global Options, Logger
+
     cnf = Config()
+    summarystats = SummaryStats()
+    log_urgency = False
+
     DBConn()
 
     Arguments = [('a',"automatic","Dinstall::Options::Automatic"),
@@ -174,45 +188,9 @@ def init():
     if Options["Help"]:
         usage()
 
-    # If we have a directory flag, use it to find our files
-    if cnf["Dinstall::Options::Directory"] != "":
-        # Note that we clobber the list of files we were given in this case
-        # so warn if the user has done both
-        if len(changes_files) > 0:
-            utils.warn("Directory provided so ignoring files given on command line")
-
-        changes_files = utils.get_changes_files(cnf["Dinstall::Options::Directory"])
-
-    return changes_files
-
-###############################################################################
-
-def usage (exit_code=0):
-    print """Usage: dak process-upload [OPTION]... [CHANGES]...
-  -a, --automatic           automatic run
-  -h, --help                show this help and exit.
-  -n, --no-action           don't do anything
-  -p, --no-lock             don't check lockfile !! for cron.daily only !!
-  -s, --no-mail             don't send any mail
-  -V, --version             display the version number and exit"""
-    sys.exit(exit_code)
-
-###############################################################################
-
-def main():
-    global Logger
-
-    cnf = Config()
-    summarystats = SummaryStats()
-    changes_files = init()
-    log_urgency = False
-    stable_queue = None
-
     # -n/--dry-run invalidates some other options which would involve things happening
     if Options["No-Action"]:
         Options["Automatic"] = ""
-
-    # Check that we aren't going to clash with the daily cron job
 
     # Check that we aren't going to clash with the daily cron job
     if not Options["No-Action"] and os.path.exists("%s/daily.lock" % (cnf["Dir::Lock"])) and not Options["No-Lock"]:
@@ -234,6 +212,20 @@ def main():
             UrgencyLog()
 
     Logger = daklog.Logger(cnf, "process-upload", Options["No-Action"])
+
+    # If we have a directory flag, use it to find our files
+    if cnf["Dinstall::Options::Directory"] != "":
+        # Note that we clobber the list of files we were given in this case
+        # so warn if the user has done both
+        if len(changes_files) > 0:
+            utils.warn("Directory provided so ignoring files given on command line")
+
+        changes_files = utils.get_changes_files(cnf["Dinstall::Options::Directory"])
+        Logger.log(["Using changes files from directory", cnf["Dinstall::Options::Directory"], len(changes_files)])
+    elif not len(changes_files) > 0:
+        utils.fubar("No changes files given and no directory specified")
+    else:
+        Logger.log(["Using changes files from command-line", len(changes_files)])
 
     # Sort the .changes files so that we process sourceful ones first
     changes_files.sort(utils.changes_compare)
