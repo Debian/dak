@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-""" Create all the Release files """
+""" Create all the Release files
 
-# Copyright (C) 2001, 2002, 2006  Anthony Towns <ajt@debian.org>
-
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@Copyright: 2001, 2002, 2006  Anthony Towns <ajt@debian.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -22,8 +25,12 @@
 
 ################################################################################
 
-import sys, os, stat, time
-import gzip, bz2
+import sys
+import os
+import stat
+import time
+import gzip
+import bz2
 import apt_pkg
 
 from daklib import utils
