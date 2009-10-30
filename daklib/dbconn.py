@@ -34,6 +34,7 @@
 ################################################################################
 
 import os
+import re
 import psycopg2
 import traceback
 
@@ -230,6 +231,17 @@ __all__.append('BinAssociation')
 
 ################################################################################
 
+class BinContents(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<BinContents (%s, %s)>' % (self.binary, self.filename)
+
+__all__.append('BinContents')
+
+################################################################################
+
 class DBBinary(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -377,6 +389,28 @@ __all__.append('get_binary_components')
 
 ################################################################################
 
+class BinaryACL(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<BinaryACL %s>' % self.binary_acl_id
+
+__all__.append('BinaryACL')
+
+################################################################################
+
+class BinaryACLMap(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<BinaryACLMap %s>' % self.binary_acl_map_id
+
+__all__.append('BinaryACLMap')
+
+################################################################################
+
 class Component(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -434,15 +468,6 @@ class DBConfig(object):
 __all__.append('DBConfig')
 
 ################################################################################
-
-class ContentFilename(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<ContentFilename %s>' % self.filename
-
-__all__.append('ContentFilename')
 
 @session_wrapper
 def get_or_set_contents_file_id(filename, session=None):
@@ -610,28 +635,14 @@ def insert_content_paths(binary_id, fullpaths, session=None):
         # Insert paths
         pathcache = {}
         for fullpath in fullpaths:
-            # Get the necessary IDs ...
-            (path, file) = os.path.split(fullpath)
+            if fullpath.startswith( './' ):
+                fullpath = fullpath[2:]
 
-            filepath_id = get_or_set_contents_path_id(path, session)
-            filename_id = get_or_set_contents_file_id(file, session)
+            session.execute( "INSERT INTO bin_contents ( file, binary_id ) VALUES ( :filename, :id )", { 'filename': fullpath, 'id': binary_id}  )
 
-            pathcache[fullpath] = (filepath_id, filename_id)
-
-        for fullpath, dat in pathcache.items():
-            ca = ContentAssociation()
-            ca.binary_id = binary_id
-            ca.filepath_id = dat[0]
-            ca.filename_id = dat[1]
-            session.add(ca)
-
-        # Only commit if we set up the session ourself
+        session.commit()
         if privatetrans:
-            session.commit()
             session.close()
-        else:
-            session.flush()
-
         return True
 
     except:
@@ -828,6 +839,33 @@ class Fingerprint(object):
 __all__.append('Fingerprint')
 
 @session_wrapper
+def get_fingerprint(fpr, session=None):
+    """
+    Returns Fingerprint object for given fpr.
+
+    @type fpr: string
+    @param fpr: The fpr to find / add
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied).
+
+    @rtype: Fingerprint
+    @return: the Fingerprint object for the given fpr or None
+    """
+
+    q = session.query(Fingerprint).filter_by(fingerprint=fpr)
+
+    try:
+        ret = q.one()
+    except NoResultFound:
+        ret = None
+
+    return ret
+
+__all__.append('get_fingerprint')
+
+@session_wrapper
 def get_or_set_fingerprint(fpr, session=None):
     """
     Returns Fingerprint object for given fpr.
@@ -864,20 +902,139 @@ __all__.append('get_or_set_fingerprint')
 
 ################################################################################
 
+# Helper routine for Keyring class
+def get_ldap_name(entry):
+    name = []
+    for k in ["cn", "mn", "sn"]:
+        ret = entry.get(k)
+        if ret and ret[0] != "" and ret[0] != "-":
+            name.append(ret[0])
+    return " ".join(name)
+
+################################################################################
+
 class Keyring(object):
+    gpg_invocation = "gpg --no-default-keyring --keyring %s" +\
+                     " --with-colons --fingerprint --fingerprint"
+
+    keys = {}
+    fpr_lookup = {}
+
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Keyring %s>' % self.keyring_name
 
+    def de_escape_gpg_str(self, str):
+        esclist = re.split(r'(\\x..)', str)
+        for x in range(1,len(esclist),2):
+            esclist[x] = "%c" % (int(esclist[x][2:],16))
+        return "".join(esclist)
+
+    def load_keys(self, keyring):
+        import email.Utils
+
+        if not self.keyring_id:
+            raise Exception('Must be initialized with database information')
+
+        k = os.popen(self.gpg_invocation % keyring, "r")
+        key = None
+        signingkey = False
+
+        for line in k.xreadlines():
+            field = line.split(":")
+            if field[0] == "pub":
+                key = field[4]
+                (name, addr) = email.Utils.parseaddr(field[9])
+                name = re.sub(r"\s*[(].*[)]", "", name)
+                if name == "" or addr == "" or "@" not in addr:
+                    name = field[9]
+                    addr = "invalid-uid"
+                name = self.de_escape_gpg_str(name)
+                self.keys[key] = {"email": addr}
+                if name != "":
+                    self.keys[key]["name"] = name
+                self.keys[key]["aliases"] = [name]
+                self.keys[key]["fingerprints"] = []
+                signingkey = True
+            elif key and field[0] == "sub" and len(field) >= 12:
+                signingkey = ("s" in field[11])
+            elif key and field[0] == "uid":
+                (name, addr) = email.Utils.parseaddr(field[9])
+                if name and name not in self.keys[key]["aliases"]:
+                    self.keys[key]["aliases"].append(name)
+            elif signingkey and field[0] == "fpr":
+                self.keys[key]["fingerprints"].append(field[9])
+                self.fpr_lookup[field[9]] = key
+
+    def import_users_from_ldap(self, session):
+        import ldap
+        cnf = Config()
+
+        LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
+        LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
+
+        l = ldap.open(LDAPServer)
+        l.simple_bind_s("","")
+        Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
+               "(&(keyfingerprint=*)(gidnumber=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
+               ["uid", "keyfingerprint", "cn", "mn", "sn"])
+
+        ldap_fin_uid_id = {}
+
+        byuid = {}
+        byname = {}
+
+        for i in Attrs:
+            entry = i[1]
+            uid = entry["uid"][0]
+            name = get_ldap_name(entry)
+            fingerprints = entry["keyFingerPrint"]
+            keyid = None
+            for f in fingerprints:
+                key = self.fpr_lookup.get(f, None)
+                if key not in self.keys:
+                    continue
+                self.keys[key]["uid"] = uid
+
+                if keyid != None:
+                    continue
+                keyid = get_or_set_uid(uid, session).uid_id
+                byuid[keyid] = (uid, name)
+                byname[uid] = (keyid, name)
+
+        return (byname, byuid)
+
+    def generate_users_from_keyring(self, format, session):
+        byuid = {}
+        byname = {}
+        any_invalid = False
+        for x in self.keys.keys():
+            if self.keys[x]["email"] == "invalid-uid":
+                any_invalid = True
+                self.keys[x]["uid"] = format % "invalid-uid"
+            else:
+                uid = format % self.keys[x]["email"]
+                keyid = get_or_set_uid(uid, session).uid_id
+                byuid[keyid] = (uid, self.keys[x]["name"])
+                byname[uid] = (keyid, self.keys[x]["name"])
+                self.keys[x]["uid"] = uid
+
+        if any_invalid:
+            uid = format % "invalid-uid"
+            keyid = get_or_set_uid(uid, session).uid_id
+            byuid[keyid] = (uid, "ungeneratable user id")
+            byname[uid] = (keyid, "ungeneratable user id")
+
+        return (byname, byuid)
+
 __all__.append('Keyring')
 
 @session_wrapper
-def get_or_set_keyring(keyring, session=None):
+def get_keyring(keyring, session=None):
     """
-    If C{keyring} does not have an entry in the C{keyrings} table yet, create one
-    and return the new Keyring
+    If C{keyring} does not have an entry in the C{keyrings} table yet, return None
     If C{keyring} already has an entry, simply return the existing Keyring
 
     @type keyring: string
@@ -892,12 +1049,20 @@ def get_or_set_keyring(keyring, session=None):
     try:
         return q.one()
     except NoResultFound:
-        obj = Keyring(keyring_name=keyring)
-        session.add(obj)
-        session.commit_or_flush()
-        return obj
+        return None
 
-__all__.append('get_or_set_keyring')
+__all__.append('get_keyring')
+
+################################################################################
+
+class KeyringACLMap(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<KeyringACLMap %s>' % self.keyring_acl_map_id
+
+__all__.append('KeyringACLMap')
 
 ################################################################################
 
@@ -1805,6 +1970,17 @@ __all__.append('get_source_in_suite')
 
 ################################################################################
 
+class SourceACL(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<SourceACL %s>' % self.source_acl_id
+
+__all__.append('SourceACL')
+
+################################################################################
+
 class SrcAssociation(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2124,6 +2300,17 @@ __all__.append('get_uid_from_fingerprint')
 
 ################################################################################
 
+class UploadBlock(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<UploadBlock %s (%s)>' % (self.source, self.upload_block_id)
+
+__all__.append('UploadBlock')
+
+################################################################################
+
 class DBConn(Singleton):
     """
     database module init.
@@ -2142,6 +2329,8 @@ class DBConn(Singleton):
         self.tbl_archive = Table('archive', self.db_meta, autoload=True)
         self.tbl_bin_associations = Table('bin_associations', self.db_meta, autoload=True)
         self.tbl_binaries = Table('binaries', self.db_meta, autoload=True)
+        self.tbl_binary_acl = Table('binary_acl', self.db_meta, autoload=True)
+        self.tbl_binary_acl_map = Table('binary_acl_map', self.db_meta, autoload=True)
         self.tbl_component = Table('component', self.db_meta, autoload=True)
         self.tbl_config = Table('config', self.db_meta, autoload=True)
         self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
@@ -2152,6 +2341,7 @@ class DBConn(Singleton):
         self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
         self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
         self.tbl_known_changes = Table('known_changes', self.db_meta, autoload=True)
+        self.tbl_keyring_acl_map = Table('keyring_acl_map', self.db_meta, autoload=True)
         self.tbl_location = Table('location', self.db_meta, autoload=True)
         self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
         self.tbl_new_comments = Table('new_comments', self.db_meta, autoload=True)
@@ -2163,6 +2353,7 @@ class DBConn(Singleton):
         self.tbl_queue_build = Table('queue_build', self.db_meta, autoload=True)
         self.tbl_section = Table('section', self.db_meta, autoload=True)
         self.tbl_source = Table('source', self.db_meta, autoload=True)
+        self.tbl_source_acl = Table('source_acl', self.db_meta, autoload=True)
         self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
         self.tbl_src_format = Table('src_format', self.db_meta, autoload=True)
         self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
@@ -2170,6 +2361,7 @@ class DBConn(Singleton):
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
         self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
+        self.tbl_upload_blocks = Table('upload_blocks', self.db_meta, autoload=True)
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
@@ -2185,6 +2377,7 @@ class DBConn(Singleton):
                                  suite = relation(Suite),
                                  binary_id = self.tbl_bin_associations.c.bin,
                                  binary = relation(DBBinary)))
+
 
         mapper(DBBinary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
@@ -2205,30 +2398,20 @@ class DBConn(Singleton):
                                  binassociations = relation(BinAssociation,
                                                             primaryjoin=(self.tbl_binaries.c.id==self.tbl_bin_associations.c.bin))))
 
+        mapper(BinaryACL, self.tbl_binary_acl,
+               properties = dict(binary_acl_id = self.tbl_binary_acl.c.id))
+
+        mapper(BinaryACLMap, self.tbl_binary_acl_map,
+               properties = dict(binary_acl_map_id = self.tbl_binary_acl_map.c.id,
+                                 fingerprint = relation(Fingerprint, backref="binary_acl_map"),
+                                 architecture = relation(Architecture)))
+
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
                                  component_name = self.tbl_component.c.name))
 
         mapper(DBConfig, self.tbl_config,
                properties = dict(config_id = self.tbl_config.c.id))
-
-        mapper(ContentAssociation, self.tbl_content_associations,
-               properties = dict(ca_id = self.tbl_content_associations.c.id,
-                                 filename_id = self.tbl_content_associations.c.filename,
-                                 filename    = relation(ContentFilename),
-                                 filepath_id = self.tbl_content_associations.c.filepath,
-                                 filepath    = relation(ContentFilepath),
-                                 binary_id   = self.tbl_content_associations.c.binary_pkg,
-                                 binary      = relation(DBBinary)))
-
-
-        mapper(ContentFilename, self.tbl_content_file_names,
-               properties = dict(cafilename_id = self.tbl_content_file_names.c.id,
-                                 filename = self.tbl_content_file_names.c.file))
-
-        mapper(ContentFilepath, self.tbl_content_file_paths,
-               properties = dict(cafilepath_id = self.tbl_content_file_paths.c.id,
-                                 filepath = self.tbl_content_file_paths.c.path))
 
         mapper(DSCFile, self.tbl_dsc_files,
                properties = dict(dscfile_id = self.tbl_dsc_files.c.id,
@@ -2248,7 +2431,9 @@ class DBConn(Singleton):
                                  uid_id = self.tbl_fingerprint.c.uid,
                                  uid = relation(Uid),
                                  keyring_id = self.tbl_fingerprint.c.keyring,
-                                 keyring = relation(Keyring)))
+                                 keyring = relation(Keyring),
+                                 source_acl = relation(SourceACL),
+                                 binary_acl = relation(BinaryACL)))
 
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
@@ -2256,6 +2441,11 @@ class DBConn(Singleton):
 
         mapper(KnownChange, self.tbl_known_changes,
                properties = dict(known_change_id = self.tbl_known_changes.c.id))
+
+        mapper(KeyringACLMap, self.tbl_keyring_acl_map,
+               properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
+                                 keyring = relation(Keyring, backref="keyring_acl_map"),
+                                 architecture = relation(Architecture)))
 
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
@@ -2287,13 +2477,6 @@ class DBConn(Singleton):
                properties = dict(overridetype = self.tbl_override_type.c.type,
                                  overridetype_id = self.tbl_override_type.c.id))
 
-        mapper(PendingContentAssociation, self.tbl_pending_content_associations,
-               properties = dict(pca_id = self.tbl_pending_content_associations.c.id,
-                                 filepath_id = self.tbl_pending_content_associations.c.filepath,
-                                 filepath = relation(ContentFilepath),
-                                 filename_id = self.tbl_pending_content_associations.c.filename,
-                                 filename = relation(ContentFilename)))
-
         mapper(Priority, self.tbl_priority,
                properties = dict(priority_id = self.tbl_priority.c.id))
 
@@ -2324,7 +2507,11 @@ class DBConn(Singleton):
                                  srcfiles = relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  srcassociations = relation(SrcAssociation,
-                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source))))
+                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source)),
+                                 srcuploaders = relation(SrcUploader)))
+
+        mapper(SourceACL, self.tbl_source_acl,
+               properties = dict(source_acl_id = self.tbl_source_acl.c.id))
 
         mapper(SrcAssociation, self.tbl_src_associations,
                properties = dict(sa_id = self.tbl_src_associations.c.id,
@@ -2364,6 +2551,11 @@ class DBConn(Singleton):
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
                                  fingerprint = relation(Fingerprint)))
+
+        mapper(UploadBlock, self.tbl_upload_blocks,
+               properties = dict(upload_block_id = self.tbl_upload_blocks.c.id,
+                                 fingerprint = relation(Fingerprint, backref="uploadblocks"),
+                                 uid = relation(Uid, backref="uploadblocks")))
 
     ## Connection functions
     def __createconn(self):

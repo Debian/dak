@@ -45,7 +45,8 @@ from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
-                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource
+                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
+                    re_is_orig_source
 
 from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
@@ -304,13 +305,13 @@ def check_hash(where, files, hashname, hashfunc):
         try:
             try:
                 file_handle = open_file(f)
-    
+
                 # Check for the hash entry, to not trigger a KeyError.
                 if not files[f].has_key(hash_key(hashname)):
                     rejmsg.append("%s: misses %s checksum in %s" % (f, hashname,
                         where))
                     continue
-    
+
                 # Actually check the hash for correctness.
                 if hashfunc(file_handle) != files[f][hash_key(hashname)]:
                     rejmsg.append("%s: %s check failed in %s" % (f, hashname,
