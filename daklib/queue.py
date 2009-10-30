@@ -296,7 +296,7 @@ class Upload(object):
 
         # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
         if not self.pkg.changes.has_key("architecture") or not \
-           isinstance(self.pkg.changes["architecture"], DictType):
+           isinstance(self.pkg.changes["architecture"], dict):
             self.pkg.changes["architecture"] = { "Unknown" : "" }
 
         # and maintainer2047 may not exist.
