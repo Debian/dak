@@ -309,6 +309,8 @@ def write_filelists(packages, dislocated_files, session):
 ################################################################################
 
 def do_da_do_da():
+    cnf = Config()
+
     # If we're only doing a subset of suites, ensure we do enough to
     # be able to do arch: all mapping.
     if Options["Suite"]:
