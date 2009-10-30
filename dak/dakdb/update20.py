@@ -84,11 +84,11 @@ def do_update(self):
         c.execute("ALTER TABLE suite ADD COLUMN policy_queue_id INT4 REFERENCES queue(id) DEFAULT NULL")
         # Handle some of our common cases automatically
         if seenqueues.has_key('proposedupdates'):
-            c.execute("""UPDATE suite SET policy_queue = (SELECT id FROM queue WHERE queue_name = 'proposedupdates')
+            c.execute("""UPDATE suite SET policy_queue_id = (SELECT id FROM queue WHERE queue_name = 'proposedupdates')
                                       WHERE suite_name = 'proposed-updates'""")
 
         if seenqueues.has_key('oldproposedupdates'):
-            c.execute("""UPDATE suite SET policy_queue = (SELECT id FROM queue WHERE queue_name = 'oldproposedupdates')
+            c.execute("""UPDATE suite SET policy_queue_id = (SELECT id FROM queue WHERE queue_name = 'oldproposedupdates')
                                       WHERE suite_name = 'oldstable-proposed-updates'""")
 
         print "Committing"
