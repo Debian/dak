@@ -36,7 +36,6 @@ import stat
 import apt_pkg
 import time
 import re
-import string
 import email as modemail
 import subprocess
 
@@ -615,7 +614,7 @@ def send_mail (message, filename=""):
                 if len(match) == 0:
                     del message_raw[field]
                 else:
-                    message_raw.replace_header(field, string.join(match, ", "))
+                    message_raw.replace_header(field, ', '.join(match))
 
         # Change message fields in order if we don't have a To header
         if not message_raw.has_key("To"):
