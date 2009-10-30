@@ -34,6 +34,7 @@ import os
 import datetime
 from daklib.dak_exceptions import DBUpdateError, InvalidDscError, ChangesUnicodeError
 from daklib.config import Config
+from daklib.changes import Changes
 from daklib.utils import parse_changes, warn, gpgv_get_status_output, process_gpgv_output
 
 ################################################################################
