@@ -2220,13 +2220,13 @@ distribution."""
 
     ################################################################################
 
-    def cross_suite_version_check(self, sv_list, file, new_version, sourceful=False):
+    def cross_suite_version_check(self, sv_list, filename, new_version, sourceful=False):
         """
         @type sv_list: list
         @param sv_list: list of (suite, version) tuples to check
 
-        @type file: string
-        @param file: XXX
+        @type filename: string
+        @param filename: XXX
 
         @type new_version: string
         @param new_version: XXX
@@ -2251,7 +2251,7 @@ distribution."""
                 vercmp = apt_pkg.VersionCompare(new_version, existent_version)
 
                 if suite in must_be_newer_than and sourceful and vercmp < 1:
-                    self.rejects.append("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+                    self.rejects.append("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
 
                 if suite in must_be_older_than and vercmp > -1:
                     cansave = 0
@@ -2284,7 +2284,7 @@ distribution."""
                             self.rejects.append("Won't propogate NEW packages.")
                         elif apt_pkg.VersionCompare(new_version, add_version) < 0:
                             # propogation would be redundant. no need to reject though.
-                            self.warnings.append("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+                            self.warnings.append("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
                             cansave = 1
                         elif apt_pkg.VersionCompare(new_version, add_version) > 0 and \
                              apt_pkg.VersionCompare(add_version, target_version) >= 0:
@@ -2295,7 +2295,7 @@ distribution."""
                             cansave = 1
 
                     if not cansave:
-                        self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (file, existent_version, suite, new_version, target_suite))
+                        self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
 
     ################################################################################
     def check_binary_against_db(self, filename, session):
