@@ -2552,7 +2552,8 @@ class DBConn(Singleton):
                                                        primaryjoin=(self.tbl_src_uploaders.c.maintainer==self.tbl_maintainer.c.id))))
 
         mapper(Suite, self.tbl_suite,
-               properties = dict(suite_id = self.tbl_suite.c.id))
+               properties = dict(suite_id = self.tbl_suite.c.id,
+                                 policy_queue = relation(Queue)))
 
         mapper(SuiteArchitecture, self.tbl_suite_architectures,
                properties = dict(suite_id = self.tbl_suite_architectures.c.suite,

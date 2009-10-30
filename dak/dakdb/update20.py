@@ -80,7 +80,8 @@ def do_update(self):
         c.execute("ALTER TABLE known_changes ADD COLUMN approved_for INT4 REFERENCES queue(id) DEFAULT NULL")
 
         print "Adding policy queue column to suite table"
-        c.execute("ALTER TABLE suite ADD COLUMN policy_queue INT4 REFERENCES queue(id) DEFAULT NULL")
+        c.execute("ALTER TABLE suite DROP COLUMN policy_engine")
+        c.execute("ALTER TABLE suite ADD COLUMN policy_queue_id INT4 REFERENCES queue(id) DEFAULT NULL")
         # Handle some of our common cases automatically
         if seenqueues.has_key('proposedupdates'):
             c.execute("""UPDATE suite SET policy_queue = (SELECT id FROM queue WHERE queue_name = 'proposedupdates')
