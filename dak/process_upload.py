@@ -130,6 +130,7 @@ import fcntl
 import os
 import sys
 #from datetime import datetime
+import traceback
 import apt_pkg
 
 from daklib import daklog
@@ -165,6 +166,8 @@ def usage (exit_code=0):
 def process_it(changes_file):
     global Logger
 
+    Logger.log(["Processing changes file", changes_file])
+
     cnf = Config()
 
     holding = Holding()
@@ -173,14 +176,14 @@ def process_it(changes_file):
     u.pkg.changes_file = changes_file
     u.pkg.directory = os.getcwd()
     u.logger = Logger
-    origchanges = os.path.join(u.pkg.directory, u.pkg.changes_file)
+    origchanges = os.path.abspath(u.pkg.changes_file)
 
     # Some defaults in case we can't fully process the .changes file
     u.pkg.changes["maintainer2047"] = cnf["Dinstall::MyEmailAddress"]
     u.pkg.changes["changedby2047"] = cnf["Dinstall::MyEmailAddress"]
 
     # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
-    bcc = "X-DAK: dak process-unchecked"
+    bcc = "X-DAK: dak process-upload"
     if cnf.has_key("Dinstall::Bcc"):
         u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
     else:
@@ -189,11 +192,6 @@ def process_it(changes_file):
     # Remember where we are so we can come back after cd-ing into the
     # holding directory.  TODO: Fix this stupid hack
     u.prevdir = os.getcwd()
-
-    # TODO: Figure out something better for this (or whether it's even
-    #       necessary - it seems to have been for use when we were
-    #       still doing the is_unchecked check; reprocess = 2)
-    u.reprocess = 1
 
     try:
         # If this is the Real Thing(tm), copy things into a private
@@ -208,6 +206,8 @@ def process_it(changes_file):
             # Relativize the filename so we use the copy in holding
             # rather than the original...
             changespath = os.path.basename(u.pkg.changes_file)
+        else:
+            changespath = origchanges
 
         (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changespath)
 
@@ -218,19 +218,18 @@ def process_it(changes_file):
             u.rejects.extend(rejects)
 
         if valid_changes_p:
-            while u.reprocess:
-                u.check_distributions()
-                u.check_files(not Options["No-Action"])
-                valid_dsc_p = u.check_dsc(not Options["No-Action"])
-                if valid_dsc_p and not Options["No-Action"]:
-                    u.check_source()
-                    u.check_lintian()
-                u.check_hashes()
-                u.check_urgency()
-                u.check_timestamps()
-                u.check_signed_by_key()
+            u.check_distributions()
+            u.check_files(not Options["No-Action"])
+            valid_dsc_p = u.check_dsc(not Options["No-Action"])
+            if valid_dsc_p and not Options["No-Action"]:
+                u.check_source()
+                u.check_lintian()
+            u.check_hashes()
+            u.check_urgency()
+            u.check_timestamps()
+            u.check_signed_by_key()
 
-        action(u)
+#        action(u)
 
     except (SystemExit, KeyboardInterrupt):
         raise
