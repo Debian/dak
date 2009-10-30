@@ -554,7 +554,7 @@ def main ():
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
         Subst["__SUITE_LIST__"] = suites_list
-        summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (Options["Reason"])
+        summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (summary, Options["Reason"])
         summarymail += "----------------------------------------------\n"
         Subst["__SUMMARY__"] = summarymail
         Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suite_list)
