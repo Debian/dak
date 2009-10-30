@@ -29,7 +29,6 @@ Changes class for dak
 
 import os
 import stat
-import time
 
 import datetime
 from cPickle import Unpickler, Pickler
