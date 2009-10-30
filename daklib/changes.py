@@ -192,7 +192,7 @@ class Changes(object):
 
     def mark_missing_fields(self):
         """add "missing" in fields which we will require for the known_changes table"""
-        for key in ['urgency', 'maintainer', 'fingerprint', 'changedby' ]:
+        for key in ['urgency', 'maintainer', 'fingerprint', 'changed-by' ]:
             if (not self.changes.has_key(key)) or (not self.changes[key]):
                 self.changes[key]='missing'
 
