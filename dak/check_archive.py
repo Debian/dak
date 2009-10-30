@@ -185,7 +185,7 @@ def check_override():
         print suite_name
         print "-" * len(suite_name)
         print
-        suite = get_suite(suite)
+        suite = get_suite(suite_name)
         q = s.execute("""
 SELECT DISTINCT b.package FROM binaries b, bin_associations ba
  WHERE b.id = ba.bin AND ba.suite = :suiteid AND NOT EXISTS
