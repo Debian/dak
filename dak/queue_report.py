@@ -39,7 +39,7 @@ import glob, os, stat, sys, time
 import apt_pkg
 
 from daklib import utils
-from daklib.changes import Changes
+from daklib.queue import Upload
 from daklib.dbconn import DBConn, has_new_comment
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
@@ -301,9 +301,9 @@ def process_changes_files(changes_files, type, log):
     # Read in all the .changes files
     for filename in changes_files:
         try:
-            c = Changes()
-            c.load_dot_dak(filename)
-            cache[filename] = copy(c.changes)
+            u = Upload()
+            u.load_changes(filename)
+            cache[filename] = copy(u.pkg.changes)
             cache[filename]["filename"] = filename
         except Exception, e:
             print "WARNING: Exception %s" % e
