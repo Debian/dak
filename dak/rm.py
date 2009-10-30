@@ -554,7 +554,9 @@ def main ():
         if carbon_copy:
             Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
         Subst["__SUITE_LIST__"] = suites_list
-        Subst["__SUMMARY__"] = summary
+        summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (Options["Reason"])
+        summarymail += "----------------------------------------------\n"
+        Subst["__SUMMARY__"] = summarymail
         Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = whoami
