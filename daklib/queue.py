@@ -1923,23 +1923,12 @@ distribution."""
             os.rename(temp_filename, filename)
             os.chmod(filename, 0644)
 
-        # Its is Cnf["Dir::Queue::Accepted"] here, not targetdir!
-        # <Ganneff> we do call queue_build too
-        # <mhy> well yes, we'd have had to if we were inserting into accepted
-        # <Ganneff> now. thats database only.
-        # <mhy> urgh, that's going to get messy
-        # <Ganneff> so i make the p-n call to it *also* using accepted/
-        # <mhy> but then the packages will be in the queue_build table without the files being there
-        # <Ganneff> as the buildd queue is only regenerated whenever unchecked runs
-        # <mhy> ah, good point
-        # <Ganneff> so it will work out, as unchecked move it over
-        # <mhy> that's all completely sick
-        # <Ganneff> yes
-
         # This routine returns None on success or an error on failure
-        res = get_or_set_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
-        if res:
-            utils.fubar(res)
+        # TODO: Replace queue copying using the new queue.add_file_from_pool routine
+        #       and by looking up which queues in suite.copy_queues
+        #res = get_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
+        #if res:
+        #    utils.fubar(res)
 
 
     def check_override(self):
