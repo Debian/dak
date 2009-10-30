@@ -153,9 +153,9 @@ def do_update(self):
         c.execute("GRANT ALL ON known_changes TO ftpmaster;")
         c.execute("GRANT SELECT ON known_changes TO public;")
 
-        c.execute("UPDATE config SET value = '20' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '18' WHERE name = 'db_revision'")
         self.db.commit()
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to apply source format update 15, rollback issued. Error message : %s" % (str(msg))
+        raise DBUpdateError, "Unable to apply known_changes update 18, rollback issued. Error message

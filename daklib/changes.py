@@ -188,7 +188,7 @@ class Changes(object):
         if privatetrans:
             session.commit()
             session.close()
-            
+
     def add_known_changes(self, queue, session=None):
         cnf = Config()
 
