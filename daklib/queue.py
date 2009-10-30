@@ -1474,7 +1474,7 @@ class Upload(object):
         #  or binary, whereas keys with no access might be able to
         #  upload some binaries)
         if fpr.source_acl.access_level == 'dm':
-            self.check_dm_source_upload(fpr, session)
+            self.check_dm_upload(fpr, session)
         else:
             # Check source-based permissions for other types
             if self.pkg.changes["architecture"].has_key("source"):
