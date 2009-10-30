@@ -118,6 +118,12 @@ def do_update(self):
         c.execute("CREATE INDEX changesdistribution_ind ON known_changes(distribution)")
         c.execute("CREATE INDEX changesurgency_ind ON known_changes(urgency)")
 
+        c.execute("GRANT ALL ON known_changes TO ftpmaster;")
+        c.execute("GRANT SELECT ON known_changes TO public;")
+
+        c.execute("UPDATE config SET value = '18' WHERE name = 'db_revision'")
+        self.db.commit()
+
         print "Done. Now looking for old changes files"
         count = 0
         failure = 0
@@ -145,13 +151,6 @@ def do_update(self):
                     except ChangesUnicodeError:
                         warn("found invalid changes file, not properly utf-8 encoded")
                         failure += 1
-
-
-        c.execute("GRANT ALL ON known_changes TO ftpmaster;")
-        c.execute("GRANT SELECT ON known_changes TO public;")
-
-        c.execute("UPDATE config SET value = '18' WHERE name = 'db_revision'")
-        self.db.commit()
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
