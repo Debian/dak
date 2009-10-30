@@ -2375,7 +2375,7 @@ class DBConn(Singleton):
                                  files = relation(KnownChangePendingFile, backref="changesfile")))
 
         mapper(KnownChangePendingFile, self.tbl_changes_pending_files,
-               properties = dict(known_change_pending_file_id = self.tbl_changes_pending_files.id))
+               properties = dict(known_change_pending_file_id = self.tbl_changes_pending_files.c.id))
 
         mapper(KeyringACLMap, self.tbl_keyring_acl_map,
                properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
