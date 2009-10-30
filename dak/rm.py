@@ -492,7 +492,7 @@ def main ():
     game_over()
 
     whoami = utils.whoami()
-    date = commands.getoutput('date -R').strip()
+    date = commands.getoutput('date -R')
 
     # Log first; if it all falls apart I want a record that we at least tried.
     logfile = utils.open_file(cnf["Rm::LogFile"], 'a')
