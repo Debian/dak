@@ -796,17 +796,11 @@ class Upload(object):
             entry["othercomponents"] = res.fetchone()[0]
 
     def check_files(self, action=True):
-        archive = utils.where_am_i()
         file_keys = self.pkg.files.keys()
         holding = Holding()
         cnf = Config()
 
-        # XXX: As far as I can tell, this can no longer happen - see
-        #      comments by AJ in old revisions - mhy
-        # if reprocess is 2 we've already done this and we're checking
-        # things again for the new .orig.tar.gz.
-        # [Yes, I'm fully aware of how disgusting this is]
-        if action and self.reprocess < 2:
+        if action:
             cwd = os.getcwd()
             os.chdir(self.pkg.directory)
             for f in file_keys:
@@ -817,11 +811,10 @@ class Upload(object):
 
             os.chdir(cwd)
 
-        # Check there isn't already a .changes or .dak file of the same name in
-        # the proposed-updates "CopyChanges" or "CopyDotDak" storage directories.
+        # Check there isn't already a .changes file of the same name in
+        # the proposed-updates "CopyChanges" storage directories.
         # [NB: this check must be done post-suite mapping]
         base_filename = os.path.basename(self.pkg.changes_file)
-        dot_dak_filename = base_filename[:-8] + ".dak"
 
         for suite in self.pkg.changes["distribution"].keys():
             copychanges = "Suite::%s::CopyChanges" % (suite)
@@ -830,13 +823,6 @@ class Upload(object):
                 self.rejects.append("%s: a file with this name already exists in %s" \
                            % (base_filename, cnf[copychanges]))
 
-            copy_dot_dak = "Suite::%s::CopyDotDak" % (suite)
-            if cnf.has_key(copy_dot_dak) and \
-                   os.path.exists(os.path.join(cnf[copy_dot_dak], dot_dak_filename)):
-                self.rejects.append("%s: a file with this name already exists in %s" \
-                           % (dot_dak_filename, Cnf[copy_dot_dak]))
-
-        self.reprocess = 0
         has_binaries = False
         has_source = False
 
@@ -1084,15 +1070,10 @@ class Upload(object):
             self.rejects.append("%s: changelog format not recognised (empty version tree)." % (dsc_filename))
 
     def check_source(self):
-        # XXX: I'm fairly sure reprocess == 2 can never happen
-        #      AJT disabled the is_incoming check years ago - mhy
-        #      We should probably scrap or rethink the whole reprocess thing
         # Bail out if:
         #    a) there's no source
-        # or b) reprocess is 2 - we will do this check next time when orig
-        #       tarball is in 'files'
         # or c) the orig files are MIA
-        if not self.pkg.changes["architecture"].has_key("source") or self.reprocess == 2 \
+        if not self.pkg.changes["architecture"].has_key("source") \
            or len(self.pkg.orig_files) == 0:
             return
 
