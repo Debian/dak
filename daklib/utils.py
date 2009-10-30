@@ -73,6 +73,9 @@ def dak_getstatusoutput(cmd):
 
     output = "".join(pipe.stdout.readlines())
 
+    if output[-1:] == '\n':
+        output = output[:-1]
+
     ret = pipe.wait()
     if ret is None:
         ret = 0

@@ -215,7 +215,7 @@ class Changes(object):
               distribution, urgency, maintainer, fingerprint, changedby, date)
               VALUES (:changesfile,:filetime,:source,:binary, :architecture,
               :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
-              { 'changesfile':changesfile,
+              { 'changesfile':self.changes_file,
                 'filetime':filetime,
                 'source':self.changes["source"],
                 'binary':self.changes["binary"],
