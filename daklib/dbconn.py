@@ -2045,6 +2045,7 @@ def add_dsc_to_db(u, filename, session=None):
     if not entry.has_key("files id") or not entry["files id"]:
         filename = entry["pool name"] + filename
         poolfile = add_poolfile(filename, entry, dsc_location_id, session)
+        session.flush()
         entry["files id"] = poolfile.file_id
 
     source.poolfile_id = entry["files id"]
