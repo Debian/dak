@@ -475,6 +475,7 @@ def chk_bd_process_dir (unused, dirname, filenames):
 
 def check_build_depends():
     """ Validate build-dependencies of .dsc files in the archive """
+    cnf = Config()
     os.path.walk(cnf["Dir::Root"], chk_bd_process_dir, None)
 
 ################################################################################
