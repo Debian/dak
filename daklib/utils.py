@@ -64,7 +64,6 @@ known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
 
 # Monkeypatch commands.getstatusoutput as it returns a "0" exit code in
 # all situations under lenny's Python.
-import commands
 def dak_getstatusoutput(cmd):
     pipe = subprocess.Popen(cmd, shell=True, universal_newlines=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
