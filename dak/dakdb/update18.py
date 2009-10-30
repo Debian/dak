@@ -137,7 +137,7 @@ def do_update(self):
                         changes.changes_file = filename
                         changesfile = os.path.join(checkdir, filename)
                         changes.changes = parse_changes(changesfile, signing_rules=-1)
-                        changes.changes["fingerprint"], = check_signature(changesfile)
+                        changes.changes["fingerprint"] = check_signature(changesfile)
                         changes.add_known_changes(directory)
                     except InvalidDscError, line:
                         warn("syntax error in .dsc file '%s', line %s." % (f, line))
