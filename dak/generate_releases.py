@@ -379,13 +379,21 @@ def main ():
             dest = Cnf["Dir::Root"] + tree + "/Release.gpg"
             if os.path.exists(dest):
                 os.unlink(dest)
+            inlinedest = Cnf["Dir::Root"] + tree + "/InRelease"
+            if os.path.exists(inlinedest):
+                os.unlink(inlinedest)
 
             for keyid in signkeyids:
-                if keyid != "": defkeyid = "--default-key %s" % keyid
-                else: defkeyid = ""
+                if keyid != "":
+                    defkeyid = "--default-key %s" % keyid
+                else:
+                    defkeyid = ""
                 os.system("gpg %s %s %s --detach-sign <%s >>%s" %
                         (keyring, defkeyid, arguments,
                         Cnf["Dir::Root"] + tree + "/Release", dest))
+                os.system("gpg %s %s %s --clearsign <%s >>%s" %
+                        (keyring, defkeyid, arguments,
+                        Cnf["Dir::Root"] + tree + "/Release", inlinedest))
 
 #######################################################################################
 
