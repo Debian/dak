@@ -125,20 +125,16 @@ def do_update(self):
             checkdir = cnf["Dir::Queue::%s" % (directory) ]
             if os.path.exists(checkdir):
                 print "Looking into %s" % (checkdir)
-                for dirpath, dirnames, filenames in os.walk(checkdir, topdown=False):
-                    if not filenames:
-                        # Empty directory (or only subdirectories), next
-                        continue
-                    for changesfile in filenames:
-                        if not changesfile.endswith(".changes"):
+                for filename in os.listdir(checkdir):
+                    if not filename.endswith(".changes"):
                             # Only interested in changes files.
                             continue
                         try:
                             count += 1
-                            print "Directory %s, file %7d, failures %3d. (%s)" % (dirpath[-10:], count, failure, changesfile)
+                            print "Directory %s, file %7d, failures %3d. (%s)" % (directory, count, failure, filename)
                             changes = Changes()
-                            changes.changes_file = changesfile
-                            changesfile = os.path.join(dirpath, changesfile)
+                            changes.changes_file = filename
+                            changesfile = os.path.join(checkdir, filename)
                             changes.changes = parse_changes(changesfile, signing_rules=-1)
                             changes.changes["fingerprint"], = check_signature(changesfile)
                             changes.add_known_changes(directory)
