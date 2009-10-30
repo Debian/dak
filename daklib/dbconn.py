@@ -2119,6 +2119,7 @@ class DBConn(Singleton):
         self.tbl_suite = Table('suite', self.db_meta, autoload=True)
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
         self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
+        self.tbl_udeb_contents = Table('udeb_contents', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
 
     def __setupmappers(self):

@@ -209,7 +209,7 @@ class ContentFile(object):
     def __init__(self,
                  filename,
                  suite_str,
-                 suite_id)
+                 suite_id):
 
         self.filename = filename
         self.filenames = {}
@@ -306,7 +306,7 @@ class DebContentFile(ContentFile):
         self.cursor.execute("""SELECT file, component || section || '/' || package
         FROM deb_contents
         WHERE ( arch=2 or arch = :arch) AND suite = :suite
-        """, { 'arch':self.arch_id, 'suite':self.suite_id }
+        """, { 'arch':self.arch_id, 'suite':self.suite_id } )
 
 class UdebContentFile(ContentFile):
     def __init__(self,
@@ -314,7 +314,7 @@ class UdebContentFile(ContentFile):
                  suite_str,
                  suite_id,
                  section_name,
-                 section_id)
+                 section_id):
         ContentFile.__init__(self,
                              filename,
                              suite_str,
