@@ -189,7 +189,6 @@ class ChangesGenerator(threading.Thread):
 
                         if not get_knownchange(changesfile, self.session):
                             to_import = ChangesToImport(dirpath, changesfile, count)
-                            print("enqueue: %s" % to_import)
                             self.queue.enqueue(to_import)
 
         self.queue.enqueue(EndOfChanges())
@@ -212,7 +211,6 @@ class ImportThread(threading.Thread):
                 changes = Changes()
                 changes.changes_file = to_import.changesfile
                 changesfile = os.path.join(to_import.dirpath, to_import.changesfile)
-                print( "STU: %s / %s" % (to_import.dirpath, to_import.changesfile))
                 changes.changes = parse_changes(changesfile, signing_rules=-1)
                 changes.changes["fingerprint"] = check_signature(changesfile)
                 changes.add_known_changes(to_import.dirpath, self.session)
