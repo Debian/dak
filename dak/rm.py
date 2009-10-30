@@ -557,6 +557,7 @@ def main ():
         summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (Options["Reason"])
         summarymail += "----------------------------------------------\n"
         Subst["__SUMMARY__"] = summarymail
+        Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suite_list)
         Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
         Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = whoami
