@@ -28,7 +28,6 @@ Queue utility functions for dak
 
 import errno
 import os
-import pg
 import stat
 import sys
 import time
@@ -38,7 +37,6 @@ import utils
 import commands
 import shutil
 import textwrap
-import tempfile
 from types import *
 
 import yaml
