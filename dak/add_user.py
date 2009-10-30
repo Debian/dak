@@ -112,8 +112,8 @@ def main():
                  ]
 
     for i in [ "help", "create" ]:
-	if not Cnf.has_key("Add-User::Options::%s" % (i)):
-	    Cnf["Add-User::Options::%s" % (i)] = ""
+        if not Cnf.has_key("Add-User::Options::%s" % (i)):
+            Cnf["Add-User::Options::%s" % (i)] = ""
 
     apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
 
@@ -138,10 +138,10 @@ def main():
     (result, output) = commands.getstatusoutput(cmd)
     m = re_gpg_fingerprint.search(output)
     if not m:
-	print output
+        print output
         utils.fubar("0x%s: (1) No fingerprint found in gpg output but it returned 0?\n%s" \
-					% (Cnf["Add-User::Options::Key"], utils.prefix_multi_line_string(output, \
-																				" [GPG output:] ")))
+                                        % (Cnf["Add-User::Options::Key"], utils.prefix_multi_line_string(output, \
+                                                                                                                                                                " [GPG output:] ")))
     primary_key = m.group(1)
     primary_key = primary_key.replace(" ","")
 
@@ -216,7 +216,7 @@ def main():
               file.close()
 
           print "Added:\nUid:\t %s (ID: %s)\nMaint:\t %s\nFP:\t %s" % (uid, uid_id, \
-	             name, primary_key)
+                     name, primary_key)
 
 # Should we send mail to the newly added user?
           if Cnf.FindB("Add-User::SendEmail"):
