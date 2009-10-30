@@ -228,11 +228,12 @@ def main():
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-upload' is already running.")
             else:
                 raise
-        Logger = daklog.Logger(cnf, "process-upload")
         if cnf.get("Dir::UrgencyLog"):
             # Initialise UrgencyLog()
             log_urgency = True
             UrgencyLog()
+
+    Logger = daklog.Logger(cnf, "process-upload", Options["No-Action"])
 
     # Sort the .changes files so that we process sourceful ones first
     changes_files.sort(utils.changes_compare)
@@ -252,9 +253,9 @@ def main():
         Logger.log(["total", summarystats.accept_count, summarystats.accept_bytes])
 
     if not Options["No-Action"]:
-        Logger.close()
         if log_urgency:
             UrgencyLog().close()
+    Logger.close()
 
 ###############################################################################
 
