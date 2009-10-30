@@ -195,7 +195,7 @@ class ChangesGenerator(threading.Thread):
             if os.path.exists(checkdir):
                 print "Looking into %s" % (checkdir)
 
-                for dirpath, dirnames, filenames in os.walk(checkdir, topdown=False):
+                for dirpath, dirnames, filenames in os.walk(checkdir, topdown=True):
                     if not filenames:
                         # Empty directory (or only subdirectories), next
                         continue
@@ -255,13 +255,12 @@ class ImportThread(threading.Thread):
             except ChangesUnicodeError:
                 warn("found invalid changes file, not properly utf-8 encoded")
 
-
             except KeyboardInterrupt:
                 print("Caught C-c; on ImportThread. terminating.")
                 self.parent.plsDie()
                 sys.exit(1)
+
             except:
-                traceback.print_exc()
                 self.parent.plsDie()
                 sys.exit(1)
 
