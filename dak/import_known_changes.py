@@ -128,37 +128,48 @@ class OneAtATime(object):
     """
     def __init__(self):
         self.next_in_line = None
-        self.next_lock = threading.Condition()
+        self.read_lock = threading.Condition()
+        self.write_lock = threading.Condition()
         self.die = False
 
     def plsDie(self):
         self.die = True
-        self.next_lock.notify()
+        self.write_lock.acquire()
+        self.write_lock.notifyAll()
+        self.write_lock.release()
+
+        self.read_lock.acquire()
+        self.read_lock.notifyAll()
+        self.read_lock.release()
 
     def enqueue(self, next):
-        self.next_lock.acquire()
+        self.write_lock.acquire()
         while self.next_in_line:
             if self.die:
                 return
-            self.next_lock.wait()
+            self.write_lock.wait()
 
         assert( not self.next_in_line )
         self.next_in_line = next
-        self.next_lock.notifyAll()
-        self.next_lock.release()
+        self.write_lock.release()
+        self.read_lock.acquire()
+        self.read_lock.notify()
+        self.read_lock.release()
 
     def dequeue(self):
-        self.next_lock.acquire()
+        self.read_lock.acquire()
         while not self.next_in_line:
             if self.die:
                 return
-            self.next_lock.wait()
+            self.read_lock.wait()
 
         result = self.next_in_line
 
         self.next_in_line = None
-        self.next_lock.notifyAll()
-        self.next_lock.release()
+        self.read_lock.release()
+        self.write_lock.acquire()
+        self.write_lock.notify()
+        self.write_lock.release()
 
         if isinstance(result, EndOfChanges):
             return None
