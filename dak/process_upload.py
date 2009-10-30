@@ -166,6 +166,7 @@ def usage (exit_code=0):
 
 def action(u):
     cnf = Config()
+    holding = Holding()
 
     # changes["distribution"] may not exist in corner cases
     # (e.g. unreadable changes files)
@@ -232,6 +233,11 @@ def action(u):
         sys.exit(0)
 
 ###############################################################################
+
+def cleanup():
+    h = Holding()
+    if not Options["No-Action"]:
+        h.clean()
 
 def process_it(changes_file):
     global Logger
@@ -302,12 +308,14 @@ def process_it(changes_file):
         action(u)
 
     except (SystemExit, KeyboardInterrupt):
+        cleanup()
         raise
 
     except:
         print "ERROR"
         traceback.print_exc(file=sys.stderr)
 
+    cleanup()
     # Restore previous WD
     os.chdir(u.prevdir)
 

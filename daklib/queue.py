@@ -2006,15 +2006,21 @@ distribution."""
     def remove(self, from_dir=None):
         """
         Used (for instance) in p-u to remove the package from unchecked
+
+        Also removes the package from holding area.
         """
         if from_dir is None:
-            os.chdir(self.pkg.directory)
-        else:
-            os.chdir(from_dir)
+            from_dir = self.pkg.directory
+        h = Holding()
 
         for f in self.pkg.files.keys():
-            os.unlink(f)
-        os.unlink(self.pkg.changes_file)
+            os.unlink(os.path.join(from_dir, f))
+            if os.path.exists(os.path.join(h.holding_dir, f)):
+                os.unlink(os.path.join(h.holding_dir, f))
+                          
+        os.unlink(os.path.join(from_dir, self.pkg.changes_file))
+        if os.path.exists(os.path.join(h.holding_dir, self.pkg.changes_file)):
+            os.unlink(os.path.join(h.holding_dir, self.pkg.changes_file))
 
     ###########################################################################
 
@@ -2022,9 +2028,11 @@ distribution."""
         """
         Move files to dest with certain perms/changesperms
         """
-        utils.move(self.pkg.changes_file, dest, perms=changesperms)
+        h = Holding()
+        utils.move(os.path.join(h.holding_dir, self.pkg.changes_file),
+                   dest, perms=changesperms)
         for f in self.pkg.files.keys():
-            utils.move(f, dest, perms=perms)
+            utils.move(os.path.join(h.holding_dir, f), dest, perms=perms)
 
     ###########################################################################
 
