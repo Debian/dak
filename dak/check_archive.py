@@ -185,8 +185,8 @@ def check_override():
         print suite_name
         print "-" * len(suite_name)
         print
-        suite = get_suite(suite)
-        q = s.execute("""
+        suite = get_suite(suite_name)
+        q = session.execute("""
 SELECT DISTINCT b.package FROM binaries b, bin_associations ba
  WHERE b.id = ba.bin AND ba.suite = :suiteid AND NOT EXISTS
        (SELECT 1 FROM override o WHERE o.suite = :suiteid AND o.package = b.package)"""
@@ -195,7 +195,7 @@ SELECT DISTINCT b.package FROM binaries b, bin_associations ba
         for j in q.fetchall():
             print j[0]
 
-        q = s.execute("""
+        q = session.execute("""
 SELECT DISTINCT s.source FROM source s, src_associations sa
   WHERE s.id = sa.source AND sa.suite = :suiteid AND NOT EXISTS
        (SELECT 1 FROM override o WHERE o.suite = :suiteid and o.package = s.source)"""
@@ -427,8 +427,8 @@ def check_indices_files_exist():
     """
     for suite in [ "stable", "testing", "unstable" ]:
         for component in Cnf.ValueList("Suite::%s::Components" % (suite)):
-            architectures = database.get_suite_architectures(suite)
-            for arch in [ i.lower() for i in architectures ]:
+            architectures = get_suite_architectures(suite)
+            for arch in [ i.arch_string.lower() for i in architectures ]:
                 if arch == "source":
                     validate_sources(suite, component)
                 elif arch == "all":
@@ -475,6 +475,7 @@ def chk_bd_process_dir (unused, dirname, filenames):
 
 def check_build_depends():
     """ Validate build-dependencies of .dsc files in the archive """
+    cnf = Config()
     os.path.walk(cnf["Dir::Root"], chk_bd_process_dir, None)
 
 ################################################################################

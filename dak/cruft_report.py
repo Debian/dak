@@ -92,8 +92,9 @@ def do_anais(architecture, binaries_list, source, session):
                                WHERE ba.suite = :suiteid AND ba.bin = b.id
                                  AND b.architecture = a.id AND b.package = :package""",
                              {'suiteid': suite_id, 'package': binary})
+        ql = q.fetchall()
         versions = []
-        for i in q.fetchall():
+        for i in ql:
             arch = i[0]
             version = i[1]
             if architectures.has_key(arch):
