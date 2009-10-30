@@ -286,12 +286,12 @@ def get_suites_binary_in(package, session=None):
 __all__.append('get_suites_binary_in')
 
 @session_wrapper
-def get_binary_from_id(id, session=None):
+def get_binary_from_id(binary_id, session=None):
     """
     Returns DBBinary object for given C{id}
 
-    @type id: int
-    @param id: Id of the required binary
+    @type binary_id: int
+    @param binary_id: Id of the required binary
 
     @type session: Session
     @param session: Optional SQLA session object (a temporary one will be
@@ -301,7 +301,7 @@ def get_binary_from_id(id, session=None):
     @return: DBBinary object for the given binary (None if not present)
     """
 
-    q = session.query(DBBinary).filter_by(binary_id=id)
+    q = session.query(DBBinary).filter_by(binary_id=binary_id)
 
     try:
         return q.one()
@@ -944,8 +944,8 @@ class Keyring(object):
     def __repr__(self):
         return '<Keyring %s>' % self.keyring_name
 
-    def de_escape_gpg_str(self, str):
-        esclist = re.split(r'(\\x..)', str)
+    def de_escape_gpg_str(self, txt):
+        esclist = re.split(r'(\\x..)', txt)
         for x in range(1,len(esclist),2):
             esclist[x] = "%c" % (int(esclist[x][2:],16))
         return "".join(esclist)
@@ -1444,13 +1444,13 @@ def insert_pending_content_paths(package, fullpaths, session=None):
         # Insert paths
         pathcache = {}
         for fullpath in fullpaths:
-            (path, file) = os.path.split(fullpath)
+            (path, filename) = os.path.split(fullpath)
 
             if path.startswith( "./" ):
                 path = path[2:]
 
             filepath_id = get_or_set_contents_path_id(path, session)
-            filename_id = get_or_set_contents_file_id(file, session)
+            filename_id = get_or_set_contents_file_id(filename, session)
 
             pathcache[fullpath] = (filepath_id, filename_id)
 
