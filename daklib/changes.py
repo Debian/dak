@@ -177,17 +177,9 @@ class Changes(object):
 
         return summary
 
+    @session_wrapper
     def remove_known_changes(self, session=None):
-        if session is None:
-            session = DBConn().session()
-            privatetrans = True
-
         session.delete(get_knownchange(self.changes_file, session))
-
-        if privatetrans:
-            session.commit()
-            session.close()
-
 
     def mark_missing_fields(self):
         """add "missing" in fields which we will require for the known_changes table"""
@@ -195,13 +187,10 @@ class Changes(object):
             if (not self.changes.has_key(key)) or (not self.changes[key]):
                 self.changes[key]='missing'
 
+    @session_wrapper
     def add_known_changes(self, dirpath, session=None):
         """add "missing" in fields which we will require for the known_changes table"""
         cnf = Config()
-        privatetrans = False
-        if session is None:
-            session = DBConn().session()
-            privatetrans = True
 
         changesfile = os.path.join(dirpath, self.changes_file)
         filetime = datetime.datetime.fromtimestamp(os.path.getctime(changesfile))

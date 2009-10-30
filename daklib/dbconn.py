@@ -124,6 +124,8 @@ def session_wrapper(fn):
 
     return wrapped
 
+__all__.append('session_wrapper')
+
 ################################################################################
 
 class Architecture(object):
