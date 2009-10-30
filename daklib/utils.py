@@ -1362,7 +1362,7 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
     # Finally ensure there's not something we don't recognise
     known_keywords = dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
                           SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
-                          NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="")
+                          NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="",POLICY_URL="")
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
