@@ -408,7 +408,7 @@ class Upload(object):
                    fix_maintainer (self.pkg.changes["maintainer"])
         except ParseMaintError, msg:
             self.rejects.append("%s: Maintainer field ('%s') failed to parse: %s" \
-                   % (filename, changes["maintainer"], msg))
+                   % (filename, self.pkg.changes["maintainer"], msg))
 
         # ...likewise for the Changed-By: field if it exists.
         try:
