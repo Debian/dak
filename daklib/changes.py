@@ -189,9 +189,16 @@ class Changes(object):
             session.commit()
             session.close()
 
-    def add_known_changes(self, queue, session=None):
-        cnf = Config()
 
+    def mark_missing_fields(self):
+        """add "missing" in fields which we will require for the known_changes table"""
+        for key in ['urgency', 'maintainer', 'fingerprint', 'changedby' ]:
+            if (not self.changes.has_key(key)) or (not self.changes[key]):
+                self.changes[key]='missing'
+
+    def add_known_changes(self, queue, session=None):
+        """add "missing" in fields which we will require for the known_changes table"""
+        cnf = Config()
         if session is None:
             session = DBConn().session()
             privatetrans = True
@@ -199,6 +206,8 @@ class Changes(object):
         dirpath = cnf["Dir::Queue::%s" % (queue) ]
         changesfile = os.path.join(dirpath, self.changes_file)
         filetime = datetime.datetime.fromtimestamp(os.path.getctime(changesfile))
+
+        self.mark_missing_fields()
 
         session.execute(
             """INSERT INTO known_changes
