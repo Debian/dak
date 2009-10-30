@@ -168,6 +168,10 @@ class ChangesGenerator(threading.Thread):
         threading.Thread.__init__(self)
         self.queue = queue
         self.session = DBConn().session()
+        self.die = False
+
+    def plsDie(self):
+        self.die = True
 
     def run(self):
         cnf = Config()
@@ -181,6 +185,9 @@ class ChangesGenerator(threading.Thread):
                     if not filenames:
                         # Empty directory (or only subdirectories), next
                         continue
+                    if self.die:
+                        return
+
                     for changesfile in filenames:
                         if not changesfile.endswith(".changes"):
                             # Only interested in changes files.
@@ -199,10 +206,16 @@ class ImportThread(threading.Thread):
         threading.Thread.__init__(self)
         self.queue = queue
         self.session = DBConn().session()
+        self.die = False
+
+    def plsDie(self):
+        self.die = True
 
     def run(self):
         while True:
             try:
+                if self.die:
+                    return
                 to_import = self.queue.dequeue()
                 if not to_import:
                     return
@@ -268,10 +281,25 @@ def main():
 
 
     queue = OneAtATime()
-    ChangesGenerator(queue).start()
+    threads = [ ChangesGenerator(queue) ]
 
     for i in range(num_threads):
-        ImportThread(queue).start()
+        threads.append( ImportThread(queue) )
+
+    try:
+        for thread in threads:
+            thread.start()
+
+        for thread in thrads:
+            thread.join()
+
+    except KeyboardInterrupt:
+        utils.warn("Caught C-c; terminating.")
+        for thread in threads:
+            thread.plsDie()
+
+        for thread in threads:
+            thread.join()
 
 
 if __name__ == '__main__':
