@@ -33,18 +33,6 @@ from daklib.config import Config
 
 ###############################################################################
 
-# q-unapproved hax0ring
-QueueInfo = {
-    "New": { "is": is_new, "process": acknowledge_new },
-    "Autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
-    "Byhand" : { "is": is_byhand, "process": do_byhand },
-    "OldStableUpdate" : { "is": is_oldstableupdate,
-                          "process": do_oldstableupdate },
-    "StableUpdate" : { "is": is_stableupdate, "process": do_stableupdate },
-    "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
-    "Embargo" : { "is": is_embargo, "process": queue_embargo },
-}
-
 def determine_target(u):
     cnf = Config()
     
@@ -284,3 +272,17 @@ def acknowledge_new(u, summary, short_summary):
         u.Subst["__SUMMARY__"] = summary
         new_ack_message = utils.TemplateSubst(u.Subst, template)
         utils.send_mail(new_ack_message)
+
+################################################################################
+
+# q-unapproved hax0ring
+QueueInfo = {
+    "New": { "is": is_new, "process": acknowledge_new },
+    "Autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
+    "Byhand" : { "is": is_byhand, "process": do_byhand },
+    "OldStableUpdate" : { "is": is_oldstableupdate,
+                          "process": do_oldstableupdate },
+    "StableUpdate" : { "is": is_stableupdate, "process": do_stableupdate },
+    "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
+    "Embargo" : { "is": is_embargo, "process": queue_embargo },
+}

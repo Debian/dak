@@ -135,6 +135,7 @@ import apt_pkg
 
 from daklib import daklog
 from daklib.queue import *
+from daklib.queue_install import *
 from daklib import utils
 from daklib.dbconn import *
 #from daklib.dak_exceptions import *
@@ -160,6 +161,75 @@ def usage (exit_code=0):
   -s, --no-mail             don't send any mail
   -V, --version             display the version number and exit"""
     sys.exit(exit_code)
+
+###############################################################################
+
+def action(u):
+    cnf = Config()
+
+    # changes["distribution"] may not exist in corner cases
+    # (e.g. unreadable changes files)
+    if not u.pkg.changes.has_key("distribution") or not isinstance(u.pkg.changes["distribution"], DictType):
+        u.pkg.changes["distribution"] = {}
+
+    (summary, short_summary) = u.build_summaries()
+
+    (prompt, answer) = ("", "XXX")
+    if Options["No-Action"] or Options["Automatic"]:
+        answer = 'S'
+
+    queuekey = ''
+
+    pi = u.package_info()
+
+    if len(u.rejects) > 0:
+        if u.upload_too_new():
+            print "SKIP (too new)\n" + pi,
+            prompt = "[S]kip, Quit ?"
+        else:
+            print "REJECT\n" + pi
+            prompt = "[R]eject, Skip, Quit ?"
+            if Options["Automatic"]:
+                answer = 'R'
+    else:
+        qu = determine_target(u)
+        if qu:
+            print "%s for %s\n%s%s" % ( qu.upper(), ", ".join(u.pkg.changes["distribution"].keys()), pi, summary)
+            queuekey = qu[0].upper()
+            if queuekey in "RQSA":
+                queuekey = "D"
+                prompt = "[D]ivert, Skip, Quit ?"
+            else:
+                prompt = "[%s]%s, Skip, Quit ?" % (queuekey, qu[1:].lower())
+            if Options["Automatic"]:
+                answer = queuekey
+        else:
+            print "ACCEPT\n" + pi + summary,
+            prompt = "[A]ccept, Skip, Quit ?"
+            if Options["Automatic"]:
+                answer = 'A'
+
+    while prompt.find(answer) == -1:
+        answer = utils.our_raw_input(prompt)
+        m = re_default_answer.match(prompt)
+        if answer == "":
+            answer = m.group(1)
+        answer = answer[:1].upper()
+
+    if answer == 'R':
+        os.chdir(u.pkg.directory)
+        u.do_reject(0, pi)
+    elif answer == 'A':
+        u.pkg.add_known_changes( "Accepted" )
+        u.accept(summary, short_summary)
+        u.check_override()
+        u.remove()
+    elif answer == queuekey:
+        u.pkg.add_known_changes( qu )
+        QueueInfo[qu]["process"](u, summary, short_summary)
+        u.remove()
+    elif answer == 'Q':
+        sys.exit(0)
 
 ###############################################################################
 
@@ -229,7 +299,7 @@ def process_it(changes_file):
             u.check_timestamps()
             u.check_signed_by_key()
 
-#        action(u)
+        action(u)
 
     except (SystemExit, KeyboardInterrupt):
         raise
