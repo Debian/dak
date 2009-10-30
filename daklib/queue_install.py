@@ -25,6 +25,10 @@ Utility functions for process-upload
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import os
+
+from daklib import utils
+from daklib.dbconn import *
 from daklib.config import Config
 
 ###############################################################################
@@ -88,9 +92,8 @@ def package_to_queue(u, summary, short_summary, queue, perms=0660, build=True, a
     dir = cnf["Dir::Queue::%s" % queue]
 
     print "Moving to %s holding area" % queue.upper()
-    Logger.log(["Moving to %s" % queue, u.pkg.changes_file])
+    u.logger.log(["Moving to %s" % queue, u.pkg.changes_file])
 
-    u.pkg.write_dot_dak(dir)
     u.move_to_dir(dir, perms=perms)
     if build:
         get_or_set_queue(queue.lower()).autobuild_upload(u.pkg, dir)
@@ -127,9 +130,8 @@ def is_unembargo(u):
 
     if u.pkg.directory == disdir:
         if u.pkg.changes["architecture"].has_key("source"):
-            if not Options["No-Action"]:
-                session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)", u.pkg.changes)
-                session.commit()
+            session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)", u.pkg.changes)
+            session.commit()
 
             ret = True
 
@@ -271,9 +273,8 @@ def acknowledge_new(u, summary, short_summary):
     cnf = Config()
 
     print "Moving to NEW holding area."
-    Logger.log(["Moving to new", u.pkg.changes_file])
+    u.logger.log(["Moving to new", u.pkg.changes_file])
 
-    u.pkg.write_dot_dak(cnf["Dir::Queue::New"])
     u.move_to_dir(cnf["Dir::Queue::New"], perms=0640, changesperms=0644)
 
     if not Options["No-Mail"]:
