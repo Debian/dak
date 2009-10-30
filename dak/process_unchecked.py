@@ -507,7 +507,7 @@ def process_it(changes_file):
 
         action(u)
 
-    except SystemExit:
+    except (SystemExit, KeyboardInterrupt):
         raise
 
     except:

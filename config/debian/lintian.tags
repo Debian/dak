@@ -10,7 +10,11 @@ lintian:
     - binary-with-bad-dynamic-table
     - usr-share-doc-symlink-without-dependency
     - mknod-in-maintainer-script
+    - package-contains-info-dir-file
   error:
+    - wrong-file-owner-uid-or-gid
+    - bad-relation
+    - FSSTND-dir-in-usr
     - binary-in-etc
     - missing-dependency-on-perlapi
     - copyright-lists-upstream-authors-with-dh_make-boilerplate

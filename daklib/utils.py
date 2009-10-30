@@ -48,13 +48,13 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
                     re_is_orig_source
 
+from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
 from collections import defaultdict
 
 ################################################################################
 
-#default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
-default_config = "/home/stew/etc/dak/dak.conf"     #: default dak config, defines host properties
+default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
 default_apt_config = "/etc/dak/apt.conf" #: default apt config, not normally used
 
 alias_cache = None        #: Cache for email alias checks
@@ -528,9 +528,9 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     if not changes.has_key(field):
         raise NoFilesFieldError
 
-    # Get SourceFormat object for this Format and validate it
-    format = get_format_from_string(changes['format'])
-    format.validate_format(is_a_dsc=is_a_dsc, field=field)
+    # Validate .changes Format: field
+    if not is_a_dsc:
+        validate_changes_format(parse_format(changes['format']), field)
 
     includes_section = (not is_a_dsc) and field == "files"
 
@@ -1505,52 +1505,5 @@ apt_pkg.init()
 Cnf = apt_pkg.newConfiguration()
 apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
-#if which_conf_file() != default_config:
-#    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
-
-###############################################################################
-
-def ensure_orig_files(changes, dest_dir, session):
-    """
-    Ensure that dest_dir contains all the orig tarballs for the specified
-    changes. If it does not, symlink them into place.
-
-    Returns a 2-tuple (already_exists, symlinked) containing a list of files
-    that were already there and a list of files that were symlinked into place.
-    """
-
-    exists, symlinked = [], []
-
-    for dsc_file in changes.dsc_files:
-
-        # Skip all files that are not orig tarballs
-        if not re_is_orig_source.match(dsc_file):
-            continue
-
-        # Skip orig files not identified in the pool
-        if not (dsc_file in changes.orig_files and
-                'id' in changes.orig_files[dsc_file]):
-            continue
-
-        dest = os.path.join(dest_dir, dsc_file)
-
-        if os.path.exists(dest):
-            exists.append(dest)
-            continue
-
-        orig_file_id = changes.orig_files[dsc_file]['id']
-
-        c = session.execute(
-            'SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id',
-            {'id': orig_file_id}
-        )
-
-        res = c.fetchone()
-        if not res:
-            return "[INTERNAL ERROR] Couldn't find id %s in files table." % orig_file_id
-
-        src = os.path.join(res[0], res[1])
-        os.symlink(src, dest)
-        symlinked.append(dest)
-
-    return (exists, symlinked)
+if which_conf_file() != default_config:
+    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())

@@ -213,28 +213,14 @@ def check_valid(new):
 
 ###############################################################################
 
-def lookup_uid_from_fingerprint(fpr, session):
-    uid = None
-    uid_name = ""
-    # This is a stupid default, but see the comments below
-    is_dm = False
-
-    user = get_uid_from_fingerprint(fpr, session)
-
-    if user is not None:
-        uid = user.uid
-        if user.name is None:
-            uid_name = ''
-        else:
-            uid_name = user.name
-
-        # Check the relevant fingerprint (which we have to have)
-        for f in user.fingerprint:
-            if f.fingerprint == fpr:
-                is_dm = f.keyring.debian_maintainer
-                break
-
-    return (uid, uid_name, is_dm)
+def check_status(files):
+    new = byhand = 0
+    for f in files.keys():
+        if files[f]["type"] == "byhand":
+            byhand = 1
+        elif files[f].has_key("new"):
+            new = 1
+    return (new, byhand)
 
 ###############################################################################
 
@@ -287,19 +273,20 @@ class Upload(object):
         self.pkg.reset()
 
     def package_info(self):
+        """
+        Format various messages from this Upload to send to the maintainer.
+        """
+
+        msgs = (
+            ('Reject Reasons', self.rejects),
+            ('Warnings', self.warnings),
+            ('Notes', self.notes),
+        )
+
         msg = ''
-
-        if len(self.rejects) > 0:
-            msg += "Reject Reasons:\n"
-            msg += "\n".join(self.rejects)
-
-        if len(self.warnings) > 0:
-            msg += "Warnings:\n"
-            msg += "\n".join(self.warnings)
-
-        if len(self.notes) > 0:
-            msg += "Notes:\n"
-            msg += "\n".join(self.notes)
+        for title, messages in msgs:
+            if messages:
+                msg += '\n\n%s:\n%s' % (title, '\n'.join(messages))
 
         return msg
 
@@ -1025,42 +1012,6 @@ class Upload(object):
 
     ###########################################################################
 
-    def ensure_all_source_exists(self, dest_dir=None):
-        """
-        Ensure that dest_dir contains all the orig tarballs for the specified
-        changes. If it does not, symlink them into place.
-
-        If dest_dir is None, populate the current directory.
-        """
-
-        if dest_dir is None:
-            dest_dir = os.getcwd()
-
-        # Create a symlink mirror of the source files in our temporary directory
-        for f in self.pkg.files.keys():
-            m = re_issource.match(f)
-            if m:
-                src = os.path.join(source_dir, f)
-                # If a file is missing for whatever reason, give up.
-                if not os.path.exists(src):
-                    return
-                ftype = m.group(3)
-                if re_is_orig_source.match(f) and pkg.orig_files.has_key(f) and \
-                   pkg.orig_files[f].has_key("path"):
-                    continue
-                dest = os.path.join(os.getcwd(), f)
-                os.symlink(src, dest)
-
-        # If the orig files are not a part of the upload, create symlinks to the
-        # existing copies.
-        for orig_file in self.pkg.orig_files.keys():
-            if not self.pkg.orig_files[orig_file].has_key("path"):
-                continue
-            dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
-            os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
-
-    ###########################################################################
-
     def get_changelog_versions(self, source_dir):
         """Extracts a the source package and (optionally) grabs the
         version history out of debian/changelog for the BTS."""
@@ -1077,7 +1028,28 @@ class Upload(object):
         if not dsc_filename:
             return
 
-        self.ensure_all_source_exists()
+        # Create a symlink mirror of the source files in our temporary directory
+        for f in self.pkg.files.keys():
+            m = re_issource.match(f)
+            if m:
+                src = os.path.join(source_dir, f)
+                # If a file is missing for whatever reason, give up.
+                if not os.path.exists(src):
+                    return
+                ftype = m.group(3)
+                if re_is_orig_source.match(f) and self.pkg.orig_files.has_key(f) and \
+                   self.pkg.orig_files[f].has_key("path"):
+                    continue
+                dest = os.path.join(os.getcwd(), f)
+                os.symlink(src, dest)
+
+        # If the orig files are not a part of the upload, create symlinks to the
+        # existing copies.
+        for orig_file in self.pkg.orig_files.keys():
+            if not self.pkg.orig_files[orig_file].has_key("path"):
+                continue
+            dest = os.path.join(os.getcwd(), os.path.basename(orig_file))
+            os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
 
         # Extract the source
         cmd = "dpkg-source -sn -x %s" % (dsc_filename)
@@ -1211,7 +1183,98 @@ class Upload(object):
         self.ensure_hashes()
 
     ###########################################################################
+
+    def ensure_orig(self, target_dir='.', session=None):
+        """
+        Ensures that all orig files mentioned in the changes file are present
+        in target_dir. If they do not exist, they are symlinked into place.
+
+        An list containing the symlinks that were created are returned (so they
+        can be removed).
+        """
+
+        symlinked = []
+        cnf = Config()
+
+        for filename, entry in self.pkg.dsc_files.iteritems():
+            if not re_is_orig_source.match(filename):
+                # File is not an orig; ignore
+                continue
+
+            if os.path.exists(filename):
+                # File exists, no need to continue
+                continue
+
+            def symlink_if_valid(path):
+                f = utils.open_file(path)
+                md5sum = apt_pkg.md5sum(f)
+                f.close()
+
+                fingerprint = (os.stat(path)[stat.ST_SIZE], md5sum)
+                expected = (int(entry['size']), entry['md5sum'])
+
+                if fingerprint != expected:
+                    return False
+
+                dest = os.path.join(target_dir, filename)
+
+                os.symlink(path, dest)
+                symlinked.append(dest)
+
+                return True
+
+            session_ = session
+            if session is None:
+                session_ = DBConn().session()
+
+            found = False
+
+            # Look in the pool
+            for poolfile in get_poolfile_like_name('/%s' % filename, session_):
+                poolfile_path = os.path.join(
+                    poolfile.location.path, poolfile.filename
+                )
+
+                if symlink_if_valid(poolfile_path):
+                    found = True
+                    break
+
+            if session is None:
+                session_.close()
+
+            if found:
+                continue
+
+            # Look in some other queues for the file
+            queues = ('Accepted', 'New', 'Byhand', 'ProposedUpdates',
+                'OldProposedUpdates', 'Embargoed', 'Unembargoed')
+
+            for queue in queues:
+                if not cnf.get('Dir::Queue::%s' % queue):
+                    continue
+
+                queuefile_path = os.path.join(
+                    cnf['Dir::Queue::%s' % queue], filename
+                )
+
+                if not os.path.exists(queuefile_path):
+                    # Does not exist in this queue
+                    continue
+
+                if symlink_if_valid(queuefile_path):
+                    break
+
+        return symlinked
+
+    ###########################################################################
+
     def check_lintian(self):
+        cnf = Config()
+
+        # Don't reject binary uploads
+        if not self.pkg.changes['architecture'].has_key('source'):
+            return
+
         # Only check some distributions
         valid_dist = False
         for dist in ('unstable', 'experimental'):
@@ -1222,13 +1285,11 @@ class Upload(object):
         if not valid_dist:
             return
 
-        self.ensure_all_source_exists()
-
-        cnf = Config()
         tagfile = cnf.get("Dinstall::LintianTags")
         if tagfile is None:
             # We don't have a tagfile, so just don't do anything.
             return
+
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
@@ -1238,6 +1299,9 @@ class Upload(object):
         except yaml.YAMLError, msg:
             utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
             return
+
+        # Try and find all orig mentioned in the .dsc
+        symlinked = self.ensure_orig()
 
         # Now setup the input file for lintian. lintian wants "one tag per line" only,
         # so put it together like it. We put all types of tags in one file and then sort
@@ -1258,14 +1322,22 @@ class Upload(object):
         # to then parse it.
         command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
         (result, output) = commands.getstatusoutput(command)
-        # We are done with lintian, remove our tempfile
+
+        # We are done with lintian, remove our tempfile and any symlinks we created
         os.unlink(temp_filename)
+        for symlink in symlinked:
+            os.unlink(symlink)
+
         if (result == 2):
             utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
             utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
 
         if len(output) == 0:
             return
+
+        def log(*txt):
+            if self.logger:
+                self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
 
         # We have output of lintian, this package isn't clean. Lets parse it and see if we
         # are having a victim for a reject.
@@ -1293,12 +1365,16 @@ class Upload(object):
                 elif etag in lintiantags['error']:
                     # The tag is overriden - but is not allowed to be
                     self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
+                    log("ftpmaster does not allow tag to be overridable", etag)
             else:
                 # Tag is known, it is not overriden, direct reject.
                 self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
                 # Now tell if they *might* override it.
                 if etag in lintiantags['warning']:
+                    log("auto rejecting", "overridable", etag)
                     self.rejects.append("%s: If you have a good reason, you may override this lintian tag." % (epackage))
+                else:
+                    log("auto rejecting", "not overridable", etag)
 
     ###########################################################################
     def check_urgency(self):
@@ -1361,7 +1437,201 @@ class Upload(object):
                 except:
                     self.rejects.append("%s: deb contents timestamp check failed [%s: %s]" % (filename, sys.exc_type, sys.exc_value))
 
+    def check_if_upload_is_sponsored(self, uid_email, uid_name):
+        if uid_email in [self.pkg.changes["maintaineremail"], self.pkg.changes["changedbyemail"]]:
+            sponsored = False
+        elif uid_name in [self.pkg.changes["maintainername"], self.pkg.changes["changedbyname"]]:
+            sponsored = False
+            if uid_name == "":
+                sponsored = True
+        else:
+            sponsored = True
+            if ("source" in self.pkg.changes["architecture"] and uid_email and utils.is_email_alias(uid_email)):
+                sponsor_addresses = utils.gpg_get_key_addresses(self.pkg.changes["fingerprint"])
+                if (self.pkg.changes["maintaineremail"] not in sponsor_addresses and
+                    self.pkg.changes["changedbyemail"] not in sponsor_addresses):
+                        self.pkg.changes["sponsoremail"] = uid_email
+
+        return sponsored
+
+
     ###########################################################################
+    # check_signed_by_key checks
+    ###########################################################################
+
+    def check_signed_by_key(self):
+        """Ensure the .changes is signed by an authorized uploader."""
+        session = DBConn().session()
+
+        # First of all we check that the person has proper upload permissions
+        # and that this upload isn't blocked
+        fpr = get_fingerprint(self.pkg.changes['fingerprint'], session=session)
+
+        if fpr is None:
+            self.rejects.append("Cannot find fingerprint %s" % self.pkg.changes["fingerprint"])
+            return
+
+        # TODO: Check that import-keyring adds UIDs properly
+        if not fpr.uid:
+            self.rejects.append("Cannot find uid for fingerprint %s.  Please contact ftpmaster@debian.org" % fpr.fingerprint)
+            return
+
+        # Check that the fingerprint which uploaded has permission to do so
+        self.check_upload_permissions(fpr, session)
+
+        # Check that this package is not in a transition
+        self.check_transition(session)
+
+        session.close()
+
+
+    def check_upload_permissions(self, fpr, session):
+        # Check any one-off upload blocks
+        self.check_upload_blocks(fpr, session)
+
+        # Start with DM as a special case
+        # DM is a special case unfortunately, so we check it first
+        # (keys with no source access get more access than DMs in one
+        #  way; DMs can only upload for their packages whether source
+        #  or binary, whereas keys with no access might be able to
+        #  upload some binaries)
+        if fpr.source_acl.access_level == 'dm':
+            self.check_dm_source_upload(fpr, session)
+        else:
+            # Check source-based permissions for other types
+            if self.pkg.changes["architecture"].has_key("source"):
+                if fpr.source_acl.access_level is None:
+                    rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
+                    rej += '\nPlease contact ftpmaster if you think this is incorrect'
+                    self.rejects.append(rej)
+                    return
+            else:
+                # If not a DM, we allow full upload rights
+                uid_email = "%s@debian.org" % (fpr.uid.uid)
+                self.check_if_upload_is_sponsored(uid_email, fpr.uid.name)
+
+
+        # Check binary upload permissions
+        # By this point we know that DMs can't have got here unless they
+        # are allowed to deal with the package concerned so just apply
+        # normal checks
+        if fpr.binary_acl.access_level == 'full':
+            return
+
+        # Otherwise we're in the map case
+        tmparches = self.pkg.changes["architecture"].copy()
+        tmparches.pop('source', None)
+
+        for bam in fpr.binary_acl_map:
+            tmparches.pop(bam.architecture.arch_string, None)
+
+        if len(tmparches.keys()) > 0:
+            if fpr.binary_reject:
+                rej = ".changes file contains files of architectures not permitted for fingerprint %s" % fpr.fingerprint
+                rej += "\narchitectures involved are: ", ",".join(tmparches.keys())
+                self.rejects.append(rej)
+            else:
+                # TODO: This is where we'll implement reject vs throw away binaries later
+                rej = "Uhm.  I'm meant to throw away the binaries now but that's not implemented yet"
+                rej += "\nPlease complain to ftpmaster@debian.org as this shouldn't have been turned on"
+                rej += "\nFingerprint: %s", (fpr.fingerprint)
+                self.rejects.append(rej)
+
+
+    def check_upload_blocks(self, fpr, session):
+        """Check whether any upload blocks apply to this source, source
+           version, uid / fpr combination"""
+
+        def block_rej_template(fb):
+            rej = 'Manual upload block in place for package %s' % fb.source
+            if fb.version is not None:
+                rej += ', version %s' % fb.version
+            return rej
+
+        for fb in session.query(UploadBlock).filter_by(source = self.pkg.changes['source']).all():
+            # version is None if the block applies to all versions
+            if fb.version is None or fb.version == self.pkg.changes['version']:
+                # Check both fpr and uid - either is enough to cause a reject
+                if fb.fpr is not None:
+                    if fb.fpr.fingerprint == fpr.fingerprint:
+                        self.rejects.append(block_rej_template(fb) + ' for fingerprint %s\nReason: %s' % (fpr.fingerprint, fb.reason))
+                if fb.uid is not None:
+                    if fb.uid == fpr.uid:
+                        self.rejects.append(block_rej_template(fb) + ' for uid %s\nReason: %s' % (fb.uid.uid, fb.reason))
+
+
+    def check_dm_upload(self, fpr, session):
+        # Quoth the GR (http://www.debian.org/vote/2007/vote_003):
+        ## none of the uploaded packages are NEW
+        rej = False
+        for f in self.pkg.files.keys():
+            if self.pkg.files[f].has_key("byhand"):
+                self.rejects.append("%s may not upload BYHAND file %s" % (uid, f))
+                rej = True
+            if self.pkg.files[f].has_key("new"):
+                self.rejects.append("%s may not upload NEW file %s" % (uid, f))
+                rej = True
+
+        if rej:
+            return
+
+        ## the most recent version of the package uploaded to unstable or
+        ## experimental includes the field "DM-Upload-Allowed: yes" in the source
+        ## section of its control file
+        q = session.query(DBSource).filter_by(source=self.pkg.changes["source"])
+        q = q.join(SrcAssociation)
+        q = q.join(Suite).filter(Suite.suite_name.in_(['unstable', 'experimental']))
+        q = q.order_by(desc('source.version')).limit(1)
+
+        r = q.all()
+
+        if len(r) != 1:
+            rej = "Could not find existing source package %s in unstable or experimental and this is a DM upload" % self.pkg.changes["source"]
+            self.rejects.append(rej)
+            return
+
+        r = r[0]
+        if not r.dm_upload_allowed:
+            rej = "Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version (%s)" % (self.pkg.changes["source"], r.version)
+            self.rejects.append(rej)
+            return
+
+        ## the Maintainer: field of the uploaded .changes file corresponds with
+        ## the owner of the key used (ie, non-developer maintainers may not sponsor
+        ## uploads)
+        if self.check_if_upload_is_sponsored(fpr.uid.uid, fpr.uid.name):
+            self.rejects.append("%s (%s) is not authorised to sponsor uploads" % (fpr.uid.uid, fpr.fingerprint))
+
+        ## the most recent version of the package uploaded to unstable or
+        ## experimental lists the uploader in the Maintainer: or Uploaders: fields (ie,
+        ## non-developer maintainers cannot NMU or hijack packages)
+
+        # srcuploaders includes the maintainer
+        accept = False
+        for sup in r.srcuploaders:
+            (rfc822, rfc2047, name, email) = sup.maintainer.get_split_maintainer()
+            # Eww - I hope we never have two people with the same name in Debian
+            if email == fpr.uid.uid or name == fpr.uid.name:
+                accept = True
+                break
+
+        if not accept:
+            self.rejects.append("%s is not in Maintainer or Uploaders of source package %s" % (fpr.uid.uid, self.pkg.changes["source"]))
+            return
+
+        ## none of the packages are being taken over from other source packages
+        for b in self.pkg.changes["binary"].keys():
+            for suite in self.pkg.changes["distribution"].keys():
+                q = session.query(DBSource)
+                q = q.join(DBBinary).filter_by(package=b)
+                q = q.join(BinAssociation).join(Suite).filter_by(suite_name=suite)
+
+                for s in q.all():
+                    if s.source != self.pkg.changes["source"]:
+                        self.rejects.append("%s may not hijack %s from source package %s in suite %s" % (fpr.uid.uid, b, s, suite))
+
+
+
     def check_transition(self, session):
         cnf = Config()
 
@@ -1434,92 +1704,9 @@ transition is done."""
                     return
 
     ###########################################################################
-    def check_signed_by_key(self):
-        """Ensure the .changes is signed by an authorized uploader."""
-        session = DBConn().session()
-
-        self.check_transition(session)
-
-        (uid, uid_name, is_dm) = lookup_uid_from_fingerprint(self.pkg.changes["fingerprint"], session=session)
-
-        # match claimed name with actual name:
-        if uid is None:
-            # This is fundamentally broken but need us to refactor how we get
-            # the UIDs/Fingerprints in order for us to fix it properly
-            uid, uid_email = self.pkg.changes["fingerprint"], uid
-            may_nmu, may_sponsor = 1, 1
-            # XXX by default new dds don't have a fingerprint/uid in the db atm,
-            #     and can't get one in there if we don't allow nmu/sponsorship
-        elif is_dm is False:
-            # If is_dm is False, we allow full upload rights
-            uid_email = "%s@debian.org" % (uid)
-            may_nmu, may_sponsor = 1, 1
-        else:
-            # Assume limited upload rights unless we've discovered otherwise
-            uid_email = uid
-            may_nmu, may_sponsor = 0, 0
-
-        if uid_email in [self.pkg.changes["maintaineremail"], self.pkg.changes["changedbyemail"]]:
-            sponsored = 0
-        elif uid_name in [self.pkg.changes["maintainername"], self.pkg.changes["changedbyname"]]:
-            sponsored = 0
-            if uid_name == "": sponsored = 1
-        else:
-            sponsored = 1
-            if ("source" in self.pkg.changes["architecture"] and
-                uid_email and utils.is_email_alias(uid_email)):
-                sponsor_addresses = utils.gpg_get_key_addresses(self.pkg.changes["fingerprint"])
-                if (self.pkg.changes["maintaineremail"] not in sponsor_addresses and
-                    self.pkg.changes["changedbyemail"] not in sponsor_addresses):
-                    self.pkg.changes["sponsoremail"] = uid_email
-
-        if sponsored and not may_sponsor:
-            self.rejects.append("%s is not authorised to sponsor uploads" % (uid))
-
-        if not sponsored and not may_nmu:
-            should_reject = True
-            highest_sid, highest_version = None, None
-
-            # XXX: This reimplements in SQLA what existed before but it's fundamentally fucked
-            #      It ignores higher versions with the dm_upload_allowed flag set to false
-            #      I'm keeping the existing behaviour for now until I've gone back and
-            #      checked exactly what the GR says - mhy
-            for si in get_sources_from_name(source=self.pkg.changes['source'], dm_upload_allowed=True, session=session):
-                if highest_version is None or apt_pkg.VersionCompare(si.version, highest_version) == 1:
-                     highest_sid = si.source_id
-                     highest_version = si.version
-
-            if highest_sid is None:
-                self.rejects.append("Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version" % self.pkg.changes["source"])
-            else:
-                for sup in session.query(SrcUploader).join(DBSource).filter_by(source_id=highest_sid):
-                    (rfc822, rfc2047, name, email) = sup.maintainer.get_split_maintainer()
-                    if email == uid_email or name == uid_name:
-                        should_reject = False
-                        break
-
-            if should_reject is True:
-                self.rejects.append("%s is not in Maintainer or Uploaders of source package %s" % (uid, self.pkg.changes["source"]))
-
-            for b in self.pkg.changes["binary"].keys():
-                for suite in self.pkg.changes["distribution"].keys():
-                    q = session.query(DBSource)
-                    q = q.join(DBBinary).filter_by(package=b)
-                    q = q.join(BinAssociation).join(Suite).filter_by(suite_name=suite)
-
-                    for s in q.all():
-                        if s.source != self.pkg.changes["source"]:
-                            self.rejects.append("%s may not hijack %s from source package %s in suite %s" % (uid, b, s, suite))
-
-            for f in self.pkg.files.keys():
-                if self.pkg.files[f].has_key("byhand"):
-                    self.rejects.append("%s may not upload BYHAND file %s" % (uid, f))
-                if self.pkg.files[f].has_key("new"):
-                    self.rejects.append("%s may not upload NEW file %s" % (uid, f))
-
-        session.close()
-
+    # End check_signed_by_key checks
     ###########################################################################
+
     def build_summaries(self):
         """ Build a summary of changes the upload introduces. """
 
@@ -2282,6 +2469,44 @@ distribution."""
                 self.rejects.append("md5sum for %s doesn't match %s." % (found, file))
             if actual_size != int(dsc_entry["size"]):
                 self.rejects.append("size for %s doesn't match %s." % (found, file))
+
+    ################################################################################
+    # This is used by process-new and process-holding to recheck a changes file
+    # at the time we're running.  It mainly wraps various other internal functions
+    # and is similar to accepted_checks - these should probably be tidied up
+    # and combined
+    def recheck(self, session):
+        cnf = Config()
+        for f in self.pkg.files.keys():
+            # The .orig.tar.gz can disappear out from under us is it's a
+            # duplicate of one in the archive.
+            if not self.pkg.files.has_key(f):
+                continue
+
+            entry = self.pkg.files[f]
+
+            # Check that the source still exists
+            if entry["type"] == "deb":
+                source_version = entry["source version"]
+                source_package = entry["source package"]
+                if not self.pkg.changes["architecture"].has_key("source") \
+                   and not source_exists(source_package, source_version, self.pkg.changes["distribution"].keys(), session):
+                    source_epochless_version = re_no_epoch.sub('', source_version)
+                    dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
+                    found = False
+                    for q in ["Accepted", "Embargoed", "Unembargoed", "Newstage"]:
+                        if cnf.has_key("Dir::Queue::%s" % (q)):
+                            if os.path.exists(cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
+                                found = True
+                    if not found:
+                        self.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, f))
+
+            # Version and file overwrite checks
+            if entry["type"] == "deb":
+                self.check_binary_against_db(f, session)
+            elif entry["type"] == "dsc":
+                self.check_source_against_db(f, session)
+                self.check_dsc_against_db(f, session)
 
     ################################################################################
     def accepted_checks(self, overwrite_checks, session):
