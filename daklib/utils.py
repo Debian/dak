@@ -556,7 +556,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
         (section, component) = extract_component_from_section(section)
 
-        files[name] = Dict(size=size, section=section,
+        files[name] = dict(size=size, section=section,
                            priority=priority, component=component)
         files[name][hashname] = md5
 
@@ -1093,10 +1093,6 @@ def split_args (s, dwim=1):
 
 ################################################################################
 
-def Dict(**dict): return dict
-
-########################################
-
 def gpgv_get_status_output(cmd, status_read, status_write):
     """
     Our very own version of commands.getouputstatus(), hacked to support
@@ -1364,7 +1360,7 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
         rejects.append("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
 
     # Finally ensure there's not something we don't recognise
-    known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+    known_keywords = dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
                           SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
                           NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="")
 
