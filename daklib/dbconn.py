@@ -448,14 +448,14 @@ class BuildQueue(object):
         for f in self.queuefiles:
             if f.fileid is not None and f.fileid == poolfile.file_id or \
                f.poolfile.filename == poolfile_basename:
-                   # In this case, update the QueueFile entry so we
+                   # In this case, update the BuildQueueFile entry so we
                    # don't remove it too early
                    f.lastused = datetime.now()
                    DBConn().session().object_session(pf).add(f)
                    return f
 
-        # Prepare QueueFile object
-        qf = QueueFile()
+        # Prepare BuildQueueFile object
+        qf = BuildQueueFile()
         qf.queue_id = self.queue_id
         qf.lastused = datetime.now()
         qf.filename = poolfile_basename
