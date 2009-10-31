@@ -54,7 +54,7 @@ from summarystats import SummaryStats
 from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
 from binary import Binary
-from lintian import parse_lintian_output
+from lintian import parse_lintian_output, generate_reject_messages
 
 ###############################################################################
 
@@ -1287,14 +1287,11 @@ class Upload(object):
         # through lintians output later to see if its a fatal tag we detected, or not.
         # So we only run lintian once on all tags, even if we might reject on some, but not
         # reject on others.
-        # Additionally build up a set of tags
-        tags = set()
         (fd, temp_filename) = utils.temp_filename()
         temptagfile = os.fdopen(fd, 'w')
-        for tagtype in lintiantags:
-            for tag in lintiantags[tagtype]:
+        for tags in lintiantags.values():
+            for tag in tags:
                 temptagfile.write("%s\n" % tag)
-                tags.add(tag)
         temptagfile.close()
 
         # So now we should look at running lintian at the .changes file, capturing output
@@ -1311,35 +1308,15 @@ class Upload(object):
             utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
             utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
 
+        parsed_tags = parse_lintian_output(output)
+
         def log(*txt):
             if self.logger:
                 self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
 
-        for etype, epackage, etag, etext in parse_lintian_output(output):
-
-            # So lets check if we know the tag at all.
-            if etag not in tags:
-                continue
-
-            if etype == 'O':
-                # We know it and it is overriden. Check that override is allowed.
-                if etag in lintiantags['nonfatal']:
-                    # The tag is overriden, and it is allowed to be overriden.
-                    # Don't add a reject message.
-                    pass
-                elif etag in lintiantags['fatal']:
-                    # The tag is overriden - but is not allowed to be
-                    self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
-                    log("ftpmaster does not allow tag to be overridable", etag)
-            else:
-                # Tag is known, it is not overriden, direct reject.
-                self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
-                # Now tell if they *might* override it.
-                if etag in lintiantags['nonfatal']:
-                    log("auto rejecting", "overridable", etag)
-                    self.rejects.append("%s: If you have a good reason, you may override this lintian tag." % (epackage))
-                else:
-                    log("auto rejecting", "not overridable", etag)
+        self.rejects.extend(
+            generate_reject_messages(parsed_tags, lintiantags, log=log)
+        )
 
     ###########################################################################
     def check_urgency(self):

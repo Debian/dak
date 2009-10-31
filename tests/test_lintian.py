@@ -4,7 +4,7 @@ from base_test import DakTestCase
 
 import unittest
 
-from daklib.lintian import parse_lintian_output
+from daklib.lintian import parse_lintian_output, generate_reject_messages
 
 class ParseLintianTestCase(DakTestCase):
     def assertParse(self, output, expected):
@@ -39,6 +39,59 @@ class ParseLintianTestCase(DakTestCase):
         self.assertParse(
             'W: pkgname source: some-tag path/to/file',
             [('W', 'pkgname source', 'some-tag', 'path/to/file')]
+        )
+
+class GenerateRejectMessages(DakTestCase):
+    def assertNumReject(self, input, defs, num):
+        self.assertEqual(len(generate_reject_messages(input, defs)), num)
+
+    def testUnknownTag(self):
+        self.assertNumReject(
+            [('W', 'pkgname', 'unknown-tag', '')],
+            {'fatal': ['known-tag'], 'nonfatal': []},
+            0,
+        )
+
+    def testFatalTags(self):
+        self.assertNumReject([
+                ('W', 'pkgname', 'fatal-tag-1', ''),
+                ('W', 'pkgname', 'fatal-tag-2', ''),
+            ],
+            {'fatal': ['fatal-tag-1', 'fatal-tag-2'], 'nonfatal': []},
+            2,
+        )
+
+    def testMixture(self):
+        self.assertNumReject([
+                ('W', 'pkgname', 'fatal-tag', ''),
+                ('W', 'pkgname', 'unknown-tag', ''),
+            ],
+            {'fatal': ['fatal-tag'], 'nonfatal': []},
+            1,
+        )
+
+    def testOverridable(self):
+        self.assertNumReject([
+                ('W', 'pkgname', 'non-fatal-tag', ''),
+            ],
+            {'fatal': [], 'nonfatal': ['non-fatal-tag']},
+            1 + 1, # We add an extra 'reject' hint message
+        )
+
+    def testOverrideAllowed(self):
+        self.assertNumReject([
+                ('O', 'pkgname', 'non-fatal-tag', ''),
+            ],
+            {'fatal': [], 'nonfatal': ['non-fatal-tag']},
+            0,
+        )
+
+    def testOverrideNotAllowed(self):
+        self.assertNumReject([
+                ('O', 'pkgname', 'fatal-tag', ''),
+            ],
+            {'fatal': ['fatal-tag'], 'nonfatal': []},
+            1,
         )
 
 if __name__ == '__main__':
