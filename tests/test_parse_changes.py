@@ -31,7 +31,7 @@ class ParseDscTestCase(ParseChangesTestCase):
 
     def test_2(self):
         # Missing blank line before signature body
-        self.assertFails('dsc/2.dsc', line=14)
+        self.assertParse('dsc/2.dsc')
 
     def test_2_ignoreErrors(self):
         # Invalid .dsc ; ignoring errors
@@ -39,19 +39,19 @@ class ParseDscTestCase(ParseChangesTestCase):
 
     def test_3(self):
         # Missing blank line after signature header
-        self.assertFails('dsc/3.dsc', line=14)
+        self.assertParse('dsc/3.dsc')
 
     def test_4(self):
         # No blank lines at all
-        self.assertFails('dsc/4.dsc', line=19)
+        self.assertParse('dsc/4.dsc')
 
     def test_5(self):
         # Extra blank line before signature body
-        self.assertFails('dsc/5.dsc', line=15)
+        self.assertParse('dsc/5.dsc')
 
     def test_6(self):
         # Extra blank line after signature header
-        self.assertFails('dsc/6.dsc', line=5)
+        self.assertParse('dsc/6.dsc')
 
 class ParseChangesTestCase(ParseChangesTestCase):
     def test_1(self):
