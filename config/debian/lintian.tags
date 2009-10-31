@@ -11,13 +11,13 @@ lintian:
     - usr-share-doc-symlink-without-dependency
     - mknod-in-maintainer-script
     - package-contains-info-dir-file
+    - copyright-lists-upstream-authors-with-dh_make-boilerplate
   error:
     - wrong-file-owner-uid-or-gid
     - bad-relation
     - FSSTND-dir-in-usr
     - binary-in-etc
     - missing-dependency-on-perlapi
-    - copyright-lists-upstream-authors-with-dh_make-boilerplate
     - section-is-dh_make-template
     - package-installs-python-pyc
     - library-in-debug-or-profile-should-not-be-stripped
