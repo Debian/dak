@@ -2516,51 +2516,57 @@ class DBConn(object):
             self.__createconn()
 
     def __setuptables(self):
-        self.tbl_architecture = Table('architecture', self.db_meta, autoload=True)
-        self.tbl_archive = Table('archive', self.db_meta, autoload=True)
-        self.tbl_bin_associations = Table('bin_associations', self.db_meta, autoload=True)
-        self.tbl_binaries = Table('binaries', self.db_meta, autoload=True)
-        self.tbl_binary_acl = Table('binary_acl', self.db_meta, autoload=True)
-        self.tbl_binary_acl_map = Table('binary_acl_map', self.db_meta, autoload=True)
-        self.tbl_build_queue = Table('build_queue', self.db_meta, autoload=True)
-        self.tbl_build_queue_files = Table('build_queue_files', self.db_meta, autoload=True)
-        self.tbl_component = Table('component', self.db_meta, autoload=True)
-        self.tbl_config = Table('config', self.db_meta, autoload=True)
-        self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
-        self.tbl_content_file_names = Table('content_file_names', self.db_meta, autoload=True)
-        self.tbl_content_file_paths = Table('content_file_paths', self.db_meta, autoload=True)
-        self.tbl_changes_pending_binary = Table('changes_pending_binaries', self.db_meta, autoload=True)
-        self.tbl_changes_pending_files = Table('changes_pending_files', self.db_meta, autoload=True)
-        self.tbl_changes_pending_files_map = Table('changes_pending_files_map', self.db_meta, autoload=True)
-        self.tbl_changes_pending_source = Table('changes_pending_source', self.db_meta, autoload=True)
-        self.tbl_changes_pending_source_files = Table('changes_pending_source_files', self.db_meta, autoload=True)
-        self.tbl_changes_pool_files = Table('changes_pool_files', self.db_meta, autoload=True)
-        self.tbl_dsc_files = Table('dsc_files', self.db_meta, autoload=True)
-        self.tbl_files = Table('files', self.db_meta, autoload=True)
-        self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
-        self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
-        self.tbl_changes = Table('changes', self.db_meta, autoload=True)
-        self.tbl_keyring_acl_map = Table('keyring_acl_map', self.db_meta, autoload=True)
-        self.tbl_location = Table('location', self.db_meta, autoload=True)
-        self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
-        self.tbl_new_comments = Table('new_comments', self.db_meta, autoload=True)
-        self.tbl_override = Table('override', self.db_meta, autoload=True)
-        self.tbl_override_type = Table('override_type', self.db_meta, autoload=True)
-        self.tbl_pending_content_associations = Table('pending_content_associations', self.db_meta, autoload=True)
-        self.tbl_policy_queue = Table('policy_queue', self.db_meta, autoload=True)
-        self.tbl_priority = Table('priority', self.db_meta, autoload=True)
-        self.tbl_section = Table('section', self.db_meta, autoload=True)
-        self.tbl_source = Table('source', self.db_meta, autoload=True)
-        self.tbl_source_acl = Table('source_acl', self.db_meta, autoload=True)
-        self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
-        self.tbl_src_format = Table('src_format', self.db_meta, autoload=True)
-        self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
-        self.tbl_suite = Table('suite', self.db_meta, autoload=True)
-        self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
-        self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
-        self.tbl_suite_build_queue_copy = Table('suite_build_queue_copy', self.db_meta, autoload=True)
-        self.tbl_uid = Table('uid', self.db_meta, autoload=True)
-        self.tbl_upload_blocks = Table('upload_blocks', self.db_meta, autoload=True)
+        tables = (
+            'architecture',
+            'archive',
+            'bin_associations',
+            'binaries',
+            'binary_acl',
+            'binary_acl_map',
+            'build_queue',
+            'build_queue_files',
+            'component',
+            'config',
+            'content_associations',
+            'content_file_names',
+            'content_file_paths',
+            'changes_pending_binaries',
+            'changes_pending_files',
+            'changes_pending_files_map',
+            'changes_pending_source',
+            'changes_pending_source_files',
+            'changes_pool_files',
+            'dsc_files',
+            'files',
+            'fingerprint',
+            'keyrings',
+            'changes',
+            'keyring_acl_map',
+            'location',
+            'maintainer',
+            'new_comments',
+            'override',
+            'override_type',
+            'pending_content_associations',
+            'policy_queue',
+            'priority',
+            'section',
+            'source',
+            'source_acl',
+            'src_associations',
+            'src_format',
+            'src_uploaders',
+            'suite',
+            'suite_architectures',
+            'suite_src_formats',
+            'suite_build_queue_copy',
+            'uid',
+            'upload_blocks',
+        )
+
+        for table_name in tables:
+            table = Table('tbl_%s' % table_name, self.db_meta, autoload=True)
+            setattr(self, table_name, table)
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
