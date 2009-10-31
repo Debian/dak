@@ -2088,7 +2088,7 @@ def add_deb_to_db(u, filename, session=None):
     filename = entry["pool name"] + filename
     fullpath = os.path.join(cnf["Dir::Pool"], filename)
     if not entry.get("location id", None):
-        entry["location id"] = get_location(cnf["Dir::Pool"], entry["component"], utils.where_am_i(), session).location_id
+        entry["location id"] = get_location(cnf["Dir::Pool"], entry["component"], session=session).location_id
 
     if not entry.get("files id", None):
         poolfile = add_poolfile(filename, entry, entry["location id"], session)

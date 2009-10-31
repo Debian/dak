@@ -205,7 +205,7 @@ class Changes(object):
                 multivalues[key] = self.changes[key].keys()
 
         session.execute(
-            """INSERT INTO known_changes
+            """INSERT INTO changes
               (changesname, seen, source, binaries, architecture, version,
               distribution, urgency, maintainer, fingerprint, changedby, date)
               VALUES (:changesfile,:filetime,:source,:binary, :architecture,

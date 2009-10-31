@@ -720,7 +720,6 @@ class Upload(object):
     def per_suite_file_checks(self, f, suite, session):
         cnf = Config()
         entry = self.pkg.files[f]
-        archive = utils.where_am_i()
 
         # Skip byhand
         if entry.has_key("byhand"):
@@ -764,9 +763,9 @@ class Upload(object):
 
         # Determine the location
         location = cnf["Dir::Pool"]
-        l = get_location(location, entry["component"], archive, session)
+        l = get_location(location, entry["component"], session=session)
         if l is None:
-            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (entry["component"], archive))
+            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %)" % entry["component"])
             entry["location id"] = -1
         else:
             entry["location id"] = l.location_id
@@ -817,7 +816,10 @@ class Upload(object):
 
         try:
             dbc = session.query(DBChange).filter_by(changesname=base_filename).one()
-            if dbc.in_queue is not None and dbc.in_queue.queue_name != 'unchecked':
+            # if in the pool or in a queue other than unchecked, reject
+            if (dbc.in_queue is None) \
+                   or (dbc.in_queue is not None
+                       and dbc.in_queue.queue_name != 'unchecked'):
                 self.rejects.append("%s file already known to dak" % base_filename)
         except NoResultFound, e:
             # not known, good

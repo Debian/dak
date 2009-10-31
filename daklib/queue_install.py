@@ -34,14 +34,14 @@ from daklib.config import Config
 ################################################################################
 
 def package_to_suite(u, suite_name, session):
-    if not u.pkg.changes["distribution"].has_key(suite):
+    if not u.pkg.changes["distribution"].has_key(suite_name):
         return False
 
     ret = True
 
     if not u.pkg.changes["architecture"].has_key("source"):
         q = session.query(SrcAssociation.sa_id)
-        q = q.join(Suite).filter_by(suite_name=suite)
+        q = q.join(Suite).filter_by(suite_name=suite_name)
         q = q.join(DBSource).filter_by(source=u.pkg.changes['source'])
         q = q.filter_by(version=u.pkg.changes['version']).limit(1)
 
