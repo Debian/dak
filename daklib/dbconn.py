@@ -464,7 +464,7 @@ class BuildQueue(object):
         queuepath = os.path.join(self.path, poolfile_basename)
 
         try:
-            if self.copy_pool_files:
+            if self.copy_files:
                 # We need to copy instead of symlink
                 import utils
                 utils.copy(targetfile, queuepath)
