@@ -2233,6 +2233,7 @@ class DBConn(Singleton):
         mapper(Override, self.tbl_override,
                properties = dict(suite_id = self.tbl_override.c.suite,
                                  suite = relation(Suite),
+                                 package = self.tbl_override.c.package,
                                  component_id = self.tbl_override.c.component,
                                  component = relation(Component),
                                  priority_id = self.tbl_override.c.priority,
