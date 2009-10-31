@@ -2499,6 +2499,7 @@ class DBConn(Singleton):
         self.tbl_content_file_paths = Table('content_file_paths', self.db_meta, autoload=True)
         self.tbl_changes_pending_binary = Table('changes_pending_binaries', self.db_meta, autoload=True)
         self.tbl_changes_pending_files = Table('changes_pending_files', self.db_meta, autoload=True)
+        self.tbl_changes_pending_files_map = Table('changes_pending_files_map', self.db_meta, autoload=True)
         self.tbl_changes_pending_source = Table('changes_pending_source', self.db_meta, autoload=True)
         self.tbl_changes_pending_source_files = Table('changes_pending_source_files', self.db_meta, autoload=True)
         self.tbl_changes_pool_files = Table('changes_pool_files', self.db_meta, autoload=True)
@@ -2616,7 +2617,13 @@ class DBConn(Singleton):
                                  poolfiles = relation(PoolFile,
                                                       secondary=self.tbl_changes_pool_files,
                                                       backref="changeslinks"),
-                                 files = relation(ChangePendingFile, backref="changesfile")))
+                                 files = relation(ChangePendingFile,
+                                                  secondary=self.tbl_changes_pending_files_map,
+                                                  backref="changesfile"),
+                                 in_queue_id = self.tbl_changes.c.in_queue,
+                                 in_queue = relation(PolicyQueue,
+                                                     primaryjoin=(self.tbl_changes.c.in_queue==self.tbl_policy_queue.c.id)),
+                                 approved_for_id = self.tbl_changes.c.approved_for))
 
         mapper(ChangePendingBinary, self.tbl_changes_pending_binary,
                properties = dict(change_pending_binary_id = self.tbl_changes_pending_binary.c.id))

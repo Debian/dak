@@ -166,6 +166,12 @@ def do_update(self):
                             sha1sum        TEXT NOT NULL,
                             sha256sum      TEXT NOT NULL )""")
 
+        c.execute("""CREATE TABLE changes_pending_files_map (
+                            file_id        INT4 NOT NULL REFERENCES changes_pending_files (id),
+                            change_id      INT4 NOT NULL REFERENCES known_changes (id),
+
+                            PRIMARY KEY (file_id, change_id))""")
+
         c.execute("""CREATE TABLE changes_pending_source (
                             id             SERIAL PRIMARY KEY,
                             change_id      INT4 NOT NULL REFERENCES known_changes (id),
