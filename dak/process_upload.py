@@ -291,7 +291,7 @@ def action(u, session):
     elif answer == 'P':
         if not chg:
             chg = u.pkg.add_known_changes(holding.holding_dir, session)
-        move_to_queue(u, policyqueue, perms=0664, announce=None)
+        u.move_to_queue(policyqueue)
         chg.in_queue = policyqueue.queue_id
         session.add(chg)
         session.commit()
