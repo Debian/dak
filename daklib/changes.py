@@ -200,7 +200,7 @@ class Changes(object):
         multivalues = {}
         for key in ("distribution", "architecture", "binary"):
             if isinstance(self.changes[key], dict):
-                multivalues[key] = ", ".join(self.changes[key].keys())
+                multivalues[key] = " ".join(self.changes[key].keys())
             else:
                 multivalues[key] = self.changes[key].keys()
 
