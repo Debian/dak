@@ -56,9 +56,12 @@ def do_update(self):
 
         print "Adding policy_queue table"
         c.execute("""CREATE TABLE policy_queue (
-                            id          SERIAL PRIMARY KEY,
-                            queue_name  TEXT NOT NULL UNIQUE,
-                            path        TEXT NOT NULL)""")
+                            id           SERIAL PRIMARY KEY,
+                            queue_name   TEXT NOT NULL UNIQUE,
+                            path         TEXT NOT NULL,
+                            perms        CHAR(4) NOT NULL DEFAULT '0660' CHECK (perms SIMILAR TO '^[0-7][0-7][0-7][0-7]$'),
+                            change_perms CHAR(4) NOT NULL DEFAULT '0660' CHECK (change_perms SIMILAR TO '^[0-7][0-7][0-7][0-7]$')
+                            )""")
 
         print "Copying queues"
         queues = {}
@@ -203,6 +206,9 @@ def do_update(self):
 
         print "Getting rid of old queue table"
         c.execute("""DROP TABLE queue""")
+
+        print "Sorting out permission columns"
+        c.execute("""UPDATE policy_queue SET perms = '0664' WHERE queue_name IN ('proposedupdates', 'oldproposedupdates')""")
 
         print "Moving known_changes table"
         c.execute("""ALTER TABLE known_changes RENAME TO changes""")
