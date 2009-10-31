@@ -460,7 +460,7 @@ class BuildQueue(object):
         qf.lastused = datetime.now()
         qf.filename = poolfile_basename
 
-        targetpath = qf.fullpath
+        targetpath = poolfile.fullpath
         queuepath = os.path.join(self.path, poolfile_basename)
 
         try:
