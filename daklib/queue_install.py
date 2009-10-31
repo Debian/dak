@@ -61,7 +61,7 @@ def package_to_queue(u, summary, short_summary, queue, chg, session, announce=No
     u.logger.log(["Moving to %s" % queue.queue_name, u.pkg.changes_file])
 
     u.move_to_queue(queue)
-    chg.in_queue = queue.queue_id
+    chg.in_queue = queue.policy_queue_id
     session.add(chg)
     session.commit()
 
@@ -229,7 +229,7 @@ def acknowledge_new(u, summary, short_summary, chg, session):
     q = get_policy_queue('new', session)
 
     u.move_to_queue(q)
-    chg.in_queue = q.queue_id
+    chg.in_queue = q.policy_queue_id
     session.add(chg)
     session.commit()
 

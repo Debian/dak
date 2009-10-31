@@ -292,7 +292,7 @@ def action(u, session):
         if not chg:
             chg = u.pkg.add_known_changes(holding.holding_dir, session)
         u.move_to_queue(policyqueue)
-        chg.in_queue = policyqueue.queue_id
+        chg.in_queue = policyqueue.policy_queue_id
         session.add(chg)
         session.commit()
         u.remove()
