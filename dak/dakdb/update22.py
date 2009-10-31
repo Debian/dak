@@ -95,7 +95,7 @@ def do_update(self):
                        ON DELETE CASCADE""")
 
 
-        c.execute("""ALTER TABLE suite DROP CONSTRAINT suite_policy_queue_fkey""")
+        c.execute("""ALTER TABLE suite DROP CONSTRAINT suite_policy_queue_id_fkey""")
 
         c.execute("""UPDATE suite
     SET policy_queue_id = (SELECT policy_queue.id FROM policy_queue
