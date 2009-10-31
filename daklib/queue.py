@@ -54,6 +54,7 @@ from summarystats import SummaryStats
 from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
 from binary import Binary
+from lintian import parse_lintian_output
 
 ###############################################################################
 
@@ -1317,18 +1318,7 @@ class Upload(object):
             if self.logger:
                 self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
 
-        # We have output of lintian, this package isn't clean. Lets parse it and see if we
-        # are having a victim for a reject.
-        # W: tzdata: binary-without-manpage usr/sbin/tzconfig
-        for line in output.split('\n'):
-            m = re_parse_lintian.match(line)
-            if m is None:
-                continue
-
-            etype = m.group(1)
-            epackage = m.group(2)
-            etag = m.group(3)
-            etext = m.group(4)
+        for etype, epackage, etag, etext in parse_lintian_output(output):
 
             # So lets check if we know the tag at all.
             if etag not in tags:
