@@ -1504,7 +1504,8 @@ def get_changes_files(from_dir):
 apt_pkg.init()
 
 Cnf = apt_pkg.newConfiguration()
-apt_pkg.ReadConfigFileISC(Cnf,default_config)
+if not os.getenv("DAK_TEST"):
+    apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
 if which_conf_file() != default_config:
     apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
