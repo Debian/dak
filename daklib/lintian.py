@@ -14,6 +14,11 @@ def parse_lintian_output(output):
             yield m.groups()
 
 def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: args):
+    """
+    Generates package reject messages by comparing parsed lintian output with
+    tag definitions.
+    """
+
     rejects = []
 
     tags = set()

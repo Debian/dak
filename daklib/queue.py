@@ -1248,6 +1248,11 @@ class Upload(object):
     ###########################################################################
 
     def check_lintian(self):
+        """
+        Extends self.rejects by checking the output of lintian against tags
+        specified in Dinstall::LintianTags.
+        """
+
         cnf = Config()
 
         # Don't reject binary uploads
@@ -1255,24 +1260,22 @@ class Upload(object):
             return
 
         # Only check some distributions
-        valid_dist = False
         for dist in ('unstable', 'experimental'):
             if dist in self.pkg.changes['distribution']:
-                valid_dist = True
                 break
-
-        if not valid_dist:
+        else:
             return
 
+        # If we do not have a tagfile, don't do anything
         tagfile = cnf.get("Dinstall::LintianTags")
         if tagfile is None:
-            # We don't have a tagfile, so just don't do anything.
             return
 
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
         sourcefile.close()
+
         try:
             lintiantags = yaml.load(sourcecontent)['lintian']
         except yaml.YAMLError, msg:
@@ -1282,38 +1285,39 @@ class Upload(object):
         # Try and find all orig mentioned in the .dsc
         symlinked = self.ensure_orig()
 
-        # Now setup the input file for lintian. lintian wants "one tag per line" only,
-        # so put it together like it. We put all types of tags in one file and then sort
-        # through lintians output later to see if its a fatal tag we detected, or not.
-        # So we only run lintian once on all tags, even if we might reject on some, but not
-        # reject on others.
-        (fd, temp_filename) = utils.temp_filename()
+        # Setup the input file for lintian
+        fd, temp_filename = utils.temp_filename()
         temptagfile = os.fdopen(fd, 'w')
         for tags in lintiantags.values():
-            for tag in tags:
-                temptagfile.write("%s\n" % tag)
+            temptagfile.writelines(['%s\n' % x for x in tags])
         temptagfile.close()
 
-        # So now we should look at running lintian at the .changes file, capturing output
-        # to then parse it.
-        command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
-        (result, output) = commands.getstatusoutput(command)
+        try:
+            cmd = "lintian --show-overrides --tags-from-file %s %s" % \
+                (temp_filename, self.pkg.changes_file)
 
-        # We are done with lintian, remove our tempfile and any symlinks we created
-        os.unlink(temp_filename)
-        for symlink in symlinked:
-            os.unlink(symlink)
+            result, output = commands.getstatusoutput(cmd)
+        finally:
+            # Remove our tempfile and any symlinks we created
+            os.unlink(temp_filename)
 
-        if (result == 2):
-            utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
-            utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
+            for symlink in symlinked:
+                os.unlink(symlink)
 
-        parsed_tags = parse_lintian_output(output)
+        if result == 2:
+            utils.warn("lintian failed for %s [return code: %s]." % \
+                (self.pkg.changes_file, result))
+            utils.warn(utils.prefix_multi_line_string(output, \
+                " [possible output:] "))
 
         def log(*txt):
             if self.logger:
-                self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
+                self.logger.log(
+                    [self.pkg.changes_file, "check_lintian"] + list(txt)
+                )
 
+        # Generate messages
+        parsed_tags = parse_lintian_output(output)
         self.rejects.extend(
             generate_reject_messages(parsed_tags, lintiantags, log=log)
         )
