@@ -467,11 +467,11 @@ class BuildQueue(object):
             if self.copy_files:
                 # We need to copy instead of symlink
                 import utils
-                utils.copy(targetfile, queuepath)
+                utils.copy(targetpath, queuepath)
                 # NULL in the fileid field implies a copy
                 qf.fileid = None
             else:
-                os.symlink(targetfile, queuepath)
+                os.symlink(targetpath, queuepath)
                 qf.fileid = poolfile.file_id
         except OSError:
             return None
