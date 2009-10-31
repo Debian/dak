@@ -2039,9 +2039,9 @@ distribution."""
         """
         h = Holding()
         utils.move(os.path.join(h.holding_dir, self.pkg.changes_file),
-                   dest, perms=int(queue.changesperms, 8))
+                   queue.path, perms=int(queue.changesperms, 8))
         for f in self.pkg.files.keys():
-            utils.move(os.path.join(h.holding_dir, f), dest, perms=int(queue.perms, 8))
+            utils.move(os.path.join(h.holding_dir, f), queue.path, perms=int(queue.perms, 8))
 
     ###########################################################################
 
