@@ -1969,7 +1969,7 @@ distribution."""
         # Set up our copy queues (e.g. buildd queues)
         for suite_name in self.pkg.changes["distribution"].keys():
             suite = get_suite(suite_name, session)
-            for q in suite.copyqueues:
+            for q in suite.copy_queues:
                 for f in poolfiles:
                     q.add_file_from_pool(f)
 
