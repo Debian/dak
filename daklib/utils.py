@@ -48,13 +48,13 @@ from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
                     re_is_orig_source
 
+from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
 from collections import defaultdict
 
 ################################################################################
 
-#default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
-default_config = "/home/stew/etc/dak/dak.conf"     #: default dak config, defines host properties
+default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
 default_apt_config = "/etc/dak/apt.conf" #: default apt config, not normally used
 
 alias_cache = None        #: Cache for email alias checks
@@ -528,9 +528,8 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     if not changes.has_key(field):
         raise NoFilesFieldError
 
-    # Get SourceFormat object for this Format and validate it
-    format = get_format_from_string(changes['format'])
-    format.validate_format(is_a_dsc=is_a_dsc, field=field)
+    # Validate .changes Format: field
+    validate_changes_format(parse_format(changes['format']), field)
 
     includes_section = (not is_a_dsc) and field == "files"
 
@@ -711,20 +710,24 @@ def where_am_i ():
         return res[0]
 
 def which_conf_file ():
-    res = socket.gethostbyaddr(socket.gethostname())
-    # In case we allow local config files per user, try if one exists
-    if Cnf.FindB("Config::" + res[0] + "::AllowLocalConfig"):
-        homedir = os.getenv("HOME")
-        confpath = os.path.join(homedir, "/etc/dak.conf")
-        if os.path.exists(confpath):
-            apt_pkg.ReadConfigFileISC(Cnf,default_config)
-
-    # We are still in here, so there is no local config file or we do
-    # not allow local files. Do the normal stuff.
-    if Cnf.get("Config::" + res[0] + "::DakConfig"):
-        return Cnf["Config::" + res[0] + "::DakConfig"]
+    if os.getenv("DAK_CONFIG"):
+        print(os.getenv("DAK_CONFIG"))
+        return os.getenv("DAK_CONFIG")
     else:
-        return default_config
+        res = socket.gethostbyaddr(socket.gethostname())
+        # In case we allow local config files per user, try if one exists
+        if Cnf.FindB("Config::" + res[0] + "::AllowLocalConfig"):
+            homedir = os.getenv("HOME")
+            confpath = os.path.join(homedir, "/etc/dak.conf")
+            if os.path.exists(confpath):
+                apt_pkg.ReadConfigFileISC(Cnf,default_config)
+
+        # We are still in here, so there is no local config file or we do
+        # not allow local files. Do the normal stuff.
+        if Cnf.get("Config::" + res[0] + "::DakConfig"):
+            return Cnf["Config::" + res[0] + "::DakConfig"]
+        else:
+            return default_config
 
 def which_apt_conf_file ():
     res = socket.gethostbyaddr(socket.gethostname())
@@ -1505,8 +1508,8 @@ apt_pkg.init()
 Cnf = apt_pkg.newConfiguration()
 apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
-#if which_conf_file() != default_config:
-#    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
+if which_conf_file() != default_config:
+    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
 
 ###############################################################################
 

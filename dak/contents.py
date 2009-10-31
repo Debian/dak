@@ -92,7 +92,6 @@ log = logging.getLogger()
 
 ################################################################################
 
-
 class EndOfContents(object):
     """
     A sentry object for the end of the filename stream
