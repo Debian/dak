@@ -31,60 +31,37 @@ from daklib import utils
 from daklib.dbconn import *
 from daklib.config import Config
 
-###############################################################################
-
-def determine_target(u):
-    cnf = Config()
-
-    queues = [ "New", "Autobyhand", "Byhand" ]
-    if cnf.FindB("Dinstall::SecurityQueueHandling"):
-        queues += [ "Unembargo", "Embargo" ]
-    else:
-        queues += [ "OldStableUpdate", "StableUpdate" ]
-
-    target = None
-    for q in queues:
-        if QueueInfo[q]["is"](u):
-            target = q
-            break
-
-    return target
-
 ################################################################################
 
-def package_to_suite(u, suite):
+def package_to_suite(u, suite_name, session):
     if not u.pkg.changes["distribution"].has_key(suite):
         return False
 
     ret = True
 
     if not u.pkg.changes["architecture"].has_key("source"):
-        s = DBConn().session()
-        q = s.query(SrcAssociation.sa_id)
+        q = session.query(SrcAssociation.sa_id)
         q = q.join(Suite).filter_by(suite_name=suite)
         q = q.join(DBSource).filter_by(source=u.pkg.changes['source'])
         q = q.filter_by(version=u.pkg.changes['version']).limit(1)
 
         # NB: Careful, this logic isn't what you would think it is
-        # Source is already in {old-,}proposed-updates so no need to hold
-        # Instead, we don't move to the holding area, we just do an ACCEPT
+        # Source is already in the target suite so no need to go to policy
+        # Instead, we don't move to the policy area, we just do an ACCEPT
         if q.count() > 0:
             ret = False
 
-        s.close()
-
     return ret
 
-def package_to_queue(u, summary, short_summary, queue, perms=0660, build=True, announce=None):
+def package_to_queue(u, summary, short_summary, queue, perms=0660, announce=None):
     cnf = Config()
-    dir = cnf["Dir::Queue::%s" % queue]
+    dir = queue.path
 
-    print "Moving to %s holding area" % queue.upper()
-    u.logger.log(["Moving to %s" % queue, u.pkg.changes_file])
+    print "Moving to %s policy queue" % queue.queue_name.upper()
+    u.logger.log(["Moving to %s" % queue.queue_name, u.pkg.changes_file])
 
     u.move_to_dir(dir, perms=perms)
-    if build:
-        get_or_set_queue(queue.lower()).autobuild_upload(u.pkg, dir)
+    # TODO: Put building logic in here?  We used to take a build=bool argument
 
     # Check for override disparities
     u.check_override()
@@ -100,64 +77,49 @@ def package_to_queue(u, summary, short_summary, queue, perms=0660, build=True, a
 
 ################################################################################
 
-def is_unembargo(u):
-    session = DBConn().session()
-    cnf = Config()
+# TODO: This logic needs to be replaced with policy queues before we upgrade
+# security master
 
-    q = session.execute("SELECT package FROM disembargo WHERE package = :source AND version = :version", u.pkg.changes)
-    if q.rowcount > 0:
-        session.close()
-        return True
-
-    oldcwd = os.getcwd()
-    os.chdir(cnf["Dir::Queue::Disembargo"])
-    disdir = os.getcwd()
-    os.chdir(oldcwd)
-
-    ret = False
-
-    if u.pkg.directory == disdir:
-        if u.pkg.changes["architecture"].has_key("source"):
-            session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)", u.pkg.changes)
-            session.commit()
-
-            ret = True
-
-    session.close()
-
-    return ret
-
-def queue_unembargo(u, summary, short_summary, session=None):
-    return package_to_queue(u, summary, short_summary, "Unembargoed",
-                            perms=0660, build=True, announce='process-unchecked.accepted')
-
-################################################################################
-
-def is_embargo(u):
-    # if embargoed queues are enabled always embargo
-    return True
-
-def queue_embargo(u, summary, short_summary, session=None):
-    return package_to_queue(u, summary, short_summary, "Unembargoed",
-                            perms=0660, build=True, announce='process-unchecked.accepted')
-
-################################################################################
-
-def is_stableupdate(u):
-    return package_to_suite(u, 'proposed-updates')
-
-def do_stableupdate(u, summary, short_summary, session=None):
-    return package_to_queue(u, summary, short_summary, "ProposedUpdates",
-                            perms=0664, build=False, announce=None)
-
-################################################################################
-
-def is_oldstableupdate(u):
-    return package_to_suite(u, 'oldstable-proposed-updates')
-
-def do_oldstableupdate(u, summary, short_summary, session=None):
-    return package_to_queue(u, summary, short_summary, "OldProposedUpdates",
-                            perms=0664, build=False, announce=None)
+#def is_unembargo(u):
+#    session = DBConn().session()
+#    cnf = Config()
+#
+#    q = session.execute("SELECT package FROM disembargo WHERE package = :source AND version = :version", u.pkg.changes)
+#    if q.rowcount > 0:
+#        session.close()
+#        return True
+#
+#    oldcwd = os.getcwd()
+#    os.chdir(cnf["Dir::Queue::Disembargo"])
+#    disdir = os.getcwd()
+#    os.chdir(oldcwd)
+#
+#    ret = False
+#
+#    if u.pkg.directory == disdir:
+#        if u.pkg.changes["architecture"].has_key("source"):
+#            session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)", u.pkg.changes)
+#            session.commit()
+#
+#            ret = True
+#
+#    session.close()
+#
+#    return ret
+#
+#def queue_unembargo(u, summary, short_summary, session=None):
+#    return package_to_queue(u, summary, short_summary, "Unembargoed",
+#                            perms=0660, build=True, announce='process-unchecked.accepted')
+#
+#################################################################################
+#
+#def is_embargo(u):
+#    # if embargoed queues are enabled always embargo
+#    return True
+#
+#def queue_embargo(u, summary, short_summary, session=None):
+#    return package_to_queue(u, summary, short_summary, "Unembargoed",
+#                            perms=0660, build=True, announce='process-unchecked.accepted')
 
 ################################################################################
 
@@ -275,12 +237,22 @@ def acknowledge_new(u, summary, short_summary, session=None):
 
 # q-unapproved hax0ring
 QueueInfo = {
-    "New": { "is": is_new, "process": acknowledge_new },
-    "Autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
-    "Byhand" : { "is": is_byhand, "process": do_byhand },
-    "OldStableUpdate" : { "is": is_oldstableupdate,
-                          "process": do_oldstableupdate },
-    "StableUpdate" : { "is": is_stableupdate, "process": do_stableupdate },
-    "Unembargo" : { "is": is_unembargo, "process": queue_unembargo },
-    "Embargo" : { "is": is_embargo, "process": queue_embargo },
+    "new": { "is": is_new, "process": acknowledge_new },
+    "autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
+    "byhand" : { "is": is_byhand, "process": do_byhand },
 }
+
+def determine_target(u):
+    cnf = Config()
+
+    # Statically handled queues
+    target = None
+
+    for q in QueueInfo.keys():
+        if QueueInfo[q]["is"](u):
+            target = q
+
+    return target
+
+###############################################################################
+

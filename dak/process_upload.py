@@ -125,21 +125,53 @@ Checks Debian packages from Incoming
 ##       pu: create files for BTS
 ##       pu: create entry in queue_build
 ##       pu: check overrides
-import errno
+
+# Integrity checks
+## GPG
+## Parsing changes (check for duplicates)
+## Parse dsc
+## file list checks
+
+# New check layout (TODO: Implement)
+## Permission checks
+### suite mappings
+### ACLs
+### version checks (suite)
+### override checks
+
+## Source checks
+### copy orig
+### unpack
+### BTS changelog
+### src contents
+### lintian
+### urgency log
+
+## Binary checks
+### timestamps
+### control checks
+### src relation check
+### contents
+
+## Database insertion (? copy from stuff)
+### BYHAND / NEW / Policy queues
+### Pool
+
+## Queue builds
+
+from errno import EACCES, EAGAIN
 import fcntl
 import os
 import sys
-#from datetime import datetime
 import traceback
 import apt_pkg
+from sqlalchemy.orm.exc import NoResultFound
 
 from daklib import daklog
 from daklib.queue import *
 from daklib.queue_install import *
 from daklib import utils
 from daklib.dbconn import *
-#from daklib.dak_exceptions import *
-#from daklib.regexes import re_default_answer, re_issource, re_fdnic
 from daklib.urgencylog import UrgencyLog
 from daklib.summarystats import SummaryStats
 from daklib.holding import Holding
@@ -164,13 +196,14 @@ def usage (exit_code=0):
 
 ###############################################################################
 
-def action(u):
+def action(u, dbc):
     cnf = Config()
     holding = Holding()
+    session = DBConn().session()
 
     # changes["distribution"] may not exist in corner cases
     # (e.g. unreadable changes files)
-    if not u.pkg.changes.has_key("distribution") or not isinstance(u.pkg.changes["distribution"], DictType):
+    if not u.pkg.changes.has_key("distribution") or not isinstance(u.pkg.changes["distribution"], dict):
         u.pkg.changes["distribution"] = {}
 
     (summary, short_summary) = u.build_summaries()
@@ -193,6 +226,8 @@ def action(u):
             if Options["Automatic"]:
                 answer = 'R'
     else:
+        # Are we headed for NEW / BYHAND / AUTOBYHAND?
+        # Note that policy queues are no longer handled here
         qu = determine_target(u)
         if qu:
             print "%s for %s\n%s%s" % ( qu.upper(), ", ".join(u.pkg.changes["distribution"].keys()), pi, summary)
@@ -205,10 +240,38 @@ def action(u):
             if Options["Automatic"]:
                 answer = queuekey
         else:
-            print "ACCEPT\n" + pi + summary,
-            prompt = "[A]ccept, Skip, Quit ?"
-            if Options["Automatic"]:
-                answer = 'A'
+            # TODO: FIX THIS BY HAVING ADDED TO changes TABLE earlier
+            try:
+                dbc = session.query(DBChange).filter_by(changesname=os.path.basename(u.pkg.changes_file)).one()
+            except NoResultFound, e:
+                dbc = None
+
+            # Does suite have a policy_queue configured
+            divert = False
+            for s in u.pkg.changes["distribution"].keys():
+                suite = get_suite(s, session)
+                if suite.policy_queue:
+                    if not dbc or dbc.approved_for_id != su.policy_queue.policy_queue_id:
+                        # This routine will check whether the upload is a binary
+                        # upload when the source is already in the target suite.  If
+                        # so, we skip the policy queue, otherwise we go there.
+                        divert = package_to_suite(u, suite.suite_name, session=session)
+                        if divert:
+                            print "%s for %s\n%s%s" % ( su.policy_queue.queue_name.upper(),
+                                                        ", ".join(u.pkg.changes["distribution"].keys()),
+                                                        pi, summary)
+                            queuekey = "P"
+                            prompt = "[P]olicy, Skip, Quit ?"
+                            policyqueue = su.policy_queue
+                            if Options["Automatic"]:
+                                answer = 'P'
+                            break
+
+            if not divert:
+                print "ACCEPT\n" + pi + summary,
+                prompt = "[A]ccept, Skip, Quit ?"
+                if Options["Automatic"]:
+                    answer = 'A'
 
     while prompt.find(answer) == -1:
         answer = utils.our_raw_input(prompt)
@@ -217,8 +280,6 @@ def action(u):
             answer = m.group(1)
         answer = answer[:1].upper()
 
-    session = DBConn().session()
-
     if answer == 'R':
         os.chdir(u.pkg.directory)
         u.do_reject(0, pi)
@@ -226,6 +287,10 @@ def action(u):
         u.pkg.add_known_changes(holding.holding_dir, session)
         u.accept(summary, short_summary, session)
         u.check_override()
+        u.remove()
+    elif answer == 'P':
+        u.pkg.add_known_changes(holding.holding_dir, session)
+        package_to_queue(u, summary, short_summary, policyqueue, perms=0664, announce=None)
         u.remove()
     elif answer == queuekey:
         u.pkg.add_known_changes(holding.holding_dir, session)
@@ -251,6 +316,9 @@ def process_it(changes_file):
     cnf = Config()
 
     holding = Holding()
+
+    # TODO: Actually implement using pending* tables so that we don't lose track
+    #       of what is where
 
     u = Upload()
     u.pkg.changes_file = changes_file
