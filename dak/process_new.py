@@ -832,7 +832,7 @@ def do_accept(upload):
 
         if cnf.FindB("Dinstall::SecurityQueueHandling"):
             upload.dump_vars(cnf["Dir::Queue::Embargoed"])
-            upload.move_to_queue(get_queue('embargoed'))
+            upload.move_to_queue(get_policy_queue('embargoed'))
             upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
             # Check for override disparities
             upload.Subst["__SUMMARY__"] = summary

@@ -209,7 +209,7 @@ def is_byhand(u):
 
 def do_byhand(u, summary, short_summary, chg, session):
     return package_to_queue(u, summary, short_summary,
-                            get_queue('byhand'), chg, session,
+                            get_policy_queue('byhand'), chg, session,
                             announce=None)
 
 ################################################################################
@@ -226,7 +226,7 @@ def acknowledge_new(u, summary, short_summary, chg, session):
     print "Moving to NEW queue."
     u.logger.log(["Moving to new", u.pkg.changes_file])
 
-    q = get_queue('new', session)
+    q = get_policy_queue('new', session)
 
     u.move_to_queue(q)
     chg.in_queue = q.queue_id

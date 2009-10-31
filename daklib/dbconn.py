@@ -485,9 +485,9 @@ class BuildQueue(object):
 __all__.append('BuildQueue')
 
 @session_wrapper
-def get_queue(queuename, session=None):
+def get_build_queue(queuename, session=None):
     """
-    Returns Queue object for given C{queue name}, creating it if it does not
+    Returns BuildQueue object for given C{queue name}, creating it if it does not
     exist.
 
     @type queuename: string
@@ -497,18 +497,18 @@ def get_queue(queuename, session=None):
     @param session: Optional SQLA session object (a temporary one will be
     generated if not supplied)
 
-    @rtype: Queue
-    @return: Queue object for the given queue
+    @rtype: BuildQueue
+    @return: BuildQueue object for the given queue
     """
 
-    q = session.query(Queue).filter_by(queue_name=queuename)
+    q = session.query(BuildQueue).filter_by(queue_name=queuename)
 
     try:
         return q.one()
     except NoResultFound:
         return None
 
-__all__.append('get_queue')
+__all__.append('get_build_queue')
 
 ################################################################################
 
@@ -1658,6 +1658,31 @@ class PolicyQueue(object):
         return '<PolicyQueue %s>' % self.queue_name
 
 __all__.append('PolicyQueue')
+
+@session_wrapper
+def get_policy_queue(queuename, session=None):
+    """
+    Returns PolicyQueue object for given C{queue name}
+
+    @type queuename: string
+    @param queuename: The name of the queue
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: PolicyQueue
+    @return: PolicyQueue object for the given queue
+    """
+
+    q = session.query(PolicyQueue).filter_by(queue_name=queuename)
+
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
+
+__all__.append('get_policy_queue')
 
 ################################################################################
 
