@@ -179,7 +179,7 @@ class Changes(object):
 
     @session_wrapper
     def remove_known_changes(self, session=None):
-        session.delete(get_knownchange(self.changes_file, session))
+        session.delete(get_dbchange(self.changes_file, session))
 
     def mark_missing_fields(self):
         """add "missing" in fields which we will require for the known_changes table"""

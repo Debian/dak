@@ -1248,19 +1248,19 @@ __all__.append('KeyringACLMap')
 
 ################################################################################
 
-class KnownChange(object):
+class DBChange(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
-        return '<KnownChange %s>' % self.changesname
+        return '<DBChange %s>' % self.changesname
 
-__all__.append('KnownChange')
+__all__.append('DBChange')
 
 @session_wrapper
-def get_knownchange(filename, session=None):
+def get_dbchange(filename, session=None):
     """
-    returns knownchange object for given C{filename}.
+    returns DBChange object for given C{filename}.
 
     @type archive: string
     @param archive: the name of the arhive
@@ -1273,14 +1273,14 @@ def get_knownchange(filename, session=None):
     @return: Archive object for the given name (None if not present)
 
     """
-    q = session.query(KnownChange).filter_by(changesname=filename)
+    q = session.query(DBChange).filter_by(changesname=filename)
 
     try:
         return q.one()
     except NoResultFound:
         return None
 
-__all__.append('get_knownchange')
+__all__.append('get_dbchange')
 
 ################################################################################
 
@@ -2506,7 +2506,7 @@ class DBConn(Singleton):
         self.tbl_files = Table('files', self.db_meta, autoload=True)
         self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
         self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
-        self.tbl_known_changes = Table('known_changes', self.db_meta, autoload=True)
+        self.tbl_changes = Table('changes', self.db_meta, autoload=True)
         self.tbl_keyring_acl_map = Table('keyring_acl_map', self.db_meta, autoload=True)
         self.tbl_location = Table('location', self.db_meta, autoload=True)
         self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
@@ -2611,8 +2611,8 @@ class DBConn(Singleton):
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
                                  keyring_id = self.tbl_keyrings.c.id))
 
-        mapper(KnownChange, self.tbl_known_changes,
-               properties = dict(known_change_id = self.tbl_known_changes.c.id,
+        mapper(DBChange, self.tbl_changes,
+               properties = dict(change_id = self.tbl_changes.c.id,
                                  poolfiles = relation(PoolFile,
                                                       secondary=self.tbl_changes_pool_files,
                                                       backref="changeslinks"),
@@ -2626,7 +2626,7 @@ class DBConn(Singleton):
 
         mapper(ChangePendingSource, self.tbl_changes_pending_source,
                properties = dict(change_pending_source_id = self.tbl_changes_pending_source.c.id,
-                                 change = relation(KnownChange),
+                                 change = relation(DBChange),
                                  maintainer = relation(Maintainer,
                                                        primaryjoin=(self.tbl_changes_pending_source.c.maintainer_id==self.tbl_maintainer.c.id)),
                                  changedby = relation(Maintainer,

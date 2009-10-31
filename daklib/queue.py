@@ -441,7 +441,7 @@ class Upload(object):
         # Check there isn't already a changes file of the same name in one
         # of the queue directories.
         base_filename = os.path.basename(filename)
-        if get_knownchange(base_filename):
+        if get_dbchange(base_filename):
             self.rejects.append("%s: a file with this name already exists." % (base_filename))
 
         # Check the .changes is non-empty
@@ -822,7 +822,7 @@ class Upload(object):
         session = DBConn().session()
 
         try:
-            changes = session.query(KnownChange).filter_by(changesname=base_filename).one()
+            changes = session.query(DBChange).filter_by(changesname=base_filename).one()
             if not changes.approved_for:
                 self.rejects.append("%s file already known to dak" % base_filename)
         except NoResultFound, e:

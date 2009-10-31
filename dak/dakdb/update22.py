@@ -198,6 +198,9 @@ def do_update(self):
         print "Getting rid of old queue table"
         c.execute("""DROP TABLE queue""")
 
+        print "Moving known_changes table"
+        c.execute("""ALTER TABLE known_changes RENAME TO changes""")
+
         print "Sorting out permissions"
 
         for t in ['build_queue', 'policy_queue', 'build_queue_files',
