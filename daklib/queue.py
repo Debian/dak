@@ -2330,8 +2330,6 @@ distribution."""
     ################################################################################
 
     def check_source_against_db(self, filename, session):
-        """
-        """
         source = self.pkg.dsc.get("source")
         version = self.pkg.dsc.get("version")
 
