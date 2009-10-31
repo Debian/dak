@@ -817,7 +817,10 @@ class Upload(object):
 
         try:
             dbc = session.query(DBChange).filter_by(changesname=base_filename).one()
-            if dbc.in_queue is not None and dbc.in_queue.queue_name != 'unchecked':
+            # if in the pool or in a queue other than unchecked, reject
+            if (dbc.in_queue is None) \
+                   or (dbc.in_queue is not None
+                       and dbc.in_queue.queue_name != 'unchecked'):
                 self.rejects.append("%s file already known to dak" % base_filename)
         except NoResultFound, e:
             # not known, good
