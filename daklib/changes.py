@@ -204,6 +204,7 @@ class Changes(object):
             else:
                 multivalues[key] = self.changes[key].keys()
 
+        # TODO: Use ORM
         session.execute(
             """INSERT INTO changes
               (changesname, seen, source, binaries, architecture, version,
@@ -222,6 +223,10 @@ class Changes(object):
                 'fingerprint':  self.changes["fingerprint"],
                 'changedby':    self.changes["changed-by"],
                 'date':         self.changes["date"]} )
+
+        session.commit()
+
+        return session.query(DBChange).filter_by(changesname = self.changes_file).one()
 
     def unknown_files_fields(self, name):
         return sorted(list( set(self.files[name].keys()) -

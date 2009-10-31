@@ -196,10 +196,9 @@ def usage (exit_code=0):
 
 ###############################################################################
 
-def action(u):
+def action(u, session):
     cnf = Config()
     holding = Holding()
-    session = DBConn().session()
 
     # changes["distribution"] may not exist in corner cases
     # (e.g. unreadable changes files)
@@ -215,6 +214,11 @@ def action(u):
     queuekey = ''
 
     pi = u.package_info()
+
+    try:
+        chg = session.query(DBChange).filter_by(changesname=os.path.basename(u.pkg.changes_file)).one()
+    except NoResultFound, e:
+        chg = None
 
     if len(u.rejects) > 0:
         if u.upload_too_new():
@@ -240,18 +244,12 @@ def action(u):
             if Options["Automatic"]:
                 answer = queuekey
         else:
-            # TODO: FIX THIS BY HAVING ADDED TO changes TABLE earlier
-            try:
-                dbc = session.query(DBChange).filter_by(changesname=os.path.basename(u.pkg.changes_file)).one()
-            except NoResultFound, e:
-                dbc = None
-
             # Does suite have a policy_queue configured
             divert = False
             for s in u.pkg.changes["distribution"].keys():
                 suite = get_suite(s, session)
                 if suite.policy_queue:
-                    if not dbc or dbc.approved_for_id != su.policy_queue.policy_queue_id:
+                    if not chg or chg.approved_for_id != su.policy_queue.policy_queue_id:
                         # This routine will check whether the upload is a binary
                         # upload when the source is already in the target suite.  If
                         # so, we skip the policy queue, otherwise we go there.
@@ -284,17 +282,25 @@ def action(u):
         os.chdir(u.pkg.directory)
         u.do_reject(0, pi)
     elif answer == 'A':
-        u.pkg.add_known_changes(holding.holding_dir, session)
+        if not chg:
+            chg = u.pkg.add_known_changes(holding.holding_dir, session)
         u.accept(summary, short_summary, session)
         u.check_override()
+        session.commit()
         u.remove()
     elif answer == 'P':
-        u.pkg.add_known_changes(holding.holding_dir, session)
-        package_to_queue(u, summary, short_summary, policyqueue, perms=0664, announce=None)
+        if not chg:
+            chg = u.pkg.add_known_changes(holding.holding_dir, session)
+        move_to_queue(u, policyqueue, perms=0664, announce=None)
+        chg.in_queue = policyqueue.queue_id
+        session.add(chg)
+        session.commit()
         u.remove()
     elif answer == queuekey:
-        u.pkg.add_known_changes(holding.holding_dir, session)
-        QueueInfo[qu]["process"](u, summary, short_summary, session)
+        if not chg:
+            chg = u.pkg.add_known_changes(holding.holding_dir, session)
+        QueueInfo[qu]["process"](u, summary, short_summary, chg, session)
+        session.commit()
         u.remove()
     elif answer == 'Q':
         sys.exit(0)
@@ -308,7 +314,7 @@ def cleanup():
     if not Options["No-Action"]:
         h.clean()
 
-def process_it(changes_file):
+def process_it(changes_file, session):
     global Logger
 
     Logger.log(["Processing changes file", changes_file])
@@ -377,7 +383,7 @@ def process_it(changes_file):
             u.check_timestamps()
             u.check_signed_by_key()
 
-        action(u)
+        action(u, session)
 
     except (SystemExit, KeyboardInterrupt):
         cleanup()
@@ -466,7 +472,7 @@ def main():
     for changes_file in changes_files:
         print "\n" + changes_file
         session = DBConn().session()
-        process_it(changes_file)
+        process_it(changes_file, session)
         session.close()
 
     if summarystats.accept_count:

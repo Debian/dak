@@ -1842,15 +1842,19 @@ distribution."""
         print "Installing."
         self.logger.log(["installing changes", self.pkg.changes_file])
 
+        poolfiles = []
+
         # Add the .dsc file to the DB first
         for newfile, entry in self.pkg.files.items():
             if entry["type"] == "dsc":
-                dsc_component, dsc_location_id = add_dsc_to_db(self, newfile, session)
+                dsc_component, dsc_location_id, pfs = add_dsc_to_db(self, newfile, session)
+                for j in pfs:
+                    poolfiles.append(j)
 
         # Add .deb / .udeb files to the DB (type is always deb, dbtype is udeb/deb)
         for newfile, entry in self.pkg.files.items():
             if entry["type"] == "deb":
-                add_deb_to_db(self, newfile, session)
+                poolfiles.append(add_deb_to_db(self, newfile, session))
 
         # If this is a sourceful diff only upload that is moving
         # cross-component we need to copy the .orig files into the new
@@ -1884,6 +1888,8 @@ distribution."""
                     dscf.poolfile_id = newf.file_id
                     session.add(dscf)
                     session.flush()
+
+                    poolfiles.append(newf)
 
         # Install the files into the pool
         for newfile, entry in self.pkg.files.items():
@@ -1958,12 +1964,14 @@ distribution."""
             os.rename(temp_filename, filename)
             os.chmod(filename, 0644)
 
-        # This routine returns None on success or an error on failure
-        # TODO: Replace queue copying using the new queue.add_file_from_pool routine
-        #       and by looking up which queues in suite.copy_queues
-        #res = get_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
-        #if res:
-        #    utils.fubar(res)
+        session.commit()
+
+        # Set up our copy queues (e.g. buildd queues)
+        for suite_name in self.pkg.changes["distribution"].keys():
+            suite = get_suite(suite_name, session)
+            for q in suite.copyqueues:
+                for f in poolfiles:
+                    q.add_file_from_pool(f)
 
         session.commit()
 
@@ -2025,15 +2033,15 @@ distribution."""
 
     ###########################################################################
 
-    def move_to_dir (self, dest, perms=0660, changesperms=0664):
+    def move_to_queue (self, queue):
         """
-        Move files to dest with certain perms/changesperms
+        Move files to a destination queue using the permissions in the table
         """
         h = Holding()
         utils.move(os.path.join(h.holding_dir, self.pkg.changes_file),
-                   dest, perms=changesperms)
+                   dest, perms=int(queue.changesperms, 8))
         for f in self.pkg.files.keys():
-            utils.move(os.path.join(h.holding_dir, f), dest, perms=perms)
+            utils.move(os.path.join(h.holding_dir, f), dest, perms=int(queue.perms, 8))
 
     ###########################################################################
 

@@ -458,7 +458,7 @@ class BuildQueue(object):
         qf = QueueFile()
         qf.queue_id = self.queue_id
         qf.lastused = datetime.now()
-        qf.filename = dest
+        qf.filename = poolfile_basename
 
         targetpath = qf.fullpath
         queuepath = os.path.join(self.path, poolfile_basename)
@@ -1965,6 +1965,7 @@ __all__.append('get_source_in_suite')
 def add_dsc_to_db(u, filename, session=None):
     entry = u.pkg.files[filename]
     source = DBSource()
+    pfs = []
 
     source.source = u.pkg.dsc["source"]
     source.version = u.pkg.dsc["version"] # NB: not files[file]["version"], that has no epoch
@@ -1983,6 +1984,7 @@ def add_dsc_to_db(u, filename, session=None):
         filename = entry["pool name"] + filename
         poolfile = add_poolfile(filename, entry, dsc_location_id, session)
         session.flush()
+        pfs.append(poolfile)
         entry["files id"] = poolfile.file_id
 
     source.poolfile_id = entry["files id"]
@@ -2026,6 +2028,7 @@ def add_dsc_to_db(u, filename, session=None):
             # FIXME: needs to check for -1/-2 and or handle exception
             if found and obj is not None:
                 files_id = obj.file_id
+                pfs.append(obj)
 
             # If still not found, add it
             if files_id is None:
@@ -2033,6 +2036,7 @@ def add_dsc_to_db(u, filename, session=None):
                 dentry["sha1sum"] = dfentry["sha1sum"]
                 dentry["sha256sum"] = dfentry["sha256sum"]
                 poolfile = add_poolfile(filename, dentry, dsc_location_id, session)
+                pfs.append(poolfile)
                 files_id = poolfile.file_id
 
         df.poolfile_id = files_id
@@ -2062,7 +2066,7 @@ def add_dsc_to_db(u, filename, session=None):
 
     session.flush()
 
-    return dsc_component, dsc_location_id
+    return dsc_component, dsc_location_id, pfs
 
 __all__.append('add_dsc_to_db')
 
@@ -2090,11 +2094,12 @@ def add_deb_to_db(u, filename, session=None):
     if not entry.get("location id", None):
         entry["location id"] = get_location(cnf["Dir::Pool"], entry["component"], session=session).location_id
 
-    if not entry.get("files id", None):
+    if entry.get("files id", None):
+        poolfile = get_poolfile_by_id(bin.poolfile_id)
+        bin.poolfile_id = entry["files id"]
+    else:
         poolfile = add_poolfile(filename, entry, entry["location id"], session)
-        entry["files id"] = poolfile.file_id
-
-    bin.poolfile_id = entry["files id"]
+        bin.poolfile_id = entry["files id"] = poolfile.file_id
 
     # Find source id
     bin_sources = get_sources_from_name(entry["source package"], entry["source version"], session=session)
@@ -2124,6 +2129,8 @@ def add_deb_to_db(u, filename, session=None):
     #    print "REJECT\nCould not determine contents of package %s" % bin.package
     #    session.rollback()
     #    raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
+
+    return poolfile
 
 __all__.append('add_deb_to_db')
 

@@ -53,15 +53,17 @@ def package_to_suite(u, suite_name, session):
 
     return ret
 
-def package_to_queue(u, summary, short_summary, queue, perms=0660, announce=None):
+def package_to_queue(u, summary, short_summary, queue, chg, session, announce=None):
     cnf = Config()
     dir = queue.path
 
     print "Moving to %s policy queue" % queue.queue_name.upper()
     u.logger.log(["Moving to %s" % queue.queue_name, u.pkg.changes_file])
 
-    u.move_to_dir(dir, perms=perms)
-    # TODO: Put building logic in here?  We used to take a build=bool argument
+    u.move_to_queue(queue)
+    chg.in_queue = queue.queue_id
+    session.add(chg)
+    session.commit()
 
     # Check for override disparities
     u.check_override()
@@ -162,7 +164,7 @@ def is_autobyhand(u):
 
     return any_auto and all_auto
 
-def do_autobyhand(u, summary, short_summary, session=None):
+def do_autobyhand(u, summary, short_summary, chg, session):
     print "Attempting AUTOBYHAND."
     byhandleft = True
     for f, entry in u.pkg.files.items():
@@ -192,7 +194,7 @@ def do_autobyhand(u, summary, short_summary, session=None):
             byhandleft = True
 
     if byhandleft:
-        do_byhand(u, summary, short_summary, session)
+        do_byhand(u, summary, short_summary, chg, session)
     else:
         u.accept(summary, short_summary, session)
         u.check_override()
@@ -205,9 +207,10 @@ def is_byhand(u):
             return True
     return False
 
-def do_byhand(u, summary, short_summary, session=None):
-    return package_to_queue(u, summary, short_summary, "Byhand",
-                            perms=0660, build=False, announce=None)
+def do_byhand(u, summary, short_summary, chg, session):
+    return package_to_queue(u, summary, short_summary,
+                            get_queue('byhand'), chg, session,
+                            announce=None)
 
 ################################################################################
 
@@ -217,13 +220,18 @@ def is_new(u):
             return True
     return False
 
-def acknowledge_new(u, summary, short_summary, session=None):
+def acknowledge_new(u, summary, short_summary, chg, session):
     cnf = Config()
 
     print "Moving to NEW queue."
     u.logger.log(["Moving to new", u.pkg.changes_file])
 
-    u.move_to_dir(cnf["Dir::Queue::New"], perms=0640, changesperms=0644)
+    q = get_queue('new', session)
+
+    u.move_to_queue(q)
+    chg.in_queue = q.queue_id
+    session.add(chg)
+    session.commit()
 
     if not cnf["Dinstall::Options::No-Mail"]:
         print "Sending new ack."
@@ -248,9 +256,10 @@ def determine_target(u):
     # Statically handled queues
     target = None
 
-    for q in QueueInfo.keys():
+    for q in ["new", "autobyhand", "byhand"]:
         if QueueInfo[q]["is"](u):
             target = q
+            break
 
     return target
 
