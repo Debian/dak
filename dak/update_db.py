@@ -39,12 +39,13 @@ import time
 import errno
 
 from daklib import utils
+from daklib.config import Config
 from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 
 Cnf = None
-required_database_schema = 21
+required_database_schema = 22
 
 ################################################################################
 
@@ -104,12 +105,13 @@ Updates dak's database schema to the lastest version. You should disable crontab
     def update_db(self):
         # Ok, try and find the configuration table
         print "Determining dak database revision ..."
+        cnf = Config()
 
         try:
             # Build a connect string
-            connect_str = "dbname=%s"% (Cnf["DB::Name"])
-            if Cnf["DB::Host"] != '': connect_str += " host=%s" % (Cnf["DB::Host"])
-            if Cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(Cnf["DB::Port"]))
+            connect_str = "dbname=%s"% (cnf["DB::Name"])
+            if cnf["DB::Host"] != '': connect_str += " host=%s" % (cnf["DB::Host"])
+            if cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(cnf["DB::Port"]))
 
             self.db = psycopg2.connect(connect_str)
 
@@ -133,22 +135,22 @@ Updates dak's database schema to the lastest version. You should disable crontab
             self.update_db_to_zero()
             database_revision = 0
 
-        print "dak database schema at " + str(database_revision)
-        print "dak version requires schema " + str(required_database_schema)
+        print "dak database schema at %d" % database_revision
+        print "dak version requires schema %d"  % required_database_schema
 
         if database_revision == required_database_schema:
             print "no updates required"
             sys.exit(0)
 
         for i in range (database_revision, required_database_schema):
-            print "updating database schema from " + str(database_revision) + " to " + str(i+1)
+            print "updating database schema from %d to %d" % (database_revision, i+1)
             try:
                 dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i+1)])
                 update_module = getattr(dakdb, "update"+str(i+1))
                 update_module.do_update(self)
             except DBUpdateError, e:
                 # Seems the update did not work.
-                print "Was unable to update database schema from %s to %s." % (str(database_revision), str(i+1))
+                print "Was unable to update database schema from %d to %d." % (database_revision, i+1)
                 print "The error message received was %s" % (e)
                 utils.fubar("DB Schema upgrade failed")
             database_revision += 1
@@ -156,32 +158,29 @@ Updates dak's database schema to the lastest version. You should disable crontab
 ################################################################################
 
     def init (self):
-        global Cnf
-
-        Cnf = utils.get_conf()
+        cnf = Config()
         arguments = [('h', "help", "Update-DB::Options::Help")]
         for i in [ "help" ]:
-            if not Cnf.has_key("Update-DB::Options::%s" % (i)):
-                Cnf["Update-DB::Options::%s" % (i)] = ""
+            if not cnf.has_key("Update-DB::Options::%s" % (i)):
+                cnf["Update-DB::Options::%s" % (i)] = ""
 
-        arguments = apt_pkg.ParseCommandLine(Cnf, arguments, sys.argv)
+        arguments = apt_pkg.ParseCommandLine(cnf.Cnf, arguments, sys.argv)
 
-        options = Cnf.SubTree("Update-DB::Options")
+        options = cnf.SubTree("Update-DB::Options")
         if options["Help"]:
             self.usage()
         elif arguments:
             utils.warn("dak update-db takes no arguments.")
             self.usage(exit_code=1)
 
-
-        self.update_db()
-
         try:
-            lock_fd = os.open(Cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT)
+            lock_fd = os.open(cnf["Dinstall::LockFile"], os.O_RDWR | os.O_CREAT)
             fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError, e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
+
+        self.update_db()
 
 
 ################################################################################

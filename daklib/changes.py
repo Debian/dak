@@ -177,17 +177,9 @@ class Changes(object):
 
         return summary
 
+    @session_wrapper
     def remove_known_changes(self, session=None):
-        if session is None:
-            session = DBConn().session()
-            privatetrans = True
-
-        session.delete(get_knownchange(self.changes_file, session))
-
-        if privatetrans:
-            session.commit()
-            session.close()
-
+        session.delete(get_dbchange(self.changes_file, session))
 
     def mark_missing_fields(self):
         """add "missing" in fields which we will require for the known_changes table"""
@@ -195,180 +187,46 @@ class Changes(object):
             if (not self.changes.has_key(key)) or (not self.changes[key]):
                 self.changes[key]='missing'
 
+    @session_wrapper
     def add_known_changes(self, dirpath, session=None):
         """add "missing" in fields which we will require for the known_changes table"""
         cnf = Config()
-        privatetrans = False
-        if session is None:
-            session = DBConn().session()
-            privatetrans = True
 
         changesfile = os.path.join(dirpath, self.changes_file)
         filetime = datetime.datetime.fromtimestamp(os.path.getctime(changesfile))
 
         self.mark_missing_fields()
 
+        multivalues = {}
+        for key in ("distribution", "architecture", "binary"):
+            if isinstance(self.changes[key], dict):
+                multivalues[key] = " ".join(self.changes[key].keys())
+            else:
+                multivalues[key] = self.changes[key].keys()
+
+        # TODO: Use ORM
         session.execute(
-            """INSERT INTO known_changes
+            """INSERT INTO changes
               (changesname, seen, source, binaries, architecture, version,
               distribution, urgency, maintainer, fingerprint, changedby, date)
               VALUES (:changesfile,:filetime,:source,:binary, :architecture,
               :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
-              { 'changesfile':self.changes_file,
-                'filetime':filetime,
-                'source':self.changes["source"],
-                'binary':self.changes["binary"],
-                'architecture':self.changes["architecture"],
-                'version':self.changes["version"],
-                'distribution':self.changes["distribution"],
-                'urgency':self.changes["urgency"],
-                'maintainer':self.changes["maintainer"],
-                'fingerprint':self.changes["fingerprint"],
-                'changedby':self.changes["changed-by"],
-                'date':self.changes["date"]} )
+              { 'changesfile':  self.changes_file,
+                'filetime':     filetime,
+                'source':       self.changes["source"],
+                'binary':       multivalues["binary"],
+                'architecture': multivalues["architecture"],
+                'version':      self.changes["version"],
+                'distribution': multivalues["distribution"],
+                'urgency':      self.changes["urgency"],
+                'maintainer':   self.changes["maintainer"],
+                'fingerprint':  self.changes["fingerprint"],
+                'changedby':    self.changes["changed-by"],
+                'date':         self.changes["date"]} )
 
-        if privatetrans:
-            session.commit()
-            session.close()
+        session.commit()
 
-    def load_dot_dak(self, changesfile):
-        """
-        Update ourself by reading a previously created cPickle .dak dumpfile.
-        """
-
-        self.changes_file = changesfile
-        dump_filename = self.changes_file[:-8]+".dak"
-        dump_file = open_file(dump_filename)
-
-        p = Unpickler(dump_file)
-
-        self.changes.update(p.load())
-        self.dsc.update(p.load())
-        self.files.update(p.load())
-        self.dsc_files.update(p.load())
-
-        next_obj = p.load()
-        if isinstance(next_obj, dict):
-            self.orig_files.update(next_obj)
-        else:
-            # Auto-convert old dak files to new format supporting
-            # multiple tarballs
-            orig_tar_gz = None
-            for dsc_file in self.dsc_files.keys():
-                if dsc_file.endswith(".orig.tar.gz"):
-                    orig_tar_gz = dsc_file
-            self.orig_files[orig_tar_gz] = {}
-            if next_obj != None:
-                self.orig_files[orig_tar_gz]["id"] = next_obj
-            next_obj = p.load()
-            if next_obj != None and next_obj != "":
-                self.orig_files[orig_tar_gz]["location"] = next_obj
-            if len(self.orig_files[orig_tar_gz]) == 0:
-                del self.orig_files[orig_tar_gz]
-
-        dump_file.close()
-
-    def sanitised_files(self):
-        ret = {}
-        for name, entry in self.files.items():
-            ret[name] = {}
-            for i in CHANGESFIELDS_FILES:
-                if entry.has_key(i):
-                    ret[name][i] = entry[i]
-
-        return ret
-
-    def sanitised_changes(self):
-        ret = {}
-        # Mandatory changes fields
-        for i in CHANGESFIELDS_MANDATORY:
-            ret[i] = self.changes[i]
-
-        # Optional changes fields
-        for i in CHANGESFIELDS_OPTIONAL:
-            if self.changes.has_key(i):
-                ret[i] = self.changes[i]
-
-        return ret
-
-    def sanitised_dsc(self):
-        ret = {}
-        for i in CHANGESFIELDS_DSC:
-            if self.dsc.has_key(i):
-                ret[i] = self.dsc[i]
-
-        return ret
-
-    def sanitised_dsc_files(self):
-        ret = {}
-        for name, entry in self.dsc_files.items():
-            ret[name] = {}
-            # Mandatory dsc_files fields
-            for i in CHANGESFIELDS_DSCFILES_MANDATORY:
-                ret[name][i] = entry[i]
-
-            # Optional dsc_files fields
-            for i in CHANGESFIELDS_DSCFILES_OPTIONAL:
-                if entry.has_key(i):
-                    ret[name][i] = entry[i]
-
-        return ret
-
-    def sanitised_orig_files(self):
-        ret = {}
-        for name, entry in self.orig_files.items():
-            ret[name] = {}
-            # Optional orig_files fields
-            for i in CHANGESFIELDS_ORIGFILES:
-                if entry.has_key(i):
-                    ret[name][i] = entry[i]
-
-        return ret
-
-    def write_dot_dak(self, dest_dir):
-        """
-        Dump ourself into a cPickle file.
-
-        @type dest_dir: string
-        @param dest_dir: Path where the dumpfile should be stored
-
-        @note: This could just dump the dictionaries as is, but I'd like to avoid this so
-               there's some idea of what process-accepted & process-new use from
-               process-unchecked. (JT)
-
-        """
-
-        dump_filename = os.path.join(dest_dir, self.changes_file[:-8] + ".dak")
-        dump_file = open_file(dump_filename, 'w')
-
-        try:
-            os.chmod(dump_filename, 0664)
-        except OSError, e:
-            # chmod may fail when the dumpfile is not owned by the user
-            # invoking dak (like e.g. when NEW is processed by a member
-            # of ftpteam)
-            if e.errno == EPERM:
-                perms = stat.S_IMODE(os.stat(dump_filename)[stat.ST_MODE])
-                # security precaution, should never happen unless a weird
-                # umask is set anywhere
-                if perms & stat.S_IWOTH:
-                    fubar("%s is world writable and chmod failed." % \
-                        (dump_filename,))
-                # ignore the failed chmod otherwise as the file should
-                # already have the right privileges and is just, at worst,
-                # unreadable for world
-            else:
-                raise
-
-        p = Pickler(dump_file, 1)
-
-        p.dump(self.sanitised_changes())
-        p.dump(self.sanitised_dsc())
-        p.dump(self.sanitised_files())
-        p.dump(self.sanitised_dsc_files())
-        p.dump(self.sanitised_orig_files())
-
-        dump_file.close()
+        return session.query(DBChange).filter_by(changesname = self.changes_file).one()
 
     def unknown_files_fields(self, name):
         return sorted(list( set(self.files[name].keys()) -

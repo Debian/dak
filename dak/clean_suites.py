@@ -164,6 +164,7 @@ SELECT id, filename FROM files f
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.file = f.id)
     AND NOT EXISTS (SELECT 1 FROM dsc_files df WHERE df.file = f.id)
     AND NOT EXISTS (SELECT 1 FROM changes_pool_files cpf WHERE cpf.fileid = f.id)
+    AND NOT EXISTS (SELECT 1 FROM queue_files qf WHERE qf.id = f.id)
     AND last_used IS NULL
     ORDER BY filename""")
 
@@ -337,7 +338,7 @@ def clean_queue_build(now_date, delete_date, max_delete, session):
     our_delete_date = now_date - timedelta(seconds = int(cnf["Clean-Suites::QueueBuildStayOfExecution"]))
     count = 0
 
-    for qf in session.query(QueueBuild).filter(QueueBuild.last_used <= our_delete_date):
+    for qf in session.query(BuildQueueFile).filter(BuildQueueFile.last_used <= our_delete_date):
         if not os.path.exists(qf.filename):
             utils.warn("%s (from queue_build) doesn't exist." % (qf.filename))
             continue
