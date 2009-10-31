@@ -16,10 +16,8 @@ def parse_lintian_output(output):
 def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: args):
     """
     Generates package reject messages by comparing parsed lintian output with
-    tag definitions.
+    tag definitions. Returns a generator containing the reject messages.
     """
-
-    rejects = []
 
     tags = set()
     for values in tag_definitions.values():
@@ -41,25 +39,18 @@ def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: arg
                 # Overriding this tag is NOT allowed.
 
                 log('ftpmaster does not allow tag to be overridable', etag)
-                rejects.append(
-                    "%s: Overriden tag %s found, but this tag "
+                yield "%s: Overriden tag %s found, but this tag " \
                     "may not be overridden." % (epackage, etag)
-                )
 
         else:
             # Tag is known and not overridden; reject
-            rejects.append(
-                "%s: Found lintian output: '%s %s', automatically "
+            yield "%s: Found lintian output: '%s %s', automatically " \
                 "rejected package." % (epackage, etag, etext)
-            )
 
             # Now tell if they *might* override it.
             if etag in tag_definitions['nonfatal']:
                 log("auto rejecting", "overridable", etag)
-                rejects.append(
-                    "%s: If you have a good reason, you may override this "
-                    "lintian tag." % epackage)
+                yield "%s: If you have a good reason, you may override this " \
+                   "lintian tag." % epackage
             else:
                 log("auto rejecting", "not overridable", etag)
-
-    return rejects

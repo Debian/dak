@@ -43,7 +43,8 @@ class ParseLintianTestCase(DakTestCase):
 
 class GenerateRejectMessages(DakTestCase):
     def assertNumReject(self, input, defs, num):
-        self.assertEqual(len(generate_reject_messages(input, defs)), num)
+        msgs = list(generate_reject_messages(input, defs))
+        self.assertEqual(len(msgs), num)
 
     def testUnknownTag(self):
         self.assertNumReject(
