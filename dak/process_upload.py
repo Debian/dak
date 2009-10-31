@@ -196,7 +196,7 @@ def usage (exit_code=0):
 
 ###############################################################################
 
-def action(u, dbc):
+def action(u):
     cnf = Config()
     holding = Holding()
     session = DBConn().session()
@@ -257,12 +257,12 @@ def action(u, dbc):
                         # so, we skip the policy queue, otherwise we go there.
                         divert = package_to_suite(u, suite.suite_name, session=session)
                         if divert:
-                            print "%s for %s\n%s%s" % ( su.policy_queue.queue_name.upper(),
+                            print "%s for %s\n%s%s" % ( suite.policy_queue.queue_name.upper(),
                                                         ", ".join(u.pkg.changes["distribution"].keys()),
                                                         pi, summary)
                             queuekey = "P"
                             prompt = "[P]olicy, Skip, Quit ?"
-                            policyqueue = su.policy_queue
+                            policyqueue = suite.policy_queue
                             if Options["Automatic"]:
                                 answer = 'P'
                             break
