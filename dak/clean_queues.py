@@ -83,10 +83,10 @@ def init (cnf):
     os.chdir(incoming)
 
 # Remove a file to the morgue
-def remove (f):
+def remove (from_dir, f):
     fname = os.path.basename(f)
     if os.access(f, os.R_OK):
-        Logger.log(["move file to morgue", fname, del_dir])
+        Logger.log(["move file to morgue", from_dir, fname, del_dir])
         if Options["Verbose"]:
             print "Removing '%s' (to '%s')."  % (fname, del_dir)
         if Options["No-Action"]:
@@ -106,11 +106,11 @@ def remove (f):
 # [Used for Incoming/REJECT]
 #
 def flush_old ():
-    Logger.log(["check Incoming/REJECT for old files"])
+    Logger.log(["check Incoming/REJECT for old files", os.getcwd()])
     for f in os.listdir('.'):
         if os.path.isfile(f):
             if os.stat(f)[stat.ST_MTIME] < delete_date:
-                remove(f)
+                remove('Incoming/REJECT', f)
             else:
                 if Options["Verbose"]:
                     print "Skipping, too new, '%s'." % (os.path.basename(f))
@@ -122,7 +122,7 @@ def flush_orphans ():
     all_files = {}
     changes_files = []
 
-    Logger.log(["check Incoming for old orphaned files"])
+    Logger.log(["check Incoming for old orphaned files", os.getcwd()])
     # Build up the list of all files in the directory
     for i in os.listdir('.'):
         if os.path.isfile(i):
@@ -163,7 +163,7 @@ def flush_orphans ():
     # a .dsc) and should be deleted if old enough.
     for f in all_files.keys():
         if os.stat(f)[stat.ST_MTIME] < delete_date:
-            remove(f)
+            remove('Incoming', f)
         else:
             if Options["Verbose"]:
                 print "Skipping, too new, '%s'." % (os.path.basename(f))

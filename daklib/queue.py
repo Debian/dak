@@ -438,12 +438,6 @@ class Upload(object):
         self.pkg.changes["chopversion"] = re_no_epoch.sub('', self.pkg.changes["version"])
         self.pkg.changes["chopversion2"] = re_no_revision.sub('', self.pkg.changes["chopversion"])
 
-        # Check there isn't already a changes file of the same name in one
-        # of the queue directories.
-        base_filename = os.path.basename(filename)
-        if get_knownchange(base_filename):
-            self.rejects.append("%s: a file with this name already exists." % (base_filename))
-
         # Check the .changes is non-empty
         if not self.pkg.files:
             self.rejects.append("%s: nothing to do (Files field is empty)." % (base_filename))
@@ -822,8 +816,8 @@ class Upload(object):
         session = DBConn().session()
 
         try:
-            changes = session.query(KnownChange).filter_by(changesname=base_filename).one()
-            if not changes.approved_for:
+            dbc = session.query(DBChange).filter_by(changesname=base_filename).one()
+            if dbc.in_queue is not None and dbc.in_queue.queue_name != 'unchecked':
                 self.rejects.append("%s file already known to dak" % base_filename)
         except NoResultFound, e:
             # not known, good

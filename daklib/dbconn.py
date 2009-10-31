@@ -50,8 +50,6 @@ from sqlalchemy import types as sqltypes
 from sqlalchemy.exc import *
 from sqlalchemy.orm.exc import NoResultFound
 
-# Only import Config until Queue stuff is changed to store its config
-# in the database
 from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
@@ -429,6 +427,132 @@ class BinaryACLMap(object):
         return '<BinaryACLMap %s>' % self.binary_acl_map_id
 
 __all__.append('BinaryACLMap')
+
+################################################################################
+
+class BuildQueue(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<Queue %s>' % self.queue_name
+
+    def add_file_from_pool(self, poolfile):
+        """Copies a file into the pool.  Assumes that the PoolFile object is
+        attached to the same SQLAlchemy session as the Queue object is.
+
+        The caller is responsible for committing after calling this function."""
+        poolfile_basename = poolfile.filename[poolfile.filename.rindex(os.sep)+1:]
+
+        # Check if we have a file of this name or this ID already
+        for f in self.queuefiles:
+            if f.fileid is not None and f.fileid == poolfile.file_id or \
+               f.poolfile.filename == poolfile_basename:
+                   # In this case, update the QueueFile entry so we
+                   # don't remove it too early
+                   f.lastused = datetime.now()
+                   DBConn().session().object_session(pf).add(f)
+                   return f
+
+        # Prepare QueueFile object
+        qf = QueueFile()
+        qf.queue_id = self.queue_id
+        qf.lastused = datetime.now()
+        qf.filename = dest
+
+        targetpath = qf.fullpath
+        queuepath = os.path.join(self.path, poolfile_basename)
+
+        try:
+            if self.copy_pool_files:
+                # We need to copy instead of symlink
+                import utils
+                utils.copy(targetfile, queuepath)
+                # NULL in the fileid field implies a copy
+                qf.fileid = None
+            else:
+                os.symlink(targetfile, queuepath)
+                qf.fileid = poolfile.file_id
+        except OSError:
+            return None
+
+        # Get the same session as the PoolFile is using and add the qf to it
+        DBConn().session().object_session(poolfile).add(qf)
+
+        return qf
+
+
+__all__.append('BuildQueue')
+
+@session_wrapper
+def get_queue(queuename, session=None):
+    """
+    Returns Queue object for given C{queue name}, creating it if it does not
+    exist.
+
+    @type queuename: string
+    @param queuename: The name of the queue
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: Queue
+    @return: Queue object for the given queue
+    """
+
+    q = session.query(Queue).filter_by(queue_name=queuename)
+
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
+
+__all__.append('get_queue')
+
+################################################################################
+
+class BuildQueueFile(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<BuildQueueFile %s (%s)>' % (self.filename, self.queue_id)
+
+__all__.append('BuildQueueFile')
+
+################################################################################
+
+class ChangePendingBinary(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<ChangePendingBinary %s>' % self.change_pending_binary_id
+
+__all__.append('ChangePendingBinary')
+
+################################################################################
+
+class ChangePendingFile(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<ChangePendingFile %s>' % self.change_pending_file_id
+
+__all__.append('ChangePendingFile')
+
+################################################################################
+
+class ChangePendingSource(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<ChangePendingSource %s>' % self.change_pending_source_id
+
+__all__.append('ChangePendingSource')
 
 ################################################################################
 
@@ -1124,19 +1248,19 @@ __all__.append('KeyringACLMap')
 
 ################################################################################
 
-class KnownChange(object):
+class DBChange(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
-        return '<KnownChange %s>' % self.changesname
+        return '<DBChange %s>' % self.changesname
 
-__all__.append('KnownChange')
+__all__.append('DBChange')
 
 @session_wrapper
-def get_knownchange(filename, session=None):
+def get_dbchange(filename, session=None):
     """
-    returns knownchange object for given C{filename}.
+    returns DBChange object for given C{filename}.
 
     @type archive: string
     @param archive: the name of the arhive
@@ -1149,25 +1273,14 @@ def get_knownchange(filename, session=None):
     @return: Archive object for the given name (None if not present)
 
     """
-    q = session.query(KnownChange).filter_by(changesname=filename)
+    q = session.query(DBChange).filter_by(changesname=filename)
 
     try:
         return q.one()
     except NoResultFound:
         return None
 
-__all__.append('get_knownchange')
-
-################################################################################
-
-class KnownChangePendingFile(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<KnownChangePendingFile %s>' % self.known_change_pending_file_id
-
-__all__.append('KnownChangePendingFile')
+__all__.append('get_dbchange')
 
 ################################################################################
 
@@ -1537,6 +1650,17 @@ __all__.append('insert_pending_content_paths')
 
 ################################################################################
 
+class PolicyQueue(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<PolicyQueue %s>' % self.queue_name
+
+__all__.append('PolicyQueue')
+
+################################################################################
+
 class Priority(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1604,99 +1728,6 @@ def get_priorities(session=None):
     return ret
 
 __all__.append('get_priorities')
-
-################################################################################
-
-class Queue(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<Queue %s>' % self.queue_name
-
-    def add_file_from_pool(self, poolfile):
-        """Copies a file into the pool.  Assumes that the PoolFile object is
-        attached to the same SQLAlchemy session as the Queue object is.
-
-        The caller is responsible for committing after calling this function."""
-        poolfile_basename = poolfile.filename[poolfile.filename.rindex(os.sep)+1:]
-
-        # Check if we have a file of this name or this ID already
-        for f in self.queuefiles:
-            if f.fileid is not None and f.fileid == poolfile.file_id or \
-               f.poolfile.filename == poolfile_basename:
-                   # In this case, update the QueueFile entry so we
-                   # don't remove it too early
-                   f.lastused = datetime.now()
-                   DBConn().session().object_session(pf).add(f)
-                   return f
-
-        # Prepare QueueFile object
-        qf = QueueFile()
-        qf.queue_id = self.queue_id
-        qf.lastused = datetime.now()
-        qf.filename = dest
-
-        targetpath = qf.fullpath
-        queuepath = os.path.join(self.path, poolfile_basename)
-
-        try:
-            if self.copy_pool_files:
-                # We need to copy instead of symlink
-                import utils
-                utils.copy(targetfile, queuepath)
-                # NULL in the fileid field implies a copy
-                qf.fileid = None
-            else:
-                os.symlink(targetfile, queuepath)
-                qf.fileid = poolfile.file_id
-        except OSError:
-            return None
-
-        # Get the same session as the PoolFile is using and add the qf to it
-        DBConn().session().object_session(poolfile).add(qf)
-
-        return qf
-
-
-__all__.append('Queue')
-
-@session_wrapper
-def get_queue(queuename, session=None):
-    """
-    Returns Queue object for given C{queue name}, creating it if it does not
-    exist.
-
-    @type queuename: string
-    @param queuename: The name of the queue
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: Queue
-    @return: Queue object for the given queue
-    """
-
-    q = session.query(Queue).filter_by(queue_name=queuename)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
-
-__all__.append('get_queue')
-
-################################################################################
-
-class QueueFile(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<QueueFile %s (%s)>' % (self.filename, self.queue_id)
-
-__all__.append('QueueFile')
 
 ################################################################################
 
@@ -2459,18 +2490,24 @@ class DBConn(Singleton):
         self.tbl_binaries = Table('binaries', self.db_meta, autoload=True)
         self.tbl_binary_acl = Table('binary_acl', self.db_meta, autoload=True)
         self.tbl_binary_acl_map = Table('binary_acl_map', self.db_meta, autoload=True)
+        self.tbl_build_queue = Table('build_queue', self.db_meta, autoload=True)
+        self.tbl_build_queue_files = Table('build_queue_files', self.db_meta, autoload=True)
         self.tbl_component = Table('component', self.db_meta, autoload=True)
         self.tbl_config = Table('config', self.db_meta, autoload=True)
         self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
         self.tbl_content_file_names = Table('content_file_names', self.db_meta, autoload=True)
         self.tbl_content_file_paths = Table('content_file_paths', self.db_meta, autoload=True)
+        self.tbl_changes_pending_binary = Table('changes_pending_binaries', self.db_meta, autoload=True)
         self.tbl_changes_pending_files = Table('changes_pending_files', self.db_meta, autoload=True)
+        self.tbl_changes_pending_files_map = Table('changes_pending_files_map', self.db_meta, autoload=True)
+        self.tbl_changes_pending_source = Table('changes_pending_source', self.db_meta, autoload=True)
+        self.tbl_changes_pending_source_files = Table('changes_pending_source_files', self.db_meta, autoload=True)
         self.tbl_changes_pool_files = Table('changes_pool_files', self.db_meta, autoload=True)
         self.tbl_dsc_files = Table('dsc_files', self.db_meta, autoload=True)
         self.tbl_files = Table('files', self.db_meta, autoload=True)
         self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
         self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
-        self.tbl_known_changes = Table('known_changes', self.db_meta, autoload=True)
+        self.tbl_changes = Table('changes', self.db_meta, autoload=True)
         self.tbl_keyring_acl_map = Table('keyring_acl_map', self.db_meta, autoload=True)
         self.tbl_location = Table('location', self.db_meta, autoload=True)
         self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
@@ -2478,9 +2515,8 @@ class DBConn(Singleton):
         self.tbl_override = Table('override', self.db_meta, autoload=True)
         self.tbl_override_type = Table('override_type', self.db_meta, autoload=True)
         self.tbl_pending_content_associations = Table('pending_content_associations', self.db_meta, autoload=True)
+        self.tbl_policy_queue = Table('policy_queue', self.db_meta, autoload=True)
         self.tbl_priority = Table('priority', self.db_meta, autoload=True)
-        self.tbl_queue = Table('queue', self.db_meta, autoload=True)
-        self.tbl_queue_files = Table('queue_files', self.db_meta, autoload=True)
         self.tbl_section = Table('section', self.db_meta, autoload=True)
         self.tbl_source = Table('source', self.db_meta, autoload=True)
         self.tbl_source_acl = Table('source_acl', self.db_meta, autoload=True)
@@ -2490,7 +2526,7 @@ class DBConn(Singleton):
         self.tbl_suite = Table('suite', self.db_meta, autoload=True)
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
         self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
-        self.tbl_suite_queue_copy = Table('suite_queue_copy', self.db_meta, autoload=True)
+        self.tbl_suite_build_queue_copy = Table('suite_build_queue_copy', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
         self.tbl_upload_blocks = Table('upload_blocks', self.db_meta, autoload=True)
 
@@ -2509,6 +2545,12 @@ class DBConn(Singleton):
                                  binary_id = self.tbl_bin_associations.c.bin,
                                  binary = relation(DBBinary)))
 
+        mapper(BuildQueue, self.tbl_build_queue,
+               properties = dict(queue_id = self.tbl_build_queue.c.id))
+
+        mapper(BuildQueueFile, self.tbl_build_queue_files,
+               properties = dict(buildqueue = relation(BuildQueue, backref='queuefiles'),
+                                 poolfile = relation(PoolFile, backref='buildqueueinstances')))
 
         mapper(DBBinary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
@@ -2570,16 +2612,36 @@ class DBConn(Singleton):
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
                                  keyring_id = self.tbl_keyrings.c.id))
 
-        mapper(KnownChange, self.tbl_known_changes,
-               properties = dict(known_change_id = self.tbl_known_changes.c.id,
+        mapper(DBChange, self.tbl_changes,
+               properties = dict(change_id = self.tbl_changes.c.id,
                                  poolfiles = relation(PoolFile,
                                                       secondary=self.tbl_changes_pool_files,
                                                       backref="changeslinks"),
-                                 files = relation(KnownChangePendingFile, backref="changesfile")))
+                                 files = relation(ChangePendingFile,
+                                                  secondary=self.tbl_changes_pending_files_map,
+                                                  backref="changesfile"),
+                                 in_queue_id = self.tbl_changes.c.in_queue,
+                                 in_queue = relation(PolicyQueue,
+                                                     primaryjoin=(self.tbl_changes.c.in_queue==self.tbl_policy_queue.c.id)),
+                                 approved_for_id = self.tbl_changes.c.approved_for))
 
-        mapper(KnownChangePendingFile, self.tbl_changes_pending_files,
-               properties = dict(known_change_pending_file_id = self.tbl_changes_pending_files.id))
+        mapper(ChangePendingBinary, self.tbl_changes_pending_binary,
+               properties = dict(change_pending_binary_id = self.tbl_changes_pending_binary.c.id))
 
+        mapper(ChangePendingFile, self.tbl_changes_pending_files,
+               properties = dict(change_pending_file_id = self.tbl_changes_pending_files.c.id))
+
+        mapper(ChangePendingSource, self.tbl_changes_pending_source,
+               properties = dict(change_pending_source_id = self.tbl_changes_pending_source.c.id,
+                                 change = relation(DBChange),
+                                 maintainer = relation(Maintainer,
+                                                       primaryjoin=(self.tbl_changes_pending_source.c.maintainer_id==self.tbl_maintainer.c.id)),
+                                 changedby = relation(Maintainer,
+                                                      primaryjoin=(self.tbl_changes_pending_source.c.changedby_id==self.tbl_maintainer.c.id)),
+                                 fingerprint = relation(Fingerprint),
+                                 source_files = relation(ChangePendingFile,
+                                                         secondary=self.tbl_changes_pending_source_files,
+                                                         backref="pending_sources")))
         mapper(KeyringACLMap, self.tbl_keyring_acl_map,
                properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
                                  keyring = relation(Keyring, backref="keyring_acl_map"),
@@ -2615,15 +2677,11 @@ class DBConn(Singleton):
                properties = dict(overridetype = self.tbl_override_type.c.type,
                                  overridetype_id = self.tbl_override_type.c.id))
 
+        mapper(PolicyQueue, self.tbl_policy_queue,
+               properties = dict(policy_queue_id = self.tbl_policy_queue.c.id))
+
         mapper(Priority, self.tbl_priority,
                properties = dict(priority_id = self.tbl_priority.c.id))
-
-        mapper(Queue, self.tbl_queue,
-               properties = dict(queue_id = self.tbl_queue.c.id))
-
-        mapper(QueueFile, self.tbl_queue_files,
-               properties = dict(queue = relation(Queue, backref='queuefiles'),
-                                 poolfile = relation(PoolFile, backref='queueinstances')))
 
         mapper(Section, self.tbl_section,
                properties = dict(section_id = self.tbl_section.c.id))
@@ -2672,8 +2730,8 @@ class DBConn(Singleton):
 
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id,
-                                 policy_queue = relation(Queue),
-                                 copy_queues = relation(Queue, secondary=self.tbl_suite_queue_copy)))
+                                 policy_queue = relation(PolicyQueue),
+                                 copy_queues = relation(BuildQueue, secondary=self.tbl_suite_build_queue_copy)))
 
         mapper(SuiteArchitecture, self.tbl_suite_architectures,
                properties = dict(suite_id = self.tbl_suite_architectures.c.suite,

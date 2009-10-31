@@ -338,7 +338,7 @@ def clean_queue_build(now_date, delete_date, max_delete, session):
     our_delete_date = now_date - timedelta(seconds = int(cnf["Clean-Suites::QueueBuildStayOfExecution"]))
     count = 0
 
-    for qf in session.query(QueueBuild).filter(QueueBuild.last_used <= our_delete_date):
+    for qf in session.query(BuildQueueFile).filter(BuildQueueFile.last_used <= our_delete_date):
         if not os.path.exists(qf.filename):
             utils.warn("%s (from queue_build) doesn't exist." % (qf.filename))
             continue
