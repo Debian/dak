@@ -39,6 +39,7 @@ import os
 import logging
 import gzip
 import threading
+import traceback
 import Queue
 import apt_pkg
 import datetime

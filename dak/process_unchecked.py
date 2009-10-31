@@ -102,7 +102,7 @@ def init():
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: dinstall [OPTION]... [CHANGES]...
+    print """Usage: dak process-unchecked [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -h, --help                show this help and exit.
   -n, --no-action           don't do anything
@@ -191,10 +191,12 @@ def action(u):
         os.chdir(u.pkg.directory)
         u.do_reject(0, pi)
     elif answer == 'A':
+        u.pkg.add_known_changes( "Accepted" )
         u.accept(summary, short_summary)
         u.check_override()
         u.remove()
     elif answer == queuekey:
+        u.pkg.add_known_changes( qu )
         queue_info[qu]["process"](u, summary, short_summary)
         u.remove()
     elif answer == 'Q':
@@ -507,7 +509,7 @@ def process_it(changes_file):
 
         action(u)
 
-    except SystemExit:
+    except (SystemExit, KeyboardInterrupt):
         raise
 
     except:

@@ -64,14 +64,17 @@ key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
                 ("sha256", apt_pkg.sha256sum, (1, 8))] #: hashes we accept for entries in .changes/.dsc
 
-# Monkeypatch commands.getstatusoutput as it returns a "0" exit code in
-# all situations under lenny's Python.
-import commands
+# Monkeypatch commands.getstatusoutput as it may not return the correct exit
+# code in lenny's Python. This also affects commands.getoutput and
+# commands.getstatus.
 def dak_getstatusoutput(cmd):
     pipe = subprocess.Popen(cmd, shell=True, universal_newlines=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     output = "".join(pipe.stdout.readlines())
+
+    if output[-1:] == '\n':
+        output = output[:-1]
 
     ret = pipe.wait()
     if ret is None:
@@ -305,13 +308,13 @@ def check_hash(where, files, hashname, hashfunc):
         try:
             try:
                 file_handle = open_file(f)
-    
+
                 # Check for the hash entry, to not trigger a KeyError.
                 if not files[f].has_key(hash_key(hashname)):
                     rejmsg.append("%s: misses %s checksum in %s" % (f, hashname,
                         where))
                     continue
-    
+
                 # Actually check the hash for correctness.
                 if hashfunc(file_handle) != files[f][hash_key(hashname)]:
                     rejmsg.append("%s: %s check failed in %s" % (f, hashname,
@@ -529,7 +532,8 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         raise NoFilesFieldError
 
     # Validate .changes Format: field
-    validate_changes_format(parse_format(changes['format']), field)
+    if not is_a_dsc:
+        validate_changes_format(parse_format(changes['format']), field)
 
     includes_section = (not is_a_dsc) and field == "files"
 
@@ -554,7 +558,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
         (section, component) = extract_component_from_section(section)
 
-        files[name] = Dict(size=size, section=section,
+        files[name] = dict(size=size, section=section,
                            priority=priority, component=component)
         files[name][hashname] = md5
 
@@ -612,7 +616,7 @@ def send_mail (message, filename=""):
                 if len(match) == 0:
                     del message_raw[field]
                 else:
-                    message_raw.replace_header(field, string.join(match, ", "))
+                    message_raw.replace_header(field, ', '.join(match))
 
         # Change message fields in order if we don't have a To header
         if not message_raw.has_key("To"):
@@ -753,12 +757,12 @@ def which_alias_file():
 
 ################################################################################
 
-def TemplateSubst(map, filename):
+def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
     templatefile = open_file(filename)
     template = templatefile.read()
-    for x in map.keys():
-        template = template.replace(x, str(map[x]))
+    for k, v in subst_map.iteritems():
+        template = template.replace(k, str(v))
     templatefile.close()
     return template
 
@@ -1091,10 +1095,6 @@ def split_args (s, dwim=1):
 
 ################################################################################
 
-def Dict(**dict): return dict
-
-########################################
-
 def gpgv_get_status_output(cmd, status_read, status_write):
     """
     Our very own version of commands.getouputstatus(), hacked to support
@@ -1362,9 +1362,9 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
         rejects.append("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
 
     # Finally ensure there's not something we don't recognise
-    known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+    known_keywords = dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
                           SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
-                          NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="")
+                          NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="",POLICY_URL="")
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
@@ -1484,7 +1484,7 @@ def is_email_alias(email):
 
 ################################################################################
 
-def get_changes_files(dir):
+def get_changes_files(from_dir):
     """
     Takes a directory and lists all .changes files in it (as well as chdir'ing
     to the directory; this is due to broken behaviour on the part of p-u/p-a
@@ -1494,10 +1494,10 @@ def get_changes_files(dir):
     """
     try:
         # Much of the rest of p-u/p-a depends on being in the right place
-        os.chdir(dir)
-        changes_files = [x for x in os.listdir(dir) if x.endswith('.changes')]
+        os.chdir(from_dir)
+        changes_files = [x for x in os.listdir(from_dir) if x.endswith('.changes')]
     except OSError, e:
-        fubar("Failed to read list from directory %s (%s)" % (dir, e))
+        fubar("Failed to read list from directory %s (%s)" % (from_dir, e))
 
     return changes_files
 
@@ -1510,50 +1510,3 @@ apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
 if which_conf_file() != default_config:
     apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
-
-###############################################################################
-
-def ensure_orig_files(changes, dest_dir, session):
-    """
-    Ensure that dest_dir contains all the orig tarballs for the specified
-    changes. If it does not, symlink them into place.
-
-    Returns a 2-tuple (already_exists, symlinked) containing a list of files
-    that were already there and a list of files that were symlinked into place.
-    """
-
-    exists, symlinked = [], []
-
-    for dsc_file in changes.dsc_files:
-
-        # Skip all files that are not orig tarballs
-        if not re_is_orig_source.match(dsc_file):
-            continue
-
-        # Skip orig files not identified in the pool
-        if not (dsc_file in changes.orig_files and
-                'id' in changes.orig_files[dsc_file]):
-            continue
-
-        dest = os.path.join(dest_dir, dsc_file)
-
-        if os.path.exists(dest):
-            exists.append(dest)
-            continue
-
-        orig_file_id = changes.orig_files[dsc_file]['id']
-
-        c = session.execute(
-            'SELECT l.path, f.filename FROM location l, files f WHERE f.id = :id and f.location = l.id',
-            {'id': orig_file_id}
-        )
-
-        res = c.fetchone()
-        if not res:
-            return "[INTERNAL ERROR] Couldn't find id %s in files table." % orig_file_id
-
-        src = os.path.join(res[0], res[1])
-        os.symlink(src, dest)
-        symlinked.append(dest)
-
-    return (exists, symlinked)

@@ -17,7 +17,7 @@ set -e
 if [ $rc = 1 ] || [ ! -f Maintainers ] ; then
 	echo -n "installing Maintainers ... "
 	mv -f .new-maintainers Maintainers
-	gzip -9v <Maintainers >.new-maintainers.gz
+	gzip --rsyncable -9v <Maintainers >.new-maintainers.gz
 	mv -f .new-maintainers.gz Maintainers.gz
 elif [ $rc = 0 ] ; then
 	echo '(same as before)'

@@ -29,6 +29,8 @@ Changes class for dak
 
 import os
 import stat
+
+import datetime
 from cPickle import Unpickler, Pickler
 from errno import EPERM
 
@@ -36,6 +38,8 @@ from apt_inst import debExtractControl
 from apt_pkg import ParseSection
 
 from utils import open_file, fubar, poolify
+from config import *
+from dbconn import *
 
 ###############################################################################
 
@@ -173,6 +177,59 @@ class Changes(object):
 
         return summary
 
+    def remove_known_changes(self, session=None):
+        if session is None:
+            session = DBConn().session()
+            privatetrans = True
+
+        session.delete(get_knownchange(self.changes_file, session))
+
+        if privatetrans:
+            session.commit()
+            session.close()
+
+
+    def mark_missing_fields(self):
+        """add "missing" in fields which we will require for the known_changes table"""
+        for key in ['urgency', 'maintainer', 'fingerprint', 'changed-by' ]:
+            if (not self.changes.has_key(key)) or (not self.changes[key]):
+                self.changes[key]='missing'
+
+    def add_known_changes(self, dirpath, session=None):
+        """add "missing" in fields which we will require for the known_changes table"""
+        cnf = Config()
+        privatetrans = False
+        if session is None:
+            session = DBConn().session()
+            privatetrans = True
+
+        changesfile = os.path.join(dirpath, self.changes_file)
+        filetime = datetime.datetime.fromtimestamp(os.path.getctime(changesfile))
+
+        self.mark_missing_fields()
+
+        session.execute(
+            """INSERT INTO known_changes
+              (changesname, seen, source, binaries, architecture, version,
+              distribution, urgency, maintainer, fingerprint, changedby, date)
+              VALUES (:changesfile,:filetime,:source,:binary, :architecture,
+              :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
+              { 'changesfile':self.changes_file,
+                'filetime':filetime,
+                'source':self.changes["source"],
+                'binary':self.changes["binary"],
+                'architecture':self.changes["architecture"],
+                'version':self.changes["version"],
+                'distribution':self.changes["distribution"],
+                'urgency':self.changes["urgency"],
+                'maintainer':self.changes["maintainer"],
+                'fingerprint':self.changes["fingerprint"],
+                'changedby':self.changes["changed-by"],
+                'date':self.changes["date"]} )
+
+        if privatetrans:
+            session.commit()
+            session.close()
 
     def load_dot_dak(self, changesfile):
         """

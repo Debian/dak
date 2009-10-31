@@ -44,7 +44,7 @@ def do_update(self):
         file text,
         binary_id integer,
         UNIQUE(file,binary_id))""" )
-        
+
         c.execute("""ALTER TABLE ONLY bin_contents
         ADD CONSTRAINT bin_contents_bin_fkey
         FOREIGN KEY (binary_id) REFERENCES binaries(id)
@@ -54,6 +54,7 @@ def do_update(self):
 
         c.execute("GRANT ALL ON bin_contents TO ftpmaster;")
         c.execute("GRANT SELECT ON bin_contents TO public;")
+        c.execute("UPDATE config SET value = '17' WHERE name = 'db_revision'")
 
         self.db.commit()
 

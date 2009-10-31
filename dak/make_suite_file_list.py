@@ -54,10 +54,6 @@ Options = None  #: Parsed CommandLine arguments
 
 ################################################################################
 
-def Dict(**dict): return dict
-
-################################################################################
-
 def usage (exit_code=0):
     print """Usage: dak make-suite-file-list [OPTION]
 Write out file lists suitable for use with apt-ftparchive.
@@ -309,6 +305,8 @@ def write_filelists(packages, dislocated_files, session):
 ################################################################################
 
 def do_da_do_da():
+    cnf = Config()
+
     # If we're only doing a subset of suites, ensure we do enough to
     # be able to do arch: all mapping.
     if Options["Suite"]:
@@ -357,7 +355,7 @@ SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name, f.id,
 
         # 'id' comes from either 'binaries' or 'source', so it's not unique
         unique_id += 1
-        packages[unique_id] = Dict(sourceid=sourceid, pkg=pkg, arch=arch, version=version,
+        packages[unique_id] = dict(sourceid=sourceid, pkg=pkg, arch=arch, version=version,
                                    path=path, filename=filename,
                                    component=component, file_id=file_id,
                                    suite=suite, filetype = filetype)

@@ -2,10 +2,10 @@
 # coding=utf8
 
 """
-Adding a trainee field to the process-new notes
+Move to using the C version of debversion
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
-@copyright: 2009  Mike O'Connor <stew@debian.org>
+@copyright: 2009  Mark Hymers <mhy@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -30,210 +30,78 @@ Adding a trainee field to the process-new notes
 
 import psycopg2
 import time
+import os
+import datetime
+import traceback
+
 from daklib.dak_exceptions import DBUpdateError
+from daklib.config import Config
 
 ################################################################################
 
-def suites():
-    """
-    return a list of suites to operate on
-    """
-    if Config().has_key( "%s::%s" %(options_prefix,"Suite")):
-        suites = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Suite")])
-    else:
-        suites = [ 'unstable', 'testing' ]
-#            suites = Config().SubTree("Suite").List()
-
-    return suites
-
-def arches(cursor, suite):
-    """
-    return a list of archs to operate on
-    """
-    arch_list = []
-    cursor.execute("""SELECT s.architecture, a.arch_string
-    FROM suite_architectures s
-    JOIN architecture a ON (s.architecture=a.id)
-    WHERE suite = :suite""", {'suite' : suite })
-
-    while True:
-        r = cursor.fetchone()
-        if not r:
-            break
-
-        if r[1] != "source" and r[1] != "all":
-            arch_list.append((r[0], r[1]))
-
-    return arch_list
-
 def do_update(self):
-    """
-    Adding contents table as first step to maybe, finally getting rid
-    of apt-ftparchive
-    """
-
-    print __doc__
+    print "Converting database to use new C based debversion type"
 
     try:
         c = self.db.cursor()
 
-        c.execute("""CREATE TABLE pending_bin_contents (
-        id serial NOT NULL,
-        package text NOT NULL,
-        version debversion NOT NULL,
-        arch int NOT NULL,
-        filename text NOT NULL,
-        type int NOT NULL,
-        PRIMARY KEY(id))""" );
+        print "Temporarily converting columns to TEXT"
+        c.execute("ALTER TABLE binaries ALTER COLUMN version TYPE TEXT")
+        c.execute("ALTER TABLE source ALTER COLUMN version TYPE TEXT")
+        c.execute("ALTER TABLE upload_blocks ALTER COLUMN version TYPE TEXT")
+        c.execute("ALTER TABLE pending_content_associations ALTER COLUMN version TYPE TEXT")
 
-        c.execute("""CREATE TABLE deb_contents (
-        filename text,
-        section text,
-        package text,
-        binary_id integer,
-        arch integer,
-        suite integer,
-        component text)""" )
+        print "Dropping old debversion type"
+        c.execute("DROP OPERATOR >(debversion, debversion)")
+        c.execute("DROP OPERATOR <(debversion, debversion)")
+        c.execute("DROP OPERATOR <=(debversion, debversion)")
+        c.execute("DROP OPERATOR >=(debversion, debversion)")
+        c.execute("DROP OPERATOR =(debversion, debversion)")
+        c.execute("DROP OPERATOR <>(debversion, debversion)")
+        c.execute("DROP FUNCTION debversion_eq(debversion,debversion)")
+        c.execute("DROP FUNCTION debversion_ge(debversion,debversion)")
+        c.execute("DROP FUNCTION debversion_gt(debversion,debversion)")
+        c.execute("DROP FUNCTION debversion_le(debversion,debversion)")
+        c.execute("DROP FUNCTION debversion_lt(debversion,debversion)")
+        c.execute("DROP FUNCTION debversion_ne(debversion,debversion)")
+        c.execute("DROP FUNCTION debversion_compare(debversion,debversion)")
+        c.execute("DROP FUNCTION debversion_revision(debversion)")
+        c.execute("DROP FUNCTION debversion_version(debversion)")
+        c.execute("DROP FUNCTION debversion_epoch(debversion)")
+        c.execute("DROP FUNCTION debversion_split(debversion)")
+        c.execute("DROP TYPE debversion")
 
-        c.execute("""CREATE TABLE udeb_contents (
-        filename text,
-        section text,
-        package text,
-        binary_id integer,
-        suite integer,
-        arch integer,
-        component text )""" )
+        # URGH - kill me now
+        print "Importing new debversion type"
+        f = open('/usr/share/postgresql/8.4/contrib/debversion.sql', 'r')
+        cmds = []
+        curcmd = ''
+        for j in f.readlines():
+            j = j.replace('\t', '').replace('\n', '').split('--')[0]
+            if not j.startswith('--'):
+                jj = j.split(';')
+                curcmd += " " + jj[0]
+                if len(jj) > 1:
+                    for jjj in jj[1:]:
+                        if jjj.strip() == '':
+                            cmds.append(curcmd)
+                            curcmd = ''
+                        else:
+                            curcmd += " " + jjj
 
-        c.execute("""ALTER TABLE ONLY deb_contents
-        ADD CONSTRAINT deb_contents_arch_fkey
-        FOREIGN KEY (arch) REFERENCES architecture(id)
-        ON DELETE CASCADE;""")
+        for cm in cmds:
+            c.execute(cm)
 
-        c.execute("""ALTER TABLE ONLY udeb_contents
-        ADD CONSTRAINT udeb_contents_arch_fkey
-        FOREIGN KEY (arch) REFERENCES architecture(id)
-        ON DELETE CASCADE;""")
+        print "Converting columns to new debversion type"
+        c.execute("ALTER TABLE binaries ALTER COLUMN version TYPE debversion")
+        c.execute("ALTER TABLE source ALTER COLUMN version TYPE debversion")
+        c.execute("ALTER TABLE upload_blocks ALTER COLUMN version TYPE debversion")
+        c.execute("ALTER TABLE pending_content_associations ALTER COLUMN version TYPE debversion")
 
-        c.execute("""ALTER TABLE ONLY deb_contents
-        ADD CONSTRAINT deb_contents_pkey
-        PRIMARY KEY (filename,package,arch,suite);""")
-
-        c.execute("""ALTER TABLE ONLY udeb_contents
-        ADD CONSTRAINT udeb_contents_pkey
-        PRIMARY KEY (filename,package,arch,suite);""")
-
-        c.execute("""ALTER TABLE ONLY deb_contents
-        ADD CONSTRAINT deb_contents_suite_fkey
-        FOREIGN KEY (suite) REFERENCES suite(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""ALTER TABLE ONLY udeb_contents
-        ADD CONSTRAINT udeb_contents_suite_fkey
-        FOREIGN KEY (suite) REFERENCES suite(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""ALTER TABLE ONLY deb_contents
-        ADD CONSTRAINT deb_contents_binary_fkey
-        FOREIGN KEY (binary_id) REFERENCES binaries(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""ALTER TABLE ONLY udeb_contents
-        ADD CONSTRAINT udeb_contents_binary_fkey
-        FOREIGN KEY (binary_id) REFERENCES binaries(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""CREATE INDEX ind_deb_contents_binary ON deb_contents(binary_id);""" )
-
-
-        suites = self.suites()
-
-        for suite in [i.lower() for i in suites]:
-            suite_id = DBConn().get_suite_id(suite)
-            arch_list = arches(c, suite_id)
-            arch_list = arches(c, suite_id)
-
-            for (arch_id,arch_str) in arch_list:
-                c.execute( "CREATE INDEX ind_deb_contents_%s_%s ON deb_contents (arch,suite) WHERE (arch=2 OR arch=%d) AND suite=$d"%(arch_str,suite,arch_id,suite_id) )
-
-            for section, sname in [("debian-installer","main"),
-                                  ("non-free/debian-installer", "nonfree")]:
-                c.execute( "CREATE INDEX ind_udeb_contents_%s_%s ON udeb_contents (section,suite) WHERE section=%s AND suite=$d"%(sname,suite,section,suite_id) )
-
-
-        c.execute( """CREATE OR REPLACE FUNCTION update_contents_for_bin_a() RETURNS trigger AS  $$
-    event = TD["event"]
-    if event == "DELETE" or event == "UPDATE":
-
-        plpy.execute(plpy.prepare("DELETE FROM deb_contents WHERE binary_id=$1 and suite=$2",
-                                  ["int","int"]),
-                                  [TD["old"]["bin"], TD["old"]["suite"]])
-
-    if event == "INSERT" or event == "UPDATE":
-
-       content_data = plpy.execute(plpy.prepare(
-            """SELECT s.section, b.package, b.architecture, c.name, ot.type
-            FROM override o
-            JOIN override_type ot on o.type=ot.id
-            JOIN binaries b on b.package=o.package
-            JOIN files f on b.file=f.id
-            JOIN location l on l.id=f.location
-            JOIN section s on s.id=o.section
-            JOIN component c on c.id=l.component
-            WHERE b.id=$1
-            AND o.suite=$2
-            """,
-            ["int", "int"]),
-            [TD["new"]["bin"], TD["new"]["suite"]])[0]
-
-       component_str = "";
-       if not content_data["name"] === "main":
-           component_str=content_data["name"]+"/"
-       
-       filenames = plpy.execute(plpy.prepare(
-           "SELECT bc.file FROM bin_contents bc where bc.binary_id=$1",
-           ["int"]),
-           [TD["new"]["bin"]])
-
-       for filename in filenames:
-           plpy.execute(plpy.prepare(
-               """INSERT INTO deb_contents
-                   (file,section,package,binary_id,arch,suite,component)
-                   VALUES($1,$2,$3,$4,$5,$6,$7)""",
-               ["text","text","text","int","int","int","text"]),
-               [filename["filename"],
-                content_data["section"],
-                content_data["package"],
-                TD["new"]["bin"],
-                content_data["architecture"],
-                TD["new"]["suite"],
-                component_str])
-$$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
-""")
-
-
-        c.execute( """CREATE OR REPLACE FUNCTION update_contents_for_override() RETURNS trigger AS  $$
-    event = TD["event"]
-    if event == "UPDATE":
-
-        otype = plpy.execute(plpy.prepare("SELECT type from override_type where id=$1",["int"]),TD["new"]["type"] )[0];
-        if otype["type"].endswith("deb"):
-            table_name = "%s_contents" % otype["type"]
-            plpy.execute(plpy.prepare("UPDATE %s set sections=$1" % table_name
-                                      ["text"]),
-                                      [TD["new"]["section"]])
-
-$$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
-""")
-        c.execute( """CREATE TRIGGER bin_associations_contents_trigger
-                      AFTER INSERT OR UPDATE OR DELETE ON bin_associations
-                      FOR EACH ROW EXECUTE PROCEDURE update_contents_for_bin_a();""")
-        c.execute("""CREATE TRIGGER override_contents_trigger
-                      AFTER UPDATE ON override
-                      FOR EACH ROW EXECUTE PROCEDURE update_contents_for_override();""")
-
+        print "Committing"
+        c.execute("UPDATE config SET value = '19' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.InternalError, msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to apply process-new update 14, rollback issued. Error message : %s" % (str(msg))
-
+        raise DBUpdateError, "Unable to apply debversion update 19, rollback issued. Error message : %s" % (str(msg))

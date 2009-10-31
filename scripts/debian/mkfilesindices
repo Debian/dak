@@ -27,7 +27,7 @@ echo "Generating sources list..."
   cd $base/ftp
   find ./dists -maxdepth 1 \! -type d
   find ./dists \! -type d | grep "/source/"
-) | sort -u | gzip -9 > source.list.gz
+) | sort -u | gzip --rsyncable -9 > source.list.gz
 
 echo "Generating arch lists..."
 
@@ -39,7 +39,7 @@ for a in $ARCHES; do
    cd $base/ftp
    find ./dists -maxdepth 1 \! -type d
    find ./dists \! -type d | grep -E "(proposed-updates.*_$a.changes$|/main/disks-$a/|/main/installer-$a/|/Contents-$a|/binary-$a/)"
-  ) | sort -u | gzip -9 > arch-$a.list.gz
+  ) | sort -u | gzip --rsyncable -9 > arch-$a.list.gz
 done
 
 echo "Generating suite lists..."
@@ -62,7 +62,7 @@ printf 'SELECT id, suite_name FROM suite\n' | psql -F' ' -At projectb |
       done
      )
      suite_list $id | tr -d ' ' | sed 's,^/srv/ftp.debian.org/ftp,.,'
-    ) | sort -u | gzip -9 > suite-${suite}.list.gz
+    ) | sort -u | gzip --rsyncable -9 > suite-${suite}.list.gz
   done
 
 echo "Finding everything on the ftp site to generate sundries $(date +"%X")..."
@@ -83,7 +83,7 @@ done
 
 (cd $base/ftp/
 	for dist in sid squeeze; do
-		find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
+		find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip --rsyncable -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
 	done
 )
 

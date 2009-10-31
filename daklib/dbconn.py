@@ -34,13 +34,17 @@
 ################################################################################
 
 import os
+import re
 import psycopg2
 import traceback
+import datetime
 
 from inspect import getargspec
 
+import sqlalchemy
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker, mapper, relation
+from sqlalchemy import types as sqltypes
 
 # Don't remove this, we re-export the exceptions to scripts which import us
 from sqlalchemy.exc import *
@@ -51,6 +55,22 @@ from sqlalchemy.orm.exc import NoResultFound
 from config import Config
 from singleton import Singleton
 from textutils import fix_maintainer
+
+################################################################################
+
+# Patch in support for the debversion field type so that it works during
+# reflection
+
+class DebVersion(sqltypes.Text):
+    def get_col_spec(self):
+        return "DEBVERSION"
+
+sa_major_version = sqlalchemy.__version__[0:3]
+if sa_major_version == "0.5":
+    from sqlalchemy.databases import postgres
+    postgres.ischema_names['debversion'] = DebVersion
+else:
+    raise Exception("dak isn't ported to SQLA versions != 0.5 yet.  See daklib/dbconn.py")
 
 ################################################################################
 
@@ -267,12 +287,12 @@ def get_suites_binary_in(package, session=None):
 __all__.append('get_suites_binary_in')
 
 @session_wrapper
-def get_binary_from_id(id, session=None):
+def get_binary_from_id(binary_id, session=None):
     """
     Returns DBBinary object for given C{id}
 
-    @type id: int
-    @param id: Id of the required binary
+    @type binary_id: int
+    @param binary_id: Id of the required binary
 
     @type session: Session
     @param session: Optional SQLA session object (a temporary one will be
@@ -282,7 +302,7 @@ def get_binary_from_id(id, session=None):
     @return: DBBinary object for the given binary (None if not present)
     """
 
-    q = session.query(DBBinary).filter_by(binary_id=id)
+    q = session.query(DBBinary).filter_by(binary_id=binary_id)
 
     try:
         return q.one()
@@ -385,6 +405,28 @@ def get_binary_components(package, suitename, arch, session=None):
     return session.execute(query, vals)
 
 __all__.append('get_binary_components')
+
+################################################################################
+
+class BinaryACL(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<BinaryACL %s>' % self.binary_acl_id
+
+__all__.append('BinaryACL')
+
+################################################################################
+
+class BinaryACLMap(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<BinaryACLMap %s>' % self.binary_acl_map_id
+
+__all__.append('BinaryACLMap')
 
 ################################################################################
 
@@ -692,6 +734,10 @@ class PoolFile(object):
     def __repr__(self):
         return '<PoolFile %s>' % self.filename
 
+    @property
+    def fullpath(self):
+        return os.path.join(self.location.path, self.filename)
+
 __all__.append('PoolFile')
 
 @session_wrapper
@@ -733,7 +779,7 @@ def check_poolfile(filename, filesize, md5sum, location_id, session=None):
         ret = (False, None)
     else:
         obj = q.one()
-        if obj.md5sum != md5sum or obj.filesize != filesize:
+        if obj.md5sum != md5sum or obj.filesize != int(filesize):
             ret = (False, obj)
 
     if ret is None:
@@ -821,6 +867,33 @@ class Fingerprint(object):
 __all__.append('Fingerprint')
 
 @session_wrapper
+def get_fingerprint(fpr, session=None):
+    """
+    Returns Fingerprint object for given fpr.
+
+    @type fpr: string
+    @param fpr: The fpr to find / add
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied).
+
+    @rtype: Fingerprint
+    @return: the Fingerprint object for the given fpr or None
+    """
+
+    q = session.query(Fingerprint).filter_by(fingerprint=fpr)
+
+    try:
+        ret = q.one()
+    except NoResultFound:
+        ret = None
+
+    return ret
+
+__all__.append('get_fingerprint')
+
+@session_wrapper
 def get_or_set_fingerprint(fpr, session=None):
     """
     Returns Fingerprint object for given fpr.
@@ -857,20 +930,139 @@ __all__.append('get_or_set_fingerprint')
 
 ################################################################################
 
+# Helper routine for Keyring class
+def get_ldap_name(entry):
+    name = []
+    for k in ["cn", "mn", "sn"]:
+        ret = entry.get(k)
+        if ret and ret[0] != "" and ret[0] != "-":
+            name.append(ret[0])
+    return " ".join(name)
+
+################################################################################
+
 class Keyring(object):
+    gpg_invocation = "gpg --no-default-keyring --keyring %s" +\
+                     " --with-colons --fingerprint --fingerprint"
+
+    keys = {}
+    fpr_lookup = {}
+
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<Keyring %s>' % self.keyring_name
 
+    def de_escape_gpg_str(self, txt):
+        esclist = re.split(r'(\\x..)', txt)
+        for x in range(1,len(esclist),2):
+            esclist[x] = "%c" % (int(esclist[x][2:],16))
+        return "".join(esclist)
+
+    def load_keys(self, keyring):
+        import email.Utils
+
+        if not self.keyring_id:
+            raise Exception('Must be initialized with database information')
+
+        k = os.popen(self.gpg_invocation % keyring, "r")
+        key = None
+        signingkey = False
+
+        for line in k.xreadlines():
+            field = line.split(":")
+            if field[0] == "pub":
+                key = field[4]
+                (name, addr) = email.Utils.parseaddr(field[9])
+                name = re.sub(r"\s*[(].*[)]", "", name)
+                if name == "" or addr == "" or "@" not in addr:
+                    name = field[9]
+                    addr = "invalid-uid"
+                name = self.de_escape_gpg_str(name)
+                self.keys[key] = {"email": addr}
+                if name != "":
+                    self.keys[key]["name"] = name
+                self.keys[key]["aliases"] = [name]
+                self.keys[key]["fingerprints"] = []
+                signingkey = True
+            elif key and field[0] == "sub" and len(field) >= 12:
+                signingkey = ("s" in field[11])
+            elif key and field[0] == "uid":
+                (name, addr) = email.Utils.parseaddr(field[9])
+                if name and name not in self.keys[key]["aliases"]:
+                    self.keys[key]["aliases"].append(name)
+            elif signingkey and field[0] == "fpr":
+                self.keys[key]["fingerprints"].append(field[9])
+                self.fpr_lookup[field[9]] = key
+
+    def import_users_from_ldap(self, session):
+        import ldap
+        cnf = Config()
+
+        LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
+        LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
+
+        l = ldap.open(LDAPServer)
+        l.simple_bind_s("","")
+        Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
+               "(&(keyfingerprint=*)(gidnumber=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
+               ["uid", "keyfingerprint", "cn", "mn", "sn"])
+
+        ldap_fin_uid_id = {}
+
+        byuid = {}
+        byname = {}
+
+        for i in Attrs:
+            entry = i[1]
+            uid = entry["uid"][0]
+            name = get_ldap_name(entry)
+            fingerprints = entry["keyFingerPrint"]
+            keyid = None
+            for f in fingerprints:
+                key = self.fpr_lookup.get(f, None)
+                if key not in self.keys:
+                    continue
+                self.keys[key]["uid"] = uid
+
+                if keyid != None:
+                    continue
+                keyid = get_or_set_uid(uid, session).uid_id
+                byuid[keyid] = (uid, name)
+                byname[uid] = (keyid, name)
+
+        return (byname, byuid)
+
+    def generate_users_from_keyring(self, format, session):
+        byuid = {}
+        byname = {}
+        any_invalid = False
+        for x in self.keys.keys():
+            if self.keys[x]["email"] == "invalid-uid":
+                any_invalid = True
+                self.keys[x]["uid"] = format % "invalid-uid"
+            else:
+                uid = format % self.keys[x]["email"]
+                keyid = get_or_set_uid(uid, session).uid_id
+                byuid[keyid] = (uid, self.keys[x]["name"])
+                byname[uid] = (keyid, self.keys[x]["name"])
+                self.keys[x]["uid"] = uid
+
+        if any_invalid:
+            uid = format % "invalid-uid"
+            keyid = get_or_set_uid(uid, session).uid_id
+            byuid[keyid] = (uid, "ungeneratable user id")
+            byname[uid] = (keyid, "ungeneratable user id")
+
+        return (byname, byuid)
+
 __all__.append('Keyring')
 
 @session_wrapper
-def get_or_set_keyring(keyring, session=None):
+def get_keyring(keyring, session=None):
     """
-    If C{keyring} does not have an entry in the C{keyrings} table yet, create one
-    and return the new Keyring
+    If C{keyring} does not have an entry in the C{keyrings} table yet, return None
     If C{keyring} already has an entry, simply return the existing Keyring
 
     @type keyring: string
@@ -885,12 +1077,67 @@ def get_or_set_keyring(keyring, session=None):
     try:
         return q.one()
     except NoResultFound:
-        obj = Keyring(keyring_name=keyring)
-        session.add(obj)
-        session.commit_or_flush()
-        return obj
+        return None
 
-__all__.append('get_or_set_keyring')
+__all__.append('get_keyring')
+
+################################################################################
+
+class KeyringACLMap(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<KeyringACLMap %s>' % self.keyring_acl_map_id
+
+__all__.append('KeyringACLMap')
+
+################################################################################
+
+class KnownChange(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<KnownChange %s>' % self.changesname
+
+__all__.append('KnownChange')
+
+@session_wrapper
+def get_knownchange(filename, session=None):
+    """
+    returns knownchange object for given C{filename}.
+
+    @type archive: string
+    @param archive: the name of the arhive
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: Archive
+    @return: Archive object for the given name (None if not present)
+
+    """
+    q = session.query(KnownChange).filter_by(changesname=filename)
+
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
+
+__all__.append('get_knownchange')
+
+################################################################################
+
+class KnownChangePendingFile(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<KnownChangePendingFile %s>' % self.known_change_pending_file_id
+
+__all__.append('KnownChangePendingFile')
 
 ################################################################################
 
@@ -1354,106 +1601,55 @@ class Queue(object):
     def __repr__(self):
         return '<Queue %s>' % self.queue_name
 
-    def autobuild_upload(self, changes, srcpath, session=None):
-        """
-        Update queue_build database table used for incoming autobuild support.
+    def add_file_from_pool(self, poolfile):
+        """Copies a file into the pool.  Assumes that the PoolFile object is
+        attached to the same SQLAlchemy session as the Queue object is.
 
-        @type changes: Changes
-        @param changes: changes object for the upload to process
+        The caller is responsible for committing after calling this function."""
+        poolfile_basename = poolfile.filename[poolfile.filename.rindex(os.sep)+1:]
 
-        @type srcpath: string
-        @param srcpath: path for the queue file entries/link destinations
+        # Check if we have a file of this name or this ID already
+        for f in self.queuefiles:
+            if f.fileid is not None and f.fileid == poolfile.file_id or \
+               f.poolfile.filename == poolfile_basename:
+                   # In this case, update the QueueFile entry so we
+                   # don't remove it too early
+                   f.lastused = datetime.now()
+                   DBConn().session().object_session(pf).add(f)
+                   return f
 
-        @type session: SQLAlchemy session
-        @param session: Optional SQLAlchemy session.  If this is passed, the
-        caller is responsible for ensuring a transaction has begun and
-        committing the results or rolling back based on the result code.  If
-        not passed, a commit will be performed at the end of the function,
-        otherwise the caller is responsible for commiting.
+        # Prepare QueueFile object
+        qf = QueueFile()
+        qf.queue_id = self.queue_id
+        qf.lastused = datetime.now()
+        qf.filename = dest
 
-        @rtype: NoneType or string
-        @return: None if the operation failed, a string describing the error if not
-        """
+        targetpath = qf.fullpath
+        queuepath = os.path.join(self.path, poolfile_basename)
 
-        privatetrans = False
-        if session is None:
-            session = DBConn().session()
-            privatetrans = True
+        try:
+            if self.copy_pool_files:
+                # We need to copy instead of symlink
+                import utils
+                utils.copy(targetfile, queuepath)
+                # NULL in the fileid field implies a copy
+                qf.fileid = None
+            else:
+                os.symlink(targetfile, queuepath)
+                qf.fileid = poolfile.file_id
+        except OSError:
+            return None
 
-        # TODO: Remove by moving queue config into the database
-        conf = Config()
+        # Get the same session as the PoolFile is using and add the qf to it
+        DBConn().session().object_session(poolfile).add(qf)
 
-        for suitename in changes.changes["distribution"].keys():
-            # TODO: Move into database as:
-            #       buildqueuedir TEXT DEFAULT NULL (i.e. NULL is no build)
-            #       buildqueuecopy BOOLEAN NOT NULL DEFAULT FALSE (i.e. default is symlink)
-            #       This also gets rid of the SecurityQueueBuild hack below
-            if suitename not in conf.ValueList("Dinstall::QueueBuildSuites"):
-                continue
+        return qf
 
-            # Find suite object
-            s = get_suite(suitename, session)
-            if s is None:
-                return "INTERNAL ERROR: Could not find suite %s" % suitename
-
-            # TODO: Get from database as above
-            dest_dir = conf["Dir::QueueBuild"]
-
-            # TODO: Move into database as above
-            if conf.FindB("Dinstall::SecurityQueueBuild"):
-                dest_dir = os.path.join(dest_dir, suitename)
-
-            for file_entry in changes.files.keys():
-                src = os.path.join(srcpath, file_entry)
-                dest = os.path.join(dest_dir, file_entry)
-
-                # TODO: Move into database as above
-                if conf.FindB("Dinstall::SecurityQueueBuild"):
-                    # Copy it since the original won't be readable by www-data
-                    import utils
-                    utils.copy(src, dest)
-                else:
-                    # Create a symlink to it
-                    os.symlink(src, dest)
-
-                qb = QueueBuild()
-                qb.suite_id = s.suite_id
-                qb.queue_id = self.queue_id
-                qb.filename = dest
-                qb.in_queue = True
-
-                session.add(qb)
-
-            exists, symlinked = utils.ensure_orig_files(changes, dest, session)
-
-            # Add symlinked files to the list of packages for later processing
-            # by apt-ftparchive
-            for filename in symlinked:
-                qb = QueueBuild()
-                qb.suite_id = s.suite_id
-                qb.queue_id = self.queue_id
-                qb.filename = filename
-                qb.in_queue = True
-                session.add(qb)
-
-            # Update files to ensure they are not removed prematurely
-            for filename in exists:
-                qb = get_queue_build(filename, s.suite_id, session)
-                if qb is None:
-                    qb.in_queue = True
-                    qb.last_used = None
-                    session.add(qb)
-
-        if privatetrans:
-            session.commit()
-            session.close()
-
-        return None
 
 __all__.append('Queue')
 
 @session_wrapper
-def get_or_set_queue(queuename, session=None):
+def get_queue(queuename, session=None):
     """
     Returns Queue object for given C{queue name}, creating it if it does not
     exist.
@@ -1472,60 +1668,22 @@ def get_or_set_queue(queuename, session=None):
     q = session.query(Queue).filter_by(queue_name=queuename)
 
     try:
-        ret = q.one()
-    except NoResultFound:
-        queue = Queue()
-        queue.queue_name = queuename
-        session.add(queue)
-        session.commit_or_flush()
-        ret = queue
-
-    return ret
-
-__all__.append('get_or_set_queue')
-
-################################################################################
-
-class QueueBuild(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<QueueBuild %s (%s)>' % (self.filename, self.queue_id)
-
-__all__.append('QueueBuild')
-
-@session_wrapper
-def get_queue_build(filename, suite, session=None):
-    """
-    Returns QueueBuild object for given C{filename} and C{suite}.
-
-    @type filename: string
-    @param filename: The name of the file
-
-    @type suiteid: int or str
-    @param suiteid: Suite name or ID
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: Queue
-    @return: Queue object for the given queue
-    """
-
-    if isinstance(suite, int):
-        q = session.query(QueueBuild).filter_by(filename=filename).filter_by(suite_id=suite)
-    else:
-        q = session.query(QueueBuild).filter_by(filename=filename)
-        q = q.join(Suite).filter_by(suite_name=suite)
-
-    try:
         return q.one()
     except NoResultFound:
         return None
 
-__all__.append('get_queue_build')
+__all__.append('get_queue')
+
+################################################################################
+
+class QueueFile(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<QueueFile %s (%s)>' % (self.filename, self.queue_id)
+
+__all__.append('QueueFile')
 
 ################################################################################
 
@@ -1756,6 +1914,17 @@ def get_source_in_suite(source, suite, session=None):
         return None
 
 __all__.append('get_source_in_suite')
+
+################################################################################
+
+class SourceACL(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<SourceACL %s>' % self.source_acl_id
+
+__all__.append('SourceACL')
 
 ################################################################################
 
@@ -2078,6 +2247,17 @@ __all__.append('get_uid_from_fingerprint')
 
 ################################################################################
 
+class UploadBlock(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<UploadBlock %s (%s)>' % (self.source, self.upload_block_id)
+
+__all__.append('UploadBlock')
+
+################################################################################
+
 class DBConn(Singleton):
     """
     database module init.
@@ -2097,16 +2277,22 @@ class DBConn(Singleton):
         self.tbl_bin_contents = Table('bin_contents', self.db_meta, autoload=True)
         self.tbl_bin_associations = Table('bin_associations', self.db_meta, autoload=True)
         self.tbl_binaries = Table('binaries', self.db_meta, autoload=True)
+        self.tbl_binary_acl = Table('binary_acl', self.db_meta, autoload=True)
+        self.tbl_binary_acl_map = Table('binary_acl_map', self.db_meta, autoload=True)
         self.tbl_component = Table('component', self.db_meta, autoload=True)
         self.tbl_config = Table('config', self.db_meta, autoload=True)
         self.tbl_content_associations = Table('content_associations', self.db_meta, autoload=True)
         self.tbl_content_file_names = Table('content_file_names', self.db_meta, autoload=True)
         self.tbl_content_file_paths = Table('content_file_paths', self.db_meta, autoload=True)
+        self.tbl_changes_pending_files = Table('changes_pending_files', self.db_meta, autoload=True)
+        self.tbl_changes_pool_files = Table('changes_pool_files', self.db_meta, autoload=True)
         self.tbl_dsc_files = Table('dsc_files', self.db_meta, autoload=True)
         self.tbl_deb_contents = Table('deb_contents', self.db_meta, autoload=True)
         self.tbl_files = Table('files', self.db_meta, autoload=True)
         self.tbl_fingerprint = Table('fingerprint', self.db_meta, autoload=True)
         self.tbl_keyrings = Table('keyrings', self.db_meta, autoload=True)
+        self.tbl_known_changes = Table('known_changes', self.db_meta, autoload=True)
+        self.tbl_keyring_acl_map = Table('keyring_acl_map', self.db_meta, autoload=True)
         self.tbl_location = Table('location', self.db_meta, autoload=True)
         self.tbl_maintainer = Table('maintainer', self.db_meta, autoload=True)
         self.tbl_new_comments = Table('new_comments', self.db_meta, autoload=True)
@@ -2115,17 +2301,20 @@ class DBConn(Singleton):
         self.tbl_pending_bin_contents = Table('pending_bin_contents', self.db_meta, autoload=True)
         self.tbl_priority = Table('priority', self.db_meta, autoload=True)
         self.tbl_queue = Table('queue', self.db_meta, autoload=True)
-        self.tbl_queue_build = Table('queue_build', self.db_meta, autoload=True)
+        self.tbl_queue_files = Table('queue_files', self.db_meta, autoload=True)
         self.tbl_section = Table('section', self.db_meta, autoload=True)
         self.tbl_source = Table('source', self.db_meta, autoload=True)
+        self.tbl_source_acl = Table('source_acl', self.db_meta, autoload=True)
         self.tbl_src_associations = Table('src_associations', self.db_meta, autoload=True)
         self.tbl_src_format = Table('src_format', self.db_meta, autoload=True)
         self.tbl_src_uploaders = Table('src_uploaders', self.db_meta, autoload=True)
         self.tbl_suite = Table('suite', self.db_meta, autoload=True)
         self.tbl_suite_architectures = Table('suite_architectures', self.db_meta, autoload=True)
         self.tbl_suite_src_formats = Table('suite_src_formats', self.db_meta, autoload=True)
+        self.tbl_suite_queue_copy = Table('suite_queue_copy', self.db_meta, autoload=True)
         self.tbl_udeb_contents = Table('udeb_contents', self.db_meta, autoload=True)
         self.tbl_uid = Table('uid', self.db_meta, autoload=True)
+        self.tbl_upload_blocks = Table('upload_blocks', self.db_meta, autoload=True)
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
@@ -2185,6 +2374,14 @@ class DBConn(Singleton):
                                  binassociations = relation(BinAssociation,
                                                             primaryjoin=(self.tbl_binaries.c.id==self.tbl_bin_associations.c.bin))))
 
+        mapper(BinaryACL, self.tbl_binary_acl,
+               properties = dict(binary_acl_id = self.tbl_binary_acl.c.id))
+
+        mapper(BinaryACLMap, self.tbl_binary_acl_map,
+               properties = dict(binary_acl_map_id = self.tbl_binary_acl_map.c.id,
+                                 fingerprint = relation(Fingerprint, backref="binary_acl_map"),
+                                 architecture = relation(Architecture)))
+
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
                                  component_name = self.tbl_component.c.name))
@@ -2210,11 +2407,28 @@ class DBConn(Singleton):
                                  uid_id = self.tbl_fingerprint.c.uid,
                                  uid = relation(Uid),
                                  keyring_id = self.tbl_fingerprint.c.keyring,
-                                 keyring = relation(Keyring)))
+                                 keyring = relation(Keyring),
+                                 source_acl = relation(SourceACL),
+                                 binary_acl = relation(BinaryACL)))
 
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
                                  keyring_id = self.tbl_keyrings.c.id))
+
+        mapper(KnownChange, self.tbl_known_changes,
+               properties = dict(known_change_id = self.tbl_known_changes.c.id,
+                                 poolfiles = relation(PoolFile,
+                                                      secondary=self.tbl_changes_pool_files,
+                                                      backref="changeslinks"),
+                                 files = relation(KnownChangePendingFile, backref="changesfile")))
+
+        mapper(KnownChangePendingFile, self.tbl_changes_pending_files,
+               properties = dict(known_change_pending_file_id = self.tbl_changes_pending_files.c.id))
+
+        mapper(KeyringACLMap, self.tbl_keyring_acl_map,
+               properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
+                                 keyring = relation(Keyring, backref="keyring_acl_map"),
+                                 architecture = relation(Architecture)))
 
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
@@ -2253,10 +2467,9 @@ class DBConn(Singleton):
         mapper(Queue, self.tbl_queue,
                properties = dict(queue_id = self.tbl_queue.c.id))
 
-        mapper(QueueBuild, self.tbl_queue_build,
-               properties = dict(suite_id = self.tbl_queue_build.c.suite,
-                                 queue_id = self.tbl_queue_build.c.queue,
-                                 queue = relation(Queue, backref='queuebuild')))
+        mapper(QueueFile, self.tbl_queue_files,
+               properties = dict(queue = relation(Queue, backref='queuefiles'),
+                                 poolfile = relation(PoolFile, backref='queueinstances')))
 
         mapper(Section, self.tbl_section,
                properties = dict(section_id = self.tbl_section.c.id,
@@ -2278,7 +2491,11 @@ class DBConn(Singleton):
                                  srcfiles = relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  srcassociations = relation(SrcAssociation,
-                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source))))
+                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source)),
+                                 srcuploaders = relation(SrcUploader)))
+
+        mapper(SourceACL, self.tbl_source_acl,
+               properties = dict(source_acl_id = self.tbl_source_acl.c.id))
 
         mapper(SrcAssociation, self.tbl_src_associations,
                properties = dict(sa_id = self.tbl_src_associations.c.id,
@@ -2301,7 +2518,9 @@ class DBConn(Singleton):
                                                        primaryjoin=(self.tbl_src_uploaders.c.maintainer==self.tbl_maintainer.c.id))))
 
         mapper(Suite, self.tbl_suite,
-               properties = dict(suite_id = self.tbl_suite.c.id))
+               properties = dict(suite_id = self.tbl_suite.c.id,
+                                 policy_queue = relation(Queue),
+                                 copy_queues = relation(Queue, secondary=self.tbl_suite_queue_copy)))
 
         mapper(SuiteArchitecture, self.tbl_suite_architectures,
                properties = dict(suite_id = self.tbl_suite_architectures.c.suite,
@@ -2318,6 +2537,11 @@ class DBConn(Singleton):
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
                                  fingerprint = relation(Fingerprint)))
+
+        mapper(UploadBlock, self.tbl_upload_blocks,
+               properties = dict(upload_block_id = self.tbl_upload_blocks.c.id,
+                                 fingerprint = relation(Fingerprint, backref="uploadblocks"),
+                                 uid = relation(Uid, backref="uploadblocks")))
 
     ## Connection functions
     def __createconn(self):
