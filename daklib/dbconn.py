@@ -2635,7 +2635,6 @@ class DBConn(Singleton):
                                  source_files = relation(ChangePendingFile,
                                                          secondary=self.tbl_changes_pending_source_files,
                                                          backref="pending_sources")))
-
         mapper(KeyringACLMap, self.tbl_keyring_acl_map,
                properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
                                  keyring = relation(Keyring, backref="keyring_acl_map"),
