@@ -227,6 +227,10 @@ $$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
                       AFTER UPDATE ON override
                       FOR EACH ROW EXECUTE PROCEDURE update_contents_for_override();""")
 
+
+        c.execute( "CREATE INDEX ind_deb_contents_name ON deb_contents(package);");
+        c.execute( "CREATE INDEX ind_udeb_contents_name ON udeb_contents(package);");
+
         self.db.commit()
 
     except psycopg2.ProgrammingError, msg:
