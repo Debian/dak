@@ -34,26 +34,46 @@ class re_parse_lintian(DakTestCase):
 
     def testBinary(self):
         self.assertEqual(
-            self.MATCH('W: pkgname: some-tag path/to/file').groups(),
-            ('W', 'pkgname', 'some-tag', 'path/to/file')
+            self.MATCH('W: pkgname: some-tag path/to/file').groupdict(),
+            {
+                'level': 'W',
+                'package': 'pkgname',
+                'tag': 'some-tag',
+                'description': 'path/to/file',
+            }
         )
 
     def testBinaryNoDescription(self):
         self.assertEqual(
-            self.MATCH('W: pkgname: some-tag').groups(),
-            ('W', 'pkgname', 'some-tag', '')
+            self.MATCH('W: pkgname: some-tag').groupdict(),
+            {
+                'level': 'W',
+                'package': 'pkgname',
+                'tag': 'some-tag',
+                'description': '',
+            }
         )
 
     def testSource(self):
         self.assertEqual(
-            self.MATCH('W: pkgname source: some-tag').groups(),
-            ('W', 'pkgname source', 'some-tag', '')
+            self.MATCH('W: pkgname source: some-tag').groupdict(),
+            {
+                'level': 'W',
+                'package': 'pkgname source',
+                'tag': 'some-tag',
+                'description': '',
+            }
         )
 
     def testSourceNoDescription(self):
         self.assertEqual(
-            self.MATCH('W: pkgname source: some-tag path/to/file').groups(),
-            ('W', 'pkgname source', 'some-tag', 'path/to/file')
+            self.MATCH('W: pkgname source: some-tag path/to/file').groupdict(),
+            {
+                'level': 'W',
+                'package': 'pkgname source',
+                'tag': 'some-tag',
+                'description': 'path/to/file',
+            }
         )
 
 if __name__ == '__main__':
