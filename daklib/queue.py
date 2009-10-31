@@ -1336,11 +1336,11 @@ class Upload(object):
 
             if etype == 'O':
                 # We know it and it is overriden. Check that override is allowed.
-                if etag in lintiantags['warning']:
+                if etag in lintiantags['nonfatal']:
                     # The tag is overriden, and it is allowed to be overriden.
                     # Don't add a reject message.
                     pass
-                elif etag in lintiantags['error']:
+                elif etag in lintiantags['fatal']:
                     # The tag is overriden - but is not allowed to be
                     self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
                     log("ftpmaster does not allow tag to be overridable", etag)
@@ -1348,7 +1348,7 @@ class Upload(object):
                 # Tag is known, it is not overriden, direct reject.
                 self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
                 # Now tell if they *might* override it.
-                if etag in lintiantags['warning']:
+                if etag in lintiantags['nonfatal']:
                     log("auto rejecting", "overridable", etag)
                     self.rejects.append("%s: If you have a good reason, you may override this lintian tag." % (epackage))
                 else:
