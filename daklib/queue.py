@@ -1311,9 +1311,6 @@ class Upload(object):
             utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
             utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
 
-        if len(output) == 0:
-            return
-
         def log(*txt):
             if self.logger:
                 self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
