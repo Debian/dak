@@ -32,8 +32,6 @@ import os
 import apt_pkg
 import socket
 
-from singleton import Singleton
-
 ################################################################################
 
 default_config = "/etc/dak/dak.conf" #: default dak config, defines host properties
@@ -41,13 +39,20 @@ default_config = "/etc/dak/dak.conf" #: default dak config, defines host propert
 def which_conf_file():
     return os.getenv("DAK_CONFIG", default_config)
 
-class Config(Singleton):
+class Config(object):
     """
     A Config object is a singleton containing
     information about the DAK configuration
     """
+
+    __shared_state = {}
+
     def __init__(self, *args, **kwargs):
-        super(Config, self).__init__(*args, **kwargs)
+        self.__dict__ = self.__shared_state
+
+        if not getattr(self, 'initialised', False):
+            self.initialised = True
+            self._readconf()
 
     def _readconf(self):
         apt_pkg.init()
@@ -70,9 +75,6 @@ class Config(Singleton):
         self.ValueList = self.Cnf.ValueList
         self.Find = self.Cnf.Find
         self.FindB = self.Cnf.FindB
-
-    def _startup(self, *args, **kwargs):
-        self._readconf()
 
     def has_key(self, name):
         return self.Cnf.has_key(name)

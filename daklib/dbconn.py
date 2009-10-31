@@ -51,7 +51,6 @@ from sqlalchemy.exc import *
 from sqlalchemy.orm.exc import NoResultFound
 
 from config import Config
-from singleton import Singleton
 from textutils import fix_maintainer
 
 ################################################################################
@@ -2502,18 +2501,19 @@ __all__.append('UploadBlock')
 
 ################################################################################
 
-class DBConn(Singleton):
+class DBConn(object):
     """
     database module init.
     """
-    def __init__(self, *args, **kwargs):
-        super(DBConn, self).__init__(*args, **kwargs)
+    __shared_state = {}
 
-    def _startup(self, *args, **kwargs):
-        self.debug = False
-        if kwargs.has_key('debug'):
-            self.debug = True
-        self.__createconn()
+    def __init__(self, *args, **kwargs):
+        self.__dict__ = self.__shared_state
+
+        if not getattr(self, 'initialised', False):
+            self.initialised = True
+            self.debug = kwargs.has_key('debug')
+            self.__createconn()
 
     def __setuptables(self):
         self.tbl_architecture = Table('architecture', self.db_meta, autoload=True)

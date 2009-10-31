@@ -26,16 +26,15 @@ Simple summary class for dak
 
 ###############################################################################
 
-from singleton import Singleton
+class SummaryStats(object):
+    __shared_state = {}
 
-###############################################################################
-
-class SummaryStats(Singleton):
     def __init__(self, *args, **kwargs):
-        super(SummaryStats, self).__init__(*args, **kwargs)
+        self.__dict__ = self.__shared_state
 
-    def _startup(self):
-        self.reset_accept()
+        if not getattr(self, 'initialised', False):
+            self.initialised = True
+            self.reset_accept()
 
     def reset_accept(self):
         self.accept_count = 0
