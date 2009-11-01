@@ -450,7 +450,7 @@ class BuildQueue(object):
                    # In this case, update the BuildQueueFile entry so we
                    # don't remove it too early
                    f.lastused = datetime.now()
-                   DBConn().session().object_session(pf).add(f)
+                   DBConn().session().object_session(poolfile).add(f)
                    return f
 
         # Prepare BuildQueueFile object
