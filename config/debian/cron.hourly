@@ -10,7 +10,7 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 date -u > $ftpdir/project/trace/ftp-master.debian.org
 echo "Using dak v1" >> $ftpdir/project/trace/ftp-master.debian.org
 echo "Running on host: $(hostname -f)" >> $ftpdir/project/trace/ftp-master.debian.org
-#dak import-users-from-passwd
+dak import-users-from-passwd
 #dak queue-report -n > $webdir/new.html
 #dak queue-report -8 -d accepted,new,byhand,proposedupdates,oldproposedupdates
 dak show-deferred > ${webdir}/deferred.html

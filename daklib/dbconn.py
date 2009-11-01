@@ -2565,8 +2565,8 @@ class DBConn(object):
         )
 
         for table_name in tables:
-            table = Table('tbl_%s' % table_name, self.db_meta, autoload=True)
-            setattr(self, table_name, table)
+            table = Table(table_name, self.db_meta, autoload=True)
+            setattr(self, 'tbl_%s' % table_name, table)
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
@@ -2663,8 +2663,8 @@ class DBConn(object):
                                                      primaryjoin=(self.tbl_changes.c.in_queue==self.tbl_policy_queue.c.id)),
                                  approved_for_id = self.tbl_changes.c.approved_for))
 
-        mapper(ChangePendingBinary, self.tbl_changes_pending_binary,
-               properties = dict(change_pending_binary_id = self.tbl_changes_pending_binary.c.id))
+        mapper(ChangePendingBinary, self.tbl_changes_pending_binaries,
+               properties = dict(change_pending_binary_id = self.tbl_changes_pending_binaries.c.id))
 
         mapper(ChangePendingFile, self.tbl_changes_pending_files,
                properties = dict(change_pending_file_id = self.tbl_changes_pending_files.c.id))
