@@ -291,7 +291,7 @@ def action(u, session):
     elif answer == 'P':
         if not chg:
             chg = u.pkg.add_known_changes(holding.holding_dir, session)
-        package_to_queue(u, summary, short_summary, policy_queue, chg, session)
+        package_to_queue(u, summary, short_summary, policyqueue, chg, session)
         session.commit()
         u.remove()
     elif answer == queuekey:
