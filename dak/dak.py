@@ -33,6 +33,7 @@ G{importgraph}
 
 ################################################################################
 
+import os
 import sys
 import traceback
 import daklib.utils
