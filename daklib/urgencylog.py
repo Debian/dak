@@ -29,33 +29,35 @@ Urgency Logger class for dak
 import os
 import time
 
-from singleton import Singleton
 from config import Config
 from utils import warn, open_file, move
 
 ###############################################################################
 
-class UrgencyLog(Singleton):
+class UrgencyLog(object):
     "Urgency Logger object"
+
+    __shared_state = {}
+
     def __init__(self, *args, **kwargs):
-        super(UrgencyLog, self).__init__(*args, **kwargs)
+        self.__dict__ = self.__shared_state
 
-    def _startup(self):
-        "Initialize a new Urgency Logger object"
+        if not getattr(self, 'initialised', False):
+            self.initialised = True
 
-        self.timestamp = time.strftime("%Y%m%d%H%M%S")
+            self.timestamp = time.strftime("%Y%m%d%H%M%S")
 
-        # Create the log directory if it doesn't exist
-        self.log_dir = Config()["Dir::UrgencyLog"]
+            # Create the log directory if it doesn't exist
+            self.log_dir = Config()["Dir::UrgencyLog"]
 
-        if not os.path.exists(self.log_dir) or not os.access(self.log_dir, os.W_OK):
-            warn("UrgencyLog directory %s does not exist or is not writeable, using /srv/ftp.debian.org/tmp/ instead" % (self.log_dir))
-            self.log_dir = '/srv/ftp.debian.org/tmp/'
+            if not os.path.exists(self.log_dir) or not os.access(self.log_dir, os.W_OK):
+                warn("UrgencyLog directory %s does not exist or is not writeable, using /srv/ftp.debian.org/tmp/ instead" % (self.log_dir))
+                self.log_dir = '/srv/ftp.debian.org/tmp/'
 
-        # Open the logfile
-        self.log_filename = "%s/.install-urgencies-%s.new" % (self.log_dir, self.timestamp)
-        self.log_file = open_file(self.log_filename, 'w')
-        self.writes = 0
+            # Open the logfile
+            self.log_filename = "%s/.install-urgencies-%s.new" % (self.log_dir, self.timestamp)
+            self.log_file = open_file(self.log_filename, 'w')
+            self.writes = 0
 
     def log(self, source, version, urgency):
         "Log an event"

@@ -1,5 +1,5 @@
 lintian:
-  warning:
+  nonfatal:
     - statically-linked-binary
     - arch-independent-package-contains-binary-or-object
     - arch-dependent-file-in-usr-share
@@ -12,7 +12,7 @@ lintian:
     - mknod-in-maintainer-script
     - package-contains-info-dir-file
     - copyright-lists-upstream-authors-with-dh_make-boilerplate
-  error:
+  fatal:
     - wrong-file-owner-uid-or-gid
     - bad-relation
     - FSSTND-dir-in-usr
