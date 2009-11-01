@@ -2062,6 +2062,11 @@ def add_dsc_to_db(u, filename, session=None):
                 poolfile = add_poolfile(filename, dentry, dsc_location_id, session)
                 pfs.append(poolfile)
                 files_id = poolfile.file_id
+        else:
+            poolfile = get_poolfile_by_id(files_id, session)
+            if poolfile is None:
+                utils.fubar("INTERNAL ERROR. Found no poolfile with id %d" % files_id)
+            pfs.append(poolfile)
 
         df.poolfile_id = files_id
         session.add(df)
