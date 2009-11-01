@@ -434,7 +434,7 @@ class BuildQueue(object):
         pass
 
     def __repr__(self):
-        return '<Queue %s>' % self.queue_name
+        return '<BuildQueue %s>' % self.queue_name
 
     def add_file_from_pool(self, poolfile):
         """Copies a file into the pool.  Assumes that the PoolFile object is
