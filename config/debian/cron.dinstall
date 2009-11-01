@@ -223,8 +223,8 @@ lockfile "$LOCK_ACCEPTED"
 lockfile "$LOCK_NEW"
 
 GO=(
-    FUNC="process_upload"
-    TIME="process-upload"
+    FUNC="process_unchecked"
+    TIME="unchecked"
     ARGS=""
     ERR=""
 )
