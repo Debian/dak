@@ -478,7 +478,7 @@ def main():
         if summarystats.accept_count > 1:
             sets = "sets"
         print "Installed %d package %s, %s." % (summarystats.accept_count, sets,
-                                                utils.size_type(int(summarystats.accept_bytes))))
+                                                utils.size_type(int(summarystats.accept_bytes)))
         Logger.log(["total", summarystats.accept_count, summarystats.accept_bytes])
 
     if not Options["No-Action"]:
