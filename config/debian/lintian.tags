@@ -61,7 +61,6 @@ lintian:
     - uploader-address-is-on-localhost
     - no-source-field
     - source-field-does-not-match-pkg-name
-    - section-is-dh_make-template
     - build-depends-on-essential-package-without-using-version
     - depends-on-build-essential-package-without-using-version
     - build-depends-on-build-essential
