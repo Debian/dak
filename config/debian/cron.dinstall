@@ -445,6 +445,19 @@ function mkfilesindices() {
     rm -f $ARCHLIST
     echo "Done!"
 }
+
+function mkchecksums() {
+    dsynclist=$dbdir/dsync.list
+    md5list=$indices/md5sums
+
+    log -n "Creating md5 / dsync index file ... "
+
+    cd "$ftpdir"
+    ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
+    ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n --rsyncable > ${md5list}.gz
+    ${bindir}/dsync-flist -q link-dups $dsynclist || true
+}
+
 function scripts() {
     log "Running various scripts from $scriptsdir"
     cd $scriptsdir
@@ -452,7 +465,7 @@ function scripts() {
     copyoverrides
     mklslar
     mkfilesindices
-    ./mkchecksums
+    mkchecksums
 }
 
 function mirror() {
