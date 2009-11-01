@@ -347,11 +347,11 @@ function copyoverrides() {
         if [ $rc = 0 ]; then
 		    rm -f .newover-$f.gz
 	    elif [ $rc = 1 -o ! -f $nf ]; then
-		    echo "   installing new $nf $pc"
+		    log "   installing new $nf $pc"
 		    mv -f .newover-$f.gz $nf
 		    chmod g+w $nf
 	    else
-		    echo $? $pc
+		    log $? $pc
 		    exit 1
 	    fi
     done
@@ -363,7 +363,7 @@ function mkfilesindices() {
 
     ARCHLIST=$(tempfile)
 
-    echo "Querying projectb..."
+    log "Querying projectb..."
     echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s,^/srv/ftp.debian.org/ftp,.,' | sort >$ARCHLIST
 
     includedirs () {
@@ -373,7 +373,7 @@ function mkfilesindices() {
         perl -e '@nonpool=(); while (<>) { if (m,^\./pool/,) { print; } else { push @nonpool, $_; } } print for (@nonpool);'
     }
 
-    echo "Generating sources list..."
+    log "Generating sources list
     (
         sed -n 's/|$//p' $ARCHLIST
         cd $base/ftp
@@ -381,7 +381,7 @@ function mkfilesindices() {
         find ./dists \! -type d | grep "/source/"
     ) | sort -u | gzip --rsyncable -9 > source.list.gz
 
-    echo "Generating arch lists..."
+    log "Generating arch lists
 
     ARCHES=$( (<$ARCHLIST sed -n 's/^.*|//p'; echo amd64) | grep . | grep -v all | sort -u)
     for a in $ARCHES; do
@@ -394,7 +394,7 @@ function mkfilesindices() {
         ) | sort -u | gzip --rsyncable -9 > arch-$a.list.gz
     done
 
-    echo "Generating suite lists..."
+    log "Generating suite lists"
 
     suite_list () {
         printf 'SELECT DISTINCT l.path, f.filename FROM (SELECT sa.source AS source FROM src_associations sa WHERE sa.suite = %d UNION SELECT b.source AS source FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) WHERE ba.suite = %d) s JOIN dsc_files df ON (s.source = df.source) JOIN files f ON (df.file = f.id) JOIN location l ON (f.location = l.id)\n' $1 $1 | psql -F' ' -A -t projectb
@@ -417,7 +417,7 @@ function mkfilesindices() {
         ) | sort -u | gzip --rsyncable -9 > suite-${suite}.list.gz
     done
 
-    echo "Finding everything on the ftp site to generate sundries $(date +"%X")..."
+    log "Finding everything on the ftp site to generate sundries"
 
     (cd $base/ftp; find . \! -type d \! -name 'Archive_Maintenance_In_Progress' | sort) >$ARCHLIST
 
@@ -425,7 +425,7 @@ function mkfilesindices() {
     zcat *.list.gz | cat - *.list | sort -u |
     diff - $ARCHLIST | sed -n 's/^> //p' > sundries.list
 
-    echo "Generating files list $(date +"%X")..."
+    log "Generating files list"
 
     for a in $ARCHES; do
         (echo ./project/trace; zcat arch-$a.list.gz source.list.gz) |
@@ -443,7 +443,7 @@ function mkfilesindices() {
     sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
-    echo "Done!"
+    log "Done!"
 }
 
 function mkchecksums() {
@@ -469,7 +469,7 @@ function scripts() {
 }
 
 function mirror() {
-    echo "Regenerating \"public\" mirror/ hardlink fun"
+    log "Regenerating \"public\" mirror/ hardlink fun"
     cd ${mirrordir}
     rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
 }
