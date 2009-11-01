@@ -54,6 +54,7 @@ from summarystats import SummaryStats
 from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
 from binary import Binary
+from lintian import parse_lintian_output, generate_reject_messages
 
 ###############################################################################
 
@@ -1247,6 +1248,11 @@ class Upload(object):
     ###########################################################################
 
     def check_lintian(self):
+        """
+        Extends self.rejects by checking the output of lintian against tags
+        specified in Dinstall::LintianTags.
+        """
+
         cnf = Config()
 
         # Don't reject binary uploads
@@ -1254,24 +1260,22 @@ class Upload(object):
             return
 
         # Only check some distributions
-        valid_dist = False
         for dist in ('unstable', 'experimental'):
             if dist in self.pkg.changes['distribution']:
-                valid_dist = True
                 break
-
-        if not valid_dist:
+        else:
             return
 
+        # If we do not have a tagfile, don't do anything
         tagfile = cnf.get("Dinstall::LintianTags")
         if tagfile is None:
-            # We don't have a tagfile, so just don't do anything.
             return
 
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
         sourcefile.close()
+
         try:
             lintiantags = yaml.load(sourcecontent)['lintian']
         except yaml.YAMLError, msg:
@@ -1281,78 +1285,42 @@ class Upload(object):
         # Try and find all orig mentioned in the .dsc
         symlinked = self.ensure_orig()
 
-        # Now setup the input file for lintian. lintian wants "one tag per line" only,
-        # so put it together like it. We put all types of tags in one file and then sort
-        # through lintians output later to see if its a fatal tag we detected, or not.
-        # So we only run lintian once on all tags, even if we might reject on some, but not
-        # reject on others.
-        # Additionally build up a set of tags
-        tags = set()
-        (fd, temp_filename) = utils.temp_filename()
+        # Setup the input file for lintian
+        fd, temp_filename = utils.temp_filename()
         temptagfile = os.fdopen(fd, 'w')
-        for tagtype in lintiantags:
-            for tag in lintiantags[tagtype]:
-                temptagfile.write("%s\n" % tag)
-                tags.add(tag)
+        for tags in lintiantags.values():
+            temptagfile.writelines(['%s\n' % x for x in tags])
         temptagfile.close()
 
-        # So now we should look at running lintian at the .changes file, capturing output
-        # to then parse it.
-        command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
-        (result, output) = commands.getstatusoutput(command)
+        try:
+            cmd = "lintian --show-overrides --tags-from-file %s %s" % \
+                (temp_filename, self.pkg.changes_file)
 
-        # We are done with lintian, remove our tempfile and any symlinks we created
-        os.unlink(temp_filename)
-        for symlink in symlinked:
-            os.unlink(symlink)
+            result, output = commands.getstatusoutput(cmd)
+        finally:
+            # Remove our tempfile and any symlinks we created
+            os.unlink(temp_filename)
 
-        if (result == 2):
-            utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
-            utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
+            for symlink in symlinked:
+                os.unlink(symlink)
 
-        if len(output) == 0:
-            return
+        if result == 2:
+            utils.warn("lintian failed for %s [return code: %s]." % \
+                (self.pkg.changes_file, result))
+            utils.warn(utils.prefix_multi_line_string(output, \
+                " [possible output:] "))
 
         def log(*txt):
             if self.logger:
-                self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
+                self.logger.log(
+                    [self.pkg.changes_file, "check_lintian"] + list(txt)
+                )
 
-        # We have output of lintian, this package isn't clean. Lets parse it and see if we
-        # are having a victim for a reject.
-        # W: tzdata: binary-without-manpage usr/sbin/tzconfig
-        for line in output.split('\n'):
-            m = re_parse_lintian.match(line)
-            if m is None:
-                continue
-
-            etype = m.group(1)
-            epackage = m.group(2)
-            etag = m.group(3)
-            etext = m.group(4)
-
-            # So lets check if we know the tag at all.
-            if etag not in tags:
-                continue
-
-            if etype == 'O':
-                # We know it and it is overriden. Check that override is allowed.
-                if etag in lintiantags['warning']:
-                    # The tag is overriden, and it is allowed to be overriden.
-                    # Don't add a reject message.
-                    pass
-                elif etag in lintiantags['error']:
-                    # The tag is overriden - but is not allowed to be
-                    self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
-                    log("ftpmaster does not allow tag to be overridable", etag)
-            else:
-                # Tag is known, it is not overriden, direct reject.
-                self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
-                # Now tell if they *might* override it.
-                if etag in lintiantags['warning']:
-                    log("auto rejecting", "overridable", etag)
-                    self.rejects.append("%s: If you have a good reason, you may override this lintian tag." % (epackage))
-                else:
-                    log("auto rejecting", "not overridable", etag)
+        # Generate messages
+        parsed_tags = parse_lintian_output(output)
+        self.rejects.extend(
+            generate_reject_messages(parsed_tags, lintiantags, log=log)
+        )
 
     ###########################################################################
     def check_urgency(self):
@@ -2362,8 +2330,6 @@ distribution."""
     ################################################################################
 
     def check_source_against_db(self, filename, session):
-        """
-        """
         source = self.pkg.dsc.get("source")
         version = self.pkg.dsc.get("version")
 

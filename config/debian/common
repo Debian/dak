@@ -45,22 +45,23 @@ function make_buildd_dir () {
 
 # move accepted NEW packages from stagedir into queue/accepted
 function acceptnew () {
-    cd $newstage
-    for file in $(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs); do
-        sed '1,/Files:/d' "${file}" | sed '/BEGIN PGP SIGNATURE/,$d' \
-            | while read notused1 notused2 notused3 notused4 NAME; do
-            if [ -z "${NAME}" ]; then
-                # Sometimes there is a newline after the Files:, ignore it
-                continue
-            fi
-            if [ -f "${NAME}" ]; then
-                mv --target-directory="${accepted}" "${NAME}"
-            else
-                log_error "Error, couldn't find file ${NAME} to move to ${accepted}"
-            fi
-        done
-        mv --target-directory="${accepted}"  "${file}" "${file%%.changes}.dak"
-    done
+    return
+    # cd $newstage
+    # for file in $(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs); do
+    #     sed '1,/Files:/d' "${file}" | sed '/BEGIN PGP SIGNATURE/,$d' \
+    #         | while read notused1 notused2 notused3 notused4 NAME; do
+    #         if [ -z "${NAME}" ]; then
+    #             # Sometimes there is a newline after the Files:, ignore it
+    #             continue
+    #         fi
+    #         if [ -f "${NAME}" ]; then
+    #             mv --target-directory="${accepted}" "${NAME}"
+    #         else
+    #             log_error "Error, couldn't find file ${NAME} to move to ${accepted}"
+    #         fi
+    #     done
+    #     mv --target-directory="${accepted}"  "${file}" "${file%%.changes}.dak"
+    # done
 }
 
 # Do the unchecked processing, in case we have files.
@@ -73,7 +74,7 @@ function do_unchecked () {
     UNCHECKED_WITHOUT_LOCK=${UNCHECKED_WITHOUT_LOCK:-""}
 
     echo "$timestamp": ${changes:-"Nothing to do"}  >> $report
-    dak process-unchecked -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
+    dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
 }
 
 function sync_debbugs () {

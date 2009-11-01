@@ -30,19 +30,22 @@ import os
 from errno import ENOENT, EEXIST, EACCES
 import shutil
 
-from singleton import Singleton
 from config import Config
 from utils import fubar
 
 ###############################################################################
 
-class Holding(Singleton):
-    def __init__(self, *args, **kwargs):
-        super(Holding, self).__init__(*args, **kwargs)
+class Holding(object):
+    __shared_state = {}
 
-    def _startup(self):
-        self.in_holding = {}
-        self.holding_dir = Config()["Dir::Queue::Holding"]
+    def __init__(self, *args, **kwargs):
+        self.__dict__ = self.__shared_state
+
+        if not getattr(self, 'initialised', False):
+            self.initialised = True
+
+            self.in_holding = {}
+            self.holding_dir = Config()["Dir::Queue::Holding"]
 
     def copy_to_holding(self, filename):
         base_filename = os.path.basename(filename)

@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 
-import unittest
-
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from collections import defaultdict
+from base_test import DakTestCase
 
 from daklib import srcformats
+from collections import defaultdict
 from daklib.formats import parse_format
 from daklib.dak_exceptions import UnknownFormatError
 
-class SourceFormatTestCase(unittest.TestCase):
+class SourceFormatTestCase(DakTestCase):
     def get_rejects(self, has_vars):
         has = defaultdict(lambda: 0)
         has.update(has_vars)
@@ -104,7 +100,7 @@ class FormatTreeQuiltTestCase(SourceFormatTestCase):
             'native_tar': 1,
         })
 
-class FormatFromStringTestCase(unittest.TestCase):
+class FormatFromStringTestCase(DakTestCase):
     def assertFormat(self, txt, klass):
         self.assertEqual(srcformats.get_format_from_string(txt), klass)
 
