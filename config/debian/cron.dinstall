@@ -74,20 +74,6 @@ function onerror() {
 # the actual dinstall functions follow                                 #
 ########################################################################
 
-# Setup the notice file to tell bad mirrors they used the wrong time
-function notice() {
-    rm -f "$NOTICE"
-    cat > "$NOTICE" <<EOF
-Packages are currently being installed and indices rebuilt.
-Maintenance is automatic, starting at 01|07|13|19:52 UTC,
-and ending about an hour later.  This file is then removed.
-
-You should not mirror the archive during this period. If you find this
-file on a Debian mirror please have a nice talk with the admin. They
-are doing something wrong.
-EOF
-}
-
 # pushing merkels QA user, part one
 function merkel1() {
     log "Telling merkels QA user that we start dinstall"
@@ -356,7 +342,7 @@ function scripts() {
 function mirror() {
     echo "Regenerating \"public\" mirror/ hardlink fun"
     cd ${mirrordir}
-    rsync -aH --link-dest ${ftpdir} --exclude Archive_Maintenance_In_Progress --delete --delete-after --ignore-errors ${ftpdir}/. .
+    rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
 }
 
 function wb() {
@@ -632,9 +618,6 @@ DINSTALLEND="${lockdir}/dinstallend"
 touch "${DINSTALLSTART}"
 ts "startup"
 
-# Tell everyone we are doing some work
-NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
-
 # lock cron.unchecked (it immediately exits when this exists)
 LOCK_DAILY="$lockdir/daily.lock"
 
@@ -858,7 +841,6 @@ GO=(
 )
 stage $GO &
 
-rm -f "${NOTICE}"
 rm -f "${LOCK_DAILY}"
 
 ts "locked part finished"
