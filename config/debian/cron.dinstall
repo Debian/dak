@@ -593,6 +593,9 @@ function stage() {
     # Make sure we are always at the same place.
     cd ${configdir}
 
+    # We always use the same umask. If a function wants to do different, fine, but we reset.
+    umask 022
+
     touch "${STAGEFILE}"
 
     if [ -n "${TIME}" ]; then
@@ -634,6 +637,13 @@ else
     # Yay, ftpmaster
     MAILTO=${MAILTO:-"ftpmaster@debian.org"}
 fi
+
+# Make sure we start out with a sane umask setting
+umask 022
+
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
 
 # How many logfiles to keep
 LOGROTATE=${LOGROTATE:-400}
