@@ -54,9 +54,9 @@ CREATE VIEW srcfiles_suite_component AS
     JOIN location ON files.location = location.id;
 	    """)
 
-	print "Committing"
-	c.execute("UPDATE config SET value = '23' WHERE name = 'db_revision'")
-	self.db.commit()
+        print "Committing"
+        c.execute("UPDATE config SET value = '23' WHERE name = 'db_revision'")
+        self.db.commit()
 
     except psycopg2.InternalError, msg:
         self.db.rollback()
