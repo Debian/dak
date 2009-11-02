@@ -182,6 +182,15 @@ def do_update(self):
             ["int", "int"]),
             [TD["new"]["bin"], TD["new"]["suite"]])[0]
 
+       tablename="%s_contents" % content_data['type']
+
+       plpy.execute(plpy.prepare("""DELETE FROM %s
+                   WHERE package=$1 and arch=$2 and suite=$3""" % tablename,
+                   ['text','int','int']),
+                   [content_data['package'],
+                   content_data['architecture'],
+                   TD["new"]["suite"]])
+
        filenames = plpy.execute(plpy.prepare(
            "SELECT bc.file FROM bin_contents bc where bc.binary_id=$1",
            ["int"]),
@@ -189,9 +198,9 @@ def do_update(self):
 
        for filename in filenames:
            plpy.execute(plpy.prepare(
-               """INSERT INTO deb_contents
+               """INSERT INTO %s
                    (filename,section,package,binary_id,arch,suite)
-                   VALUES($1,$2,$3,$4,$5,$6)""",
+                   VALUES($1,$2,$3,$4,$5,$6)""" % tablename,
                ["text","text","text","int","int","int"]),
                [filename["file"],
                 content_data["section"],
@@ -220,6 +229,26 @@ $$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
 
 $$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
 """)
+
+        c.execute("""CREATE OR REPLACE FUNCTION update_contents_for_override()
+                      RETURNS trigger AS  $$
+    event = TD["event"]
+    if event == "UPDATE" or event == "INSERT":
+        row = TD["new"]
+        r = plpy.execute(plpy.prepare( """SELECT 1 from suite_architectures sa
+                  JOIN binaries b ON b.architecture = sa.architecture
+                  WHERE b.id = $1 and sa.suite = $2""",
+                ["int", "int"]),
+                [row["bin"], row["suite"]])
+        if not len(r):
+            plpy.error("Illegal architecture for this suite")
+
+$$ LANGUAGE plpythonu VOLATILE;""")
+
+        c.execute( """CREATE TRIGGER illegal_suite_arch_bin_associations_trigger
+                      BEFORE INSERT OR UPDATE ON bin_associations
+                      FOR EACH ROW EXECUTE PROCEDURE update_contents_for_override();""")
+
         c.execute( """CREATE TRIGGER bin_associations_contents_trigger
                       AFTER INSERT OR UPDATE OR DELETE ON bin_associations
                       FOR EACH ROW EXECUTE PROCEDURE update_contents_for_bin_a();""")
