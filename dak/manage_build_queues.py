@@ -76,7 +76,7 @@ def main ():
         queue = get_build_queue(q.lower(), session)
         if queue:
             Logger.log(['cleaning queue %s using datetime %s' % (q, starttime)])
-            queue.clean_and_update(starttime)
+            queue.clean_and_update(starttime, dryrun=Options["No-Action"])
         else:
             Logger.log(['cannot find queue %s' % q])
 

@@ -477,7 +477,7 @@ class BuildQueue(object):
     def __repr__(self):
         return '<BuildQueue %s>' % self.queue_name
 
-    def write_metadata(self, ourtime, force=False):
+    def write_metadata(self, starttime, force=False):
         # Do we write out metafiles?
         if not (force or self.generate_metadata):
             return
@@ -491,8 +491,7 @@ class BuildQueue(object):
 
         try:
             # Grab files we want to include
-            newer = session.query(BuildQueueFile).filter_by(build_queue_id = 1).filter(BuildQueueFile.lastused > ourtime).all()
-
+            newer = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) > starttime).all()
             # Write file list with newer files
             (fl_fd, fl_name) = mkstemp()
             for n in newer:
@@ -562,13 +561,11 @@ class BuildQueue(object):
         """WARNING: This routine commits for you"""
         session = DBConn().session().object_session(self)
 
-        ourtime = starttime + timedelta(seconds=self.stay_of_execution)
-
         if self.generate_metadata:
-            self.write_metadata(ourtime)
+            self.write_metadata(starttime)
 
         # Grab files older than our execution time
-        older = session.query(BuildQueueFile).filter_by(build_queue_id = 1).filter(BuildQueueFile.lastused <= ourtime).all()
+	older = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) <= starttime).all()
 
         for o in older:
             killdb = False
@@ -576,6 +573,7 @@ class BuildQueue(object):
                 if dryrun:
                     print "I: Would have removed %s from the queue"
                 else:
+                    print "I: Removing %s from the queue"
                     os.unlink(o.fullpath)
                     killdb = True
             except OSError, e:
@@ -591,6 +589,22 @@ class BuildQueue(object):
 
         session.commit()
 
+        for f in os.listdir(self.path):
+            if f.startswith('Packages') or f.startswith('Source') or f.startswith('Release'):
+                continue
+
+            try:
+                r = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter_by(filename = f).one()
+            except NoResultFound:
+                fp = os.path.join(self.path, f)
+                if dryrun:
+                    print "I: Would remove unused link %s" % fp
+                else:
+                    print "I: Removing unused link %s" % fp
+                    try:
+                        os.unlink(fp)
+                    except OSError:
+                        print "E: Failed to unlink unreferenced file %s" % r.fullpath
 
     def add_file_from_pool(self, poolfile):
         """Copies a file into the pool.  Assumes that the PoolFile object is
