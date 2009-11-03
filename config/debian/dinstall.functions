@@ -134,6 +134,11 @@ function msfl() {
     dak make-suite-file-list
 }
 
+function filelist() {
+    log "Generating file lists for apt-ftparchive"
+    dak generate-filelist
+}
+
 function fingerprints() {
     log "Not updating fingerprints - scripts needs checking"
 
