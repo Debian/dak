@@ -250,6 +250,14 @@ GO=(
 stage $GO
 
 GO=(
+    FUNC="filelist"
+    TIME="generate-filelist"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
     FUNC="fingerprints"
     TIME="import-keyring"
     ARGS=""
