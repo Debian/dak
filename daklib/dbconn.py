@@ -516,7 +516,7 @@ class BuildQueueFile(object):
         pass
 
     def __repr__(self):
-        return '<BuildQueueFile %s (%s)>' % (self.filename, self.queue_id)
+        return '<BuildQueueFile %s (%s)>' % (self.filename, self.build_queue_id)
 
 __all__.append('BuildQueueFile')
 
