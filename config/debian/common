@@ -43,27 +43,6 @@ function make_buildd_dir () {
 	find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 }
 
-# move accepted NEW packages from stagedir into queue/accepted
-function acceptnew () {
-    return
-    # cd $newstage
-    # for file in $(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs); do
-    #     sed '1,/Files:/d' "${file}" | sed '/BEGIN PGP SIGNATURE/,$d' \
-    #         | while read notused1 notused2 notused3 notused4 NAME; do
-    #         if [ -z "${NAME}" ]; then
-    #             # Sometimes there is a newline after the Files:, ignore it
-    #             continue
-    #         fi
-    #         if [ -f "${NAME}" ]; then
-    #             mv --target-directory="${accepted}" "${NAME}"
-    #         else
-    #             log_error "Error, couldn't find file ${NAME} to move to ${accepted}"
-    #         fi
-    #     done
-    #     mv --target-directory="${accepted}"  "${file}" "${file%%.changes}.dak"
-    # done
-}
-
 # Do the unchecked processing, in case we have files.
 function do_unchecked () {
     cd $unchecked

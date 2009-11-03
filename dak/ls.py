@@ -91,7 +91,7 @@ def main ():
     session = DBConn().session()
 
     # If cron.daily is running; warn the user that our output might seem strange
-    if os.path.exists(os.path.join(cnf["Dir::Root"], "Archive_Maintenance_In_Progress")):
+    if os.path.exists(os.path.join(cnf["Dir::Lock"], "daily.lock")):
         utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
 
     # Handle buildd maintenance helper options

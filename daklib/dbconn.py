@@ -434,7 +434,7 @@ class BuildQueue(object):
         pass
 
     def __repr__(self):
-        return '<Queue %s>' % self.queue_name
+        return '<BuildQueue %s>' % self.queue_name
 
     def add_file_from_pool(self, poolfile):
         """Copies a file into the pool.  Assumes that the PoolFile object is
@@ -450,7 +450,7 @@ class BuildQueue(object):
                    # In this case, update the BuildQueueFile entry so we
                    # don't remove it too early
                    f.lastused = datetime.now()
-                   DBConn().session().object_session(pf).add(f)
+                   DBConn().session().object_session(poolfile).add(f)
                    return f
 
         # Prepare BuildQueueFile object
@@ -2062,6 +2062,11 @@ def add_dsc_to_db(u, filename, session=None):
                 poolfile = add_poolfile(filename, dentry, dsc_location_id, session)
                 pfs.append(poolfile)
                 files_id = poolfile.file_id
+        else:
+            poolfile = get_poolfile_by_id(files_id, session)
+            if poolfile is None:
+                utils.fubar("INTERNAL ERROR. Found no poolfile with id %d" % files_id)
+            pfs.append(poolfile)
 
         df.poolfile_id = files_id
         session.add(df)

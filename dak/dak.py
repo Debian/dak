@@ -33,6 +33,7 @@ G{importgraph}
 
 ################################################################################
 
+import os
 import sys
 import traceback
 import daklib.utils
@@ -73,6 +74,8 @@ def init():
          "Generate lists of packages per suite for apt-ftparchive"),
         ("make-pkg-file-mapping",
          "Generate package <-> file mapping"),
+        ("generate-filelist",
+         "Generate file lists for apt-ftparchive"),
         ("generate-releases",
          "Generate Release files"),
         ("contents",

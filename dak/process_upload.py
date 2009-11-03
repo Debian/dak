@@ -291,7 +291,7 @@ def action(u, session):
     elif answer == 'P':
         if not chg:
             chg = u.pkg.add_known_changes(holding.holding_dir, session)
-        package_to_queue(u, summary, short_summary, policy_queue, chg, session)
+        package_to_queue(u, summary, short_summary, policyqueue, chg, session)
         session.commit()
         u.remove()
     elif answer == queuekey:
@@ -477,8 +477,8 @@ def main():
         sets = "set"
         if summarystats.accept_count > 1:
             sets = "sets"
-        sys.stderr.write("Installed %d package %s, %s.\n" % (summarystats.accept_count, sets,
-                                                             utils.size_type(int(summarystats.accept_bytes))))
+        print "Installed %d package %s, %s." % (summarystats.accept_count, sets,
+                                                utils.size_type(int(summarystats.accept_bytes)))
         Logger.log(["total", summarystats.accept_count, summarystats.accept_bytes])
 
     if not Options["No-Action"]:
