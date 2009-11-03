@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+"""Manage build queues"""
+# Copyright (C) 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>
+# Copyright (C) 2009  Mark Hymers <mhy@debian.org>
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+import os, os.path, stat, sys
+from datetime import datetime
+import apt_pkg
+
+from daklib import daklog
+from daklib.dbconn import *
+from daklib.config import Config
+
+################################################################################
+
+Options = None
+Logger = None
+
+################################################################################
+
+def usage (exit_code=0):
+    print """Usage: dak manage-build-queues [OPTIONS] buildqueue1 buildqueue2
+Manage the contents of one or more build queues
+
+  -n, --no-action            don't do anything
+  -v, --verbose              explain what is being done
+  -h, --help                 show this help and exit"""
+
+    sys.exit(exit_code)
+
+################################################################################
+
+def main ():
+    global Options, Logger
+
+    cnf = Config()
+
+    for i in ["Help", "No-Action", "Verbose" ]:
+        if not cnf.has_key("Manage-Build-Queues::Options::%s" % (i)):
+            cnf["Manage-Build-Queues::Options::%s" % (i)] = ""
+
+    Arguments = [('h',"help","Manage-Build-Queues::Options::Help"),
+                 ('n',"no-action","Manage-Build-Queues::Options::No-Action"),
+                 ('v',"verbose","Manage-Build-Queues::Options::Verbose")]
+
+    queue_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Manage-Build-Queues::Options")
+
+    if Options["Help"]:
+        usage()
+
+    Logger = daklog.Logger(cnf, 'manage-build-queues', Options['No-Action'])
+
+    starttime = datetime.now()
+
+    # For each given queue, look up object and call manage_queue
+    for q in queue_names:
+        session = DBConn().session()
+        queue = get_build_queue(q.lower(), session)
+        if queue:
+            Logger.log(['cleaning queue %s using datetime %s' % (q, starttime)])
+            queue.clean_and_update(starttime)
+        else:
+            Logger.log(['cannot find queue %s' % q])
+
+    Logger.close()
+
+#######################################################################################
+
+if __name__ == '__main__':
+    main()
