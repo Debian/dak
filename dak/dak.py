@@ -84,6 +84,8 @@ def init():
          "Generate .diff/Index files"),
         ("clean-suites",
          "Clean unused/superseded packages from the archive"),
+        ("manage-build-queues",
+         "Clean and update metadata for build queues"),
         ("clean-queues",
          "Clean cruft from incoming"),
         ("clean-proposed-updates",
