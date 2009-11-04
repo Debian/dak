@@ -36,6 +36,7 @@ def getSources(suite, component, session):
         SELECT path, filename
             FROM srcfiles_suite_component
             WHERE suite = :suite AND component = :component
+            ORDER BY filename
     """
     args = { 'suite': suite.suite_id,
              'component': component.component_id }
@@ -47,6 +48,7 @@ def getBinaries(suite, component, architecture, type, session):
             FROM binfiles_suite_component_arch
             WHERE suite = :suite AND component = :component AND type = :type AND
                   (architecture = :architecture OR architecture = 2)
+            ORDER BY filename
     """
     args = { 'suite': suite.suite_id,
              'component': component.component_id,
