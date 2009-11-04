@@ -237,7 +237,7 @@ def clean(now_date, delete_date, max_delete, session):
 
     cur_date = now_date.strftime("%Y-%m-%d")
     dest = os.path.join(cnf["Dir::Morgue"], cnf["Clean-Suites::MorgueSubDir"], cur_date)
-    if not os.path.exists(dest):
+    if not Options["No-Action"] and not os.path.exists(dest):
         os.mkdir(dest)
 
     # Delete from source
@@ -361,6 +361,8 @@ def clean_empty_directories(session):
     """
     Removes empty directories from pool directories.
     """
+
+    print "Cleaning out empty directories..."
 
     count = 0
 
