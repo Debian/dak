@@ -39,6 +39,7 @@ def usage (exit_code=0):
     print """Usage: dak manage-build-queues [OPTIONS] buildqueue1 buildqueue2
 Manage the contents of one or more build queues
 
+  -a, --all                  run on all known build queues
   -n, --no-action            don't do anything
   -v, --verbose              explain what is being done
   -h, --help                 show this help and exit"""
@@ -52,12 +53,13 @@ def main ():
 
     cnf = Config()
 
-    for i in ["Help", "No-Action", "Verbose" ]:
+    for i in ["Help", "No-Action", "Verbose" "All"]:
         if not cnf.has_key("Manage-Build-Queues::Options::%s" % (i)):
             cnf["Manage-Build-Queues::Options::%s" % (i)] = ""
 
     Arguments = [('h',"help","Manage-Build-Queues::Options::Help"),
                  ('n',"no-action","Manage-Build-Queues::Options::No-Action"),
+                 ('a',"all","Manage-Build-Queues::Options::All"),
                  ('v',"verbose","Manage-Build-Queues::Options::Verbose")]
 
     queue_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
@@ -70,15 +72,27 @@ def main ():
 
     starttime = datetime.now()
 
+    session = DBConn().session()
+
+    if Options["All"]:
+        if len(queue_names) != 0:
+            print "E: Cannot use both -a and a queue_name"
+            sys.exit(1)
+        queues = session.query(BuildQueue).all()
+
+    else:
+        queues = []
+        for q in queue_name:
+            queue = get_build_queue(q.lower(), session)
+            if queue:
+                queues.append(queue)
+            else:
+                Logger.log(['cannot find queue %s' % q])
+
     # For each given queue, look up object and call manage_queue
-    for q in queue_names:
-        session = DBConn().session()
-        queue = get_build_queue(q.lower(), session)
-        if queue:
-            Logger.log(['cleaning queue %s using datetime %s' % (q, starttime)])
-            queue.clean_and_update(starttime, dryrun=Options["No-Action"])
-        else:
-            Logger.log(['cannot find queue %s' % q])
+    for q in queues:
+        Logger.log(['cleaning queue %s using datetime %s' % (q.queue_name, starttime)])
+        q.clean_and_update(starttime, dryrun=Options["No-Action"])
 
     Logger.close()
 
