@@ -514,6 +514,14 @@ class BuildQueue(object):
             bname = os.path.basename(self.path)
             os.chdir(self.path)
             os.chdir('..')
+
+            # We have to remove the Release file otherwise it'll be included in the
+            # new one
+            try:
+                os.unlink(os.path.join(bname, 'Release'))
+            except OSError:
+                pass
+
             os.system("""apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="%s" -o APT::FTPArchive::Release::Label="%s" -o APT::FTPArchive::Release::Description="%s" -o APT::FTPArchive::Release::Architectures="%s" release %s > Release""" % (self.origin, self.label, self.releasedescription, arches, bname))
 
             # Sign if necessary
