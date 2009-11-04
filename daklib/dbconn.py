@@ -506,8 +506,8 @@ class BuildQueue(object):
             os.close()
 
             # Run apt-ftparchive generate
-            os.chdir(os.path.dirname(fl_name))
-            os.system('apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate %s' % os.path.basename(fl_name))
+            os.chdir(os.path.dirname(ac_name))
+            os.system('apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate %s' % os.path.basename(ac_name))
 
             # Run apt-ftparchive release
             # TODO: Eww - fix this
