@@ -503,7 +503,7 @@ class BuildQueue(object):
             (ac_fd, ac_name) = mkstemp()
             os.write(ac_fd, MINIMAL_APT_CONF % {'archivepath': self.path,
                                                 'filelist': fl_name})
-            os.close()
+            os.close(ac_fd)
 
             # Run apt-ftparchive generate
             os.chdir(os.path.dirname(ac_name))
@@ -561,7 +561,7 @@ class BuildQueue(object):
         """WARNING: This routine commits for you"""
         session = DBConn().session().object_session(self)
 
-        if self.generate_metadata:
+        if self.generate_metadata and not dryrun:
             self.write_metadata(starttime)
 
         # Grab files older than our execution time
