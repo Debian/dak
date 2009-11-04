@@ -565,15 +565,15 @@ class BuildQueue(object):
             self.write_metadata(starttime)
 
         # Grab files older than our execution time
-	older = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) <= starttime).all()
+        older = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) <= starttime).all()
 
         for o in older:
             killdb = False
             try:
                 if dryrun:
-                    print "I: Would have removed %s from the queue"
+                    print "I: Would have removed %s from the queue" % o.fullpath
                 else:
-                    print "I: Removing %s from the queue"
+                    print "I: Removing %s from the queue" % o.fullpath
                     os.unlink(o.fullpath)
                     killdb = True
             except OSError, e:
