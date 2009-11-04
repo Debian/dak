@@ -206,15 +206,6 @@ function dakcleanup() {
     dak clean-queues
 }
 
-function buildd() {
-    # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
-    # update this before wanna-build is updated.
-    log "Regenerating wanna-build/buildd information"
-    psql projectb -A -t -q -c "SELECT build_queue.path || '/' || build_queue_files.filename FROM build_queue_files LEFT JOIN build_queue ON (build_queue.id =build_queue_files.build_queue_id) WHERE queue_name = 'buildd' AND filename ~ 'd(sc|eb)$'"  > $dbdir/dists/unstable_accepted.list
-    symlinks -d /srv/incoming.debian.org/buildd > /dev/null
-    apt-ftparchive generate apt.conf.buildd
-}
-
 function buildd_dir() {
     # Rebuilt the buildd dir to avoid long times of 403
     log "Regenerating the buildd incoming dir"
