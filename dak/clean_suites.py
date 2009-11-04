@@ -357,41 +357,6 @@ SELECT f.id, f.fingerprint FROM fingerprint f
 
 ################################################################################
 
-def clean_queue_build(now_date, delete_date, max_delete, session):
-
-    cnf = Config()
-
-    if not cnf.ValueList("Dinstall::QueueBuildSuites") or Options["No-Action"]:
-        return
-
-    print "Cleaning out queue build symlinks..."
-
-    our_delete_date = now_date - timedelta(seconds = int(cnf["Clean-Suites::QueueBuildStayOfExecution"]))
-    count = 0
-
-    for qf in session.query(BuildQueueFile).filter(BuildQueueFile.last_used <= our_delete_date):
-        if not os.path.exists(qf.filename):
-            utils.warn("%s (from queue_build) doesn't exist." % (qf.filename))
-            continue
-
-        if not cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(qf.filename):
-            utils.fubar("%s (from queue_build) should be a symlink but isn't." % (qf.filename))
-
-        Logger.log(["delete queue build", qf.filename])
-        if not Options["No-Action"]:
-            os.unlink(qf.filename)
-            session.delete(qf)
-        count += 1
-
-    if not Options["No-Action"]:
-        session.commit()
-
-    if count:
-        Logger.log(["total", count])
-        print "Cleaned %d queue_build files." % (count)
-
-################################################################################
-
 def clean_empty_directories(session):
     """
     Removes empty directories from pool directories.
@@ -463,7 +428,6 @@ def main():
     clean(now_date, delete_date, max_delete, session)
     clean_maintainers(now_date, delete_date, max_delete, session)
     clean_fingerprints(now_date, delete_date, max_delete, session)
-    clean_queue_build(now_date, delete_date, max_delete, session)
     clean_empty_directories(session)
 
     Logger.close()
