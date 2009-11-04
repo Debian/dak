@@ -62,10 +62,15 @@ def check_binaries(now_date, delete_date, max_delete, session):
     # deletion.
 
     q = session.execute("""
-SELECT b.file, f.filename FROM binaries b, files f
- WHERE f.last_used IS NULL AND b.file = f.id
-   AND NOT EXISTS (SELECT 1 FROM bin_associations ba WHERE ba.bin = b.id)""")
-
+SELECT b.file, f.filename
+         FROM binaries b
+    LEFT JOIN files f
+      ON (b.file = f.id)
+   WHERE f.last_used IS NULL
+     AND b.id NOT IN
+         (SELECT ba.bin FROM bin_associations ba)
+     AND f.id NOT IN
+         (SELECT bqf.fileid FROM build_queue_files bqf)""")
     for i in q.fetchall():
         Logger.log(["set lastused", i[1]])
         if not Options["No-Action"]:
@@ -79,9 +84,15 @@ SELECT b.file, f.filename FROM binaries b, files f
     # but are now used again.
 
     q = session.execute("""
-SELECT b.file, f.filename FROM binaries b, files f
-   WHERE f.last_used IS NOT NULL AND f.id = b.file
-    AND EXISTS (SELECT 1 FROM bin_associations ba WHERE ba.bin = b.id)""")
+SELECT b.file, f.filename
+         FROM binaries b
+    LEFT JOIN files f
+      ON (b.file = f.id)
+   WHERE f.last_used IS NOT NULL
+     AND (b.id IN
+          (SELECT ba.bin FROM bin_associations ba)
+          OR f.id IN
+          (SELECT bqf.fileid FROM build_queue_files bqf))""")
 
     for i in q.fetchall():
         Logger.log(["unset lastused", i[1]])
@@ -99,10 +110,17 @@ def check_sources(now_date, delete_date, max_delete, session):
     # Get the list of source packages not in a suite and not used by
     # any binaries.
     q = session.execute("""
-SELECT s.id, s.file, f.filename FROM source s, files f
-  WHERE f.last_used IS NULL AND s.file = f.id
-    AND NOT EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id)
-    AND NOT EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id)""")
+SELECT s.id, s.file, f.filename
+       FROM source s
+  LEFT JOIN files f
+    ON (s.file = f.id)
+  WHERE f.last_used IS NULL
+   AND s.id NOT IN
+        (SELECT sa.source FROM src_associations sa)
+   AND s.id NOT IN
+        (SELECT b.source FROM binaries b)
+   AND f.id NOT IN
+        (SELECT bqf.fileid FROM build_queue_files bqf)""")
 
     #### XXX: this should ignore cases where the files for the binary b
     ####      have been marked for deletion (so the delay between bins go
@@ -140,12 +158,12 @@ SELECT s.id, s.file, f.filename FROM source s, files f
 
     # Check for any sources which are marked for deletion but which
     # are now used again.
-
     q = session.execute("""
 SELECT f.id, f.filename FROM source s, files f, dsc_files df
   WHERE f.last_used IS NOT NULL AND s.id = df.source AND df.file = f.id
     AND ((EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id))
-      OR (EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id)))""")
+      OR (EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id))
+      OR (EXISTS (SELECT 1 FROM build_queue_files bqf WHERE bqf.fileid = s.file)))""")
 
     #### XXX: this should also handle deleted binaries specially (ie, not
     ####      reinstate sources because of them
@@ -175,7 +193,7 @@ SELECT id, filename FROM files f
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.file = f.id)
     AND NOT EXISTS (SELECT 1 FROM dsc_files df WHERE df.file = f.id)
     AND NOT EXISTS (SELECT 1 FROM changes_pool_files cpf WHERE cpf.fileid = f.id)
-    AND NOT EXISTS (SELECT 1 FROM queue_files qf WHERE qf.id = f.id)
+    AND NOT EXISTS (SELECT 1 FROM build_queue_files qf WHERE qf.fileid = f.id)
     AND last_used IS NULL
     ORDER BY filename""")
 
