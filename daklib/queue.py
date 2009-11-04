@@ -661,7 +661,7 @@ class Upload(object):
                     entry["new"] = 1
                 else:
                     dsc_file_exists = False
-                    for myq in ["Accepted", "Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
+                    for myq in ["Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
                         if cnf.has_key("Dir::Queue::%s" % (myq)):
                             if os.path.exists(os.path.join(cnf["Dir::Queue::" + myq], dsc_filename)):
                                 dsc_file_exists = True
@@ -1225,7 +1225,7 @@ class Upload(object):
                 continue
 
             # Look in some other queues for the file
-            queues = ('Accepted', 'New', 'Byhand', 'ProposedUpdates',
+            queues = ('New', 'Byhand', 'ProposedUpdates',
                 'OldProposedUpdates', 'Embargoed', 'Unembargoed')
 
             for queue in queues:
@@ -2453,7 +2453,7 @@ distribution."""
                 else:
                     # TODO: Record the queues and info in the DB so we don't hardcode all this crap
                     # Not there? Check the queue directories...
-                    for directory in [ "Accepted", "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+                    for directory in [ "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
                         if not Cnf.has_key("Dir::Queue::%s" % (directory)):
                             continue
                         in_otherdir = os.path.join(Cnf["Dir::Queue::%s" % (directory)], dsc_name)
@@ -2502,7 +2502,7 @@ distribution."""
                     source_epochless_version = re_no_epoch.sub('', source_version)
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                     found = False
-                    for q in ["Accepted", "Embargoed", "Unembargoed", "Newstage"]:
+                    for q in ["Embargoed", "Unembargoed", "Newstage"]:
                         if cnf.has_key("Dir::Queue::%s" % (q)):
                             if os.path.exists(cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
                                 found = True
