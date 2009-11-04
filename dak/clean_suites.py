@@ -62,28 +62,45 @@ def check_binaries(now_date, delete_date, max_delete, session):
     # deletion.
 
     q = session.execute("""
-SELECT b.file, f.filename FROM binaries b, files f
- WHERE f.last_used IS NULL AND b.file = f.id
-   AND NOT EXISTS (SELECT 1 FROM bin_associations ba WHERE ba.bin = b.id)""")
-
+SELECT b.file, f.filename
+         FROM binaries b
+    LEFT JOIN files f
+      ON (b.file = f.id)
+   WHERE f.last_used IS NULL
+     AND b.id NOT IN
+         (SELECT ba.bin FROM bin_associations ba)
+     AND f.id NOT IN
+         (SELECT bqf.fileid FROM build_queue_files bqf)""")
     for i in q.fetchall():
         Logger.log(["set lastused", i[1]])
-        session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid AND last_used IS NULL",
-                        {'lastused': now_date, 'fileid': i[0]})
-    session.commit()
+        if not Options["No-Action"]:
+            session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid AND last_used IS NULL",
+                            {'lastused': now_date, 'fileid': i[0]})
+
+    if not Options["No-Action"]:
+        session.commit()
 
     # Check for any binaries which are marked for eventual deletion
     # but are now used again.
 
     q = session.execute("""
-SELECT b.file, f.filename FROM binaries b, files f
-   WHERE f.last_used IS NOT NULL AND f.id = b.file
-    AND EXISTS (SELECT 1 FROM bin_associations ba WHERE ba.bin = b.id)""")
+SELECT b.file, f.filename
+         FROM binaries b
+    LEFT JOIN files f
+      ON (b.file = f.id)
+   WHERE f.last_used IS NOT NULL
+     AND (b.id IN
+          (SELECT ba.bin FROM bin_associations ba)
+          OR f.id IN
+          (SELECT bqf.fileid FROM build_queue_files bqf))""")
 
     for i in q.fetchall():
         Logger.log(["unset lastused", i[1]])
-        session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid", {'fileid': i[0]})
-    session.commit()
+        if not Options["No-Action"]:
+            session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid", {'fileid': i[0]})
+
+    if not Options["No-Action"]:
+        session.commit()
 
 ########################################
 
@@ -93,10 +110,17 @@ def check_sources(now_date, delete_date, max_delete, session):
     # Get the list of source packages not in a suite and not used by
     # any binaries.
     q = session.execute("""
-SELECT s.id, s.file, f.filename FROM source s, files f
-  WHERE f.last_used IS NULL AND s.file = f.id
-    AND NOT EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id)
-    AND NOT EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id)""")
+SELECT s.id, s.file, f.filename
+       FROM source s
+  LEFT JOIN files f
+    ON (s.file = f.id)
+  WHERE f.last_used IS NULL
+   AND s.id NOT IN
+        (SELECT sa.source FROM src_associations sa)
+   AND s.id NOT IN
+        (SELECT b.source FROM binaries b)
+   AND f.id NOT IN
+        (SELECT bqf.fileid FROM build_queue_files bqf)""")
 
     #### XXX: this should ignore cases where the files for the binary b
     ####      have been marked for deletion (so the delay between bins go
@@ -109,9 +133,10 @@ SELECT s.id, s.file, f.filename FROM source s, files f
 
         # Mark the .dsc file for deletion
         Logger.log(["set lastused", dsc_fname])
-        session.execute("""UPDATE files SET last_used = :last_used
-                                    WHERE id = :dscfileid AND last_used IS NULL""",
-                        {'last_used': now_date, 'dscfileid': dsc_file_id})
+        if not Options["No-Action"]:
+            session.execute("""UPDATE files SET last_used = :last_used
+                                WHERE id = :dscfileid AND last_used IS NULL""",
+                            {'last_used': now_date, 'dscfileid': dsc_file_id})
 
         # Mark all other files references by .dsc too if they're not used by anyone else
         x = session.execute("""SELECT f.id, f.filename FROM files f, dsc_files d
@@ -123,30 +148,34 @@ SELECT s.id, s.file, f.filename FROM source s, files f
             y = session.execute("SELECT id FROM dsc_files d WHERE d.file = :fileid", {'fileid': file_id})
             if len(y.fetchall()) == 1:
                 Logger.log(["set lastused", file_name])
-                session.execute("""UPDATE files SET last_used = :lastused
-                                  WHERE id = :fileid AND last_used IS NULL""",
-                                {'lastused': now_date, 'fileid': file_id})
+                if not Options["No-Action"]:
+                    session.execute("""UPDATE files SET last_used = :lastused
+                                       WHERE id = :fileid AND last_used IS NULL""",
+                                    {'lastused': now_date, 'fileid': file_id})
 
-    session.commit()
+    if not Options["No-Action"]:
+        session.commit()
 
     # Check for any sources which are marked for deletion but which
     # are now used again.
-
     q = session.execute("""
 SELECT f.id, f.filename FROM source s, files f, dsc_files df
   WHERE f.last_used IS NOT NULL AND s.id = df.source AND df.file = f.id
     AND ((EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id))
-      OR (EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id)))""")
+      OR (EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id))
+      OR (EXISTS (SELECT 1 FROM build_queue_files bqf WHERE bqf.fileid = s.file)))""")
 
     #### XXX: this should also handle deleted binaries specially (ie, not
     ####      reinstate sources because of them
 
     for i in q.fetchall():
         Logger.log(["unset lastused", i[1]])
-        session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid",
-                        {'fileid': i[0]})
+        if not Options["No-Action"]:
+            session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid",
+                            {'fileid': i[0]})
 
-    session.commit()
+    if not Options["No-Action"]:
+        session.commit()
 
 ########################################
 
@@ -164,7 +193,7 @@ SELECT id, filename FROM files f
   WHERE NOT EXISTS (SELECT 1 FROM binaries b WHERE b.file = f.id)
     AND NOT EXISTS (SELECT 1 FROM dsc_files df WHERE df.file = f.id)
     AND NOT EXISTS (SELECT 1 FROM changes_pool_files cpf WHERE cpf.fileid = f.id)
-    AND NOT EXISTS (SELECT 1 FROM queue_files qf WHERE qf.id = f.id)
+    AND NOT EXISTS (SELECT 1 FROM build_queue_files qf WHERE qf.fileid = f.id)
     AND last_used IS NULL
     ORDER BY filename""")
 
@@ -174,10 +203,12 @@ SELECT id, filename FROM files f
         for x in ql:
             utils.warn("orphaned file: %s" % x)
             Logger.log(["set lastused", x[1], "ORPHANED FILE"])
-            session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
-                            {'lastused': now_date, 'fileid': x[0]})
+            if not Options["No-Action"]:
+                 session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
+                                 {'lastused': now_date, 'fileid': x[0]})
 
-        session.commit()
+        if not Options["No-Action"]:
+            session.commit()
 
 def clean_binaries(now_date, delete_date, max_delete, session):
     # We do this here so that the binaries we remove will have their
@@ -206,7 +237,7 @@ def clean(now_date, delete_date, max_delete, session):
 
     cur_date = now_date.strftime("%Y-%m-%d")
     dest = os.path.join(cnf["Dir::Morgue"], cnf["Clean-Suites::MorgueSubDir"], cur_date)
-    if not os.path.exists(dest):
+    if not Options["No-Action"] and not os.path.exists(dest):
         os.mkdir(dest)
 
     # Delete from source
@@ -326,45 +357,12 @@ SELECT f.id, f.fingerprint FROM fingerprint f
 
 ################################################################################
 
-def clean_queue_build(now_date, delete_date, max_delete, session):
-
-    cnf = Config()
-
-    if not cnf.ValueList("Dinstall::QueueBuildSuites") or Options["No-Action"]:
-        return
-
-    print "Cleaning out queue build symlinks..."
-
-    our_delete_date = now_date - timedelta(seconds = int(cnf["Clean-Suites::QueueBuildStayOfExecution"]))
-    count = 0
-
-    for qf in session.query(BuildQueueFile).filter(BuildQueueFile.last_used <= our_delete_date):
-        if not os.path.exists(qf.filename):
-            utils.warn("%s (from queue_build) doesn't exist." % (qf.filename))
-            continue
-
-        if not cnf.FindB("Dinstall::SecurityQueueBuild") and not os.path.islink(qf.filename):
-            utils.fubar("%s (from queue_build) should be a symlink but isn't." % (qf.filename))
-
-        Logger.log(["delete queue build", qf.filename])
-        if not Options["No-Action"]:
-            os.unlink(qf.filename)
-            session.delete(qf)
-        count += 1
-
-    if not Options["No-Action"]:
-        session.commit()
-
-    if count:
-        Logger.log(["total", count])
-        print "Cleaned %d queue_build files." % (count)
-
-################################################################################
-
 def clean_empty_directories(session):
     """
     Removes empty directories from pool directories.
     """
+
+    print "Cleaning out empty directories..."
 
     count = 0
 
@@ -432,7 +430,6 @@ def main():
     clean(now_date, delete_date, max_delete, session)
     clean_maintainers(now_date, delete_date, max_delete, session)
     clean_fingerprints(now_date, delete_date, max_delete, session)
-    clean_queue_build(now_date, delete_date, max_delete, session)
     clean_empty_directories(session)
 
     Logger.close()

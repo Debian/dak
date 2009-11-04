@@ -201,7 +201,7 @@ class ChangesGenerator(threading.Thread):
     def run(self):
         cnf = Config()
         count = 1
-        for directory in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
+        for directory in [ "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
             checkdir = cnf["Dir::Queue::%s" % (directory) ]
             if os.path.exists(checkdir):
                 print "Looking into %s" % (checkdir)

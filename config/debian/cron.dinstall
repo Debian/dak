@@ -311,12 +311,11 @@ GO=(
     ARGS=""
     ERR=""
 )
-### TODO: clean-* fixup
-#stage $GO
+stage $GO
 
 GO=(
-    FUNC="buildd"
-    TIME="buildd"
+    FUNC="buildd_dir"
+    TIME="buildd_dir"
     ARGS=""
     ERR=""
 )

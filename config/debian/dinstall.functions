@@ -142,30 +142,30 @@ function filelist() {
 function fingerprints() {
     log "Not updating fingerprints - scripts needs checking"
 
-#    log "Updating fingerprints"
-#    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
+    log "Updating fingerprints"
+    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
-#    OUTFILE=$(mktemp)
-#    dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
+    OUTFILE=$(mktemp)
+    dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
 
-#    if [ -s "${OUTFILE}" ]; then
-#        /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
-#From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
-#To: <debian-project@lists.debian.org>
-#Subject: Debian Maintainers Keyring changes
-#Content-Type: text/plain; charset=utf-8
-#MIME-Version: 1.0
-#
-#The following changes to the debian-maintainers keyring have just been activated:
-#
-#$(cat $OUTFILE)
-#
-#Debian distribution maintenance software,
-#on behalf of the Keyring maintainers
-#
-#EOF
-#    fi
-#    rm -f "$OUTFILE"
+    if [ -s "${OUTFILE}" ]; then
+        /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
+From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
+To: <debian-project@lists.debian.org>
+Subject: Debian Maintainers Keyring changes
+Content-Type: text/plain; charset=utf-8
+MIME-Version: 1.0
+
+The following changes to the debian-maintainers keyring have just been activated:
+
+$(cat $OUTFILE)
+
+Debian distribution maintenance software,
+on behalf of the Keyring maintainers
+
+EOF
+    fi
+    rm -f "$OUTFILE"
 }
 
 function overrides() {
@@ -202,17 +202,9 @@ function release() {
 
 function dakcleanup() {
     log "Cleanup old packages/files"
-    dak clean-suites -m 10000
+    # TODO: Fix up clean-suites
+    #dak clean-suites -m 10000
     dak clean-queues
-}
-
-function buildd() {
-    # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
-    # update this before wanna-build is updated.
-    log "Regenerating wanna-build/buildd information"
-    psql projectb -A -t -q -c "SELECT build_queue.path || '/' || build_queue_files.filename FROM build_queue_files LEFT JOIN build_queue ON (build_queue.id =build_queue_files.build_queue_id) WHERE queue_name = 'buildd' AND filename ~ 'd(sc|eb)$'"  > $dbdir/dists/unstable_accepted.list
-    symlinks -d /srv/incoming.debian.org/buildd > /dev/null
-    apt-ftparchive generate apt.conf.buildd
 }
 
 function buildd_dir() {
