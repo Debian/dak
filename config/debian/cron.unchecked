@@ -33,6 +33,7 @@ LOCKDAILY=""
 LOCKFILE="$lockdir/unchecked.lock"
 LOCK_NEW="$lockdir/processnew.lock"
 NOTICE="$lockdir/daily.lock"
+LOCK_BUILDD="$lockdir/buildd.lock"
 
 # our name
 PROGRAM="unchecked"
@@ -69,8 +70,7 @@ function do_buildd () {
             fi
         done
         make_buildd_dir
-
-        . $configdir/cron.buildd
+        wbtrigger "often"
     fi
 }
 

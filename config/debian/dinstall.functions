@@ -418,7 +418,7 @@ function mirror() {
 
 function wb() {
     log "Trigger daily wanna-build run"
-    ssh -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 wbadm@buildd /org/wanna-build/trigger.daily || echo "W-B trigger.daily failed" | mail -s "W-B Daily trigger failed" ftpmaster@ftp-master.debian.org
+    wbtrigger "daily"
 }
 
 function expire() {

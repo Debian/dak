@@ -25,6 +25,20 @@ function debug () {
     fi
 }
 
+function wbtrigger() {
+    MODE=${1:-"often"}
+    SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
+    if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
+        if [ "x${MODE}x" = "xdailyx" ]; then
+            ssh -o ${SSHOPT} wbadm@buildd /org/wanna-build/trigger.daily || echo "W-B trigger.daily failed" | mail -s "W-B Daily trigger failed" ftpmaster@ftp-master.debian.org
+        elif [ "x${MODE}x" = "xoftenx" ]; then
+            ssh -q -q ${SSHOPT} wbadm@buildd /org/wanna-build/trigger.often
+        else
+            log_error "Unknown wb trigger mode called"
+        fi
+    fi
+}
+
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
     dak manage-build-queues -v buildd
