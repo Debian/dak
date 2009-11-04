@@ -53,7 +53,7 @@ def main ():
 
     cnf = Config()
 
-    for i in ["Help", "No-Action", "Verbose" "All"]:
+    for i in ["Help", "No-Action", "Verbose", "All"]:
         if not cnf.has_key("Manage-Build-Queues::Options::%s" % (i)):
             cnf["Manage-Build-Queues::Options::%s" % (i)] = ""
 
