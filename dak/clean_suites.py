@@ -68,9 +68,12 @@ SELECT b.file, f.filename FROM binaries b, files f
 
     for i in q.fetchall():
         Logger.log(["set lastused", i[1]])
-        session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid AND last_used IS NULL",
-                        {'lastused': now_date, 'fileid': i[0]})
-    session.commit()
+        if not Options["No-Action"]:
+            session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid AND last_used IS NULL",
+                            {'lastused': now_date, 'fileid': i[0]})
+
+    if not Options["No-Action"]:
+        session.commit()
 
     # Check for any binaries which are marked for eventual deletion
     # but are now used again.
@@ -82,8 +85,11 @@ SELECT b.file, f.filename FROM binaries b, files f
 
     for i in q.fetchall():
         Logger.log(["unset lastused", i[1]])
-        session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid", {'fileid': i[0]})
-    session.commit()
+        if not Options["No-Action"]:
+            session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid", {'fileid': i[0]})
+
+    if not Options["No-Action"]:
+        session.commit()
 
 ########################################
 
@@ -109,9 +115,10 @@ SELECT s.id, s.file, f.filename FROM source s, files f
 
         # Mark the .dsc file for deletion
         Logger.log(["set lastused", dsc_fname])
-        session.execute("""UPDATE files SET last_used = :last_used
-                                    WHERE id = :dscfileid AND last_used IS NULL""",
-                        {'last_used': now_date, 'dscfileid': dsc_file_id})
+        if not Options["No-Action"]:
+            session.execute("""UPDATE files SET last_used = :last_used
+                                WHERE id = :dscfileid AND last_used IS NULL""",
+                            {'last_used': now_date, 'dscfileid': dsc_file_id})
 
         # Mark all other files references by .dsc too if they're not used by anyone else
         x = session.execute("""SELECT f.id, f.filename FROM files f, dsc_files d
@@ -123,11 +130,13 @@ SELECT s.id, s.file, f.filename FROM source s, files f
             y = session.execute("SELECT id FROM dsc_files d WHERE d.file = :fileid", {'fileid': file_id})
             if len(y.fetchall()) == 1:
                 Logger.log(["set lastused", file_name])
-                session.execute("""UPDATE files SET last_used = :lastused
-                                  WHERE id = :fileid AND last_used IS NULL""",
-                                {'lastused': now_date, 'fileid': file_id})
+                if not Options["No-Action"]:
+                    session.execute("""UPDATE files SET last_used = :lastused
+                                       WHERE id = :fileid AND last_used IS NULL""",
+                                    {'lastused': now_date, 'fileid': file_id})
 
-    session.commit()
+    if not Options["No-Action"]:
+        session.commit()
 
     # Check for any sources which are marked for deletion but which
     # are now used again.
@@ -143,10 +152,12 @@ SELECT f.id, f.filename FROM source s, files f, dsc_files df
 
     for i in q.fetchall():
         Logger.log(["unset lastused", i[1]])
-        session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid",
-                        {'fileid': i[0]})
+        if not Options["No-Action"]:
+            session.execute("UPDATE files SET last_used = NULL WHERE id = :fileid",
+                            {'fileid': i[0]})
 
-    session.commit()
+    if not Options["No-Action"]:
+        session.commit()
 
 ########################################
 
@@ -174,10 +185,12 @@ SELECT id, filename FROM files f
         for x in ql:
             utils.warn("orphaned file: %s" % x)
             Logger.log(["set lastused", x[1], "ORPHANED FILE"])
-            session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
-                            {'lastused': now_date, 'fileid': x[0]})
+            if not Options["No-Action"]:
+                 session.execute("UPDATE files SET last_used = :lastused WHERE id = :fileid",
+                                 {'lastused': now_date, 'fileid': x[0]})
 
-        session.commit()
+        if not Options["No-Action"]:
+            session.commit()
 
 def clean_binaries(now_date, delete_date, max_delete, session):
     # We do this here so that the binaries we remove will have their
