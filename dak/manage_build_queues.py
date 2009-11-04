@@ -92,7 +92,7 @@ def main ():
     # For each given queue, look up object and call manage_queue
     for q in queues:
         Logger.log(['cleaning queue %s using datetime %s' % (q.queue_name, starttime)])
-        q.clean_and_update(starttime, dryrun=Options["No-Action"])
+        q.clean_and_update(starttime, Logger, dryrun=Options["No-Action"])
 
     Logger.close()
 

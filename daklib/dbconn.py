@@ -565,7 +565,7 @@ class BuildQueue(object):
                 except OSError:
                     pass
 
-    def clean_and_update(self, starttime, dryrun=False):
+    def clean_and_update(self, starttime, Logger, dryrun=False):
         """WARNING: This routine commits for you"""
         session = DBConn().session().object_session(self)
 
@@ -579,9 +579,9 @@ class BuildQueue(object):
             killdb = False
             try:
                 if dryrun:
-                    print "I: Would have removed %s from the queue" % o.fullpath
+                    Logger.log(["I: Would have removed %s from the queue" % o.fullpath])
                 else:
-                    print "I: Removing %s from the queue" % o.fullpath
+                    Logger.log(["I: Removing %s from the queue" % o.fullpath])
                     os.unlink(o.fullpath)
                     killdb = True
             except OSError, e:
@@ -590,7 +590,7 @@ class BuildQueue(object):
                     killdb = True
                 else:
                     # TODO: Replace with proper logging call
-                    print "E: Could not remove %s" % o.fullpath
+                    Logger.log(["E: Could not remove %s" % o.fullpath])
 
             if killdb:
                 session.delete(o)
@@ -606,13 +606,13 @@ class BuildQueue(object):
             except NoResultFound:
                 fp = os.path.join(self.path, f)
                 if dryrun:
-                    print "I: Would remove unused link %s" % fp
+                    Logger.log(["I: Would remove unused link %s" % fp])
                 else:
-                    print "I: Removing unused link %s" % fp
+                    Logger.log(["I: Removing unused link %s" % fp])
                     try:
                         os.unlink(fp)
                     except OSError:
-                        print "E: Failed to unlink unreferenced file %s" % r.fullpath
+                        Logger.log(["E: Failed to unlink unreferenced file %s" % r.fullpath])
 
     def add_file_from_pool(self, poolfile):
         """Copies a file into the pool.  Assumes that the PoolFile object is
