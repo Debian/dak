@@ -82,7 +82,7 @@ def main ():
 
     else:
         queues = []
-        for q in queue_name:
+        for q in queue_names:
             queue = get_build_queue(q.lower(), session)
             if queue:
                 queues.append(queue)
