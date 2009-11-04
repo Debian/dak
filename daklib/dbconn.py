@@ -514,7 +514,7 @@ class BuildQueue(object):
             bname = os.path.basename(self.path)
             os.chdir(self.path)
             os.chdir('..')
-            os.system("""apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="%s" -o APT::FTPArchive::Release::Label="%s" -o -o APT::FTPArchive::Release::Description="%s" -o APT::FTPArchive::Release::Architectures="%s" release %s > Release""" % [self.origin, self.label, self.releasedescription, arches, bname])
+            os.system("""apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="%s" -o APT::FTPArchive::Release::Label="%s" -o APT::FTPArchive::Release::Description="%s" -o APT::FTPArchive::Release::Architectures="%s" release %s > Release""" % (self.origin, self.label, self.releasedescription, arches, bname))
 
             # Sign if necessary
             if self.signingkey:
