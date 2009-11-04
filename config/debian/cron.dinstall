@@ -311,8 +311,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-### TODO: clean-* fixup
-#stage $GO
+stage $GO
 
 GO=(
     FUNC="buildd_dir"

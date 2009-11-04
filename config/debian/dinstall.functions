@@ -202,7 +202,8 @@ function release() {
 
 function dakcleanup() {
     log "Cleanup old packages/files"
-    dak clean-suites -m 10000
+    # TODO: Fix up clean-suites
+    #dak clean-suites -m 10000
     dak clean-queues
 }
 
