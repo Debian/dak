@@ -37,6 +37,7 @@ function wbtrigger() {
             log_error "Unknown wb trigger mode called"
         fi
     fi
+    rm -f "${LOCK_BUILDD}"
 }
 
 # used by cron.dinstall *and* cron.unchecked.
