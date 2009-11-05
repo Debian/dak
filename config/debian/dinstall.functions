@@ -248,54 +248,41 @@ function mklslar() {
 }
 
 function mkmaintainers() {
-    log -n 'Creating Maintainers index ... '
+    log 'Creating Maintainers index ... '
 
     cd $indices
     dak make-maintainers ${scriptdir}/masterfiles/pseudo-packages.maintainers | \
-        sed -e "s/~[^  ]*\([   ]\)/\1/"  | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
+        sed -e "s/~[^  ]*\([   ]\)/\1/"  | \
+        awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
 
-    set +e
-    cmp .new-maintainers Maintainers >/dev/null
-    rc=$?
-    set -e
-    if [ $rc = 1 ] || [ ! -f Maintainers ] ; then
-	    log -n "installing Maintainers ... "
+    if ! cmp -s .new-maintainers Maintainers || [ ! -f Maintainers ]; then
+	    log "installing Maintainers ... "
 	    mv -f .new-maintainers Maintainers
 	    gzip --rsyncable -9v <Maintainers >.new-maintainers.gz
 	    mv -f .new-maintainers.gz Maintainers.gz
-    elif [ $rc = 0 ] ; then
-	    log '(same as before)'
-	    rm -f .new-maintainers
     else
-	    log cmp returned $rc
-	    false
+        rm -f .new-maintainers
     fi
 }
 
 function copyoverrides() {
     log 'Copying override files into public view ...'
 
-    for f in $copyoverrides ; do
+    for ofile in $copyoverrides ; do
 	    cd $overridedir
 	    chmod g+w override.$f
 
 	    cd $indices
-	    rm -f .newover-$f.gz
-	    pc="`gzip 2>&1 -9nv <$overridedir/override.$f >.newover-$f.gz`"
-	    set +e
-	    nf=override.$f.gz
-	    cmp -s .newover-$f.gz $nf
-	    rc=$?
-	    set -e
-        if [ $rc = 0 ]; then
-		    rm -f .newover-$f.gz
-	    elif [ $rc = 1 -o ! -f $nf ]; then
-		    log "   installing new $nf $pc"
-		    mv -f .newover-$f.gz $nf
-		    chmod g+w $nf
-	    else
-		    log $? $pc
-		    exit 1
+
+	    newofile=override.$ofile.gz
+	    rm -f .newover-$ofile.gz
+	    pc="`gzip 2>&1 -9nv <$overridedir/override.$ofile >.newover-$ofile.gz`"
+        if ! cmp -s .newover-$ofile.gz $newofile || [ ! -f $newofile ]; then
+		    log "   installing new $newofile $pc"
+		    mv -f .newover-$ofile.gz $newofile
+		    chmod g+w $newofile
+        else
+		    rm -f .newover-$ofile.gz
 	    fi
     done
 }
@@ -316,7 +303,7 @@ function mkfilesindices() {
         perl -e '@nonpool=(); while (<>) { if (m,^\./pool/,) { print; } else { push @nonpool, $_; } } print for (@nonpool);'
     }
 
-    log "Generating sources list
+    log "Generating sources list"
     (
         sed -n 's/|$//p' $ARCHLIST
         cd $base/ftp
@@ -324,7 +311,7 @@ function mkfilesindices() {
         find ./dists \! -type d | grep "/source/"
     ) | sort -u | gzip --rsyncable -9 > source.list.gz
 
-    log "Generating arch lists
+    log "Generating arch lists"
 
     ARCHES=$( (<$ARCHLIST sed -n 's/^.*|//p'; echo amd64) | grep . | grep -v all | sort -u)
     for a in $ARCHES; do
@@ -361,7 +348,6 @@ function mkfilesindices() {
     done
 
     log "Finding everything on the ftp site to generate sundries"
-
     (cd $base/ftp; find . \! -type d \! -name 'Archive_Maintenance_In_Progress' | sort) >$ARCHLIST
 
     rm -f sundries.list
@@ -399,15 +385,6 @@ function mkchecksums() {
     ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
     ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n --rsyncable > ${md5list}.gz
     ${bindir}/dsync-flist -q link-dups $dsynclist || true
-}
-
-function scripts() {
-    log "Running various scripts from $scriptsdir"
-    mkmaintainers
-    copyoverrides
-    mklslar
-    mkfilesindices
-    mkchecksums
 }
 
 function mirror() {
