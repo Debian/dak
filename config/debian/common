@@ -42,7 +42,7 @@ function wbtrigger() {
 
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
-    dak manage-build-queues -v buildd
+    dak manage-build-queues -a
 
     cd ${incoming}
     mkdir -p tree/${STAMP}
