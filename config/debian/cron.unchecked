@@ -78,6 +78,10 @@ function do_buildd () {
 # the actual unchecked functions follow                                #
 ########################################################################
 
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
+
 #lockfile -r3 "$LOCK_NEW"
 # acceptnew
 #rm -f "$LOCK_NEW"

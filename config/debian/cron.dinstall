@@ -228,6 +228,8 @@ GO=(
     ARGS=""
     ERR=""
 )
+# disabled until p-u is faster than now. it runs often enough, so wont hurt to save
+# the time here.
 #stage $GO
 
 GO=(
@@ -271,7 +273,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="mpfm"
@@ -279,7 +281,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="packages"
@@ -287,6 +289,8 @@ GO=(
     ARGS=""
     ERR=""
 )
+# Careful: When we ever go and remove this monster-long thing, we have to check the backgrounded
+# functions before it. We no longer have a 1.5hour sync point then.
 stage $GO
 
 GO=(
@@ -443,7 +447,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="i18n2"
@@ -451,7 +455,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="stats"
@@ -467,9 +471,9 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
-rm -f ${LOCK_BRITNEY}
+rm -f "${LOCK_BRITNEY}"
 
 GO=(
     FUNC="pgdakdev"
