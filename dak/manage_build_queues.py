@@ -41,7 +41,6 @@ Manage the contents of one or more build queues
 
   -a, --all                  run on all known build queues
   -n, --no-action            don't do anything
-  -v, --verbose              explain what is being done
   -h, --help                 show this help and exit"""
 
     sys.exit(exit_code)
@@ -53,14 +52,13 @@ def main ():
 
     cnf = Config()
 
-    for i in ["Help", "No-Action", "Verbose", "All"]:
+    for i in ["Help", "No-Action", "All"]:
         if not cnf.has_key("Manage-Build-Queues::Options::%s" % (i)):
             cnf["Manage-Build-Queues::Options::%s" % (i)] = ""
 
     Arguments = [('h',"help","Manage-Build-Queues::Options::Help"),
                  ('n',"no-action","Manage-Build-Queues::Options::No-Action"),
-                 ('a',"all","Manage-Build-Queues::Options::All"),
-                 ('v',"verbose","Manage-Build-Queues::Options::Verbose")]
+                 ('a',"all","Manage-Build-Queues::Options::All")]
 
     queue_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.SubTree("Manage-Build-Queues::Options")
