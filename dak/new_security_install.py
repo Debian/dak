@@ -25,7 +25,7 @@ import apt_pkg, os, sys, pwd, time, commands
 from daklib import queue
 from daklib import daklog
 from daklib import utils
-from daklib.dbconn import DBConn, get_or_set_queue, get_suite_architectures
+from daklib.dbconn import DBConn, get_build_queue, get_suite_architectures
 from daklib.regexes import re_taint_free
 
 Cnf = None
@@ -474,6 +474,7 @@ def _do_Approve():
     # 3. run dak make-suite-file-list / apt-ftparchve / dak generate-releases
     print "Updating file lists for apt-ftparchive..."
     spawn("dak make-suite-file-list")
+    spawn("dak generate-filelist")
     print "Updating Packages and Sources files..."
     spawn("/org/security.debian.org/dak/config/debian-security/map.sh")
     spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
@@ -495,8 +496,8 @@ def _do_Disembargo():
     session = DBConn().session()
 
     dest = Cnf["Dir::Queue::Unembargoed"]
-    emb_q = get_or_set_queue("embargoed", session)
-    une_q = get_or_set_queue("unembargoed", session)
+    emb_q = get_build_queue("embargoed", session)
+    une_q = get_build_queue("unembargoed", session)
 
     for c in changes:
         print "Disembargoing %s" % (c)

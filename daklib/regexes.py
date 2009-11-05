@@ -112,4 +112,4 @@ re_user_mails = re.compile(r"^(pub|uid):[^rdin].*<(.*@.*)>.*$", re.MULTILINE);
 re_user_name = re.compile(r"^pub:.*:(.*)<.*$", re.MULTILINE);
 re_re_mark = re.compile(r'^RE:')
 
-re_parse_lintian = re.compile(r"^(W|E|O): (.*?): ([^ ]*) ?(.*)$")
+re_parse_lintian = re.compile(r"^(?P<level>W|E|O): (?P<package>.*?): (?P<tag>[^ ]*) ?(?P<description>.*)$")

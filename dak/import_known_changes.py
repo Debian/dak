@@ -32,7 +32,7 @@ import sys
 import os
 import logging
 import threading
-from daklib.dbconn import DBConn,get_knownchange
+from daklib.dbconn import DBConn, get_dbchange
 from daklib.config import Config
 import apt_pkg
 from daklib.dak_exceptions import DBUpdateError, InvalidDscError, ChangesUnicodeError
@@ -218,7 +218,7 @@ class ChangesGenerator(threading.Thread):
                                 continue
                             count += 1
 
-                            if not get_knownchange(changesfile, self.session):
+                            if not get_dbchange(changesfile, self.session):
                                 to_import = ChangesToImport(dirpath, changesfile, count)
                                 if self.die:
                                     return

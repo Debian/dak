@@ -53,6 +53,7 @@ symlinks -d -r $ftpdir
 
 cd $masterdir
 dak make-suite-file-list
+dak generate-filelist
 
 # Generate override files
 cd $overridedir

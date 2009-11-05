@@ -33,6 +33,7 @@ G{importgraph}
 
 ################################################################################
 
+import os
 import sys
 import traceback
 import daklib.utils
@@ -66,15 +67,15 @@ def init():
 
         ("process-new",
          "Process NEW and BYHAND packages"),
-        ("process-unchecked",
+        ("process-upload",
          "Process packages in queue/unchecked"),
-        ("process-accepted",
-         "Install packages into the pool"),
 
         ("make-suite-file-list",
          "Generate lists of packages per suite for apt-ftparchive"),
         ("make-pkg-file-mapping",
          "Generate package <-> file mapping"),
+        ("generate-filelist",
+         "Generate file lists for apt-ftparchive"),
         ("generate-releases",
          "Generate Release files"),
         ("contents",
@@ -221,4 +222,6 @@ def main():
 ################################################################################
 
 if __name__ == "__main__":
+    os.environ['LANG'] = 'C'
+    os.environ['LC_ALL'] = 'C'
     main()

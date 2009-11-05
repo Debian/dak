@@ -361,7 +361,9 @@ SELECT s.id, s.source, 'source', s.version, l.path, f.filename, c.name, f.id,
                                    suite=suite, filetype = filetype)
     cleanup(packages, session)
     session.commit()
-    write_filelists(packages, dislocated_files, session)
+
+    # has been replaced by 'dak generate-filelist':
+    #write_filelists(packages, dislocated_files, session)
 
 ################################################################################
 

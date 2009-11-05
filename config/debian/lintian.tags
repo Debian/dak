@@ -1,5 +1,5 @@
 lintian:
-  warning:
+  nonfatal:
     - statically-linked-binary
     - arch-independent-package-contains-binary-or-object
     - arch-dependent-file-in-usr-share
@@ -11,11 +11,26 @@ lintian:
     - usr-share-doc-symlink-without-dependency
     - mknod-in-maintainer-script
     - package-contains-info-dir-file
-    - copyright-lists-upstream-authors-with-dh_make-boilerplate
-  error:
+    - binary-or-shlib-defines-rpath
+    - non-etc-file-marked-as-conffile
+    - embedded-zlib
+    - no-shlibs-control-file
+    - copyright-contains-dh_make-todo-boilerplate
+    - preinst-interpreter-without-predepends
+    - control-interpreter-without-depends
+  fatal:
+    - debian-control-file-uses-obsolete-national-encoding
+    - malformed-deb-archive
+    - bad-package-name
+    - no-architecture-field
+    - package-contains-ancient-file
+    - forbidden-postrm-interpreter
+    - control-interpreter-in-usr-local
+    - package-uses-local-diversion
     - wrong-file-owner-uid-or-gid
     - bad-relation
     - FSSTND-dir-in-usr
+    - FSSTND-dir-in-var
     - binary-in-etc
     - missing-dependency-on-perlapi
     - section-is-dh_make-template
@@ -61,7 +76,6 @@ lintian:
     - uploader-address-is-on-localhost
     - no-source-field
     - source-field-does-not-match-pkg-name
-    - section-is-dh_make-template
     - build-depends-on-essential-package-without-using-version
     - depends-on-build-essential-package-without-using-version
     - build-depends-on-build-essential

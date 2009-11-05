@@ -38,6 +38,8 @@ import commands
 import shutil
 import textwrap
 from types import *
+from sqlalchemy.sql.expression import desc
+from sqlalchemy.orm.exc import NoResultFound
 
 import yaml
 
@@ -46,11 +48,13 @@ from changes import *
 from regexes import *
 from config import Config
 from holding import Holding
+from urgencylog import UrgencyLog
 from dbconn import *
 from summarystats import SummaryStats
 from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
 from binary import Binary
+from lintian import parse_lintian_output, generate_reject_messages
 
 ###############################################################################
 
@@ -285,6 +289,7 @@ class Upload(object):
         for title, messages in msgs:
             if messages:
                 msg += '\n\n%s:\n%s' % (title, '\n'.join(messages))
+        msg += '\n'
 
         return msg
 
@@ -433,12 +438,6 @@ class Upload(object):
         # chopversion = no epoch; chopversion2 = no epoch and no revision (e.g. for .orig.tar.gz comparison)
         self.pkg.changes["chopversion"] = re_no_epoch.sub('', self.pkg.changes["version"])
         self.pkg.changes["chopversion2"] = re_no_revision.sub('', self.pkg.changes["chopversion"])
-
-        # Check there isn't already a changes file of the same name in one
-        # of the queue directories.
-        base_filename = os.path.basename(filename)
-        if get_knownchange(base_filename):
-            self.rejects.append("%s: a file with this name already exists." % (base_filename))
 
         # Check the .changes is non-empty
         if not self.pkg.files:
@@ -722,7 +721,6 @@ class Upload(object):
     def per_suite_file_checks(self, f, suite, session):
         cnf = Config()
         entry = self.pkg.files[f]
-        archive = utils.where_am_i()
 
         # Skip byhand
         if entry.has_key("byhand"):
@@ -766,9 +764,9 @@ class Upload(object):
 
         # Determine the location
         location = cnf["Dir::Pool"]
-        l = get_location(location, entry["component"], archive, session)
+        l = get_location(location, entry["component"], session=session)
         if l is None:
-            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s, Archive: %s)" % (entry["component"], archive))
+            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %)" % entry["component"])
             entry["location id"] = -1
         else:
             entry["location id"] = l.location_id
@@ -796,17 +794,11 @@ class Upload(object):
             entry["othercomponents"] = res.fetchone()[0]
 
     def check_files(self, action=True):
-        archive = utils.where_am_i()
         file_keys = self.pkg.files.keys()
         holding = Holding()
         cnf = Config()
 
-        # XXX: As far as I can tell, this can no longer happen - see
-        #      comments by AJ in old revisions - mhy
-        # if reprocess is 2 we've already done this and we're checking
-        # things again for the new .orig.tar.gz.
-        # [Yes, I'm fully aware of how disgusting this is]
-        if action and self.reprocess < 2:
+        if action:
             cwd = os.getcwd()
             os.chdir(self.pkg.directory)
             for f in file_keys:
@@ -817,36 +809,31 @@ class Upload(object):
 
             os.chdir(cwd)
 
-        # Check there isn't already a .changes or .dak file of the same name in
-        # the proposed-updates "CopyChanges" or "CopyDotDak" storage directories.
+        # check we already know the changes file
         # [NB: this check must be done post-suite mapping]
         base_filename = os.path.basename(self.pkg.changes_file)
-        dot_dak_filename = base_filename[:-8] + ".dak"
-
-        for suite in self.pkg.changes["distribution"].keys():
-            copychanges = "Suite::%s::CopyChanges" % (suite)
-            if cnf.has_key(copychanges) and \
-                   os.path.exists(os.path.join(cnf[copychanges], base_filename)):
-                self.rejects.append("%s: a file with this name already exists in %s" \
-                           % (base_filename, cnf[copychanges]))
-
-            copy_dot_dak = "Suite::%s::CopyDotDak" % (suite)
-            if cnf.has_key(copy_dot_dak) and \
-                   os.path.exists(os.path.join(cnf[copy_dot_dak], dot_dak_filename)):
-                self.rejects.append("%s: a file with this name already exists in %s" \
-                           % (dot_dak_filename, Cnf[copy_dot_dak]))
-
-        self.reprocess = 0
-        has_binaries = False
-        has_source = False
 
         session = DBConn().session()
 
+        try:
+            dbc = session.query(DBChange).filter_by(changesname=base_filename).one()
+            # if in the pool or in a queue other than unchecked, reject
+            if (dbc.in_queue is None) \
+                   or (dbc.in_queue is not None
+                       and dbc.in_queue.queue_name != 'unchecked'):
+                self.rejects.append("%s file already known to dak" % base_filename)
+        except NoResultFound, e:
+            # not known, good
+            pass
+
+        has_binaries = False
+        has_source = False
+
         for f, entry in self.pkg.files.items():
             # Ensure the file does not already exist in one of the accepted directories
-            for d in [ "Accepted", "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
+            for d in [ "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
                 if not cnf.has_key("Dir::Queue::%s" % (d)): continue
-                if os.path.exists(cnf["Dir::Queue::%s" % (d) ] + '/' + f):
+                if os.path.exists(os.path.join(cnf["Dir::Queue::%s" % (d) ], f)):
                     self.rejects.append("%s file already exists in the %s directory." % (f, d))
 
             if not re_taint_free.match(f):
@@ -1084,15 +1071,10 @@ class Upload(object):
             self.rejects.append("%s: changelog format not recognised (empty version tree)." % (dsc_filename))
 
     def check_source(self):
-        # XXX: I'm fairly sure reprocess == 2 can never happen
-        #      AJT disabled the is_incoming check years ago - mhy
-        #      We should probably scrap or rethink the whole reprocess thing
         # Bail out if:
         #    a) there's no source
-        # or b) reprocess is 2 - we will do this check next time when orig
-        #       tarball is in 'files'
         # or c) the orig files are MIA
-        if not self.pkg.changes["architecture"].has_key("source") or self.reprocess == 2 \
+        if not self.pkg.changes["architecture"].has_key("source") \
            or len(self.pkg.orig_files) == 0:
             return
 
@@ -1266,6 +1248,11 @@ class Upload(object):
     ###########################################################################
 
     def check_lintian(self):
+        """
+        Extends self.rejects by checking the output of lintian against tags
+        specified in Dinstall::LintianTags.
+        """
+
         cnf = Config()
 
         # Don't reject binary uploads
@@ -1273,24 +1260,22 @@ class Upload(object):
             return
 
         # Only check some distributions
-        valid_dist = False
         for dist in ('unstable', 'experimental'):
             if dist in self.pkg.changes['distribution']:
-                valid_dist = True
                 break
-
-        if not valid_dist:
+        else:
             return
 
+        # If we do not have a tagfile, don't do anything
         tagfile = cnf.get("Dinstall::LintianTags")
         if tagfile is None:
-            # We don't have a tagfile, so just don't do anything.
             return
 
         # Parse the yaml file
         sourcefile = file(tagfile, 'r')
         sourcecontent = sourcefile.read()
         sourcefile.close()
+
         try:
             lintiantags = yaml.load(sourcecontent)['lintian']
         except yaml.YAMLError, msg:
@@ -1300,78 +1285,42 @@ class Upload(object):
         # Try and find all orig mentioned in the .dsc
         symlinked = self.ensure_orig()
 
-        # Now setup the input file for lintian. lintian wants "one tag per line" only,
-        # so put it together like it. We put all types of tags in one file and then sort
-        # through lintians output later to see if its a fatal tag we detected, or not.
-        # So we only run lintian once on all tags, even if we might reject on some, but not
-        # reject on others.
-        # Additionally build up a set of tags
-        tags = set()
-        (fd, temp_filename) = utils.temp_filename()
+        # Setup the input file for lintian
+        fd, temp_filename = utils.temp_filename()
         temptagfile = os.fdopen(fd, 'w')
-        for tagtype in lintiantags:
-            for tag in lintiantags[tagtype]:
-                temptagfile.write("%s\n" % tag)
-                tags.add(tag)
+        for tags in lintiantags.values():
+            temptagfile.writelines(['%s\n' % x for x in tags])
         temptagfile.close()
 
-        # So now we should look at running lintian at the .changes file, capturing output
-        # to then parse it.
-        command = "lintian --show-overrides --tags-from-file %s %s" % (temp_filename, self.pkg.changes_file)
-        (result, output) = commands.getstatusoutput(command)
+        try:
+            cmd = "lintian --show-overrides --tags-from-file %s %s" % \
+                (temp_filename, self.pkg.changes_file)
 
-        # We are done with lintian, remove our tempfile and any symlinks we created
-        os.unlink(temp_filename)
-        for symlink in symlinked:
-            os.unlink(symlink)
+            result, output = commands.getstatusoutput(cmd)
+        finally:
+            # Remove our tempfile and any symlinks we created
+            os.unlink(temp_filename)
 
-        if (result == 2):
-            utils.warn("lintian failed for %s [return code: %s]." % (self.pkg.changes_file, result))
-            utils.warn(utils.prefix_multi_line_string(output, " [possible output:] "))
+            for symlink in symlinked:
+                os.unlink(symlink)
 
-        if len(output) == 0:
-            return
+        if result == 2:
+            utils.warn("lintian failed for %s [return code: %s]." % \
+                (self.pkg.changes_file, result))
+            utils.warn(utils.prefix_multi_line_string(output, \
+                " [possible output:] "))
 
         def log(*txt):
             if self.logger:
-                self.logger.log([self.pkg.changes_file, "check_lintian"] + list(txt))
+                self.logger.log(
+                    [self.pkg.changes_file, "check_lintian"] + list(txt)
+                )
 
-        # We have output of lintian, this package isn't clean. Lets parse it and see if we
-        # are having a victim for a reject.
-        # W: tzdata: binary-without-manpage usr/sbin/tzconfig
-        for line in output.split('\n'):
-            m = re_parse_lintian.match(line)
-            if m is None:
-                continue
-
-            etype = m.group(1)
-            epackage = m.group(2)
-            etag = m.group(3)
-            etext = m.group(4)
-
-            # So lets check if we know the tag at all.
-            if etag not in tags:
-                continue
-
-            if etype == 'O':
-                # We know it and it is overriden. Check that override is allowed.
-                if etag in lintiantags['warning']:
-                    # The tag is overriden, and it is allowed to be overriden.
-                    # Don't add a reject message.
-                    pass
-                elif etag in lintiantags['error']:
-                    # The tag is overriden - but is not allowed to be
-                    self.rejects.append("%s: Overriden tag %s found, but this tag may not be overwritten." % (epackage, etag))
-                    log("ftpmaster does not allow tag to be overridable", etag)
-            else:
-                # Tag is known, it is not overriden, direct reject.
-                self.rejects.append("%s: Found lintian output: '%s %s', automatically rejected package." % (epackage, etag, etext))
-                # Now tell if they *might* override it.
-                if etag in lintiantags['warning']:
-                    log("auto rejecting", "overridable", etag)
-                    self.rejects.append("%s: If you have a good reason, you may override this lintian tag." % (epackage))
-                else:
-                    log("auto rejecting", "not overridable", etag)
+        # Generate messages
+        parsed_tags = parse_lintian_output(output)
+        self.rejects.extend(
+            generate_reject_messages(parsed_tags, lintiantags, log=log)
+        )
 
     ###########################################################################
     def check_urgency(self):
@@ -1493,7 +1442,7 @@ class Upload(object):
         #  or binary, whereas keys with no access might be able to
         #  upload some binaries)
         if fpr.source_acl.access_level == 'dm':
-            self.check_dm_source_upload(fpr, session)
+            self.check_dm_upload(fpr, session)
         else:
             # Check source-based permissions for other types
             if self.pkg.changes["architecture"].has_key("source"):
@@ -1837,13 +1786,13 @@ distribution."""
         return summary
 
     ###########################################################################
-
-    def accept (self, summary, short_summary, targetdir=None):
+    @session_wrapper
+    def accept (self, summary, short_summary, session=None):
         """
         Accept an upload.
 
-        This moves all files referenced from the .changes into the I{accepted}
-        queue, sends the accepted mail, announces to lists, closes bugs and
+        This moves all files referenced from the .changes into the pool,
+        sends the accepted mail, announces to lists, closes bugs and
         also checks for override disparities. If enabled it will write out
         the version history for the BTS Version Tracking and will finally call
         L{queue_build}.
@@ -1853,31 +1802,90 @@ distribution."""
 
         @type short_summary: string
         @param short_summary: Short summary
-
         """
 
         cnf = Config()
         stats = SummaryStats()
 
-        accepttemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted')
+        print "Installing."
+        self.logger.log(["installing changes", self.pkg.changes_file])
 
-        if targetdir is None:
-            targetdir = cnf["Dir::Queue::Accepted"]
+        poolfiles = []
 
-        print "Accepting."
-        if self.logger:
-            self.logger.log(["Accepting changes", self.pkg.changes_file])
+        # Add the .dsc file to the DB first
+        for newfile, entry in self.pkg.files.items():
+            if entry["type"] == "dsc":
+                dsc_component, dsc_location_id, pfs = add_dsc_to_db(self, newfile, session)
+                for j in pfs:
+                    poolfiles.append(j)
 
-        self.pkg.write_dot_dak(targetdir)
+        # Add .deb / .udeb files to the DB (type is always deb, dbtype is udeb/deb)
+        for newfile, entry in self.pkg.files.items():
+            if entry["type"] == "deb":
+                poolfiles.append(add_deb_to_db(self, newfile, session))
 
-        # Move all the files into the accepted directory
-        utils.move(self.pkg.changes_file, targetdir)
+        # If this is a sourceful diff only upload that is moving
+        # cross-component we need to copy the .orig files into the new
+        # component too for the same reasons as above.
+        if self.pkg.changes["architecture"].has_key("source"):
+            for orig_file in self.pkg.orig_files.keys():
+                if not self.pkg.orig_files[orig_file].has_key("id"):
+                    continue # Skip if it's not in the pool
+                orig_file_id = self.pkg.orig_files[orig_file]["id"]
+                if self.pkg.orig_files[orig_file]["location"] == dsc_location_id:
+                    continue # Skip if the location didn't change
 
-        for name, entry in sorted(self.pkg.files.items()):
-            utils.move(name, targetdir)
+                # Do the move
+                oldf = get_poolfile_by_id(orig_file_id, session)
+                old_filename = os.path.join(oldf.location.path, oldf.filename)
+                old_dat = {'size': oldf.filesize,   'md5sum': oldf.md5sum,
+                           'sha1sum': oldf.sha1sum, 'sha256sum': oldf.sha256sum}
+
+                new_filename = os.path.join(utils.poolify(self.pkg.changes["source"], dsc_component), os.path.basename(old_filename))
+
+                # TODO: Care about size/md5sum collisions etc
+                (found, newf) = check_poolfile(new_filename, file_size, file_md5sum, dsc_location_id, session)
+
+                if newf is None:
+                    utils.copy(old_filename, os.path.join(cnf["Dir::Pool"], new_filename))
+                    newf = add_poolfile(new_filename, old_dat, dsc_location_id, session)
+
+                    # TODO: Check that there's only 1 here
+                    source = get_sources_from_name(self.pkg.changes["source"], self.pkg.changes["version"])[0]
+                    dscf = get_dscfiles(source_id=source.source_id, poolfile_id=orig_file_id, session=session)[0]
+                    dscf.poolfile_id = newf.file_id
+                    session.add(dscf)
+                    session.flush()
+
+                    poolfiles.append(newf)
+
+        # Install the files into the pool
+        for newfile, entry in self.pkg.files.items():
+            destination = os.path.join(cnf["Dir::Pool"], entry["pool name"], newfile)
+            utils.move(newfile, destination)
+            self.logger.log(["installed", newfile, entry["type"], entry["size"], entry["architecture"]])
             stats.accept_bytes += float(entry["size"])
 
-        stats.accept_count += 1
+        # Copy the .changes file across for suite which need it.
+        copy_changes = {}
+        for suite_name in self.pkg.changes["distribution"].keys():
+            if cnf.has_key("Suite::%s::CopyChanges" % (suite_name)):
+                copy_changes[cnf["Suite::%s::CopyChanges" % (suite_name)]] = ""
+
+        for dest in copy_changes.keys():
+            utils.copy(self.pkg.changes_file, os.path.join(cnf["Dir::Root"], dest))
+
+        # We're done - commit the database changes
+        session.commit()
+        # Our SQL session will automatically start a new transaction after
+        # the last commit
+
+        # Move the .changes into the 'done' directory
+        utils.move(self.pkg.changes_file,
+                   os.path.join(cnf["Dir::Queue::Done"], os.path.basename(self.pkg.changes_file)))
+
+        if self.pkg.changes["architecture"].has_key("source") and cnf.get("Dir::UrgencyLog"):
+            UrgencyLog().log(self.pkg.dsc["source"], self.pkg.dsc["version"], self.pkg.changes["urgency"])
 
         # Send accept mail, announce to lists, close bugs and check for
         # override disparities
@@ -1885,7 +1893,8 @@ distribution."""
             self.update_subst()
             self.Subst["__SUITE__"] = ""
             self.Subst["__SUMMARY__"] = summary
-            mail_message = utils.TemplateSubst(self.Subst, accepttemplate)
+            mail_message = utils.TemplateSubst(self.Subst,
+                                               os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted'))
             utils.send_mail(mail_message)
             self.announce(short_summary, 1)
 
@@ -1923,13 +1932,19 @@ distribution."""
             os.rename(temp_filename, filename)
             os.chmod(filename, 0644)
 
-        # This routine returns None on success or an error on failure
-        # TODO: Replace queue copying using the new queue.add_file_from_pool routine
-        #       and by looking up which queues in suite.copy_queues
-        #res = get_queue('accepted').autobuild_upload(self.pkg, cnf["Dir::Queue::Accepted"])
-        #if res:
-        #    utils.fubar(res)
+        session.commit()
 
+        # Set up our copy queues (e.g. buildd queues)
+        for suite_name in self.pkg.changes["distribution"].keys():
+            suite = get_suite(suite_name, session)
+            for q in suite.copy_queues:
+                for f in poolfiles:
+                    q.add_file_from_pool(f)
+
+        session.commit()
+
+        # Finally...
+        stats.accept_count += 1
 
     def check_override(self):
         """
@@ -1968,25 +1983,33 @@ distribution."""
     def remove(self, from_dir=None):
         """
         Used (for instance) in p-u to remove the package from unchecked
+
+        Also removes the package from holding area.
         """
         if from_dir is None:
-            os.chdir(self.pkg.directory)
-        else:
-            os.chdir(from_dir)
+            from_dir = self.pkg.directory
+        h = Holding()
 
         for f in self.pkg.files.keys():
-            os.unlink(f)
-        os.unlink(self.pkg.changes_file)
+            os.unlink(os.path.join(from_dir, f))
+            if os.path.exists(os.path.join(h.holding_dir, f)):
+                os.unlink(os.path.join(h.holding_dir, f))
+
+        os.unlink(os.path.join(from_dir, self.pkg.changes_file))
+        if os.path.exists(os.path.join(h.holding_dir, self.pkg.changes_file)):
+            os.unlink(os.path.join(h.holding_dir, self.pkg.changes_file))
 
     ###########################################################################
 
-    def move_to_dir (self, dest, perms=0660, changesperms=0664):
+    def move_to_queue (self, queue):
         """
-        Move files to dest with certain perms/changesperms
+        Move files to a destination queue using the permissions in the table
         """
-        utils.move(self.pkg.changes_file, dest, perms=changesperms)
+        h = Holding()
+        utils.move(os.path.join(h.holding_dir, self.pkg.changes_file),
+                   queue.path, perms=int(queue.change_perms, 8))
         for f in self.pkg.files.keys():
-            utils.move(f, dest, perms=perms)
+            utils.move(os.path.join(h.holding_dir, f), queue.path, perms=int(queue.perms, 8))
 
     ###########################################################################
 
@@ -2307,8 +2330,6 @@ distribution."""
     ################################################################################
 
     def check_source_against_db(self, filename, session):
-        """
-        """
         source = self.pkg.dsc.get("source")
         version = self.pkg.dsc.get("version")
 
@@ -2377,6 +2398,7 @@ distribution."""
                                 # This would fix the stupidity of changing something we often iterate over
                                 # whilst we're doing it
                                 del self.pkg.files[dsc_name]
+                                dsc_entry["files id"] = i.file_id
                                 if not orig_files.has_key(dsc_name):
                                     orig_files[dsc_name] = {}
                                 orig_files[dsc_name]["path"] = os.path.join(i.location.path, i.filename)

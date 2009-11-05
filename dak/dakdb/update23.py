@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-# coding=utf8
 
 """
-Adding a trainee field to the process-new notes
+Add view for new generate_filelist command.
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
-@copyright: 2009  Mike O'Connor <stew@debian.org>
+@copyright: 2009  Torsten Werner <twerner@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -23,246 +22,43 @@ Adding a trainee field to the process-new notes
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-################################################################################
-
-
-################################################################################
-
 import psycopg2
-import time
-from daklib.dak_exceptions import DBUpdateError
-
-################################################################################
-
-def suites():
-    """
-    return a list of suites to operate on
-    """
-    if Config().has_key( "%s::%s" %(options_prefix,"Suite")):
-        suites = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Suite")])
-    else:
-        suites = [ 'unstable', 'testing' ]
-#            suites = Config().SubTree("Suite").List()
-
-    return suites
-
-def arches(cursor, suite):
-    """
-    return a list of archs to operate on
-    """
-    arch_list = []
-    cursor.execute("""SELECT s.architecture, a.arch_string
-    FROM suite_architectures s
-    JOIN architecture a ON (s.architecture=a.id)
-    WHERE suite = :suite""", {'suite' : suite })
-
-    while True:
-        r = cursor.fetchone()
-        if not r:
-            break
-
-        if r[1] != "source" and r[1] != "all":
-            arch_list.append((r[0], r[1]))
-
-    return arch_list
 
 def do_update(self):
-    """
-    Adding contents table as first step to maybe, finally getting rid
-    of apt-ftparchive
-    """
-
-    print __doc__
+    print "Add views for generate_filelist to database."
 
     try:
         c = self.db.cursor()
 
-        c.execute("""CREATE TABLE pending_bin_contents (
-        id serial NOT NULL,
-        package text NOT NULL,
-        version debversion NOT NULL,
-        arch int NOT NULL,
-        filename text NOT NULL,
-        type int NOT NULL,
-        PRIMARY KEY(id))""" );
+        print "Drop old views."
+        c.execute("DROP VIEW IF EXISTS binfiles_suite_component_arch CASCADE")
+        c.execute("DROP VIEW IF EXISTS srcfiles_suite_component CASCADE")
 
-        c.execute("""CREATE TABLE deb_contents (
-        filename text,
-        section text,
-        package text,
-        binary_id integer,
-        arch integer,
-        suite integer)""" )
+        print "Create new views."
+        c.execute("""
+CREATE VIEW binfiles_suite_component_arch AS
+  SELECT files.filename, binaries.type, location.path, location.component,
+         bin_associations.suite, binaries.architecture
+    FROM binaries
+    JOIN bin_associations ON binaries.id = bin_associations.bin
+    JOIN files ON binaries.file = files.id
+    JOIN location ON files.location = location.id;
+	    """)
+        c.execute("""
+CREATE VIEW srcfiles_suite_component AS
+  SELECT files.filename, location.path, location.component,
+         src_associations.suite
+    FROM source
+    JOIN src_associations ON source.id = src_associations.source
+    JOIN files ON source.file = files.id
+    JOIN location ON files.location = location.id;
+	    """)
 
-        c.execute("""CREATE TABLE udeb_contents (
-        filename text,
-        section text,
-        package text,
-        binary_id integer,
-        suite integer,
-        arch integer)""" )
-
-        c.execute("""ALTER TABLE ONLY deb_contents
-        ADD CONSTRAINT deb_contents_arch_fkey
-        FOREIGN KEY (arch) REFERENCES architecture(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""ALTER TABLE ONLY udeb_contents
-        ADD CONSTRAINT udeb_contents_arch_fkey
-        FOREIGN KEY (arch) REFERENCES architecture(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""ALTER TABLE ONLY deb_contents
-        ADD CONSTRAINT deb_contents_pkey
-        PRIMARY KEY (filename,package,arch,suite);""")
-
-        c.execute("""ALTER TABLE ONLY udeb_contents
-        ADD CONSTRAINT udeb_contents_pkey
-        PRIMARY KEY (filename,package,arch,suite);""")
-
-        c.execute("""ALTER TABLE ONLY deb_contents
-        ADD CONSTRAINT deb_contents_suite_fkey
-        FOREIGN KEY (suite) REFERENCES suite(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""ALTER TABLE ONLY udeb_contents
-        ADD CONSTRAINT udeb_contents_suite_fkey
-        FOREIGN KEY (suite) REFERENCES suite(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""ALTER TABLE ONLY deb_contents
-        ADD CONSTRAINT deb_contents_binary_fkey
-        FOREIGN KEY (binary_id) REFERENCES binaries(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""ALTER TABLE ONLY udeb_contents
-        ADD CONSTRAINT udeb_contents_binary_fkey
-        FOREIGN KEY (binary_id) REFERENCES binaries(id)
-        ON DELETE CASCADE;""")
-
-        c.execute("""CREATE INDEX ind_deb_contents_binary ON deb_contents(binary_id);""" )
-
-
-        suites = self.suites()
-
-        for suite in [i.lower() for i in suites]:
-            suite_id = DBConn().get_suite_id(suite)
-            arch_list = arches(c, suite_id)
-            arch_list = arches(c, suite_id)
-
-            for (arch_id,arch_str) in arch_list:
-                c.execute( "CREATE INDEX ind_deb_contents_%s_%s ON deb_contents (arch,suite) WHERE (arch=2 OR arch=%d) AND suite=$d"%(arch_str,suite,arch_id,suite_id) )
-
-            for section, sname in [("debian-installer","main"),
-                                  ("non-free/debian-installer", "nonfree")]:
-                c.execute( "CREATE INDEX ind_udeb_contents_%s_%s ON udeb_contents (section,suite) WHERE section=%s AND suite=$d"%(sname,suite,section,suite_id) )
-
-
-        c.execute( """CREATE OR REPLACE FUNCTION update_contents_for_bin_a() RETURNS trigger AS  $$
-    event = TD["event"]
-    if event == "DELETE" or event == "UPDATE":
-
-        plpy.execute(plpy.prepare("DELETE FROM deb_contents WHERE binary_id=$1 and suite=$2",
-                                  ["int","int"]),
-                                  [TD["old"]["bin"], TD["old"]["suite"]])
-
-    if event == "INSERT" or event == "UPDATE":
-
-       content_data = plpy.execute(plpy.prepare(
-            """SELECT s.section, b.package, b.architecture, ot.type
-            FROM override o
-            JOIN override_type ot on o.type=ot.id
-            JOIN binaries b on b.package=o.package
-            JOIN files f on b.file=f.id
-            JOIN location l on l.id=f.location
-            JOIN section s on s.id=o.section
-            WHERE b.id=$1
-            AND o.suite=$2
-            """,
-            ["int", "int"]),
-            [TD["new"]["bin"], TD["new"]["suite"]])[0]
-
-       tablename="%s_contents" % content_data['type']
-
-       plpy.execute(plpy.prepare("""DELETE FROM %s
-                   WHERE package=$1 and arch=$2 and suite=$3""" % tablename,
-                   ['text','int','int']),
-                   [content_data['package'],
-                   content_data['architecture'],
-                   TD["new"]["suite"]])
-
-       filenames = plpy.execute(plpy.prepare(
-           "SELECT bc.file FROM bin_contents bc where bc.binary_id=$1",
-           ["int"]),
-           [TD["new"]["bin"]])
-
-       for filename in filenames:
-           plpy.execute(plpy.prepare(
-               """INSERT INTO %s
-                   (filename,section,package,binary_id,arch,suite)
-                   VALUES($1,$2,$3,$4,$5,$6)""" % tablename,
-               ["text","text","text","int","int","int"]),
-               [filename["file"],
-                content_data["section"],
-                content_data["package"],
-                TD["new"]["bin"],
-                content_data["architecture"],
-                TD["new"]["suite"]] )
-$$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
-""")
-
-
-        c.execute( """CREATE OR REPLACE FUNCTION update_contents_for_override() RETURNS trigger AS  $$
-    event = TD["event"]
-    if event == "UPDATE":
-
-        otype = plpy.execute(plpy.prepare("SELECT type from override_type where id=$1",["int"]),[TD["new"]["type"]] )[0];
-        if otype["type"].endswith("deb"):
-            section = plpy.execute(plpy.prepare("SELECT section from section where id=$1",["int"]),[TD["new"]["section"]] )[0];
-
-            table_name = "%s_contents" % otype["type"]
-            plpy.execute(plpy.prepare("UPDATE %s set section=$1 where package=$2 and suite=$3" % table_name,
-                                      ["text","text","int"]),
-                                      [section["section"],
-                                      TD["new"]["package"],
-                                      TD["new"]["suite"]])
-
-$$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
-""")
-
-        c.execute("""CREATE OR REPLACE FUNCTION update_contents_for_override()
-                      RETURNS trigger AS  $$
-    event = TD["event"]
-    if event == "UPDATE" or event == "INSERT":
-        row = TD["new"]
-        r = plpy.execute(plpy.prepare( """SELECT 1 from suite_architectures sa
-                  JOIN binaries b ON b.architecture = sa.architecture
-                  WHERE b.id = $1 and sa.suite = $2""",
-                ["int", "int"]),
-                [row["bin"], row["suite"]])
-        if not len(r):
-            plpy.error("Illegal architecture for this suite")
-
-$$ LANGUAGE plpythonu VOLATILE;""")
-
-        c.execute( """CREATE TRIGGER illegal_suite_arch_bin_associations_trigger
-                      BEFORE INSERT OR UPDATE ON bin_associations
-                      FOR EACH ROW EXECUTE PROCEDURE update_contents_for_override();""")
-
-        c.execute( """CREATE TRIGGER bin_associations_contents_trigger
-                      AFTER INSERT OR UPDATE OR DELETE ON bin_associations
-                      FOR EACH ROW EXECUTE PROCEDURE update_contents_for_bin_a();""")
-        c.execute("""CREATE TRIGGER override_contents_trigger
-                      AFTER UPDATE ON override
-                      FOR EACH ROW EXECUTE PROCEDURE update_contents_for_override();""")
-
-
-        c.execute( "CREATE INDEX ind_deb_contents_name ON deb_contents(package);");
-        c.execute( "CREATE INDEX ind_udeb_contents_name ON udeb_contents(package);");
-
+        print "Committing"
+        c.execute("UPDATE config SET value = '23' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.InternalError, msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to apply process-new update 14, rollback issued. Error message : %s" % (str(msg))
+        raise DBUpdateError, "Database error, rollback issued. Error message : %s" % (str(msg))
 

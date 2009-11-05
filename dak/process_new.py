@@ -821,7 +821,7 @@ def _accept(upload):
     if Options["No-Action"]:
         return
     (summary, short_summary) = upload.build_summaries()
-    upload.accept(summary, short_summary, targetdir=Config()["Dir::Queue::Newstage"])
+    upload.accept(summary, short_summary, targetqueue)
     os.unlink(upload.pkg.changes_file[:-8]+".dak")
 
 def do_accept(upload):
@@ -832,7 +832,7 @@ def do_accept(upload):
 
         if cnf.FindB("Dinstall::SecurityQueueHandling"):
             upload.dump_vars(cnf["Dir::Queue::Embargoed"])
-            upload.move_to_dir(cnf["Dir::Queue::Embargoed"])
+            upload.move_to_queue(get_policy_queue('embargoed'))
             upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
             # Check for override disparities
             upload.Subst["__SUMMARY__"] = summary
@@ -897,6 +897,10 @@ def end():
 
 def main():
     global Options, Logger, Sections, Priorities
+
+    print "NO NEW PROCESSING CURRENTLY AVAILABLE"
+    print "(Go and do something more interesting)"
+    sys.exit(0)
 
     cnf = Config()
     session = DBConn().session()
