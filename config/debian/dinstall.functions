@@ -269,7 +269,7 @@ function copyoverrides() {
 
     for ofile in $copyoverrides ; do
 	    cd $overridedir
-	    chmod g+w override.$f
+	    chmod g+w override.$ofile
 
 	    cd $indices
 
