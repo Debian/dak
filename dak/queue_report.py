@@ -40,7 +40,7 @@ import apt_pkg
 
 from daklib import utils
 from daklib.queue import Upload
-from daklib.dbconn import DBConn, has_new_comment
+from daklib.dbconn import DBConn, has_new_comment, DBChange
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
@@ -277,12 +277,12 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     (name, mail) = changedby.split(":", 1)
     print "<span class=\"changed-by\">Changed-By: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
 
-    try:
-        (login, domain) = sponsor.split("@", 1)
-        print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
-    except Exception, e:
-        print "WARNING: Exception %s" % e
-        pass
+    if sponsor:
+        try:
+            (login, domain) = sponsor.split("@", 1)
+            print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
+        except Exception, e:
+            pass
 
     print "<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint)
     print "</td>"
@@ -296,6 +296,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
 ############################################################
 
 def process_changes_files(changes_files, type, log):
+    session = DBConn().session()
     msg = ""
     cache = {}
     # Read in all the .changes files
@@ -362,6 +363,13 @@ def process_changes_files(changes_files, type, log):
         arches = {}
         versions = {}
         for j in i[1]["list"]:
+            changesbase = os.path.basename(j["filename"])
+            try:
+                dbc = session.query(DBChange).filter_by(changesname=changesbase).one()
+            except Exception, e:
+                print "Can't find changes file in NEW for %s (%s)" % (changesbase, e)
+                dbc = None
+
             if Cnf.has_key("Queue-Report::Options::New") or Cnf.has_key("Queue-Report::Options::822"):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
@@ -385,9 +393,15 @@ def process_changes_files(changes_files, type, log):
 
                 distribution=j["distribution"].keys()
                 closes=j["closes"].keys()
-                fingerprint=j["fingerprint"]
-                if j.has_key("sponsoremail"):
-                    sponsor=j["sponsoremail"]
+                if dbc:
+                    fingerprint = dbc.fingerprint
+
+                # TODO: This won't work now as it never gets set
+                #       Fix so that we compare the changed-by/maintainer and the signing key
+                #       Should probably be done somewhere more central
+                #if j.has_key("sponsoremail"):
+                #    sponsor=j["sponsoremail"]
+
             for arch in j["architecture"].keys():
                 arches[arch] = ""
             version = j["version"]
