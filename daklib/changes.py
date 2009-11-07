@@ -202,7 +202,7 @@ class Changes(object):
             if isinstance(self.changes[key], dict):
                 multivalues[key] = " ".join(self.changes[key].keys())
             else:
-                multivalues[key] = self.changes[key].keys()
+                multivalues[key] = self.changes[key]
 
         # TODO: Use ORM
         session.execute(
