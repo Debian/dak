@@ -894,10 +894,6 @@ def end():
 def main():
     global Options, Logger, Sections, Priorities
 
-    print "NO NEW PROCESSING CURRENTLY AVAILABLE"
-    print "(Go and do something more interesting)"
-    sys.exit(0)
-
     cnf = Config()
     session = DBConn().session()
 
