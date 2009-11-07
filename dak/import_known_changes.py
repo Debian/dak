@@ -257,7 +257,7 @@ class ImportThread(threading.Thread):
                 changesfile = os.path.join(to_import.dirpath, to_import.changesfile)
                 changes.changes = parse_changes(changesfile, signing_rules=-1)
                 changes.changes["fingerprint"] = check_signature(changesfile)
-                changes.add_known_changes(to_import.dirpath, self.session)
+                changes.add_known_changes(to_import.dirpath, session=self.session)
                 self.session.commit()
 
             except InvalidDscError, line:
