@@ -838,8 +838,8 @@ def do_accept(upload):
 
 def do_pkg(changes_file, session):
     u = Upload()
-    u.pkg.load_dot_dak(changes_file)
-    u.update_subst()
+    u.pkg.changes_file = changes_file
+    u.load_changes(changes_file)
 
     cnf = Config()
     bcc = "X-DAK: dak process-new"
