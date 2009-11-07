@@ -869,7 +869,7 @@ def do_pkg(changes_file, session):
                     do_accept(u)
                 except CantGetLockError:
                     print "Hello? Operator! Give me the number for 911!"
-                    print "Dinstall in the locked area, cant process packages, come back later"
+                    print "Dinstall in the locked area, can't process packages, come back later"
     except AlreadyLockedError, e:
         print "Seems to be locked by %s already, skipping..." % (e)
 
