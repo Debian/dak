@@ -25,22 +25,30 @@ function debug () {
     fi
 }
 
+function wbtrigger() {
+    MODE=${1:-"often"}
+    SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
+    if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
+        if [ "x${MODE}x" = "xdailyx" ]; then
+            ssh ${SSHOPT} wbadm@buildd /org/wanna-build/trigger.daily || echo "W-B trigger.daily failed" | mail -s "W-B Daily trigger failed" ftpmaster@ftp-master.debian.org
+        elif [ "x${MODE}x" = "xoftenx" ]; then
+            ssh -q -q ${SSHOPT} wbadm@buildd /org/wanna-build/trigger.often
+        else
+            log_error "Unknown wb trigger mode called"
+        fi
+    fi
+    rm -f "${LOCK_BUILDD}"
+}
+
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
-	cd $configdir
-	apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
+    dak manage-build-queues -a
 
-	cd  ${incoming}
-	rm -f buildd/Release*
-	apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd incoming" -o APT::FTPArchive::Release::Architectures="${archs}" release buildd > Release
-	gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o Release.gpg Release
-	mv Release* buildd/.
-
-	cd ${incoming}
-	mkdir -p tree/${STAMP}
-	cp -al ${incoming}/buildd/. tree/${STAMP}/
-	ln -sfT tree/${STAMP} ${incoming}/builddweb
-	find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+    cd ${incoming}
+    mkdir -p tree/${STAMP}
+    cp -al ${incoming}/buildd/. tree/${STAMP}/
+    ln -sfT tree/${STAMP} ${incoming}/builddweb
+    find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 }
 
 # Do the unchecked processing, in case we have files.

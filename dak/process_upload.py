@@ -283,20 +283,20 @@ def action(u, session):
         u.do_reject(0, pi)
     elif answer == 'A':
         if not chg:
-            chg = u.pkg.add_known_changes(holding.holding_dir, session)
+            chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
         u.accept(summary, short_summary, session)
         u.check_override()
         session.commit()
         u.remove()
     elif answer == 'P':
         if not chg:
-            chg = u.pkg.add_known_changes(holding.holding_dir, session)
+            chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
         package_to_queue(u, summary, short_summary, policyqueue, chg, session)
         session.commit()
         u.remove()
     elif answer == queuekey:
         if not chg:
-            chg = u.pkg.add_known_changes(holding.holding_dir, session)
+            chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
         QueueInfo[qu]["process"](u, summary, short_summary, chg, session)
         session.commit()
         u.remove()

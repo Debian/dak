@@ -228,7 +228,9 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+# disabled until p-u is faster than now. it runs often enough, so wont hurt to save
+# the time here.
+#stage $GO
 
 GO=(
     FUNC="cruft"
@@ -279,7 +281,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="packages"
@@ -287,6 +289,8 @@ GO=(
     ARGS=""
     ERR=""
 )
+# Careful: When we ever go and remove this monster-long thing, we have to check the backgrounded
+# functions before it. We no longer have a 1.5hour sync point then.
 stage $GO
 
 GO=(
@@ -311,20 +315,51 @@ GO=(
     ARGS=""
     ERR=""
 )
-### TODO: clean-* fixup
-#stage $GO
+stage $GO
 
 GO=(
-    FUNC="buildd"
-    TIME="buildd"
+    FUNC="buildd_dir"
+    TIME="buildd_dir"
     ARGS=""
     ERR=""
 )
 stage $GO
 
 GO=(
-    FUNC="scripts"
-    TIME="scripts"
+    FUNC="mkmaintainers"
+    TIME="mkmaintainers"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="copyoverrides"
+    TIME="copyoverrides"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="mklslar"
+    TIME="mklslar"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="mkfilesindices"
+    TIME="mkfilesindices"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="mkchecksums"
+    TIME="mkchecksums"
     ARGS=""
     ERR=""
 )
@@ -412,7 +447,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="i18n2"
@@ -420,7 +455,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="stats"
@@ -436,9 +471,9 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
-rm -f ${LOCK_BRITNEY}
+rm -f "${LOCK_BRITNEY}"
 
 GO=(
     FUNC="pgdakdev"

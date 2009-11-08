@@ -77,11 +77,6 @@ Check for cruft in overrides.
 
 ################################################################################
 
-def gen_blacklist(dir):
-    for entry in os.listdir(dir):
-        entry = entry.split('_')[0]
-        blacklist[entry] = 1
-
 def process(osuite, affected_suites, originosuite, component, otype, session):
     global Logger, Options, sections, priorities
 
@@ -341,8 +336,6 @@ def main ():
         Logger = daklog.Logger(cnf, "check-overrides")
     else:
         Logger = daklog.Logger(cnf, "check-overrides", 1)
-
-    gen_blacklist(cnf["Dir::Queue::Accepted"])
 
     for osuite in cnf.SubTree("Check-Overrides::OverrideSuites").List():
         if "1" != cnf["Check-Overrides::OverrideSuites::%s::Process" % osuite]:

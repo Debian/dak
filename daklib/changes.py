@@ -188,7 +188,7 @@ class Changes(object):
                 self.changes[key]='missing'
 
     @session_wrapper
-    def add_known_changes(self, dirpath, session=None):
+    def add_known_changes(self, dirpath, in_queue=None, session=None):
         """add "missing" in fields which we will require for the known_changes table"""
         cnf = Config()
 
@@ -202,17 +202,18 @@ class Changes(object):
             if isinstance(self.changes[key], dict):
                 multivalues[key] = " ".join(self.changes[key].keys())
             else:
-                multivalues[key] = self.changes[key].keys()
+                multivalues[key] = self.changes[key]
 
         # TODO: Use ORM
         session.execute(
             """INSERT INTO changes
-              (changesname, seen, source, binaries, architecture, version,
+              (changesname, in_queue, seen, source, binaries, architecture, version,
               distribution, urgency, maintainer, fingerprint, changedby, date)
-              VALUES (:changesfile,:filetime,:source,:binary, :architecture,
+              VALUES (:changesfile,:in_queue,:filetime,:source,:binary, :architecture,
               :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
               { 'changesfile':  self.changes_file,
                 'filetime':     filetime,
+                'in_queue':     in_queue,
                 'source':       self.changes["source"],
                 'binary':       multivalues["binary"],
                 'architecture': multivalues["architecture"],

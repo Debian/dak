@@ -201,7 +201,7 @@ class ChangesGenerator(threading.Thread):
     def run(self):
         cnf = Config()
         count = 1
-        for directory in [ "Accepted", "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
+        for directory in [ "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
             checkdir = cnf["Dir::Queue::%s" % (directory) ]
             if os.path.exists(checkdir):
                 print "Looking into %s" % (checkdir)
@@ -257,7 +257,7 @@ class ImportThread(threading.Thread):
                 changesfile = os.path.join(to_import.dirpath, to_import.changesfile)
                 changes.changes = parse_changes(changesfile, signing_rules=-1)
                 changes.changes["fingerprint"] = check_signature(changesfile)
-                changes.add_known_changes(to_import.dirpath, self.session)
+                changes.add_known_changes(to_import.dirpath, session=self.session)
                 self.session.commit()
 
             except InvalidDscError, line:

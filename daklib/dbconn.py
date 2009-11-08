@@ -37,7 +37,9 @@ import os
 import re
 import psycopg2
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
+from errno import ENOENT
+from tempfile import mkstemp, mkdtemp
 
 from inspect import getargspec
 
@@ -431,12 +433,188 @@ __all__.append('BinaryACLMap')
 
 ################################################################################
 
+MINIMAL_APT_CONF="""
+Dir
+{
+   ArchiveDir "%(archivepath)s";
+   OverrideDir "/srv/ftp.debian.org/scripts/override/";
+   CacheDir "/srv/ftp.debian.org/database/";
+};
+
+Default
+{
+   Packages::Compress ". bzip2 gzip";
+   Sources::Compress ". bzip2 gzip";
+   DeLinkLimit 0;
+   FileMode 0664;
+}
+
+bindirectory "incoming"
+{
+   Packages "Packages";
+   Contents " ";
+
+   BinOverride "override.sid.all3";
+   BinCacheDB "packages-accepted.db";
+
+   FileList "%(filelist)s";
+
+   PathPrefix "";
+   Packages::Extensions ".deb .udeb";
+};
+
+bindirectory "incoming/"
+{
+   Sources "Sources";
+   BinOverride "override.sid.all3";
+   SrcOverride "override.sid.all3.src";
+   FileList "%(filelist)s";
+};
+"""
+
 class BuildQueue(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
         return '<BuildQueue %s>' % self.queue_name
+
+    def write_metadata(self, starttime, force=False):
+        # Do we write out metafiles?
+        if not (force or self.generate_metadata):
+            return
+
+        session = DBConn().session().object_session(self)
+
+        fl_fd = fl_name = ac_fd = ac_name = None
+        tempdir = None
+        arches = " ".join([ a.arch_string for a in session.query(Architecture).all() if a.arch_string != 'source' ])
+        startdir = os.getcwd()
+
+        try:
+            # Grab files we want to include
+            newer = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) > starttime).all()
+            # Write file list with newer files
+            (fl_fd, fl_name) = mkstemp()
+            for n in newer:
+                os.write(fl_fd, '%s\n' % n.fullpath)
+            os.close(fl_fd)
+
+            # Write minimal apt.conf
+            # TODO: Remove hardcoding from template
+            (ac_fd, ac_name) = mkstemp()
+            os.write(ac_fd, MINIMAL_APT_CONF % {'archivepath': self.path,
+                                                'filelist': fl_name})
+            os.close(ac_fd)
+
+            # Run apt-ftparchive generate
+            os.chdir(os.path.dirname(ac_name))
+            os.system('apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate %s' % os.path.basename(ac_name))
+
+            # Run apt-ftparchive release
+            # TODO: Eww - fix this
+            bname = os.path.basename(self.path)
+            os.chdir(self.path)
+            os.chdir('..')
+
+            # We have to remove the Release file otherwise it'll be included in the
+            # new one
+            try:
+                os.unlink(os.path.join(bname, 'Release'))
+            except OSError:
+                pass
+
+            os.system("""apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="%s" -o APT::FTPArchive::Release::Label="%s" -o APT::FTPArchive::Release::Description="%s" -o APT::FTPArchive::Release::Architectures="%s" release %s > Release""" % (self.origin, self.label, self.releasedescription, arches, bname))
+
+            # Sign if necessary
+            if self.signingkey:
+                cnf = Config()
+                keyring = "--secret-keyring \"%s\"" % cnf["Dinstall::SigningKeyring"]
+                if cnf.has_key("Dinstall::SigningPubKeyring"):
+                    keyring += " --keyring \"%s\"" % cnf["Dinstall::SigningPubKeyring"]
+
+                os.system("gpg %s --no-options --batch --no-tty --armour --default-key %s --detach-sign -o Release.gpg Release""" % (keyring, self.signingkey))
+
+            # Move the files if we got this far
+            os.rename('Release', os.path.join(bname, 'Release'))
+            if self.signingkey:
+                os.rename('Release.gpg', os.path.join(bname, 'Release.gpg'))
+
+        # Clean up any left behind files
+        finally:
+            os.chdir(startdir)
+            if fl_fd:
+                try:
+                    os.close(fl_fd)
+                except OSError:
+                    pass
+
+            if fl_name:
+                try:
+                    os.unlink(fl_name)
+                except OSError:
+                    pass
+
+            if ac_fd:
+                try:
+                    os.close(ac_fd)
+                except OSError:
+                    pass
+
+            if ac_name:
+                try:
+                    os.unlink(ac_name)
+                except OSError:
+                    pass
+
+    def clean_and_update(self, starttime, Logger, dryrun=False):
+        """WARNING: This routine commits for you"""
+        session = DBConn().session().object_session(self)
+
+        if self.generate_metadata and not dryrun:
+            self.write_metadata(starttime)
+
+        # Grab files older than our execution time
+        older = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) <= starttime).all()
+
+        for o in older:
+            killdb = False
+            try:
+                if dryrun:
+                    Logger.log(["I: Would have removed %s from the queue" % o.fullpath])
+                else:
+                    Logger.log(["I: Removing %s from the queue" % o.fullpath])
+                    os.unlink(o.fullpath)
+                    killdb = True
+            except OSError, e:
+                # If it wasn't there, don't worry
+                if e.errno == ENOENT:
+                    killdb = True
+                else:
+                    # TODO: Replace with proper logging call
+                    Logger.log(["E: Could not remove %s" % o.fullpath])
+
+            if killdb:
+                session.delete(o)
+
+        session.commit()
+
+        for f in os.listdir(self.path):
+            if f.startswith('Packages') or f.startswith('Source') or f.startswith('Release'):
+                continue
+
+            try:
+                r = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter_by(filename = f).one()
+            except NoResultFound:
+                fp = os.path.join(self.path, f)
+                if dryrun:
+                    Logger.log(["I: Would remove unused link %s" % fp])
+                else:
+                    Logger.log(["I: Removing unused link %s" % fp])
+                    try:
+                        os.unlink(fp)
+                    except OSError:
+                        Logger.log(["E: Failed to unlink unreferenced file %s" % r.fullpath])
 
     def add_file_from_pool(self, poolfile):
         """Copies a file into the pool.  Assumes that the PoolFile object is
@@ -518,7 +696,12 @@ class BuildQueueFile(object):
         pass
 
     def __repr__(self):
-        return '<BuildQueueFile %s (%s)>' % (self.filename, self.queue_id)
+        return '<BuildQueueFile %s (%s)>' % (self.filename, self.build_queue_id)
+
+    @property
+    def fullpath(self):
+        return os.path.join(self.buildqueue.path, self.filename)
+
 
 __all__.append('BuildQueueFile')
 

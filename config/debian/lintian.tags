@@ -18,6 +18,8 @@ lintian:
     - copyright-contains-dh_make-todo-boilerplate
     - preinst-interpreter-without-predepends
     - control-interpreter-without-depends
+    - dir-or-file-in-var-www
+    - wrong-file-owner-uid-or-gid
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
@@ -27,7 +29,6 @@ lintian:
     - forbidden-postrm-interpreter
     - control-interpreter-in-usr-local
     - package-uses-local-diversion
-    - wrong-file-owner-uid-or-gid
     - bad-relation
     - FSSTND-dir-in-usr
     - FSSTND-dir-in-var
@@ -37,7 +38,6 @@ lintian:
     - package-installs-python-pyc
     - library-in-debug-or-profile-should-not-be-stripped
     - binary-file-compressed-with-upx
-    - html-changelog-without-text-version
     - file-in-usr-marked-as-conffile
     - build-info-in-binary-control-file-section
     - debian-control-with-duplicate-fields
@@ -61,7 +61,6 @@ lintian:
     - package-not-lowercase
     - no-version-field
     - bad-version-number
-    - upstream-version-not-numeric
     - no-architecture-field
     - magic-arch-in-arch-list
     - too-many-architectures
@@ -76,18 +75,10 @@ lintian:
     - uploader-address-is-on-localhost
     - no-source-field
     - source-field-does-not-match-pkg-name
-    - build-depends-on-essential-package-without-using-version
-    - depends-on-build-essential-package-without-using-version
-    - build-depends-on-build-essential
-    - executable-in-usr-share-doc
     - symlink-has-too-many-up-segments
-    - debian-rules-is-symlink
     - debian-rules-not-a-makefile
     - debian-rules-missing-required-target
     - maintainer-script-removes-device-files
-    - no-standards-version-field
-    - invalid-standards-version
-    - dir-or-file-in-var-www
     - dir-or-file-in-tmp
     - dir-or-file-in-mnt
     - dir-or-file-in-opt

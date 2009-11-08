@@ -142,30 +142,30 @@ function filelist() {
 function fingerprints() {
     log "Not updating fingerprints - scripts needs checking"
 
-#    log "Updating fingerprints"
-#    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
+    log "Updating fingerprints"
+    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
-#    OUTFILE=$(mktemp)
-#    dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
+    OUTFILE=$(mktemp)
+    dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
 
-#    if [ -s "${OUTFILE}" ]; then
-#        /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
-#From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
-#To: <debian-project@lists.debian.org>
-#Subject: Debian Maintainers Keyring changes
-#Content-Type: text/plain; charset=utf-8
-#MIME-Version: 1.0
-#
-#The following changes to the debian-maintainers keyring have just been activated:
-#
-#$(cat $OUTFILE)
-#
-#Debian distribution maintenance software,
-#on behalf of the Keyring maintainers
-#
-#EOF
-#    fi
-#    rm -f "$OUTFILE"
+    if [ -s "${OUTFILE}" ]; then
+        /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
+From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
+To: <debian-project@lists.debian.org>
+Subject: Debian Maintainers Keyring changes
+Content-Type: text/plain; charset=utf-8
+MIME-Version: 1.0
+
+The following changes to the debian-maintainers keyring have just been activated:
+
+$(cat $OUTFILE)
+
+Debian distribution maintenance software,
+on behalf of the Keyring maintainers
+
+EOF
+    fi
+    rm -f "$OUTFILE"
 }
 
 function overrides() {
@@ -204,15 +204,6 @@ function dakcleanup() {
     log "Cleanup old packages/files"
     dak clean-suites -m 10000
     dak clean-queues
-}
-
-function buildd() {
-    # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
-    # update this before wanna-build is updated.
-    log "Regenerating wanna-build/buildd information"
-    psql projectb -A -t -q -c "SELECT build_queue.path || '/' || build_queue_files.filename FROM build_queue_files LEFT JOIN build_queue ON (build_queue.id =build_queue_files.build_queue_id) WHERE queue_name = 'buildd' AND filename ~ 'd(sc|eb)$'"  > $dbdir/dists/unstable_accepted.list
-    symlinks -d /srv/incoming.debian.org/buildd > /dev/null
-    apt-ftparchive generate apt.conf.buildd
 }
 
 function buildd_dir() {
@@ -256,54 +247,41 @@ function mklslar() {
 }
 
 function mkmaintainers() {
-    log -n 'Creating Maintainers index ... '
+    log 'Creating Maintainers index ... '
 
     cd $indices
     dak make-maintainers ${scriptdir}/masterfiles/pseudo-packages.maintainers | \
-        sed -e "s/~[^  ]*\([   ]\)/\1/"  | awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
+        sed -e "s/~[^  ]*\([   ]\)/\1/"  | \
+        awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
 
-    set +e
-    cmp .new-maintainers Maintainers >/dev/null
-    rc=$?
-    set -e
-    if [ $rc = 1 ] || [ ! -f Maintainers ] ; then
-	    log -n "installing Maintainers ... "
+    if ! cmp -s .new-maintainers Maintainers || [ ! -f Maintainers ]; then
+	    log "installing Maintainers ... "
 	    mv -f .new-maintainers Maintainers
 	    gzip --rsyncable -9v <Maintainers >.new-maintainers.gz
 	    mv -f .new-maintainers.gz Maintainers.gz
-    elif [ $rc = 0 ] ; then
-	    log '(same as before)'
-	    rm -f .new-maintainers
     else
-	    log cmp returned $rc
-	    false
+        rm -f .new-maintainers
     fi
 }
 
 function copyoverrides() {
     log 'Copying override files into public view ...'
 
-    for f in $copyoverrides ; do
+    for ofile in $copyoverrides ; do
 	    cd $overridedir
-	    chmod g+w override.$f
+	    chmod g+w override.$ofile
 
 	    cd $indices
-	    rm -f .newover-$f.gz
-	    pc="`gzip 2>&1 -9nv <$overridedir/override.$f >.newover-$f.gz`"
-	    set +e
-	    nf=override.$f.gz
-	    cmp -s .newover-$f.gz $nf
-	    rc=$?
-	    set -e
-        if [ $rc = 0 ]; then
-		    rm -f .newover-$f.gz
-	    elif [ $rc = 1 -o ! -f $nf ]; then
-		    log "   installing new $nf $pc"
-		    mv -f .newover-$f.gz $nf
-		    chmod g+w $nf
-	    else
-		    log $? $pc
-		    exit 1
+
+	    newofile=override.$ofile.gz
+	    rm -f .newover-$ofile.gz
+	    pc="`gzip 2>&1 -9nv <$overridedir/override.$ofile >.newover-$ofile.gz`"
+        if ! cmp -s .newover-$ofile.gz $newofile || [ ! -f $newofile ]; then
+		    log "   installing new $newofile $pc"
+		    mv -f .newover-$ofile.gz $newofile
+		    chmod g+w $newofile
+        else
+		    rm -f .newover-$ofile.gz
 	    fi
     done
 }
@@ -324,7 +302,7 @@ function mkfilesindices() {
         perl -e '@nonpool=(); while (<>) { if (m,^\./pool/,) { print; } else { push @nonpool, $_; } } print for (@nonpool);'
     }
 
-    log "Generating sources list
+    log "Generating sources list"
     (
         sed -n 's/|$//p' $ARCHLIST
         cd $base/ftp
@@ -332,7 +310,7 @@ function mkfilesindices() {
         find ./dists \! -type d | grep "/source/"
     ) | sort -u | gzip --rsyncable -9 > source.list.gz
 
-    log "Generating arch lists
+    log "Generating arch lists"
 
     ARCHES=$( (<$ARCHLIST sed -n 's/^.*|//p'; echo amd64) | grep . | grep -v all | sort -u)
     for a in $ARCHES; do
@@ -369,7 +347,6 @@ function mkfilesindices() {
     done
 
     log "Finding everything on the ftp site to generate sundries"
-
     (cd $base/ftp; find . \! -type d \! -name 'Archive_Maintenance_In_Progress' | sort) >$ARCHLIST
 
     rm -f sundries.list
@@ -409,15 +386,6 @@ function mkchecksums() {
     ${bindir}/dsync-flist -q link-dups $dsynclist || true
 }
 
-function scripts() {
-    log "Running various scripts from $scriptsdir"
-    mkmaintainers
-    copyoverrides
-    mklslar
-    mkfilesindices
-    mkchecksums
-}
-
 function mirror() {
     log "Regenerating \"public\" mirror/ hardlink fun"
     cd ${mirrordir}
@@ -426,7 +394,7 @@ function mirror() {
 
 function wb() {
     log "Trigger daily wanna-build run"
-    ssh -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 wbadm@buildd /org/wanna-build/trigger.daily || echo "W-B trigger.daily failed" | mail -s "W-B Daily trigger failed" ftpmaster@ftp-master.debian.org
+    wbtrigger "daily"
 }
 
 function expire() {
