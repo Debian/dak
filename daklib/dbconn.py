@@ -1152,7 +1152,7 @@ def get_poolfile_like_name(filename, session=None):
     """
 
     # TODO: There must be a way of properly using bind parameters with %FOO%
-    q = session.query(PoolFile).filter(PoolFile.filename.like('%%%s%%' % filename))
+    q = session.query(PoolFile).filter(PoolFile.filename.like('%%/%s' % filename))
 
     return q.all()
 
