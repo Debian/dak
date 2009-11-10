@@ -817,12 +817,39 @@ def lock_package(package):
     finally:
         os.unlink(path)
 
+@session_wrapper
+def move_file_to_queue(to_q, f, session=None):
+    """mark a file as being in the unchecked queue"""
+    # update the queue_file entry for the existing queue
+    qf = session.query(QueueFile).filter_by(queueid=to_q.queueid,
+                                            filename=f.filename)
+    qf.queue = to_q
+
+    # update the changes_pending_files row
+    f.queue = to_q
+
+    # actually move the file
+    src = os.path.join(f.queue.path, filename)
+    dest = os.path.join(to_q.path, filename)
+    shutil.move(src, dest)
+
+@session_wrapper
+def changes_to_unchecked(changes, session=None):
+    """move a changes file to unchecked"""
+    unchecked = get_queue( 'uncecked' )
+    changes.in_queue = unchecked
+
+    for f in changes.files:
+        move_file_to_queue(unchecked, f)
+
+
 def _accept(upload):
     if Options["No-Action"]:
         return
     (summary, short_summary) = upload.build_summaries()
-    upload.accept(summary, short_summary, targetqueue)
-    os.unlink(upload.pkg.changes_file[:-8]+".dak")
+#    upload.accept(summary, short_summary, targetqueue)
+#    os.unlink(upload.pkg.changes_file[:-8]+".dak")
+    changes_to_unchecked(upload.pkg)
 
 def do_accept(upload):
     print "ACCEPT"
