@@ -867,6 +867,7 @@ def do_pkg(changes_file, session):
     u.pkg.changes_file = changes_file
     u.load_changes(changes_file)
     u.pkg.directory = new_queue.path
+    u.update_subst()
     u.logger = Logger
     origchanges = os.path.abspath(u.pkg.changes_file)
 
