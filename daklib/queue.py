@@ -115,8 +115,8 @@ def determine_new(changes, files, warn=1):
     # Build up a list of potentially new things
     for name, f in files.items():
         # Skip byhand elements
-        if f["type"] == "byhand":
-            continue
+#        if f["type"] == "byhand":
+#            continue
         pkg = f["package"]
         priority = f["priority"]
         section = f["section"]
@@ -218,7 +218,7 @@ def check_valid(new):
 def check_status(files):
     new = byhand = 0
     for f in files.keys():
-        if files[f]["type"] == "byhand":
+        if files[f].has_key("byhand"):
             byhand = 1
         elif files[f].has_key("new"):
             new = 1
