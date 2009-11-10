@@ -865,6 +865,7 @@ def do_pkg(changes_file, session):
     new_queue = get_policy_queue('new', session );
     u = Upload()
     u.pkg.changes_file = changes_file
+    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
     u.load_changes(changes_file)
     u.pkg.directory = new_queue.path
     u.update_subst()
@@ -885,8 +886,13 @@ def do_pkg(changes_file, session):
             if not recheck(u, session):
                 return
 
-            do_new(u,session)
-
+            # FIXME: This does need byhand checks added!
+            print "files is %s" % (u.pkg.files)
+            new = determine_new(changes_file, files)
+            if new:
+                do_new(u, session)
+            else:
+                do_accept(u)
 #             (new, byhand) = check_status(files)
 #             if new or byhand:
 #                 if new:
