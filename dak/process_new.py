@@ -159,7 +159,8 @@ def sort_changes(changes_files, session):
     for filename in changes_files:
         u = Upload()
         try:
-            u.pkg.load_dot_dak(filename)
+            u.pkg.changes_file = filename
+            u.load_changes(filename)
             u.update_subst()
             cache[filename] = copy.copy(u.pkg.changes)
             cache[filename]["filename"] = filename
