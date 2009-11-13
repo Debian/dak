@@ -33,8 +33,10 @@ import os
 import logging
 import threading
 import glob
-from daklib.dbconn import DBConn, get_dbchange
+import apt_pkg
+from daklib.dbconn import DBConn, get_dbchange, get_policy_queue, session_wrapper, ChangePendingFile
 from daklib.config import Config
+from daklib.queue import Upload
 
 # where in dak.conf all of our configuration will be stowed
 options_prefix = "NewFiles"
@@ -58,27 +60,40 @@ OPTIONS
 """
     sys.exit(exit_code)
 
-class ImportKnownChanges(object):
+class ImportNewFiles(object):
     @session_wrapper
     def __init__(self, session=None):
         try:
             newq = get_policy_queue('new', session)
             for changes_fn in glob.glob(newq.path + "/*.changes"):
-                changes_bn = os.path.basename(fn)
-                chg = session.query(DBChange).filter_by(changesname=changes_bn).one()
+                changes_bn = os.path.basename(changes_fn)
+                chg = get_dbchange(changes_bn, session)
 
                 u = Upload()
-                u.changes_file = changes_fn
-                u.load_changes(changes_fn)
+                success = u.load_changes(changes_fn)
+                u.pkg.changes_file = changes_bn
 
+                if not chg:
+                    chg = u.pkg.add_known_changes(newq.path, newq.policy_queue_id, session)
+                    session.add(chg)
+
+                if not success:
+                    log.critical("failed to load %s" % changes_fn)
+                    sys.exit(1)
+                else:
+                    log.critical("ACCLAIM: %s" % changes_fn)
+
+                files=[]
                 for chg_fn in u.pkg.files.keys():
                     cpf = ChangePendingFile()
                     cpf.filename = chg_fn
-                    cpf.size = self.files[chg_fn]['size']
-                    cpf.md5sum = self.files[chg_fn]['md5sum']
+                    cpf.size = u.pkg.files[chg_fn]['size']
+                    cpf.md5sum = u.pkg.files[chg_fn]['md5sum']
 
                     session.add(cpf)
-                    chg.files.append(cpf)
+                    files.append(cpf)
+
+                chg.files = files
 
 
             session.commit()
