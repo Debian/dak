@@ -2843,6 +2843,16 @@ class DBConn(object):
                                  poolfiles = relation(PoolFile,
                                                       secondary=self.tbl_changes_pool_files,
                                                       backref="changeslinks"),
+                                 filetime = self.tbl_changes.c.filetime,
+                                 source = self.tbl_changes.c.source,
+                                 binaries = self.tbl_changes.c.binaries,
+                                 architecture = self.tbl_changes.c.architecture,
+                                 distribution = self.tbl_changes.c.distribution,
+                                 urgency = self.tbl_changes.c.urgency,
+                                 maintainer = self.tbl_changes.c.maintainer,
+                                 changedby = self.tbl_changes.c.changedby,
+                                 date = self.tbl_changes.c.date,
+                                 version = self.tbl_changes.c.version
                                  files = relation(ChangePendingFile,
                                                   secondary=self.tbl_changes_pending_files_map,
                                                   backref="changesfile"),
@@ -2855,7 +2865,12 @@ class DBConn(object):
                properties = dict(change_pending_binary_id = self.tbl_changes_pending_binaries.c.id))
 
         mapper(ChangePendingFile, self.tbl_changes_pending_files,
-               properties = dict(change_pending_file_id = self.tbl_changes_pending_files.c.id))
+               properties = dict(change_pending_file_id = self.tbl_changes_pending_files.c.id,
+                                 filename = self.tbl_changes_pending_files.c.filename,
+                                 size = self.tbl_changes_pending_files.c.size,
+                                 md5sum = self.tbl_changes_pending_files.c.md5sum,
+                                 sha1sum = self.tbl_changes_pending_files.c.sha1sum,
+                                 sha256sum = self.tbl_changes_pending_files.c.sha256sum))
 
         mapper(ChangePendingSource, self.tbl_changes_pending_source,
                properties = dict(change_pending_source_id = self.tbl_changes_pending_source.c.id,
