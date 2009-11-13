@@ -2843,7 +2843,7 @@ class DBConn(object):
                                  poolfiles = relation(PoolFile,
                                                       secondary=self.tbl_changes_pool_files,
                                                       backref="changeslinks"),
-                                 filetime = self.tbl_changes.c.filetime,
+                                 seen = self.tbl_changes.c.seen,
                                  source = self.tbl_changes.c.source,
                                  binaries = self.tbl_changes.c.binaries,
                                  architecture = self.tbl_changes.c.architecture,
