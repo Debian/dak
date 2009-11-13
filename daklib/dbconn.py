@@ -2852,7 +2852,7 @@ class DBConn(object):
                                  maintainer = self.tbl_changes.c.maintainer,
                                  changedby = self.tbl_changes.c.changedby,
                                  date = self.tbl_changes.c.date,
-                                 version = self.tbl_changes.c.version
+                                 version = self.tbl_changes.c.version,
                                  files = relation(ChangePendingFile,
                                                   secondary=self.tbl_changes_pending_files_map,
                                                   backref="changesfile"),
