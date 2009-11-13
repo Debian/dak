@@ -816,36 +816,30 @@ def lock_package(package):
     finally:
         os.unlink(path)
 
-def move_file_to_queue(to_q, f, session):
-    """mark a file as being in the unchecked queue"""
-    # update the queue_file entry for the existing queue
-    qf = session.query(QueueFile).filter_by(queueid=to_q.queueid,
-                                            filename=f.filename)
-    qf.queue = to_q
-
-    # update the changes_pending_files row
-    f.queue = to_q
-
-def changes_to_unchecked(changes, session):
+def changes_to_unchecked(upload, session):
     """move a changes file to unchecked"""
     unchecked = get_policy_queue('unchecked', session );
-    changes.in_queue = unchecked
 
-    for f in changes.pkg.files:
-        move_file_to_queue(unchecked, f)
+#    changes.in_queue = unchecked
+
+    chg = session.query(DBChange).filter_by(changesname=os.path.basename(upload.pkg.changes_file)).one()
+    chg.approved_for = unchecked.policy_queue_id
+
+    for f in upload.pkg.files:
+        # update the changes_pending_files row
+        f.queue = unchecked
 
     # actually move files
-    changes.move_to_queue(unchecked)
+    upload.move_to_queue(unchecked)
 
-def _accept(upload):
+def _accept(upload, session):
     if Options["No-Action"]:
         return
     (summary, short_summary) = upload.build_summaries()
 #    upload.accept(summary, short_summary, targetqueue)
-#    os.unlink(upload.pkg.changes_file[:-8]+".dak")
-    changes_to_unchecked(upload)
+    changes_to_unchecked(upload, session)
 
-def do_accept(upload):
+def do_accept(upload, session):
     print "ACCEPT"
     cnf = Config()
     if not Options["No-Action"]:
@@ -859,7 +853,7 @@ def do_accept(upload):
             upload.Subst["__SUMMARY__"] = summary
         else:
             # Just a normal upload, accept it...
-            _accept(upload)
+            _accept(upload, session)
 
 def do_pkg(changes_file, session):
     new_queue = get_policy_queue('new', session );
@@ -881,30 +875,14 @@ def do_pkg(changes_file, session):
 
     files = u.pkg.files
     for deb_filename, f in files.items():
-        package = re_package.sub(r'\1', deb_filename)
-        files[deb_filename]["package"] = package
-
-        if deb_filename.endswith(".udeb"):
-            files[deb_filename]["dbtype"] = "udeb"
-        elif deb_filename.endswith(".deb"):
-            files[deb_filename]["dbtype"] = "deb"
-        else:
-            m = re_issource.match(deb_filename)
-            if not m:
-                continue
-            files[deb_filename]["package"] = m.group(1)
-            files[deb_filename]["version"] = m.group(2)
-            files[deb_filename]["type"] = m.group(3)
-
-        files[deb_filename]["type"] = get_type(f, session)
-        entry = files[deb_filename]
-
-        # Version and file overwrite checks
-        if entry["type"] == "deb":
+        if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
+            u.binary_file_checks(deb_filename, session)
             u.check_binary_against_db(deb_filename, session)
-        elif entry["type"] == "dsc":
+        else:
+            u.source_file_checks(deb_filename, session)
             u.check_source_against_db(deb_filename, session)
-            u.check_dsc_against_db(dsc_filename, session)
+
+        u.pkg.changes["suite"] = copy.copy(u.pkg.changes["distribution"])
 
     try:
         with lock_package(u.pkg.changes["source"]):
@@ -912,13 +890,11 @@ def do_pkg(changes_file, session):
                 return
 
             # FIXME: This does need byhand checks added!
-            print "files is %s" % (u.pkg.files)
-            print "changes is %s" % (u.pkg.changes)
             new = determine_new(u.pkg.changes, files)
             if new:
                 do_new(u, session)
             else:
-                do_accept(u)
+                do_accept(u, session)
 #             (new, byhand) = check_status(files)
 #             if new or byhand:
 #                 if new:
