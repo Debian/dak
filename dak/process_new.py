@@ -60,7 +60,7 @@ from daklib.dbconn import *
 from daklib.queue import *
 from daklib import daklog
 from daklib import utils
-from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
+from daklib.regexes import re_no_epoch, re_default_answer, re_isanum, re_package
 from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
@@ -880,6 +880,31 @@ def do_pkg(changes_file, session):
         u.Subst["__BCC__"] = bcc
 
     files = u.pkg.files
+    for deb_filename, f in files.items():
+        package = re_package.sub(r'\1', deb_filename)
+        files[deb_filename]["package"] = package
+
+        if deb_filename.endswith(".udeb"):
+            files[deb_filename]["dbtype"] = "udeb"
+        elif deb_filename.endswith(".deb"):
+            files[deb_filename]["dbtype"] = "deb"
+        else:
+            m = re_issource.match(deb_filename)
+            if not m:
+                continue
+            files[deb_filename]["package"] = m.group(1)
+            files[deb_filename]["version"] = m.group(2)
+            files[deb_filename]["type"] = m.group(3)
+
+        files[deb_filename]["type"] = get_type(f, session)
+        entry = files[deb_filename]
+
+        # Version and file overwrite checks
+        if entry["type"] == "deb":
+            u.check_binary_against_db(deb_filename, session)
+        elif entry["type"] == "dsc":
+            u.check_source_against_db(deb_filename, session)
+            u.check_dsc_against_db(dsc_filename, session)
 
     try:
         with lock_package(u.pkg.changes["source"]):
@@ -888,7 +913,8 @@ def do_pkg(changes_file, session):
 
             # FIXME: This does need byhand checks added!
             print "files is %s" % (u.pkg.files)
-            new = determine_new(changes_file, files)
+            print "changes is %s" % (u.pkg.changes)
+            new = determine_new(u.pkg.changes, files)
             if new:
                 do_new(u, session)
             else:
