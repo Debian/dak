@@ -204,30 +204,39 @@ class Changes(object):
             else:
                 multivalues[key] = self.changes[key]
 
-        # TODO: Use ORM
-        session.execute(
-            """INSERT INTO changes
-              (changesname, in_queue, seen, source, binaries, architecture, version,
-              distribution, urgency, maintainer, fingerprint, changedby, date)
-              VALUES (:changesfile,:in_queue,:filetime,:source,:binary, :architecture,
-              :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
-              { 'changesfile':  self.changes_file,
-                'filetime':     filetime,
-                'in_queue':     in_queue,
-                'source':       self.changes["source"],
-                'binary':       multivalues["binary"],
-                'architecture': multivalues["architecture"],
-                'version':      self.changes["version"],
-                'distribution': multivalues["distribution"],
-                'urgency':      self.changes["urgency"],
-                'maintainer':   self.changes["maintainer"],
-                'fingerprint':  self.changes["fingerprint"],
-                'changedby':    self.changes["changed-by"],
-                'date':         self.changes["date"]} )
+        chg = DBChange()
+        chg.chagnesfile = self.change_file
+        chg.seen = filetime
+        chg.in_queue_id = in_queue
+        chg.source = self.chagnes["source"]
+        chg.binaries = multivalues["binary"]
+        chg.architecture = multivalues["architecture"]
+        chg.version = self.changes["version"]
+        chg.distribution = multivalues["distribution"]
+        chg.urgency = self.changes["urgency"]
+        chg.maintainer = self.changes["maintainer"]
+        chg.fingerprint = self.changes["fingerprint"]
+        chg.changedby = self.changes["changed-by"]
+        chg.date = self.changes["date"]
+        
+        session.add(chg)
+
+        chg_files = []
+        for chg_fn in self.files.keys():
+            cpf = ChangePendingFile()
+            cpf.filename = chg_fn
+            cpf.size = self.files[chg_fn]['size']
+            cpf.md5sum = self.files[chg_fn]['md5sum']
+
+            session.add(cpf)
+            chg_files.append(cpf)
+
+        chg.files = chg_files
 
         session.commit()
-
-        return session.query(DBChange).filter_by(changesname = self.changes_file).one()
+        chg = session.query(DBChange).filter_by(changesname = self.changes_file).one();
+        
+        return chg
 
     def unknown_files_fields(self, name):
         return sorted(list( set(self.files[name].keys()) -

@@ -816,28 +816,29 @@ def lock_package(package):
     finally:
         os.unlink(path)
 
-def changes_to_unchecked(upload, session):
-    """move a changes file to unchecked"""
-    unchecked = get_policy_queue('unchecked', session );
+def changes_to_newstage(upload, session):
+    """move a changes file to newstage"""
+    newstage = get_policy_queue('newstage', session );
 
-#    changes.in_queue = unchecked
+    # changes.in_queue = newstage
 
     chg = session.query(DBChange).filter_by(changesname=os.path.basename(upload.pkg.changes_file)).one()
-    chg.approved_for = unchecked.policy_queue_id
+    chg.approved_for = newstage.policy_queue_id
 
-    for f in upload.pkg.files:
+    for f in chg.files:
         # update the changes_pending_files row
-        f.queue = unchecked
+        f.queue = newstage
 
     # actually move files
-    upload.move_to_queue(unchecked)
+    upload.move_to_queue(newstage)
 
 def _accept(upload, session):
     if Options["No-Action"]:
         return
     (summary, short_summary) = upload.build_summaries()
-#    upload.accept(summary, short_summary, targetqueue)
-    changes_to_unchecked(upload, session)
+    # upload.accept(summary, short_summary, targetqueue)
+
+    changes_to_newstage(upload, session)
 
 def do_accept(upload, session):
     print "ACCEPT"
