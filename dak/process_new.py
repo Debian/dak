@@ -816,8 +816,25 @@ def lock_package(package):
     finally:
         os.unlink(path)
 
+class clean_holding(object):
+    def __init__(self,pkg):
+        self.pkg = pkg
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, type, value, traceback):
+        h = Holding()
+
+        for f in self.pkg.files.keys():
+            if os.path.exists(os.path.join(h.holding_dir, f)):
+                os.unlink(os.path.join(h.holding_dir, f))
+
+
+
 def changes_to_newstage(upload, session):
     """move a changes file to newstage"""
+    new = get_policy_queue('new', session );
     newstage = get_policy_queue('newstage', session );
 
     # changes.in_queue = newstage
@@ -828,9 +845,10 @@ def changes_to_newstage(upload, session):
     for f in chg.files:
         # update the changes_pending_files row
         f.queue = newstage
+        utils.move(os.path.join(new.path, f.filename), newstage.path, perms=int(newstage.perms, 8))
 
-    # actually move files
-    upload.move_to_queue(newstage)
+    utils.move(os.path.join(new.path, upload.pkg.changes_file), newstage.path, perms=int(newstage.perms, 8))
+    chg.in_queue = newstage
 
 def _accept(upload, session):
     if Options["No-Action"]:
@@ -887,8 +905,9 @@ def do_pkg(changes_file, session):
 
     try:
         with lock_package(u.pkg.changes["source"]):
-            if not recheck(u, session):
-                return
+            with clean_holding(u.pkg):
+                if not recheck(u, session):
+                    return
 
             # FIXME: This does need byhand checks added!
             new = determine_new(u.pkg.changes, files)
