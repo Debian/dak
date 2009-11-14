@@ -72,6 +72,7 @@ class ImportNewFiles(object):
                 u = Upload()
                 success = u.load_changes(changes_fn)
                 u.pkg.changes_file = changes_bn
+                u.check_hashes()
 
                 if not chg:
                     chg = u.pkg.add_known_changes(newq.path, newq.policy_queue_id, session)
@@ -89,6 +90,8 @@ class ImportNewFiles(object):
                     cpf.filename = chg_fn
                     cpf.size = u.pkg.files[chg_fn]['size']
                     cpf.md5sum = u.pkg.files[chg_fn]['md5sum']
+                    cpf.sha1sum = u.pkg.files[chg_fn]['sha1sum']
+                    cpf.sha256sum = u.pkg.files[chg_fn]['sha256sum']
 
                     session.add(cpf)
                     files.append(cpf)
