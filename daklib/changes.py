@@ -208,7 +208,7 @@ class Changes(object):
         chg.changesfile = self.changes_file
         chg.seen = filetime
         chg.in_queue_id = in_queue
-        chg.source = self.chagnes["source"]
+        chg.source = self.changes["source"]
         chg.binaries = multivalues["binary"]
         chg.architecture = multivalues["architecture"]
         chg.version = self.changes["version"]
