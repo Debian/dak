@@ -1479,12 +1479,12 @@ class DBChange(object):
                                                  session=session)
 
                 if found is None:
-                    Logger.log(["E: Found multiple files for pool (%s) for %s" %  % (chg_fn, entry["component"]))
+                    Logger.log(["E: Found multiple files for pool (%s) for %s" % (chg_fn, entry["component"])])
                 elif found is False and poolfile is not None:
-                    Logger.log(["E: md5sum/size mismatch for %s in pool" %  % (chg_fn))
+                    Logger.log(["E: md5sum/size mismatch for %s in pool" % (chg_fn)])
                 else:
                     if poolfile is None:
-                        Logger.log(["E: Could not find %s in pool" %  % (chg_fn))
+                        Logger.log(["E: Could not find %s in pool" % (chg_fn)])
                     else:
                         chg.poolfiles.append(poolfile)
 
