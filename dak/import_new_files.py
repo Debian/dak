@@ -122,7 +122,7 @@ class ImportNewFiles(object):
                         found, poolfile = check_poolfile(os.path.join(poolname, chg_fn),
                                                          u.pkg.files[chg_fn]['size'],
                                                          u.pkg.files[chg_fn]["md5sum"],
-                                                         l,
+                                                         l.location_id,
                                                          session=session)
 
                         if found is None:
