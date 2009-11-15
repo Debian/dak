@@ -63,6 +63,7 @@ OPTIONS
 class ImportNewFiles(object):
     @session_wrapper
     def __init__(self, session=None):
+        cnf = Config()
         try:
             newq = get_policy_queue('new', session)
             for changes_fn in glob.glob(newq.path + "/*.changes"):
@@ -86,29 +87,56 @@ class ImportNewFiles(object):
 
                 files=[]
                 for chg_fn in u.pkg.files.keys():
-                    f = open(os.path.join(newq.path, chg_fn))
-                    cpf = ChangePendingFile()
-                    cpf.filename = chg_fn
-                    cpf.size = u.pkg.files[chg_fn]['size']
-                    cpf.md5sum = u.pkg.files[chg_fn]['md5sum']
+                    try:
+                        f = open(os.path.join(newq.path, chg_fn))
+                        cpf = ChangePendingFile()
+                        cpf.filename = chg_fn
+                        cpf.size = u.pkg.files[chg_fn]['size']
+                        cpf.md5sum = u.pkg.files[chg_fn]['md5sum']
 
-                    if u.pkg.files[chg_fn].has_key('sha1sum'):
-                        cpf.sha1sum = u.pkg.files[chg_fn]['sha1sum']
-                    else:
-                        log.warning("Having to generate sha1sum for %s" % chg_fn)
-                        f.seek(0)
-                        cpf.sha1sum = apt_pkg.sha1sum(f)
+                        if u.pkg.files[chg_fn].has_key('sha1sum'):
+                            cpf.sha1sum = u.pkg.files[chg_fn]['sha1sum']
+                        else:
+                            log.warning("Having to generate sha1sum for %s" % chg_fn)
+                            f.seek(0)
+                            cpf.sha1sum = apt_pkg.sha1sum(f)
 
-                    if u.pkg.files[chg_fn].has_key('sha256sum'):
-                        cpf.sha256sum = u.pkg.files[chg_fn]['sha256sum']
-                    else:
-                        log.warning("Having to generate sha256sum for %s" % chg_fn)
-                        f.seek(0)
-                        cpf.sha256sum = apt_pkg.sha256sum(f)
+                        if u.pkg.files[chg_fn].has_key('sha256sum'):
+                            cpf.sha256sum = u.pkg.files[chg_fn]['sha256sum']
+                        else:
+                            log.warning("Having to generate sha256sum for %s" % chg_fn)
+                            f.seek(0)
+                            cpf.sha256sum = apt_pkg.sha256sum(f)
 
-                    session.add(cpf)
-                    files.append(cpf)
-                    f.close()
+                        session.add(cpf)
+                        files.append(cpf)
+                        f.close()
+                    except IOError:
+                        # Can't find the file, try to look it up in the pool
+                        poolname = utils.poolify(u.pkg.changes["source"], u.pkg.files[chg_fn]["component"])
+                        l = get_location(cnf["Dir::Pool"], u.pkg.files[chg_fn]["component"], session=session)
+                        if not l:
+                            log.critical("ERROR: Can't find location for %s (component %s)" % (chg_fn, u.pkg.files[chg_fn]["component"]))
+
+                        found, poolfile = check_poolfile(os.path.join(poolname, chg_fn),
+                                                         u.pkg.files[chg_fn]['size'],
+                                                         u.pkg.files[chg_fn]["md5sum"],
+                                                         l,
+                                                         session=session)
+
+                        if found is None:
+                            log.critical("ERROR: Found multiple files for %s in pool" % chg_fn)
+                            sys.exit(1)
+                        elif found is False and poolfile is not None:
+                            log.critical("ERROR: md5sum / size mismatch for %s in pool" % chg_fn)
+                            sys.exit(1)
+                        else:
+                            if poolfile is None:
+                                log.critical("ERROR: Could not find %s in pool" % chg_fn)
+                                sys.exit(1)
+                            else:
+                                chg.changeslinks.append(poolfile)
+
 
                 chg.files = files
 
