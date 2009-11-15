@@ -909,17 +909,17 @@ def do_pkg(changes_file, session):
                 if not recheck(u, session):
                     return
 
-            # FIXME: This does need byhand checks added!
-            new = determine_new(u.pkg.changes, files)
-            if new:
-                do_new(u, session)
-            else:
-                try:
-                    check_daily_lock()
-                    do_accept(u, session)
-                except CantGetLockError:
-                    print "Hello? Operator! Give me the number for 911!"
-                    print "Dinstall in the locked area, cant process packages, come back later"
+                # FIXME: This does need byhand checks added!
+                new = determine_new(u.pkg.changes, files)
+                if new:
+                    do_new(u, session)
+                else:
+                    try:
+                        check_daily_lock()
+                        do_accept(u, session)
+                    except CantGetLockError:
+                        print "Hello? Operator! Give me the number for 911!"
+                        print "Dinstall in the locked area, cant process packages, come back later"
 #             (new, byhand) = check_status(files)
 #             if new or byhand:
 #                 if new:
