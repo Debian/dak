@@ -1441,12 +1441,10 @@ class DBChange(object):
         session = DBConn().session().object_session(self)
 
         # Remove changes_pool_files entries
-        for pf in self.poolfiles:
-            self.poolfiles.remove(pf)
+        self.poolfiles = []
 
-        # Remove change
-        for cf in self.files:
-            self.files.remove(cf)
+        # Remove changes_pending_files references
+        self.files = []
 
         # Clear out of queue
         self.in_queue = None
