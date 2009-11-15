@@ -1437,6 +1437,60 @@ class DBChange(object):
     def __repr__(self):
         return '<DBChange %s>' % self.changesname
 
+    def upload_into_db(self, u, path):
+        cnf = Config()
+        session = DBConn().session().object_session(self)
+
+        files = []
+        for chg_fn, entry in u.pkg.files.items():
+            try:
+                f = open(os.path.join(path, chg_fn))
+                cpf = ChangePendingFile()
+                cpf.filename = chg_fn
+                cpf.size = entry['size']
+                cpf.md5sum = entry['md5sum']
+
+                if entry.has_key('sha1sum'):
+                    cpf.sha1sum = entry['sha1sum']
+                else:
+                    f.seek(0)
+                    cpf.sha1sum = apt_pkg.sha1sum(f)
+
+                if entry.has_key('sha256sum'):
+                    cpf.sha256sum = entry['sha256sum']
+                else:
+                    f.seek(0)
+                    cpf.sha256sum = apt_pkg.sha256sum(f)
+
+                session.add(cpf)
+                files.append(cpf)
+                f.close()
+
+            except IOError:
+                # Can't find the file, try to look it up in the pool
+                from utils import poolify
+                poolname = poolify(entry["source"], entry["component"])
+                l = get_location(cnf["Dir::Pool"], entry["component"], session=session)
+
+                found, poolfile = check_poolfile(os.path.join(poolname, chg_fn),
+                                                 entry['size'],
+                                                 entry["md5sum"],
+                                                 l.location_id,
+                                                 session=session)
+
+                if found is None:
+                    Logger.log(["E: Found multiple files for pool (%s) for %s" %  % (chg_fn, entry["component"]))
+                elif found is False and poolfile is not None:
+                    Logger.log(["E: md5sum/size mismatch for %s in pool" %  % (chg_fn))
+                else:
+                    if poolfile is None:
+                        Logger.log(["E: Could not find %s in pool" %  % (chg_fn))
+                    else:
+                        chg.poolfiles.append(poolfile)
+
+        chg.files = files
+
+
     def clean_from_queue(self):
         session = DBConn().session().object_session(self)
 
