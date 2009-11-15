@@ -286,6 +286,7 @@ def action(u, session):
             chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
         u.accept(summary, short_summary, session)
         u.check_override()
+        chg.clean_from_queue()
         session.commit()
         u.remove()
     elif answer == 'P':
@@ -482,6 +483,11 @@ def main():
         Logger.log(["total", summarystats.accept_count, summarystats.accept_bytes])
 
     if not Options["No-Action"]:
+        # Clean out the queue files
+        session = DBConn().session()
+        session.execute("DELETE FROM changes_pending_files WHERE id NOT IN (SELECT file_id FROM changes_pending_files_map )")
+        session.commit()
+
         if log_urgency:
             UrgencyLog().close()
     Logger.close()

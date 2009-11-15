@@ -1437,6 +1437,21 @@ class DBChange(object):
     def __repr__(self):
         return '<DBChange %s>' % self.changesname
 
+    def clean_from_queue(self):
+        session = DBConn().session().object_session(self)
+
+        # Remove changes_pool_files entries
+        for pf in self.poolfiles:
+            self.poolfiles.remove(pf)
+
+        # Remove change
+        for cf in self.files:
+            self.files.remove(cf)
+
+        # Clear out of queue
+        self.in_queue = None
+        self.approved_for_id = None
+
 __all__.append('DBChange')
 
 @session_wrapper
