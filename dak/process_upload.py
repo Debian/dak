@@ -293,6 +293,7 @@ def action(u, session):
     elif answer == 'A':
         if not chg:
             chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
+        session.commit()
         u.accept(summary, short_summary, session)
         u.check_override()
         chg.clean_from_queue()
