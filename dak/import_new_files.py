@@ -34,7 +34,7 @@ import logging
 import threading
 import glob
 import apt_pkg
-from daklib.dbconn import DBConn, get_dbchange, get_policy_queue, session_wrapper, ChangePendingFile
+from daklib.dbconn import DBConn, get_dbchange, get_policy_queue, session_wrapper, ChangePendingFile, get_location, check_poolfile
 from daklib.config import Config
 from daklib.queue import Upload
 from daklib.utils import poolify
