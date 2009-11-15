@@ -293,14 +293,12 @@ def action(u, session):
         if not chg:
             chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
         package_to_queue(u, summary, short_summary, policyqueue, chg, session)
-        chg.upload_into_db(u, holding.holding_dir)
         session.commit()
         u.remove()
     elif answer == queuekey:
         if not chg:
             chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
         QueueInfo[qu]["process"](u, summary, short_summary, chg, session)
-        chg.upload_into_db(u, holding.holding_dir)
         session.commit()
         u.remove()
     elif answer == 'Q':
