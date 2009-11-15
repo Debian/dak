@@ -37,6 +37,7 @@ import apt_pkg
 from daklib.dbconn import DBConn, get_dbchange, get_policy_queue, session_wrapper, ChangePendingFile
 from daklib.config import Config
 from daklib.queue import Upload
+from daklib.utils import poolify
 
 # where in dak.conf all of our configuration will be stowed
 options_prefix = "NewFiles"
@@ -113,7 +114,7 @@ class ImportNewFiles(object):
                         f.close()
                     except IOError:
                         # Can't find the file, try to look it up in the pool
-                        poolname = utils.poolify(u.pkg.changes["source"], u.pkg.files[chg_fn]["component"])
+                        poolname = poolify(u.pkg.changes["source"], u.pkg.files[chg_fn]["component"])
                         l = get_location(cnf["Dir::Pool"], u.pkg.files[chg_fn]["component"], session=session)
                         if not l:
                             log.critical("ERROR: Can't find location for %s (component %s)" % (chg_fn, u.pkg.files[chg_fn]["component"]))
