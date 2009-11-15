@@ -820,7 +820,7 @@ class Upload(object):
             # if in the pool or in a queue other than unchecked, reject
             if (dbc.in_queue is None) \
                    or (dbc.in_queue is not None
-                       and dbc.in_queue.queue_name != 'unchecked'):
+                       and dbc.in_queue.queue_name not in ["unchecked", "newstage"]):
                 self.rejects.append("%s file already known to dak" % base_filename)
         except NoResultFound, e:
             # not known, good
