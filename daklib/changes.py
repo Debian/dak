@@ -205,7 +205,7 @@ class Changes(object):
                 multivalues[key] = self.changes[key]
 
         chg = DBChange()
-        chg.changesfile = self.change_file
+        chg.changesfile = self.changes_file
         chg.seen = filetime
         chg.in_queue_id = in_queue
         chg.source = self.chagnes["source"]
