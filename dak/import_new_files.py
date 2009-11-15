@@ -86,15 +86,27 @@ class ImportNewFiles(object):
 
                 files=[]
                 for chg_fn in u.pkg.files.keys():
+                    f = open(chg_fn)
                     cpf = ChangePendingFile()
                     cpf.filename = chg_fn
                     cpf.size = u.pkg.files[chg_fn]['size']
                     cpf.md5sum = u.pkg.files[chg_fn]['md5sum']
-                    cpf.sha1sum = u.pkg.files[chg_fn]['sha1sum']
-                    cpf.sha256sum = u.pkg.files[chg_fn]['sha256sum']
+
+                    if u.pkg.files[chg_fn].has_key('sha1sum'):
+                        cpf.sha1sum = u.pkg.files[chg_fn]['sha1sum']
+                    else:
+                        log.warning("Having to generate sha1sum for %s" % chg_fn)
+                        cpf.sha1sum = apt_pkg.sha1sum(f)
+
+                    if u.pkg.files[chg_fn].has_key('sha256sum'):
+                        cpf.sha256sum = u.pkg.files[chg_fn]['sha256sum']
+                    else:
+                        log.warning("Having to generate sha256sum for %s" % chg_fn)
+                        cpf.sha256sum = apt_pkg.sha256sum(f)
 
                     session.add(cpf)
                     files.append(cpf)
+                    f.close()
 
                 chg.files = files
 
