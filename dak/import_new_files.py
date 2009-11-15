@@ -136,7 +136,7 @@ class ImportNewFiles(object):
                                 log.critical("ERROR: Could not find %s in pool" % chg_fn)
                                 sys.exit(1)
                             else:
-                                chg.changeslinks.append(poolfile)
+                                chg.poolfiles.append(poolfile)
 
 
                 chg.files = files
