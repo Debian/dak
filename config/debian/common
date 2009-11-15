@@ -64,6 +64,19 @@ function do_unchecked () {
     dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
 }
 
+# Do the newstage processing, in case we have files.
+function do_newstage () {
+    cd $newstage
+
+    changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+    report=$queuedir/REPORT
+    timestamp=$(date "+%Y-%m-%d %H:%M")
+    UNCHECKED_WITHOUT_LOCK=${UNCHECKED_WITHOUT_LOCK:-""}
+
+    echo "$timestamp": ${changes:-"Nothing to do in newstage"}  >> $report
+    dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$newstage" >> $report
+}
+
 function sync_debbugs () {
     # sync with debbugs
     echo "--" >> $report

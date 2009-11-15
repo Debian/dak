@@ -90,6 +90,7 @@ export LC_ALL=C
 lockfile -r3 $LOCKFILE || exit 0
 trap cleanup 0
 
+do_newstage
 do_unchecked
 
 if [ ! -z "$changes" ]; then
