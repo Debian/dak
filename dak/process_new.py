@@ -666,6 +666,7 @@ def do_new(upload, session):
             try:
                 check_daily_lock()
                 done = add_overrides (new, upload, session)
+                do_accept(upload, session)
                 Logger.log(["NEW ACCEPT: %s" % (upload.pkg.changes_file)])
             except CantGetLockError:
                 print "Hello? Operator! Give me the number for 911!"
@@ -837,8 +838,6 @@ def changes_to_newstage(upload, session):
     new = get_policy_queue('new', session );
     newstage = get_policy_queue('newstage', session );
 
-    # changes.in_queue = newstage
-
     chg = session.query(DBChange).filter_by(changesname=os.path.basename(upload.pkg.changes_file)).one()
     chg.approved_for = newstage.policy_queue_id
 
@@ -849,6 +848,7 @@ def changes_to_newstage(upload, session):
 
     utils.move(os.path.join(new.path, upload.pkg.changes_file), newstage.path, perms=int(newstage.perms, 8))
     chg.in_queue = newstage
+    session.commit()
 
 def _accept(upload, session):
     if Options["No-Action"]:
@@ -914,7 +914,12 @@ def do_pkg(changes_file, session):
             if new:
                 do_new(u, session)
             else:
-                do_accept(u, session)
+                try:
+                    check_daily_lock()
+                    do_accept(u, session)
+                except CantGetLockError:
+                    print "Hello? Operator! Give me the number for 911!"
+                    print "Dinstall in the locked area, cant process packages, come back later"
 #             (new, byhand) = check_status(files)
 #             if new or byhand:
 #                 if new:
