@@ -86,7 +86,7 @@ class ImportNewFiles(object):
 
                 files=[]
                 for chg_fn in u.pkg.files.keys():
-                    f = open(chg_fn)
+                    f = open(os.path.join(newq.path, chg_fn))
                     cpf = ChangePendingFile()
                     cpf.filename = chg_fn
                     cpf.size = u.pkg.files[chg_fn]['size']
