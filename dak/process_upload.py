@@ -312,6 +312,7 @@ def action(u, session):
         u.remove()
     elif answer == 'Q':
         byebye()
+        sys.exit(0)
 
     session.commit()
 
