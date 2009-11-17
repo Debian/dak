@@ -70,8 +70,10 @@ def init():
         ("process-upload",
          "Process packages in queue/unchecked"),
 
+        ("dominate",
+         "Remove obsolete source and binary associations from suites"),
         ("make-suite-file-list",
-         "Generate lists of packages per suite for apt-ftparchive"),
+         "OBSOLETE: replaced by dominate and generate-filelist"),
         ("make-pkg-file-mapping",
          "Generate package <-> file mapping"),
         ("generate-filelist",
