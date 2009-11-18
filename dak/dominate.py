@@ -35,10 +35,11 @@ def fetch(reason, query, args, session):
     for row in session.execute(query, args).fetchall():
         (id, package, version, suite_name, architecture) = row
         if Options['No-Action']:
-            print "Delete %s %s from %s architecture %s (%s)" % \
-                (package, version, suite_name, architecture, reason)
+            print "Delete %s %s from %s architecture %s (%s, %d)" % \
+                (package, version, suite_name, architecture, reason, id)
         else:
-            Logger.log([reason, package, version, suite_name, architecture])
+            Logger.log([reason, package, version, suite_name, \
+	        architecture, id])
         idList.append(id)
     return idList
 
