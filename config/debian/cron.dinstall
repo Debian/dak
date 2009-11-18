@@ -244,8 +244,8 @@ rm -f "$LOCK_ACCEPTED"
 rm -f "$LOCK_NEW"
 
 GO=(
-    FUNC="msfl"
-    TIME="make-suite-file-list"
+    FUNC="dominate"
+    TIME="dominate"
     ARGS=""
     ERR=""
 )
