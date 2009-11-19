@@ -129,9 +129,9 @@ function cruft() {
     dak check-overrides
 }
 
-function msfl() {
-    log "Generating suite file lists for apt-ftparchive"
-    dak make-suite-file-list
+function dominate() {
+    log "Removing obsolete source and binary associations"
+    dak dominate
 }
 
 function filelist() {
