@@ -2139,6 +2139,7 @@ distribution."""
             user_email_address = utils.whoami() + " <%s>" % (cnf["Dinstall::MyAdminAddress"])
             self.Subst["__REJECTOR_ADDRESS__"] = user_email_address
             self.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
+            self.Subst["__REJECT_MESSAGE__"] = ""
             self.Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
             reject_mail_message = utils.TemplateSubst(self.Subst, rej_template)
             # Write the rejection email out as the <foo>.reason file
