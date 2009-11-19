@@ -358,7 +358,9 @@ def main ():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = [ "nbs", "nviu", "nvit", "obsolete source" ]
+        checks = [ "nbs", "nviu", "nvit" ]
+        # 'obsolete source' is broken since the introduction of dak dominate
+        #checks = [ "nbs", "nviu", "nvit", "obsolete source" ]
     elif Options["Mode"] == "full":
         checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
     else:
