@@ -1445,16 +1445,15 @@ class Upload(object):
             self.check_dm_upload(fpr, session)
         else:
             # Check source-based permissions for other types
-            if self.pkg.changes["architecture"].has_key("source"):
-                if fpr.source_acl.access_level is None:
-                    rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
-                    rej += '\nPlease contact ftpmaster if you think this is incorrect'
-                    self.rejects.append(rej)
-                    return
-            else:
-                # If not a DM, we allow full upload rights
-                uid_email = "%s@debian.org" % (fpr.uid.uid)
-                self.check_if_upload_is_sponsored(uid_email, fpr.uid.name)
+            if self.pkg.changes["architecture"].has_key("source") and \
+                fpr.source_acl.access_level is None:
+                rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
+                rej += '\nPlease contact ftpmaster if you think this is incorrect'
+                self.rejects.append(rej)
+                return
+            # If not a DM, we allow full upload rights
+            uid_email = "%s@debian.org" % (fpr.uid.uid)
+            self.check_if_upload_is_sponsored(uid_email, fpr.uid.name)
 
 
         # Check binary upload permissions
