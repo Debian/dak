@@ -419,8 +419,8 @@ def main ():
 
             # Check for duplicated packages and build indices for checking "no source" later
             source_index = component + '/' + source
-            if src_pkgs.has_key(source):
-                print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
+            #if src_pkgs.has_key(source):
+            #    print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
             src_pkgs[source] = source_index
             for binary in binaries_list:
                 if bin_pkgs.has_key(binary):
