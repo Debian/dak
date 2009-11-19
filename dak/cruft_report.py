@@ -238,7 +238,7 @@ def do_nbs(real_nbs):
             output += "        o %s: %s\n" % (version, ", ".join(packages))
         if all_packages:
             all_packages.sort()
-            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s\n\n" % (source, suite.suite_name, " ".join(all_packages))
+            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s -R\n\n" % (source, suite.suite_name, " ".join(all_packages))
 
         output += "\n"
 
@@ -358,7 +358,9 @@ def main ():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = [ "nbs", "nviu", "nvit", "obsolete source" ]
+        checks = [ "nbs", "nviu", "nvit" ]
+        # 'obsolete source' is broken since the introduction of dak dominate
+        #checks = [ "nbs", "nviu", "nvit", "obsolete source" ]
     elif Options["Mode"] == "full":
         checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
     else:
@@ -386,7 +388,7 @@ def main ():
     bin_not_built = {}
 
     if "bnb" in checks:
-        bins_in_suite = get_suite_binaries(suite_name, session)
+        bins_in_suite = get_suite_binaries(suite, session)
 
     # Checks based on the Sources files
     components = cnf.ValueList("Suite::%s::Components" % (suite_name))
@@ -419,8 +421,8 @@ def main ():
 
             # Check for duplicated packages and build indices for checking "no source" later
             source_index = component + '/' + source
-            if src_pkgs.has_key(source):
-                print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
+            #if src_pkgs.has_key(source):
+            #    print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
             src_pkgs[source] = source_index
             for binary in binaries_list:
                 if bin_pkgs.has_key(binary):
