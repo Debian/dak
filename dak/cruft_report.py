@@ -238,7 +238,7 @@ def do_nbs(real_nbs):
             output += "        o %s: %s\n" % (version, ", ".join(packages))
         if all_packages:
             all_packages.sort()
-            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s\n\n" % (source, suite.suite_name, " ".join(all_packages))
+            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s -R\n\n" % (source, suite.suite_name, " ".join(all_packages))
 
         output += "\n"
 
