@@ -287,8 +287,8 @@ def write_transitions_from_file(from_file):
     """
 
     # Lets check if from_file is in the directory we expect it to be in
-    if not os.path.abspath(from_file).startswith(Cnf["Transitions::TempPath"]):
-        print "Will not accept transitions file outside of %s" % (Cnf["Transitions::TempPath"])
+    if not os.path.abspath(from_file).startswith(Cnf["Dir::TempPath"]):
+        print "Will not accept transitions file outside of %s" % (Cnf["Dir::TempPath"])
         sys.exit(3)
 
     if Options["sudo"]:
@@ -318,7 +318,7 @@ def temp_transitions_file(transitions):
            sudo-ed script and would be unreadable if it has default mkstemp mode
     """
 
-    (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Transitions::TempPath"])
+    (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Dir::TempPath"])
     os.chmod(path, 0644)
     f = open(path, "w")
     yaml.dump(transitions, f, default_flow_style=False)
@@ -577,13 +577,13 @@ def main():
                           (Cnf["Dinstall::Reject::ReleaseTransitions"]))
         sys.exit(1)
     # Also check if our temp directory is defined and existant
-    temppath = Cnf.get("Transitions::TempPath", "")
+    temppath = Cnf.get("Dir::TempPath", "")
     if temppath == "":
-        utils.warn("Transitions::TempPath not defined")
+        utils.warn("Dir::TempPath not defined")
         sys.exit(1)
     if not os.path.exists(temppath):
         utils.warn("Temporary path %s not found." %
-                          (Cnf["Transitions::TempPath"]))
+                          (Cnf["Dir::TempPath"]))
         sys.exit(1)
 
     if Options["import"]:
