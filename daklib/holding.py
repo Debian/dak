@@ -48,7 +48,7 @@ class Holding(object):
             self.holding_dir = Config()["Dir::Queue::Holding"]
             # ftptrainees haven't access to holding, use a temp directory instead
             if not os.access(self.holding_dir, os.W_OK):
-                self.holding_dir = Config()["TempPath::TempPath"]
+                self.holding_dir = Config()["Dir::TempPath"]
 
     def copy_to_holding(self, filename):
         base_filename = os.path.basename(filename)
