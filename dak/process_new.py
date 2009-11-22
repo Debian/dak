@@ -603,6 +603,9 @@ def do_new(upload, session):
     changes = upload.pkg.changes
     cnf = Config()
 
+    # Check for a valid distribution
+    upload.check_distributions()
+
     # Make a copy of distribution we can happily trample on
     changes["suite"] = copy.copy(changes["distribution"])
 
@@ -620,10 +623,6 @@ def do_new(upload, session):
                         oinv, suite, ninv, override)
             del changes["suite"][suite]
             changes["suite"][override] = 1
-    # Validate suites
-    for suite in changes["suite"].keys():
-        if get_suite(suite, session) is None:
-            utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite))
 
     # The main NEW processing loop
     done = 0
