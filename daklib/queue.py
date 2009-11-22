@@ -2307,7 +2307,7 @@ distribution."""
                             cansave = 1
 
                     if not cansave:
-                        self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
+                        self.rejects.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
 
     ################################################################################
     def check_binary_against_db(self, filename, session):
