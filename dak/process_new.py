@@ -675,11 +675,11 @@ def do_new(upload, session):
         elif answer == 'E' and not Options["Trainee"]:
             new = edit_overrides (new, upload, session)
         elif answer == 'M' and not Options["Trainee"]:
-            upload.pkg.remove_known_changes()
             aborted = upload.do_reject(manual=1,
                                        reject_message=Options["Manual-Reject"],
                                        note=get_new_comments(changes.get("source", ""), session=session))
             if not aborted:
+                upload.pkg.remove_known_changes()
                 Logger.log(["NEW REJECT: %s" % (upload.pkg.changes_file)])
                 done = 1
         elif answer == 'N':
