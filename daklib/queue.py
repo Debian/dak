@@ -427,7 +427,7 @@ class Upload(object):
             self.pkg.changes["changedbyemail"] = ""
 
             self.rejects.append("%s: Changed-By field ('%s') failed to parse: %s" \
-                   % (filename, changes["changed-by"], msg))
+                   % (filename, self.pkg.changes["changed-by"], msg))
 
         # Ensure all the values in Closes: are numbers
         if self.pkg.changes.has_key("closes"):
