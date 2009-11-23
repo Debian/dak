@@ -57,8 +57,9 @@ def do_update(self):
             c.execute("""CREATE TRIGGER modified_%s BEFORE UPDATE ON %s 
             FOR EACH ROW EXECUTE PROCEDURE tfunc_set_modified()""" % (updatetable, updatetable))
 	
-    print "Committing"
-    self.db.commit()
+        print "Committing"
+        c.execute("UPDATE config SET value = '26' WHERE name = 'db_revision'")
+        self.db.commit()
 
     except psycopg2.InternalError, msg:
             self.db.rollback()
