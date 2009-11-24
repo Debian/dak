@@ -115,7 +115,12 @@ def open_file(filename, mode='r'):
 
 def our_raw_input(prompt=""):
     if prompt:
-        sys.stdout.write(prompt)
+        while 1:
+            try:
+                sys.stdout.write(prompt)
+                break
+            except IOError:
+                pass
     sys.stdout.flush()
     try:
         ret = raw_input()
