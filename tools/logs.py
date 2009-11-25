@@ -46,7 +46,7 @@ if m:
     raise Exception("I don't like command line arguments including char '%s'"%m.group(0))
 
 if args:
-  for l in os.popen('bzgrep -H "Archive maintenance timestamp" "'+'" "'.join(args)+'"'):
+  for l in os.popen('bzgrep -H "^Archive maintenance timestamp" "'+'" "'.join(args)+'"'):
     m = LINE.match(l)
     if not m:
         raise Exception("woops '%s'"%l)
