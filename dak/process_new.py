@@ -96,6 +96,7 @@ def recheck(upload, session):
         if answer == 'R':
             upload.do_reject(manual=0, reject_message='\n'.join(upload.rejects))
             upload.pkg.remove_known_changes(session=session)
+            session.commit()
             return 0
         elif answer == 'S':
             return 0
@@ -681,6 +682,7 @@ def do_new(upload, session):
                                        note=get_new_comments(changes.get("source", ""), session=session))
             if not aborted:
                 upload.pkg.remove_known_changes(session=session)
+                session.commit()
                 Logger.log(["NEW REJECT: %s" % (upload.pkg.changes_file)])
                 done = 1
         elif answer == 'N':
@@ -771,6 +773,7 @@ def do_byhand(upload, session):
             Logger.log(["BYHAND REJECT: %s" % (upload.pkg.changes_file)])
             upload.do_reject(manual=1, reject_message=Options["Manual-Reject"])
             upload.pkg.remove_known_changes(session=session)
+            session.commit()
             done = 1
         elif answer == 'S':
             done = 1
