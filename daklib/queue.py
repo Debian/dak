@@ -2061,7 +2061,7 @@ distribution."""
             os.close(dest_fd)
 
     ###########################################################################
-    def do_reject (self, manual=0, reject_message="", note=""):
+    def do_reject (self, manual=0, reject_message="", notes=""):
         """
         Reject an upload. If called without a reject message or C{manual} is
         true, spawn an editor so the user can write one.
@@ -2080,9 +2080,10 @@ distribution."""
         if manual and not reject_message:
             (fd, temp_filename) = utils.temp_filename()
             temp_file = os.fdopen(fd, 'w')
-            if len(note) > 0:
-                for line in note:
-                    temp_file.write(line)
+            if len(notes) > 0:
+                for note in notes:
+                    temp_file.write("\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
+                                    % (note.author, note.version, note.notedate, note.comment))
             temp_file.close()
             editor = os.environ.get("EDITOR","vi")
             answer = 'E'
