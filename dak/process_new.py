@@ -611,21 +611,6 @@ def do_new(upload, session):
     # Make a copy of distribution we can happily trample on
     changes["suite"] = copy.copy(changes["distribution"])
 
-    # Fix up the list of target suites
-    for suite in changes["suite"].keys():
-        override = cnf.Find("Suite::%s::OverrideSuite" % (suite))
-        if override:
-            (olderr, newerr) = (get_suite(suite, session) == None,
-                                get_suite(override, session) == None)
-            if olderr or newerr:
-                (oinv, newinv) = ("", "")
-                if olderr: oinv = "invalid "
-                if newerr: ninv = "invalid "
-                print "warning: overriding %ssuite %s to %ssuite %s" % (
-                        oinv, suite, ninv, override)
-            del changes["suite"][suite]
-            changes["suite"][override] = 1
-
     # The main NEW processing loop
     done = 0
     while not done:

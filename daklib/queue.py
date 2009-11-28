@@ -148,6 +148,22 @@ def determine_new(changes, files, warn=1):
         if f.has_key("othercomponents"):
             new[pkg]["othercomponents"] = f["othercomponents"]
 
+    # Fix up the list of target suites
+    cnf = Config()
+    for suite in changes["suite"].keys():
+        override = cnf.Find("Suite::%s::OverrideSuite" % (suite))
+        if override:
+            (olderr, newerr) = (get_suite(suite, session) == None,
+                                get_suite(override, session) == None)
+            if olderr or newerr:
+                (oinv, newinv) = ("", "")
+                if olderr: oinv = "invalid "
+                if newerr: ninv = "invalid "
+                print "warning: overriding %ssuite %s to %ssuite %s" % (
+                        oinv, suite, ninv, override)
+            del changes["suite"][suite]
+            changes["suite"][override] = 1
+
     for suite in changes["suite"].keys():
         for pkg in new.keys():
             ql = get_override(pkg, suite, new[pkg]["component"], new[pkg]["type"], session)
