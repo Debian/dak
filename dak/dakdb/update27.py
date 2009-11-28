@@ -50,53 +50,6 @@ CREATE OR REPLACE VIEW bin_associations_binaries AS
         JOIN binaries ON bin_associations.bin = binaries.id;
             """)
 
-        print "Drop old views."
-        c.execute("DROP VIEW IF EXISTS source_suite_unique CASCADE")
-        c.execute("DROP VIEW IF EXISTS obsolete_source CASCADE")
-        c.execute("DROP VIEW IF EXISTS source_bin CASCADE")
-        c.execute("DROP VIEW IF EXISTS newest_source_bab CASCADE")
-
-        print "Create new views."
-        # returns source package names from suite without duplicates;
-        # rationale: cruft-report and rm cannot handle duplicates (yet)
-        c.execute("""
-CREATE VIEW source_suite_unique
-    AS SELECT source, suite
-        FROM source_suite GROUP BY source, suite HAVING count(*) = 1;
-            """)
-        # returns obsolete sources without binaries in the same suite;
-        # outputs install_date to detect source only (or binary throw away)
-        # uploads; duplicates are skipped
-        c.execute("""
-CREATE VIEW obsolete_source
-    AS SELECT ss.src, ss.source, ss.version, ss.suite,
-        to_char(ss.install_date, 'YYYY-MM-DD') AS install_date
-        FROM source_suite ss
-        JOIN source_suite_unique ssu
-            ON ss.source = ssu.source AND ss.suite = ssu.suite
-        LEFT JOIN bin_associations_binaries bab
-            ON ss.src = bab.source AND ss.suite = bab.suite
-            WHERE bab.id IS NULL;
-            """)
-        # returns source package names and its binaries from any suite
-        c.execute("""
-CREATE VIEW source_bin
-    AS SELECT b.package, MAX(b.version) AS version, sas.source
-        FROM binaries b
-        JOIN src_associations_src sas
-            ON b.source = sas.src
-        GROUP BY b.package, sas.source
-            """)
-        # returns binaries from suite and their source with max(version)
-        # grouped by source name, binary name, and suite
-        c.execute("""
-CREATE VIEW newest_source_bab
-    AS SELECT sas.source, MAX(sas.version) AS srcver, bab.package, bab.suite
-        FROM src_associations_src sas
-        JOIN bin_associations_binaries bab ON sas.src = bab.source
-            GROUP BY sas.source, bab.package, bab.suite;
-            """)
-
         print "Grant permissions to views."
         c.execute("GRANT SELECT ON binfiles_suite_component_arch TO PUBLIC;");
         c.execute("GRANT SELECT ON srcfiles_suite_component TO PUBLIC;");
@@ -116,10 +69,6 @@ CREATE VIEW newest_source_bab
         c.execute("GRANT SELECT ON src_associations_bin TO PUBLIC;");
         c.execute("GRANT SELECT ON almost_obsolete_all_associations TO PUBLIC;");
         c.execute("GRANT SELECT ON obsolete_all_associations TO PUBLIC;");
-        c.execute("GRANT SELECT ON source_suite_unique TO PUBLIC;");
-        c.execute("GRANT SELECT ON obsolete_source TO PUBLIC;");
-        c.execute("GRANT SELECT ON source_bin TO PUBLIC;");
-        c.execute("GRANT SELECT ON newest_source_bab TO PUBLIC;");
 
         print "Committing"
         c.execute("UPDATE config SET value = '27' WHERE name = 'db_revision'")

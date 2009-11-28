@@ -273,38 +273,58 @@ def do_dubious_nbs(dubious_nbs):
 ################################################################################
 
 def obsolete_source(suite_name, session):
-    """returns obsolete source packages for suite_name sorted by
-    install_date"""
+    """returns obsolete source packages for suite_name without binaries
+    in the same suite sorted by install_date; install_date should help
+    detecting source only (or binary throw away) uploads; duplicates in
+    the suite are skipped
+
+    subquery 'source_suite_unique' returns source package names from
+    suite without duplicates; the rationale behind is that neither
+    cruft-report nor rm cannot handle duplicates (yet)"""
 
     query = """
-SELECT os.src, os.source, os.version, os.install_date
-    FROM obsolete_source os
-    JOIN suite s on s.id = os.suite
-    WHERE s.suite_name = :suite_name
+WITH source_suite_unique AS
+    (SELECT source, suite
+        FROM source_suite GROUP BY source, suite HAVING count(*) = 1)
+SELECT ss.src, ss.source, ss.version,
+    to_char(ss.install_date, 'YYYY-MM-DD') AS install_date
+    FROM source_suite ss
+    JOIN source_suite_unique ssu
+	ON ss.source = ssu.source AND ss.suite = ssu.suite
+    JOIN suite s ON s.id = ss.suite
+    LEFT JOIN bin_associations_binaries bab
+	ON ss.src = bab.source AND ss.suite = bab.suite
+    WHERE s.suite_name = :suite_name AND bab.id IS NULL
     ORDER BY install_date"""
     args = { 'suite_name': suite_name }
     return session.execute(query, args)
 
 def source_bin(source, session):
-    """returns binaries built by source for all or no suite"""
+    """returns binaries built by source for all or no suite grouped and
+    ordered by package name"""
 
     query = """
-SELECT package
-    FROM source_bin
-    WHERE source = :source
-    ORDER BY package"""
+SELECT b.package
+    FROM binaries b
+    JOIN src_associations_src sas ON b.source = sas.src
+    WHERE sas.source = :source
+    GROUP BY b.package
+    ORDER BY b.package"""
     args = { 'source': source }
     return session.execute(query, args)
 
 def newest_source_bab(suite_name, package, session):
-    """returns newest source that builds binary package in suite"""
+    """returns newest source that builds binary package in suite grouped
+    and sorted by source and package name"""
 
     query = """
-SELECT source, srcver
-    FROM newest_source_bab nsb
-    JOIN suite s on s.id = nsb.suite
-    WHERE s.suite_name = :suite_name AND nsb.package = :package
-    ORDER BY source"""
+SELECT sas.source, MAX(sas.version) AS srcver
+    FROM src_associations_src sas
+    JOIN bin_associations_binaries bab ON sas.src = bab.source
+    JOIN suite s on s.id = bab.suite
+    WHERE s.suite_name = :suite_name AND bab.package = :package
+	GROUP BY sas.source, bab.package
+        ORDER BY sas.source, bab.package"""
     args = { 'suite_name': suite_name, 'package': package }
     return session.execute(query, args)
 
