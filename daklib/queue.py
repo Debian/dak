@@ -1859,7 +1859,7 @@ distribution."""
                 new_filename = os.path.join(utils.poolify(self.pkg.changes["source"], dsc_component), os.path.basename(old_filename))
 
                 # TODO: Care about size/md5sum collisions etc
-                (found, newf) = check_poolfile(new_filename, file_size, file_md5sum, dsc_location_id, session)
+                (found, newf) = check_poolfile(new_filename, old_dat['size'], old_dat['md5sum'], dsc_location_id, session)
 
                 if newf is None:
                     utils.copy(old_filename, os.path.join(cnf["Dir::Pool"], new_filename))
