@@ -1830,7 +1830,7 @@ distribution."""
         # Add the .dsc file to the DB first
         for newfile, entry in self.pkg.files.items():
             if entry["type"] == "dsc":
-                dsc_component, dsc_location_id, pfs = add_dsc_to_db(self, newfile, session)
+                source, dsc_component, dsc_location_id, pfs = add_dsc_to_db(self, newfile, session)
                 for j in pfs:
                     poolfiles.append(j)
 
@@ -1842,6 +1842,7 @@ distribution."""
         # If this is a sourceful diff only upload that is moving
         # cross-component we need to copy the .orig files into the new
         # component too for the same reasons as above.
+        # XXX: mhy: I think this should be in add_dsc_to_db
         if self.pkg.changes["architecture"].has_key("source"):
             for orig_file in self.pkg.orig_files.keys():
                 if not self.pkg.orig_files[orig_file].has_key("id"):
@@ -1861,18 +1862,42 @@ distribution."""
                 # TODO: Care about size/md5sum collisions etc
                 (found, newf) = check_poolfile(new_filename, old_dat['size'], old_dat['md5sum'], dsc_location_id, session)
 
+                # TODO: Uhm, what happens if newf isn't None - something has gone badly and we should cope
                 if newf is None:
                     utils.copy(old_filename, os.path.join(cnf["Dir::Pool"], new_filename))
                     newf = add_poolfile(new_filename, old_dat, dsc_location_id, session)
 
-                    # TODO: Check that there's only 1 here
-                    source = get_sources_from_name(self.pkg.changes["source"], self.pkg.changes["version"])[0]
-                    dscf = get_dscfiles(source_id=source.source_id, poolfile_id=orig_file_id, session=session)[0]
-                    dscf.poolfile_id = newf.file_id
-                    session.add(dscf)
                     session.flush()
 
+                    # Don't reference the old file from this changes
+                    for p in poolfiles:
+                        if p.file_id == oldf.file_id:
+                            poolfiles.remove(p)
+
                     poolfiles.append(newf)
+
+                    # Fix up the DSC references
+                    toremove = []
+
+                    for df in source.srcfiles:
+                        if df.poolfile.file_id == oldf.file_id:
+                            # Add a new DSC entry and mark the old one for deletion
+                            # Don't do it in the loop so we don't change the thing we're iterating over
+                            newdscf = DSCFile()
+                            newdscf.source_id = source.source_id
+                            newdscf.poolfile_id = newf.file_id
+                            session.add(newdscf)
+
+                            toremove.append(df)
+
+                    for df in toremove:
+                        session.delete(df)
+
+                    # Flush our changes
+                    session.flush()
+
+                    # Make sure that our source object is up-to-date
+                    session.expire(source)
 
         # Install the files into the pool
         for newfile, entry in self.pkg.files.items():

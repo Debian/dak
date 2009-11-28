@@ -2291,7 +2291,7 @@ def add_dsc_to_db(u, filename, session=None):
 
     session.flush()
 
-    return dsc_component, dsc_location_id, pfs
+    return source, dsc_component, dsc_location_id, pfs
 
 __all__.append('add_dsc_to_db')
 
