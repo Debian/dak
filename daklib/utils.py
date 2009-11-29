@@ -1344,9 +1344,9 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
     if exit_status:
         rejects.append("gpgv failed while checking %s." % (sig_filename))
         if status.strip():
-            rejects.append(prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
+            rejects.append(prefix_multi_line_string(status, " [GPG status-fd output:] "))
         else:
-            rejects.append(prefix_multi_line_string(output, " [GPG output:] "), "")
+            rejects.append(prefix_multi_line_string(output, " [GPG output:] "))
         return (None, rejects)
 
     # Sanity check the good stuff we expect
