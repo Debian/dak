@@ -64,6 +64,7 @@ from daklib.regexes import re_no_epoch, re_default_answer, re_isanum, re_package
 from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
+from daklib.changesutils import *
 
 # Globals
 Options = None
@@ -105,104 +106,6 @@ def recheck(upload, session):
             sys.exit(0)
 
     return 1
-
-################################################################################
-
-def indiv_sg_compare (a, b):
-    """Sort by source name, source, version, 'have source', and
-       finally by filename."""
-    # Sort by source version
-    q = apt_pkg.VersionCompare(a["version"], b["version"])
-    if q:
-        return -q
-
-    # Sort by 'have source'
-    a_has_source = a["architecture"].get("source")
-    b_has_source = b["architecture"].get("source")
-    if a_has_source and not b_has_source:
-        return -1
-    elif b_has_source and not a_has_source:
-        return 1
-
-    return cmp(a["filename"], b["filename"])
-
-############################################################
-
-def sg_compare (a, b):
-    a = a[1]
-    b = b[1]
-    """Sort by have note, source already in database and time of oldest upload."""
-    # Sort by have note
-    a_note_state = a["note_state"]
-    b_note_state = b["note_state"]
-    if a_note_state < b_note_state:
-        return -1
-    elif a_note_state > b_note_state:
-        return 1
-    # Sort by source already in database (descending)
-    source_in_database = cmp(a["source_in_database"], b["source_in_database"])
-    if source_in_database:
-        return -source_in_database
-
-    # Sort by time of oldest upload
-    return cmp(a["oldest"], b["oldest"])
-
-def sort_changes(changes_files, session):
-    """Sort into source groups, then sort each source group by version,
-    have source, filename.  Finally, sort the source groups by have
-    note, time of oldest upload of each source upload."""
-    if len(changes_files) == 1:
-        return changes_files
-
-    sorted_list = []
-    cache = {}
-    # Read in all the .changes files
-    for filename in changes_files:
-        u = Upload()
-        try:
-            u.pkg.changes_file = filename
-            u.load_changes(filename)
-            u.update_subst()
-            cache[filename] = copy.copy(u.pkg.changes)
-            cache[filename]["filename"] = filename
-        except:
-            sorted_list.append(filename)
-            break
-    # Divide the .changes into per-source groups
-    per_source = {}
-    for filename in cache.keys():
-        source = cache[filename]["source"]
-        if not per_source.has_key(source):
-            per_source[source] = {}
-            per_source[source]["list"] = []
-        per_source[source]["list"].append(cache[filename])
-    # Determine oldest time and have note status for each source group
-    for source in per_source.keys():
-        q = session.query(DBSource).filter_by(source = source).all()
-        per_source[source]["source_in_database"] = len(q)>0
-        source_list = per_source[source]["list"]
-        first = source_list[0]
-        oldest = os.stat(first["filename"])[stat.ST_MTIME]
-        have_note = 0
-        for d in per_source[source]["list"]:
-            mtime = os.stat(d["filename"])[stat.ST_MTIME]
-            if mtime < oldest:
-                oldest = mtime
-            have_note += has_new_comment(d["source"], d["version"], session)
-        per_source[source]["oldest"] = oldest
-        if not have_note:
-            per_source[source]["note_state"] = 0; # none
-        elif have_note < len(source_list):
-            per_source[source]["note_state"] = 1; # some
-        else:
-            per_source[source]["note_state"] = 2; # all
-        per_source[source]["list"].sort(indiv_sg_compare)
-    per_source_items = per_source.items()
-    per_source_items.sort(sg_compare)
-    for i in per_source_items:
-        for j in i[1]["list"]:
-            sorted_list.append(j["filename"])
-    return sorted_list
 
 ################################################################################
 
@@ -652,7 +555,7 @@ def do_new(upload, session):
             try:
                 check_daily_lock()
                 done = add_overrides (new, upload, session)
-                do_accept(upload, session)
+                new_accept(upload, session)
                 Logger.log(["NEW ACCEPT: %s" % (upload.pkg.changes_file)])
             except CantGetLockError:
                 print "Hello? Operator! Give me the number for 911!"
@@ -821,48 +724,6 @@ class clean_holding(object):
                 os.unlink(os.path.join(h.holding_dir, f))
 
 
-
-def changes_to_newstage(upload, session):
-    """move a changes file to newstage"""
-    new = get_policy_queue('new', session );
-    newstage = get_policy_queue('newstage', session );
-
-    chg = session.query(DBChange).filter_by(changesname=os.path.basename(upload.pkg.changes_file)).one()
-    chg.approved_for = newstage.policy_queue_id
-
-    for f in chg.files:
-        # update the changes_pending_files row
-        f.queue = newstage
-        utils.move(os.path.join(new.path, f.filename), newstage.path, perms=int(newstage.perms, 8))
-
-    utils.move(os.path.join(new.path, upload.pkg.changes_file), newstage.path, perms=int(newstage.perms, 8))
-    chg.in_queue = newstage
-    session.commit()
-
-def _accept(upload, session):
-    if Options["No-Action"]:
-        return
-    (summary, short_summary) = upload.build_summaries()
-    # upload.accept(summary, short_summary, targetqueue)
-
-    changes_to_newstage(upload, session)
-
-def do_accept(upload, session):
-    print "ACCEPT"
-    cnf = Config()
-    if not Options["No-Action"]:
-        (summary, short_summary) = upload.build_summaries()
-
-        if cnf.FindB("Dinstall::SecurityQueueHandling"):
-            upload.dump_vars(cnf["Dir::Queue::Embargoed"])
-            upload.move_to_queue(get_policy_queue('embargoed'))
-            upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
-            # Check for override disparities
-            upload.Subst["__SUMMARY__"] = summary
-        else:
-            # Just a normal upload, accept it...
-            _accept(upload, session)
-
 def do_pkg(changes_file, session):
     new_queue = get_policy_queue('new', session );
     u = Upload()
@@ -905,7 +766,7 @@ def do_pkg(changes_file, session):
                 else:
                     try:
                         check_daily_lock()
-                        do_accept(u, session)
+                        new_accept(u, session)
                     except CantGetLockError:
                         print "Hello? Operator! Give me the number for 911!"
                         print "Dinstall in the locked area, cant process packages, come back later"
