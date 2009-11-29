@@ -157,16 +157,18 @@ def changes_to_queue(upload, srcqueue, destqueue, session):
         f.queue = destqueue
         utils.move(os.path.join(srcqueue.path, f.filename), destqueue.path, perms=int(destqueue.perms, 8))
 
-    utils.move(os.path.join(new.path, upload.pkg.changes_file), destqueue.path, perms=int(destqueue.perms, 8))
+    utils.move(os.path.join(srcqueue.path, upload.pkg.changes_file), destqueue.path, perms=int(destqueue.perms, 8))
     chg.in_queue = destqueue
     session.commit()
 
 __all__.append('changes_to_queue')
 
-def new_accept(upload, session):
+def new_accept(upload, dry_run, session):
     print "ACCEPT"
-    cnf = Config()
-    if not Options["No-Action"]:
+
+    if not dry_run:
+        cnf = Config()
+
         (summary, short_summary) = upload.build_summaries()
 
         # XXX: mhy: I think this is wrong as these are all attributes on the

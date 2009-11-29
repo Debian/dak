@@ -555,7 +555,7 @@ def do_new(upload, session):
             try:
                 check_daily_lock()
                 done = add_overrides (new, upload, session)
-                new_accept(upload, session)
+                new_accept(upload, Options["No-Action"], session)
                 Logger.log(["NEW ACCEPT: %s" % (upload.pkg.changes_file)])
             except CantGetLockError:
                 print "Hello? Operator! Give me the number for 911!"
@@ -766,7 +766,7 @@ def do_pkg(changes_file, session):
                 else:
                     try:
                         check_daily_lock()
-                        new_accept(u, session)
+                        new_accept(u, Options["No-Action"], session)
                     except CantGetLockError:
                         print "Hello? Operator! Give me the number for 911!"
                         print "Dinstall in the locked area, cant process packages, come back later"
