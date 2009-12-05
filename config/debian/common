@@ -49,6 +49,15 @@ function make_buildd_dir () {
     cp -al ${incoming}/buildd/. tree/${STAMP}/
     ln -sfT tree/${STAMP} ${incoming}/builddweb
     find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+
+    for dist in experimental
+    do
+        cd ${incoming}/dists/${dist}
+        mkdir -p tree/${STAMP}
+        cp -al ${incoming}/dists/${dist}/buildd/. tree/${STAMP}/
+        ln -sfT tree/${STAMP} ${incoming}/dists/${dist}/current
+        find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+    done
 }
 
 # Do the unchecked processing, in case we have files.
