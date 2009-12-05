@@ -288,6 +288,8 @@ class Upload(object):
         self.warnings = []
         self.notes = []
 
+        self.later_check_files = []
+
         self.pkg.reset()
 
     def package_info(self):
@@ -820,8 +822,7 @@ class Upload(object):
             for f in file_keys:
                 ret = holding.copy_to_holding(f)
                 if ret is not None:
-                    # XXX: Should we bail out here or try and continue?
-                    self.rejects.append(ret)
+                    self.warnings.append('Could not copy %s to holding; will attempt to find in DB later' % f)
 
             os.chdir(cwd)
 
@@ -863,7 +864,9 @@ class Upload(object):
                     if os.path.exists(f):
                         self.rejects.append("Can't read `%s'. [permission denied]" % (f))
                     else:
-                        self.rejects.append("Can't read `%s'. [file not found]" % (f))
+                        # Don't directly reject, mark to check later to deal with orig's
+                        # we can find in the pool
+                        self.later_check_files.append(f)
                 entry["type"] = "unreadable"
                 continue
 
@@ -1007,6 +1010,10 @@ class Upload(object):
         self.check_source_against_db(dsc_filename, session)
         self.check_dsc_against_db(dsc_filename, session)
         session.close()
+
+        # Finally, check if we're missing any files
+        for f in self.later_check_files:
+            self.rejects.append("Could not find file %s references in changes" % f)
 
         return True
 
@@ -2438,6 +2445,13 @@ distribution."""
                                     orig_files[dsc_name] = {}
                                 orig_files[dsc_name]["path"] = os.path.join(i.location.path, i.filename)
                                 match = 1
+
+                                # Don't bitch that we couldn't find this file later
+                                try:
+                                    self.later_check_files.remove(dsc_name)
+                                except ValueError:
+                                    pass
+
 
                     if not match:
                         self.rejects.append("can not overwrite existing copy of '%s' already in the archive." % (dsc_name))
