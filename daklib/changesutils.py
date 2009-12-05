@@ -149,8 +149,12 @@ def changes_to_queue(upload, srcqueue, destqueue, session):
     """Move a changes file to a different queue and mark as approved for the
        source queue"""
 
-    chg = session.query(DBChange).filter_by(changesname=os.path.basename(upload.pkg.changes_file)).one()
-    chg.approved_for = srcqueue.policy_queue_id
+    try:
+        chg = session.query(DBChange).filter_by(changesname=os.path.basename(upload.pkg.changes_file)).one()
+    except NoResultFound:
+        return False
+
+    chg.approved_for_id = srcqueue.policy_queue_id
 
     for f in chg.files:
         # update the changes_pending_files row
@@ -160,6 +164,8 @@ def changes_to_queue(upload, srcqueue, destqueue, session):
     utils.move(os.path.join(srcqueue.path, upload.pkg.changes_file), destqueue.path, perms=int(destqueue.perms, 8))
     chg.in_queue = destqueue
     session.commit()
+
+    return True
 
 __all__.append('changes_to_queue')
 

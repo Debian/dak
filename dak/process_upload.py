@@ -258,7 +258,7 @@ def action(u, session):
             for s in u.pkg.changes["distribution"].keys():
                 suite = get_suite(s, session)
                 if suite.policy_queue:
-                    if not chg or chg.approved_for_id != su.policy_queue.policy_queue_id:
+                    if not chg or chg.approved_for_id != suite.policy_queue.policy_queue_id:
                         # This routine will check whether the upload is a binary
                         # upload when the source is already in the target suite.  If
                         # so, we skip the policy queue, otherwise we go there.

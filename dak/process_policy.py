@@ -52,20 +52,17 @@ Logger = None
 
 def do_comments(dir, srcqueue, opref, npref, line, fn, session):
     for comm in [ x for x in os.listdir(dir) if x.startswith(opref) ]:
-        print comm
         lines = open("%s/%s" % (dir, comm)).readlines()
         if len(lines) == 0 or lines[0] != line + "\n": continue
         changes_files = [ x for x in os.listdir(".") if x.startswith(comm[7:]+"_")
                                 and x.endswith(".changes") ]
-        print changes_files
         changes_files = sort_changes(changes_files, session)
         for f in changes_files:
-            print " Changes file: %s" % f
+            print "Processing changes file: %s" % f
             f = utils.validate_changes_file_arg(f, 0)
             if not f:
                 print "Couldn't validate changes file %s" % f
                 continue
-            print "\n" + f
             fn(f, srcqueue, "".join(lines[1:]), session)
 
         if opref != npref and not Options["No-Action"]:
@@ -75,8 +72,6 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, session):
 ################################################################################
 
 def comment_accept(changes_file, srcqueue, comments, session):
-    print "*** Accept for %s (%s)" % (changes_file, comments)
-
     u = Upload()
     u.pkg.changes_file = changes_file
     u.load_changes(changes_file)
@@ -84,15 +79,14 @@ def comment_accept(changes_file, srcqueue, comments, session):
 
     if not Options["No-Action"]:
         destqueue = get_policy_queue('newstage', session)
-        changes_to_queue(u, srcqueue, destqueue, session)
-
-        Logger.log(["Policy Queue Accept: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
+	if changes_to_queue(u, srcqueue, destqueue, session):
+            Logger.log(["Policy Queue ACCEPT: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
+	else:
+            print "E: Failed to migrate %s" % u.pkg.changes_file
 
 ################################################################################
 
 def comment_reject(changes_file, srcqueue, comments, session):
-    print "Reject for %s (%s)" % (changes_file, comments)
-
     u = Upload()
     u.pkg.changes_file = changes_file
     u.load_changes(changes_file)
@@ -100,12 +94,11 @@ def comment_reject(changes_file, srcqueue, comments, session):
 
     u.rejects.append(comments)
 
-    print "REJECT\n" + '\n'.join(u.rejects)
     if not Options["No-Action"]:
         u.do_reject(manual=0, reject_message='\n'.join(u.rejects))
         u.pkg.remove_known_changes(session=session)
 
-        Logger.log(["Policy Queue Reject: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
+        Logger.log(["Policy Queue REJECT: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
 
 
 ################################################################################
@@ -138,7 +131,7 @@ def main():
 
     if not Options["No-Action"]:
         try:
-            Logger = daklog.Logger(cnf, "process-new")
+            Logger = daklog.Logger(cnf, "process-policy")
         except CantOpenError, e:
             Logger = None
 
@@ -147,14 +140,16 @@ def main():
 
     try:
         pq = session.query(PolicyQueue).filter_by(queue_name=queue_name).one()
-        commentsdir = os.path.join(pq.path, 'COMMENTS')
-        # The comments stuff relies on being in the right directory
-        os.chdir(pq.path)
-        do_comments(commentsdir, pq, "ACCEPT.", "ACCEPTED.", "OK", comment_accept, session)
-        do_comments(commentsdir, pq, "REJECT.", "REJECTED.", "NOTOK", comment_reject, session)
     except NoResultFound:
         print "E: Cannot find policy queue %s" % queue_name
         sys.exit(1)
+
+    commentsdir = os.path.join(pq.path, 'COMMENTS')
+    # The comments stuff relies on being in the right directory
+    os.chdir(pq.path)
+    do_comments(commentsdir, pq, "ACCEPT.", "ACCEPTED.", "OK", comment_accept, session)
+    do_comments(commentsdir, pq, "REJECT.", "REJECTED.", "NOTOK", comment_reject, session)
+
 
 ################################################################################
 
