@@ -69,13 +69,12 @@ def package_to_queue(u, summary, short_summary, queue, chg, session, announce=No
     u.check_override()
 
     # Send accept mail, announce to lists and close bugs
-    if announce and not cnf["Dinstall::Options::No-Mail"]:
-        template = os.path.join(cnf["Dir::Templates"], announce)
-        u.update_subst()
-        u.Subst["__SUITE__"] = ""
-        mail_message = utils.TemplateSubst(u.Subst, template)
-        utils.send_mail(mail_message)
-        u.announce(short_summary, True)
+    template = os.path.join(cnf["Dir::Templates"], announce)
+    u.update_subst()
+    u.Subst["__SUITE__"] = ""
+    mail_message = utils.TemplateSubst(u.Subst, template)
+    utils.send_mail(mail_message)
+    u.announce(short_summary, True)
 
 ################################################################################
 
@@ -233,13 +232,12 @@ def acknowledge_new(u, summary, short_summary, chg, session):
     session.add(chg)
     session.commit()
 
-    if not cnf["Dinstall::Options::No-Mail"]:
-        print "Sending new ack."
-        template = os.path.join(cnf["Dir::Templates"], 'process-unchecked.new')
-        u.update_subst()
-        u.Subst["__SUMMARY__"] = summary
-        new_ack_message = utils.TemplateSubst(u.Subst, template)
-        utils.send_mail(new_ack_message)
+    print "Sending new ack."
+    template = os.path.join(cnf["Dir::Templates"], 'process-unchecked.new')
+    u.update_subst()
+    u.Subst["__SUMMARY__"] = summary
+    new_ack_message = utils.TemplateSubst(u.Subst, template)
+    utils.send_mail(new_ack_message)
 
 ################################################################################
 

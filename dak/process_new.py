@@ -493,9 +493,8 @@ def prod_maintainer (note, upload):
     prod_mail_message = utils.TemplateSubst(
         Subst,cnf["Dir::Templates"]+"/process-new.prod")
 
-    # Send the prod mail if appropriate
-    if not cnf["Dinstall::Options::No-Mail"]:
-        utils.send_mail(prod_mail_message)
+    # Send the prod mail
+    utils.send_mail(prod_mail_message)
 
     print "Sent proding message"
 
@@ -845,9 +844,6 @@ def main():
     if len(changes_files) > 1:
         sys.stderr.write("Sorting changes...\n")
     changes_files = sort_changes(changes_files, session)
-
-    # Kill me now? **FIXME**
-    cnf["Dinstall::Options::No-Mail"] = ""
 
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)

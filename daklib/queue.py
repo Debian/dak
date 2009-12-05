@@ -1927,16 +1927,13 @@ distribution."""
         if self.pkg.changes["architecture"].has_key("source") and cnf.get("Dir::UrgencyLog"):
             UrgencyLog().log(self.pkg.dsc["source"], self.pkg.dsc["version"], self.pkg.changes["urgency"])
 
-        # Send accept mail, announce to lists, close bugs and check for
-        # override disparities
-        if not cnf["Dinstall::Options::No-Mail"]:
-            self.update_subst()
-            self.Subst["__SUITE__"] = ""
-            self.Subst["__SUMMARY__"] = summary
-            mail_message = utils.TemplateSubst(self.Subst,
-                                               os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted'))
-            utils.send_mail(mail_message)
-            self.announce(short_summary, 1)
+        self.update_subst()
+        self.Subst["__SUITE__"] = ""
+        self.Subst["__SUMMARY__"] = summary
+        mail_message = utils.TemplateSubst(self.Subst,
+                                           os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted'))
+        utils.send_mail(mail_message)
+        self.announce(short_summary, 1)
 
         ## Helper stuff for DebBugs Version Tracking
         if cnf.Find("Dir::Queue::BTSVersionTrack"):
@@ -1998,11 +1995,8 @@ distribution."""
 
         cnf = Config()
 
-        # Abandon the check if:
-        #  a) override disparity checks have been disabled
-        #  b) we're not sending mail
-        if not cnf.FindB("Dinstall::OverrideDisparityCheck") or \
-           cnf["Dinstall::Options::No-Mail"]:
+        # Abandon the check if override disparity checks have been disabled
+        if not cnf.FindB("Dinstall::OverrideDisparityCheck"):
             return
 
         summary = self.pkg.check_override()
@@ -2192,9 +2186,8 @@ distribution."""
 
         os.close(reason_fd)
 
-        # Send the rejection mail if appropriate
-        if not cnf["Dinstall::Options::No-Mail"]:
-            utils.send_mail(reject_mail_message)
+        # Send the rejection mail
+        utils.send_mail(reject_mail_message)
 
         if self.logger:
             self.logger.log(["rejected", self.pkg.changes_file])

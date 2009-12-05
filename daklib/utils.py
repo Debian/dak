@@ -572,6 +572,10 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 def send_mail (message, filename=""):
     """sendmail wrapper, takes _either_ a message string or a file as arguments"""
 
+    # Check whether we're supposed to be sending mail
+    if Cnf.has_key("Dinstall::Options::No-Mail") and Cnf["Dinstall::Options::No-Mail"]:
+        return
+
     # If we've been passed a string dump it into a temporary file
     if message:
         (fd, filename) = tempfile.mkstemp()
