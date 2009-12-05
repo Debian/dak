@@ -84,9 +84,9 @@ def comment_accept(changes_file, srcqueue, comments, session):
 
     if not Options["No-Action"]:
         destqueue = get_policy_queue('newstage', session)
-        changes_to_queue(upload, srcqueue, destqueue, session)
+        changes_to_queue(u, srcqueue, destqueue, session)
 
-        Logger.log(["Policy Queue Accept: %s:  %s" % (srcqueue.queue_name, upload.pkg.changes_file)])
+        Logger.log(["Policy Queue Accept: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
 
 ################################################################################
 
@@ -105,7 +105,7 @@ def comment_reject(changes_file, srcqueue, comments, session):
         u.do_reject(manual=0, reject_message='\n'.join(u.rejects))
         u.pkg.remove_known_changes(session=session)
 
-        Logger.log(["Policy Queue Reject: %s:  %s" % (srcqueue.queue_name, upload.pkg.changes_file)])
+        Logger.log(["Policy Queue Reject: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
 
 
 ################################################################################
