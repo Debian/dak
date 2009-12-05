@@ -94,9 +94,17 @@ def comment_reject(changes_file, srcqueue, comments, session):
 
     u.rejects.append(comments)
 
+    cnf = Config()
+    bcc = "X-DAK: dak process-policy"
+    if cnf.has_key("Dinstall::Bcc"):
+        u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
+    else:
+        u.Subst["__BCC__"] = bcc
+
     if not Options["No-Action"]:
         u.do_reject(manual=0, reject_message='\n'.join(u.rejects))
         u.pkg.remove_known_changes(session=session)
+        session.commit()
 
         Logger.log(["Policy Queue REJECT: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
 
