@@ -69,12 +69,13 @@ def package_to_queue(u, summary, short_summary, queue, chg, session, announce=No
     u.check_override()
 
     # Send accept mail, announce to lists and close bugs
-    template = os.path.join(cnf["Dir::Templates"], announce)
-    u.update_subst()
-    u.Subst["__SUITE__"] = ""
-    mail_message = utils.TemplateSubst(u.Subst, template)
-    utils.send_mail(mail_message)
-    u.announce(short_summary, True)
+    if announce:
+        template = os.path.join(cnf["Dir::Templates"], announce)
+        u.update_subst()
+        u.Subst["__SUITE__"] = ""
+        mail_message = utils.TemplateSubst(u.Subst, template)
+        utils.send_mail(mail_message)
+        u.announce(short_summary, True)
 
 ################################################################################
 
