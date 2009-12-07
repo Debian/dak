@@ -30,7 +30,7 @@ import os, sys, time
 import apt_pkg
 import examine_package
 
-from daklib.queue import determine_new, check_valid
+from daklib.queue import determine_new, check_valid, Upload
 from daklib import utils
 from daklib.regexes import re_source_ext
 
@@ -140,19 +140,19 @@ def html_footer():
 
 
 def do_pkg(changes_file):
-    c = Changes()
-    c.load_dot_dak(changes_file)
-    files = c.files
-    changes = c.changes
+    upload = Upload()
+    upload.load_changes(changes_file)
 
-    c.changes["suite"] = copy(c.changes["distribution"])
-    distribution = c.changes["distribution"].keys()[0]
+    files = upload.pkg.files
+    changes = upload.pkg.changes
+    upload.pkg.changes["suite"] = copy(upload.pkg.changes["distribution"])
+    distribution = upload.pkg.changes["distribution"].keys()[0]
     # Find out what's new
-    new = determine_new(c.changes, c.files, 0)
+    new = determine_new(upload.pkg.changes, upload.pkg.files, 0)
 
     stdout_fd = sys.stdout
 
-    htmlname = c.changes["source"] + "_" + c.changes["version"] + ".html"
+    htmlname = changes["source"] + "_" + changes["version"] + ".html"
     sources.add(htmlname)
     # do not generate html output if that source/version already has one.
     if not os.path.exists(os.path.join(Cnf["Show-New::HTMLPath"],htmlname)):
@@ -161,12 +161,12 @@ def do_pkg(changes_file):
         filestoexamine = []
         for pkg in new.keys():
             for fn in new[pkg]["files"]:
-                if (c.files[fn].has_key("new") and
-                    (c.files[fn]["type"] == "dsc" or
-                     not re_source_ext.match(c.files[fn]["type"]))):
+                if (files[fn].has_key("new") and
+                    (files[fn]["type"] == "dsc" or
+                     not re_source_ext.match(files[fn]["type"]))):
                     filestoexamine.append(fn)
 
-        html_header(c.changes["source"], filestoexamine)
+        html_header(changes["source"], filestoexamine)
 
         check_valid(new)
         examine_package.display_changes( distribution, changes_file)
