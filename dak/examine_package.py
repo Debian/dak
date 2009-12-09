@@ -308,7 +308,7 @@ def create_depends_string (suite, depends_tree):
     if suite == 'experimental':
         suite_where = " in ('experimental','unstable')"
     else:
-        suite_where = " ='%s'" % suite
+        suite_where = "'%s'" % suite
 
     comma_count = 1
     session = DBConn().session()
