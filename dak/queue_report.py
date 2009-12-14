@@ -40,7 +40,7 @@ import apt_pkg
 
 from daklib import utils
 from daklib.queue import Upload
-from daklib.dbconn import DBConn, has_new_comment, DBChange
+from daklib.dbconn import DBConn, has_new_comment, DBChange, get_uid_from_fingerprint
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
@@ -395,12 +395,11 @@ def process_changes_files(changes_files, type, log):
                 closes=j["closes"].keys()
                 if dbc:
                     fingerprint = dbc.fingerprint
-
-                # TODO: This won't work now as it never gets set
-                #       Fix so that we compare the changed-by/maintainer and the signing key
-                #       Should probably be done somewhere more central
-                #if j.has_key("sponsoremail"):
-                #    sponsor=j["sponsoremail"]
+                    sponsor_name = get_uid_from_fingerprint(fingerprint).name
+                    sponsor_email = get_uid_from_fingerprint(fingerprint).uid + "@debian.org"
+                    if sponsor_name != maintainer["maintainername"] and sponsor_name != changeby["changedbyname"] and \
+                    sponsor_email != maintainer["maintaineremail"] and sponsor_name != changeby["changedbyemail"]:
+                        sponsor = sponsor_email
 
             for arch in j["architecture"].keys():
                 arches[arch] = ""
