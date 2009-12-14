@@ -383,7 +383,7 @@ def get_binary_from_name_suite(package, suitename, session=None):
                AND l.component = c.id
                AND ba.bin=b.id
                AND ba.suite = su.id
-               AND su.suite_name=%(suitename)s
+               AND su.suite_name %(suitename)s
           ORDER BY b.version DESC"""
 
     return session.execute(sql % {'package': package, 'suitename': suitename})
