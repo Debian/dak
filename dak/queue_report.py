@@ -360,8 +360,8 @@ def process_changes_files(changes_files, type, log):
         source = i[1]["list"][0]["source"]
         if len(source) > max_source_len:
             max_source_len = len(source)
-	binary_list = i[1]["list"][0]["binary"].keys()
-	binary = ', '.join(binary_list)
+        binary_list = i[1]["list"][0]["binary"].keys()
+        binary = ', '.join(binary_list)
         arches = {}
         versions = {}
         for j in i[1]["list"]:
