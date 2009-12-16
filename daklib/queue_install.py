@@ -166,7 +166,7 @@ def is_autobyhand(u):
 
 def do_autobyhand(u, summary, short_summary, chg, session):
     print "Attempting AUTOBYHAND."
-    byhandleft = True
+    byhandleft = False
     for f, entry in u.pkg.files.items():
         byhandfile = f
 
@@ -188,7 +188,7 @@ def do_autobyhand(u, summary, short_summary, chg, session):
 
         if result == 0:
             os.unlink(byhandfile)
-            del entry
+            del u.pkg.files[f]
         else:
             print "Error processing %s, left as byhand." % (f)
             byhandleft = True
