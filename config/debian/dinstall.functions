@@ -545,3 +545,18 @@ function process_unchecked() {
     do_unchecked
     sync_debbugs
 }
+
+# Function to update a "statefile" telling people what we are doing
+# (more or less).
+#
+# This should be called with the argument(s)
+#  - Status name we want to show.
+#
+function state() {
+    RIGHTNOW="$(date -u +"%a %b %d %T %Z %Y (%s)")"
+    cat >"${DINSTALLSTATE}" <<EOF
+Dinstall start: ${DINSTALLBEGIN}
+Current action: ${1}
+Action start: ${RIGHTNOW}
+EOF
+}

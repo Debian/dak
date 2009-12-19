@@ -154,6 +154,8 @@ export LC_ALL=C
 
 touch "${DINSTALLSTART}"
 ts "startup"
+DINSTALLBEGIN="$(date -u +"%a %b %d %T %Z %Y (%s)")"
+state "Startup"
 
 lockfile -l 3600 "${LOCK_DAILY}"
 trap onerror ERR
@@ -243,6 +245,8 @@ stage $GO
 rm -f "$LOCK_ACCEPTED"
 rm -f "$LOCK_NEW"
 
+state "indices"
+
 GO=(
     FUNC="dominate"
     TIME="dominate"
@@ -283,6 +287,7 @@ GO=(
 )
 stage $GO &
 
+state "packages/contents"
 GO=(
     FUNC="packages"
     TIME="apt-ftparchive"
@@ -293,6 +298,7 @@ GO=(
 # functions before it. We no longer have a 1.5hour sync point then.
 stage $GO
 
+state "dists/"
 GO=(
     FUNC="pdiff"
     TIME="pdiff"
@@ -325,6 +331,7 @@ GO=(
 )
 stage $GO
 
+state "scripts"
 GO=(
     FUNC="mkmaintainers"
     TIME="mkmaintainers"
@@ -384,6 +391,7 @@ stage $GO &
 rm -f "${LOCK_DAILY}"
 
 ts "locked part finished"
+state "postlock"
 
 GO=(
     FUNC="pgdump_post"
@@ -518,6 +526,7 @@ GO=(
     ERR="false"
 )
 stage $GO
+state "all done"
 
 
 # Now, at the very (successful) end of dinstall, make sure we remove
