@@ -240,9 +240,9 @@ def main ():
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "Cc: " + package + "@" + Cnf["Dinstall::PackagesServer"] + "\nX-DAK: dak override"
-        Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
-        Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
+        Subst["__CC__"] = "Cc: " + package + "@" + cnf["Dinstall::PackagesServer"] + "\nX-DAK: dak override"
+        Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
+        Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = utils.whoami()
         Subst["__SOURCE__"] = package
 

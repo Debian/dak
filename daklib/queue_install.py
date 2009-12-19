@@ -69,7 +69,7 @@ def package_to_queue(u, summary, short_summary, queue, chg, session, announce=No
     u.check_override()
 
     # Send accept mail, announce to lists and close bugs
-    if announce and not cnf["Dinstall::Options::No-Mail"]:
+    if announce:
         template = os.path.join(cnf["Dir::Templates"], announce)
         u.update_subst()
         u.Subst["__SUITE__"] = ""
@@ -166,7 +166,7 @@ def is_autobyhand(u):
 
 def do_autobyhand(u, summary, short_summary, chg, session):
     print "Attempting AUTOBYHAND."
-    byhandleft = True
+    byhandleft = False
     for f, entry in u.pkg.files.items():
         byhandfile = f
 
@@ -188,7 +188,7 @@ def do_autobyhand(u, summary, short_summary, chg, session):
 
         if result == 0:
             os.unlink(byhandfile)
-            del entry
+            del u.pkg.files[f]
         else:
             print "Error processing %s, left as byhand." % (f)
             byhandleft = True
@@ -233,13 +233,12 @@ def acknowledge_new(u, summary, short_summary, chg, session):
     session.add(chg)
     session.commit()
 
-    if not cnf["Dinstall::Options::No-Mail"]:
-        print "Sending new ack."
-        template = os.path.join(cnf["Dir::Templates"], 'process-unchecked.new')
-        u.update_subst()
-        u.Subst["__SUMMARY__"] = summary
-        new_ack_message = utils.TemplateSubst(u.Subst, template)
-        utils.send_mail(new_ack_message)
+    print "Sending new ack."
+    template = os.path.join(cnf["Dir::Templates"], 'process-unchecked.new')
+    u.update_subst()
+    u.Subst["__SUMMARY__"] = summary
+    new_ack_message = utils.TemplateSubst(u.Subst, template)
+    utils.send_mail(new_ack_message)
 
 ################################################################################
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """ Output html for packages in NEW """
-# Copyright (C) 2007 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2007, 2009 Joerg Jaspert <joerg@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,9 +30,13 @@ import os, sys, time
 import apt_pkg
 import examine_package
 
-from daklib.queue import determine_new, check_valid
+from daklib.dbconn import *
+from daklib.queue import determine_new, check_valid, Upload, get_policy_queue
 from daklib import utils
 from daklib.regexes import re_source_ext
+from daklib.config import Config
+from daklib import daklog
+from daklib.changesutils import *
 
 # Globals
 Cnf = None
@@ -135,41 +139,53 @@ def html_footer():
   </body>
 </html>
 """
-
+#"""
 ################################################################################
 
 
-def do_pkg(changes_file):
-    c = Changes()
-    c.load_dot_dak(changes_file)
-    files = c.files
-    changes = c.changes
+def do_pkg(changes_file, session):
+    u = Upload()
+    u.pkg.changes_file = changes_file
+    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
+    u.load_changes(changes_file)
+    new_queue = get_policy_queue('new', session );
+    u.pkg.directory = new_queue.path
+    u.update_subst()
+    origchanges = os.path.abspath(u.pkg.changes_file)
+    files = u.pkg.files
+    changes = u.pkg.changes
 
-    c.changes["suite"] = copy(c.changes["distribution"])
-    distribution = c.changes["distribution"].keys()[0]
-    # Find out what's new
-    new = determine_new(c.changes, c.files, 0)
+    for deb_filename, f in files.items():
+        if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
+            u.binary_file_checks(deb_filename, session)
+            u.check_binary_against_db(deb_filename, session)
+        else:
+            u.source_file_checks(deb_filename, session)
+            u.check_source_against_db(deb_filename, session)
+    u.pkg.changes["suite"] = u.pkg.changes["distribution"]
+
+    new = determine_new(u.pkg.changes, files, 0)
 
     stdout_fd = sys.stdout
 
-    htmlname = c.changes["source"] + "_" + c.changes["version"] + ".html"
+    htmlname = changes["source"] + "_" + changes["version"] + ".html"
     sources.add(htmlname)
     # do not generate html output if that source/version already has one.
-    if not os.path.exists(os.path.join(Cnf["Show-New::HTMLPath"],htmlname)):
-        sys.stdout = open(os.path.join(Cnf["Show-New::HTMLPath"],htmlname),"w")
+    if not os.path.exists(os.path.join(cnf["Show-New::HTMLPath"],htmlname)):
+        sys.stdout = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
 
         filestoexamine = []
         for pkg in new.keys():
             for fn in new[pkg]["files"]:
-                if (c.files[fn].has_key("new") and
-                    (c.files[fn]["type"] == "dsc" or
-                     not re_source_ext.match(c.files[fn]["type"]))):
+                if (files[fn].has_key("new") and
+                    (files[fn]["type"] == "dsc" or
+                     not re_source_ext.match(files[fn]["type"]))):
                     filestoexamine.append(fn)
 
-        html_header(c.changes["source"], filestoexamine)
+        html_header(changes["source"], filestoexamine)
 
         check_valid(new)
-        examine_package.display_changes( distribution, changes_file)
+        examine_package.display_changes( u.pkg.changes["distribution"], changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
             examine_package.check_dsc(distribution, fn)
@@ -192,20 +208,24 @@ def usage (exit_code=0):
 
 ################################################################################
 
-def init():
-    global Cnf, Options
+def init(session):
+    global cnf, Options
 
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('h',"help","Show-New::Options::Help"),
                  ("p","html-path","Show-New::HTMLPath","HasArg")]
 
     for i in ["help"]:
-        if not Cnf.has_key("Show-New::Options::%s" % (i)):
-            Cnf["Show-New::Options::%s" % (i)] = ""
+        if not cnf.has_key("Show-New::Options::%s" % (i)):
+            cnf["Show-New::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Show-New::Options")
+    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
+    if len(changes_files) == 0:
+        new_queue = get_policy_queue('new', session );
+        changes_files = utils.get_changes_files(new_queue.path)
+
+    Options = cnf.SubTree("Show-New::Options")
 
     if Options["help"]:
         usage()
@@ -217,7 +237,8 @@ def init():
 ################################################################################
 
 def main():
-    changes_files = init()
+    session = DBConn().session()
+    changes_files = init(session)
 
     examine_package.use_html=1
 
@@ -226,11 +247,12 @@ def main():
         if not changes_file:
             continue
         print "\n" + changes_file
-        do_pkg (changes_file)
-    files = set(os.listdir(Cnf["Show-New::HTMLPath"]))
+        do_pkg (changes_file, session)
+
+    files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))
     for f in to_delete:
-        os.remove(os.path.join(Cnf["Show-New::HTMLPath"],f))
+        os.remove(os.path.join(cnf["Show-New::HTMLPath"],f))
 
 ################################################################################
 

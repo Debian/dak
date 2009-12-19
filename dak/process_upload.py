@@ -196,6 +196,15 @@ def usage (exit_code=0):
 
 ###############################################################################
 
+def byebye():
+    if not Options["No-Action"]:
+        # Clean out the queue files
+        session = DBConn().session()
+        session.execute("DELETE FROM changes_pending_files WHERE id NOT IN (SELECT file_id FROM changes_pending_files_map )")
+        session.commit()
+
+
+
 def action(u, session):
     cnf = Config()
     holding = Holding()
@@ -249,7 +258,7 @@ def action(u, session):
             for s in u.pkg.changes["distribution"].keys():
                 suite = get_suite(s, session)
                 if suite.policy_queue:
-                    if not chg or chg.approved_for_id != su.policy_queue.policy_queue_id:
+                    if not chg or chg.approved_for_id != suite.policy_queue.policy_queue_id:
                         # This routine will check whether the upload is a binary
                         # upload when the source is already in the target suite.  If
                         # so, we skip the policy queue, otherwise we go there.
@@ -284,8 +293,10 @@ def action(u, session):
     elif answer == 'A':
         if not chg:
             chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
+        session.commit()
         u.accept(summary, short_summary, session)
         u.check_override()
+        chg.clean_from_queue()
         session.commit()
         u.remove()
     elif answer == 'P':
@@ -301,6 +312,7 @@ def action(u, session):
         session.commit()
         u.remove()
     elif answer == 'Q':
+        byebye()
         sys.exit(0)
 
     session.commit()
@@ -481,9 +493,12 @@ def main():
                                                 utils.size_type(int(summarystats.accept_bytes)))
         Logger.log(["total", summarystats.accept_count, summarystats.accept_bytes])
 
+    byebye()
+
     if not Options["No-Action"]:
         if log_urgency:
             UrgencyLog().close()
+
     Logger.close()
 
 ###############################################################################

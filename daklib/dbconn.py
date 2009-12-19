@@ -379,16 +379,16 @@ def get_binary_from_name_suite(package, suitename, session=None):
 
     sql = """SELECT DISTINCT(b.package), b.version, c.name, su.suite_name
              FROM binaries b, files fi, location l, component c, bin_associations ba, suite su
-             WHERE b.package=:package
+             WHERE b.package='%(package)s'
                AND b.file = fi.id
                AND fi.location = l.id
                AND l.component = c.id
                AND ba.bin=b.id
                AND ba.suite = su.id
-               AND su.suite_name=:suitename
+               AND su.suite_name %(suitename)s
           ORDER BY b.version DESC"""
 
-    return session.execute(sql, {'package': package, 'suitename': suitename})
+    return session.execute(sql % {'package': package, 'suitename': suitename})
 
 __all__.append('get_binary_from_name_suite')
 
@@ -1444,6 +1444,19 @@ class DBChange(object):
     def __repr__(self):
         return '<DBChange %s>' % self.changesname
 
+    def clean_from_queue(self):
+        session = DBConn().session().object_session(self)
+
+        # Remove changes_pool_files entries
+        self.poolfiles = []
+
+        # Remove changes_pending_files references
+        self.files = []
+
+        # Clear out of queue
+        self.in_queue = None
+        self.approved_for_id = None
+
 __all__.append('DBChange')
 
 @session_wrapper
@@ -2302,7 +2315,7 @@ def add_dsc_to_db(u, filename, session=None):
 
     session.flush()
 
-    return dsc_component, dsc_location_id, pfs
+    return source, dsc_component, dsc_location_id, pfs
 
 __all__.append('add_dsc_to_db')
 
@@ -2884,6 +2897,16 @@ class DBConn(object):
                                  poolfiles = relation(PoolFile,
                                                       secondary=self.tbl_changes_pool_files,
                                                       backref="changeslinks"),
+                                 seen = self.tbl_changes.c.seen,
+                                 source = self.tbl_changes.c.source,
+                                 binaries = self.tbl_changes.c.binaries,
+                                 architecture = self.tbl_changes.c.architecture,
+                                 distribution = self.tbl_changes.c.distribution,
+                                 urgency = self.tbl_changes.c.urgency,
+                                 maintainer = self.tbl_changes.c.maintainer,
+                                 changedby = self.tbl_changes.c.changedby,
+                                 date = self.tbl_changes.c.date,
+                                 version = self.tbl_changes.c.version,
                                  files = relation(ChangePendingFile,
                                                   secondary=self.tbl_changes_pending_files_map,
                                                   backref="changesfile"),
@@ -2896,7 +2919,12 @@ class DBConn(object):
                properties = dict(change_pending_binary_id = self.tbl_changes_pending_binaries.c.id))
 
         mapper(ChangePendingFile, self.tbl_changes_pending_files,
-               properties = dict(change_pending_file_id = self.tbl_changes_pending_files.c.id))
+               properties = dict(change_pending_file_id = self.tbl_changes_pending_files.c.id,
+                                 filename = self.tbl_changes_pending_files.c.filename,
+                                 size = self.tbl_changes_pending_files.c.size,
+                                 md5sum = self.tbl_changes_pending_files.c.md5sum,
+                                 sha1sum = self.tbl_changes_pending_files.c.sha1sum,
+                                 sha256sum = self.tbl_changes_pending_files.c.sha256sum))
 
         mapper(ChangePendingSource, self.tbl_changes_pending_source,
                properties = dict(change_pending_source_id = self.tbl_changes_pending_source.c.id,

@@ -14,7 +14,7 @@ LINE = re.compile(r'(?:|.*/)dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(
                   r'Archive maintenance timestamp \(([^\)]*)\): (\d{2}):(\d{2}):(\d{2})$')
 UNSAFE = re.compile(r'[^a-zA-Z/\._:0-9\- ]')
 
-graphs = {"dinstall1": {"keystolist":["pg_dump1", "i18n 1", "accepted", "make-suite-file-list", "apt-ftparchive",
+graphs = {"dinstall1": {"keystolist":["pg_dump1", "i18n 1", "accepted", "dominate", "generate-filelist", "apt-ftparchive",
                                     "pdiff", "release files", "w-b", "i18n 2", "apt-ftparchive cleanup"],
                         "showothers":True},
           "dinstall2": {"keystolist":['External Updates', 'p-u-new', 'o-p-u-new', 'cruft', 'import-keyring', 'overrides', 'cleanup', 'scripts', 'mirror hardlinks', 'stats', 'compress', "pkg-file-mapping" ],
@@ -46,7 +46,7 @@ if m:
     raise Exception("I don't like command line arguments including char '%s'"%m.group(0))
 
 if args:
-  for l in os.popen('bzgrep -H "Archive maintenance timestamp" "'+'" "'.join(args)+'"'):
+  for l in os.popen('bzgrep -H "^Archive maintenance timestamp" "'+'" "'.join(args)+'"'):
     m = LINE.match(l)
     if not m:
         raise Exception("woops '%s'"%l)

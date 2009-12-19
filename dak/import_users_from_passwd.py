@@ -99,8 +99,9 @@ def main ():
     keys = postgres_unames.keys()
     keys.sort()
     for uname in keys:
-        if not passwd_unames.has_key(uname)and not known_postgres_unames.has_key(uname):
-            print "W: %s is in Postgres but not the passwd file or list of known Postgres users." % (uname)
+        if not passwd_unames.has_key(uname) and not known_postgres_unames.has_key(uname):
+            print "I: Deleting %s from Postgres, no longer in passwd or list of known Postgres users" % (uname)
+            q = session.execute('DROP USER "%s"' % (uname))
 
     keys = passwd_unames.keys()
     keys.sort()

@@ -238,7 +238,7 @@ def do_nbs(real_nbs):
             output += "        o %s: %s\n" % (version, ", ".join(packages))
         if all_packages:
             all_packages.sort()
-            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s\n\n" % (source, suite.suite_name, " ".join(all_packages))
+            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s -R\n\n" % (source, suite.suite_name, " ".join(all_packages))
 
         output += "\n"
 
@@ -272,47 +272,84 @@ def do_dubious_nbs(dubious_nbs):
 
 ################################################################################
 
-def do_obsolete_source(duplicate_bins, bin2source):
-    obsolete = {}
-    for key in duplicate_bins.keys():
-        (source_a, source_b) = key.split('_')
-        for source in [ source_a, source_b ]:
-            if not obsolete.has_key(source):
-                if not source_binaries.has_key(source):
-                    # Source has already been removed
-                    continue
-                else:
-                    obsolete[source] = [ i.strip() for i in source_binaries[source].split(',') ]
-            for binary in duplicate_bins[key]:
-                if bin2source.has_key(binary) and bin2source[binary]["source"] == source:
-                    continue
-                if binary in obsolete[source]:
-                    obsolete[source].remove(binary)
+def obsolete_source(suite_name, session):
+    """returns obsolete source packages for suite_name without binaries
+    in the same suite sorted by install_date; install_date should help
+    detecting source only (or binary throw away) uploads; duplicates in
+    the suite are skipped
 
-    to_remove = []
-    output = "Obsolete source package\n"
-    output += "-----------------------\n\n"
-    obsolete_keys = obsolete.keys()
-    obsolete_keys.sort()
-    for source in obsolete_keys:
-        if not obsolete[source]:
-            to_remove.append(source)
-            output += " * %s (%s)\n" % (source, source_versions[source])
-            for binary in [ i.strip() for i in source_binaries[source].split(',') ]:
-                if bin2source.has_key(binary):
-                    output += "    o %s (%s) is built by %s.\n" \
-                          % (binary, bin2source[binary]["version"],
-                             bin2source[binary]["source"])
-                else:
-                    output += "    o %s is not built.\n" % binary
-            output += "\n"
+    subquery 'source_suite_unique' returns source package names from
+    suite without duplicates; the rationale behind is that neither
+    cruft-report nor rm cannot handle duplicates (yet)"""
 
-    if to_remove:
-        print output
+    query = """
+WITH source_suite_unique AS
+    (SELECT source, suite
+        FROM source_suite GROUP BY source, suite HAVING count(*) = 1)
+SELECT ss.src, ss.source, ss.version,
+    to_char(ss.install_date, 'YYYY-MM-DD') AS install_date
+    FROM source_suite ss
+    JOIN source_suite_unique ssu
+	ON ss.source = ssu.source AND ss.suite = ssu.suite
+    JOIN suite s ON s.id = ss.suite
+    LEFT JOIN bin_associations_binaries bab
+	ON ss.src = bab.source AND ss.suite = bab.suite
+    WHERE s.suite_name = :suite_name AND bab.id IS NULL
+    ORDER BY install_date"""
+    args = { 'suite_name': suite_name }
+    return session.execute(query, args)
 
-        print "Suggested command:"
-        print " dak rm -S -p -m \"[auto-cruft] obsolete source package\" %s" % (" ".join(to_remove))
-        print
+def source_bin(source, session):
+    """returns binaries built by source for all or no suite grouped and
+    ordered by package name"""
+
+    query = """
+SELECT b.package
+    FROM binaries b
+    JOIN src_associations_src sas ON b.source = sas.src
+    WHERE sas.source = :source
+    GROUP BY b.package
+    ORDER BY b.package"""
+    args = { 'source': source }
+    return session.execute(query, args)
+
+def newest_source_bab(suite_name, package, session):
+    """returns newest source that builds binary package in suite grouped
+    and sorted by source and package name"""
+
+    query = """
+SELECT sas.source, MAX(sas.version) AS srcver
+    FROM src_associations_src sas
+    JOIN bin_associations_binaries bab ON sas.src = bab.source
+    JOIN suite s on s.id = bab.suite
+    WHERE s.suite_name = :suite_name AND bab.package = :package
+	GROUP BY sas.source, bab.package
+        ORDER BY sas.source, bab.package"""
+    args = { 'suite_name': suite_name, 'package': package }
+    return session.execute(query, args)
+
+def report_obsolete_source(suite_name, session):
+    rows = obsolete_source(suite_name, session)
+    if rows.rowcount == 0:
+        return
+    print \
+"""Obsolete source packages in suite %s
+----------------------------------%s\n""" % \
+        (suite_name, '-' * len(suite_name))
+    for os_row in rows.fetchall():
+        (src, old_source, version, install_date) = os_row
+        print " * obsolete source %s version %s installed at %s" % \
+            (old_source, version, install_date)
+        for sb_row in source_bin(old_source, session):
+            (package, ) = sb_row
+            print "   - has built binary %s" % package
+            for nsb_row in newest_source_bab(suite_name, package, session):
+                (new_source, srcver) = nsb_row
+                print "     currently built by source %s version %s" % \
+                    (new_source, srcver)
+        print "   - suggested command:"
+        rm_opts = "-S -p -m \"[auto-cruft] obsolete source package\""
+        print "     dak rm -s %s %s %s\n" % (suite_name, rm_opts, old_source)
 
 def get_suite_binaries(suite, session):
     # Initalize a large hash table of all binary packages
@@ -383,10 +420,13 @@ def main ():
     suite_id = suite.suite_id
     suite_name = suite.suite_name.lower()
 
+    if "obsolete source" in checks:
+        report_obsolete_source(suite_name, session)
+
     bin_not_built = {}
 
     if "bnb" in checks:
-        bins_in_suite = get_suite_binaries(suite_name, session)
+        bins_in_suite = get_suite_binaries(suite, session)
 
     # Checks based on the Sources files
     components = cnf.ValueList("Suite::%s::Components" % (suite_name))
@@ -419,8 +459,8 @@ def main ():
 
             # Check for duplicated packages and build indices for checking "no source" later
             source_index = component + '/' + source
-            if src_pkgs.has_key(source):
-                print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
+            #if src_pkgs.has_key(source):
+            #    print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
             src_pkgs[source] = source_index
             for binary in binaries_list:
                 if bin_pkgs.has_key(binary):
@@ -500,9 +540,6 @@ def main ():
                     
             packages.close()
             os.unlink(temp_filename)
-
-    if "obsolete source" in checks:
-        do_obsolete_source(duplicate_bins, bin2source)
 
     # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
     dubious_nbs = {}

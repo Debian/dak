@@ -306,9 +306,9 @@ def read_changes_or_dsc (suite, filename):
 def create_depends_string (suite, depends_tree):
     result = ""
     if suite == 'experimental':
-        suite_where = " in ('experimental','unstable')"
+        suite_where = "in ('experimental','unstable')"
     else:
-        suite_where = " ='%s'" % suite
+        suite_where = "= '%s'" % suite
 
     comma_count = 1
     session = DBConn().session()

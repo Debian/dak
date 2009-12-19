@@ -204,30 +204,75 @@ class Changes(object):
             else:
                 multivalues[key] = self.changes[key]
 
-        # TODO: Use ORM
-        session.execute(
-            """INSERT INTO changes
-              (changesname, in_queue, seen, source, binaries, architecture, version,
-              distribution, urgency, maintainer, fingerprint, changedby, date)
-              VALUES (:changesfile,:in_queue,:filetime,:source,:binary, :architecture,
-              :version,:distribution,:urgency,:maintainer,:fingerprint,:changedby,:date)""",
-              { 'changesfile':  self.changes_file,
-                'filetime':     filetime,
-                'in_queue':     in_queue,
-                'source':       self.changes["source"],
-                'binary':       multivalues["binary"],
-                'architecture': multivalues["architecture"],
-                'version':      self.changes["version"],
-                'distribution': multivalues["distribution"],
-                'urgency':      self.changes["urgency"],
-                'maintainer':   self.changes["maintainer"],
-                'fingerprint':  self.changes["fingerprint"],
-                'changedby':    self.changes["changed-by"],
-                'date':         self.changes["date"]} )
+        chg = DBChange()
+        chg.changesname = self.changes_file
+        chg.seen = filetime
+        chg.in_queue_id = in_queue
+        chg.source = self.changes["source"]
+        chg.binaries = multivalues["binary"]
+        chg.architecture = multivalues["architecture"]
+        chg.version = self.changes["version"]
+        chg.distribution = multivalues["distribution"]
+        chg.urgency = self.changes["urgency"]
+        chg.maintainer = self.changes["maintainer"]
+        chg.fingerprint = self.changes["fingerprint"]
+        chg.changedby = self.changes["changed-by"]
+        chg.date = self.changes["date"]
+
+        session.add(chg)
+
+        files = []
+        for chg_fn, entry in self.files.items():
+            try:
+                f = open(os.path.join(dirpath, chg_fn))
+                cpf = ChangePendingFile()
+                cpf.filename = chg_fn
+                cpf.size = entry['size']
+                cpf.md5sum = entry['md5sum']
+
+                if entry.has_key('sha1sum'):
+                    cpf.sha1sum = entry['sha1sum']
+                else:
+                    f.seek(0)
+                    cpf.sha1sum = apt_pkg.sha1sum(f)
+
+                if entry.has_key('sha256sum'):
+                    cpf.sha256sum = entry['sha256sum']
+                else:
+                    f.seek(0)
+                    cpf.sha256sum = apt_pkg.sha256sum(f)
+
+                session.add(cpf)
+                files.append(cpf)
+                f.close()
+
+            except IOError:
+                # Can't find the file, try to look it up in the pool
+                poolname = poolify(entry["source"], entry["component"])
+                l = get_location(cnf["Dir::Pool"], entry["component"], session=session)
+
+                found, poolfile = check_poolfile(os.path.join(poolname, chg_fn),
+                                                 entry['size'],
+                                                 entry["md5sum"],
+                                                 l.location_id,
+                                                 session=session)
+
+                if found is None:
+                    Logger.log(["E: Found multiple files for pool (%s) for %s" % (chg_fn, entry["component"])])
+                elif found is False and poolfile is not None:
+                    Logger.log(["E: md5sum/size mismatch for %s in pool" % (chg_fn)])
+                else:
+                    if poolfile is None:
+                        Logger.log(["E: Could not find %s in pool" % (chg_fn)])
+                    else:
+                        chg.poolfiles.append(poolfile)
+
+        chg.files = files
 
         session.commit()
+        chg = session.query(DBChange).filter_by(changesname = self.changes_file).one();
 
-        return session.query(DBChange).filter_by(changesname = self.changes_file).one()
+        return chg
 
     def unknown_files_fields(self, name):
         return sorted(list( set(self.files[name].keys()) -

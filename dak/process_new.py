@@ -60,10 +60,11 @@ from daklib.dbconn import *
 from daklib.queue import *
 from daklib import daklog
 from daklib import utils
-from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
+from daklib.regexes import re_no_epoch, re_default_answer, re_isanum, re_package
 from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
+from daklib.changesutils import *
 
 # Globals
 Options = None
@@ -95,6 +96,8 @@ def recheck(upload, session):
 
         if answer == 'R':
             upload.do_reject(manual=0, reject_message='\n'.join(upload.rejects))
+            upload.pkg.remove_known_changes(session=session)
+            session.commit()
             return 0
         elif answer == 'S':
             return 0
@@ -103,104 +106,6 @@ def recheck(upload, session):
             sys.exit(0)
 
     return 1
-
-################################################################################
-
-def indiv_sg_compare (a, b):
-    """Sort by source name, source, version, 'have source', and
-       finally by filename."""
-    # Sort by source version
-    q = apt_pkg.VersionCompare(a["version"], b["version"])
-    if q:
-        return -q
-
-    # Sort by 'have source'
-    a_has_source = a["architecture"].get("source")
-    b_has_source = b["architecture"].get("source")
-    if a_has_source and not b_has_source:
-        return -1
-    elif b_has_source and not a_has_source:
-        return 1
-
-    return cmp(a["filename"], b["filename"])
-
-############################################################
-
-def sg_compare (a, b):
-    a = a[1]
-    b = b[1]
-    """Sort by have note, source already in database and time of oldest upload."""
-    # Sort by have note
-    a_note_state = a["note_state"]
-    b_note_state = b["note_state"]
-    if a_note_state < b_note_state:
-        return -1
-    elif a_note_state > b_note_state:
-        return 1
-    # Sort by source already in database (descending)
-    source_in_database = cmp(a["source_in_database"], b["source_in_database"])
-    if source_in_database:
-        return -source_in_database
-
-    # Sort by time of oldest upload
-    return cmp(a["oldest"], b["oldest"])
-
-def sort_changes(changes_files, session):
-    """Sort into source groups, then sort each source group by version,
-    have source, filename.  Finally, sort the source groups by have
-    note, time of oldest upload of each source upload."""
-    if len(changes_files) == 1:
-        return changes_files
-
-    sorted_list = []
-    cache = {}
-    # Read in all the .changes files
-    for filename in changes_files:
-        u = Upload()
-        try:
-            u.pkg.changes_file = filename
-            u.load_changes(filename)
-            u.update_subst()
-            cache[filename] = copy.copy(u.pkg.changes)
-            cache[filename]["filename"] = filename
-        except:
-            sorted_list.append(filename)
-            break
-    # Divide the .changes into per-source groups
-    per_source = {}
-    for filename in cache.keys():
-        source = cache[filename]["source"]
-        if not per_source.has_key(source):
-            per_source[source] = {}
-            per_source[source]["list"] = []
-        per_source[source]["list"].append(cache[filename])
-    # Determine oldest time and have note status for each source group
-    for source in per_source.keys():
-        q = session.query(DBSource).filter_by(source = source).all()
-        per_source[source]["source_in_database"] = len(q)>0
-        source_list = per_source[source]["list"]
-        first = source_list[0]
-        oldest = os.stat(first["filename"])[stat.ST_MTIME]
-        have_note = 0
-        for d in per_source[source]["list"]:
-            mtime = os.stat(d["filename"])[stat.ST_MTIME]
-            if mtime < oldest:
-                oldest = mtime
-            have_note += has_new_comment(d["source"], d["version"], session)
-        per_source[source]["oldest"] = oldest
-        if not have_note:
-            per_source[source]["note_state"] = 0; # none
-        elif have_note < len(source_list):
-            per_source[source]["note_state"] = 1; # some
-        else:
-            per_source[source]["note_state"] = 2; # all
-        per_source[source]["list"].sort(indiv_sg_compare)
-    per_source_items = per_source.items()
-    per_source_items.sort(sg_compare)
-    for i in per_source_items:
-        for j in i[1]["list"]:
-            sorted_list.append(j["filename"])
-    return sorted_list
 
 ################################################################################
 
@@ -588,9 +493,8 @@ def prod_maintainer (note, upload):
     prod_mail_message = utils.TemplateSubst(
         Subst,cnf["Dir::Templates"]+"/process-new.prod")
 
-    # Send the prod mail if appropriate
-    if not cnf["Dinstall::Options::No-Mail"]:
-        utils.send_mail(prod_mail_message)
+    # Send the prod mail
+    utils.send_mail(prod_mail_message)
 
     print "Sent proding message"
 
@@ -603,27 +507,11 @@ def do_new(upload, session):
     changes = upload.pkg.changes
     cnf = Config()
 
+    # Check for a valid distribution
+    upload.check_distributions()
+
     # Make a copy of distribution we can happily trample on
     changes["suite"] = copy.copy(changes["distribution"])
-
-    # Fix up the list of target suites
-    for suite in changes["suite"].keys():
-        override = cnf.Find("Suite::%s::OverrideSuite" % (suite))
-        if override:
-            (olderr, newerr) = (get_suite(suite, session) == None,
-                                get_suite(override, session) == None)
-            if olderr or newerr:
-                (oinv, newinv) = ("", "")
-                if olderr: oinv = "invalid "
-                if newerr: ninv = "invalid "
-                print "warning: overriding %ssuite %s to %ssuite %s" % (
-                        oinv, suite, ninv, override)
-            del changes["suite"][suite]
-            changes["suite"][override] = 1
-    # Validate suites
-    for suite in changes["suite"].keys():
-        if get_suite(suite, session) is None:
-            utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite))
 
     # The main NEW processing loop
     done = 0
@@ -666,6 +554,7 @@ def do_new(upload, session):
             try:
                 check_daily_lock()
                 done = add_overrides (new, upload, session)
+                new_accept(upload, Options["No-Action"], session)
                 Logger.log(["NEW ACCEPT: %s" % (upload.pkg.changes_file)])
             except CantGetLockError:
                 print "Hello? Operator! Give me the number for 911!"
@@ -675,11 +564,12 @@ def do_new(upload, session):
         elif answer == 'E' and not Options["Trainee"]:
             new = edit_overrides (new, upload, session)
         elif answer == 'M' and not Options["Trainee"]:
-            upload.pkg.remove_known_changes()
             aborted = upload.do_reject(manual=1,
                                        reject_message=Options["Manual-Reject"],
-                                       note=get_new_comments(changes.get("source", ""), session=session))
+                                       notes=get_new_comments(changes.get("source", ""), session=session))
             if not aborted:
+                upload.pkg.remove_known_changes(session=session)
+                session.commit()
                 Logger.log(["NEW REJECT: %s" % (upload.pkg.changes_file)])
                 done = 1
         elif answer == 'N':
@@ -769,6 +659,8 @@ def do_byhand(upload, session):
         elif answer == 'M':
             Logger.log(["BYHAND REJECT: %s" % (upload.pkg.changes_file)])
             upload.do_reject(manual=1, reject_message=Options["Manual-Reject"])
+            upload.pkg.remove_known_changes(session=session)
+            session.commit()
             done = 1
         elif answer == 'S':
             done = 1
@@ -816,55 +708,26 @@ def lock_package(package):
     finally:
         os.unlink(path)
 
-def move_file_to_queue(to_q, f, session):
-    """mark a file as being in the unchecked queue"""
-    # update the queue_file entry for the existing queue
-    qf = session.query(QueueFile).filter_by(queueid=to_q.queueid,
-                                            filename=f.filename)
-    qf.queue = to_q
+class clean_holding(object):
+    def __init__(self,pkg):
+        self.pkg = pkg
 
-    # update the changes_pending_files row
-    f.queue = to_q
+    def __enter__(self):
+        pass
 
-def changes_to_unchecked(changes, session):
-    """move a changes file to unchecked"""
-    unchecked = get_policy_queue('unchecked', session );
-    changes.in_queue = unchecked
+    def __exit__(self, type, value, traceback):
+        h = Holding()
 
-    for f in changes.pkg.files:
-        move_file_to_queue(unchecked, f)
+        for f in self.pkg.files.keys():
+            if os.path.exists(os.path.join(h.holding_dir, f)):
+                os.unlink(os.path.join(h.holding_dir, f))
 
-    # actually move files
-    changes.move_to_queue(unchecked)
-
-def _accept(upload):
-    if Options["No-Action"]:
-        return
-    (summary, short_summary) = upload.build_summaries()
-#    upload.accept(summary, short_summary, targetqueue)
-#    os.unlink(upload.pkg.changes_file[:-8]+".dak")
-    changes_to_unchecked(upload)
-
-def do_accept(upload):
-    print "ACCEPT"
-    cnf = Config()
-    if not Options["No-Action"]:
-        (summary, short_summary) = upload.build_summaries()
-
-        if cnf.FindB("Dinstall::SecurityQueueHandling"):
-            upload.dump_vars(cnf["Dir::Queue::Embargoed"])
-            upload.move_to_queue(get_policy_queue('embargoed'))
-            upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
-            # Check for override disparities
-            upload.Subst["__SUMMARY__"] = summary
-        else:
-            # Just a normal upload, accept it...
-            _accept(upload)
 
 def do_pkg(changes_file, session):
     new_queue = get_policy_queue('new', session );
     u = Upload()
     u.pkg.changes_file = changes_file
+    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
     u.load_changes(changes_file)
     u.pkg.directory = new_queue.path
     u.update_subst()
@@ -879,14 +742,33 @@ def do_pkg(changes_file, session):
         u.Subst["__BCC__"] = bcc
 
     files = u.pkg.files
+    for deb_filename, f in files.items():
+        if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
+            u.binary_file_checks(deb_filename, session)
+            u.check_binary_against_db(deb_filename, session)
+        else:
+            u.source_file_checks(deb_filename, session)
+            u.check_source_against_db(deb_filename, session)
+
+        u.pkg.changes["suite"] = copy.copy(u.pkg.changes["distribution"])
 
     try:
         with lock_package(u.pkg.changes["source"]):
-            if not recheck(u, session):
-                return
+            with clean_holding(u.pkg):
+                if not recheck(u, session):
+                    return
 
-            do_new(u,session)
-
+                # FIXME: This does need byhand checks added!
+                new = determine_new(u.pkg.changes, files)
+                if new:
+                    do_new(u, session)
+                else:
+                    try:
+                        check_daily_lock()
+                        new_accept(u, Options["No-Action"], session)
+                    except CantGetLockError:
+                        print "Hello? Operator! Give me the number for 911!"
+                        print "Dinstall in the locked area, cant process packages, come back later"
 #             (new, byhand) = check_status(files)
 #             if new or byhand:
 #                 if new:
@@ -962,9 +844,6 @@ def main():
     if len(changes_files) > 1:
         sys.stderr.write("Sorting changes...\n")
     changes_files = sort_changes(changes_files, session)
-
-    # Kill me now? **FIXME**
-    cnf["Dinstall::Options::No-Mail"] = ""
 
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)

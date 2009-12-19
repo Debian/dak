@@ -148,6 +148,22 @@ def determine_new(changes, files, warn=1):
         if f.has_key("othercomponents"):
             new[pkg]["othercomponents"] = f["othercomponents"]
 
+    # Fix up the list of target suites
+    cnf = Config()
+    for suite in changes["suite"].keys():
+        override = cnf.Find("Suite::%s::OverrideSuite" % (suite))
+        if override:
+            (olderr, newerr) = (get_suite(suite, session) == None,
+                                get_suite(override, session) == None)
+            if olderr or newerr:
+                (oinv, newinv) = ("", "")
+                if olderr: oinv = "invalid "
+                if newerr: ninv = "invalid "
+                print "warning: overriding %ssuite %s to %ssuite %s" % (
+                        oinv, suite, ninv, override)
+            del changes["suite"][suite]
+            changes["suite"][override] = 1
+
     for suite in changes["suite"].keys():
         for pkg in new.keys():
             ql = get_override(pkg, suite, new[pkg]["component"], new[pkg]["type"], session)
@@ -272,6 +288,8 @@ class Upload(object):
         self.warnings = []
         self.notes = []
 
+        self.later_check_files = []
+
         self.pkg.reset()
 
     def package_info(self):
@@ -289,7 +307,7 @@ class Upload(object):
         for title, messages in msgs:
             if messages:
                 msg += '\n\n%s:\n%s' % (title, '\n'.join(messages))
-        msg += '\n'
+        msg += '\n\n'
 
         return msg
 
@@ -427,7 +445,7 @@ class Upload(object):
             self.pkg.changes["changedbyemail"] = ""
 
             self.rejects.append("%s: Changed-By field ('%s') failed to parse: %s" \
-                   % (filename, changes["changed-by"], msg))
+                   % (filename, self.pkg.changes["changed-by"], msg))
 
         # Ensure all the values in Closes: are numbers
         if self.pkg.changes.has_key("closes"):
@@ -804,8 +822,7 @@ class Upload(object):
             for f in file_keys:
                 ret = holding.copy_to_holding(f)
                 if ret is not None:
-                    # XXX: Should we bail out here or try and continue?
-                    self.rejects.append(ret)
+                    self.warnings.append('Could not copy %s to holding; will attempt to find in DB later' % f)
 
             os.chdir(cwd)
 
@@ -820,7 +837,7 @@ class Upload(object):
             # if in the pool or in a queue other than unchecked, reject
             if (dbc.in_queue is None) \
                    or (dbc.in_queue is not None
-                       and dbc.in_queue.queue_name != 'unchecked'):
+                       and dbc.in_queue.queue_name not in ["unchecked", "newstage"]):
                 self.rejects.append("%s file already known to dak" % base_filename)
         except NoResultFound, e:
             # not known, good
@@ -847,7 +864,9 @@ class Upload(object):
                     if os.path.exists(f):
                         self.rejects.append("Can't read `%s'. [permission denied]" % (f))
                     else:
-                        self.rejects.append("Can't read `%s'. [file not found]" % (f))
+                        # Don't directly reject, mark to check later to deal with orig's
+                        # we can find in the pool
+                        self.later_check_files.append(f)
                 entry["type"] = "unreadable"
                 continue
 
@@ -991,6 +1010,10 @@ class Upload(object):
         self.check_source_against_db(dsc_filename, session)
         self.check_dsc_against_db(dsc_filename, session)
         session.close()
+
+        # Finally, check if we're missing any files
+        for f in self.later_check_files:
+            self.rejects.append("Could not find file %s references in changes" % f)
 
         return True
 
@@ -1445,16 +1468,15 @@ class Upload(object):
             self.check_dm_upload(fpr, session)
         else:
             # Check source-based permissions for other types
-            if self.pkg.changes["architecture"].has_key("source"):
-                if fpr.source_acl.access_level is None:
-                    rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
-                    rej += '\nPlease contact ftpmaster if you think this is incorrect'
-                    self.rejects.append(rej)
-                    return
-            else:
-                # If not a DM, we allow full upload rights
-                uid_email = "%s@debian.org" % (fpr.uid.uid)
-                self.check_if_upload_is_sponsored(uid_email, fpr.uid.name)
+            if self.pkg.changes["architecture"].has_key("source") and \
+                fpr.source_acl.access_level is None:
+                rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
+                rej += '\nPlease contact ftpmaster if you think this is incorrect'
+                self.rejects.append(rej)
+                return
+            # If not a DM, we allow full upload rights
+            uid_email = "%s@debian.org" % (fpr.uid.uid)
+            self.check_if_upload_is_sponsored(uid_email, fpr.uid.name)
 
 
         # Check binary upload permissions
@@ -1815,7 +1837,7 @@ distribution."""
         # Add the .dsc file to the DB first
         for newfile, entry in self.pkg.files.items():
             if entry["type"] == "dsc":
-                dsc_component, dsc_location_id, pfs = add_dsc_to_db(self, newfile, session)
+                source, dsc_component, dsc_location_id, pfs = add_dsc_to_db(self, newfile, session)
                 for j in pfs:
                     poolfiles.append(j)
 
@@ -1827,6 +1849,7 @@ distribution."""
         # If this is a sourceful diff only upload that is moving
         # cross-component we need to copy the .orig files into the new
         # component too for the same reasons as above.
+        # XXX: mhy: I think this should be in add_dsc_to_db
         if self.pkg.changes["architecture"].has_key("source"):
             for orig_file in self.pkg.orig_files.keys():
                 if not self.pkg.orig_files[orig_file].has_key("id"):
@@ -1844,20 +1867,44 @@ distribution."""
                 new_filename = os.path.join(utils.poolify(self.pkg.changes["source"], dsc_component), os.path.basename(old_filename))
 
                 # TODO: Care about size/md5sum collisions etc
-                (found, newf) = check_poolfile(new_filename, file_size, file_md5sum, dsc_location_id, session)
+                (found, newf) = check_poolfile(new_filename, old_dat['size'], old_dat['md5sum'], dsc_location_id, session)
 
+                # TODO: Uhm, what happens if newf isn't None - something has gone badly and we should cope
                 if newf is None:
                     utils.copy(old_filename, os.path.join(cnf["Dir::Pool"], new_filename))
                     newf = add_poolfile(new_filename, old_dat, dsc_location_id, session)
 
-                    # TODO: Check that there's only 1 here
-                    source = get_sources_from_name(self.pkg.changes["source"], self.pkg.changes["version"])[0]
-                    dscf = get_dscfiles(source_id=source.source_id, poolfile_id=orig_file_id, session=session)[0]
-                    dscf.poolfile_id = newf.file_id
-                    session.add(dscf)
                     session.flush()
 
+                    # Don't reference the old file from this changes
+                    for p in poolfiles:
+                        if p.file_id == oldf.file_id:
+                            poolfiles.remove(p)
+
                     poolfiles.append(newf)
+
+                    # Fix up the DSC references
+                    toremove = []
+
+                    for df in source.srcfiles:
+                        if df.poolfile.file_id == oldf.file_id:
+                            # Add a new DSC entry and mark the old one for deletion
+                            # Don't do it in the loop so we don't change the thing we're iterating over
+                            newdscf = DSCFile()
+                            newdscf.source_id = source.source_id
+                            newdscf.poolfile_id = newf.file_id
+                            session.add(newdscf)
+
+                            toremove.append(df)
+
+                    for df in toremove:
+                        session.delete(df)
+
+                    # Flush our changes
+                    session.flush()
+
+                    # Make sure that our source object is up-to-date
+                    session.expire(source)
 
         # Install the files into the pool
         for newfile, entry in self.pkg.files.items():
@@ -1887,16 +1934,13 @@ distribution."""
         if self.pkg.changes["architecture"].has_key("source") and cnf.get("Dir::UrgencyLog"):
             UrgencyLog().log(self.pkg.dsc["source"], self.pkg.dsc["version"], self.pkg.changes["urgency"])
 
-        # Send accept mail, announce to lists, close bugs and check for
-        # override disparities
-        if not cnf["Dinstall::Options::No-Mail"]:
-            self.update_subst()
-            self.Subst["__SUITE__"] = ""
-            self.Subst["__SUMMARY__"] = summary
-            mail_message = utils.TemplateSubst(self.Subst,
-                                               os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted'))
-            utils.send_mail(mail_message)
-            self.announce(short_summary, 1)
+        self.update_subst()
+        self.Subst["__SUITE__"] = ""
+        self.Subst["__SUMMARY__"] = summary
+        mail_message = utils.TemplateSubst(self.Subst,
+                                           os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted'))
+        utils.send_mail(mail_message)
+        self.announce(short_summary, 1)
 
         ## Helper stuff for DebBugs Version Tracking
         if cnf.Find("Dir::Queue::BTSVersionTrack"):
@@ -1958,11 +2002,8 @@ distribution."""
 
         cnf = Config()
 
-        # Abandon the check if:
-        #  a) override disparity checks have been disabled
-        #  b) we're not sending mail
-        if not cnf.FindB("Dinstall::OverrideDisparityCheck") or \
-           cnf["Dinstall::Options::No-Mail"]:
+        # Abandon the check if override disparity checks have been disabled
+        if not cnf.FindB("Dinstall::OverrideDisparityCheck"):
             return
 
         summary = self.pkg.check_override()
@@ -2062,7 +2103,7 @@ distribution."""
             os.close(dest_fd)
 
     ###########################################################################
-    def do_reject (self, manual=0, reject_message="", note=""):
+    def do_reject (self, manual=0, reject_message="", notes=""):
         """
         Reject an upload. If called without a reject message or C{manual} is
         true, spawn an editor so the user can write one.
@@ -2081,9 +2122,10 @@ distribution."""
         if manual and not reject_message:
             (fd, temp_filename) = utils.temp_filename()
             temp_file = os.fdopen(fd, 'w')
-            if len(note) > 0:
-                for line in note:
-                    temp_file.write(line)
+            if len(notes) > 0:
+                for note in notes:
+                    temp_file.write("\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
+                                    % (note.author, note.version, note.notedate, note.comment))
             temp_file.close()
             editor = os.environ.get("EDITOR","vi")
             answer = 'E'
@@ -2139,6 +2181,7 @@ distribution."""
             user_email_address = utils.whoami() + " <%s>" % (cnf["Dinstall::MyAdminAddress"])
             self.Subst["__REJECTOR_ADDRESS__"] = user_email_address
             self.Subst["__MANUAL_REJECT_MESSAGE__"] = reject_message
+            self.Subst["__REJECT_MESSAGE__"] = ""
             self.Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
             reject_mail_message = utils.TemplateSubst(self.Subst, rej_template)
             # Write the rejection email out as the <foo>.reason file
@@ -2150,9 +2193,8 @@ distribution."""
 
         os.close(reason_fd)
 
-        # Send the rejection mail if appropriate
-        if not cnf["Dinstall::Options::No-Mail"]:
-            utils.send_mail(reject_mail_message)
+        # Send the rejection mail
+        utils.send_mail(reject_mail_message)
 
         if self.logger:
             self.logger.log(["rejected", self.pkg.changes_file])
@@ -2307,7 +2349,7 @@ distribution."""
                             cansave = 1
 
                     if not cansave:
-                        self.reject.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
+                        self.rejects.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
 
     ################################################################################
     def check_binary_against_db(self, filename, session):
@@ -2403,6 +2445,13 @@ distribution."""
                                     orig_files[dsc_name] = {}
                                 orig_files[dsc_name]["path"] = os.path.join(i.location.path, i.filename)
                                 match = 1
+
+                                # Don't bitch that we couldn't find this file later
+                                try:
+                                    self.later_check_files.remove(dsc_name)
+                                except ValueError:
+                                    pass
+
 
                     if not match:
                         self.rejects.append("can not overwrite existing copy of '%s' already in the archive." % (dsc_name))

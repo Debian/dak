@@ -117,7 +117,12 @@ def open_file(filename, mode='r'):
 
 def our_raw_input(prompt=""):
     if prompt:
-        sys.stdout.write(prompt)
+        while 1:
+            try:
+                sys.stdout.write(prompt)
+                break
+            except IOError:
+                pass
     sys.stdout.flush()
     try:
         ret = raw_input()
@@ -568,6 +573,10 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
 def send_mail (message, filename=""):
     """sendmail wrapper, takes _either_ a message string or a file as arguments"""
+
+    # Check whether we're supposed to be sending mail
+    if Cnf.has_key("Dinstall::Options::No-Mail") and Cnf["Dinstall::Options::No-Mail"]:
+        return
 
     # If we've been passed a string dump it into a temporary file
     if message:
@@ -1341,9 +1350,9 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
     if exit_status:
         rejects.append("gpgv failed while checking %s." % (sig_filename))
         if status.strip():
-            rejects.append(prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
+            rejects.append(prefix_multi_line_string(status, " [GPG status-fd output:] "))
         else:
-            rejects.append(prefix_multi_line_string(output, " [GPG output:] "), "")
+            rejects.append(prefix_multi_line_string(output, " [GPG output:] "))
         return (None, rejects)
 
     # Sanity check the good stuff we expect

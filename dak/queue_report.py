@@ -40,7 +40,7 @@ import apt_pkg
 
 from daklib import utils
 from daklib.queue import Upload
-from daklib.dbconn import DBConn, has_new_comment, DBChange
+from daklib.dbconn import DBConn, has_new_comment, DBChange, get_uid_from_fingerprint
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
@@ -360,6 +360,8 @@ def process_changes_files(changes_files, type, log):
         source = i[1]["list"][0]["source"]
         if len(source) > max_source_len:
             max_source_len = len(source)
+        binary_list = i[1]["list"][0]["binary"].keys()
+        binary = ', '.join(binary_list)
         arches = {}
         versions = {}
         for j in i[1]["list"]:
@@ -395,12 +397,11 @@ def process_changes_files(changes_files, type, log):
                 closes=j["closes"].keys()
                 if dbc:
                     fingerprint = dbc.fingerprint
-
-                # TODO: This won't work now as it never gets set
-                #       Fix so that we compare the changed-by/maintainer and the signing key
-                #       Should probably be done somewhere more central
-                #if j.has_key("sponsoremail"):
-                #    sponsor=j["sponsoremail"]
+                    sponsor_name = get_uid_from_fingerprint(fingerprint).name
+                    sponsor_email = get_uid_from_fingerprint(fingerprint).uid + "@debian.org"
+                    if sponsor_name != maintainer["maintainername"] and sponsor_name != changeby["changedbyname"] and \
+                    sponsor_email != maintainer["maintaineremail"] and sponsor_name != changeby["changedbyemail"]:
+                        sponsor = sponsor_email
 
             for arch in j["architecture"].keys():
                 arches[arch] = ""
@@ -418,7 +419,7 @@ def process_changes_files(changes_files, type, log):
             note = " | [N]"
         else:
             note = ""
-        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename])
+        entries.append([source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename])
 
     # direction entry consists of "Which field, which direction, time-consider" where
     # time-consider says how we should treat last_modified. Thats all.
@@ -460,11 +461,12 @@ def process_changes_files(changes_files, type, log):
     if Cnf.has_key("Queue-Report::Options::822"):
         # print stuff out in 822 format
         for entry in entries:
-            (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file) = entry
+            (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file) = entry
 
             # We'll always have Source, Version, Arch, Mantainer, and Dist
             # For the rest, check to see if we have them, then print them out
             log.write("Source: " + source + "\n")
+            log.write("Binary: " + binary + "\n")
             log.write("Version: " + version_list + "\n")
             log.write("Architectures: ")
             log.write( (", ".join(arch_list.split(" "))) + "\n")
@@ -502,7 +504,7 @@ def process_changes_files(changes_files, type, log):
             source_count = len(per_source_items)
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
-                (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
+                (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
                 table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
     elif not Cnf.has_key("Queue-Report::Options::822"):
@@ -511,7 +513,7 @@ def process_changes_files(changes_files, type, log):
 
         msg = ""
         for entry in entries:
-            (source, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
+            (source, binary, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
             msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
