@@ -77,7 +77,7 @@ Sections = None
 ################################################################################
 
 def recheck(upload, session):
-    upload.recheck()
+# STU: I'm not sure, but I don't thin kthis is necessary any longer:    upload.recheck(session)
     if len(upload.rejects) > 0:
         answer = "XXX"
         if Options["No-Action"] or Options["Automatic"] or Options["Trainee"]:
@@ -95,7 +95,6 @@ def recheck(upload, session):
 
         if answer == 'R':
             upload.do_reject(manual=0, reject_message='\n'.join(upload.rejects))
-            os.unlink(upload.pkg.changes_file[:-8]+".dak")
             return 0
         elif answer == 'S':
             return 0
@@ -159,7 +158,8 @@ def sort_changes(changes_files, session):
     for filename in changes_files:
         u = Upload()
         try:
-            u.pkg.load_dot_dak(filename)
+            u.pkg.changes_file = filename
+            u.load_changes(filename)
             u.update_subst()
             cache[filename] = copy.copy(u.pkg.changes)
             cache[filename]["filename"] = filename
@@ -599,6 +599,7 @@ def prod_maintainer (note, upload):
 def do_new(upload, session):
     print "NEW\n"
     files = upload.pkg.files
+    upload.check_files(not Options["No-Action"])
     changes = upload.pkg.changes
     cnf = Config()
 
@@ -680,7 +681,6 @@ def do_new(upload, session):
                                        note=get_new_comments(changes.get("source", ""), session=session))
             if not aborted:
                 Logger.log(["NEW REJECT: %s" % (upload.pkg.changes_file)])
-                os.unlink(upload.pkg.changes_file[:-8]+".dak")
                 done = 1
         elif answer == 'N':
             edit_note(get_new_comments(changes.get("source", ""), session=session),
@@ -769,7 +769,6 @@ def do_byhand(upload, session):
         elif answer == 'M':
             Logger.log(["BYHAND REJECT: %s" % (upload.pkg.changes_file)])
             upload.do_reject(manual=1, reject_message=Options["Manual-Reject"])
-            os.unlink(upload.pkg.changes_file[:-8]+".dak")
             done = 1
         elif answer == 'S':
             done = 1
@@ -817,12 +816,34 @@ def lock_package(package):
     finally:
         os.unlink(path)
 
+def move_file_to_queue(to_q, f, session):
+    """mark a file as being in the unchecked queue"""
+    # update the queue_file entry for the existing queue
+    qf = session.query(QueueFile).filter_by(queueid=to_q.queueid,
+                                            filename=f.filename)
+    qf.queue = to_q
+
+    # update the changes_pending_files row
+    f.queue = to_q
+
+def changes_to_unchecked(changes, session):
+    """move a changes file to unchecked"""
+    unchecked = get_policy_queue('unchecked', session );
+    changes.in_queue = unchecked
+
+    for f in changes.pkg.files:
+        move_file_to_queue(unchecked, f)
+
+    # actually move files
+    changes.move_to_queue(unchecked)
+
 def _accept(upload):
     if Options["No-Action"]:
         return
     (summary, short_summary) = upload.build_summaries()
-    upload.accept(summary, short_summary, targetqueue)
-    os.unlink(upload.pkg.changes_file[:-8]+".dak")
+#    upload.accept(summary, short_summary, targetqueue)
+#    os.unlink(upload.pkg.changes_file[:-8]+".dak")
+    changes_to_unchecked(upload)
 
 def do_accept(upload):
     print "ACCEPT"
@@ -841,9 +862,14 @@ def do_accept(upload):
             _accept(upload)
 
 def do_pkg(changes_file, session):
+    new_queue = get_policy_queue('new', session );
     u = Upload()
-    u.pkg.load_dot_dak(changes_file)
+    u.pkg.changes_file = changes_file
+    u.load_changes(changes_file)
+    u.pkg.directory = new_queue.path
     u.update_subst()
+    u.logger = Logger
+    origchanges = os.path.abspath(u.pkg.changes_file)
 
     cnf = Config()
     bcc = "X-DAK: dak process-new"
@@ -859,21 +885,23 @@ def do_pkg(changes_file, session):
             if not recheck(u, session):
                 return
 
-            (new, byhand) = check_status(files)
-            if new or byhand:
-                if new:
-                    do_new(u, session)
-                if byhand:
-                    do_byhand(u, session)
-                (new, byhand) = check_status(files)
+            do_new(u,session)
 
-            if not new and not byhand:
-                try:
-                    check_daily_lock()
-                    do_accept(u)
-                except CantGetLockError:
-                    print "Hello? Operator! Give me the number for 911!"
-                    print "Dinstall in the locked area, cant process packages, come back later"
+#             (new, byhand) = check_status(files)
+#             if new or byhand:
+#                 if new:
+#                     do_new(u, session)
+#                 if byhand:
+#                     do_byhand(u, session)
+#                 (new, byhand) = check_status(files)
+
+#             if not new and not byhand:
+#                 try:
+#                     check_daily_lock()
+#                     do_accept(u)
+#                 except CantGetLockError:
+#                     print "Hello? Operator! Give me the number for 911!"
+#                     print "Dinstall in the locked area, cant process packages, come back later"
     except AlreadyLockedError, e:
         print "Seems to be locked by %s already, skipping..." % (e)
 
@@ -898,10 +926,6 @@ def end():
 def main():
     global Options, Logger, Sections, Priorities
 
-    print "NO NEW PROCESSING CURRENTLY AVAILABLE"
-    print "(Go and do something more interesting)"
-    sys.exit(0)
-
     cnf = Config()
     session = DBConn().session()
 
@@ -917,7 +941,8 @@ def main():
 
     changes_files = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
     if len(changes_files) == 0:
-        changes_files = utils.get_changes_files(cnf["Dir::Queue::New"])
+        new_queue = get_policy_queue('new', session );
+        changes_files = utils.get_changes_files(new_queue.path)
 
     Options = cnf.SubTree("Process-New::Options")
 
