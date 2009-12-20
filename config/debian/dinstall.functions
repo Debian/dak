@@ -392,11 +392,6 @@ function mirror() {
     rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
 }
 
-function wb() {
-    log "Trigger daily wanna-build run"
-    wbtrigger "daily"
-}
-
 function expire() {
     log "Expiring old database dumps..."
     cd $base/backup
