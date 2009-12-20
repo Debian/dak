@@ -380,14 +380,6 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="wb"
-    TIME="w-b"
-    ARGS=""
-    ERR=""
-)
-stage $GO &
-
 rm -f "${LOCK_DAILY}"
 
 ts "locked part finished"
