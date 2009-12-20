@@ -113,3 +113,6 @@ re_user_name = re.compile(r"^pub:.*:(.*)<.*$", re.MULTILINE);
 re_re_mark = re.compile(r'^RE:')
 
 re_parse_lintian = re.compile(r"^(?P<level>W|E|O): (?P<package>.*?): (?P<tag>[^ ]*) ?(?P<description>.*)$")
+
+# in process-upload
+re_match_expired = re.compile(r"^The key used to sign .+ has expired on .+$")
