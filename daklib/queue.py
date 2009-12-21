@@ -2081,11 +2081,11 @@ distribution."""
                 # File exists?  Let's find a new name by adding a number
                 if e.errno == errno.EEXIST:
                     try:
-                        dest_file = utils.find_next_free(morgue_file, 255)
+                        dest_file = utils.find_next_free(dest_file, 255)
                     except NoFreeFilenameError:
                         # Something's either gone badly Pete Tong, or
                         # someone is trying to exploit us.
-                        utils.warn("**WARNING** failed to find a free filename for %s in %s." % (file_entry, cnf["Fir::Queue::Reject"]))
+                        utils.warn("**WARNING** failed to find a free filename for %s in %s." % (file_entry, cnf["Dir::Queue::Reject"]))
                         return
 
                     # Make sure we really got it
