@@ -2078,17 +2078,17 @@ distribution."""
             try:
                 dest_fd = os.open(dest_file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
             except OSError, e:
-                # File exists?  Let's try and move it to the morgue
+                # File exists?  Let's find a new name by adding a number
                 if e.errno == errno.EEXIST:
-                    morgue_file = os.path.join(cnf["Dir::Morgue"], cnf["Dir::MorgueReject"], file_entry)
                     try:
-                        morgue_file = utils.find_next_free(morgue_file)
+                        dest_file = utils.find_next_free(morgue_file, 255)
                     except NoFreeFilenameError:
                         # Something's either gone badly Pete Tong, or
                         # someone is trying to exploit us.
-                        utils.warn("**WARNING** failed to move %s from the reject directory to the morgue." % (file_entry))
+                        utils.warn("**WARNING** failed to find a free filename for %s in %s." % (file_entry, cnf["Fir::Queue::Reject"]))
                         return
-                    utils.move(dest_file, morgue_file, perms=0660)
+
+                    # Make sure we really got it
                     try:
                         dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
                     except OSError, e:
