@@ -542,6 +542,13 @@ function process_unchecked() {
     sync_debbugs
 }
 
+# do a run of newstage only before dinstall is on.
+function process_newstage() {
+    log "Processing the newstage queue"
+    UNCHECKED_WITHOUT_LOCK="-p"
+    do_newstage
+}
+
 # Function to update a "statefile" telling people what we are doing
 # (more or less).
 #

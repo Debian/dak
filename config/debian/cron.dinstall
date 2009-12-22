@@ -196,6 +196,17 @@ GO=(
 stage $GO &
 
 GO=(
+    FUNC="i18n1"
+    TIME="i18n 1"
+    ARGS=""
+    ERR="false"
+)
+stage $GO &
+
+lockfile "$LOCK_ACCEPTED"
+lockfile "$LOCK_NEW"
+
+GO=(
     FUNC="punew"
     TIME="p-u-new"
     ARGS="proposedupdates"
@@ -212,25 +223,12 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="i18n1"
-    TIME="i18n 1"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-lockfile "$LOCK_ACCEPTED"
-lockfile "$LOCK_NEW"
-
-GO=(
-    FUNC="process_unchecked"
-    TIME="unchecked"
+    FUNC="newstage"
+    TIME="newstage"
     ARGS=""
     ERR=""
 )
-# disabled until p-u is faster than now. it runs often enough, so wont hurt to save
-# the time here.
-#stage $GO
+stage $GO
 
 GO=(
     FUNC="cruft"
