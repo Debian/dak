@@ -71,17 +71,18 @@ function updates() {
 
 # Process (oldstable)-proposed-updates "NEW" queue
 function punew_do() {
-    cd "${queuedir}/${1}"
     date -u -R >> REPORT
-    dak process-new -a -C COMMENTS >> REPORT || true
+    dak process-policy $1 | tee >> REPORT | mail -e -s "NEW changes in $1" debian-release@lists.debian.org
     echo >> REPORT
 }
 function punew() {
     log "Doing automated p-u-new processing"
+    cd "${queuedir}/p-u-new"
     punew_do "$1"
 }
 function opunew() {
     log "Doing automated o-p-u-new processing"
+    cd "${queuedir}/o-p-u-new"
     punew_do "$1"
 }
 

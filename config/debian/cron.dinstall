@@ -198,20 +198,18 @@ stage $GO &
 GO=(
     FUNC="punew"
     TIME="p-u-new"
-    ARGS="p-u-new"
-    ERR=""
+    ARGS="proposedupdates"
+    ERR="false"
 )
-### TODO: policy-new
-#stage $GO
+stage $GO
 
 GO=(
     FUNC="opunew"
     TIME="o-p-u-new"
-    ARGS="o-p-u-new"
-    ERR=""
+    ARGS="oldproposedupdates"
+    ERR="false"
 )
-### TODO: policy-new
-#stage $GO
+stage $GO
 
 GO=(
     FUNC="i18n1"
