@@ -543,7 +543,7 @@ function process_unchecked() {
 }
 
 # do a run of newstage only before dinstall is on.
-function process_newstage() {
+function newstage() {
     log "Processing the newstage queue"
     UNCHECKED_WITHOUT_LOCK="-p"
     do_newstage
