@@ -2,7 +2,7 @@
 # coding=utf8
 
 """
-Adding a trainee field to the process-new notes
+keep contents of binary packages in tables so we can generate contents.gz files from dak
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009  Mike O'Connor <stew@debian.org>

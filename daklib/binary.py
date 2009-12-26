@@ -324,13 +324,13 @@ def copy_temporary_contents(binary, bin_association, reject, session=None):
         table = "deb_contents"
     else:
         return False
-    
+
 
     if component.name == "main":
         component_str = ""
     else:
         component_str = component.name + "/"
-        
+
     vals = { 'package':binary.package,
              'version':binary.version,
              'arch':binary.architecture,

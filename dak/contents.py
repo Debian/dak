@@ -215,7 +215,7 @@ class OutputThread(ContentsWorkThread):
             contents_file.filehandle.write("%s\t%s\n" % (fname,contents_file.filenames[fname]))
         contents_file.sorted_keys = None
         contents_file.filenames.clear()
-    
+
 class GzipThread(ContentsWorkThread):
     def __init__(self, upstream, downstream):
         ContentsWorkThread.__init__(self, upstream, downstream)
@@ -262,18 +262,6 @@ class ContentFile(object):
             self.filenames[filename]=package
 
         self.session.close()
-
-#     def ingest(self):
-#         while True:
-#             r = self.results.fetchone()
-#             if not r:
-#                 break
-#             filename, package = r
-#             if self.filenames.has_key(filename):
-#                 self.filenames[filename] += ",%s" % (package)
-#             else:
-#                 self.filenames[filename] = "%s" % (package)
-#         self.session.close()
 
     def open_file(self):
         """
@@ -500,23 +488,16 @@ class Contents(object):
 
         qt = QueryThread(inputtoquery,querytoingest)
         it = IngestThread(querytoingest,ingesttosort)
-# these actually make things worse
-#        it2 = IngestThread(querytoingest,ingesttosort)
-#        it3 = IngestThread(querytoingest,ingesttosort)
-#        it4 = IngestThread(querytoingest,ingesttosort)
         st = SortThread(ingesttosort,sorttooutput)
         ot = OutputThread(sorttooutput,outputtogzip)
         gt = GzipThread(outputtogzip, None)
 
         qt.start()
         it.start()
-#        it2.start()
-#        it3.start()
-#        it2.start()
         st.start()
         ot.start()
         gt.start()
-        
+
         # Get our suites, and the architectures
         for suite in [i.lower() for i in suites]:
             suite_id = get_suite(suite, session).suite_id
@@ -526,7 +507,6 @@ class Contents(object):
             for (arch_id,arch_str) in arch_list:
                 print( "suite: %s, arch: %s time: %s" %(suite_id, arch_id, datetime.datetime.now().isoformat()) )
 
-#                filename = "dists/%s/Contents-%s.gz" % (suite, arch_str)
                 filename = "dists/%s/Contents-%s" % (suite, arch_str)
                 cf = DebContentFile(filename, suite, suite_id, arch_str, arch_id)
                 inputtoquery.enqueue( cf )
@@ -550,54 +530,15 @@ class Contents(object):
 
         qt = QueryThread(inputtoquery,querytoingest)
         it = IngestThread(querytoingest,ingesttosort)
-# these actually make things worse
-#        it2 = IngestThread(querytoingest,ingesttosort)
-#        it3 = IngestThread(querytoingest,ingesttosort)
-#        it4 = IngestThread(querytoingest,ingesttosort)
         st = SortThread(ingesttosort,sorttooutput)
         ot = OutputThread(sorttooutput,outputtogzip)
         gt = GzipThread(outputtogzip, None)
 
         qt.start()
         it.start()
-#        it2.start()
-#        it3.start()
-#        it2.start()
         st.start()
         ot.start()
         gt.start()
-        
-#        for section, fn_pattern in [("debian-installer","dists/%s/Contents-udeb-%s"),
-#                                     ("non-free/debian-installer", "dists/%s/Contents-udeb-nf-%s")]:
-
-#             section_id = DBConn().get_section_id(section) # all udebs should be here)
-#             if section_id != -1:
-
-                
-
-#                 # Get our suites, and the architectures
-#                 for suite in [i.lower() for i in suites]:
-#                     suite_id = DBConn().get_suite_id(suite)
-#                     arch_list = self._arches(suite_id, session)
-
-#                     for arch_id in arch_list:
-
-#                         writer = GzippedContentWriter(fn_pattern % (suite, arch_id[1]))
-#                         try:
-
-#                             results = session.execute("EXECUTE udeb_contents_q(%d,%d,%d)" % (suite_id, udebtype_id, section_id, arch_id))
-
-#                             while True:
-#                                 r = cursor.fetchone()
-#                                 if not r:
-#                                     break
-
-#                                 filename, section, package, arch = r
-#                                 writer.write(filename, section, package)
-#                         finally:
-#                             writer.close()
-
-
 
 
     def generate(self):
