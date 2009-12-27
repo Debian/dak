@@ -2277,15 +2277,16 @@ def add_dsc_to_db(u, filename, session=None):
             uploader_ids.append(get_or_set_maintainer(up, session).maintainer_id)
 
     added_ids = {}
-    for up in uploader_ids:
-        if added_ids.has_key(up):
-            utils.warn("Already saw uploader %s for source %s" % (up, source.source))
+    for up_id in uploader_ids:
+        if added_ids.has_key(up_id):
+            import utils
+            utils.warn("Already saw uploader %s for source %s" % (up_id, source.source))
             continue
 
-        added_ids[u]=1
+        added_ids[up_id]=1
 
         su = SrcUploader()
-        su.maintainer_id = up
+        su.maintainer_id = up_id
         su.source_id = source.source_id
         session.add(su)
 
