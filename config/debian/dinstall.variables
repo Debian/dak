@@ -1,3 +1,4 @@
+# -*- mode:sh -*-
 # usually we are not using debug logs. Set to 1 if you want them.
 DEBUG=0
 

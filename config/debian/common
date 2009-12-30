@@ -1,3 +1,4 @@
+# -*- mode:sh -*-
 # log something (basically echo it together with a timestamp)
 #
 # Set $PROGRAM to a string to have it added to the output.
