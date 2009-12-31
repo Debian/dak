@@ -83,11 +83,10 @@ function do_newstage () {
 function sync_debbugs () {
     # sync with debbugs
     echo "--" >> $report
-    if [ -f "$queuedir/bts_version_track/*.versions" ]; then
-        timestamp=$(date "+%Y-%m-%d-%H:%M")
-        mkdir -p $queuedir/${timestamp}
-        rsync -aq $queuedir/bts_version_track/ $queuedir/${timestamp}
-    fi
+    timestamp=$(date "+%Y-%m-%d-%H:%M")
+    mkdir -p $queuedir/${timestamp}
+    rsync -aq $queuedir/bts_version_track/ $queuedir/${timestamp}
+    rmdir --ignore-fail-on-non-empty $queuedir/${timestamp} # remove if empty.
     rsync -aq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30" --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/ 2>/dev/null && touch $lockdir/synced_bts_version || true
     NOW=$(date +%s)
     TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
