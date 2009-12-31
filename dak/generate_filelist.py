@@ -22,6 +22,19 @@ Generate file lists for apt-ftparchive.
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+################################################################################
+
+# Ganneff> Please go and try to lock mhy now. After than try to lock NEW.
+# twerner> !lock mhy
+# dak> twerner: You suck, this is already locked by Ganneff
+# Ganneff> now try with NEW
+# twerner> !lock NEW
+# dak> twerner: also locked NEW
+# mhy> Ganneff: oy, stop using me for locks and highlighting me you tall muppet
+# Ganneff> hehe :)
+
+################################################################################
+
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import utils
