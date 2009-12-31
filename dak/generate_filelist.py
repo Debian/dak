@@ -22,6 +22,19 @@ Generate file lists for apt-ftparchive.
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+################################################################################
+
+# Ganneff> Please go and try to lock mhy now. After than try to lock NEW.
+# twerner> !lock mhy
+# dak> twerner: You suck, this is already locked by Ganneff
+# Ganneff> now try with NEW
+# twerner> !lock NEW
+# dak> twerner: also locked NEW
+# mhy> Ganneff: oy, stop using me for locks and highlighting me you tall muppet
+# Ganneff> hehe :)
+
+################################################################################
+
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import utils
@@ -44,11 +57,46 @@ def getSources(suite, component, session):
 
 def getBinaries(suite, component, architecture, type, session):
     query = """
-        SELECT path, filename
-            FROM binfiles_suite_component_arch
-            WHERE suite = :suite AND component = :component AND type = :type AND
-                  (architecture = :architecture OR architecture = 2)
-            ORDER BY filename
+CREATE TEMP TABLE gf_candidates (
+    filename text,
+    path text,
+    architecture integer,
+    src integer,
+    source text);
+
+INSERT INTO gf_candidates (filename, path, architecture, src, source)
+    SELECT f.filename, l.path, b.architecture, b.source as src, s.source
+	FROM binaries b
+	JOIN bin_associations ba ON b.id = ba.bin
+	JOIN source s ON b.source = s.id
+        JOIN files f ON b.file = f.id
+        JOIN location l ON f.location = l.id
+	WHERE ba.suite = :suite AND b.type = :type AND
+            l.component = :component AND b.architecture IN (2, :architecture);
+
+WITH arch_any AS
+
+    (SELECT path, filename FROM gf_candidates
+	WHERE architecture > 2),
+
+     arch_all_with_any AS
+    (SELECT path, filename FROM gf_candidates
+	WHERE architecture = 2 AND
+	      src IN (SELECT src FROM gf_candidates WHERE architecture > 2)),
+
+     arch_all_without_any AS
+    (SELECT path, filename FROM gf_candidates
+	WHERE architecture = 2 AND
+	      source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture > 2)),
+
+     filelist AS
+    (SELECT * FROM arch_any
+    UNION
+    SELECT * FROM arch_all_with_any
+    UNION
+    SELECT * FROM arch_all_without_any)
+
+    SELECT * FROM filelist ORDER BY filename
     """
     args = { 'suite': suite.suite_id,
              'component': component.component_id,
@@ -75,20 +123,22 @@ def writeSourceList(suite, component, session):
         file.write(filename + '\n')
     file.close()
 
-def writeBinaryList(suite, component, architecture, type, session):
+def writeBinaryList(suite, component, architecture, type):
     file = listPath(suite, component, architecture, type)
+    session = DBConn().session()
     for filename in getBinaries(suite, component, architecture, type, session):
         file.write(filename + '\n')
+    session.close()
     file.close()
 
 def usage():
     print """Usage: dak generate_filelist [OPTIONS]
 Create filename lists for apt-ftparchive.
 
-  -s, --suite=SUITE                    act on this suite
+  -s, --suite=SUITE            act on this suite
   -c, --component=COMPONENT    act on this component
-  -a, --architecture=ARCH        act on this architecture
-  -h, --help                                 show this help and exit
+  -a, --architecture=ARCH      act on this architecture
+  -h, --help                   show this help and exit
 
 ARCH, COMPONENT and SUITE can be comma (or space) separated list, e.g.
     --suite=testing,unstable"""
@@ -133,12 +183,12 @@ def main():
                     if architecture_name == 'source':
                         writeSourceList(suite, component, session)
                     elif architecture_name != 'all':
-                        writeBinaryList(suite, component, architecture, 'deb', session)
-                        writeBinaryList(suite, component, architecture, 'udeb', session)
+                        writeBinaryList(suite, component, architecture, 'deb')
+                        writeBinaryList(suite, component, architecture, 'udeb')
                 except:
                     pass
     # this script doesn't change the database
-    session.rollback()
+    session.close()
 
 if __name__ == '__main__':
     main()
