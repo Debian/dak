@@ -85,10 +85,10 @@ def usage():
     print """Usage: dak generate_filelist [OPTIONS]
 Create filename lists for apt-ftparchive.
 
-  -s, --suite=SUITE                    act on this suite
+  -s, --suite=SUITE            act on this suite
   -c, --component=COMPONENT    act on this component
-  -a, --architecture=ARCH        act on this architecture
-  -h, --help                                 show this help and exit
+  -a, --architecture=ARCH      act on this architecture
+  -h, --help                   show this help and exit
 
 ARCH, COMPONENT and SUITE can be comma (or space) separated list, e.g.
     --suite=testing,unstable"""
