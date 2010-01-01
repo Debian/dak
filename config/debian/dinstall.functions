@@ -1,3 +1,4 @@
+# -*- mode:sh -*-
 # Timestamp. Used for dinstall stat graphs
 function ts() {
         echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
@@ -389,6 +390,9 @@ function mkchecksums() {
 
 function mirror() {
     log "Regenerating \"public\" mirror/ hardlink fun"
+    date -u > ${ftpdir}/project/trace/ftp-master.debian.org
+    echo "Using dak v1" >> ${ftpdir}/project/trace/ftp-master.debian.org
+    echo "Running on host: $(hostname -f)" >> ${ftpdir}/project/trace/ftp-master.debian.org
     cd ${mirrordir}
     rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
 }
