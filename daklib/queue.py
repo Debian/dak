@@ -6,7 +6,7 @@ Queue utility functions for dak
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2001 - 2006 James Troup <james@nocrew.org>
-@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@copyright: 2009, 2010  Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -361,8 +361,14 @@ class Upload(object):
     ###########################################################################
     def load_changes(self, filename):
         """
+        Load a changes file and setup a dictionary around it. Also checks for mandantory
+        fields  within.
+
+        @type: string
+        @param: Changes filename, full path.
+
         @rtype: boolean
-        @rvalue: whether the changes file was valid or not.  We may want to
+        @return: whether the changes file was valid or not.  We may want to
                  reject even if this is True (see what gets put in self.rejects).
                  This is simply to prevent us even trying things later which will
                  fail because we couldn't properly parse the file.
@@ -2052,8 +2058,8 @@ distribution."""
         directory it will be moved to the morgue to make way for
         the new file.
 
-        @type files: dict
-        @param files: file dictionary
+        @type reject_files: dict
+        @param reject_files: file dictionary
 
         """
 
