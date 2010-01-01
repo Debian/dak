@@ -1944,14 +1944,15 @@ distribution."""
 
         ## Helper stuff for DebBugs Version Tracking
         if cnf.Find("Dir::Queue::BTSVersionTrack"):
-            (fd, temp_filename) = utils.temp_filename(cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
-            version_history = os.fdopen(fd, 'w')
-            version_history.write(self.pkg.dsc["bts changelog"])
-            version_history.close()
-            filename = "%s/%s" % (cnf["Dir::Queue::BTSVersionTrack"],
-                                  self.pkg.changes_file[:-8]+".versions")
-            os.rename(temp_filename, filename)
-            os.chmod(filename, 0644)
+            if self.pkg.changes["architecture"].has_key("source"):
+                (fd, temp_filename) = utils.temp_filename(cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+                version_history = os.fdopen(fd, 'w')
+                version_history.write(self.pkg.dsc["bts changelog"])
+                version_history.close()
+                filename = "%s/%s" % (cnf["Dir::Queue::BTSVersionTrack"],
+                                      self.pkg.changes_file[:-8]+".versions")
+                os.rename(temp_filename, filename)
+                os.chmod(filename, 0644)
 
             # Write out the binary -> source mapping.
             (fd, temp_filename) = utils.temp_filename(cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
