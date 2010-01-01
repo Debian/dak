@@ -61,6 +61,10 @@ from textutils import fix_maintainer
 # reflection
 
 class DebVersion(sqltypes.Text):
+    """
+    Support the debversion type
+    """
+
     def get_col_spec(self):
         return "DEBVERSION"
 
