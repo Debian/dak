@@ -231,17 +231,6 @@ def check_valid(new):
 
 ###############################################################################
 
-def check_status(files):
-    new = byhand = 0
-    for f in files.keys():
-        if files[f].has_key("byhand"):
-            byhand = 1
-        elif files[f].has_key("new"):
-            new = 1
-    return (new, byhand)
-
-###############################################################################
-
 # Used by Upload.check_timestamps
 class TarTime(object):
     def __init__(self, future_cutoff, past_cutoff):
@@ -364,8 +353,8 @@ class Upload(object):
         Load a changes file and setup a dictionary around it. Also checks for mandantory
         fields  within.
 
-        @type: string
-        @param: Changes filename, full path.
+        @type filename: string
+        @param filename: Changes filename, full path.
 
         @rtype: boolean
         @return: whether the changes file was valid or not.  We may want to

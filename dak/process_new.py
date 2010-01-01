@@ -769,21 +769,7 @@ def do_pkg(changes_file, session):
                     except CantGetLockError:
                         print "Hello? Operator! Give me the number for 911!"
                         print "Dinstall in the locked area, cant process packages, come back later"
-#             (new, byhand) = check_status(files)
-#             if new or byhand:
-#                 if new:
-#                     do_new(u, session)
-#                 if byhand:
-#                     do_byhand(u, session)
-#                 (new, byhand) = check_status(files)
 
-#             if not new and not byhand:
-#                 try:
-#                     check_daily_lock()
-#                     do_accept(u)
-#                 except CantGetLockError:
-#                     print "Hello? Operator! Give me the number for 911!"
-#                     print "Dinstall in the locked area, cant process packages, come back later"
     except AlreadyLockedError, e:
         print "Seems to be locked by %s already, skipping..." % (e)
 
