@@ -45,3 +45,6 @@ LOCK_BUILDD="$lockdir/buildd.lock"
 
 # Statefile for the users
 DINSTALLSTATE="${webdir}/dinstall.status"
+
+# The mirror trace file
+TRACEFILE="${ftpdir}/project/trace/ftp-master.debian.org"
