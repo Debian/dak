@@ -1096,9 +1096,7 @@ class Upload(object):
     def check_source(self):
         # Bail out if:
         #    a) there's no source
-        # or c) the orig files are MIA
-        if not self.pkg.changes["architecture"].has_key("source") \
-           or len(self.pkg.orig_files) == 0:
+        if not self.pkg.changes["architecture"].has_key("source"):
             return
 
         tmpdir = utils.temp_dirname()
