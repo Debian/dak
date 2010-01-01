@@ -1225,7 +1225,7 @@ class Upload(object):
             found = False
 
             # Look in the pool
-            for poolfile in get_poolfile_like_name('/%s' % filename, session_):
+            for poolfile in get_poolfile_like_name('%s' % filename, session_):
                 poolfile_path = os.path.join(
                     poolfile.location.path, poolfile.filename
                 )
