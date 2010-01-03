@@ -79,11 +79,11 @@ def comment_accept(changes_file, srcqueue, comments, session):
 
     if not Options["No-Action"]:
         destqueue = get_policy_queue('newstage', session)
-	if changes_to_queue(u, srcqueue, destqueue, session):
-        print "  ACCEPT"
-        Logger.log(["Policy Queue ACCEPT: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
-	else:
-        print "E: Failed to migrate %s" % u.pkg.changes_file
+        if changes_to_queue(u, srcqueue, destqueue, session):
+            print "  ACCEPT"
+            Logger.log(["Policy Queue ACCEPT: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
+        else:
+            print "E: Failed to migrate %s" % u.pkg.changes_file
 
 ################################################################################
 
