@@ -41,8 +41,7 @@ def suites():
     if Config().has_key( "%s::%s" %(options_prefix,"Suite")):
         suites = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Suite")])
     else:
-        suites = [ 'unstable', 'testing' ]
-#            suites = Config().SubTree("Suite").List()
+        suites = Config().SubTree("Suite").List()
 
     return suites
 

@@ -267,12 +267,10 @@ class ContentFile(object):
         """
         opens a gzip stream to the contents file
         """
-#        filepath = Config()["Contents::Root"] + self.filename
-        self.filename = "/home/stew/contents/" + self.filename
+        filepath = Config()["Contents::Root"] + self.filename
         filedir = os.path.dirname(self.filename)
         if not os.path.isdir(filedir):
             os.makedirs(filedir)
-#        self.filehandle = gzip.open(self.filename, "w")
         self.filehandle = open(self.filename, "w")
         self._write_header()
 
@@ -470,7 +468,7 @@ class Contents(object):
         Generate contents files for both deb and udeb
         """
         self.deb_generate()
-#        self.udeb_generate()
+        self.udeb_generate()
 
     def deb_generate(self):
         """
@@ -596,8 +594,7 @@ class Contents(object):
         if Config().has_key( "%s::%s" %(options_prefix,"Suite")):
             suites = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Suite")])
         else:
-            suites = [ 'unstable', 'testing' ]
-#            suites = Config().SubTree("Suite").List()
+            suites = Config().SubTree("Suite").List()
 
         return suites
 

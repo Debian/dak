@@ -36,7 +36,6 @@ import stat
 import apt_pkg
 import time
 import re
-import string
 import email as modemail
 import subprocess
 
