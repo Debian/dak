@@ -394,8 +394,9 @@ def process_it(changes_file, session):
             valid_dsc_p = u.check_dsc(not Options["No-Action"])
             if valid_dsc_p and not Options["No-Action"]:
                 u.check_source()
-                u.check_lintian()
             u.check_hashes()
+            if valid_dsc_p and not len(u.rejects):
+                u.check_lintian()
             u.check_urgency()
             u.check_timestamps()
             u.check_signed_by_key()
