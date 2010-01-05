@@ -176,6 +176,7 @@ from daklib.urgencylog import UrgencyLog
 from daklib.summarystats import SummaryStats
 from daklib.holding import Holding
 from daklib.config import Config
+from daklib.regexes import re_match_expired
 
 ###############################################################################
 
@@ -378,6 +379,12 @@ def process_it(changes_file, session):
         if u.pkg.changes["fingerprint"]:
             valid_changes_p = u.load_changes(changespath)
         else:
+            for reason in rejects:
+                if re_match_expired.match(reason):
+                    # Hrm, key expired. Lets see if we can still parse the .changes before
+                    # we reject. Then we would be able to mail the maintainer, instead of
+                    # just silently dropping the upload.
+                    u.load_changes(changespath)
             valid_changes_p = False
             u.rejects.extend(rejects)
 

@@ -1,3 +1,4 @@
+# -*- mode:sh -*-
 # usually we are not using debug logs. Set to 1 if you want them.
 DEBUG=0
 
@@ -41,3 +42,9 @@ LOCK_STOP="$lockdir/archive.stop"
 
 # Lock buildd updates
 LOCK_BUILDD="$lockdir/buildd.lock"
+
+# Statefile for the users
+DINSTALLSTATE="${webdir}/dinstall.status"
+
+# The mirror trace file
+TRACEFILE="${ftpdir}/project/trace/ftp-master.debian.org"

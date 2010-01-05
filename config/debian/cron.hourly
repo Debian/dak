@@ -7,9 +7,6 @@ set -u
 export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-date -u > $ftpdir/project/trace/ftp-master.debian.org
-echo "Using dak v1" >> $ftpdir/project/trace/ftp-master.debian.org
-echo "Running on host: $(hostname -f)" >> $ftpdir/project/trace/ftp-master.debian.org
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
 # We used to have accepted in here, but it doesn't exist in that form any more

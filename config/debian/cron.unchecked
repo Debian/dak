@@ -70,7 +70,7 @@ function do_buildd () {
             fi
         done
         make_buildd_dir
-        wbtrigger "often"
+        wbtrigger
     fi
 }
 

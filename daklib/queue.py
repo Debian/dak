@@ -6,7 +6,7 @@ Queue utility functions for dak
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2001 - 2006 James Troup <james@nocrew.org>
-@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@copyright: 2009, 2010  Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -231,17 +231,6 @@ def check_valid(new):
 
 ###############################################################################
 
-def check_status(files):
-    new = byhand = 0
-    for f in files.keys():
-        if files[f].has_key("byhand"):
-            byhand = 1
-        elif files[f].has_key("new"):
-            new = 1
-    return (new, byhand)
-
-###############################################################################
-
 # Used by Upload.check_timestamps
 class TarTime(object):
     def __init__(self, future_cutoff, past_cutoff):
@@ -361,8 +350,14 @@ class Upload(object):
     ###########################################################################
     def load_changes(self, filename):
         """
+        Load a changes file and setup a dictionary around it. Also checks for mandantory
+        fields  within.
+
+        @type filename: string
+        @param filename: Changes filename, full path.
+
         @rtype: boolean
-        @rvalue: whether the changes file was valid or not.  We may want to
+        @return: whether the changes file was valid or not.  We may want to
                  reject even if this is True (see what gets put in self.rejects).
                  This is simply to prevent us even trying things later which will
                  fail because we couldn't properly parse the file.
@@ -1096,9 +1091,7 @@ class Upload(object):
     def check_source(self):
         # Bail out if:
         #    a) there's no source
-        # or c) the orig files are MIA
-        if not self.pkg.changes["architecture"].has_key("source") \
-           or len(self.pkg.orig_files) == 0:
+        if not self.pkg.changes["architecture"].has_key("source"):
             return
 
         tmpdir = utils.temp_dirname()
@@ -1232,7 +1225,7 @@ class Upload(object):
             found = False
 
             # Look in the pool
-            for poolfile in get_poolfile_like_name('/%s' % filename, session_):
+            for poolfile in get_poolfile_like_name('%s' % filename, session_):
                 poolfile_path = os.path.join(
                     poolfile.location.path, poolfile.filename
                 )
@@ -1944,14 +1937,7 @@ distribution."""
 
         ## Helper stuff for DebBugs Version Tracking
         if cnf.Find("Dir::Queue::BTSVersionTrack"):
-            # ??? once queue/* is cleared on *.d.o and/or reprocessed
-            # the conditionalization on dsc["bts changelog"] should be
-            # dropped.
-
-            # Write out the version history from the changelog
-            if self.pkg.changes["architecture"].has_key("source") and \
-               self.pkg.dsc.has_key("bts changelog"):
-
+            if self.pkg.changes["architecture"].has_key("source"):
                 (fd, temp_filename) = utils.temp_filename(cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
                 version_history = os.fdopen(fd, 'w')
                 version_history.write(self.pkg.dsc["bts changelog"])
@@ -2061,8 +2047,8 @@ distribution."""
         directory it will be moved to the morgue to make way for
         the new file.
 
-        @type files: dict
-        @param files: file dictionary
+        @type reject_files: dict
+        @param reject_files: file dictionary
 
         """
 
@@ -2078,17 +2064,17 @@ distribution."""
             try:
                 dest_fd = os.open(dest_file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
             except OSError, e:
-                # File exists?  Let's try and move it to the morgue
+                # File exists?  Let's find a new name by adding a number
                 if e.errno == errno.EEXIST:
-                    morgue_file = os.path.join(cnf["Dir::Morgue"], cnf["Dir::MorgueReject"], file_entry)
                     try:
-                        morgue_file = utils.find_next_free(morgue_file)
+                        dest_file = utils.find_next_free(dest_file, 255)
                     except NoFreeFilenameError:
                         # Something's either gone badly Pete Tong, or
                         # someone is trying to exploit us.
-                        utils.warn("**WARNING** failed to move %s from the reject directory to the morgue." % (file_entry))
+                        utils.warn("**WARNING** failed to find a free filename for %s in %s." % (file_entry, cnf["Dir::Queue::Reject"]))
                         return
-                    utils.move(dest_file, morgue_file, perms=0660)
+
+                    # Make sure we really got it
                     try:
                         dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
                     except OSError, e:

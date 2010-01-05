@@ -154,6 +154,8 @@ export LC_ALL=C
 
 touch "${DINSTALLSTART}"
 ts "startup"
+DINSTALLBEGIN="$(date -u +"%a %b %d %T %Z %Y (%s)")"
+state "Startup"
 
 lockfile -l 3600 "${LOCK_DAILY}"
 trap onerror ERR
@@ -194,24 +196,6 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="punew"
-    TIME="p-u-new"
-    ARGS="p-u-new"
-    ERR=""
-)
-### TODO: policy-new
-#stage $GO
-
-GO=(
-    FUNC="opunew"
-    TIME="o-p-u-new"
-    ARGS="o-p-u-new"
-    ERR=""
-)
-### TODO: policy-new
-#stage $GO
-
-GO=(
     FUNC="i18n1"
     TIME="i18n 1"
     ARGS=""
@@ -223,14 +207,28 @@ lockfile "$LOCK_ACCEPTED"
 lockfile "$LOCK_NEW"
 
 GO=(
-    FUNC="process_unchecked"
-    TIME="unchecked"
+    FUNC="punew"
+    TIME="p-u-new"
+    ARGS="proposedupdates"
+    ERR="false"
+)
+stage $GO
+
+GO=(
+    FUNC="opunew"
+    TIME="o-p-u-new"
+    ARGS="oldproposedupdates"
+    ERR="false"
+)
+stage $GO
+
+GO=(
+    FUNC="newstage"
+    TIME="newstage"
     ARGS=""
     ERR=""
 )
-# disabled until p-u is faster than now. it runs often enough, so wont hurt to save
-# the time here.
-#stage $GO
+stage $GO
 
 GO=(
     FUNC="cruft"
@@ -242,6 +240,8 @@ stage $GO
 
 rm -f "$LOCK_ACCEPTED"
 rm -f "$LOCK_NEW"
+
+state "indices"
 
 GO=(
     FUNC="dominate"
@@ -283,6 +283,7 @@ GO=(
 )
 stage $GO &
 
+state "packages/contents"
 GO=(
     FUNC="packages"
     TIME="apt-ftparchive"
@@ -293,6 +294,7 @@ GO=(
 # functions before it. We no longer have a 1.5hour sync point then.
 stage $GO
 
+state "dists/"
 GO=(
     FUNC="pdiff"
     TIME="pdiff"
@@ -325,6 +327,7 @@ GO=(
 )
 stage $GO
 
+state "scripts"
 GO=(
     FUNC="mkmaintainers"
     TIME="mkmaintainers"
@@ -373,17 +376,10 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="wb"
-    TIME="w-b"
-    ARGS=""
-    ERR=""
-)
-stage $GO &
-
 rm -f "${LOCK_DAILY}"
 
 ts "locked part finished"
+state "postlock"
 
 GO=(
     FUNC="pgdump_post"
@@ -518,6 +514,7 @@ GO=(
     ERR="false"
 )
 stage $GO
+state "all done"
 
 
 # Now, at the very (successful) end of dinstall, make sure we remove

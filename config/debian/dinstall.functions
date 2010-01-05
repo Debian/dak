@@ -1,3 +1,4 @@
+# -*- mode:sh -*-
 # Timestamp. Used for dinstall stat graphs
 function ts() {
         echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
@@ -71,17 +72,18 @@ function updates() {
 
 # Process (oldstable)-proposed-updates "NEW" queue
 function punew_do() {
-    cd "${queuedir}/${1}"
     date -u -R >> REPORT
-    dak process-new -a -C COMMENTS >> REPORT || true
+    dak process-policy $1 | tee -a REPORT | mail -e -s "NEW changes in $1" debian-release@lists.debian.org
     echo >> REPORT
 }
 function punew() {
     log "Doing automated p-u-new processing"
+    cd "${queuedir}/p-u-new"
     punew_do "$1"
 }
 function opunew() {
     log "Doing automated o-p-u-new processing"
+    cd "${queuedir}/o-p-u-new"
     punew_do "$1"
 }
 
@@ -388,13 +390,19 @@ function mkchecksums() {
 
 function mirror() {
     log "Regenerating \"public\" mirror/ hardlink fun"
+    DATE_SERIAL=$(date +"%Y%m%d01")
+    FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
+    if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
+        SERIAL="$DATE_SERIAL"
+    else
+        SERIAL="$FILESOAPLUS1"
+    fi
+    date -u > ${TRACEFILE}
+    echo "Using dak v1" >> ${TRACEFILE}
+    echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
+    echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
     cd ${mirrordir}
     rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
-}
-
-function wb() {
-    log "Trigger daily wanna-build run"
-    wbtrigger "daily"
 }
 
 function expire() {
@@ -544,4 +552,26 @@ function process_unchecked() {
     UNCHECKED_WITHOUT_LOCK="-p"
     do_unchecked
     sync_debbugs
+}
+
+# do a run of newstage only before dinstall is on.
+function newstage() {
+    log "Processing the newstage queue"
+    UNCHECKED_WITHOUT_LOCK="-p"
+    do_newstage
+}
+
+# Function to update a "statefile" telling people what we are doing
+# (more or less).
+#
+# This should be called with the argument(s)
+#  - Status name we want to show.
+#
+function state() {
+    RIGHTNOW="$(date -u +"%a %b %d %T %Z %Y (%s)")"
+    cat >"${DINSTALLSTATE}" <<EOF
+Dinstall start: ${DINSTALLBEGIN}
+Current action: ${1}
+Action start: ${RIGHTNOW}
+EOF
 }

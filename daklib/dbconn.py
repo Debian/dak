@@ -5,7 +5,7 @@
 @contact: Debian FTPMaster <ftpmaster@debian.org>
 @copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
 @copyright: 2008-2009  Mark Hymers <mhy@debian.org>
-@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@copyright: 2009, 2010  Joerg Jaspert <joerg@debian.org>
 @copyright: 2009  Mike O'Connor <stew@debian.org>
 @license: GNU General Public License version 2 or later
 """
@@ -63,6 +63,10 @@ from textutils import fix_maintainer
 # reflection
 
 class DebVersion(sqltypes.Text):
+    """
+    Support the debversion type
+    """
+
     def get_col_spec(self):
         return "DEBVERSION"
 
@@ -181,8 +185,8 @@ def get_architecture_suites(architecture, session=None):
     """
     Returns list of Suite objects for given C{architecture} name
 
-    @type source: str
-    @param source: Architecture name to search for
+    @type architecture: str
+    @param architecture: Architecture name to search for
 
     @type session: Session
     @param session: Optional SQL session object (a temporary one will be
@@ -278,8 +282,8 @@ def get_suites_binary_in(package, session=None):
     """
     Returns list of Suite objects which given C{package} name is in
 
-    @type source: str
-    @param source: DBBinary package name to search for
+    @type package: str
+    @param package: DBBinary package name to search for
 
     @rtype: list
     @return: list of Suite objects for the given package
@@ -325,8 +329,8 @@ def get_binaries_from_name(package, version=None, architecture=None, session=Non
     @type version: str or None
     @param version: Version to search for (or None)
 
-    @type package: str, list or None
-    @param package: Architectures to limit to (or None if no limit)
+    @type architecture: str, list or None
+    @param architecture: Architectures to limit to (or None if no limit)
 
     @type session: Session
     @param session: Optional SQL session object (a temporary one will be
@@ -900,8 +904,9 @@ def get_or_set_contents_path_id(filepath, session=None):
 
     If no matching file is found, a row is inserted.
 
-    @type filename: string
-    @param filename: The filepath
+    @type filepath: string
+    @param filepath: The filepath
+
     @type session: SQLAlchemy
     @param session: Optional SQL session object (a temporary one will be
     generated if not supplied).  If not passed, a commit will be performed at
@@ -1054,7 +1059,7 @@ __all__.append('PoolFile')
 def check_poolfile(filename, filesize, md5sum, location_id, session=None):
     """
     Returns a tuple:
-     (ValidFileFound [boolean or None], PoolFile object or None)
+    (ValidFileFound [boolean or None], PoolFile object or None)
 
     @type filename: string
     @param filename: the filename of the file to check against the DB
@@ -1070,12 +1075,11 @@ def check_poolfile(filename, filesize, md5sum, location_id, session=None):
 
     @rtype: tuple
     @return: Tuple of length 2.
-             If more than one file found with that name:
-                    (None,  None)
-             If valid pool file found: (True, PoolFile object)
-             If valid pool file not found:
-                    (False, None) if no file found
-                    (False, PoolFile object) if file found with size/md5sum mismatch
+                 - If more than one file found with that name: (C{None},  C{None})
+                 - If valid pool file found: (C{True}, C{PoolFile object})
+                 - If valid pool file not found:
+                     - (C{False}, C{None}) if no file found
+                     - (C{False}, C{PoolFile object}) if file found with size/md5sum mismatch
     """
 
     q = session.query(PoolFile).filter_by(filename=filename)
@@ -1464,15 +1468,15 @@ def get_dbchange(filename, session=None):
     """
     returns DBChange object for given C{filename}.
 
-    @type archive: string
-    @param archive: the name of the arhive
+    @type filename: string
+    @param filename: the name of the file
 
     @type session: Session
     @param session: Optional SQLA session object (a temporary one will be
     generated if not supplied)
 
-    @rtype: Archive
-    @return: Archive object for the given name (None if not present)
+    @rtype: DBChange
+    @return:  DBChange object for the given filename (C{None} if not present)
 
     """
     q = session.query(DBChange).filter_by(changesname=filename)
@@ -1508,7 +1512,7 @@ def get_location(location, component=None, archive=None, session=None):
     @param component: the component name (if None, no restriction applied)
 
     @type archive: string
-    @param archive_id: the archive name (if None, no restriction applied)
+    @param archive: the archive name (if None, no restriction applied)
 
     @rtype: Location / None
     @return: Either a Location object or None if one can't be found
@@ -2062,8 +2066,8 @@ def source_exists(source, source_version, suites = ["any"], session=None):
       1. exact match     => 1.0-3
       2. bin-only NMU    => 1.0-3+b1 , 1.0-3.1+b1
 
-    @type package: string
-    @param package: package source name
+    @type source: string
+    @param source: source name
 
     @type source_version: string
     @param source_version: expected source version
@@ -2146,8 +2150,8 @@ def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=
     @type source: str
     @param source: DBSource package name to search for
 
-    @type source: str or None
-    @param source: DBSource version name to search for or None if not applicable
+    @type version: str or None
+    @param version: DBSource version name to search for or None if not applicable
 
     @type dm_upload_allowed: bool
     @param dm_upload_allowed: If None, no effect.  If True or False, only
@@ -2301,15 +2305,16 @@ def add_dsc_to_db(u, filename, session=None):
             uploader_ids.append(get_or_set_maintainer(up, session).maintainer_id)
 
     added_ids = {}
-    for up in uploader_ids:
-        if added_ids.has_key(up):
-            utils.warn("Already saw uploader %s for source %s" % (up, source.source))
+    for up_id in uploader_ids:
+        if added_ids.has_key(up_id):
+            import utils
+            utils.warn("Already saw uploader %s for source %s" % (up_id, source.source))
             continue
 
-        added_ids[u]=1
+        added_ids[up_id]=1
 
         su = SrcUploader()
-        su.maintainer_id = up
+        su.maintainer_id = up_id
         su.source_id = source.source_id
         session.add(su)
 
@@ -2551,8 +2556,8 @@ def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     """
     Returns list of Architecture objects for given C{suite} name
 
-    @type source: str
-    @param source: Suite name to search for
+    @type suite: str
+    @param suite: Suite name to search for
 
     @type skipsrc: boolean
     @param skipsrc: Whether to skip returning the 'source' architecture entry

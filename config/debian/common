@@ -1,3 +1,4 @@
+# -*- mode:sh -*-
 # log something (basically echo it together with a timestamp)
 #
 # Set $PROGRAM to a string to have it added to the output.
@@ -26,16 +27,9 @@ function debug () {
 }
 
 function wbtrigger() {
-    MODE=${1:-"often"}
     SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
     if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
-        if [ "x${MODE}x" = "xdailyx" ]; then
-            ssh ${SSHOPT} wbadm@buildd /org/wanna-build/trigger.daily || echo "W-B trigger.daily failed" | mail -s "W-B Daily trigger failed" ftpmaster@ftp-master.debian.org
-        elif [ "x${MODE}x" = "xoftenx" ]; then
-            ssh -q -q ${SSHOPT} wbadm@buildd /org/wanna-build/trigger.often
-        else
-            log_error "Unknown wb trigger mode called"
-        fi
+        ssh -q -q ${SSHOPT} wbadm@buildd /org/wanna-build/trigger.often
     fi
     rm -f "${LOCK_BUILDD}"
 }
@@ -89,6 +83,10 @@ function do_newstage () {
 function sync_debbugs () {
     # sync with debbugs
     echo "--" >> $report
+    timestamp=$(date "+%Y-%m-%d-%H:%M")
+    mkdir -p $queuedir/${timestamp}
+    rsync -aq $queuedir/bts_version_track/ $queuedir/bts_version_track_archive/${timestamp}
+    rmdir --ignore-fail-on-non-empty $queuedir/${timestamp} # remove if empty.
     rsync -aq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30" --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/ 2>/dev/null && touch $lockdir/synced_bts_version || true
     NOW=$(date +%s)
     TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)

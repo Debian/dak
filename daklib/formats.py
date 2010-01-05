@@ -1,3 +1,36 @@
+#!/usr/bin/python
+
+""" Helper functions for the various changes formats
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2009, 2010  Joerg Jaspert <joerg@debian.org>
+@copyright: 2009  Chris Lamb <lamby@debian.org>
+@license: GNU General Public License version 2 or later
+"""
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+################################################################################
+
+# <mhy> !!!!11111iiiiiioneoneoneone
+# <dak> mhy: Error: "!!!11111iiiiiioneoneoneone" is not a valid command.
+# <mhy> dak: oh shut up
+# <dak> mhy: Error: "oh" is not a valid command.
+
+################################################################################
+
 from regexes import re_verwithext
 from dak_exceptions import UnknownFormatError
 
@@ -12,6 +45,14 @@ def parse_format(txt):
     (8, 4, 'hardy')
 
     If the format doesn't match these forms, raises UnknownFormatError.
+
+    @type txt: string
+    @param txt: Format string to parse
+
+    @rtype: tuple
+    @return: Parsed format
+
+    @raise UnknownFormatError: Unknown Format: line
     """
 
     format = re_verwithext.search(txt)

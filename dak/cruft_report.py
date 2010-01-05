@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 
-""" Check for obsolete binary packages """
-# Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+"""
+Check for obsolete binary packages
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000-2006 James Troup <james@nocrew.org>
+@copyright: 2009      Torsten Werner <twerner@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -216,36 +222,183 @@ SELECT s.source, s.version AS lower, s2.version AS higher
 
 ################################################################################
 
-def do_nbs(real_nbs):
-    output = "Not Built from Source\n"
-    output += "---------------------\n\n"
+def queryWithoutSource(suite_id, session):
+    """searches for arch: all packages from suite that do no longer
+    reference a source package in the same suite
 
-    cmd_output = ""
-    nbs_keys = real_nbs.keys()
-    nbs_keys.sort()
-    for source in nbs_keys:
-        output += " * %s_%s builds: %s\n" % (source,
-                                       source_versions.get(source, "??"),
-                                       source_binaries.get(source, "(source does not exist)"))
-        output += "      but no longer builds:\n"
-        versions = real_nbs[source].keys()
-        versions.sort(apt_pkg.VersionCompare)
-        all_packages = []
-        for version in versions:
-            packages = real_nbs[source][version].keys()
-            packages.sort()
-            all_packages.extend(packages)
-            output += "        o %s: %s\n" % (version, ", ".join(packages))
-        if all_packages:
-            all_packages.sort()
-            cmd_output += " dak rm -m \"[auto-cruft] NBS (was built by %s)\" -s %s -b %s -R\n\n" % (source, suite.suite_name, " ".join(all_packages))
+    subquery unique_binaries: selects all packages with only 1 version
+    in suite since 'dak rm' does not allow to specify version numbers"""
 
-        output += "\n"
+    query = """
+    with unique_binaries as
+        (select package, max(version) as version, max(source) as source
+            from bin_associations_binaries
+	    where architecture = 2 and suite = :suite_id
+            group by package having count(*) = 1)
+    select ub.package, ub.version
+        from unique_binaries ub
+        left join src_associations_src sas
+	    on ub.source = sas.src and sas.suite = :suite_id
+        where sas.id is null
+        order by ub.package"""
+    return session.execute(query, { 'suite_id': suite_id })
 
-    if len(cmd_output):
-        print output
-        print "Suggested commands:\n"
-        print cmd_output
+def reportWithoutSource(suite_name, suite_id, session):
+    rows = queryWithoutSource(suite_id, session)
+    title = 'packages without source in suite %s' % suite_name
+    if rows.rowcount > 0:
+        print '%s\n%s\n' % (title, '-' * len(title))
+    message = '"[auto-cruft] no longer built from source"'
+    for row in rows:
+        (package, version) = row
+        print "* package %s in version %s is no longer built from source" % \
+            (package, version)
+        print "  - suggested command:"
+        print "    dak rm -m %s -s %s -a all -p -R -b %s\n" % \
+            (message, suite_name, package)
+
+def queryNewerAll(suite_name, session):
+    """searches for arch != all packages that have an arch == all
+    package with a higher version in the same suite"""
+
+    query = """
+select bab1.package, bab1.version as oldver,
+    array_to_string(array_agg(a.arch_string), ',') as oldarch,
+    bab2.version as newver
+    from bin_associations_binaries bab1
+    join bin_associations_binaries bab2
+        on bab1.package = bab2.package and bab1.version < bab2.version and
+        bab1.suite = bab2.suite and bab1.architecture > 2 and
+        bab2.architecture = 2
+    join architecture a on bab1.architecture = a.id
+    join suite s on bab1.suite = s.id
+    where s.suite_name = :suite_name
+    group by bab1.package, oldver, bab1.suite, newver"""
+    return session.execute(query, { 'suite_name': suite_name })
+
+def reportNewerAll(suite_name, session):
+    rows = queryNewerAll(suite_name, session)
+    title = 'obsolete arch any packages in suite %s' % suite_name
+    if rows.rowcount > 0:
+        print '%s\n%s\n' % (title, '-' * len(title))
+    message = '"[auto-cruft] obsolete arch any package"'
+    for row in rows:
+        (package, oldver, oldarch, newver) = row
+        print "* package %s is arch any in version %s but arch all in version %s" % \
+            (package, oldver, newver)
+        print "  - suggested command:"
+        print "    dak rm -m %s -s %s -a %s -p -b %s\n" % \
+            (message, suite_name, oldarch, package)
+
+def queryNBS(suite_id, session):
+    """This one is really complex. It searches arch != all packages that
+    are no longer built from current source packages in suite.
+
+    temp table unique_binaries: will be populated with packages that
+    have only one version in suite because 'dak rm' does not allow
+    specifying version numbers
+
+    temp table newest_binaries: will be populated with packages that are
+    built from current sources
+
+    subquery uptodate_arch: returns all architectures built from current
+    sources
+
+    subquery unique_binaries_uptodate_arch: returns all packages in
+    architectures from uptodate_arch
+
+    subquery unique_binaries_uptodate_arch_agg: same as
+    unique_binaries_uptodate_arch but with column architecture
+    aggregated to array
+
+    subquery uptodate_packages: similar to uptodate_arch but returns all
+    packages built from current sources
+
+    subquery outdated_packages: returns all packages with architectures
+    no longer built from current source
+    """
+
+    query = """
+create temp table unique_binaries (
+    package text not null,
+    architecture integer not null,
+    source integer not null);
+
+insert into unique_binaries
+    select bab.package, bab.architecture, max(bab.source)
+        from bin_associations_binaries bab
+        where bab.suite = :suite_id and bab.architecture > 2
+        group by package, architecture having count(*) = 1;
+
+create temp table newest_binaries (
+    package text not null,
+    architecture integer not null,
+    source text not null,
+    version debversion not null);
+
+insert into newest_binaries
+    select ub.package, ub.architecture, nsa.source, nsa.version
+        from unique_binaries ub
+        join newest_src_association nsa
+            on ub.source = nsa.src and nsa.suite = :suite_id;
+
+with uptodate_arch as
+    (select architecture, source, version
+        from newest_binaries
+        group by architecture, source, version),
+    unique_binaries_uptodate_arch as
+    (select ub.package, ub.architecture, ua.source, ua.version
+        from unique_binaries ub
+        join source s
+            on ub.source = s.id
+        join uptodate_arch ua
+            on ub.architecture = ua.architecture and s.source = ua.source),
+    unique_binaries_uptodate_arch_agg as
+    (select ubua.package,
+        array(select unnest(array_agg(a.arch_string)) order by 1) as arch_list,
+        ubua.source, ubua.version
+        from unique_binaries_uptodate_arch ubua
+        join architecture a
+            on ubua.architecture = a.id
+        group by ubua.source, ubua.version, ubua.package),
+    uptodate_packages as
+    (select package, source, version
+        from newest_binaries
+        group by package, source, version),
+    outdated_packages as
+    (select array(select unnest(array_agg(package)) order by 1) as pkg_list,
+        arch_list, source, version
+        from unique_binaries_uptodate_arch_agg
+        where package not in
+            (select package from uptodate_packages)
+        group by arch_list, source, version)
+    select * from outdated_packages order by source"""
+    return session.execute(query, { 'suite_id': suite_id })
+
+def reportNBS(suite_name, suite_id):
+    session = DBConn().session()
+    nbsRows = queryNBS(suite_id, session)
+    title = 'NBS packages in suite %s' % suite_name
+    if nbsRows.rowcount > 0:
+	print '%s\n%s\n' % (title, '-' * len(title))
+    for row in nbsRows:
+	(pkg_list, arch_list, source, version) = row
+	pkg_string = ' '.join(pkg_list)
+	arch_string = ','.join(arch_list)
+	print "* source package %s version %s no longer builds" % \
+	    (source, version)
+	print "  binary package(s): %s" % pkg_string
+	print "  on %s" % arch_string
+	print "  - suggested command:"
+	message = '"[auto-cruft] NBS (no longer built by %s)"' % source
+	print "    dak rm -m %s -s %s -a %s -p -R -b %s\n" % \
+	    (message, suite_name, arch_string, pkg_string)
+    session.close()
+
+def reportAllNBS(suite_name, suite_id, session):
+    reportWithoutSource(suite_name, suite_id, session)
+    reportNewerAll(suite_name, session)
+    reportNBS(suite_name, suite_id)
 
 ################################################################################
 
@@ -423,6 +576,9 @@ def main ():
     if "obsolete source" in checks:
         report_obsolete_source(suite_name, session)
 
+    if "nbs" in checks:
+        reportAllNBS(suite_name, suite_id, session)
+
     bin_not_built = {}
 
     if "bnb" in checks:
@@ -543,7 +699,6 @@ def main ():
 
     # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
     dubious_nbs = {}
-    real_nbs = {}
     for source in nbs.keys():
         for package in nbs[source].keys():
             versions = nbs[source][package].keys()
@@ -552,17 +707,12 @@ def main ():
             source_version = source_versions.get(source,"0")
             if apt_pkg.VersionCompare(latest_version, source_version) == 0:
                 add_nbs(dubious_nbs, source, latest_version, package, suite_id, session)
-            else:
-                add_nbs(real_nbs, source, latest_version, package, suite_id, session)
 
     if "nviu" in checks:
         do_newer_version('unstable', 'experimental', 'NVIU', session)
 
     if "nvit" in checks:
         do_newer_version('testing', 'testing-proposed-updates', 'NVIT', session)
-
-    if "nbs" in checks:
-        do_nbs(real_nbs)
 
     ###
 
