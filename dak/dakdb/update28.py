@@ -32,6 +32,7 @@ import psycopg2
 import time
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
+import string
 
 ################################################################################
 
@@ -149,6 +150,7 @@ def do_update(self):
             arch_list = arches(c, suite_id)
 
             for (arch_id,arch_str) in arch_list:
+                suitestr=string.replace(suite,'-','_');
                 c.execute( "CREATE INDEX ind_deb_contents_%s_%s ON deb_contents (arch,suite) WHERE (arch=2 OR arch=%s) AND suite='%s'"%(arch_str,suite,arch_id,suite_id) )
 
             for section, sname in [("debian-installer","main"),
