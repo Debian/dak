@@ -58,12 +58,10 @@ def do_update(self):
             JOIN section s on s.id=o.section
             WHERE b.id=$1
             AND o.suite=$2
+            AND o.type in ('deb','udeb')
             \"\"\",
             ["int", "int"]),
             [TD["new"]["bin"], TD["new"]["suite"]])[0]
-
-       if content_data['type'] not in ['deb', 'udeb']:
-           return
 
        tablename="%s_contents" % content_data['type']
 
