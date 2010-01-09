@@ -32,6 +32,7 @@ import psycopg2
 import time
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
+import string
 
 ################################################################################
 
@@ -50,7 +51,7 @@ def arches(cursor, suite):
     cursor.execute("""SELECT s.architecture, a.arch_string
     FROM suite_architectures s
     JOIN architecture a ON (s.architecture=a.id)
-    WHERE suite = :suite""", {'suite' : suite })
+    WHERE suite = '%s'""" % suite)
 
     while True:
         r = cursor.fetchone()
@@ -141,16 +142,21 @@ def do_update(self):
         suites = _suites()
 
         for suite in [i.lower() for i in suites]:
-            suite_id = DBConn().get_suite_id(suite)
+
+            c.execute("SELECT id FROM suite WHERE suite_name ='%s'" % suite )
+            suiterow = c.fetchone()
+            suite_id = suiterow[0]
             arch_list = arches(c, suite_id)
             arch_list = arches(c, suite_id)
+            suitestr=string.replace(suite,'-','_');
 
             for (arch_id,arch_str) in arch_list:
-                c.execute( "CREATE INDEX ind_deb_contents_%s_%s ON deb_contents (arch,suite) WHERE (arch=2 OR arch=%d) AND suite=$d"%(arch_str,suite,arch_id,suite_id) )
+                arch_str = string.replace(arch_str,"-", "_")
+                c.execute( "CREATE INDEX ind_deb_contents_%s_%s ON deb_contents (arch,suite) WHERE (arch=2 OR arch=%s) AND suite='%s'"%(arch_str,suitestr,arch_id,suite_id) )
 
             for section, sname in [("debian-installer","main"),
                                   ("non-free/debian-installer", "nonfree")]:
-                c.execute( "CREATE INDEX ind_udeb_contents_%s_%s ON udeb_contents (section,suite) WHERE section=%s AND suite=$d"%(sname,suite,section,suite_id) )
+                c.execute( "CREATE INDEX ind_udeb_contents_%s_%s ON udeb_contents (section,suite) WHERE section='%s' AND suite='%s'"%(sname,suitestr,section,suite_id) )
 
 
         c.execute( """CREATE OR REPLACE FUNCTION update_contents_for_bin_a() RETURNS trigger AS  $$
