@@ -143,8 +143,8 @@ def do_update(self):
         for suite in [i.lower() for i in suites]:
 
             c.execute("SELECT id FROM suite WHERE suite_name ='%s'" % suite )
-            suiterow = c.fetchall()
-            suite_id=suiterow[0]
+            suiterow = c.fetchone()
+            suite_id = suiterow[0]
             arch_list = arches(c, suite_id)
             arch_list = arches(c, suite_id)
 
