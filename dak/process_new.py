@@ -448,14 +448,13 @@ def add_overrides (new, upload, session):
 
 ################################################################################
 
-def prod_maintainer (note, upload):
+def prod_maintainer (notes, upload):
     cnf = Config()
     # Here we prepare an editor and get them ready to prod...
     (fd, temp_filename) = utils.temp_filename()
     temp_file = os.fdopen(fd, 'w')
-    if len(note) > 0:
-        for line in note:
-            temp_file.write(line)
+    for note in notes:
+        temp_file.write(note.comment)
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
