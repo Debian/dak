@@ -50,7 +50,7 @@ def arches(cursor, suite):
     cursor.execute("""SELECT s.architecture, a.arch_string
     FROM suite_architectures s
     JOIN architecture a ON (s.architecture=a.id)
-    WHERE suite = :suite""", {'suite' : suite })
+    WHERE suite = '%s'""" % suite)
 
     while True:
         r = cursor.fetchone()
