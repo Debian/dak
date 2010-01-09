@@ -45,6 +45,7 @@
 			<li><a href="#testing">Testing</a></li>
 			<li><a href="#stable">Stable</a></li>
 			<li><a href="#rejections">Rejections</a></li>
+			<li><a href="#lintianrejects">Lintian Autorejects</a></li>
 <!--			<li><a href="#dependencies">Unmet Dependencies</a></li>-->
 			<li><a href="#archivecriteria">Archive Criteria</a></li>
 			<li><a href="#talks">Talks</a></li>
@@ -194,10 +195,40 @@
             <a href="http://ftp-master.debian.org/REJECT-FAQ.html">the REJECT-FAQ</a>.</p>
         </div>
 
+		<div id="lintianrejects">
+		  <h1>Lintian Autorejects</h1>
+		  <p>Packages failing a defined set of lintian tags will no
+		  longer be accepted into the archive, but get rejected immediately.</p>
+
+		  <p>Those automated rejects will only be done on sourceful uploads to
+		  unstable and experimental.</p>
+
+		  <p>As there are certain lintian tags that should only appear in very rare
+		  cases we have created two categories:
+		  <dl>
+			<dt>warning</dt>
+			<dd>Tags listed here *can* be overriden by the maintainer using the normal
+			  lintian override mechanism. Of course this should only be done if you
+			  have a technically sound reason why your package needs to break in such a
+			  way.
+			</dd>
+			<dt>error</dt>
+            <dd>Tags listed here can not be overridden. Those are tags
+               corresponding to packaging errors serious enough to mark a
+               package unfit for the archive and should never happen. In
+               fact, most of the tags listed do not appear in our archive
+               currently, the few packages listed below should be easily
+               fixable with their next upload.
+            </dd>
+          </dl>
+          </p>
+          <p>The current list of tags can be <a href="static/lintian.tags">found here</a>.
+        </div>
+
 <!--         <div id="dependencies"> -->
 <!--             <h1>Unmet/Illegal dependencies</h1> -->
 
-<!-- 		    <p> -->
+<!--             <p> -->
 <!--             <a href="/unmet-deps/">Reports</a> of unmet and/or illegal dependencies -->
 <!--             for most architectures in testing+unstable used to be generated daily.</p> -->
 <!--             <p>If your package(s) are listed, you're likely to be violating policy... -->
@@ -217,7 +248,7 @@
             <a href="ftpmaster.pdf">DebConf 2009</a>, Cáceres, Spain.
         </div>
 
-		</div>
+        </div>
         </div>
         </div>
     <hr />
