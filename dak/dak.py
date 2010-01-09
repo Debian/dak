@@ -37,6 +37,7 @@ import os
 import sys
 import traceback
 import daklib.utils
+import warnings
 
 from daklib.daklog import Logger
 from daklib.config import Config
@@ -205,6 +206,10 @@ def main():
             else:
                 daklib.utils.warn("unknown command '%s'" % (cmdname))
                 usage(functionality, 1)
+
+    # We do not care. No idea wth sqlalchemy warns about them, makes no sense,
+    # so we ignore it.
+    warnings.filterwarnings("ignore", 'Predicate of partial index')
 
     # Invoke the module
     module = __import__(cmdname.replace("-","_"))
