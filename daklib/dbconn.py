@@ -2941,7 +2941,7 @@ class DBConn(object):
                                  fingerprint = relation(Fingerprint),
                                  source_files = relation(ChangePendingFile,
                                                          secondary=self.tbl_changes_pending_source_files,
-                                                         backref="pending_sources")))
+                                                         backref="pending_sources"),
                                  files = relation(KnownChangePendingFile, backref="changesfile")))
 
         mapper(KnownChangePendingFile, self.tbl_changes_pending_files,
