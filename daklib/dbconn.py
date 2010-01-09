@@ -2824,7 +2824,7 @@ class DBConn(object):
         mapper(DebContents, self.tbl_deb_contents,
                properties = dict(binary_id=self.tbl_deb_contents.c.binary_id,
                                  package=self.tbl_deb_contents.c.package,
-                                 component=self.tbl_deb_contents.c.component,
+                                 suite=self.tbl_deb_contents.c.suite,
                                  arch=self.tbl_deb_contents.c.arch,
                                  section=self.tbl_deb_contents.c.section,
                                  filename=self.tbl_deb_contents.c.filename))
@@ -2832,7 +2832,7 @@ class DBConn(object):
         mapper(UdebContents, self.tbl_udeb_contents,
                properties = dict(binary_id=self.tbl_udeb_contents.c.binary_id,
                                  package=self.tbl_udeb_contents.c.package,
-                                 component=self.tbl_udeb_contents.c.component,
+                                 suite=self.tbl_udeb_contents.c.suite,
                                  arch=self.tbl_udeb_contents.c.arch,
                                  section=self.tbl_udeb_contents.c.section,
                                  filename=self.tbl_udeb_contents.c.filename))
