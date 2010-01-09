@@ -38,15 +38,10 @@ def do_update(self):
 
     try:
         c = self.db.cursor()
-        c.execute("""DROP AGGREGATE comma_separated_list(                   BASETYPE = text,
-                   SFUNC = comma_concat,
-                   STYPE = text,
-                   INITCOND = ''
-);""" )
-        c.execute("""DROP FUNCTION comma_concat(text, text);""" );
+        c.execute("""DROP FUNCTION comma_concat(text, text) CASCADE;""" );
         c.execute("""DROP TABLE pending_content_associations;""")
         c.execute("""DROP TABLE content_associations;""")
-        c.execute("""DROP TABLE content_file_names;""")
+        c.execute("""DROP TABLE content_filecd ._names;""")
         c.execute("""DROP TABLE content_file_paths;""")
 
         c.execute("UPDATE config SET value = '29' WHERE name = 'db_revision'")
