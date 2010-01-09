@@ -967,17 +967,16 @@ def insert_content_paths(binary_id, fullpaths, session=None):
 
     try:
         # Insert paths
-        pathcache = {}
-
         def generate_path_dicts():
             for fullpath in fullpaths:
                 if fullpath.startswith( './' ):
                     fullpath = fullpath[2:]
 
-                yield {'fulename':fullpath, 'id': binary_id }
+                yield {'filename':fullpath, 'id': binary_id }
 
-        session.execute( "INSERT INTO bin_contents ( file, binary_id ) VALUES ( :filename, :id )",
-                         generate_path_dicts() )
+        for d in generate_path_dicts():
+            session.execute( "INSERT INTO bin_contents ( file, binary_id ) VALUES ( :filename, :id )",
+                         d )
 
         session.commit()
         if privatetrans:
@@ -2837,6 +2836,13 @@ class DBConn(object):
                                  section=self.tbl_udeb_contents.c.section,
                                  filename=self.tbl_udeb_contents.c.filename))
 
+        mapper(BuildQueue, self.tbl_build_queue,
+               properties = dict(queue_id = self.tbl_build_queue.c.id))
+
+        mapper(BuildQueueFile, self.tbl_build_queue_files,
+               properties = dict(buildqueue = relation(BuildQueue, backref='queuefiles'),
+                                 poolfile = relation(PoolFile, backref='buildqueueinstances')))
+
         mapper(DBBinary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
                                  package = self.tbl_binaries.c.package,
@@ -2941,11 +2947,8 @@ class DBConn(object):
                                  fingerprint = relation(Fingerprint),
                                  source_files = relation(ChangePendingFile,
                                                          secondary=self.tbl_changes_pending_source_files,
-                                                         backref="pending_sources"),
-                                 files = relation(KnownChangePendingFile, backref="changesfile")))
+                                                         backref="pending_sources")))
 
-        mapper(KnownChangePendingFile, self.tbl_changes_pending_files,
-               properties = dict(known_change_pending_file_id = self.tbl_changes_pending_files.c.id))
 
         mapper(KeyringACLMap, self.tbl_keyring_acl_map,
                properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
