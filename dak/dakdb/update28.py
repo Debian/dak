@@ -168,7 +168,7 @@ def do_update(self):
     if event == "INSERT" or event == "UPDATE":
 
        content_data = plpy.execute(plpy.prepare(
-            """SELECT s.section, b.package, b.architecture, ot.type
+            \"\"\"SELECT s.section, b.package, b.architecture, ot.type
             FROM override o
             JOIN override_type ot on o.type=ot.id
             JOIN binaries b on b.package=o.package
@@ -177,14 +177,14 @@ def do_update(self):
             JOIN section s on s.id=o.section
             WHERE b.id=$1
             AND o.suite=$2
-            """,
+            \"\"\",
             ["int", "int"]),
             [TD["new"]["bin"], TD["new"]["suite"]])[0]
 
        tablename="%s_contents" % content_data['type']
 
-       plpy.execute(plpy.prepare("""DELETE FROM %s
-                   WHERE package=$1 and arch=$2 and suite=$3""" % tablename,
+       plpy.execute(plpy.prepare(\"\"\"DELETE FROM %s
+                   WHERE package=$1 and arch=$2 and suite=$3\"\"\" % tablename,
                    ['text','int','int']),
                    [content_data['package'],
                    content_data['architecture'],
@@ -197,9 +197,9 @@ def do_update(self):
 
        for filename in filenames:
            plpy.execute(plpy.prepare(
-               """INSERT INTO %s
+               \"\"\"INSERT INTO %s
                    (filename,section,package,binary_id,arch,suite)
-                   VALUES($1,$2,$3,$4,$5,$6)""" % tablename,
+                   VALUES($1,$2,$3,$4,$5,$6)\"\"\" % tablename,
                ["text","text","text","int","int","int"]),
                [filename["file"],
                 content_data["section"],
@@ -234,9 +234,9 @@ $$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
     event = TD["event"]
     if event == "UPDATE" or event == "INSERT":
         row = TD["new"]
-        r = plpy.execute(plpy.prepare( """SELECT 1 from suite_architectures sa
+        r = plpy.execute(plpy.prepare( \"\"\"SELECT 1 from suite_architectures sa
                   JOIN binaries b ON b.architecture = sa.architecture
-                  WHERE b.id = $1 and sa.suite = $2""",
+                  WHERE b.id = $1 and sa.suite = $2\"\"\",
                 ["int", "int"]),
                 [row["bin"], row["suite"]])
         if not len(r):
