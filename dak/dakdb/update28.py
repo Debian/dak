@@ -31,6 +31,7 @@ keep contents of binary packages in tables so we can generate contents.gz files 
 import psycopg2
 import time
 from daklib.dak_exceptions import DBUpdateError
+from daklib.config import Config
 
 ################################################################################
 
