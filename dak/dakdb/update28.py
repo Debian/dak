@@ -34,7 +34,7 @@ from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
 
-def suites():
+def _suites():
     """
     return a list of suites to operate on
     """
@@ -141,8 +141,7 @@ def do_update(self):
 
         c.execute("""CREATE INDEX ind_deb_contents_binary ON deb_contents(binary_id);""" )
 
-
-        suites = suites()
+        suites = _suites()
 
         for suite in [i.lower() for i in suites]:
             suite_id = DBConn().get_suite_id(suite)
