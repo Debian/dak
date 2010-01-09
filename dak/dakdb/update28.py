@@ -32,6 +32,7 @@ import psycopg2
 import time
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
+from daklib.dakdb import DBConn
 
 ################################################################################
 
@@ -141,6 +142,11 @@ def do_update(self):
         suites = _suites()
 
         for suite in [i.lower() for i in suites]:
+
+            c.execute("SELECT id FROM suite WHERE suite_name ='%s'" % suite )
+            rows = c.fetchall()
+
+
             suite_id = DBConn().get_suite_id(suite)
             arch_list = arches(c, suite_id)
             arch_list = arches(c, suite_id)
