@@ -39,11 +39,7 @@ def _suites():
     """
     return a list of suites to operate on
     """
-    if Config().has_key( "%s::%s" %(options_prefix,"Suite")):
-        suites = utils.split_args(Config()[ "%s::%s" %(options_prefix,"Suite")])
-    else:
-        suites = Config().SubTree("Suite").List()
-
+    suites = Config().SubTree("Suite").List()
     return suites
 
 def arches(cursor, suite):
