@@ -218,7 +218,7 @@ class Changes(object):
         chg.fingerprint = self.changes["fingerprint"]
         chg.changedby = self.changes["changed-by"]
         chg.date = self.changes["date"]
-        
+
         session.add(chg)
 
         files = []
@@ -271,7 +271,7 @@ class Changes(object):
 
         session.commit()
         chg = session.query(DBChange).filter_by(changesname = self.changes_file).one();
-        
+
         return chg
 
     def unknown_files_fields(self, name):

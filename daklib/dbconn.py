@@ -52,6 +52,8 @@ from sqlalchemy import types as sqltypes
 from sqlalchemy.exc import *
 from sqlalchemy.orm.exc import NoResultFound
 
+# Only import Config until Queue stuff is changed to store its config
+# in the database
 from config import Config
 from textutils import fix_maintainer
 
@@ -966,11 +968,16 @@ def insert_content_paths(binary_id, fullpaths, session=None):
     try:
         # Insert paths
         pathcache = {}
-        for fullpath in fullpaths:
-            if fullpath.startswith( './' ):
-                fullpath = fullpath[2:]
 
-            session.execute( "INSERT INTO bin_contents ( file, binary_id ) VALUES ( :filename, :id )", { 'filename': fullpath, 'id': binary_id}  )
+        def generate_path_dicts():
+            for fullpath in fullpaths:
+                if fullpath.startswith( './' ):
+                    fullpath = fullpath[2:]
+
+                yield {'fulename':fullpath, 'id': binary_id }
+
+        session.execute( "INSERT INTO bin_contents ( file, binary_id ) VALUES ( :filename, :id )",
+                         generate_path_dicts() )
 
         session.commit()
         if privatetrans:
@@ -1761,16 +1768,38 @@ __all__.append('get_override_type')
 
 ################################################################################
 
-class PendingContentAssociation(object):
+class DebContents(object):
     def __init__(self, *args, **kwargs):
         pass
 
     def __repr__(self):
-        return '<PendingContentAssociation %s>' % self.pca_id
+        return '<DebConetnts %s: %s>' % (self.package.package,self.file)
 
-__all__.append('PendingContentAssociation')
+__all__.append('DebContents')
 
-def insert_pending_content_paths(package, fullpaths, session=None):
+
+class UdebContents(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<UdebConetnts %s: %s>' % (self.package.package,self.file)
+
+__all__.append('UdebContents')
+
+class PendingBinContents(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<PendingBinContents %s>' % self.contents_id
+
+__all__.append('PendingBinContents')
+
+def insert_pending_content_paths(package,
+                                 is_udeb,
+                                 fullpaths,
+                                 session=None):
     """
     Make sure given paths are temporarily associated with given
     package
@@ -1799,32 +1828,27 @@ def insert_pending_content_paths(package, fullpaths, session=None):
         arch_id = arch.arch_id
 
         # Remove any already existing recorded files for this package
-        q = session.query(PendingContentAssociation)
+        q = session.query(PendingBinContents)
         q = q.filter_by(package=package['Package'])
         q = q.filter_by(version=package['Version'])
         q = q.filter_by(architecture=arch_id)
         q.delete()
 
-        # Insert paths
-        pathcache = {}
         for fullpath in fullpaths:
-            (path, filename) = os.path.split(fullpath)
 
-            if path.startswith( "./" ):
-                path = path[2:]
+            if fullpath.startswith( "./" ):
+                fullpath = fullpath[2:]
 
-            filepath_id = get_or_set_contents_path_id(path, session)
-            filename_id = get_or_set_contents_file_id(filename, session)
-
-            pathcache[fullpath] = (filepath_id, filename_id)
-
-        for fullpath, dat in pathcache.items():
-            pca = PendingContentAssociation()
+            pca = PendingBinContents()
             pca.package = package['Package']
             pca.version = package['Version']
-            pca.filepath_id = dat[0]
-            pca.filename_id = dat[1]
+            pca.file = fullpath
             pca.architecture = arch_id
+
+            if isudeb:
+                pca.type = 8 # gross
+            else:
+                pca.type = 7 # also gross
             session.add(pca)
 
         # Only commit if we set up the session ourself
@@ -2729,19 +2753,18 @@ class DBConn(object):
             'binaries',
             'binary_acl',
             'binary_acl_map',
+            'bin_contents'
             'build_queue',
             'build_queue_files',
             'component',
             'config',
-            'content_associations',
-            'content_file_names',
-            'content_file_paths',
             'changes_pending_binaries',
             'changes_pending_files',
             'changes_pending_files_map',
             'changes_pending_source',
             'changes_pending_source_files',
             'changes_pool_files',
+            'deb_contents',
             'dsc_files',
             'files',
             'fingerprint',
@@ -2753,7 +2776,7 @@ class DBConn(object):
             'new_comments',
             'override',
             'override_type',
-            'pending_content_associations',
+            'pending_bin_contents',
             'policy_queue',
             'priority',
             'section',
@@ -2766,6 +2789,7 @@ class DBConn(object):
             'suite_architectures',
             'suite_src_formats',
             'suite_build_queue_copy',
+            'udeb_contents',
             'uid',
             'upload_blocks',
         )
@@ -2789,12 +2813,29 @@ class DBConn(object):
                                  binary_id = self.tbl_bin_associations.c.bin,
                                  binary = relation(DBBinary)))
 
-        mapper(BuildQueue, self.tbl_build_queue,
-               properties = dict(queue_id = self.tbl_build_queue.c.id))
+        mapper(PendingBinContents, self.tbl_pending_bin_contents,
+               properties = dict(contents_id =self.tbl_pending_bin_contents.c.id,
+                                 filename = self.tbl_pending_bin_contents.c.filename,
+                                 package = self.tbl_pending_bin_contents.c.package,
+                                 version = self.tbl_pending_bin_contents.c.version,
+                                 arch = self.tbl_pending_bin_contents.c.arch,
+                                 otype = self.tbl_pending_bin_contents.c.type))
 
-        mapper(BuildQueueFile, self.tbl_build_queue_files,
-               properties = dict(buildqueue = relation(BuildQueue, backref='queuefiles'),
-                                 poolfile = relation(PoolFile, backref='buildqueueinstances')))
+        mapper(DebContents, self.tbl_deb_contents,
+               properties = dict(binary_id=self.tbl_deb_contents.c.binary_id,
+                                 package=self.tbl_deb_contents.c.package,
+                                 component=self.tbl_deb_contents.c.component,
+                                 arch=self.tbl_deb_contents.c.arch,
+                                 section=self.tbl_deb_contents.c.section,
+                                 filename=self.tbl_deb_contents.c.filename))
+
+        mapper(UdebContents, self.tbl_udeb_contents,
+               properties = dict(binary_id=self.tbl_udeb_contents.c.binary_id,
+                                 package=self.tbl_udeb_contents.c.package,
+                                 component=self.tbl_udeb_contents.c.component,
+                                 arch=self.tbl_udeb_contents.c.arch,
+                                 section=self.tbl_udeb_contents.c.section,
+                                 filename=self.tbl_udeb_contents.c.filename))
 
         mapper(DBBinary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
@@ -2901,6 +2942,11 @@ class DBConn(object):
                                  source_files = relation(ChangePendingFile,
                                                          secondary=self.tbl_changes_pending_source_files,
                                                          backref="pending_sources")))
+                                 files = relation(KnownChangePendingFile, backref="changesfile")))
+
+        mapper(KnownChangePendingFile, self.tbl_changes_pending_files,
+               properties = dict(known_change_pending_file_id = self.tbl_changes_pending_files.c.id))
+
         mapper(KeyringACLMap, self.tbl_keyring_acl_map,
                properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
                                  keyring = relation(Keyring, backref="keyring_acl_map"),
@@ -2923,6 +2969,7 @@ class DBConn(object):
         mapper(Override, self.tbl_override,
                properties = dict(suite_id = self.tbl_override.c.suite,
                                  suite = relation(Suite),
+                                 package = self.tbl_override.c.package,
                                  component_id = self.tbl_override.c.component,
                                  component = relation(Component),
                                  priority_id = self.tbl_override.c.priority,
@@ -2943,7 +2990,8 @@ class DBConn(object):
                properties = dict(priority_id = self.tbl_priority.c.id))
 
         mapper(Section, self.tbl_section,
-               properties = dict(section_id = self.tbl_section.c.id))
+               properties = dict(section_id = self.tbl_section.c.id,
+                                 section=self.tbl_section.c.section))
 
         mapper(DBSource, self.tbl_source,
                properties = dict(source_id = self.tbl_source.c.id,

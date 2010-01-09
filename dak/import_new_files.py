@@ -143,7 +143,7 @@ class ImportNewFiles(object):
 
 
             session.commit()
-            
+
         except KeyboardInterrupt:
             print("Caught C-c; terminating.")
             utils.warn("Caught C-c; terminating.")

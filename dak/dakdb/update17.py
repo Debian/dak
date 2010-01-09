@@ -52,7 +52,10 @@ def do_update(self):
 
         c.execute("""CREATE INDEX ind_bin_contents_binary ON bin_contents(binary_id);""" )
 
+        c.execute("GRANT ALL ON bin_contents TO ftpmaster;")
+        c.execute("GRANT SELECT ON bin_contents TO public;")
         c.execute("UPDATE config SET value = '17' WHERE name = 'db_revision'")
+
         self.db.commit()
 
     except psycopg2.ProgrammingError, msg:

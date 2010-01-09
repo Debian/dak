@@ -204,7 +204,10 @@ class Binary(object):
                     else:
                         pkgs = deb822.Packages.iter_paragraphs(file(os.path.join(self.tmpdir,'control')))
                         pkg = pkgs.next()
-                        result = insert_pending_content_paths(pkg, [tarinfo.name for tarinfo in data if not tarinfo.isdir()], session)
+                        result = insert_pending_content_paths(pkg,
+                                                              self.filename.endswith('.udeb'),
+                                                              [tarinfo.name for tarinfo in data if not tarinfo.isdir()],
+                                                              session)
 
                 except:
                     traceback.print_exc()
@@ -260,7 +263,8 @@ class Binary(object):
 
 __all__.append('Binary')
 
-def copy_temporary_contents(package, version, archname, deb, reject, session=None):
+
+def copy_temporary_contents(binary, bin_association, reject, session=None):
     """
     copy the previously stored contents from the temp table to the permanant one
 
@@ -277,20 +281,11 @@ def copy_temporary_contents(package, version, archname, deb, reject, session=Non
 
     arch = get_architecture(archname, session=session)
 
-    # first see if contents exist:
-    in_pcaq = """SELECT 1 FROM pending_content_associations
-                               WHERE package=:package
-                               AND version=:version
-                               AND architecture=:archid LIMIT 1"""
+    pending = session.query(PendingBinContents).filter_by(package=binary.package,
+                                                          version=binary.version,
+                                                          arch=binary.arch).first()
 
-    vals = {'package': package,
-            'version': version,
-            'archid': arch.arch_id}
-
-    exists = None
-    check = session.execute(in_pcaq, vals)
-
-    if check.rowcount > 0:
+    if pending:
         # This should NOT happen.  We should have added contents
         # during process-unchecked.  if it did, log an error, and send
         # an email.
@@ -304,23 +299,64 @@ def copy_temporary_contents(package, version, archname, deb, reject, session=Non
         message = utils.TemplateSubst(subst, cnf["Dir::Templates"]+"/missing-contents")
         utils.send_mail(message)
 
-        # Temporarily disable contents storage until we re-do the table layout
-        #exists = Binary(deb, reject).scan_package()
+        # rescan it now
+        exists = Binary(deb, reject).scan_package()
 
-    if exists:
-        sql = """INSERT INTO content_associations(binary_pkg,filepath,filename)
-                 SELECT currval('binaries_id_seq'), filepath, filename FROM pending_content_associations
-                 WHERE package=:package AND version=:version AND architecture=:archid"""
-        session.execute(sql, vals)
+        if not exists:
+            # LOG?
+            return False
 
-        sql = """DELETE from pending_content_associations
-                 WHERE package=:package AND version=:version AND architecture=:archid"""
-        session.execute(sql, vals)
-        session.commit()
+    component = binary.poolfile.location.component
+    override = session.query(Override).filter_by(package=binary.package,
+                                                 suite=bin_association.suite,
+                                                 component=component.id).first()
+    if not override:
+        # LOG?
+        return False
+
+
+    if not override.overridetype.type.endswith('deb'):
+        return True
+
+    if override.overridetype.type == "udeb":
+        table = "udeb_contents"
+    elif override.overridetype.type == "deb":
+        table = "deb_contents"
+    else:
+        return False
+
+
+    if component.name == "main":
+        component_str = ""
+    else:
+        component_str = component.name + "/"
+
+    vals = { 'package':binary.package,
+             'version':binary.version,
+             'arch':binary.architecture,
+             'binary_id': binary.id,
+             'component':component_str,
+             'section':override.section.section
+             }
+
+    session.execute( """INSERT INTO %s
+    (binary_id,package,version.component,arch,section,filename)
+    SELECT :binary_id, :package, :version, :component, :arch, :section
+    FROM pending_bin_contents pbc
+    WHERE pbc.package=:package
+    AND pbc.version=:version
+    AND pbc.arch=:arch""" % table, vals )
+
+    session.execute( """DELETE from pending_bin_contents package=:package
+    AND version=:version
+    AND arch=:arch""", vals )
 
     if privatetrans:
+        session.commit()
         session.close()
 
     return exists
 
 __all__.append('copy_temporary_contents')
+
+
