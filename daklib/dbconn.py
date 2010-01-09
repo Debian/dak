@@ -2753,7 +2753,7 @@ class DBConn(object):
             'binaries',
             'binary_acl',
             'binary_acl_map',
-            'bin_contents'
+            'bin_contents',
             'build_queue',
             'build_queue_files',
             'component',
