@@ -153,7 +153,7 @@ def do_update(self):
 
             for section, sname in [("debian-installer","main"),
                                   ("non-free/debian-installer", "nonfree")]:
-                c.execute( "CREATE INDEX ind_udeb_contents_%s_%s ON udeb_contents (section,suite) WHERE section='%s' AND suite='%s'"%(sname,suite,section,suite_id) )
+                c.execute( "CREATE INDEX ind_udeb_contents_%s ON udeb_contents (section,suite) WHERE section='%s' AND suite='%s'"%(sname,section,suite_id) )
 
 
         c.execute( """CREATE OR REPLACE FUNCTION update_contents_for_bin_a() RETURNS trigger AS  $$
