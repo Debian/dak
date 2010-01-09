@@ -149,11 +149,11 @@ def do_update(self):
             arch_list = arches(c, suite_id)
 
             for (arch_id,arch_str) in arch_list:
-                c.execute( "CREATE INDEX ind_deb_contents_%s_%s ON deb_contents (arch,suite) WHERE (arch=2 OR arch=%s) AND suite=%s"%(arch_str,suite,arch_id,suite_id) )
+                c.execute( "CREATE INDEX ind_deb_contents_%s_%s ON deb_contents (arch,suite) WHERE (arch=2 OR arch=%s) AND suite='%s'"%(arch_str,suite,arch_id,suite_id) )
 
             for section, sname in [("debian-installer","main"),
                                   ("non-free/debian-installer", "nonfree")]:
-                c.execute( "CREATE INDEX ind_udeb_contents_%s_%s ON udeb_contents (section,suite) WHERE section=%s AND suite=%s"%(sname,suite,section,suite_id) )
+                c.execute( "CREATE INDEX ind_udeb_contents_%s_%s ON udeb_contents (section,suite) WHERE section='%s' AND suite='%s'"%(sname,suite,section,suite_id) )
 
 
         c.execute( """CREATE OR REPLACE FUNCTION update_contents_for_bin_a() RETURNS trigger AS  $$
