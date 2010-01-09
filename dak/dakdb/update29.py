@@ -41,7 +41,7 @@ def do_update(self):
         c.execute("""DROP FUNCTION comma_concat(text, text) CASCADE;""" );
         c.execute("""DROP TABLE pending_content_associations;""")
         c.execute("""DROP TABLE content_associations;""")
-        c.execute("""DROP TABLE content_filecd ._names;""")
+        c.execute("""DROP TABLE content_file_names;""")
         c.execute("""DROP TABLE content_file_paths;""")
 
         c.execute("UPDATE config SET value = '29' WHERE name = 'db_revision'")
