@@ -142,7 +142,7 @@ def do_update(self):
         c.execute("""CREATE INDEX ind_deb_contents_binary ON deb_contents(binary_id);""" )
 
 
-        suites = self.suites()
+        suites = suites()
 
         for suite in [i.lower() for i in suites]:
             suite_id = DBConn().get_suite_id(suite)
