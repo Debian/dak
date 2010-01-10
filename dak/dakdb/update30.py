@@ -58,7 +58,7 @@ def do_update(self):
             JOIN section s on s.id=o.section
             WHERE b.id=$1
             AND o.suite=$2
-            AND o.type in ('deb','udeb')
+            AND ot.type in ('deb','udeb')
             \"\"\",
             ["int", "int"]),
             [TD["new"]["bin"], TD["new"]["suite"]])[0]
