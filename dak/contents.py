@@ -632,7 +632,7 @@ def main():
                  ('v',"verbose", "%s::%s" % (options_prefix,"Verbose")),
                 ]
 
-    commands = {'generate' : Contents.deb_generate,
+    commands = {'generate' : Contents.generate,
                 'bootstrap_bin' : Contents.bootstrap_bin,
                 'bootstrap' : Contents.bootstrap,
                 'cruft' : Contents.cruft,
