@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
-"""Manage build queues"""
-# Copyright (C) 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>
-# Copyright (C) 2009  Mark Hymers <mhy@debian.org>
+""" Manage build queues
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Mark Hymers <mhy@debian.org>
+
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +24,10 @@
 
 ################################################################################
 
-import os, os.path, stat, sys
+import os
+import os.path
+import stat
+import sys
 from datetime import datetime
 import apt_pkg
 
