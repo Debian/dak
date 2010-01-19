@@ -3,7 +3,7 @@
 
 # License: GPL v2 or later
 # Author: Filippo Giunchedi <filippo@debian.org>
-# Version: 0.4
+# Version: 0.5
 
 import cgi
 import os
@@ -23,7 +23,8 @@ outrss_filename = "NEW_out.rss"
 db_filename = "status.db"
 
 parser = OptionParser()
-parser.set_defaults(queuedir="queue", outdir="out", datadir="status", max_entries="30")
+parser.set_defaults(queuedir="queue", outdir="out", datadir="status",
+                    max_entries="30")
 
 parser.add_option("-q", "--queuedir", dest="queuedir",
         help="The queue dir (%default)")
@@ -111,7 +112,8 @@ def add_rss_item(status, msg, direction):
         return False
 
     description = "<pre>Description: %s\nChanges: %s\n</pre>" % \
-            (utf2ascii(cgi.escape(msg['Description'])), utf2ascii(cgi.escape(msg['Changes'])))
+            (utf2ascii(cgi.escape(msg['Description'])),
+             utf2ascii(cgi.escape(msg['Changes'])))
 
     link = "http://ftp-master.debian.org/new/%s_%s.html" % \
             (msg['Source'], msg['Version'])
