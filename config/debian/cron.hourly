@@ -13,7 +13,7 @@ dak queue-report -n > $webdir/new.html
 dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates
 dak show-deferred > ${webdir}/deferred.html
 dak show-new > /dev/null
-$base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc
+$base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
 $base/dak/tools/removals.pl > $webdir/rss/removals.rss
 
 $scriptsdir/generate-di
