@@ -9,7 +9,9 @@ import cgi
 import os
 import os.path
 import cPickle
+import re
 import sys
+import time
 import encodings.ascii
 from optparse import OptionParser
 from datetime import datetime
@@ -24,7 +26,7 @@ db_filename = "status.db"
 
 parser = OptionParser()
 parser.set_defaults(queuedir="queue", outdir="out", datadir="status",
-                    max_entries="30")
+                    logdir="log", max_entries="30")
 
 parser.add_option("-q", "--queuedir", dest="queuedir",
         help="The queue dir (%default)")
@@ -32,6 +34,8 @@ parser.add_option("-o", "--outdir", dest="outdir",
         help="The output directory (%default)")
 parser.add_option("-d", "--datadir", dest="datadir",
         help="The data dir (%default)")
+parser.add_option("-l", "--logdir", dest="logdir",
+        help="The ACCEPT/REJECT dak log dir (%default)")
 parser.add_option("-m", "--max-entries", dest="max_entries", type="int",
         help="Max number of entries to keep (%default)")
 
@@ -99,6 +103,28 @@ def parse_queuedir(dir):
 
     return res
 
+def parse_leave_reason(fname):
+    """ Parse a dak log file fname for ACCEPT/REJECT reason from process-new.
+
+    Return a dictionary {filename: reason}"""
+
+    reason_re = re.compile(".+\|process-new\|.+\|NEW (ACCEPT|REJECT): (\S+)")
+
+    try:
+        f = open(fname)
+    except IOError, e:
+        sys.stderr.write("Can't open %s: %s\n" % (fname, e))
+        return {}
+
+    res = {}
+    for l in f.readlines():
+        m = reason_re.search(l)
+        if m:
+            res[m.group(2)] = m.group(1)
+
+    f.close()
+    return res
+
 def add_rss_item(status, msg, direction):
     if direction == "in":
         feed = status.feed_in
@@ -106,7 +132,13 @@ def add_rss_item(status, msg, direction):
         pubdate = msg['Date']
     elif direction == "out":
         feed = status.feed_out
-        title = "%s %s left NEW" % (msg['Source'], msg['Version'])
+        if msg.has_key('Leave-Reason'):
+            title = "%s %s left NEW (%s)" % (msg['Source'], msg['Version'],
+                                             msg['Leave-Reason'])
+        else:
+            title = "%s %s left NEW" % (msg['Source'], msg['Version'])
+
+
         pubdate = datetime.utcnow()
     else:
         return False
@@ -129,9 +161,13 @@ def add_rss_item(status, msg, direction):
         )
     )
 
-def update_feeds(curqueue, status):
+def update_feeds(curqueue, status, settings):
     # inrss -> append all items in curqueue not in status.queue
     # outrss -> append all items in status.queue not in curqueue
+
+    leave_reason = None
+    # logfile from dak's process-new
+    reason_log = os.path.join(settings.logdir, time.strftime("%Y-%m"))
 
     for (name, parsed) in curqueue.items():
         if not status.queue.has_key(name):
@@ -140,7 +176,11 @@ def update_feeds(curqueue, status):
 
     for (name, parsed) in status.queue.items():
         if not curqueue.has_key(name):
-            # removed package
+            # removed package, try to find out why
+            if leave_reason is None:
+                leave_reason = parse_leave_reason(reason_log)
+            if leave_reason and leave_reason.has_key(name):
+                parsed['Leave-Reason'] = leave_reason[name]
             add_rss_item(status, parsed, "out")
 
 
@@ -172,7 +212,7 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
 
-    update_feeds(current_queue, status)
+    update_feeds(current_queue, status, settings)
 
     purge_old_items(status.feed_in, settings.max_entries)
     purge_old_items(status.feed_out, settings.max_entries)
