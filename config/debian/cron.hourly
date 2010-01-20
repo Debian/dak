@@ -4,15 +4,20 @@
 
 set -e
 set -u
+
 export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
-# We used to have accepted in here, but it doesn't exist in that form any more
 dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates
 dak show-deferred > ${webdir}/deferred.html
 dak show-new > /dev/null
+
+cd $webdir
+cat removals-20*.txt > removals-full.txt
+cat removals.txt >> removals-full.txt
+
 $base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
 $base/dak/tools/removals.pl > $webdir/rss/removals.rss
 

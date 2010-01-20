@@ -1,0 +1,18 @@
+MAILTO=cron@ftp-master.debian.org
+PATH=/usr/local/bin:/usr/bin:/bin
+# m        h          dom mon dow command
+2,17,32,47 *          *   *   *   /srv/ftp.debian.org/dak/config/debian/cron.unchecked
+0          *          *   *   *   /srv/ftp.debian.org/dak/config/debian/cron.hourly
+52         1,7,13,19  *   *   *   /srv/ftp.debian.org/dak/config/debian/cron.dinstall
+#### And an alternate line, for the times the release team wants it half an hour late.
+####22         2,9,14,20  *   *   *   /srv/ftp.debian.org/dak/config/debian/cron.dinstall
+0          12         *   *   0   /srv/ftp.debian.org/dak/config/debian/cron.weekly
+6          0          1   *   *   /srv/ftp.debian.org/dak/config/debian/cron.monthly
+@reboot                           /srv/ftp.debian.org/dak/config/debian/cron.reboot
+
+0          0          *   *   *   crontab -l > ~/crontab.out
+
+# We do like our queued and make sure it will always be there.
+# Luckily it checks itself and doesn't start if it already runs
+@reboot /srv/queued/debianqueued-0.9/debianqueued
+*/10        *          *   *   *   /srv/queued/debianqueued-0.9/debianqueued 2>/dev/null
