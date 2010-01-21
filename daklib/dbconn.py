@@ -530,6 +530,12 @@ class BuildQueue(object):
 
             os.system("""apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="%s" -o APT::FTPArchive::Release::Label="%s" -o APT::FTPArchive::Release::Description="%s" -o APT::FTPArchive::Release::Architectures="%s" release %s > Release""" % (self.origin, self.label, self.releasedescription, arches, bname))
 
+            # Crude hack with open and append, but this whole section is and should be redone.
+            if self.notautomatic:
+                release=open("Release", "a")
+                release.write("NotAutomatic: yes")
+                release.close()
+
             # Sign if necessary
             if self.signingkey:
                 cnf = Config()
