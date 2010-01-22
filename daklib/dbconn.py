@@ -2305,7 +2305,7 @@ def add_dsc_to_db(u, filename, session=None):
     # Add the src_uploaders to the DB
     uploader_ids = [source.maintainer_id]
     if u.pkg.dsc.has_key("uploaders"):
-        for up in u.pkg.dsc["uploaders"].replace(">, ", "\t")split("\t"):
+        for up in u.pkg.dsc["uploaders"].replace(">, ", ">\t").split("\t"):
             up = up.strip()
             uploader_ids.append(get_or_set_maintainer(up, session).maintainer_id)
 
