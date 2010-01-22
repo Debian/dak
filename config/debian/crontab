@@ -5,7 +5,7 @@ PATH=/usr/local/bin:/usr/bin:/bin
 0          *          *   *   *   /srv/ftp.debian.org/dak/config/debian/cron.hourly
 52         1,7,13,19  *   *   *   /srv/ftp.debian.org/dak/config/debian/cron.dinstall
 #### And an alternate line, for the times the release team wants it half an hour late.
-####22         2,9,14,20  *   *   *   /srv/ftp.debian.org/dak/config/debian/cron.dinstall
+####22         2,8,14,20  *   *   *   /srv/ftp.debian.org/dak/config/debian/cron.dinstall
 0          12         *   *   0   /srv/ftp.debian.org/dak/config/debian/cron.weekly
 6          0          1   *   *   /srv/ftp.debian.org/dak/config/debian/cron.monthly
 @reboot                           /srv/ftp.debian.org/dak/config/debian/cron.reboot
