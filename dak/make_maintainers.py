@@ -136,20 +136,20 @@ def main():
         suite_priority = int(cnf["Suite::%s::Priority" % (suite)])
 
         # Source packages
-        if not gen_uploaders:
-            q = session.execute("""SELECT s.source, s.version, m.name
-                                     FROM src_associations sa, source s, suite su, maintainer m
-                                    WHERE su.suite_name = :suite_name
-                                      AND sa.suite = su.id AND sa.source = s.id
-                                      AND m.id = s.maintainer""",
-                                    {'suite_name': suite})
-        else:
+        if gen_uploaders:
             q = session.execute("""SELECT s.source, s.version, m.name
                                      FROM src_associations sa, source s, suite su, maintainer m, src_uploaders srcu
                                     WHERE su.suite_name = :suite_name
                                       AND sa.suite = su.id AND sa.source = s.id
                                       AND m.id = srcu.maintainer
                                       AND srcu.source = s.id""",
+                                    {'suite_name': suite})
+        else:
+            q = session.execute("""SELECT s.source, s.version, m.name
+                                     FROM src_associations sa, source s, suite su, maintainer m
+                                    WHERE su.suite_name = :suite_name
+                                      AND sa.suite = su.id AND sa.source = s.id
+                                      AND m.id = s.maintainer""",
                                     {'suite_name': suite})
 
         for source in q.fetchall():
@@ -169,18 +169,18 @@ def main():
                 packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
 
         # Binary packages
-        if not gen_uploaders:
-            q = session.execute("""SELECT b.package, b.source, b.maintainer, b.version
-                                     FROM bin_associations ba, binaries b, suite s
-                                    WHERE s.suite_name = :suite_name
-                                      AND ba.suite = s.id AND ba.bin = b.id""",
-                                   {'suite_name': suite})
-        else:
+        if gen_uploaders:
             q = session.execute("""SELECT b.package, b.source, srcu.maintainer, b.version
                                      FROM bin_associations ba, binaries b, suite s, src_uploaders srcu
                                     WHERE s.suite_name = :suite_name
                                       AND ba.suite = s.id AND ba.bin = b.id
                                       AND b.source = srcu.source""",
+                                   {'suite_name': suite})
+        else:
+            q = session.execute("""SELECT b.package, b.source, b.maintainer, b.version
+                                     FROM bin_associations ba, binaries b, suite s
+                                    WHERE s.suite_name = :suite_name
+                                      AND ba.suite = s.id AND ba.bin = b.id""",
                                    {'suite_name': suite})
 
 
@@ -193,10 +193,10 @@ def main():
                 maintainer = get_maintainer_from_source(source_id, session)
             else:
                 maintainer = get_maintainer(binary[2], session)
-            if not gen_uploaders:
-                key = package
-            else:
+            if gen_uploaders:
                 key = (package, maintainer)
+            else:
+                key = package
 
             if packages.has_key(key):
                 if packages[key]["priority"] <= suite_priority:
@@ -232,14 +232,14 @@ def main():
 
     package_keys = packages.keys()
     package_keys.sort()
-    if not gen_uploaders:
-        for package in package_keys:
-            lhs = "~".join([package, packages[package]["version"]])
-            print "%-30s %s" % (lhs, packages[package]["maintainer"])
-    else:
+    if gen_uploaders:
         for (package, maintainer) in package_keys:
             lhs = "~".join([package, packages[package]["version"]])
             print "%-30s %s" % (lhs, maintainer)
+    else:
+        for package in package_keys:
+            lhs = "~".join([package, packages[package]["version"]])
+            print "%-30s %s" % (lhs, packages[package]["maintainer"])
 
 ################################################################################
 
