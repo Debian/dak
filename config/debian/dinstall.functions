@@ -266,6 +266,24 @@ function mkmaintainers() {
     fi
 }
 
+function mkuploaders() {
+    log 'Creating Uploaders index ... '
+
+    cd $indices
+    dak make-maintainers -u ${scriptdir}/masterfiles/pseudo-packages.maintainers | \
+        sed -e "s/~[^  ]*\([   ]\)/\1/"  | \
+        awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-uploaders
+
+    if ! cmp -s .new-uploaders Uploaders || [ ! -f Uploaders ]; then
+	    log "installing Uploaders ... "
+	    mv -f .new-uploaders Uploaders
+	    gzip --rsyncable -9v <Uploaders >.new-uploaders.gz
+	    mv -f .new-uploaders.gz Uploaders.gz
+    else
+        rm -f .new-uploaders
+    fi
+}
+
 function copyoverrides() {
     log 'Copying override files into public view ...'
 

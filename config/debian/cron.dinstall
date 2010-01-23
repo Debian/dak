@@ -337,6 +337,14 @@ GO=(
 stage $GO
 
 GO=(
+    FUNC="mkuploaders"
+    TIME="mkuploaders"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
     FUNC="copyoverrides"
     TIME="copyoverrides"
     ARGS=""
