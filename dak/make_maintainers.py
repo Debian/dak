@@ -156,10 +156,10 @@ def main():
             package = source[0]
             version = source[1]
             maintainer = fix_maintainer(source[2])
-            if not gen_uploaders:
-                key = package
-            else:
+            if gen_uploaders:
                 key = (package, maintainer)
+            else:
+                key = package
 
             if packages.has_key(key):
                 if packages[key]["priority"] <= suite_priority:
@@ -234,7 +234,8 @@ def main():
     package_keys.sort()
     if gen_uploaders:
         for (package, maintainer) in package_keys:
-            lhs = "~".join([package, packages[package]["version"]])
+            key = (package, maintainer)
+            lhs = "~".join([package, packages[key]["version"]])
             print "%-30s %s" % (lhs, maintainer)
     else:
         for package in package_keys:
