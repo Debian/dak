@@ -223,7 +223,7 @@ def process_file(file, suite, action, session):
                     continue
                 else:
                     session.execute("""INSERT INTO bin_associations (suite, bin)
-                                            VALUES (%s, %s)""",
+                                            VALUES (:suiteid, :pkid)""",
                                        {'suiteid': suite_id, 'pkid': pkid})
             elif action == "remove":
                 if association_id == None:
