@@ -6,6 +6,9 @@ Various
 
 * Implement autosigning, see ftpmaster_autosigning on ftp-master host in text/.
 
+* Improve logging in dak control-suite. --add is silent, not nice. same
+   for --remove
+
 * Throw away all DD uploaded .debs. (Depend on "Lintian based automated
    rejects")
   - Depends on the lintian based automated rejects, we do want correct
