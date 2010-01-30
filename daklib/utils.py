@@ -268,7 +268,21 @@ def parse_changes(filename, signing_rules=0):
         unicode(content, 'utf-8')
     except UnicodeError:
         raise ChangesUnicodeError, "Changes file not proper utf-8"
-    return parse_deb822(content, signing_rules)
+    changes = parse_deb822(content, signing_rules)
+
+    # Finally ensure that everything needed is there
+    must_keywords = ('Format', 'Date', 'Source', 'Binary', 'Architecture', 'Version',
+                     'Distribution', 'Maintainer', 'Description', 'Changes', 'Files')
+
+    missingfields=[]
+    for keyword in must_keywords:
+        if not changes.has_key(keyword.lower()):
+            missingfields.append(keyword)
+
+    if len(missingfields):
+        raise ParseChangesError, "Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields)
+
+    return changes
 
 ################################################################################
 
