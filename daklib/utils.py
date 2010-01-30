@@ -239,7 +239,7 @@ def parse_deb822(contents, signing_rules=0):
 
 ################################################################################
 
-def parse_changes(filename, signing_rules=0):
+def parse_changes(filename, signing_rules=0, dsc_file=0):
     """
     Parses a changes file and returns a dictionary where each field is a
     key.  The mandatory first argument is the filename of the .changes
@@ -270,17 +270,19 @@ def parse_changes(filename, signing_rules=0):
         raise ChangesUnicodeError, "Changes file not proper utf-8"
     changes = parse_deb822(content, signing_rules)
 
-    # Finally ensure that everything needed is there
-    must_keywords = ('Format', 'Date', 'Source', 'Binary', 'Architecture', 'Version',
-                     'Distribution', 'Maintainer', 'Description', 'Changes', 'Files')
 
-    missingfields=[]
-    for keyword in must_keywords:
-        if not changes.has_key(keyword.lower()):
-            missingfields.append(keyword)
+    if not dsc_file:
+        # Finally ensure that everything needed for .changes is there
+        must_keywords = ('Format', 'Date', 'Source', 'Binary', 'Architecture', 'Version',
+                         'Distribution', 'Maintainer', 'Description', 'Changes', 'Files')
 
-    if len(missingfields):
-        raise ParseChangesError, "Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields)
+        missingfields=[]
+        for keyword in must_keywords:
+            if not changes.has_key(keyword.lower()):
+                missingfields.append(keyword)
+
+                if len(missingfields):
+                    raise ParseChangesError, "Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields)
 
     return changes
 
@@ -394,7 +396,7 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
 
     # Parse the file if needed
     if dsc is None:
-        dsc = parse_changes(dsc_filename, signing_rules=1);
+        dsc = parse_changes(dsc_filename, signing_rules=1, dsc_file=1);
 
     if dsc_files is None:
         dsc_files = build_file_list(dsc, is_a_dsc=1)

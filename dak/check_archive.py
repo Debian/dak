@@ -162,7 +162,7 @@ def check_dscs():
         for line in list_file.readlines():
             f = line[:-1]
             try:
-                utils.parse_changes(f, signing_rules=1)
+                utils.parse_changes(f, signing_rules=1, dsc_file=1)
             except InvalidDscError, line:
                 utils.warn("syntax error in .dsc file '%s', line %s." % (f, line))
                 count += 1
@@ -339,7 +339,7 @@ def check_files_in_dsc():
 
         try:
             # NB: don't enforce .dsc syntax
-            dsc = utils.parse_changes(filename)
+            dsc = utils.parse_changes(filename, dsc_file=1)
         except:
             utils.fubar("error parsing .dsc file '%s'." % (filename))
 
@@ -461,7 +461,7 @@ def chk_bd_process_dir (unused, dirname, filenames):
         if not name.endswith(".dsc"):
             continue
         filename = os.path.abspath(dirname+'/'+name)
-        dsc = utils.parse_changes(filename)
+        dsc = utils.parse_changes(filename, dsc_file=1)
         for field_name in [ "build-depends", "build-depends-indep" ]:
             field = dsc.get(field_name)
             if field:

@@ -929,7 +929,7 @@ class Upload(object):
 
         # Parse the .dsc file
         try:
-            self.pkg.dsc.update(utils.parse_changes(dsc_filename, signing_rules=1))
+            self.pkg.dsc.update(utils.parse_changes(dsc_filename, signing_rules=1, dsc_file=1))
         except CantOpenError:
             # if not -n copy_to_holding() will have done this for us...
             if not action:

@@ -399,7 +399,7 @@ def main ():
             for i in source_packages.keys():
                 filename = "/".join(source_packages[i])
                 try:
-                    dsc = utils.parse_changes(filename)
+                    dsc = utils.parse_changes(filename, dsc_file=1)
                 except CantOpenError:
                     utils.warn("couldn't open '%s'." % (filename))
                     continue

@@ -143,7 +143,7 @@ def flush_orphans ():
         for f in files.keys():
             if f.endswith(".dsc"):
                 try:
-                    dsc = utils.parse_changes(f)
+                    dsc = utils.parse_changes(f, dsc_file=1)
                     dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
                 except:
                     utils.warn("error processing '%s'; skipping it. [Got %s]" % (f, sys.exc_type))
