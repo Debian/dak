@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 
-""" Cleans up unassociated binary and source packages """
-# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+""" Cleans up unassociated binary and source packages
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Mark Hymers <mhy@debian.org>
+@copyright: 2010  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +34,10 @@
 
 ################################################################################
 
-import os, stat, sys, time
+import os
+import stat
+import sys
+import time
 import apt_pkg
 from datetime import datetime, timedelta
 
