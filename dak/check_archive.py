@@ -95,8 +95,7 @@ def process_dir (unused, dirname, filenames):
     if dirname.find('proposed-updates') != -1:
         return
     for name in filenames:
-        filename = os.path.abspath(dirname+'/'+name)
-        filename = filename.replace('potato-proposed-updates', 'proposed-updates')
+        filename = os.path.abspath(os.path.join(dirname,name))
         if os.path.isfile(filename) and not os.path.islink(filename) and not db_files.has_key(filename) and not excluded.has_key(filename):
             waste += os.stat(filename)[stat.ST_SIZE]
             print "%s" % (filename)
@@ -119,7 +118,7 @@ def check_files():
     db_files.clear()
 
     for f in q.all():
-        filename = os.path.abspath(f.location.path, f.filename)
+        filename = os.path.abspath(os.path.join(f.location.path, f.filename))
         db_files[filename] = ""
         if os.access(filename, os.R_OK) == 0:
             if f.last_used:
@@ -137,7 +136,7 @@ def check_files():
 
     print "Existent files not in db:"
 
-    os.path.walk(cnf["Dir::Root"] + 'pool/', process_dir, None)
+    os.path.walk(os.path.join(cnf["Dir::Root"], 'pool/'), process_dir, None)
 
     print
     print "%s wasted..." % (utils.size_type(waste))
