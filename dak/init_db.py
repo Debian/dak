@@ -133,7 +133,9 @@ class InitDB(object):
         s.query(Suite).delete()
 
         for suite in self.Cnf.SubTree("Suite").List():
+            suite = suite.lower()
             su = Suite()
+            su.suite_name  = suite
             su.version     = self.Cnf.get("Suite::%s::Version" % suite, "-")
             su.origin      = self.Cnf.get("Suite::%s::Origin" % suite, "")
             su.description = self.Cnf.get("Suite::%s::Description" % suite, "")
@@ -141,11 +143,11 @@ class InitDB(object):
 
             for architecture in self.Cnf.ValueList("Suite::%s::Architectures" % (suite)):
                 sa = SuiteArchitecture()
-                sa.suite_id = su.suite_id
                 a = s.query(Architecture).filter_by(arch_string=architecture)
                 if a.count() < 1:
                     utils.fubar("E: Architecture %s not found for suite %s" % (architecture, suite))
                 sa.arch_id = a.one().arch_id
+                sa.suite_id = su.suite_id
                 s.add(sa)
 
         s.commit()
