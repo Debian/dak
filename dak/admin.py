@@ -67,6 +67,10 @@ Perform administrative work on the dak database.
   suite / s:
      s list                 show a list of suites
      s show SUITE           show config details for a suite
+     s add SUITE VERSION [ label=LABEL ] [ description=DESCRIPTION ]
+                         [ origin=ORIGIN ] [ codename=CODENAME ]
+                            add suite SUITE, version VERSION. label,
+                            description, origin and codename are optional.
 
   suite-architecture / s-a:
      s-a list-suite ARCH    show the suites an ARCH is in
@@ -170,6 +174,37 @@ def __suite_show(d, args):
 
     print su.details()
 
+def __suite_add(d, args):
+    die_arglen(args, 4, "E: adding a suite requires at least a name and a version")
+    suite_name = args[2].lower()
+    version = args[3]
+    rest = args[3:]
+
+    def get_field(field):
+        for varval in args:
+            if varval.startswith(field + '='):
+                return varval.split('=')[1]
+        return None
+
+    print "Adding suite %s" % suite_name
+    if not dryrun:
+        try:
+            s = d.session()
+            suite = Suite()
+            suite.suite_name = suite_name
+            suite.version = version
+            suite.label = get_field('label')
+            suite.description = get_field('description')
+            suite.origin = get_field('origin')
+            suite.codename = get_field('codename')
+            s.add(suite)
+            s.commit()
+        except IntegrityError, e:
+            die("E: Integrity error adding suite %s (it probably already exists)" % suite_name)
+        except SQLAlchemyError, e:
+            die("E: Error adding suite %s (%s)" % (suite_name, e))
+    print "Suite %s added" % (suite_name)
+
 def suite(command):
     args = [str(x) for x in command]
     Cnf = utils.get_conf()
@@ -183,6 +218,8 @@ def suite(command):
         __suite_list(d, args)
     elif mode == 'show':
         __suite_show(d, args)
+    elif mode == 'add':
+        __suite_add(d, args)
     else:
         die("E: suite command unknown")
 
