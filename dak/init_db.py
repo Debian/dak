@@ -174,7 +174,7 @@ class InitDB(object):
         for priority in self.Cnf.SubTree("Priority").List():
             p = Priority()
             p.priority = priority
-            p.level    = self.Cnf.get("Priority::%s", "0")
+            p.level    = self.Cnf.get("Priority::" + priority, "0")
             s.add(p)
 
         s.commit()
