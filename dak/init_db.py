@@ -127,7 +127,7 @@ class InitDB(object):
         s.commit()
 
     def do_suite(self):
-        """Initalize the suite table."""
+        """Initialize the suite table."""
 
         s = self.projectB.session()
         s.query(Suite).delete()
