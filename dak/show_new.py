@@ -177,15 +177,13 @@ def do_pkg(changes_file, session):
         filestoexamine = []
         for pkg in new.keys():
             for fn in new[pkg]["files"]:
-                if (files[fn].has_key("new") and
-                    (files[fn]["type"] == "dsc" or
-                     not re_source_ext.match(files[fn]["type"]))):
-                    filestoexamine.append(fn)
+                filestoexamine.append(fn)
 
         html_header(changes["source"], filestoexamine)
 
         check_valid(new)
-        examine_package.display_changes( u.pkg.changes["distribution"], changes_file)
+        distribution = changes["distribution"].keys()[0]
+        examine_package.display_changes(distribution, changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
             examine_package.check_dsc(distribution, fn)
