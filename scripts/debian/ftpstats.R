@@ -1,7 +1,7 @@
 arch <- c("source", "all", "amd64", "i386", "alpha", "arm", "armel", "hppa", "hurd-i386", "ia64",
 	"kfreebsd-amd64", "kfreebsd-i386", "mips", "mipsel", "powerpc", "s390", "sparc")
 palette(c("midnightblue", "gold", "turquoise", "cyan", "black", "red", "OrangeRed", "green3", "blue", "magenta",
-	"comsilk3", "darkolivegreen3", "tomato4", "violetred2","thistle4", "steelblue2", "springgreen4",
+	"cornsilk3", "darkolivegreen3", "tomato4", "violetred2","thistle4", "steelblue2", "springgreen4",
 	"salmon","gray"))
 cname <- c("date",arch)
 plotsize <- function(file,title,p,height=11.8,width=16.9) {
