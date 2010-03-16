@@ -144,6 +144,8 @@ def init():
          "import old changes files into known_changes table"),
         ("add-user",
          "Add a user to the archive"),
+        ("make-changelog",
+         "Generate changelog between two suites"),
         ]
     return functionality
 

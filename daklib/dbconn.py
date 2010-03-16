@@ -2212,6 +2212,30 @@ def get_source_in_suite(source, suite, session=None):
 
 __all__.append('get_source_in_suite')
 
+@session_wrapper
+def get_all_sources_in_suite(suitename, session=None):
+    """
+    Returns list of sources and versions found in a given suite
+
+      - B{suite} - a suite name, eg. I{unstable}
+
+    @type suite: string
+    @param suite: the suite name
+
+    @rtype: dictionary
+    @return: the version for I{source} in I{suite}
+
+    """
+    query = """SELECT source, version FROM source_suite
+    WHERE suite_name=:suitename
+    ORDER BY source"""
+
+    vals = {'suitename': suitename}
+   
+    return session.execute(query, vals)
+
+__all__.append('get_all_sources_in_suite')
+
 ################################################################################
 
 @session_wrapper

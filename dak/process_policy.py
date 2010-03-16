@@ -65,6 +65,9 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, session):
                 continue
             fn(f, srcqueue, "".join(lines[1:]), session)
 
+        if len(changes_files) and not Options["No-Action"]:
+            store_changelog(changes_files[0], srcqueue)
+
         if opref != npref and not Options["No-Action"]:
             newcomm = npref + comm[len(opref):]
             os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
@@ -110,6 +113,21 @@ def comment_reject(changes_file, srcqueue, comments, session):
         print "  REJECT"
         Logger.log(["Policy Queue REJECT: %s:  %s" % (srcqueue.queue_name, u.pkg.changes_file)])
 
+
+################################################################################
+
+def store_changelog(changes_file, srcqueue):
+    Cnf = Config()
+    u = Upload()
+    u.pkg.changes_file = os.path.join(Cnf['Dir::Queue::Newstage'], changes_file)
+    u.load_changes(u.pkg.changes_file)
+    u.update_subst()
+    query = """INSERT INTO changelogs (source, version, suite, changelog)
+               VALUES (:source, :version, :suite, :changelog)"""
+    session = DBConn().session()
+    session.execute(query, {'source': u.pkg.changes['source'], 'version': u.pkg.changes['version'], \
+                    'suite': srcqueue.queue_name, 'changelog': u.pkg.changes['changes']})
+    session.commit()
 
 ################################################################################
 
