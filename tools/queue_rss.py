@@ -12,7 +12,6 @@ import cPickle
 import re
 import sys
 import time
-import encodings.ascii
 from optparse import OptionParser
 from datetime import datetime
 
@@ -52,14 +51,6 @@ class Status:
                        description = "Debian packages leaving the NEW queue" )
 
         self.queue = {}
-
-def utf2ascii(src):
-    """ Return an ASCII encoded copy of the input UTF-8 string """
-    try:
-        res = unicode(src, 'utf-8').encode('ascii', 'replace')
-    except UnicodeDecodeError:
-        res = None
-    return res
 
 def purge_old_items(feed, max):
     """ Purge RSSItem from feed, no more than max. """
@@ -144,8 +135,8 @@ def add_rss_item(status, msg, direction):
         return False
 
     description = "<pre>Description: %s\nChanges: %s\n</pre>" % \
-            (utf2ascii(cgi.escape(msg['Description'])),
-             utf2ascii(cgi.escape(msg['Changes'])))
+            (cgi.escape(msg['Description']),
+             cgi.escape(msg['Changes']))
 
     link = "http://ftp-master.debian.org/new/%s_%s.html" % \
             (msg['Source'], msg['Version'])
@@ -155,7 +146,7 @@ def add_rss_item(status, msg, direction):
             title,
             pubDate = pubdate,
             description = description,
-            author = utf2ascii(cgi.escape(msg['Maintainer'])),
+            author = cgi.escape(msg['Maintainer']),
             link = link,
             guid = link
         )
