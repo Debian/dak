@@ -2,7 +2,7 @@
 # coding=utf8
 
 """
-Implement changelogs table
+Implement changelogs related tables
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2010 Luca Falavigna <dktrkranz@debian.org>
@@ -39,7 +39,12 @@ def do_update(self):
     print __doc__
     try:
         c = self.db.cursor()
-        c.execute('CREATE TABLE changelogs (source text, version debversion, suite text, changelog text)')
+        c.execute('ALTER TABLE changes ADD COLUMN changelog_id integer')
+        c.execute('CREATE TABLE changelogs_text (id serial PRIMARY KEY NOT NULL, changelog text)')
+        c.execute("GRANT SELECT ON changelogs_text TO public")
+        c.execute("GRANT ALL ON changelogs_text TO ftpmaster")
+        c.execute('CREATE VIEW changelogs AS SELECT cl.id, source, version, architecture, changelog \
+                   FROM changes c JOIN changelogs_text cl ON cl.id = c.changelog_id')
         c.execute("GRANT SELECT ON changelogs TO public")
         c.execute("GRANT ALL ON changelogs TO ftpmaster")
         c.execute("UPDATE config SET value = '33' WHERE name = 'db_revision'")
@@ -47,4 +52,4 @@ def do_update(self):
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        raise DBUpdateError, 'Unable to apply build_queue update 32, rollback issued. Error message : %s' % (str(msg))
+        raise DBUpdateError, 'Unable to apply build_queue update 33, rollback issued. Error message : %s' % (str(msg))

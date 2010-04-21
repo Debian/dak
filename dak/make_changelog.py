@@ -53,12 +53,8 @@ import sys
 import apt_pkg
 from daklib.dbconn import *
 from daklib import utils
-from daklib.queue import Upload
 
 ################################################################################
-
-suites = {'proposed-updates': 'proposedupdates',
-          'oldstable-proposed-updates': 'oldproposedupdates'}
 
 def usage (exit_code=0):
     print """Usage: make-changelog -s <suite> -b <base_suite> [OPTION]...
@@ -72,50 +68,38 @@ Options:
 
     sys.exit(exit_code)
 
-def get_new_packages(suite, base_suite):
+def get_source_uploads(suite, base_suite, session):
     """
-    Returns a dict of sources and versions where version is newer in base.
+    Returns changelogs for source uploads where version is newer than base.
     """
 
-    suite_sources = dict()
-    base_suite_sources = dict()
-    new_in_suite = dict()
-    session = DBConn().session()
+    query = """WITH base AS (
+                 SELECT source, max(version) AS version
+                 FROM source_suite
+                 WHERE suite_name = :base_suite
+                 GROUP BY source
+                 UNION SELECT source, CAST(0 AS debversion) AS version
+                 FROM source_suite
+                 WHERE suite_name = :suite
+                 EXCEPT SELECT source, CAST(0 AS debversion) AS version
+                 FROM source_suite
+                 WHERE suite_name = :base_suite
+                 ORDER BY source),
+               cur_suite AS (
+                 SELECT source, max(version) AS version
+                 FROM source_suite
+                 WHERE suite_name = :suite
+                 GROUP BY source)
+               SELECT DISTINCT c.source, c.version, c.changelog
+               FROM changelogs c
+               JOIN base b on b.source = c.source
+               JOIN cur_suite cs ON cs.source = c.source
+               WHERE c.version > b.version
+               AND c.version <= cs.version
+               AND c.architecture LIKE '%source%'
+               ORDER BY c.source, c.version DESC"""
 
-    # Get source details from given suites
-    for i in get_all_sources_in_suite(suite, session):
-        suite_sources[i[0]] = i[1]
-    for i in get_all_sources_in_suite(base_suite, session):
-        base_suite_sources[i[0]] = i[1]
-
-    # Compare if version in suite is greater than the base_suite one
-    for i in suite_sources.keys():
-        if i not in suite_sources.keys():
-            new_in_suite[i] = (suite_sources[i], 0)
-        elif apt_pkg.VersionCompare(suite_sources[i], base_suite_sources[i]) > 0:
-            new_in_suite[i] = (suite_sources[i], base_suite_sources[i])
-
-    return new_in_suite
-
-def generate_changelog(suite, source, versions):
-    """
-    Generates changelog data returned from changelogs table
-    """
-    query = """
-    SELECT changelog FROM changelogs
-    WHERE suite = :suite
-    AND source = :source
-    AND version > :base
-    AND version <= :current
-    ORDER BY source, version DESC"""
-    session = DBConn().session()
-
-    result = session.execute(query, {'suite': suites[suite], 'source': source, \
-                             'base': versions[1], 'current': versions[0]})
-    session.commit()
-    for r in result.fetchall():
-        for i in range(0, len(r)):
-            print r[i]
+    return session.execute(query, {'suite': suite, 'base_suite': base_suite})
 
 def main():
     Cnf = utils.get_conf()
@@ -139,9 +123,12 @@ def main():
         if not get_suite(s):
             utils.fubar('Invalid suite "%s"' % s)
 
-    new_packages = get_new_packages(suite, base_suite)
-    for package in sorted(new_packages.keys()):
-        generate_changelog(suite, package, new_packages[package])
+    session = DBConn().session()
+    uploads = get_source_uploads(suite, base_suite, session)
+    session.commit()
+
+    for u in uploads:
+        print u[2]
 
 if __name__ == '__main__':
     main()

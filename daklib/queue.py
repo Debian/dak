@@ -1899,6 +1899,9 @@ distribution."""
                     # Make sure that our source object is up-to-date
                     session.expire(source)
 
+            # Add changelog information to the database
+            self.store_changelog()
+
         # Install the files into the pool
         for newfile, entry in self.pkg.files.items():
             destination = os.path.join(cnf["Dir::Pool"], entry["pool name"], newfile)
@@ -2672,3 +2675,18 @@ distribution."""
 
         os.chdir(cwd)
         return too_new
+
+    def store_changelog(self):
+        session = DBConn().session()
+
+        # Add current changelog text into changelogs_text table, return created ID
+        query = "INSERT INTO changelogs_text (changelog) VALUES (:changelog) RETURNING id"
+        ID = session.execute(query, {'changelog': self.pkg.changes['changes']}).fetchone()[0]
+
+        # Link ID to the upload available in changes table
+        query = """UPDATE changes SET changelog_id = :id WHERE source = :source
+                   AND version = :version AND architecture LIKE '%source%'"""
+        session.execute(query, {'id': ID, 'source': self.pkg.changes['source'], \
+                                'version': self.pkg.changes['version']})
+
+        session.commit()
