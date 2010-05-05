@@ -64,7 +64,8 @@ Options:
 
   -h, --help                show this help and exit
   -s, --suite               suite providing packages to compare
-  -b, --base-suite          suite to be taken as reference for comparison"""
+  -b, --base-suite          suite to be taken as reference for comparison
+  -n, --binnmu              display binNMUs uploads instead of source ones"""
 
     sys.exit(exit_code)
 
@@ -78,13 +79,13 @@ def get_source_uploads(suite, base_suite, session):
                  FROM source_suite
                  WHERE suite_name = :base_suite
                  GROUP BY source
-                 UNION SELECT source, CAST(0 AS debversion) AS version
+                 UNION (SELECT source, CAST(0 AS debversion) AS version
                  FROM source_suite
                  WHERE suite_name = :suite
                  EXCEPT SELECT source, CAST(0 AS debversion) AS version
                  FROM source_suite
                  WHERE suite_name = :base_suite
-                 ORDER BY source),
+                 ORDER BY source)),
                cur_suite AS (
                  SELECT source, max(version) AS version
                  FROM source_suite
@@ -92,7 +93,7 @@ def get_source_uploads(suite, base_suite, session):
                  GROUP BY source)
                SELECT DISTINCT c.source, c.version, c.changelog
                FROM changelogs c
-               JOIN base b on b.source = c.source
+               JOIN base b ON b.source = c.source
                JOIN cur_suite cs ON cs.source = c.source
                WHERE c.version > b.version
                AND c.version <= cs.version
@@ -101,13 +102,53 @@ def get_source_uploads(suite, base_suite, session):
 
     return session.execute(query, {'suite': suite, 'base_suite': base_suite})
 
+def get_binary_uploads(suite, base_suite, session):
+    """
+    Returns changelogs for binary uploads where version is newer than base.
+    """
+
+    query = """WITH base as (
+                 SELECT s.source, max(b.version) AS version, a.arch_string
+                 FROM source s
+                 JOIN binaries b ON b.source = s.id
+                 JOIN bin_associations ba ON ba.bin = b.id
+                 JOIN architecture a ON a.id = b.architecture
+                 WHERE ba.suite = (
+                   SELECT id
+                   FROM suite
+                   WHERE suite_name = :base_suite)
+                 GROUP BY s.source, a.arch_string),
+               cur_suite as (
+                 SELECT s.source, max(b.version) AS version, a.arch_string
+                 FROM source s
+                 JOIN binaries b ON b.source = s.id
+                 JOIN bin_associations ba ON ba.bin = b.id
+                 JOIN architecture a ON a.id = b.architecture
+                 WHERE ba.suite = (
+                   SELECT id
+                   FROM suite
+                   WHERE suite_name = :suite)
+                 GROUP BY s.source, a.arch_string)
+               SELECT DISTINCT c.source, c.version, c.architecture, c.changelog
+               FROM changelogs c
+               JOIN base b on b.source = c.source
+               JOIN cur_suite cs ON cs.source = c.source
+               WHERE c.version > b.version
+               AND c.version <= cs.version 
+               AND c.architecture = b.arch_string
+               AND c.architecture = cs.arch_string
+               ORDER BY c.source, c.version DESC, c.architecture"""
+
+    return session.execute(query, {'suite': suite, 'base_suite': base_suite})
+
 def main():
     Cnf = utils.get_conf()
     Arguments = [('h','help','Make-Changelog::Options::Help'),
-                 ('s','suite','Make-Changelog::Options::Suite', 'HasArg'),
-                 ('b','base-suite','Make-Changelog::Options::Base-Suite', 'HasArg')]
+                 ('s','suite','Make-Changelog::Options::Suite','HasArg'),
+                 ('b','base-suite','Make-Changelog::Options::Base-Suite','HasArg'),
+                 ('n','binnmu','Make-Changelog::Options::binNMU')]
 
-    for i in ['help', 'suite', 'base-suite']:
+    for i in ['help', 'suite', 'base-suite', 'binnmu']:
         if not Cnf.has_key('Make-Changelog::Options::%s' % (i)):
             Cnf['Make-Changelog::Options::%s' % (i)] = ''
 
@@ -115,6 +156,7 @@ def main():
     Options = Cnf.SubTree('Make-Changelog::Options')
     suite = Cnf['Make-Changelog::Options::Suite']
     base_suite = Cnf['Make-Changelog::Options::Base-Suite']
+    binnmu = Cnf['Make-Changelog::Options::binNMU']
 
     if Options['help'] or not (suite and base_suite):
         usage()
@@ -124,11 +166,17 @@ def main():
             utils.fubar('Invalid suite "%s"' % s)
 
     session = DBConn().session()
-    uploads = get_source_uploads(suite, base_suite, session)
-    session.commit()
 
-    for u in uploads:
-        print u[2]
+    if binnmu:
+        uploads = get_binary_uploads(suite, base_suite, session)
+        session.commit()
+        for upload in uploads:
+            print upload[3]
+    else:
+        uploads = get_source_uploads(suite, base_suite, session)
+        session.commit()
+        for upload in uploads:
+            print upload[2]
 
 if __name__ == '__main__':
     main()

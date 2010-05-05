@@ -2677,6 +2677,13 @@ distribution."""
         return too_new
 
     def store_changelog(self):
+
+        # Skip binary-only upload if it is not a bin-NMU
+        if not self.pkg.changes['architecture'].has_key('source'):
+            from daklib.regexes import re_bin_only_nmu
+            if not re_bin_only_nmu.search(self.pkg.changes['version']):
+                return
+
         session = DBConn().session()
 
         # Add current changelog text into changelogs_text table, return created ID
@@ -2685,8 +2692,9 @@ distribution."""
 
         # Link ID to the upload available in changes table
         query = """UPDATE changes SET changelog_id = :id WHERE source = :source
-                   AND version = :version AND architecture LIKE '%source%'"""
+                   AND version = :version AND architecture = :architecture"""
         session.execute(query, {'id': ID, 'source': self.pkg.changes['source'], \
-                                'version': self.pkg.changes['version']})
+                                'version': self.pkg.changes['version'], \
+                                'architecture': " ".join(self.pkg.changes['architecture'].keys())})
 
         session.commit()

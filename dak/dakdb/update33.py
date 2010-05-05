@@ -43,7 +43,7 @@ def do_update(self):
         c.execute('CREATE TABLE changelogs_text (id serial PRIMARY KEY NOT NULL, changelog text)')
         c.execute("GRANT SELECT ON changelogs_text TO public")
         c.execute("GRANT ALL ON changelogs_text TO ftpmaster")
-        c.execute('CREATE VIEW changelogs AS SELECT cl.id, source, version, architecture, changelog \
+        c.execute('CREATE VIEW changelogs AS SELECT cl.id, source, CAST(version AS debversion), architecture, changelog \
                    FROM changes c JOIN changelogs_text cl ON cl.id = c.changelog_id')
         c.execute("GRANT SELECT ON changelogs TO public")
         c.execute("GRANT ALL ON changelogs TO ftpmaster")
