@@ -75,8 +75,6 @@ def init():
 
         ("dominate",
          "Remove obsolete source and binary associations from suites"),
-        ("make-suite-file-list",
-         "OBSOLETE: replaced by dominate and generate-filelist"),
         ("make-pkg-file-mapping",
          "Generate package <-> file mapping"),
         ("generate-filelist",

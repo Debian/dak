@@ -15,7 +15,7 @@ o Update the 'Debian<n>.<n>r<n>' symlink in dists/
 o Clean up dists/stable/ChangeLog (add header, basically)
 o Update fields in suite table in postgresql (see below)
 
-o Run 'dak make-suite-file-list --force -s stable'
+o Run 'dak dominate --force -s stable'
 o Run 'dak generate-filelist -s stable'
 o Run apt-ftparchive generate apt.conf.stable
 o Run 'dak generate-releases --force-touch --apt-conf apt.conf.stable stable'

@@ -25,9 +25,8 @@ o To process queue/:
 
 o To generate indices files:
 
-  * dak make-suite-file-list - generates file lists for apt-ftparchive
-                               and removes obsolete packages from
-                               suites 
+  * dak dominate          - removes obsolete packages from suites 
+  * dak generate-filelist - generates file lists for apt-ftparchive
   * dak generate-releases - generates Release
 
 o To clean things up:
