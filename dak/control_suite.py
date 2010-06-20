@@ -302,7 +302,7 @@ def main ():
 
     # Safety/Sanity check
     # XXX: This should be stored in the database
-    if action == "set" and suite_name not in ["testing", "etch-m68k"]:
+    if action == "set" and suite_name not in ["testing"]:
         utils.fubar("Will not reset suite %s" % (suite_name))
 
     if action == "list":
