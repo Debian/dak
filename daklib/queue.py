@@ -1899,8 +1899,8 @@ distribution."""
                     # Make sure that our source object is up-to-date
                     session.expire(source)
 
-            # Add changelog information to the database
-            self.store_changelog()
+        # Add changelog information to the database
+        self.store_changelog()
 
         # Install the files into the pool
         for newfile, entry in self.pkg.files.items():
