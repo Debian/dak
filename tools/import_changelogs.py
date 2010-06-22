@@ -6,6 +6,7 @@ import os
 import sys
 import fnmatch
 from glob import glob
+sys.path.append('../dak')
 from daklib.dbconn import *
 from daklib import utils
 from daklib.queue import Upload
