@@ -198,10 +198,14 @@ def do_newer_version(lowersuite_name, highersuite_name, code, session):
 
     # Check for packages in $highersuite obsoleted by versions in $lowersuite
     q = session.execute("""
+WITH highersuite_maxversion AS (SELECT s.source AS source, max(s.version) AS version
+  FROM src_associations sa, source s
+  WHERE sa.suite = :highersuite_id AND sa.source = s.id group by s.source)
 SELECT s.source, s.version AS lower, s2.version AS higher
-  FROM src_associations sa, source s, source s2, src_associations sa2
+  FROM src_associations sa, source s, source s2, src_associations sa2, highersuite_maxversion hm
   WHERE sa.suite = :highersuite_id AND sa2.suite = :lowersuite_id AND sa.source = s.id
    AND sa2.source = s2.id AND s.source = s2.source
+   AND hm.source = s.source AND hm.version < s2.version
    AND s.version < s2.version""", {'lowersuite_id': lowersuite.suite_id,
                                     'highersuite_id': highersuite.suite_id})
     ql = q.fetchall()
