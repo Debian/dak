@@ -454,7 +454,7 @@ class Upload(object):
 
         # Check the .changes is non-empty
         if not self.pkg.files:
-            self.rejects.append("%s: nothing to do (Files field is empty)." % (base_filename))
+            self.rejects.append("%s: nothing to do (Files field is empty)." % (os.path.basename(self.pkg.changes_file)))
             return False
 
         # Changes was syntactically valid even if we'll reject
