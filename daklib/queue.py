@@ -2686,6 +2686,15 @@ distribution."""
 
         session = DBConn().session()
 
+        # Check if upload already has a changelog entry
+        query = """SELECT changelog_id FROM changes WHERE source = :source
+                   AND version = :version AND architecture = :architecture AND changelog_id != 0"""
+        if session.execute(query, {'source': self.pkg.changes['source'], \
+                                   'version': self.pkg.changes['version'], \
+                                   'architecture': " ".join(self.pkg.changes['architecture'].keys())}).rowcount:
+            session.commit()
+            return
+
         # Add current changelog text into changelogs_text table, return created ID
         query = "INSERT INTO changelogs_text (changelog) VALUES (:changelog) RETURNING id"
         ID = session.execute(query, {'changelog': self.pkg.changes['changes']}).fetchone()[0]
