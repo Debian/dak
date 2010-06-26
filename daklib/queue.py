@@ -454,7 +454,7 @@ class Upload(object):
 
         # Check the .changes is non-empty
         if not self.pkg.files:
-            self.rejects.append("%s: nothing to do (Files field is empty)." % (base_filename))
+            self.rejects.append("%s: nothing to do (Files field is empty)." % (os.path.basename(self.pkg.changes_file)))
             return False
 
         # Changes was syntactically valid even if we'll reject
@@ -2685,6 +2685,15 @@ distribution."""
                 return
 
         session = DBConn().session()
+
+        # Check if upload already has a changelog entry
+        query = """SELECT changelog_id FROM changes WHERE source = :source
+                   AND version = :version AND architecture = :architecture AND changelog_id != 0"""
+        if session.execute(query, {'source': self.pkg.changes['source'], \
+                                   'version': self.pkg.changes['version'], \
+                                   'architecture': " ".join(self.pkg.changes['architecture'].keys())}).rowcount:
+            session.commit()
+            return
 
         # Add current changelog text into changelogs_text table, return created ID
         query = "INSERT INTO changelogs_text (changelog) VALUES (:changelog) RETURNING id"

@@ -171,12 +171,12 @@ def main():
         uploads = get_binary_uploads(suite, base_suite, session)
         session.commit()
         for upload in uploads:
-            print upload[3]
+            print upload[3] + "\n"
     else:
         uploads = get_source_uploads(suite, base_suite, session)
         session.commit()
         for upload in uploads:
-            print upload[2]
+            print upload[2] + "\n"
 
 if __name__ == '__main__':
     main()
