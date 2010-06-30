@@ -1,6 +1,6 @@
 # locations used by many scripts
 
-base=/srv/ftp.debian.org
+base=/srv/ftp-master.debian.org
 bindir=$base/bin
 ftpdir=$base/ftp
 webdir=$base/web

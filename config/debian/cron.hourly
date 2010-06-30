@@ -5,7 +5,7 @@
 set -e
 set -u
 
-export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 dak import-users-from-passwd

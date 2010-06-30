@@ -1,11 +1,11 @@
 Config
 {
-  ries.debian.org
+  franck.debian.org
   {
     AllowLocalConfig    "false";
     DatabaseHostname    "ftp-master";
-    DakConfig           "/srv/ftp.debian.org/dak/config/debian/dak.conf";
-    AptConfig           "/srv/ftp.debian.org/dak/config/debian/apt.conf";
+    DakConfig           "/srv/ftp-master.debian.org/dak/config/debian/dak.conf";
+    AptConfig           "/srv/ftp-master.debian.org/dak/config/debian/apt.conf";
   }
 }
 

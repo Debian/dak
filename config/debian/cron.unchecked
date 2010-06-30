@@ -26,7 +26,7 @@ set -u
 set -E
 
 # import the general variable set.
-export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 LOCKDAILY=""

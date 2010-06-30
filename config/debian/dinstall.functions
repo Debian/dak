@@ -96,7 +96,7 @@ function i18n1() {
 
     # Now check if we still know about the packages for which they created the files
     # is the timestamp signed by us?
-    if $(gpgv --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg timestamp.gpg timestamp); then
+    if $(gpgv --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg timestamp.gpg timestamp); then
         # now read it. As its signed by us we are sure the content is what we expect, no need
         # to do more here. And we only test -d a directory on it anyway.
         TSTAMP=$(cat timestamp)
@@ -313,7 +313,7 @@ function mkfilesindices() {
     ARCHLIST=$(tempfile)
 
     log "Querying projectb..."
-    echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s,^/srv/ftp.debian.org/ftp,.,' | sort >$ARCHLIST
+    echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s,^/srv/ftp-master.debian.org/ftp,.,' | sort >$ARCHLIST
 
     includedirs () {
         perl -ne 'print; while (m,/[^/]+$,) { $_=$`; print $_ . "\n" unless $d{$_}++; }'
@@ -362,7 +362,7 @@ function mkfilesindices() {
                     [ "$(readlink $distdir)" != "$distname" ] || echo $distdir
                 done
             )
-            suite_list $id | tr -d ' ' | sed 's,^/srv/ftp.debian.org/ftp,.,'
+            suite_list $id | tr -d ' ' | sed 's,^/srv/ftp-master.debian.org/ftp,.,'
         ) | sort -u | gzip --rsyncable -9 > suite-${suite}.list.gz
     done
 
@@ -472,9 +472,9 @@ function merkel3() {
 
 function mirrorpush() {
     log "Starting the mirrorpush"
-    date -u > /srv/ftp.debian.org/web/mirrorstart
-    echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
-    echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
+    date -u > /srv/ftp-master.debian.org/web/mirrorstart
+    echo "Using dak v1" >> /srv/ftp-master.debian.org/web/mirrorstart
+    echo "Running on host $(hostname -f)" >> /srv/ftp-master.debian.org/web/mirrorstart
     sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
 }
 
@@ -487,7 +487,7 @@ function i18n2() {
     dak control-suite -l testing > squeeze
     dak control-suite -l unstable > sid
     echo "${STAMP}" > timestamp
-    gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o timestamp.gpg timestamp
+    gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o timestamp.gpg timestamp
     rm -f md5sum
     md5sum * > md5sum
     cd ${webdir}/

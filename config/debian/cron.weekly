@@ -8,7 +8,7 @@ set -u
 # substitutions and subshells and whatnot, but for us the functions is
 # the important part here)
 set -E
-export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 # Start logging
