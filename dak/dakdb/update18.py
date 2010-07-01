@@ -42,7 +42,6 @@ from daklib.utils import parse_changes, warn, gpgv_get_status_output, process_gp
 def check_signature (sig_filename, data_filename=""):
     keyrings = [
         "/home/joerg/keyring/keyrings/debian-keyring.gpg",
-        "/home/joerg/keyring/keyrings/debian-keyring.pgp",
         "/home/joerg/keyring/keyrings/debian-maintainers.gpg",
         "/home/joerg/keyring/keyrings/debian-role-keys.gpg",
         "/home/joerg/keyring/keyrings/emeritus-keyring.pgp",
