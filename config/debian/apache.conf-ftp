@@ -1,0 +1,7 @@
+  # virtualhost is defined in the file including this file.
+
+  ServerName ftp-master.debian.org
+  DocumentRoot /srv/ftp.debian.org/web
+  Redirect permanent /proposed-updates.html http://release.debian.org/proposed-updates/stable.html
+  Redirect permanent /oldstable-proposed-updates.html http://release.debian.org/proposed-updates/oldstable.html
+  Redirect permanent /testing/hints/transitions.yaml http://ftp-master.debian.org/transitions.yaml
