@@ -4,8 +4,8 @@
 #  grep -Ev '^[a-z0-9A-Z.+-]+\   Task    [a-z0-9:. ,+-]+$' task*
 
 x="build-essential tag task"
-opath="/org/ftp.debian.org/scripts/override"
-apath="/org/ftp.debian.org/ftp/dists"
+opath="/srv/ftp-master.debian.org/scripts/override"
+apath="/srv/ftp-master.debian.org/ftp/dists"
 
 if [ ! -d "$apath" ]; then
   echo "$0: invalid path to archive" >&2

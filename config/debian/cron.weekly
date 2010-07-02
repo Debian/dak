@@ -40,7 +40,7 @@ echo "VACUUM; VACUUM ANALYZE;" | psql --no-psqlrc projectb 2>&1
 
 # Do git cleanup stuff
 echo "Doing git stuff"
-cd /org/ftp.debian.org/git/dak.git
+cd /srv/ftp-master.debian.org/git/dak.git
 git gc --prune
 git update-server-info
 # now workaround a git bug not honoring the setup in logs/*
@@ -55,7 +55,7 @@ apt-ftparchive -q clean apt.conf.buildd
 
 # Update wanna-build dump
 echo "Update wanna-build database dump"
-/org/ftp.debian.org/scripts/nfu/get-w-b-db
+/srv/ftp-master.debian.org/scripts/nfu/get-w-b-db
 
 echo "Fixing symlinks in $ftpdir"
 symlinks -d -r $ftpdir

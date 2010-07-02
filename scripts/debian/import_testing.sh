@@ -25,7 +25,7 @@
 set -e
 
 # Load up some standard variables
-export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 # What file we look at.

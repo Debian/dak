@@ -37,7 +37,7 @@ case $SUITE in
 esac
 
 # This must end with /
-TARGET="/srv/ftp.debian.org/ftp/dists/$SUITE/main/installer-$ARCH/"
+TARGET="/srv/ftp-master.debian.org/ftp/dists/$SUITE/main/installer-$ARCH/"
 
 # Check validity of the target directory
 # This could fail, for example for new architectures; doing
@@ -97,7 +97,7 @@ find "$TARGET/$VERSION" -type f -exec chmod 644 {} +
 
 # Make sure nothing symlinks outside of the ftpdir
 # Shouldnt happen, but better be sure.
-symlinks -d -r /srv/ftp.debian.org/ftp
+symlinks -d -r /srv/ftp-master.debian.org/ftp
 
 trap - EXIT
 cleanup

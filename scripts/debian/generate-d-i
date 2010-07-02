@@ -3,7 +3,7 @@
 # Original written from Jeroen van Wolffelaar <jeroen@debian.org>
 
 set -e
-export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 export PAGER=cat
