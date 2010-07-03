@@ -441,8 +441,8 @@ MINIMAL_APT_CONF="""
 Dir
 {
    ArchiveDir "%(archivepath)s";
-   OverrideDir "/srv/ftp.debian.org/scripts/override/";
-   CacheDir "/srv/ftp.debian.org/database/";
+   OverrideDir "/srv/ftp-master.debian.org/scripts/override/";
+   CacheDir "/srv/ftp-master.debian.org/database/";
 };
 
 Default
@@ -1511,7 +1511,7 @@ def get_location(location, component=None, archive=None, session=None):
     and archive
 
     @type location: string
-    @param location: the path of the location, e.g. I{/srv/ftp.debian.org/ftp/pool/}
+    @param location: the path of the location, e.g. I{/srv/ftp-master.debian.org/ftp/pool/}
 
     @type component: string
     @param component: the component name (if None, no restriction applied)
