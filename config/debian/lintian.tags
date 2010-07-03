@@ -64,7 +64,6 @@ lintian:
     - no-architecture-field
     - magic-arch-in-arch-list
     - too-many-architectures
-    - arch-any-in-binary-pkg
     - no-maintainer-field
     - maintainer-name-missing
     - maintainer-address-missing
