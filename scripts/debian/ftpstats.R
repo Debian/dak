@@ -15,5 +15,5 @@ t <- (read.table("/srv/ftp-master.debian.org/misc/ftpstats.data",sep=",",header=
 v <- t[(length(t$all)-90):(length(t$all)),1:15]
 
 #plotsize("/org/ftp.debian.org/web/size.png","Daily dinstall run size by arch",t)
-plotsize("/srv/ftp-master.debian.org/web/size-quarter.png","Daily dinstall run size by arch (past quarter)",v)
+plotsize("/srv/ftp.debian.org/web/size-quarter.png","Daily dinstall run size by arch (past quarter)",v)
 
