@@ -46,9 +46,9 @@ function pgdump_post() {
     cd $base/backup
     POSTDUMP=$(date +%Y.%m.%d-%H:%M:%S)
     pg_dump projectb > $base/backup/dump_$POSTDUMP
-    pg_dumpall --globals-only > $base/backup/dumpall_$POSTDUMP
+    #pg_dumpall --globals-only > $base/backup/dumpall_$POSTDUMP
     ln -sf $base/backup/dump_$POSTDUMP current
-    ln -sf $base/backup/dumpall_$POSTDUMP currentall
+    #ln -sf $base/backup/dumpall_$POSTDUMP currentall
 }
 
 # Load the dak-dev projectb
