@@ -7,7 +7,7 @@ import os,re,datetime, sys
 import tempfile, time
 
 ITEMS_TO_KEEP = 20
-CACHE_FILE = '/srv/ftp.debian.org/misc/dinstall_time_cache'
+CACHE_FILE = '/srv/ftp-master.debian.org/misc/dinstall_time_cache'
 GRAPH_DIR = '/srv/ftp.debian.org/web/stat'
 
 LINE = re.compile(r'(?:|.*/)dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)?:'+
