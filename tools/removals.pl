@@ -26,7 +26,7 @@ use XML::RSS;
 use POSIX qw(strftime);
 use CGI qw/:standard/;
 
-open REMOVALS, "</srv/ftp-master.debian.org/web/removals.txt";
+open REMOVALS, "</srv/ftp.debian.org/web/removals.txt";
 
 my @removals;
 
