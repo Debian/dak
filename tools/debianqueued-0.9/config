@@ -34,10 +34,10 @@ $ssh_options = "-o'BatchMode yes' -o'FallBackToRsh no' ".
 $ssh_key_file = "";
 
 # the incoming dir we live in
-$incoming = "/srv/queued/UploadQueue";
+$incoming = "/srv/upload.debian.org/pub/UploadQueue";
 
 # the delayed incoming directories
-$incoming_delayed = "/srv/queued/UploadQueue/DELAYED/%d-day";
+$incoming_delayed = "/srv/upload.debian.org/pub/UploadQueue/DELAYED/%d-day";
 
 # maximum delay directory, -1 for no delayed directory,
 # incoming_delayed and target_delayed need to exist.
@@ -82,10 +82,10 @@ $target = "localhost";
 $targetlogin = "queue";
 
 # incoming on target host
-$targetdir = "/srv/ftp.debian.org/queue/unchecked/";
+$targetdir = "/srv/ftp-master.debian.org/queue/unchecked/";
 
 # incoming/delayed on target host
-$targetdir_delayed = "/srv/queued/DEFERRED/%d-day";
+$targetdir_delayed = "/srv/upload.debian.org/DEFERRED/%d-day";
 
 # select FTP debugging
 #$ftpdebug = 0;
