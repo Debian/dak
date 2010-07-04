@@ -472,9 +472,9 @@ function merkel3() {
 
 function mirrorpush() {
     log "Starting the mirrorpush"
-    date -u > /srv/ftp-master.debian.org/web/mirrorstart
-    echo "Using dak v1" >> /srv/ftp-master.debian.org/web/mirrorstart
-    echo "Running on host $(hostname -f)" >> /srv/ftp-master.debian.org/web/mirrorstart
+    date -u > /srv/ftp.debian.org/web/mirrorstart
+    echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
+    echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
     sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
 }
 
