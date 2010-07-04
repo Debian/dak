@@ -22,6 +22,7 @@ use Net::FTP;
 use Socket qw( PF_INET AF_INET SOCK_STREAM );
 use Config;
 use Sys::Hostname;
+use File::Copy;
 
 setlocale(&POSIX::LC_ALL, "C");
 
@@ -1320,8 +1321,8 @@ outer_loop: while (<COMMANDS>) {
             if ( $afile =~ m/\.changes$/ ) {
               utime undef, undef, ("$dir/$afile");
             }
-            if ( !rename "$dir/$afile", "$target_dir/$afile" ) {
-              msg( "mail,log", "rename: $!\n" );
+            if ( !move("$dir/$afile", "$target_dir/$afile") ) {
+              msg( "mail,log", "move: $!\n" );
             } else {
               msg( "mail,log", "$afile moved to $target_delay-day\n" );
             }
@@ -1391,8 +1392,8 @@ sub age_delayed_queues() {
         my @thesefiles = ( $achanges =~ m,.*/([^/]*), );
         push( @thesefiles, get_filelist_from_known_good_changes($achanges) );
         for my $afile (@thesefiles) {
-          if ( !rename "$dir/$afile", "$target_dir/$afile" ) {
-            msg( "log", "rename: $!\n" );
+          if ( !move("$dir/$afile", "$target_dir/$afile") ) {
+            msg( "log", "move: $!\n" );
           } else {
             msg( "log", "$afile moved to $target_dir\n" );
           }
