@@ -37,15 +37,15 @@ function merkel1() {
 
 # Create the postgres dump files
 function pgdump_pre() {
-    log "Creating pre-daily-cron-job backup of projectb database..."
-    pg_dump projectb > $base/backup/dump_pre_$(date +%Y.%m.%d-%H:%M:%S)
+    log "Creating pre-daily-cron-job backup of $PGDATABASE database..."
+    pg_dump > $base/backup/dump_pre_$(date +%Y.%m.%d-%H:%M:%S)
 }
 
 function pgdump_post() {
-    log "Creating post-daily-cron-job backup of projectb database..."
+    log "Creating post-daily-cron-job backup of $PGDATABASE database..."
     cd $base/backup
     POSTDUMP=$(date +%Y.%m.%d-%H:%M:%S)
-    pg_dump projectb > $base/backup/dump_$POSTDUMP
+    pg_dump > $base/backup/dump_$POSTDUMP
     #pg_dumpall --globals-only > $base/backup/dumpall_$POSTDUMP
     ln -sf $base/backup/dump_$POSTDUMP current
     #ln -sf $base/backup/dumpall_$POSTDUMP currentall
@@ -322,8 +322,8 @@ function mkfilesindices() {
 
     ARCHLIST=$(tempfile)
 
-    log "Querying projectb..."
-    echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql projectb -At | sed 's/|//;s,^/srv/ftp-master.debian.org/ftp,.,' | sort >$ARCHLIST
+    log "Querying $PGDATABASE..."
+    echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql -At | sed 's/|//;s,^/srv/ftp-master.debian.org/ftp,.,' | sort >$ARCHLIST
 
     includedirs () {
         perl -ne 'print; while (m,/[^/]+$,) { $_=$`; print $_ . "\n" unless $d{$_}++; }'
@@ -356,12 +356,12 @@ function mkfilesindices() {
     log "Generating suite lists"
 
     suite_list () {
-        printf 'SELECT DISTINCT l.path, f.filename FROM (SELECT sa.source AS source FROM src_associations sa WHERE sa.suite = %d UNION SELECT b.source AS source FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) WHERE ba.suite = %d) s JOIN dsc_files df ON (s.source = df.source) JOIN files f ON (df.file = f.id) JOIN location l ON (f.location = l.id)\n' $1 $1 | psql -F' ' -A -t projectb
+        printf 'SELECT DISTINCT l.path, f.filename FROM (SELECT sa.source AS source FROM src_associations sa WHERE sa.suite = %d UNION SELECT b.source AS source FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) WHERE ba.suite = %d) s JOIN dsc_files df ON (s.source = df.source) JOIN files f ON (df.file = f.id) JOIN location l ON (f.location = l.id)\n' $1 $1 | psql -F' ' -A -t
 
-        printf 'SELECT l.path, f.filename FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) JOIN files f ON (b.file = f.id) JOIN location l ON (f.location = l.id) WHERE ba.suite = %d\n' $1 | psql -F' ' -A -t projectb
+        printf 'SELECT l.path, f.filename FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) JOIN files f ON (b.file = f.id) JOIN location l ON (f.location = l.id) WHERE ba.suite = %d\n' $1 | psql -F' ' -A -t
     }
 
-    printf 'SELECT id, suite_name FROM suite\n' | psql -F' ' -At projectb |
+    printf 'SELECT id, suite_name FROM suite\n' | psql -F' ' -At |
     while read id suite; do
         [ -e $base/ftp/dists/$suite ] || continue
         (
@@ -468,7 +468,7 @@ function bts() {
 
 function merkel2() {
     # Push dak@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
-    log "Trigger merkel/flotows projectb sync"
+    log "Trigger merkel/flotows $PGDATABASE sync"
     ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb dak@merkel.debian.org sleep 1
     # Also trigger flotow, the ftpmaster test box
     ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_flotow_projectb dak@flotow.debconf.org sleep 1

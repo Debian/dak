@@ -33,3 +33,5 @@ copyoverrides="etch.contrib etch.contrib.src etch.main etch.main.src etch.non-fr
 PATH=$masterdir:$PATH
 umask 022
 
+# Set the database variables
+eval $(dak/admin.py config db-shell)
