@@ -117,10 +117,12 @@ def listPath(suite, component, architecture = None, type = None):
     pathname = os.path.join(Config()["Dir::Lists"], filename)
     return utils.open_file(pathname, "w")
 
-def writeSourceList(suite, component, session):
+def writeSourceList(suite, component):
     file = listPath(suite, component)
+    session = DBConn().session()
     for filename in getSources(suite, component, session):
         file.write(filename + '\n')
+    session.close()
     file.close()
 
 def writeBinaryList(suite, component, architecture, type):
@@ -181,7 +183,7 @@ def main():
                 try:
                     join.filter_by(arch_id = architecture.arch_id).one()
                     if architecture_name == 'source':
-                        writeSourceList(suite, component, session)
+                        writeSourceList(suite, component)
                     elif architecture_name != 'all':
                         writeBinaryList(suite, component, architecture, 'deb')
                         writeBinaryList(suite, component, architecture, 'udeb')
