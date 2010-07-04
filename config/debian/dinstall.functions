@@ -55,8 +55,8 @@ function pgdump_post() {
 function pgdakdev() {
     cd $base/backup
     echo "drop database projectb" | psql -p 5433 template1
-	cat currentall | psql -p 5433 template1
-    createdb -p 5433 -T template0 projectb
+	#cat currentall | psql -p 5433 template1
+    createdb -p 5433 -T template1 projectb
     fgrep -v '\connect' current | psql -p 5433 projectb
 }
 
