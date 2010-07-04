@@ -37,6 +37,7 @@ Generate file lists for apt-ftparchive.
 
 from daklib.dbconn import *
 from daklib.config import Config
+from daklib.threadpool import ThreadPool
 from daklib import utils
 import apt_pkg, os, sys
 
@@ -117,7 +118,8 @@ def listPath(suite, component, architecture = None, type = None):
     pathname = os.path.join(Config()["Dir::Lists"], filename)
     return utils.open_file(pathname, "w")
 
-def writeSourceList(suite, component):
+def writeSourceList(args):
+    (suite, component) = args
     file = listPath(suite, component)
     session = DBConn().session()
     for filename in getSources(suite, component, session):
@@ -125,7 +127,8 @@ def writeSourceList(suite, component):
     session.close()
     file.close()
 
-def writeBinaryList(suite, component, architecture, type):
+def writeBinaryList(args):
+    (suite, component, architecture, type) = args
     file = listPath(suite, component, architecture, type)
     session = DBConn().session()
     for filename in getBinaries(suite, component, architecture, type, session):
@@ -171,6 +174,7 @@ def main():
         usage()
     session = DBConn().session()
     suite_arch = session.query(SuiteArchitecture)
+    threadpool = ThreadPool()
     for suite_name in utils.split_args(Options['Suite']):
         suite = query_suites.filter_by(suite_name = suite_name).one()
         join = suite_arch.filter_by(suite_id = suite.suite_id)
@@ -183,12 +187,15 @@ def main():
                 try:
                     join.filter_by(arch_id = architecture.arch_id).one()
                     if architecture_name == 'source':
-                        writeSourceList(suite, component)
+                        threadpool.queueTask(writeSourceList, (suite, component))
                     elif architecture_name != 'all':
-                        writeBinaryList(suite, component, architecture, 'deb')
-                        writeBinaryList(suite, component, architecture, 'udeb')
+                        threadpool.queueTask(writeBinaryList,
+                            (suite, component, architecture, 'deb'))
+                        threadpool.queueTask(writeBinaryList,
+                            (suite, component, architecture, 'udeb'))
                 except:
                     pass
+    threadpool.joinAll()
     # this script doesn't change the database
     session.close()
 
