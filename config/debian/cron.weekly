@@ -35,9 +35,6 @@ fi
 echo "Splitting queue/done"
 dak split-done > /dev/null
 
-# Vacuum the database
-echo "VACUUM; VACUUM ANALYZE;" | psql --no-psqlrc projectb 2>&1
-
 # Do git cleanup stuff
 echo "Doing git stuff"
 cd /srv/ftp.debian.org/git/dak.git
