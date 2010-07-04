@@ -330,7 +330,6 @@ dispatch['s-a'] = suite_architecture
 def show_config(command):
     args = [str(x) for x in command]
     cnf = utils.get_conf()
-    d = DBConn()
 
     die_arglen(args, 2, "E: config needs at least a command")
 
