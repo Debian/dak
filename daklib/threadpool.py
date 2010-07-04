@@ -1,15 +1,12 @@
 import threading
 from time import sleep
 
+from daklib.config import Config
+
 # This code is a modified copy of
 # http://code.activestate.com/recipes/203871-a-generic-programming-thread-pool/
 # and is licensed under the Python License. The full text of the license
 # is available in the file COPYING-PSF.
-
-# FIXME:
-# numThreads defaults to 16 in __init__ to work best on
-# franck.debian.org but the default value should be specified in
-# dak.conf
 
 # Ensure booleans exist (not needed for Python 2.2.1 or higher)
 try:
@@ -21,10 +18,11 @@ except NameError:
 class ThreadPool:
 
     """Flexible thread pool class.  Creates a pool of threads, then
-    accepts tasks that will be dispatched to the next available
-    thread."""
+    accepts tasks that will be dispatched to the next available thread.
+    The argument numThreads defaults to 'Common::ThreadCount' which must
+    be specified in dak.conf."""
 
-    def __init__(self, numThreads = 16):
+    def __init__(self, numThreads = Config()['Common::ThreadCount']):
 
         """Initialize the thread pool with numThreads workers."""
 
