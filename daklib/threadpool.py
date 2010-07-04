@@ -15,6 +15,11 @@ except NameError:
     False = 0
     True = not False
 
+if Config().has_key('Common::ThreadCount'):
+    defaultThreadCount = int(Config()['Common::ThreadCount'])
+else:
+    defaultThreadCount = 1
+
 class ThreadPool:
 
     """Flexible thread pool class.  Creates a pool of threads, then
@@ -22,9 +27,12 @@ class ThreadPool:
     The argument numThreads defaults to 'Common::ThreadCount' which must
     be specified in dak.conf."""
 
-    def __init__(self, numThreads = Config()['Common::ThreadCount']):
+    def __init__(self, numThreads = 0):
 
         """Initialize the thread pool with numThreads workers."""
+
+        if numThreads == 0:
+            numThreads = defaultThreadCount
 
         self.__threads = []
         self.__resizeLock = threading.Condition(threading.Lock())
