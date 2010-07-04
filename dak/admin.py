@@ -55,6 +55,10 @@ Perform administrative work on the dak database.
 
   Commands can use a long or abbreviated form:
 
+  config / c:
+     c db                   show db config
+     c db-shell             show db config in a usable form for psql
+
   architecture / a:
      a list                 show a list of architectures
      a rm ARCH              remove an architecture (will only work if
@@ -320,6 +324,47 @@ def suite_architecture(command):
 
 dispatch['suite-architecture'] = suite_architecture
 dispatch['s-a'] = suite_architecture
+
+################################################################################
+
+def show_config(command):
+    args = [str(x) for x in command]
+    cnf = utils.get_conf()
+    d = DBConn()
+
+    die_arglen(args, 2, "E: config needs at least a command")
+
+    mode = args[1].lower()
+
+    if mode == 'db':
+        connstr = ""
+        if cnf["DB::Host"]:
+            # TCP/IP
+            connstr = "postgres://%s" % cnf["DB::Host"]
+            if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+                connstr += ":%s" % cnf["DB::Port"]
+            connstr += "/%s" % cnf["DB::Name"]
+        else:
+            # Unix Socket
+            connstr = "postgres:///%s" % cnf["DB::Name"]
+            if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+                connstr += "?port=%s" % cnf["DB::Port"]
+        print connstr
+    elif mode == 'db-shell':
+        e = ['PGDATABASE']
+        print "PGDATABASE=%s" % cnf["DB::Name"]
+        if cnf["DB::Host"]:
+            print "PGHOST=%s" % cnf["DB::Host"]
+            e.append('PGHOST')
+        if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+            print "PGPORT=%s" % cnf["DB::Port"]
+            e.append('PGPORT')
+        print "export " + " ".join(e)
+    else:
+        die("E: config command unknown")
+
+dispatch['config'] = show_config
+dispatch['c'] = show_config
 
 ################################################################################
 
