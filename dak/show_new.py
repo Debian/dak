@@ -143,7 +143,8 @@ def html_footer():
 ################################################################################
 
 
-def do_pkg(changes_file, session):
+def do_pkg(changes_file):
+    session = DBConn().session()
     u = Upload()
     u.pkg.changes_file = changes_file
     (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
@@ -194,6 +195,7 @@ def do_pkg(changes_file, session):
         if sys.stdout != stdout_fd:
             sys.stdout.close()
             sys.stdout = stdout_fd
+    session.close()
 
 ################################################################################
 
@@ -245,7 +247,7 @@ def main():
         if not changes_file:
             continue
         print "\n" + changes_file
-        do_pkg (changes_file, session)
+        do_pkg (changes_file)
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))
