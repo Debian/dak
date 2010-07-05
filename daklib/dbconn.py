@@ -2487,6 +2487,9 @@ class Suite(object):
 
         return "\n".join(ret)
 
+    def generate_packages_sources(self, Logger):
+        """ Generate Packages/Sources files for the given suite"
+
 __all__.append('Suite')
 
 @session_wrapper
