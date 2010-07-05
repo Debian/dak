@@ -193,7 +193,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO &
+stage $GO
 
 GO=(
     FUNC="i18n1"
@@ -201,7 +201,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO &
+stage $GO
 
 lockfile "$LOCK_ACCEPTED"
 lockfile "$LOCK_NEW"
@@ -265,7 +265,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO &
+stage $GO
 
 GO=(
     FUNC="overrides"
@@ -281,7 +281,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO &
+stage $GO
 
 state "packages/contents"
 GO=(
