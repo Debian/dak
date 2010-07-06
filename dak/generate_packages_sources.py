@@ -99,15 +99,19 @@ def main ():
         suites=session.query(Suite).filter(Suite.untouchable == False).all()
 
     threadpool = ThreadPool()
+
+    startdir = os.getcwd()
+    os.chdir(cnf["Dir::TempPath"])
+
     # For each given suite, each architecture, run one apt-ftparchive
     for s in suites:
-        arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=False, session=session)
+        arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=True, session=session)
+        Logger.log(['generating output for Suite %s, Architectures %s' % (s.suite_name, arch_list)])
         for a in arch_list:
-            Logger.log(['generating output for Suite %s, Architecture %s' % (s.suite_name, a.arch_string)])
-            print 'generating output for Suite %s, Architecture %s' % (s.suite_name, a.arch_string)
             threadpool.queueTask(s.generate_packages_sources, (a.arch_string))
 
     threadpool.joinAll()
+    os.chdir(startdir)
     # this script doesn't change the database
     session.close()
     Logger.close()

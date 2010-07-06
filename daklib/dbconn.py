@@ -37,6 +37,7 @@ import os
 import re
 import psycopg2
 import traceback
+import commands
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
@@ -2469,8 +2470,8 @@ Dir
 
 Default
 {
-   Packages::Compress ". bzip2 gzip";
-   Sources::Compress ". bzip2 gzip";
+   Packages::Compress "bzip2 gzip";
+   Sources::Compress "bzip2 gzip";
    Contents::Compress "gzip";
    DeLinkLimit 0;
    MaxContentsChange 25000;
@@ -2485,6 +2486,7 @@ TreeDefault
 """
 
 apt_trees={}
+apt_trees["di"]={}
 apt_trees["testing"]="""
 tree "dists/testing"
 {
@@ -2497,6 +2499,8 @@ tree "dists/testing"
    ExtraOverride "override.squeeze.extra.$(SECTION)";
    SrcOverride "override.squeeze.$(SECTION).src";
 };
+"""
+apt_trees["di"]["testing"]="""
 tree "dists/testing/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/testing_main_$(SECTION)_binary-$(ARCH).list";
@@ -2506,7 +2510,7 @@ tree "dists/testing/main"
    SrcOverride "override.squeeze.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
-   Contents "$(DIST)/../Contents-udeb";
+   %(contentsline)s
 };
 
 tree "dists/testing/non-free"
@@ -2518,7 +2522,7 @@ tree "dists/testing/non-free"
    SrcOverride "override.squeeze.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
-   Contents "$(DIST)/../Contents-udeb-nf";
+   %(contentsline)s
 };
 """
 
@@ -2533,6 +2537,8 @@ tree "dists/unstable"
    ExtraOverride "override.sid.extra.$(SECTION)";
    SrcOverride "override.sid.$(SECTION).src";
 };
+"""
+apt_trees["di"]["unstable"]="""
 tree "dists/unstable/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/unstable_main_$(SECTION)_binary-$(ARCH).list";
@@ -2542,7 +2548,7 @@ tree "dists/unstable/main"
    SrcOverride "override.sid.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
-   Contents "$(DIST)/../Contents-udeb";
+   %(contentsline)s
 };
 
 tree "dists/unstable/non-free"
@@ -2554,7 +2560,7 @@ tree "dists/unstable/non-free"
    SrcOverride "override.sid.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
-   Contents "$(DIST)/../Contents-udeb-nf";
+   %(contentsline)s
 };
 """
 
@@ -2568,6 +2574,8 @@ tree "dists/experimental"
    BinOverride "override.sid.$(SECTION)";
    SrcOverride "override.sid.$(SECTION).src";
 };
+"""
+apt_trees["di"]["experimental"]="""
 tree "dists/experimental/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/experimental_main_$(SECTION)_binary-$(ARCH).list";
@@ -2577,7 +2585,7 @@ tree "dists/experimental/main"
    SrcOverride "override.sid.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
-   Contents "$(DIST)/../Contents-udeb";
+   %(contentsline)s
 };
 
 tree "dists/experimental/non-free"
@@ -2589,7 +2597,7 @@ tree "dists/experimental/non-free"
    SrcOverride "override.sid.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
-   Contents "$(DIST)/../Contents-udeb-nf";
+   %(contentsline)s
 };
 """
 
@@ -2605,6 +2613,8 @@ tree "dists/testing-proposed-updates"
    SrcOverride "override.squeeze.$(SECTION).src";
    Contents " ";
 };
+"""
+apt_trees["di"]["testing-proposed-updates"]="""
 tree "dists/testing-proposed-updates/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
@@ -2624,12 +2634,14 @@ tree "dists/proposed-updates"
    FileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "amd64";
+   Architectures "%(arch)s";
    BinOverride "override.lenny.$(SECTION)";
    ExtraOverride "override.lenny.extra.$(SECTION)";
    SrcOverride "override.lenny.$(SECTION).src";
    Contents " ";
 };
+"""
+apt_trees["di"]["proposed-updates"]="""
 tree "dists/proposed-updates/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
@@ -2682,25 +2694,36 @@ class Suite(object):
         @param arch: Architecture name
         """
 
-        tempdir = None
-        startdir = os.getcwd()
-
+        cnf = Config()
         try:
             # Write apt.conf
-            (ac_fd, ac_name) = mkstemp()
+            (ac_fd, ac_name) = mkstemp(dir=cnf["Dir::TempPath"])
             os.write(ac_fd, DAILY_APT_CONF)
             # here we want to generate the tree entries
             os.write(ac_fd, apt_trees[self.suite_name] % {'arch': arch})
+            # this special casing needs to go away, but this whole thing may just want an
+            # aptconfig class anyways
+            if arch != 'source':
+                if arch == 'hurd-i386' and self.suite_name == 'experimental':
+                    pass
+                else:
+                    if arch == "amd64":
+                        os.write(ac_fd, apt_trees["di"][self.suite_name] %
+                                 {'arch': arch, 'contentsline': 'Contents "$(DIST)/../Contents-udeb";'})
+                    else:
+                        os.write(ac_fd, apt_trees["di"][self.suite_name] % {'arch': arch, 'contentsline': ''})
             os.close(ac_fd)
 
             # Run apt-ftparchive generate
-            os.chdir(os.path.dirname(ac_name))
             # We might want to add a -q or -qq here
-            os.system('apt-ftparchive generate %s' % os.path.basename(ac_name))
+            os.environ['GZIP'] = '--rsyncable'
+            os.chdir(cnf["Dir::TempPath"])
+            (result, output) = commands.getstatusoutput('apt-ftparchive generate %s' % os.path.basename(ac_name))
+            sn="a-f %s,%s: " % (self.suite_name, arch)
+            print sn + output.replace('\n', '\n%s' % (sn))
 
         # Clean up any left behind files
         finally:
-            os.chdir(startdir)
             if ac_fd:
                 try:
                     os.close(ac_fd)
