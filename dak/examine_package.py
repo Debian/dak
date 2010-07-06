@@ -566,6 +566,10 @@ def main ():
     if Options["Help"]:
         usage()
 
+    if Options["Html-Output"]:
+        global use_html
+        use_html = 1
+
     stdout_fd = sys.stdout
 
     for f in args:
