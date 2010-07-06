@@ -105,7 +105,7 @@ def main ():
         for a in arch_list:
             Logger.log(['generating output for Suite %s, Architecture %s' % (s.suite_name, a.arch_string)])
             print 'generating output for Suite %s, Architecture %s' % (s.suite_name, a.arch_string)
-            threadpool.queueTask(s.generate_packages_sources, (s.suite_name, a.arch_string))
+            threadpool.queueTask(s.generate_packages_sources, (a.arch_string))
 
     threadpool.joinAll()
     # this script doesn't change the database

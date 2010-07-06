@@ -2462,7 +2462,7 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
 DAILY_APT_CONF="""
 Dir
 {
-   ArchiveDir "%(archivepath)s";
+   ArchiveDir "/srv/ftp-master.debian.org/ftp/";
    OverrideDir "/srv/ftp-master.debian.org/scripts/override/";
    CacheDir "/srv/ftp-master.debian.org/database/";
 };
@@ -2671,7 +2671,7 @@ class Suite(object):
 
         return "\n".join(ret)
 
-    def generate_packages_sources(self, suite, arch):
+    def generate_packages_sources(self, arch):
         """
         Generate Packages/Sources files with apt-ftparchive for the given suite/arch
 
@@ -2688,9 +2688,9 @@ class Suite(object):
         try:
             # Write apt.conf
             (ac_fd, ac_name) = mkstemp()
-            os.write(ac_fd, DAILY_APT_CONF % {'archivepath': self.path})
+            os.write(ac_fd, DAILY_APT_CONF)
             # here we want to generate the tree entries
-            os.write(ac_fd, apt_trees[suite] % {'arch': arch})
+            os.write(ac_fd, apt_trees[self.suite_name] % {'arch': arch})
             os.close(ac_fd)
 
             # Run apt-ftparchive generate
