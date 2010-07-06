@@ -35,6 +35,7 @@ import apt_pkg
 from daklib import daklog
 from daklib.dbconn import *
 from daklib.config import Config
+from daklib.threadpool import ThreadPool
 
 ################################################################################
 
@@ -80,7 +81,7 @@ def main ():
     if Options["Help"]:
         usage()
 
-#    Logger = daklog.Logger(cnf, 'generate-packages-sources')
+    Logger = daklog.Logger(cnf, 'generate-packages-sources')
 
     session = DBConn().session()
 
@@ -93,19 +94,23 @@ def main ():
                 suites.append(suite)
             else:
                 print "cannot find suite %s" % s
-#                Logger.log(['cannot find suite %s' % s])
+                Logger.log(['cannot find suite %s' % s])
     else:
-        suites=session.query(Suite).filter(Suite.untouchable == 'false').all()
+        suites=session.query(Suite).filter(Suite.untouchable == False).all()
 
+    threadpool = ThreadPool()
+    # For each given suite, each architecture, run one apt-ftparchive
     for s in suites:
-        print "Working on: %s" % (s.suite_name)
-    sys.exit(0)
-    # For each given suite, look up object and call generate-filelist
-    for s in suites:
-        Logger.log(['generating filelist for %s' % (s.suite_name)])
-        s.generate_filelist(Logger)
+        arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=False, session=session)
+        for a in arch_list:
+            Logger.log(['generating output for Suite %s, Architecture %s' % (s.suite_name, a.arch_string)])
+            print 'generating output for Suite %s, Architecture %s' % (s.suite_name, a.arch_string)
+            threadpool.queueTask(s.generate_packages_sources, (s.suite_name, a.arch_string))
 
-#    Logger.close()
+    threadpool.joinAll()
+    # this script doesn't change the database
+    session.close()
+    Logger.close()
 
 #######################################################################################
 

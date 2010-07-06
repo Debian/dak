@@ -2459,6 +2459,190 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
                  ('ChangelogBase', 'changelogbase')]
 
 
+DAILY_APT_CONF="""
+Dir
+{
+   ArchiveDir "%(archivepath)s";
+   OverrideDir "/srv/ftp-master.debian.org/scripts/override/";
+   CacheDir "/srv/ftp-master.debian.org/database/";
+};
+
+Default
+{
+   Packages::Compress ". bzip2 gzip";
+   Sources::Compress ". bzip2 gzip";
+   Contents::Compress "gzip";
+   DeLinkLimit 0;
+   MaxContentsChange 25000;
+   FileMode 0664;
+}
+
+TreeDefault
+{
+   Contents::Header "/srv/ftp-master.debian.org/dak/config/debian/Contents.top";
+};
+
+"""
+
+apt_trees={}
+apt_trees["testing"]="""
+tree "dists/testing"
+{
+   FakeDI "dists/unstable";
+   FileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.$(SECTION)";
+   ExtraOverride "override.squeeze.extra.$(SECTION)";
+   SrcOverride "override.squeeze.$(SECTION).src";
+};
+tree "dists/testing/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/testing_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents "$(DIST)/../Contents-udeb";
+};
+
+tree "dists/testing/non-free"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/testing_non-free_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents "$(DIST)/../Contents-udeb-nf";
+};
+"""
+
+apt_trees["unstable"]="""
+tree "dists/unstable"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/unstable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/unstable_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.sid.$(SECTION)";
+   ExtraOverride "override.sid.extra.$(SECTION)";
+   SrcOverride "override.sid.$(SECTION).src";
+};
+tree "dists/unstable/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/unstable_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.sid.main.$(SECTION)";
+   SrcOverride "override.sid.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents "$(DIST)/../Contents-udeb";
+};
+
+tree "dists/unstable/non-free"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/unstable_non-free_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.sid.main.$(SECTION)";
+   SrcOverride "override.sid.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents "$(DIST)/../Contents-udeb-nf";
+};
+"""
+
+apt_trees["experimental"]="""
+tree "dists/experimental"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/experimental_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/experimental_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.sid.$(SECTION)";
+   SrcOverride "override.sid.$(SECTION).src";
+};
+tree "dists/experimental/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/experimental_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.sid.main.$(SECTION)";
+   SrcOverride "override.sid.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents "$(DIST)/../Contents-udeb";
+};
+
+tree "dists/experimental/non-free"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/experimental_non-free_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.sid.main.$(SECTION)";
+   SrcOverride "override.sid.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents "$(DIST)/../Contents-udeb-nf";
+};
+"""
+
+apt_trees["testing-proposed-updates"]="""
+tree "dists/testing-proposed-updates"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.$(SECTION)";
+   ExtraOverride "override.squeeze.extra.$(SECTION)";
+   SrcOverride "override.squeeze.$(SECTION).src";
+   Contents " ";
+};
+tree "dists/testing-proposed-updates/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents " ";
+};
+"""
+
+apt_trees["proposed-updates"]="""
+tree "dists/proposed-updates"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "amd64";
+   BinOverride "override.lenny.$(SECTION)";
+   ExtraOverride "override.lenny.extra.$(SECTION)";
+   SrcOverride "override.lenny.$(SECTION).src";
+   Contents " ";
+};
+tree "dists/proposed-updates/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.lenny.main.$(SECTION)";
+   SrcOverride "override.lenny.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents " ";
+};
+"""
+
 class Suite(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2487,8 +2671,50 @@ class Suite(object):
 
         return "\n".join(ret)
 
-    def generate_packages_sources(self, Logger):
-        """ Generate Packages/Sources files for the given suite"
+    def generate_packages_sources(self, suite, arch):
+        """
+        Generate Packages/Sources files with apt-ftparchive for the given suite/arch
+
+        @type suite: string
+        @param suite: Suite name
+
+        @type arch: string
+        @param arch: Architecture name
+        """
+
+        tempdir = None
+        startdir = os.getcwd()
+
+        try:
+            # Write apt.conf
+            (ac_fd, ac_name) = mkstemp()
+            os.write(ac_fd, DAILY_APT_CONF % {'archivepath': self.path})
+            # here we want to generate the tree entries
+            os.write(ac_fd, apt_trees[suite] % {'arch': arch})
+            os.close(ac_fd)
+
+            # Run apt-ftparchive generate
+            os.chdir(os.path.dirname(ac_name))
+            # We might want to add a -q or -qq here
+            os.system('apt-ftparchive generate %s' % os.path.basename(ac_name))
+
+        # Clean up any left behind files
+        finally:
+            os.chdir(startdir)
+            if ac_fd:
+                try:
+                    os.close(ac_fd)
+                except OSError:
+                    pass
+
+            if ac_name:
+                try:
+                    os.unlink(ac_name)
+                except OSError:
+                    pass
+
+
+
 
 __all__.append('Suite')
 
