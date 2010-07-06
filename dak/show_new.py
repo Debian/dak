@@ -51,7 +51,7 @@ sources = set()
 def html_header(name, filestoexamine):
     if name.endswith('.changes'):
         name = ' '.join(name.split('_')[:2])
-    print """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    result = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
   <head>
     <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8"
@@ -105,31 +105,36 @@ def html_header(name, filestoexamine):
         Debian NEW package overview for %(name)s
       </span>
     </div>
+
     """%{"name":name}
 
     # we assume only one source (.dsc) per changes here
-    print """
+    result += """
     <div id="menu">
       <p class="title">Navigation</p>
       <p><a href="#changes" onclick="show('changes-body')">.changes</a></p>
       <p><a href="#dsc" onclick="show('dsc-body')">.dsc</a></p>
       <p><a href="#source-lintian" onclick="show('source-lintian-body')">source lintian</a></p>
-      """
+
+"""
     for fn in filter(lambda x: x.endswith('.deb') or x.endswith('.udeb'),filestoexamine):
         packagename = fn.split('_')[0]
-        print """
+        result += """
         <p class="subtitle">%(pkg)s</p>
         <p><a href="#binary-%(pkg)s-control" onclick="show('binary-%(pkg)s-control-body')">control file</a></p>
         <p><a href="#binary-%(pkg)s-lintian" onclick="show('binary-%(pkg)s-lintian-body')">binary lintian</a></p>
         <p><a href="#binary-%(pkg)s-contents" onclick="show('binary-%(pkg)s-contents-body')">.deb contents</a></p>
         <p><a href="#binary-%(pkg)s-copyright" onclick="show('binary-%(pkg)s-copyright-body')">copyright</a></p>
         <p><a href="#binary-%(pkg)s-file-listing" onclick="show('binary-%(pkg)s-file-listing-body')">file listing</a></p>
-        """%{"pkg":packagename}
-    print "    </div>"
+
+"""%{"pkg":packagename}
+    result += "    </div>"
+    return result
 
 def html_footer():
-    print """    <p class="validate">Timestamp: %s (UTC)</p>"""% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
-    print """    <p><a href="http://validator.w3.org/check?uri=referer">
+    result = """    <p class="validate">Timestamp: %s (UTC)</p>
+"""% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
+    result += """    <p><a href="http://validator.w3.org/check?uri=referer">
       <img src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
       style="border: none; height: 31px; width: 88px" /></a>
     <a href="http://jigsaw.w3.org/css-validator/check/referer">
@@ -139,7 +144,8 @@ def html_footer():
   </body>
 </html>
 """
-#"""
+    return result
+
 ################################################################################
 
 
@@ -180,18 +186,18 @@ def do_pkg(changes_file):
             for fn in new[pkg]["files"]:
                 filestoexamine.append(fn)
 
-        html_header(changes["source"], filestoexamine)
+        print html_header(changes["source"], filestoexamine)
 
         check_valid(new)
         distribution = changes["distribution"].keys()[0]
-        examine_package.display_changes(distribution, changes_file)
+        print examine_package.display_changes(distribution, changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-            examine_package.check_dsc(distribution, fn)
+            print examine_package.check_dsc(distribution, fn)
         for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-            examine_package.check_deb(distribution, fn)
+            print examine_package.check_deb(distribution, fn)
 
-        html_footer()
+        print html_footer()
         if sys.stdout != stdout_fd:
             sys.stdout.close()
             sys.stdout = stdout_fd

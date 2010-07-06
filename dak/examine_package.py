@@ -3,6 +3,10 @@
 """
 Script to automate some parts of checking NEW packages
 
+Most functions are written in a functional programming style. They
+return a string avoiding the side effect of directly printing the string
+to stdout. Those functions can be used in multithreaded parts of dak.
+
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
 @copyright: 2009  Joerg Jaspert <joerg@debian.org>
@@ -362,7 +366,7 @@ def output_package_relations ():
             to_print += "%-15s: (%s) %s\n" % (package, relation, package_relations[package][relation])
 
     package_relations.clear()
-    print foldable_output("Package relations", "relations", to_print)
+    return foldable_output("Package relations", "relations", to_print)
 
 def output_deb_info(suite, filename, packagename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
@@ -464,9 +468,13 @@ def get_readme_source (dsc_filename):
 
 def check_dsc (suite, dsc_filename):
     (dsc) = read_changes_or_dsc(suite, dsc_filename)
-    print foldable_output(dsc_filename, "dsc", dsc, norow=True)
-    print foldable_output("lintian check for %s" % dsc_filename, "source-lintian", do_lintian(dsc_filename))
-    print foldable_output("README.source for %s" % dsc_filename, "source-readmesource", get_readme_source(dsc_filename))
+    return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
+           "\n" + \
+           foldable_output("lintian check for %s" % dsc_filename,
+	       "source-lintian", do_lintian(dsc_filename)) + \
+           "\n" + \
+           foldable_output("README.source for %s" % dsc_filename,
+               "source-readmesource", get_readme_source(dsc_filename))
 
 def check_deb (suite, deb_filename):
     filename = os.path.basename(deb_filename)
@@ -477,29 +485,30 @@ def check_deb (suite, deb_filename):
     else:
         is_a_udeb = 0
 
-
-    print foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
-                    output_deb_info(suite, deb_filename, packagename), norow=True)
-
-    if is_a_udeb:
-        print foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
-                        "")
-    else:
-        print foldable_output("lintian check for %s" % (filename), "binary-%s-lintian"%packagename,
-                        do_lintian(deb_filename))
-
-    print foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
-                    do_command("dpkg -c", deb_filename))
+    result = foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
+        output_deb_info(suite, deb_filename, packagename), norow=True) + "\n"
 
     if is_a_udeb:
-        print foldable_output("skipping copyright for udeb", "binary-%s-copyright"%packagename,
-                        "")
+        result += foldable_output("skipping lintian check for udeb",
+	    "binary-%s-lintian"%packagename, "") + "\n"
     else:
-        print foldable_output("copyright of %s" % (filename), "binary-%s-copyright"%packagename,
-                        get_copyright(deb_filename))
+        result += foldable_output("lintian check for %s" % (filename),
+	    "binary-%s-lintian"%packagename, do_lintian(deb_filename)) + "\n"
 
-    print foldable_output("file listing of %s" % (filename),  "binary-%s-file-listing"%packagename,
-                    do_command("ls -l", deb_filename))
+    result += foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
+        do_command("dpkg -c", deb_filename)) + "\n"
+
+    if is_a_udeb:
+        result += foldable_output("skipping copyright for udeb",
+	    "binary-%s-copyright"%packagename, "") + "\n"
+    else:
+        result += foldable_output("copyright of %s" % (filename),
+	    "binary-%s-copyright"%packagename, get_copyright(deb_filename)) + "\n"
+
+    result += foldable_output("file listing of %s" % (filename),
+	"binary-%s-file-listing"%packagename, do_command("ls -l", deb_filename))
+
+    return result
 
 # Read a file, strip the signature and return the modified contents as
 # a string.
@@ -531,21 +540,21 @@ def strip_pgp_signature (filename):
 
 def display_changes(suite, changes_filename):
     changes = read_changes_or_dsc(suite, changes_filename)
-    print foldable_output(changes_filename, "changes", changes, norow=True)
+    return foldable_output(changes_filename, "changes", changes, norow=True)
 
 def check_changes (changes_filename):
     try:
         changes = utils.parse_changes (changes_filename)
     except ChangesUnicodeError:
         utils.warn("Encoding problem with changes file %s" % (changes_filename))
-    display_changes(changes['distribution'], changes_filename)
+    print display_changes(changes['distribution'], changes_filename)
 
     files = utils.build_file_list(changes)
     for f in files.keys():
         if f.endswith(".deb") or f.endswith(".udeb"):
-            check_deb(changes['distribution'], f)
+            print check_deb(changes['distribution'], f)
         if f.endswith(".dsc"):
-            check_dsc(changes['distribution'], f)
+            print check_dsc(changes['distribution'], f)
         # else: => byhand
 
 def main ():
@@ -585,13 +594,13 @@ def main ():
                 elif f.endswith(".deb") or f.endswith(".udeb"):
                     # default to unstable when we don't have a .changes file
                     # perhaps this should be a command line option?
-                    check_deb('unstable', f)
+                    print check_deb('unstable', f)
                 elif f.endswith(".dsc"):
-                    check_dsc('unstable', f)
+                    print check_dsc('unstable', f)
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (f))
             finally:
-                output_package_relations()
+                print output_package_relations()
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()
