@@ -93,11 +93,11 @@ def headline(s, level=2, bodyelement=None):
         if bodyelement:
             return """<thead>
                 <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s <span class="toggle-msg">(click to toggle)</span></th></tr>
-              </thead>"""%{"bodyelement":bodyelement,"title":utils.html_escape(s)}
+              </thead>\n"""%{"bodyelement":bodyelement,"title":utils.html_escape(s)}
         else:
-            return "<h%d>%s</h%d>" % (level, utils.html_escape(s), level)
+            return "<h%d>%s</h%d>\n" % (level, utils.html_escape(s), level)
     else:
-        return "---- %s ----" % (s)
+        return "---- %s ----\n" % (s)
 
 # Colour definitions, 'end' isn't really for use
 
@@ -154,22 +154,20 @@ def format_field(k,v):
 
 def foldable_output(title, elementnameprefix, content, norow=False):
     d = {'elementnameprefix':elementnameprefix}
-    header = ''
+    result = ''
     if use_html:
-        header = """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
-                   <table class="infobox rfc822">"""%d
-    title = headline(title, bodyelement="%(elementnameprefix)s-body"%d)
-    body = ''
+        result += """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
+                   <table class="infobox rfc822">\n"""%d
+    result += headline(title, bodyelement="%(elementnameprefix)s-body"%d)
     if use_html:
-        body = """    <tbody id="%(elementnameprefix)s-body" class="infobody">"""%d
+        result += """    <tbody id="%(elementnameprefix)s-body" class="infobody">\n"""%d
     if norow:
-        body = content
+        result += content + "\n"
     else:
-        body = output_row(content)
-    footer = ''
+        result += output_row(content) + "\n"
     if use_html:
-        footer = """</tbody></table></div>"""
-    return header + title + body + footer
+        result += """</tbody></table></div>"""
+    return result
 
 ################################################################################
 
