@@ -154,18 +154,22 @@ def format_field(k,v):
 
 def foldable_output(title, elementnameprefix, content, norow=False):
     d = {'elementnameprefix':elementnameprefix}
+    header = ''
     if use_html:
-        print """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
+        header = """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
                    <table class="infobox rfc822">"""%d
-    print headline(title, bodyelement="%(elementnameprefix)s-body"%d)
+    title = headline(title, bodyelement="%(elementnameprefix)s-body"%d)
+    body = ''
     if use_html:
-        print """    <tbody id="%(elementnameprefix)s-body" class="infobody">"""%d
+        body = """    <tbody id="%(elementnameprefix)s-body" class="infobody">"""%d
     if norow:
-        print content
+        body = content
     else:
-        print output_row(content)
+        body = output_row(content)
+    footer = ''
     if use_html:
-        print """</tbody></table></div>"""
+        footer = """</tbody></table></div>"""
+    return header + title + body + footer
 
 ################################################################################
 
@@ -360,7 +364,7 @@ def output_package_relations ():
             to_print += "%-15s: (%s) %s\n" % (package, relation, package_relations[package][relation])
 
     package_relations.clear()
-    foldable_output("Package relations", "relations", to_print)
+    print foldable_output("Package relations", "relations", to_print)
 
 def output_deb_info(suite, filename, packagename):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
@@ -462,9 +466,9 @@ def get_readme_source (dsc_filename):
 
 def check_dsc (suite, dsc_filename):
     (dsc) = read_changes_or_dsc(suite, dsc_filename)
-    foldable_output(dsc_filename, "dsc", dsc, norow=True)
-    foldable_output("lintian check for %s" % dsc_filename, "source-lintian", do_lintian(dsc_filename))
-    foldable_output("README.source for %s" % dsc_filename, "source-readmesource", get_readme_source(dsc_filename))
+    print foldable_output(dsc_filename, "dsc", dsc, norow=True)
+    print foldable_output("lintian check for %s" % dsc_filename, "source-lintian", do_lintian(dsc_filename))
+    print foldable_output("README.source for %s" % dsc_filename, "source-readmesource", get_readme_source(dsc_filename))
 
 def check_deb (suite, deb_filename):
     filename = os.path.basename(deb_filename)
@@ -476,27 +480,27 @@ def check_deb (suite, deb_filename):
         is_a_udeb = 0
 
 
-    foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
+    print foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
                     output_deb_info(suite, deb_filename, packagename), norow=True)
 
     if is_a_udeb:
-        foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
+        print foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
                         "")
     else:
-        foldable_output("lintian check for %s" % (filename), "binary-%s-lintian"%packagename,
+        print foldable_output("lintian check for %s" % (filename), "binary-%s-lintian"%packagename,
                         do_lintian(deb_filename))
 
-    foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
+    print foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
                     do_command("dpkg -c", deb_filename))
 
     if is_a_udeb:
-        foldable_output("skipping copyright for udeb", "binary-%s-copyright"%packagename,
+        print foldable_output("skipping copyright for udeb", "binary-%s-copyright"%packagename,
                         "")
     else:
-        foldable_output("copyright of %s" % (filename), "binary-%s-copyright"%packagename,
+        print foldable_output("copyright of %s" % (filename), "binary-%s-copyright"%packagename,
                         get_copyright(deb_filename))
 
-    foldable_output("file listing of %s" % (filename),  "binary-%s-file-listing"%packagename,
+    print foldable_output("file listing of %s" % (filename),  "binary-%s-file-listing"%packagename,
                     do_command("ls -l", deb_filename))
 
 # Read a file, strip the signature and return the modified contents as
@@ -529,7 +533,7 @@ def strip_pgp_signature (filename):
 
 def display_changes(suite, changes_filename):
     changes = read_changes_or_dsc(suite, changes_filename)
-    foldable_output(changes_filename, "changes", changes, norow=True)
+    print foldable_output(changes_filename, "changes", changes, norow=True)
 
 def check_changes (changes_filename):
     try:
