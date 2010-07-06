@@ -380,17 +380,17 @@ def check_pkg (upload):
         try:
             sys.stdout = less_fd
             changes = utils.parse_changes (upload.pkg.changes_file)
-            examine_package.display_changes(changes['distribution'], upload.pkg.changes_file)
+            print examine_package.display_changes(changes['distribution'], upload.pkg.changes_file)
             files = upload.pkg.files
             for f in files.keys():
                 if files[f].has_key("new"):
                     ftype = files[f]["type"]
                     if ftype == "deb":
-                        examine_package.check_deb(changes['distribution'], f)
+                        print examine_package.check_deb(changes['distribution'], f)
                     elif ftype == "dsc":
-                        examine_package.check_dsc(changes['distribution'], f)
+                        print examine_package.check_dsc(changes['distribution'], f)
         finally:
-            examine_package.output_package_relations()
+            print examine_package.output_package_relations()
             sys.stdout = stdout_fd
     except IOError, e:
         if e.errno == errno.EPIPE:
