@@ -173,34 +173,29 @@ def do_pkg(changes_file):
 
     new = determine_new(u.pkg.changes, files, 0)
 
-    stdout_fd = sys.stdout
-
     htmlname = changes["source"] + "_" + changes["version"] + ".html"
     sources.add(htmlname)
     # do not generate html output if that source/version already has one.
     if not os.path.exists(os.path.join(cnf["Show-New::HTMLPath"],htmlname)):
-        sys.stdout = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
+        outfile = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
 
         filestoexamine = []
         for pkg in new.keys():
             for fn in new[pkg]["files"]:
                 filestoexamine.append(fn)
 
-        print html_header(changes["source"], filestoexamine)
+        print >> outfile, html_header(changes["source"], filestoexamine)
 
         check_valid(new)
         distribution = changes["distribution"].keys()[0]
-        print examine_package.display_changes(distribution, changes_file)
+        print >> outfile, examine_package.display_changes(distribution, changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-            print examine_package.check_dsc(distribution, fn)
+            print >> outfile, examine_package.check_dsc(distribution, fn)
         for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-            print examine_package.check_deb(distribution, fn)
+            print >> outfile, examine_package.check_deb(distribution, fn)
 
-        print html_footer()
-        if sys.stdout != stdout_fd:
-            sys.stdout.close()
-            sys.stdout = stdout_fd
+        print >> outfile, html_footer()
     session.close()
 
 ################################################################################
