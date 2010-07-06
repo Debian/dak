@@ -91,13 +91,13 @@ def escape_if_needed(s):
 def headline(s, level=2, bodyelement=None):
     if use_html:
         if bodyelement:
-            print """<thead>
+            return """<thead>
                 <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s <span class="toggle-msg">(click to toggle)</span></th></tr>
               </thead>"""%{"bodyelement":bodyelement,"title":utils.html_escape(s)}
         else:
-            print "<h%d>%s</h%d>" % (level, utils.html_escape(s), level)
+            return "<h%d>%s</h%d>" % (level, utils.html_escape(s), level)
     else:
-        print "---- %s ----" % (s)
+        return "---- %s ----" % (s)
 
 # Colour definitions, 'end' isn't really for use
 
@@ -157,7 +157,7 @@ def foldable_output(title, elementnameprefix, content, norow=False):
     if use_html:
         print """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
                    <table class="infobox rfc822">"""%d
-    headline(title, bodyelement="%(elementnameprefix)s-body"%d)
+    print headline(title, bodyelement="%(elementnameprefix)s-body"%d)
     if use_html:
         print """    <tbody id="%(elementnameprefix)s-body" class="infobody">"""%d
     if norow:
