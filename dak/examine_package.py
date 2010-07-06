@@ -579,7 +579,7 @@ def main ():
                 elif f.endswith(".deb") or f.endswith(".udeb"):
                     # default to unstable when we don't have a .changes file
                     # perhaps this should be a command line option?
-                    check_deb('unstable', file)
+                    check_deb('unstable', f)
                 elif f.endswith(".dsc"):
                     check_dsc('unstable', f)
                 else:
