@@ -319,7 +319,6 @@ def create_depends_string (suite, depends_tree):
         suite_where = "= '%s'" % suite
 
     comma_count = 1
-    session = DBConn().session()
     for l in depends_tree:
         if (comma_count >= 2):
             result += ", "
