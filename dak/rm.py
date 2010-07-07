@@ -75,7 +75,7 @@ Remove PACKAGE(s) from suite(s).
   -S, --source-only          remove source only
 
 ARCH, BUG#, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
-    --architecture=m68k,i386"""
+    --architecture=amd64,i386"""
 
     sys.exit(exit_code)
 
