@@ -187,7 +187,7 @@ def determine_new(changes, files, warn=1):
 
 ################################################################################
 
-def check_valid(new):
+def check_valid(new, session = None):
     """
     Check if section and priority for NEW packages exist in database.
     Additionally does sanity checks:
@@ -204,13 +204,13 @@ def check_valid(new):
         priority_name = new[pkg]["priority"]
         file_type = new[pkg]["type"]
 
-        section = get_section(section_name)
+        section = get_section(section_name, session)
         if section is None:
             new[pkg]["section id"] = -1
         else:
             new[pkg]["section id"] = section.section_id
 
-        priority = get_priority(priority_name)
+        priority = get_priority(priority_name, session)
         if priority is None:
             new[pkg]["priority id"] = -1
         else:
@@ -569,8 +569,8 @@ class Upload(object):
         architecture = control.Find("Architecture")
         upload_suite = self.pkg.changes["distribution"].keys()[0]
 
-        if      architecture not in [a.arch_string for a in get_suite_architectures(default_suite, session)] \
-            and architecture not in [a.arch_string for a in get_suite_architectures(upload_suite, session)]:
+        if      architecture not in [a.arch_string for a in get_suite_architectures(default_suite, session = session)] \
+            and architecture not in [a.arch_string for a in get_suite_architectures(upload_suite, session = session)]:
             self.rejects.append("Unknown architecture '%s'." % (architecture))
 
         # Ensure the architecture of the .deb is one of the ones
