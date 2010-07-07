@@ -70,7 +70,9 @@ def dak_getstatusoutput(cmd):
     pipe = subprocess.Popen(cmd, shell=True, universal_newlines=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-    output, _ = pipe.communicate()
+    output = pipe.stdout.read()
+
+    pipe.wait()
 
     if output[-1:] == '\n':
         output = output[:-1]
