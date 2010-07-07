@@ -16,8 +16,8 @@ error() {
 }
 
 # Check validity of version number
-# Expected are: YYYYMMDD, YYYYMMDD.x, YYYYMMDD<suite>x
-if ! echo "$VERSION" | grep -Eq "^[0-9]{8}(|(\.|[a-z]+)[0-9]+)$"; then
+# Expected are: YYYYMMDD, YYYYMMDD.x, YYYYMMDD<suite>x and the +b[0-9] on the end
+if ! echo "$VERSION" | grep -Eq "^[0-9]{8}(|(\.|[a-z]+)[0-9]+)(\+b[0-9])?$"; then
 	error "Invalid version: '$VERSION'"
 fi
 
@@ -50,10 +50,13 @@ if [ -d "$TARGET/$VERSION" ]; then
 	error "Directory already exists: $TARGET/$VERSION"
 fi
 
+# We know the VERSION is sane by here, we just need to make sure we escape the + in +b1 (if any)
+VERSIONREGEXP="$(echo $VERSION | sed 's@+@\\\+@')"
+
 # We know all data to be in ./installer-<arch>/<version>; see if there's
 # anything else in the tarball except that and the 'current' symlink
 if tar tzf "$TARBALL" | \
-   grep -Eqv "^\./(installer-$ARCH/($VERSION/.*|current|)|)$"; then
+   grep -Eqv "^\./(installer-$ARCH/($VERSIONREGEXP/.*|current|)|)$"; then
 	error "Tarball contains unexpected contents"
 fi
 

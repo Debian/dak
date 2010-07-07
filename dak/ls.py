@@ -56,7 +56,7 @@ Display information about PACKAGE(s).
   -S, --source-and-binary    show info for the binary children of source pkgs
 
 ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
-    --architecture=m68k,i386"""
+    --architecture=amd64,i386"""
     sys.exit(exit_code)
 
 ################################################################################
