@@ -170,6 +170,7 @@ def do_pkg(changes_file):
         else:
             u.source_file_checks(deb_filename, session)
             u.check_source_against_db(deb_filename, session)
+    session.close()
     u.pkg.changes["suite"] = u.pkg.changes["distribution"]
 
     new = determine_new(u.pkg.changes, files, 0)
@@ -197,7 +198,8 @@ def do_pkg(changes_file):
             print >> outfile, examine_package.check_deb(distribution, fn)
 
         print >> outfile, html_footer()
-    session.close()
+
+	outfile.close()
 
 ################################################################################
 
