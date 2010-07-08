@@ -91,7 +91,7 @@ def get_type(f, session):
 
 # Determine what parts in a .changes are NEW
 
-def determine_new(changes, files, warn=1):
+def determine_new(changes, files, warn=1, session = None):
     """
     Determine what parts in a C{changes} file are NEW.
 
@@ -109,8 +109,6 @@ def determine_new(changes, files, warn=1):
 
     """
     new = {}
-
-    session = DBConn().session()
 
     # Build up a list of potentially new things
     for name, f in files.items():
@@ -180,8 +178,6 @@ def determine_new(changes, files, warn=1):
         for pkg in new.keys():
             if new[pkg].has_key("othercomponents"):
                 print "WARNING: %s already present in %s distribution." % (pkg, new[pkg]["othercomponents"])
-
-    session.close()
 
     return new
 
