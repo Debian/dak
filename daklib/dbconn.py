@@ -37,6 +37,7 @@ import os
 import re
 import psycopg2
 import traceback
+import commands
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
@@ -2457,7 +2458,6 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
                  ('CommentsDir', 'commentsdir'),
                  ('OverrideSuite', 'overridesuite'),
                  ('ChangelogBase', 'changelogbase')]
-
 
 class Suite(object):
     def __init__(self, *args, **kwargs):

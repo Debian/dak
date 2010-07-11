@@ -81,6 +81,8 @@ def init():
          "Generate file lists for apt-ftparchive"),
         ("generate-releases",
          "Generate Release files"),
+        ("generate-packages-sources",
+         "Generate Packages/Sources files"),
         ("contents",
          "Generate content files"),
         ("generate-index-diffs",
