@@ -170,10 +170,9 @@ def do_pkg(changes_file):
         else:
             u.source_file_checks(deb_filename, session)
             u.check_source_against_db(deb_filename, session)
-    session.close()
     u.pkg.changes["suite"] = u.pkg.changes["distribution"]
 
-    new = determine_new(u.pkg.changes, files, 0)
+    new = determine_new(u.pkg.changes, files, 0, session)
 
     htmlname = changes["source"] + "_" + changes["version"] + ".html"
     sources.add(htmlname)
@@ -188,18 +187,19 @@ def do_pkg(changes_file):
 
         print >> outfile, html_header(changes["source"], filestoexamine)
 
-        check_valid(new)
+        check_valid(new, session)
         distribution = changes["distribution"].keys()[0]
         print >> outfile, examine_package.display_changes(distribution, changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-            print >> outfile, examine_package.check_dsc(distribution, fn)
+            print >> outfile, examine_package.check_dsc(distribution, fn, session)
         for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-            print >> outfile, examine_package.check_deb(distribution, fn)
+            print >> outfile, examine_package.check_deb(distribution, fn, session)
 
         print >> outfile, html_footer()
 
 	outfile.close()
+    session.close()
 
 ################################################################################
 

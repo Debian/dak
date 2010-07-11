@@ -275,7 +275,7 @@ def read_control (filename):
 
     return (control, control_keys, section, depends, recommends, arch, maintainer)
 
-def read_changes_or_dsc (suite, filename):
+def read_changes_or_dsc (suite, filename, session = None):
     dsc = {}
 
     dsc_file = utils.open_file(filename)
@@ -294,7 +294,7 @@ def read_changes_or_dsc (suite, filename):
 
     for k in dsc.keys():
         if k in ("build-depends","build-depends-indep"):
-            dsc[k] = create_depends_string(suite, split_depends(dsc[k]))
+            dsc[k] = create_depends_string(suite, split_depends(dsc[k]), session)
         elif k == "architecture":
             if (dsc["architecture"] != "any"):
                 dsc['architecture'] = colour_output(dsc["architecture"], 'arch')
@@ -311,7 +311,7 @@ def read_changes_or_dsc (suite, filename):
     filecontents = '\n'.join(map(lambda x: format_field(x,dsc[x.lower()]), keysinorder))+'\n'
     return filecontents
 
-def create_depends_string (suite, depends_tree):
+def create_depends_string (suite, depends_tree, session = None):
     result = ""
     if suite == 'experimental':
         suite_where = "in ('experimental','unstable')"
@@ -328,7 +328,7 @@ def create_depends_string (suite, depends_tree):
                 result += " | "
             # doesn't do version lookup yet.
 
-            res = get_binary_from_name_suite(d['name'], suite_where)
+            res = get_binary_from_name_suite(d['name'], suite_where, session)
             if res.rowcount > 0:
                 i = res.fetchone()
 
@@ -369,7 +369,7 @@ def output_package_relations ():
     package_relations.clear()
     return foldable_output("Package relations", "relations", to_print)
 
-def output_deb_info(suite, filename, packagename):
+def output_deb_info(suite, filename, packagename, session = None):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
@@ -379,10 +379,10 @@ def output_deb_info(suite, filename, packagename):
         package_relations[packagename] = {}
     for key in control_keys :
         if key == 'Depends':
-            field_value = create_depends_string(suite, depends)
+            field_value = create_depends_string(suite, depends, session)
             package_relations[packagename][key] = field_value
         elif key == 'Recommends':
-            field_value = create_depends_string(suite, recommends)
+            field_value = create_depends_string(suite, recommends, session)
             package_relations[packagename][key] = field_value
         elif key == 'Section':
             field_value = section
@@ -471,8 +471,8 @@ def get_readme_source (dsc_filename):
 
     return res
 
-def check_dsc (suite, dsc_filename):
-    (dsc) = read_changes_or_dsc(suite, dsc_filename)
+def check_dsc (suite, dsc_filename, session = None):
+    (dsc) = read_changes_or_dsc(suite, dsc_filename, session)
     return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
            "\n" + \
            foldable_output("lintian check for %s" % dsc_filename,
@@ -481,7 +481,7 @@ def check_dsc (suite, dsc_filename):
            foldable_output("README.source for %s" % dsc_filename,
                "source-readmesource", get_readme_source(dsc_filename))
 
-def check_deb (suite, deb_filename):
+def check_deb (suite, deb_filename, session = None):
     filename = os.path.basename(deb_filename)
     packagename = filename.split('_')[0]
 
@@ -491,7 +491,7 @@ def check_deb (suite, deb_filename):
         is_a_udeb = 0
 
     result = foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
-        output_deb_info(suite, deb_filename, packagename), norow=True) + "\n"
+        output_deb_info(suite, deb_filename, packagename, session), norow=True) + "\n"
 
     if is_a_udeb:
         result += foldable_output("skipping lintian check for udeb",
