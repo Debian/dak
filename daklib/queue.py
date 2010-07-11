@@ -674,7 +674,7 @@ class Upload(object):
                     entry["new"] = 1
                 else:
                     dsc_file_exists = False
-                    for myq in ["Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
+                    for myq in ["Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates", "Lenny-Volatile-Proposed-Updates"]:
                         if cnf.has_key("Dir::Queue::%s" % (myq)):
                             if os.path.exists(os.path.join(cnf["Dir::Queue::" + myq], dsc_filename)):
                                 dsc_file_exists = True
