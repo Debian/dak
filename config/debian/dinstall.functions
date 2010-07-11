@@ -199,7 +199,8 @@ function packages() {
     log "Generating Packages and Sources files"
     cd $configdir
     GZIP='--rsyncable' ; export GZIP
-    apt-ftparchive generate apt.conf
+    #apt-ftparchive generate apt.conf
+    dak generate-packages-sources
 }
 
 function pdiff() {
