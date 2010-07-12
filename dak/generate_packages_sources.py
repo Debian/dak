@@ -360,19 +360,19 @@ def main ():
     startdir = os.getcwd()
     os.chdir(cnf["Dir::TempPath"])
 
-    # Setup a multiprocessing Pool. As many workers as we have CPU cores.
-    pool = Pool()
-
     # For each given suite, each architecture, run one apt-ftparchive
     for s in suites:
+        # Setup a multiprocessing Pool. As many workers as we have CPU cores.
+        pool = Pool()
         arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=True, session=session)
         Logger.log(['generating output for Suite %s, Architectures %s' % (s.suite_name, map(sname, arch_list))])
         for a in arch_list:
             pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]))
 
-    # No more work will be added to our pool, close it and then wait for all to finish
-    pool.close()
-    pool.join()
+        # No more work will be added to our pool, close it and then wait for all to finish
+        pool.close()
+        pool.join()
+
     os.chdir(startdir)
     # this script doesn't change the database
     session.close()
