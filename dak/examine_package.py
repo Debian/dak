@@ -64,8 +64,8 @@ from daklib.regexes import html_escaping, re_html_escaping, re_version, re_space
 Cnf = None
 Cnf = utils.get_conf()
 
-changes_lock = threading.Lock()
-printed_copyrights = {}
+printed = threading.local()
+printed.copyrights = {}
 package_relations = {}           #: Store relations of packages for later output
 
 # default is to not output html.
@@ -416,7 +416,7 @@ def do_lintian (filename):
         return do_command("lintian --show-overrides --color always", filename, 1)
 
 def get_copyright (deb_filename):
-    global changes_lock, printed_copyrights
+    global printed
 
     package = re_package.sub(r'\1', deb_filename)
     o = os.popen("dpkg-deb -c %s | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{print $6}' | head -n 1" % (deb_filename))
@@ -434,13 +434,11 @@ def get_copyright (deb_filename):
     copyrightmd5 = md5.md5(cright).hexdigest()
 
     res = ""
-    changes_lock.acquire()
-    if printed_copyrights.has_key(copyrightmd5) and printed_copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
+    if printed.copyrights.has_key(copyrightmd5) and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
         res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
-                               (printed_copyrights[copyrightmd5]))
+                               (printed.copyrights[copyrightmd5]))
     else:
-        printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
-    changes_lock.release()
+        printed.copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
     return res+formatted_text(cright)
 
 def get_readme_source (dsc_filename):
@@ -544,11 +542,9 @@ def strip_pgp_signature (filename):
     return contents
 
 def display_changes(suite, changes_filename):
-    global changes_lock, printed_copyrights
+    global printed
     changes = read_changes_or_dsc(suite, changes_filename)
-    changes_lock.acquire()
-    printed_copyrights = {}
-    changes_lock.release()
+    printed.copyrights = {}
     return foldable_output(changes_filename, "changes", changes, norow=True)
 
 def check_changes (changes_filename):
