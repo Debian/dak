@@ -274,7 +274,7 @@ tree "dists/proposed-updates/main"
     cnf = Config()
     try:
         # Write apt.conf
-        (ac_fd, ac_name) = mkstemp(dir=tmppath)
+        (ac_fd, ac_name) = mkstemp(dir=tmppath, suffix=suite, prefix=arch)
         os.write(ac_fd, DAILY_APT_CONF)
         # here we want to generate the tree entries
         os.write(ac_fd, apt_trees[suite] % {'arch': arch})
