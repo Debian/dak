@@ -39,25 +39,48 @@ from daklib.dbconn import *
 from daklib.config import Config
 from daklib.threadpool import ThreadPool
 from daklib import utils
-import apt_pkg, os, sys
+import apt_pkg, os, stat, sys
 
 def fetch(query, args, session):
     return [path + filename for (path, filename) in \
         session.execute(query, args).fetchall()]
 
-def getSources(suite, component, session):
+def getSources(suite, component, session, timestamp):
+    extra_cond = ""
+    if timestamp:
+        extra_cond = "AND extract(epoch from sa.created) > %d" % timestamp
     query = """
-        SELECT path, filename
-            FROM srcfiles_suite_component
-            WHERE suite = :suite AND component = :component
+        SELECT l.path, f.filename
+            FROM source s
+            JOIN src_associations sa
+                ON s.id = sa.source AND sa.suite = :suite %s
+            JOIN files f
+                ON s.file = f.id
+            JOIN location l
+                ON f.location = l.id AND l.component = :component
             ORDER BY filename
-    """
+    """ % extra_cond
     args = { 'suite': suite.suite_id,
              'component': component.component_id }
     return fetch(query, args, session)
 
-def getBinaries(suite, component, architecture, type, session):
+def getBinaries(suite, component, architecture, type, session, timestamp):
+    extra_cond = ""
+    if timestamp:
+        extra_cond = "AND extract(epoch from ba.created) > %d" % timestamp
     query = """
+CREATE TEMP TABLE b_candidates (
+    source integer,
+    file integer,
+    architecture integer);
+
+INSERT INTO b_candidates (source, file, architecture)
+    SELECT b.source, b.file, b.architecture
+        FROM binaries b
+        JOIN bin_associations ba ON b.id = ba.bin
+        WHERE b.type = :type AND ba.suite = :suite AND
+            b.architecture IN (2, :architecture) %s;
+
 CREATE TEMP TABLE gf_candidates (
     filename text,
     path text,
@@ -66,29 +89,27 @@ CREATE TEMP TABLE gf_candidates (
     source text);
 
 INSERT INTO gf_candidates (filename, path, architecture, src, source)
-    SELECT f.filename, l.path, b.architecture, b.source as src, s.source
-	FROM binaries b
-	JOIN bin_associations ba ON b.id = ba.bin
-	JOIN source s ON b.source = s.id
-        JOIN files f ON b.file = f.id
+    SELECT f.filename, l.path, bc.architecture, bc.source as src, s.source
+        FROM b_candidates bc
+        JOIN source s ON bc.source = s.id
+        JOIN files f ON bc.file = f.id
         JOIN location l ON f.location = l.id
-	WHERE ba.suite = :suite AND b.type = :type AND
-            l.component = :component AND b.architecture IN (2, :architecture);
+        WHERE l.component = :component;
 
 WITH arch_any AS
 
     (SELECT path, filename FROM gf_candidates
-	WHERE architecture > 2),
+        WHERE architecture > 2),
 
      arch_all_with_any AS
     (SELECT path, filename FROM gf_candidates
-	WHERE architecture = 2 AND
-	      src IN (SELECT src FROM gf_candidates WHERE architecture > 2)),
+        WHERE architecture = 2 AND
+              src IN (SELECT src FROM gf_candidates WHERE architecture > 2)),
 
      arch_all_without_any AS
     (SELECT path, filename FROM gf_candidates
-	WHERE architecture = 2 AND
-	      source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture > 2)),
+        WHERE architecture = 2 AND
+              source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture > 2)),
 
      filelist AS
     (SELECT * FROM arch_any
@@ -98,14 +119,15 @@ WITH arch_any AS
     SELECT * FROM arch_all_without_any)
 
     SELECT * FROM filelist ORDER BY filename
-    """
+    """ % extra_cond
     args = { 'suite': suite.suite_id,
              'component': component.component_id,
              'architecture': architecture.arch_id,
              'type': type }
     return fetch(query, args, session)
 
-def listPath(suite, component, architecture = None, type = None):
+def listPath(suite, component, architecture = None, type = None,
+        incremental_mode = False):
     """returns full path to the list file"""
     suffixMap = { 'deb': "binary-",
                   'udeb': "debian-installer_binary-" }
@@ -116,22 +138,32 @@ def listPath(suite, component, architecture = None, type = None):
     filename = "%s_%s_%s.list" % \
         (suite.suite_name, component.component_name, suffix)
     pathname = os.path.join(Config()["Dir::Lists"], filename)
-    return utils.open_file(pathname, "w")
+    file = utils.open_file(pathname, "a")
+    timestamp = None
+    if incremental_mode:
+        timestamp = os.fstat(file.fileno())[stat.ST_MTIME]
+    else:
+        file.seek(0)
+        file.truncate()
+    return (file, timestamp)
 
 def writeSourceList(args):
-    (suite, component) = args
-    file = listPath(suite, component)
+    (suite, component, incremental_mode) = args
+    (file, timestamp) = listPath(suite, component,
+            incremental_mode = incremental_mode)
     session = DBConn().session()
-    for filename in getSources(suite, component, session):
+    for filename in getSources(suite, component, session, timestamp):
         file.write(filename + '\n')
     session.close()
     file.close()
 
 def writeBinaryList(args):
-    (suite, component, architecture, type) = args
-    file = listPath(suite, component, architecture, type)
+    (suite, component, architecture, type, incremental_mode) = args
+    (file, timestamp) = listPath(suite, component, architecture, type,
+            incremental_mode)
     session = DBConn().session()
-    for filename in getBinaries(suite, component, architecture, type, session):
+    for filename in getBinaries(suite, component, architecture, type,
+            session, timestamp):
         file.write(filename + '\n')
     session.close()
     file.close()
@@ -144,9 +176,12 @@ Create filename lists for apt-ftparchive.
   -c, --component=COMPONENT    act on this component
   -a, --architecture=ARCH      act on this architecture
   -h, --help                   show this help and exit
+  -i, --incremental            activate incremental mode
 
 ARCH, COMPONENT and SUITE can be comma (or space) separated list, e.g.
-    --suite=testing,unstable"""
+    --suite=testing,unstable
+
+Incremental mode appends only newer files to exising lists."""
     sys.exit()
 
 def main():
@@ -154,7 +189,8 @@ def main():
     Arguments = [('h', "help",         "Filelist::Options::Help"),
                  ('s', "suite",        "Filelist::Options::Suite", "HasArg"),
                  ('c', "component",    "Filelist::Options::Component", "HasArg"),
-                 ('a', "architecture", "Filelist::Options::Architecture", "HasArg")]
+                 ('a', "architecture", "Filelist::Options::Architecture", "HasArg"),
+                 ('i', "incremental",  "Filelist::Options::Incremental")]
     query_suites = DBConn().session().query(Suite)
     suites = [suite.suite_name for suite in query_suites.all()]
     if not cnf.has_key('Filelist::Options::Suite'):
@@ -168,6 +204,7 @@ def main():
     if not cnf.has_key('Filelist::Options::Architecture'):
         cnf['Filelist::Options::Architecture'] = ','.join(architectures)
     cnf['Filelist::Options::Help'] = ''
+    cnf['Filelist::Options::Incremental'] = ''
     apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.SubTree("Filelist::Options")
     if Options['Help']:
@@ -187,12 +224,15 @@ def main():
                 try:
                     join.filter_by(arch_id = architecture.arch_id).one()
                     if architecture_name == 'source':
-                        threadpool.queueTask(writeSourceList, (suite, component))
+                        threadpool.queueTask(writeSourceList,
+                            (suite, component, Options['Incremental']))
                     elif architecture_name != 'all':
                         threadpool.queueTask(writeBinaryList,
-                            (suite, component, architecture, 'deb'))
+                            (suite, component, architecture, 'deb',
+                                Options['Incremental']))
                         threadpool.queueTask(writeBinaryList,
-                            (suite, component, architecture, 'udeb'))
+                            (suite, component, architecture, 'udeb',
+                                Options['Incremental']))
                 except:
                     pass
     threadpool.joinAll()
