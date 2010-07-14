@@ -181,7 +181,7 @@ Create filename lists for apt-ftparchive.
 ARCH, COMPONENT and SUITE can be comma (or space) separated list, e.g.
     --suite=testing,unstable
 
-Incremental mode appends only newer files to exising lists."""
+Incremental mode appends only newer files to existing lists."""
     sys.exit()
 
 def main():
