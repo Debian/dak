@@ -74,6 +74,13 @@ function do_buildd () {
     fi
 }
 
+function do_dists () {
+    cd $configdir
+    dak generate-filelist -i
+    GZIP='--rsyncable' ; export GZIP
+    dak generate-packages-sources
+}
+
 ########################################################################
 # the actual unchecked functions follow                                #
 ########################################################################
@@ -96,4 +103,5 @@ do_unchecked
 if [ ! -z "$changes" ]; then
     sync_debbugs
     do_buildd
+    do_dists
 fi
