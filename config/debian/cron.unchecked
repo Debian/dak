@@ -103,5 +103,7 @@ do_unchecked
 if [ ! -z "$changes" ]; then
     sync_debbugs
     do_buildd
+    echo "Starting g-p-s: $(date +%H:%M:%S)"
     do_dists
+    echo "Done with g-p-s: $(date +%H:%M:%S)"
 fi
