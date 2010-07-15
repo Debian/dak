@@ -191,14 +191,15 @@ def main():
                  ('c', "component",    "Filelist::Options::Component", "HasArg"),
                  ('a', "architecture", "Filelist::Options::Architecture", "HasArg"),
                  ('i', "incremental",  "Filelist::Options::Incremental")]
-    query_suites = DBConn().session().query(Suite)
+    session = DBConn().session()
+    query_suites = session.query(Suite)
     suites = [suite.suite_name for suite in query_suites.all()]
     if not cnf.has_key('Filelist::Options::Suite'):
         cnf['Filelist::Options::Suite'] = ','.join(suites)
     # we can ask the database for components if 'mixed' is gone
     if not cnf.has_key('Filelist::Options::Component'):
         cnf['Filelist::Options::Component'] = 'main,contrib,non-free'
-    query_architectures = DBConn().session().query(Architecture)
+    query_architectures = session.query(Architecture)
     architectures = \
         [architecture.arch_string for architecture in query_architectures.all()]
     if not cnf.has_key('Filelist::Options::Architecture'):
@@ -209,7 +210,6 @@ def main():
     Options = cnf.SubTree("Filelist::Options")
     if Options['Help']:
         usage()
-    session = DBConn().session()
     suite_arch = session.query(SuiteArchitecture)
     threadpool = ThreadPool()
     for suite_name in utils.split_args(Options['Suite']):
