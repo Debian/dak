@@ -76,7 +76,7 @@ function do_buildd () {
 
 function do_dists () {
     cd $configdir
-    dak generate-filelist -i
+    dak generate-filelist
     GZIP='--rsyncable' ; export GZIP
     dak generate-packages-sources
 }
