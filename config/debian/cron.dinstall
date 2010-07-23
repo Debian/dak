@@ -238,9 +238,6 @@ GO=(
 )
 stage $GO
 
-rm -f "$LOCK_ACCEPTED"
-rm -f "$LOCK_NEW"
-
 state "indices"
 
 GO=(
@@ -384,6 +381,8 @@ GO=(
 )
 stage $GO
 
+rm -f "$LOCK_ACCEPTED"
+rm -f "$LOCK_NEW"
 rm -f "${LOCK_DAILY}"
 
 ts "locked part finished"
