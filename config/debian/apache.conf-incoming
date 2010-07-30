@@ -1,6 +1,7 @@
 <VirtualHost *:80>
   ServerName incoming.debian.org
   DocumentRoot /srv/incoming.debian.org/public
+
   # deny by default
   <Directory />
     Order allow,deny
@@ -133,13 +134,15 @@
   # powerpc
     # static-72-66-115-54.washdc.fios.verizon.net
     allow from 72.66.115.54
-    # malo
-    allow from 140.211.166.27
     # praetorius
     allow from 130.239.18.121
     # purcell
     allow from 82.195.75.69
     allow from 2001:41b8:202:deb:20a:95ff:fe6c:3c02
+    # poulenc
+    allow from 144.32.168.77
+    # porpora
+    allow from 144.32.168.78
   # s390
     # debian01.zseries
     allow from 195.243.109.161
@@ -177,7 +180,6 @@
 # dynamics use password auth
     AuthType Basic
     AuthName "incoming.debian.org"
-    # We do not like passwords, unless for good reason.
     AuthUserFile /srv/incoming.debian.org/htpasswd
     require valid-user
     satisfy any
