@@ -40,6 +40,12 @@
     allow from 2001:648:2ffc:deb:214:22ff:feb2:2370
     # brahms
     Allow from 206.12.19.115
+    # vitry (archive rebuild)
+    allow from 194.177.211.206
+    allow from 2001:648:2ffc:deb:214:22ff:feb2:122c
+    # krenek (archive rebuild)
+    allow from 194.177.211.207
+    allow from 2001:648:2ffc:deb:214:22ff:feb1:ff56
   # arm
     # netwinder
     allow from 192.133.104.24
