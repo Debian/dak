@@ -68,6 +68,14 @@
     allow from 157.193.39.233
     # ancina
     allow from 157.193.39.13
+    # arnold
+    allow from 217.140.96.57
+    # alain
+    allow from 217.140.96.58
+    # alwyn
+    allow from 217.140.96.59
+    # antheil
+    allow from 217.140.96.60
   # hppa
     # sarti
     allow from 193.201.200.199
