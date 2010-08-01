@@ -775,7 +775,7 @@ class Upload(object):
         location = cnf["Dir::Pool"]
         l = get_location(location, entry["component"], session=session)
         if l is None:
-            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %)" % entry["component"])
+            self.rejects.append("[INTERNAL ERROR] couldn't determine location (Component: %s)" % entry["component"])
             entry["location id"] = -1
         else:
             entry["location id"] = l.location_id
