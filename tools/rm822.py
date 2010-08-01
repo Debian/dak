@@ -32,13 +32,13 @@ for removal in removals:
                 if element[2].find('source') > 0:
                     sources.append(' %s_%s' % tuple(elem.strip(' ') for elem in element[:2]))
                     element[2] = re.sub('source\s?,?', '', element[2]).strip(' ')
-                if len(element[2]):
+                if element[2]:
                     binaries.append(' %s_%s [%s]' % tuple(elem.strip(' ') for elem in element))
-    if len(sources):
+    if sources:
         print 'Sources:'
         for source in sources:
             print source
-    if len(binaries):
+    if binaries:
         print 'Binaries:'
         for binary in binaries:
             print binary

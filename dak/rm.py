@@ -520,19 +520,19 @@ def main ():
                 if element[2].find("source") > 0:
                     sources.append("%s_%s" % tuple(elem.strip(" ") for elem in element[:2]))
                     element[2] = sub("source\s?,?", "", element[2]).strip(" ")
-                if len(element[2]):
+                if element[2]:
                     binaries.append("%s_%s [%s]" % tuple(elem.strip(" ") for elem in element))
-    if len(sources):
+    if sources:
         logfile822.write("Sources:\n")
         for source in sources:
             logfile822.write(" %s\n" % source)
-    if len(binaries):
+    if binaries:
         logfile822.write("Binaries:\n")
         for binary in binaries:
             logfile822.write(" %s\n" % binary)
-    logfile822.write("Reason: %s\n" % (Options["Reason"]))
+    logfile822.write("Reason: %s\n" % Options["Reason"])
     if Options["Done"]:
-        logfile822.write("Bug: %s\n" % (Options["Done"]))
+        logfile822.write("Bug: %s\n" % Options["Done"])
     logfile822.write("\n")
     logfile822.flush()
     logfile822.close()
