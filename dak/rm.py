@@ -530,7 +530,7 @@ def main ():
         logfile822.write("Binaries:\n")
         for binary in binaries:
             logfile822.write(" %s\n" % binary)
-    logfile822.write("Reason: %s\n" % Options["Reason"])
+    logfile822.write("Reason: %s\n" % Options["Reason"].replace('\n', '\n '))
     if Options["Done"]:
         logfile822.write("Bug: %s\n" % Options["Done"])
     logfile822.write("\n")
