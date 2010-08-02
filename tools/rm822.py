@@ -42,7 +42,7 @@ for removal in removals:
         print 'Binaries:'
         for binary in binaries:
             print binary
-    print 'Reason: %s' % reason
+    print 'Reason: %s' % reason.replace('\n', '\n ')
     if bug:
         print 'Bug: %s' % bug.group(1)
     print
