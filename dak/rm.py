@@ -44,6 +44,7 @@ import os
 import sys
 import apt_pkg
 import apt_inst
+from re import sub
 
 from daklib.config import Config
 from daklib.dbconn import *
@@ -504,6 +505,37 @@ def main ():
     logfile.write("\n------------------- Reason -------------------\n%s\n" % (Options["Reason"]))
     logfile.write("----------------------------------------------\n")
     logfile.flush()
+
+    # Do the same in rfc822 format
+    logfile822 = utils.open_file(cnf["Rm::LogFile822"], 'a')
+    logfile822.write("Date: %s\n" % date)
+    logfile822.write("Ftpmaster: %s\n" % whoami)
+    logfile822.write("Suite: %s\n" % suites_list)
+    sources = []
+    binaries = []
+    for package in summary.split("\n"):
+        for row in package.split("\n"):
+            element = row.split("|")
+            if len(element) == 3:
+                if element[2].find("source") > 0:
+                    sources.append("%s_%s" % tuple(elem.strip(" ") for elem in element[:2]))
+                    element[2] = sub("source\s?,?", "", element[2]).strip(" ")
+                if element[2]:
+                    binaries.append("%s_%s [%s]" % tuple(elem.strip(" ") for elem in element))
+    if sources:
+        logfile822.write("Sources:\n")
+        for source in sources:
+            logfile822.write(" %s\n" % source)
+    if binaries:
+        logfile822.write("Binaries:\n")
+        for binary in binaries:
+            logfile822.write(" %s\n" % binary)
+    logfile822.write("Reason: %s\n" % Options["Reason"].replace('\n', '\n '))
+    if Options["Done"]:
+        logfile822.write("Bug: %s\n" % Options["Done"])
+    logfile822.write("\n")
+    logfile822.flush()
+    logfile822.close()
 
     dsc_type_id = get_override_type('dsc', session).overridetype_id
     deb_type_id = get_override_type('deb', session).overridetype_id
