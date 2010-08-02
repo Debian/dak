@@ -35,15 +35,17 @@
     allow from 213.188.99.214
     allow from 213.188.99.208
   # amd64
-    # fivetimesnine.de - fs
-    allow from 194.0.163.247
-    # excelsior
-    allow from 77.243.184.66
-    # thukydides, HE
-    allow from 78.47.240.182
     # barber
     allow from 194.177.211.203
     allow from 2001:648:2ffc:deb:214:22ff:feb2:2370
+    # brahms
+    Allow from 206.12.19.115
+    # vitry (archive rebuild)
+    allow from 194.177.211.206
+    allow from 2001:648:2ffc:deb:214:22ff:feb2:122c
+    # krenek (archive rebuild)
+    allow from 194.177.211.207
+    allow from 2001:648:2ffc:deb:214:22ff:feb1:ff56
   # arm
     # netwinder
     allow from 192.133.104.24
@@ -95,14 +97,8 @@
     # back / mozart (xen domains; NOT .debian.org)
     allow from 80.87.129.151
   # i386
-    # puccini
-    Allow from 87.106.4.56
-    # brahms
-    Allow from 206.12.19.115
     # murphy
     Allow from 70.103.162.31
-    # demosthenes, HE
-    allow from 78.47.223.98
     # biber
     allow from 194.177.211.204
     allow from 2001:648:2ffc:deb:214:22ff:feb2:1268
@@ -111,8 +107,6 @@
     allow from 193.201.200.200
     # mundi
     allow from 192.25.206.62
-    # zx6000.gag.com
-    allow from 192.133.104.50
     # alkman
     allow from 192.25.206.63
   # mips
@@ -144,9 +138,6 @@
     allow from 72.66.115.54
     # praetorius
     allow from 130.239.18.121
-    # purcell
-    allow from 82.195.75.69
-    allow from 2001:41b8:202:deb:20a:95ff:fe6c:3c02
     # poulenc
     allow from 144.32.168.77
     # porpora
