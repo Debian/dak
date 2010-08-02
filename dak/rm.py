@@ -119,6 +119,12 @@ def reverse_depends_check(removals, suites, arches=None):
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
                 utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
+            # Also check for udebs
+            filename = "%s/dists/%s/%s/debian-installer/binary-%s/Packages.gz" % (cnf["Dir::Root"], suites[0], component, architecture)
+            if os.path.exists(filename):
+                (result, output) = commands.getstatusoutput("gunzip -c %s >> %s" % (filename, temp_filename))
+                if (result != 0):
+                    utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
             packages = utils.open_file(temp_filename)
             Packages = apt_pkg.ParseTagFile(packages)
             while Packages.Step():
