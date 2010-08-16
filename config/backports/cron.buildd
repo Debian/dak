@@ -4,8 +4,8 @@
 # stolen from newraff and adjusted by aba on 2005-04-30
 #exit 0
 
-export SCRIPTVARS=/org/backports.org/dak-config/vars
+export SCRIPTVARS=/srv/backports-master.debian.org/config/backports/vars
 . $SCRIPTVARS
-#ssh -i $base/s3kr1t/dot-ssh/id_rsa wanna-build@wanna-build.farm.ftbfs.de echo broken
+
 ssh -i $base/s3kr1t/dot-ssh/id_rsa wbadm@buildd.debian.org echo broken
 exit 0

@@ -4,7 +4,7 @@
 
 # WARNING: spaces in filenames/paths considered harmful.
 
-export SCRIPTVARS=/org/backports.org/dak/config/backports.org/vars
+export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports.org/vars
 . $SCRIPTVARS
 
 cd ${configdir}

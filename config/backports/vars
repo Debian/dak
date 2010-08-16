@@ -1,6 +1,6 @@
 # locations used by many scripts
 
-base=/org/backports.org
+base=/srv/backports-master.debian.org
 ftpdir=$base/ftp/
 webdir=$base/web
 
@@ -37,9 +37,9 @@ suites="lenny-backports"
 override_types="deb dsc udeb"
 
 # temporary fix only!
-# export TMP=/org/backports.org/tmp
-# export TEMP=/org/backports.org/tmp
-# export TMPDIR==/org/backports.org/tmp
+# export TMP=/srv/backports-master.debian.org/tmp
+# export TEMP=/srv/backports-master.debian.org/tmp
+# export TMPDIR==/srv/backports-master.debian.org/tmp
 
 PATH=$masterdir:$PATH
 umask 022

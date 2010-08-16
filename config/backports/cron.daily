@@ -3,7 +3,7 @@
 # Executed daily via cron, out of katie's crontab.
 
 set -e
-export SCRIPTVARS=/org/backports.org/dak-config/vars
+export SCRIPTVARS=/srv/backports-master.debian.org/config/backports/vars
 . $SCRIPTVARS
 
 ################################################################################
@@ -12,8 +12,8 @@ dak clean-suites
 dak clean-queues
 
 # Send a report on NEW/BYHAND packages
-dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@backports.org
+dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@backports.debian.org
 # and one on crufty packages
-dak cruft-report | tee $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@backports.org
+dak cruft-report | tee $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@backports.debian.org
 
 echo Daily cron scripts successful.

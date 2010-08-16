@@ -1,6 +1,6 @@
 #! /bin/sh
 set -e
-export SCRIPTVARS=/org/backports.org/dak-config/vars
+export SCRIPTVARS=/srv/backports-master.debian.org/config/backports/vars
 . $SCRIPTVARS
 
 LOCKFILE="$lockdir/unchecked.lock"

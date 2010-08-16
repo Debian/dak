@@ -1,6 +1,6 @@
-This file maps each file available in the backports.org archive system to
-the package from which it originates.  It includes packages from the
-DIST distribution for the ARCH architecture.
+This file maps each file available in the backports.debian.org archive
+system to the package from which it originates.  It includes packages
+from the DIST distribution for the ARCH architecture.
 
 You can use this list to determine which package contains a specific
 file, or whether or not a specific file is available.  The list is
