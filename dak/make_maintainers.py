@@ -30,20 +30,20 @@ Generate Maintainers file used by e.g. the Debian Bug Tracking System
 
 ################################################################################
 
-import pg
 import sys
 import apt_pkg
-from daklib import database
+
+from daklib.config import Config
+from daklib.dbconn import *
 from daklib import utils
+from daklib import textutils
 from daklib.regexes import re_comments
 
 ################################################################################
 
-Cnf = None                          #: Configuration, apt_pkg.Configuration
-projectB = None                     #: database connection, pgobject
 maintainer_from_source_cache = {}   #: caches the maintainer name <email> per source_id
 packages = {}                       #: packages data to write out
-fixed_maintainer_cache = {}         #: caches fixed ( L{daklib.utils.fix_maintainer} ) maintainer data
+fixed_maintainer_cache = {}         #: caches fixed ( L{daklib.textutils.fix_maintainer} ) maintainer data
 
 ################################################################################
 
@@ -51,6 +51,7 @@ def usage (exit_code=0):
     print """Usage: dak make-maintainers [OPTION] EXTRA_FILE[...]
 Generate an index of packages <=> Maintainers.
 
+  -u, --uploaders            create uploaders index
   -h, --help                 show this help and exit
 """
     sys.exit(exit_code)
@@ -62,7 +63,7 @@ def fix_maintainer (maintainer):
     Fixup maintainer entry, cache the result.
 
     @type maintainer: string
-    @param maintainer: A maintainer entry as passed to L{daklib.utils.fix_maintainer}
+    @param maintainer: A maintainer entry as passed to L{daklib.textutils.fix_maintainer}
 
     @rtype: tuple
     @returns: fixed maintainer tuple
@@ -70,11 +71,11 @@ def fix_maintainer (maintainer):
     global fixed_maintainer_cache
 
     if not fixed_maintainer_cache.has_key(maintainer):
-        fixed_maintainer_cache[maintainer] = utils.fix_maintainer(maintainer)[0]
+        fixed_maintainer_cache[maintainer] = textutils.fix_maintainer(maintainer)[0]
 
     return fixed_maintainer_cache[maintainer]
 
-def get_maintainer (maintainer):
+def get_maintainer(maintainer, session):
     """
     Retrieves maintainer name from database, passes it through fix_maintainer and
     passes on whatever that returns.
@@ -82,9 +83,10 @@ def get_maintainer (maintainer):
     @type maintainer: int
     @param maintainer: maintainer_id
     """
-    return fix_maintainer(database.get_maintainer(maintainer))
+    q = session.execute("SELECT name FROM maintainer WHERE id = :id", {'id': maintainer}).fetchall()
+    return fix_maintainer(q[0][0])
 
-def get_maintainer_from_source (source_id):
+def get_maintainer_from_source(source_id, session):
     """
     Returns maintainer name for given source_id.
 
@@ -97,8 +99,10 @@ def get_maintainer_from_source (source_id):
     global maintainer_from_source_cache
 
     if not maintainer_from_source_cache.has_key(source_id):
-        q = projectB.query("SELECT m.name FROM maintainer m, source s WHERE s.id = %s and s.maintainer = m.id" % (source_id))
-        maintainer = q.getresult()[0][0]
+        q = session.execute("""SELECT m.name FROM maintainer m, source s
+                                WHERE s.id = :sourceid AND s.maintainer = m.id""",
+                            {'sourceid': source_id})
+        maintainer = q.fetchall()[0][0]
         maintainer_from_source_cache[source_id] = fix_maintainer(maintainer)
 
     return maintainer_from_source_cache[source_id]
@@ -106,59 +110,100 @@ def get_maintainer_from_source (source_id):
 ################################################################################
 
 def main():
-    global Cnf, projectB
+    cnf = Config()
 
-    Cnf = utils.get_conf()
+    Arguments = [('h',"help","Make-Maintainers::Options::Help"),
+                 ('u',"uploaders","Make-Maintainers::Options::Uploaders")]
+    if not cnf.has_key("Make-Maintainers::Options::Help"):
+        cnf["Make-Maintainers::Options::Help"] = ""
+    if not cnf.has_key("Make-Maintainers::Options::Uploaders"):
+        cnf["Make-Maintainers::Options::Uploaders"] = ""
 
-    Arguments = [('h',"help","Make-Maintainers::Options::Help")]
-    if not Cnf.has_key("Make-Maintainers::Options::Help"):
-        Cnf["Make-Maintainers::Options::Help"] = ""
-
-    extra_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Make-Maintainers::Options")
+    extra_files = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Make-Maintainers::Options")
 
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    gen_uploaders = False
+    if Options["Uploaders"]:
+        gen_uploaders = True
 
-    for suite in Cnf.SubTree("Suite").List():
+    session = DBConn().session()
+
+    for suite in cnf.SubTree("Suite").List():
         suite = suite.lower()
-        suite_priority = int(Cnf["Suite::%s::Priority" % (suite)])
+        suite_priority = int(cnf["Suite::%s::Priority" % (suite)])
 
         # Source packages
-        q = projectB.query("SELECT s.source, s.version, m.name FROM src_associations sa, source s, suite su, maintainer m WHERE su.suite_name = '%s' AND sa.suite = su.id AND sa.source = s.id AND m.id = s.maintainer" % (suite))
-        sources = q.getresult()
-        for source in sources:
+        if gen_uploaders:
+            q = session.execute("""SELECT s.source, s.version, m.name
+                                     FROM src_associations sa, source s, suite su, maintainer m, src_uploaders srcu
+                                    WHERE su.suite_name = :suite_name
+                                      AND sa.suite = su.id AND sa.source = s.id
+                                      AND m.id = srcu.maintainer
+                                      AND srcu.source = s.id""",
+                                    {'suite_name': suite})
+        else:
+            q = session.execute("""SELECT s.source, s.version, m.name
+                                     FROM src_associations sa, source s, suite su, maintainer m
+                                    WHERE su.suite_name = :suite_name
+                                      AND sa.suite = su.id AND sa.source = s.id
+                                      AND m.id = s.maintainer""",
+                                    {'suite_name': suite})
+
+        for source in q.fetchall():
             package = source[0]
             version = source[1]
             maintainer = fix_maintainer(source[2])
-            if packages.has_key(package):
-                if packages[package]["priority"] <= suite_priority:
-                    if apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
-                        packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
+            if gen_uploaders:
+                key = (package, maintainer)
             else:
-                packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
+                key = package
+
+            if packages.has_key(key):
+                if packages[key]["priority"] <= suite_priority:
+                    if apt_pkg.VersionCompare(packages[key]["version"], version) < 0:
+                        packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
+            else:
+                packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
 
         # Binary packages
-        q = projectB.query("SELECT b.package, b.source, b.maintainer, b.version FROM bin_associations ba, binaries b, suite s WHERE s.suite_name = '%s' AND ba.suite = s.id AND ba.bin = b.id" % (suite))
-        binaries = q.getresult()
-        for binary in binaries:
+        if gen_uploaders:
+            q = session.execute("""SELECT b.package, b.source, srcu.maintainer, b.version
+                                     FROM bin_associations ba, binaries b, suite s, src_uploaders srcu
+                                    WHERE s.suite_name = :suite_name
+                                      AND ba.suite = s.id AND ba.bin = b.id
+                                      AND b.source = srcu.source""",
+                                   {'suite_name': suite})
+        else:
+            q = session.execute("""SELECT b.package, b.source, b.maintainer, b.version
+                                     FROM bin_associations ba, binaries b, suite s
+                                    WHERE s.suite_name = :suite_name
+                                      AND ba.suite = s.id AND ba.bin = b.id""",
+                                   {'suite_name': suite})
+
+
+        for binary in q.fetchall():
             package = binary[0]
             source_id = binary[1]
             version = binary[3]
             # Use the source maintainer first; falling back on the binary maintainer as a last resort only
-            if source_id:
-                maintainer = get_maintainer_from_source(source_id)
+            if source_id and not gen_uploaders:
+                maintainer = get_maintainer_from_source(source_id, session)
             else:
-                maintainer = get_maintainer(binary[2])
-            if packages.has_key(package):
-                if packages[package]["priority"] <= suite_priority:
-                    if apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
-                        packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
+                maintainer = get_maintainer(binary[2], session)
+            if gen_uploaders:
+                key = (package, maintainer)
             else:
-                packages[package] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
+                key = package
+
+            if packages.has_key(key):
+                if packages[key]["priority"] <= suite_priority:
+                    if apt_pkg.VersionCompare(packages[key]["version"], version) < 0:
+                        packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
+            else:
+                packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
 
     # Process any additional Maintainer files (e.g. from pseudo packages)
     for filename in extra_files:
@@ -175,17 +220,27 @@ def main():
             else:
                 package = lhs
                 version = '*'
+            if not gen_uploaders:
+                key = package
+            else:
+                key = (package, maintainer)
             # A version of '*' overwhelms all real version numbers
-            if not packages.has_key(package) or version == '*' \
-               or apt_pkg.VersionCompare(packages[package]["version"], version) < 0:
-                packages[package] = { "maintainer": maintainer, "version": version }
+            if not packages.has_key(key) or version == '*' \
+               or apt_pkg.VersionCompare(packages[key]["version"], version) < 0:
+                packages[key] = { "maintainer": maintainer, "version": version }
         extrafile.close()
 
     package_keys = packages.keys()
     package_keys.sort()
-    for package in package_keys:
-        lhs = "~".join([package, packages[package]["version"]])
-        print "%-30s %s" % (lhs, packages[package]["maintainer"])
+    if gen_uploaders:
+        for (package, maintainer) in package_keys:
+            key = (package, maintainer)
+            lhs = "~".join([package, packages[key]["version"]])
+            print "%-30s %s" % (lhs, maintainer)
+    else:
+        for package in package_keys:
+            lhs = "~".join([package, packages[package]["version"]])
+            print "%-30s %s" % (lhs, packages[package]["maintainer"])
 
 ################################################################################
 

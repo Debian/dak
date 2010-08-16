@@ -40,6 +40,7 @@ RULES = [
     # keep 14 days, all each day
     # keep 31 days, 1 each 7th day
     # keep 365 days, 1 each 31th day
+    # keep 3650 days, 1 each 365th day
 ]
 
 TODAY = datetime.today()

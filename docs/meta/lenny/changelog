@@ -1,0 +1,13 @@
+ftpmaster-lenny (1.1) unstable; urgency=low
+
+  * Add procmail, we use lockfile from it.
+  * Add python-magic and unp
+
+ -- Joerg Jaspert <joerg@debian.org>  Sat, 27 Feb 2010 10:53:24 +0100
+
+ftpmaster-lenny (1.0) unstable; urgency=low
+
+  * New "package", to help DSA
+
+ -- Joerg Jaspert <joerg@debian.org>  Mon, 09 Mar 2009 14:09:09 +0100
+

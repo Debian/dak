@@ -25,16 +25,14 @@
 ## That Alisha Rules The World
 ################################################################################
 
-import pg, sys
+import os
+import sys
 import apt_pkg
-from daklib import logging
-from daklib import database
+
+from daklib.config import Config
+from daklib.dbconn import *
+from daklib import daklog
 from daklib import utils
-
-################################################################################
-
-Cnf = None
-projectB = None
 
 ################################################################################
 
@@ -58,9 +56,7 @@ Make microchanges or microqueries of the binary overrides
     sys.exit(exit_code)
 
 def main ():
-    global Cnf, projectB
-
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('h',"help","Override::Options::Help"),
                  ('d',"done","Override::Options::Done", "HasArg"),
@@ -68,19 +64,18 @@ def main ():
                  ('s',"suite","Override::Options::Suite", "HasArg"),
                  ]
     for i in ["help", "no-action"]:
-        if not Cnf.has_key("Override::Options::%s" % (i)):
-            Cnf["Override::Options::%s" % (i)] = ""
-    if not Cnf.has_key("Override::Options::Suite"):
-        Cnf["Override::Options::Suite"] = "unstable"
+        if not cnf.has_key("Override::Options::%s" % (i)):
+            cnf["Override::Options::%s" % (i)] = ""
+    if not cnf.has_key("Override::Options::Suite"):
+        cnf["Override::Options::Suite"] = "unstable"
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Override::Options")
+    arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Override::Options")
 
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    session = DBConn().session()
 
     if not arguments:
         utils.fubar("package name is a required argument.")
@@ -93,15 +88,15 @@ def main ():
     if arguments and len(arguments) == 1:
         # Determine if the argument is a priority or a section...
         arg = arguments.pop()
-        q = projectB.query("""
-        SELECT ( SELECT COUNT(*) FROM section WHERE section=%s ) AS secs,
-               ( SELECT COUNT(*) FROM priority WHERE priority=%s ) AS prios
-               """ % ( pg._quote(arg,"str"), pg._quote(arg,"str")))
-        r = q.getresult()
+        q = session.execute("""
+        SELECT ( SELECT COUNT(*) FROM section WHERE section = :arg ) AS secs,
+               ( SELECT COUNT(*) FROM priority WHERE priority = :arg ) AS prios
+               """, {'arg': arg})
+        r = q.fetchall()
         if r[0][0] == 1:
-            arguments = (arg,".")
+            arguments = (arg, ".")
         elif r[0][1] == 1:
-            arguments = (".",arg)
+            arguments = (".", arg)
         else:
             utils.fubar("%s is not a valid section or priority" % (arg))
 
@@ -111,42 +106,44 @@ def main ():
         eqdsc = '!='
         if packagetype == 'source':
             eqdsc = '='
-        q = projectB.query("""
+        q = session.execute("""
     SELECT priority.priority AS prio, section.section AS sect, override_type.type AS type
       FROM override, priority, section, suite, override_type
      WHERE override.priority = priority.id
        AND override.type = override_type.id
        AND override_type.type %s 'dsc'
        AND override.section = section.id
-       AND override.package = %s
+       AND override.package = :package
        AND override.suite = suite.id
-       AND suite.suite_name = %s
-        """ % (eqdsc, pg._quote(package,"str"), pg._quote(suite,"str")))
+       AND suite.suite_name = :suite
+        """ % (eqdsc), {'package': package, 'suite': suite})
 
-        if q.ntuples() == 0:
+        if q.rowcount == 0:
             continue
-        if q.ntuples() > 1:
+        if q.rowcount > 1:
             utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
 
-        r = q.getresult()
+        r = q.fetchone()
         if packagetype == 'binary':
-            oldsection = r[0][1]
-            oldpriority = r[0][0]
+            oldsection = r[1]
+            oldpriority = r[0]
         else:
-            oldsourcesection = r[0][1]
+            oldsourcesection = r[1]
             oldpriority = 'source'
 
     if not oldpriority and not oldsourcesection:
         utils.fubar("Unable to find package %s" % (package))
+
     if oldsection and oldsourcesection and oldsection != oldsourcesection:
         # When setting overrides, both source & binary will become the same section
         utils.warn("Source is in section '%s' instead of '%s'" % (oldsourcesection, oldsection))
+
     if not oldsection:
         oldsection = oldsourcesection
 
     if not arguments:
         print "%s is in section '%s' at priority '%s'" % (
-            package,oldsection,oldpriority)
+            package, oldsection, oldpriority)
         sys.exit(0)
 
     # At this point, we have a new section and priority... check they're valid...
@@ -157,19 +154,15 @@ def main ():
     if newpriority == ".":
         newpriority = oldpriority
 
-    q = projectB.query("SELECT id FROM section WHERE section=%s" % (
-        pg._quote(newsection,"str")))
-
-    if q.ntuples() == 0:
+    s = get_section(newsection, session)
+    if s is None:
         utils.fubar("Supplied section %s is invalid" % (newsection))
-    newsecid = q.getresult()[0][0]
+    newsecid = s.section_id
 
-    q = projectB.query("SELECT id FROM priority WHERE priority=%s" % (
-        pg._quote(newpriority,"str")))
-
-    if q.ntuples() == 0:
+    p = get_priority(newpriority, session)
+    if p is None:
         utils.fubar("Supplied priority %s is invalid" % (newpriority))
-    newprioid = q.getresult()[0][0]
+    newprioid = p.priority_id
 
     if newpriority == oldpriority and newsection == oldsection:
         print "I: Doing nothing"
@@ -191,6 +184,7 @@ def main ():
 
     if newpriority != oldpriority:
         print "I: Will change priority from %s to %s" % (oldpriority,newpriority)
+
     if newsection != oldsection:
         print "I: Will change section from %s to %s" % (oldsection,newsection)
 
@@ -202,50 +196,53 @@ def main ():
 
     game_over()
 
-    Logger = logging.Logger(Cnf, "override")
+    Logger = daklog.Logger(cnf.Cnf, "override")
 
-    projectB.query("BEGIN WORK")
+    dsc_otype_id = get_override_type('dsc').overridetype_id
+
+    # We're already in a transaction
     # We're in "do it" mode, we have something to do... do it
     if newpriority != oldpriority:
-        q = projectB.query("""
+        session.execute("""
         UPDATE override
-           SET priority=%d
-         WHERE package=%s
-           AND override.type != %d
-           AND suite = (SELECT id FROM suite WHERE suite_name=%s)""" % (
-            newprioid,
-            pg._quote(package,"str"), database.get_override_type_id("dsc"),
-            pg._quote(suite,"str") ))
-        Logger.log(["changed priority",package,oldpriority,newpriority])
+           SET priority = :newprioid
+         WHERE package = :package
+           AND override.type != :otypedsc
+           AND suite = (SELECT id FROM suite WHERE suite_name = :suite)""",
+           {'newprioid': newprioid, 'package': package,
+            'otypedsc':  dsc_otype_id, 'suite': suite})
+
+        Logger.log(["changed priority", package, oldpriority, newpriority])
 
     if newsection != oldsection:
-        q = projectB.query("""
+        q = session.execute("""
         UPDATE override
-           SET section=%d
-         WHERE package=%s
-           AND suite = (SELECT id FROM suite WHERE suite_name=%s)""" % (
-            newsecid,
-            pg._quote(package,"str"),
-            pg._quote(suite,"str") ))
-        Logger.log(["changed section",package,oldsection,newsection])
-    projectB.query("COMMIT WORK")
+           SET section = :newsecid
+         WHERE package = :package
+           AND suite = (SELECT id FROM suite WHERE suite_name = :suite)""",
+           {'newsecid': newsecid, 'package': package,
+            'suite': suite})
+
+        Logger.log(["changed section", package, oldsection, newsection])
+
+    session.commit()
 
     if Options.has_key("Done"):
         Subst = {}
-        Subst["__OVERRIDE_ADDRESS__"] = Cnf["Override::MyEmailAddress"]
-        Subst["__BUG_SERVER__"] = Cnf["Dinstall::BugServer"]
+        Subst["__OVERRIDE_ADDRESS__"] = cnf["Override::MyEmailAddress"]
+        Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
         bcc = []
-        if Cnf.Find("Dinstall::Bcc") != "":
-            bcc.append(Cnf["Dinstall::Bcc"])
-        if Cnf.Find("Override::Bcc") != "":
-            bcc.append(Cnf["Override::Bcc"])
+        if cnf.Find("Dinstall::Bcc") != "":
+            bcc.append(cnf["Dinstall::Bcc"])
+        if cnf.Find("Override::Bcc") != "":
+            bcc.append(cnf["Override::Bcc"])
         if bcc:
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
             Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak override\nX-Katie: alicia"
-        Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
-        Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
+        Subst["__CC__"] = "Cc: " + package + "@" + cnf["Dinstall::PackagesServer"] + "\nX-DAK: dak override"
+        Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
+        Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
         Subst["__WHOAMI__"] = utils.whoami()
         Subst["__SOURCE__"] = package
 
@@ -257,16 +254,14 @@ def main ():
             summary += "Changed section from %s to %s\n" % (oldsection,newsection)
         Subst["__SUMMARY__"] = summary
 
+        template = os.path.join(cnf["Dir::Templates"], "override.bug-close")
         for bug in utils.split_args(Options["Done"]):
             Subst["__BUG_NUMBER__"] = bug
-            mail_message = utils.TemplateSubst(
-                Subst,Cnf["Dir::Templates"]+"/override.bug-close")
+            mail_message = utils.TemplateSubst(Subst, template)
             utils.send_mail(mail_message)
-            Logger.log(["closed bug",bug])
+            Logger.log(["closed bug", bug])
 
     Logger.close()
-
-    print "Done"
 
 #################################################################################
 

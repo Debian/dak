@@ -1,11 +1,12 @@
 # locations used by many scripts
 
-base=/srv/ftp.debian.org
+base=/srv/ftp-master.debian.org
+public=/srv/ftp.debian.org
 bindir=$base/bin
 ftpdir=$base/ftp
-webdir=$base/web
+webdir=$public/web
 indices=$ftpdir/indices
-archs="alpha amd64 arm armel hppa hurd-i386 i386 ia64 mips mipsel powerpc s390 sparc"
+archs="alpha amd64 arm armel hppa hurd-i386 i386 ia64 mips mipsel powerpc s390 sparc kfreebsd-i386 kfreebsd-amd64 "
 
 scriptdir=$base/scripts
 masterdir=$base/dak/
@@ -23,6 +24,7 @@ unchecked=$queuedir/unchecked/
 accepted=$queuedir/accepted/
 mirrordir=$base/mirror/
 incoming=$base/incoming
+newstage=$queuedir/newstage/
 
 ftpgroup=debadmin
 
@@ -31,3 +33,5 @@ copyoverrides="etch.contrib etch.contrib.src etch.main etch.main.src etch.non-fr
 PATH=$masterdir:$PATH
 umask 022
 
+# Set the database variables
+eval $(dak admin config db-shell)

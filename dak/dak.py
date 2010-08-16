@@ -33,48 +33,15 @@ G{importgraph}
 
 ################################################################################
 
-import sys, imp
-import daklib.utils, daklib.extensions
+import os
+import sys
+import traceback
+import daklib.utils
+import warnings
 
-################################################################################
-
-class UserExtension:
-    def __init__(self, user_extension = None):
-        if user_extension:
-            m = imp.load_source("dak_userext", user_extension)
-            d = m.__dict__
-        else:
-            m, d = None, {}
-        self.__dict__["_module"] = m
-        self.__dict__["_d"] = d
-
-    def __getattr__(self, a):
-        if a in self.__dict__: return self.__dict__[a]
-        if a[0] == "_": raise AttributeError, a
-        return self._d.get(a, None)
-
-    def __setattr__(self, a, v):
-        self._d[a] = v
-
-################################################################################
-
-class UserExtension:
-    def __init__(self, user_extension = None):
-        if user_extension:
-            m = imp.load_source("dak_userext", user_extension)
-            d = m.__dict__
-        else:
-            m, d = None, {}
-        self.__dict__["_module"] = m
-        self.__dict__["_d"] = d
-
-    def __getattr__(self, a):
-        if a in self.__dict__: return self.__dict__[a]
-        if a[0] == "_": raise AttributeError, a
-        return self._d.get(a, None)
-
-    def __setattr__(self, a, v):
-        self._d[a] = v
+from daklib.daklog import Logger
+from daklib.config import Config
+from daklib.dak_exceptions import CantOpenError
 
 ################################################################################
 
@@ -101,21 +68,29 @@ def init():
 
         ("process-new",
          "Process NEW and BYHAND packages"),
-        ("process-unchecked",
+        ("process-upload",
          "Process packages in queue/unchecked"),
-        ("process-accepted",
-         "Install packages into the pool"),
+        ("process-policy",
+         "Process packages in policy queues from COMMENTS files"),
 
-        ("make-suite-file-list",
-         "Generate lists of packages per suite for apt-ftparchive"),
+        ("dominate",
+         "Remove obsolete source and binary associations from suites"),
         ("make-pkg-file-mapping",
          "Generate package <-> file mapping"),
+        ("generate-filelist",
+         "Generate file lists for apt-ftparchive"),
         ("generate-releases",
          "Generate Release files"),
+        ("generate-packages-sources",
+         "Generate Packages/Sources files"),
+        ("contents",
+         "Generate content files"),
         ("generate-index-diffs",
          "Generate .diff/Index files"),
         ("clean-suites",
          "Clean unused/superseded packages from the archive"),
+        ("manage-build-queues",
+         "Clean and update metadata for build queues"),
         ("clean-queues",
          "Clean cruft from incoming"),
         ("clean-proposed-updates",
@@ -127,8 +102,6 @@ def init():
          "Override cruft checks"),
         ("check-proposed-updates",
          "Dependency checking for proposed-updates"),
-        ("compare-suites",
-         "Show fixable discrepencies between suites"),
         ("control-overrides",
          "Manipulate/list override entries in bulk"),
         ("control-suite",
@@ -141,14 +114,14 @@ def init():
          "Show information useful for NEW processing"),
         ("find-null-maintainers",
          "Check for users with no packages in the archive"),
-        ("import-archive",
-         "Populate SQL database based from an archive tree"),
         ("import-keyring",
          "Populate fingerprint/uid table based on a new/updated keyring"),
         ("import-ldap-fingerprints",
          "Syncs fingerprint and uid tables with Debian LDAP db"),
         ("import-users-from-passwd",
          "Sync PostgreSQL users with passwd file"),
+        ("admin",
+         "Perform administration on the dak database"),
         ("init-db",
          "Update the database to match the conf file"),
         ("update-db",
@@ -161,8 +134,6 @@ def init():
          "Generates override files"),
         ("poolize",
          "Move packages from dists/ to pool/"),
-        ("reject-proposed-updates",
-         "Manually reject from proposed-updates"),
         ("new-security-install",
          "New way to install a security upload into the archive"),
         ("split-done",
@@ -171,8 +142,12 @@ def init():
          "Generate statistics"),
         ("bts-categorize",
          "Categorize uncategorized bugs filed against ftp.debian.org"),
+        ("import-known-changes",
+         "import old changes files into known_changes table"),
         ("add-user",
          "Add a user to the archive"),
+        ("make-changelog",
+         "Generate changelog between two suites"),
         ]
     return functionality
 
@@ -194,12 +169,11 @@ Available commands:"""
 def main():
     """Launch dak functionality."""
 
-    Cnf = daklib.utils.get_conf()
 
-    if Cnf.has_key("Dinstall::UserExtensions"):
-        userext = UserExtension(Cnf["Dinstall::UserExtensions"])
-    else:
-        userext = UserExtension()
+    try:
+        logger = Logger(Config(), 'dak top-level', print_starting=False)
+    except CantOpenError:
+        logger = None
 
     functionality = init()
     modules = [ command for (command, _) in functionality ]
@@ -235,18 +209,32 @@ def main():
                 daklib.utils.warn("unknown command '%s'" % (cmdname))
                 usage(functionality, 1)
 
+    # We do not care. No idea wth sqlalchemy warns about them, makes no sense,
+    # so we ignore it.
+    warnings.filterwarnings("ignore", 'Predicate of partial index')
+
     # Invoke the module
     module = __import__(cmdname.replace("-","_"))
 
-    module.dak_userext = userext
-    userext.dak_module = module
-
-    daklib.extensions.init(cmdname, module, userext)
-    if userext.init is not None: userext.init(cmdname)
-
-    module.main()
+    try:
+        module.main()
+    except KeyboardInterrupt:
+        msg = 'KeyboardInterrupt caught; exiting'
+        print msg
+        if logger:
+            logger.log([msg])
+        sys.exit(1)
+    except SystemExit:
+        pass
+    except:
+        if logger:
+            for line in traceback.format_exc().split('\n')[:-1]:
+                logger.log(['exception', line])
+        raise
 
 ################################################################################
 
 if __name__ == "__main__":
+    os.environ['LANG'] = 'C'
+    os.environ['LC_ALL'] = 'C'
     main()

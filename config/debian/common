@@ -1,3 +1,4 @@
+# -*- mode:sh -*-
 # log something (basically echo it together with a timestamp)
 #
 # Set $PROGRAM to a string to have it added to the output.
@@ -22,5 +23,69 @@ function log_error () {
 function debug () {
     if [ $DEBUG -eq 1 ]; then
         log "$*"
+    fi
+}
+
+function wbtrigger() {
+    SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
+    if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
+        ssh -q -q ${SSHOPT} wbadm@buildd /org/wanna-build/trigger.often
+    fi
+    rm -f "${LOCK_BUILDD}"
+}
+
+# used by cron.dinstall *and* cron.unchecked.
+function make_buildd_dir () {
+    dak manage-build-queues -a
+
+    for dist in $(ls -1 ${incoming}/dists/); do
+        cd ${incoming}/dists/${dist}
+        mkdir -p tree/${STAMP}
+        cp -al ${incoming}/dists/${dist}/buildd/. tree/${STAMP}/
+        ln -sfT tree/${STAMP} ${incoming}/dists/${dist}/current
+        find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+    done
+
+}
+
+# Do the unchecked processing, in case we have files.
+function do_unchecked () {
+    cd $unchecked
+
+    changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+    report=$queuedir/REPORT
+    timestamp=$(date "+%Y-%m-%d %H:%M")
+    UNCHECKED_WITHOUT_LOCK=${UNCHECKED_WITHOUT_LOCK:-""}
+
+    echo "$timestamp": ${changes:-"Nothing to do"}  >> $report
+    dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
+}
+
+# Do the newstage processing, in case we have files.
+function do_newstage () {
+    cd $newstage
+
+    changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+    report=$queuedir/REPORT
+    timestamp=$(date "+%Y-%m-%d %H:%M")
+    UNCHECKED_WITHOUT_LOCK=${UNCHECKED_WITHOUT_LOCK:-""}
+
+    echo "$timestamp": ${changes:-"Nothing to do in newstage"}  >> $report
+    dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$newstage" >> $report
+}
+
+function sync_debbugs () {
+    # sync with debbugs
+    echo "--" >> $report
+    timestamp=$(date "+%Y-%m-%d-%H:%M")
+    mkdir -p $queuedir/${timestamp}
+    rsync -aq $queuedir/bts_version_track/ $queuedir/bts_version_track_archive/${timestamp}
+    rmdir --ignore-fail-on-non-empty $queuedir/${timestamp} # remove if empty.
+    rsync -aq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30" --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/ 2>/dev/null && touch $lockdir/synced_bts_version || true
+    NOW=$(date +%s)
+    TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
+    DIFF=$(( NOW - TSTAMP ))
+    if [ $DIFF -ge 259200 ]; then
+        log "Kids, you tried your best and you failed miserably. The lesson is, never try. (Homer Simpson)"
     fi
 }

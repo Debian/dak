@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-""" Create all the Release files """
+""" Create all the Release files
 
-# Copyright (C) 2001, 2002, 2006  Anthony Towns <ajt@debian.org>
-
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@Copyright: 2001, 2002, 2006  Anthony Towns <ajt@debian.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -22,17 +25,21 @@
 
 ################################################################################
 
-import sys, os, stat, time, pg
-import gzip, bz2
+import sys
+import os
+import stat
+import time
+import gzip
+import bz2
 import apt_pkg
+
 from daklib import utils
-from daklib import database
 from daklib.dak_exceptions import *
+from daklib.dbconn import *
 
 ################################################################################
 
 Cnf = None
-projectB = None
 out = None
 AptCnf = None
 
@@ -57,6 +64,24 @@ def add_tiffani (files, path, indexstem):
     filepath = "%s/%s" % (path, index)
     if os.path.exists(filepath):
         #print "ALERT: there was a tiffani file %s" % (filepath)
+        files.append(index)
+
+def gen_i18n_index (files, tree, sec):
+    path = Cnf["Dir::Root"] + tree + "/"
+    i18n_path = "%s/i18n" % (sec)
+    if os.path.exists("%s/%s" % (path, i18n_path)):
+        index = "%s/Index" % (i18n_path)
+        out = open("%s/%s" % (path, index), "w")
+        out.write("SHA1:\n")
+        for x in os.listdir("%s/%s" % (path, i18n_path)):
+            if x.startswith('Translation-'):
+                f = open("%s/%s/%s" % (path, i18n_path, x), "r")
+                size = os.fstat(f.fileno())[6]
+                f.seek(0)
+                sha1sum = apt_pkg.sha1sum(f)
+                f.close()
+                out.write(" %s %7d %s\n" % (sha1sum, size, x))
+        out.close()
         files.append(index)
 
 def compressnames (tree,type,file):
@@ -121,10 +146,35 @@ def print_sha1_files (tree, files):
 def print_sha256_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.sha256sum)
 
+def write_release_file (relpath, suite, component, origin, label, arch, version="", suite_suffix="", notautomatic=""):
+    try:
+        if os.access(relpath, os.F_OK):
+            if os.stat(relpath).st_nlink > 1:
+                os.unlink(relpath)
+        release = open(relpath, "w")
+    except IOError:
+        utils.fubar("Couldn't write to " + relpath)
+
+    release.write("Archive: %s\n" % (suite))
+    if version != "":
+        release.write("Version: %s\n" % (version))
+
+    if suite_suffix:
+        release.write("Component: %s/%s\n" % (suite_suffix,component))
+    else:
+        release.write("Component: %s\n" % (component))
+
+    release.write("Origin: %s\n" % (origin))
+    release.write("Label: %s\n" % (label))
+    if notautomatic != "":
+        release.write("NotAutomatic: %s\n" % (notautomatic))
+    release.write("Architecture: %s\n" % (arch))
+    release.close()
+
 ################################################################################
 
 def main ():
-    global Cnf, AptCnf, projectB, out
+    global Cnf, AptCnf, out
     out = sys.stdout
 
     Cnf = utils.get_conf()
@@ -149,38 +199,33 @@ def main ():
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf, Options["Apt-Conf"])
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
-
     if not suites:
         suites = Cnf.SubTree("Suite").List()
 
-    for suite in suites:
-        print "Processing: " + suite
-        SuiteBlock = Cnf.SubTree("Suite::" + suite)
+    for suitename in suites:
+        print "Processing: " + suitename
+        SuiteBlock = Cnf.SubTree("Suite::" + suitename)
+        suiteobj = get_suite(suitename.lower())
+        if not suiteobj:
+            print "ALERT: Cannot find suite %s!" % (suitename.lower())
+            continue
 
-        if SuiteBlock.has_key("Untouchable") and not Options["Force-Touch"]:
+        # Use the canonical name
+        suite = suiteobj.suite_name.lower()
+
+        if suiteobj.untouchable and not Options["Force-Touch"]:
             print "Skipping: " + suite + " (untouchable)"
             continue
 
-        suite = suite.lower()
-
-        origin = SuiteBlock["Origin"]
-        label = SuiteBlock.get("Label", origin)
-        codename = SuiteBlock.get("CodeName", "")
-
+        origin = suiteobj.origin
+        label = suiteobj.label or suiteobj.origin
+        codename = suiteobj.codename or ""
         version = ""
-        description = ""
+        if suiteobj.version and suiteobj.version != '-':
+            version = suiteobj.version
+        description = suiteobj.description or ""
 
-        q = projectB.query("SELECT version, description FROM suite WHERE suite_name = '%s'" % (suite))
-        qs = q.getresult()
-        if len(qs) == 1:
-            if qs[0][0] != "-": version = qs[0][0]
-            if qs[0][1]: description = qs[0][1]
-
-        architectures = database.get_suite_architectures(suite)
-        if architectures == None:
-            architectures = []
+        architectures = get_suite_architectures(suite, skipall=True, skipsrc=True)
 
         if SuiteBlock.has_key("NotAutomatic"):
             notautomatic = "yes"
@@ -212,7 +257,7 @@ def main ():
         print Cnf["Dir::Root"] + tree + "/Release"
         out = open(Cnf["Dir::Root"] + tree + "/Release", "w")
 
-        out.write("Origin: %s\n" % (origin))
+        out.write("Origin: %s\n" % (suiteobj.origin))
         out.write("Label: %s\n" % (label))
         out.write("Suite: %s\n" % (suite))
         if version != "":
@@ -227,7 +272,7 @@ def main ():
 
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
-        out.write("Architectures: %s\n" % (" ".join(filter(utils.real_arch, architectures))))
+        out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
         if components:
             out.write("Components: %s\n" % (" ".join(components)))
 
@@ -237,6 +282,16 @@ def main ():
         files = []
 
         if AptCnf.has_key("tree::%s" % (tree)):
+            if AptCnf.has_key("tree::%s::Contents" % (tree)):
+                pass
+            else:
+                for x in os.listdir("%s/%s" % (Cnf["Dir::Root"], tree)):
+                    if x.startswith('Contents-'):
+                        if x.endswith('.diff'):
+                            files.append("%s/Index" % (x))
+                        else:
+                            files.append(x)
+
             for sec in AptCnf["tree::%s::Sections" % (tree)].split():
                 for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
                     if arch == "source":
@@ -262,30 +317,9 @@ def main ():
                     else:
                         rel = "%s/binary-%s/Release" % (sec, arch)
                     relpath = Cnf["Dir::Root"]+tree+"/"+rel
-
-                    try:
-                        if os.access(relpath, os.F_OK):
-                            if os.stat(relpath).st_nlink > 1:
-                                os.unlink(relpath)
-                        release = open(relpath, "w")
-                        #release = open(longsuite.replace("/","_") + "_" + arch + "_" + sec + "_Release", "w")
-                    except IOError:
-                        utils.fubar("Couldn't write to " + relpath)
-
-                    release.write("Archive: %s\n" % (suite))
-                    if version != "":
-                        release.write("Version: %s\n" % (version))
-                    if suite_suffix:
-                        release.write("Component: %s/%s\n" % (suite_suffix,sec))
-                    else:
-                        release.write("Component: %s\n" % (sec))
-                    release.write("Origin: %s\n" % (origin))
-                    release.write("Label: %s\n" % (label))
-                    if notautomatic != "":
-                        release.write("NotAutomatic: %s\n" % (notautomatic))
-                    release.write("Architecture: %s\n" % (arch))
-                    release.close()
+                    write_release_file(relpath, suite, sec, origin, label, arch, version, suite_suffix, notautomatic)
                     files.append(rel)
+                gen_i18n_index(files, tree, sec)
 
             if AptCnf.has_key("tree::%s/main" % (tree)):
                 for dis in ["main", "contrib", "non-free"]:
@@ -296,6 +330,10 @@ def main ():
 
                     for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
                         if arch != "source":  # always true
+                            rel = "%s/%s/binary-%s/Release" % (dis, sec, arch)
+                            relpath = Cnf["Dir::Root"]+tree+"/"+rel
+                            write_release_file(relpath, suite, dis, origin, label, arch, version, suite_suffix, notautomatic)
+                            files.append(rel)
                             for cfile in compressnames("tree::%s/%s" % (tree,dis),
                                 "Packages",
                                 "%s/%s/binary-%s/Packages" % (dis, sec, arch)):
@@ -341,13 +379,21 @@ def main ():
             dest = Cnf["Dir::Root"] + tree + "/Release.gpg"
             if os.path.exists(dest):
                 os.unlink(dest)
+            inlinedest = Cnf["Dir::Root"] + tree + "/InRelease"
+            if os.path.exists(inlinedest):
+                os.unlink(inlinedest)
 
             for keyid in signkeyids:
-                if keyid != "": defkeyid = "--default-key %s" % keyid
-                else: defkeyid = ""
+                if keyid != "":
+                    defkeyid = "--default-key %s" % keyid
+                else:
+                    defkeyid = ""
                 os.system("gpg %s %s %s --detach-sign <%s >>%s" %
                         (keyring, defkeyid, arguments,
                         Cnf["Dir::Root"] + tree + "/Release", dest))
+                os.system("gpg %s %s %s --clearsign <%s >>%s" %
+                        (keyring, defkeyid, arguments,
+                        Cnf["Dir::Root"] + tree + "/Release", inlinedest))
 
 #######################################################################################
 

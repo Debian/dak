@@ -1,0 +1,15 @@
+From: __DAK_ADDRESS__
+To: __TRANSITION_EMAIL__
+__BCC__
+X-Debian: DAK
+Precedence: bulk
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+Subject: __SUBJECT__
+
+Some transitions for which there was an upload block in place have been
+completed and the block has been automatically lifted:
+
+__TRANSITION_MESSAGE__
+

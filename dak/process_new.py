@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # vim:set et ts=4 sw=4:
 
-""" Handles NEW and BYHAND packages """
-# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+""" Handles NEW and BYHAND packages
 
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
+@copyright: 2009 Joerg Jaspert <joerg@debian.org>
+@copyright: 2009 Frank Lichtenheld <djpig@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -37,76 +42,49 @@
 
 ################################################################################
 
-import copy, errno, os, readline, stat, sys, time
+from __future__ import with_statement
+
+import copy
+import errno
+import os
+import readline
+import stat
+import sys
+import time
+import contextlib
+import pwd
 import apt_pkg, apt_inst
 import examine_package
-from daklib import database
-from daklib import logging
-from daklib import queue
+
+from daklib.dbconn import *
+from daklib.queue import *
+from daklib import daklog
 from daklib import utils
-from daklib.regexes import re_no_epoch, re_default_answer, re_isanum
+from daklib.regexes import re_no_epoch, re_default_answer, re_isanum, re_package
+from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
+from daklib.summarystats import SummaryStats
+from daklib.config import Config
+from daklib.changesutils import *
 
 # Globals
-Cnf = None
 Options = None
-Upload = None
-projectB = None
 Logger = None
 
 Priorities = None
 Sections = None
 
-reject_message = ""
-
 ################################################################################
 ################################################################################
 ################################################################################
 
-def reject (str, prefix="Rejected: "):
-    global reject_message
-    if str:
-        reject_message += prefix + str + "\n"
-
-def recheck():
-    global reject_message
-    files = Upload.pkg.files
-    reject_message = ""
-
-    for f in files.keys():
-        # The .orig.tar.gz can disappear out from under us is it's a
-        # duplicate of one in the archive.
-        if not files.has_key(f):
-            continue
-        # Check that the source still exists
-        if files[f]["type"] == "deb":
-            source_version = files[f]["source version"]
-            source_package = files[f]["source package"]
-            if not Upload.pkg.changes["architecture"].has_key("source") \
-               and not Upload.source_exists(source_package, source_version, Upload.pkg.changes["distribution"].keys()):
-                source_epochless_version = re_no_epoch.sub('', source_version)
-                dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
-                found = 0
-                for q in ["Accepted", "Embargoed", "Unembargoed"]:
-                    if Cnf.has_key("Dir::Queue::%s" % (q)):
-                        if os.path.exists(Cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
-                            found = 1
-                if not found:
-                    reject("no source found for %s %s (%s)." % (source_package, source_version, f))
-
-        # Version and file overwrite checks
-        if files[f]["type"] == "deb":
-            reject(Upload.check_binary_against_db(f), "")
-        elif files[f]["type"] == "dsc":
-            reject(Upload.check_source_against_db(f), "")
-            (reject_msg, is_in_incoming) = Upload.check_dsc_against_db(f)
-            reject(reject_msg, "")
-
-    if reject_message.find("Rejected") != -1:
+def recheck(upload, session):
+# STU: I'm not sure, but I don't thin kthis is necessary any longer:    upload.recheck(session)
+    if len(upload.rejects) > 0:
         answer = "XXX"
-        if Options["No-Action"] or Options["Automatic"]:
+        if Options["No-Action"] or Options["Automatic"] or Options["Trainee"]:
             answer = 'S'
 
-        print "REJECT\n" + reject_message,
+        print "REJECT\n%s" % '\n'.join(upload.rejects)
         prompt = "[R]eject, Skip, Quit ?"
 
         while prompt.find(answer) == -1:
@@ -117,8 +95,9 @@ def recheck():
             answer = answer[:1].upper()
 
         if answer == 'R':
-            Upload.do_reject(0, reject_message)
-            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+            upload.do_reject(manual=0, reject_message='\n'.join(upload.rejects))
+            upload.pkg.remove_known_changes(session=session)
+            session.commit()
             return 0
         elif answer == 'S':
             return 0
@@ -130,111 +109,12 @@ def recheck():
 
 ################################################################################
 
-def indiv_sg_compare (a, b):
-    """Sort by source name, source, version, 'have source', and
-       finally by filename."""
-    # Sort by source version
-    q = apt_pkg.VersionCompare(a["version"], b["version"])
-    if q:
-        return -q
-
-    # Sort by 'have source'
-    a_has_source = a["architecture"].get("source")
-    b_has_source = b["architecture"].get("source")
-    if a_has_source and not b_has_source:
-        return -1
-    elif b_has_source and not a_has_source:
-        return 1
-
-    return cmp(a["filename"], b["filename"])
-
-############################################################
-
-def sg_compare (a, b):
-    a = a[1]
-    b = b[1]
-    """Sort by have note, source already in database and time of oldest upload."""
-    # Sort by have note
-    a_note_state = a["note_state"]
-    b_note_state = b["note_state"]
-    if a_note_state < b_note_state:
-        return -1
-    elif a_note_state > b_note_state:
-        return 1
-    # Sort by source already in database (descending)
-    source_in_database = cmp(a["source_in_database"], b["source_in_database"])
-    if source_in_database:
-        return -source_in_database
-
-    # Sort by time of oldest upload
-    return cmp(a["oldest"], b["oldest"])
-
-def sort_changes(changes_files):
-    """Sort into source groups, then sort each source group by version,
-    have source, filename.  Finally, sort the source groups by have
-    note, time of oldest upload of each source upload."""
-    if len(changes_files) == 1:
-        return changes_files
-
-    sorted_list = []
-    cache = {}
-    # Read in all the .changes files
-    for filename in changes_files:
-        try:
-            Upload.pkg.changes_file = filename
-            Upload.init_vars()
-            Upload.update_vars()
-            cache[filename] = copy.copy(Upload.pkg.changes)
-            cache[filename]["filename"] = filename
-        except:
-            sorted_list.append(filename)
-            break
-    # Divide the .changes into per-source groups
-    per_source = {}
-    for filename in cache.keys():
-        source = cache[filename]["source"]
-        if not per_source.has_key(source):
-            per_source[source] = {}
-            per_source[source]["list"] = []
-        per_source[source]["list"].append(cache[filename])
-    # Determine oldest time and have note status for each source group
-    for source in per_source.keys():
-        q = projectB.query("SELECT 1 FROM source WHERE source = '%s'" % source)
-        ql = q.getresult()
-        per_source[source]["source_in_database"] = len(ql)>0
-        source_list = per_source[source]["list"]
-        first = source_list[0]
-        oldest = os.stat(first["filename"])[stat.ST_MTIME]
-        have_note = 0
-        for d in per_source[source]["list"]:
-            mtime = os.stat(d["filename"])[stat.ST_MTIME]
-            if mtime < oldest:
-                oldest = mtime
-            have_note += (d.has_key("process-new note"))
-        per_source[source]["oldest"] = oldest
-        if not have_note:
-            per_source[source]["note_state"] = 0; # none
-        elif have_note < len(source_list):
-            per_source[source]["note_state"] = 1; # some
-        else:
-            per_source[source]["note_state"] = 2; # all
-        per_source[source]["list"].sort(indiv_sg_compare)
-    per_source_items = per_source.items()
-    per_source_items.sort(sg_compare)
-    for i in per_source_items:
-        for j in i[1]["list"]:
-            sorted_list.append(j["filename"])
-    return sorted_list
-
-################################################################################
-
 class Section_Completer:
-    def __init__ (self):
+    def __init__ (self, session):
         self.sections = []
         self.matches = []
-        q = projectB.query("SELECT section FROM section")
-        for i in q.getresult():
-            self.sections.append(i[0])
+        for s, in session.query(Section.section):
+            self.sections.append(s)
 
     def complete(self, text, state):
         if state == 0:
@@ -251,12 +131,11 @@ class Section_Completer:
 ############################################################
 
 class Priority_Completer:
-    def __init__ (self):
+    def __init__ (self, session):
         self.priorities = []
         self.matches = []
-        q = projectB.query("SELECT priority FROM priority")
-        for i in q.getresult():
-            self.priorities.append(i[0])
+        for p, in session.query(Priority.priority):
+            self.priorities.append(p)
 
     def complete(self, text, state):
         if state == 0:
@@ -272,9 +151,9 @@ class Priority_Completer:
 
 ################################################################################
 
-def print_new (new, indexed, file=sys.stdout):
-    queue.check_valid(new)
-    broken = 0
+def print_new (new, upload, indexed, file=sys.stdout):
+    check_valid(new)
+    broken = False
     index = 0
     for pkg in new.keys():
         index += 1
@@ -282,22 +161,22 @@ def print_new (new, indexed, file=sys.stdout):
         priority = new[pkg]["priority"]
         if new[pkg]["section id"] == -1:
             section += "[!]"
-            broken = 1
+            broken = True
         if new[pkg]["priority id"] == -1:
             priority += "[!]"
-            broken = 1
+            broken = True
         if indexed:
             line = "(%s): %-20s %-20s %-20s" % (index, pkg, priority, section)
         else:
             line = "%-20s %-20s %-20s" % (pkg, priority, section)
         line = line.strip()+'\n'
         file.write(line)
-    note = Upload.pkg.changes.get("process-new note")
-    if note:
-        print "*"*75
-        print note
-        print "*"*75
-    return broken, note
+    notes = get_new_comments(upload.pkg.changes.get("source"))
+    for note in notes:
+        print "\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
+              % (note.author, note.version, note.notedate, note.comment)
+        print "-" * 72
+    return broken, len(notes) > 0
 
 ################################################################################
 
@@ -310,11 +189,11 @@ def index_range (index):
 ################################################################################
 ################################################################################
 
-def edit_new (new):
+def edit_new (new, upload):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
     temp_file = os.fdopen(fd, 'w')
-    print_new (new, 0, temp_file)
+    print_new (new, upload, indexed=0, file=temp_file)
     temp_file.close()
     # Spawn an editor on that file
     editor = os.environ.get("EDITOR","vi")
@@ -344,14 +223,14 @@ def edit_new (new):
             if priority.endswith("[!]"):
                 priority = priority[:-3]
             for f in new[pkg]["files"]:
-                Upload.pkg.files[f]["section"] = section
-                Upload.pkg.files[f]["priority"] = priority
+                upload.pkg.files[f]["section"] = section
+                upload.pkg.files[f]["priority"] = priority
             new[pkg]["section"] = section
             new[pkg]["priority"] = priority
 
 ################################################################################
 
-def edit_index (new, index):
+def edit_index (new, upload, index):
     priority = new[index]["priority"]
     section = new[index]["section"]
     ftype = new[index]["type"]
@@ -410,19 +289,19 @@ def edit_index (new, index):
         readline.set_completer(None)
 
     for f in new[index]["files"]:
-        Upload.pkg.files[f]["section"] = section
-        Upload.pkg.files[f]["priority"] = priority
+        upload.pkg.files[f]["section"] = section
+        upload.pkg.files[f]["priority"] = priority
     new[index]["priority"] = priority
     new[index]["section"] = section
     return new
 
 ################################################################################
 
-def edit_overrides (new):
+def edit_overrides (new, upload, session):
     print
     done = 0
     while not done:
-        print_new (new, 1)
+        print_new (new, upload, indexed=1)
         new_index = {}
         index = 0
         for i in new.keys():
@@ -446,31 +325,28 @@ def edit_overrides (new):
                     got_answer = 1
 
         if answer == 'E':
-            edit_new(new)
+            edit_new(new, upload)
         elif answer == 'D':
             done = 1
         else:
-            edit_index (new, new_index[answer])
+            edit_index (new, upload, new_index[answer])
 
     return new
 
 ################################################################################
 
-def edit_note(note):
+def edit_note(note, upload, session):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
-    temp_file = os.fdopen(fd, 'w')
-    temp_file.write(note)
-    temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
         temp_file = utils.open_file(temp_filename)
-        note = temp_file.read().rstrip()
+        newnote = temp_file.read().rstrip()
         temp_file.close()
-        print "Note:"
-        print utils.prefix_multi_line_string(note,"  ")
+        print "New Note:"
+        print utils.prefix_multi_line_string(newnote,"  ")
         prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
@@ -485,28 +361,36 @@ def edit_note(note):
     elif answer == 'Q':
         end()
         sys.exit(0)
-    Upload.pkg.changes["process-new note"] = note
-    Upload.dump_vars(Cnf["Dir::Queue::New"])
+
+    comment = NewComment()
+    comment.package = upload.pkg.changes["source"]
+    comment.version = upload.pkg.changes["version"]
+    comment.comment = newnote
+    comment.author  = utils.whoami()
+    comment.trainee = bool(Options["Trainee"])
+    session.add(comment)
+    session.commit()
 
 ################################################################################
 
-def check_pkg ():
+def check_pkg (upload):
     try:
         less_fd = os.popen("less -R -", 'w', 0)
         stdout_fd = sys.stdout
         try:
             sys.stdout = less_fd
-            changes = utils.parse_changes (Upload.pkg.changes_file)
-            examine_package.display_changes(changes['distribution'], Upload.pkg.changes_file)
-            files = Upload.pkg.files
+            changes = utils.parse_changes (upload.pkg.changes_file)
+            print examine_package.display_changes(changes['distribution'], upload.pkg.changes_file)
+            files = upload.pkg.files
             for f in files.keys():
                 if files[f].has_key("new"):
                     ftype = files[f]["type"]
                     if ftype == "deb":
-                        examine_package.check_deb(changes['distribution'], f)
+                        print examine_package.check_deb(changes['distribution'], f)
                     elif ftype == "dsc":
-                        examine_package.check_dsc(changes['distribution'], f)
+                        print examine_package.check_dsc(changes['distribution'], f)
         finally:
+            print examine_package.output_package_relations()
             sys.stdout = stdout_fd
     except IOError, e:
         if e.errno == errno.EPIPE:
@@ -522,8 +406,8 @@ def check_pkg ():
 
 ## FIXME: horribly Debian specific
 
-def do_bxa_notification():
-    files = Upload.pkg.files
+def do_bxa_notification(upload):
+    files = upload.pkg.files
     summary = ""
     for f in files.keys():
         if files[f]["type"] == "deb":
@@ -531,47 +415,54 @@ def do_bxa_notification():
             summary += "\n"
             summary += "Package: %s\n" % (control.Find("Package"))
             summary += "Description: %s\n" % (control.Find("Description"))
-    Upload.Subst["__BINARY_DESCRIPTIONS__"] = summary
-    bxa_mail = utils.TemplateSubst(Upload.Subst,Cnf["Dir::Templates"]+"/process-new.bxa_notification")
+    upload.Subst["__BINARY_DESCRIPTIONS__"] = summary
+    bxa_mail = utils.TemplateSubst(upload.Subst,Config()["Dir::Templates"]+"/process-new.bxa_notification")
     utils.send_mail(bxa_mail)
 
 ################################################################################
 
-def add_overrides (new):
-    changes = Upload.pkg.changes
-    files = Upload.pkg.files
+def add_overrides (new, upload, session):
+    changes = upload.pkg.changes
+    files = upload.pkg.files
+    srcpkg = changes.get("source")
 
-    projectB.query("BEGIN WORK")
     for suite in changes["suite"].keys():
-        suite_id = database.get_suite_id(suite)
+        suite_id = get_suite(suite).suite_id
         for pkg in new.keys():
-            component_id = database.get_component_id(new[pkg]["component"])
-            type_id = database.get_override_type_id(new[pkg]["type"])
+            component_id = get_component(new[pkg]["component"]).component_id
+            type_id = get_override_type(new[pkg]["type"]).overridetype_id
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
-            projectB.query("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (%s, %s, %s, '%s', %s, %s, '')" % (suite_id, component_id, type_id, pkg, priority_id, section_id))
+            Logger.log(["%s overrides" % (srcpkg), suite, new[pkg]["component"], new[pkg]["type"], new[pkg]["priority"], new[pkg]["section"]])
+            session.execute("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (:sid, :cid, :tid, :pkg, :pid, :sectid, '')",
+                            { 'sid': suite_id, 'cid': component_id, 'tid':type_id, 'pkg': pkg, 'pid': priority_id, 'sectid': section_id})
             for f in new[pkg]["files"]:
                 if files[f].has_key("new"):
                     del files[f]["new"]
             del new[pkg]
 
-    projectB.query("COMMIT WORK")
+    session.commit()
 
-    if Cnf.FindB("Dinstall::BXANotify"):
-        do_bxa_notification()
+    if Config().FindB("Dinstall::BXANotify"):
+        do_bxa_notification(upload)
 
 ################################################################################
 
-def prod_maintainer ():
+def prod_maintainer (notes, upload):
+    cnf = Config()
     # Here we prepare an editor and get them ready to prod...
     (fd, temp_filename) = utils.temp_filename()
+    temp_file = os.fdopen(fd, 'w')
+    for note in notes:
+        temp_file.write(note.comment)
+    temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        f = os.fdopen(fd)
-        prod_message = "".join(f.readlines())
-        f.close()
+        temp_fh = utils.open_file(temp_filename)
+        prod_message = "".join(temp_fh.readlines())
+        temp_fh.close()
         print "Prod message:"
         print utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
         prompt = "[P]rod, Edit, Abandon, Quit ?"
@@ -582,66 +473,50 @@ def prod_maintainer ():
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
-        os.unlink(temp_filename)
-        if answer == 'A':
-            return
-        elif answer == 'Q':
-            end()
-            sys.exit(0)
+    os.unlink(temp_filename)
+    if answer == 'A':
+        return
+    elif answer == 'Q':
+        end()
+        sys.exit(0)
     # Otherwise, do the proding...
     user_email_address = utils.whoami() + " <%s>" % (
-        Cnf["Dinstall::MyAdminAddress"])
+        cnf["Dinstall::MyAdminAddress"])
 
-    Subst = Upload.Subst
+    Subst = upload.Subst
 
     Subst["__FROM_ADDRESS__"] = user_email_address
     Subst["__PROD_MESSAGE__"] = prod_message
-    Subst["__CC__"] = "Cc: " + Cnf["Dinstall::MyEmailAddress"]
+    Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
 
     prod_mail_message = utils.TemplateSubst(
-        Subst,Cnf["Dir::Templates"]+"/process-new.prod")
+        Subst,cnf["Dir::Templates"]+"/process-new.prod")
 
-    # Send the prod mail if appropriate
-    if not Cnf["Dinstall::Options::No-Mail"]:
-        utils.send_mail(prod_mail_message)
+    # Send the prod mail
+    utils.send_mail(prod_mail_message)
 
     print "Sent proding message"
 
 ################################################################################
 
-def do_new():
+def do_new(upload, session):
     print "NEW\n"
-    files = Upload.pkg.files
-    changes = Upload.pkg.changes
+    files = upload.pkg.files
+    upload.check_files(not Options["No-Action"])
+    changes = upload.pkg.changes
+    cnf = Config()
+
+    # Check for a valid distribution
+    upload.check_distributions()
 
     # Make a copy of distribution we can happily trample on
     changes["suite"] = copy.copy(changes["distribution"])
-
-    # Fix up the list of target suites
-    for suite in changes["suite"].keys():
-        override = Cnf.Find("Suite::%s::OverrideSuite" % (suite))
-        if override:
-            (olderr, newerr) = (database.get_suite_id(suite) == -1,
-              database.get_suite_id(override) == -1)
-            if olderr or newerr:
-                (oinv, newinv) = ("", "")
-                if olderr: oinv = "invalid "
-                if newerr: ninv = "invalid "
-                print "warning: overriding %ssuite %s to %ssuite %s" % (
-                        oinv, suite, ninv, override)
-            del changes["suite"][suite]
-            changes["suite"][override] = 1
-    # Validate suites
-    for suite in changes["suite"].keys():
-        suite_id = database.get_suite_id(suite)
-        if suite_id == -1:
-            utils.fubar("%s has invalid suite '%s' (possibly overriden).  say wha?" % (changes, suite))
 
     # The main NEW processing loop
     done = 0
     while not done:
         # Find out what's new
-        new = queue.determine_new(changes, files, projectB)
+        new = determine_new(changes, files)
 
         if not new:
             break
@@ -650,7 +525,7 @@ def do_new():
         if Options["No-Action"] or Options["Automatic"]:
             answer = 'S'
 
-        (broken, note) = print_new(new, 0)
+        (broken, note) = print_new(new, upload, indexed=0)
         prompt = ""
 
         if not broken and not note:
@@ -659,7 +534,7 @@ def do_new():
             print "W: [!] marked entries must be fixed before package can be processed."
         if note:
             print "W: note must be removed before package can be processed."
-            prompt += "Remove note, "
+            prompt += "RemOve all notes, Remove note, "
 
         prompt += "Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?"
 
@@ -670,25 +545,52 @@ def do_new():
                 answer = m.group(1)
             answer = answer[:1].upper()
 
-        if answer == 'A':
-            done = add_overrides (new)
+        if answer in ( 'A', 'E', 'M', 'O', 'R' ) and Options["Trainee"]:
+            utils.warn("Trainees can't do that")
+            continue
+
+        if answer == 'A' and not Options["Trainee"]:
+            try:
+                check_daily_lock()
+                done = add_overrides (new, upload, session)
+                new_accept(upload, Options["No-Action"], session)
+                Logger.log(["NEW ACCEPT: %s" % (upload.pkg.changes_file)])
+            except CantGetLockError:
+                print "Hello? Operator! Give me the number for 911!"
+                print "Dinstall in the locked area, cant process packages, come back later"
         elif answer == 'C':
-            check_pkg()
-        elif answer == 'E':
-            new = edit_overrides (new)
-        elif answer == 'M':
-            aborted = Upload.do_reject(1, Options["Manual-Reject"])
+            check_pkg(upload)
+        elif answer == 'E' and not Options["Trainee"]:
+            new = edit_overrides (new, upload, session)
+        elif answer == 'M' and not Options["Trainee"]:
+            aborted = upload.do_reject(manual=1,
+                                       reject_message=Options["Manual-Reject"],
+                                       notes=get_new_comments(changes.get("source", ""), session=session))
             if not aborted:
-                os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+                upload.pkg.remove_known_changes(session=session)
+                session.commit()
+                Logger.log(["NEW REJECT: %s" % (upload.pkg.changes_file)])
                 done = 1
         elif answer == 'N':
-            edit_note(changes.get("process-new note", ""))
-        elif answer == 'P':
-            prod_maintainer()
-        elif answer == 'R':
+            edit_note(get_new_comments(changes.get("source", ""), session=session),
+                      upload, session)
+        elif answer == 'P' and not Options["Trainee"]:
+            prod_maintainer(get_new_comments(changes.get("source", ""), session=session),
+                            upload)
+            Logger.log(["NEW PROD: %s" % (upload.pkg.changes_file)])
+        elif answer == 'R' and not Options["Trainee"]:
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
-                del changes["process-new note"]
+                for c in get_new_comments(changes.get("source", ""), changes.get("version", ""), session=session):
+                    session.delete(c)
+                session.commit()
+        elif answer == 'O' and not Options["Trainee"]:
+            confirm = utils.our_raw_input("Really clear all notes (y/N)? ").lower()
+            if confirm == "y":
+                for c in get_new_comments(changes.get("source", ""), session=session):
+                    session.delete(c)
+                session.commit()
+
         elif answer == 'S':
             done = 1
         elif answer == 'Q':
@@ -703,54 +605,18 @@ def usage (exit_code=0):
     print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -h, --help                show this help and exit.
-  -C, --comments-dir=DIR    use DIR as comments-dir, for [o-]p-u-new
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
+  -t, --trainee             FTP Trainee mode
   -V, --version             display the version number and exit"""
     sys.exit(exit_code)
 
 ################################################################################
 
-def init():
-    global Cnf, Options, Logger, Upload, projectB, Sections, Priorities
-
-    Cnf = utils.get_conf()
-
-    Arguments = [('a',"automatic","Process-New::Options::Automatic"),
-                 ('h',"help","Process-New::Options::Help"),
-                 ('C',"comments-dir","Process-New::Options::Comments-Dir", "HasArg"),
-                 ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
-                 ('n',"no-action","Process-New::Options::No-Action")]
-
-    for i in ["automatic", "help", "manual-reject", "no-action", "version", "comments-dir"]:
-        if not Cnf.has_key("Process-New::Options::%s" % (i)):
-            Cnf["Process-New::Options::%s" % (i)] = ""
-
-    changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Process-New::Options")
-
-    if Options["Help"]:
-        usage()
-
-    Upload = queue.Upload(Cnf)
-
-    if not Options["No-Action"]:
-        Logger = Upload.Logger = logging.Logger(Cnf, "process-new")
-
-    projectB = Upload.projectB
-
-    Sections = Section_Completer()
-    Priorities = Priority_Completer()
-    readline.parse_and_bind("tab: complete")
-
-    return changes_files
-
-################################################################################
-
-def do_byhand():
+def do_byhand(upload, session):
     done = 0
     while not done:
-        files = Upload.pkg.files
+        files = upload.pkg.files
         will_install = 1
         byhand = []
 
@@ -780,12 +646,20 @@ def do_byhand():
             answer = answer[:1].upper()
 
         if answer == 'A':
-            done = 1
-            for f in byhand:
-                del files[f]
+            try:
+                check_daily_lock()
+                done = 1
+                for f in byhand:
+                    del files[f]
+                Logger.log(["BYHAND ACCEPT: %s" % (upload.pkg.changes_file)])
+            except CantGetLockError:
+                print "Hello? Operator! Give me the number for 911!"
+                print "Dinstall in the locked area, cant process packages, come back later"
         elif answer == 'M':
-            Upload.do_reject(1, Options["Manual-Reject"])
-            os.unlink(Upload.pkg.changes_file[:-8]+".dak")
+            Logger.log(["BYHAND REJECT: %s" % (upload.pkg.changes_file)])
+            upload.do_reject(manual=1, reject_message=Options["Manual-Reject"])
+            upload.pkg.remove_known_changes(session=session)
+            session.commit()
             done = 1
         elif answer == 'S':
             done = 1
@@ -795,166 +669,114 @@ def do_byhand():
 
 ################################################################################
 
-def get_accept_lock():
-    retry = 0
-    while retry < 10:
-        try:
-            os.open(Cnf["Process-New::AcceptedLockFile"], os.O_RDONLY | os.O_CREAT | os.O_EXCL)
-            retry = 10
-        except OSError, e:
-            if e.errno == errno.EACCES or e.errno == errno.EEXIST:
-                retry += 1
-                if (retry >= 10):
-                    utils.fubar("Couldn't obtain lock; assuming 'dak process-unchecked' is already running.")
-                else:
-                    print("Unable to get accepted lock (try %d of 10)" % retry)
-                time.sleep(60)
-            else:
-                raise
+def check_daily_lock():
+    """
+    Raises CantGetLockError if the dinstall daily.lock exists.
+    """
 
-def move_to_dir (dest, perms=0660, changesperms=0664):
-    utils.move (Upload.pkg.changes_file, dest, perms=changesperms)
-    file_keys = Upload.pkg.files.keys()
-    for f in file_keys:
-        utils.move (f, dest, perms=perms)
-
-def is_source_in_queue_dir(qdir):
-    entries = [ x for x in os.listdir(qdir) if x.startswith(Upload.pkg.changes["source"])
-                and x.endswith(".changes") ]
-    for entry in entries:
-        # read the .dak
-        u = queue.Upload(Cnf)
-        u.pkg.changes_file = os.path.join(qdir, entry)
-        u.update_vars()
-        if not u.pkg.changes["architecture"].has_key("source"):
-            # another binary upload, ignore
-            continue
-        if Upload.pkg.changes["version"] != u.pkg.changes["version"]:
-            # another version, ignore
-            continue
-        # found it!
-        return True
-    return False
-
-def move_to_holding(suite, queue_dir):
-    print "Moving to %s holding area." % (suite.upper(),)
-    if Options["No-Action"]:
-    	return
-    Logger.log(["Moving to %s" % (suite,), Upload.pkg.changes_file])
-    Upload.dump_vars(queue_dir)
-    move_to_dir(queue_dir)
-    os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-
-def _accept():
-    if Options["No-Action"]:
-        return
-    (summary, short_summary) = Upload.build_summaries()
-    Upload.accept(summary, short_summary)
-    os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-
-def do_accept_stableupdate(suite, q):
-    queue_dir = Cnf["Dir::Queue::%s" % (q,)]
-    if not Upload.pkg.changes["architecture"].has_key("source"):
-        # It is not a sourceful upload.  So its source may be either in p-u
-        # holding, in new, in accepted or already installed.
-        if is_source_in_queue_dir(queue_dir):
-            # It's in p-u holding, so move it there.
-            print "Binary-only upload, source in %s." % (q,)
-            move_to_holding(suite, queue_dir)
-        elif Upload.source_exists(Upload.pkg.changes["source"],
-                Upload.pkg.changes["version"]):
-            # dak tells us that there is source available.  At time of
-            # writing this means that it is installed, so put it into
-            # accepted.
-            print "Binary-only upload, source installed."
-            _accept()
-        elif is_source_in_queue_dir(Cnf["Dir::Queue::Accepted"]):
-            # The source is in accepted, the binary cleared NEW: accept it.
-            print "Binary-only upload, source in accepted."
-            _accept()
-        elif is_source_in_queue_dir(Cnf["Dir::Queue::New"]):
-            # It's in NEW.  We expect the source to land in p-u holding
-            # pretty soon.
-            print "Binary-only upload, source in new."
-            move_to_holding(suite, queue_dir)
-        else:
-            # No case applicable.  Bail out.  Return will cause the upload
-            # to be skipped.
-            print "ERROR"
-            print "Stable update failed.  Source not found."
-            return
-    else:
-        # We are handling a sourceful upload.  Move to accepted if currently
-        # in p-u holding and to p-u holding otherwise.
-        if is_source_in_queue_dir(queue_dir):
-            print "Sourceful upload in %s, accepting." % (q,)
-            _accept()
-        else:
-            move_to_holding(suite, queue_dir)
-
-def do_accept():
-    print "ACCEPT"
-    if not Options["No-Action"]:
-        get_accept_lock()
-        (summary, short_summary) = Upload.build_summaries()
+    cnf = Config()
     try:
-        if Cnf.FindB("Dinstall::SecurityQueueHandling"):
-            Upload.dump_vars(Cnf["Dir::Queue::Embargoed"])
-            move_to_dir(Cnf["Dir::Queue::Embargoed"])
-            Upload.queue_build("embargoed", Cnf["Dir::Queue::Embargoed"])
-            # Check for override disparities
-            Upload.Subst["__SUMMARY__"] = summary
-        else:
-            # Stable updates need to be copied to proposed-updates holding
-            # area instead of accepted.  Sourceful uploads need to go
-            # to it directly, binaries only if the source has not yet been
-            # accepted into p-u.
-            for suite, q in [("proposed-updates", "ProposedUpdates"),
-                    ("oldstable-proposed-updates", "OldProposedUpdates")]:
-                if not Upload.pkg.changes["distribution"].has_key(suite):
-                    continue
-                return do_accept_stableupdate(suite, q)
-            # Just a normal upload, accept it...
-            _accept()
+        os.open(cnf["Process-New::DinstallLockFile"],
+                os.O_RDONLY | os.O_CREAT | os.O_EXCL)
+    except OSError, e:
+        if e.errno == errno.EEXIST or e.errno == errno.EACCES:
+            raise CantGetLockError
+
+    os.unlink(cnf["Process-New::DinstallLockFile"])
+
+
+@contextlib.contextmanager
+def lock_package(package):
+    """
+    Lock C{package} so that noone else jumps in processing it.
+
+    @type package: string
+    @param package: source package name to lock
+    """
+
+    path = os.path.join(Config()["Process-New::LockDir"], package)
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDONLY)
+    except OSError, e:
+        if e.errno == errno.EEXIST or e.errno == errno.EACCES:
+            user = pwd.getpwuid(os.stat(path)[stat.ST_UID])[4].split(',')[0].replace('.', '')
+            raise AlreadyLockedError, user
+
+    try:
+        yield fd
     finally:
-        if not Options["No-Action"]:
-            os.unlink(Cnf["Process-New::AcceptedLockFile"])
+        os.unlink(path)
 
-def check_status(files):
-    new = byhand = 0
-    for f in files.keys():
-        if files[f]["type"] == "byhand":
-            byhand = 1
-        elif files[f].has_key("new"):
-            new = 1
-    return (new, byhand)
+class clean_holding(object):
+    def __init__(self,pkg):
+        self.pkg = pkg
 
-def do_pkg(changes_file):
-    Upload.pkg.changes_file = changes_file
-    Upload.init_vars()
-    Upload.update_vars()
-    Upload.update_subst()
-    files = Upload.pkg.files
+    def __enter__(self):
+        pass
 
-    if not recheck():
-        return
+    def __exit__(self, type, value, traceback):
+        h = Holding()
 
-    (new, byhand) = check_status(files)
-    if new or byhand:
-        if new:
-            do_new()
-        if byhand:
-            do_byhand()
-        (new, byhand) = check_status(files)
+        for f in self.pkg.files.keys():
+            if os.path.exists(os.path.join(h.holding_dir, f)):
+                os.unlink(os.path.join(h.holding_dir, f))
 
-    if not new and not byhand:
-        do_accept()
+
+def do_pkg(changes_file, session):
+    new_queue = get_policy_queue('new', session );
+    u = Upload()
+    u.pkg.changes_file = changes_file
+    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
+    u.load_changes(changes_file)
+    u.pkg.directory = new_queue.path
+    u.update_subst()
+    u.logger = Logger
+    origchanges = os.path.abspath(u.pkg.changes_file)
+
+    cnf = Config()
+    bcc = "X-DAK: dak process-new"
+    if cnf.has_key("Dinstall::Bcc"):
+        u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
+    else:
+        u.Subst["__BCC__"] = bcc
+
+    files = u.pkg.files
+    for deb_filename, f in files.items():
+        if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
+            u.binary_file_checks(deb_filename, session)
+            u.check_binary_against_db(deb_filename, session)
+        else:
+            u.source_file_checks(deb_filename, session)
+            u.check_source_against_db(deb_filename, session)
+
+        u.pkg.changes["suite"] = copy.copy(u.pkg.changes["distribution"])
+
+    try:
+        with lock_package(u.pkg.changes["source"]):
+            with clean_holding(u.pkg):
+                if not recheck(u, session):
+                    return
+
+                # FIXME: This does need byhand checks added!
+                new = determine_new(u.pkg.changes, files)
+                if new:
+                    do_new(u, session)
+                else:
+                    try:
+                        check_daily_lock()
+                        new_accept(u, Options["No-Action"], session)
+                    except CantGetLockError:
+                        print "Hello? Operator! Give me the number for 911!"
+                        print "Dinstall in the locked area, cant process packages, come back later"
+
+    except AlreadyLockedError, e:
+        print "Seems to be locked by %s already, skipping..." % (e)
 
 ################################################################################
 
 def end():
-    accept_count = Upload.accept_count
-    accept_bytes = Upload.accept_bytes
+    accept_count = SummaryStats().accept_count
+    accept_bytes = SummaryStats().accept_bytes
 
     if accept_count:
         sets = "set"
@@ -963,91 +785,58 @@ def end():
         sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))))
         Logger.log(["total",accept_count,accept_bytes])
 
-    if not Options["No-Action"]:
+    if not Options["No-Action"] and not Options["Trainee"]:
         Logger.close()
 
 ################################################################################
 
-def do_comments(dir, opref, npref, line, fn):
-    for comm in [ x for x in os.listdir(dir) if x.startswith(opref) ]:
-        lines = open("%s/%s" % (dir, comm)).readlines()
-        if len(lines) == 0 or lines[0] != line + "\n": continue
-        changes_files = [ x for x in os.listdir(".") if x.startswith(comm[7:]+"_")
-                                and x.endswith(".changes") ]
-        changes_files = sort_changes(changes_files)
-        for f in changes_files:
-            f = utils.validate_changes_file_arg(f, 0)
-            if not f: continue
-            print "\n" + f
-            fn(f, "".join(lines[1:]))
-
-        if opref != npref and not Options["No-Action"]:
-            newcomm = npref + comm[len(opref):]
-            os.rename("%s/%s" % (dir, comm), "%s/%s" % (dir, newcomm))
-
-################################################################################
-
-def comment_accept(changes_file, comments):
-    Upload.pkg.changes_file = changes_file
-    Upload.init_vars()
-    Upload.update_vars()
-    Upload.update_subst()
-    files = Upload.pkg.files
-
-    if not recheck():
-        return # dak wants to REJECT, crap
-
-    (new, byhand) = check_status(files)
-    if not new and not byhand:
-        do_accept()
-
-################################################################################
-
-def comment_reject(changes_file, comments):
-    Upload.pkg.changes_file = changes_file
-    Upload.init_vars()
-    Upload.update_vars()
-    Upload.update_subst()
-
-    if not recheck():
-        pass # dak has its own reasons to reject as well, which is fine
-
-    reject(comments)
-    print "REJECT\n" + reject_message,
-    if not Options["No-Action"]:
-        Upload.do_reject(0, reject_message)
-        os.unlink(Upload.pkg.changes_file[:-8]+".dak")
-
-################################################################################
-
 def main():
-    changes_files = init()
-    if len(changes_files) > 50:
+    global Options, Logger, Sections, Priorities
+
+    cnf = Config()
+    session = DBConn().session()
+
+    Arguments = [('a',"automatic","Process-New::Options::Automatic"),
+                 ('h',"help","Process-New::Options::Help"),
+                 ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
+                 ('t',"trainee","Process-New::Options::Trainee"),
+                 ('n',"no-action","Process-New::Options::No-Action")]
+
+    for i in ["automatic", "help", "manual-reject", "no-action", "version", "trainee"]:
+        if not cnf.has_key("Process-New::Options::%s" % (i)):
+            cnf["Process-New::Options::%s" % (i)] = ""
+
+    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
+    if len(changes_files) == 0:
+        new_queue = get_policy_queue('new', session );
+        changes_files = utils.get_changes_files(new_queue.path)
+
+    Options = cnf.SubTree("Process-New::Options")
+
+    if Options["Help"]:
+        usage()
+
+    if not Options["No-Action"]:
+        try:
+            Logger = daklog.Logger(cnf, "process-new")
+        except CantOpenError, e:
+            Options["Trainee"] = "True"
+
+    Sections = Section_Completer(session)
+    Priorities = Priority_Completer(session)
+    readline.parse_and_bind("tab: complete")
+
+    if len(changes_files) > 1:
         sys.stderr.write("Sorting changes...\n")
-    changes_files = sort_changes(changes_files)
+    changes_files = sort_changes(changes_files, session)
 
-    # Kill me now? **FIXME**
-    Cnf["Dinstall::Options::No-Mail"] = ""
-    bcc = "X-DAK: dak process-new\nX-Katie: lisa $Revision: 1.31 $"
-    if Cnf.has_key("Dinstall::Bcc"):
-        Upload.Subst["__BCC__"] = bcc + "\nBcc: %s" % (Cnf["Dinstall::Bcc"])
-    else:
-        Upload.Subst["__BCC__"] = bcc
+    for changes_file in changes_files:
+        changes_file = utils.validate_changes_file_arg(changes_file, 0)
+        if not changes_file:
+            continue
+        print "\n" + changes_file
 
-    commentsdir = Cnf.get("Process-New::Options::Comments-Dir","")
-    if commentsdir:
-        if changes_files != []:
-            sys.stderr.write("Can't specify any changes files if working with comments-dir")
-            sys.exit(1)
-        do_comments(commentsdir, "ACCEPT.", "ACCEPTED.", "OK", comment_accept)
-        do_comments(commentsdir, "REJECT.", "REJECTED.", "NOTOK", comment_reject)
-    else:
-        for changes_file in changes_files:
-            changes_file = utils.validate_changes_file_arg(changes_file, 0)
-            if not changes_file:
-                continue
-            print "\n" + changes_file
-            do_pkg (changes_file)
+        do_pkg (changes_file, session)
 
     end()
 

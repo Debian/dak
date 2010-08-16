@@ -16,13 +16,26 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+# Homer: Are you saying you're never going to eat any animal again? What
+#        about bacon?
+# Lisa: No.
+# Homer: Ham?
+# Lisa: No.
+# Homer: Pork chops?
+# Lisa: Dad, those all come from the same animal.
+# Homer: Heh heh heh. Ooh, yeah, right, Lisa. A wonderful, magical animal.
+
 # exit on errors
 set -e
 # make sure to only use defined variables
 set -u
+# ERR traps should be inherited from functions too. (And command
+# substitutions and subshells and whatnot, but for us the functions is
+# the important part here)
+set -E
 
 # import the general variable set.
-export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 ########################################################################
@@ -31,317 +44,8 @@ export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
 # common functions are "outsourced"
 . "${configdir}/common"
 
-# Timestamp. Used for dinstall stat graphs
-function ts() {
-        TS=$(($TS+1));
-        echo "Archive maintenance timestamp $TS ($1): $(date +%H:%M:%S)"
-}
-
-# Cleanup actions
-function cleanup() {
-	rm -f ${LOCK_DAILY}
-	rm -f ${LOCK_ACCEPTED}
-}
-
-########################################################################
-# the actual dinstall functions follow                                 #
-########################################################################
-
-# Setup the notice file to tell bad mirrors they used the wrong time
-function notice() {
-    rm -f "$NOTICE"
-    cat > "$NOTICE" <<EOF
-Packages are currently being installed and indices rebuilt.
-Maintenance is automatic, starting at 01|07|13|19:52 UTC,
-and ending about an hour later.  This file is then removed.
-
-You should not mirror the archive during this period.
-EOF
-}
-
-# pushing merkels QA user, part one
-function merkel1() {
-    log "Telling merkels QA user that we start dinstall"
-    ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 qa@merkel.debian.org sleep 1
-}
-
-# Create the postgres dump files
-function pgdump_pre() {
-    log "Creating pre-daily-cron-job backup of projectb database..."
-    pg_dump projectb > $base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
-}
-
-function pgdump_post() {
-    log "Creating post-daily-cron-job backup of projectb database..."
-    cd $base/backup
-    POSTDUMP=$base/backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
-    pg_dump projectb > $POSTDUMP
-    ln -sf $POSTDUMP current
-}
-
-# Updating various files
-function updates() {
-    log "Updating Bugs docu, Mirror list and mailing-lists.txt"
-    cd $configdir
-    $scriptsdir/update-bugdoctxt
-    $scriptsdir/update-mirrorlists
-    $scriptsdir/update-mailingliststxt
-    $scriptsdir/update-pseudopackages.sh
-}
-
-# Process (oldstable)-proposed-updates "NEW" queue
-function punew_do() {
-    cd "${queuedir}/${1}"
-    date -u -R >> REPORT
-    dak process-new -a -C COMMENTS >> REPORT || true
-    echo >> REPORT
-}
-function punew() {
-    log "Doing automated p-u-new processing"
-    punew_do "$1"
-}
-function opunew() {
-    log "Doing automated o-p-u-new processing"
-    punew_do "$1"
-}
-
-# The first i18n one, syncing new descriptions
-function i18n1() {
-    log "Synchronizing i18n package descriptions"
-    # First sync their newest data
-    cd ${scriptdir}/i18nsync
-    rsync -aq --delete --delete-after ddtp-sync:/does/not/matter . || true
-
-    # Now check if we still know about the packages for which they created the files
-    # is the timestamp signed by us?
-    if $(gpgv --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg timestamp.gpg timestamp); then
-        # now read it. As its signed by us we are sure the content is what we expect, no need
-        # to do more here. And we only test -d a directory on it anyway.
-        TSTAMP=$(cat timestamp)
-        # do we have the dir still?
-        if [ -d ${scriptdir}/i18n/${TSTAMP} ]; then
-            # Lets check!
-            if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
-                # Yay, worked, lets copy around
-                for dir in squeeze sid; do
-                    if [ -d dists/${dir}/ ]; then
-                        cd dists/${dir}/main/i18n
-                        rsync -aq --delete --delete-after  . ${ftpdir}/dists/${dir}/main/i18n/.
-                    fi
-                    cd ${scriptdir}/i18nsync
-                done
-            else
-                echo "ARRRR, bad guys, wrong files, ARRR"
-                echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail -s "Don't you kids take anything. I'm watching you. I've got eye implants in the back of my head." debian-l10n-devel@lists.alioth.debian.org
-            fi
-        else
-            echo "ARRRR, missing the timestamp ${TSTAMP} directory, not updating i18n, ARRR"
-            echo "Arf, Arf, Arf, missing the timestamp ${TSTAMP} directory, not updating i18n, arf, arf, arf" | mail -s "Lisa, if you don't like your job you don't strike. You just go in every day and do it really half-assed. That's the American way." debian-l10n-devel@lists.alioth.debian.org
-        fi
-    else
-        echo "ARRRRRRR, could not verify our timestamp signature, ARRR. Don't mess with our files, i18n guys, ARRRRR."
-        echo "Arf, Arf, Arf, could not verify our timestamp signature, arf. Don't mess with our files, i18n guys, arf, arf, arf" | mail -s "You can't keep blaming yourself. Just blame yourself once, and move on." debian-l10n-devel@lists.alioth.debian.org
-    fi
-}
-
-# Process the accepted queue
-function accepted() {
-    log "Processing queue/accepted"
-    rm -f "$accepted/REPORT"
-    dak process-accepted -pa -d "$accepted" > "$accepted/REPORT"
-    cat "$accepted/REPORT" | mail -s "Install for $(date +"%D - %R")" ftpmaster@ftp-master.debian.org
-    chgrp debadmin "$accepted/REPORT"
-    chmod 664 "$accepted/REPORT"
-}
-
-function cruft() {
-    log "Checking for cruft in overrides"
-    dak check-overrides
-
-    log "Fixing symlinks in $ftpdir"
-    symlinks -d -r $ftpdir
-}
-
-function msfl() {
-    log "Generating suite file lists for apt-ftparchive"
-    dak make-suite-file-list
-}
-
-function fingerprints() {
-    log "Updating fingerprints"
-    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
-}
-
-function overrides() {
-    log "Writing overrides into text files"
-    cd $overridedir
-    dak make-overrides
-
-    # FIXME
-    rm -f override.sid.all3
-    for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
-}
-
-function mpfm() {
-    log "Generating package / file mapping"
-    dak make-pkg-file-mapping | bzip2 -9 > $base/ftp/indices/package-file.map.bz2
-}
-
-function packages() {
-    log "Generating Packages and Sources files"
-    cd $configdir
-    apt-ftparchive generate apt.conf
-}
-
-function pdiff() {
-    log "Generating pdiff files"
-    dak generate-index-diffs
-}
-
-function release() {
-    log "Generating Release files"
-    dak generate-releases
-}
-
-function dakcleanup() {
-    log "Cleanup old packages/files"
-    dak clean-suites
-    dak clean-queues
-}
-
-function buildd() {
-    # Needs to be rebuilt, as files have moved.  Due to unaccepts, we need to
-    # update this before wanna-build is updated.
-    log "Regenerating wanna-build/buildd information"
-    psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE suite = 5 AND queue = 0 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
-    symlinks -d /srv/incoming.debian.org/buildd > /dev/null
-    apt-ftparchive generate apt.conf.buildd
-}
-
-function scripts() {
-    log "Running various scripts from $scriptsdir"
-    cd $scriptsdir
-    ./mkmaintainers
-    ./copyoverrides
-    ./mklslar
-    ./mkfilesindices
-    ./mkchecksums
-}
-
-function mirror() {
-    echo "Regenerating \"public\" mirror/ hardlink fun"
-    cd ${mirrordir}
-    rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
-}
-
-function wb() {
-    log "Trigger daily wanna-build run"
-    ssh -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 wbadm@buildd /org/wanna-build/trigger.daily || echo "W-B trigger.daily failed" | mail -s "W-B Daily trigger failed" ftpmaster@ftp-master.debian.org
-}
-
-function expire() {
-    log "Expiring old database dumps..."
-    cd $base/backup
-    $scriptsdir/expire_dumps -d . -p -f "dump_*"
-}
-
-function reports() {
-    # Send a report on NEW/BYHAND packages
-    log "Nagging ftpteam about NEW/BYHAND packages"
-    dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org
-    # and one on crufty packages
-    log "Sending information about crufty packages"
-    dak cruft-report > $webdir/cruft-report-daily.txt
-    dak cruft-report -s experimental >> $webdir/cruft-report-daily.txt
-    cat $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org
-}
-
-function dm() {
-    log "Updating DM html page"
-    $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
-}
-
-function bts() {
-    log "Categorizing uncategorized bugs filed against ftp.debian.org"
-    dak bts-categorize
-}
-
-function merkel2() {
-    # Push katie@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
-    log "Trigger merkels projectb sync"
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb katie@merkel.debian.org sleep 1
-}
-
-function runparts() {
-    log "Using run-parts to run scripts in $base/scripts/distmnt"
-    run-parts --report $base/scripts/distmnt
-}
-
-function i18n2() {
-    log "Exporting package data foo for i18n project"
-    STAMP=$(date "+%Y%m%d%H%M")
-    mkdir -p ${scriptdir}/i18n/${STAMP}
-    cd ${scriptdir}/i18n/${STAMP}
-    dak control-suite -l stable > lenny
-    dak control-suite -l testing > squeeze
-    dak control-suite -l unstable > sid
-    echo "${STAMP}" > timestamp
-    gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 6070D3A1 --detach-sign -o timestamp.gpg timestamp
-    rm -f md5sum
-    md5sum * > md5sum
-    cd ${webdir}/
-    ln -sfT ${scriptdir}/i18n/${STAMP} i18n
-
-    cd ${scriptdir}
-    find ./i18n -mindepth 1 -maxdepth 1 -mtime +2 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
-}
-
-function stats() {
-    log "Updating stats data"
-    cd $configdir
-    $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
-    R --slave --vanilla < $base/misc/ftpstats.R
-}
-
-function aptftpcleanup() {
-    log "Clean up apt-ftparchive's databases"
-    cd $configdir
-    apt-ftparchive -q clean apt.conf
-}
-
-function compress() {
-    log "Compress old psql backups"
-    cd $base/backup/
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mtime +1 |
-    while read dumpname; do
-        echo "Compressing $dumpname"
-        bzip2 -9v "$dumpname"
-    done
-}
-
-function logstats() {
-    $masterdir/tools/logs.py "$1"
-}
-
-# save timestamp when we start
-function savetimestamp() {
-	NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-	echo ${NOW} > "${dbdir}/dinstallstart"
-}
-
-function renamelogfile() {
-	if [ -f "${dbdir}/dinstallstart" ]; then
-		RENAMETO=$(cat "${dbdir}/dinstallstart")
-		mv "$LOGFILE" "$logdir/dinstall_${RENAMETO}.log"
-		logstats "$logdir/dinstall_${RENAMETO}.log"
-		bzip2 -9 "$logdir/dinstall_${RENAMETO}.log"
-	else
-		error "Problem, I don't know when dinstall started, unable to do log statistics."
-		NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-		mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
-		bzip2 -9 "$logdir/dinstall_${NOW}.log"
-	fi
-}
+# source the dinstall functions
+. "${configdir}/dinstall.functions"
 
 ########################################################################
 ########################################################################
@@ -349,13 +53,13 @@ function renamelogfile() {
 # Function to save which stage we are in, so we can restart an interrupted
 # dinstall. Or even run actions in parallel, if we dare to, by simply
 # backgrounding the call to this function. But that should only really be
-# done for things we dont care much about.
+# done for things we don't care much about.
 #
 # This should be called with the first argument being an array, with the
 # members
 #  - FUNC - the function name to call
 #  - ARGS - Possible arguments to hand to the function. Can be the empty string
-#  - TS   - The timestamp name. Can be the empty string
+#  - TIME - The timestamp name. Can be the empty string
 #  - ERR  - if this is the string false, then the call will be surrounded by
 #           set +e ... set -e calls, so errors in the function do not exit
 #           dinstall. Can be the empty string, meaning true.
@@ -366,8 +70,11 @@ function stage() {
     ARGS='GO[@]'
     local "${!ARGS}"
 
-    if [ -f "${stagedir}/${FUNC}" ]; then
-        stamptime=$(/usr/bin/stat -c %Z "${stagedir}/${FUNC}")
+    error=${ERR:-"true"}
+
+    STAGEFILE="${stagedir}/${FUNC}"
+    if [ -f "${STAGEFILE}" ]; then
+        stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
         unixtime=$(date +%s)
         difference=$(( $unixtime - $stamptime ))
         if [ ${difference} -ge 14400 ]; then
@@ -378,18 +85,23 @@ function stage() {
         return
     fi
 
-    debug "Now calling function ${FUNC}. Arguments: ${ARGS}. Timestamp: ${TS}"
+    debug "Now calling function ${FUNC}. Arguments: ${ARGS}. Timestamp: ${TIME}"
 
     # Make sure we are always at the same place. If a function wants to be elsewhere,
     # it has to cd first!
     cd ${configdir}
 
-	if [ -f "${LOCK_STOP}" ]; then
-		log "${LOCK_STOP} exists, exiting immediately"
-		exit 42
-	fi
+    # Now redirect the output into $STAGEFILE.log. In case it errors out somewhere our
+    # errorhandler trap can then mail the contents of $STAGEFILE.log only, instead of a whole
+    # dinstall logfile. Short error mails ftw!
+    exec >> "${STAGEFILE}.log" 2>&1
 
-    if [ "${ERR}" = "false" ]; then
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
+
+    if [ "${error}" = "false" ]; then
         set +e
     fi
     ${FUNC} ${ARGS}
@@ -400,16 +112,27 @@ function stage() {
     # Make sure we are always at the same place.
     cd ${configdir}
 
-    touch "${stagedir}/${FUNC}"
+    # We always use the same umask. If a function wants to do different, fine, but we reset.
+    umask 022
+
+    touch "${STAGEFILE}"
 
     if [ -n "${TIME}" ]; then
         ts "${TIME}"
     fi
 
-	if [ -f "${LOCK_STOP}" ]; then
-		log "${LOCK_STOP} exists, exiting immediately"
-		exit 42
-	fi
+    # And the output goes back to the normal logfile
+    exec >> "$LOGFILE" 2>&1
+
+    # Now we should make sure that we have a usable dinstall.log, so append the $STAGEFILE.log
+    # to it.
+    cat "${STAGEFILE}.log" >> "${LOGFILE}"
+    rm -f "${STAGEFILE}.log"
+
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
 }
 
 ########################################################################
@@ -419,54 +142,24 @@ LOGFILE="$logdir/dinstall.log"
 
 exec >> "$LOGFILE" 2>&1
 
-# usually we are not using debug logs. Set to 1 if you want them.
-DEBUG=0
+# And now source our default config
+. "${configdir}/dinstall.variables"
 
-# our name
-PROGRAM="dinstall"
+# Make sure we start out with a sane umask setting
+umask 022
 
-# where do we want mails to go? For example log entries made with error()
-if [ "x$(hostname -s)x" != "xriesx" ]; then
-    # Not our ftpmaster host
-    MAILTO=${MAILTO:-"root"}
-else
-    # Yay, ftpmaster
-    MAILTO=${MAILTO:-"ftpmaster@debian.org"}
-fi
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
 
-# How many logfiles to keep
-LOGROTATE=${LOGROTATE:-400}
-
-# Marker for dinstall start
-DINSTALLSTART="${lockdir}/dinstallstart"
-# Marker for dinstall end
-DINSTALLEND="${lockdir}/dinstallend"
-
-# Timestamps start at -1. so first gets 0
-TS=-1
 touch "${DINSTALLSTART}"
 ts "startup"
-
-# Tell everyone we are doing some work
-NOTICE="$ftpdir/Archive_Maintenance_In_Progress"
-
-# lock cron.unchecked (it immediately exits when this exists)
-LOCK_DAILY="$lockdir/daily.lock"
-
-# Lock process-new and cron.unchecked from doing work
-LOCK_ACCEPTED="$lockdir/unchecked.lock"
-
-# This file is simply used to indicate to britney whether or not
-# the Packages file updates completed sucessfully.  It's not a lock
-# from our point of view
-LOCK_BRITNEY="$lockdir/britney.lock"
-
-# If this file exists we exit immediately after the currently running
-# function is done
-LOCK_STOP="$lockdir/archive.stop"
+DINSTALLBEGIN="$(date -u +"%a %b %d %T %Z %Y (%s)")"
+state "Startup"
 
 lockfile -l 3600 "${LOCK_DAILY}"
-trap cleanup EXIT ERR TERM HUP INT QUIT
+trap onerror ERR
+trap cleanup EXIT TERM HUP INT QUIT
 
 touch "${LOCK_BRITNEY}"
 
@@ -479,20 +172,12 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="notice"
-    TIME=""
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-GO=(
     FUNC="merkel1"
     TIME="init"
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="pgdump_pre"
@@ -511,22 +196,6 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="punew"
-    TIME="p-u-new"
-    ARGS="p-u-new"
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="opunew"
-    TIME="o-p-u-new"
-    ARGS="o-p-u-new"
-    ERR=""
-)
-stage $GO
-
-GO=(
     FUNC="i18n1"
     TIME="i18n 1"
     ARGS=""
@@ -535,10 +204,27 @@ GO=(
 stage $GO
 
 lockfile "$LOCK_ACCEPTED"
+lockfile "$LOCK_NEW"
 
 GO=(
-    FUNC="accepted"
-    TIME="accepted"
+    FUNC="punew"
+    TIME="p-u-new"
+    ARGS="proposedupdates"
+    ERR="false"
+)
+stage $GO
+
+#GO=(
+#    FUNC="opunew"
+#    TIME="o-p-u-new"
+#    ARGS="oldproposedupdates"
+#    ERR="false"
+#)
+#stage $GO
+
+GO=(
+    FUNC="newstage"
+    TIME="newstage"
     ARGS=""
     ERR=""
 )
@@ -552,11 +238,19 @@ GO=(
 )
 stage $GO
 
-rm -f "$LOCK_ACCEPTED"
+state "indices"
 
 GO=(
-    FUNC="msfl"
-    TIME="make-suite-file-list"
+    FUNC="dominate"
+    TIME="dominate"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="filelist"
+    TIME="generate-filelist"
     ARGS=""
     ERR=""
 )
@@ -586,14 +280,18 @@ GO=(
 )
 stage $GO
 
+state "packages/contents"
 GO=(
     FUNC="packages"
     TIME="apt-ftparchive"
     ARGS=""
     ERR=""
 )
+# Careful: When we ever go and remove this monster-long thing, we have to check the backgrounded
+# functions before it. We no longer have a 1.5hour sync point then.
 stage $GO
 
+state "dists/"
 GO=(
     FUNC="pdiff"
     TIME="pdiff"
@@ -619,16 +317,57 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="buildd"
-    TIME="buildd"
+    FUNC="buildd_dir"
+    TIME="buildd_dir"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+state "scripts"
+GO=(
+    FUNC="mkmaintainers"
+    TIME="mkmaintainers"
     ARGS=""
     ERR=""
 )
 stage $GO
 
 GO=(
-    FUNC="scripts"
-    TIME="scripts"
+    FUNC="mkuploaders"
+    TIME="mkuploaders"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="copyoverrides"
+    TIME="copyoverrides"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="mklslar"
+    TIME="mklslar"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="mkfilesindices"
+    TIME="mkfilesindices"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="mkchecksums"
+    TIME="mkchecksums"
     ARGS=""
     ERR=""
 )
@@ -642,18 +381,12 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="wb"
-    TIME="w-b"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-rm -f "${NOTICE}"
+rm -f "$LOCK_ACCEPTED"
+rm -f "$LOCK_NEW"
 rm -f "${LOCK_DAILY}"
 
 ts "locked part finished"
+state "postlock"
 
 GO=(
     FUNC="pgdump_post"
@@ -661,7 +394,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="expire"
@@ -669,7 +402,15 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
+
+GO=(
+    FUNC="transitionsclean"
+    TIME="transitionsclean"
+    ARGS=""
+    ERR=""
+)
+stage $GO &
 
 GO=(
     FUNC="reports"
@@ -677,7 +418,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="dm"
@@ -685,15 +426,15 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="bts"
     TIME=""
     ARGS=""
-    ERR=""
+    ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="merkel2"
@@ -701,17 +442,15 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
-
-ulimit -m 90000 -d 90000 -s 10000 -v 200000
+stage $GO &
 
 GO=(
-    FUNC="runparts"
-    TIME="run-parts"
+    FUNC="mirrorpush"
+    TIME="mirrorpush"
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="i18n2"
@@ -719,7 +458,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+stage $GO &
 
 GO=(
     FUNC="stats"
@@ -727,17 +466,33 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
-
-rm -f ${LOCK_BRITNEY}
+stage $GO &
 
 GO=(
-    FUNC="aptftpcleanup"
-    TIME="apt-ftparchive cleanup"
+    FUNC="testingsourcelist"
+    TIME=""
     ARGS=""
-    ERR=""
+    ERR="false"
 )
-stage $GO
+stage $GO &
+
+rm -f "${LOCK_BRITNEY}"
+
+GO=(
+    FUNC="pgdakdev"
+    TIME="dak-dev db"
+    ARGS=""
+    ERR="false"
+)
+stage $GO &
+
+GO=(
+    FUNC="merkel3"
+    TIME="merkel ddaccessible sync"
+    ARGS=""
+    ERR="false"
+)
+stage $GO &
 
 GO=(
     FUNC="compress"
@@ -745,13 +500,19 @@ GO=(
     ARGS=""
     ERR=""
 )
+stage $GO &
+
+GO=(
+    FUNC="aptftpcleanup"
+    TIME="apt-ftparchive cleanup"
+    ARGS=""
+    ERR="false"
+)
 stage $GO
 
 log "Daily cron scripts successful, all done"
 
 exec > "$logdir/afterdinstall.log" 2>&1
-
-cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
 
 GO=(
     FUNC="renamelogfile"
@@ -760,6 +521,7 @@ GO=(
     ERR="false"
 )
 stage $GO
+state "all done"
 
 
 # Now, at the very (successful) end of dinstall, make sure we remove

@@ -33,14 +33,16 @@
 
 ################################################################################
 
-import os, stat, sys, time
+import os, os.path, stat, sys, time
 import apt_pkg
 from daklib import utils
+from daklib import daklog
+from daklib.config import Config
 
 ################################################################################
 
-Cnf = None
 Options = None
+Logger = None
 del_dir = None
 delete_date = None
 
@@ -60,15 +62,15 @@ Clean out incoming directories.
 
 ################################################################################
 
-def init ():
+def init (cnf):
     global delete_date, del_dir
 
     delete_date = int(time.time())-(int(Options["Days"])*84600)
+    date = time.strftime("%Y-%m-%d")
+    del_dir = os.path.join(cnf["Dir::Morgue"], cnf["Clean-Queues::MorgueSubDir"], date)
 
     # Ensure a directory exists to remove files to
     if not Options["No-Action"]:
-        date = time.strftime("%Y-%m-%d")
-        del_dir = Cnf["Dir::Morgue"] + '/' + Cnf["Clean-Queues::MorgueSubDir"] + '/' + date
         if not os.path.exists(del_dir):
             os.makedirs(del_dir, 02775)
         if not os.path.isdir(del_dir):
@@ -77,33 +79,38 @@ def init ():
     # Move to the directory to clean
     incoming = Options["Incoming"]
     if incoming == "":
-        incoming = Cnf["Dir::Queue::Unchecked"]
+        incoming = cnf["Dir::Queue::Unchecked"]
     os.chdir(incoming)
 
 # Remove a file to the morgue
-def remove (f):
+def remove (from_dir, f):
+    fname = os.path.basename(f)
     if os.access(f, os.R_OK):
-        dest_filename = del_dir + '/' + os.path.basename(f)
+        Logger.log(["move file to morgue", from_dir, fname, del_dir])
+        if Options["Verbose"]:
+            print "Removing '%s' (to '%s')."  % (fname, del_dir)
+        if Options["No-Action"]:
+            return
+
+        dest_filename = os.path.join(del_dir, fname)
         # If the destination file exists; try to find another filename to use
         if os.path.exists(dest_filename):
             dest_filename = utils.find_next_free(dest_filename, 10)
+            Logger.log(["change destination file name", os.path.basename(dest_filename)])
         utils.move(f, dest_filename, 0660)
     else:
-        utils.warn("skipping '%s', permission denied." % (os.path.basename(f)))
+        Logger.log(["skipping file because of permission problem", fname])
+        utils.warn("skipping '%s', permission denied." % fname)
 
 # Removes any old files.
 # [Used for Incoming/REJECT]
 #
 def flush_old ():
+    Logger.log(["check Incoming/REJECT for old files", os.getcwd()])
     for f in os.listdir('.'):
         if os.path.isfile(f):
             if os.stat(f)[stat.ST_MTIME] < delete_date:
-                if Options["No-Action"]:
-                    print "I: Would delete '%s'." % (os.path.basename(f))
-                else:
-                    if Options["Verbose"]:
-                        print "Removing '%s' (to '%s')."  % (os.path.basename(f), del_dir)
-                    remove(f)
+                remove('Incoming/REJECT', f)
             else:
                 if Options["Verbose"]:
                     print "Skipping, too new, '%s'." % (os.path.basename(f))
@@ -115,6 +122,7 @@ def flush_orphans ():
     all_files = {}
     changes_files = []
 
+    Logger.log(["check Incoming for old orphaned files", os.getcwd()])
     # Build up the list of all files in the directory
     for i in os.listdir('.'):
         if os.path.isfile(i):
@@ -135,7 +143,7 @@ def flush_orphans ():
         for f in files.keys():
             if f.endswith(".dsc"):
                 try:
-                    dsc = utils.parse_changes(f)
+                    dsc = utils.parse_changes(f, dsc_file=1)
                     dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
                 except:
                     utils.warn("error processing '%s'; skipping it. [Got %s]" % (f, sys.exc_type))
@@ -155,12 +163,7 @@ def flush_orphans ():
     # a .dsc) and should be deleted if old enough.
     for f in all_files.keys():
         if os.stat(f)[stat.ST_MTIME] < delete_date:
-            if Options["No-Action"]:
-                print "I: Would delete '%s'." % (os.path.basename(f))
-            else:
-                if Options["Verbose"]:
-                    print "Removing '%s' (to '%s')."  % (os.path.basename(f), del_dir)
-                remove(f)
+            remove('Incoming', f)
         else:
             if Options["Verbose"]:
                 print "Skipping, too new, '%s'." % (os.path.basename(f))
@@ -168,15 +171,15 @@ def flush_orphans ():
 ################################################################################
 
 def main ():
-    global Cnf, Options
+    global Options, Logger
 
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
-        if not Cnf.has_key("Clean-Queues::Options::%s" % (i)):
-            Cnf["Clean-Queues::Options::%s" % (i)] = ""
-    if not Cnf.has_key("Clean-Queues::Options::Days"):
-        Cnf["Clean-Queues::Options::Days"] = "14"
+        if not cnf.has_key("Clean-Queues::Options::%s" % (i)):
+            cnf["Clean-Queues::Options::%s" % (i)] = ""
+    if not cnf.has_key("Clean-Queues::Options::Days"):
+        cnf["Clean-Queues::Options::Days"] = "14"
 
     Arguments = [('h',"help","Clean-Queues::Options::Help"),
                  ('d',"days","Clean-Queues::Options::Days", "IntLevel"),
@@ -184,24 +187,28 @@ def main ():
                  ('n',"no-action","Clean-Queues::Options::No-Action"),
                  ('v',"verbose","Clean-Queues::Options::Verbose")]
 
-    apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Clean-Queues::Options")
+    apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
+    Options = cnf.SubTree("Clean-Queues::Options")
 
     if Options["Help"]:
         usage()
 
-    init()
+    Logger = daklog.Logger(cnf, 'clean-queues', Options['No-Action'])
+
+    init(cnf)
 
     if Options["Verbose"]:
         print "Processing incoming..."
     flush_orphans()
 
-    reject = Cnf["Dir::Queue::Reject"]
+    reject = cnf["Dir::Queue::Reject"]
     if os.path.exists(reject) and os.path.isdir(reject):
         if Options["Verbose"]:
             print "Processing incoming/REJECT..."
         os.chdir(reject)
         flush_old()
+
+    Logger.close()
 
 #######################################################################################
 

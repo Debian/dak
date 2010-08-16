@@ -25,9 +25,8 @@ o To process queue/:
 
 o To generate indices files:
 
-  * dak make-suite-file-list - generates file lists for apt-ftparchive
-                               and removes obsolete packages from
-                               suites 
+  * dak dominate          - removes obsolete packages from suites 
+  * dak generate-filelist - generates file lists for apt-ftparchive
   * dak generate-releases - generates Release
 
 o To clean things up:
@@ -114,10 +113,11 @@ o If you have an existing archive:
      which are needed for this.  After changing all occurences of "projectb"
      to the name of your database (as defined in DB::Name) you can run:
          psql <DB::Name> < init_pool.sql
+   * Create the following groups in postgres: ftpmaster ftpteam ftptrainee
+   * Run 'dak update-db' to upgrade the database schema.
    * Run 'dak init-db': it will populate your database with the values from
      dak.conf and apt.conf.
    * Run 'psql <DB::Name> < add_constraints.sql'.
 o Copy all templates from the "templates" directory to to the directory
   specified in Dir::Templates, and adapt them to your distribution.
-o Create an 'ftpmaster' group in postgres.
 

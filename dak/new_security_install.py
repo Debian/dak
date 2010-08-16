@@ -23,9 +23,9 @@
 import apt_pkg, os, sys, pwd, time, commands
 
 from daklib import queue
-from daklib import logging
+from daklib import daklog
 from daklib import utils
-from daklib import database
+from daklib.dbconn import DBConn, get_build_queue, get_suite_architectures
 from daklib.regexes import re_taint_free
 
 Cnf = None
@@ -60,9 +60,7 @@ def init():
 
     Options = Cnf.SubTree("Security-Install::Options")
 
-    whoami = os.getuid()
-    whoamifull = pwd.getpwuid(whoami)
-    username = whoamifull[0]
+    username = utils.getusername()
     if username != "dak":
         print "Non-dak user: %s" % username
         Options["Sudo"] = "y"
@@ -78,7 +76,7 @@ def init():
     if Options["No-Action"]:
         Options["Sudo"] = ""
     if not Options["Sudo"] and not Options["No-Action"]:
-        Logger = Upload.Logger = logging.Logger(Cnf, "new-security-install")
+        Logger = Upload.Logger = daklog.Logger(Cnf, "new-security-install")
 
     return arguments
 
@@ -154,9 +152,9 @@ def advisory_info():
     svs = srcverarches.keys()
     svs.sort()
     for sv in svs:
-        as = srcverarches[sv].keys()
-        as.sort()
-        print " %s (%s)" % (sv, ", ".join(as))
+        as_ = srcverarches[sv].keys()
+        as_.sort()
+        print " %s (%s)" % (sv, ", ".join(as_))
 
 def prompt(opts, default):
     p = ""
@@ -303,7 +301,10 @@ def remove_from_buildd(suites, filename):
         try:
             os.unlink(os.path.join(builddbase, s, filebase))
         except OSError, e:
-            utils.warn("Problem removing %s from buildd queue %s [%s]" % (filebase, s, str(e)))
+            pass
+            # About no value printing this warning - it only confuses the security team,
+            # yet makes no difference otherwise.
+            #utils.warn("Problem removing %s from buildd queue %s [%s]" % (filebase, s, str(e)))
 
 
 def generate_advisory(template):
@@ -386,7 +387,7 @@ def generate_advisory(template):
                                        ver, suite)
         adv += "%s\n%s\n\n" % (suite_header, "-"*len(suite_header))
 
-        arches = database.get_suite_architectures(suite)
+        arches = [x.arch_name for x in get_suite_architectures(suite)]
         if "source" in arches:
             arches.remove("source")
         if "all" in arches:
@@ -473,6 +474,7 @@ def _do_Approve():
     # 3. run dak make-suite-file-list / apt-ftparchve / dak generate-releases
     print "Updating file lists for apt-ftparchive..."
     spawn("dak make-suite-file-list")
+    spawn("dak generate-filelist")
     print "Updating Packages and Sources files..."
     spawn("/org/security.debian.org/dak/config/debian-security/map.sh")
     spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
@@ -491,9 +493,11 @@ def _do_Disembargo():
     if os.getcwd() != Cnf["Dir::Queue::Embargoed"].rstrip("/"):
         utils.fubar("Can only disembargo from %s" % Cnf["Dir::Queue::Embargoed"])
 
+    session = DBConn().session()
+
     dest = Cnf["Dir::Queue::Unembargoed"]
-    emb_q = database.get_or_set_queue_id("embargoed")
-    une_q = database.get_or_set_queue_id("unembargoed")
+    emb_q = get_build_queue("embargoed", session)
+    une_q = get_build_queue("unembargoed", session)
 
     for c in changes:
         print "Disembargoing %s" % (c)
@@ -504,7 +508,8 @@ def _do_Disembargo():
 
         if "source" in Upload.pkg.changes["architecture"].keys():
             print "Adding %s %s to disembargo table" % (Upload.pkg.changes["source"], Upload.pkg.changes["version"])
-            Upload.projectB.query("INSERT INTO disembargo (package, version) VALUES ('%s', '%s')" % (Upload.pkg.changes["source"], Upload.pkg.changes["version"]))
+            session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)",
+                {'package': Upload.pkg.changes["source"], 'version': Upload.pkg.changes["version"]})
 
         files = {}
         for suite in Upload.pkg.changes["distribution"].keys():
@@ -517,10 +522,10 @@ def _do_Disembargo():
                 files[os.path.join(dest_dir, file)] = 1
 
         files = files.keys()
-        Upload.projectB.query("BEGIN WORK")
         for f in files:
-            Upload.projectB.query("UPDATE queue_build SET queue = %s WHERE filename = '%s' AND queue = %s" % (une_q, f, emb_q))
-        Upload.projectB.query("COMMIT WORK")
+            session.execute("UPDATE queue_build SET queue = :unembargoed WHERE filename = :filename AND queue = :embargoed",
+                {'unembargoed': une_q.queue_id, 'filename': f, 'embargoed': emb_q.queue_id})
+        session.commit()
 
         for file in Upload.pkg.files.keys():
             utils.copy(file, os.path.join(dest, file))
@@ -533,9 +538,14 @@ def _do_Disembargo():
         utils.copy(k, os.path.join(dest, k))
         os.unlink(k)
 
+    session.commit()
+
 def do_Reject(): sudo("R", _do_Reject, True)
 def _do_Reject():
     global changes
+
+    session = DBConn().session()
+
     for c in changes:
         print "Rejecting %s..." % (c)
         Upload.init_vars()
@@ -557,8 +567,8 @@ def _do_Reject():
         if not aborted:
             os.unlink(c[:-8]+".dak")
             for f in files:
-                Upload.projectB.query(
-                    "DELETE FROM queue_build WHERE filename = '%s'" % (f))
+                session.execute("DELETE FROM queue_build WHERE filename = :filename",
+                    {'filename': f})
                 os.unlink(f)
 
     print "Updating buildd information..."
@@ -567,6 +577,8 @@ def _do_Reject():
     adv_file = "./advisory.%s" % (advisory)
     if os.path.exists(adv_file):
         os.unlink(adv_file)
+
+    session.commit()
 
 def do_DropAdvisory():
     for c in changes:

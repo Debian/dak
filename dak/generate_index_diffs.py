@@ -34,14 +34,14 @@
 import sys
 import os
 import tempfile
-import subprocess
 import time
 import apt_pkg
+
 from daklib import utils
+from daklib.dbconn import get_suite, get_suite_architectures
 
 ################################################################################
 
-projectB = None
 Cnf = None
 Logger = None
 Options = None
@@ -254,7 +254,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
-        w = os.popen("diff --ed - %s | gzip -c -9 > %s.gz" %
+        w = os.popen("diff --ed - %s | gzip --rsyncable -c -9 > %s.gz" %
                      (newfile, difffile), "w")
         pipe_file(oldf, w)
         oldf.close()
@@ -312,17 +312,20 @@ def main():
     if not suites:
         suites = Cnf.SubTree("Suite").List()
 
-    for suite in suites:
-        print "Processing: " + suite
-        SuiteBlock = Cnf.SubTree("Suite::" + suite)
+    for suitename in suites:
+        print "Processing: " + suitename
+        SuiteBlock = Cnf.SubTree("Suite::" + suitename)
 
-        if SuiteBlock.has_key("Untouchable"):
+        suiteobj = get_suite(suitename.lower())
+
+        # Use the canonical version of the suite name
+        suite = suiteobj.suite_name
+
+        if suiteobj.untouchable:
             print "Skipping: " + suite + " (untouchable)"
             continue
 
-        suite = suite.lower()
-
-        architectures = SuiteBlock.ValueList("Architectures")
+        architectures = get_suite_architectures(suite, skipall=True)
 
         if SuiteBlock.has_key("Components"):
             components = SuiteBlock.ValueList("Components")
@@ -346,9 +349,8 @@ def main():
             print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
             continue
 
-        for architecture in architectures:
-            if architecture == "all":
-                continue
+        for archobj in architectures:
+            architecture = archobj.arch_string
 
             if architecture != "source":
                 # Process Contents

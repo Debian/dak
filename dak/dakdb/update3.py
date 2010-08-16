@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 
-""" Database Update Script - Remove unused versioncmp """
-# Copyright (C) 2008  Michael Casadevall <mcasadevall@debian.org>
-# Copyright (C) 2009  Joerg Jaspert <joerg@debian.org>
+"""
+Remove unused versioncmp
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2008  Michael Casadevall <mcasadevall@debian.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +36,15 @@ def do_update(self):
 
     try:
         c = self.db.cursor()
-        c.execute("DROP FUNCTION versioncmp(text, text);")
+        # The reason we try and check to see if it exists is that
+        # psycopg2 might leave the cursor invalid if the drop fails
+        c.execute("SELECT proname from pg_catalog.pg_proc WHERE proname = 'versioncmp'")
+        rows = c.fetchall()
+        if rows:
+            c.execute("DROP FUNCTION versioncmp(text, text);")
+        else:
+            print "function already does not exist"
+
         c.execute("UPDATE config SET value = '3' WHERE name = 'db_revision'")
 
         self.db.commit()

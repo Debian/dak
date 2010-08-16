@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 
-""" Script to automate some parts of checking NEW packages """
-# Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+"""
+Script to automate some parts of checking NEW packages
+
+Most functions are written in a functional programming style. They
+return a string avoiding the side effect of directly printing the string
+to stdout. Those functions can be used in multithreaded parts of dak.
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,10 +42,19 @@
 
 ################################################################################
 
-import errno, os, pg, re, sys, md5
-import apt_pkg, apt_inst
-from daklib import database
+import errno
+import os
+import re
+import sys
+import md5
+import apt_pkg
+import apt_inst
+import shutil
+import commands
+import threading
+
 from daklib import utils
+from daklib.dbconn import DBConn, get_binary_from_name_suite
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory
@@ -43,13 +62,11 @@ from daklib.regexes import html_escaping, re_html_escaping, re_version, re_space
 ################################################################################
 
 Cnf = None
-projectB = None
-
 Cnf = utils.get_conf()
-projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-database.init(Cnf, projectB)
 
-printed_copyrights = {}
+printed = threading.local()
+printed.copyrights = {}
+package_relations = {}           #: Store relations of packages for later output
 
 # default is to not output html.
 use_html = 0
@@ -80,13 +97,13 @@ def escape_if_needed(s):
 def headline(s, level=2, bodyelement=None):
     if use_html:
         if bodyelement:
-            print """<thead>
+            return """<thead>
                 <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s <span class="toggle-msg">(click to toggle)</span></th></tr>
-              </thead>"""%{"bodyelement":bodyelement,"title":utils.html_escape(s)}
+              </thead>\n"""%{"bodyelement":bodyelement,"title":utils.html_escape(s)}
         else:
-            print "<h%d>%s</h%d>" % (level, utils.html_escape(s), level)
+            return "<h%d>%s</h%d>\n" % (level, utils.html_escape(s), level)
     else:
-        print "---- %s ----" % (s)
+        return "---- %s ----\n" % (s)
 
 # Colour definitions, 'end' isn't really for use
 
@@ -143,18 +160,20 @@ def format_field(k,v):
 
 def foldable_output(title, elementnameprefix, content, norow=False):
     d = {'elementnameprefix':elementnameprefix}
+    result = ''
     if use_html:
-        print """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
-                   <table class="infobox rfc822">"""%d
-    headline(title, bodyelement="%(elementnameprefix)s-body"%d)
+        result += """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
+                   <table class="infobox rfc822">\n"""%d
+    result += headline(title, bodyelement="%(elementnameprefix)s-body"%d)
     if use_html:
-        print """    <tbody id="%(elementnameprefix)s-body" class="infobody">"""%d
+        result += """    <tbody id="%(elementnameprefix)s-body" class="infobody">\n"""%d
     if norow:
-        print content
+        result += content + "\n"
     else:
-        print output_row(content)
+        result += output_row(content) + "\n"
     if use_html:
-        print """</tbody></table></div>"""
+        result += """</tbody></table></div>"""
+    return result
 
 ################################################################################
 
@@ -256,12 +275,12 @@ def read_control (filename):
 
     return (control, control_keys, section, depends, recommends, arch, maintainer)
 
-def read_changes_or_dsc (suite, filename):
+def read_changes_or_dsc (suite, filename, session = None):
     dsc = {}
 
     dsc_file = utils.open_file(filename)
     try:
-        dsc = utils.parse_changes(filename)
+        dsc = utils.parse_changes(filename, dsc_file=1)
     except:
         return formatted_text("can't parse .dsc control info")
     dsc_file.close()
@@ -275,7 +294,7 @@ def read_changes_or_dsc (suite, filename):
 
     for k in dsc.keys():
         if k in ("build-depends","build-depends-indep"):
-            dsc[k] = create_depends_string(suite, split_depends(dsc[k]))
+            dsc[k] = create_depends_string(suite, split_depends(dsc[k]), session)
         elif k == "architecture":
             if (dsc["architecture"] != "any"):
                 dsc['architecture'] = colour_output(dsc["architecture"], 'arch')
@@ -292,12 +311,12 @@ def read_changes_or_dsc (suite, filename):
     filecontents = '\n'.join(map(lambda x: format_field(x,dsc[x.lower()]), keysinorder))+'\n'
     return filecontents
 
-def create_depends_string (suite, depends_tree):
+def create_depends_string (suite, depends_tree, session = None):
     result = ""
     if suite == 'experimental':
-        suite_where = " in ('experimental','unstable')"
+        suite_where = "in ('experimental','unstable')"
     else:
-        suite_where = " ='%s'" % suite
+        suite_where = "= '%s'" % suite
 
     comma_count = 1
     for l in depends_tree:
@@ -309,10 +328,9 @@ def create_depends_string (suite, depends_tree):
                 result += " | "
             # doesn't do version lookup yet.
 
-            q = projectB.query("SELECT DISTINCT(b.package), b.version, c.name, su.suite_name FROM  binaries b, files fi, location l, component c, bin_associations ba, suite su WHERE b.package='%s' AND b.file = fi.id AND fi.location = l.id AND l.component = c.id AND ba.bin=b.id AND ba.suite = su.id AND su.suite_name %s ORDER BY b.version desc" % (d['name'], suite_where))
-            ql = q.getresult()
-            if ql:
-                i = ql[0]
+            res = get_binary_from_name_suite(d['name'], suite_where, session)
+            if res.rowcount > 0:
+                i = res.fetchone()
 
                 adepends = d['name']
                 if d['version'] != '' :
@@ -333,17 +351,39 @@ def create_depends_string (suite, depends_tree):
         comma_count += 1
     return result
 
-def output_deb_info(suite, filename):
+def output_package_relations ():
+    """
+    Output the package relations, if there is more than one package checked in this run.
+    """
+
+    if len(package_relations) < 2:
+        # Only list something if we have more than one binary to compare
+        package_relations.clear()
+        return
+
+    to_print = ""
+    for package in package_relations:
+        for relation in package_relations[package]:
+            to_print += "%-15s: (%s) %s\n" % (package, relation, package_relations[package][relation])
+
+    package_relations.clear()
+    return foldable_output("Package relations", "relations", to_print)
+
+def output_deb_info(suite, filename, packagename, session = None):
     (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
         return formatted_text("no control info")
     to_print = ""
+    if not package_relations.has_key(packagename):
+        package_relations[packagename] = {}
     for key in control_keys :
         if key == 'Depends':
-            field_value = create_depends_string(suite, depends)
+            field_value = create_depends_string(suite, depends, session)
+            package_relations[packagename][key] = field_value
         elif key == 'Recommends':
-            field_value = create_depends_string(suite, recommends)
+            field_value = create_depends_string(suite, recommends, session)
+            package_relations[packagename][key] = field_value
         elif key == 'Section':
             field_value = section
         elif key == 'Architecture':
@@ -376,6 +416,8 @@ def do_lintian (filename):
         return do_command("lintian --show-overrides --color always", filename, 1)
 
 def get_copyright (deb_filename):
+    global printed
+
     package = re_package.sub(r'\1', deb_filename)
     o = os.popen("dpkg-deb -c %s | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{print $6}' | head -n 1" % (deb_filename))
     cright = o.read()[:-1]
@@ -392,19 +434,52 @@ def get_copyright (deb_filename):
     copyrightmd5 = md5.md5(cright).hexdigest()
 
     res = ""
-    if printed_copyrights.has_key(copyrightmd5) and printed_copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
+    if printed.copyrights.has_key(copyrightmd5) and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
         res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
-                               (printed_copyrights[copyrightmd5]))
+                               (printed.copyrights[copyrightmd5]))
     else:
-        printed_copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
+        printed.copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
     return res+formatted_text(cright)
 
-def check_dsc (suite, dsc_filename):
-    (dsc) = read_changes_or_dsc(suite, dsc_filename)
-    foldable_output(dsc_filename, "dsc", dsc, norow=True)
-    foldable_output("lintian check for %s" % dsc_filename, "source-lintian", do_lintian(dsc_filename))
+def get_readme_source (dsc_filename):
+    tempdir = utils.temp_dirname()
+    os.rmdir(tempdir)
 
-def check_deb (suite, deb_filename):
+    cmd = "dpkg-source --no-check --no-copy -x %s %s" % (dsc_filename, tempdir)
+    (result, output) = commands.getstatusoutput(cmd)
+    if (result != 0):
+        res = "How is education supposed to make me feel smarter? Besides, every time I learn something new, it pushes some\n old stuff out of my brain. Remember when I took that home winemaking course, and I forgot how to drive?\n"
+        res += "Error, couldn't extract source, WTF?\n"
+        res += "'dpkg-source -x' failed. return code: %s.\n\n" % (result)
+        res += output
+        return res
+
+    path = os.path.join(tempdir, 'debian/README.source')
+    res = ""
+    if os.path.exists(path):
+        res += do_command("cat", path)
+    else:
+        res += "No README.source in this package\n\n"
+
+    try:
+        shutil.rmtree(tempdir)
+    except OSError, e:
+        if errno.errorcode[e.errno] != 'EACCES':
+            res += "%s: couldn't remove tmp dir %s for source tree." % (dsc_filename, tempdir)
+
+    return res
+
+def check_dsc (suite, dsc_filename, session = None):
+    (dsc) = read_changes_or_dsc(suite, dsc_filename, session)
+    return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
+           "\n" + \
+           foldable_output("lintian check for %s" % dsc_filename,
+	       "source-lintian", do_lintian(dsc_filename)) + \
+           "\n" + \
+           foldable_output("README.source for %s" % dsc_filename,
+               "source-readmesource", get_readme_source(dsc_filename))
+
+def check_deb (suite, deb_filename, session = None):
     filename = os.path.basename(deb_filename)
     packagename = filename.split('_')[0]
 
@@ -413,29 +488,30 @@ def check_deb (suite, deb_filename):
     else:
         is_a_udeb = 0
 
-
-    foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
-                    output_deb_info(suite, deb_filename), norow=True)
-
-    if is_a_udeb:
-        foldable_output("skipping lintian check for udeb", "binary-%s-lintian"%packagename,
-                        "")
-    else:
-        foldable_output("lintian check for %s" % (filename), "binary-%s-lintian"%packagename,
-                        do_lintian(deb_filename))
-
-    foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
-                    do_command("dpkg -c", deb_filename))
+    result = foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
+        output_deb_info(suite, deb_filename, packagename, session), norow=True) + "\n"
 
     if is_a_udeb:
-        foldable_output("skipping copyright for udeb", "binary-%s-copyright"%packagename,
-                        "")
+        result += foldable_output("skipping lintian check for udeb",
+	    "binary-%s-lintian"%packagename, "") + "\n"
     else:
-        foldable_output("copyright of %s" % (filename), "binary-%s-copyright"%packagename,
-                        get_copyright(deb_filename))
+        result += foldable_output("lintian check for %s" % (filename),
+	    "binary-%s-lintian"%packagename, do_lintian(deb_filename)) + "\n"
 
-    foldable_output("file listing of %s" % (filename),  "binary-%s-file-listing"%packagename,
-                    do_command("ls -l", deb_filename))
+    result += foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
+        do_command("dpkg -c", deb_filename)) + "\n"
+
+    if is_a_udeb:
+        result += foldable_output("skipping copyright for udeb",
+	    "binary-%s-copyright"%packagename, "") + "\n"
+    else:
+        result += foldable_output("copyright of %s" % (filename),
+	    "binary-%s-copyright"%packagename, get_copyright(deb_filename)) + "\n"
+
+    result += foldable_output("file listing of %s" % (filename),
+	"binary-%s-file-listing"%packagename, do_command("ls -l", deb_filename))
+
+    return result
 
 # Read a file, strip the signature and return the modified contents as
 # a string.
@@ -466,26 +542,28 @@ def strip_pgp_signature (filename):
     return contents
 
 def display_changes(suite, changes_filename):
+    global printed
     changes = read_changes_or_dsc(suite, changes_filename)
-    foldable_output(changes_filename, "changes", changes, norow=True)
+    printed.copyrights = {}
+    return foldable_output(changes_filename, "changes", changes, norow=True)
 
 def check_changes (changes_filename):
     try:
         changes = utils.parse_changes (changes_filename)
     except ChangesUnicodeError:
         utils.warn("Encoding problem with changes file %s" % (changes_filename))
-    display_changes(changes['distribution'], changes_filename)
+    print display_changes(changes['distribution'], changes_filename)
 
     files = utils.build_file_list(changes)
     for f in files.keys():
         if f.endswith(".deb") or f.endswith(".udeb"):
-            check_deb(changes['distribution'], f)
+            print check_deb(changes['distribution'], f)
         if f.endswith(".dsc"):
-            check_dsc(changes['distribution'], f)
+            print check_dsc(changes['distribution'], f)
         # else: => byhand
 
 def main ():
-    global Cnf, projectB, db_files, waste, excluded
+    global Cnf, db_files, waste, excluded
 
 #    Cnf = utils.get_conf()
 
@@ -502,6 +580,10 @@ def main ():
     if Options["Help"]:
         usage()
 
+    if Options["Html-Output"]:
+        global use_html
+        use_html = 1
+
     stdout_fd = sys.stdout
 
     for f in args:
@@ -517,12 +599,13 @@ def main ():
                 elif f.endswith(".deb") or f.endswith(".udeb"):
                     # default to unstable when we don't have a .changes file
                     # perhaps this should be a command line option?
-                    check_deb('unstable', file)
+                    print check_deb('unstable', f)
                 elif f.endswith(".dsc"):
-                    check_dsc('unstable', f)
+                    print check_dsc('unstable', f)
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (f))
             finally:
+                print output_package_relations()
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()

@@ -29,15 +29,14 @@ Display, edit and check the release manager's transition file.
 ################################################################################
 
 import os
-import pg
 import sys
 import time
 import errno
 import fcntl
 import tempfile
-import pwd
 import apt_pkg
-from daklib import database
+
+from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
 from daklib.regexes import re_broken_package
@@ -46,7 +45,6 @@ import yaml
 # Globals
 Cnf = None      #: Configuration, apt_pkg.Configuration
 Options = None  #: Parsed CommandLine arguments
-projectB = None #: database connection, pgobject
 
 ################################################################################
 
@@ -60,20 +58,21 @@ def init():
     @attention: This function may run B{within sudo}
 
     """
-    global Cnf, Options, projectB
+    global Cnf, Options
 
     apt_pkg.init()
 
     Cnf = utils.get_conf()
 
-    Arguments = [('h',"help","Edit-Transitions::Options::Help"),
+    Arguments = [('a',"automatic","Edit-Transitions::Options::Automatic"),
+                 ('h',"help","Edit-Transitions::Options::Help"),
                  ('e',"edit","Edit-Transitions::Options::Edit"),
                  ('i',"import","Edit-Transitions::Options::Import", "HasArg"),
                  ('c',"check","Edit-Transitions::Options::Check"),
                  ('s',"sudo","Edit-Transitions::Options::Sudo"),
                  ('n',"no-action","Edit-Transitions::Options::No-Action")]
 
-    for i in ["help", "no-action", "edit", "import", "check", "sudo"]:
+    for i in ["automatic", "help", "no-action", "edit", "import", "check", "sudo"]:
         if not Cnf.has_key("Edit-Transitions::Options::%s" % (i)):
             Cnf["Edit-Transitions::Options::%s" % (i)] = ""
 
@@ -84,15 +83,13 @@ def init():
     if Options["help"]:
         usage()
 
-    whoami = os.getuid()
-    whoamifull = pwd.getpwuid(whoami)
-    username = whoamifull[0]
+    username = utils.getusername()
     if username != "dak":
         print "Non-dak user: %s" % username
         Options["sudo"] = "y"
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
+    # Initialise DB connection
+    DBConn()
 
 ################################################################################
 
@@ -107,6 +104,7 @@ Options:
   -i, --import <file>       check and import transitions from file
   -c, --check               check the transitions file, remove outdated entries
   -S, --sudo                use sudo to update transitions file
+  -a, --automatic           don't prompt (only affects check).
   -n, --no-action           don't do anything (only affects check)"""
 
     sys.exit(exit_code)
@@ -289,8 +287,8 @@ def write_transitions_from_file(from_file):
     """
 
     # Lets check if from_file is in the directory we expect it to be in
-    if not os.path.abspath(from_file).startswith(Cnf["Transitions::TempPath"]):
-        print "Will not accept transitions file outside of %s" % (Cnf["Transitions::TempPath"])
+    if not os.path.abspath(from_file).startswith(Cnf["Dir::TempPath"]):
+        print "Will not accept transitions file outside of %s" % (Cnf["Dir::TempPath"])
         sys.exit(3)
 
     if Options["sudo"]:
@@ -320,7 +318,7 @@ def temp_transitions_file(transitions):
            sudo-ed script and would be unreadable if it has default mkstemp mode
     """
 
-    (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Transitions::TempPath"])
+    (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Dir::TempPath"])
     os.chmod(path, 0644)
     f = open(path, "w")
     yaml.dump(transitions, f, default_flow_style=False)
@@ -389,26 +387,34 @@ def edit_transitions():
 def check_transitions(transitions):
     """
     Check if the defined transitions still apply and remove those that no longer do.
-    @note: Asks the user for confirmation first.
+    @note: Asks the user for confirmation first unless -a has been set.
 
     """
+    global Cnf
+
     to_dump = 0
     to_remove = []
+    info = {}
+
+    session = DBConn().session()
+
     # Now look through all defined transitions
     for trans in transitions:
         t = transitions[trans]
         source = t["source"]
         expected = t["new"]
 
-        # Will be None if nothing is in testing.
-        current = database.get_suite_version(source, "testing")
+        # Will be an empty list if nothing is in testing.
+        sourceobj = get_source_in_suite(source, "testing", session)
 
-        print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        info[trans] = get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        print info[trans]
 
-        if current == None:
+        if sourceobj is None:
             # No package in testing
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
+            current = sourceobj.version
             compare = apt_pkg.VersionCompare(current, expected)
             if compare < 0:
                 # This is still valid, the current version in database is older than
@@ -432,6 +438,8 @@ def check_transitions(transitions):
 
         if Options["no-action"]:
             answer="n"
+        elif Options["automatic"]:
+            answer="y"
         else:
             answer = utils.our_raw_input(prompt).lower()
 
@@ -443,8 +451,25 @@ def check_transitions(transitions):
             sys.exit(0)
         elif answer == 'y':
             print "Committing"
-            for remove in to_remove:
+            subst = {}
+            subst['__SUBJECT__'] = "Transitions completed: " + ", ".join(sorted(to_remove))
+            subst['__TRANSITION_MESSAGE__'] = "The following transitions were removed:\n"
+            for remove in sorted(to_remove):
+                subst['__TRANSITION_MESSAGE__'] += info[remove] + '\n'
                 del transitions[remove]
+
+            # If we have a mail address configured for transitions,
+            # send a notification
+            subst['__TRANSITION_EMAIL__'] = Cnf.get("Transitions::Notifications", "")
+            if subst['__TRANSITION_EMAIL__'] != "":
+                print "Sending notification to %s" % subst['__TRANSITION_EMAIL__']
+                subst['__DAK_ADDRESS__'] = Cnf["Dinstall::MyEmailAddress"]
+                subst['__BCC__'] = 'X-DAK: dak transitions'
+                if Cnf.has_key("Dinstall::Bcc"):
+                    subst["__BCC__"] += '\nBcc: %s' % Cnf["Dinstall::Bcc"]
+                message = utils.TemplateSubst(subst,
+                                              os.path.join(Cnf["Dir::Templates"], 'transition.removed'))
+                utils.send_mail(message)
 
             edit_file = temp_transitions_file(transitions)
             write_transitions_from_file(edit_file)
@@ -456,7 +481,7 @@ def check_transitions(transitions):
 
 ################################################################################
 
-def print_info(trans, source, expected, rm, reason, packages):
+def get_info(trans, source, expected, rm, reason, packages):
     """
     Print information about a single transition.
 
@@ -479,49 +504,51 @@ def print_info(trans, source, expected, rm, reason, packages):
     @param packages: list of blocked packages
 
     """
-    print """Looking at transition: %s
+    return """Looking at transition: %s
 Source:      %s
 New Version: %s
 Responsible: %s
 Description: %s
 Blocked Packages (total: %d): %s
 """ % (trans, source, expected, rm, reason, len(packages), ", ".join(packages))
-    return
 
 ################################################################################
 
 def transition_info(transitions):
     """
     Print information about all defined transitions.
-    Calls L{print_info} for every transition and then tells user if the transition is
+    Calls L{get_info} for every transition and then tells user if the transition is
     still ongoing or if the expected version already hit testing.
 
     @type transitions: dict
     @param transitions: defined transitions
     """
+
+    session = DBConn().session()
+
     for trans in transitions:
         t = transitions[trans]
         source = t["source"]
         expected = t["new"]
 
         # Will be None if nothing is in testing.
-        current = database.get_suite_version(source, "testing")
+        sourceobj = get_source_in_suite(source, "testing", session)
 
-        print_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
 
-        if current == None:
+        if sourceobj is None:
             # No package in testing
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
-            compare = apt_pkg.VersionCompare(current, expected)
+            compare = apt_pkg.VersionCompare(sourceobj.version, expected)
             print "Apt compare says: %s" % (compare)
             if compare < 0:
                 # This is still valid, the current version in database is older than
                 # the new version we wait for
-                print "This transition is still ongoing, we currently have version %s" % (current)
+                print "This transition is still ongoing, we currently have version %s" % (sourceobj.version)
             else:
                 print "This transition is over, the target package reached testing, should be removed"
-                print "%s wanted version: %s, has %s" % (source, expected, current)
+                print "%s wanted version: %s, has %s" % (source, expected, sourceobj.version)
         print "-------------------------------------------------------------------------"
 
 ################################################################################
@@ -550,13 +577,13 @@ def main():
                           (Cnf["Dinstall::Reject::ReleaseTransitions"]))
         sys.exit(1)
     # Also check if our temp directory is defined and existant
-    temppath = Cnf.get("Transitions::TempPath", "")
+    temppath = Cnf.get("Dir::TempPath", "")
     if temppath == "":
-        utils.warn("Transitions::TempPath not defined")
+        utils.warn("Dir::TempPath not defined")
         sys.exit(1)
     if not os.path.exists(temppath):
         utils.warn("Temporary path %s not found." %
-                          (Cnf["Transitions::TempPath"]))
+                          (Cnf["Dir::TempPath"]))
         sys.exit(1)
 
     if Options["import"]:

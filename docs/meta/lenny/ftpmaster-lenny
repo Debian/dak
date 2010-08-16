@@ -1,0 +1,22 @@
+Section: devel
+Priority: optional
+Standards-Version: 3.8.1
+
+Package: ftpmaster-lenny
+Version: 1.0
+Maintainer: Debian FTP Master <ftpmaster@debian.org>
+Depends: ftpmaster-common, bicyclerepair, binutils-multiarch, build-essential, cron, curl, cvs, debian-el, dpkg-dev-el, easypg, devscripts, emacs-goodies-el, emacs22-nox, graphviz, ikiwiki, irb, libdbd-pg-ruby, mc, mutt, pychecker, pylint, pymacs, python-epydoc, python-mode, python-numpy, python-soappy, r-base, rsync, ruby, ruby-elisp, subversion, git-core, symlinks, procmail, python-magic, unp
+Architecture: all
+Copyright: copyright
+Changelog: changelog
+Readme: README.Debian
+Description: Meta package for DSA listing ftpmaster needs
+ This is a small meta package for the Debian System Administrators
+ so DSA easily knows (and can keep installed) all packages
+ Ftpmaster needs.
+ .
+ If, for whatever reason, you need a package added to this ones
+ Dependencies, ask ftpmaster, not the Debian admins.
+ .
+ This is not only "What DAK needs", but a general "FTPMaster needs this
+ to do the work"

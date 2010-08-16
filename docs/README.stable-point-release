@@ -1,6 +1,36 @@
 Rough Guide to doing Stable Point Releases in Debian
 ----------------------------------------------------
 
+o Dump projectb for backup purposes.
+o get everything listed, dak control-suite -l proposed-updates > p-u.list
+o add everything to stable:  cat p-u.list |dak control-suite --add stable
+o remove everything from proposed-updates, dak control-suite -r proposed-updates < p-u.list
+o sync with stable RM if there is any propup needed. do it, if so.
+o ask rms if they have RMs to do.
+o If you installed a debian-installer upload; migrate the relevant
+  installer-*/$release directory from proposed-updates to stable.
+  (Including potentially removing older versions)
+o Update version number in README, README.html and dists/README
+o Update the 'Debian<n>.<n>r<n>' symlink in dists/
+o Clean up dists/stable/ChangeLog (add header, basically)
+o Update fields in suite table in postgresql (see below)
+
+o Run 'dak dominate --force -s stable'
+o Run 'dak generate-filelist -s stable'
+o Run apt-ftparchive generate apt.conf.stable
+o Run 'dak generate-releases --force-touch --apt-conf apt.conf.stable stable'
+
+
+
+
+begin;
+update suite set version = '5.0.4' where suite_name = 'stable';
+update suite set description = 'Debian 5.0.4 Released 29 Januar 2010' where suite_name = 'stable';
+
+------------------------------------------------------------------------
+Old doc:
+
+
 o run 'dak clean-proposed-updates' to get rid of obsolete .changes
   from p-u ['dak clean-proposed-updates *.changes' from within p-u]
 o [also check for obsolete .changes caused by 'dak rm'-ing from p-u]
@@ -13,13 +43,10 @@ o Install, reject and remove packages as directed by the SRM using
   NB: removing packages are not logged to the stable ChangeLog; you
       need to do that byhand.
 
-o If you installed a debian-installer upload; migrate the relevant
-  installer-*/$release directory from proposed-updates to stable.
-  (Including potentially removing older versions)
 
 o Decruft stable in coordination with SRMs
 
-o Do anything in proposed-updates/TODO 
+o Do anything in proposed-updates/TODO
 o Close any applicable stable bugs
   (hint: http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=ftp.debian.org&include=etch)
 o Update version number in README, README.html and dists/README
