@@ -66,6 +66,8 @@ dak generate-index-diffs
 # Generate Release files
 dak generate-releases
 
+dak make-pkg-file-mapping | bzip2 -9 > $base/ftp/indices/package-file.map.bz2
+
 # Clean out old packages
 # Now in cron.daily. JJ[03.05.2005.]
 #rhona

@@ -6,5 +6,6 @@
 
 export SCRIPTVARS=/org/backports.org/dak-config/vars
 . $SCRIPTVARS
-ssh -i $base/s3kr1t/dot-ssh/id_rsa wanna-build@wanna-build.farm.ftbfs.de echo broken
+#ssh -i $base/s3kr1t/dot-ssh/id_rsa wanna-build@wanna-build.farm.ftbfs.de echo broken
+ssh -i $base/s3kr1t/dot-ssh/id_rsa wbadm@buildd.debian.org echo broken
 exit 0
