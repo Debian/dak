@@ -40,7 +40,7 @@ import apt_pkg
 
 from daklib import utils
 from daklib.queue import Upload
-from daklib.dbconn import DBConn, has_new_comment, DBChange, get_uid_from_fingerprint
+from daklib.dbconn import DBConn, has_new_comment, DBChange, DBSource, get_uid_from_fingerprint
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
@@ -172,6 +172,23 @@ def header():
     <title>
       Debian NEW and BYHAND Packages
     </title>
+    <script type="text/javascript">
+    function togglePkg() {
+        var children = document.getElementsByTagName("*");
+        for (var i = 0; i < children.length; i++) {
+            if(!children[i].hasAttribute("class"))
+                continue;
+            c = children[i].getAttribute("class").split(" ");
+            for(var j = 0; j < c.length; j++) {
+                if(c[j] == "binNEW") {
+                    if (children[i].style.display == '')
+                        children[i].style.display = 'none';
+                    else children[i].style.display = '';
+                }
+            }
+        }
+    }
+    </script>
   </head>
   <body id="NEW">
     <div id="logo">
@@ -219,10 +236,12 @@ def footer():
     """
 
 def table_header(type, source_count, total_count):
-    print "<h1>Summary for: %s</h1>" % (type)
+    print "<h1 class='binNEW'>Summary for: %s</h1>" % (type)
+    print "<h1 class='binNEW' style='display: none'>Summary for: binary-%s only</h1>" % (type)
     print """
     <table class="NEW">
-      <caption>
+      <p class="togglepkg" onclick="togglePkg()">Click to toggle all/binary-NEW packages</p>
+      <caption class="binNEW">
     """
     print "Package count in <strong>%s</strong>: <em>%s</em>&nbsp;|&nbsp; Total Package count: <em>%s</em>" % (type, source_count, total_count)
     print """
@@ -250,9 +269,14 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     global row_number
 
     trclass = "sid"
+    session = DBConn().session()
     for dist in distribution:
         if dist == "experimental":
             trclass = "exp"
+
+    if not len(session.query(DBSource).filter_by(source = source).all()):
+        trclass += " binNEW"
+    session.commit()
 
     if row_number % 2 != 0:
         print "<tr class=\"%s even\">" % (trclass)
