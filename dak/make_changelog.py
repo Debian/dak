@@ -165,6 +165,14 @@ def testing_summary(summary, session):
 
     return session.execute(query)
 
+def display_changes(uploads, index):
+    prev_upload = None
+    for upload in uploads:
+        if prev_upload and prev_upload != upload[0]:
+            print
+        print upload[index]
+        prev_upload = upload[0]
+
 def main():
     Cnf = utils.get_conf()
     Arguments = [('h','help','Make-Changelog::Options::Help'),
@@ -194,17 +202,11 @@ def main():
     session = DBConn().session()
 
     if testing:
-        uploads = testing_summary(Cnf['Changelogs::Testing'], session)
-        for upload in uploads:
-            print upload[1] + '\n'        
+        display_changes(testing_summary(Cnf['Changelogs::Testing'], session), 1)
     elif binnmu:
-        uploads = get_binary_uploads(suite, base_suite, session)
-        for upload in uploads:
-            print upload[3] + '\n'
+        display_changes(get_binary_uploads(suite, base_suite, session), 3)
     else:
-        uploads = get_source_uploads(suite, base_suite, session)
-        for upload in uploads:
-            print upload[2] + '\n'
+        display_changes(get_source_uploads(suite, base_suite, session), 2)
 
     session.commit()
 
