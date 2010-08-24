@@ -57,15 +57,19 @@ from daklib import utils
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: make-changelog -s <suite> -b <base_suite> [OPTION]...
-Generate changelog between two suites
+    print """Generate changelog between two suites
+
+       Usage:
+       make-changelog -s <suite> -b <base_suite> [OPTION]...
+       make-changelog -T
 
 Options:
 
   -h, --help                show this help and exit
   -s, --suite               suite providing packages to compare
   -b, --base-suite          suite to be taken as reference for comparison
-  -n, --binnmu              display binNMUs uploads instead of source ones"""
+  -n, --binnmu              display binNMUs uploads instead of source ones
+  -T, --testing             display changes entering testing"""
 
     sys.exit(exit_code)
 
@@ -141,14 +145,35 @@ def get_binary_uploads(suite, base_suite, session):
 
     return session.execute(query, {'suite': suite, 'base_suite': base_suite})
 
+def testing_summary(summary, session):
+    """
+    Returns changes introduced in packages entering testing.
+    """
+
+    query =  'SELECT source, changelog FROM changelogs WHERE'
+    fd = open(summary, 'r')
+    for package in fd.read().splitlines():
+        package = package.split()
+        if package[1] != package[2]:
+            if package[1] == '(not_in_testing)':
+                package[1] = 0
+            query += " source = '%s' AND version > '%s' AND version <= '%s'" \
+                     % (package[0], package[1], package[2])
+            query += " AND architecture LIKE '%source%' OR"
+    fd.close()
+    query += ' False ORDER BY source, version DESC;'
+
+    return session.execute(query)
+
 def main():
     Cnf = utils.get_conf()
     Arguments = [('h','help','Make-Changelog::Options::Help'),
                  ('s','suite','Make-Changelog::Options::Suite','HasArg'),
                  ('b','base-suite','Make-Changelog::Options::Base-Suite','HasArg'),
-                 ('n','binnmu','Make-Changelog::Options::binNMU')]
+                 ('n','binnmu','Make-Changelog::Options::binNMU'),
+                 ('T', 'testing','Make-Changelog::Options::Testing')]
 
-    for i in ['help', 'suite', 'base-suite', 'binnmu']:
+    for i in ['help', 'suite', 'base-suite', 'binnmu', 'testing']:
         if not Cnf.has_key('Make-Changelog::Options::%s' % (i)):
             Cnf['Make-Changelog::Options::%s' % (i)] = ''
 
@@ -157,26 +182,31 @@ def main():
     suite = Cnf['Make-Changelog::Options::Suite']
     base_suite = Cnf['Make-Changelog::Options::Base-Suite']
     binnmu = Cnf['Make-Changelog::Options::binNMU']
+    testing = Cnf['Make-Changelog::Options::Testing']
 
-    if Options['help'] or not (suite and base_suite):
+    if Options['help'] or not (suite and base_suite) and not testing:
         usage()
 
     for s in suite, base_suite:
-        if not get_suite(s):
+        if not testing and not get_suite(s):
             utils.fubar('Invalid suite "%s"' % s)
 
     session = DBConn().session()
 
-    if binnmu:
-        uploads = get_binary_uploads(suite, base_suite, session)
-        session.commit()
+    if testing:
+        uploads = testing_summary(Cnf['Changelogs::Testing'], session)
         for upload in uploads:
-            print upload[3] + "\n"
+            print upload[1] + '\n'        
+    elif binnmu:
+        uploads = get_binary_uploads(suite, base_suite, session)
+        for upload in uploads:
+            print upload[3] + '\n'
     else:
         uploads = get_source_uploads(suite, base_suite, session)
-        session.commit()
         for upload in uploads:
-            print upload[2] + "\n"
+            print upload[2] + '\n'
+
+    session.commit()
 
 if __name__ == '__main__':
     main()
