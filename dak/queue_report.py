@@ -236,11 +236,12 @@ def footer():
     """
 
 def table_header(type, source_count, total_count):
-    print "<h1>Summary for: %s</h1>" % (type)
+    print "<h1 class='binNEW'>Summary for: %s</h1>" % (type)
+    print "<h1 class='binNEW' style='display: none'>Summary for: binary-%s only</h1>" % (type)
     print """
     <table class="NEW">
       <p class="togglepkg" onclick="togglePkg()">Click to toggle all/binary-NEW packages</p>
-      <caption>
+      <caption class="binNEW">
     """
     print "Package count in <strong>%s</strong>: <em>%s</em>&nbsp;|&nbsp; Total Package count: <em>%s</em>" % (type, source_count, total_count)
     print """
