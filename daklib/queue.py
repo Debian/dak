@@ -329,8 +329,11 @@ class Upload(object):
             self.Subst["__MAINTAINER_TO__"] = self.pkg.changes["maintainer2047"]
             self.Subst["__MAINTAINER__"] = self.pkg.changes.get("maintainer", "Unknown")
 
-        if "sponsoremail" in self.pkg.changes:
+        session = DBConn().session()
+        fpr = get_fingerprint(self.pkg.changes['fingerprint'], session)
+        if self.check_if_upload_is_sponsored("%s@debian.org" % fpr.uid.uid, fpr.uid.name):
             self.Subst["__MAINTAINER_TO__"] += ", %s" % self.pkg.changes["sponsoremail"]
+        session.close()
 
         if cnf.has_key("Dinstall::TrackingServer") and self.pkg.changes.has_key("source"):
             self.Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::TrackingServer"])
