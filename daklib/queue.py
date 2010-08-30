@@ -353,6 +353,7 @@ class Upload(object):
         self.Subst["__REJECT_MESSAGE__"] = self.package_info()
         self.Subst["__SOURCE__"] = self.pkg.changes.get("source", "Unknown")
         self.Subst["__VERSION__"] = self.pkg.changes.get("version", "Unknown")
+        self.Subst["__SUITE__"] = self.pkg.changes.get("distribution", "unknown")
 
     ###########################################################################
     def load_changes(self, filename):
@@ -1938,7 +1939,6 @@ distribution."""
             UrgencyLog().log(self.pkg.dsc["source"], self.pkg.dsc["version"], self.pkg.changes["urgency"])
 
         self.update_subst()
-        self.Subst["__SUITE__"] = ""
         self.Subst["__SUMMARY__"] = summary
         mail_message = utils.TemplateSubst(self.Subst,
                                            os.path.join(cnf["Dir::Templates"], 'process-unchecked.accepted'))
