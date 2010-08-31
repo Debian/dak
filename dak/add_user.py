@@ -22,7 +22,7 @@ import sys
 import apt_pkg
 
 from daklib import utils
-from daklib.dbconn import DBConn, add_database_user, get_or_set_uid
+from daklib.dbconn import DBConn, get_or_set_uid
 from daklib.regexes import re_gpg_fingerprint, re_user_address, re_user_mails, re_user_name
 
 ################################################################################
@@ -198,7 +198,6 @@ def main():
         # Note that we provide a session, so we're responsible for committing
         uidobj = get_or_set_uid(uid, session=session)
         uid_id = uidobj.uid_id
-        add_database_user(uid)
         session.commit()
 
         # The following two are kicked out in rhona, so we don't set them. kelly adds

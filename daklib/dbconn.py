@@ -2656,28 +2656,6 @@ class Uid(object):
 __all__.append('Uid')
 
 @session_wrapper
-def add_database_user(uidname, session=None):
-    """
-    Adds a database user
-
-    @type uidname: string
-    @param uidname: The uid of the user to add
-
-    @type session: SQLAlchemy
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied).  If not passed, a commit will be performed at
-    the end of the function, otherwise the caller is responsible for commiting.
-
-    @rtype: Uid
-    @return: the uid object for the given uidname
-    """
-
-    session.execute("CREATE USER :uid", {'uid': uidname})
-    session.commit_or_flush()
-
-__all__.append('add_database_user')
-
-@session_wrapper
 def get_or_set_uid(uidname, session=None):
     """
     Returns uid object for given uidname.
