@@ -37,7 +37,7 @@ cd $masterdir
 echo "Importing new data for testing into projectb"
 
 # Now load the data
-cat $TESTINGINPUT | dak control-suite --set testing
+cat $TESTINGINPUT | dak control-suite --set testing --britney
 
 echo "Done"
 
