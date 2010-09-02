@@ -37,6 +37,7 @@ cd $masterdir
 echo "Importing new data for testing into projectb"
 
 # Now load the data
+savelog -l -c 4 ${ftpdir}/dists/testing/ChangeLog
 cat $TESTINGINPUT | dak control-suite --set testing --britney
 
 echo "Done"
