@@ -26,7 +26,7 @@ use XML::RSS;
 use POSIX qw(strftime);
 use CGI qw/:standard/;
 
-open REMOVALS, "</srv/ftp.debian.org/web/removals.txt";
+open REMOVALS, "</srv/backports-web.debian.org/underlay/removals.txt";
 
 my @removals;
 
@@ -38,7 +38,7 @@ my @removals;
 my $rss = new XML::RSS (version => '1.0');
 $rss->channel(
 			  title        => "Removals from Debian",
-			  link         => "http://ftp-master.debian.org/removals.txt",
+			  link         => "http://backports-master.debian.org/removals.txt",
 			  description  => "List of all the removals from Debian's archives",
 			  dc => {
 					 date       => POSIX::strftime ("%FT%R+00:00",gmtime()),
@@ -70,7 +70,7 @@ for my $removal (@removals ) {
   chomp($link);
 
   $rss->add_item(title       => "$reason",
-				 link        => "http://ftp-master.debian.org/removals.txt?" . $link,
+				 link        => "http://backports-master.debian.org/removals.txt?" . $link,
 				 description => qq[<pre>$body</pre>],
 				 dc => {
 						creator => "$ftpmaster",
