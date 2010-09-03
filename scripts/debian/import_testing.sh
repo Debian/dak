@@ -37,8 +37,13 @@ cd $masterdir
 echo "Importing new data for testing into projectb"
 
 # Now load the data
-savelog -l -c 4 ${ftpdir}/dists/testing/ChangeLog
-cat $TESTINGINPUT | dak control-suite --set testing --britney
+rm ${ftpdir}/dists/testing/ChangeLog
+cat ${TESTINGINPUT} | dak control-suite --set testing --britney
+NOW=$(date "+%Y%m%d%H%M")
+cd ${ftpdir}/dists/testing/
+mv ChangeLog ChangeLog.${NOW}
+ln -s ChangeLog.${NOW} ChangeLog
+find . -maxdepth 1 -mindepth 1 -type f -print0 -mmin +1800 -name 'ChangeLog.*' | xargs --no-run-if-empty -0 rm
 
 echo "Done"
 
