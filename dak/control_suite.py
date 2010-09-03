@@ -123,7 +123,8 @@ def britney_changelog(packages, suite, session):
     for p in new.keys():
         query += " source = '%s' AND version > '%s' AND version <= '%s'" \
                  % (p, new[p][1], new[p][0])
-        query += " AND architecture LIKE '%source%' OR"
+        query += " AND architecture LIKE '%source%' AND distribution in \
+                  ('unstable', 'experimental', 'testing-proposed-updates') OR"
     query += " False ORDER BY source, version DESC"
     q = session.execute(query)
 
