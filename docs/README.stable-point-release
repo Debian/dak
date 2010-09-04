@@ -3,6 +3,7 @@ Rough Guide to doing Stable Point Releases in Debian
 
 o Dump projectb for backup purposes.
 o get everything listed, dak control-suite -l proposed-updates > p-u.list
+o generate the changelog using dak make-changelog
 o add everything to stable:  cat p-u.list |dak control-suite --add stable
 o remove everything from proposed-updates, dak control-suite -r proposed-updates < p-u.list
 o sync with stable RM if there is any propup needed. do it, if so.
@@ -24,8 +25,8 @@ o Run 'dak generate-releases --force-touch --apt-conf apt.conf.stable stable'
 
 
 begin;
-update suite set version = '5.0.4' where suite_name = 'stable';
-update suite set description = 'Debian 5.0.4 Released 29 Januar 2010' where suite_name = 'stable';
+update suite set version = '5.0.6' where suite_name = 'stable';
+update suite set description = 'Debian 5.0.6 Released 04 September 2010' where suite_name = 'stable';
 
 ------------------------------------------------------------------------
 Old doc:
