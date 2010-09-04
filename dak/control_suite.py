@@ -136,7 +136,7 @@ def britney_changelog(packages, suite, session):
             brit.write("\n")
         brit.write("%s\n" % u[1])
         pu = u[0]
-    if len(q): brit.write("\n\n\n")
+    if q.rowcount: brit.write("\n\n\n")
 
     for p in list(set(old.keys()).difference(current.keys())):
         brit.write("REMOVED: %s %s\n" % (p, old[p]))
