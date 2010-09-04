@@ -43,7 +43,7 @@ NOW=$(date "+%Y%m%d%H%M")
 cd ${ftpdir}/dists/testing/
 mv ChangeLog ChangeLog.${NOW}
 ln -s ChangeLog.${NOW} ChangeLog
-find . -maxdepth 1 -mindepth 1 -type f -print0 -mmin +2880 -name 'ChangeLog.*' | xargs --no-run-if-empty -0 rm
+find . -maxdepth 1 -mindepth 1 -type f -mmin +2880 -name 'ChangeLog.*' -print0 | xargs --no-run-if-empty -0 rm
 
 echo "Done"
 
