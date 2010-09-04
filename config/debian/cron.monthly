@@ -11,7 +11,7 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 
 DATE=`date -d yesterday +%y%m`
 
-cd /srv/ftp-master.debian.org/mail/archive
+cd ${base}/mail/archive
 for m in mail bxamail; do
     if [ -f $m ]; then
         mv $m ${m}-$DATE
@@ -24,5 +24,12 @@ for m in mail bxamail; do
         chmod 660 ${m}-$DATE.gz
     fi;
 done
+
+DATE=`date +%Y-%m`
+cd ${base}/log
+touch $DATE
+ln -sf $DATE current
+chmod g+w $DATE
+chown dak:ftpteam $DATE
 
 ################################################################################
