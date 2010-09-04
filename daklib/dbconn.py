@@ -442,8 +442,8 @@ MINIMAL_APT_CONF="""
 Dir
 {
    ArchiveDir "%(archivepath)s";
-   OverrideDir "/srv/ftp-master.debian.org/scripts/override/";
-   CacheDir "/srv/ftp-master.debian.org/database/";
+   OverrideDir "/srv/backports-master.debian.org/scripts/override/";
+   CacheDir "/srv/backports-master.debian.org/database/";
 };
 
 Default
