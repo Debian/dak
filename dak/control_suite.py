@@ -63,7 +63,8 @@ Display or alter the contents of a suite using FILE(s), or stdin.
   -h, --help                 show this help and exit
   -l, --list=SUITE           list the contents of SUITE
   -r, --remove=SUITE         remove from SUITE
-  -s, --set=SUITE            set SUITE"""
+  -s, --set=SUITE            set SUITE
+  -b, --britney              generate changelog entry for britney runs"""
 
     sys.exit(exit_code)
 
@@ -93,7 +94,59 @@ def get_id(package, version, architecture, session):
 
 #######################################################################################
 
-def set_suite(file, suite, session):
+def britney_changelog(packages, suite, session):
+
+    old = {}
+    current = {}
+
+    q = session.execute("""SELECT s.source, s.version, sa.id
+                             FROM source s, src_associations sa
+                            WHERE sa.suite = :suiteid
+                              AND sa.source = s.id""", {'suiteid': suite.suite_id})
+
+    for p in q.fetchall():
+        current[p[0]] = p[1]
+    for p in packages.keys():
+        p = p.split()
+        if p[2] == "source":
+            old[p[0]] = p[1]
+
+    new = {}
+    for p in current.keys():
+        if p in old.keys():
+            if apt_pkg.VersionCompare(current[p], old[p]) > 0:
+                new[p] = [current[p], old[p]]
+        else:
+            new[p] = [current[p], 0]
+
+    query =  "SELECT source, changelog FROM changelogs WHERE"
+    for p in new.keys():
+        query += " source = '%s' AND version > '%s' AND version <= '%s'" \
+                 % (p, new[p][1], new[p][0])
+        query += " AND architecture LIKE '%source%' AND distribution in \
+                  ('unstable', 'experimental', 'testing-proposed-updates') OR"
+    query += " False ORDER BY source, version DESC"
+    q = session.execute(query)
+
+    pu = None
+    brit = utils.open_file(Config()["Changelogs::Britney"], 'w')
+
+    for u in q:
+        if pu and pu != u[0]:
+            brit.write("\n")
+        brit.write("%s\n" % u[1])
+        pu = u[0]
+    if q.rowcount: brit.write("\n\n\n")
+
+    for p in list(set(old.keys()).difference(current.keys())):
+        brit.write("REMOVED: %s %s\n" % (p, old[p]))
+
+    brit.flush()
+    brit.close()
+
+#######################################################################################
+
+def set_suite(file, suite, session, britney=False):
     suite_id = suite.suite_id
     lines = file.readlines()
 
@@ -155,11 +208,14 @@ def set_suite(file, suite, session):
 
     session.commit()
 
+    if britney:
+        britney_changelog(current, suite, session)
+
 #######################################################################################
 
-def process_file(file, suite, action, session):
+def process_file(file, suite, action, session, britney=False):
     if action == "set":
-        set_suite(file, suite, session)
+        set_suite(file, suite, session, britney)
         return
 
     suite_id = suite.suite_id
@@ -262,12 +318,13 @@ def main ():
     cnf = Config()
 
     Arguments = [('a',"add","Control-Suite::Options::Add", "HasArg"),
+                 ('b',"britney","Control-Suite::Options::Britney"),
                  ('h',"help","Control-Suite::Options::Help"),
                  ('l',"list","Control-Suite::Options::List","HasArg"),
                  ('r',"remove", "Control-Suite::Options::Remove", "HasArg"),
                  ('s',"set", "Control-Suite::Options::Set", "HasArg")]
 
-    for i in ["add", "help", "list", "remove", "set", "version" ]:
+    for i in ["add", "britney", "help", "list", "remove", "set", "version" ]:
         if not cnf.has_key("Control-Suite::Options::%s" % (i)):
             cnf["Control-Suite::Options::%s" % (i)] = ""
 
@@ -305,15 +362,19 @@ def main ():
     if action == "set" and suite_name not in ["testing"]:
         utils.fubar("Will not reset suite %s" % (suite_name))
 
+    britney = False
+    if action == "set" and cnf["Control-Suite::Options::Britney"]:
+        britney = True
+
     if action == "list":
         get_list(suite, session)
     else:
         Logger = daklog.Logger(cnf.Cnf, "control-suite")
         if file_list:
             for f in file_list:
-                process_file(utils.open_file(f), suite, action, session)
+                process_file(utils.open_file(f), suite, action, session, britney)
         else:
-            process_file(sys.stdin, suite, action, session)
+            process_file(sys.stdin, suite, action, session, britney)
         Logger.close()
 
 #######################################################################################

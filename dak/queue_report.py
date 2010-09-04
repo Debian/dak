@@ -286,7 +286,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     print "<td class=\"package\">%s</td>" % (source)
     print "<td class=\"version\">"
     for vers in version.split():
-        print "<a href=\"/new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers))
+        print "<a href=\"new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers))
     print "</td>"
     print "<td class=\"arch\">%s</td>" % (arch)
     print "<td class=\"distribution\">"
