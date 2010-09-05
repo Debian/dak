@@ -19,4 +19,7 @@ dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@backport
 dak cruft-report > $webdir/cruft-report-daily.txt
 cat $webdir/cruft-report-daily.txt | mail -e -s "Debian backports archive cruft report for $(date +%D)" ftpmaster@backports.debian.org
 
+cd $configdir
+apt-ftparchive -q clean apt.conf
+
 echo Daily cron scripts successful.
