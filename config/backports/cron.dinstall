@@ -398,13 +398,13 @@ GO=(
 )
 stage $GO &
 
-GO=(
-    FUNC="aptftpcleanup"
-    TIME="apt-ftparchive cleanup"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
+# GO=(
+#     FUNC="aptftpcleanup"
+#     TIME="apt-ftparchive cleanup"
+#     ARGS=""
+#     ERR="false"
+# )
+# stage $GO
 
 log "Daily cron scripts successful, all done"
 
