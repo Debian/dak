@@ -6,7 +6,7 @@ DEBUG=0
 PROGRAM="dinstall"
 
 # where do we want mails to go? For example log entries made with error()
-if [ "x$(hostname -s)x" != "xriesx" ]; then
+if [ "x$(hostname -s)x" != "xfranckx" ]; then
     # Not our ftpmaster host
     MAILTO=${MAILTO:-"root"}
 else
