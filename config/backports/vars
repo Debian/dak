@@ -4,7 +4,7 @@ base=/srv/backports-master.debian.org
 bindir=$base/bin
 ftpdir=$base/ftp/
 indices=$ftpdir/indices
-webdir=$base/web
+webdir=/srv/backports-web.debian.org/underlay/
 scriptdir=$base/scripts
 
 archs="alpha amd64 arm armel hppa hurd-i386 i386 ia64 mips mipsel powerpc s390 sparc kfreebsd-i386 kfreebsd-amd64 "
