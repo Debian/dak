@@ -10,12 +10,12 @@ Config
 
     // Optional filename of katie's config file; if not present, this
     // file is assumed to contain katie config info.
-    DakConfig		"/srv/backports-master.debian.org/dak/config/backports.org/dak.conf";
+    DakConfig		"/srv/backports-master.debian.org/dak/config/backports/dak.conf";
 
     // Optional filename of apt-ftparchive's config file; if not
     // present, the file is assumed to be 'apt.conf' in the same
     // directory as this file.
-    AptConfig		"/srv/backports-master.debian.org/dak/config/backports.org/apt.conf";
+    AptConfig		"/srv/backports-master.debian.org/dak/config/backports/apt.conf";
   }
 
 }
