@@ -4,7 +4,7 @@
 set -e
 set -u
 
-export SCRIPTVARS=/srv/backports-master.debian.org/config/backports/vars
+export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
 . $SCRIPTVARS
 
 ################################################################################

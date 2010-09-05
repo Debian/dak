@@ -7,7 +7,7 @@ set -u
 # substitutions and subshells and whatnot, but for us the functions is
 # the important part here)
 set -E
-export SCRIPTVARS=/srv/backports-master.debian.org/config/backports/vars
+export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
 . $SCRIPTVARS
 
 # Start logging
