@@ -2330,7 +2330,7 @@ sub send_mail($$$) {
     $Email::Send::Sendmail::SENDMAIL = $conf::mail;
   }
 
-  $addr = 'debian-backports@lists.debian.org';
+  $addr = 'debian-backports-changes@lists.debian.org';
   my $date = sprintf "%s",
     strftime( "%a, %d %b %Y %T %z", ( localtime(time) ) );
   my $message = <<__MESSAGE__;
