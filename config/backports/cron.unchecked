@@ -33,6 +33,8 @@ LOCKFILE="$lockdir/unchecked.lock"
 LOCK_NEW="$lockdir/processnew.lock"
 NOTICE="$lockdir/daily.lock"
 LOCK_BUILDD="$lockdir/buildd.lock"
+# The state file telling us we have something new to do
+DINSTALLPACKAGES="${lockdir}/dinstall.packages"
 
 # our name
 PROGRAM="unchecked"
@@ -96,8 +98,10 @@ do_newstage
 do_unchecked
 
 if [ ! -z "$changes" ]; then
+    touch ${DINSTALLPACKAGES}
     sync_debbugs
     do_buildd
+
 #    echo "Starting g-p-s: $(date +%H:%M:%S)"
 #    do_dists
 #    echo "Done with g-p-s: $(date +%H:%M:%S)"

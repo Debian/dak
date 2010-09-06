@@ -48,3 +48,6 @@ DINSTALLSTATE="${webdir}/dinstall.status"
 
 # The mirror trace file
 TRACEFILE="${ftpdir}/project/trace/backports-master.debian.org"
+
+# The state file telling us we have something new to do
+DINSTALLPACKAGES="${lockdir}/dinstall.packages"

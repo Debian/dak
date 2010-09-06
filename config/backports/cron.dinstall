@@ -152,6 +152,13 @@ umask 022
 export LANG=C
 export LC_ALL=C
 
+# If we did not install new packages, we dont want to run.
+if ! [ -f "${DINSTALLPACKAGES}" ]; then
+    log "nothing to do"
+    exit 0
+fi
+rm -f "${DINSTALLPACKAGES}"
+
 touch "${DINSTALLSTART}"
 ts "startup"
 DINSTALLBEGIN="$(date -u +"%a %b %d %T %Z %Y (%s)")"
