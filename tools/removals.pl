@@ -2,6 +2,7 @@
 
 #    removals - generate an RSS feed of removals from Debian
 #    (C) Copyright 2005 Tollef Fog Heen <tfheen@err.no>
+#    (C) Copyright 2010 Uli Martens <uli@youam.net>
 #
 #    This program is free software; you can redistribute it and/or
 #    modify it under the terms of the GNU General Public License
