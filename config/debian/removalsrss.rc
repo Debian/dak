@@ -1,5 +1,4 @@
-#input: /srv/ftp.debian.org/web/removals.txt
-input: /home/youam/removals.txt
+input: /srv/ftp.debian.org/web/removals.txt
 items: 16
 
 title: Removals from Debian
