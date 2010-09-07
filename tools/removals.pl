@@ -26,7 +26,27 @@ use XML::RSS;
 use POSIX qw(strftime);
 use CGI qw/:standard/;
 
-open REMOVALS, "</srv/ftp.debian.org/web/removals.txt";
+die "usage: $0 <configfile>\n" unless scalar @ARGV;
+
+my $config;
+
+my $cfgfname = $ARGV[0];
+open my $cfgfile, "<", $cfgfname
+	or die "config file $cfgfname not found: $!\n";
+while (<$cfgfile>){
+	chomp;
+	s/#.*//;
+	next if m/^$/;
+	my ($key, $val) = split ": ", $_, 2;
+	warn "$0: warning: redefining config key $key\n" if defined $config->{$key};
+	$config->{$key} = $val;
+}
+close $cfgfile;
+
+for ( qw/input items title link description subject creator publisher rights language/ ) {
+	die "config option '$_' missing in $cfgfname\n" unless $config->{$_};
+}
+open REMOVALS, "<", $config->{input};
 
 my @removals;
 
@@ -37,16 +57,16 @@ my @removals;
 
 my $rss = new XML::RSS (version => '1.0');
 $rss->channel(
-			  title        => "Removals from Debian",
-			  link         => "http://ftp-master.debian.org/removals.txt",
-			  description  => "List of all the removals from Debian's archives",
+			  title        => $config->{title},
+			  link         => $config->{link},
+			  description  => $config->{description},
 			  dc => {
 					 date       => POSIX::strftime ("%FT%R+00:00",gmtime()),
-					 subject    => "Removals from Debian",
-					 creator    => 'tfheen@debian.org',
-					 publisher  => 'joerg@debian.org',
-					 rights     => 'Copyright 2005, Tollef Fog Heen',
-					 language   => 'en-us',
+					 subject    => $config->{subject},
+					 creator    => $config->{creator},
+					 publisher  => $config->{publisher},
+					 rights     => $config->{rights},
+					 language   => $config->{language},
 					},
 			  syn => {
 					  updatePeriod     => "hourly",
@@ -55,7 +75,7 @@ $rss->channel(
 					 }
 			 );
 
-my $num_to_display = 16;
+my $num_to_display = $config->{items};
 for my $removal (@removals ) {
   my ($null, $date, $ftpmaster, $body, $reason);
   $removal =~ s/=========================================================================//g;
@@ -70,7 +90,7 @@ for my $removal (@removals ) {
   chomp($link);
 
   $rss->add_item(title       => "$reason",
-				 link        => "http://ftp-master.debian.org/removals.txt?" . $link,
+				 link        => $config->{link} . "?" . $link,
 				 description => qq[<pre>$body</pre>],
 				 dc => {
 						creator => "$ftpmaster",
