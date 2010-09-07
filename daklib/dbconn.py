@@ -442,8 +442,8 @@ MINIMAL_APT_CONF="""
 Dir
 {
    ArchiveDir "%(archivepath)s";
-   OverrideDir "/srv/ftp-master.debian.org/scripts/override/";
-   CacheDir "/srv/ftp-master.debian.org/database/";
+   OverrideDir "%(overridedir)s";
+   CacheDir "%(cachedir)s";
 };
 
 Default
@@ -505,11 +505,16 @@ class BuildQueue(object):
                 os.write(fl_fd, '%s\n' % n.fullpath)
             os.close(fl_fd)
 
+            cnf = Config()
+
             # Write minimal apt.conf
             # TODO: Remove hardcoding from template
             (ac_fd, ac_name) = mkstemp()
             os.write(ac_fd, MINIMAL_APT_CONF % {'archivepath': self.path,
-                                                'filelist': fl_name})
+                                                'filelist': fl_name,
+                                                'cachedir': cnf["Dir::Cache"],
+                                                'overridedir': cnf["Dir::Override"],
+                                                })
             os.close(ac_fd)
 
             # Run apt-ftparchive generate
@@ -539,7 +544,6 @@ class BuildQueue(object):
 
             # Sign if necessary
             if self.signingkey:
-                cnf = Config()
                 keyring = "--secret-keyring \"%s\"" % cnf["Dinstall::SigningKeyring"]
                 if cnf.has_key("Dinstall::SigningPubKeyring"):
                     keyring += " --keyring \"%s\"" % cnf["Dinstall::SigningPubKeyring"]

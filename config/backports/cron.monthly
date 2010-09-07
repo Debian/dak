@@ -1,33 +1,32 @@
-#!/bin/sh
+#!/bin/bash
 #
-# Run at the beginning of the month via cron, out of katie's crontab.
 
 set -e
-export SCRIPTVARS=/org/backports.org/dak-config/vars
+set -u
+
+export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
 . $SCRIPTVARS
 
 ################################################################################
 
 DATE=`date -d yesterday +%y%m`
 
-cd ${basedir}/mail/archive
+cd ${base}/mail/archive
 for m in mail import; do
     if [ -f $m ]; then
         mv $m ${m}-$DATE
         sleep 20
         gzip -9 ${m}-$DATE
-        chgrp debadmin ${m}-$DATE.gz
+        chgrp backports ${m}-$DATE.gz
         chmod 660 ${m}-$DATE.gz
     fi;
 done
 
 DATE=`date +%Y-%m`
-cd ${basedir}/log
+cd ${base}/log
 touch $DATE
-rm current
-ln -s $DATE current
+ln -sf $DATE current
 chmod g+w $DATE
-chown dak:debadmin $DATE
+chown dak:backports $DATE
 
-dak split-done
 ################################################################################

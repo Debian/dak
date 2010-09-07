@@ -59,6 +59,7 @@ $junk         = @conf::test_binaries;
 $junk         = @conf::maintainer_mail;
 $junk         = @conf::targetdir_delayed;
 $junk         = $conf::mail ||= '/usr/sbin/sendmail';
+$junk         = $conf::overridemail;
 $conf::target = "localhost" if $conf::upload_method eq "copy";
 
 package main;
@@ -2330,6 +2331,10 @@ sub send_mail($$$) {
     $Email::Send::Sendmail::SENDMAIL = $conf::mail;
   }
 
+  if ($conf::overridemail) {
+	$addr = $conf::overridemail;
+  }
+
   my $date = sprintf "%s",
     strftime( "%a, %d %b %Y %T %z", ( localtime(time) ) );
   my $message = <<__MESSAGE__;
@@ -2338,6 +2343,7 @@ From: Archive Administrator <dak\@ftp-master.debian.org>
 Subject: $subject
 Date: $date
 X-Debian: DAK
+X-DAK: DAK
 __MESSAGE__
 
   if ( length $package ) {

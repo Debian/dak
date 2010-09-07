@@ -34,14 +34,14 @@ $ssh_options = "-o'BatchMode yes' -o'FallBackToRsh no' ".
 $ssh_key_file = "";
 
 # the incoming dir we live in
-$incoming = "/srv/upload.debian.org/ftp/pub/UploadQueue";
+$incoming = "/srv/backports-upload/pub/UploadQueue";
 
 # the delayed incoming directories
 $incoming_delayed = "/srv/upload.debian.org/ftp/pub/UploadQueue/DELAYED/%d-day";
 
 # maximum delay directory, -1 for no delayed directory,
 # incoming_delayed and target_delayed need to exist.
-$max_delayed = 15;
+$max_delayed = -1;
 
 # files not to delete in $incoming (regexp)
 $keep_files = '(status|\.message|README)$';
@@ -82,13 +82,13 @@ $target = "localhost";
 $targetlogin = "queue";
 
 # incoming on target host
-$targetdir = "/srv/ftp-master.debian.org/queue/unchecked/";
+$targetdir = "/srv/backports-master.debian.org/queue/unchecked/";
 
 # incoming/delayed on target host
 $targetdir_delayed = "/srv/upload.debian.org/DEFERRED/%d-day";
 
 # select FTP debugging
-#$ftpdebug = 0;
+$ftpdebug = 0;
 
 # FTP timeout
 $ftptimeout = 900;
@@ -126,7 +126,7 @@ $remote_timeout = 3*60*60; # 3 hours
 $maintainer_mail = "ftpmaster\@debian.org";
 
 # to override the TO address of ALL outgoing mail, set this value.
-$overridemail = "";
+$overridemail = "debian-backports-changes@lists.debian.org";
 
 # logfile rotating:
 # -----------------
