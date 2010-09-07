@@ -13,7 +13,7 @@ masterdir=$base/dak/
 overridedir=$base/scripts/override
 extoverridedir=$scriptdir/external-overrides
 configdir=$base/dak/config/backports/
-scriptsdir=$base/dak/scripts/backports/
+scriptsdir=$base/dak/scripts/debian/
 dbdir=$base/database/
 
 queuedir=$base/queue
