@@ -21,6 +21,6 @@ cat removals-20*.822 > removals-full.822
 cat removals.822 >> removals-full.822
 
 $base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
-$base/dak/tools/removals.pl > $webdir/rss/removals.rss
+$base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 
 $scriptsdir/generate-di
