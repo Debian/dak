@@ -125,6 +125,9 @@ $remote_timeout = 3*60*60; # 3 hours
 # mail address of maintainer
 $maintainer_mail = "ftpmaster\@debian.org";
 
+# to override the TO address of ALL outgoing mail, set this value.
+$overridemail = "debian-backports-changes@lists.debian.org";
+
 # logfile rotating:
 # -----------------
 #    how often to rotate (in days)
