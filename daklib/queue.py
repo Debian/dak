@@ -2620,45 +2620,6 @@ distribution."""
                     self.rejects.append("%s is NEW for %s." % (checkfile, suite))
 
     ################################################################################
-    # This is not really a reject, but an unaccept, but since a) the code for
-    # that is non-trivial (reopen bugs, unannounce etc.), b) this should be
-    # extremely rare, for now we'll go with whining at our admin folks...
-
-    def do_unaccept(self):
-        cnf = Config()
-
-        self.update_subst()
-        self.Subst["__REJECTOR_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
-        self.Subst["__REJECT_MESSAGE__"] = self.package_info()
-        self.Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
-        self.Subst["__BCC__"] = "X-DAK: dak process-accepted"
-        if cnf.has_key("Dinstall::Bcc"):
-            self.Subst["__BCC__"] += "\nBcc: %s" % (cnf["Dinstall::Bcc"])
-
-        template = os.path.join(cnf["Dir::Templates"], "process-accepted.unaccept")
-
-        reject_mail_message = utils.TemplateSubst(self.Subst, template)
-
-        # Write the rejection email out as the <foo>.reason file
-        reason_filename = os.path.basename(self.pkg.changes_file[:-8]) + ".reason"
-        reject_filename = os.path.join(cnf["Dir::Queue::Reject"], reason_filename)
-
-        # If we fail here someone is probably trying to exploit the race
-        # so let's just raise an exception ...
-        if os.path.exists(reject_filename):
-            os.unlink(reject_filename)
-
-        fd = os.open(reject_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
-        os.write(fd, reject_mail_message)
-        os.close(fd)
-
-        utils.send_mail(reject_mail_message)
-
-        del self.Subst["__REJECTOR_ADDRESS__"]
-        del self.Subst["__REJECT_MESSAGE__"]
-        del self.Subst["__CC__"]
-
-    ################################################################################
     # If any file of an upload has a recent mtime then chances are good
     # the file is still being uploaded.
 
