@@ -136,7 +136,7 @@ def main():
            % (utils.gpg_keyring_args(keyrings),
               Cnf["Add-User::Options::Key"])
     (result, output) = commands.getstatusoutput(cmd)
-    m = re_gpg_fingerprint.search(output)
+    m = re_gpg_fingerprint_colon.search(output)
     if not m:
         print output
         utils.fubar("0x%s: (1) No fingerprint found in gpg output but it returned 0?\n%s" \

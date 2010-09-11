@@ -113,7 +113,7 @@ re_build_dep_arch = re.compile(r"\[[^]]+\]")
 re_broken_package = re.compile(r"[a-zA-Z]\w+\s+\-.*")
 
 # From dak/add_user.py
-re_gpg_fingerprint = re.compile(r"^fpr:+(.*):$", re.MULTILINE);
+re_gpg_fingerprint_colon = re.compile(r"^fpr:+(.*):$", re.MULTILINE);
 # The next one is dirty
 re_user_address = re.compile(r"^pub:.*<(.*)@.*>.*$", re.MULTILINE);
 re_user_mails = re.compile(r"^(pub|uid):[^rdin].*<(.*@.*)>.*$", re.MULTILINE);
