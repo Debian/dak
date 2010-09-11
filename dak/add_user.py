@@ -126,12 +126,6 @@ def main():
     if not keyrings:
         keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
 
-# Ignore the PGP keyring for download of new keys. Ignore errors, if key is missing it will
-# barf with the next commands.
-    cmd = "gpg --no-secmem-warning --no-default-keyring %s --recv-keys %s" \
-           % (utils.gpg_keyring_args(keyrings), Cnf["Add-User::Options::Key"])
-    (result, output) = commands.getstatusoutput(cmd)
-
     cmd = "gpg --with-colons --no-secmem-warning --no-auto-check-trustdb --no-default-keyring %s --with-fingerprint --list-key %s" \
            % (utils.gpg_keyring_args(keyrings),
               Cnf["Add-User::Options::Key"])
@@ -167,7 +161,6 @@ def main():
             continue
         emails.append(e.group(2))
 
-
     print "0x%s -> %s <%s> -> %s -> %s" % (Cnf["Add-User::Options::Key"], name, emails[0], uid, primary_key)
 
     prompt = "Add user %s with above data (y/N) ? " % (uid)
@@ -176,37 +169,12 @@ def main():
     if yn == "y":
         # Create an account for the user?
         summary = ""
-        if Cnf.FindB("Add-User::CreateAccount") or Cnf["Add-User::Options::Create"]:
-            password = GenPass()
-            pwcrypt = HashPass(password)
-            if Cnf.has_key("Add-User::GID"):
-                cmd = "sudo /usr/sbin/useradd -g users -m -p '%s' -c '%s' -G %s %s" \
-                       % (pwcrypt, name, Cnf["Add-User::GID"], uid)
-            else:
-                cmd = "sudo /usr/sbin/useradd -g users -m -p '%s' -c '%s' %s" \
-                       % (pwcrypt, name, uid)
-            (result, output) = commands.getstatusoutput(cmd)
-            if (result != 0):
-                utils.fubar("Invocation of '%s' failed:\n%s\n" % (cmd, output), result)
-            try:
-                summary+=createMail(uid, password, Cnf["Add-User::Options::Key"], Cnf["Dinstall::GPGKeyring"])
-            except:
-                summary=""
-                utils.warn("Could not prepare password information for mail, not sending password.")
 
         # Now add user to the database.
         # Note that we provide a session, so we're responsible for committing
         uidobj = get_or_set_uid(uid, session=session)
         uid_id = uidobj.uid_id
         session.commit()
-
-        # The following two are kicked out in rhona, so we don't set them. kelly adds
-        # them as soon as she installs a package with unknown ones, so no problems to expect here.
-        # Just leave the comment in, to not think about "Why the hell aren't they added" in
-        # a year, if we ever touch uma again.
-        #          maint_id = database.get_or_set_maintainer_id(name)
-        #          session.execute("INSERT INTO fingerprint (fingerprint, uid) VALUES (:fingerprint, uid)",
-        #                          {'fingerprint': primary_key, 'uid': uid_id})
 
         # Lets add user to the email-whitelist file if its configured.
         if Cnf.has_key("Dinstall::MailWhiteList") and Cnf["Dinstall::MailWhiteList"] != "":
