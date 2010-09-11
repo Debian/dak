@@ -195,7 +195,9 @@ def main():
             Subst["__KEYID__"] = Cnf["Add-User::Options::Key"]
             Subst["__PRIMARY_KEY__"] = primary_key
             Subst["__FROM_ADDRESS__"] = Cnf["Dinstall::MyEmailAddress"]
+            Subst["__ADMIN_ADDRESS__"] = Cnf["Dinstall::MyAdminAddress"]
             Subst["__HOSTNAME__"] = Cnf["Dinstall::MyHost"]
+            Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
             Subst["__SUMMARY__"] = summary
             new_add_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/add-user.added")
             utils.send_mail(new_add_message)
