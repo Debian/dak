@@ -353,7 +353,7 @@ class Upload(object):
         self.Subst["__REJECT_MESSAGE__"] = self.package_info()
         self.Subst["__SOURCE__"] = self.pkg.changes.get("source", "Unknown")
         self.Subst["__VERSION__"] = self.pkg.changes.get("version", "Unknown")
-        self.Subst["__SUITE__"] = self.pkg.changes["distribution"].keys()
+        self.Subst["__SUITE__"] = ", ".join(self.pkg.changes["distribution"])
 
     ###########################################################################
     def load_changes(self, filename):
