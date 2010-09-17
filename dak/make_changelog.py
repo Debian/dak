@@ -182,7 +182,7 @@ def display_changes(uploads, index):
         print upload[index]
         prev_upload = upload[0]
 
-def export_files(session, pool, clpool):
+def export_files(session, pool, clpool, temppath):
     """
     Export interesting files from source packages.
     """
@@ -200,7 +200,7 @@ def export_files(session, pool, clpool):
             sources[p[0]] = {}
         sources[p[0]][p[1]] = (p[2], p[3])
 
-    tempdir = utils.temp_dirname(parent=clpool)
+    tempdir = utils.temp_dirname(parent=temppath)
     os.rmdir(tempdir)
 
     for p in sources.keys():
@@ -291,7 +291,7 @@ def main():
     if testing:
         display_changes(testing_summary(Cnf['Changelogs::Testing'], session), 1)
     elif export:
-        export_files(session, Cnf['Dir::Pool'], Cnf['Changelogs::Export'])
+        export_files(session, Cnf['Dir::Pool'], Cnf['Changelogs::Export'], Cnf['Dir::TempPath'])
     elif binnmu:
         display_changes(get_binary_uploads(suite, base_suite, session), 3)
     else:
