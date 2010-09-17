@@ -337,7 +337,7 @@ class Upload(object):
         if self.pkg.changes.has_key('fingerprint'):
             session = DBConn().session()
             fpr = get_fingerprint(self.pkg.changes['fingerprint'], session)
-            if self.check_if_upload_is_sponsored("%s@debian.org" % fpr.uid.uid, fpr.uid.name):
+            if fpr and self.check_if_upload_is_sponsored("%s@debian.org" % fpr.uid.uid, fpr.uid.name):
                 if self.pkg.changes.has_key("sponsoremail"):
                     self.Subst["__MAINTAINER_TO__"] += ", %s" % self.pkg.changes["sponsoremail"]
             session.close()
