@@ -200,7 +200,7 @@ def export_files(session, pool, clpool):
             sources[p[0]] = {}
         sources[p[0]][p[1]] = (p[2], p[3])
 
-    tempdir = utils.temp_dirname()
+    tempdir = utils.temp_dirname(parent=clpool)
     os.rmdir(tempdir)
 
     for p in sources.keys():
