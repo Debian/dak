@@ -675,8 +675,7 @@ def do_pkg(changes_file, session):
                     #       got already processed byhand components
                     print "Warning: This has byhand components and probably shouldn't be in NEW."
                     print "Contact an ftpmaster as this needs to be dealt with by them"
-                    continue
-                if new:
+                elif new:
                     do_new(u, session)
                 else:
                     try:
