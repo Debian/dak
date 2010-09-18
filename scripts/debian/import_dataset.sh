@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2008 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2008,2010 Joerg Jaspert <joerg@debian.org>
 
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -23,27 +23,51 @@
 
 
 set -e
+set -u
 
 # Load up some standard variables
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-# What file we look at.
-TESTINGINPUT="/srv/release.debian.org/britney/Heidi/set/current"
+IMPORTSUITE=${1:-"testing"}
+BRITNEY=""
+
+case "${IMPORTSUITE}" in
+    testing)
+        # What file we look at.
+        INPUTFILE="/srv/release.debian.org/britney/Heidi/set/current"
+        DO_CHANGELOG="true"
+        ;;
+    squeeze-volatile)
+        # What file we look at.
+        INPUTFILE="/srv/release.debian.org/volatile/set/squeeze-volatile"
+        DO_CHANGELOG="false"
+        ;;
+    *)
+        echo "You are so wrong here that I can't even believe it. Sod off."
+        exit 42
+        ;;
+esac
 
 # Change to a known safe location
 cd $masterdir
 
-echo "Importing new data for testing into projectb"
+echo "Importing new data for ${INPUTSUITE} into database"
 
-# Now load the data
-rm ${ftpdir}/dists/testing/ChangeLog
-cat ${TESTINGINPUT} | dak control-suite --set testing --britney
-NOW=$(date "+%Y%m%d%H%M")
-cd ${ftpdir}/dists/testing/
-mv ChangeLog ChangeLog.${NOW}
-ln -s ChangeLog.${NOW} ChangeLog
-find . -maxdepth 1 -mindepth 1 -type f -mmin +2880 -name 'ChangeLog.*' -print0 | xargs --no-run-if-empty -0 rm
+if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
+    rm ${ftpdir}/dists/${IMPORTSUITE}/ChangeLog
+    BRITNEY=" --britney"
+fi
+
+cat ${INPUTFILE} | dak control-suite --set ${INPUTSUITE} ${BRITNEY}
+
+if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
+    NOW=$(date "+%Y%m%d%H%M")
+    cd ${ftpdir}/dists/${IMPORTSUITE}/
+    mv ChangeLog ChangeLog.${NOW}
+    ln -s ChangeLog.${NOW} ChangeLog
+    find . -maxdepth 1 -mindepth 1 -type f -mmin +2880 -name 'ChangeLog.*' -delete
+fi
 
 echo "Done"
 
