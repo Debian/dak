@@ -84,13 +84,6 @@ class BugClassifier(object):
                     dak_re: 'dak',
                     arch_re: 'archs'}
 
-    def __init__( self ):
-        # Tolimar: I'm not really sure, what the following line used to to
-        # with btsutils, but I think it's not needed any more with
-        # debianbts
-	# self.bts.setUsers(['ftp.debian.org@packages.debian.org'])
-
-
     def unclassified_bugs(self):
         """
         Returns a list of open bugs which have not yet been classified
@@ -115,7 +108,7 @@ class BugClassifier(object):
         retval = ""
 
         for classifier in self.classifiers.keys():
-            if classifier.match(bug.summary):
+            if classifier.match(bug.subject):
                 retval = "usertag %s %s\n" % (bug.bug_num,
                                             self.classifiers[classifier])
                 break
