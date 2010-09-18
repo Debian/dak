@@ -67,6 +67,7 @@ Remove PACKAGE(s) from suite(s).
   -c, --component=COMPONENT  act on this component
   -C, --carbon-copy=EMAIL    send a CC of removal message to EMAIL
   -d, --done=BUG#            send removal message as closure to bug#
+  -D, --do-close             also close all bugs associated to that package
   -h, --help                 show this help and exit
   -m, --reason=MSG           reason for removal
   -n, --no-action            don't do anything
@@ -269,6 +270,7 @@ def main ():
                  ('c',"component", "Rm::Options::Component", "HasArg"),
                  ('C',"carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
                  ('d',"done","Rm::Options::Done", "HasArg"), # Bugs fixed
+                 ('D',"do-close","Rm::Options::Do-Close"),
                  ('R',"rdep-check", "Rm::Options::Rdep-Check"),
                  ('m',"reason", "Rm::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
                  ('n',"no-action","Rm::Options::No-Action"),
@@ -305,6 +307,12 @@ def main ():
     if Options["Architecture"] and not Options["Partial"]:
         utils.warn("-a/--architecture implies -p/--partial.")
         Options["Partial"] = "true"
+    if Options["Do-Close"] and Options["Binary-Only"]:
+        utils.fubar("No.")
+    if Options["Do-Close"] and Options["Source-Only"]:
+        utils.fubar("No.")
+    if Options["Do-Close"] and Options["Suite"] != 'unstable':
+        utils.fubar("No.")
 
     # Force the admin to tell someone if we're not doing a 'dak
     # cruft-report' inspired removal (or closing a bug, which counts
