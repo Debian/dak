@@ -5,6 +5,7 @@ bts -- manage bugs filed against ftp.debian.org
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009 Mike O'Connor <stew@vireo.org>
+@copyright: 2010 Alexander Reichle-Schmehl <tolimar@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -33,7 +34,7 @@ log = logging.getLogger()
 
 import apt_pkg
 from daklib import utils
-from btsutils.debbugs import debbugs
+import debianbts as bts
 
 def usage():
     print """
@@ -84,8 +85,10 @@ class BugClassifier(object):
                     arch_re: 'archs'}
 
     def __init__( self ):
-        self.bts = debbugs()
-        self.bts.setUsers(['ftp.debian.org@packages.debian.org'])
+        # Tolimar: I'm not really sure, what the following line used to to
+        # with btsutils, but I think it's not needed any more with
+        # debianbts
+	# self.bts.setUsers(['ftp.debian.org@packages.debian.org'])
 
 
     def unclassified_bugs(self):
@@ -93,8 +96,14 @@ class BugClassifier(object):
         Returns a list of open bugs which have not yet been classified
         by one of our usertags.
         """
-        return [ bug for bug in self.bts.query("pkg:ftp.debian.org") \
-                     if bug.status=='pending' and not bug.usertags ]
+
+	tagged_bugs = bts.get_usertag('ftp.debian.org@packages.debian.org')
+	tagged_bugs_ftp = []
+	for tags in tagged_bugs.keys():
+		tagged_bugs_ftp += tagged_bugs[tags]
+
+        return [ bug for bug in bts.get_status( bts.get_bugs("package", "ftp.debian.org" ) ) \
+                     if bug.pending=='pending' and not bug.bug_num in tagged_bugs_ftp ]
 
 
     def classify_bug(self, bug):
@@ -107,14 +116,14 @@ class BugClassifier(object):
 
         for classifier in self.classifiers.keys():
             if classifier.match(bug.summary):
-                retval = "usertag %s %s\n" % (bug.bug,
+                retval = "usertag %s %s\n" % (bug.bug_num,
                                             self.classifiers[classifier])
                 break
 
         if retval:
             log.info(retval)
         else:
-            log.debug("Unmatched: [%s] %s" % (bug.bug, bug.summary))
+            log.debug("Unmatched: [%s] %s" % (bug.bug_num, bug.summary))
 
         return retval
 
