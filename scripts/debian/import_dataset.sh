@@ -52,14 +52,14 @@ esac
 # Change to a known safe location
 cd $masterdir
 
-echo "Importing new data for ${INPUTSUITE} into database"
+echo "Importing new data for ${IMPORTSUITE} into database"
 
 if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     rm ${ftpdir}/dists/${IMPORTSUITE}/ChangeLog
     BRITNEY=" --britney"
 fi
 
-cat ${INPUTFILE} | dak control-suite --set ${INPUTSUITE} ${BRITNEY}
+cat ${INPUTFILE} | dak control-suite --set ${IMPORTSUITE} ${BRITNEY}
 
 if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     NOW=$(date "+%Y%m%d%H%M")
