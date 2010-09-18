@@ -1,10 +1,11 @@
 # locations used by many scripts
 
 base=/srv/backports-master.debian.org
+public=/srv/backports-web.debian.org
 bindir=$base/bin
 ftpdir=$base/ftp/
 indices=$ftpdir/indices
-webdir=/srv/backports-web.debian.org/underlay/
+webdir=$public/underlay/
 scriptdir=$base/scripts
 
 archs="alpha amd64 arm armel hppa hurd-i386 i386 ia64 mips mipsel powerpc s390 sparc kfreebsd-i386 kfreebsd-amd64 "
@@ -27,6 +28,8 @@ incoming=$base/incoming
 logdir=$base/log/cron/
 mirrordir=$base/mirror/
 newstage=$queuedir/newstage/
+exportdir=$base/export/
+exportpublic=$public/export/
 
 
 ftpgroup=debadmin

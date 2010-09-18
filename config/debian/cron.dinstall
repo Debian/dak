@@ -389,6 +389,14 @@ ts "locked part finished"
 state "postlock"
 
 GO=(
+    FUNC="changelogs"
+    TIME="changelogs"
+    ARGS=""
+    ERR="false"
+)
+stage $GO &
+
+GO=(
     FUNC="pgdump_post"
     TIME="pg_dump2"
     ARGS=""
