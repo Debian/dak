@@ -159,7 +159,9 @@ def changes_to_queue(upload, srcqueue, destqueue, session):
     for f in chg.files:
         # update the changes_pending_files row
         f.queue = destqueue
-        utils.move(os.path.join(srcqueue.path, f.filename), destqueue.path, perms=int(destqueue.perms, 8))
+        # Only worry about unprocessed files
+        if not f.processed:
+            utils.move(os.path.join(srcqueue.path, f.filename), destqueue.path, perms=int(destqueue.perms, 8))
 
     utils.move(os.path.join(srcqueue.path, upload.pkg.changes_file), destqueue.path, perms=int(destqueue.perms, 8))
     chg.in_queue = destqueue
@@ -188,8 +190,13 @@ def new_accept(upload, dry_run, session):
         else:
             # Just a normal upload, accept it...
             (summary, short_summary) = upload.build_summaries()
-            srcqueue = get_policy_queue('new', session)
             destqueue = get_policy_queue('newstage', session)
+
+            srcqueue = get_policy_queue_from_path(upload.pkg.directory, session)
+
+            if not srcqueue:
+                # Assume NEW and hope for the best
+                srcqueue = get_policy_queue('new', session)
 
             changes_to_queue(upload, srcqueue, destqueue, session)
 

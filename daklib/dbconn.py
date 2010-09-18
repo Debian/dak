@@ -1917,6 +1917,31 @@ def get_policy_queue(queuename, session=None):
 
 __all__.append('get_policy_queue')
 
+@session_wrapper
+def get_policy_queue_from_path(pathname, session=None):
+    """
+    Returns PolicyQueue object for given C{path name}
+
+    @type queuename: string
+    @param queuename: The path
+
+    @type session: Session
+    @param session: Optional SQLA session object (a temporary one will be
+    generated if not supplied)
+
+    @rtype: PolicyQueue
+    @return: PolicyQueue object for the given queue
+    """
+
+    q = session.query(PolicyQueue).filter_by(path=pathname)
+
+    try:
+        return q.one()
+    except NoResultFound:
+        return None
+
+__all__.append('get_policy_queue_from_path')
+
 ################################################################################
 
 class Priority(object):
