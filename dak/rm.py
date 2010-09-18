@@ -307,6 +307,8 @@ def main ():
     if Options["Architecture"] and not Options["Partial"]:
         utils.warn("-a/--architecture implies -p/--partial.")
         Options["Partial"] = "true"
+    if Options["Do-Close"] and not Options["Done"]:
+        utils.fubar("No.")
     if Options["Do-Close"] and Options["Binary-Only"]:
         utils.fubar("No.")
     if Options["Do-Close"] and Options["Source-Only"]:
@@ -616,6 +618,38 @@ def main ():
             mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close")
             utils.send_mail(mail_message)
 
+    # close associated bug reports 
+    if Options["Do-Close"]:
+        Subst = {}
+        Subst["__RM_ADDRESS__"] = cnf["Rm::MyEmailAddress"]
+        Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
+        bcc = []
+        if cnf.Find("Dinstall::Bcc") != "":
+            bcc.append(cnf["Dinstall::Bcc"])
+        if cnf.Find("Rm::Bcc") != "":
+            bcc.append(cnf["Rm::Bcc"])
+        if bcc:
+            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
+        else:
+            Subst["__BCC__"] = "X-Filler: 42"
+        Subst["__CC__"] = "X-DAK: dak rm"
+        if carbon_copy:
+            Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
+        Subst["__SUITE_LIST__"] = suites_list
+        Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
+        Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
+        Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
+        Subst["__WHOAMI__"] = whoami
+        whereami = utils.where_am_i()
+        Archive = cnf.SubTree("Archive::%s" % (whereami))
+        # at this point, I just assume, that the first closed bug gives
+        # some usefull information on why the package got removed
+	Subst["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
+        for bug in bts.get_bugs('src', package, 'status', 'open'):
+            Subst["__BUG_NUMBER_ALSO__"] += bug + "-done@" + cnf["Dinstall::BugServer"] + "'"
+            mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close-related")
+            utils.send_mail(mail_message)
+        
     logfile.write("=========================================================================\n")
     logfile.close()
 
