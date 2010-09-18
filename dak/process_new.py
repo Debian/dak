@@ -428,7 +428,7 @@ def do_new(upload, session):
     done = 0
     while not done:
         # Find out what's new
-        new = determine_new(changes, files)
+        new, byhand = determine_new(upload.pkg.changes_file, changes, files, session=session)
 
         if not new:
             break
@@ -529,14 +529,14 @@ def do_byhand(upload, session):
     done = 0
     while not done:
         files = upload.pkg.files
-        will_install = 1
+        will_install = True
         byhand = []
 
         for f in files.keys():
-            if files[f]["type"] == "byhand":
+            if files[f]["section"] == "byhand":
                 if os.path.exists(f):
                     print "W: %s still present; please process byhand components and try again." % (f)
-                    will_install = 0
+                    will_install = False
                 else:
                     byhand.append(f)
 
@@ -558,21 +558,39 @@ def do_byhand(upload, session):
             answer = answer[:1].upper()
 
         if answer == 'A':
-            try:
-                check_daily_lock()
-                done = 1
-                for f in byhand:
-                    del files[f]
-                Logger.log(["BYHAND ACCEPT: %s" % (upload.pkg.changes_file)])
-            except CantGetLockError:
-                print "Hello? Operator! Give me the number for 911!"
-                print "Dinstall in the locked area, cant process packages, come back later"
+            dbchg = get_dbchange(upload.pkg.changes_file, session)
+            if dbchg is None:
+                print "Warning: cannot find changes file in database; can't process BYHAND"
+            else:
+                try:
+                    check_daily_lock()
+                    done = 1
+                    for b in byhand:
+                        # Find the file entry in the database
+                        found = False
+                        for f in dbchg.files:
+                            if f.filename == b:
+                                found = True
+                                f.processed = True
+                                break
+
+                        if not found:
+                            print "Warning: Couldn't find BYHAND item %s in the database to mark it processed" % b
+
+                    session.commit()
+                    Logger.log(["BYHAND ACCEPT: %s" % (upload.pkg.changes_file)])
+                except CantGetLockError:
+                    print "Hello? Operator! Give me the number for 911!"
+                    print "Dinstall in the locked area, cant process packages, come back later"
         elif answer == 'M':
-            Logger.log(["BYHAND REJECT: %s" % (upload.pkg.changes_file)])
-            upload.do_reject(manual=1, reject_message=Options["Manual-Reject"])
-            upload.pkg.remove_known_changes(session=session)
-            session.commit()
-            done = 1
+            aborted = upload.do_reject(manual=1,
+                                       reject_message=Options["Manual-Reject"],
+                                       notes=get_new_comments(changes.get("source", ""), session=session))
+            if not aborted:
+                upload.pkg.remove_known_changes(session=session)
+                session.commit()
+                Logger.log(["BYHAND REJECT: %s" % (upload.pkg.changes_file)])
+                done = 1
         elif answer == 'S':
             done = 1
         elif answer == 'Q':
@@ -671,12 +689,9 @@ def do_pkg(changes_full_path, session):
                 if not recheck(u, session):
                     return
 
-                new, byhand = determine_new(u.pkg.changes, files)
+                new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, session=session)
                 if byhand:
-                    # TODO: Fix this and make sure it doesn't complain when we've
-                    #       got already processed byhand components
-                    print "Warning: This has byhand components and probably shouldn't be in NEW."
-                    print "Contact an ftpmaster as this needs to be dealt with by them"
+                    do_byhand(u, session)
                 elif new:
                     do_new(u, session)
                 else:

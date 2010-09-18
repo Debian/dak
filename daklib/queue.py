@@ -92,9 +92,12 @@ def get_type(f, session):
 
 # Determine what parts in a .changes are NEW
 
-def determine_new(changes, files, warn=1, session = None):
+def determine_new(filename, changes, files, warn=1, session = None):
     """
     Determine what parts in a C{changes} file are NEW.
+
+    @type filename: str
+    @param filename: changes filename
 
     @type changes: Upload.Pkg.changes dict
     @param changes: Changes dictionary
@@ -109,8 +112,14 @@ def determine_new(changes, files, warn=1, session = None):
     @return: dictionary of NEW components.
 
     """
+    # TODO: This should all use the database instead of parsing the changes
+    # file again
     new = {}
     byhand = {}
+
+    dbchg = get_dbchange(filename, session)
+    if dbchg is None:
+        print "Warning: cannot find changes file in database; won't check byhand"
 
     # Build up a list of potentially new things
     for name, f in files.items():
@@ -118,6 +127,7 @@ def determine_new(changes, files, warn=1, session = None):
         if f["section"] == "byhand":
             byhand[name] = 1
             continue
+
         pkg = f["package"]
         priority = f["priority"]
         section = f["section"]
@@ -165,6 +175,23 @@ def determine_new(changes, files, warn=1, session = None):
             del changes["suite"][suite]
             changes["suite"][override] = 1
 
+    # Check for unprocessed byhand files
+    if dbchg is not None:
+        for b in byhand.keys():
+            # Find the file entry in the database
+            found = False
+            for f in dbchg.files:
+                if f.filename == b:
+                    found = True
+                    # If it's processed, we can ignore it
+                    if f.processed:
+                        del byhand[b]
+                    break
+
+            if not found:
+                print "Warning: Couldn't find BYHAND item %s in the database; assuming unprocessed"
+
+    # Check for new stuff
     for suite in changes["suite"].keys():
         for pkg in new.keys():
             ql = get_override(pkg, suite, new[pkg]["component"], new[pkg]["type"], session)
@@ -1104,11 +1131,24 @@ class Upload(object):
         session = DBConn().session()
         self.check_source_against_db(dsc_filename, session)
         self.check_dsc_against_db(dsc_filename, session)
-        session.close()
+
+        dbchg = get_dbchange(self.pkg.changes_file, session)
 
         # Finally, check if we're missing any files
         for f in self.later_check_files:
-            self.rejects.append("Could not find file %s references in changes" % f)
+            print 'XXX: %s' % f
+            # Check if we've already processed this file if we have a dbchg object
+            ok = False
+            if dbchg:
+                for pf in dbchg.files:
+                    if pf.filename == f and pf.processed:
+                        self.notes.append('%s was already processed so we can go ahead' % f)
+                        ok = True
+                        del self.pkg.files[f]
+            if not ok:
+                self.rejects.append("Could not find file %s references in changes" % f)
+
+        session.close()
 
         return True
 
