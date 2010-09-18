@@ -609,6 +609,7 @@ EOF
 function changelogs() {
     log "Extracting changelogs"
     dak make-changelog -e
+    mkdir -p ${exportpublic}/changelogs
     cd ${exportpublic}/changelogs
     rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
 }
