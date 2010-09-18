@@ -116,6 +116,21 @@ tree "dists/testing"
    SrcOverride "override.squeeze.$(SECTION).src";
 };
 """
+
+    apt_trees["squeeze-volatile"]="""
+tree "dists/squeeze-volatile"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/squeeze-volatile_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/squeeze-volatile_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.$(SECTION)";
+   ExtraOverride "override.squeeze.extra.$(SECTION)";
+   SrcOverride "override.squeeze.$(SECTION).src";
+   Contents " ";
+};
+"""
+
     apt_trees["di"]["testing"]="""
 tree "dists/testing/main"
 {
