@@ -669,8 +669,13 @@ def do_pkg(changes_file, session):
                 if not recheck(u, session):
                     return
 
-                # FIXME: This does need byhand checks added!
-                new = determine_new(u.pkg.changes, files)
+                new, byhand = determine_new(u.pkg.changes, files)
+                if byhand:
+                    # TODO: Fix this and make sure it doesn't complain when we've
+                    #       got already processed byhand components
+                    print "Warning: This has byhand components and probably shouldn't be in NEW."
+                    print "Contact an ftpmaster as this needs to be dealt with by them"
+                    continue
                 if new:
                     do_new(u, session)
                 else:

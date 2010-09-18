@@ -110,12 +110,14 @@ def determine_new(changes, files, warn=1, session = None):
 
     """
     new = {}
+    byhand = {}
 
     # Build up a list of potentially new things
     for name, f in files.items():
-        # Skip byhand elements
-#        if f["type"] == "byhand":
-#            continue
+        # Keep a record of byhand elements
+        if f["section"] == "byhand":
+            byhand[name] = 1
+            continue
         pkg = f["package"]
         priority = f["priority"]
         section = f["section"]
@@ -180,7 +182,7 @@ def determine_new(changes, files, warn=1, session = None):
             if new[pkg].has_key("othercomponents"):
                 print "WARNING: %s already present in %s distribution." % (pkg, new[pkg]["othercomponents"])
 
-    return new
+    return new, byhand
 
 ################################################################################
 

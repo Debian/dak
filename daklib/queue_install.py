@@ -254,7 +254,7 @@ def determine_target(u):
     # Statically handled queues
     target = None
 
-    for q in ["new", "autobyhand", "byhand"]:
+    for q in ["autobyhand", "byhand", "new"]:
         if QueueInfo[q]["is"](u):
             target = q
             break
