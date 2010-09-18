@@ -634,13 +634,15 @@ class clean_holding(object):
                 os.unlink(os.path.join(h.holding_dir, f))
 
 
-def do_pkg(changes_file, session):
-    new_queue = get_policy_queue('new', session );
+def do_pkg(changes_full_path, session):
+    changes_dir = os.path.dirname(changes_full_path)
+    changes_file = os.path.basename(changes_full_path)
+
     u = Upload()
     u.pkg.changes_file = changes_file
     (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
     u.load_changes(changes_file)
-    u.pkg.directory = new_queue.path
+    u.pkg.directory = changes_dir
     u.update_subst()
     u.logger = Logger
     origchanges = os.path.abspath(u.pkg.changes_file)
@@ -725,7 +727,9 @@ def main():
     changes_files = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
     if len(changes_files) == 0:
         new_queue = get_policy_queue('new', session );
-        changes_files = utils.get_changes_files(new_queue.path)
+        changes_paths = [ os.path.join(new_queue.path, j) for j in utils.get_changes_files(new_queue.path) ]
+    else:
+        changes_paths = [ os.path.abspath(j) for j in changes_files ]
 
     Options = cnf.SubTree("Process-New::Options")
 
@@ -742,15 +746,15 @@ def main():
     Priorities = Priority_Completer(session)
     readline.parse_and_bind("tab: complete")
 
-    if len(changes_files) > 1:
+    if len(changes_paths) > 1:
         sys.stderr.write("Sorting changes...\n")
-    changes_files = sort_changes(changes_files, session)
+    changes_files = sort_changes(changes_paths, session)
 
-    for changes_file in changes_files:
+    for changes_file in changes_paths:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
             continue
-        print "\n" + changes_file
+        print "\n" + os.path.basename(changes_file)
 
         do_pkg (changes_file, session)
 
