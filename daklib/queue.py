@@ -247,6 +247,96 @@ class TarTime(object):
 
 ###############################################################################
 
+def prod_maintainer(notes, upload):
+    cnf = Config()
+
+    # Here we prepare an editor and get them ready to prod...
+    (fd, temp_filename) = utils.temp_filename()
+    temp_file = os.fdopen(fd, 'w')
+    for note in notes:
+        temp_file.write(note.comment)
+    temp_file.close()
+    editor = os.environ.get("EDITOR","vi")
+    answer = 'E'
+    while answer == 'E':
+        os.system("%s %s" % (editor, temp_filename))
+        temp_fh = utils.open_file(temp_filename)
+        prod_message = "".join(temp_fh.readlines())
+        temp_fh.close()
+        print "Prod message:"
+        print utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
+        prompt = "[P]rod, Edit, Abandon, Quit ?"
+        answer = "XXX"
+        while prompt.find(answer) == -1:
+            answer = utils.our_raw_input(prompt)
+            m = re_default_answer.search(prompt)
+            if answer == "":
+                answer = m.group(1)
+            answer = answer[:1].upper()
+    os.unlink(temp_filename)
+    if answer == 'A':
+        return
+    elif answer == 'Q':
+        end()
+        sys.exit(0)
+    # Otherwise, do the proding...
+    user_email_address = utils.whoami() + " <%s>" % (
+        cnf["Dinstall::MyAdminAddress"])
+
+    Subst = upload.Subst
+
+    Subst["__FROM_ADDRESS__"] = user_email_address
+    Subst["__PROD_MESSAGE__"] = prod_message
+    Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
+
+    prod_mail_message = utils.TemplateSubst(
+        Subst,cnf["Dir::Templates"]+"/process-new.prod")
+
+    # Send the prod mail
+    utils.send_mail(prod_mail_message)
+
+    print "Sent prodding message"
+
+################################################################################
+
+def edit_note(note, upload, session):
+    # Write the current data to a temporary file
+    (fd, temp_filename) = utils.temp_filename()
+    editor = os.environ.get("EDITOR","vi")
+    answer = 'E'
+    while answer == 'E':
+        os.system("%s %s" % (editor, temp_filename))
+        temp_file = utils.open_file(temp_filename)
+        newnote = temp_file.read().rstrip()
+        temp_file.close()
+        print "New Note:"
+        print utils.prefix_multi_line_string(newnote,"  ")
+        prompt = "[D]one, Edit, Abandon, Quit ?"
+        answer = "XXX"
+        while prompt.find(answer) == -1:
+            answer = utils.our_raw_input(prompt)
+            m = re_default_answer.search(prompt)
+            if answer == "":
+                answer = m.group(1)
+            answer = answer[:1].upper()
+    os.unlink(temp_filename)
+    if answer == 'A':
+        return
+    elif answer == 'Q':
+        end()
+        sys.exit(0)
+
+    comment = NewComment()
+    comment.package = upload.pkg.changes["source"]
+    comment.version = upload.pkg.changes["version"]
+    comment.comment = newnote
+    comment.author  = utils.whoami()
+    comment.trainee = bool(Options["Trainee"])
+    session.add(comment)
+    session.commit()
+
+###############################################################################
+
 class Upload(object):
     """
     Everything that has to do with an upload processed.
