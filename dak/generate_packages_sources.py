@@ -298,7 +298,7 @@ tree "dists/proposed-updates/main"
         if arch != 'source':
             if arch == 'hurd-i386' and suite == 'experimental':
                 pass
-            else:
+            elif apt_trees["di"].has_key(suite):
                 if arch == "amd64":
                     os.write(ac_fd, apt_trees["di"][suite] %
                              {'arch': arch, 'contentsline': 'Contents "$(DIST)/../Contents-udeb";'})
