@@ -16,9 +16,9 @@ for m in mail import; do
     if [ -f $m ]; then
         mv $m ${m}-$DATE
         sleep 20
-        gzip -9 ${m}-$DATE
-        chgrp backports ${m}-$DATE.gz
-        chmod 660 ${m}-$DATE.gz
+        xz -9 ${m}-$DATE
+        chgrp backports ${m}-$DATE.xz
+        chmod 660 ${m}-$DATE.xz
     fi;
 done
 
