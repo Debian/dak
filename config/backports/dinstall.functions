@@ -612,4 +612,5 @@ function changelogs() {
     mkdir -p ${exportpublic}/changelogs
     cd ${exportpublic}/changelogs
     rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
+    sudo -H -u archvsync /home/archvsync/runmirrors metabdo > ~dak/runmirrors-metadata.log 2>&1 &
 }
