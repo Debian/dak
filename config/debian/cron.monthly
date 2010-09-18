@@ -19,9 +19,9 @@ for m in mail bxamail; do
         chown dak:ftpteam ${m}
         chmod 660 ${m}
         sleep 20
-        gzip -9 ${m}-$DATE
-        chgrp $ftpgroup ${m}-$DATE.gz
-        chmod 660 ${m}-$DATE.gz
+        xz -9 ${m}-$DATE
+        chgrp $ftpgroup ${m}-$DATE.xz
+        chmod 660 ${m}-$DATE.xz
     fi;
 done
 
