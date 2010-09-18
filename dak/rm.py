@@ -51,6 +51,7 @@ from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
 from daklib.regexes import re_strip_source_version, re_build_dep_arch
+import debianbts as bts
 
 ################################################################################
 
