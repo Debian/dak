@@ -25,6 +25,8 @@ accepted=$queuedir/accepted/
 mirrordir=$base/mirror/
 incoming=$base/incoming
 newstage=$queuedir/newstage/
+exportdir=$base/export/
+exportpublic=$public/rsync/export/
 
 ftpgroup=debadmin
 

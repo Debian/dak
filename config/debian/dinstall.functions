@@ -604,3 +604,11 @@ Current action: ${1}
 Action start: ${RIGHTNOW}
 EOF
 }
+
+# extract changelogs and stuff
+function changelogs() {
+    log "Extracting changelogs"
+    dak make-changelog -e
+    cd ${exportpublic}/changelogs
+    rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
+}
