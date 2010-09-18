@@ -32,7 +32,7 @@ function onerror() {
 # pushing merkels QA user, part one
 function merkel1() {
     log "Telling merkels QA user that we start dinstall"
-    ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 qa@merkel.debian.org sleep 1
+    ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 qa@qa.debian.org sleep 1
 }
 
 # Create the postgres dump files
