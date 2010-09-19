@@ -131,9 +131,9 @@ def main():
 
     session = DBConn().session()
 
-    for suite in cnf.SubTree("Suite").List():
-        suite = suite.lower()
-        suite_priority = int(cnf["Suite::%s::Priority" % (suite)])
+    for suite in session.query(Suite).all():
+        suite_name = suite.suite_name
+        suite_priority = suite.priority
 
         # Source packages
         if gen_uploaders:
@@ -143,14 +143,14 @@ def main():
                                       AND sa.suite = su.id AND sa.source = s.id
                                       AND m.id = srcu.maintainer
                                       AND srcu.source = s.id""",
-                                    {'suite_name': suite})
+                                    {'suite_name': suite_name})
         else:
             q = session.execute("""SELECT s.source, s.version, m.name
                                      FROM src_associations sa, source s, suite su, maintainer m
                                     WHERE su.suite_name = :suite_name
                                       AND sa.suite = su.id AND sa.source = s.id
                                       AND m.id = s.maintainer""",
-                                    {'suite_name': suite})
+                                    {'suite_name': suite_name})
 
         for source in q.fetchall():
             package = source[0]
@@ -175,13 +175,13 @@ def main():
                                     WHERE s.suite_name = :suite_name
                                       AND ba.suite = s.id AND ba.bin = b.id
                                       AND b.source = srcu.source""",
-                                   {'suite_name': suite})
+                                   {'suite_name': suite_name})
         else:
             q = session.execute("""SELECT b.package, b.source, b.maintainer, b.version
                                      FROM bin_associations ba, binaries b, suite s
                                     WHERE s.suite_name = :suite_name
                                       AND ba.suite = s.id AND ba.bin = b.id""",
-                                   {'suite_name': suite})
+                                   {'suite_name': suite_name})
 
 
         for binary in q.fetchall():

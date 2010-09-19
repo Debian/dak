@@ -111,17 +111,6 @@ def longest(list):
             longest = l
     return longest
 
-def suite_sort(a, b):
-    if Cnf.has_key("Suite::%s::Priority" % (a)):
-        a_priority = int(Cnf["Suite::%s::Priority" % (a)])
-    else:
-        a_priority = 0
-    if Cnf.has_key("Suite::%s::Priority" % (b)):
-        b_priority = int(Cnf["Suite::%s::Priority" % (b)])
-    else:
-        b_priority = 0
-    return cmp(a_priority, b_priority)
-
 def output_format(suite):
     output_suite = []
     for word in suite.split("-"):
@@ -164,7 +153,6 @@ def number_of_packages():
     ## Print the results
     # Setup
     suite_list = suites.values()
-    suite_list.sort(suite_sort)
     suite_id_list = []
     suite_arches = {}
     for suite in suite_list:
