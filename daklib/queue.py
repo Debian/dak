@@ -162,18 +162,22 @@ def determine_new(filename, changes, files, warn=1, session = None):
     # Fix up the list of target suites
     cnf = Config()
     for suite in changes["suite"].keys():
-        override = cnf.Find("Suite::%s::OverrideSuite" % (suite))
-        if override:
-            (olderr, newerr) = (get_suite(suite, session) == None,
-                                get_suite(override, session) == None)
-            if olderr or newerr:
-                (oinv, newinv) = ("", "")
-                if olderr: oinv = "invalid "
-                if newerr: ninv = "invalid "
-                print "warning: overriding %ssuite %s to %ssuite %s" % (
-                        oinv, suite, ninv, override)
-            del changes["suite"][suite]
-            changes["suite"][override] = 1
+        oldsuite = get_suite(suite, session)
+        if not oldsuite:
+            print "WARNING: Invalid suite %s found" % suite
+            continue
+
+        if oldsuite.overridesuite:
+            newsuite = get_suite(oldsuite.overridesuite, session)
+
+            if newsuite:
+                print "WARNING: overriding suite %s to suite %s" % (
+                    suite, oldsuite.overridesuite)
+                del changes["suite"][suite]
+                changes["suite"][oldsuite.overridesuite] = 1
+            else:
+                print "WARNING: Told to use overridesuite %s for %s but it doesn't exist.  Bugger" % (
+                    oldsuite.overridesuite, suite)
 
     # Check for unprocessed byhand files
     if dbchg is not None:
@@ -2361,8 +2365,9 @@ distribution."""
             file_type = binary_type
 
         # Override suite name; used for example with proposed-updates
-        if cnf.Find("Suite::%s::OverrideSuite" % (suite)) != "":
-            suite = cnf["Suite::%s::OverrideSuite" % (suite)]
+        oldsuite = get_suite(suite, session)
+        if oldsuite.overridesuite:
+            suite = oldsuite.overridesuite
 
         result = get_override(package, suite, component, file_type, session)
 

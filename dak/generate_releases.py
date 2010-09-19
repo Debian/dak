@@ -227,7 +227,7 @@ def main ():
 
         architectures = get_suite_architectures(suite, skipall=True, skipsrc=True)
 
-        if SuiteBlock.has_key("NotAutomatic"):
+        if suiteobj.notautomatic:
             notautomatic = "yes"
         else:
             notautomatic = ""
@@ -266,8 +266,8 @@ def main ():
             out.write("Codename: %s\n" % (codename))
         out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
 
-        if SuiteBlock.has_key("ValidTime"):
-            validtime=float(SuiteBlock["ValidTime"])
+        if suiteobj.validtime:
+            validtime=float(suiteobj.validtime)
             out.write("Valid-Until: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()+validtime))))
 
         if notautomatic != "":
