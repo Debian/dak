@@ -36,6 +36,7 @@ import apt_pkg
 from daklib import utils
 from daklib.dak_exceptions import *
 from daklib.dbconn import *
+from daklib.config import Config
 
 ################################################################################
 
@@ -178,6 +179,7 @@ def main ():
     out = sys.stdout
 
     Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('h',"help","Generate-Releases::Options::Help"),
                  ('a',"apt-conf","Generate-Releases::Options::Apt-Conf", "HasArg"),
@@ -371,7 +373,7 @@ def main ():
                 keyring += " --keyring \"%s\"" % Cnf["Dinstall::SigningPubKeyring"]
 
             arguments = "--no-options --batch --no-tty --armour"
-            signkeyids=Cnf.signingkeyids.split()
+            signkeyids=cnf.signingkeyids.split()
 
             dest = Cnf["Dir::Root"] + tree + "/Release.gpg"
             if os.path.exists(dest):
