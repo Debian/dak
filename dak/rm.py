@@ -588,7 +588,7 @@ def main ():
     print "done."
 
     Subst = {}
-    Subst["__RM_ADDRESS__"] = cnf["Rm::MyEmailAddress"]
+    Subst["__RM_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
     Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
     bcc = []
     if cnf.Find("Dinstall::Bcc") != "":
