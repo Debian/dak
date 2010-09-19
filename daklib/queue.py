@@ -2051,10 +2051,9 @@ distribution."""
             stats.accept_bytes += float(entry["size"])
 
         # Copy the .changes file across for suite which need it.
-        copy_changes = {}
-        for suite_name in self.pkg.changes["distribution"].keys():
-            if cnf.has_key("Suite::%s::CopyChanges" % (suite_name)):
-                copy_changes[cnf["Suite::%s::CopyChanges" % (suite_name)]] = ""
+        copy_changes = dict([(x.copychanges, '')
+                             for x in session.query(Suite).filter(Suite.suite_name.in_([self.pkg.changes["distribution"].keys()])).all()
+                             if x.copychanges is not None])
 
         for dest in copy_changes.keys():
             utils.copy(self.pkg.changes_file, os.path.join(cnf["Dir::Root"], dest))
