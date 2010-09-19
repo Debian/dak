@@ -353,19 +353,13 @@ def main ():
             pass
 
         print "Processing %s%s..." % (osuite, originremark)
+        suiteobj = get_suite(osuite)
         # Get a list of all suites that use the override file of 'osuite'
-        ocodename = cnf["Suite::%s::codename" % osuite].lower()
-        suites = []
-        suiteids = []
-        for suite in cnf.SubTree("Suite").List():
-            if ocodename == cnf["Suite::%s::OverrideCodeName" % suite].lower():
-                suites.append(suite)
-                s = get_suite(suite.lower(), session)
-                if s is not None:
-                    suiteids.append(s.suite_id)
+        ocodename = suiteobj.codename
+        suiteids = [x.suite_id for x in session.query(Suite).filter(Suite.overridecodename == ocodename).all()]
 
-        if len(suiteids) != len(suites) or len(suiteids) < 1:
-            utils.fubar("Couldn't find id's of all suites: %s" % suites)
+        if len(suiteids) < 1:
+            utils.fubar("Couldn't find id's of all suites: %s" % suiteids)
 
         for component in cnf.SubTree("Component").List():
             # It is crucial for the dsc override creation based on binary
