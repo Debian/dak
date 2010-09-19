@@ -521,7 +521,8 @@ def main ():
         logfile.write("Closed bugs: %s\n" % (Options["Done"]))
     logfile.write("\n------------------- Reason -------------------\n%s\n" % (Options["Reason"]))
     logfile.write("----------------------------------------------\n")
-    logfile.flush()
+    logfile.write("=========================================================================\n")
+    logfile.close()
 
     # Do the same in rfc822 format
     logfile822 = utils.open_file(cnf["Rm::LogFile822"], 'a')
@@ -551,7 +552,6 @@ def main ():
     if Options["Done"]:
         logfile822.write("Bug: %s\n" % Options["Done"])
     logfile822.write("\n")
-    logfile822.flush()
     logfile822.close()
 
     dsc_type_id = get_override_type('dsc', session).overridetype_id
@@ -585,31 +585,32 @@ def main ():
     session.commit()
     print "done."
 
+    Subst = {}
+    Subst["__RM_ADDRESS__"] = cnf["Rm::MyEmailAddress"]
+    Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
+    bcc = []
+    if cnf.Find("Dinstall::Bcc") != "":
+        bcc.append(cnf["Dinstall::Bcc"])
+    if cnf.Find("Rm::Bcc") != "":
+        bcc.append(cnf["Rm::Bcc"])
+    if bcc:
+        Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
+    else:
+        Subst["__BCC__"] = "X-Filler: 42"
+    Subst["__CC__"] = "X-DAK: dak rm"
+    if carbon_copy:
+        Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
+    Subst["__SUITE_LIST__"] = suites_list
+    Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
+    Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
+    Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
+    Subst["__WHOAMI__"] = whoami
+
     # Send the bug closing messages
     if Options["Done"]:
-        Subst = {}
-        Subst["__RM_ADDRESS__"] = cnf["Rm::MyEmailAddress"]
-        Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
-        bcc = []
-        if cnf.Find("Dinstall::Bcc") != "":
-            bcc.append(cnf["Dinstall::Bcc"])
-        if cnf.Find("Rm::Bcc") != "":
-            bcc.append(cnf["Rm::Bcc"])
-        if bcc:
-            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
-        else:
-            Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak rm"
-        if carbon_copy:
-            Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
-        Subst["__SUITE_LIST__"] = suites_list
         summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (summary, Options["Reason"])
         summarymail += "----------------------------------------------\n"
         Subst["__SUMMARY__"] = summarymail
-        Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
-        Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
-        Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
-        Subst["__WHOAMI__"] = whoami
         whereami = utils.where_am_i()
         Archive = cnf.SubTree("Archive::%s" % (whereami))
         Subst["__MASTER_ARCHIVE__"] = Archive["OriginServer"]
@@ -619,40 +620,17 @@ def main ():
             mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close")
             utils.send_mail(mail_message)
 
-    # close associated bug reports 
+    # close associated bug reports
     if Options["Do-Close"]:
-        Subst = {}
-        Subst["__RM_ADDRESS__"] = cnf["Rm::MyEmailAddress"]
-        Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
-        bcc = []
-        if cnf.Find("Dinstall::Bcc") != "":
-            bcc.append(cnf["Dinstall::Bcc"])
-        if cnf.Find("Rm::Bcc") != "":
-            bcc.append(cnf["Rm::Bcc"])
-        if bcc:
-            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
-        else:
-            Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak rm"
-        if carbon_copy:
-            Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
-        Subst["__SUITE_LIST__"] = suites_list
-        Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
-        Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
-        Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
-        Subst["__WHOAMI__"] = whoami
         whereami = utils.where_am_i()
         Archive = cnf.SubTree("Archive::%s" % (whereami))
         # at this point, I just assume, that the first closed bug gives
         # some usefull information on why the package got removed
-	Subst["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
+        Subst["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
         for bug in bts.get_bugs('src', package, 'status', 'open'):
-            Subst["__BUG_NUMBER_ALSO__"] += bug + "-done@" + cnf["Dinstall::BugServer"] + "'"
-            mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close-related")
-            utils.send_mail(mail_message)
-        
-    logfile.write("=========================================================================\n")
-    logfile.close()
+            Subst["__BUG_NUMBER_ALSO__"] += bug + "-done@" + cnf["Dinstall::BugServer"] + ","
+        mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close-related")
+        utils.send_mail(mail_message)
 
 #######################################################################################
 
