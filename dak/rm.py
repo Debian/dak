@@ -2,6 +2,7 @@
 
 """ General purpose package removal tool for ftpmaster """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+# Copyright (C) 2010 Alexander Reichle-Schmehl <tolimar@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -478,6 +479,7 @@ def main ():
     summary = ""
     removals = d.keys()
     removals.sort()
+    versions = []
     for package in removals:
         versions = d[package].keys()
         versions.sort(apt_pkg.VersionCompare)
@@ -622,6 +624,10 @@ def main ():
 
     # close associated bug reports
     if Options["Do-Close"]:
+        if len(versions) == 1:
+            Subst["__VERSION__"] = versions[0]
+        else:
+            utils.fubar("Closing bugs with multiple package versions is not supported.  Do it yourself.")
         whereami = utils.where_am_i()
         Archive = cnf.SubTree("Archive::%s" % (whereami))
         # at this point, I just assume, that the first closed bug gives
