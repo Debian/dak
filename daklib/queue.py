@@ -1913,7 +1913,8 @@ distribution."""
         self.Subst["__SHORT_SUMMARY__"] = short_summary
 
         for dist in self.pkg.changes["distribution"].keys():
-            announce_list = cnf.Find("Suite::%s::Announce" % (dist))
+            suite = get_suite(dist)
+            announce_list = suite.announce
             if announce_list == "" or lists_done.has_key(announce_list):
                 continue
 
