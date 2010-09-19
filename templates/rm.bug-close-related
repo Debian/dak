@@ -1,0 +1,27 @@
+From: __RM_ADDRESS__
+To: __BUG_NUMBER_ALSO__
+__CC__
+__BCC__
+X-Debian: DAK
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+Subject: Bug#__BUG_NUMBER__: __SUBJECT__
+
+Version: __VERSION__+rm
+
+Dear submitter,
+
+as the package __SOURCE__ has just been removed from the Debian archive
+__SUITE_LIST__ we hereby close the assiciated bug reports.  We are sorry
+that we couldn't deal with your issue properly.
+
+For details on the removal, please see http://__BUG_SERVER__/__BUG_NUMBER__
+
+This message was generated automatically; if you believe that there is
+a problem with it please contact the archive administrators by mailing
+__ADMIN_ADDRESS__.
+
+__DISTRO__ distribution maintenance software
+pp.
+__WHOAMI__ (the ftpmaster behind the curtain)

@@ -2,6 +2,7 @@
 
 """ General purpose package removal tool for ftpmaster """
 # Copyright (C) 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+# Copyright (C) 2010 Alexander Reichle-Schmehl <tolimar@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,6 +52,7 @@ from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
 from daklib.regexes import re_strip_source_version, re_build_dep_arch
+import debianbts as bts
 
 ################################################################################
 
@@ -67,6 +69,7 @@ Remove PACKAGE(s) from suite(s).
   -c, --component=COMPONENT  act on this component
   -C, --carbon-copy=EMAIL    send a CC of removal message to EMAIL
   -d, --done=BUG#            send removal message as closure to bug#
+  -D, --do-close             also close all bugs associated to that package
   -h, --help                 show this help and exit
   -m, --reason=MSG           reason for removal
   -n, --no-action            don't do anything
@@ -269,6 +272,7 @@ def main ():
                  ('c',"component", "Rm::Options::Component", "HasArg"),
                  ('C',"carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
                  ('d',"done","Rm::Options::Done", "HasArg"), # Bugs fixed
+                 ('D',"do-close","Rm::Options::Do-Close"),
                  ('R',"rdep-check", "Rm::Options::Rdep-Check"),
                  ('m',"reason", "Rm::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
                  ('n',"no-action","Rm::Options::No-Action"),
@@ -305,6 +309,14 @@ def main ():
     if Options["Architecture"] and not Options["Partial"]:
         utils.warn("-a/--architecture implies -p/--partial.")
         Options["Partial"] = "true"
+    if Options["Do-Close"] and not Options["Done"]:
+        utils.fubar("No.")
+    if Options["Do-Close"] and Options["Binary-Only"]:
+        utils.fubar("No.")
+    if Options["Do-Close"] and Options["Source-Only"]:
+        utils.fubar("No.")
+    if Options["Do-Close"] and Options["Suite"] != 'unstable':
+        utils.fubar("No.")
 
     # Force the admin to tell someone if we're not doing a 'dak
     # cruft-report' inspired removal (or closing a bug, which counts
@@ -467,6 +479,7 @@ def main ():
     summary = ""
     removals = d.keys()
     removals.sort()
+    versions = []
     for package in removals:
         versions = d[package].keys()
         versions.sort(apt_pkg.VersionCompare)
@@ -510,7 +523,8 @@ def main ():
         logfile.write("Closed bugs: %s\n" % (Options["Done"]))
     logfile.write("\n------------------- Reason -------------------\n%s\n" % (Options["Reason"]))
     logfile.write("----------------------------------------------\n")
-    logfile.flush()
+    logfile.write("=========================================================================\n")
+    logfile.close()
 
     # Do the same in rfc822 format
     logfile822 = utils.open_file(cnf["Rm::LogFile822"], 'a')
@@ -540,7 +554,6 @@ def main ():
     if Options["Done"]:
         logfile822.write("Bug: %s\n" % Options["Done"])
     logfile822.write("\n")
-    logfile822.flush()
     logfile822.close()
 
     dsc_type_id = get_override_type('dsc', session).overridetype_id
@@ -574,31 +587,32 @@ def main ():
     session.commit()
     print "done."
 
+    Subst = {}
+    Subst["__RM_ADDRESS__"] = cnf["Rm::MyEmailAddress"]
+    Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
+    bcc = []
+    if cnf.Find("Dinstall::Bcc") != "":
+        bcc.append(cnf["Dinstall::Bcc"])
+    if cnf.Find("Rm::Bcc") != "":
+        bcc.append(cnf["Rm::Bcc"])
+    if bcc:
+        Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
+    else:
+        Subst["__BCC__"] = "X-Filler: 42"
+    Subst["__CC__"] = "X-DAK: dak rm"
+    if carbon_copy:
+        Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
+    Subst["__SUITE_LIST__"] = suites_list
+    Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
+    Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
+    Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
+    Subst["__WHOAMI__"] = whoami
+
     # Send the bug closing messages
     if Options["Done"]:
-        Subst = {}
-        Subst["__RM_ADDRESS__"] = cnf["Rm::MyEmailAddress"]
-        Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
-        bcc = []
-        if cnf.Find("Dinstall::Bcc") != "":
-            bcc.append(cnf["Dinstall::Bcc"])
-        if cnf.Find("Rm::Bcc") != "":
-            bcc.append(cnf["Rm::Bcc"])
-        if bcc:
-            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
-        else:
-            Subst["__BCC__"] = "X-Filler: 42"
-        Subst["__CC__"] = "X-DAK: dak rm"
-        if carbon_copy:
-            Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
-        Subst["__SUITE_LIST__"] = suites_list
         summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (summary, Options["Reason"])
         summarymail += "----------------------------------------------\n"
         Subst["__SUMMARY__"] = summarymail
-        Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
-        Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
-        Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
-        Subst["__WHOAMI__"] = whoami
         whereami = utils.where_am_i()
         Archive = cnf.SubTree("Archive::%s" % (whereami))
         Subst["__MASTER_ARCHIVE__"] = Archive["OriginServer"]
@@ -608,8 +622,21 @@ def main ():
             mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close")
             utils.send_mail(mail_message)
 
-    logfile.write("=========================================================================\n")
-    logfile.close()
+    # close associated bug reports
+    if Options["Do-Close"]:
+        if len(versions) == 1:
+            Subst["__VERSION__"] = versions[0]
+        else:
+            utils.fubar("Closing bugs with multiple package versions is not supported.  Do it yourself.")
+        whereami = utils.where_am_i()
+        Archive = cnf.SubTree("Archive::%s" % (whereami))
+        # at this point, I just assume, that the first closed bug gives
+        # some usefull information on why the package got removed
+        Subst["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
+        for bug in bts.get_bugs('src', package, 'status', 'open'):
+            Subst["__BUG_NUMBER_ALSO__"] += bug + "-done@" + cnf["Dinstall::BugServer"] + ","
+        mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close-related")
+        utils.send_mail(mail_message)
 
 #######################################################################################
 
