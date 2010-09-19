@@ -2483,10 +2483,8 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
                  ('Priority', 'priority'),
                  ('NotAutomatic', 'notautomatic'),
                  ('CopyChanges', 'copychanges'),
-                 ('CopyDotDak', 'copydotdak'),
                  ('CommentsDir', 'commentsdir'),
-                 ('OverrideSuite', 'overridesuite'),
-                 ('ChangelogBase', 'changelogbase')]
+                 ('OverrideSuite', 'overridesuite')]
 
 class Suite(object):
     def __init__(self, *args, **kwargs):
