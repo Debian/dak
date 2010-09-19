@@ -623,6 +623,8 @@ def main ():
             utils.send_mail(mail_message)
 
     # close associated bug reports
+    # FIXME:  We should also close possible WNPP bugs for that package, but
+    # currently there's no sane way to determine them
     if Options["Do-Close"]:
         if len(versions) == 1:
             Subst["__VERSION__"] = versions[0]
@@ -633,13 +635,15 @@ def main ():
         # at this point, I just assume, that the first closed bug gives
         # some usefull information on why the package got removed
         Subst["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
-        print "Package:", package
-        print "Bugs found:", bts.get_bugs('src', package, 'status', 'open')
-        for bug in bts.get_bugs('src', package, 'status', 'open'):
-            Subst["__BUG_NUMBER_ALSO__"] += bug + "-done@" + cnf["Dinstall::BugServer"] + ","
-	print "Resulting to:", Subst["__BUG_NUMBER_ALSO__"]
+        if len(sources) > 1:
+            utils.fubar("Closing bugs for multiple source pakcages is not supported.  Do it yourself.")
+        Subst["__BUG_NUMBER_ALSO__"] = ""
+        Subst["__SOURCE__"] = source.split("_", 1)[0]
+        for bug in bts.get_bugs('src', source.split("_", 1)[0], 'status', 'open'):
+            Subst["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
         mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close-related")
-        utils.send_mail(mail_message)
+        if Subst["__BUG_NUMBER_ALSO__"]:
+            utils.send_mail(mail_message)
 
 #######################################################################################
 
