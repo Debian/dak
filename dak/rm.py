@@ -283,7 +283,7 @@ def main ():
 
     for i in [ "architecture", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
-               "source-only" ]:
+               "source-only", "Do-Close" ]:
         if not cnf.has_key("Rm::Options::%s" % (i)):
             cnf["Rm::Options::%s" % (i)] = ""
     if not cnf.has_key("Rm::Options::Suite"):
