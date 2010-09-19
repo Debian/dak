@@ -107,7 +107,9 @@ class Config(object):
         Of course, what the values do is another matter
         """
         for field in [('db_revision',      None,       int),
-                      ('defaultsuitename', 'unstable', str)]:
+                      ('defaultsuitename', 'unstable', str),
+                      ('signingkeyids',    '',         str)
+                      ]:
             setattr(self, 'get_%s' % field[0], lambda x=None: self.get_db_value(field[0], field[1], field[2]))
             setattr(Config, '%s' % field[0], property(fget=getattr(self, 'get_%s' % field[0])))
 

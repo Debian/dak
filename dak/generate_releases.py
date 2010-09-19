@@ -371,10 +371,7 @@ def main ():
                 keyring += " --keyring \"%s\"" % Cnf["Dinstall::SigningPubKeyring"]
 
             arguments = "--no-options --batch --no-tty --armour"
-            if Cnf.has_key("Dinstall::SigningKeyIds"):
-                signkeyids = Cnf["Dinstall::SigningKeyIds"].split()
-            else:
-                signkeyids = [""]
+            signkeyids=Cnf.signingkeyids.split()
 
             dest = Cnf["Dir::Root"] + tree + "/Release.gpg"
             if os.path.exists(dest):
