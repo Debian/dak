@@ -2056,7 +2056,7 @@ distribution."""
 
         # Copy the .changes file across for suite which need it.
         copy_changes = dict([(x.copychanges, '')
-                             for x in session.query(Suite).filter(Suite.suite_name.in_([self.pkg.changes["distribution"].keys()])).all()
+                             for x in session.query(Suite).filter(Suite.suite_name.in_(self.pkg.changes["distribution"].keys())).all()
                              if x.copychanges is not None])
 
         for dest in copy_changes.keys():
