@@ -368,8 +368,8 @@ def main ():
             otypes.remove("dsc")
             otypes = ["dsc"] + otypes
             for otype in otypes:
-                print "Processing %s [%s - %s] using %s..." \
-                    % (osuite, component, otype, suites)
+                print "Processing %s [%s - %s]" \
+                    % (osuite, component, otype)
                 sys.stdout.flush()
                 process(osuite, suiteids, originosuite, component, otype, session)
 
