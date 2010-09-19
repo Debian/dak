@@ -52,6 +52,7 @@ override_types="deb dsc udeb"
 
 PATH=$masterdir:$PATH
 umask 022
+unset CDPATH
 
 # Set the database variables
 eval $(dak admin config db-shell)

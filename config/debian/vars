@@ -34,6 +34,7 @@ copyoverrides="etch.contrib etch.contrib.src etch.main etch.main.src etch.non-fr
 
 PATH=$masterdir:$PATH
 umask 022
+unset CDPATH
 
 # Set the database variables
 eval $(dak admin config db-shell)
