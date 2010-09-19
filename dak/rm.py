@@ -283,7 +283,7 @@ def main ():
 
     for i in [ "architecture", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
-               "source-only" ]:
+               "source-only", "Do-Close" ]:
         if not cnf.has_key("Rm::Options::%s" % (i)):
             cnf["Rm::Options::%s" % (i)] = ""
     if not cnf.has_key("Rm::Options::Suite"):
@@ -633,8 +633,11 @@ def main ():
         # at this point, I just assume, that the first closed bug gives
         # some usefull information on why the package got removed
         Subst["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
+        print "Package:", package
+        print "Bugs found:", bts.get_bugs('src', package, 'status', 'open')
         for bug in bts.get_bugs('src', package, 'status', 'open'):
             Subst["__BUG_NUMBER_ALSO__"] += bug + "-done@" + cnf["Dinstall::BugServer"] + ","
+	print "Resulting to:", Subst["__BUG_NUMBER_ALSO__"]
         mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close-related")
         utils.send_mail(mail_message)
 
