@@ -229,13 +229,11 @@ def main ():
 
     if Options.has_key("Done"):
         Subst = {}
-        Subst["__OVERRIDE_ADDRESS__"] = cnf["Override::MyEmailAddress"]
+        Subst["__OVERRIDE_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
         Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
         bcc = []
         if cnf.Find("Dinstall::Bcc") != "":
             bcc.append(cnf["Dinstall::Bcc"])
-        if cnf.Find("Override::Bcc") != "":
-            bcc.append(cnf["Override::Bcc"])
         if bcc:
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
