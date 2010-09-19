@@ -120,7 +120,7 @@ def main ():
             continue
 
         sys.stderr.write("Processing %s...\n" % (suite.suite_name))
-        override_suite = cnf["Suite::%s::OverrideCodeName" % (suite_name)]
+        override_suite = suite.overridecodename
 
         for component_name in cnf.SubTree("Component").List():
             component = get_component(component_name, session)
