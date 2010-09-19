@@ -2483,7 +2483,6 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
                  ('Priority', 'priority'),
                  ('NotAutomatic', 'notautomatic'),
                  ('CopyChanges', 'copychanges'),
-                 ('CommentsDir', 'commentsdir'),
                  ('OverrideSuite', 'overridesuite')]
 
 class Suite(object):
