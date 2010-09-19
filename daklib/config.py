@@ -53,6 +53,7 @@ class Config(object):
         if not getattr(self, 'initialised', False):
             self.initialised = True
             self._readconf()
+            self._setup_routines()
 
     def _readconf(self):
         apt_pkg.init()
@@ -84,3 +85,39 @@ class Config(object):
 
     def __setitem__(self, name, value):
         self.Cnf[name] = value
+
+    @staticmethod
+    def get_db_value(name, default=None, rettype=None):
+        from daklib.dbconn import DBConfig, DBConn, NoResultFound
+        try:
+            res = DBConn().session().query(DBConfig).filter(DBConfig.name == name).one()
+        except NoResultFound:
+            return default
+
+        if rettype:
+            return rettype(res.value)
+        else:
+            return res.value
+
+    def _setup_routines(self):
+        """
+        This routine is the canonical list of which fields need to exist in
+        the config table.  If your dak instance is to work, we suggest reading it
+
+        Of course, what the values do is another matter
+        """
+        for field in [('db_revision',      None,       int),
+                      ('defaultsuitename', 'unstable', str)]:
+            setattr(self, 'get_%s' % field[0], lambda x=None: self.get_db_value(field[0], field[1], field[2]))
+            setattr(Config, '%s' % field[0], property(fget=getattr(self, 'get_%s' % field[0])))
+
+    def get_defaultsuite(self):
+        from daklib.dbconn import get_suite
+        suitename = self.defaultsuitename
+        if not suitename:
+            return None
+        else:
+            return get_suite(suitename)
+
+    defaultsuite = property(get_defaultsuite)
+
