@@ -78,7 +78,7 @@ function do_dists () {
     cd $configdir
     dak generate-filelist
     GZIP='--rsyncable' ; export GZIP
-    dak generate-packages-sources
+    dak generate-packages-sources >/dev/null
 }
 
 ########################################################################
@@ -103,7 +103,5 @@ do_unchecked
 if [ ! -z "$changes" ]; then
     sync_debbugs
     do_buildd
-    echo "Starting g-p-s: $(date +%H:%M:%S)"
     do_dists
-    echo "Done with g-p-s: $(date +%H:%M:%S)"
 fi
