@@ -1918,6 +1918,7 @@ distribution."""
 
         for dist in self.pkg.changes["distribution"].keys():
             suite = get_suite(dist)
+            if suite is None: continue
             announce_list = suite.announce
             if announce_list == "" or lists_done.has_key(announce_list):
                 continue
@@ -2366,7 +2367,7 @@ distribution."""
 
         # Override suite name; used for example with proposed-updates
         oldsuite = get_suite(suite, session)
-        if oldsuite.overridesuite:
+        if (not oldsuite is None) and oldsuite.overridesuite:
             suite = oldsuite.overridesuite
 
         result = get_override(package, suite, component, file_type, session)
