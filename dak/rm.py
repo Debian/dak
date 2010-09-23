@@ -591,14 +591,6 @@ def main ():
     Subst["__RM_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
     Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
     bcc = []
-    if cnf.Find("Dinstall::Bcc") != "":
-        bcc.append(cnf["Dinstall::Bcc"])
-    if cnf.Find("Rm::Bcc") != "":
-        bcc.append(cnf["Rm::Bcc"])
-    if bcc:
-        Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
-    else:
-        Subst["__BCC__"] = "X-Filler: 42"
     Subst["__CC__"] = "X-DAK: dak rm"
     if carbon_copy:
         Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
@@ -610,6 +602,14 @@ def main ():
 
     # Send the bug closing messages
     if Options["Done"]:
+        if cnf.Find("Dinstall::Bcc") != "":
+            bcc.append(cnf["Dinstall::Bcc"])
+        if cnf.Find("Rm::Bcc") != "":
+            bcc.append(cnf["Rm::Bcc"])
+        if bcc:
+            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
+        else:
+            Subst["__BCC__"] = "X-Filler: 42"
         summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (summary, Options["Reason"])
         summarymail += "----------------------------------------------\n"
         Subst["__SUMMARY__"] = summarymail
@@ -630,6 +630,10 @@ def main ():
             Subst["__VERSION__"] = versions[0]
         else:
             utils.fubar("Closing bugs with multiple package versions is not supported.  Do it yourself.")
+        if bcc:
+            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
+        else:
+            Subst["__BCC__"] = "X-Filler: 42"
         whereami = utils.where_am_i()
         Archive = cnf.SubTree("Archive::%s" % (whereami))
         # at this point, I just assume, that the first closed bug gives
