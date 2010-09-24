@@ -591,7 +591,6 @@ def main ():
     Subst_common = {}
     Subst_common["__RM_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
     Subst_common["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
-    bcc = []
     Subst_common["__CC__"] = "X-DAK: dak rm"
     if carbon_copy:
         Subst_common["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
@@ -602,8 +601,9 @@ def main ():
     Subst_common["__WHOAMI__"] = whoami
 
     # Send the bug closing messages
-    Subst_close_rm = Subst_common
     if Options["Done"]:
+        Subst_close_rm = Subst_common
+        bcc = []
         if cnf.Find("Dinstall::Bcc") != "":
             bcc.append(cnf["Dinstall::Bcc"])
         if cnf.Find("Rm::Bcc") != "":
@@ -629,6 +629,7 @@ def main ():
     # currently there's no sane way to determine them
     if Options["Do-Close"]:
         Subst_close_other = Subst_common
+        bcc = []
         if len(versions) == 1:
             Subst_close_other["__VERSION__"] = versions[0]
         else:
