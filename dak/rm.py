@@ -587,66 +587,67 @@ def main ():
     session.commit()
     print "done."
 
-    Subst = {}
-    Subst["__RM_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
-    Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
+    # read common subst variables for all bug closure mails
+    Subst_common = {}
+    Subst_common["__RM_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
+    Subst_common["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
     bcc = []
-    Subst["__CC__"] = "X-DAK: dak rm"
+    Subst_common["__CC__"] = "X-DAK: dak rm"
     if carbon_copy:
-        Subst["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
-    Subst["__SUITE_LIST__"] = suites_list
-    Subst["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
-    Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
-    Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
-    Subst["__WHOAMI__"] = whoami
+        Subst_common["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
+    Subst_common["__SUITE_LIST__"] = suites_list
+    Subst_common["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
+    Subst_common["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
+    Subst_common["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
+    Subst_common["__WHOAMI__"] = whoami
 
     # Send the bug closing messages
+    Subst_close_rm = Subst_common
     if Options["Done"]:
         if cnf.Find("Dinstall::Bcc") != "":
             bcc.append(cnf["Dinstall::Bcc"])
         if cnf.Find("Rm::Bcc") != "":
             bcc.append(cnf["Rm::Bcc"])
         if bcc:
-            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
+            Subst_close_rm["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
-            Subst["__BCC__"] = "X-Filler: 42"
+            Subst_close_rm["__BCC__"] = "X-Filler: 42"
         summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (summary, Options["Reason"])
         summarymail += "----------------------------------------------\n"
-        Subst["__SUMMARY__"] = summarymail
+        Subst_close_rm["__SUMMARY__"] = summarymail
         whereami = utils.where_am_i()
         Archive = cnf.SubTree("Archive::%s" % (whereami))
-        Subst["__MASTER_ARCHIVE__"] = Archive["OriginServer"]
-        Subst["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"]
+        Subst_close_rm["__MASTER_ARCHIVE__"] = Archive["OriginServer"]
+        Subst_close_rm["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"]
         for bug in utils.split_args(Options["Done"]):
-            Subst["__BUG_NUMBER__"] = bug
-            mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close")
+            Subst_close_rm["__BUG_NUMBER__"] = bug
+            mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close")
             utils.send_mail(mail_message)
 
     # close associated bug reports
     # FIXME:  We should also close possible WNPP bugs for that package, but
     # currently there's no sane way to determine them
     if Options["Do-Close"]:
+        Subst_close_other = Subst_common
         if len(versions) == 1:
-            Subst["__VERSION__"] = versions[0]
+            Subst_close_other["__VERSION__"] = versions[0]
         else:
             utils.fubar("Closing bugs with multiple package versions is not supported.  Do it yourself.")
         if bcc:
-            Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)
+            Subst_close_other["__BCC__"] = "Bcc: " + ", ".join(bcc)
         else:
-            Subst["__BCC__"] = "X-Filler: 42"
-        whereami = utils.where_am_i()
-        Archive = cnf.SubTree("Archive::%s" % (whereami))
+            Subst_close_other["__BCC__"] = "X-Filler: 42"
         # at this point, I just assume, that the first closed bug gives
         # some usefull information on why the package got removed
-        Subst["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
+        Subst_close_other["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
         if len(sources) > 1:
             utils.fubar("Closing bugs for multiple source pakcages is not supported.  Do it yourself.")
-        Subst["__BUG_NUMBER_ALSO__"] = ""
-        Subst["__SOURCE__"] = source.split("_", 1)[0]
+        Subst_close_other["__BUG_NUMBER_ALSO__"] = ""
+        Subst_close_other["__SOURCE__"] = source.split("_", 1)[0]
         for bug in bts.get_bugs('src', source.split("_", 1)[0], 'status', 'open'):
-            Subst["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
-        mail_message = utils.TemplateSubst(Subst,cnf["Dir::Templates"]+"/rm.bug-close-related")
-        if Subst["__BUG_NUMBER_ALSO__"]:
+            Subst_close_other["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
+        mail_message = utils.TemplateSubst(Subst_close_other,cnf["Dir::Templates"]+"/rm.bug-close-related")
+        if Subst_close_other["__BUG_NUMBER_ALSO__"]:
             utils.send_mail(mail_message)
 
 #######################################################################################
