@@ -99,6 +99,13 @@ def britney_changelog(packages, suite, session):
     old = {}
     current = {}
 
+    try:
+        q = session.execute("""SELECT britney_changelog FROM suite
+                               WHERE id = :suiteid""", {'suiteid': suite.suite_id})
+        brit_file = q.fetchone()[0]
+    except:
+        return
+
     q = session.execute("""SELECT s.source, s.version, sa.id
                              FROM source s, src_associations sa
                             WHERE sa.suite = :suiteid
@@ -129,7 +136,7 @@ def britney_changelog(packages, suite, session):
     q = session.execute(query)
 
     pu = None
-    brit = utils.open_file(Config()["Changelogs::Britney"], 'w')
+    brit = utils.open_file(brit_file, 'w')
 
     for u in q:
         if pu and pu != u[0]:
