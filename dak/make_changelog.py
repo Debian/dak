@@ -58,6 +58,7 @@ from re import split
 from shutil import rmtree
 from daklib.dbconn import *
 from daklib import utils
+from daklib.config import Config
 
 ################################################################################
 
@@ -260,6 +261,7 @@ def export_files(session, pool, clpool, temppath):
 
 def main():
     Cnf = utils.get_conf()
+    cnf = Config()
     Arguments = [('h','help','Make-Changelog::Options::Help'),
                  ('s','suite','Make-Changelog::Options::Suite','HasArg'),
                  ('b','base-suite','Make-Changelog::Options::Base-Suite','HasArg'),
@@ -291,7 +293,10 @@ def main():
     if testing:
         display_changes(testing_summary(Cnf['Changelogs::Testing'], session), 1)
     elif export:
-        export_files(session, Cnf['Dir::Pool'], Cnf['Changelogs::Export'], Cnf['Dir::TempPath'])
+        if cnf.exportpath:
+            export_files(session, Cnf['Dir::Pool'], cnf.exportpath, Cnf['Dir::TempPath'])
+        else:
+            utils.fubar('No changelog export path defined')
     elif binnmu:
         display_changes(get_binary_uploads(suite, base_suite, session), 3)
     else:
