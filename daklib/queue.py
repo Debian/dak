@@ -171,8 +171,8 @@ def determine_new(filename, changes, files, warn=1, session = None):
             newsuite = get_suite(oldsuite.overridesuite, session)
 
             if newsuite:
-                print "WARNING: overriding suite %s to suite %s" % (
-                    suite, oldsuite.overridesuite)
+                print "INFORMATION: Using overrides from suite %s instead of suite %s" % (
+                    oldsuite.overridesuite, suite)
                 del changes["suite"][suite]
                 changes["suite"][oldsuite.overridesuite] = 1
             else:
