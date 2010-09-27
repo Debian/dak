@@ -494,6 +494,8 @@ def main ():
         print "Will also close bugs: "+Options["Done"]
     if carbon_copy:
         print "Will also send CCs to: " + ", ".join(carbon_copy)
+    if Options["Do-Close"]:
+        print "Will also close associated bug reports."
     print
     print "------------------- Reason -------------------"
     print Options["Reason"]
@@ -523,8 +525,6 @@ def main ():
         logfile.write("Closed bugs: %s\n" % (Options["Done"]))
     logfile.write("\n------------------- Reason -------------------\n%s\n" % (Options["Reason"]))
     logfile.write("----------------------------------------------\n")
-    logfile.write("=========================================================================\n")
-    logfile.close()
 
     # Do the same in rfc822 format
     logfile822 = utils.open_file(cnf["Rm::LogFile822"], 'a')
@@ -553,8 +553,6 @@ def main ():
     logfile822.write("Reason: %s\n" % Options["Reason"].replace('\n', '\n '))
     if Options["Done"]:
         logfile822.write("Bug: %s\n" % Options["Done"])
-    logfile822.write("\n")
-    logfile822.close()
 
     dsc_type_id = get_override_type('dsc', session).overridetype_id
     deb_type_id = get_override_type('deb', session).overridetype_id
@@ -645,11 +643,23 @@ def main ():
             utils.fubar("Closing bugs for multiple source pakcages is not supported.  Do it yourself.")
         Subst_close_other["__BUG_NUMBER_ALSO__"] = ""
         Subst_close_other["__SOURCE__"] = source.split("_", 1)[0]
+        logfile.write("Also closing bugs: ")
+        logfile822.write("Also-Bugs: ")
         for bug in bts.get_bugs('src', source.split("_", 1)[0], 'status', 'open'):
             Subst_close_other["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
+            logfile.wirte(" " + str(bug))
+            logfile822.wirte(" " + str(bug))          
         mail_message = utils.TemplateSubst(Subst_close_other,cnf["Dir::Templates"]+"/rm.bug-close-related")
         if Subst_close_other["__BUG_NUMBER_ALSO__"]:
             utils.send_mail(mail_message)
+        logfile.write("\n")
+        logfile822.write("\n")
+
+    logfile.write("=========================================================================\n")
+    logfile.close()
+
+    logfile822.write("\n")
+    logfile822.close()
 
 #######################################################################################
 
