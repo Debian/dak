@@ -1539,7 +1539,7 @@ if which_conf_file() != default_config:
 
 ################################################################################
 
-def parse_wnpp_bug_file(file = "/home/tolimar/wnpp-bugs"):
+def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm"):
     """
     Parses the wnpp bug list available at http://qa.debian.org/data/bts/wnpp_rm
     Well, actually it parsed a local copy, but let's document the source
