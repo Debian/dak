@@ -623,11 +623,10 @@ def main ():
             utils.send_mail(mail_message)
 
     # close associated bug reports
-    # FIXME:  We should also close possible WNPP bugs for that package, but
-    # currently there's no sane way to determine them
     if Options["Do-Close"]:
         Subst_close_other = Subst_common
         bcc = []
+        wnpp = utils.parse_wnpp_bug_file()
         if len(versions) == 1:
             Subst_close_other["__VERSION__"] = versions[0]
         else:
@@ -639,21 +638,37 @@ def main ():
         # at this point, I just assume, that the first closed bug gives
         # some useful information on why the package got removed
         Subst_close_other["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
-        if len(sources) > 1:
+        if len(sources) == 1:
+            source_pkg = source.split("_", 1)[0]
+        else:
             utils.fubar("Closing bugs for multiple source pakcages is not supported.  Do it yourself.")
         Subst_close_other["__BUG_NUMBER_ALSO__"] = ""
-        Subst_close_other["__SOURCE__"] = source.split("_", 1)[0]
-        logfile.write("Also closing bugs: ")
-        logfile822.write("Also-Bugs: ")
+        Subst_close_other["__SOURCE__"] = source_pkg
+        logfile.write("Also closing bug(s):")
+        logfile822.write("Also-Bugs:")
         for bug in bts.get_bugs('src', source.split("_", 1)[0], 'status', 'open'):
             Subst_close_other["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
             logfile.write(" " + str(bug))
             logfile822.write(" " + str(bug))
+        logfile.write("\n")
+        logfile822.write("\n")
+        if source_pkg in wnpp.keys():
+            logfile.write("Also closing WNPP bug(s):")
+            logfile822.write("Also-WNPP:")
+            for bug in wnpp[source_pkg]:
+                # the wnpp-rm file we parse also contains our removal
+                # bugs, filtering that out
+                if bug != Subst_close_other["__BUG_NUMBER__"]:
+                    Subst_close_other["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
+                    logfile.write(" " + str(bug))
+                    logfile822.write(" " + str(bug))
+            logfile.write("\n")
+            logfile822.write("\n")
+              
         mail_message = utils.TemplateSubst(Subst_close_other,cnf["Dir::Templates"]+"/rm.bug-close-related")
         if Subst_close_other["__BUG_NUMBER_ALSO__"]:
             utils.send_mail(mail_message)
-        logfile.write("\n")
-        logfile822.write("\n")
+             
 
     logfile.write("=========================================================================\n")
     logfile.close()

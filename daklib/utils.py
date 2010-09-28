@@ -1536,3 +1536,32 @@ if not os.getenv("DAK_TEST"):
 
 if which_conf_file() != default_config:
     apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
+
+################################################################################
+
+def parse_wnpp_bug_file(file = "/home/tolimar/wnpp-bugs"):
+    """
+    Parses the wnpp bug list available at http://qa.debian.org/data/bts/wnpp_rm
+    Well, actually it parsed a local copy, but let's document the source
+    somewhere ;)
+
+    returns a dict associating source package name with a list of open wnpp
+    bugs (Yes, there might be more than one)
+    """
+    lines = open(file).readlines()
+    wnpp = {}
+
+    for line in lines:
+        splited_line = line.split(": ", 1)
+        if len(splited_line) > 1:
+            wnpp[splited_line[0]] = splited_line[1].split("|")
+
+    for source in wnpp.keys():
+        bugs = []
+        for wnpp_bug in wnpp[source]:
+            bug_no = re.search("(\d)+", wnpp_bug).group()
+            if bug_no:
+                bugs.append(bug_no)
+        wnpp[source] = bugs
+    return wnpp
+
