@@ -647,14 +647,16 @@ def main ():
             utils.fubar("Closing bugs for multiple source pakcages is not supported.  Do it yourself.")
         Subst_close_other["__BUG_NUMBER_ALSO__"] = ""
         Subst_close_other["__SOURCE__"] = source_pkg
-        logfile.write("Also closing bug(s):")
-        logfile822.write("Also-Bugs:")
-        for bug in bts.get_bugs('src', source.split("_", 1)[0], 'status', 'open'):
-            Subst_close_other["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
-            logfile.write(" " + str(bug))
-            logfile822.write(" " + str(bug))
-        logfile.write("\n")
-        logfile822.write("\n")
+        other_bugs = bts.get_bugs('src', source_pkg, 'status', 'open')
+        if other_bugs:
+            logfile.write("Also closing bug(s):")
+            logfile822.write("Also-Bugs:")
+            for bug in other_bugs:
+                Subst_close_other["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
+                logfile.write(" " + str(bug))
+                logfile822.write(" " + str(bug))
+            logfile.write("\n")
+            logfile822.write("\n")
         if source_pkg in wnpp.keys():
             logfile.write("Also closing WNPP bug(s):")
             logfile822.write("Also-WNPP:")
