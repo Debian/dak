@@ -619,7 +619,10 @@ def main ():
         Subst_close_rm["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"]
         for bug in utils.split_args(Options["Done"]):
             Subst_close_rm["__BUG_NUMBER__"] = bug
-            mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close")
+            if Options["Do-Close"]:
+                mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close-with-related")
+            else:
+                mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close")
             utils.send_mail(mail_message)
 
     # close associated bug reports
