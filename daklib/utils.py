@@ -1548,7 +1548,14 @@ def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/w
     returns a dict associating source package name with a list of open wnpp
     bugs (Yes, there might be more than one)
     """
-    lines = open(file).readlines()
+    
+    line = []
+    try:
+        f = open(file)
+        lines = f.readlines()
+    except IOerror, e:
+        print "Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file
+	lines = []
     wnpp = {}
 
     for line in lines:
