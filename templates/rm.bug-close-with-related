@@ -1,0 +1,45 @@
+From: __RM_ADDRESS__
+To: __BUG_NUMBER__-close@__BUG_SERVER__
+__CC__
+__BCC__
+X-Debian: DAK
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+Subject: Bug#__BUG_NUMBER__: __SUBJECT__
+
+We believe that the bug you reported is now fixed; the following
+package(s) have been removed from __SUITE_LIST__:
+
+__SUMMARY__
+Note that the package(s) have simply been removed from the tag
+database and may (or may not) still be in the pool; this is not a bug.
+The package(s) will be physically removed automatically when no suite
+references them (and in the case of source, when no binary references
+it).  Please also remember that the changes have been done on the
+master archive (__MASTER_ARCHIVE__) and will not propagate to any
+mirrors (__PRIMARY_MIRROR__ included) until the next cron.daily run at the
+earliest.
+
+Packages are usually not removed from testing by hand. Testing tracks
+unstable and will automatically remove packages which were removed
+from unstable when removing them from testing causes no dependency
+problems. The release team can force a removal from testing if it is
+really needed, please contact them if this should be the case.
+
+We try to close Bugs which have been reported against this package
+automatically.  But please check all old bugs, if they where closed
+correctly or should have been re-assign to another package.
+
+Thank you for reporting the bug, which will now be closed.  If you
+have further comments please address them to __BUG_NUMBER__@__BUG_SERVER__.
+
+The full log for this bug can be viewed at http://__BUG_SERVER__/__BUG_NUMBER__
+
+This message was generated automatically; if you believe that there is
+a problem with it please contact the archive administrators by mailing
+__ADMIN_ADDRESS__.
+
+__DISTRO__ distribution maintenance software
+pp.
+__WHOAMI__ (the ftpmaster behind the curtain)
