@@ -45,10 +45,10 @@ components="main contrib non-free"
 suites="lenny-backports"
 override_types="deb dsc udeb"
 
-# temporary fix only!
 # export TMP=/srv/backports-master.debian.org/tmp
 # export TEMP=/srv/backports-master.debian.org/tmp
-# export TMPDIR==/srv/backports-master.debian.org/tmp
+
+TMPDIR==$base/tmp
 
 PATH=$masterdir:$PATH
 umask 022
