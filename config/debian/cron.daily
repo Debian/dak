@@ -20,8 +20,7 @@ trap cleanup SIGHUP SIGINT SIGPIPE SIGTERM EXIT ERR
 
 # get the latest list of wnpp bugs and their source packages
 wget -q -O${TMPFILE} http://qa.debian.org/data/bts/wnpp_rm
+chmod go+r ${TMPFILE}
 mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
-chgrp ftpteam /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
-chmod g+r /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
 
 ################################################################################
