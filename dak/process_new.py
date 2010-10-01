@@ -485,7 +485,7 @@ def do_new(upload, session):
                 done = 1
         elif answer == 'N':
             edit_note(get_new_comments(changes.get("source", ""), session=session),
-                      upload, session)
+                      upload, session, bool(Options["Trainee"]))
         elif answer == 'P' and not Options["Trainee"]:
             prod_maintainer(get_new_comments(changes.get("source", ""), session=session),
                             upload)

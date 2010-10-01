@@ -332,7 +332,7 @@ def prod_maintainer(notes, upload):
 
 ################################################################################
 
-def edit_note(note, upload, session):
+def edit_note(note, upload, session, trainee=False):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
     editor = os.environ.get("EDITOR","vi")
@@ -364,7 +364,7 @@ def edit_note(note, upload, session):
     comment.version = upload.pkg.changes["version"]
     comment.comment = newnote
     comment.author  = utils.whoami()
-    comment.trainee = bool(Options["Trainee"])
+    comment.trainee = trainee
     session.add(comment)
     session.commit()
 
