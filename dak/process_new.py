@@ -765,7 +765,7 @@ def main():
         sys.stderr.write("Sorting changes...\n")
     changes_files = sort_changes(changes_paths, session)
 
-    for changes_file in changes_paths:
+    for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
             continue
