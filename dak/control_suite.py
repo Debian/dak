@@ -100,8 +100,8 @@ def britney_changelog(packages, suite, session):
     current = {}
 
     try:
-        q = session.execute("""SELECT britney_changelog FROM suite
-                               WHERE id = :suiteid""", {'suiteid': suite.suite_id})
+        q = session.execute("SELECT changelog FROM suite WHERE id = :suiteid", \
+                            {'suiteid': suite.suite_id})
         brit_file = q.fetchone()[0]
     except:
         return

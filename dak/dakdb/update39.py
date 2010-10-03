@@ -37,8 +37,8 @@ def do_update(self):
     try:
         c = self.db.cursor()
         c.execute("INSERT INTO config(name, value) VALUES ('exportpath', '/srv/ftp-master.debian.org/export/changelogs')")
-        c.execute("ALTER TABLE suite ADD COLUMN britney_changelog text NULL")
-        c.execute("UPDATE suite SET britney_changelog = '/srv/ftp-master.debian.org/ftp/dists/testing/ChangeLog' WHERE suite_name = 'testing'")
+        c.execute("ALTER TABLE suite ADD COLUMN changelog text NULL")
+        c.execute("UPDATE suite SET changelog = '/srv/ftp-master.debian.org/ftp/dists/testing/ChangeLog' WHERE suite_name = 'testing'")
         c.execute("UPDATE config SET value = '39' WHERE name = 'db_revision'")
         self.db.commit()
 
