@@ -98,6 +98,7 @@ def britney_changelog(packages, suite, session):
 
     old = {}
     current = {}
+    Cnf = utils.get_conf()
 
     try:
         q = session.execute("SELECT changelog FROM suite WHERE id = :suiteid", \
@@ -106,7 +107,9 @@ def britney_changelog(packages, suite, session):
     except:
         brit_file = None
 
-    if not brit_file:
+    if brit_file:
+        brit_file = os.path.join(Cnf['Dir::Root'], brit_file)
+    else:
         return
 
     q = session.execute("""SELECT s.source, s.version, sa.id
