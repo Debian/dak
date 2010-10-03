@@ -111,7 +111,7 @@ class Config(object):
                       ('signingkeyids',    '',         str),
                       ('exportpath',       '',         str)
                       ]:
-            setattr(self, 'get_%s' % field[0], lambda x=None: self.get_db_value(field[0], field[1], field[2]))
+            setattr(self, 'get_%s' % field[0], lambda s=None, x=field[0], y=field[1], z=field[2]: self.get_db_value(x, y, z))
             setattr(Config, '%s' % field[0], property(fget=getattr(self, 'get_%s' % field[0])))
 
     def get_defaultsuite(self):
