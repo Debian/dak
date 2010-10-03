@@ -104,6 +104,9 @@ def britney_changelog(packages, suite, session):
                             {'suiteid': suite.suite_id})
         brit_file = q.fetchone()[0]
     except:
+        brit_file = None
+
+    if not brit_file:
         return
 
     q = session.execute("""SELECT s.source, s.version, sa.id
