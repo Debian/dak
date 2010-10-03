@@ -58,6 +58,7 @@ from re import split
 from shutil import rmtree
 from daklib.dbconn import *
 from daklib import utils
+from daklib.config import Config
 
 ################################################################################
 
@@ -67,7 +68,6 @@ def usage (exit_code=0):
        Usage:
        make-changelog -s <suite> -b <base_suite> [OPTION]...
        make-changelog -e
-       make-changelog -T
 
 Options:
 
@@ -76,9 +76,7 @@ Options:
   -b, --base-suite          suite to be taken as reference for comparison
   -n, --binnmu              display binNMUs uploads instead of source ones
 
-  -e, --export              export interesting files from source packages
-
-  -T, --testing             display changes entering testing"""
+  -e, --export              export interesting files from source packages"""
 
     sys.exit(exit_code)
 
@@ -153,26 +151,6 @@ def get_binary_uploads(suite, base_suite, session):
                ORDER BY c.source, c.version DESC, c.architecture"""
 
     return session.execute(query, {'suite': suite, 'base_suite': base_suite})
-
-def testing_summary(summary, session):
-    """
-    Returns changes introduced in packages entering testing.
-    """
-
-    query =  'SELECT source, changelog FROM changelogs WHERE'
-    fd = open(summary, 'r')
-    for package in fd.read().splitlines():
-        package = package.split()
-        if package[1] != package[2]:
-            if package[1] == '(not_in_testing)':
-                package[1] = 0
-            query += " source = '%s' AND version > '%s' AND version <= '%s'" \
-                     % (package[0], package[1], package[2])
-            query += " AND architecture LIKE '%source%' OR"
-    fd.close()
-    query += ' False ORDER BY source, version DESC;'
-
-    return session.execute(query)
 
 def display_changes(uploads, index):
     prev_upload = None
@@ -260,14 +238,14 @@ def export_files(session, pool, clpool, temppath):
 
 def main():
     Cnf = utils.get_conf()
+    cnf = Config()
     Arguments = [('h','help','Make-Changelog::Options::Help'),
                  ('s','suite','Make-Changelog::Options::Suite','HasArg'),
                  ('b','base-suite','Make-Changelog::Options::Base-Suite','HasArg'),
                  ('n','binnmu','Make-Changelog::Options::binNMU'),
-                 ('e','export','Make-Changelog::Options::export'),
-                 ('T', 'testing','Make-Changelog::Options::Testing')]
+                 ('e','export','Make-Changelog::Options::export')]
 
-    for i in ['help', 'suite', 'base-suite', 'binnmu', 'export', 'testing']:
+    for i in ['help', 'suite', 'base-suite', 'binnmu', 'export']:
         if not Cnf.has_key('Make-Changelog::Options::%s' % (i)):
             Cnf['Make-Changelog::Options::%s' % (i)] = ''
 
@@ -277,21 +255,22 @@ def main():
     base_suite = Cnf['Make-Changelog::Options::Base-Suite']
     binnmu = Cnf['Make-Changelog::Options::binNMU']
     export = Cnf['Make-Changelog::Options::export']
-    testing = Cnf['Make-Changelog::Options::Testing']
 
-    if Options['help'] or not (suite and base_suite) and not testing and not export:
+    if Options['help'] or not (suite and base_suite) and not export:
         usage()
 
     for s in suite, base_suite:
-        if not testing and not export and not get_suite(s):
+        if not export and not get_suite(s):
             utils.fubar('Invalid suite "%s"' % s)
 
     session = DBConn().session()
 
-    if testing:
-        display_changes(testing_summary(Cnf['Changelogs::Testing'], session), 1)
-    elif export:
-        export_files(session, Cnf['Dir::Pool'], Cnf['Changelogs::Export'], Cnf['Dir::TempPath'])
+    if export:
+        if cnf.exportpath:
+            cnf.exportpath = os.path.join(Cnf['Dir::Export'], cnf.exportpath)
+            export_files(session, Cnf['Dir::Pool'], cnf.exportpath, Cnf['Dir::TempPath'])
+        else:
+            utils.fubar('No changelog export path defined')
     elif binnmu:
         display_changes(get_binary_uploads(suite, base_suite, session), 3)
     else:
