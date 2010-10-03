@@ -267,8 +267,8 @@ def main():
 
     if export:
         if cnf.exportpath:
-            cnf.exportpath = os.path.join(Cnf['Dir::Export'], cnf.exportpath)
-            export_files(session, Cnf['Dir::Pool'], cnf.exportpath, Cnf['Dir::TempPath'])
+            exportpath = os.path.join(Cnf['Dir::Export'], cnf.exportpath)
+            export_files(session, Cnf['Dir::Pool'], exportpath, Cnf['Dir::TempPath'])
         else:
             utils.fubar('No changelog export path defined')
     elif binnmu:
