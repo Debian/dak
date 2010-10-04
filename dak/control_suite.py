@@ -43,6 +43,7 @@
 
 import sys
 import apt_pkg
+import os
 
 from daklib.config import Config
 from daklib.dbconn import *
