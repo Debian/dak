@@ -55,7 +55,7 @@ cd $masterdir
 echo "Importing new data for ${IMPORTSUITE} into database"
 
 if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
-    rm ${ftpdir}/dists/${IMPORTSUITE}/ChangeLog
+    rm -f ${ftpdir}/dists/${IMPORTSUITE}/ChangeLog
     BRITNEY=" --britney"
 fi
 
