@@ -421,14 +421,6 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="reports"
-    TIME="reports"
-    ARGS=""
-    ERR=""
-)
-stage $GO &
-
-GO=(
     FUNC="dm"
     TIME=""
     ARGS=""

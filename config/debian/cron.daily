@@ -7,6 +7,9 @@ set -u
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
+# common functions are "outsourced"
+. "${configdir}/common"
+
 ################################################################################
 
 TMPFILE=$( mktemp -p ${TMPDIR} )
@@ -22,5 +25,7 @@ trap cleanup SIGHUP SIGINT SIGPIPE SIGTERM EXIT ERR
 wget -q -O${TMPFILE} http://qa.debian.org/data/bts/wnpp_rm
 chmod go+r ${TMPFILE}
 mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
+
+reports
 
 ################################################################################
