@@ -19,6 +19,7 @@
   # New suite aliases
   Alias /buildd-unstable /srv/incoming.debian.org/dists/unstable/current/
   Alias /buildd-experimental /srv/incoming.debian.org/dists/experimental/current/
+  Alias /buildd-squeeze-volatile /srv/incoming.debian.org/dists/squeeze-volatile/current/
 
   <DirectoryMatch ~ "^/srv/(incoming\.debian\.org/(dists/|builddweb)|ftp\.debian\.org/mirror)">
     Order allow,deny
