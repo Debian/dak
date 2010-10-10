@@ -84,7 +84,7 @@ def sg_compare (a, b):
 
 __all__.append('sg_compare')
 
-def sort_changes(changes_files, session):
+def sort_changes(changes_files, session, binaries = None):
     """Sort into source groups, then sort each source group by version,
     have source, filename.  Finally, sort the source groups by have
     note, time of oldest upload of each source upload."""
@@ -116,7 +116,7 @@ def sort_changes(changes_files, session):
     # Determine oldest time and have note status for each source group
     for source in per_source.keys():
         q = session.query(DBSource).filter_by(source = source).all()
-        per_source[source]["source_in_database"] = len(q)>0
+        per_source[source]["source_in_database"] = binaries and -(len(q)>0) or len(q)>0
         source_list = per_source[source]["list"]
         first = source_list[0]
         oldest = os.stat(first["filename"])[stat.ST_MTIME]
