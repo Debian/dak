@@ -22,7 +22,7 @@ function onerror() {
     fi
     subject="${subject} dinstall error at ${ERRDATE} in ${STAGEFILE} - (Be quiet, Brain, or I'll stab you with a Q-tip)"
 
-    cat "${STAGEFILE}.log" | mail -s "${subject}" -a "X-Debian: DAK" cron@ftp-master.debian.org
+    cat "${STAGEFILE}.log" | mail -s "${subject}" -a "X-Debian: DAK" cron@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
 }
 
 ########################################################################
@@ -83,7 +83,7 @@ function updates() {
 # Process (oldstable)-proposed-updates "NEW" queue
 function punew_do() {
     date -u -R >> REPORT
-    dak process-policy $1 | tee -a REPORT | mail -e -s "NEW changes in $1" debian-release@lists.debian.org
+    dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "NEW changes in $1" debian-release@lists.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
     echo >> REPORT
 }
 function punew() {
@@ -124,15 +124,15 @@ function i18n1() {
                 done
             else
                 echo "ARRRR, bad guys, wrong files, ARRR"
-                echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail -s "Don't you kids take anything. I'm watching you. I've got eye implants in the back of my head." debian-l10n-devel@lists.alioth.debian.org
+                echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail -a "X-Debian: DAK" -s "Don't you kids take anything. I'm watching you. I've got eye implants in the back of my head." debian-l10n-devel@lists.alioth.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
             fi
         else
             echo "ARRRR, missing the timestamp ${TSTAMP} directory, not updating i18n, ARRR"
-            echo "Arf, Arf, Arf, missing the timestamp ${TSTAMP} directory, not updating i18n, arf, arf, arf" | mail -s "Lisa, if you don't like your job you don't strike. You just go in every day and do it really half-assed. That's the American way." debian-l10n-devel@lists.alioth.debian.org
+            echo "Arf, Arf, Arf, missing the timestamp ${TSTAMP} directory, not updating i18n, arf, arf, arf" | mail -a "X-Debian: DAK" -s "Lisa, if you don't like your job you don't strike. You just go in every day and do it really half-assed. That's the American way." debian-l10n-devel@lists.alioth.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
         fi
     else
         echo "ARRRRRRR, could not verify our timestamp signature, ARRR. Don't mess with our files, i18n guys, ARRRRR."
-        echo "Arf, Arf, Arf, could not verify our timestamp signature, arf. Don't mess with our files, i18n guys, arf, arf, arf" | mail -s "You can't keep blaming yourself. Just blame yourself once, and move on." debian-l10n-devel@lists.alioth.debian.org
+        echo "Arf, Arf, Arf, could not verify our timestamp signature, arf. Don't mess with our files, i18n guys, arf, arf, arf" | mail -a "X-Debian: DAK" -s "You can't keep blaming yourself. Just blame yourself once, and move on." debian-l10n-devel@lists.alioth.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
     fi
 }
 
@@ -166,6 +166,7 @@ From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
 To: <debian-project@lists.debian.org>
 Subject: Debian Maintainers Keyring changes
 Content-Type: text/plain; charset=utf-8
+X-Debian: DAK
 MIME-Version: 1.0
 
 The following changes to the debian-maintainers keyring have just been activated:
@@ -541,7 +542,7 @@ function savetimestamp() {
 }
 
 function maillogfile() {
-    cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
+    cat "$LOGFILE" | mail -a "X-Debian: DAK" -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
 }
 
 function renamelogfile() {
