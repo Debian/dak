@@ -114,7 +114,8 @@ ansi_colours = {
   'arch': "\033[32m",
   'end': "\033[0m",
   'bold': "\033[1m",
-  'maintainer': "\033[32m"}
+  'maintainer': "\033[32m",
+  'distro': "\033[1m\033[41m"}
 
 html_colours = {
   'main': ('<span style="color: aqua">',"</span>"),
@@ -122,7 +123,8 @@ html_colours = {
   'nonfree': ('<span style="color: red">',"</span>"),
   'arch': ('<span style="color: green">',"</span>"),
   'bold': ('<span style="font-weight: bold">',"</span>"),
-  'maintainer': ('<span style="color: green">',"</span>")}
+  'maintainer': ('<span style="color: green">',"</span>"),
+  'distro': ('<span style="font-weight: bold; background-color: red">',"</span>")}
 
 def colour_output(s, colour):
     if use_html:
@@ -298,6 +300,9 @@ def read_changes_or_dsc (suite, filename, session = None):
         elif k == "architecture":
             if (dsc["architecture"] != "any"):
                 dsc['architecture'] = colour_output(dsc["architecture"], 'arch')
+        elif k == "distribution":
+            if dsc["distribution"] not in ('unstable', 'experimental'):
+                dsc['distribution'] = colour_output(dsc["distribution"], 'distro')
         elif k in ("files","changes","description"):
             if use_html:
                 dsc[k] = formatted_text(dsc[k], strip=True)

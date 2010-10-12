@@ -516,6 +516,7 @@ def do_new(upload, session):
 def usage (exit_code=0):
     print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
+  -b, --no-binaries         do not sort binary-NEW packages first
   -h, --help                show this help and exit.
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
@@ -730,12 +731,13 @@ def main():
     session = DBConn().session()
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
+                 ('b',"no-binaries","Process-New::Options::Binaries"),
                  ('h',"help","Process-New::Options::Help"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
                  ('t',"trainee","Process-New::Options::Trainee"),
                  ('n',"no-action","Process-New::Options::No-Action")]
 
-    for i in ["automatic", "help", "manual-reject", "no-action", "version", "trainee"]:
+    for i in ["automatic", "no-binaries", "help", "manual-reject", "no-action", "version", "trainee"]:
         if not cnf.has_key("Process-New::Options::%s" % (i)):
             cnf["Process-New::Options::%s" % (i)] = ""
 
@@ -763,7 +765,7 @@ def main():
 
     if len(changes_paths) > 1:
         sys.stderr.write("Sorting changes...\n")
-    changes_files = sort_changes(changes_paths, session)
+    changes_files = sort_changes(changes_paths, session, Options["Binaries"])
 
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
