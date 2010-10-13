@@ -2339,7 +2339,7 @@ sub send_mail($$$) {
     strftime( "%a, %d %b %Y %T %z", ( localtime(time) ) );
   my $message = <<__MESSAGE__;
 To: $addr
-From: Archive Administrator <dak\@ftp-master.debian.org>
+From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
 Subject: $subject
 Date: $date
 X-Debian: DAK
