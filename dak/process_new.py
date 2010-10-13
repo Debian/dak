@@ -731,7 +731,7 @@ def main():
     session = DBConn().session()
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
-                 ('b',"no-binaries","Process-New::Options::Binaries"),
+                 ('b',"no-binaries","Process-New::Options::No-Binaries"),
                  ('h',"help","Process-New::Options::Help"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
                  ('t',"trainee","Process-New::Options::Trainee"),
@@ -765,7 +765,7 @@ def main():
 
     if len(changes_paths) > 1:
         sys.stderr.write("Sorting changes...\n")
-    changes_files = sort_changes(changes_paths, session, Options["Binaries"])
+    changes_files = sort_changes(changes_paths, session, Options["No-Binaries"])
 
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
