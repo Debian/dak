@@ -13,10 +13,10 @@ dak clean-suites -m 10000
 dak clean-queues
 
 # Send a report on NEW/BYHAND packages
-dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@backports.debian.org
+dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" team@backports.debian.org
 # and one on crufty packages
 
 dak cruft-report > $webdir/cruft-report-daily.txt
-cat $webdir/cruft-report-daily.txt | mail -e -s "Debian backports archive cruft report for $(date +%D)" ftpmaster@backports.debian.org
+cat $webdir/cruft-report-daily.txt | mail -e -s "Debian backports archive cruft report for $(date +%D)" team@backports.debian.org
 
 echo Daily cron scripts successful.
