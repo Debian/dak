@@ -172,7 +172,7 @@ def list_uploads(filelist):
         f = open(fn,"w")
         try:
             for u in uploads:
-                print >> f, "Changes: %s"%u[1]
+                print >> f, "Changes-file: %s"%u[1]
                 fields = """Location: DEFERRED
 Delayed-Until: %s
 Delay-Remaining: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u[0])),u[2])

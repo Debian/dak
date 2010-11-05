@@ -517,6 +517,7 @@ def usage (exit_code=0):
     print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -b, --no-binaries         do not sort binary-NEW packages first
+  -c, --comments            show NEW comments
   -h, --help                show this help and exit.
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
@@ -706,6 +707,23 @@ def do_pkg(changes_full_path, session):
     except AlreadyLockedError, e:
         print "Seems to be locked by %s already, skipping..." % (e)
 
+def show_new_comments(changes_files, session):
+    sources = set()
+    query = """SELECT package, version, comment, author
+               FROM new_comments
+               WHERE package IN ('"""
+
+    for changes in changes_files:
+        sources.add(os.path.basename(changes).split("_")[0])
+
+    query += "%s') ORDER BY package, version" % "', '".join(sources)
+    r = session.execute(query)
+
+    for i in r:
+        print "%s_%s\n%s\n(%s)\n\n\n" % (i[0], i[1], i[2], i[3])
+
+    session.commit()
+
 ################################################################################
 
 def end():
@@ -732,12 +750,13 @@ def main():
 
     Arguments = [('a',"automatic","Process-New::Options::Automatic"),
                  ('b',"no-binaries","Process-New::Options::No-Binaries"),
+                 ('c',"comments","Process-New::Options::Comments"),
                  ('h',"help","Process-New::Options::Help"),
                  ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
                  ('t',"trainee","Process-New::Options::Trainee"),
                  ('n',"no-action","Process-New::Options::No-Action")]
 
-    for i in ["automatic", "no-binaries", "help", "manual-reject", "no-action", "version", "trainee"]:
+    for i in ["automatic", "no-binaries", "comments", "help", "manual-reject", "no-action", "version", "trainee"]:
         if not cnf.has_key("Process-New::Options::%s" % (i)):
             cnf["Process-New::Options::%s" % (i)] = ""
 
@@ -767,13 +786,16 @@ def main():
         sys.stderr.write("Sorting changes...\n")
     changes_files = sort_changes(changes_paths, session, Options["No-Binaries"])
 
-    for changes_file in changes_files:
-        changes_file = utils.validate_changes_file_arg(changes_file, 0)
-        if not changes_file:
-            continue
-        print "\n" + os.path.basename(changes_file)
+    if Options["Comments"]:
+        show_new_comments(changes_files, session)
+    else:
+        for changes_file in changes_files:
+            changes_file = utils.validate_changes_file_arg(changes_file, 0)
+            if not changes_file:
+                continue
+            print "\n" + os.path.basename(changes_file)
 
-        do_pkg (changes_file, session)
+            do_pkg (changes_file, session)
 
     end()
 
