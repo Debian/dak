@@ -3,14 +3,14 @@
 # Executed daily via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
+export SCRIPTVARS=/org/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 ################################################################################
 
 # Fix overrides
 
-rsync --delete -r --include=override\* --exclude=\* --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
+rsync --delete -r --include=override\* --exclude=\* --password-file /srv/security-master.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
 
 cd $overridedir
 for file in override*.gz; do
@@ -68,7 +68,7 @@ apt-ftparchive -q clean apt.conf.buildd
 
 symlinks -d -r $ftpdir
 
-pg_dump obscurity > /org/security.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+pg_dump obscurity > /org/security-master.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
 
 # Vacuum the database
 set +e

@@ -3,7 +3,7 @@
 # Executed weekly via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
+export SCRIPTVARS=/org/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 ################################################################################
@@ -13,6 +13,7 @@ export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 # we dont have a security update in that time...
 cd $masterdir
 dak generate-releases
+/org/security-master.debian.org/dak/config/debian-security/make-mirror.sh
 sudo -u archvsync -H /home/archvsync/signal_security
 
 

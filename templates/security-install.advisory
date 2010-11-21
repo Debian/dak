@@ -28,14 +28,20 @@ Foo discovered that
 
 
 [single issue]
-For the stable distribution (etch), this problem has been fixed in version XXX
+For the old stable distribution (etch), this problem has been fixed in version XXX
+__PACKAGE__
+
+For the stable distribution (lenny), this problem has been fixed in version XXX
 __PACKAGE__
 
 For the unstable distribution (sid), this problem has been fixed in
 version XXX
 
 [multiple issues]
-For the stable distribution (etch), these problems have been fixed in version
+For the old stable distribution (etch), these problems have been fixed in version
+__PACKAGE__
+
+For the stable distribution (lenny), these problems have been fixed in version
 __PACKAGE__
 
 For the unstable distribution (sid), these problems have been fixed in
@@ -65,6 +71,9 @@ footer to the proper configuration.
 
 Debian GNU/Linux 4.0 alias etch
 -------------------------------
+
+Debian GNU/Linux 5.0 alias lenny
+--------------------------------
 
 __ADVISORY_TEXT__
 

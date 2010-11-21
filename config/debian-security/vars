@@ -1,6 +1,6 @@
 # locations used by many scripts
 
-base=/org/security.debian.org
+base=/org/security-master.debian.org
 ftpdir=$base/ftp/
 masterdir=$base/dak/config/debian-security/
 overridedir=$base/override

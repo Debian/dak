@@ -2,9 +2,9 @@ APT::FTPArchive::Contents off;
 
 Dir 
 {
-   ArchiveDir "/srv/security.debian.org/buildd/";
-   OverrideDir "/srv/security.debian.org/override/";
-   CacheDir "/srv/security.debian.org/dak-database/";
+   ArchiveDir "/srv/security-master.debian.org/buildd/";
+   OverrideDir "/srv/security-master.debian.org/override/";
+   CacheDir "/srv/security-master.debian.org/dak-database/";
 };
 
 Default

@@ -4,12 +4,12 @@
 
 ARCHS_oldstable="alpha amd64 arm hppa i386 ia64 mips mipsel powerpc sparc s390"
 ARCHS_stable="alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc sparc s390"
-ARCHS_testing="alpha amd64 armel hppa i386 ia64 mips mipsel powerpc sparc s390"
+ARCHS_testing="alpha amd64 armel hppa i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc sparc s390"
 DISTS="oldstable stable testing"
 SSH_SOCKET=~/.ssh/buildd.debian.org.socket
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
+export SCRIPTVARS=/org/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then

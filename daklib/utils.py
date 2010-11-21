@@ -260,6 +260,7 @@ def create_hash(where, files, hashname, hashfunc):
             file_handle = open_file(f)
         except CantOpenError:
             rejmsg.append("Could not open file %s for checksumming" % (f))
+            continue
 
         files[f][hash_key(hashname)] = hashfunc(file_handle)
 

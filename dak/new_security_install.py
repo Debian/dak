@@ -455,7 +455,7 @@ def sudo(arg, fn, exit):
 def do_Approve(): sudo("A", _do_Approve, True)
 def _do_Approve():
     # 1. dump advisory in drafts
-    draft = "/org/security.debian.org/advisories/drafts/%s" % (advisory)
+    draft = "/org/security-master.debian.org/advisories/drafts/%s" % (advisory)
     print "Advisory in %s" % (draft)
     if not Options["No-Action"]:
         adv_file = "./advisory.%s" % (advisory)
@@ -474,11 +474,12 @@ def _do_Approve():
     print "Updating file lists for apt-ftparchive..."
     spawn("dak make-suite-file-list")
     print "Updating Packages and Sources files..."
-    spawn("/org/security.debian.org/dak/config/debian-security/map.sh")
+    spawn("/org/security-master.debian.org/dak/config/debian-security/map.sh")
     spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
     print "Updating Release files..."
     spawn("dak generate-releases")
     print "Triggering security mirrors..."
+    spawn("/org/security-master.debian.org/dak/config/debian-security/make-mirror.sh")
     spawn("sudo -u archvsync -H /home/archvsync/signal_security")
 
     # 4. chdir to done - do upload
@@ -559,10 +560,14 @@ def _do_Reject():
             for f in files:
                 Upload.projectB.query(
                     "DELETE FROM queue_build WHERE filename = '%s'" % (f))
-                os.unlink(f)
+                try:
+                    os.unlink(f)
+                except OSError, e:
+                    # Make it nicer if you want, for now its pass
+                    pass
 
     print "Updating buildd information..."
-    spawn("/org/security.debian.org/dak/config/debian-security/cron.buildd")
+    spawn("/org/security-master.debian.org/dak/config/debian-security/cron.buildd")
 
     adv_file = "./advisory.%s" % (advisory)
     if os.path.exists(adv_file):
