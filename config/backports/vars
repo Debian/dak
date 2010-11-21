@@ -1,0 +1,58 @@
+# locations used by many scripts
+
+base=/srv/backports-master.debian.org
+public=/srv/backports-web.debian.org
+bindir=$base/bin
+ftpdir=$base/ftp/
+indices=$ftpdir/indices
+webdir=$public/underlay/
+scriptdir=$base/scripts
+
+archs="alpha amd64 arm armel hppa hurd-i386 i386 ia64 mips mipsel powerpc s390 sparc kfreebsd-i386 kfreebsd-amd64 "
+
+masterdir=$base/dak/
+overridedir=$base/scripts/override
+extoverridedir=$scriptdir/external-overrides
+configdir=$base/dak/config/backports/
+scriptsdir=$base/dak/scripts/debian/
+dbdir=$base/database/
+
+queuedir=$base/queue
+unchecked=$queuedir/unchecked/
+accepted=$queuedir/accepted/
+done=$queuedir/done/
+over=$base/over/
+lockdir=$base/lock/
+stagedir=$lockdir/stages
+incoming=$base/incoming
+logdir=$base/log/cron/
+mirrordir=$base/mirror/
+newstage=$queuedir/newstage/
+exportdir=$base/export/
+exportpublic=$public/export/
+
+
+ftpgroup=debadmin
+
+copyoverrides="lenny-backports.contrib lenny-backports.contrib.src lenny-backports.main lenny-backports.main.debian-installer lenny-backports.main.src lenny-backports.extra.contrib lenny-backports.extra.main"
+
+# Change this to your hostname
+uploadhost=localhost
+uploaddir=/pub/UploadQueue/
+
+# What components to support
+components="main contrib non-free"
+suites="lenny-backports"
+override_types="deb dsc udeb"
+
+# export TMP=/srv/backports-master.debian.org/tmp
+# export TEMP=/srv/backports-master.debian.org/tmp
+
+TMPDIR==$base/tmp
+
+PATH=$masterdir:$PATH
+umask 022
+unset CDPATH
+
+# Set the database variables
+eval $(dak admin config db-shell)

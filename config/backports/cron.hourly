@@ -1,0 +1,26 @@
+#! /bin/sh
+#
+# Executed hourly via cron, out of dak's crontab.
+
+set -e
+set -u
+
+export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
+. $SCRIPTVARS
+
+dak import-users-from-passwd
+dak queue-report -n > $webdir/new.html
+dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates
+#dak show-deferred > ${webdir}/deferred.html
+dak show-new > /dev/null
+
+# cd $webdir
+# cat removals-20*.txt > removals-full.txt
+# cat removals.txt >> removals-full.txt
+# cat removals-20*.822 > removals-full.822
+# cat removals.822 >> removals-full.822
+
+#$base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
+$base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/removals.rss
+
+#$scriptsdir/generate-di

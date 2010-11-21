@@ -1,5 +1,8 @@
 #!/bin/sh -ue
 
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
 # Tarball to read, compressed with gzip
 INPUT="${1:?"Usage: $0 filename"}"
 
@@ -7,7 +10,7 @@ INPUT="${1:?"Usage: $0 filename"}"
 CHECKRE='^[a-z0-9A-Z.+-]+[[:space:]]+Tag[[:space:]]+[a-z0-9:. ,{}+-]+$'
 
 # This must end with /
-TARGET=/srv/ftp.debian.org/scripts/external-overrides/
+TARGET=/srv/ftp-master.debian.org/scripts/external-overrides/
 
 # Read the main directory from the tarball
 DIR="`tar ztf \"$INPUT\" | tac | tail -n 1`"
@@ -38,7 +41,7 @@ mv "$OUTNONFREE"        "$TARGET"tag.non-free
 
 chmod 644 "$TARGET"tag "$TARGET"tag.contrib "$TARGET"tag.non-free
 
-(cd $TARGET && ./mk-extra-overrides.sh)
+(cd $TARGET && $scriptsdir/mk-extra-overrides.sh)
 
 trap - EXIT
 

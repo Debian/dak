@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # coding=utf8
 
-""" Database Update Script - debversion """
-# Copyright © 2008  Michael Casadevall <mcasadevall@debian.org>
-# Copyright © 2008  Roger Leigh <rleigh@debian.org>
+"""
+debversion
+
+@contact: Debian FTP Master <ftpmaster@debian.org>
+@copyright: 2008  Michael Casadevall <mcasadevall@debian.org>
+@copyright: 2008  Roger Leigh <rleigh@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

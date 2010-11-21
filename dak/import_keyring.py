@@ -2,6 +2,7 @@
 
 """ Imports a keyring into the database """
 # Copyright (C) 2007  Anthony Towns <aj@erisian.com.au>
+# Copyright (C) 2009  Mark Hymers <mhy@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,152 +20,33 @@
 
 ################################################################################
 
-from daklib import database
-from daklib import utils
 import sys, os, re
-import apt_pkg, pg, ldap, email.Utils
+import apt_pkg, ldap
+
+from daklib.config import Config
+from daklib.dbconn import *
 
 # Globals
-Cnf = None
 Options = None
-projectB = None
 
 ################################################################################
 
-def get_uid_info():
+def get_uid_info(session):
     byname = {}
     byid = {}
-    q = projectB.query("SELECT id, uid, name FROM uid")
-    for (keyid, uid, name) in q.getresult():
+    q = session.execute("SELECT id, uid, name FROM uid")
+    for (keyid, uid, name) in q.fetchall():
         byname[uid] = (keyid, name)
         byid[keyid] = (uid, name)
+
     return (byname, byid)
 
-def get_fingerprint_info():
+def get_fingerprint_info(session):
     fins = {}
-    q = projectB.query("SELECT f.fingerprint, f.id, f.uid, f.keyring FROM fingerprint f")
-    for (fingerprint, fingerprint_id, uid, keyring) in q.getresult():
+    q = session.execute("SELECT f.fingerprint, f.id, f.uid, f.keyring FROM fingerprint f")
+    for (fingerprint, fingerprint_id, uid, keyring) in q.fetchall():
         fins[fingerprint] = (uid, fingerprint_id, keyring)
     return fins
-
-################################################################################
-
-def get_ldap_name(entry):
-    name = []
-    for k in ["cn", "mn", "sn"]:
-        ret = entry.get(k)
-        if ret and ret[0] != "" and ret[0] != "-":
-            name.append(ret[0])
-    return " ".join(name)
-
-################################################################################
-
-class Keyring:
-    gpg_invocation = "gpg --no-default-keyring --keyring %s" +\
-                     " --with-colons --fingerprint --fingerprint"
-    keys = {}
-    fpr_lookup = {}
-
-    def de_escape_gpg_str(self, str):
-        esclist = re.split(r'(\\x..)', str)
-        for x in range(1,len(esclist),2):
-            esclist[x] = "%c" % (int(esclist[x][2:],16))
-        return "".join(esclist)
-
-    def __init__(self, keyring):
-        k = os.popen(self.gpg_invocation % keyring, "r")
-        keys = self.keys
-        key = None
-        fpr_lookup = self.fpr_lookup
-        signingkey = False
-        for line in k.xreadlines():
-            field = line.split(":")
-            if field[0] == "pub":
-                key = field[4]
-                (name, addr) = email.Utils.parseaddr(field[9])
-                name = re.sub(r"\s*[(].*[)]", "", name)
-                if name == "" or addr == "" or "@" not in addr:
-                    name = field[9]
-                    addr = "invalid-uid"
-                name = self.de_escape_gpg_str(name)
-                keys[key] = {"email": addr}
-                if name != "": keys[key]["name"] = name
-                keys[key]["aliases"] = [name]
-                keys[key]["fingerprints"] = []
-                signingkey = True
-            elif key and field[0] == "sub" and len(field) >= 12:
-                signingkey = ("s" in field[11])
-            elif key and field[0] == "uid":
-                (name, addr) = email.Utils.parseaddr(field[9])
-                if name and name not in keys[key]["aliases"]:
-                    keys[key]["aliases"].append(name)
-            elif signingkey and field[0] == "fpr":
-                keys[key]["fingerprints"].append(field[9])
-                fpr_lookup[field[9]] = key
-
-    def generate_desired_users(self):
-        if Options["Generate-Users"]:
-            format = Options["Generate-Users"]
-            return self.generate_users_from_keyring(format)
-        if Options["Import-Ldap-Users"]:
-            return self.import_users_from_ldap()
-        return ({}, {})
-
-    def import_users_from_ldap(self):
-        LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
-        LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
-        l = ldap.open(LDAPServer)
-        l.simple_bind_s("","")
-        Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
-               "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Import-Users-From-Passwd::ValidGID"]),
-               ["uid", "keyfingerprint", "cn", "mn", "sn"])
-
-        ldap_fin_uid_id = {}
-
-        byuid = {}
-        byname = {}
-        keys = self.keys
-        fpr_lookup = self.fpr_lookup
-
-        for i in Attrs:
-            entry = i[1]
-            uid = entry["uid"][0]
-            name = get_ldap_name(entry)
-            fingerprints = entry["keyFingerPrint"]
-            keyid = None
-            for f in fingerprints:
-                key = fpr_lookup.get(f, None)
-                if key not in keys: continue
-                keys[key]["uid"] = uid
-
-                if keyid != None: continue
-                keyid = database.get_or_set_uid_id(uid)
-                byuid[keyid] = (uid, name)
-                byname[uid] = (keyid, name)
-
-        return (byname, byuid)
-
-    def generate_users_from_keyring(self, format):
-        byuid = {}
-        byname = {}
-        keys = self.keys
-        any_invalid = False
-        for x in keys.keys():
-            if keys[x]["email"] == "invalid-uid":
-                any_invalid = True
-                keys[x]["uid"] = format % "invalid-uid"
-            else:
-                uid = format % keys[x]["email"]
-                keyid = database.get_or_set_uid_id(uid)
-                byuid[keyid] = (uid, keys[x]["name"])
-                byname[uid] = (keyid, keys[x]["name"])
-                keys[x]["uid"] = uid
-        if any_invalid:
-            uid = format % "invalid-uid"
-            keyid = database.get_or_set_uid_id(uid)
-            byuid[keyid] = (uid, "ungeneratable user id")
-            byname[uid] = (keyid, "ungeneratable user id")
-        return (byname, byuid)
 
 ################################################################################
 
@@ -179,23 +61,24 @@ def usage (exit_code=0):
 ################################################################################
 
 def main():
-    global Cnf, projectB, Options
+    global Options
 
-    Cnf = utils.get_conf()
+    cnf = Config()
     Arguments = [('h',"help","Import-Keyring::Options::Help"),
                  ('L',"import-ldap-users","Import-Keyring::Options::Import-Ldap-Users"),
                  ('U',"generate-users","Import-Keyring::Options::Generate-Users", "HasArg"),
                 ]
 
     for i in [ "help", "report-changes", "generate-users", "import-ldap-users" ]:
-        if not Cnf.has_key("Import-Keyring::Options::%s" % (i)):
-            Cnf["Import-Keyring::Options::%s" % (i)] = ""
+        if not cnf.has_key("Import-Keyring::Options::%s" % (i)):
+            cnf["Import-Keyring::Options::%s" % (i)] = ""
 
-    keyring_names = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    keyring_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
     ### Parse options
 
-    Options = Cnf.SubTree("Import-Keyring::Options")
+    Options = cnf.SubTree("Import-Keyring::Options")
+
     if Options["Help"]:
         usage()
 
@@ -203,38 +86,35 @@ def main():
         usage(1)
 
     ### Keep track of changes made
-
     changes = []   # (uid, changes strings)
 
     ### Initialise
-
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
-
-    projectB.query("BEGIN WORK")
+    session = DBConn().session()
 
     ### Cache all the existing fingerprint entries
-
-    db_fin_info = get_fingerprint_info()
+    db_fin_info = get_fingerprint_info(session)
 
     ### Parse the keyring
 
     keyringname = keyring_names[0]
-    keyring = Keyring(keyringname)
+    keyring = get_keyring(keyringname, session)
+    if not keyring:
+        print "E: Can't load keyring %s from database" % keyringname
+        sys.exit(1)
 
-    is_dm = "false"
-    if Cnf.has_key("Import-Keyring::"+keyringname+"::Debian-Maintainer"):
-        projectB.query("UPDATE keyrings SET debian_maintainer = '%s' WHERE name = '%s'" % (Cnf["Import-Keyring::"+keyringname+"::Debian-Maintainer"], keyringname.split("/")[-1]))
-        is_dm = Cnf["Import-Keyring::"+keyringname+"::Debian-Maintainer"]
-
-    keyring_id = database.get_or_set_keyring_id(
-                        keyringname.split("/")[-1])
+    keyring.load_keys(keyringname)
 
     ### Generate new uid entries if they're needed (from LDAP or the keyring)
-    (desuid_byname, desuid_byid) = keyring.generate_desired_users()
+    if Options["Generate-Users"]:
+        format = Options["Generate-Users"]
+        (desuid_byname, desuid_byid) = keyring.generate_users_from_keyring(Options["Generate-Users"], session)
+    elif Options["Import-Ldap-Users"]:
+        (desuid_byname, desuid_byid) = keyring.import_users_from_ldap(session)
+    else:
+        (desuid_byname, desuid_byid) = ({}, {})
 
     ### Cache all the existing uid entries
-    (db_uid_byname, db_uid_byid) = get_uid_info()
+    (db_uid_byname, db_uid_byid) = get_uid_info(session)
 
     ### Update full names of applicable users
     for keyid in desuid_byid.keys():
@@ -243,8 +123,8 @@ def main():
         oname = db_uid_byid[keyid][1]
         if name and oname != name:
             changes.append((uid[1], "Full name: %s" % (name)))
-            projectB.query("UPDATE uid SET name = '%s' WHERE id = %s" %
-                (pg.escape_string(name), keyid))
+            session.execute("UPDATE uid SET name = :name WHERE id = :keyid",
+                            {'name': name, 'keyid': keyid})
 
     # The fingerprint table (fpr) points to a uid and a keyring.
     #   If the uid is being decided here (ldap/generate) we set it to it.
@@ -258,17 +138,28 @@ def main():
         if keyid == None:
             keyid = db_fin_info.get(keyring.keys[z]["fingerprints"][0], [None])[0]
         for y in keyring.keys[z]["fingerprints"]:
-            fpr[y] = (keyid,keyring_id)
+            fpr[y] = (keyid, keyring.keyring_id)
 
     # For any keys that used to be in this keyring, disassociate them.
     # We don't change the uid, leaving that for historical info; if
     # the id should change, it'll be set when importing another keyring.
 
     for f,(u,fid,kr) in db_fin_info.iteritems():
-        if kr != keyring_id: continue
-        if f in fpr: continue
+        if kr != keyring.keyring_id:
+            continue
+
+        if f in fpr:
+            continue
+
         changes.append((db_uid_byid.get(u, [None])[0], "Removed key: %s" % (f)))
-        projectB.query("UPDATE fingerprint SET keyring = NULL WHERE id = %d" % (fid))
+        session.execute("""UPDATE fingerprint
+                              SET keyring = NULL,
+                                  source_acl_id = NULL,
+                                  binary_acl_id = NULL,
+                                  binary_reject = TRUE
+                            WHERE id = :fprid""", {'fprid': fid})
+
+        session.execute("""DELETE FROM binary_acl_map WHERE fingerprint_id = :fprid""", {'fprid': fid})
 
     # For the keys in this keyring, add/update any fingerprints that've
     # changed.
@@ -276,15 +167,36 @@ def main():
     for f in fpr:
         newuid = fpr[f][0]
         newuiduid = db_uid_byid.get(newuid, [None])[0]
+
         (olduid, oldfid, oldkid) = db_fin_info.get(f, [-1,-1,-1])
-        if olduid == None: olduid = -1
-        if oldkid == None: oldkid = -1
+
+        if olduid == None:
+            olduid = -1
+
+        if oldkid == None:
+            oldkid = -1
+
         if oldfid == -1:
             changes.append((newuiduid, "Added key: %s" % (f)))
+            fp = Fingerprint()
+            fp.fingerprint = f
+            fp.keyring_id = keyring.keyring_id
             if newuid:
-                projectB.query("INSERT INTO fingerprint (fingerprint, uid, keyring) VALUES ('%s', %d, %d)" % (f, newuid, keyring_id))
-            else:
-                projectB.query("INSERT INTO fingerprint (fingerprint, keyring) VALUES ('%s', %d)" % (f, keyring_id))
+                fp.uid_id = newuid
+
+            fp.binary_acl_id = keyring.default_binary_acl_id
+            fp.source_acl_id = keyring.default_source_acl_id
+            fp.default_binary_reject = keyring.default_binary_reject
+            session.add(fp)
+            session.flush()
+
+            for k in keyring.keyring_acl_map:
+                ba = BinaryACLMap()
+                ba.fingerprint_id = fp.fingerprint_id
+                ba.architecture_id = k.architecture_id
+                session.add(ba)
+                session.flush()
+
         else:
             if newuid and olduid != newuid:
                 if olduid != -1:
@@ -293,23 +205,62 @@ def main():
                 else:
                     changes.append((newuiduid, "Linked key: %s" % f))
                     changes.append((newuiduid, "  (formerly unowned)"))
-                projectB.query("UPDATE fingerprint SET uid = %d WHERE id = %d" % (newuid, oldfid))
 
-            if oldkid != keyring_id:
-                # Only change the keyring if it won't result in a loss of permissions
-                q = projectB.query("SELECT debian_maintainer FROM keyrings WHERE id = '%d'" % (keyring_id))
-                if is_dm == "false" and q.getresult()[0][0] == 'f':
-                    projectB.query("UPDATE fingerprint SET keyring = %d WHERE id = %d" % (keyring_id, oldfid))
+                session.execute("UPDATE fingerprint SET uid = :uid WHERE id = :fpr",
+                                {'uid': newuid, 'fpr': oldfid})
+
+            # Don't move a key from a keyring with a higher priority to a lower one
+            if oldkid != keyring.keyring_id:
+                movekey = False
+                if oldkid == -1:
+                    movekey = True
                 else:
-                    print "Key %s exists in both DM and DD keyrings. Not demoting." % (f)
+                    try:
+                        oldkeyring = session.query(Keyring).filter_by(keyring_id=oldkid).one()
+                    except NotFoundError:
+                        print "ERROR: Cannot find old keyring with id %s" % oldkid
+                        sys.exit(1)
+
+                    if oldkeyring.priority < keyring.priority:
+                        movekey = True
+
+                # Only change the keyring if it won't result in a loss of permissions
+                if movekey:
+                    session.execute("""DELETE FROM binary_acl_map WHERE fingerprint_id = :fprid""", {'fprid': oldfid})
+
+                    session.execute("""UPDATE fingerprint
+                                          SET keyring = :keyring,
+                                              source_acl_id = :source_acl_id,
+                                              binary_acl_id = :binary_acl_id,
+                                              binary_reject = :binary_reject
+                                        WHERE id = :fpr""",
+                                    {'keyring': keyring.keyring_id,
+                                     'source_acl_id': keyring.default_source_acl_id,
+                                     'binary_acl_id': keyring.default_binary_acl_id,
+                                     'binary_reject': keyring.default_binary_reject,
+                                     'fpr': oldfid})
+
+                    session.flush()
+
+                    for k in keyring.keyring_acl_map:
+                        ba = BinaryACLMap()
+                        ba.fingerprint_id = oldfid
+                        ba.architecture_id = k.architecture_id
+                        session.add(ba)
+                        session.flush()
+
+                else:
+                    print "Key %s exists in both %s and %s keyrings. Not demoting." % (oldkeyring.keyring_name,
+                                                                                       keyring.keyring_name)
 
     # All done!
+    session.commit()
 
-    projectB.query("COMMIT WORK")
-
+    # Print a summary
     changesd = {}
     for (k, v) in changes:
-        if k not in changesd: changesd[k] = ""
+        if k not in changesd:
+            changesd[k] = ""
         changesd[k] += "    %s\n" % (v)
 
     keys = changesd.keys()

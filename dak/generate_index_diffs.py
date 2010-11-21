@@ -34,16 +34,14 @@
 import sys
 import os
 import tempfile
-import subprocess
 import time
 import apt_pkg
-import pg
+
 from daklib import utils
-from daklib import database
+from daklib.dbconn import get_suite, get_suite_architectures
 
 ################################################################################
 
-projectB = None
 Cnf = None
 Logger = None
 Options = None
@@ -256,7 +254,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
-        w = os.popen("diff --ed - %s | gzip -c -9 > %s.gz" %
+        w = os.popen("diff --ed - %s | gzip --rsyncable -c -9 > %s.gz" %
                      (newfile, difffile), "w")
         pipe_file(oldf, w)
         oldf.close()
@@ -280,7 +278,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 
 
 def main():
-    global Cnf, Options, Logger, projectB
+    global Cnf, Options, Logger
 
     os.umask(0002)
 
@@ -311,25 +309,23 @@ def main():
 
     if Options.has_key("RootDir"): Cnf["Dir::Root"] = Options["RootDir"]
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    database.init(Cnf, projectB)
-
     if not suites:
         suites = Cnf.SubTree("Suite").List()
 
-    for suite in suites:
-        print "Processing: " + suite
-        SuiteBlock = Cnf.SubTree("Suite::" + suite)
+    for suitename in suites:
+        print "Processing: " + suitename
+        SuiteBlock = Cnf.SubTree("Suite::" + suitename)
 
-        if SuiteBlock.has_key("Untouchable"):
+        suiteobj = get_suite(suitename.lower())
+
+        # Use the canonical version of the suite name
+        suite = suiteobj.suite_name
+
+        if suiteobj.untouchable:
             print "Skipping: " + suite + " (untouchable)"
             continue
 
-        suite = suite.lower()
-
-        architectures = database.get_suite_architectures(suite)
-        if architectures == None:
-            architectures = []
+        architectures = get_suite_architectures(suite, skipall=True)
 
         if SuiteBlock.has_key("Components"):
             components = SuiteBlock.ValueList("Components")
@@ -353,9 +349,8 @@ def main():
             print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
             continue
 
-        for architecture in architectures:
-            if architecture == "all":
-                continue
+        for archobj in architectures:
+            architecture = archobj.arch_string
 
             if architecture != "source":
                 # Process Contents

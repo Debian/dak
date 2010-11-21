@@ -29,14 +29,15 @@
 
 ################################################################################
 
-import pg, pwd, sys
+import pwd
+import sys
+import re
 import apt_pkg
+
+from daklib.config import Config
+from daklib.dbconn import *
 from daklib import utils
 
-################################################################################
-
-Cnf = None
-projectB = None
 ################################################################################
 
 def usage (exit_code=0):
@@ -52,20 +53,18 @@ Sync PostgreSQL's users with system users.
 ################################################################################
 
 def main ():
-    global Cnf, projectB
-
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('n', "no-action", "Import-Users-From-Passwd::Options::No-Action"),
                  ('q', "quiet", "Import-Users-From-Passwd::Options::Quiet"),
                  ('v', "verbose", "Import-Users-From-Passwd::Options::Verbose"),
                  ('h', "help", "Import-Users-From-Passwd::Options::Help")]
     for i in [ "no-action", "quiet", "verbose", "help" ]:
-        if not Cnf.has_key("Import-Users-From-Passwd::Options::%s" % (i)):
-            Cnf["Import-Users-From-Passwd::Options::%s" % (i)] = ""
+        if not cnf.has_key("Import-Users-From-Passwd::Options::%s" % (i)):
+            cnf["Import-Users-From-Passwd::Options::%s" % (i)] = ""
 
-    arguments = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Import-Users-From-Passwd::Options")
+    arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Import-Users-From-Passwd::Options")
 
     if Options["Help"]:
         usage()
@@ -73,8 +72,8 @@ def main ():
         utils.warn("dak import-users-from-passwd takes no non-option arguments.")
         usage(1)
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
-    valid_gid = int(Cnf.get("Import-Users-From-Passwd::ValidGID",""))
+    session = DBConn().session()
+    valid_gid = int(cnf.get("Import-Users-From-Passwd::ValidGID",""))
 
     passwd_unames = {}
     for entry in pwd.getpwall():
@@ -87,31 +86,40 @@ def main ():
         passwd_unames[uname] = ""
 
     postgres_unames = {}
-    q = projectB.query("SELECT usename FROM pg_user")
-    ql = q.getresult()
-    for i in ql:
+    q = session.execute("SELECT usename FROM pg_user")
+    for i in q.fetchall():
         uname = i[0]
         postgres_unames[uname] = ""
 
     known_postgres_unames = {}
-    for i in Cnf.get("Import-Users-From-Passwd::KnownPostgres","").split(","):
+    for i in cnf.get("Import-Users-From-Passwd::KnownPostgres","").split(","):
         uname = i.strip()
         known_postgres_unames[uname] = ""
 
     keys = postgres_unames.keys()
     keys.sort()
     for uname in keys:
-        if not passwd_unames.has_key(uname)and not known_postgres_unames.has_key(uname):
-            print "W: %s is in Postgres but not the passwd file or list of known Postgres users." % (uname)
+        if not passwd_unames.has_key(uname) and not known_postgres_unames.has_key(uname):
+            print "I: Deleting %s from Postgres, no longer in passwd or list of known Postgres users" % (uname)
+            q = session.execute('DROP USER "%s"' % (uname))
 
     keys = passwd_unames.keys()
     keys.sort()
+    safe_name = re.compile('^[A-Za-z0-9]+$')
     for uname in keys:
         if not postgres_unames.has_key(uname):
             if not Options["Quiet"]:
                 print "Creating %s user in Postgres." % (uname)
             if not Options["No-Action"]:
-                q = projectB.query('CREATE USER "%s"' % (uname))
+                if safe_name.match(uname):
+                    # NB: I never figured out how to use a bind parameter for this query
+                    # XXX: Fix this as it looks like a potential SQL injection attack to me
+                    #      (hence the safe_name match we do)
+                    q = session.execute('CREATE USER "%s"' % (uname))
+                else:
+                    print "NOT CREATING USER %s.  Doesn't match safety regex" % uname
+
+    session.commit()
 
 #######################################################################################
 

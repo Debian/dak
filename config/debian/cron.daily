@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Run daily via cron, out of dak's crontab.
+
+set -e
+set -u
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
+# common functions are "outsourced"
+. "${configdir}/common"
+
+################################################################################
+
+TMPFILE=$( mktemp -p ${TMPDIR} )
+
+function cleanup {
+    ERRVAL=$?
+    rm -f ${TMPFILE}
+    exit ${ERRVAL}
+}
+trap cleanup SIGHUP SIGINT SIGPIPE SIGTERM EXIT ERR
+
+# get the latest list of wnpp bugs and their source packages
+wget -q -O${TMPFILE} http://qa.debian.org/data/bts/wnpp_rm
+chmod go+r ${TMPFILE}
+mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
+
+reports
+
+################################################################################

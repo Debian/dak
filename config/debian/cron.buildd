@@ -1,6 +1,0 @@
-#! /bin/sh
-#
-# Called from cron.unchecked to update wanna-build, each time it runs.
-#
-ssh -q -q -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240 wbadm@buildd /org/wanna-build/trigger.often
-exit 0

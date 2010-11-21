@@ -1,8 +1,8 @@
 Dir
 {
-   ArchiveDir "/srv/ftp.debian.org/ftp/";
-   OverrideDir "/srv/ftp.debian.org/scripts/override/";
-   CacheDir "/srv/ftp.debian.org/database/";
+   ArchiveDir "/srv/ftp-master.debian.org/ftp/";
+   OverrideDir "/srv/ftp-master.debian.org/scripts/override/";
+   CacheDir "/srv/ftp-master.debian.org/database/";
 };
 
 Default
@@ -16,13 +16,13 @@ Default
 
 TreeDefault
 {
-   Contents::Header "/srv/ftp.debian.org/dak/config/debian/Contents.top";
+   Contents::Header "/srv/ftp-master.debian.org/dak/config/debian/Contents.top";
 };
 
 tree "dists/oldstable"
 {
-   FileList "/srv/ftp.debian.org/database/dists/oldstable_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp.debian.org/database/dists/oldstable_$(SECTION)_source.list";
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc source";
    BinOverride "override.etch.$(SECTION)";
@@ -34,7 +34,7 @@ tree "dists/oldstable"
 
 tree "dists/oldstable/main"
 {
-   FileList "/srv/ftp.debian.org/database/dists/oldstable_main_$(SECTION)_binary-$(ARCH).list";
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc";
    BinOverride "override.etch.main.$(SECTION)";
@@ -46,7 +46,7 @@ tree "dists/oldstable/main"
 
 tree "dists/oldstable/non-free"
 {
-   FileList "/srv/ftp.debian.org/database/dists/oldstable_non-free_$(SECTION)_binary-$(ARCH).list";
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_non-free_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc";
    BinOverride "override.etch.main.$(SECTION)";

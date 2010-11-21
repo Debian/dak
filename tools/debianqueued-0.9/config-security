@@ -47,7 +47,7 @@ $max_delayed = -1;
 $keep_files = '(status|\.message|README)$';
 
 # file patterns that aren't deleted right away
-$valid_files = '(\.changes|\.tar\.gz|\.dsc|\.u?deb|diff\.gz|\.sh)$';
+$valid_files = '(\.changes|\.tar\.(?:gz|bz2)|\.dsc|\.u?deb|diff\.gz|\.sh)$';
 
 # Change files to mode 644 locally (after md5 check) or only on master?
 $chmod_on_target = 0;
@@ -63,8 +63,7 @@ $statusfile = "$incoming/status";
 $statusdelay = 30;
 
 # names of the keyring files
-@keyrings = ( "/srv/keyring.debian.org/keyrings/debian-keyring.gpg",
-              "/srv/keyring.debian.org/keyrings/debian-keyring.pgp");
+@keyrings = ( "/srv/keyring.debian.org/keyrings/debian-keyring.gpg" );
 
 # our log file
 $logfile = "$queued_dir/log";

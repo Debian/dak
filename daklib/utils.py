@@ -22,7 +22,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import codecs
 import commands
 import email.Header
 import os
@@ -35,15 +34,22 @@ import tempfile
 import traceback
 import stat
 import apt_pkg
-import database
 import time
 import re
-import string
 import email as modemail
+import subprocess
+
+from dbconn import DBConn, get_architecture, get_component, get_suite
 from dak_exceptions import *
+from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
-                    re_multi_line_field, re_srchasver, re_verwithext, \
-                    re_parse_maintainer, re_taint_free, re_gpg_uid, re_re_mark
+                    re_multi_line_field, re_srchasver, re_taint_free, \
+                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
+                    re_is_orig_source
+
+from formats import parse_format, validate_changes_format
+from srcformats import get_format_from_string
+from collections import defaultdict
 
 ################################################################################
 
@@ -56,6 +62,27 @@ key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 # (hashname, function, earliest_changes_version)
 known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
                 ("sha256", apt_pkg.sha256sum, (1, 8))] #: hashes we accept for entries in .changes/.dsc
+
+# Monkeypatch commands.getstatusoutput as it may not return the correct exit
+# code in lenny's Python. This also affects commands.getoutput and
+# commands.getstatus.
+def dak_getstatusoutput(cmd):
+    pipe = subprocess.Popen(cmd, shell=True, universal_newlines=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    output = pipe.stdout.read()
+
+    pipe.wait()
+
+    if output[-1:] == '\n':
+        output = output[:-1]
+
+    ret = pipe.wait()
+    if ret is None:
+        ret = 0
+
+    return ret, output
+commands.getstatusoutput = dak_getstatusoutput
 
 ################################################################################
 
@@ -91,7 +118,12 @@ def open_file(filename, mode='r'):
 
 def our_raw_input(prompt=""):
     if prompt:
-        sys.stdout.write(prompt)
+        while 1:
+            try:
+                sys.stdout.write(prompt)
+                break
+            except IOError:
+                pass
     sys.stdout.flush()
     try:
         ret = raw_input()
@@ -209,7 +241,7 @@ def parse_deb822(contents, signing_rules=0):
 
 ################################################################################
 
-def parse_changes(filename, signing_rules=0):
+def parse_changes(filename, signing_rules=0, dsc_file=0):
     """
     Parses a changes file and returns a dictionary where each field is a
     key.  The mandatory first argument is the filename of the .changes
@@ -238,7 +270,23 @@ def parse_changes(filename, signing_rules=0):
         unicode(content, 'utf-8')
     except UnicodeError:
         raise ChangesUnicodeError, "Changes file not proper utf-8"
-    return parse_deb822(content, signing_rules)
+    changes = parse_deb822(content, signing_rules)
+
+
+    if not dsc_file:
+        # Finally ensure that everything needed for .changes is there
+        must_keywords = ('Format', 'Date', 'Source', 'Binary', 'Architecture', 'Version',
+                         'Distribution', 'Maintainer', 'Description', 'Changes', 'Files')
+
+        missingfields=[]
+        for keyword in must_keywords:
+            if not changes.has_key(keyword.lower()):
+                missingfields.append(keyword)
+
+                if len(missingfields):
+                    raise ParseChangesError, "Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields)
+
+    return changes
 
 ################################################################################
 
@@ -282,13 +330,13 @@ def check_hash(where, files, hashname, hashfunc):
         try:
             try:
                 file_handle = open_file(f)
-    
+
                 # Check for the hash entry, to not trigger a KeyError.
                 if not files[f].has_key(hash_key(hashname)):
                     rejmsg.append("%s: misses %s checksum in %s" % (f, hashname,
                         where))
                     continue
-    
+
                 # Actually check the hash for correctness.
                 if hashfunc(file_handle) != files[f][hash_key(hashname)]:
                     rejmsg.append("%s: %s check failed in %s" % (f, hashname,
@@ -325,6 +373,86 @@ def check_size(where, files):
         if size != actual_size:
             rejmsg.append("%s: actual file size (%s) does not match size (%s) in %s"
                    % (f, actual_size, size, where))
+    return rejmsg
+
+################################################################################
+
+def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
+    """
+    Verify that the files listed in the Files field of the .dsc are
+    those expected given the announced Format.
+
+    @type dsc_filename: string
+    @param dsc_filename: path of .dsc file
+
+    @type dsc: dict
+    @param dsc: the content of the .dsc parsed by C{parse_changes()}
+
+    @type dsc_files: dict
+    @param dsc_files: the file list returned by C{build_file_list()}
+
+    @rtype: list
+    @return: all errors detected
+    """
+    rejmsg = []
+
+    # Parse the file if needed
+    if dsc is None:
+        dsc = parse_changes(dsc_filename, signing_rules=1, dsc_file=1);
+
+    if dsc_files is None:
+        dsc_files = build_file_list(dsc, is_a_dsc=1)
+
+    # Ensure .dsc lists proper set of source files according to the format
+    # announced
+    has = defaultdict(lambda: 0)
+
+    ftype_lookup = (
+        (r'orig.tar.gz',               ('orig_tar_gz', 'orig_tar')),
+        (r'diff.gz',                   ('debian_diff',)),
+        (r'tar.gz',                    ('native_tar_gz', 'native_tar')),
+        (r'debian\.tar\.(gz|bz2)',     ('debian_tar',)),
+        (r'orig\.tar\.(gz|bz2)',       ('orig_tar',)),
+        (r'tar\.(gz|bz2)',             ('native_tar',)),
+        (r'orig-.+\.tar\.(gz|bz2)',    ('more_orig_tar',)),
+    )
+
+    for f in dsc_files.keys():
+        m = re_issource.match(f)
+        if not m:
+            rejmsg.append("%s: %s in Files field not recognised as source."
+                          % (dsc_filename, f))
+            continue
+
+        # Populate 'has' dictionary by resolving keys in lookup table
+        matched = False
+        for regex, keys in ftype_lookup:
+            if re.match(regex, m.group(3)):
+                matched = True
+                for key in keys:
+                    has[key] += 1
+                break
+
+        # File does not match anything in lookup table; reject
+        if not matched:
+            reject("%s: unexpected source file '%s'" % (dsc_filename, f))
+
+    # Check for multiple files
+    for file_type in ('orig_tar', 'native_tar', 'debian_tar', 'debian_diff'):
+        if has[file_type] > 1:
+            rejmsg.append("%s: lists multiple %s" % (dsc_filename, file_type))
+
+    # Source format specific tests
+    try:
+        format = get_format_from_string(dsc['format'])
+        rejmsg.extend([
+            '%s: %s' % (dsc_filename, x) for x in format.reject_msgs(has)
+        ])
+
+    except UnknownFormatError:
+        # Not an error here for now
+        pass
+
     return rejmsg
 
 ################################################################################
@@ -383,41 +511,6 @@ def _ensure_dsc_hash(dsc, dsc_files, hashname, hashfunc):
 
 ################################################################################
 
-def ensure_hashes(changes, dsc, files, dsc_files):
-    rejmsg = []
-
-    # Make sure we recognise the format of the Files: field in the .changes
-    format = changes.get("format", "0.0").split(".", 1)
-    if len(format) == 2:
-        format = int(format[0]), int(format[1])
-    else:
-        format = int(float(format[0])), 0
-
-    # We need to deal with the original changes blob, as the fields we need
-    # might not be in the changes dict serialised into the .dak anymore.
-    orig_changes = parse_deb822(changes['filecontents'])
-
-    # Copy the checksums over to the current changes dict.  This will keep
-    # the existing modifications to it intact.
-    for field in orig_changes:
-        if field.startswith('checksums-'):
-            changes[field] = orig_changes[field]
-
-    # Check for unsupported hashes
-    rejmsg.extend(check_hash_fields(".changes", changes))
-    rejmsg.extend(check_hash_fields(".dsc", dsc))
-
-    # We have to calculate the hash if we have an earlier changes version than
-    # the hash appears in rather than require it exist in the changes file
-    for hashname, hashfunc, version in known_hashes:
-        rejmsg.extend(_ensure_changes_hash(changes, format, version, files,
-            hashname, hashfunc))
-        if "source" in changes["architecture"]:
-            rejmsg.extend(_ensure_dsc_hash(dsc, dsc_files, hashname,
-                hashfunc))
-
-    return rejmsg
-
 def parse_checksums(where, files, manifest, hashname):
     rejmsg = []
     field = 'checksums-%s' % hashname
@@ -426,7 +519,12 @@ def parse_checksums(where, files, manifest, hashname):
     for line in manifest[field].split('\n'):
         if not line:
             break
-        checksum, size, checkfile = line.strip().split(' ')
+        clist = line.strip().split(' ')
+        if len(clist) == 3:
+            checksum, size, checkfile = clist
+        else:
+            rejmsg.append("Cannot parse checksum line [%s]" % (line))
+            continue
         if not files.has_key(checkfile):
         # TODO: check for the file's entry in the original files dict, not
         # the one modified by (auto)byhand and other weird stuff
@@ -455,30 +553,9 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     if not changes.has_key(field):
         raise NoFilesFieldError
 
-    # Make sure we recognise the format of the Files: field
-    format = re_verwithext.search(changes.get("format", "0.0"))
-    if not format:
-        raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
-
-    format = format.groups()
-    if format[1] == None:
-        format = int(float(format[0])), 0, format[2]
-    else:
-        format = int(format[0]), int(format[1]), format[2]
-    if format[2] == None:
-        format = format[:2]
-
-    if is_a_dsc:
-        # format = (1,0) are the only formats we currently accept,
-        # format = (0,0) are missing format headers of which we still
-        # have some in the archive.
-        if format != (1,0) and format != (0,0):
-            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
-    else:
-        if (format < (1,5) or format > (1,8)):
-            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
-        if field != "files" and format < (1,8):
-            raise UnknownFormatError, "%s" % (changes.get("format","0.0"))
+    # Validate .changes Format: field
+    if not is_a_dsc:
+        validate_changes_format(parse_format(changes['format']), field)
 
     includes_section = (not is_a_dsc) and field == "files"
 
@@ -503,7 +580,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
         (section, component) = extract_component_from_section(section)
 
-        files[name] = Dict(size=size, section=section,
+        files[name] = dict(size=size, section=section,
                            priority=priority, component=component)
         files[name][hashname] = md5
 
@@ -511,94 +588,12 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
 ################################################################################
 
-def force_to_utf8(s):
-    """
-    Forces a string to UTF-8.  If the string isn't already UTF-8,
-    it's assumed to be ISO-8859-1.
-    """
-    try:
-        unicode(s, 'utf-8')
-        return s
-    except UnicodeError:
-        latin1_s = unicode(s,'iso8859-1')
-        return latin1_s.encode('utf-8')
-
-def rfc2047_encode(s):
-    """
-    Encodes a (header) string per RFC2047 if necessary.  If the
-    string is neither ASCII nor UTF-8, it's assumed to be ISO-8859-1.
-    """
-    try:
-        codecs.lookup('ascii')[1](s)
-        return s
-    except UnicodeError:
-        pass
-    try:
-        codecs.lookup('utf-8')[1](s)
-        h = email.Header.Header(s, 'utf-8', 998)
-        return str(h)
-    except UnicodeError:
-        h = email.Header.Header(s, 'iso-8859-1', 998)
-        return str(h)
-
-################################################################################
-
-# <Culus> 'The standard sucks, but my tool is supposed to interoperate
-#          with it. I know - I'll fix the suckage and make things
-#          incompatible!'
-
-def fix_maintainer (maintainer):
-    """
-    Parses a Maintainer or Changed-By field and returns:
-      1. an RFC822 compatible version,
-      2. an RFC2047 compatible version,
-      3. the name
-      4. the email
-
-    The name is forced to UTF-8 for both 1. and 3..  If the name field
-    contains '.' or ',' (as allowed by Debian policy), 1. and 2. are
-    switched to 'email (name)' format.
-
-    """
-    maintainer = maintainer.strip()
-    if not maintainer:
-        return ('', '', '', '')
-
-    if maintainer.find("<") == -1:
-        email = maintainer
-        name = ""
-    elif (maintainer[0] == "<" and maintainer[-1:] == ">"):
-        email = maintainer[1:-1]
-        name = ""
-    else:
-        m = re_parse_maintainer.match(maintainer)
-        if not m:
-            raise ParseMaintError, "Doesn't parse as a valid Maintainer field."
-        name = m.group(1)
-        email = m.group(2)
-
-    # Get an RFC2047 compliant version of the name
-    rfc2047_name = rfc2047_encode(name)
-
-    # Force the name to be UTF-8
-    name = force_to_utf8(name)
-
-    if name.find(',') != -1 or name.find('.') != -1:
-        rfc822_maint = "%s (%s)" % (email, name)
-        rfc2047_maint = "%s (%s)" % (email, rfc2047_name)
-    else:
-        rfc822_maint = "%s <%s>" % (name, email)
-        rfc2047_maint = "%s <%s>" % (rfc2047_name, email)
-
-    if email.find("@") == -1 and email.find("buildd_") != 0:
-        raise ParseMaintError, "No @ found in email address part."
-
-    return (rfc822_maint, rfc2047_maint, name, email)
-
-################################################################################
-
 def send_mail (message, filename=""):
     """sendmail wrapper, takes _either_ a message string or a file as arguments"""
+
+    # Check whether we're supposed to be sending mail
+    if Cnf.has_key("Dinstall::Options::No-Mail") and Cnf["Dinstall::Options::No-Mail"]:
+        return
 
     # If we've been passed a string dump it into a temporary file
     if message:
@@ -616,10 +611,11 @@ def send_mail (message, filename=""):
         whitelist_in = open_file(Cnf["Dinstall::MailWhiteList"])
         try:
             for line in whitelist_in:
-                if re_re_mark.match(line):
-                    whitelist.append(re.compile(re_re_mark.sub("", line.strip(), 1)))
-                else:
-                    whitelist.append(re.compile(re.escape(line.strip())))
+                if not re_whitespace_comment.match(line):
+                    if re_re_mark.match(line):
+                        whitelist.append(re.compile(re_re_mark.sub("", line.strip(), 1)))
+                    else:
+                        whitelist.append(re.compile(re.escape(line.strip())))
         finally:
             whitelist_in.close()
 
@@ -646,7 +642,7 @@ def send_mail (message, filename=""):
                 if len(match) == 0:
                     del message_raw[field]
                 else:
-                    message_raw.replace_header(field, string.join(match, ", "))
+                    message_raw.replace_header(field, ', '.join(match))
 
         # Change message fields in order if we don't have a To header
         if not message_raw.has_key("To"):
@@ -736,29 +732,48 @@ def copy (src, dest, overwrite = 0, perms = 0664):
 ################################################################################
 
 def where_am_i ():
-    res = socket.gethostbyaddr(socket.gethostname())
-    database_hostname = Cnf.get("Config::" + res[0] + "::DatabaseHostname")
+    res = socket.getfqdn()
+    database_hostname = Cnf.get("Config::" + res + "::DatabaseHostname")
     if database_hostname:
         return database_hostname
     else:
-        return res[0]
+        return res
 
 def which_conf_file ():
-    res = socket.gethostbyaddr(socket.gethostname())
-    if Cnf.get("Config::" + res[0] + "::DakConfig"):
-        return Cnf["Config::" + res[0] + "::DakConfig"]
-    else:
-        return default_config
+    if os.getenv('DAK_CONFIG'):
+        return os.getenv('DAK_CONFIG')
+
+    res = socket.getfqdn()
+    # In case we allow local config files per user, try if one exists
+    if Cnf.FindB("Config::" + res + "::AllowLocalConfig"):
+        homedir = os.getenv("HOME")
+        confpath = os.path.join(homedir, "/etc/dak.conf")
+        if os.path.exists(confpath):
+            apt_pkg.ReadConfigFileISC(Cnf,default_config)
+
+    # We are still in here, so there is no local config file or we do
+    # not allow local files. Do the normal stuff.
+    if Cnf.get("Config::" + res + "::DakConfig"):
+        return Cnf["Config::" + res + "::DakConfig"]
+
+    return default_config
 
 def which_apt_conf_file ():
-    res = socket.gethostbyaddr(socket.gethostname())
-    if Cnf.get("Config::" + res[0] + "::AptConfig"):
-        return Cnf["Config::" + res[0] + "::AptConfig"]
+    res = socket.getfqdn()
+    # In case we allow local config files per user, try if one exists
+    if Cnf.FindB("Config::" + res + "::AllowLocalConfig"):
+        homedir = os.getenv("HOME")
+        confpath = os.path.join(homedir, "/etc/dak.conf")
+        if os.path.exists(confpath):
+            apt_pkg.ReadConfigFileISC(Cnf,default_config)
+
+    if Cnf.get("Config::" + res + "::AptConfig"):
+        return Cnf["Config::" + res + "::AptConfig"]
     else:
         return default_apt_config
 
 def which_alias_file():
-    hostname = socket.gethostbyaddr(socket.gethostname())[0]
+    hostname = socket.getfqdn()
     aliasfn = '/var/lib/misc/'+hostname+'/forward-alias'
     if os.path.exists(aliasfn):
         return aliasfn
@@ -767,22 +782,12 @@ def which_alias_file():
 
 ################################################################################
 
-# Escape characters which have meaning to SQL's regex comparison operator ('~')
-# (woefully incomplete)
-
-def regex_safe (s):
-    s = s.replace('+', '\\\\+')
-    s = s.replace('.', '\\\\.')
-    return s
-
-################################################################################
-
-def TemplateSubst(map, filename):
+def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
     templatefile = open_file(filename)
     template = templatefile.read()
-    for x in map.keys():
-        template = template.replace(x,map[x])
+    for k, v in subst_map.iteritems():
+        template = template.replace(k, str(v))
     templatefile.close()
     return template
 
@@ -801,6 +806,9 @@ def warn(msg):
 # (read: removing stray periods).
 def whoami ():
     return pwd.getpwuid(os.getuid())[4].split(',')[0].replace('.', '')
+
+def getusername ():
+    return pwd.getpwuid(os.getuid())[0]
 
 ################################################################################
 
@@ -977,15 +985,19 @@ def get_conf():
 
 def parse_args(Options):
     """ Handle -a, -c and -s arguments; returns them as SQL constraints """
+    # XXX: This should go away and everything which calls it be converted
+    #      to use SQLA properly.  For now, we'll just fix it not to use
+    #      the old Pg interface though
+    session = DBConn().session()
     # Process suite
     if Options["Suite"]:
         suite_ids_list = []
-        for suite in split_args(Options["Suite"]):
-            suite_id = database.get_suite_id(suite)
-            if suite_id == -1:
-                warn("suite '%s' not recognised." % (suite))
+        for suitename in split_args(Options["Suite"]):
+            suite = get_suite(suitename, session=session)
+            if suite.suite_id is None:
+                warn("suite '%s' not recognised." % (suite.suite_name))
             else:
-                suite_ids_list.append(suite_id)
+                suite_ids_list.append(suite.suite_id)
         if suite_ids_list:
             con_suites = "AND su.id IN (%s)" % ", ".join([ str(i) for i in suite_ids_list ])
         else:
@@ -996,12 +1008,12 @@ def parse_args(Options):
     # Process component
     if Options["Component"]:
         component_ids_list = []
-        for component in split_args(Options["Component"]):
-            component_id = database.get_component_id(component)
-            if component_id == -1:
-                warn("component '%s' not recognised." % (component))
+        for componentname in split_args(Options["Component"]):
+            component = get_component(componentname, session=session)
+            if component is None:
+                warn("component '%s' not recognised." % (componentname))
             else:
-                component_ids_list.append(component_id)
+                component_ids_list.append(component.component_id)
         if component_ids_list:
             con_components = "AND c.id IN (%s)" % ", ".join([ str(i) for i in component_ids_list ])
         else:
@@ -1011,18 +1023,18 @@ def parse_args(Options):
 
     # Process architecture
     con_architectures = ""
+    check_source = 0
     if Options["Architecture"]:
         arch_ids_list = []
-        check_source = 0
-        for architecture in split_args(Options["Architecture"]):
-            if architecture == "source":
+        for archname in split_args(Options["Architecture"]):
+            if archname == "source":
                 check_source = 1
             else:
-                architecture_id = database.get_architecture_id(architecture)
-                if architecture_id == -1:
-                    warn("architecture '%s' not recognised." % (architecture))
+                arch = get_architecture(archname, session=session)
+                if arch is None:
+                    warn("architecture '%s' not recognised." % (archname))
                 else:
-                    arch_ids_list.append(architecture_id)
+                    arch_ids_list.append(arch.arch_id)
         if arch_ids_list:
             con_architectures = "AND a.id IN (%s)" % ", ".join([ str(i) for i in arch_ids_list ])
         else:
@@ -1107,10 +1119,6 @@ def split_args (s, dwim=1):
         return s.split(",")
 
 ################################################################################
-
-def Dict(**dict): return dict
-
-########################################
 
 def gpgv_get_status_output(cmd, status_read, status_write):
     """
@@ -1260,7 +1268,7 @@ def gpg_keyring_args(keyrings=None):
 
 ################################################################################
 
-def check_signature (sig_filename, reject, data_filename="", keyrings=None, autofetch=None):
+def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=None):
     """
     Check the signature of a file and return the fingerprint if the
     signature is valid or 'None' if it's not.  The first argument is the
@@ -1276,14 +1284,16 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
     used.
     """
 
+    rejects = []
+
     # Ensure the filename contains no shell meta-characters or other badness
     if not re_taint_free.match(sig_filename):
-        reject("!!WARNING!! tainted signature filename: '%s'." % (sig_filename))
-        return None
+        rejects.append("!!WARNING!! tainted signature filename: '%s'." % (sig_filename))
+        return (None, rejects)
 
     if data_filename and not re_taint_free.match(data_filename):
-        reject("!!WARNING!! tainted data filename: '%s'." % (data_filename))
-        return None
+        rejects.append("!!WARNING!! tainted data filename: '%s'." % (data_filename))
+        return (None, rejects)
 
     if not keyrings:
         keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
@@ -1294,8 +1304,8 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
     if autofetch:
         error_msg = retrieve_key(sig_filename)
         if error_msg:
-            reject(error_msg)
-            return None
+            rejects.append(error_msg)
+            return (None, rejects)
 
     # Build the command line
     status_read, status_write = os.pipe()
@@ -1310,40 +1320,32 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
 
     # If we failed to parse the status-fd output, let's just whine and bail now
     if internal_error:
-        reject("internal error while performing signature check on %s." % (sig_filename))
-        reject(internal_error, "")
-        reject("Please report the above errors to the Archive maintainers by replying to this mail.", "")
-        return None
+        rejects.append("internal error while performing signature check on %s." % (sig_filename))
+        rejects.append(internal_error, "")
+        rejects.append("Please report the above errors to the Archive maintainers by replying to this mail.", "")
+        return (None, rejects)
 
-    bad = ""
     # Now check for obviously bad things in the processed output
     if keywords.has_key("KEYREVOKED"):
-        reject("The key used to sign %s has been revoked." % (sig_filename))
-        bad = 1
+        rejects.append("The key used to sign %s has been revoked." % (sig_filename))
     if keywords.has_key("BADSIG"):
-        reject("bad signature on %s." % (sig_filename))
-        bad = 1
+        rejects.append("bad signature on %s." % (sig_filename))
     if keywords.has_key("ERRSIG") and not keywords.has_key("NO_PUBKEY"):
-        reject("failed to check signature on %s." % (sig_filename))
-        bad = 1
+        rejects.append("failed to check signature on %s." % (sig_filename))
     if keywords.has_key("NO_PUBKEY"):
         args = keywords["NO_PUBKEY"]
         if len(args) >= 1:
             key = args[0]
-        reject("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, sig_filename))
-        bad = 1
+        rejects.append("The key (0x%s) used to sign %s wasn't found in the keyring(s)." % (key, sig_filename))
     if keywords.has_key("BADARMOR"):
-        reject("ASCII armour of signature was corrupt in %s." % (sig_filename))
-        bad = 1
+        rejects.append("ASCII armour of signature was corrupt in %s." % (sig_filename))
     if keywords.has_key("NODATA"):
-        reject("no signature found in %s." % (sig_filename))
-        bad = 1
+        rejects.append("no signature found in %s." % (sig_filename))
     if keywords.has_key("EXPKEYSIG"):
         args = keywords["EXPKEYSIG"]
         if len(args) >= 1:
             key = args[0]
-        reject("Signature made by expired key 0x%s" % (key))
-        bad = 1
+        rejects.append("Signature made by expired key 0x%s" % (key))
     if keywords.has_key("KEYEXPIRED") and not keywords.has_key("GOODSIG"):
         args = keywords["KEYEXPIRED"]
         expiredate=""
@@ -1356,53 +1358,47 @@ def check_signature (sig_filename, reject, data_filename="", keyrings=None, auto
                     expiredate = "unknown (%s)" % (timestamp)
             else:
                 expiredate = timestamp
-        reject("The key used to sign %s has expired on %s" % (sig_filename, expiredate))
-        bad = 1
+        rejects.append("The key used to sign %s has expired on %s" % (sig_filename, expiredate))
 
-    if bad:
-        return None
+    if len(rejects) > 0:
+        return (None, rejects)
 
     # Next check gpgv exited with a zero return code
     if exit_status:
-        reject("gpgv failed while checking %s." % (sig_filename))
+        rejects.append("gpgv failed while checking %s." % (sig_filename))
         if status.strip():
-            reject(prefix_multi_line_string(status, " [GPG status-fd output:] "), "")
+            rejects.append(prefix_multi_line_string(status, " [GPG status-fd output:] "))
         else:
-            reject(prefix_multi_line_string(output, " [GPG output:] "), "")
-        return None
+            rejects.append(prefix_multi_line_string(output, " [GPG output:] "))
+        return (None, rejects)
 
     # Sanity check the good stuff we expect
     if not keywords.has_key("VALIDSIG"):
-        reject("signature on %s does not appear to be valid [No VALIDSIG]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No VALIDSIG]." % (sig_filename))
     else:
         args = keywords["VALIDSIG"]
         if len(args) < 1:
-            reject("internal error while checking signature on %s." % (sig_filename))
-            bad = 1
+            rejects.append("internal error while checking signature on %s." % (sig_filename))
         else:
             fingerprint = args[0]
     if not keywords.has_key("GOODSIG"):
-        reject("signature on %s does not appear to be valid [No GOODSIG]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No GOODSIG]." % (sig_filename))
     if not keywords.has_key("SIG_ID"):
-        reject("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
-        bad = 1
+        rejects.append("signature on %s does not appear to be valid [No SIG_ID]." % (sig_filename))
 
     # Finally ensure there's not something we don't recognise
-    known_keywords = Dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
+    known_keywords = dict(VALIDSIG="",SIG_ID="",GOODSIG="",BADSIG="",ERRSIG="",
                           SIGEXPIRED="",KEYREVOKED="",NO_PUBKEY="",BADARMOR="",
-                          NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="")
+                          NODATA="",NOTATION_DATA="",NOTATION_NAME="",KEYEXPIRED="",POLICY_URL="")
 
     for keyword in keywords.keys():
         if not known_keywords.has_key(keyword):
-            reject("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], sig_filename))
-            bad = 1
+            rejects.append("found unknown status token '%s' from gpgv with args '%r' in %s." % (keyword, keywords[keyword], sig_filename))
 
-    if bad:
-        return None
+    if len(rejects) > 0:
+        return (None, rejects)
     else:
-        return fingerprint
+        return (fingerprint, [])
 
 ################################################################################
 
@@ -1485,6 +1481,20 @@ def temp_filename(directory=None, prefix="dak", suffix=""):
 
 ################################################################################
 
+def temp_dirname(parent=None, prefix="dak", suffix=""):
+    """
+    Return a secure and unique directory by pre-creating it.
+    If 'parent' is non-null, it will be the directory the directory is pre-created in.
+    If 'prefix' is non-null, the filename will be prefixed with it, default is dak.
+    If 'suffix' is non-null, the filename will end with it.
+
+    Returns a pathname to the new directory
+    """
+
+    return tempfile.mkdtemp(suffix, prefix, parent)
+
+################################################################################
+
 def is_email_alias(email):
     """ checks if the user part of the email is listed in the alias file """
     global alias_cache
@@ -1499,7 +1509,7 @@ def is_email_alias(email):
 
 ################################################################################
 
-def get_changes_files(dir):
+def get_changes_files(from_dir):
     """
     Takes a directory and lists all .changes files in it (as well as chdir'ing
     to the directory; this is due to broken behaviour on the part of p-u/p-a
@@ -1509,10 +1519,10 @@ def get_changes_files(dir):
     """
     try:
         # Much of the rest of p-u/p-a depends on being in the right place
-        os.chdir(dir)
-        changes_files = [x for x in os.listdir(dir) if x.endswith('.changes')]
+        os.chdir(from_dir)
+        changes_files = [x for x in os.listdir(from_dir) if x.endswith('.changes')]
     except OSError, e:
-        fubar("Failed to read list from directory %s (%s)" % (dir, e))
+        fubar("Failed to read list from directory %s (%s)" % (from_dir, e))
 
     return changes_files
 
@@ -1521,9 +1531,43 @@ def get_changes_files(dir):
 apt_pkg.init()
 
 Cnf = apt_pkg.newConfiguration()
-apt_pkg.ReadConfigFileISC(Cnf,default_config)
+if not os.getenv("DAK_TEST"):
+    apt_pkg.ReadConfigFileISC(Cnf,default_config)
 
 if which_conf_file() != default_config:
     apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
 
 ################################################################################
+
+def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm"):
+    """
+    Parses the wnpp bug list available at http://qa.debian.org/data/bts/wnpp_rm
+    Well, actually it parsed a local copy, but let's document the source
+    somewhere ;)
+
+    returns a dict associating source package name with a list of open wnpp
+    bugs (Yes, there might be more than one)
+    """
+
+    line = []
+    try:
+        f = open(file)
+        lines = f.readlines()
+    except IOError, e:
+        print "Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file
+	lines = []
+    wnpp = {}
+
+    for line in lines:
+        splited_line = line.split(": ", 1)
+        if len(splited_line) > 1:
+            wnpp[splited_line[0]] = splited_line[1].split("|")
+
+    for source in wnpp.keys():
+        bugs = []
+        for wnpp_bug in wnpp[source]:
+            bug_no = re.search("(\d)+", wnpp_bug).group()
+            if bug_no:
+                bugs.append(bug_no)
+        wnpp[source] = bugs
+    return wnpp

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Database Update Script - Fix bin_assoc_by_arch view
+Fix bin_assoc_by_arch view
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009  Joerg Jaspert <joerg@debian.org>
@@ -36,7 +36,6 @@ def do_update(self):
     print "Fixing bin_assoc_by_arch view"
     try:
         c = self.db.cursor()
-        c.execute("DROP VIEW bin_assoc_by_arch")
 
         c.execute("""CREATE OR REPLACE VIEW bin_assoc_by_arch AS
         SELECT ba.suite, ba.bin, a.id AS arch

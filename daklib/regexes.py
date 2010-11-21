@@ -7,7 +7,7 @@ Central repository of regexes for dak
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2001, 2002, 2003, 2004, 2005, 2006  James Troup <james@nocrew.org>
 @copyright: 2009  Mark Hymers <mhy@debian.org>
-@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@copyright: 2009, 2010  Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -29,21 +29,34 @@ Central repository of regexes for dak
 
 import re
 
+#: Is it a number?
 re_isanum = re.compile (r"^\d+$")
+
+#: Looking for the default reply
 re_default_answer = re.compile(r"\[(.*)\]")
+#: Used in build_summaries to make changes output look better
 re_fdnic = re.compile(r"\n\n")
+#: Detect a binnmu
 re_bin_only_nmu = re.compile(r"\+b\d+$")
 
+#: To sort out comment lines
 re_comments = re.compile(r"\#.*")
+#: To ignore comment and whitespace lines.
+re_whitespace_comment = re.compile(r"^\s*(#|$)")
 re_no_epoch = re.compile(r"^\d+\:")
 re_no_revision = re.compile(r"-[^-]+$")
 re_arch_from_filename = re.compile(r"/binary-[^/]+/")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
 re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$")
 
-re_issource = re.compile (r"(.+)_(.+?)\.(orig\.tar\.gz|diff\.gz|tar\.gz|dsc)$")
+orig_source_ext_re = r"orig(?:-.+)?\.tar\.(?:gz|bz2)"
+re_orig_source_ext = re.compile(orig_source_ext_re + "$")
+re_source_ext = re.compile("(" + orig_source_ext_re + r"|debian\.tar\.(?:gz|bz2)|diff\.gz|tar\.(?:gz|bz2)|dsc)$")
+re_issource = re.compile(r"(.+)_(.+?)\." + re_source_ext.pattern)
+re_is_orig_source = re.compile (r"(.+)_(.+?)\.orig(?:-.+)?\.tar\.(?:gz|bz2)$")
+#re_is_orig_source = re.compile (r"(.+)_(.+?)\.(?:orig\.)?tar\.(?:gz|bz2)$")
 
-re_single_line_field = re.compile(r"^(\S*)\s*:\s*(.*)")
+re_single_line_field = re.compile(r"^(\S*?)\s*:\s*(.*)")
 re_multi_line_field = re.compile(r"^\s(.*)")
 re_taint_free = re.compile(r"^[-+~/\.\w]+$")
 
@@ -100,10 +113,14 @@ re_build_dep_arch = re.compile(r"\[[^]]+\]")
 re_broken_package = re.compile(r"[a-zA-Z]\w+\s+\-.*")
 
 # From dak/add_user.py
-re_gpg_fingerprint = re.compile(r"^fpr:+(.*):$", re.MULTILINE);
+re_gpg_fingerprint_colon = re.compile(r"^fpr:+(.*):$", re.MULTILINE);
 # The next one is dirty
 re_user_address = re.compile(r"^pub:.*<(.*)@.*>.*$", re.MULTILINE);
 re_user_mails = re.compile(r"^(pub|uid):[^rdin].*<(.*@.*)>.*$", re.MULTILINE);
 re_user_name = re.compile(r"^pub:.*:(.*)<.*$", re.MULTILINE);
 re_re_mark = re.compile(r'^RE:')
 
+re_parse_lintian = re.compile(r"^(?P<level>W|E|O): (?P<package>.*?): (?P<tag>[^ ]*) ?(?P<description>.*)$")
+
+# in process-upload
+re_match_expired = re.compile(r"^The key used to sign .+ has expired on .+$")

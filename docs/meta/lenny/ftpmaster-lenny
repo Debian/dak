@@ -5,7 +5,7 @@ Standards-Version: 3.8.1
 Package: ftpmaster-lenny
 Version: 1.0
 Maintainer: Debian FTP Master <ftpmaster@debian.org>
-Depends: apt-utils, bicyclerepair, binutils-multiarch, build-essential, bzip2, cron, curl, cvs, debian-el, debian-bug, dpkg-dev-el, easypg, devscripts, emacs-goodies-el, emacs22-nox, gnupg, gpgv, graphviz, ikiwiki, irb, libapt-pkg-dev, libdbd-pg-ruby, lintian, mc, mutt, postgresql-plperl-8.3, pychecker, pylint, pymacs, python, python-apt, python-btsutils, python-debian, python-epydoc, python-ldap, python-mode, python-numpy, python-psycopg2, python-pygresql, python-pyrss2gen, python-soappy, python-yaml, r-base, rsync, ruby, ruby-elisp, subversion, git-core, symlinks
+Depends: ftpmaster-common, bicyclerepair, binutils-multiarch, build-essential, cron, curl, cvs, debian-el, dpkg-dev-el, easypg, devscripts, emacs-goodies-el, emacs22-nox, graphviz, ikiwiki, irb, libdbd-pg-ruby, mc, mutt, pychecker, pylint, pymacs, python-epydoc, python-mode, python-numpy, python-soappy, r-base, rsync, ruby, ruby-elisp, subversion, git-core, symlinks, procmail, python-magic, unp
 Architecture: all
 Copyright: copyright
 Changelog: changelog

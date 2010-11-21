@@ -1,0 +1,7 @@
+dak meta package
+
+
+This is a dummy package that makes Debian's package management system
+believe that certain packages needed for dak have to be installed. The
+intention is to be able to easily see what needs to be there for dak
+to run.

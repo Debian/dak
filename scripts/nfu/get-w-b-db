@@ -9,7 +9,7 @@ set -e
 # the WB_DB_DIR enviroment variable
 if [ -z "$WB_DB_DIR" ]
 then
-	WB_DB_DIR=/srv/ftp.debian.org/scripts/nfu
+	WB_DB_DIR=/srv/ftp-master.debian.org/scripts/nfu
 fi
 
 cd $WB_DB_DIR || { echo "Failed to cd to $WB_DB_DIR" ; exit 1 ;}

@@ -19,14 +19,11 @@
 
 ################################################################################
 
-import ldap, pg, sys, time
+import ldap, sys, time
 import apt_pkg
-from daklib import utils
 
-################################################################################
-
-Cnf = None
-projectB = None
+from daklib.dbconn import *
+from daklib.config import Config
 
 ################################################################################
 
@@ -48,47 +45,41 @@ def get_ldap_value(entry, value):
         return ret[0]
 
 def main():
-    global Cnf, projectB
+    cnf = Config()
 
-    Cnf = utils.get_conf()
     Arguments = [('h',"help","Find-Null-Maintainers::Options::Help")]
     for i in [ "help" ]:
-        if not Cnf.has_key("Find-Null-Maintainers::Options::%s" % (i)):
-            Cnf["Find-Null-Maintainers::Options::%s" % (i)] = ""
+        if not cnf.has_key("Find-Null-Maintainers::Options::%s" % (i)):
+            cnf["Find-Null-Maintainers::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Find-Null-Maintainers::Options")
+    Options = cnf.SubTree("Find-Null-Maintainers::Options")
     if Options["Help"]:
         usage()
 
-    projectB = pg.connect(Cnf["DB::Name"], Cnf["DB::Host"], int(Cnf["DB::Port"]))
+    session = DBConn().session()
 
-    before = time.time()
-    sys.stderr.write("[Getting info from the LDAP server...")
-    LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
-    LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
+    print "Getting info from the LDAP server..."
+    LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
+    LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
     l = ldap.open(LDAPServer)
     l.simple_bind_s("","")
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
-                       "(&(keyfingerprint=*)(gidnumber=%s))" % (Cnf["Import-Users-From-Passwd::ValidGID"]),
+                       "(&(keyfingerprint=*)(gidnumber=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
                        ["uid", "cn", "mn", "sn", "createTimestamp"])
-    sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
 
 
     db_uid = {}
     db_unstable_uid = {}
 
-    before = time.time()
-    sys.stderr.write("[Getting UID info for entire archive...")
-    q = projectB.query("SELECT DISTINCT u.uid FROM uid u, fingerprint f WHERE f.uid = u.id;")
-    sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
-    for i in q.getresult():
+    print "Getting UID info for entire archive..."
+    q = session.execute("SELECT DISTINCT u.uid FROM uid u, fingerprint f WHERE f.uid = u.id")
+    for i in q.fetchall():
         db_uid[i[0]] = ""
 
-    before = time.time()
-    sys.stderr.write("[Getting UID info for unstable...")
-    q = projectB.query("""
+    print "Getting UID info for unstable..."
+    q = session.execute("""
 SELECT DISTINCT u.uid FROM suite su, src_associations sa, source s, fingerprint f, uid u
  WHERE f.uid = u.id AND sa.source = s.id AND sa.suite = su.id
    AND su.suite_name = 'unstable' AND s.sig_fpr = f.id
@@ -96,8 +87,7 @@ UNION
 SELECT DISTINCT u.uid FROM suite su, bin_associations ba, binaries b, fingerprint f, uid u
  WHERE f.uid = u.id AND ba.bin = b.id AND ba.suite = su.id
    AND su.suite_name = 'unstable' AND b.sig_fpr = f.id""")
-    sys.stderr.write("done. (%d seconds)]\n" % (int(time.time()-before)))
-    for i in q.getresult():
+    for i in q.fetchall():
         db_unstable_uid[i[0]] = ""
 
     now = time.time()

@@ -1,0 +1,35 @@
+This file maps each file available in the Debian GNU/Linux system to
+the package from which it originates.  It includes packages from the
+DIST distribution for the ARCH architecture.
+
+You can use this list to determine which package contains a specific
+file, or whether or not a specific file is available.  The list is
+updated weekly, each architecture on a different day.
+
+When a file is contained in more than one package, all packages are
+listed.  When a directory is contained in more than one package, only
+the first is listed.
+
+As all Contents files are shipped compressed, the best way to search quickly
+for a file is with the Unix `zgrep' utility, as in:
+  `zgrep <regular expression> CONTENTSFILE.gz':
+
+ $ zgrep -i debian/ Contents-amd64.gz
+ usr/share/IlohaMail/debian/Ilohamail.apache                 web/ilohamail
+ usr/share/R/debian/r-cran.mk                                devel/r-base-dev
+ usr/share/apt-listbugs/debian/apt_preferences.rb            admin/apt-listbugs
+ usr/share/apt-listbugs/debian/bts.rb                        admin/apt-listbugs
+ usr/share/apt-listbugs/debian/btssoap.rb                    admin/apt-listbugs
+ usr/share/apt-listbugs/debian/bug.rb                        admin/apt-listbugs
+ usr/share/apt-listbugs/debian/mytempfile.rb                 admin/apt-listbugs
+
+This list contains files in all packages, even though not all of the
+packages are installed on an actual system at once.  If you want to
+find out which packages on an installed Debian system provide a
+particular file, you can use `dpkg --search <filename>':
+
+ $ dpkg --search apt-get
+ apt: /usr/bin/apt-get
+
+
+FILE                                                    LOCATION

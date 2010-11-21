@@ -34,10 +34,10 @@ $ssh_options = "-o'BatchMode yes' -o'FallBackToRsh no' ".
 $ssh_key_file = "";
 
 # the incoming dir we live in
-$incoming = "/srv/queued/UploadQueue";
+$incoming = "/srv/upload.debian.org/ftp/pub/UploadQueue";
 
 # the delayed incoming directories
-$incoming_delayed = "/srv/queued/UploadQueue/DELAYED/%d-day";
+$incoming_delayed = "/srv/upload.debian.org/ftp/pub/UploadQueue/DELAYED/%d-day";
 
 # maximum delay directory, -1 for no delayed directory,
 # incoming_delayed and target_delayed need to exist.
@@ -47,7 +47,7 @@ $max_delayed = 15;
 $keep_files = '(status|\.message|README)$';
 
 # file patterns that aren't deleted right away
-$valid_files = '(\.changes|\.tar\.gz|\.dsc|\.u?deb|diff\.gz|\.sh)$';
+$valid_files = '(\.changes|\.tar\.(?:gz|bz2)|\.dsc|\.u?deb|diff\.gz|\.sh)$';
 
 # Change files to mode 644 locally (after md5 check) or only on master?
 $chmod_on_target = 0;
@@ -64,8 +64,7 @@ $statusdelay = 30;
 
 # names of the keyring files
 @keyrings = ( "/srv/keyring.debian.org/keyrings/debian-keyring.gpg",
-              "/srv/keyring.debian.org/keyrings/debian-keyring.pgp",
-              "/srv/ftp.debian.org/keyrings/debian-maintainers.gpg" );
+              "/srv/keyring.debian.org/keyrings/debian-maintainers.gpg" );
 
 # our log file
 $logfile = "$queued_dir/log";
@@ -83,10 +82,10 @@ $target = "localhost";
 $targetlogin = "queue";
 
 # incoming on target host
-$targetdir = "/srv/ftp.debian.org/queue/unchecked/";
+$targetdir = "/srv/ftp-master.debian.org/queue/unchecked/";
 
 # incoming/delayed on target host
-$targetdir_delayed = "/srv/queued/DEFERRED/%d-day";
+$targetdir_delayed = "/srv/upload.debian.org/DEFERRED/%d-day";
 
 # select FTP debugging
 #$ftpdebug = 0;
@@ -126,6 +125,8 @@ $remote_timeout = 3*60*60; # 3 hours
 # mail address of maintainer
 $maintainer_mail = "ftpmaster\@debian.org";
 
+# to override the TO address of ALL outgoing mail, set this value.
+$overridemail = "";
 
 # logfile rotating:
 # -----------------

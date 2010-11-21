@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """ Output html for packages in NEW """
-# Copyright (C) 2007 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2007, 2009 Joerg Jaspert <joerg@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,18 +25,23 @@
 
 ################################################################################
 
-import copy, os, sys, time
+from copy import copy
+import os, sys, time
 import apt_pkg
 import examine_package
-from daklib import database
-from daklib import queue
+
+from daklib.dbconn import *
+from daklib.queue import determine_new, check_valid, Upload, get_policy_queue
 from daklib import utils
+from daklib.regexes import re_source_ext
+from daklib.config import Config
+from daklib import daklog
+from daklib.changesutils import *
+from daklib.threadpool import ThreadPool
 
 # Globals
 Cnf = None
 Options = None
-Upload = None
-projectB = None
 sources = set()
 
 
@@ -47,7 +52,7 @@ sources = set()
 def html_header(name, filestoexamine):
     if name.endswith('.changes'):
         name = ' '.join(name.split('_')[:2])
-    print """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    result = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
   <head>
     <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8"
@@ -101,31 +106,36 @@ def html_header(name, filestoexamine):
         Debian NEW package overview for %(name)s
       </span>
     </div>
+
     """%{"name":name}
 
     # we assume only one source (.dsc) per changes here
-    print """
+    result += """
     <div id="menu">
       <p class="title">Navigation</p>
       <p><a href="#changes" onclick="show('changes-body')">.changes</a></p>
       <p><a href="#dsc" onclick="show('dsc-body')">.dsc</a></p>
       <p><a href="#source-lintian" onclick="show('source-lintian-body')">source lintian</a></p>
-      """
+
+"""
     for fn in filter(lambda x: x.endswith('.deb') or x.endswith('.udeb'),filestoexamine):
         packagename = fn.split('_')[0]
-        print """
+        result += """
         <p class="subtitle">%(pkg)s</p>
         <p><a href="#binary-%(pkg)s-control" onclick="show('binary-%(pkg)s-control-body')">control file</a></p>
         <p><a href="#binary-%(pkg)s-lintian" onclick="show('binary-%(pkg)s-lintian-body')">binary lintian</a></p>
         <p><a href="#binary-%(pkg)s-contents" onclick="show('binary-%(pkg)s-contents-body')">.deb contents</a></p>
         <p><a href="#binary-%(pkg)s-copyright" onclick="show('binary-%(pkg)s-copyright-body')">copyright</a></p>
         <p><a href="#binary-%(pkg)s-file-listing" onclick="show('binary-%(pkg)s-file-listing-body')">file listing</a></p>
-        """%{"pkg":packagename}
-    print "    </div>"
+
+"""%{"pkg":packagename}
+    result += "    </div>"
+    return result
 
 def html_footer():
-    print """    <p class="validate">Timestamp: %s (UTC)</p>"""% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
-    print """    <p><a href="http://validator.w3.org/check?uri=referer">
+    result = """    <p class="validate">Timestamp: %s (UTC)</p>
+"""% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
+    result += """    <p><a href="http://validator.w3.org/check?uri=referer">
       <img src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
       style="border: none; height: 31px; width: 88px" /></a>
     <a href="http://jigsaw.w3.org/css-validator/check/referer">
@@ -135,51 +145,61 @@ def html_footer():
   </body>
 </html>
 """
+    return result
 
 ################################################################################
 
 
 def do_pkg(changes_file):
-    Upload.pkg.changes_file = changes_file
-    Upload.init_vars()
-    Upload.update_vars()
-    files = Upload.pkg.files
-    changes = Upload.pkg.changes
+    session = DBConn().session()
+    u = Upload()
+    u.pkg.changes_file = changes_file
+    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
+    u.load_changes(changes_file)
+    new_queue = get_policy_queue('new', session );
+    u.pkg.directory = new_queue.path
+    u.update_subst()
+    origchanges = os.path.abspath(u.pkg.changes_file)
+    files = u.pkg.files
+    changes = u.pkg.changes
 
-    changes["suite"] = copy.copy(changes["distribution"])
-    distribution = changes["distribution"].keys()[0]
-    # Find out what's new
-    new = queue.determine_new(changes, files, projectB, 0)
+    for deb_filename, f in files.items():
+        if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
+            u.binary_file_checks(deb_filename, session)
+            u.check_binary_against_db(deb_filename, session)
+        else:
+            u.source_file_checks(deb_filename, session)
+            u.check_source_against_db(deb_filename, session)
+    u.pkg.changes["suite"] = u.pkg.changes["distribution"]
 
-    stdout_fd = sys.stdout
+    new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, 0, session)
 
     htmlname = changes["source"] + "_" + changes["version"] + ".html"
     sources.add(htmlname)
     # do not generate html output if that source/version already has one.
-    if not os.path.exists(os.path.join(Cnf["Show-New::HTMLPath"],htmlname)):
-        sys.stdout = open(os.path.join(Cnf["Show-New::HTMLPath"],htmlname),"w")
+    if not os.path.exists(os.path.join(cnf["Show-New::HTMLPath"],htmlname)):
+        outfile = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
 
         filestoexamine = []
         for pkg in new.keys():
             for fn in new[pkg]["files"]:
-                if ( files[fn].has_key("new") and not
-                     files[fn]["type"] in [ "orig.tar.gz", "orig.tar.bz2", "tar.gz", "tar.bz2", "diff.gz", "diff.bz2"] ):
-                    filestoexamine.append(fn)
+                filestoexamine.append(fn)
 
-        html_header(changes["source"], filestoexamine)
+        print >> outfile, html_header(changes["source"], filestoexamine)
 
-        queue.check_valid(new)
-        examine_package.display_changes( distribution, Upload.pkg.changes_file)
+        check_valid(new, session)
+        distribution = changes["distribution"].keys()[0]
+        print >> outfile, examine_package.display_changes(distribution, changes_file)
 
         for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-            examine_package.check_dsc(distribution, fn)
+            print >> outfile, examine_package.check_dsc(distribution, fn, session)
         for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-            examine_package.check_deb(distribution, fn)
+            print >> outfile, examine_package.check_deb(distribution, fn, session)
 
-        html_footer()
-        if sys.stdout != stdout_fd:
-            sys.stdout.close()
-            sys.stdout = stdout_fd
+        print >> outfile, html_footer()
+
+	outfile.close()
+    session.close()
 
 ################################################################################
 
@@ -192,27 +212,27 @@ def usage (exit_code=0):
 
 ################################################################################
 
-def init():
-    global Cnf, Options, Upload, projectB
+def init(session):
+    global cnf, Options
 
-    Cnf = utils.get_conf()
+    cnf = Config()
 
     Arguments = [('h',"help","Show-New::Options::Help"),
                  ("p","html-path","Show-New::HTMLPath","HasArg")]
 
     for i in ["help"]:
-        if not Cnf.has_key("Show-New::Options::%s" % (i)):
-            Cnf["Show-New::Options::%s" % (i)] = ""
+        if not cnf.has_key("Show-New::Options::%s" % (i)):
+            cnf["Show-New::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Show-New::Options")
+    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
+    if len(changes_files) == 0:
+        new_queue = get_policy_queue('new', session );
+        changes_files = utils.get_changes_files(new_queue.path)
+
+    Options = cnf.SubTree("Show-New::Options")
 
     if Options["help"]:
         usage()
-
-    Upload = queue.Upload(Cnf)
-
-    projectB = Upload.projectB
 
     return changes_files
 
@@ -221,20 +241,24 @@ def init():
 ################################################################################
 
 def main():
-    changes_files = init()
+    session = DBConn().session()
+    changes_files = init(session)
 
     examine_package.use_html=1
 
+    threadpool = ThreadPool()
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
             continue
         print "\n" + changes_file
-        do_pkg (changes_file)
-    files = set(os.listdir(Cnf["Show-New::HTMLPath"]))
+        threadpool.queueTask(do_pkg, changes_file)
+    threadpool.joinAll()
+
+    files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))
     for f in to_delete:
-        os.remove(os.path.join(Cnf["Show-New::HTMLPath"],f))
+        os.remove(os.path.join(cnf["Show-New::HTMLPath"],f))
 
 ################################################################################
 

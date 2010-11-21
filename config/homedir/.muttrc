@@ -1,0 +1,158 @@
+#
+# System configuration file for Mutt
+#
+
+# default list of header fields to weed when displaying
+#
+ignore "from " received content- mime-version status x-status message-id
+ignore sender references return-path lines
+ignore date delivered-to precedence errors-to in-reply-to user-agent
+ignore x-loop x-sender x-mailer x-msmail-priority x-mimeole x-priority
+ignore x-accept-language x-authentication-warning
+
+# emacs-like bindings
+bind editor    "\e<delete>"    kill-word
+bind editor    "\e<backspace>" kill-word
+
+# map delete-char to a sane value
+bind editor     <delete>  delete-char
+
+# don't add the hostname to the From header
+unset use_domain
+# don't generate a From header
+unset use_from
+
+# Specifies how to sort messages in the index menu.
+set sort=threads
+
+# Exim does not remove Bcc headers
+unset write_bcc
+# Postfix and qmail use Delivered-To for detecting loops
+unset bounce_delivered
+
+# imitate the old search-body function
+macro index \eb '/~b ' 'search in message bodies'
+
+# simulate the old url menu
+macro index \cb |urlview\n 'call urlview to extract URLs out of a message'
+macro pager \cb |urlview\n 'call urlview to extract URLs out of a message'
+
+# Show documentation when pressing F1
+macro generic <f1> "!zless /usr/share/doc/mutt/manual.txt.gz\n" "Show Mutt documentation"
+macro index   <f1> "!zless /usr/share/doc/mutt/manual.txt.gz\n" "Show Mutt documentation"
+macro pager   <f1> "!zless /usr/share/doc/mutt/manual.txt.gz\n" "Show Mutt documentation"
+
+# Use folders which match on \\.gz$ as gzipped folders:
+open-hook \\.gz$ "gzip -cd %f > %t"
+close-hook \\.gz$ "gzip -c %t > %f"
+append-hook \\.gz$ "gzip -c %t >> %f"
+
+# Use folders which match on \\.xz$ as xz compressed folders:
+open-hook \\.xz$ "xz -cd %f > %t"
+close-hook \\.xz$ "xz -c %t > %f"
+append-hook \\.xz$ "xz -c %t >> %f"
+
+# colors
+color normal	white black
+color attachment brightyellow black
+color hdrdefault cyan black
+color indicator black cyan
+color markers	brightred black
+color quoted	green black
+color signature cyan black
+color status	brightgreen blue
+color tilde	blue black
+color tree	red black
+
+# aliases for broken MUAs
+charset-hook windows-1250 CP1250
+charset-hook windows-1251 CP1251
+charset-hook windows-1252 CP1252
+charset-hook windows-1253 CP1253
+charset-hook windows-1254 CP1254
+charset-hook windows-1255 CP1255
+charset-hook windows-1256 CP1256
+charset-hook windows-1257 CP1257
+charset-hook windows-1258 CP1258
+
+##
+## More settings
+##
+set ispell=ispell
+
+# GnuPG configuration
+set pgp_decode_command="/usr/bin/gpg   --status-fd=2 %?p?--passphrase-fd 0? --no-verbose --quiet  --batch  --output - %f"
+set pgp_verify_command="/usr/bin/gpg   --status-fd=2 --no-verbose --quiet  --batch  --output - --verify %s %f"
+set pgp_decrypt_command="/usr/bin/gpg   --status-fd=2 --passphrase-fd 0 --no-verbose --quiet  --batch  --output - %f"
+set pgp_sign_command="/usr/bin/gpg    --no-verbose --batch --quiet   --output - --passphrase-fd 0 --armor --detach-sign --textmode %?a?-u %a? %f"
+set pgp_clearsign_command="/usr/bin/gpg   --no-verbose --batch --quiet   --output - --passphrase-fd 0 --armor --textmode --clearsign %?a?-u %a? %f"
+set pgp_encrypt_only_command="/usr/lib/mutt/pgpewrap /usr/bin/gpg    --batch  --quiet  --no-verbose --output - --encrypt --textmode --armor --always-trust -- -r %r -- %f"
+set pgp_encrypt_sign_command="/usr/lib/mutt/pgpewrap /usr/bin/gpg  --passphrase-fd 0  --batch --quiet  --no-verbose  --textmode --output - --encrypt --sign %?a?-u %a? --armor --always-trust -- -r %r -- %f"
+set pgp_import_command="/usr/bin/gpg  --no-verbose --import -v %f"
+set pgp_export_command="/usr/bin/gpg   --no-verbose --export --armor %r"
+set pgp_verify_key_command="/usr/bin/gpg   --verbose --batch  --fingerprint --check-sigs %r"
+set pgp_list_pubring_command="/usr/bin/gpg   --no-verbose --batch --quiet   --with-colons --list-keys %r"
+set pgp_list_secring_command="/usr/bin/gpg   --no-verbose --batch --quiet   --with-colons --list-secret-keys %r"
+set pgp_good_sign="^\\[GNUPG:\\] VALIDSIG"
+
+set nomove
+bind    pager           <up>            previous-line
+bind    pager           <down>          next-line
+bind    index           <up>            previous-entry
+bind    index           <down>          next-entry
+bind    index           <left>          previous-entry
+bind    index           <right>         next-entry
+bind    pager           <left>          previous-entry
+bind    pager           <right>         next-entry
+bind    pager           $         		bottom
+bind	index			<tab>			next-unread
+bind	index			\c?				search-reverse
+bind	index			\c\\			search-opposite
+set edit_hdrs
+set xterm_set_titles
+
+ignore *
+unignore date from to cc subject x-mailer resent-from reply-to mail-followup-to
+
+set index_format="%4C %Z %(%b%d %H) %-15.15L (%?l?%4l&%4c?) %s"
+
+set folder=~/mail
+
+unset confirmappend
+
+my_hdr From: Archive Administrator <ftpmaster@debian.org>
+
+macro index s <save-message>=
+
+set tmpdir="/tmp"
+
+macro index s <save-message>=
+macro index c <change-folder>=
+macro pager s <save-message>=
+macro pager c <change-folder>=
+
+set index_format="%4C %Z %(%b%d %H) %-15.15L (%?l?%4l&%4c?) %s"
+
+
+set delete=yes
+unset confirmappend
+
+set implicit_autoview
+auto_view text/html
+
+set pager_stop
+set wrap_search		# Wrap search to top/bottom.
+set smart_wrap		# wrap long lines at word boundary.
+set tilde			# Internal Pager: ~~~~ at and of message?
+
+set pager_context=3
+set pager_index_lines=9	# number of lines to see from the index
+set pgp_timeout=60	  	# number of seconds to cache passphrase
+
+set mail_check=1
+set timeout=1
+
+set beep
+set beep_new
+set fast_reply
+set metoo

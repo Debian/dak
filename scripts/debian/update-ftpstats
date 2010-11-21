@@ -3,7 +3,7 @@
 my %data;
 my %data2;
 my @archs = ("source", "all", "amd64", "i386", "alpha", "arm", "armel", "hppa",
-	"hurd-i386", "ia64", "mips", "mipsel", "powerpc", "s390",
+	"hurd-i386", "ia64", "kfreebsd-amd64", "kfreebsd-i386", "mips", "mipsel", "powerpc", "s390",
 	"sparc");
 
 while (<>) {

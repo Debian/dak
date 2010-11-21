@@ -1,0 +1,20 @@
+Section: devel
+Priority: optional
+Standards-Version: 3.8.1
+
+Package: ftpmaster-common
+Version: 1.0
+Maintainer: Debian FTP Master <ftpmaster@debian.org>
+Depends: apt-utils, bzip2, gnupg, gpgv, gzip, libapt-pkg-dev, lintian, python, python-apt, python-debianbts, python-debian, python-gnupginterface, python-ldap, python-psycopg2, python-pygresql, python-pyrss2gen, python-yaml, python-sqlalchemy
+Recommends: postgresql-plperl-8.4, postgresql-8.4-debversion, postgresql-plpython-8.4
+Architecture: all
+Copyright: copyright
+Changelog: changelog
+Readme: README.Debian
+
+Description: Meta package for DSA listing dak needs. This is a small
+ meta package to install all of the dependencies for dak in order to
+ know easily (and keep installed) all packages required for dak.
+ .
+ It, is quite likely that you will require more tools to actually do
+ your work, look for the ftpmaster-$release package, it might give hints.

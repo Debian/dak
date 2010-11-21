@@ -34,15 +34,17 @@
 
 ################################################################################
 
-import copy, glob, os, stat, sys, time
+from copy import copy
+import glob, os, stat, sys, time
 import apt_pkg
-import cgi
-from daklib import queue
+
 from daklib import utils
+from daklib.queue import Upload
+from daklib.dbconn import DBConn, has_new_comment, DBChange, DBSource, get_uid_from_fingerprint
+from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
 Cnf = None
-Upload = None
 direction = []
 row_number = 0
 
@@ -170,6 +172,23 @@ def header():
     <title>
       Debian NEW and BYHAND Packages
     </title>
+    <script type="text/javascript">
+    function togglePkg() {
+        var children = document.getElementsByTagName("*");
+        for (var i = 0; i < children.length; i++) {
+            if(!children[i].hasAttribute("class"))
+                continue;
+            c = children[i].getAttribute("class").split(" ");
+            for(var j = 0; j < c.length; j++) {
+                if(c[j] == "binNEW") {
+                    if (children[i].style.display == '')
+                        children[i].style.display = 'none';
+                    else children[i].style.display = '';
+                }
+            }
+        }
+    }
+    </script>
   </head>
   <body id="NEW">
     <div id="logo">
@@ -217,10 +236,12 @@ def footer():
     """
 
 def table_header(type, source_count, total_count):
-    print "<h1>Summary for: %s</h1>" % (type)
+    print "<h1 class='binNEW'>Summary for: %s</h1>" % (type)
+    print "<h1 class='binNEW' style='display: none'>Summary for: binary-%s only</h1>" % (type)
     print """
     <table class="NEW">
-      <caption>
+      <p class="togglepkg" onclick="togglePkg()">Click to toggle all/binary-NEW packages</p>
+      <caption class="binNEW">
     """
     print "Package count in <strong>%s</strong>: <em>%s</em>&nbsp;|&nbsp; Total Package count: <em>%s</em>" % (type, source_count, total_count)
     print """
@@ -248,9 +269,14 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     global row_number
 
     trclass = "sid"
+    session = DBConn().session()
     for dist in distribution:
         if dist == "experimental":
             trclass = "exp"
+
+    if not len(session.query(DBSource).filter_by(source = source).all()):
+        trclass += " binNEW"
+    session.commit()
 
     if row_number % 2 != 0:
         print "<tr class=\"%s even\">" % (trclass)
@@ -260,7 +286,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     print "<td class=\"package\">%s</td>" % (source)
     print "<td class=\"version\">"
     for vers in version.split():
-        print "<a href=\"/new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers))
+        print "<a href=\"new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers))
     print "</td>"
     print "<td class=\"arch\">%s</td>" % (arch)
     print "<td class=\"distribution\">"
@@ -275,11 +301,12 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     (name, mail) = changedby.split(":", 1)
     print "<span class=\"changed-by\">Changed-By: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
 
-    try:
-        (login, domain) = sponsor.split("@", 1)
-        print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
-    except:
-        pass
+    if sponsor:
+        try:
+            (login, domain) = sponsor.split("@", 1)
+            print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
+        except Exception, e:
+            pass
 
     print "<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint)
     print "</td>"
@@ -293,18 +320,19 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
 ############################################################
 
 def process_changes_files(changes_files, type, log):
+    session = DBConn().session()
     msg = ""
     cache = {}
     # Read in all the .changes files
     for filename in changes_files:
         try:
-            Upload.pkg.changes_file = filename
-            Upload.init_vars()
-            Upload.update_vars()
-            cache[filename] = copy.copy(Upload.pkg.changes)
+            u = Upload()
+            u.load_changes(filename)
+            cache[filename] = copy(u.pkg.changes)
             cache[filename]["filename"] = filename
-        except:
-            break
+        except Exception, e:
+            print "WARNING: Exception %s" % e
+            continue
     # Divide the .changes into per-source groups
     per_source = {}
     for filename in cache.keys():
@@ -327,7 +355,7 @@ def process_changes_files(changes_files, type, log):
             else:
                 if mtime < oldest:
                     oldest = mtime
-            have_note += (d.has_key("process-new note"))
+            have_note += has_new_comment(d["source"], d["version"])
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -356,14 +384,23 @@ def process_changes_files(changes_files, type, log):
         source = i[1]["list"][0]["source"]
         if len(source) > max_source_len:
             max_source_len = len(source)
+        binary_list = i[1]["list"][0]["binary"].keys()
+        binary = ', '.join(binary_list)
         arches = {}
         versions = {}
         for j in i[1]["list"]:
+            changesbase = os.path.basename(j["filename"])
+            try:
+                dbc = session.query(DBChange).filter_by(changesname=changesbase).one()
+            except Exception, e:
+                print "Can't find changes file in NEW for %s (%s)" % (changesbase, e)
+                dbc = None
+
             if Cnf.has_key("Queue-Report::Options::New") or Cnf.has_key("Queue-Report::Options::822"):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
-                    utils.fix_maintainer (j["maintainer"])
+                    fix_maintainer (j["maintainer"])
                 except ParseMaintError, msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
@@ -373,7 +410,7 @@ def process_changes_files(changes_files, type, log):
                 try:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
-                     utils.fix_maintainer (j["changed-by"])
+                     fix_maintainer (j["changed-by"])
                 except ParseMaintError, msg:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
@@ -382,9 +419,14 @@ def process_changes_files(changes_files, type, log):
 
                 distribution=j["distribution"].keys()
                 closes=j["closes"].keys()
-                fingerprint=j["fingerprint"]
-                if j.has_key("sponsoremail"):
-                    sponsor=j["sponsoremail"]
+                if dbc:
+                    fingerprint = dbc.fingerprint
+                    sponsor_name = get_uid_from_fingerprint(fingerprint).name
+                    sponsor_email = get_uid_from_fingerprint(fingerprint).uid + "@debian.org"
+                    if sponsor_name != maintainer["maintainername"] and sponsor_name != changeby["changedbyname"] and \
+                    sponsor_email != maintainer["maintaineremail"] and sponsor_name != changeby["changedbyemail"]:
+                        sponsor = sponsor_email
+
             for arch in j["architecture"].keys():
                 arches[arch] = ""
             version = j["version"]
@@ -401,7 +443,7 @@ def process_changes_files(changes_files, type, log):
             note = " | [N]"
         else:
             note = ""
-        entries.append([source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename])
+        entries.append([source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename])
 
     # direction entry consists of "Which field, which direction, time-consider" where
     # time-consider says how we should treat last_modified. Thats all.
@@ -412,16 +454,16 @@ def process_changes_files(changes_files, type, log):
         age =  Cnf["Queue-Report::Options::Age"]
     if Cnf.has_key("Queue-Report::Options::New"):
     # If we produce html we always have oldest first.
-        direction.append([4,-1,"ao"])
+        direction.append([5,-1,"ao"])
     else:
         if Cnf.has_key("Queue-Report::Options::Sort"):
             for i in Cnf["Queue-Report::Options::Sort"].split(","):
                 if i == "ao":
                     # Age, oldest first.
-                    direction.append([4,-1,age])
+                    direction.append([5,-1,age])
                 elif i == "an":
                     # Age, newest first.
-                    direction.append([4,1,age])
+                    direction.append([5,1,age])
                 elif i == "na":
                     # Name, Ascending.
                     direction.append([0,1,0])
@@ -430,10 +472,10 @@ def process_changes_files(changes_files, type, log):
                     direction.append([0,-1,0])
                 elif i == "nl":
                     # Notes last.
-                    direction.append([3,1,0])
+                    direction.append([4,1,0])
                 elif i == "nf":
                     # Notes first.
-                    direction.append([3,-1,0])
+                    direction.append([4,-1,0])
     entries.sort(lambda x, y: sortfunc(x, y))
     # Yes, in theory you can add several sort options at the commandline with. But my mind is to small
     # at the moment to come up with a real good sorting function that considers all the sidesteps you
@@ -443,11 +485,12 @@ def process_changes_files(changes_files, type, log):
     if Cnf.has_key("Queue-Report::Options::822"):
         # print stuff out in 822 format
         for entry in entries:
-            (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file) = entry
+            (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file) = entry
 
             # We'll always have Source, Version, Arch, Mantainer, and Dist
             # For the rest, check to see if we have them, then print them out
             log.write("Source: " + source + "\n")
+            log.write("Binary: " + binary + "\n")
             log.write("Version: " + version_list + "\n")
             log.write("Architectures: ")
             log.write( (", ".join(arch_list.split(" "))) + "\n")
@@ -476,7 +519,7 @@ def process_changes_files(changes_files, type, log):
             log.write("\n")
 
     if Cnf.has_key("Queue-Report::Options::New"):
-        direction.append([4,1,"ao"])
+        direction.append([5,1,"ao"])
         entries.sort(lambda x, y: sortfunc(x, y))
     # Output for a html file. First table header. then table_footer.
     # Any line between them is then a <tr> printed from subroutine table_row.
@@ -485,7 +528,7 @@ def process_changes_files(changes_files, type, log):
             source_count = len(per_source_items)
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
-                (source, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
+                (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
                 table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
     elif not Cnf.has_key("Queue-Report::Options::822"):
@@ -494,7 +537,7 @@ def process_changes_files(changes_files, type, log):
 
         msg = ""
         for entry in entries:
-            (source, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
+            (source, binary, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
             msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
@@ -511,7 +554,7 @@ def process_changes_files(changes_files, type, log):
 ################################################################################
 
 def main():
-    global Cnf, Upload
+    global Cnf
 
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Queue-Report::Options::Help"),
@@ -530,10 +573,11 @@ def main():
     if Options["Help"]:
         usage()
 
-    Upload = queue.Upload(Cnf)
-
     if Cnf.has_key("Queue-Report::Options::New"):
         header()
+
+    # Initialize db so we can get the NEW comments
+    dbconn = DBConn()
 
     directories = [ ]
 

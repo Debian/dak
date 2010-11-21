@@ -20,9 +20,13 @@
 set -e
 # make sure to only use defined variables
 set -u
+# ERR traps should be inherited from functions too. (And command
+# substitutions and subshells and whatnot, but for us the functions is
+# the important part here)
+set -E
 
 # import the general variable set.
-export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 # common functions are "outsourced"
@@ -35,7 +39,7 @@ DEBUG=0
 PROGRAM="dinstall_reboot"
 
 # where do we want mails to go? For example log entries made with error()
-if [ "x$(hostname -s)x" != "xriesx" ]; then
+if [ "x$(hostname -s)x" != "xfranckx" ]; then
     # Not our ftpmaster host
     MAILTO=${MAILTO:-"root"}
 else

@@ -7,7 +7,7 @@ Precedence: bulk
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-Subject: __CHANGES_FILENAME__ INSTALLED__SUITE__
+Subject: __CHANGES_FILENAME__ INSTALLED into __SUITE__
 
 __REJECT_MESSAGE__
 Installing:

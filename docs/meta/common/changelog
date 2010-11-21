@@ -1,0 +1,22 @@
+ftpmaster-common (1.2) unstable; urgency=low
+
+  * Partly revert 1.1, and keep a recommends split. DSA gets another kind of
+    package elsewhere, so we can use this as a kind of documentation for new
+    setups.
+
+ -- Joerg Jaspert <joerg@debian.org>  Sat, 27 Feb 2010 11:19:17 +0100
+
+ftpmaster-common (1.1) unstable; urgency=low
+
+  * Move recommends into depends. While its true that database might not
+    be on the same host, this package *main* usage is as a help for
+    DSA. And DSA does not install recommends by default, so make it
+    depends. We do want the database stuff, really. :)
+
+ -- Joerg Jaspert <joerg@debian.org>  Sat, 27 Feb 2010 10:53:27 +0100
+
+ftpmaster-common (1.0) unstable; urgency=low
+
+  * New "package", to document dak requirements
+
+ -- Allan Lyons <allan_lyons@wycliffe.ca>  Fri, 08 May 2009 09:09:09 -0600

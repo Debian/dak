@@ -1,79 +1,107 @@
-#! /bin/sh
+#!/bin/bash
+# No way I try to deal with a crippled sh just for POSIX foo.
 
+# Copyright (C) 2009 Joerg Jaspert <joerg@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# exit on errors
 set -e
+# make sure to only use defined variables
 set -u
-export SCRIPTVARS=/srv/ftp.debian.org/dak/config/debian/vars
+# ERR traps should be inherited from functions too. (And command
+# substitutions and subshells and whatnot, but for us the functions is
+# the important part here)
+set -E
+
+# import the general variable set.
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 LOCKDAILY=""
 LOCKFILE="$lockdir/unchecked.lock"
+LOCK_NEW="$lockdir/processnew.lock"
 NOTICE="$lockdir/daily.lock"
+LOCK_BUILDD="$lockdir/buildd.lock"
 
-if [ -e $NOTICE ]; then exit 0; fi
+# our name
+PROGRAM="unchecked"
+
+if [ -e $NOTICE ]; then
+    exit 0;
+fi
+
+########################################################################
+# Functions                                                            #
+########################################################################
+# common functions are "outsourced"
+. "${configdir}/common"
 
 STAMP=$(date "+%Y%m%d%H%M")
 
 cleanup() {
     rm -f "$LOCKFILE"
     if [ ! -z "$LOCKDAILY" ]; then
-	rm -f "$NOTICE"
+        rm -f "$NOTICE"
     fi
 }
 
-# only run one cron.unchecked
-if lockfile -r3 $LOCKFILE; then
-    trap cleanup 0
-    cd $unchecked
-
-    changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
-    report=$queuedir/REPORT
-    timestamp=$(date "+%Y-%m-%d %H:%M")
-
-    if [ ! -z "$changes" ]; then
-	echo "$timestamp": "$changes"  >> $report
-	dak process-unchecked -a -d "$unchecked" >> $report
-	echo "--" >> $report
-
-	# sync with debbugs
-    rsync -aq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30" --remove-source-files  $queuedir/bts_version_track/ bugs-sync:/org/bugs.debian.org/versions/queue/ftp-master/ 2>/dev/null && touch $lockdir/synced_bts_version || true
-
-	NOW=$(date +%s)
-	TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
-	DIFF=$(( NOW - TSTAMP ))
-	if [ $DIFF -ge 259200 ]; then
-		echo "Kids, you tried your best and you failed miserably. The lesson is, never try. (Homer Simpson)"
-	fi
-
-	if lockfile -r3 $NOTICE; then
-	    LOCKDAILY="YES"
-	    psql projectb -A -t -q -c "SELECT filename FROM queue_build WHERE queue = 0 AND suite = 5 AND in_queue = true AND filename ~ 'd(sc|eb)$'" > $dbdir/dists/unstable_accepted.list
-	    cd $overridedir
-	    dak make-overrides &>/dev/null
-	    rm -f override.sid.all3 override.sid.all3.src
-	    for i in main contrib non-free main.debian-installer; do
-		cat override.sid.$i >> override.sid.all3
-		if [ "$i" != "main.debian-installer" ]; then
-		    cat override.sid.$i.src >> override.sid.all3.src
-		fi
-	    done
-	    cd $configdir
-	    apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
-
-	    cd  ${incoming}
-	    rm -f buildd/Release*
-	    apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd incoming" -o APT::FTPArchive::Release::Architectures="${archs}" release buildd > Release
-	    gpg --secret-keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 6070D3A1 --detach-sign -o Release.gpg Release 
-		mv Release* buildd/.
-
-	    cd ${incoming}
-	    mkdir -p tree/${STAMP}
-	    cp -al ${incoming}/buildd/. tree/${STAMP}/
-	    ln -sfT tree/${STAMP} ${incoming}/builddweb
-	    find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
-
-	    . $configdir/cron.buildd
-	fi
-    else
-		echo "$timestamp": Nothing to do >> $report
+function do_buildd () {
+    if lockfile -r3 $NOTICE; then
+        LOCKDAILY="YES"
+        cd $overridedir
+        dak make-overrides &>/dev/null
+        rm -f override.sid.all3 override.sid.all3.src
+        for i in main contrib non-free main.debian-installer; do
+            cat override.sid.$i >> override.sid.all3
+            if [ "$i" != "main.debian-installer" ]; then
+                cat override.sid.$i.src >> override.sid.all3.src
+            fi
+        done
+        make_buildd_dir
+        wbtrigger
     fi
+}
+
+function do_dists () {
+    cd $configdir
+    dak generate-filelist
+    GZIP='--rsyncable' ; export GZIP
+    dak generate-packages-sources >/dev/null
+}
+
+########################################################################
+# the actual unchecked functions follow                                #
+########################################################################
+
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
+
+#lockfile -r3 "$LOCK_NEW"
+# acceptnew
+#rm -f "$LOCK_NEW"
+
+# only run one cron.unchecked
+lockfile -r3 $LOCKFILE || exit 0
+trap cleanup 0
+
+do_newstage
+do_unchecked
+
+if [ ! -z "$changes" ]; then
+    sync_debbugs
+    do_buildd
+    do_dists
 fi
