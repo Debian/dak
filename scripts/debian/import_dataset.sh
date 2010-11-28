@@ -38,9 +38,9 @@ case "${IMPORTSUITE}" in
         INPUTFILE="/srv/release.debian.org/britney/Heidi/set/current"
         DO_CHANGELOG="true"
         ;;
-    squeeze-volatile)
+    squeeze-updates)
         # What file we look at.
-        INPUTFILE="/srv/release.debian.org/volatile/set/squeeze-volatile"
+        INPUTFILE="/srv/release.debian.org/updates/set/squeeze-updates"
         DO_CHANGELOG="false"
         ;;
     *)
