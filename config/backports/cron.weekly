@@ -36,8 +36,8 @@ dak split-done
 
 # Clean up apt-ftparchive's databases
 cd $configdir
-echo "Cleanup apt-ftparchive's database"
-apt-ftparchive -q clean apt.conf
+#echo "Cleanup apt-ftparchive's database"
+#apt-ftparchive -q clean apt.conf
 
 echo "Fixing symlinks in $ftpdir"
 symlinks -d -r $ftpdir
