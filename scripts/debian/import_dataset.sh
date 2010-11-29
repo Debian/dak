@@ -40,7 +40,7 @@ case "${IMPORTSUITE}" in
         ;;
     squeeze-updates)
         # What file we look at.
-        INPUTFILE="/srv/release.debian.org/updates/set/squeeze-updates"
+        INPUTFILE="/srv/release.debian.org/sets/squeeze-updates/current"
         DO_CHANGELOG="false"
         ;;
     *)
