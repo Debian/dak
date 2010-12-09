@@ -13,7 +13,7 @@ Version: __VERSION__+rm
 Dear submitter,
 
 as the package __SOURCE__ has just been removed from the Debian archive
-__SUITE_LIST__ we hereby close the assiciated bug reports.  We are sorry
+__SUITE_LIST__ we hereby close the associated bug reports.  We are sorry
 that we couldn't deal with your issue properly.
 
 For details on the removal, please see http://__BUG_SERVER__/__BUG_NUMBER__
