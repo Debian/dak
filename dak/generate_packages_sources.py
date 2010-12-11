@@ -117,11 +117,11 @@ tree "dists/testing"
 };
 """
 
-    apt_trees["squeeze-volatile"]="""
-tree "dists/squeeze-volatile"
+    apt_trees["squeeze-updates"]="""
+tree "dists/squeeze-updates"
 {
-   FileList "/srv/ftp-master.debian.org/database/dists/squeeze-volatile_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/squeeze-volatile_$(SECTION)_source.list";
+   FileList "/srv/ftp-master.debian.org/database/dists/squeeze-updates_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/squeeze-updates_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "%(arch)s";
    BinOverride "override.squeeze.$(SECTION)";

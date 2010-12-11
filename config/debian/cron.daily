@@ -28,4 +28,6 @@ mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
 
 reports
 
+clean_debbugs
+
 ################################################################################

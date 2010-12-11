@@ -90,6 +90,13 @@ function sync_debbugs () {
     fi
 }
 
+function clean_debbugs () {
+    # Delete files older than 60 days
+    find $queuedir/bts_version_track_archive/ -mtime +60 -type f -delete
+    # Delete empty directories
+    find $queuedir/bts_version_track_archive/ -empty -type d -delete
+}
+
 function reports() {
     # Send a report on NEW/BYHAND packages
     log "Nagging ftpteam about NEW/BYHAND packages"
