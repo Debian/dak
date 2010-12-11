@@ -114,7 +114,7 @@ def is_unembargo(u):
 
    return ret
 
-def queue_unembargo(u, summary, short_summary, session=None):
+def do_unembargo(u, summary, short_summary, session=None):
     return package_to_queue(u, summary, short_summary,
                             get_policy_queue('disembargo'), chg, session,
                             announce=None)
@@ -127,7 +127,7 @@ def is_embargo(u):
    if get_policy_queue('embargo'):
        return True
 
-def queue_embargo(u, summary, short_summary, session=None):
+def do_embargo(u, summary, short_summary, session=None):
     return package_to_queue(u, summary, short_summary,
                             get_policy_queue('embargo'), chg, session,
                             announce=None)
