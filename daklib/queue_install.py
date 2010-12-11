@@ -256,8 +256,8 @@ QueueInfo = {
     "new": { "is": is_new, "process": acknowledge_new },
     "autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
     "byhand" : { "is": is_byhand, "process": do_byhand },
-    "embargoed" : { "is": is_embargoed, "process": do_embargoed },
-    "unembargoed" : { "is": is_unembargoed, "process": do_unembargoed },
+    "embargoed" : { "is": is_embargo, "process": do_embargo },
+    "unembargoed" : { "is": is_unembargo, "process": do_unembargo },
 }
 
 def determine_target(u):
