@@ -196,9 +196,11 @@ def main():
     suites = [suite.suite_name for suite in query_suites.all()]
     if not cnf.has_key('Filelist::Options::Suite'):
         cnf['Filelist::Options::Suite'] = ','.join(suites)
-    # we can ask the database for components if 'mixed' is gone
+    query_components = session.query(Component)
+    components = \
+        [component.component_name for component in query_components.all()]
     if not cnf.has_key('Filelist::Options::Component'):
-        cnf['Filelist::Options::Component'] = 'main,contrib,non-free'
+        cnf['Filelist::Options::Component'] = ','.join(components)
     query_architectures = session.query(Architecture)
     architectures = \
         [architecture.arch_string for architecture in query_architectures.all()]
