@@ -615,7 +615,7 @@ class BuildQueue(object):
         session.commit()
 
         for f in os.listdir(self.path):
-            if f.startswith('Packages') or f.startswith('Source') or f.startswith('Release'):
+            if f.startswith('Packages') or f.startswith('Source') or f.startswith('Release') or f.startswith('advisory'):
                 continue
 
             try:
