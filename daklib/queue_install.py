@@ -78,49 +78,59 @@ def package_to_queue(u, summary, short_summary, queue, chg, session, announce=No
 
 ################################################################################
 
-# TODO: This logic needs to be replaced with policy queues before we upgrade
-# security master
+def is_unembargo(u):
+   session = DBConn().session()
+   cnf = Config()
 
-#def is_unembargo(u):
-#    session = DBConn().session()
-#    cnf = Config()
-#
-#    q = session.execute("SELECT package FROM disembargo WHERE package = :source AND version = :version", u.pkg.changes)
-#    if q.rowcount > 0:
-#        session.close()
-#        return True
-#
-#    oldcwd = os.getcwd()
-#    os.chdir(cnf["Dir::Queue::Disembargo"])
-#    disdir = os.getcwd()
-#    os.chdir(oldcwd)
-#
-#    ret = False
-#
-#    if u.pkg.directory == disdir:
-#        if u.pkg.changes["architecture"].has_key("source"):
-#            session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)", u.pkg.changes)
-#            session.commit()
-#
-#            ret = True
-#
-#    session.close()
-#
-#    return ret
-#
-#def queue_unembargo(u, summary, short_summary, session=None):
-#    return package_to_queue(u, summary, short_summary, "Unembargoed",
-#                            perms=0660, build=True, announce='process-unchecked.accepted')
+   # If we dont have the disembargo queue we are not on security and so not interested
+   # in doing any security queue handling
+   if not get_policy_queue("disembargo"):
+       return False
+
+   q = session.execute("SELECT package FROM disembargo WHERE package = :source AND version = :version",
+                       {'source': u.pkg.changes["source"],
+                        'version': u.pkg.changes["version"]})
+   if q.rowcount > 0:
+       session.close()
+       return True
+
+   oldcwd = os.getcwd()
+   os.chdir(cnf["Dir::Queue::Disembargo"])
+   disdir = os.getcwd()
+   os.chdir(oldcwd)
+
+   ret = False
+
+   if u.pkg.directory == disdir:
+       if u.pkg.changes["architecture"].has_key("source"):
+           session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)",
+                           {'source': u.pkg.changes["source"],
+                            'version': u.pkg.changes["version"]})
+           session.commit()
+
+           ret = True
+
+   session.close()
+
+   return ret
+
+def queue_unembargo(u, summary, short_summary, session=None):
+    return package_to_queue(u, summary, short_summary,
+                            get_policy_queue('disembargo'), chg, session,
+                            announce=None)
 #
 #################################################################################
 #
-#def is_embargo(u):
-#    # if embargoed queues are enabled always embargo
-#    return True
-#
-#def queue_embargo(u, summary, short_summary, session=None):
-#    return package_to_queue(u, summary, short_summary, "Unembargoed",
-#                            perms=0660, build=True, announce='process-unchecked.accepted')
+def is_embargo(u):
+   # if we are the security archive, we always have a embargo queue and its the
+   # last in line, so if that exists, return true
+   if get_policy_queue('embargo'):
+       return True
+
+def queue_embargo(u, summary, short_summary, session=None):
+    return package_to_queue(u, summary, short_summary,
+                            get_policy_queue('embargo'), chg, session,
+                            announce=None)
 
 ################################################################################
 
@@ -246,6 +256,8 @@ QueueInfo = {
     "new": { "is": is_new, "process": acknowledge_new },
     "autobyhand" : { "is" : is_autobyhand, "process": do_autobyhand },
     "byhand" : { "is": is_byhand, "process": do_byhand },
+    "embargoed" : { "is": is_embargoed, "process": do_embargoed },
+    "unembargoed" : { "is": is_unembargoed, "process": do_unembargoed },
 }
 
 def determine_target(u):
@@ -254,7 +266,7 @@ def determine_target(u):
     # Statically handled queues
     target = None
 
-    for q in ["autobyhand", "byhand", "new"]:
+    for q in ["autobyhand", "byhand", "new", "unembargoed", "embargoed"]:
         if QueueInfo[q]["is"](u):
             target = q
             break
