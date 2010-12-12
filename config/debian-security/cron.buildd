@@ -2,48 +2,49 @@
 #
 # Executed after cron.unchecked
 
-ARCHS_oldstable="alpha amd64 arm hppa i386 ia64 mips mipsel powerpc sparc s390"
-ARCHS_stable="alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc sparc s390"
-ARCHS_testing="alpha amd64 armel hppa i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc sparc s390"
-DISTS="oldstable stable testing"
-SSH_SOCKET=~/.ssh/buildd.debian.org.socket
-
 set -e
-export SCRIPTVARS=/org/security-master.debian.org/dak/config/debian-security/vars
+set -u
+
+export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
+SSH_SOCKET=~/.ssh/buildd.debian.org.socket
+DISTS=$(dak admin s list)
 
 if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
 	exit 0
 fi
 
-cd $masterdir
-for d in $DISTS; do
-	eval SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
-	eval PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
+for dist in $DISTS; do
+	eval SOURCES_$dist=`stat -c "%Y" $base/buildd/$dist/Sources.gz`
+	eval PACKAGES_$dist=`stat -c "%Y" $base/buildd/$dist/Packages.gz`
 done
 
+cd $configdir
 apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
+
 dists=
-for d in $DISTS; do
-	eval NEW_SOURCES_$d=`stat -c "%Y" $base/buildd/$d/Sources.gz`
-	eval NEW_PACKAGES_$d=`stat -c "%Y" $base/buildd/$d/Packages.gz`
-	old=SOURCES_$d
-        new=NEW_$old
-        if [ ${!new} -gt ${!old} ]; then
+
+
+for dist in $DISTS; do
+	eval NEW_SOURCES_$dist=`stat -c "%Y" $base/buildd/$dist/Sources.gz`
+	eval NEW_PACKAGES_$dist=`stat -c "%Y" $base/buildd/$dist/Packages.gz`
+	old=SOURCES_$dist
+    new=NEW_$old
+    if [ ${!new} -gt ${!old} ]; then
 		if [ -z "$dists" ]; then
-			dists="$d"
+			dists="$dist"
 		else
-			dists="$dists $d"
+			dists="$dists $dist"
 		fi
 		continue
 	fi
-	old=PACKAGES_$d
+	old=PACKAGES_$dist
 	new=NEW_$old
-        if [ ${!new} -gt ${!old} ]; then
+    if [ ${!new} -gt ${!old} ]; then
 		if [ -z "$dists" ]; then
-			dists="$d"
+			dists="$dist"
 		else
-			dists="$dists $d"
+			dists="$dists $dist"
 		fi
 		continue
 	fi
@@ -61,4 +62,3 @@ if [ ! -z "$dists" ]; then
 		ssh wbadm@buildd -S $SSH_SOCKET trigger.security $d
 	done
 fi
-

@@ -1,31 +1,42 @@
-#! /bin/sh
+#! /bin/bash
 
 set -e
-export SCRIPTVARS=/org/security-master.debian.org/dak/config/debian-security/vars
+set -u
+
+export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
+
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
 
 report=$queuedir/REPORT
 reportdis=$queuedir/REPORT.disembargo
 timestamp=$(date "+%Y-%m-%d %H:%M")
 doanything=false
 
+cd $newstage
+changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+if [ -n "$changes" ]; then
+    echo "$timestamp": ${changes:-"Nothing to do in newstage"}  >> $report
+    dak process-upload -a -d "$newstage" >> $report
+fi
+
 cd $unchecked
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
 if [ -n "$changes" ]; then
-  doanything=true
-  echo "$timestamp": "$changes"  >> $report
-  dak process-unchecked -a $changes >> $report
-  echo "--" >> $report
+    doanything=true
+    echo "$timestamp": ${changes:-"Nothing to do in unchecked"}  >> $report
+    dak process-upload -a -d "$unchecked" >> $report
 fi
 
 cd $disembargo
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
 
 if [ -n "$changes" ]; then
-  doanything=true
-  echo "$timestamp": "$changes"  >> $reportdis
-  dak process-unchecked -a $changes >> $reportdis
-  echo "--" >> $reportdis
+    doanything=true
+    echo "$timestamp": ${changes:-"Nothing to do in disembargo"}  >> $reportdis
+    dak process-upload -a -d "$disembargo" >> $reportdis
 fi
 
 if ! $doanything; then
@@ -33,4 +44,4 @@ if ! $doanything; then
   exit 0
 fi
 
-sh $masterdir/cron.buildd
+$masterdir/cron.buildd

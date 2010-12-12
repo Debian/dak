@@ -21,8 +21,8 @@ logdir=$base/log/cron/
 
 queuedir=$base/queue/
 unchecked=$queuedir/unchecked/
+newstage=$queuedir/newstage/
 disembargo=$queuedir/unchecked-disembargo/
-accepted=$queuedir/accepted/
 done=$queuedir/done/
 
 mirrordir=$base/mirror/
@@ -36,7 +36,7 @@ uploaddir=/pub/UploadQueue/
 ftpgroup=debadmin
 
 components="main non-free contrib"
-suites="stable testing"
+suites=$(dak admin s list)
 override_types="deb dsc udeb"
 
 TMPDIR=${base}/tmp

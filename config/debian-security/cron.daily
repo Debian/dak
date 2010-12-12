@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Executed daily via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/security-master.debian.org/dak/config/debian-security/vars
+export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 ################################################################################
@@ -69,10 +69,9 @@ apt-ftparchive -q clean apt.conf.buildd
 symlinks -d -r $ftpdir
 
 pg_dump obscurity > /org/security-master.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
-
-# Vacuum the database
-set +e
-echo "VACUUM; VACUUM ANALYZE;" | psql obscurity 2>&1 | egrep -v "^NOTICE:  Skipping \"pg_.*only table or database owner can VACUUM it$|^VACUUM$"
-set -e
+find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mmin +720 |
+while read dumpname; do
+    bzip2 -9fv "$dumpname"
+done
 
 ################################################################################
