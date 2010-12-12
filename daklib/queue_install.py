@@ -251,6 +251,8 @@ def acknowledge_new(u, summary, short_summary, chg, session):
 
 ################################################################################
 
+# FIXME: queues should be able to get autobuild
+#        the current logic doesnt allow this, as buildd stuff is AFTER accept...
 # q-unapproved hax0ring
 QueueInfo = {
     "new": { "is": is_new, "process": acknowledge_new },
