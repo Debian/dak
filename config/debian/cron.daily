@@ -36,7 +36,6 @@ reports
 clean_debbugs
 
 # Generate list of override disparities
-dak override-disparity -f ${webdir}/override-disparity
-gzip -9 ${webdir}/override-disparity
+dak override-disparity | gzip -9 > ${webdir}/override-disparity.gz
 
 ################################################################################
