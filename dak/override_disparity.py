@@ -37,6 +37,7 @@ Generate a list of override disparities
 import os
 import sys
 import apt_pkg
+import yaml
 
 from daklib.config import Config
 from daklib.dbconn import *
@@ -48,11 +49,12 @@ def usage (exit_code=0):
     print """Generate a list of override disparities
 
        Usage:
-       dak override-disparity [ -p <package> ] [ -s <suite> ]
+       dak override-disparity [-f <file>] [ -p <package> ] [ -s <suite> ]
 
 Options:
 
   -h, --help                show this help and exit
+  -f, --file                store output into given file
   -p, --package             limit check on given package only
   -s, --suite               choose suite to look for (default: unstable)"""
 
@@ -61,6 +63,7 @@ Options:
 def main():
     cnf = Config()
     Arguments = [('h','help','Override-Disparity::Options::Help'),
+                 ('f','file','Override-Disparity::Options::File','HasArg'),
                  ('s','suite','Override-Disparity::Options::Suite','HasArg'),
                  ('p','package','Override-Disparity::Options::Package','HasArg')]
 
@@ -114,6 +117,11 @@ def main():
     packages = session.execute(query)
     session.commit()
 
+    out = {}
+    if Options.has_key('file'):
+        outfile = file(os.path.expanduser(Options['file']), 'w')
+    else:
+        outfile = sys.stdout
     for p in packages:
         priorities[p[0]] = [p[1], p[2], p[3], True]
     for d in sorted(depends.keys()):
@@ -121,13 +129,18 @@ def main():
             if priorities.has_key(d) and priorities.has_key(p):
                 if priorities[d][0] < priorities[p][0]:
                      if priorities[d][3]:
-                         print 'Package: ' + d
-                         print ' Priority: ' + priorities[d][1]
-                         print ' Maintainer: ' + priorities[d][2]
+                         if not out.has_key(d):
+                             out[d] = {}
+                         out[d]['priority'] = priorities[d][1]
+                         out[d]['maintainer'] = priorities[d][2]
+                         out[d]['priority'] = priorities[d][1]
                          priorities[d][3] = False
-                     print ' Dependency: ' + p
-                     print '  Priority: ' + priorities[p][1]
-                     print '  Maintainer: ' + priorities[p][2]
+                     if not out[d].has_key('dependency'):
+                         out[d]['dependency'] = {}
+                     out[d]['dependency'][p] = priorities[p][1]
+    yaml.dump(out, outfile, default_flow_style=False)
+    if Options.has_key('file'):
+        outfile.close()
 
 if __name__ == '__main__':
     main()
