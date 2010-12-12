@@ -87,9 +87,7 @@ def main():
     arches -= set(['source', 'all'])
     for arch in arches:
         for component in components:
-            temp_filename = utils.get_packages_from_ftp(cnf['Dir::Root'], suite, component, arch)
-            packages_file = utils.open_file(temp_filename)
-            Packages = apt_pkg.ParseTagFile(packages_file)
+            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite, component, arch)
             while Packages.Step():
                 package = Packages.Section.Find('Package')
                 dep_list = Packages.Section.Find('Depends')
@@ -101,7 +99,6 @@ def main():
                             if not depends.has_key(package):
                                 depends[package] = set()
                             depends[package].add(i[0])
-            os.unlink(temp_filename)
 
     priorities = {}
     query = """SELECT DISTINCT o.package, p.level, p.priority, m.name
@@ -115,7 +112,6 @@ def main():
                AND ba.suite = s.id
                AND p.level <> 0""" % suite
     packages = session.execute(query)
-    session.commit()
 
     out = {}
     if Options.has_key('file'):

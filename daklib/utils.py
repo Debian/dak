@@ -1576,10 +1576,24 @@ def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/w
 
 def get_packages_from_ftp(root, suite, component, architecture):
     """
-    Returns a filename containing data collected by aggregating Packages.gz files
-    gathered for each architecture.
+    Returns an object containing apt_pkg-parseable data collected by
+    aggregating Packages.gz files gathered for each architecture.
 
-    Returned file has to be manually deleted afterwards.
+    @type root: string
+    @param root: path to ftp archive root directory
+
+    @type suite: string
+    @param suite: suite to extract files from
+
+    @type component: string
+    @param component: component to extract files from
+
+    @type architecture: string
+    @param architecture: architecture to extract files from
+
+    @rtype: TagFile
+    @return: apt_pkg class containing package data
+
     """
     filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (root, suite, component, architecture)
     (fd, temp_file) = temp_filename()
@@ -1591,4 +1605,7 @@ def get_packages_from_ftp(root, suite, component, architecture):
         (result, output) = commands.getstatusoutput("gunzip -c %s >> %s" % (filename, temp_file))
         if (result != 0):
             fubar("Gunzip invocation failed!\n%s\n" % (output), result)
-    return temp_file
+    packages = open_file(temp_file)
+    Packages = apt_pkg.ParseTagFile(packages)
+    os.unlink(temp_file)
+    return Packages

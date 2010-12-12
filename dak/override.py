@@ -66,9 +66,7 @@ def check_override_compliance(package, priority, suite, cnf, session):
     arches -= set(["source", "all"])
     for arch in arches:
         for component in components:
-            temp_filename = utils.get_packages_from_ftp(cnf['Dir::Root'], suite, component, arch)
-            packages = utils.open_file(temp_filename)
-            Packages = apt_pkg.ParseTagFile(packages)
+            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite, component, arch)
             while Packages.Step():
                 package_name = Packages.Section.Find("Package")
                 dep_list = Packages.Section.Find("Depends")
@@ -82,7 +80,6 @@ def check_override_compliance(package, priority, suite, cnf, session):
                             for i in d:
                                 if i[0] == package:
                                     rdepends.add(package_name)
-            os.unlink(temp_filename)
 
     query = """SELECT o.package, p.level, p.priority
                FROM override o
