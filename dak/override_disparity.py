@@ -37,7 +37,6 @@ Generate a list of override disparities
 import os
 import sys
 import apt_pkg
-import commands
 
 from daklib.config import Config
 from daklib.dbconn import *
@@ -85,16 +84,7 @@ def main():
     arches -= set(['source', 'all'])
     for arch in arches:
         for component in components:
-            filename = '%s/dists/%s/%s/binary-%s/Packages.gz' % (cnf['Dir::Root'], suite, component, arch)
-            (fd, temp_filename) = utils.temp_filename()
-            (result, output) = commands.getstatusoutput('gunzip -c %s > %s' % (filename, temp_filename))
-            if (result != 0):
-                utils.fubar('Gunzip invocation failed!\n%s\n' % (output), result)
-            filename = '%s/dists/%s/%s/debian-installer/binary-%s/Packages.gz' % (cnf['Dir::Root'], suite, component, arch)
-            if os.path.exists(filename):
-                (result, output) = commands.getstatusoutput('gunzip -c %s >> %s' % (filename, temp_filename))
-                if (result != 0):
-                    utils.fubar('Gunzip invocation failed!\n%s\n' % (output), result)
+            temp_filename = utils.get_packages_from_ftp(cnf['Dir::Root'], suite, component, arch)
             packages_file = utils.open_file(temp_filename)
             Packages = apt_pkg.ParseTagFile(packages_file)
             while Packages.Step():

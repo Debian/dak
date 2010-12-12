@@ -1571,3 +1571,24 @@ def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/w
                 bugs.append(bug_no)
         wnpp[source] = bugs
     return wnpp
+
+################################################################################
+
+def get_packages_from_ftp(root, suite, component, architecture):
+    """
+    Returns a filename containing data collected by aggregating Packages.gz files
+    gathered for each architecture.
+
+    Returned file has to be manually deleted afterwards.
+    """
+    filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (root, suite, component, architecture)
+    (fd, temp_file) = temp_filename()
+    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_file))
+    if (result != 0):
+        fubar("Gunzip invocation failed!\n%s\n" % (output), result)
+    filename = "%s/dists/%s/%s/debian-installer/binary-%s/Packages.gz" % (root, suite, component, architecture)
+    if os.path.exists(filename):
+        (result, output) = commands.getstatusoutput("gunzip -c %s >> %s" % (filename, temp_file))
+        if (result != 0):
+            fubar("Gunzip invocation failed!\n%s\n" % (output), result)
+    return temp_file
