@@ -178,26 +178,14 @@ def new_accept(upload, dry_run, session):
         cnf = Config()
 
         (summary, short_summary) = upload.build_summaries()
+        destqueue = get_policy_queue('newstage', session)
 
-        # XXX: mhy: I think this is wrong as these are all attributes on the
-        # build and policy queues now
-        if cnf.FindB("Dinstall::SecurityQueueHandling"):
-            upload.dump_vars(cnf["Dir::Queue::Embargoed"])
-            upload.move_to_queue(get_policy_queue('embargoed'))
-            upload.queue_build("embargoed", cnf["Dir::Queue::Embargoed"])
-            # Check for override disparities
-            upload.Subst["__SUMMARY__"] = summary
-        else:
-            # Just a normal upload, accept it...
-            (summary, short_summary) = upload.build_summaries()
-            destqueue = get_policy_queue('newstage', session)
+        srcqueue = get_policy_queue_from_path(upload.pkg.directory, session)
 
-            srcqueue = get_policy_queue_from_path(upload.pkg.directory, session)
+        if not srcqueue:
+            # Assume NEW and hope for the best
+            srcqueue = get_policy_queue('new', session)
 
-            if not srcqueue:
-                # Assume NEW and hope for the best
-                srcqueue = get_policy_queue('new', session)
-
-            changes_to_queue(upload, srcqueue, destqueue, session)
+        changes_to_queue(upload, srcqueue, destqueue, session)
 
 __all__.append('new_accept')
