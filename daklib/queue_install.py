@@ -87,6 +87,12 @@ def is_unembargo(u):
    if not get_policy_queue("disembargo"):
        return False
 
+   # If we already are in newstage, then it means this just got passed through and accepted
+   # by a security team member. Don't try to accept it for disembargo again
+   dbc = get_dbchange(u.pkg.changes_file, session)
+   if dbc and dbc.in_queue.queue_name in [ 'newstage' ]:
+       return False
+
    q = session.execute("SELECT package FROM disembargo WHERE package = :source AND version = :version",
                        {'source': u.pkg.changes["source"],
                         'version': u.pkg.changes["version"]})
@@ -130,7 +136,14 @@ def do_unembargo(u, summary, short_summary, chg, session=None):
 def is_embargo(u):
    # if we are the security archive, we always have a embargo queue and its the
    # last in line, so if that exists, return true
+   # Of course do not return true when we accept from out of newstage, as that means
+   # it just left embargo and we want it in the archive
    if get_policy_queue('embargo'):
+       session = DBConn().session()
+       dbc = get_dbchange(u.pkg.changes_file, session)
+       if dbc and dbc.in_queue.queue_name in [ 'newstage' ]:
+           return False
+
        return True
 
 def do_embargo(u, summary, short_summary, chg, session=None):
