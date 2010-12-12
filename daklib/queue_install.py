@@ -115,9 +115,15 @@ def is_unembargo(u):
    return ret
 
 def do_unembargo(u, summary, short_summary, chg, session=None):
-    return package_to_queue(u, summary, short_summary,
-                            get_policy_queue('disembargo'), chg, session,
-                            announce=None)
+    polq=get_policy_queue('disembargo')
+    package_to_queue(u, summary, short_summary,
+                     polq, chg, session,
+                     announce=None)
+    for suite_name in u.pkg.changes["distribution"].keys():
+        suite = get_suite(suite_name, session)
+        for q in suite.copy_queues:
+            for f in u.pkg.files.keys():
+                os.symlink(os.path.join(polq.path, f), os.path.join(q.path, f))
 #
 #################################################################################
 #
@@ -128,9 +134,15 @@ def is_embargo(u):
        return True
 
 def do_embargo(u, summary, short_summary, chg, session=None):
-    return package_to_queue(u, summary, short_summary,
-                            get_policy_queue('embargo'), chg, session,
-                            announce=None)
+    polq=get_policy_queue('embargo')
+    package_to_queue(u, summary, short_summary,
+                     polq, chg, session,
+                     announce=None)
+    for suite_name in u.pkg.changes["distribution"].keys():
+        suite = get_suite(suite_name, session)
+        for q in suite.copy_queues:
+            for f in u.pkg.files.keys():
+                os.symlink(os.path.join(polq.path, f), os.path.join(q.path, f))
 
 ################################################################################
 
@@ -253,6 +265,7 @@ def acknowledge_new(u, summary, short_summary, chg, session):
 
 # FIXME: queues should be able to get autobuild
 #        the current logic doesnt allow this, as buildd stuff is AFTER accept...
+#        embargo/disembargo use a workaround due to this
 # q-unapproved hax0ring
 QueueInfo = {
     "new": { "is": is_new, "process": acknowledge_new },
