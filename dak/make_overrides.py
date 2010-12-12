@@ -141,7 +141,9 @@ def main ():
                 elif otype_name == "dsc":
                     suffix = ".src"
 
-                filename = os.path.join(cnf["Dir::Override"], "override.%s.%s%s" % (override_suite, component.component_name, suffix))
+                cname = component.component_name.replace('/', '_')
+                filename = os.path.join(cnf["Dir::Override"], "override.%s.%s%s" % (override_suite, cname, suffix))
+
                 output_file = utils.open_file(filename, 'w')
                 do_list(output_file, suite, component, otype, session)
                 output_file.close()
