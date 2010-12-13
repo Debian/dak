@@ -26,7 +26,7 @@ Utility functions for process-upload
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import os
-from shutil import copy
+from shutil import copyfile
 
 from daklib import utils
 from daklib.dbconn import *
@@ -130,7 +130,7 @@ def do_unembargo(u, summary, short_summary, chg, session=None):
         suite = get_suite(suite_name, session)
         for q in suite.copy_queues:
             for f in u.pkg.files.keys():
-                copy(os.path.join(polq.path, f), q.path)
+                copyfile(os.path.join(polq.path, f), q.path)
 #
 #################################################################################
 #
@@ -156,7 +156,7 @@ def do_embargo(u, summary, short_summary, chg, session=None):
         suite = get_suite(suite_name, session)
         for q in suite.copy_queues:
             for f in u.pkg.files.keys():
-                copy(os.path.join(polq.path, f), q.path)
+                copyfile(os.path.join(polq.path, f), q.path)
 
 ################################################################################
 
