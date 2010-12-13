@@ -120,14 +120,14 @@ def main():
     global Options, Logger, Queue, changes
     cnf = Config()
 
-    Arguments = [('h', "help",      "Security::Options::Help"),
-                 ('n', "no-action", "Security::Options::No-Action"),
-                 ('c', 'changesfile', "Security::Options::Changesfile"),
-                 ('s', "sudo", "Security-Install::Options::Sudo"),
-                 ('A', "approve", "Security-Install::Options::Approve")
+    Arguments = [('h', "Help",      "Security::Options::Help"),
+                 ('n', "No-Action", "Security::Options::No-Action"),
+                 ('c', 'Changesfile', "Security::Options::Changesfile"),
+                 ('s', "Sudo", "Security-Install::Options::Sudo"),
+                 ('A', "Approve", "Security-Install::Options::Approve")
                  ]
 
-    for i in ["help", "no-action", "changesfile", "sudo", "approve"]:
+    for i in ["Help", "No-Action", "Changesfile", "Sudo", "Approve"]:
         if not cnf.has_key("Security::Options::%s" % (i)):
             cnf["Security::Options::%s" % (i)] = ""
 
