@@ -78,7 +78,7 @@ def spawn(command):
 def sudo(arg, fn, exit):
     if Options["Sudo"]:
         os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H",
-                  "/usr/local/bin/dak", "new-security-install", "-"+arg, "--", advisory)
+                  "/usr/local/bin/dak", "new-security-install", "-"+arg)
     else:
         fn()
     if exit:
