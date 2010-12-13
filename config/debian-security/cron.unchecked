@@ -14,6 +14,7 @@ report=$queuedir/REPORT
 reportdis=$queuedir/REPORT.disembargo
 timestamp=$(date "+%Y-%m-%d %H:%M")
 doanything=false
+dopolicy=false
 
 # So first we should go and see if any process-policy action is done
 dak process-policy embargo | mail -a "X-Debian: DAK" -e -s "Automatically accepted from embargoed" team@security.debian.org -- -F "Debian FTP Masters" -f ftonaster@ftp-master.debian.org
@@ -26,6 +27,7 @@ dak process-policy disembargo | mail -a "X-Debian: DAK" -e -s "Automatically acc
 cd $newstage
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
 if [ -n "$changes" ]; then
+    dopolicy=true
     echo "$timestamp": ${changes:-"Nothing to do in newstage"}  >> $report
     rsync -a -q $newstage/. /srv/queued/ftpmaster/.
     dak process-upload -a -d "$newstage" >> $report
@@ -53,13 +55,16 @@ if ! $doanything; then
   exit 0
 fi
 
-dak dominate
-dak generate-filelist
-cd $configdir
-$configdir/map.sh
-apt-ftparchive generate apt.conf
-dak generate-releases
-/srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh
-sudo -u archvsync -H /home/archvsync/signal_security
+if [ "x${dopolicy}x" = "xtruex" ]; then
+    # We had something approved from a policy queue, push out new archive
+    dak dominate
+    dak generate-filelist
+    cd $configdir
+    $configdir/map.sh
+    apt-ftparchive generate apt.conf
+    dak generate-releases
+    /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh
+    sudo -u archvsync -H /home/archvsync/signal_security
+fi
 
 $masterdir/cron.buildd
