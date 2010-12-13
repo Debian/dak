@@ -61,6 +61,7 @@ done
 ################################################################################
 
 cd $masterdir
+dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 dak clean-queues
 dak clean-suites
 apt-ftparchive -q clean apt.conf
