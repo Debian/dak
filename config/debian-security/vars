@@ -26,7 +26,6 @@ disembargo=$queuedir/unchecked-disembargo/
 done=$queuedir/done/
 
 mirrordir=$base/mirror/
-newstage=$queuedir/newstage/
 exportdir=$base/export/
 exportpublic=$public/rsync/export/
 
