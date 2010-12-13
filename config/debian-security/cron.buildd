@@ -22,6 +22,15 @@ done
 cd $configdir
 apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
 
+cd  ${base}/buildd
+for dist in $DISTS; do
+    rm -f $dist/Release*
+    archs=$(dak admin s-a list-arch $dist | tr '\n' ' ')
+    apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $dist security" -o APT::FTPArchive::Release::Architectures="${archs}" release $dist > Release
+    gpg --secret-keyring ${base}/s3kr1t/dot-gnupg/secring.gpg --keyring ${base}/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o Release.gpg Release
+    mv Release* $dist/.
+done
+
 dists=
 
 
