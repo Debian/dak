@@ -11,12 +11,12 @@ SSH_SOCKET=~/.ssh/buildd.debian.org.socket
 DISTS=$(dak admin s list)
 
 if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
-	exit 0
+    exit 0
 fi
 
 for dist in $DISTS; do
-	eval SOURCES_$dist=`stat -c "%Y" $base/buildd/$dist/Sources.gz`
-	eval PACKAGES_$dist=`stat -c "%Y" $base/buildd/$dist/Packages.gz`
+    eval SOURCES_$dist=`stat -c "%Y" $base/buildd/$dist/Sources.gz`
+    eval PACKAGES_$dist=`stat -c "%Y" $base/buildd/$dist/Packages.gz`
 done
 
 cd $configdir
@@ -35,39 +35,39 @@ dists=
 
 
 for dist in $DISTS; do
-	eval NEW_SOURCES_$dist=`stat -c "%Y" $base/buildd/$dist/Sources.gz`
-	eval NEW_PACKAGES_$dist=`stat -c "%Y" $base/buildd/$dist/Packages.gz`
-	old=SOURCES_$dist
+    eval NEW_SOURCES_$dist=`stat -c "%Y" $base/buildd/$dist/Sources.gz`
+    eval NEW_PACKAGES_$dist=`stat -c "%Y" $base/buildd/$dist/Packages.gz`
+    old=SOURCES_$dist
     new=NEW_$old
     if [ ${!new} -gt ${!old} ]; then
-		if [ -z "$dists" ]; then
-			dists="$dist"
-		else
-			dists="$dists $dist"
-		fi
-		continue
-	fi
-	old=PACKAGES_$dist
-	new=NEW_$old
+        if [ -z "$dists" ]; then
+            dists="$dist"
+        else
+            dists="$dists $dist"
+        fi
+        continue
+    fi
+    old=PACKAGES_$dist
+    new=NEW_$old
     if [ ${!new} -gt ${!old} ]; then
-		if [ -z "$dists" ]; then
-			dists="$dist"
-		else
-			dists="$dists $dist"
-		fi
-		continue
-	fi
+        if [ -z "$dists" ]; then
+            dists="$dist"
+        else
+            dists="$dists $dist"
+        fi
+        continue
+    fi
 done
 
 if [ ! -z "$dists" ]; then
-	# setup ssh master process
-	ssh wbadm@buildd -S $SSH_SOCKET -MN 2> /dev/null &
-	SSH_PID=$!
-	while [ ! -S $SSH_SOCKET ]; do
-		sleep 1
-	done
-	trap 'kill -TERM $SSH_PID' 0
-	for d in $dists; do
-		ssh wbadm@buildd -S $SSH_SOCKET trigger.security $d
-	done
+    # setup ssh master process
+    ssh wbadm@buildd -S $SSH_SOCKET -MN 2> /dev/null &
+    SSH_PID=$!
+    while [ ! -S $SSH_SOCKET ]; do
+        sleep 1
+    done
+    trap 'kill -TERM $SSH_PID' 0
+    for d in $dists; do
+        ssh wbadm@buildd -S $SSH_SOCKET trigger.security $d
+    done
 fi
