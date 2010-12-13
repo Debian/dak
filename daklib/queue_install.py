@@ -130,7 +130,7 @@ def do_unembargo(u, summary, short_summary, chg, session=None):
         suite = get_suite(suite_name, session)
         for q in suite.copy_queues:
             for f in u.pkg.files.keys():
-                copyfile(os.path.join(polq.path, f), q.path)
+                copyfile(os.path.join(polq.path, f), os.path.join(q.path, f))
 #
 #################################################################################
 #
@@ -156,7 +156,7 @@ def do_embargo(u, summary, short_summary, chg, session=None):
         suite = get_suite(suite_name, session)
         for q in suite.copy_queues:
             for f in u.pkg.files.keys():
-                copyfile(os.path.join(polq.path, f), q.path)
+                copyfile(os.path.join(polq.path, f), os.path.join(q.path, f))
 
 ################################################################################
 
