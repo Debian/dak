@@ -8,7 +8,7 @@ masterdir=$base/dak/
 configdir=$masterdir/config/debian-security/
 webdir=$masterdir/web
 indices=$ftpdir/indices
-archs=$(dak admin a list)
+archs=$(dak admin a list | tr '\n' ' ')
 
 scriptdir=$base/scripts
 scriptsdir=$masterdir/scripts/debian/
