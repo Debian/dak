@@ -123,8 +123,8 @@ def main():
     Arguments = [('h', "Help",      "Security::Options::Help"),
                  ('n', "No-Action", "Security::Options::No-Action"),
                  ('c', 'Changesfile', "Security::Options::Changesfile"),
-                 ('s', "Sudo", "Security-Install::Options::Sudo"),
-                 ('A', "Approve", "Security-Install::Options::Approve")
+                 ('s', "Sudo", "Security::Options::Sudo"),
+                 ('A', "Approve", "Security::Options::Approve")
                  ]
 
     for i in ["Help", "No-Action", "Changesfile", "Sudo", "Approve"]:
