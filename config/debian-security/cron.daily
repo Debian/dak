@@ -60,12 +60,10 @@ done
 
 ################################################################################
 
-cd $masterdir
+cd $configdir
 dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 dak clean-queues
 dak clean-suites
-apt-ftparchive -q clean apt.conf
-apt-ftparchive -q clean apt.conf.buildd
 
 symlinks -d -r $ftpdir
 
@@ -74,5 +72,8 @@ find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*
 while read dumpname; do
     bzip2 -9fv "$dumpname"
 done
+
+apt-ftparchive -q clean apt.conf
+apt-ftparchive -q clean apt.conf.buildd
 
 ################################################################################
