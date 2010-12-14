@@ -67,4 +67,4 @@ if [ "x${dopolicy}x" = "xtruex" ]; then
     sudo -u archvsync -H /home/archvsync/signal_security
 fi
 
-$masterdir/cron.buildd
+$configdir/cron.buildd
