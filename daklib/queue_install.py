@@ -109,7 +109,7 @@ def is_unembargo(u):
 
    if u.pkg.directory == disdir:
        if u.pkg.changes["architecture"].has_key("source"):
-           session.execute("INSERT INTO disembargo (package, version) VALUES (:package, :version)",
+           session.execute("INSERT INTO disembargo (package, version) VALUES (:source, :version)",
                            {'source': u.pkg.changes["source"],
                             'version': u.pkg.changes["version"]})
            session.commit()
