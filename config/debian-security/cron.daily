@@ -63,6 +63,7 @@ done
 cd $configdir
 dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 dak clean-queues
+dak clean-queues -i $disembargo
 dak clean-suites
 
 symlinks -d -r $ftpdir
