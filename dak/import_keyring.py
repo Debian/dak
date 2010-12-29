@@ -198,14 +198,9 @@ def main():
                 session.flush()
 
         else:
-            if newuid and olduid != newuid:
-                if olduid != -1:
-                    changes.append((newuiduid, "Linked key: %s" % f))
-                    changes.append((newuiduid, "  (formerly belonging to %s)" % (db_uid_byid[olduid][0])))
-                else:
-                    changes.append((newuiduid, "Linked key: %s" % f))
-                    changes.append((newuiduid, "  (formerly unowned)"))
-
+            if newuid and olduid != newuid and olduid == -1:
+                changes.append((newuiduid, "Linked key: %s" % f))
+                changes.append((newuiduid, "  (formerly unowned)"))
                 session.execute("UPDATE fingerprint SET uid = :uid WHERE id = :fpr",
                                 {'uid': newuid, 'fpr': oldfid})
 
