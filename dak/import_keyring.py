@@ -245,7 +245,8 @@ def main():
                         session.flush()
 
                 else:
-                    print "Key %s exists in both %s and %s keyrings. Not demoting." % (oldkeyring.keyring_name,
+                    print "Key %s exists in both %s and %s keyrings. Not demoting." % (f,
+                                                                                       oldkeyring.keyring_name,
                                                                                        keyring.keyring_name)
 
     # All done!
