@@ -48,13 +48,29 @@ def get_fingerprint_info(session):
         fins[fingerprint] = (uid, fingerprint_id, keyring)
     return fins
 
+def list_uids(session, pattern):
+    sql_pattern = "%%%s%%" % pattern
+    message = "List UIDs matching pattern %s" % sql_pattern
+    message += "\n" + ("=" * len(message))
+    print message
+    uid_query = session.query(Uid).filter(Uid.uid.ilike(sql_pattern))
+    for uid in uid_query.all():
+	print "\nuid %s" % uid.uid
+	for fp in uid.fingerprint:
+	    print "    fingerprint %s" % fp.fingerprint
+	    keyring = "unknown"
+	    if fp.keyring:
+		keyring = fp.keyring.keyring_name
+	    print "        keyring %s" % keyring
+
 ################################################################################
 
 def usage (exit_code=0):
     print """Usage: dak import-keyring [OPTION]... [KEYRING]
   -h, --help                  show this help and exit.
   -L, --import-ldap-users     generate uid entries for keyring from LDAP
-  -U, --generate-users FMT    generate uid entries from keyring as FMT"""
+  -U, --generate-users FMT    generate uid entries from keyring as FMT
+  -l, --list-uids STRING      list all uids matching *STRING*"""
     sys.exit(exit_code)
 
 
@@ -67,9 +83,10 @@ def main():
     Arguments = [('h',"help","Import-Keyring::Options::Help"),
                  ('L',"import-ldap-users","Import-Keyring::Options::Import-Ldap-Users"),
                  ('U',"generate-users","Import-Keyring::Options::Generate-Users", "HasArg"),
+                 ('l',"list-uids","Import-Keyring::Options::List-UIDs", "HasArg"),
                 ]
 
-    for i in [ "help", "report-changes", "generate-users", "import-ldap-users" ]:
+    for i in [ "help", "report-changes", "generate-users", "import-ldap-users", "list-uids"]:
         if not cnf.has_key("Import-Keyring::Options::%s" % (i)):
             cnf["Import-Keyring::Options::%s" % (i)] = ""
 
@@ -82,14 +99,18 @@ def main():
     if Options["Help"]:
         usage()
 
+    ### Initialise
+    session = DBConn().session()
+
+    if Options["List-UIDs"]:
+	list_uids(session, Options["List-UIDs"])
+	sys.exit(0)
+
     if len(keyring_names) != 1:
         usage(1)
 
     ### Keep track of changes made
     changes = []   # (uid, changes strings)
-
-    ### Initialise
-    session = DBConn().session()
 
     ### Cache all the existing fingerprint entries
     db_fin_info = get_fingerprint_info(session)
