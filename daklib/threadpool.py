@@ -131,14 +131,15 @@ class ThreadPool:
         # Tell all the threads to quit
         self.__resizeLock.acquire()
         try:
-            self.__setThreadCountNolock(0)
-            self.__isJoining = True
-
             # Wait until all threads have exited
             if waitForThreads:
                 for t in self.__threads:
+                    t.goAway()
+                for t in self.__threads:
                     t.join()
                     del t
+            self.__setThreadCountNolock(0)
+            self.__isJoining = True
 
             # Reset the pool for potential reuse
             self.__isJoining = False
