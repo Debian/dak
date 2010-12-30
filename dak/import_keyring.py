@@ -70,7 +70,8 @@ def usage (exit_code=0):
   -h, --help                  show this help and exit.
   -L, --import-ldap-users     generate uid entries for keyring from LDAP
   -U, --generate-users FMT    generate uid entries from keyring as FMT
-  -l, --list-uids STRING      list all uids matching *STRING*"""
+  -l, --list-uids STRING      list all uids matching *STRING*
+  -n, --no-action             don't change database"""
     sys.exit(exit_code)
 
 
@@ -84,9 +85,11 @@ def main():
                  ('L',"import-ldap-users","Import-Keyring::Options::Import-Ldap-Users"),
                  ('U',"generate-users","Import-Keyring::Options::Generate-Users", "HasArg"),
                  ('l',"list-uids","Import-Keyring::Options::List-UIDs", "HasArg"),
+                 ('n',"no-action","Import-Keyring::Options::No-Action"),
                 ]
 
-    for i in [ "help", "report-changes", "generate-users", "import-ldap-users", "list-uids"]:
+    for i in [ "help", "report-changes", "generate-users",
+	    "import-ldap-users", "list-uids", "no-action" ]:
         if not cnf.has_key("Import-Keyring::Options::%s" % (i)):
             cnf["Import-Keyring::Options::%s" % (i)] = ""
 
@@ -271,7 +274,10 @@ def main():
                                                                                        keyring.keyring_name)
 
     # All done!
-    session.commit()
+    if Options["No-Action"]:
+	session.rollback()
+    else:
+	session.commit()
 
     # Print a summary
     changesd = {}
