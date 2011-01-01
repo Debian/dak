@@ -121,7 +121,7 @@ def main ():
         if q.rowcount == 0:
             continue
         if q.rowcount > 1:
-            utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.ntuples()))
+            utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.rowcount))
 
         r = q.fetchone()
         if packagetype == 'binary':
