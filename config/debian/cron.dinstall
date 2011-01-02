@@ -510,6 +510,9 @@ GO=(
 )
 stage $GO
 
+# we need to wait for the background processes before the end of dinstall
+wait
+
 log "Daily cron scripts successful, all done"
 
 exec > "$logdir/afterdinstall.log" 2>&1
