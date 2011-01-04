@@ -166,7 +166,7 @@ def do_pkg(changes_file):
     sources.add(htmlname)
 
     htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
-    if os.path.exists(htmlfile) and
+    if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
             session.close()
             return
