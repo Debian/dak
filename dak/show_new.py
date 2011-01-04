@@ -162,6 +162,14 @@ def do_pkg(changes_file):
     origchanges = os.path.abspath(u.pkg.changes_file)
     files = u.pkg.files
     changes = u.pkg.changes
+    htmlname = changes["source"] + "_" + changes["version"] + ".html"
+    htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
+
+    if os.path.exists(htmlfile):
+        if os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
+            sources.add(htmlname)
+            session.close()
+            return
 
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
@@ -174,7 +182,6 @@ def do_pkg(changes_file):
 
     new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, 0, session)
 
-    htmlname = changes["source"] + "_" + changes["version"] + ".html"
     sources.add(htmlname)
     # do not generate html output if that source/version already has one.
     if not os.path.exists(os.path.join(cnf["Show-New::HTMLPath"],htmlname)):
