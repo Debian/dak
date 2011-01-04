@@ -381,9 +381,7 @@ GO=(
 )
 stage $GO
 
-rm -f "$LOCK_ACCEPTED"
-rm -f "$LOCK_NEW"
-rm -f "${LOCK_DAILY}"
+remove_locks
 
 ts "locked part finished"
 state "postlock"

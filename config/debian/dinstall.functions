@@ -4,10 +4,14 @@ function ts() {
         echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
 }
 
-# Cleanup actions
+# Remove all locks
+function remove_locks() {
+    rm -f $LOCK_DAILY $LOCK_ACCEPTED $LOCK_NEW
+}
+
+# trap handler for cleaning up on signal / error
 function cleanup() {
-	rm -f ${LOCK_DAILY}
-	rm -f ${LOCK_ACCEPTED}
+    remove_locks
 }
 
 # If we error out this one is called, *FOLLOWED* by cleanup above
