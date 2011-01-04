@@ -163,11 +163,11 @@ def do_pkg(changes_file):
     files = u.pkg.files
     changes = u.pkg.changes
     htmlname = changes["source"] + "_" + changes["version"] + ".html"
-    htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
+    sources.add(htmlname)
 
-    if os.path.exists(htmlfile):
-        if os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
-            sources.add(htmlname)
+    htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
+    if os.path.exists(htmlfile) and
+        os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
             session.close()
             return
 
@@ -182,30 +182,27 @@ def do_pkg(changes_file):
 
     new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, 0, session)
 
-    sources.add(htmlname)
-    # do not generate html output if that source/version already has one.
-    if not os.path.exists(os.path.join(cnf["Show-New::HTMLPath"],htmlname)):
-        outfile = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
+    outfile = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
 
-        filestoexamine = []
-        for pkg in new.keys():
-            for fn in new[pkg]["files"]:
-                filestoexamine.append(fn)
+    filestoexamine = []
+    for pkg in new.keys():
+        for fn in new[pkg]["files"]:
+            filestoexamine.append(fn)
 
-        print >> outfile, html_header(changes["source"], filestoexamine)
+    print >> outfile, html_header(changes["source"], filestoexamine)
 
-        check_valid(new, session)
-        distribution = changes["distribution"].keys()[0]
-        print >> outfile, examine_package.display_changes(distribution, changes_file)
+    check_valid(new, session)
+    distribution = changes["distribution"].keys()[0]
+    print >> outfile, examine_package.display_changes(distribution, changes_file)
 
-        for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-            print >> outfile, examine_package.check_dsc(distribution, fn, session)
-        for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-            print >> outfile, examine_package.check_deb(distribution, fn, session)
+    for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
+        print >> outfile, examine_package.check_dsc(distribution, fn, session)
+    for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
+        print >> outfile, examine_package.check_deb(distribution, fn, session)
 
-        print >> outfile, html_footer()
+    print >> outfile, html_footer()
 
-	outfile.close()
+    outfile.close()
     session.close()
 
 ################################################################################
