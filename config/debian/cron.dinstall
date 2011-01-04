@@ -381,9 +381,7 @@ GO=(
 )
 stage $GO
 
-rm -f "$LOCK_ACCEPTED"
-rm -f "$LOCK_NEW"
-rm -f "${LOCK_DAILY}"
+remove_locks
 
 ts "locked part finished"
 state "postlock"
@@ -509,6 +507,9 @@ GO=(
     ERR="false"
 )
 stage $GO
+
+# we need to wait for the background processes before the end of dinstall
+wait
 
 log "Daily cron scripts successful, all done"
 

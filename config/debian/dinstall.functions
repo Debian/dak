@@ -4,10 +4,14 @@ function ts() {
         echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
 }
 
-# Cleanup actions
+# Remove all locks
+function remove_locks() {
+    rm -f $LOCK_DAILY $LOCK_ACCEPTED $LOCK_NEW
+}
+
+# trap handler for cleaning up on signal / error
 function cleanup() {
-	rm -f ${LOCK_DAILY}
-	rm -f ${LOCK_ACCEPTED}
+    remove_locks
 }
 
 # If we error out this one is called, *FOLLOWED* by cleanup above
@@ -22,7 +26,11 @@ function onerror() {
     fi
     subject="${subject} dinstall error at ${ERRDATE} in ${STAGEFILE} - (Be quiet, Brain, or I'll stab you with a Q-tip)"
 
-    cat "${STAGEFILE}.log" | mail -s "${subject}" -a "X-Debian: DAK" cron@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+    if [ -r "${STAGEFILE}.log" ]; then
+        cat "${STAGEFILE}.log"
+    else
+        echo "file ${STAGEFILE}.log does not exist, sorry"
+    fi | mail -s "${subject}" -a "X-Debian: DAK" cron@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
 }
 
 ########################################################################
