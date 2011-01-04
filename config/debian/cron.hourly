@@ -12,7 +12,13 @@ dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
 dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates
 dak show-deferred > ${webdir}/deferred.html
-dak show-new > /dev/null
+
+# do not run show-new and other stuff in parallel
+LOCKFILE="$lockdir/unchecked.lock"
+if lockfile -r16 $LOCKFILE 2> /dev/null; then
+    dak show-new > /dev/null
+    rm -f $LOCKFILE
+fi
 
 cd $webdir
 cat removals-20*.txt > removals-full.txt
