@@ -1340,15 +1340,12 @@ class Keyring(object):
                 self.keys[key] = {"email": addr}
                 if name != "":
                     self.keys[key]["name"] = name
-                self.keys[key]["aliases"] = [name]
                 self.keys[key]["fingerprints"] = []
                 signingkey = True
             elif key and field[0] == "sub" and len(field) >= 12:
                 signingkey = ("s" in field[11])
             elif key and field[0] == "uid":
                 (name, addr) = email.Utils.parseaddr(field[9])
-                if name and name not in self.keys[key]["aliases"]:
-                    self.keys[key]["aliases"].append(name)
             elif signingkey and field[0] == "fpr":
                 self.keys[key]["fingerprints"].append(field[9])
                 self.fpr_lookup[field[9]] = key
