@@ -1317,9 +1317,17 @@ class Keyring(object):
             esclist[x] = "%c" % (int(esclist[x][2:],16))
         return "".join(esclist)
 
-    def load_keys(self, keyring):
+    def parse_address(self, uid):
+        """parses uid and returns a tuple of real name and email address"""
         import email.Utils
+        (name, address) = email.Utils.parseaddr(uid)
+        name = re.sub(r"\s*[(].*[)]", "", name)
+        name = self.de_escape_gpg_str(name)
+        if name == "":
+            name = uid
+        return (name, address)
 
+    def load_keys(self, keyring):
         if not self.keyring_id:
             raise Exception('Must be initialized with database information')
 
@@ -1331,21 +1339,20 @@ class Keyring(object):
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
-                (name, addr) = email.Utils.parseaddr(field[9])
-                name = re.sub(r"\s*[(].*[)]", "", name)
-                if name == "" or addr == "" or "@" not in addr:
-                    name = field[9]
-                    addr = "invalid-uid"
-                name = self.de_escape_gpg_str(name)
-                self.keys[key] = {"email": addr}
-                if name != "":
+                self.keys[key] = {}
+                (name, addr) = self.parse_address(field[9])
+                if "@" in addr:
+                    self.keys[key]["email"] = addr
                     self.keys[key]["name"] = name
                 self.keys[key]["fingerprints"] = []
                 signingkey = True
             elif key and field[0] == "sub" and len(field) >= 12:
                 signingkey = ("s" in field[11])
             elif key and field[0] == "uid":
-                (name, addr) = email.Utils.parseaddr(field[9])
+                (name, addr) = self.parse_address(field[9])
+                if "email" not in self.keys[key] and "@" in addr:
+                    self.keys[key]["email"] = addr
+                    self.keys[key]["name"] = name
             elif signingkey and field[0] == "fpr":
                 self.keys[key]["fingerprints"].append(field[9])
                 self.fpr_lookup[field[9]] = key
@@ -1393,7 +1400,7 @@ class Keyring(object):
         byname = {}
         any_invalid = False
         for x in self.keys.keys():
-            if self.keys[x]["email"] == "invalid-uid":
+            if "email" not in self.keys[x]:
                 any_invalid = True
                 self.keys[x]["uid"] = format % "invalid-uid"
             else:
