@@ -57,6 +57,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # in the database
 from config import Config
 from textutils import fix_maintainer
+from dak_exceptions import NoSourceFieldError
 
 ################################################################################
 
@@ -2398,7 +2399,7 @@ def add_deb_to_db(u, filename, session=None):
     bin_sources = get_sources_from_name(entry["source package"], entry["source version"], session=session)
     if len(bin_sources) != 1:
         raise NoSourceFieldError, "Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
-                                  (bin.package, bin.version, bin.architecture.arch_string,
+                                  (bin.package, bin.version, entry["architecture"],
                                    filename, bin.binarytype, u.pkg.changes["fingerprint"])
 
     bin.source_id = bin_sources[0].source_id
