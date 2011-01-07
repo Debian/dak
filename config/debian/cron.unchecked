@@ -94,7 +94,7 @@ export LC_ALL=C
 #rm -f "$LOCK_NEW"
 
 # only run one cron.unchecked
-lockfile -r3 $LOCKFILE || exit 0
+lockfile -r8 $LOCKFILE || exit 0
 trap cleanup 0
 
 do_newstage
