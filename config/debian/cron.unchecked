@@ -94,7 +94,10 @@ export LC_ALL=C
 #rm -f "$LOCK_NEW"
 
 # only run one cron.unchecked
-lockfile -r8 $LOCKFILE || exit 0
+if ! lockfile -r8 $LOCKFILE; then
+    echo "aborting cron.unchecked because $LOCKFILE has already been locked"
+    exit 0
+fi
 trap cleanup 0
 
 do_newstage
