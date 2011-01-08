@@ -26,9 +26,9 @@ class ImportTestCase(DakTestCase):
 
     def test_dir_names(self):
         copier = InstallerCopier(version = '20110106')
-        self.assertEqual('fixtures/ftp/dists/unstable/main',
+        self.assertEqual('tests/fixtures/ftp/dists/unstable/main',
                 copier.source_dir)
-        self.assertEqual('fixtures/ftp/dists/testing/main',
+        self.assertEqual('tests/fixtures/ftp/dists/testing/main',
                 copier.dest_dir)
 
     def missing_source(self):
@@ -46,11 +46,11 @@ class ImportTestCase(DakTestCase):
         self.assertEqual(['amd64'], copier.architectures)
         self.assertEqual(['i386'], copier.skip_architectures)
         self.assertEqual( \
-            [('fixtures/ftp/dists/unstable/main/installer-amd64/20110106', \
-              'fixtures/ftp/dists/testing/main/installer-amd64/20110106'),], \
+            [('tests/fixtures/ftp/dists/unstable/main/installer-amd64/20110106', \
+              'tests/fixtures/ftp/dists/testing/main/installer-amd64/20110106'),], \
             copier.trees_to_copy)
         self.assertEqual([('20110106', \
-            'fixtures/ftp/dists/testing/main/installer-amd64/current')], \
+            'tests/fixtures/ftp/dists/testing/main/installer-amd64/current')], \
             copier.symlinks_to_create)
         self.assertEqual('''
 Will copy installer version 20110106 from suite unstable to
