@@ -144,6 +144,8 @@ def init():
          "Add a user to the archive"),
         ("make-changelog",
          "Generate changelog between two suites"),
+        ("copy-installer",
+         "Copies the installer from one suite to another"),
         ]
     return functionality
 
