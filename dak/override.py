@@ -49,7 +49,7 @@ def usage (exit_code=0):
 Make microchanges or microqueries of the binary overrides
 
   -h, --help                 show this help and exit
-  -c, --check                chech override compliance
+  -c, --check                check override compliance
   -d, --done=BUG#            send priority/section change as closure to bug#
   -n, --no-action            don't do anything
   -s, --suite                specify the suite to use
