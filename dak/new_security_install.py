@@ -168,7 +168,10 @@ def main():
     # Yes, we could do this inside do_Approve too. But this way we see who exactly
     # called it (ownership of the file)
     dbchange=get_dbchange(os.path.basename(changes[0]), session)
-    acceptfilename="%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), dbchange.source, dbchange.version)
+    # strip epoch from version
+    version=dbchange.version
+    version=version[(version.find(':')+1):]
+    acceptfilename="%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), dbchange.source, version)
     if Options["No-Action"]:
         print "Would create %s now and then go on to accept this package, but No-Action is set" % (acceptfilename)
         sys.exit(0)
