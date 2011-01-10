@@ -146,6 +146,8 @@ def init():
          "Generate changelog between two suites"),
         ("copy-installer",
          "Copies the installer from one suite to another"),
+        ("override-disparity",
+         "Generate a list of override disparities"),
         ]
     return functionality
 

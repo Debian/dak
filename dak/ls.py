@@ -150,7 +150,10 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
    AND s.file = f.id AND f.location = l.id AND l.component = c.id
    AND s.maintainer = m.id %s
 """ % (comparison_operator, con_suites), {'package': package})
-            ql.extend(q.fetchall())
+            if not Options["Architecture"] or con_architectures:
+                ql.extend(q.fetchall())
+            else:
+                ql = q.fetchall()
         d = {}
         highver = {}
         for i in ql:
