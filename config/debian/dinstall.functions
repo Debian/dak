@@ -207,7 +207,6 @@ function mpfm() {
 function packages() {
     log "Generating Packages and Sources files"
     cd $configdir
-    GZIP='--rsyncable' ; export GZIP
     #apt-ftparchive generate apt.conf
     dak generate-packages-sources
 }
@@ -258,13 +257,13 @@ function mklslar() {
         mv -f ${FILENAME}.gz ${FILENAME}.old.gz
         mv -f .${FILENAME}.new ${FILENAME}
         rm -f ${FILENAME}.patch.gz
-        zcat ${FILENAME}.old.gz | diff -u - ${FILENAME} | gzip --rsyncable -9cfn - >${FILENAME}.patch.gz
+        zcat ${FILENAME}.old.gz | diff -u - ${FILENAME} | gzip -9cfn - >${FILENAME}.patch.gz
         rm -f ${FILENAME}.old.gz
     else
         mv -f .${FILENAME}.new ${FILENAME}
     fi
 
-    gzip --rsyncable -9cfN ${FILENAME} >${FILENAME}.gz
+    gzip -9cfN ${FILENAME} >${FILENAME}.gz
     rm -f ${FILENAME}
 }
 
@@ -279,7 +278,7 @@ function mkmaintainers() {
     if ! cmp -s .new-maintainers Maintainers || [ ! -f Maintainers ]; then
 	    log "installing Maintainers ... "
 	    mv -f .new-maintainers Maintainers
-	    gzip --rsyncable -9v <Maintainers >.new-maintainers.gz
+	    gzip -9v <Maintainers >.new-maintainers.gz
 	    mv -f .new-maintainers.gz Maintainers.gz
     else
         rm -f .new-maintainers
@@ -297,7 +296,7 @@ function mkuploaders() {
     if ! cmp -s .new-uploaders Uploaders || [ ! -f Uploaders ]; then
 	    log "installing Uploaders ... "
 	    mv -f .new-uploaders Uploaders
-	    gzip --rsyncable -9v <Uploaders >.new-uploaders.gz
+	    gzip -9v <Uploaders >.new-uploaders.gz
 	    mv -f .new-uploaders.gz Uploaders.gz
     else
         rm -f .new-uploaders
@@ -348,7 +347,7 @@ function mkfilesindices() {
         cd $base/ftp
         find ./dists -maxdepth 1 \! -type d
         find ./dists \! -type d | grep "/source/"
-    ) | sort -u | gzip --rsyncable -9 > source.list.gz
+    ) | sort -u | gzip -9 > source.list.gz
 
     log "Generating arch lists"
 
@@ -360,7 +359,7 @@ function mkfilesindices() {
             cd $base/ftp
             find ./dists -maxdepth 1 \! -type d
             find ./dists \! -type d | grep -E "(proposed-updates.*_$a.changes$|/main/disks-$a/|/main/installer-$a/|/Contents-$a|/binary-$a/)"
-        ) | sort -u | gzip --rsyncable -9 > arch-$a.list.gz
+        ) | sort -u | gzip -9 > arch-$a.list.gz
     done
 
     log "Generating suite lists"
@@ -383,7 +382,7 @@ function mkfilesindices() {
                 done
             )
             suite_list $id | tr -d ' ' | sed 's,^/srv/ftp-master.debian.org/ftp,.,'
-        ) | sort -u | gzip --rsyncable -9 > suite-${suite}.list.gz
+        ) | sort -u | gzip -9 > suite-${suite}.list.gz
     done
 
     log "Finding everything on the ftp site to generate sundries"
@@ -403,7 +402,7 @@ function mkfilesindices() {
 
     (cd $base/ftp/
 	    for dist in sid squeeze; do
-		    find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip --rsyncable -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
+		    find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
 	    done
     )
 
@@ -422,7 +421,7 @@ function mkchecksums() {
 
     cd "$ftpdir"
     ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
-    ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n --rsyncable > ${md5list}.gz
+    ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
     ${bindir}/dsync-flist -q link-dups $dsynclist || true
 }
 
