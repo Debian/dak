@@ -2322,6 +2322,9 @@ sub send_mail($$$) {
   my $subject = shift;
   my $text    = shift;
 
+# security is special
+  $addr = 'team@security.debian.org';
+
   my $package =
     keys %main::packages ? join( ' ', keys %main::packages ) : "";
 

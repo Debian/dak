@@ -1,22 +1,51 @@
 # locations used by many scripts
 
-base=/org/security.debian.org
+base=/srv/security-master.debian.org
+public=/srv/security.debian.org
+bindir=$base/bin
 ftpdir=$base/ftp/
-masterdir=$base/dak/config/debian-security/
+masterdir=$base/dak/
+configdir=$masterdir/config/debian-security/
+webdir=$masterdir/web
+indices=$ftpdir/indices
+archs=$(dak admin a list | tr '\n' ' ')
+
+scriptdir=$base/scripts
+scriptsdir=$masterdir/scripts/debian/
+dbdir=$base/dak-database/
+lockdir=$base/lock
+stagedir=$lockdir/stages
 overridedir=$base/override
+extoverridedir=$scriptdir/external-overrides
+logdir=$base/log/cron/
+
 queuedir=$base/queue/
 unchecked=$queuedir/unchecked/
+newstage=$queuedir/newstage/
 disembargo=$queuedir/unchecked-disembargo/
-accepted=$queuedir/accepted/
 done=$queuedir/done/
+
+mirrordir=$base/mirror/
+exportdir=$base/export/
+exportpublic=$public/rsync/export/
 
 uploadhost=ftp-master.debian.org
 uploaddir=/pub/UploadQueue/
 
+ftpgroup=debadmin
+
 components="main non-free contrib"
-suites="oldstable stable testing"
+suites=$(dak admin s list)
 override_types="deb dsc udeb"
+
+TMPDIR=${base}/tmp
 
 PATH=$masterdir:$PATH
 umask 022
+unset CDPATH
 
+# Set the database variables
+eval $(dak admin config db-shell)
+
+PATH=$masterdir:$PATH
+umask 022

@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Executed weekly via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
+export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 ################################################################################
@@ -11,8 +11,9 @@ export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
 # Weekly generation of release files, then pushing mirrors.
 # Used as we have a "Valid-until" field in our release files of 10 days. In case
 # we dont have a security update in that time...
-cd $masterdir
+cd $configdir
 dak generate-releases
+/srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh
 sudo -u archvsync -H /home/archvsync/signal_security
 
 

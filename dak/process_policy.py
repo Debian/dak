@@ -54,7 +54,7 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, session):
     for comm in [ x for x in os.listdir(dir) if x.startswith(opref) ]:
         lines = open("%s/%s" % (dir, comm)).readlines()
         if len(lines) == 0 or lines[0] != line + "\n": continue
-        changes_files = [ x for x in os.listdir(".") if x.startswith(comm[7:]+"_")
+        changes_files = [ x for x in os.listdir(".") if x.startswith(comm[len(opref):]+"_")
                                 and x.endswith(".changes") ]
         changes_files = sort_changes(changes_files, session)
         for f in changes_files:
@@ -158,6 +158,7 @@ def main():
     # The comments stuff relies on being in the right directory
     os.chdir(pq.path)
     do_comments(commentsdir, pq, "ACCEPT.", "ACCEPTED.", "OK", comment_accept, session)
+    do_comments(commentsdir, pq, "ACCEPTED.", "ACCEPTED.", "OK", comment_accept, session)
     do_comments(commentsdir, pq, "REJECT.", "REJECTED.", "NOTOK", comment_reject, session)
 
 
