@@ -45,7 +45,7 @@ from tempfile import mkstemp, mkdtemp
 from inspect import getargspec
 
 import sqlalchemy
-from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer
 from sqlalchemy.orm import sessionmaker, mapper, relation
 from sqlalchemy import types as sqltypes
 
@@ -2760,25 +2760,21 @@ class DBConn(object):
             self.__createconn()
 
     def __setuptables(self):
-        tables = (
+        tables_with_primary = (
             'architecture',
             'archive',
             'bin_associations',
             'binaries',
             'binary_acl',
             'binary_acl_map',
-            'bin_contents',
             'build_queue',
             'build_queue_files',
+            'changelogs_text',
             'component',
             'config',
             'changes_pending_binaries',
             'changes_pending_files',
-            'changes_pending_files_map',
             'changes_pending_source',
-            'changes_pending_source_files',
-            'changes_pool_files',
-            'deb_contents',
             'dsc_files',
             'files',
             'fingerprint',
@@ -2788,7 +2784,6 @@ class DBConn(object):
             'location',
             'maintainer',
             'new_comments',
-            'override',
             'override_type',
             'pending_bin_contents',
             'policy_queue',
@@ -2800,15 +2795,33 @@ class DBConn(object):
             'src_format',
             'src_uploaders',
             'suite',
-            'suite_architectures',
-            'suite_src_formats',
-            'suite_build_queue_copy',
-            'udeb_contents',
             'uid',
             'upload_blocks',
         )
 
-        for table_name in tables:
+        tables_no_primary = (
+            'bin_contents',
+            'changes_pending_files_map',
+            'changes_pending_source_files',
+            'changes_pool_files',
+            'deb_contents',
+            'override',
+            'suite_architectures',
+            'suite_src_formats',
+            'suite_build_queue_copy',
+            'udeb_contents',
+        )
+
+        # Sqlalchemy fails to reflect the SERIAL type correctly and that
+        # is why we have to use a workaround. It can be removed as soon
+        # as we switch to version 0.6.
+        for table_name in tables_with_primary:
+            table = Table(table_name, self.db_meta, \
+                Column('id', Integer, primary_key = True), \
+                autoload=True, useexisting=True)
+            setattr(self, 'tbl_%s' % table_name, table)
+
+        for table_name in tables_no_primary:
             table = Table(table_name, self.db_meta, autoload=True)
             setattr(self, 'tbl_%s' % table_name, table)
 
