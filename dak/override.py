@@ -49,21 +49,76 @@ def usage (exit_code=0):
 Make microchanges or microqueries of the binary overrides
 
   -h, --help                 show this help and exit
+  -c, --check                chech override compliance
   -d, --done=BUG#            send priority/section change as closure to bug#
   -n, --no-action            don't do anything
   -s, --suite                specify the suite to use
 """
     sys.exit(exit_code)
 
+def check_override_compliance(package, priority, suite, cnf, session):
+    print "Checking compliance with related overrides..."
+
+    depends = set()
+    rdepends = set()
+    components = cnf.ValueList("Suite::%s::Components" % suite)
+    arches = set([x.arch_string for x in get_suite_architectures(suite)])
+    arches -= set(["source", "all"])
+    for arch in arches:
+        for component in components:
+            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite, component, arch)
+            while Packages.Step():
+                package_name = Packages.Section.Find("Package")
+                dep_list = Packages.Section.Find("Depends")
+                if dep_list:
+                    if package_name == package:
+                        for d in apt_pkg.ParseDepends(dep_list):
+                            for i in d:
+                                depends.add(i[0])
+                    else:
+                        for d in apt_pkg.ParseDepends(dep_list):
+                            for i in d:
+                                if i[0] == package:
+                                    rdepends.add(package_name)
+
+    query = """SELECT o.package, p.level, p.priority
+               FROM override o
+               JOIN suite s ON s.id = o.suite
+               JOIN priority p ON p.id = o.priority
+               WHERE s.suite_name = '%s'
+               AND o.package in ('%s')""" \
+               % (suite, "', '".join(depends.union(rdepends)))
+    packages = session.execute(query)
+
+    excuses = []
+    for p in packages:
+        if p[0] == package or not p[1]:
+            continue
+        if p[0] in depends:
+            if priority.level < p[1]:
+                excuses.append("%s would have priority %s, its dependency %s has priority %s" \
+                      % (package, priority.priority, p[0], p[2]))
+        if p[0] in rdepends:
+            if priority.level > p[1]:
+                excuses.append("%s would have priority %s, its reverse dependency %s has priority %s" \
+                      % (package, priority.priority, p[0], p[2]))
+
+    if excuses:
+        for ex in excuses:
+            print ex
+    else:
+        print "Proposed override change complies with Debian Policy"
+
 def main ():
     cnf = Config()
 
     Arguments = [('h',"help","Override::Options::Help"),
+                 ('c',"check","Override::Options::Check"),
                  ('d',"done","Override::Options::Done", "HasArg"),
                  ('n',"no-action","Override::Options::No-Action"),
                  ('s',"suite","Override::Options::Suite", "HasArg"),
                  ]
-    for i in ["help", "no-action"]:
+    for i in ["help", "check", "no-action"]:
         if not cnf.has_key("Override::Options::%s" % (i)):
             cnf["Override::Options::%s" % (i)] = ""
     if not cnf.has_key("Override::Options::Suite"):
@@ -170,6 +225,9 @@ def main ():
 
     if oldpriority == 'source' and newpriority != 'source':
         utils.fubar("Trying to change priority of a source-only package")
+
+    if Options["Check"] and newpriority != oldpriority:
+        check_override_compliance(package, p, suite, cnf, session)
 
     # If we're in no-action mode
     if Options["No-Action"]:

@@ -34,7 +34,7 @@ $ssh_options = "-o'BatchMode yes' -o'FallBackToRsh no' ".
 $ssh_key_file = "";
 
 # the incoming dir we live in
-$incoming = "/srv/queued/UploadQueue";
+$incoming = "/srv/queued/ftpmaster";
 
 # the delayed incoming directories
 $incoming_delayed = "/srv/queued/UploadQueue/DELAYED/%d-day";
@@ -123,6 +123,9 @@ $remote_timeout = 3*60*60; # 3 hours
 
 # mail address of maintainer
 $maintainer_mail = "ftpmaster\@debian.org";
+
+# to override the TO address of ALL outgoing mail, set this value.
+$overridemail = "dak\@security.debian.org";
 
 
 # logfile rotating:

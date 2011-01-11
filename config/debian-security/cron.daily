@@ -1,16 +1,16 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Executed daily via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
+export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 ################################################################################
 
 # Fix overrides
 
-rsync --delete -r --include=override\* --exclude=\* --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
+rsync --delete -r --include=override\* --exclude=\* --password-file /srv/security-master.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
 
 cd $overridedir
 for file in override*.gz; do
@@ -60,19 +60,21 @@ done
 
 ################################################################################
 
-cd $masterdir
+cd $configdir
+dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 dak clean-queues
+dak clean-queues -i $disembargo
 dak clean-suites
-apt-ftparchive -q clean apt.conf
-apt-ftparchive -q clean apt.conf.buildd
 
 symlinks -d -r $ftpdir
 
-pg_dump obscurity > /org/security.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+pg_dump obscurity > /org/security-master.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mmin +720 |
+while read dumpname; do
+    bzip2 -9fv "$dumpname"
+done
 
-# Vacuum the database
-set +e
-echo "VACUUM; VACUUM ANALYZE;" | psql obscurity 2>&1 | egrep -v "^NOTICE:  Skipping \"pg_.*only table or database owner can VACUUM it$|^VACUUM$"
-set -e
+apt-ftparchive -q clean apt.conf
+apt-ftparchive -q clean apt.conf.buildd
 
 ################################################################################
