@@ -2812,6 +2812,30 @@ class DBConn(object):
             'udeb_contents',
         )
 
+        views = (
+            'almost_obsolete_all_associations',
+            'almost_obsolete_src_associations',
+            'any_associations_source',
+            'bin_assoc_by_arch',
+            'bin_associations_binaries',
+            'binaries_suite_arch',
+            'binfiles_suite_component_arch',
+            'changelogs',
+            'file_arch_suite',
+            'newest_all_associations',
+            'newest_any_associations',
+            'newest_source',
+            'newest_src_association',
+            'obsolete_all_associations',
+            'obsolete_any_associations',
+            'obsolete_any_by_all_associations',
+            'obsolete_src_associations',
+            'source_suite',
+            'src_associations_bin',
+            'src_associations_src',
+            'suite_arch_by_name',
+        )
+
         # Sqlalchemy fails to reflect the SERIAL type correctly and that
         # is why we have to use a workaround. It can be removed as soon
         # as we switch to version 0.6.
@@ -2824,6 +2848,10 @@ class DBConn(object):
         for table_name in tables_no_primary:
             table = Table(table_name, self.db_meta, autoload=True)
             setattr(self, 'tbl_%s' % table_name, table)
+
+        for view_name in views:
+            view = Table(view_name, self.db_meta, autoload=True)
+            setattr(self, 'view_%s' % view_name, view)
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
