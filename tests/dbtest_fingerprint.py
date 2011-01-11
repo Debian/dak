@@ -12,8 +12,9 @@ class FingerprintTestCase(DBDakTestCase):
         fingerprint.fingerprint = 'deadbeefdeadbeef'
         self.session.add(fingerprint)
         self.session.commit
-        fingerprint = self.session.query(Fingerprint).one()
-        self.assertEqual('deadbeefdeadbeef', fingerprint.fingerprint)
+        query = self.session.query(Fingerprint)
+        self.assertEqual(1, query.count())
+        self.assertEqual('deadbeefdeadbeef', query.one().fingerprint)
 
 if __name__ == '__main__':
     unittest.main()
