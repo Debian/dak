@@ -3,7 +3,7 @@ from base_test import DakTestCase, fixture
 from daklib.config import Config
 from daklib.dbconn import DBConn
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, __version__
 from sqlalchemy.exc import SADeprecationWarning
 
 import pickle
@@ -29,7 +29,8 @@ class DBDakTestCase(DakTestCase):
             if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
 
-        pickle_file = open(fixture('db-metadata.pkl'), 'r')
+        pickle_filename = 'db-metadata-%s.pkl' % __version__
+        pickle_file = open(fixture(pickle_filename), 'r')
         self.metadata = pickle.load(pickle_file)
         self.metadata.ddl_listeners = pickle.load(pickle_file)
         pickle_file.close()
