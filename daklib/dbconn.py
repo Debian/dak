@@ -2768,7 +2768,6 @@ class DBConn(object):
             'binary_acl',
             'binary_acl_map',
             'build_queue',
-            'build_queue_files',
             'changelogs_text',
             'component',
             'config',
@@ -2779,7 +2778,6 @@ class DBConn(object):
             'files',
             'fingerprint',
             'keyrings',
-            'changes',
             'keyring_acl_map',
             'location',
             'maintainer',
@@ -2797,6 +2795,11 @@ class DBConn(object):
             'suite',
             'uid',
             'upload_blocks',
+            # The following tables have primary keys but sqlalchemy
+            # version 0.5 fails to reflect them correctly with database
+            # versions before upgrade #41.
+            #'changes',
+            #'build_queue_files',
         )
 
         tables_no_primary = (
@@ -2810,6 +2813,9 @@ class DBConn(object):
             'suite_src_formats',
             'suite_build_queue_copy',
             'udeb_contents',
+            # see the comment above
+            'changes',
+            'build_queue_files',
         )
 
         views = (
@@ -2836,9 +2842,9 @@ class DBConn(object):
             'suite_arch_by_name',
         )
 
-        # Sqlalchemy fails to reflect the SERIAL type correctly and that
-        # is why we have to use a workaround. It can be removed as soon
-        # as we switch to version 0.6.
+        # Sqlalchemy version 0.5 fails to reflect the SERIAL type
+        # correctly and that is why we have to use a workaround. It can
+        # be removed as soon as we switch to version 0.6.
         for table_name in tables_with_primary:
             table = Table(table_name, self.db_meta, \
                 Column('id', Integer, primary_key = True), \
