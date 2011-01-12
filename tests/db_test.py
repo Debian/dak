@@ -17,6 +17,9 @@ warnings.filterwarnings('ignore', \
 class DBDakTestCase(DakTestCase):
     def setUp(self):
         cnf = Config()
+        if cnf["DB::Name"] in ('backports', 'obscurity', 'projectb'):
+            self.fail("You have configured an invalid database name: '%s'." % \
+                    cnf["DB::Name"])
         if cnf["DB::Host"]:
             # TCP/IP
             connstr = "postgres://%s" % cnf["DB::Host"]
