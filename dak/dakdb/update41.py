@@ -3,7 +3,7 @@
 
 """
 Remove useless type casts from primary keys to support sqlalchemy's
-reflection mechanism for all tables.
+reflection mechanism for all tables. Rename 2 sequences.
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2011 Torsten Werner <twerner@debian.org>
@@ -33,7 +33,7 @@ from socket import gethostname;
 ################################################################################
 def do_update(self):
     """
-    Remove useless type casts from primary keys.
+    Remove useless type casts from primary keys and fix 2 sequences.
     """
     print __doc__
     try:
@@ -45,6 +45,9 @@ def do_update(self):
             'src_associations', 'suite', 'uid'):
             c.execute("ALTER TABLE %s ALTER id SET DEFAULT nextval('%s_id_seq'::regclass)" % \
                 (table, table))
+
+        c.execute("ALTER SEQUENCE known_changes_id_seq RENAME TO changes_id_seq")
+        c.execute("ALTER SEQUENCE queue_files_id_seq RENAME TO build_queue_files_id_seq")
 
         c.execute("UPDATE config SET value = '41' WHERE name = 'db_revision'")
         self.db.commit()
