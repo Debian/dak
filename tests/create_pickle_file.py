@@ -3,14 +3,15 @@
 # recreate the pickle file db-metadata-*.pkl that needs to be updated
 # after a database upgrade
 
-from base_test import fixture
 from daklib.dbconn import DBConn
 
 from sqlalchemy import create_engine, __version__
 
 import pickle
+from os.path import abspath, dirname
 
-pickle_filename = fixture('db-metadata-%s.pkl' % __version__)
+DAK_TEST_DIR = dirname(abspath(__file__))
+pickle_filename = '%s/fixtures/db-metadata-%s.pkl' % (DAK_TEST_DIR, __version__)
 pickle_file = open(pickle_filename, 'w')
 metadata = DBConn().db_meta
 pickle.dump(metadata, pickle_file)
