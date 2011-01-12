@@ -128,13 +128,13 @@ def main():
                          if not out.has_key(d):
                              out[d] = {}
                          out[d]['priority'] = priorities[d][1]
-                         out[d]['maintainer'] = priorities[d][2]
+                         out[d]['maintainer'] = unicode(priorities[d][2], 'utf-8')
                          out[d]['priority'] = priorities[d][1]
                          priorities[d][3] = False
                      if not out[d].has_key('dependency'):
                          out[d]['dependency'] = {}
                      out[d]['dependency'][p] = priorities[p][1]
-    yaml.dump(out, outfile, default_flow_style=False)
+    yaml.safe_dump(out, outfile, default_flow_style=False)
     if Options.has_key('file'):
         outfile.close()
 
