@@ -42,7 +42,6 @@ class DBDakTestCase(DakTestCase):
         self.session = DBConn().session()
 
     def tearDown(self):
-        #pass
         self.session.close()
-        #self.metadata.drop_all()
+        self.metadata.drop_all()
 
