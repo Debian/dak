@@ -16,5 +16,9 @@ class FingerprintTestCase(DBDakTestCase):
         self.assertEqual(1, query.count())
         self.assertEqual('deadbeefdeadbeef', query.one().fingerprint)
 
+    def tearDown(self):
+        self.session.query(Fingerprint).delete()
+        super(FingerprintTestCase, self).tearDown()
+
 if __name__ == '__main__':
     unittest.main()
