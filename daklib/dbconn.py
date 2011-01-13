@@ -64,13 +64,22 @@ from dak_exceptions import NoSourceFieldError
 # Patch in support for the debversion field type so that it works during
 # reflection
 
-class DebVersion(sqltypes.Text):
-    """
-    Support the debversion type
-    """
+try:
+    # that is for sqlalchemy 0.6
+    UserDefinedType = sqltypes.UserDefinedType
+except:
+    # this one for sqlalchemy 0.5
+    UserDefinedType = sqltypes.TypeEngine
 
+class DebVersion(UserDefinedType):
     def get_col_spec(self):
         return "DEBVERSION"
+
+    def bind_processor(self, dialect):
+        return None
+
+    def result_processor(self, dialect):
+        return None
 
 sa_major_version = sqlalchemy.__version__[0:3]
 if sa_major_version in ["0.5", "0.6"]:
@@ -81,7 +90,7 @@ else:
 
 ################################################################################
 
-__all__ = ['IntegrityError', 'SQLAlchemyError']
+__all__ = ['IntegrityError', 'SQLAlchemyError', 'DebVersion']
 
 ################################################################################
 
