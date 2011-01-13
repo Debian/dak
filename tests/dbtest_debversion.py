@@ -26,18 +26,22 @@ class DebVersionTestCase(DBDakTestCase):
         mapper(Version, self.version_table)
 
     def test_debversion(self):
-        v1 = Version('0.5')
-        self.session.add(v1)
-        v2 = Version('1.0')
-        self.session.add(v2)
+        v = Version('0.5~')
+        self.session.add(v)
+        v = Version('0.5')
+        self.session.add(v)
+        v = Version('1.0')
+        self.session.add(v)
         #self.session.commit()
         q = self.session.query(Version)
-        self.assertEqual(2, q.count())
+        self.assertEqual(3, q.count())
         self.assertEqual(2, q.filter(Version.version > '0.5~').count())
         self.assertEqual(1, q.filter(Version.version > '0.5').count())
         self.assertEqual(0, q.filter(Version.version > '1.0').count())
-        for v in self.session.query(Version.version):
-            print v
+        q = self.session.query(func.min(Version.version))
+        self.assertEqual('0.5~', q.one()[0])
+        q = self.session.query(func.max(Version.version))
+        self.assertEqual('1.0', q.one()[0])
 
     def tearDown(self):
         self.session.close()
