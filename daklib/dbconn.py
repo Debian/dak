@@ -78,7 +78,7 @@ class DebVersion(UserDefinedType):
     def bind_processor(self, dialect):
         return None
 
-    def result_processor(self, dialect):
+    def result_processor(self, dialect, coltype):
         return None
 
 sa_major_version = sqlalchemy.__version__[0:3]

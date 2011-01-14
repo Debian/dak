@@ -16,6 +16,13 @@ class Version(object):
         return "<Version('%s')>" % self.version
 
 class DebVersionTestCase(DBDakTestCase):
+    """
+    The DebVersionTestCase tests both comparison (<=, ==, >, !=), the in_()
+    method and aggregate functions (min, max) for the DebVersion type. To
+    simplify the test it creates a separate table 'version' which is not used
+    by dak itself.
+    """
+
     def setUp(self):
         super(DebVersionTestCase, self).setUp()
         self.version_table = Table('version', self.metadata, \
@@ -32,12 +39,15 @@ class DebVersionTestCase(DBDakTestCase):
         self.session.add(v)
         v = Version('1.0')
         self.session.add(v)
-        #self.session.commit()
         q = self.session.query(Version)
         self.assertEqual(3, q.count())
+        self.assertEqual(2, q.filter(Version.version <= '0.5').count())
+        self.assertEqual(1, q.filter(Version.version == '0.5').count())
         self.assertEqual(2, q.filter(Version.version > '0.5~').count())
         self.assertEqual(1, q.filter(Version.version > '0.5').count())
         self.assertEqual(0, q.filter(Version.version > '1.0').count())
+        self.assertEqual(2, q.filter(Version.version != '1.0').count())
+        self.assertEqual(2, q.filter(Version.version.in_(['0.5~', '1.0'])).count())
         q = self.session.query(func.min(Version.version))
         self.assertEqual('0.5~', q.one()[0])
         q = self.session.query(func.max(Version.version))
