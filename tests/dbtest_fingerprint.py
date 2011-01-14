@@ -7,6 +7,16 @@ from daklib.dbconn import Fingerprint, Uid
 import unittest
 
 class FingerprintTestCase(DBDakTestCase):
+    """
+    The FingerprintTestCase tests the relation between Fingerprint and Uid
+    objects.
+    1. It creates a fresh Fingerprint object.
+    2. It assigns a fresh Uid object to the Fingerprint object.
+    3. It fetches the Uid object from the database.
+    4. It checks that the original fingerprint is assigned to the freshly
+       fetched Uid object.
+    """
+
     def test_mini(self):
         fingerprint = Fingerprint(fingerprint = 'deadbeefdeadbeef')
         self.session.add(fingerprint)
