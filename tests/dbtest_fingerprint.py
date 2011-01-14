@@ -2,23 +2,23 @@
 
 from db_test import DBDakTestCase
 
-from daklib.dbconn import Fingerprint
+from daklib.dbconn import Fingerprint, Uid
 
 import unittest
 
 class FingerprintTestCase(DBDakTestCase):
     def test_mini(self):
-        fingerprint = Fingerprint()
-        fingerprint.fingerprint = 'deadbeefdeadbeef'
+        fingerprint = Fingerprint(fingerprint = 'deadbeefdeadbeef')
         self.session.add(fingerprint)
-        self.session.commit
         query = self.session.query(Fingerprint)
         self.assertEqual(1, query.count())
         self.assertEqual('deadbeefdeadbeef', query.one().fingerprint)
-
-    def tearDown(self):
-        self.session.query(Fingerprint).delete()
-        super(FingerprintTestCase, self).tearDown()
+        fingerprint.uid = Uid(uid = 'ftp-master@debian.org', name = 'ftpteam')
+        uid = self.session.query(Uid).one()
+        self.assertEqual('ftp-master@debian.org', uid.uid)
+        self.assertEqual('ftpteam', uid.name)
+        self.assertEqual(1, len(uid.fingerprint))
+        self.assertEqual('deadbeefdeadbeef', uid.fingerprint[0].fingerprint)
 
 if __name__ == '__main__':
     unittest.main()

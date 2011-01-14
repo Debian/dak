@@ -1226,8 +1226,8 @@ __all__.append('add_poolfile')
 ################################################################################
 
 class Fingerprint(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, fingerprint = None):
+        self.fingerprint = fingerprint
 
     def __repr__(self):
         return '<Fingerprint %s>' % self.fingerprint
@@ -2676,8 +2676,9 @@ __all__.append('get_suite_src_formats')
 ################################################################################
 
 class Uid(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, uid = None, name = None):
+        self.uid = uid
+        self.name = name
 
     def __eq__(self, val):
         if isinstance(val, str):
