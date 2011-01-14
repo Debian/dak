@@ -43,5 +43,5 @@ class DBDakTestCase(DakTestCase):
 
     def tearDown(self):
         self.session.close()
-        self.metadata.drop_all()
+        #self.metadata.drop_all()
 
