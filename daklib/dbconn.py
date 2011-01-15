@@ -147,8 +147,9 @@ __all__.append('session_wrapper')
 ################################################################################
 
 class Architecture(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, arch_string = None, description = None):
+        self.arch_string = arch_string
+        self.description = description
 
     def __eq__(self, val):
         if isinstance(val, str):
