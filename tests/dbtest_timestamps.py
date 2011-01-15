@@ -19,7 +19,7 @@ class TimestampTestCase(DBDakTestCase):
         local_session = DBConn().session()
         query = local_session.query('now').from_statement('select now() as now')
         local_session.close()
-        return query.one().now
+        return query.first().now
 
     def sleep(self):
         time.sleep(0.001)
