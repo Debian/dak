@@ -4,6 +4,7 @@ from db_test import DBDakTestCase
 
 from daklib.dbconn import Fingerprint, Uid
 
+from sqlalchemy.exc import IntegrityError
 import unittest
 
 class FingerprintTestCase(DBDakTestCase):
@@ -15,9 +16,14 @@ class FingerprintTestCase(DBDakTestCase):
     3. It fetches the Uid object from the database.
     4. It checks that the original fingerprint is assigned to the freshly
        fetched Uid object.
+
+    Furthermore it checks various constraints like not null and unique.
+
+    TODO: the not null constraints should be enforced by the constructor in
+    dbconn.py. Should we check the exact format of the fingerprint?
     """
 
-    def test_mini(self):
+    def test_relation(self):
         fingerprint = Fingerprint(fingerprint = 'deadbeefdeadbeef')
         self.session.add(fingerprint)
         query = self.session.query(Fingerprint)
@@ -29,6 +35,34 @@ class FingerprintTestCase(DBDakTestCase):
         self.assertEqual('ftpteam', uid.name)
         self.assertEqual(1, len(uid.fingerprint))
         self.assertEqual('deadbeefdeadbeef', uid.fingerprint[0].fingerprint)
+
+    def fingerprint_no_fingerprint(self):
+        self.session.add(Fingerprint())
+        self.session.flush()
+
+    def fingerprint_duplicate_fingerprint(self):
+        self.session.add(Fingerprint(fingerprint = 'affe0815'))
+        self.session.add(Fingerprint(fingerprint = 'affe0815'))
+        self.session.flush()
+
+    def uid_no_uid(self):
+        self.session.add(Uid(name = 'foobar'))
+        self.session.flush()
+
+    def uid_duplicate_uid(self):
+        self.session.add(Uid(uid = 'duplicate'))
+        self.session.add(Uid(uid = 'duplicate'))
+        self.session.flush()
+
+    def test_exceptions(self):
+        self.assertRaises(IntegrityError, self.fingerprint_no_fingerprint)
+        self.session.rollback()
+        self.assertRaises(IntegrityError, self.fingerprint_duplicate_fingerprint)
+        self.session.rollback()
+        self.assertRaises(IntegrityError, self.uid_no_uid)
+        self.session.rollback()
+        self.assertRaises(IntegrityError, self.uid_duplicate_uid)
+        self.session.rollback()
 
 if __name__ == '__main__':
     unittest.main()
