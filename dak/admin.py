@@ -99,7 +99,8 @@ def __architecture_add(d, args):
     die_arglen(args, 4, "E: adding an architecture requires a name and a description")
     print "Adding architecture %s" % args[2]
     suites = [str(x) for x in args[4:]]
-    print "Adding to suites %s" % ", ".join(suites)
+    if len(suites) > 0:
+        print "Adding to suites %s" % ", ".join(suites)
     if not dryrun:
         try:
             s = d.session()
@@ -237,16 +238,20 @@ def __suite_architecture_list(d, args):
 
 def __suite_architecture_listarch(d, args):
     die_arglen(args, 3, "E: suite-architecture list-arch requires a suite")
-    a = get_suite_architectures(args[2].lower())
+    suite = get_suite(args[2].lower(), d.session())
+    if suite is None:
+        die('E: suite %s is invalid' % args[2].lower())
+    a = suite.get_architectures(skipsrc = True, skipall = True)
     for j in a:
-        # HACK: We should get rid of source from the arch table
-        if j.arch_string != 'source':
-            print j.arch_string
+        print j.arch_string
 
 
 def __suite_architecture_listsuite(d, args):
     die_arglen(args, 3, "E: suite-architecture list-suite requires an arch")
-    for j in get_architecture_suites(args[2].lower()):
+    architecture = get_architecture(args[2].lower(), d.session())
+    if architecture is None:
+        die("E: architecture %s is invalid" % args[2].lower())
+    for j in architecture.suites:
         print j.suite_name
 
 
