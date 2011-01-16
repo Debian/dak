@@ -193,6 +193,7 @@ def get_architecture(architecture, session=None):
 
 __all__.append('get_architecture')
 
+# TODO: should be removed because the implementation is too trivial
 @session_wrapper
 def get_architecture_suites(architecture, session=None):
     """
@@ -209,13 +210,7 @@ def get_architecture_suites(architecture, session=None):
     @return: list of Suite objects for the given name (may be empty)
     """
 
-    q = session.query(Suite)
-    q = q.join(SuiteArchitecture)
-    q = q.join(Architecture).filter_by(arch_string=architecture).order_by('suite_name')
-
-    ret = q.all()
-
-    return ret
+    return get_architecture(architecture, session).suites
 
 __all__.append('get_architecture_suites')
 
