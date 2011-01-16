@@ -46,7 +46,7 @@ from inspect import getargspec
 
 import sqlalchemy
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer
-from sqlalchemy.orm import sessionmaker, mapper, relation, object_session
+from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, backref
 from sqlalchemy import types as sqltypes
 
 # Don't remove this, we re-export the exceptions to scripts which import us
@@ -2852,8 +2852,10 @@ class DBConn(object):
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
-               properties = dict(arch_id = self.tbl_architecture.c.id,
-                                 suites = relation(Suite, secondary=self.tbl_suite_architectures, backref='architectures', order_by='suite_name')))
+           properties = dict(arch_id = self.tbl_architecture.c.id,
+               suites = relation(Suite, secondary=self.tbl_suite_architectures,
+                   order_by='suite_name',
+                   backref=backref('architectures', order_by='arch_string'))))
 
         mapper(Archive, self.tbl_archive,
                properties = dict(archive_id = self.tbl_archive.c.id,
