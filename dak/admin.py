@@ -234,8 +234,9 @@ dispatch['s'] = suite
 def __suite_architecture_list(d, args):
     s = d.session()
     for j in s.query(Suite).order_by('suite_name'):
+        architectures = j.get_architectures(skipsrc = True, skipall = True)
         print j.suite_name + ': ' + \
-              ', '.join([a.arch_string for a in j.architectures])
+              ', '.join([a.arch_string for a in architectures])
 
 def __suite_architecture_listarch(d, args):
     die_arglen(args, 3, "E: suite-architecture list-arch requires a suite")
