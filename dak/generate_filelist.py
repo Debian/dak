@@ -193,19 +193,19 @@ def main():
                  ('i', "incremental",  "Filelist::Options::Incremental")]
     session = DBConn().session()
     query_suites = session.query(Suite)
-    suites = [suite.suite_name for suite in query_suites.all()]
+    suites = [suite.suite_name for suite in query_suites]
     if not cnf.has_key('Filelist::Options::Suite'):
-        cnf['Filelist::Options::Suite'] = ','.join(suites)
+        cnf['Filelist::Options::Suite'] = ','.join(suites).encode()
     query_components = session.query(Component)
     components = \
-        [component.component_name for component in query_components.all()]
+        [component.component_name for component in query_components]
     if not cnf.has_key('Filelist::Options::Component'):
-        cnf['Filelist::Options::Component'] = ','.join(components)
+        cnf['Filelist::Options::Component'] = ','.join(components).encode()
     query_architectures = session.query(Architecture)
     architectures = \
-        [architecture.arch_string for architecture in query_architectures.all()]
+        [architecture.arch_string for architecture in query_architectures]
     if not cnf.has_key('Filelist::Options::Architecture'):
-        cnf['Filelist::Options::Architecture'] = ','.join(architectures)
+        cnf['Filelist::Options::Architecture'] = ','.join(architectures).encode()
     cnf['Filelist::Options::Help'] = ''
     cnf['Filelist::Options::Incremental'] = ''
     apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
