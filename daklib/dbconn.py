@@ -46,7 +46,7 @@ from inspect import getargspec
 
 import sqlalchemy
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer
-from sqlalchemy.orm import sessionmaker, mapper, relation
+from sqlalchemy.orm import sessionmaker, mapper, relation, object_session
 from sqlalchemy import types as sqltypes
 
 # Don't remove this, we re-export the exceptions to scripts which import us
@@ -2530,6 +2530,30 @@ class Suite(object):
 
         return "\n".join(ret)
 
+    def get_architectures(self, skipsrc=False, skipall=False):
+        """
+        Returns list of Architecture objects
+
+        @type skipsrc: boolean
+        @param skipsrc: Whether to skip returning the 'source' architecture entry
+        (Default False)
+
+        @type skipall: boolean
+        @param skipall: Whether to skip returning the 'all' architecture entry
+        (Default False)
+
+        @rtype: list
+        @return: list of Architecture objects for the given name (may be empty)
+        """
+
+        q = object_session(self).query(Architecture). \
+            filter(Architecture.suites.contains(self))
+        if skipsrc:
+            q = q.filter(Architecture.arch_string != 'source')
+        if skipall:
+            q = q.filter(Architecture.arch_string != 'all')
+        return q.order_by(Architecture.arch_string).all()
+
 __all__.append('Suite')
 
 @session_wrapper
@@ -2600,6 +2624,7 @@ class SuiteArchitecture(object):
 
 __all__.append('SuiteArchitecture')
 
+# TODO: should be removed because the implementation is too trivial
 @session_wrapper
 def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     """
@@ -2624,19 +2649,7 @@ def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     @return: list of Architecture objects for the given name (may be empty)
     """
 
-    q = session.query(Architecture)
-    q = q.join(SuiteArchitecture)
-    q = q.join(Suite).filter_by(suite_name=suite)
-
-    if skipsrc:
-        q = q.filter(Architecture.arch_string != 'source')
-
-    if skipall:
-        q = q.filter(Architecture.arch_string != 'all')
-
-    q = q.order_by('arch_string')
-
-    return q.all()
+    return get_suite(suite, session).get_architectures(skipsrc, skipall)
 
 __all__.append('get_suite_architectures')
 
