@@ -2889,7 +2889,7 @@ class DBConn(object):
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
                properties = dict(arch_id = self.tbl_architecture.c.id,
-                                 suites = relation(Suite, secondary=self.tbl_suite_architectures, backref='architectures')))
+                                 suites = relation(Suite, secondary=self.tbl_suite_architectures, backref='architectures', order_by='suite_name')))
 
         mapper(Archive, self.tbl_archive,
                properties = dict(archive_id = self.tbl_archive.c.id,
