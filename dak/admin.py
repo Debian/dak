@@ -96,10 +96,10 @@ def __architecture_list(d, args):
     sys.exit(0)
 
 def __architecture_add(d, args):
-    die_arglen(args, 3, "E: adding an architecture requires a name and a description")
+    die_arglen(args, 4, "E: adding an architecture requires a name and a description")
     print "Adding architecture %s" % args[2]
     suites = [str(x) for x in args[4:]]
-    print suites
+    print "Adding to suites %s" % ", ".join(suites)
     if not dryrun:
         try:
             s = d.session()
@@ -108,12 +108,9 @@ def __architecture_add(d, args):
             a.description = str(args[3])
             s.add(a)
             for sn in suites:
-                su = get_suite(sn ,s)
+                su = get_suite(sn, s)
                 if su is not None:
-                    archsu = SuiteArchitecture()
-                    archsu.arch_id = a.arch_id
-                    archsu.suite_id = su.suite_id
-                    s.add(archsu)
+                    a.suites.append(su)
                 else:
                     warn("W: Cannot find suite %s" % su)
             s.commit()
@@ -267,10 +264,7 @@ def __suite_architecture_add(d, args):
 
     if not dryrun:
         try:
-            sa = SuiteArchitecture()
-            sa.arch_id = arch.arch_id
-            sa.suite_id = suite.suite_id
-            s.add(sa)
+            suite.architectures.append(arch)
             s.commit()
         except IntegrityError, e:
             die("E: Can't add suite-architecture entry (%s, %s) - probably already exists" % (args[2].lower(), args[3].lower()))
