@@ -213,20 +213,21 @@ def main():
     if Options['Help']:
         usage()
     threadpool = ThreadPool()
-    for suite_name in utils.split_args(Options['Suite']):
-        suite = query_suites.filter_by(suite_name = suite_name).one()
-        for component_name in utils.split_args(Options['Component']):
-            component = session.query(Component).\
-                filter_by(component_name = component_name).one()
-            for arch_string in utils.split_args(Options['Architecture']):
-                architecture = query_architectures.\
-                    filter_by(arch_string = arch_string).one()
+    query_suites = query_suites. \
+        filter(Suite.suite_name.in_(utils.split_args(Options['Suite'])))
+    query_components = query_components. \
+        filter(Component.component_name.in_(utils.split_args(Options['Component'])))
+    query_architectures = query_architectures. \
+        filter(Architecture.arch_string.in_(utils.split_args(Options['Architecture'])))
+    for suite in query_suites:
+        for component in query_components:
+            for architecture in query_architectures:
                 if architecture not in suite.architectures:
                     pass
-                elif arch_string == 'source':
+                elif architecture.arch_string == 'source':
                     threadpool.queueTask(writeSourceList,
                         (suite, component, Options['Incremental']))
-                elif arch_string != 'all':
+                elif architecture.arch_string != 'all':
                     threadpool.queueTask(writeBinaryList,
                         (suite, component, architecture, 'deb',
                             Options['Incremental']))
