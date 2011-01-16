@@ -22,7 +22,14 @@
 
 import sys, os, re, time
 import apt_pkg
-from debian_bundle import deb822
+
+try:
+    # starting with squeeze
+    from debian import deb822
+except:
+    # up to lenny
+    from debian_bundle import deb822
+
 from daklib.dbconn import *
 from daklib import utils
 from daklib.regexes import re_html_escaping, html_escaping

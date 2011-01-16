@@ -47,7 +47,12 @@ import commands
 import traceback
 import atexit
 
-from debian_bundle import deb822
+try:
+    # starting with squeeze
+    from debian import deb822
+except:
+    # up to lenny
+    from debian_bundle import deb822
 
 from dbconn import *
 from config import Config

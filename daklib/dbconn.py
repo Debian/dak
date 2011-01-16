@@ -59,6 +59,16 @@ from config import Config
 from textutils import fix_maintainer
 from dak_exceptions import NoSourceFieldError
 
+# suppress some deprecation warnings in squeeze related to sqlalchemy
+import warnings
+warnings.filterwarnings('ignore', \
+    "The SQLAlchemy PostgreSQL dialect has been renamed from 'postgres' to 'postgresql'.*", \
+    SADeprecationWarning)
+# TODO: sqlalchemy needs some extra configuration to correctly reflect
+# the ind_deb_contents_* indexes - we ignore the warnings at the moment
+warnings.filterwarnings("ignore", 'Predicate of partial index', SAWarning)
+
+
 ################################################################################
 
 # Patch in support for the debversion field type so that it works during

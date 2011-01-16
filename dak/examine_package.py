@@ -42,6 +42,12 @@ to stdout. Those functions can be used in multithreaded parts of dak.
 
 ################################################################################
 
+# suppress some deprecation warnings in squeeze related to md5 module
+import warnings
+warnings.filterwarnings('ignore', \
+    "the md5 module is deprecated; use hashlib instead", \
+    DeprecationWarning)
+
 import errno
 import os
 import re

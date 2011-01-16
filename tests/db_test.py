@@ -10,11 +10,6 @@ from sqlalchemy.schema import DDL
 import pickle
 import warnings
 
-# suppress some deprecation warnings in squeeze related to sqlalchemy
-warnings.filterwarnings('ignore', \
-    "The SQLAlchemy PostgreSQL dialect has been renamed from 'postgres' to 'postgresql'.*", \
-    SADeprecationWarning)
-
 all_tables = ['architecture', 'archive', 'bin_associations', 'bin_contents',
     'binaries', 'binary_acl', 'binary_acl_map', 'build_queue', 'build_queue_files',
     'changes', 'changes_pending_binaries', 'changes_pending_files',
