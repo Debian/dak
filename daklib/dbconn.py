@@ -2578,16 +2578,6 @@ __all__.append('get_suite')
 
 ################################################################################
 
-# TODO: remove SuiteArchitecture class
-class SuiteArchitecture(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<SuiteArchitecture (%s, %s)>' % (self.suite_id, self.arch_id)
-
-__all__.append('SuiteArchitecture')
-
 # TODO: should be removed because the implementation is too trivial
 @session_wrapper
 def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
@@ -3096,12 +3086,6 @@ class DBConn(object):
                properties = dict(suite_id = self.tbl_suite.c.id,
                                  policy_queue = relation(PolicyQueue),
                                  copy_queues = relation(BuildQueue, secondary=self.tbl_suite_build_queue_copy)))
-
-        mapper(SuiteArchitecture, self.tbl_suite_architectures,
-               properties = dict(suite_id = self.tbl_suite_architectures.c.suite,
-                                 suite = relation(Suite, backref='suitearchitectures'),
-                                 arch_id = self.tbl_suite_architectures.c.architecture,
-                                 architecture = relation(Architecture)))
 
         mapper(SuiteSrcFormat, self.tbl_suite_src_formats,
                properties = dict(suite_id = self.tbl_suite_src_formats.c.suite,

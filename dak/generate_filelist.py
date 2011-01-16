@@ -212,31 +212,27 @@ def main():
     Options = cnf.SubTree("Filelist::Options")
     if Options['Help']:
         usage()
-    suite_arch = session.query(SuiteArchitecture)
     threadpool = ThreadPool()
     for suite_name in utils.split_args(Options['Suite']):
         suite = query_suites.filter_by(suite_name = suite_name).one()
-        join = suite_arch.filter_by(suite_id = suite.suite_id)
         for component_name in utils.split_args(Options['Component']):
             component = session.query(Component).\
                 filter_by(component_name = component_name).one()
-            for architecture_name in utils.split_args(Options['Architecture']):
+            for arch_string in utils.split_args(Options['Architecture']):
                 architecture = query_architectures.\
-                    filter_by(arch_string = architecture_name).one()
-                try:
-                    join.filter_by(arch_id = architecture.arch_id).one()
-                    if architecture_name == 'source':
-                        threadpool.queueTask(writeSourceList,
-                            (suite, component, Options['Incremental']))
-                    elif architecture_name != 'all':
-                        threadpool.queueTask(writeBinaryList,
-                            (suite, component, architecture, 'deb',
-                                Options['Incremental']))
-                        threadpool.queueTask(writeBinaryList,
-                            (suite, component, architecture, 'udeb',
-                                Options['Incremental']))
-                except:
+                    filter_by(arch_string = arch_string).one()
+                if architecture not in suite.architectures:
                     pass
+                elif arch_string == 'source':
+                    threadpool.queueTask(writeSourceList,
+                        (suite, component, Options['Incremental']))
+                elif arch_string != 'all':
+                    threadpool.queueTask(writeBinaryList,
+                        (suite, component, architecture, 'deb',
+                            Options['Incremental']))
+                    threadpool.queueTask(writeBinaryList,
+                        (suite, component, architecture, 'udeb',
+                            Options['Incremental']))
     threadpool.joinAll()
     # this script doesn't change the database
     session.close()
