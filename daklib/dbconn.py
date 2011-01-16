@@ -2590,6 +2590,7 @@ __all__.append('get_suite')
 
 ################################################################################
 
+# TODO: remove SuiteArchitecture class
 class SuiteArchitecture(object):
     def __init__(self, *args, **kwargs):
         pass
