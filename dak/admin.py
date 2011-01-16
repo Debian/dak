@@ -77,6 +77,7 @@ Perform administrative work on the dak database.
                             description, origin and codename are optional.
 
   suite-architecture / s-a:
+     s-a list               show the architectures for all suites
      s-a list-suite ARCH    show the suites an ARCH is in
      s-a list-arch SUITE    show the architectures in a SUITE
      s-a add SUITE ARCH     add ARCH to suite
@@ -232,9 +233,9 @@ dispatch['s'] = suite
 
 def __suite_architecture_list(d, args):
     s = d.session()
-    for j in s.query(Suite).order_by('suite_name').all():
-        print j.suite_name + ' ' + \
-              ','.join([a.architecture.arch_string for a in j.suitearchitectures])
+    for j in s.query(Suite).order_by('suite_name'):
+        print j.suite_name + ': ' + \
+              ', '.join([a.arch_string for a in j.architectures])
 
 def __suite_architecture_listarch(d, args):
     die_arglen(args, 3, "E: suite-architecture list-arch requires a suite")
