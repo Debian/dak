@@ -8,7 +8,8 @@ import unittest
 
 class PackageTestCase(DBDakTestCase):
     """
-    xxx
+    PackageTestCase checks the handling of source and binary packages in dak's
+    database.
     """
 
     def setup_architectures(self):
@@ -25,13 +26,29 @@ class PackageTestCase(DBDakTestCase):
             self.session.flush()
             self.session.refresh(architecture)
 
+    def setup_suites(self):
+        "setup a hash of Suite objects in self.suite"
+
+        self.suite = {}
+        for suite_name in ('lenny', 'squeeze', 'sid'):
+            suite = Suite(suite_name = suite_name, version = '-')
+            self.suite[suite_name] = suite
+            self.session.add(suite)
+            self.session.flush()
+            self.session.refresh(suite)
+
     def setUp(self):
         super(PackageTestCase, self).setUp()
         self.setup_architectures()
+        self.setup_suites()
 
     def test_packages(self):
+        # check the id for architectures source and all
         self.assertEqual(1, self.arch['source'].arch_id)
         self.assertEqual(2, self.arch['all'].arch_id)
+        # check the many to many relation between Suite and Architecture
+        self.arch['source'].suites.append(self.suite['lenny'])
+        self.assertEqual('source', self.suite['lenny'].architectures[0])
 
 if __name__ == '__main__':
     unittest.main()

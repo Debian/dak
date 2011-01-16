@@ -2502,8 +2502,9 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
                  ('OverrideSuite', 'overridesuite')]
 
 class Suite(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, suite_name = None, version = None):
+        self.suite_name = suite_name
+        self.version = version
 
     def __repr__(self):
         return '<Suite %s>' % self.suite_name
@@ -2873,7 +2874,8 @@ class DBConn(object):
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
-               properties = dict(arch_id = self.tbl_architecture.c.id))
+               properties = dict(arch_id = self.tbl_architecture.c.id,
+                                 suites = relation(Suite, secondary=self.tbl_suite_architectures, backref='architectures')))
 
         mapper(Archive, self.tbl_archive,
                properties = dict(archive_id = self.tbl_archive.c.id,
