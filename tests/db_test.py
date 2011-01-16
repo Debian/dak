@@ -39,7 +39,9 @@ class DBDakTestCase(DakTestCase):
         for table in all_tables:
             self.execute(create_trigger % (table, table))
 
-    def setUp(self):
+    metadata = None
+
+    def initialize(self):
         cnf = Config()
         if cnf["DB::Name"] in ('backports', 'obscurity', 'projectb'):
             self.fail("You have configured an invalid database name: '%s'." % \
@@ -58,12 +60,16 @@ class DBDakTestCase(DakTestCase):
 
         pickle_filename = 'db-metadata-%s.pkl' % __version__
         pickle_file = open(fixture(pickle_filename), 'r')
-        self.metadata = pickle.load(pickle_file)
+        DBDakTestCase.metadata = pickle.load(pickle_file)
         self.metadata.ddl_listeners = pickle.load(pickle_file)
         pickle_file.close()
         self.metadata.bind = create_engine(connstr)
         self.metadata.create_all()
         self.create_all_triggers()
+
+    def setUp(self):
+        if self.metadata is None:
+            self.initialize()
         self.session = DBConn().session()
 
     def classes_to_clean(self):
@@ -79,5 +85,6 @@ class DBDakTestCase(DakTestCase):
         for class_ in self.classes_to_clean():
             self.session.query(class_).delete()
         self.session.commit()
+        # usually there is no need to drop all tables here
         #self.metadata.drop_all()
 
