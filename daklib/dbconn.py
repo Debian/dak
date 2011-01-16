@@ -2552,37 +2552,6 @@ class Suite(object):
 __all__.append('Suite')
 
 @session_wrapper
-def get_suite_architecture(suite, architecture, session=None):
-    """
-    Returns a SuiteArchitecture object given C{suite} and ${arch} or None if it
-    doesn't exist
-
-    @type suite: str
-    @param suite: Suite name to search for
-
-    @type architecture: str
-    @param architecture: Architecture name to search for
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: SuiteArchitecture
-    @return: the SuiteArchitecture object or None
-    """
-
-    q = session.query(SuiteArchitecture)
-    q = q.join(Architecture).filter_by(arch_string=architecture)
-    q = q.join(Suite).filter_by(suite_name=suite)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
-
-__all__.append('get_suite_architecture')
-
-@session_wrapper
 def get_suite(suite, session=None):
     """
     Returns Suite object for given C{suite name}.

@@ -287,10 +287,15 @@ def __suite_architecture_rm(d, args):
     s = d.session()
     if not dryrun:
         try:
-            sa = get_suite_architecture(args[2].lower(), args[3].lower(), s)
-            if sa is None:
-                die("E: can't find suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower()))
-            s.delete(sa)
+            suite_name = args[2].lower()
+            suite = get_suite(suite_name, s)
+            if suite is None:
+                die('E: no such suite %s' % suite_name)
+            arch_string = args[3].lower()
+            architecture = get_architecture(arch_string, s)
+            if architecture not in suite.architectures:
+                die("E: architecture %s not found in suite %s" % (arch_string, suite_name))
+            suite.architectures.remove(architecture)
             s.commit()
         except IntegrityError, e:
             die("E: Can't remove suite-architecture entry (%s, %s) - it's probably referenced" % (args[2].lower(), args[3].lower()))
