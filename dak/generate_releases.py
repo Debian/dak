@@ -135,6 +135,9 @@ def print_md5sha_files (tree, files, hashop):
 
         except CantOpenError:
             print "ALERT: Couldn't open " + path + name
+        except IOError:
+            print "ALERT: IOError when reading %s" % (path + name)
+            raise
         else:
             out.write(" %s %8d %s\n" % (hashvalue, hashlen, name))
 
