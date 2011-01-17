@@ -221,7 +221,7 @@ def export_files(session, pool, clpool, temppath):
                             print 'make-changelog: unable to extract %s for %s_%s' \
                                    % (os.path.basename(f), p, sources[p][s][0])
                 else:
-                    print 'make-changelog: unable to unpack %s_%s' % (p, sources[p][s][0])
+                    print 'make-changelog: unable to unpack %s_%s: %s' % (p, sources[p][s][0], output)
                     continue
 
                 rmtree(tempdir)
