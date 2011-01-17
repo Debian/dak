@@ -3067,8 +3067,8 @@ class DBConn(object):
                                                       primaryjoin=(self.tbl_source.c.changedby==self.tbl_maintainer.c.id)),
                                  srcfiles = relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
-                                 srcassociations = relation(SrcAssociation,
-                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source)),
+                                 suites = relation(Suite, secondary=self.tbl_src_associations,
+                                     backref='sources'),
                                  srcuploaders = relation(SrcUploader)))
 
         mapper(SourceACL, self.tbl_source_acl,
