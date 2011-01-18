@@ -166,8 +166,9 @@ def export_files(session, pool, clpool, temppath):
     """
 
     sources = {}
-    query = """SELECT s.source, su.suite_name AS suite, s.version, f.filename
+    query = """SELECT DISTINCT s.source, su.suite_name AS suite, s.version, f.filename
                FROM source s
+               JOIN newest_source n ON n.source = s.source AND n.version = s.version
                JOIN src_associations sa ON sa.source = s.id
                JOIN suite su ON su.id = sa.suite
                JOIN files f ON f.id = s.file
