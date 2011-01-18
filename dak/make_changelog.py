@@ -166,8 +166,9 @@ def export_files(session, pool, clpool, temppath):
     """
 
     sources = {}
-    query = """SELECT s.source, su.suite_name AS suite, s.version, f.filename
+    query = """SELECT DISTINCT s.source, su.suite_name AS suite, s.version, f.filename
                FROM source s
+               JOIN newest_source n ON n.source = s.source AND n.version = s.version
                JOIN src_associations sa ON sa.source = s.id
                JOIN suite su ON su.id = sa.suite
                JOIN files f ON f.id = s.file
@@ -221,8 +222,7 @@ def export_files(session, pool, clpool, temppath):
                             print 'make-changelog: unable to extract %s for %s_%s' \
                                    % (os.path.basename(f), p, sources[p][s][0])
                 else:
-                    print 'make-changelog: unable to unpack %s_%s' % (p, sources[p][s][0])
-                    continue
+                    print 'make-changelog: unable to unpack %s_%s: %s' % (p, sources[p][s][0], output)
 
                 rmtree(tempdir)
 
