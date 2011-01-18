@@ -1,0 +1,47 @@
+#!/bin/sh -ue
+
+if [ $# -lt 4 ]; then
+	echo "Usage: $0 filename version arch changes_file"
+	exit 1
+fi
+
+WIN32_LOADER_FILE="$1"	# *-win32-loader{.exe,txt}
+VERSION="$2"
+ARCH="$3"
+CHANGES="$4"	# Changes file for the upload
+
+error() {
+	echo "$*"
+	exit 1
+}
+
+# Get the target suite from the Changes file
+# NOTE: it may be better to pass this to the script as a parameter!
+SUITE="$(grep "^Distribution:" "$CHANGES" | awk '{print $2}')"
+case $SUITE in
+    "")
+	error "Error: unable to determine suite from Changes file"
+	;;
+    unstable|sid)
+	: # nothing to do
+	;;
+    *)
+	SUITE="${SUITE}-proposed-updates"
+	;;
+esac
+
+# This must end with /
+TARGET="/srv/ftp-master.debian.org/ftp/tools/"
+
+# Check validity of the target directory
+if [ ! -d "$TARGET" ]; then
+	mkdir -p "$TARGET"
+fi
+
+# Put said file into the tools directory
+cp "$WIN32_LOADER_FILE" "$TARGET"
+
+trap - EXIT
+cleanup
+
+exit 0
