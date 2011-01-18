@@ -2945,7 +2945,11 @@ class DBConn(object):
                properties = dict(file_id = self.tbl_files.c.id,
                                  filesize = self.tbl_files.c.size,
                                  location_id = self.tbl_files.c.location,
-                                 location = relation(Location)))
+                                 location = relation(Location,
+                                     # using lazy='dynamic' in the back
+                                     # reference because we have A LOT of
+                                     # files in one location
+                                     backref=backref('files', lazy='dynamic'))))
 
         mapper(Fingerprint, self.tbl_fingerprint,
                properties = dict(fingerprint_id = self.tbl_fingerprint.c.id,
