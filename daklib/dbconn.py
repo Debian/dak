@@ -3022,6 +3022,8 @@ class DBConn(object):
                                  component = relation(Component),
                                  archive_id = self.tbl_location.c.archive,
                                  archive = relation(Archive),
+                                 # FIXME: the 'type' column is old cruft and
+                                 # should be removed in the future.
                                  archive_type = self.tbl_location.c.type))
 
         mapper(Maintainer, self.tbl_maintainer,
