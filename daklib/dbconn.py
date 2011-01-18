@@ -3020,7 +3020,11 @@ class DBConn(object):
                                  archive_type = self.tbl_location.c.type))
 
         mapper(Maintainer, self.tbl_maintainer,
-               properties = dict(maintainer_id = self.tbl_maintainer.c.id))
+               properties = dict(maintainer_id = self.tbl_maintainer.c.id,
+                   maintains_sources = relation(DBSource, backref='maintainer',
+                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.maintainer)),
+                   changed_sources = relation(DBSource, backref='changedby',
+                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))))
 
         mapper(NewComment, self.tbl_new_comments,
                properties = dict(comment_id = self.tbl_new_comments.c.id))
@@ -3056,15 +3060,11 @@ class DBConn(object):
                properties = dict(source_id = self.tbl_source.c.id,
                                  version = self.tbl_source.c.version,
                                  maintainer_id = self.tbl_source.c.maintainer,
-                                 maintainer = relation(Maintainer,
-                                                       primaryjoin=(self.tbl_source.c.maintainer==self.tbl_maintainer.c.id)),
                                  poolfile_id = self.tbl_source.c.file,
                                  poolfile = relation(PoolFile),
                                  fingerprint_id = self.tbl_source.c.sig_fpr,
                                  fingerprint = relation(Fingerprint),
                                  changedby_id = self.tbl_source.c.changedby,
-                                 changedby = relation(Maintainer,
-                                                      primaryjoin=(self.tbl_source.c.changedby==self.tbl_maintainer.c.id)),
                                  srcfiles = relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
