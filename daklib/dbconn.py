@@ -1567,8 +1567,8 @@ __all__.append('get_location')
 ################################################################################
 
 class Maintainer(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, name = None):
+        self.name = name
 
     def __repr__(self):
         return '''<Maintainer '%s' (%s)>''' % (self.name, self.maintainer_id)
@@ -2106,8 +2106,9 @@ __all__.append('get_sections')
 ################################################################################
 
 class DBSource(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, maintainer = None, changedby = None):
+        self.maintainer = maintainer
+        self.changedby = changedby
 
     def __repr__(self):
         return '<DBSource %s (%s)>' % (self.source, self.version)

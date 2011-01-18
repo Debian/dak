@@ -3,7 +3,7 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
-    get_architecture_suites
+    get_architecture_suites, Maintainer, DBSource
 
 import unittest
 
@@ -89,6 +89,44 @@ class PackageTestCase(DBDakTestCase):
         suites = get_architecture_suites('kfreebsd-i386', self.session)
         self.assertEqual(2, len(suites))
         self.assertTrue(self.suite['lenny'] not in suites)
+
+    def setup_maintainers(self):
+        'create some Maintainer objects'
+
+        self.maintainer = Maintainer(name = 'Mr. Maintainer')
+        self.uploader = Maintainer(name = 'Mrs. Uploader')
+        self.lazyguy = Maintainer(name = 'Lazy Guy')
+        self.session.add_all([self.maintainer, self.uploader, self.lazyguy])
+
+    def setup_sources(self):
+        'create a DBSource object; but it cannot be stored in the DB yet'
+
+        self.source = DBSource(maintainer = self.maintainer,
+            changedby = self.uploader)
+
+    def test_maintainers(self):
+        '''
+        tests relation between Maintainer and DBSource
+
+        TODO: add relations to changes_pending_source
+        '''
+
+        self.setup_maintainers()
+        self.assertEqual('Mr. Maintainer',
+                self.session.query(Maintainer)[0].name)
+        self.assertEqual('Mrs. Uploader',
+                self.session.query(Maintainer)[1].name)
+        self.assertEqual('Lazy Guy',
+                self.session.query(Maintainer)[2].name)
+        self.setup_sources()
+        #TODO: needs File and Location
+        #self.assertEqual(self.maintainer.maintains_sources, [self.source])
+        #self.assertEqual(self.maintainer.changed_sources, [])
+        #self.assertEqual(self.uploader.maintains_sources, [])
+        #self.assertEqual(self.uploader.changed_sources, [self.source])
+        #self.assertEqual(self.lazyguy.maintains_sources, [])
+        #self.assertEqual(self.lazyguy.changed_sources, [])
+
 
 if __name__ == '__main__':
     unittest.main()
