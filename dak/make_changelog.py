@@ -223,7 +223,6 @@ def export_files(session, pool, clpool, temppath):
                                    % (os.path.basename(f), p, sources[p][s][0])
                 else:
                     print 'make-changelog: unable to unpack %s_%s: %s' % (p, sources[p][s][0], output)
-                    continue
 
                 rmtree(tempdir)
 
