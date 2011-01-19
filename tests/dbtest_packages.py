@@ -3,7 +3,8 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
-    get_architecture_suites, Maintainer, DBSource, Location, PoolFile
+    get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
+    check_poolfile, get_poolfile_like_name
 
 import unittest
 
@@ -129,6 +130,11 @@ class PackageTestCase(DBDakTestCase):
                 filter(PoolFile.filename.like('%/hello/hello%')).one()
         self.assertEqual('main/h/hello/hello_2.2-2.dsc', poolfile.filename)
         self.assertEqual(location, poolfile.location)
+        # test get()
+        self.assertEqual(poolfile, \
+                self.session.query(PoolFile).get(poolfile.file_id))
+        self.assertEqual(None, self.session.query(PoolFile).get(-1))
+        # test remove() and append()
         location.files.remove(self.file['sl'])
         # TODO: deletion should cascade automatically
         self.session.delete(self.file['sl'])
@@ -143,6 +149,22 @@ class PackageTestCase(DBDakTestCase):
         # test fullpath
         self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/main/s/sl/sl_3.03-16.dsc', \
             self.file['sl'].fullpath)
+        # test check_poolfile()
+        self.assertEqual((True, self.file['sl']), \
+            check_poolfile('main/s/sl/sl_3.03-16.dsc', 0, '', \
+                location.location_id, self.session))
+        self.assertEqual((False, None), \
+            check_poolfile('foobar', 0, '', location.location_id, self.session))
+        self.assertEqual((False, self.file['sl']), \
+            check_poolfile('main/s/sl/sl_3.03-16.dsc', 42, '', \
+                location.location_id, self.session))
+        self.assertEqual((False, self.file['sl']), \
+            check_poolfile('main/s/sl/sl_3.03-16.dsc', 0, 'deadbeef', \
+                location.location_id, self.session))
+        # test get_poolfile_like_name()
+        self.assertEqual([self.file['sl']], \
+            get_poolfile_like_name('sl_3.03-16.dsc', self.session))
+        self.assertEqual([], get_poolfile_like_name('foobar', self.session))
 
     def setup_maintainers(self):
         'create some Maintainer objects'
