@@ -121,7 +121,7 @@ Architectures to skip: %(skip_arch_list)s""" % {
 
     def do_copy(self):
         for source, dest in self.trees_to_copy:
-            shutil.copytree(source, dest)
+            shutil.copytree(source, dest, symlinks=True)
         for source, dest in self.symlinks_to_create:
             if os.path.lexists(dest):
                 os.unlink(dest)
