@@ -140,6 +140,9 @@ class PackageTestCase(DBDakTestCase):
         location.files.append(self.file['sl'])
         self.session.refresh(location)
         self.assertEqual(2, location.files.count())
+        # test fullpath
+        self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/main/s/sl/sl_3.03-16.dsc', \
+            self.file['sl'].fullpath)
 
     def setup_maintainers(self):
         'create some Maintainer objects'
