@@ -1155,32 +1155,6 @@ def get_poolfile_by_id(file_id, session=None):
 
 __all__.append('get_poolfile_by_id')
 
-
-@session_wrapper
-def get_poolfile_by_name(filename, location_id=None, session=None):
-    """
-    Returns an array of PoolFile objects for the given filename and
-    (optionally) location_id
-
-    @type filename: string
-    @param filename: the filename of the file to check against the DB
-
-    @type location_id: int
-    @param location_id: the id of the location to look in (optional)
-
-    @rtype: array
-    @return: array of PoolFile objects
-    """
-
-    q = session.query(PoolFile).filter_by(filename=filename)
-
-    if location_id is not None:
-        q = q.join(Location).filter_by(location_id=location_id)
-
-    return q.all()
-
-__all__.append('get_poolfile_by_name')
-
 @session_wrapper
 def get_poolfile_like_name(filename, session=None):
     """
