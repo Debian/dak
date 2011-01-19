@@ -3,7 +3,7 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
-    get_architecture_suites
+    get_architecture_suites, Maintainer, DBSource, Location, PoolFile
 
 import unittest
 
@@ -89,6 +89,95 @@ class PackageTestCase(DBDakTestCase):
         suites = get_architecture_suites('kfreebsd-i386', self.session)
         self.assertEqual(2, len(suites))
         self.assertTrue(self.suite['lenny'] not in suites)
+
+    def setup_locations(self):
+        'create some Location objects, TODO: add component'
+
+        self.loc = {}
+        self.loc['main'] = Location(path = \
+            '/srv/ftp-master.debian.org/ftp/pool/')
+        self.session.add(self.loc['main'])
+
+    def setup_poolfiles(self):
+        'create some PoolFile objects'
+
+        self.file = {}
+        self.file['hello'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['sl'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.session.add_all(self.file.values())
+
+    def test_poolfiles(self):
+        '''
+        Test the relation of the classes PoolFile and Location.
+
+        The code needs some explaination. The property Location.files is not a
+        list as in other relations because such a list would become rather
+        huge. It is a query object that can be queried, filtered, and iterated
+        as usual.  But list like methods like append() and remove() are
+        supported as well which allows code like:
+
+        somelocation.files.append(somefile)
+        '''
+        self.setup_locations()
+        self.setup_poolfiles()
+        location = self.session.query(Location)[0]
+        self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', location.path)
+        self.assertEqual(2, location.files.count())
+        poolfile = location.files. \
+                filter(PoolFile.filename.like('%/hello/hello%')).one()
+        self.assertEqual('main/h/hello/hello_2.2-2.dsc', poolfile.filename)
+        self.assertEqual(location, poolfile.location)
+        location.files.remove(self.file['sl'])
+        # TODO: deletion should cascade automatically
+        self.session.delete(self.file['sl'])
+        self.session.refresh(location)
+        self.assertEqual(1, location.files.count())
+        # please note that we intentionally do not specify 'location' here
+        self.file['sl'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
+            filesize = 0, md5sum = '')
+        location.files.append(self.file['sl'])
+        self.session.refresh(location)
+        self.assertEqual(2, location.files.count())
+
+    def setup_maintainers(self):
+        'create some Maintainer objects'
+
+        self.maintainer = Maintainer(name = 'Mr. Maintainer')
+        self.uploader = Maintainer(name = 'Mrs. Uploader')
+        self.lazyguy = Maintainer(name = 'Lazy Guy')
+        self.session.add_all([self.maintainer, self.uploader, self.lazyguy])
+
+    def setup_sources(self):
+        'create a DBSource object; but it cannot be stored in the DB yet'
+
+        self.source = DBSource(maintainer = self.maintainer,
+            changedby = self.uploader)
+
+    def test_maintainers(self):
+        '''
+        tests relation between Maintainer and DBSource
+
+        TODO: add relations to changes_pending_source
+        '''
+
+        self.setup_maintainers()
+        self.assertEqual('Mr. Maintainer',
+                self.session.query(Maintainer)[0].name)
+        self.assertEqual('Mrs. Uploader',
+                self.session.query(Maintainer)[1].name)
+        self.assertEqual('Lazy Guy',
+                self.session.query(Maintainer)[2].name)
+        self.setup_sources()
+        #TODO: needs File and Location
+        #self.assertEqual(self.maintainer.maintains_sources, [self.source])
+        #self.assertEqual(self.maintainer.changed_sources, [])
+        #self.assertEqual(self.uploader.maintains_sources, [])
+        #self.assertEqual(self.uploader.changed_sources, [self.source])
+        #self.assertEqual(self.lazyguy.maintains_sources, [])
+        #self.assertEqual(self.lazyguy.changed_sources, [])
+
 
 if __name__ == '__main__':
     unittest.main()

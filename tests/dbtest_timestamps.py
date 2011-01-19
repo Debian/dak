@@ -4,6 +4,7 @@ from db_test import DBDakTestCase
 
 from daklib.dbconn import DBConn, Uid
 
+from sqlalchemy import func
 import time
 import unittest
 
@@ -16,10 +17,13 @@ class TimestampTestCase(DBDakTestCase):
     """
 
     def now(self):
+        "returns the current time at the db server"
+
+        # we fetch a fresh session each time to avoid caching
         local_session = DBConn().session()
-        query = local_session.query('now').from_statement('select now() as now')
+        current_time = local_session.query(func.now()).scalar()
         local_session.close()
-        return query.first().now
+        return current_time
 
     def sleep(self):
         time.sleep(0.001)

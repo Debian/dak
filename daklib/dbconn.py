@@ -1070,8 +1070,12 @@ __all__.append('get_dscfiles')
 ################################################################################
 
 class PoolFile(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, filename = None, location = None, filesize = -1, \
+        md5sum = None):
+        self.filename = filename
+        self.location = location
+        self.filesize = filesize
+        self.md5sum = md5sum
 
     def __repr__(self):
         return '<PoolFile %s>' % self.filename
@@ -1522,8 +1526,10 @@ __all__.append('get_dbchange')
 ################################################################################
 
 class Location(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, path = None):
+        self.path = path
+        # the column 'type' should go away, see comment at mapper
+        self.archive_type = 'pool'
 
     def __repr__(self):
         return '<Location %s (%s)>' % (self.path, self.location_id)
@@ -1567,8 +1573,8 @@ __all__.append('get_location')
 ################################################################################
 
 class Maintainer(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, name = None):
+        self.name = name
 
     def __repr__(self):
         return '''<Maintainer '%s' (%s)>''' % (self.name, self.maintainer_id)
@@ -2106,8 +2112,9 @@ __all__.append('get_sections')
 ################################################################################
 
 class DBSource(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, maintainer = None, changedby = None):
+        self.maintainer = maintainer
+        self.changedby = changedby
 
     def __repr__(self):
         return '<DBSource %s (%s)>' % (self.source, self.version)
@@ -2944,7 +2951,11 @@ class DBConn(object):
                properties = dict(file_id = self.tbl_files.c.id,
                                  filesize = self.tbl_files.c.size,
                                  location_id = self.tbl_files.c.location,
-                                 location = relation(Location)))
+                                 location = relation(Location,
+                                     # using lazy='dynamic' in the back
+                                     # reference because we have A LOT of
+                                     # files in one location
+                                     backref=backref('files', lazy='dynamic'))))
 
         mapper(Fingerprint, self.tbl_fingerprint,
                properties = dict(fingerprint_id = self.tbl_fingerprint.c.id,
@@ -3017,10 +3028,16 @@ class DBConn(object):
                                  component = relation(Component),
                                  archive_id = self.tbl_location.c.archive,
                                  archive = relation(Archive),
+                                 # FIXME: the 'type' column is old cruft and
+                                 # should be removed in the future.
                                  archive_type = self.tbl_location.c.type))
 
         mapper(Maintainer, self.tbl_maintainer,
-               properties = dict(maintainer_id = self.tbl_maintainer.c.id))
+               properties = dict(maintainer_id = self.tbl_maintainer.c.id,
+                   maintains_sources = relation(DBSource, backref='maintainer',
+                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.maintainer)),
+                   changed_sources = relation(DBSource, backref='changedby',
+                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))))
 
         mapper(NewComment, self.tbl_new_comments,
                properties = dict(comment_id = self.tbl_new_comments.c.id))
@@ -3056,19 +3073,15 @@ class DBConn(object):
                properties = dict(source_id = self.tbl_source.c.id,
                                  version = self.tbl_source.c.version,
                                  maintainer_id = self.tbl_source.c.maintainer,
-                                 maintainer = relation(Maintainer,
-                                                       primaryjoin=(self.tbl_source.c.maintainer==self.tbl_maintainer.c.id)),
                                  poolfile_id = self.tbl_source.c.file,
                                  poolfile = relation(PoolFile),
                                  fingerprint_id = self.tbl_source.c.sig_fpr,
                                  fingerprint = relation(Fingerprint),
                                  changedby_id = self.tbl_source.c.changedby,
-                                 changedby = relation(Maintainer,
-                                                      primaryjoin=(self.tbl_source.c.changedby==self.tbl_maintainer.c.id)),
                                  srcfiles = relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
-                                 srcassociations = relation(SrcAssociation,
-                                                            primaryjoin=(self.tbl_source.c.id==self.tbl_src_associations.c.source)),
+                                 suites = relation(Suite, secondary=self.tbl_src_associations,
+                                     backref='sources'),
                                  srcuploaders = relation(SrcUploader)))
 
         mapper(SourceACL, self.tbl_source_acl,
