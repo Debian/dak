@@ -109,6 +109,17 @@ class PackageTestCase(DBDakTestCase):
         self.session.add_all(self.file.values())
 
     def test_poolfiles(self):
+        '''
+        Test the relation of the classes PoolFile and Location.
+
+        The code needs some explaination. The property Location.files is not a
+        list as in other relations because such a list would become rather
+        huge. It is a query object that can be queried, filtered, and iterated
+        as usual.  But list like methods like append() and remove() are
+        supported as well which allows code like:
+
+        somelocation.files.append(somefile)
+        '''
         self.setup_locations()
         self.setup_poolfiles()
         location = self.session.query(Location)[0]
@@ -118,6 +129,17 @@ class PackageTestCase(DBDakTestCase):
                 filter(PoolFile.filename.like('%/hello/hello%')).one()
         self.assertEqual('main/h/hello/hello_2.2-2.dsc', poolfile.filename)
         self.assertEqual(location, poolfile.location)
+        location.files.remove(self.file['sl'])
+        # TODO: deletion should cascade automatically
+        self.session.delete(self.file['sl'])
+        self.session.refresh(location)
+        self.assertEqual(1, location.files.count())
+        # please note that we intentionally do not specify 'location' here
+        self.file['sl'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
+            filesize = 0, md5sum = '')
+        location.files.append(self.file['sl'])
+        self.session.refresh(location)
+        self.assertEqual(2, location.files.count())
 
     def setup_maintainers(self):
         'create some Maintainer objects'
