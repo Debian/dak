@@ -1070,8 +1070,12 @@ __all__.append('get_dscfiles')
 ################################################################################
 
 class PoolFile(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, filename = None, location = None, filesize = -1, \
+        md5sum = None):
+        self.filename = filename
+        self.location = location
+        self.filesize = filesize
+        self.md5sum = md5sum
 
     def __repr__(self):
         return '<PoolFile %s>' % self.filename
@@ -1522,8 +1526,10 @@ __all__.append('get_dbchange')
 ################################################################################
 
 class Location(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, path = None):
+        self.path = path
+        # the column 'type' should go away, see comment at mapper
+        self.archive_type = 'pool'
 
     def __repr__(self):
         return '<Location %s (%s)>' % (self.path, self.location_id)

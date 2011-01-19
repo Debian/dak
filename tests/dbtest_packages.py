@@ -3,7 +3,7 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
-    get_architecture_suites, Maintainer, DBSource
+    get_architecture_suites, Maintainer, DBSource, Location, PoolFile
 
 import unittest
 
@@ -89,6 +89,35 @@ class PackageTestCase(DBDakTestCase):
         suites = get_architecture_suites('kfreebsd-i386', self.session)
         self.assertEqual(2, len(suites))
         self.assertTrue(self.suite['lenny'] not in suites)
+
+    def setup_locations(self):
+        'create some Location objects, TODO: add component'
+
+        self.loc = {}
+        self.loc['main'] = Location(path = \
+            '/srv/ftp-master.debian.org/ftp/pool/')
+        self.session.add(self.loc['main'])
+
+    def setup_poolfiles(self):
+        'create some PoolFile objects'
+
+        self.file = {}
+        self.file['hello'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['sl'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.session.add_all(self.file.values())
+
+    def test_poolfiles(self):
+        self.setup_locations()
+        self.setup_poolfiles()
+        location = self.session.query(Location)[0]
+        self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', location.path)
+        self.assertEqual(2, location.files.count())
+        poolfile = location.files. \
+                filter(PoolFile.filename.like('%/hello/hello%')).one()
+        self.assertEqual('main/h/hello/hello_2.2-2.dsc', poolfile.filename)
+        self.assertEqual(location, poolfile.location)
 
     def setup_maintainers(self):
         'create some Maintainer objects'
