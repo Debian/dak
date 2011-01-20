@@ -1,4 +1,7 @@
-#!/bin/sh -ue
+#!/bin/sh
+
+set -u
+set -e
 
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
