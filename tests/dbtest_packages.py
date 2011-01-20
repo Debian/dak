@@ -102,6 +102,7 @@ class PackageTestCase(DBDakTestCase):
     def setup_poolfiles(self):
         'create some PoolFile objects'
 
+        self.setup_locations()
         self.file = {}
         self.file['hello'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
@@ -121,7 +122,7 @@ class PackageTestCase(DBDakTestCase):
 
         somelocation.files.append(somefile)
         '''
-        self.setup_locations()
+
         self.setup_poolfiles()
         location = self.session.query(Location)[0]
         self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', location.path)
@@ -179,8 +180,11 @@ class PackageTestCase(DBDakTestCase):
     def setup_sources(self):
         'create a DBSource object; but it cannot be stored in the DB yet'
 
-        self.source = DBSource(maintainer = self.maintainer['maintainer'],
-            changedby = self.maintainer['uploader'])
+        self.setup_poolfiles()
+        self.source = DBSource(source = 'hello', version = '2.2-2', \
+            maintainer = self.maintainer['maintainer'], \
+            changedby = self.maintainer['uploader'], \
+            poolfile = self.file['hello'], install_date = self.now())
 
     def test_maintainers(self):
         '''
@@ -200,13 +204,12 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(lazyguy,
             self.session.query(Maintainer).get(lazyguy.maintainer_id))
         self.setup_sources()
-        #TODO: needs File and Location
-        #self.assertEqual(maintainer.maintains_sources, [self.source])
-        #self.assertEqual(maintainer.changed_sources, [])
-        #self.assertEqual(uploader.maintains_sources, [])
-        #self.assertEqual(uploader.changed_sources, [self.source])
-        #self.assertEqual(lazyguy.maintains_sources, [])
-        #self.assertEqual(lazyguy.changed_sources, [])
+        self.assertEqual(maintainer.maintains_sources, [self.source])
+        self.assertEqual(maintainer.changed_sources, [])
+        self.assertEqual(uploader.maintains_sources, [])
+        self.assertEqual(uploader.changed_sources, [self.source])
+        self.assertEqual(lazyguy.maintains_sources, [])
+        self.assertEqual(lazyguy.changed_sources, [])
 
 
 if __name__ == '__main__':
