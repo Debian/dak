@@ -23,21 +23,15 @@ class PackageTestCase(DBDakTestCase):
         # hard code ids for source and all
         self.arch['source'].arch_id = 1
         self.arch['all'].arch_id = 2
-        for _, architecture in self.arch.items():
-            self.session.add(architecture)
-            self.session.flush()
-            self.session.refresh(architecture)
+        self.session.add_all(self.arch.values())
 
     def setup_suites(self):
         "setup a hash of Suite objects in self.suite"
 
         self.suite = {}
         for suite_name in ('lenny', 'squeeze', 'sid'):
-            suite = Suite(suite_name = suite_name, version = '-')
-            self.suite[suite_name] = suite
-            self.session.add(suite)
-            self.session.flush()
-            self.session.refresh(suite)
+            self.suite[suite_name] = Suite(suite_name = suite_name, version = '-')
+        self.session.add_all(self.suite.values())
 
     def setUp(self):
         super(PackageTestCase, self).setUp()
@@ -175,7 +169,6 @@ class PackageTestCase(DBDakTestCase):
         self.maintainer['uploader'] = Maintainer(name = 'Mrs. Uploader')
         self.maintainer['lazyguy'] = Maintainer(name = 'Lazy Guy')
         self.session.add_all(self.maintainer.values())
-        self.session.flush()
 
     def setup_sources(self):
         'create a DBSource object; but it cannot be stored in the DB yet'
@@ -195,6 +188,7 @@ class PackageTestCase(DBDakTestCase):
         '''
 
         self.setup_sources()
+        self.session.flush()
         maintainer = self.maintainer['maintainer']
         self.assertEqual(maintainer,
             self.session.query(Maintainer).get(maintainer.maintainer_id))
