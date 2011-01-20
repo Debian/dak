@@ -180,6 +180,7 @@ class PackageTestCase(DBDakTestCase):
     def setup_sources(self):
         'create a DBSource object; but it cannot be stored in the DB yet'
 
+        self.setup_maintainers()
         self.setup_poolfiles()
         self.source = DBSource(source = 'hello', version = '2.2-2', \
             maintainer = self.maintainer['maintainer'], \
@@ -193,7 +194,7 @@ class PackageTestCase(DBDakTestCase):
         TODO: add relations to changes_pending_source
         '''
 
-        self.setup_maintainers()
+        self.setup_sources()
         maintainer = self.maintainer['maintainer']
         self.assertEqual(maintainer,
             self.session.query(Maintainer).get(maintainer.maintainer_id))
@@ -203,13 +204,23 @@ class PackageTestCase(DBDakTestCase):
         lazyguy = self.maintainer['lazyguy']
         self.assertEqual(lazyguy,
             self.session.query(Maintainer).get(lazyguy.maintainer_id))
-        self.setup_sources()
         self.assertEqual(maintainer.maintains_sources, [self.source])
         self.assertEqual(maintainer.changed_sources, [])
         self.assertEqual(uploader.maintains_sources, [])
         self.assertEqual(uploader.changed_sources, [self.source])
         self.assertEqual(lazyguy.maintains_sources, [])
         self.assertEqual(lazyguy.changed_sources, [])
+
+    def test_sources(self):
+        'test relation between DBSource and PoolFile'
+
+        self.setup_sources()
+        poolfile_hello = self.session.query(DBSource)[0].poolfile
+        self.assertEqual(self.file['hello'], poolfile_hello)
+        self.assertEqual(self.source, poolfile_hello.source)
+        poolfile_sl = self.session.query(PoolFile). \
+            filter(PoolFile.filename.like('%/sl/%'))[0]
+        self.assertEqual(None, poolfile_sl.source)
 
 
 if __name__ == '__main__':
