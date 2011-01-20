@@ -209,12 +209,9 @@ class PackageTestCase(DBDakTestCase):
         'test relation between DBSource and PoolFile'
 
         self.setup_sources()
-        poolfile_hello = self.session.query(DBSource)[0].poolfile
-        self.assertEqual(self.file['hello'], poolfile_hello)
-        self.assertEqual(self.source, poolfile_hello.source)
-        poolfile_sl = self.session.query(PoolFile). \
-            filter(PoolFile.filename.like('%/sl/%'))[0]
-        self.assertEqual(None, poolfile_sl.source)
+        self.assertEqual(self.file['hello'], self.source.poolfile)
+        self.assertEqual(self.source, self.file['hello'].source)
+        self.assertEqual(None, self.file['sl'].source)
 
 
 if __name__ == '__main__':
