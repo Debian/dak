@@ -2207,10 +2207,11 @@ def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=
 
 __all__.append('get_sources_from_name')
 
+# FIXME: This function fails badly if it finds more than 1 source package.
 @session_wrapper
 def get_source_in_suite(source, suite, session=None):
     """
-    Returns list of DBSource objects for a combination of C{source} and C{suite}.
+    Returns a DBSource object for a combination of C{source} and C{suite}.
 
       - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
       - B{suite} - a suite name, eg. I{unstable}
@@ -2226,12 +2227,11 @@ def get_source_in_suite(source, suite, session=None):
 
     """
 
-    q = session.query(SrcAssociation)
-    q = q.join('source').filter_by(source=source)
-    q = q.join('suite').filter_by(suite_name=suite)
+    q = session.query(DBSource).filter_by(source = source). \
+        filter(DBSource.suites.any(Suite.suite_name == suite))
 
     try:
-        return q.one().source
+        return q.one()
     except NoResultFound:
         return None
 
