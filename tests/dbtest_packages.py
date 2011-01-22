@@ -5,10 +5,24 @@ from db_test import DBDakTestCase
 from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
-    get_suites_source_in
+    get_suites_source_in, add_dsc_to_db
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
+
+class Pkg():
+    'fake package class used for testing'
+
+    def __init__(self):
+        self.dsc = {}
+        self.files = {}
+        self.changes = {}
+
+class Upload():
+    'fake Upload class used for testing'
+
+    def __init__(self, pkg):
+        self.pkg = pkg
 
 class PackageTestCase(DBDakTestCase):
     """
@@ -273,6 +287,37 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(2, len(get_suites_source_in('sl', self.session)))
         self.assertTrue(self.suite['squeeze'] in \
             get_suites_source_in('sl', self.session))
+
+    def test_upload(self):
+        'tests function add_dsc_to_db()'
+
+        self.setup_maintainers()
+        self.setup_locations()
+        self.setup_poolfiles()
+        pkg = Pkg()
+        pkg.dsc['source'] = 'hello'
+        pkg.dsc['version'] = '2.2-2'
+        pkg.dsc['maintainer'] = self.maintainer['maintainer'].name
+        pkg.changes['changed-by'] = self.maintainer['uploader'].name
+        pkg.changes['fingerprint'] = 'deadbeef'
+        pkg.changes['distribution'] = { 'sid': '' }
+        self.session.flush()
+        self.session.refresh(self.file['hello'])
+        pkg.files['hello_2.2-2.dsc'] = { \
+            'component': 'main',
+            'location id': self.loc['main'].component_id,
+            'files id': self.file['hello'].file_id }
+        pkg.dsc_files = {}
+        upload = Upload(pkg)
+        (source, dsc_component, dsc_location_id, pfs) = \
+            add_dsc_to_db(upload, 'hello_2.2-2.dsc', self.session)
+        self.session.refresh(source)
+        self.assertEqual('hello', source.source)
+        self.assertEqual('2.2-2', source.version)
+        self.assertEqual('main', dsc_component)
+        # no dsc files defined above
+        self.assertEqual(None, dsc_location_id)
+        self.assertEqual([], pfs)
 
 
 if __name__ == '__main__':
