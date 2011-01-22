@@ -5,7 +5,7 @@ from db_test import DBDakTestCase
 from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
-    get_suites_source_in, add_dsc_to_db
+    get_suites_source_in, add_dsc_to_db, source_exists
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
@@ -319,6 +319,29 @@ class PackageTestCase(DBDakTestCase):
         # no dsc files defined above
         self.assertEqual(None, dsc_location_id)
         self.assertEqual([], pfs)
+
+    def test_source_exists(self):
+        'test function source_exists()'
+
+        self.setup_sources()
+        self.session.flush()
+        hello = self.source['hello']
+        self.assertTrue(source_exists(hello.source, hello.version, \
+            suites = ['sid'], session = self.session))
+        # binNMU
+        self.assertTrue(source_exists(hello.source, hello.version + '+b7', \
+            suites = ['sid'], session = self.session))
+        self.assertTrue(not source_exists(hello.source, hello.version, \
+            suites = ['lenny', 'squeeze'], session = self.session))
+        self.assertTrue(not source_exists(hello.source, hello.version, \
+            suites = ['lenny', 'sid'], session = self.session))
+        self.assertTrue(not source_exists(hello.source, hello.version, \
+            suites = ['sid', 'lenny'], session = self.session))
+        self.assertTrue(not source_exists(hello.source, '0815', \
+            suites = ['sid'], session = self.session))
+        # 'any' suite
+        self.assertTrue(source_exists(hello.source, hello.version, \
+            session = self.session))
 
 
 if __name__ == '__main__':

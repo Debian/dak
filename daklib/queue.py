@@ -795,7 +795,8 @@ class Upload(object):
                                     (source_version, f, self.pkg.changes["version"]))
         else:
             # Check in the SQL database
-            if not source_exists(source_package, source_version, self.pkg.changes["distribution"].keys(), session):
+            if not source_exists(source_package, source_version, suites = \
+                self.pkg.changes["distribution"].keys(), session = session):
                 # Check in one of the other directories
                 source_epochless_version = re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
@@ -2681,7 +2682,8 @@ distribution."""
                 source_version = entry["source version"]
                 source_package = entry["source package"]
                 if not self.pkg.changes["architecture"].has_key("source") \
-                   and not source_exists(source_package, source_version, self.pkg.changes["distribution"].keys(), session):
+                   and not source_exists(source_package, source_version, \
+                    suites = self.pkg.changes["distribution"].keys(), session = session):
                     source_epochless_version = re_no_epoch.sub('', source_version)
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                     found = False
@@ -2728,7 +2730,9 @@ distribution."""
                 source_version = entry["source version"]
                 source_package = entry["source package"]
                 if not self.pkg.changes["architecture"].has_key("source") \
-                   and not source_exists(source_package, source_version,  self.pkg.changes["distribution"].keys()):
+                   and not source_exists(source_package, source_version, \
+                    suites = self.pkg.changes["distribution"].keys(), \
+                    session = session):
                     self.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, checkfile))
 
             # Version and file overwrite checks
