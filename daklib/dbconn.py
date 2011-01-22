@@ -2207,7 +2207,8 @@ def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=
 
 __all__.append('get_sources_from_name')
 
-# FIXME: This function fails badly if it finds more than 1 source package.
+# FIXME: This function fails badly if it finds more than 1 source package and
+# its implementation is trivial enough to be inlined.
 @session_wrapper
 def get_source_in_suite(source, suite, session=None):
     """
@@ -2227,9 +2228,7 @@ def get_source_in_suite(source, suite, session=None):
 
     """
 
-    q = session.query(DBSource).filter_by(source = source). \
-        filter(DBSource.suites.any(Suite.suite_name == suite))
-
+    q = get_suite(suite, session).get_sources(source)
     try:
         return q.one()
     except NoResultFound:
@@ -2480,6 +2479,8 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
                  ('CopyChanges', 'copychanges'),
                  ('OverrideSuite', 'overridesuite')]
 
+# Why the heck don't we have any UNIQUE constraints in table suite?
+# TODO: Add UNIQUE constraints for appropriate columns.
 class Suite(object):
     def __init__(self, suite_name = None, version = None):
         self.suite_name = suite_name
@@ -2532,6 +2533,24 @@ class Suite(object):
         if skipall:
             q = q.filter(Architecture.arch_string != 'all')
         return q.order_by(Architecture.arch_string).all()
+
+    def get_sources(self, source):
+        """
+        Returns a query object representing DBSource that is part of C{suite}.
+
+          - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
+
+        @type source: string
+        @param source: source package name
+
+        @rtype: sqlalchemy.orm.query.Query
+        @return: a query of DBSource
+
+        """
+
+        session = object_session(self)
+        return session.query(DBSource).filter_by(source = source). \
+            filter(DBSource.suites.contains(self))
 
 __all__.append('Suite')
 
