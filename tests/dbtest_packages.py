@@ -7,7 +7,7 @@ from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
     get_suites_source_in, add_dsc_to_db, source_exists
 from daklib.queue_install import package_to_suite
-from daklib.queue import get_newest_source
+from daklib.queue import get_newest_source, get_suite_version
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
@@ -369,15 +369,26 @@ class PackageTestCase(DBDakTestCase):
         self.assertTrue(package_to_suite(upload, 'lenny', self.session))
 
     def test_get_newest_source(self):
-        'test function get_newest_source'
+        'test function get_newest_source()'
 
         self.setup_sources()
-        self.session.flush()
         import daklib.queue
         daklib.queue.dm_suites = ['sid']
         self.assertEqual(self.source['hello'], get_newest_source('hello', self.session))
         self.assertEqual(None, get_newest_source('foobar', self.session))
 
+    def test_get_suite_version(self):
+        'test function get_suite_version()'
+
+        self.setup_sources()
+        result = get_suite_version('hello', self.session)
+        self.assertEqual(2, len(result))
+        self.assertTrue(('sid', '2.2-1') in result)
+        self.assertTrue(('sid', '2.2-2') in result)
+        result = get_suite_version('sl', self.session)
+        self.assertEqual(2, len(result))
+        self.assertTrue(('squeeze', '3.03-16') in result)
+        self.assertTrue(('sid', '3.03-16') in result)
 
 if __name__ == '__main__':
     unittest.main()

@@ -383,6 +383,12 @@ def get_newest_source(source, session):
         order_by(desc('source.version'))
     return q.first()
 
+def get_suite_version(source, session):
+    'returns a list of tuples (suite_name, version) for source package'
+    q = session.query(Suite.suite_name, DBSource.version). \
+        join(Suite.sources).filter_by(source = source)
+    return q.all()
+
 class Upload(object):
     """
     Everything that has to do with an upload processed.
@@ -2515,10 +2521,7 @@ distribution."""
         version = self.pkg.dsc.get("version")
 
         # Ensure version is sane
-        q = session.query(SrcAssociation)
-        q = q.join(DBSource).filter(DBSource.source==source)
-
-        self.cross_suite_version_check([ (x.suite.suite_name, x.source.version) for x in q.all() ],
+        self.cross_suite_version_check(get_suite_version(source, session),
                                        filename, version, sourceful=True)
 
     ################################################################################
