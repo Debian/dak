@@ -48,13 +48,13 @@ class DebVersionTestCase(DBDakTestCase):
         self.assertEqual(0, q.filter(Version.version > '1.0').count())
         self.assertEqual(2, q.filter(Version.version != '1.0').count())
         self.assertEqual(2, q.filter(Version.version.in_(['0.5~', '1.0'])).count())
-        q = self.session.query(func.min(Version.version).label('min'))
-        self.assertEqual('0.5~', q.one().min)
-        q = self.session.query(func.max(Version.version).label('max'))
-        self.assertEqual('1.0', q.one().max)
+        q = self.session.query(func.min(Version.version))
+        self.assertEqual('0.5~', q.scalar())
+        q = self.session.query(func.max(Version.version))
+        self.assertEqual('1.0', q.scalar())
 
     def tearDown(self):
-        self.session.close()
+        self.session.rollback()
         self.version_table.drop()
         super(DebVersionTestCase, self).tearDown()
 

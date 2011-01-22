@@ -2074,9 +2074,14 @@ __all__.append('get_sections')
 ################################################################################
 
 class DBSource(object):
-    def __init__(self, maintainer = None, changedby = None):
+    def __init__(self, source = None, version = None, maintainer = None, \
+        changedby = None, poolfile = None, install_date = None):
+        self.source = source
+        self.version = version
         self.maintainer = maintainer
         self.changedby = changedby
+        self.poolfile = poolfile
+        self.install_date = install_date
 
     def __repr__(self):
         return '<DBSource %s (%s)>' % (self.source, self.version)
@@ -3036,7 +3041,7 @@ class DBConn(object):
                                  version = self.tbl_source.c.version,
                                  maintainer_id = self.tbl_source.c.maintainer,
                                  poolfile_id = self.tbl_source.c.file,
-                                 poolfile = relation(PoolFile),
+                                 poolfile = relation(PoolFile, backref=backref('source', uselist = False)),
                                  fingerprint_id = self.tbl_source.c.sig_fpr,
                                  fingerprint = relation(Fingerprint),
                                  changedby_id = self.tbl_source.c.changedby,

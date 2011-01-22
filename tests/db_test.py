@@ -3,7 +3,7 @@ from base_test import DakTestCase, fixture
 from daklib.config import Config
 from daklib.dbconn import DBConn
 
-from sqlalchemy import create_engine, __version__
+from sqlalchemy import create_engine, func, __version__
 from sqlalchemy.exc import SADeprecationWarning
 from sqlalchemy.schema import DDL
 
@@ -71,6 +71,15 @@ class DBDakTestCase(DakTestCase):
         if self.metadata is None:
             self.initialize()
         self.session = DBConn().session()
+
+    def now(self):
+        "returns the current time at the db server"
+
+        # we fetch a fresh session each time to avoid caching
+        local_session = DBConn().session()
+        current_time = local_session.query(func.now()).scalar()
+        local_session.close()
+        return current_time
 
     def classes_to_clean(self):
         """

@@ -23,21 +23,15 @@ class PackageTestCase(DBDakTestCase):
         # hard code ids for source and all
         self.arch['source'].arch_id = 1
         self.arch['all'].arch_id = 2
-        for _, architecture in self.arch.items():
-            self.session.add(architecture)
-            self.session.flush()
-            self.session.refresh(architecture)
+        self.session.add_all(self.arch.values())
 
     def setup_suites(self):
         "setup a hash of Suite objects in self.suite"
 
         self.suite = {}
         for suite_name in ('lenny', 'squeeze', 'sid'):
-            suite = Suite(suite_name = suite_name, version = '-')
-            self.suite[suite_name] = suite
-            self.session.add(suite)
-            self.session.flush()
-            self.session.refresh(suite)
+            self.suite[suite_name] = Suite(suite_name = suite_name, version = '-')
+        self.session.add_all(self.suite.values())
 
     def setUp(self):
         super(PackageTestCase, self).setUp()
@@ -102,6 +96,7 @@ class PackageTestCase(DBDakTestCase):
     def setup_poolfiles(self):
         'create some PoolFile objects'
 
+        self.setup_locations()
         self.file = {}
         self.file['hello'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
@@ -121,7 +116,7 @@ class PackageTestCase(DBDakTestCase):
 
         somelocation.files.append(somefile)
         '''
-        self.setup_locations()
+
         self.setup_poolfiles()
         location = self.session.query(Location)[0]
         self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', location.path)
@@ -169,16 +164,21 @@ class PackageTestCase(DBDakTestCase):
     def setup_maintainers(self):
         'create some Maintainer objects'
 
-        self.maintainer = Maintainer(name = 'Mr. Maintainer')
-        self.uploader = Maintainer(name = 'Mrs. Uploader')
-        self.lazyguy = Maintainer(name = 'Lazy Guy')
-        self.session.add_all([self.maintainer, self.uploader, self.lazyguy])
+        self.maintainer = {}
+        self.maintainer['maintainer'] = Maintainer(name = 'Mr. Maintainer')
+        self.maintainer['uploader'] = Maintainer(name = 'Mrs. Uploader')
+        self.maintainer['lazyguy'] = Maintainer(name = 'Lazy Guy')
+        self.session.add_all(self.maintainer.values())
 
     def setup_sources(self):
         'create a DBSource object; but it cannot be stored in the DB yet'
 
-        self.source = DBSource(maintainer = self.maintainer,
-            changedby = self.uploader)
+        self.setup_maintainers()
+        self.setup_poolfiles()
+        self.source = DBSource(source = 'hello', version = '2.2-2', \
+            maintainer = self.maintainer['maintainer'], \
+            changedby = self.maintainer['uploader'], \
+            poolfile = self.file['hello'], install_date = self.now())
 
     def test_maintainers(self):
         '''
@@ -187,21 +187,31 @@ class PackageTestCase(DBDakTestCase):
         TODO: add relations to changes_pending_source
         '''
 
-        self.setup_maintainers()
-        self.assertEqual('Mr. Maintainer',
-                self.session.query(Maintainer)[0].name)
-        self.assertEqual('Mrs. Uploader',
-                self.session.query(Maintainer)[1].name)
-        self.assertEqual('Lazy Guy',
-                self.session.query(Maintainer)[2].name)
         self.setup_sources()
-        #TODO: needs File and Location
-        #self.assertEqual(self.maintainer.maintains_sources, [self.source])
-        #self.assertEqual(self.maintainer.changed_sources, [])
-        #self.assertEqual(self.uploader.maintains_sources, [])
-        #self.assertEqual(self.uploader.changed_sources, [self.source])
-        #self.assertEqual(self.lazyguy.maintains_sources, [])
-        #self.assertEqual(self.lazyguy.changed_sources, [])
+        self.session.flush()
+        maintainer = self.maintainer['maintainer']
+        self.assertEqual(maintainer,
+            self.session.query(Maintainer).get(maintainer.maintainer_id))
+        uploader = self.maintainer['uploader']
+        self.assertEqual(uploader,
+            self.session.query(Maintainer).get(uploader.maintainer_id))
+        lazyguy = self.maintainer['lazyguy']
+        self.assertEqual(lazyguy,
+            self.session.query(Maintainer).get(lazyguy.maintainer_id))
+        self.assertEqual(maintainer.maintains_sources, [self.source])
+        self.assertEqual(maintainer.changed_sources, [])
+        self.assertEqual(uploader.maintains_sources, [])
+        self.assertEqual(uploader.changed_sources, [self.source])
+        self.assertEqual(lazyguy.maintains_sources, [])
+        self.assertEqual(lazyguy.changed_sources, [])
+
+    def test_sources(self):
+        'test relation between DBSource and PoolFile'
+
+        self.setup_sources()
+        self.assertEqual(self.file['hello'], self.source.poolfile)
+        self.assertEqual(self.source, self.file['hello'].source)
+        self.assertEqual(None, self.file['sl'].source)
 
 
 if __name__ == '__main__':
