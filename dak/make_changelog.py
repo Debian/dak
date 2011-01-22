@@ -54,11 +54,11 @@ import sys
 import apt_pkg
 from commands import getstatusoutput
 from glob import glob
-from re import split
 from shutil import rmtree
 from daklib.dbconn import *
 from daklib import utils
 from daklib.config import Config
+from daklib.regexes import re_no_epoch
 
 ################################################################################
 
@@ -166,6 +166,9 @@ def export_files(session, pool, clpool, temppath):
     """
 
     sources = {}
+    unpack = {}
+    files = ('changelog', 'copyright', 'NEWS.Debian', 'README.Debian')
+    stats = {'unpack': 0, 'created': 0, 'removed': 0, 'errors': 0, 'files': 0}
     query = """SELECT DISTINCT s.source, su.suite_name AS suite, s.version, f.filename
                FROM source s
                JOIN newest_source n ON n.source = s.source AND n.version = s.version
@@ -177,64 +180,80 @@ def export_files(session, pool, clpool, temppath):
     for p in session.execute(query):
         if not sources.has_key(p[0]):
             sources[p[0]] = {}
-        sources[p[0]][p[1]] = (p[2], p[3])
+        sources[p[0]][p[1]] = (re_no_epoch.sub('', p[2]), p[3])
+
+    for p in sources.keys():
+        for s in sources[p].keys():
+            path = os.path.join(clpool, '/'.join(sources[p][s][1].split('/')[:-1]))
+            if not os.path.exists(path):
+                os.makedirs(path)
+            if not os.path.exists(os.path.join(path, \
+                   '%s_%s.changelog' % (p, sources[p][s][0]))):
+                if not unpack.has_key(os.path.join(pool, sources[p][s][1])):
+                    unpack[os.path.join(pool, sources[p][s][1])] = (path, set())
+                unpack[os.path.join(pool, sources[p][s][1])][1].add(s)
+            else:
+                for file in glob('%s/%s_%s*' % (path, p, sources[p][s][0])):
+                    link = '%s%s' % (s, file.split('%s_%s' \
+                                      % (p, sources[p][s][0]))[1])
+                    try:
+                        os.unlink(os.path.join(path, link))
+                    except OSError:
+                        pass
+                    os.link(os.path.join(path, file), os.path.join(path, link))
 
     tempdir = utils.temp_dirname(parent=temppath)
     os.rmdir(tempdir)
 
-    for p in sources.keys():
-        for s in sources[p].keys():
-            files = (('changelog', True),
-                     ('copyright', True),
-                     ('NEWS.Debian', False),
-                     ('README.Debian', False))
-            path = os.path.join(clpool, sources[p][s][1].split('/')[0], \
-                                split('(^lib\S|^\S)', p)[1], p)
-            if not os.path.exists(path):
-                os.makedirs(path)
+    for p in unpack.keys():
+        package = os.path.splitext(os.path.basename(p))[0].split('_')
+        cmd = 'dpkg-source --no-check --no-copy -x %s %s' % (p, tempdir)
+        (result, output) = getstatusoutput(cmd)
+        if not result:
+            stats['unpack'] += 1
             for file in files:
-                for f in glob(os.path.join(path, s + '.*')):
-                    os.unlink(f)
-            try:
-                for file in files:
-                    t = os.path.join(path, '%s_%s.*%s' % (p, sources[p][s][0], file[0]))
-                    if file[1] and not glob(t):
-                        raise OSError
-                    else:
-                        for f in glob(t):
-                            os.link(f, os.path.join(path, '%s.%s' % \
-                                    (s, os.path.basename(f).split('%s_%s.' \
-                                    % (p, sources[p][s][0]))[1])))
-            except OSError:
-                cmd = 'dpkg-source --no-check --no-copy -x %s %s' \
-                      % (os.path.join(pool, sources[p][s][1]), tempdir)
-                (result, output) = getstatusoutput(cmd)
-                if not result:
-                    for file in files:
+                for f in glob(os.path.join(tempdir, 'debian', '*%s*' % file)):
+                    for s in unpack[p][1]:
+                        suite = os.path.join(unpack[p][0], '%s.%s' \
+                                % (s, os.path.basename(f)))
+                        version = os.path.join(unpack[p][0], '%s_%s.%s' % \
+                                  (package[0], package[1], os.path.basename(f)))
+                        if not os.path.exists(version):
+                            os.link(f, version)
+                            stats['created'] += 1
                         try:
-                            for f in glob(os.path.join(tempdir, 'debian', '*' + file[0])):
-                                for dest in os.path.join(path, '%s_%s.%s' \
-                                            % (p, sources[p][s][0], os.path.basename(f))), \
-                                            os.path.join(path, '%s.%s' % (s, os.path.basename(f))):
-                                    if not os.path.exists(dest):
-                                        os.link(f, dest)
-                        except:
-                            print 'make-changelog: unable to extract %s for %s_%s' \
-                                   % (os.path.basename(f), p, sources[p][s][0])
-                else:
-                    print 'make-changelog: unable to unpack %s_%s: %s' % (p, sources[p][s][0], output)
+                            os.unlink(suite)
+                        except OSError:
+                            pass
+                        os.link(version, suite)
+                        stats['created'] += 1
+        else:
+            print 'make-changelog: unable to unpack %s_%s: %s' \
+                   % (package[0], package[1], output)
+            stats['errors'] += 1
 
-                rmtree(tempdir)
+        rmtree(tempdir)
 
     for root, dirs, files in os.walk(clpool):
         if len(files):
             if root.split('/')[-1] not in sources.keys():
                 if os.path.exists(root):
                     rmtree(root)
+                    stats['removed'] += 1
             for file in files:
                 if os.path.exists(os.path.join(root, file)):
                     if os.stat(os.path.join(root, file)).st_nlink ==  1:
                         os.unlink(os.path.join(root, file))
+                        stats['removed'] += 1
+
+    for root, dirs, files in os.walk(clpool):
+        stats['files'] += len(files)
+    print 'make-changelog: file exporting finished'
+    print '  * New packages unpacked: %d' % stats['unpack']
+    print '  * New files created: %d' % stats['created']
+    print '  * New files removed: %d' % stats['removed']
+    print '  * Unpack errors: %d' % stats['errors']
+    print '  * Files available into changelog pool: %d' % stats['files']
 
 def main():
     Cnf = utils.get_conf()
