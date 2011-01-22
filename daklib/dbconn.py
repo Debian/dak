@@ -2501,8 +2501,7 @@ class Suite(object):
         @return: list of Architecture objects for the given name (may be empty)
         """
 
-        q = object_session(self).query(Architecture). \
-            filter(Architecture.suites.contains(self))
+        q = object_session(self).query(Architecture).with_parent(self)
         if skipsrc:
             q = q.filter(Architecture.arch_string != 'source')
         if skipall:
@@ -2525,7 +2524,7 @@ class Suite(object):
 
         session = object_session(self)
         return session.query(DBSource).filter_by(source = source). \
-            filter(DBSource.suites.contains(self))
+            with_parent(self)
 
 __all__.append('Suite')
 
