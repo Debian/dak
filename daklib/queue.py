@@ -370,6 +370,19 @@ def edit_note(note, upload, session, trainee=False):
 
 ###############################################################################
 
+# suite names DMs can upload to
+dm_suites = ['unstable', 'experimental']
+
+def get_newest_source(source, session):
+    'returns the newest DBSource object in dm_suites'
+    ## the most recent version of the package uploaded to unstable or
+    ## experimental includes the field "DM-Upload-Allowed: yes" in the source
+    ## section of its control file
+    q = session.query(DBSource).filter_by(source = source). \
+        filter(DBSource.suites.any(Suite.suite_name.in_(dm_suites))). \
+        order_by(desc('source.version'))
+    return q.first()
+
 class Upload(object):
     """
     Everything that has to do with an upload processed.
@@ -1681,22 +1694,13 @@ class Upload(object):
         if rej:
             return
 
-        ## the most recent version of the package uploaded to unstable or
-        ## experimental includes the field "DM-Upload-Allowed: yes" in the source
-        ## section of its control file
-        q = session.query(DBSource).filter_by(source=self.pkg.changes["source"])
-        q = q.join(SrcAssociation)
-        q = q.join(Suite).filter(Suite.suite_name.in_(['unstable', 'experimental']))
-        q = q.order_by(desc('source.version')).limit(1)
+        r = get_newest_source(self.pkg.changes["source"], session)
 
-        r = q.all()
-
-        if len(r) != 1:
+        if r is None:
             rej = "Could not find existing source package %s in unstable or experimental and this is a DM upload" % self.pkg.changes["source"]
             self.rejects.append(rej)
             return
 
-        r = r[0]
         if not r.dm_upload_allowed:
             rej = "Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version (%s)" % (self.pkg.changes["source"], r.version)
             self.rejects.append(rej)

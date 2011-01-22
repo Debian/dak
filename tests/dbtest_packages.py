@@ -7,6 +7,7 @@ from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
     get_suites_source_in, add_dsc_to_db, source_exists
 from daklib.queue_install import package_to_suite
+from daklib.queue import get_newest_source
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
@@ -348,7 +349,6 @@ class PackageTestCase(DBDakTestCase):
         'test function package_to_suite()'
 
         self.setup_sources()
-        self.session.flush()
         pkg = Pkg()
         pkg.changes = { 'distribution': {} }
         upload = Upload(pkg)
@@ -367,6 +367,16 @@ class PackageTestCase(DBDakTestCase):
         self.assertTrue(package_to_suite(upload, 'sid', self.session))
         pkg.changes['distribution'] = { 'lenny': '' }
         self.assertTrue(package_to_suite(upload, 'lenny', self.session))
+
+    def test_get_newest_source(self):
+        'test function get_newest_source'
+
+        self.setup_sources()
+        self.session.flush()
+        import daklib.queue
+        daklib.queue.dm_suites = ['sid']
+        self.assertEqual(self.source['hello'], get_newest_source('hello', self.session))
+        self.assertEqual(None, get_newest_source('foobar', self.session))
 
 
 if __name__ == '__main__':
