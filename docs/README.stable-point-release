@@ -3,7 +3,7 @@ Rough Guide to doing Stable Point Releases in Debian
 
 o Dump projectb for backup purposes.
 o get everything listed, dak control-suite -l proposed-updates > p-u.list
-o generate the changelog using dak make-changelog
+o generate the changelog using dak make-changelog -s proposed-updates -b stable | cat - ${ftpdir}/dists/stable/ChangeLog | sponge ${ftpdir}/dists/stable/ChangeLog
 o add everything to stable:  cat p-u.list |dak control-suite --add stable
 o remove everything from proposed-updates, dak control-suite -r proposed-updates < p-u.list
 o sync with stable RM if there is any propup needed. do it, if so.
@@ -16,17 +16,38 @@ o Update the 'Debian<n>.<n>r<n>' symlink in dists/
 o Clean up dists/stable/ChangeLog (add header, basically)
 o Update fields in suite table in postgresql (see below)
 
-o Run 'dak dominate --force -s stable'
-o Run 'dak generate-filelist -s stable'
-o Run apt-ftparchive generate apt.conf.stable
-o Run 'dak generate-releases --force-touch --apt-conf apt.conf.stable stable'
+o dak dominate --force -s stable
+o dak generate-filelist -s stable
+o Let SRM see if all is ok
+o cd $configdir ; apt-ftparchive generate apt.conf.stable
+o dak generate-releases --force-touch --apt-conf apt.conf.stable stable
+o Check if a mirror push is needed or next dinstall is enough. for a push
+o if so:
+   TRACEFILE="${ftpdir}/project/trace/ftp-master.debian.org"
+   DATE_SERIAL=$(date +"%Y%m%d01")
+   FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
+   if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
+       SERIAL="$DATE_SERIAL"
+   else
+       SERIAL="$FILESOAPLUS1"
+   fi
+   date -u > ${TRACEFILE}
+   echo "Using dak v1" >> ${TRACEFILE}
+   echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
+   echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
+   cd ${mirrordir}
+   rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
 
+   date -u > /srv/ftp.debian.org/web/mirrorstart
+   echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
+   echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
+   sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
 
 
 
 begin;
-update suite set version = '5.0.6' where suite_name = 'stable';
-update suite set description = 'Debian 5.0.6 Released 04 September 2010' where suite_name = 'stable';
+update suite set version = '5.0.8' where suite_name = 'stable';
+update suite set description = 'Debian 5.0.8 Released 22 Januar 2011' where suite_name = 'stable';
 
 ------------------------------------------------------------------------
 Old doc:
