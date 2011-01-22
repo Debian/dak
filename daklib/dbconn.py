@@ -2416,17 +2416,6 @@ __all__.append('SourceACL')
 
 ################################################################################
 
-class SrcAssociation(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<SrcAssociation %s (%s, %s)>' % (self.sa_id, self.source, self.suite)
-
-__all__.append('SrcAssociation')
-
-################################################################################
-
 class SrcFormat(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -3058,13 +3047,6 @@ class DBConn(object):
 
         mapper(SourceACL, self.tbl_source_acl,
                properties = dict(source_acl_id = self.tbl_source_acl.c.id))
-
-        mapper(SrcAssociation, self.tbl_src_associations,
-               properties = dict(sa_id = self.tbl_src_associations.c.id,
-                                 suite_id = self.tbl_src_associations.c.suite,
-                                 suite = relation(Suite),
-                                 source_id = self.tbl_src_associations.c.source,
-                                 source = relation(DBSource)))
 
         mapper(SrcFormat, self.tbl_src_format,
                properties = dict(src_format_id = self.tbl_src_format.c.id,
