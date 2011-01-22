@@ -6,6 +6,7 @@ from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
     get_suites_source_in, add_dsc_to_db, source_exists
+from daklib.queue_install import package_to_suite
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
@@ -342,6 +343,30 @@ class PackageTestCase(DBDakTestCase):
         # 'any' suite
         self.assertTrue(source_exists(hello.source, hello.version, \
             session = self.session))
+
+    def test_package_to_suite(self):
+        'test function package_to_suite()'
+
+        self.setup_sources()
+        self.session.flush()
+        pkg = Pkg()
+        pkg.changes = { 'distribution': {} }
+        upload = Upload(pkg)
+        self.assertTrue(not package_to_suite(upload, 'sid', self.session))
+        pkg.changes['distribution'] = { 'sid': '' }
+        pkg.changes['architecture'] = { 'source': '' }
+        self.assertTrue(package_to_suite(upload, 'sid', self.session))
+        pkg.changes['architecture'] = {}
+        pkg.changes['source'] = self.source['hello'].source
+        pkg.changes['version'] = self.source['hello'].version
+        self.assertTrue(not package_to_suite(upload, 'sid', self.session))
+        pkg.changes['version'] = '42'
+        self.assertTrue(package_to_suite(upload, 'sid', self.session))
+        pkg.changes['source'] = 'foobar'
+        pkg.changes['version'] = self.source['hello'].version
+        self.assertTrue(package_to_suite(upload, 'sid', self.session))
+        pkg.changes['distribution'] = { 'lenny': '' }
+        self.assertTrue(package_to_suite(upload, 'lenny', self.session))
 
 
 if __name__ == '__main__':
