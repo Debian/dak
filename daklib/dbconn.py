@@ -2268,12 +2268,9 @@ def add_dsc_to_db(u, filename, session=None):
     session.add(source)
     session.flush()
 
-    for suite_name in u.pkg.changes["distribution"].keys():
-        sa = SrcAssociation()
-        sa.source_id = source.source_id
-        sa.suite_id = get_suite(suite_name).suite_id
-        session.add(sa)
-
+    suite_names = u.pkg.changes["distribution"].keys()
+    source.suites = session.query(Suite). \
+        filter(Suite.suite_name.in_(suite_names)).all()
     session.flush()
 
     # Add the source files to the DB (files and dsc_files)
