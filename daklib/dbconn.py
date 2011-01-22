@@ -2266,12 +2266,10 @@ def add_dsc_to_db(u, filename, session=None):
 
     source.poolfile_id = entry["files id"]
     session.add(source)
-    session.flush()
 
     suite_names = u.pkg.changes["distribution"].keys()
     source.suites = session.query(Suite). \
         filter(Suite.suite_name.in_(suite_names)).all()
-    session.flush()
 
     # Add the source files to the DB (files and dsc_files)
     dscfile = DSCFile()
@@ -2320,8 +2318,6 @@ def add_dsc_to_db(u, filename, session=None):
 
         df.poolfile_id = files_id
         session.add(df)
-
-    session.flush()
 
     # Add the src_uploaders to the DB
     uploader_ids = [source.maintainer_id]
