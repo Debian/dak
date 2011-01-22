@@ -314,6 +314,7 @@ class PackageTestCase(DBDakTestCase):
         self.session.refresh(source)
         self.assertEqual('hello', source.source)
         self.assertEqual('2.2-2', source.version)
+        self.assertEqual('sid', source.suites[0].suite_name)
         self.assertEqual('main', dsc_component)
         # no dsc files defined above
         self.assertEqual(None, dsc_location_id)
