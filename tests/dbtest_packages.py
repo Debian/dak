@@ -4,7 +4,8 @@ from db_test import DBDakTestCase
 
 from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
-    check_poolfile, get_poolfile_like_name, get_source_in_suite
+    check_poolfile, get_poolfile_like_name, get_source_in_suite, \
+    get_suites_source_in
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
@@ -266,6 +267,12 @@ class PackageTestCase(DBDakTestCase):
             get_source_in_suite('hello', 'squeeze', self.session))
         self.assertEqual(self.source['sl'], \
             get_source_in_suite('sl', 'sid', self.session))
+        # test get_suites_source_in()
+        self.assertEqual([self.suite['sid']], \
+            get_suites_source_in('hello', self.session))
+        self.assertEqual(2, len(get_suites_source_in('sl', self.session)))
+        self.assertTrue(self.suite['squeeze'] in \
+            get_suites_source_in('sl', self.session))
 
 
 if __name__ == '__main__':

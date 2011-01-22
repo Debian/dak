@@ -2168,7 +2168,7 @@ def get_suites_source_in(source, session=None):
     @return: list of Suite objects for the given source
     """
 
-    return session.query(Suite).join(SrcAssociation).join(DBSource).filter_by(source=source).all()
+    return session.query(Suite).filter(Suite.sources.any(source=source)).all()
 
 __all__.append('get_suites_source_in')
 
