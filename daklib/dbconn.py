@@ -1213,6 +1213,15 @@ class PoolFile(ORMObject):
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
             'sha256sum', 'location', 'source', 'last_used']
 
+    def validate(self):
+        # sha1sum and sha256sum are not validated yet
+        if self.filename is None or len(self.filename) == 0 or \
+            self.filesize < 0 or self.md5sum is None or \
+            len(self.md5sum) == 0 or self.location is None:
+            raise DBUpdateError( \
+                "Validation failed because some properties must not be empty in object\n%s" % \
+                str(self))
+
 __all__.append('PoolFile')
 
 @session_wrapper
