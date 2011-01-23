@@ -4,7 +4,13 @@ from db_test import DBDakTestCase
 
 from daklib.dbconn import Architecture, Suite
 
-import json
+try:
+    # python >= 2.6
+    import json
+except:
+    # python <= 2.5
+    import simplejson as json
+
 import re
 import unittest
 

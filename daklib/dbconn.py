@@ -38,7 +38,14 @@ import re
 import psycopg2
 import traceback
 import commands
-import json
+
+try:
+    # python >= 2.6
+    import json
+except:
+    # python <= 2.5
+    import simplejson as json
+
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
