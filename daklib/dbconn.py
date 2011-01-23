@@ -38,6 +38,7 @@ import re
 import psycopg2
 import traceback
 import commands
+import json
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
@@ -156,7 +157,86 @@ __all__.append('session_wrapper')
 
 ################################################################################
 
-class Architecture(object):
+class ORMObject(object):
+    """
+    ORMObject is a base class for all ORM classes mapped by SQLalchemy. All
+    derived classes must implement the summary() method.
+    """
+
+    def properties(self):
+        '''
+        This method should be implemented by all derived classes and returns a
+        list of the important properties. The properties 'created' and
+        'modified' will be added automatically. A suffix '_count' should be
+        added to properties that are lists or query objects. The most important
+        property name should be returned as the first element in the list
+        because it is used by repr().
+        '''
+        return []
+
+    def json(self):
+        '''
+        Returns a JSON representation of the object based on the properties
+        returned from the properties() method.
+        '''
+        data = {}
+        # add created and modified
+        all_properties = self.properties() + ['created', 'modified']
+        for property in all_properties:
+            # check for list or query
+            if property[-6:] == '_count':
+                value = getattr(self, property[:-6])
+                if hasattr(value, '__len__'):
+                    # list
+                    value = len(value)
+                elif hasattr(value, 'count'):
+                    # query
+                    value = value.count()
+                else:
+                    raise KeyError('Do not understand property %s.' % property)
+            else:
+                # plain object
+                value = getattr(self, property)
+                if value is None:
+                    # skip None
+                    pass
+                elif isinstance(value, ORMObject):
+                    # use repr() for ORMObject types
+                    value = repr(value)
+                else:
+                    # we want a string for all other types because json cannot
+                    # everything
+                    value = str(value)
+            data[property] = value
+        return json.dumps(data)
+
+    def classname(self):
+        '''
+        Returns the name of the class.
+        '''
+        return type(self).__name__
+
+    def __repr__(self):
+        '''
+        Returns a short string representation of the object using the first
+        element from the properties() method.
+        '''
+        primary_property = self.properties()[0]
+        value = getattr(self, primary_property)
+        return '<%s %s>' % (self.classname(), str(value))
+
+    def __str__(self):
+        '''
+        Returns a human readable form of the object using the properties()
+        method.
+        '''
+        return '<%s %s>' % (self.classname(), self.json())
+
+__all__.append('ORMObject')
+
+################################################################################
+
+class Architecture(ORMObject):
     def __init__(self, arch_string = None, description = None):
         self.arch_string = arch_string
         self.description = description
@@ -173,8 +253,8 @@ class Architecture(object):
         # This signals to use the normal comparison operator
         return NotImplemented
 
-    def __repr__(self):
-        return '<Architecture %s>' % self.arch_string
+    def properties(self):
+        return ['arch_string', 'arch_id', 'suites_count']
 
 __all__.append('Architecture')
 
@@ -1069,7 +1149,7 @@ __all__.append('get_dscfiles')
 
 ################################################################################
 
-class PoolFile(object):
+class PoolFile(ORMObject):
     def __init__(self, filename = None, location = None, filesize = -1, \
         md5sum = None):
         self.filename = filename
@@ -1077,15 +1157,16 @@ class PoolFile(object):
         self.filesize = filesize
         self.md5sum = md5sum
 
-    def __repr__(self):
-        return '<PoolFile %s>' % self.filename
-
     @property
     def fullpath(self):
         return os.path.join(self.location.path, self.filename)
 
     def is_valid(self, filesize = -1, md5sum = None):\
         return self.filesize == filesize and self.md5sum == md5sum
+
+    def properties(self):
+        return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
+            'sha256sum', 'location', 'source', 'last_used']
 
 __all__.append('PoolFile')
 
