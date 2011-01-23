@@ -60,10 +60,81 @@ class PackageTestCase(DBDakTestCase):
         self.arch['all'].arch_id = 2
         self.session.add_all(self.arch.values())
 
+    def setup_locations(self):
+        'create some Location objects, TODO: add component'
+
+        if 'loc' in self.__dict__:
+            return
+        self.loc = {}
+        self.loc['main'] = Location(path = \
+            '/srv/ftp-master.debian.org/ftp/pool/')
+        self.loc['contrib'] = Location(path = \
+            '/srv/ftp-master.debian.org/ftp/pool/')
+        self.session.add_all(self.loc.values())
+
+    def setup_poolfiles(self):
+        'create some PoolFile objects'
+
+        if 'file' in self.__dict__:
+            return
+        self.setup_locations()
+        self.file = {}
+        self.file['hello_new'] = PoolFile(filename = 'main/h/hello/hello_2.2-3.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['hello'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['hello_old'] = PoolFile(filename = 'main/h/hello/hello_2.2-1.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['sl'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['python'] = PoolFile( \
+            filename = 'main/p/python2.6/python2.6_2.6.6-8.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.session.add_all(self.file.values())
+
+    def setup_maintainers(self):
+        'create some Maintainer objects'
+
+        if 'maintainer' in self.__dict__:
+            return
+        self.maintainer = {}
+        self.maintainer['maintainer'] = Maintainer(name = 'Mr. Maintainer')
+        self.maintainer['uploader'] = Maintainer(name = 'Mrs. Uploader')
+        self.maintainer['lazyguy'] = Maintainer(name = 'Lazy Guy')
+        self.session.add_all(self.maintainer.values())
+
+    def setup_sources(self):
+        'create a DBSource object; but it cannot be stored in the DB yet'
+
+        if 'source' in self.__dict__:
+            return
+        self.setup_maintainers()
+        self.source = {}
+        self.source['hello'] = DBSource(source = 'hello', version = '2.2-2', \
+            maintainer = self.maintainer['maintainer'], \
+            changedby = self.maintainer['uploader'], \
+            poolfile = self.file['hello'], install_date = self.now())
+        self.source['hello'].suites.append(self.suite['sid'])
+        self.source['hello_old'] = DBSource(source = 'hello', version = '2.2-1', \
+            maintainer = self.maintainer['maintainer'], \
+            changedby = self.maintainer['uploader'], \
+            poolfile = self.file['hello_old'], install_date = self.now())
+        self.source['hello_old'].suites.append(self.suite['sid'])
+        self.source['sl'] = DBSource(source = 'sl', version = '3.03-16', \
+            maintainer = self.maintainer['maintainer'], \
+            changedby = self.maintainer['uploader'], \
+            poolfile = self.file['sl'], install_date = self.now())
+        self.source['sl'].suites.append(self.suite['squeeze'])
+        self.source['sl'].suites.append(self.suite['sid'])
+        self.session.add_all(self.source.values())
+
     def setUp(self):
         super(PackageTestCase, self).setUp()
         self.setup_architectures()
-        self.setup_suites()
+        self.setup_poolfiles()
+        self.setup_sources()
+        # flush to make sure that the setup is correct
+        self.session.flush()
 
     def test_suite_architecture(self):
         # check the id for architectures source and all
@@ -96,34 +167,6 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(2, len(suites))
         self.assertTrue(self.suite['lenny'] not in suites)
 
-    def setup_locations(self):
-        'create some Location objects, TODO: add component'
-
-        if 'loc' in self.__dict__:
-            return
-        self.loc = {}
-        self.loc['main'] = Location(path = \
-            '/srv/ftp-master.debian.org/ftp/pool/')
-        self.session.add(self.loc['main'])
-
-    def setup_poolfiles(self):
-        'create some PoolFile objects'
-
-        if 'file' in self.__dict__:
-            return
-        self.setup_locations()
-        self.file = {}
-        self.file['hello'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['hello_old'] = PoolFile(filename = 'main/h/hello/hello_2.2-1.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['sl'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['python'] = PoolFile( \
-            filename = 'main/p/python2.6/python2.6_2.6.6-8.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.session.add_all(self.file.values())
-
     def test_poolfiles(self):
         '''
         Test the relation of the classes PoolFile and Location.
@@ -137,88 +180,44 @@ class PackageTestCase(DBDakTestCase):
         somelocation.files.append(somefile)
         '''
 
-        self.setup_poolfiles()
-        location = self.session.query(Location)[0]
-        self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', location.path)
-        self.assertEqual(4, location.files.count())
-        poolfile = location.files. \
+        main = self.loc['main']
+        contrib = self.loc['contrib']
+        self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', main.path)
+        self.assertEqual(5, main.files.count())
+        self.assertEqual(0, contrib.files.count())
+        poolfile = main.files. \
                 filter(PoolFile.filename.like('%/hello/hello%')). \
                 order_by(PoolFile.filename)[1]
         self.assertEqual('main/h/hello/hello_2.2-2.dsc', poolfile.filename)
-        self.assertEqual(location, poolfile.location)
+        self.assertEqual(main, poolfile.location)
         # test get()
         self.assertEqual(poolfile, \
                 self.session.query(PoolFile).get(poolfile.file_id))
         self.assertEqual(None, self.session.query(PoolFile).get(-1))
         # test remove() and append()
-        location.files.remove(self.file['sl'])
-        # TODO: deletion should cascade automatically
-        self.session.delete(self.file['sl'])
-        self.session.refresh(location)
-        self.assertEqual(3, location.files.count())
-        # please note that we intentionally do not specify 'location' here
-        self.file['sl'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
-            filesize = 0, md5sum = '')
-        location.files.append(self.file['sl'])
-        self.session.refresh(location)
-        self.assertEqual(4, location.files.count())
+        main.files.remove(self.file['sl'])
+        contrib.files.append(self.file['sl'])
+        self.assertEqual(4, main.files.count())
+        self.assertEqual(1, contrib.files.count())
         # test fullpath
         self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/main/s/sl/sl_3.03-16.dsc', \
             self.file['sl'].fullpath)
         # test check_poolfile()
         self.assertEqual((True, self.file['sl']), \
             check_poolfile('main/s/sl/sl_3.03-16.dsc', 0, '', \
-                location.location_id, self.session))
+                contrib.location_id, self.session))
         self.assertEqual((False, None), \
-            check_poolfile('foobar', 0, '', location.location_id, self.session))
+            check_poolfile('foobar', 0, '', contrib.location_id, self.session))
         self.assertEqual((False, self.file['sl']), \
             check_poolfile('main/s/sl/sl_3.03-16.dsc', 42, '', \
-                location.location_id, self.session))
+                contrib.location_id, self.session))
         self.assertEqual((False, self.file['sl']), \
             check_poolfile('main/s/sl/sl_3.03-16.dsc', 0, 'deadbeef', \
-                location.location_id, self.session))
+                contrib.location_id, self.session))
         # test get_poolfile_like_name()
         self.assertEqual([self.file['sl']], \
             get_poolfile_like_name('sl_3.03-16.dsc', self.session))
         self.assertEqual([], get_poolfile_like_name('foobar', self.session))
-
-    def setup_maintainers(self):
-        'create some Maintainer objects'
-
-        if 'maintainer' in self.__dict__:
-            return
-        self.maintainer = {}
-        self.maintainer['maintainer'] = Maintainer(name = 'Mr. Maintainer')
-        self.maintainer['uploader'] = Maintainer(name = 'Mrs. Uploader')
-        self.maintainer['lazyguy'] = Maintainer(name = 'Lazy Guy')
-        self.session.add_all(self.maintainer.values())
-
-    def setup_sources(self):
-        'create a DBSource object; but it cannot be stored in the DB yet'
-
-        if 'source' in self.__dict__:
-            return
-        self.setup_maintainers()
-        self.setup_poolfiles()
-        self.setup_suites()
-        self.source = {}
-        self.source['hello'] = DBSource(source = 'hello', version = '2.2-2', \
-            maintainer = self.maintainer['maintainer'], \
-            changedby = self.maintainer['uploader'], \
-            poolfile = self.file['hello'], install_date = self.now())
-        self.source['hello'].suites.append(self.suite['sid'])
-        self.source['hello_old'] = DBSource(source = 'hello', version = '2.2-1', \
-            maintainer = self.maintainer['maintainer'], \
-            changedby = self.maintainer['uploader'], \
-            poolfile = self.file['hello_old'], install_date = self.now())
-        self.source['hello_old'].suites.append(self.suite['sid'])
-        self.source['sl'] = DBSource(source = 'sl', version = '3.03-16', \
-            maintainer = self.maintainer['maintainer'], \
-            changedby = self.maintainer['uploader'], \
-            poolfile = self.file['sl'], install_date = self.now())
-        self.source['sl'].suites.append(self.suite['squeeze'])
-        self.source['sl'].suites.append(self.suite['sid'])
-        self.session.add_all(self.source.values())
 
     def test_maintainers(self):
         '''
@@ -227,8 +226,6 @@ class PackageTestCase(DBDakTestCase):
         TODO: add relations to changes_pending_source
         '''
 
-        self.setup_sources()
-        self.session.flush()
         maintainer = self.maintainer['maintainer']
         self.assertEqual(maintainer,
             self.session.query(Maintainer).get(maintainer.maintainer_id))
@@ -260,7 +257,6 @@ class PackageTestCase(DBDakTestCase):
     def test_sources(self):
         'test relation between DBSource and PoolFile or Suite'
 
-        self.setup_sources()
         # test PoolFile
         self.assertEqual(self.file['hello'], self.source['hello'].poolfile)
         self.assertEqual(self.source['hello'], self.file['hello'].source)
@@ -293,29 +289,23 @@ class PackageTestCase(DBDakTestCase):
     def test_upload(self):
         'tests function add_dsc_to_db()'
 
-        self.setup_maintainers()
-        self.setup_locations()
-        self.setup_poolfiles()
         pkg = Pkg()
         pkg.dsc['source'] = 'hello'
-        pkg.dsc['version'] = '2.2-2'
+        pkg.dsc['version'] = '2.2-3'
         pkg.dsc['maintainer'] = self.maintainer['maintainer'].name
         pkg.changes['changed-by'] = self.maintainer['uploader'].name
         pkg.changes['fingerprint'] = 'deadbeef'
         pkg.changes['distribution'] = { 'sid': '' }
-        self.session.flush()
-        self.session.refresh(self.file['hello'])
-        pkg.files['hello_2.2-2.dsc'] = { \
+        pkg.files['hello_2.2-3.dsc'] = { \
             'component': 'main',
             'location id': self.loc['main'].component_id,
-            'files id': self.file['hello'].file_id }
+            'files id': self.file['hello_new'].file_id }
         pkg.dsc_files = {}
         upload = Upload(pkg)
         (source, dsc_component, dsc_location_id, pfs) = \
-            add_dsc_to_db(upload, 'hello_2.2-2.dsc', self.session)
-        self.session.refresh(source)
+            add_dsc_to_db(upload, 'hello_2.2-3.dsc', self.session)
         self.assertEqual('hello', source.source)
-        self.assertEqual('2.2-2', source.version)
+        self.assertEqual('2.2-3', source.version)
         self.assertEqual('sid', source.suites[0].suite_name)
         self.assertEqual('main', dsc_component)
         # no dsc files defined above
@@ -325,8 +315,6 @@ class PackageTestCase(DBDakTestCase):
     def test_source_exists(self):
         'test function source_exists()'
 
-        self.setup_sources()
-        self.session.flush()
         hello = self.source['hello']
         self.assertTrue(source_exists(hello.source, hello.version, \
             suites = ['sid'], session = self.session))
@@ -348,7 +336,6 @@ class PackageTestCase(DBDakTestCase):
     def test_package_to_suite(self):
         'test function package_to_suite()'
 
-        self.setup_sources()
         pkg = Pkg()
         pkg.changes = { 'distribution': {} }
         upload = Upload(pkg)
@@ -371,7 +358,6 @@ class PackageTestCase(DBDakTestCase):
     def test_get_newest_source(self):
         'test function get_newest_source()'
 
-        self.setup_sources()
         import daklib.queue
         daklib.queue.dm_suites = ['sid']
         self.assertEqual(self.source['hello'], get_newest_source('hello', self.session))
@@ -380,7 +366,6 @@ class PackageTestCase(DBDakTestCase):
     def test_get_suite_version(self):
         'test function get_suite_version()'
 
-        self.setup_sources()
         result = get_suite_version('hello', self.session)
         self.assertEqual(2, len(result))
         self.assertTrue(('sid', '2.2-1') in result)
