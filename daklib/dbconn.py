@@ -167,7 +167,7 @@ __all__.append('session_wrapper')
 class ORMObject(object):
     """
     ORMObject is a base class for all ORM classes mapped by SQLalchemy. All
-    derived classes must implement the summary() method.
+    derived classes must implement the properties() method.
     """
 
     def properties(self):
@@ -212,7 +212,7 @@ class ORMObject(object):
                     value = repr(value)
                 else:
                     # we want a string for all other types because json cannot
-                    # everything
+                    # encode everything
                     value = str(value)
             data[property] = value
         return json.dumps(data)
