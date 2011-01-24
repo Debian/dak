@@ -2239,8 +2239,7 @@ class DBSource(ORMObject):
             'install_date']
 
     def not_null_constraints(self):
-        return ['source', 'version', 'maintainer', 'changedby', \
-            'poolfile', 'install_date']
+        return ['source', 'version', 'install_date']
 
 __all__.append('DBSource')
 
