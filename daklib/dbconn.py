@@ -212,7 +212,7 @@ class ORMObject(object):
                 value = getattr(self, property)
                 if value is None:
                     # skip None
-                    pass
+                    continue
                 elif isinstance(value, ORMObject):
                     # use repr() for ORMObject types
                     value = repr(value)
@@ -245,12 +245,26 @@ class ORMObject(object):
         '''
         return '<%s %s>' % (self.classname(), self.json())
 
+    def not_null_constraints(self):
+        '''
+        Returns a list of properties that must be not NULL. Derived classes
+        should override this method if needed.
+        '''
+        return []
+
+    validation_message = \
+        "Validation failed because property '%s' must not be empty in object\n%s"
+
     def validate(self):
         '''
-        This function should be implemented by derived classes to validate self.
-        It may raise the DBUpdateError exception if needed.
+        This function validates the not NULL constraints as returned by
+        not_null_constraints(). It raises the DBUpdateError exception if
+        validation fails.
         '''
-        pass
+        for property in self.not_null_constraints():
+            if not hasattr(self, property) or getattr(self, property) is None:
+                raise DBUpdateError(self.validation_message % \
+                    (property, str(self)))
 
 __all__.append('ORMObject')
 
@@ -295,11 +309,8 @@ class Architecture(ORMObject):
     def properties(self):
         return ['arch_string', 'arch_id', 'suites_count']
 
-    def validate(self):
-        if self.arch_string is None or len(self.arch_string) == 0:
-            raise DBUpdateError( \
-                "Validation failed because 'arch_string' must not be empty in object\n%s" % \
-                str(self))
+    def not_null_constraints(self):
+        return ['arch_string']
 
 __all__.append('Architecture')
 
@@ -1213,14 +1224,8 @@ class PoolFile(ORMObject):
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
             'sha256sum', 'location', 'source', 'last_used']
 
-    def validate(self):
-        # sha1sum and sha256sum are not validated yet
-        if self.filename is None or len(self.filename) == 0 or \
-            self.filesize < 0 or self.md5sum is None or \
-            len(self.md5sum) == 0 or self.location is None:
-            raise DBUpdateError( \
-                "Validation failed because some properties must not be empty in object\n%s" % \
-                str(self))
+    def not_null_constraints(self):
+        return ['filename', 'md5sum', 'location']
 
 __all__.append('PoolFile')
 
@@ -1332,12 +1337,16 @@ __all__.append('add_poolfile')
 
 ################################################################################
 
-class Fingerprint(object):
+class Fingerprint(ORMObject):
     def __init__(self, fingerprint = None):
         self.fingerprint = fingerprint
 
-    def __repr__(self):
-        return '<Fingerprint %s>' % self.fingerprint
+    def properties(self):
+        return ['fingerprint', 'fingerprint_id', 'keyring', 'uid', \
+            'binary_reject']
+
+    def not_null_constraints(self):
+        return ['fingerprint']
 
 __all__.append('Fingerprint')
 
@@ -1622,14 +1631,17 @@ __all__.append('get_dbchange')
 
 ################################################################################
 
-class Location(object):
+class Location(ORMObject):
     def __init__(self, path = None):
         self.path = path
         # the column 'type' should go away, see comment at mapper
         self.archive_type = 'pool'
 
-    def __repr__(self):
-        return '<Location %s (%s)>' % (self.path, self.location_id)
+    def properties(self):
+        return ['path', 'archive_type', 'component', 'files_count']
+
+    def not_null_constraints(self):
+        return ['path', 'archive_type']
 
 __all__.append('Location')
 
@@ -1669,12 +1681,15 @@ __all__.append('get_location')
 
 ################################################################################
 
-class Maintainer(object):
+class Maintainer(ORMObject):
     def __init__(self, name = None):
         self.name = name
 
-    def __repr__(self):
-        return '''<Maintainer '%s' (%s)>''' % (self.name, self.maintainer_id)
+    def properties(self):
+        return ['name', 'maintainer_id']
+
+    def not_null_constraints(self):
+        return ['name']
 
     def get_split_maintainer(self):
         if not hasattr(self, 'name') or self.name is None:
@@ -2208,7 +2223,7 @@ __all__.append('get_sections')
 
 ################################################################################
 
-class DBSource(object):
+class DBSource(ORMObject):
     def __init__(self, source = None, version = None, maintainer = None, \
         changedby = None, poolfile = None, install_date = None):
         self.source = source
@@ -2218,8 +2233,14 @@ class DBSource(object):
         self.poolfile = poolfile
         self.install_date = install_date
 
-    def __repr__(self):
-        return '<DBSource %s (%s)>' % (self.source, self.version)
+    def properties(self):
+        return ['source', 'source_id', 'maintainer', 'changedby', \
+            'fingerprint', 'poolfile', 'version', 'suites_count', \
+            'install_date']
+
+    def not_null_constraints(self):
+        return ['source', 'version', 'maintainer', 'changedby', \
+            'poolfile', 'install_date']
 
 __all__.append('DBSource')
 
@@ -2591,13 +2612,16 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
 
 # Why the heck don't we have any UNIQUE constraints in table suite?
 # TODO: Add UNIQUE constraints for appropriate columns.
-class Suite(object):
+class Suite(ORMObject):
     def __init__(self, suite_name = None, version = None):
         self.suite_name = suite_name
         self.version = version
 
-    def __repr__(self):
-        return '<Suite %s>' % self.suite_name
+    def properties(self):
+        return ['suite_name', 'version']
+
+    def not_null_constraints(self):
+        return ['suite_name', 'version']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -3051,7 +3075,8 @@ class DBConn(object):
                                      # using lazy='dynamic' in the back
                                      # reference because we have A LOT of
                                      # files in one location
-                                     backref=backref('files', lazy='dynamic'))))
+                                     backref=backref('files', lazy='dynamic'))),
+                extension = validator)
 
         mapper(Fingerprint, self.tbl_fingerprint,
                properties = dict(fingerprint_id = self.tbl_fingerprint.c.id,
@@ -3060,7 +3085,8 @@ class DBConn(object):
                                  keyring_id = self.tbl_fingerprint.c.keyring,
                                  keyring = relation(Keyring),
                                  source_acl = relation(SourceACL),
-                                 binary_acl = relation(BinaryACL)))
+                                 binary_acl = relation(BinaryACL)),
+               extension = validator)
 
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
@@ -3126,14 +3152,16 @@ class DBConn(object):
                                  archive = relation(Archive),
                                  # FIXME: the 'type' column is old cruft and
                                  # should be removed in the future.
-                                 archive_type = self.tbl_location.c.type))
+                                 archive_type = self.tbl_location.c.type),
+               extension = validator)
 
         mapper(Maintainer, self.tbl_maintainer,
                properties = dict(maintainer_id = self.tbl_maintainer.c.id,
                    maintains_sources = relation(DBSource, backref='maintainer',
                        primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.maintainer)),
                    changed_sources = relation(DBSource, backref='changedby',
-                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))))
+                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))),
+                extension = validator)
 
         mapper(NewComment, self.tbl_new_comments,
                properties = dict(comment_id = self.tbl_new_comments.c.id))
@@ -3178,7 +3206,8 @@ class DBConn(object):
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
                                      backref='sources'),
-                                 srcuploaders = relation(SrcUploader)))
+                                 srcuploaders = relation(SrcUploader)),
+               extension = validator)
 
         mapper(SourceACL, self.tbl_source_acl,
                properties = dict(source_acl_id = self.tbl_source_acl.c.id))
@@ -3199,7 +3228,9 @@ class DBConn(object):
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id,
                                  policy_queue = relation(PolicyQueue),
-                                 copy_queues = relation(BuildQueue, secondary=self.tbl_suite_build_queue_copy)))
+                                 copy_queues = relation(BuildQueue,
+                                     secondary=self.tbl_suite_build_queue_copy)),
+                extension = validator)
 
         mapper(SuiteSrcFormat, self.tbl_suite_src_formats,
                properties = dict(suite_id = self.tbl_suite_src_formats.c.suite,
