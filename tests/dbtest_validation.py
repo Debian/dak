@@ -12,26 +12,22 @@ class ValidatorTestCase(DBDakTestCase):
     The ValidatorTestCase tests the validation mechanism.
     """
 
-    def must_fail(self):
-        ''''
-        This function must fail with DBUpdateError because arch_string is not
-        set. It rolls back the transaction before re-raising the exception.
-        '''
-        try:
-            architecture = Architecture()
-            self.session.add(architecture)
-            self.session.flush()
-        except:
-            self.session.rollback()
-            raise
-
     def test_validation(self):
         'tests validate()'
-        self.assertRaises(DBUpdateError, self.must_fail)
+
+        # before_insert validation should fail
+        architecture = Architecture()
+        self.session.add(architecture)
+        self.assertRaises(DBUpdateError, self.session.flush)
+        self.session.rollback()
         # should not fail
         architecture = Architecture('i386')
         self.session.add(architecture)
         self.session.flush()
+        # before_update validation should fail
+        architecture.arch_string = ''
+        self.assertRaises(DBUpdateError, self.session.flush)
+        self.session.rollback()
 
 if __name__ == '__main__':
     unittest.main()
