@@ -262,6 +262,12 @@ class ORMObject(object):
         validation fails.
         '''
         for property in self.not_null_constraints():
+            # TODO: It is a bit awkward that the mapper configuration allow
+            # directly setting the numeric _id columns. We should get rid of it
+            # in the long run.
+            if hasattr(self, property + '_id') and \
+                getattr(self, property + '_id') is not None:
+                continue
             if not hasattr(self, property) or getattr(self, property) is None:
                 raise DBUpdateError(self.validation_message % \
                     (property, str(self)))
@@ -2239,7 +2245,8 @@ class DBSource(ORMObject):
             'install_date']
 
     def not_null_constraints(self):
-        return ['source', 'version', 'install_date']
+        return ['source', 'version', 'install_date', 'maintainer', \
+            'changedby', 'poolfile', 'install_date']
 
 __all__.append('DBSource')
 
