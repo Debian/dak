@@ -3,6 +3,7 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import Fingerprint, Uid
+from daklib.dak_exceptions import DBUpdateError
 
 from sqlalchemy.exc import IntegrityError
 import unittest
@@ -55,11 +56,11 @@ class FingerprintTestCase(DBDakTestCase):
         self.session.flush()
 
     def test_exceptions(self):
-        self.assertRaises(IntegrityError, self.fingerprint_no_fingerprint)
+        self.assertRaises(DBUpdateError, self.fingerprint_no_fingerprint)
         self.session.rollback()
         self.assertRaises(IntegrityError, self.fingerprint_duplicate_fingerprint)
         self.session.rollback()
-        self.assertRaises(IntegrityError, self.uid_no_uid)
+        self.assertRaises(DBUpdateError, self.uid_no_uid)
         self.session.rollback()
         self.assertRaises(IntegrityError, self.uid_duplicate_uid)
         self.session.rollback()

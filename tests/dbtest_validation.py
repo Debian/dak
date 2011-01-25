@@ -25,7 +25,7 @@ class ValidatorTestCase(DBDakTestCase):
         self.session.add(architecture)
         self.session.flush()
         # before_update validation should fail
-        architecture.arch_string = ''
+        architecture.arch_string = None
         self.assertRaises(DBUpdateError, self.session.flush)
         self.session.rollback()
 
