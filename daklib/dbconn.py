@@ -443,12 +443,26 @@ __all__.append('BinContents')
 
 ################################################################################
 
-class DBBinary(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class DBBinary(ORMObject):
+    def __init__(self, package = None, source = None, version = None, \
+        maintainer = None, architecture = None, poolfile = None, \
+        binarytype = 'deb'):
+        self.package = package
+        self.source = source
+        self.version = version
+        self.maintainer = maintainer
+        self.architecture = architecture
+        self.poolfile = poolfile
+        self.binarytype = binarytype
 
-    def __repr__(self):
-        return '<DBBinary %s (%s, %s)>' % (self.package, self.version, self.architecture)
+    def properties(self):
+        return ['package', 'version', 'maintainer', 'source', 'architecture', \
+            'poolfile', 'binarytype', 'fingerprint', 'install_date', \
+            'suites_count']
+
+    def not_null_constraints(self):
+        return ['package', 'version', 'maintainer', 'source', 'architecture', \
+            'poolfile', 'binarytype']
 
 __all__.append('DBBinary')
 
@@ -464,7 +478,7 @@ def get_suites_binary_in(package, session=None):
     @return: list of Suite objects for the given package
     """
 
-    return session.query(Suite).join(BinAssociation).join(DBBinary).filter_by(package=package).all()
+    return session.query(Suite).filter(Suite.binaries.any(DBBinary.package == package)).all()
 
 __all__.append('get_suites_binary_in')
 
@@ -2257,7 +2271,7 @@ class DBSource(ORMObject):
     def properties(self):
         return ['source', 'source_id', 'maintainer', 'changedby', \
             'fingerprint', 'poolfile', 'version', 'suites_count', \
-            'install_date']
+            'install_date', 'binaries_count']
 
     def not_null_constraints(self):
         return ['source', 'version', 'install_date', 'maintainer', \
@@ -2639,7 +2653,7 @@ class Suite(ORMObject):
         self.version = version
 
     def properties(self):
-        return ['suite_name', 'version']
+        return ['suite_name', 'version', 'sources_count', 'binaries_count']
 
     def not_null_constraints(self):
         return ['suite_name', 'version']
@@ -3057,7 +3071,7 @@ class DBConn(object):
                                  maintainer_id = self.tbl_binaries.c.maintainer,
                                  maintainer = relation(Maintainer),
                                  source_id = self.tbl_binaries.c.source,
-                                 source = relation(DBSource),
+                                 source = relation(DBSource, backref='binaries'),
                                  arch_id = self.tbl_binaries.c.architecture,
                                  architecture = relation(Architecture),
                                  poolfile_id = self.tbl_binaries.c.file,
@@ -3066,8 +3080,11 @@ class DBConn(object):
                                  fingerprint_id = self.tbl_binaries.c.sig_fpr,
                                  fingerprint = relation(Fingerprint),
                                  install_date = self.tbl_binaries.c.install_date,
+                                 suites = relation(Suite, secondary=self.tbl_bin_associations,
+                                     backref=backref('binaries', lazy='dynamic')),
                                  binassociations = relation(BinAssociation,
-                                                            primaryjoin=(self.tbl_binaries.c.id==self.tbl_bin_associations.c.bin))))
+                                                            primaryjoin=(self.tbl_binaries.c.id==self.tbl_bin_associations.c.bin))),
+                extension = validator)
 
         mapper(BinaryACL, self.tbl_binary_acl,
                properties = dict(binary_acl_id = self.tbl_binary_acl.c.id))
@@ -3229,7 +3246,7 @@ class DBConn(object):
                                  srcfiles = relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
-                                     backref='sources'),
+                                     backref=backref('sources', lazy='dynamic')),
                                  srcuploaders = relation(SrcUploader)),
                extension = validator)
 

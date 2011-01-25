@@ -5,7 +5,8 @@ from db_test import DBDakTestCase
 from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
-    get_suites_source_in, add_dsc_to_db, source_exists
+    get_suites_source_in, add_dsc_to_db, source_exists, DBBinary, \
+    get_suites_binary_in
 from daklib.queue_install import package_to_suite
 from daklib.queue import get_newest_source, get_suite_version
 
@@ -79,15 +80,21 @@ class PackageTestCase(DBDakTestCase):
             return
         self.setup_locations()
         self.file = {}
-        self.file['hello_new'] = PoolFile(filename = 'main/h/hello/hello_2.2-3.dsc', \
+        self.file['hello_2.2-3.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-3.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['hello'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
+        self.file['hello_2.2-2.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['hello_old'] = PoolFile(filename = 'main/h/hello/hello_2.2-1.dsc', \
+        self.file['hello_2.2-2_i386.deb'] = PoolFile( \
+            filename = 'main/h/hello/hello_2.2-2_i386.deb', \
             location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['sl'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
+        self.file['gnome-hello_2.2-2_i386.deb'] = PoolFile( \
+            filename = 'main/h/hello/gnome-hello_2.2-2_i386.deb', \
             location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['python'] = PoolFile( \
+        self.file['hello_2.2-1.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-1.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['sl_3.03-16.dsc'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['python2.6_2.6.6-8.dsc'] = PoolFile( \
             filename = 'main/p/python2.6/python2.6_2.6.6-8.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
         self.session.add_all(self.file.values())
@@ -104,35 +111,59 @@ class PackageTestCase(DBDakTestCase):
         self.session.add_all(self.maintainer.values())
 
     def setup_sources(self):
-        'create a DBSource object; but it cannot be stored in the DB yet'
+        'create DBSource objects'
 
         if 'source' in self.__dict__:
             return
         self.setup_maintainers()
+        self.setup_suites()
+        self.setup_poolfiles()
         self.source = {}
-        self.source['hello'] = DBSource(source = 'hello', version = '2.2-2', \
+        self.source['hello_2.2-2'] = DBSource(source = 'hello', version = '2.2-2', \
             maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
-            poolfile = self.file['hello'], install_date = self.now())
-        self.source['hello'].suites.append(self.suite['sid'])
-        self.source['hello_old'] = DBSource(source = 'hello', version = '2.2-1', \
+            poolfile = self.file['hello_2.2-2.dsc'], install_date = self.now())
+        self.source['hello_2.2-2'].suites.append(self.suite['sid'])
+        self.source['hello_2.2-1'] = DBSource(source = 'hello', version = '2.2-1', \
             maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
-            poolfile = self.file['hello_old'], install_date = self.now())
-        self.source['hello_old'].suites.append(self.suite['sid'])
-        self.source['sl'] = DBSource(source = 'sl', version = '3.03-16', \
+            poolfile = self.file['hello_2.2-1.dsc'], install_date = self.now())
+        self.source['hello_2.2-1'].suites.append(self.suite['sid'])
+        self.source['sl_3.03-16'] = DBSource(source = 'sl', version = '3.03-16', \
             maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
-            poolfile = self.file['sl'], install_date = self.now())
-        self.source['sl'].suites.append(self.suite['squeeze'])
-        self.source['sl'].suites.append(self.suite['sid'])
+            poolfile = self.file['sl_3.03-16.dsc'], install_date = self.now())
+        self.source['sl_3.03-16'].suites.append(self.suite['squeeze'])
+        self.source['sl_3.03-16'].suites.append(self.suite['sid'])
         self.session.add_all(self.source.values())
+
+    def setup_binaries(self):
+        'create DBBinary objects'
+
+        if 'binary' in self.__dict__:
+            return
+        self.setup_sources()
+        self.setup_architectures()
+        self.binary = {}
+        self.binary['hello_2.2-2_i386'] = DBBinary(package = 'hello', \
+            source = self.source['hello_2.2-2'], version = '2.2-2', \
+            maintainer = self.maintainer['maintainer'], \
+            architecture = self.arch['i386'], \
+            poolfile = self.file['hello_2.2-2_i386.deb'])
+        self.binary['hello_2.2-2_i386'].suites.append(self.suite['squeeze'])
+        self.binary['hello_2.2-2_i386'].suites.append(self.suite['sid'])
+        self.binary['gnome-hello_2.2-2_i386'] = DBBinary(package = 'gnome-hello', \
+            source = self.source['hello_2.2-2'], version = '2.2-2', \
+            maintainer = self.maintainer['maintainer'], \
+            architecture = self.arch['i386'], \
+            poolfile = self.file['gnome-hello_2.2-2_i386.deb'])
+        self.binary['gnome-hello_2.2-2_i386'].suites.append(self.suite['squeeze'])
+        self.binary['gnome-hello_2.2-2_i386'].suites.append(self.suite['sid'])
+        self.session.add_all(self.binary.values())
 
     def setUp(self):
         super(PackageTestCase, self).setUp()
-        self.setup_architectures()
-        self.setup_poolfiles()
-        self.setup_sources()
+        self.setup_binaries()
         # flush to make sure that the setup is correct
         self.session.flush()
 
@@ -183,7 +214,8 @@ class PackageTestCase(DBDakTestCase):
         main = self.loc['main']
         contrib = self.loc['contrib']
         self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', main.path)
-        self.assertEqual(5, main.files.count())
+        count = len(self.file.keys())
+        self.assertEqual(count, main.files.count())
         self.assertEqual(0, contrib.files.count())
         poolfile = main.files. \
                 filter(PoolFile.filename.like('%/hello/hello%')). \
@@ -195,27 +227,27 @@ class PackageTestCase(DBDakTestCase):
                 self.session.query(PoolFile).get(poolfile.file_id))
         self.assertEqual(None, self.session.query(PoolFile).get(-1))
         # test remove() and append()
-        main.files.remove(self.file['sl'])
-        contrib.files.append(self.file['sl'])
-        self.assertEqual(4, main.files.count())
+        main.files.remove(self.file['sl_3.03-16.dsc'])
+        contrib.files.append(self.file['sl_3.03-16.dsc'])
+        self.assertEqual(count - 1, main.files.count())
         self.assertEqual(1, contrib.files.count())
         # test fullpath
         self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/main/s/sl/sl_3.03-16.dsc', \
-            self.file['sl'].fullpath)
+            self.file['sl_3.03-16.dsc'].fullpath)
         # test check_poolfile()
-        self.assertEqual((True, self.file['sl']), \
+        self.assertEqual((True, self.file['sl_3.03-16.dsc']), \
             check_poolfile('main/s/sl/sl_3.03-16.dsc', 0, '', \
                 contrib.location_id, self.session))
         self.assertEqual((False, None), \
             check_poolfile('foobar', 0, '', contrib.location_id, self.session))
-        self.assertEqual((False, self.file['sl']), \
+        self.assertEqual((False, self.file['sl_3.03-16.dsc']), \
             check_poolfile('main/s/sl/sl_3.03-16.dsc', 42, '', \
                 contrib.location_id, self.session))
-        self.assertEqual((False, self.file['sl']), \
+        self.assertEqual((False, self.file['sl_3.03-16.dsc']), \
             check_poolfile('main/s/sl/sl_3.03-16.dsc', 0, 'deadbeef', \
                 contrib.location_id, self.session))
         # test get_poolfile_like_name()
-        self.assertEqual([self.file['sl']], \
+        self.assertEqual([self.file['sl_3.03-16.dsc']], \
             get_poolfile_like_name('sl_3.03-16.dsc', self.session))
         self.assertEqual([], get_poolfile_like_name('foobar', self.session))
 
@@ -236,11 +268,11 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(lazyguy,
             self.session.query(Maintainer).get(lazyguy.maintainer_id))
         self.assertEqual(3, len(maintainer.maintains_sources))
-        self.assertTrue(self.source['hello'] in maintainer.maintains_sources)
+        self.assertTrue(self.source['hello_2.2-2'] in maintainer.maintains_sources)
         self.assertEqual(maintainer.changed_sources, [])
         self.assertEqual(uploader.maintains_sources, [])
         self.assertEqual(3, len(uploader.changed_sources))
-        self.assertTrue(self.source['sl'] in uploader.changed_sources)
+        self.assertTrue(self.source['sl_3.03-16'] in uploader.changed_sources)
         self.assertEqual(lazyguy.maintains_sources, [])
         self.assertEqual(lazyguy.changed_sources, [])
 
@@ -258,26 +290,26 @@ class PackageTestCase(DBDakTestCase):
         'test relation between DBSource and PoolFile or Suite'
 
         # test PoolFile
-        self.assertEqual(self.file['hello'], self.source['hello'].poolfile)
-        self.assertEqual(self.source['hello'], self.file['hello'].source)
-        self.assertEqual(None, self.file['python'].source)
+        self.assertEqual(self.file['hello_2.2-2.dsc'], self.source['hello_2.2-2'].poolfile)
+        self.assertEqual(self.source['hello_2.2-2'], self.file['hello_2.2-2.dsc'].source)
+        self.assertEqual(None, self.file['python2.6_2.6.6-8.dsc'].source)
         # test Suite
         squeeze = self.session.query(Suite). \
-            filter(Suite.sources.contains(self.source['sl'])). \
+            filter(Suite.sources.contains(self.source['sl_3.03-16'])). \
             order_by(Suite.suite_name)[1]
         self.assertEqual(self.suite['squeeze'], squeeze)
-        self.assertEqual(1, len(squeeze.sources))
-        self.assertEqual(self.source['sl'], squeeze.sources[0])
+        self.assertEqual(1, squeeze.sources.count())
+        self.assertEqual(self.source['sl_3.03-16'], squeeze.sources[0])
         sl = self.session.query(DBSource). \
             filter(DBSource.suites.contains(self.suite['squeeze'])).one()
-        self.assertEqual(self.source['sl'], sl)
+        self.assertEqual(self.source['sl_3.03-16'], sl)
         self.assertEqual(2, len(sl.suites))
         self.assertTrue(self.suite['sid'] in sl.suites)
         # test get_source_in_suite()
         self.assertRaises(MultipleResultsFound, self.get_source_in_suite_fail)
         self.assertEqual(None, \
             get_source_in_suite('hello', 'squeeze', self.session))
-        self.assertEqual(self.source['sl'], \
+        self.assertEqual(self.source['sl_3.03-16'], \
             get_source_in_suite('sl', 'sid', self.session))
         # test get_suites_source_in()
         self.assertEqual([self.suite['sid']], \
@@ -299,7 +331,7 @@ class PackageTestCase(DBDakTestCase):
         pkg.files['hello_2.2-3.dsc'] = { \
             'component': 'main',
             'location id': self.loc['main'].component_id,
-            'files id': self.file['hello_new'].file_id }
+            'files id': self.file['hello_2.2-3.dsc'].file_id }
         pkg.dsc_files = {}
         upload = Upload(pkg)
         (source, dsc_component, dsc_location_id, pfs) = \
@@ -315,7 +347,7 @@ class PackageTestCase(DBDakTestCase):
     def test_source_exists(self):
         'test function source_exists()'
 
-        hello = self.source['hello']
+        hello = self.source['hello_2.2-2']
         self.assertTrue(source_exists(hello.source, hello.version, \
             suites = ['sid'], session = self.session))
         # binNMU
@@ -344,13 +376,13 @@ class PackageTestCase(DBDakTestCase):
         pkg.changes['architecture'] = { 'source': '' }
         self.assertTrue(package_to_suite(upload, 'sid', self.session))
         pkg.changes['architecture'] = {}
-        pkg.changes['source'] = self.source['hello'].source
-        pkg.changes['version'] = self.source['hello'].version
+        pkg.changes['source'] = self.source['hello_2.2-2'].source
+        pkg.changes['version'] = self.source['hello_2.2-2'].version
         self.assertTrue(not package_to_suite(upload, 'sid', self.session))
         pkg.changes['version'] = '42'
         self.assertTrue(package_to_suite(upload, 'sid', self.session))
         pkg.changes['source'] = 'foobar'
-        pkg.changes['version'] = self.source['hello'].version
+        pkg.changes['version'] = self.source['hello_2.2-2'].version
         self.assertTrue(package_to_suite(upload, 'sid', self.session))
         pkg.changes['distribution'] = { 'lenny': '' }
         self.assertTrue(package_to_suite(upload, 'lenny', self.session))
@@ -360,7 +392,7 @@ class PackageTestCase(DBDakTestCase):
 
         import daklib.queue
         daklib.queue.dm_suites = ['sid']
-        self.assertEqual(self.source['hello'], get_newest_source('hello', self.session))
+        self.assertEqual(self.source['hello_2.2-2'], get_newest_source('hello', self.session))
         self.assertEqual(None, get_newest_source('foobar', self.session))
 
     def test_get_suite_version(self):
@@ -374,6 +406,31 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(2, len(result))
         self.assertTrue(('squeeze', '3.03-16') in result)
         self.assertTrue(('sid', '3.03-16') in result)
+
+    def test_binaries(self):
+        '''
+        tests class DBBinary; TODO: test relation with Architecture, Maintainer,
+        PoolFile, and Fingerprint
+        '''
+
+        # test Suite relation
+        self.assertEqual(2, self.suite['sid'].binaries.count())
+        self.assertTrue(self.binary['hello_2.2-2_i386'] in \
+            self.suite['sid'].binaries.all())
+        self.assertEqual(0, self.suite['lenny'].binaries.count())
+        # test DBSource relation
+        self.assertEqual(2, len(self.source['hello_2.2-2'].binaries))
+        self.assertTrue(self.binary['hello_2.2-2_i386'] in \
+            self.source['hello_2.2-2'].binaries)
+        self.assertEqual(0, len(self.source['hello_2.2-1'].binaries))
+        # test get_suites_binary_in()
+        self.assertEqual(2, len(get_suites_binary_in('hello', self.session)))
+        self.assertTrue(self.suite['sid'] in \
+            get_suites_binary_in('hello', self.session))
+        self.assertEqual(2, len(get_suites_binary_in('gnome-hello', self.session)))
+        self.assertTrue(self.suite['squeeze'] in \
+            get_suites_binary_in('gnome-hello', self.session))
+        self.assertEqual(0, len(get_suites_binary_in('sl', self.session)))
 
 if __name__ == '__main__':
     unittest.main()
