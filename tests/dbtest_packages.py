@@ -6,7 +6,7 @@ from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
     get_suites_source_in, add_dsc_to_db, source_exists, DBBinary, \
-    get_suites_binary_in
+    get_suites_binary_in, add_deb_to_db
 from daklib.queue_install import package_to_suite
 from daklib.queue import get_newest_source, get_suite_version
 
@@ -84,13 +84,13 @@ class PackageTestCase(DBDakTestCase):
             location = self.loc['main'], filesize = 0, md5sum = '')
         self.file['hello_2.2-2.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['hello_2.2-2_i386.deb'] = PoolFile( \
-            filename = 'main/h/hello/hello_2.2-2_i386.deb', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['gnome-hello_2.2-2_i386.deb'] = PoolFile( \
-            filename = 'main/h/hello/gnome-hello_2.2-2_i386.deb', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
         self.file['hello_2.2-1.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-1.dsc', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['hello_2.2-1_i386.deb'] = PoolFile( \
+            filename = 'main/h/hello/hello_2.2-1_i386.deb', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['gnome-hello_2.2-1_i386.deb'] = PoolFile( \
+            filename = 'main/h/hello/gnome-hello_2.2-1_i386.deb', \
             location = self.loc['main'], filesize = 0, md5sum = '')
         self.file['sl_3.03-16.dsc'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
@@ -145,20 +145,20 @@ class PackageTestCase(DBDakTestCase):
         self.setup_sources()
         self.setup_architectures()
         self.binary = {}
-        self.binary['hello_2.2-2_i386'] = DBBinary(package = 'hello', \
-            source = self.source['hello_2.2-2'], version = '2.2-2', \
+        self.binary['hello_2.2-1_i386'] = DBBinary(package = 'hello', \
+            source = self.source['hello_2.2-1'], version = '2.2-1', \
             maintainer = self.maintainer['maintainer'], \
             architecture = self.arch['i386'], \
-            poolfile = self.file['hello_2.2-2_i386.deb'])
-        self.binary['hello_2.2-2_i386'].suites.append(self.suite['squeeze'])
-        self.binary['hello_2.2-2_i386'].suites.append(self.suite['sid'])
-        self.binary['gnome-hello_2.2-2_i386'] = DBBinary(package = 'gnome-hello', \
-            source = self.source['hello_2.2-2'], version = '2.2-2', \
+            poolfile = self.file['hello_2.2-1_i386.deb'])
+        self.binary['hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
+        self.binary['hello_2.2-1_i386'].suites.append(self.suite['sid'])
+        self.binary['gnome-hello_2.2-1_i386'] = DBBinary(package = 'gnome-hello', \
+            source = self.source['hello_2.2-1'], version = '2.2-1', \
             maintainer = self.maintainer['maintainer'], \
             architecture = self.arch['i386'], \
-            poolfile = self.file['gnome-hello_2.2-2_i386.deb'])
-        self.binary['gnome-hello_2.2-2_i386'].suites.append(self.suite['squeeze'])
-        self.binary['gnome-hello_2.2-2_i386'].suites.append(self.suite['sid'])
+            poolfile = self.file['gnome-hello_2.2-1_i386.deb'])
+        self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
+        self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['sid'])
         self.session.add_all(self.binary.values())
 
     def setUp(self):
@@ -219,8 +219,8 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(0, contrib.files.count())
         poolfile = main.files. \
                 filter(PoolFile.filename.like('%/hello/hello%')). \
-                order_by(PoolFile.filename)[1]
-        self.assertEqual('main/h/hello/hello_2.2-2.dsc', poolfile.filename)
+                order_by(PoolFile.filename)[0]
+        self.assertEqual('main/h/hello/hello_2.2-1.dsc', poolfile.filename)
         self.assertEqual(main, poolfile.location)
         # test get()
         self.assertEqual(poolfile, \
@@ -318,7 +318,7 @@ class PackageTestCase(DBDakTestCase):
         self.assertTrue(self.suite['squeeze'] in \
             get_suites_source_in('sl', self.session))
 
-    def test_upload(self):
+    def test_add_dsc_to_db(self):
         'tests function add_dsc_to_db()'
 
         pkg = Pkg()
@@ -330,7 +330,7 @@ class PackageTestCase(DBDakTestCase):
         pkg.changes['distribution'] = { 'sid': '' }
         pkg.files['hello_2.2-3.dsc'] = { \
             'component': 'main',
-            'location id': self.loc['main'].component_id,
+            'location id': self.loc['main'].location_id,
             'files id': self.file['hello_2.2-3.dsc'].file_id }
         pkg.dsc_files = {}
         upload = Upload(pkg)
@@ -340,8 +340,7 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual('2.2-3', source.version)
         self.assertEqual('sid', source.suites[0].suite_name)
         self.assertEqual('main', dsc_component)
-        # no dsc files defined above
-        self.assertEqual(None, dsc_location_id)
+        self.assertEqual(self.loc['main'].location_id, dsc_location_id)
         self.assertEqual([], pfs)
 
     def test_source_exists(self):
@@ -415,14 +414,14 @@ class PackageTestCase(DBDakTestCase):
 
         # test Suite relation
         self.assertEqual(2, self.suite['sid'].binaries.count())
-        self.assertTrue(self.binary['hello_2.2-2_i386'] in \
+        self.assertTrue(self.binary['hello_2.2-1_i386'] in \
             self.suite['sid'].binaries.all())
         self.assertEqual(0, self.suite['lenny'].binaries.count())
         # test DBSource relation
-        self.assertEqual(2, len(self.source['hello_2.2-2'].binaries))
-        self.assertTrue(self.binary['hello_2.2-2_i386'] in \
-            self.source['hello_2.2-2'].binaries)
-        self.assertEqual(0, len(self.source['hello_2.2-1'].binaries))
+        self.assertEqual(2, len(self.source['hello_2.2-1'].binaries))
+        self.assertTrue(self.binary['hello_2.2-1_i386'] in \
+            self.source['hello_2.2-1'].binaries)
+        self.assertEqual(0, len(self.source['hello_2.2-2'].binaries))
         # test get_suites_binary_in()
         self.assertEqual(2, len(get_suites_binary_in('hello', self.session)))
         self.assertTrue(self.suite['sid'] in \
@@ -431,6 +430,43 @@ class PackageTestCase(DBDakTestCase):
         self.assertTrue(self.suite['squeeze'] in \
             get_suites_binary_in('gnome-hello', self.session))
         self.assertEqual(0, len(get_suites_binary_in('sl', self.session)))
+
+    def test_add_deb_to_db(self):
+        'tests function add_deb_to_db()'
+
+        pkg = Pkg()
+        pkg.changes['fingerprint'] = 'deadbeef'
+        pkg.changes['distribution'] = { 'sid': '' }
+        pkg.files['hello_2.2-2_i386.deb'] = { \
+            'package': 'hello',
+            'version': '2.2-2',
+            'maintainer': self.maintainer['maintainer'].name,
+            'architecture': 'i386',
+            'dbtype': 'deb',
+            'pool name': 'main/h/hello/',
+            'location id': self.loc['main'].location_id,
+            'source package': 'hello',
+            'source version': '2.2-2',
+            'size': 0,
+            'md5sum': 'deadbeef',
+            'sha1sum': 'deadbeef',
+            'sha256sum': 'deadbeef'}
+        upload = Upload(pkg)
+        poolfile = add_deb_to_db(upload, 'hello_2.2-2_i386.deb', self.session)
+        self.session.refresh(poolfile)
+        self.assertEqual('main/h/hello/hello_2.2-2_i386.deb', poolfile.filename)
+        self.assertEqual('hello', poolfile.binary.package)
+        self.assertEqual('2.2-2', poolfile.binary.version)
+        self.assertEqual(['sid'], poolfile.binary.suites)
+        self.assertEqual('Mr. Maintainer', poolfile.binary.maintainer.name)
+        self.assertEqual('i386', poolfile.binary.architecture.arch_string)
+        self.assertEqual('deb', poolfile.binary.binarytype)
+        self.assertEqual(self.loc['main'], poolfile.location)
+        self.assertEqual(self.source['hello_2.2-2'], poolfile.binary.source)
+        self.assertEqual(0, poolfile.filesize)
+        self.assertEqual('deadbeef', poolfile.md5sum)
+        self.assertEqual('deadbeef', poolfile.sha1sum)
+        self.assertEqual('deadbeef', poolfile.sha256sum)
 
 if __name__ == '__main__':
     unittest.main()

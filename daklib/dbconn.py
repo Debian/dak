@@ -461,8 +461,8 @@ class DBBinary(ORMObject):
             'suites_count']
 
     def not_null_constraints(self):
-        return ['package', 'version', 'maintainer', 'source', 'architecture', \
-            'poolfile', 'binarytype']
+        return ['package', 'version', 'maintainer', 'source',  'poolfile', \
+            'binarytype']
 
 __all__.append('DBBinary')
 
@@ -1257,7 +1257,7 @@ class PoolFile(ORMObject):
 
     def properties(self):
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
-            'sha256sum', 'location', 'source', 'last_used']
+            'sha256sum', 'location', 'source', 'binary', 'last_used']
 
     def not_null_constraints(self):
         return ['filename', 'md5sum', 'location']
@@ -2572,14 +2572,10 @@ def add_deb_to_db(u, filename, session=None):
 
     # Add and flush object so it has an ID
     session.add(bin)
-    session.flush()
 
-    # Add BinAssociations
-    for suite_name in u.pkg.changes["distribution"].keys():
-        ba = BinAssociation()
-        ba.binary_id = bin.binary_id
-        ba.suite_id = get_suite(suite_name).suite_id
-        session.add(ba)
+    suite_names = u.pkg.changes["distribution"].keys()
+    bin.suites = session.query(Suite). \
+        filter(Suite.suite_name.in_(suite_names)).all()
 
     session.flush()
 
@@ -3075,7 +3071,7 @@ class DBConn(object):
                                  arch_id = self.tbl_binaries.c.architecture,
                                  architecture = relation(Architecture),
                                  poolfile_id = self.tbl_binaries.c.file,
-                                 poolfile = relation(PoolFile),
+                                 poolfile = relation(PoolFile, backref=backref('binary', uselist = False)),
                                  binarytype = self.tbl_binaries.c.type,
                                  fingerprint_id = self.tbl_binaries.c.sig_fpr,
                                  fingerprint = relation(Fingerprint),
