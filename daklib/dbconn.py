@@ -272,6 +272,21 @@ class ORMObject(object):
                 raise DBUpdateError(self.validation_message % \
                     (property, str(self)))
 
+    @classmethod
+    @session_wrapper
+    def get(cls, primary_key,  session = None):
+        '''
+        This is a support function that allows getting an object by its primary
+        key.
+
+        Architecture.get(3[, session])
+
+        instead of the more verbose
+
+        session.query(Architecture).get(3)
+        '''
+        return session.query(cls).get(primary_key)
+
 __all__.append('ORMObject')
 
 ################################################################################
