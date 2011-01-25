@@ -454,6 +454,7 @@ class PackageTestCase(DBDakTestCase):
         upload = Upload(pkg)
         poolfile = add_deb_to_db(upload, 'hello_2.2-2_i386.deb', self.session)
         self.session.refresh(poolfile)
+        self.session.refresh(poolfile.binary)
         self.assertEqual('main/h/hello/hello_2.2-2_i386.deb', poolfile.filename)
         self.assertEqual('hello', poolfile.binary.package)
         self.assertEqual('2.2-2', poolfile.binary.version)
