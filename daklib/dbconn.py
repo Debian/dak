@@ -2802,7 +2802,7 @@ __all__.append('get_suite_src_formats')
 
 ################################################################################
 
-class Uid(object):
+class Uid(ORMObject):
     def __init__(self, uid = None, name = None):
         self.uid = uid
         self.name = name
@@ -2819,8 +2819,11 @@ class Uid(object):
         # This signals to use the normal comparison operator
         return NotImplemented
 
-    def __repr__(self):
-        return '<Uid %s (%s)>' % (self.uid, self.name)
+    def properties(self):
+        return ['uid', 'name', 'fingerprint']
+
+    def not_null_constraints(self):
+        return ['uid']
 
 __all__.append('Uid')
 
@@ -3261,7 +3264,8 @@ class DBConn(object):
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
-                                 fingerprint = relation(Fingerprint)))
+                                 fingerprint = relation(Fingerprint)),
+               extension = validator)
 
         mapper(UploadBlock, self.tbl_upload_blocks,
                properties = dict(upload_block_id = self.tbl_upload_blocks.c.id,

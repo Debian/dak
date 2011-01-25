@@ -60,7 +60,7 @@ class FingerprintTestCase(DBDakTestCase):
         self.session.rollback()
         self.assertRaises(IntegrityError, self.fingerprint_duplicate_fingerprint)
         self.session.rollback()
-        self.assertRaises(IntegrityError, self.uid_no_uid)
+        self.assertRaises(DBUpdateError, self.uid_no_uid)
         self.session.rollback()
         self.assertRaises(IntegrityError, self.uid_duplicate_uid)
         self.session.rollback()
