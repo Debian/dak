@@ -43,7 +43,6 @@ from daklib.queue import Upload
 from daklib.dbconn import DBConn, has_new_comment, DBChange, DBSource, get_uid_from_fingerprint
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
-import debianbts
 
 Cnf = None
 direction = []
@@ -265,30 +264,7 @@ def table_footer(type):
     print "</tbody></table>"
 
 
-def find_bug_severities(bugnrs):
-    """Take a list of bug numbers and
-    return a dictionary with bug number - severity pairs."""
-    statuses = None
-    try: statuses = debianbts.get_status(bugnrs)
-    except Exception:
-        return None
-    severities = {}
-    for bug_status in statuses:
-        severities[bug_status.bug_num] = bug_status.severity
-    return severities
-
-def rcbug_close_check(closes):
-    """Take a list of bug numbers and determine if at least one of them
-    is release critical."""
-    severity_list = find_bug_severities(closes)
-    if severity_list:
-        severities = severity_list.values()
-        return ('critical' in severities) or \
-               ('serious' in severities) or \
-               ('grave' in severities)
-    return False
-
-def table_row(source, version, arch, last_mod, maint, distribution, closes, fingerprint, sponsor, changedby, fixes_rcbug):
+def table_row(source, version, arch, last_mod, maint, distribution, closes, fingerprint, sponsor, changedby):
 
     global row_number
 
@@ -297,9 +273,6 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     for dist in distribution:
         if dist == "experimental":
             trclass = "exp"
-
-    if fixes_rcbug:
-        trclass = "rcfix"
 
     if not len(session.query(DBSource).filter_by(source = source).all()):
         trclass += " binNEW"
@@ -470,8 +443,7 @@ def process_changes_files(changes_files, type, log):
             note = " | [N]"
         else:
             note = ""
-        fixes_rcbug = rcbug_close_check(closes)
-        entries.append([source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename, fixes_rcbug])
+        entries.append([source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename])
 
     # direction entry consists of "Which field, which direction, time-consider" where
     # time-consider says how we should treat last_modified. Thats all.
@@ -513,7 +485,7 @@ def process_changes_files(changes_files, type, log):
     if Cnf.has_key("Queue-Report::Options::822"):
         # print stuff out in 822 format
         for entry in entries:
-            (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file, fixes_rcbug) = entry
+            (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file) = entry
 
             # We'll always have Source, Version, Arch, Mantainer, and Dist
             # For the rest, check to see if we have them, then print them out
@@ -556,8 +528,8 @@ def process_changes_files(changes_files, type, log):
             source_count = len(per_source_items)
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
-                (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef, fixes_rcbug) = entry
-                table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby, entries, fixes_rcbug)
+                (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
+                table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
     elif not Cnf.has_key("Queue-Report::Options::822"):
     # The "normal" output without any formatting.
@@ -565,7 +537,7 @@ def process_changes_files(changes_files, type, log):
 
         msg = ""
         for entry in entries:
-            (source, binary, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef, undef, fixes_rcbug) = entry
+            (source, binary, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
             msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
