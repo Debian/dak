@@ -421,17 +421,6 @@ __all__.append('get_archive')
 
 ################################################################################
 
-class BinAssociation(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<BinAssociation %s (%s, %s)>' % (self.ba_id, self.binary, self.suite)
-
-__all__.append('BinAssociation')
-
-################################################################################
-
 class BinContents(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2939,13 +2928,6 @@ class DBConn(object):
                properties = dict(archive_id = self.tbl_archive.c.id,
                                  archive_name = self.tbl_archive.c.name))
 
-        mapper(BinAssociation, self.tbl_bin_associations,
-               properties = dict(ba_id = self.tbl_bin_associations.c.id,
-                                 suite_id = self.tbl_bin_associations.c.suite,
-                                 suite = relation(Suite),
-                                 binary_id = self.tbl_bin_associations.c.bin,
-                                 binary = relation(DBBinary)))
-
         mapper(PendingBinContents, self.tbl_pending_bin_contents,
                properties = dict(contents_id =self.tbl_pending_bin_contents.c.id,
                                  filename = self.tbl_pending_bin_contents.c.filename,
@@ -2994,9 +2976,7 @@ class DBConn(object):
                                  fingerprint = relation(Fingerprint),
                                  install_date = self.tbl_binaries.c.install_date,
                                  suites = relation(Suite, secondary=self.tbl_bin_associations,
-                                     backref=backref('binaries', lazy='dynamic')),
-                                 binassociations = relation(BinAssociation,
-                                                            primaryjoin=(self.tbl_binaries.c.id==self.tbl_bin_associations.c.bin))),
+                                     backref=backref('binaries', lazy='dynamic'))),
                 extension = validator)
 
         mapper(BinaryACL, self.tbl_binary_acl,
