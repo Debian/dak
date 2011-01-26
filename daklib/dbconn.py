@@ -483,26 +483,6 @@ def get_suites_binary_in(package, session=None):
 __all__.append('get_suites_binary_in')
 
 @session_wrapper
-def get_binaries_from_source_id(source_id, session=None):
-    """
-    Returns list of DBBinary objects for given C{source_id}
-
-    @type source_id: int
-    @param source_id: source_id to search for
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: list of DBBinary objects for the given name (may be empty)
-    """
-
-    return session.query(DBBinary).filter_by(source_id=source_id).all()
-
-__all__.append('get_binaries_from_source_id')
-
-@session_wrapper
 def get_binary_from_name_suite(package, suitename, session=None):
     ### For dak examine-package
     ### XXX: Doesn't use object API yet
