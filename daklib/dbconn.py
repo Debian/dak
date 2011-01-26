@@ -849,9 +849,9 @@ __all__.append('ChangePendingSource')
 
 ################################################################################
 
-class Component(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class Component(ORMObject):
+    def __init__(self, component_name = None):
+        self.component_name = component_name
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -865,8 +865,12 @@ class Component(object):
         # This signals to use the normal comparison operator
         return NotImplemented
 
-    def __repr__(self):
-        return '<Component %s>' % self.component_name
+    def properties(self):
+        return ['component_name', 'component_id', 'description', 'location', \
+            'meets_dfsg']
+
+    def not_null_constraints(self):
+        return ['component_name']
 
 
 __all__.append('Component')
@@ -1572,9 +1576,12 @@ __all__.append('get_dbchange')
 
 ################################################################################
 
+# TODO: Why do we have a separate Location class? Can't it be fully integrated
+# into class Component?
 class Location(ORMObject):
-    def __init__(self, path = None):
+    def __init__(self, path = None, component = None):
         self.path = path
+        self.component = component
         # the column 'type' should go away, see comment at mapper
         self.archive_type = 'pool'
 
@@ -2989,7 +2996,8 @@ class DBConn(object):
 
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
-                                 component_name = self.tbl_component.c.name))
+                                 component_name = self.tbl_component.c.name),
+               extension = validator)
 
         mapper(DBConfig, self.tbl_config,
                properties = dict(config_id = self.tbl_config.c.id))
@@ -3081,7 +3089,8 @@ class DBConn(object):
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
                                  component_id = self.tbl_location.c.component,
-                                 component = relation(Component),
+                                 component = relation(Component, \
+                                     backref=backref('location', uselist = False)),
                                  archive_id = self.tbl_location.c.archive,
                                  archive = relation(Archive),
                                  # FIXME: the 'type' column is old cruft and

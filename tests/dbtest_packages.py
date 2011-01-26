@@ -6,7 +6,7 @@ from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
     get_suites_source_in, add_dsc_to_db, source_exists, DBBinary, \
-    get_suites_binary_in, add_deb_to_db
+    get_suites_binary_in, add_deb_to_db, Component
 from daklib.queue_install import package_to_suite
 from daklib.queue import get_newest_source, get_suite_version_by_source, \
     get_source_by_package_and_suite, get_suite_version_by_package
@@ -62,16 +62,29 @@ class PackageTestCase(DBDakTestCase):
         self.arch['all'].arch_id = 2
         self.session.add_all(self.arch.values())
 
+    def setup_components(self):
+        'create some Component objects'
+
+        if 'comp' in self.__dict__:
+            return
+        self.comp = {}
+        self.comp['main'] = Component(component_name = 'main')
+        self.comp['contrib'] = Component(component_name = 'contrib')
+        self.session.add_all(self.comp.values())
+
     def setup_locations(self):
-        'create some Location objects, TODO: add component'
+        'create some Location objects'
 
         if 'loc' in self.__dict__:
             return
+        self.setup_components()
         self.loc = {}
-        self.loc['main'] = Location(path = \
-            '/srv/ftp-master.debian.org/ftp/pool/')
-        self.loc['contrib'] = Location(path = \
-            '/srv/ftp-master.debian.org/ftp/pool/')
+        self.loc['main'] = Location( \
+            path = '/srv/ftp-master.debian.org/ftp/pool/', \
+            component = self.comp['main'])
+        self.loc['contrib'] = Location( \
+            path = '/srv/ftp-master.debian.org/ftp/pool/', \
+            component = self.comp['contrib'])
         self.session.add_all(self.loc.values())
 
     def setup_poolfiles(self):
@@ -503,6 +516,12 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual([('squeeze', '2.2-1')], result)
         result = get_suite_version_by_package('python-hello', 'amd64', self.session)
         self.assertEqual([('squeeze', '2.2-1')], result)
+
+    def test_components(self):
+        'test class Component'
+
+        self.assertEqual(self.loc['main'], self.comp['main'].location)
+        self.assertEqual(self.loc['contrib'], self.comp['contrib'].location)
 
 if __name__ == '__main__':
     unittest.main()
