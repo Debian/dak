@@ -383,7 +383,7 @@ def get_newest_source(source, session):
         order_by(desc('source.version'))
     return q.first()
 
-def get_suite_version(source, session):
+def get_suite_version_by_source(source, session):
     'returns a list of tuples (suite_name, version) for source package'
     q = session.query(Suite.suite_name, DBSource.version). \
         join(Suite.sources).filter_by(source = source)
@@ -397,6 +397,16 @@ def get_source_by_package_and_suite(package, suite_name, session):
     return session.query(DBSource). \
         join(DBSource.binaries).filter_by(package = package). \
         join(DBBinary.suites).filter_by(suite_name = suite_name)
+
+def get_suite_version_by_package(package, arch_string, session):
+    '''
+    returns a list of tuples (suite_name, version) for binary package and
+    arch_string
+    '''
+    return session.query(Suite.suite_name, DBBinary.version). \
+        join(Suite.binaries).filter_by(package = package). \
+        join(DBBinary.architecture). \
+        filter(Architecture.arch_string.in_([arch_string, 'all'])).all()
 
 class Upload(object):
     """
@@ -2504,12 +2514,10 @@ distribution."""
     ################################################################################
     def check_binary_against_db(self, filename, session):
         # Ensure version is sane
-        q = session.query(BinAssociation)
-        q = q.join(DBBinary).filter(DBBinary.package==self.pkg.files[filename]["package"])
-        q = q.join(Architecture).filter(Architecture.arch_string.in_([self.pkg.files[filename]["architecture"], 'all']))
-
-        self.cross_suite_version_check([ (x.suite.suite_name, x.binary.version) for x in q.all() ],
-                                       filename, self.pkg.files[filename]["version"], sourceful=False)
+        self.cross_suite_version_check( \
+            get_suite_version_by_package(self.pkg.files[filename]["package"], \
+                self.pkg.files[filename]["architecture"], session),
+            filename, self.pkg.files[filename]["version"], sourceful=False)
 
         # Check for any existing copies of the file
         q = session.query(DBBinary).filter_by(package=self.pkg.files[filename]["package"])
@@ -2526,8 +2534,9 @@ distribution."""
         version = self.pkg.dsc.get("version")
 
         # Ensure version is sane
-        self.cross_suite_version_check(get_suite_version(source, session),
-                                       filename, version, sourceful=True)
+        self.cross_suite_version_check( \
+            get_suite_version_by_source(source, session), filename, version,
+            sourceful=True)
 
     ################################################################################
     def check_dsc_against_db(self, filename, session):

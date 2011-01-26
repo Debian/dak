@@ -8,8 +8,8 @@ from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_suites_source_in, add_dsc_to_db, source_exists, DBBinary, \
     get_suites_binary_in, add_deb_to_db
 from daklib.queue_install import package_to_suite
-from daklib.queue import get_newest_source, get_suite_version, \
-    get_source_by_package_and_suite
+from daklib.queue import get_newest_source, get_suite_version_by_source, \
+    get_source_by_package_and_suite, get_suite_version_by_package
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
@@ -93,6 +93,9 @@ class PackageTestCase(DBDakTestCase):
         self.file['gnome-hello_2.2-1_i386.deb'] = PoolFile( \
             filename = 'main/h/hello/gnome-hello_2.2-1_i386.deb', \
             location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['python-hello_2.2-1_all.deb'] = PoolFile( \
+            filename = 'main/h/hello/python-hello_2.2-1_all.deb', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
         self.file['sl_3.03-16.dsc'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
         self.file['python2.6_2.6.6-8.dsc'] = PoolFile( \
@@ -160,6 +163,12 @@ class PackageTestCase(DBDakTestCase):
             poolfile = self.file['gnome-hello_2.2-1_i386.deb'])
         self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
         self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['sid'])
+        self.binary['python-hello_2.2-1_i386'] = DBBinary(package = 'python-hello', \
+            source = self.source['hello_2.2-1'], version = '2.2-1', \
+            maintainer = self.maintainer['maintainer'], \
+            architecture = self.arch['all'], \
+            poolfile = self.file['python-hello_2.2-1_all.deb'])
+        self.binary['python-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
         self.session.add_all(self.binary.values())
 
     def setUp(self):
@@ -395,14 +404,14 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(self.source['hello_2.2-2'], get_newest_source('hello', self.session))
         self.assertEqual(None, get_newest_source('foobar', self.session))
 
-    def test_get_suite_version(self):
-        'test function get_suite_version()'
+    def test_get_suite_version_by_source(self):
+        'test function get_suite_version_by_source()'
 
-        result = get_suite_version('hello', self.session)
+        result = get_suite_version_by_source('hello', self.session)
         self.assertEqual(2, len(result))
         self.assertTrue(('sid', '2.2-1') in result)
         self.assertTrue(('sid', '2.2-2') in result)
-        result = get_suite_version('sl', self.session)
+        result = get_suite_version_by_source('sl', self.session)
         self.assertEqual(2, len(result))
         self.assertTrue(('squeeze', '3.03-16') in result)
         self.assertTrue(('sid', '3.03-16') in result)
@@ -419,7 +428,7 @@ class PackageTestCase(DBDakTestCase):
             self.suite['sid'].binaries.all())
         self.assertEqual(0, self.suite['lenny'].binaries.count())
         # test DBSource relation
-        self.assertEqual(2, len(self.source['hello_2.2-1'].binaries))
+        self.assertEqual(3, len(self.source['hello_2.2-1'].binaries))
         self.assertTrue(self.binary['hello_2.2-1_i386'] in \
             self.source['hello_2.2-1'].binaries)
         self.assertEqual(0, len(self.source['hello_2.2-2'].binaries))
@@ -481,6 +490,19 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(0, query.count())
         query = get_source_by_package_and_suite('foobar', 'squeeze', self.session)
         self.assertEqual(0, query.count())
+
+    def test_get_suite_version_by_package(self):
+        'test function get_suite_version_by_package()'
+
+        result = get_suite_version_by_package('hello', 'i386', self.session)
+        self.assertEqual(2, len(result))
+        self.assertTrue(('sid', '2.2-1') in result)
+        result = get_suite_version_by_package('hello', 'amd64', self.session)
+        self.assertEqual(0, len(result))
+        result = get_suite_version_by_package('python-hello', 'i386', self.session)
+        self.assertEqual([('squeeze', '2.2-1')], result)
+        result = get_suite_version_by_package('python-hello', 'amd64', self.session)
+        self.assertEqual([('squeeze', '2.2-1')], result)
 
 if __name__ == '__main__':
     unittest.main()
