@@ -483,44 +483,6 @@ def get_suites_binary_in(package, session=None):
 __all__.append('get_suites_binary_in')
 
 @session_wrapper
-def get_binaries_from_name(package, version=None, architecture=None, session=None):
-    """
-    Returns list of DBBinary objects for given C{package} name
-
-    @type package: str
-    @param package: DBBinary package name to search for
-
-    @type version: str or None
-    @param version: Version to search for (or None)
-
-    @type architecture: str, list or None
-    @param architecture: Architectures to limit to (or None if no limit)
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: list of DBBinary objects for the given name (may be empty)
-    """
-
-    q = session.query(DBBinary).filter_by(package=package)
-
-    if version is not None:
-        q = q.filter_by(version=version)
-
-    if architecture is not None:
-        if not isinstance(architecture, list):
-            architecture = [architecture]
-        q = q.join(Architecture).filter(Architecture.arch_string.in_(architecture))
-
-    ret = q.all()
-
-    return ret
-
-__all__.append('get_binaries_from_name')
-
-@session_wrapper
 def get_binaries_from_source_id(source_id, session=None):
     """
     Returns list of DBBinary objects for given C{source_id}
