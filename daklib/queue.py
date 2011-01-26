@@ -389,6 +389,15 @@ def get_suite_version(source, session):
         join(Suite.sources).filter_by(source = source)
     return q.all()
 
+def get_source_by_package_and_suite(package, suite_name, session):
+    '''
+    returns a DBSource query filtered by DBBinary.package and this package's
+    suite_name
+    '''
+    return session.query(DBSource). \
+        join(DBSource.binaries).filter_by(package = package). \
+        join(DBBinary.suites).filter_by(suite_name = suite_name)
+
 class Upload(object):
     """
     Everything that has to do with an upload processed.
@@ -1738,11 +1747,7 @@ class Upload(object):
         ## none of the packages are being taken over from other source packages
         for b in self.pkg.changes["binary"].keys():
             for suite in self.pkg.changes["distribution"].keys():
-                q = session.query(DBSource)
-                q = q.join(DBBinary).filter_by(package=b)
-                q = q.join(BinAssociation).join(Suite).filter_by(suite_name=suite)
-
-                for s in q.all():
+                for s in get_source_by_package_and_suite(b, suite, session):
                     if s.source != self.pkg.changes["source"]:
                         self.rejects.append("%s may not hijack %s from source package %s in suite %s" % (fpr.uid.uid, b, s, suite))
 

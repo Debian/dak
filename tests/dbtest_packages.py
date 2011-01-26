@@ -8,7 +8,8 @@ from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_suites_source_in, add_dsc_to_db, source_exists, DBBinary, \
     get_suites_binary_in, add_deb_to_db
 from daklib.queue_install import package_to_suite
-from daklib.queue import get_newest_source, get_suite_version
+from daklib.queue import get_newest_source, get_suite_version, \
+    get_source_by_package_and_suite
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
@@ -468,6 +469,18 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual('deadbeef', poolfile.md5sum)
         self.assertEqual('deadbeef', poolfile.sha1sum)
         self.assertEqual('deadbeef', poolfile.sha256sum)
+
+    def test_get_source_by_package_and_suite(self):
+        'test get_source_by_package_and_suite()'
+
+        query = get_source_by_package_and_suite('hello', 'sid', self.session)
+        self.assertEqual(self.source['hello_2.2-1'], query.one())
+        query = get_source_by_package_and_suite('gnome-hello', 'squeeze', self.session)
+        self.assertEqual(self.source['hello_2.2-1'], query.one())
+        query = get_source_by_package_and_suite('hello', 'hamm', self.session)
+        self.assertEqual(0, query.count())
+        query = get_source_by_package_and_suite('foobar', 'squeeze', self.session)
+        self.assertEqual(0, query.count())
 
 if __name__ == '__main__':
     unittest.main()
