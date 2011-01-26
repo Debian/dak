@@ -458,7 +458,7 @@ class DBBinary(ORMObject):
     def properties(self):
         return ['package', 'version', 'maintainer', 'source', 'architecture', \
             'poolfile', 'binarytype', 'fingerprint', 'install_date', \
-            'suites_count']
+            'suites_count', 'binary_id']
 
     def not_null_constraints(self):
         return ['package', 'version', 'maintainer', 'source',  'poolfile', \
@@ -481,31 +481,6 @@ def get_suites_binary_in(package, session=None):
     return session.query(Suite).filter(Suite.binaries.any(DBBinary.package == package)).all()
 
 __all__.append('get_suites_binary_in')
-
-@session_wrapper
-def get_binary_from_id(binary_id, session=None):
-    """
-    Returns DBBinary object for given C{id}
-
-    @type binary_id: int
-    @param binary_id: Id of the required binary
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: DBBinary
-    @return: DBBinary object for the given binary (None if not present)
-    """
-
-    q = session.query(DBBinary).filter_by(binary_id=binary_id)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
-
-__all__.append('get_binary_from_id')
 
 @session_wrapper
 def get_binaries_from_name(package, version=None, architecture=None, session=None):
