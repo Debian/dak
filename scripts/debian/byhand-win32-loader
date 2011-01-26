@@ -43,4 +43,7 @@ fi
 # Put said file into the tools directory
 cp "$WIN32_LOADER_FILE" "$TARGET"
 
+# Chmod it correctly
+chmod 0644 "${TARGET}${WIN32_LOADER_FILE}"
+
 exit 0
