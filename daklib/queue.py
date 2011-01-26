@@ -370,6 +370,25 @@ def edit_note(note, upload, session, trainee=False):
 
 ###############################################################################
 
+# suite names DMs can upload to
+dm_suites = ['unstable', 'experimental']
+
+def get_newest_source(source, session):
+    'returns the newest DBSource object in dm_suites'
+    ## the most recent version of the package uploaded to unstable or
+    ## experimental includes the field "DM-Upload-Allowed: yes" in the source
+    ## section of its control file
+    q = session.query(DBSource).filter_by(source = source). \
+        filter(DBSource.suites.any(Suite.suite_name.in_(dm_suites))). \
+        order_by(desc('source.version'))
+    return q.first()
+
+def get_suite_version(source, session):
+    'returns a list of tuples (suite_name, version) for source package'
+    q = session.query(Suite.suite_name, DBSource.version). \
+        join(Suite.sources).filter_by(source = source)
+    return q.all()
+
 class Upload(object):
     """
     Everything that has to do with an upload processed.
@@ -795,7 +814,8 @@ class Upload(object):
                                     (source_version, f, self.pkg.changes["version"]))
         else:
             # Check in the SQL database
-            if not source_exists(source_package, source_version, self.pkg.changes["distribution"].keys(), session):
+            if not source_exists(source_package, source_version, suites = \
+                self.pkg.changes["distribution"].keys(), session = session):
                 # Check in one of the other directories
                 source_epochless_version = re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
@@ -1680,22 +1700,13 @@ class Upload(object):
         if rej:
             return
 
-        ## the most recent version of the package uploaded to unstable or
-        ## experimental includes the field "DM-Upload-Allowed: yes" in the source
-        ## section of its control file
-        q = session.query(DBSource).filter_by(source=self.pkg.changes["source"])
-        q = q.join(SrcAssociation)
-        q = q.join(Suite).filter(Suite.suite_name.in_(['unstable', 'experimental']))
-        q = q.order_by(desc('source.version')).limit(1)
+        r = get_newest_source(self.pkg.changes["source"], session)
 
-        r = q.all()
-
-        if len(r) != 1:
+        if r is None:
             rej = "Could not find existing source package %s in unstable or experimental and this is a DM upload" % self.pkg.changes["source"]
             self.rejects.append(rej)
             return
 
-        r = r[0]
         if not r.dm_upload_allowed:
             rej = "Source package %s does not have 'DM-Upload-Allowed: yes' in its most recent version (%s)" % (self.pkg.changes["source"], r.version)
             self.rejects.append(rej)
@@ -2510,10 +2521,7 @@ distribution."""
         version = self.pkg.dsc.get("version")
 
         # Ensure version is sane
-        q = session.query(SrcAssociation)
-        q = q.join(DBSource).filter(DBSource.source==source)
-
-        self.cross_suite_version_check([ (x.suite.suite_name, x.source.version) for x in q.all() ],
+        self.cross_suite_version_check(get_suite_version(source, session),
                                        filename, version, sourceful=True)
 
     ################################################################################
@@ -2681,7 +2689,8 @@ distribution."""
                 source_version = entry["source version"]
                 source_package = entry["source package"]
                 if not self.pkg.changes["architecture"].has_key("source") \
-                   and not source_exists(source_package, source_version, self.pkg.changes["distribution"].keys(), session):
+                   and not source_exists(source_package, source_version, \
+                    suites = self.pkg.changes["distribution"].keys(), session = session):
                     source_epochless_version = re_no_epoch.sub('', source_version)
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                     found = False
@@ -2728,7 +2737,9 @@ distribution."""
                 source_version = entry["source version"]
                 source_package = entry["source package"]
                 if not self.pkg.changes["architecture"].has_key("source") \
-                   and not source_exists(source_package, source_version,  self.pkg.changes["distribution"].keys()):
+                   and not source_exists(source_package, source_version, \
+                    suites = self.pkg.changes["distribution"].keys(), \
+                    session = session):
                     self.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, checkfile))
 
             # Version and file overwrite checks

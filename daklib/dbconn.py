@@ -38,6 +38,14 @@ import re
 import psycopg2
 import traceback
 import commands
+
+try:
+    # python >= 2.6
+    import json
+except:
+    # python <= 2.5
+    import simplejson as json
+
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
@@ -46,7 +54,8 @@ from inspect import getargspec
 
 import sqlalchemy
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer
-from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, backref
+from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
+    backref, MapperExtension, EXT_CONTINUE
 from sqlalchemy import types as sqltypes
 
 # Don't remove this, we re-export the exceptions to scripts which import us
@@ -57,7 +66,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # in the database
 from config import Config
 from textutils import fix_maintainer
-from dak_exceptions import NoSourceFieldError
+from dak_exceptions import DBUpdateError, NoSourceFieldError
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
@@ -156,7 +165,152 @@ __all__.append('session_wrapper')
 
 ################################################################################
 
-class Architecture(object):
+class ORMObject(object):
+    """
+    ORMObject is a base class for all ORM classes mapped by SQLalchemy. All
+    derived classes must implement the properties() method.
+    """
+
+    def properties(self):
+        '''
+        This method should be implemented by all derived classes and returns a
+        list of the important properties. The properties 'created' and
+        'modified' will be added automatically. A suffix '_count' should be
+        added to properties that are lists or query objects. The most important
+        property name should be returned as the first element in the list
+        because it is used by repr().
+        '''
+        return []
+
+    def json(self):
+        '''
+        Returns a JSON representation of the object based on the properties
+        returned from the properties() method.
+        '''
+        data = {}
+        # add created and modified
+        all_properties = self.properties() + ['created', 'modified']
+        for property in all_properties:
+            # check for list or query
+            if property[-6:] == '_count':
+                real_property = property[:-6]
+                if not hasattr(self, real_property):
+                    continue
+                value = getattr(self, real_property)
+                if hasattr(value, '__len__'):
+                    # list
+                    value = len(value)
+                elif hasattr(value, 'count'):
+                    # query
+                    value = value.count()
+                else:
+                    raise KeyError('Do not understand property %s.' % property)
+            else:
+                if not hasattr(self, property):
+                    continue
+                # plain object
+                value = getattr(self, property)
+                if value is None:
+                    # skip None
+                    continue
+                elif isinstance(value, ORMObject):
+                    # use repr() for ORMObject types
+                    value = repr(value)
+                else:
+                    # we want a string for all other types because json cannot
+                    # encode everything
+                    value = str(value)
+            data[property] = value
+        return json.dumps(data)
+
+    def classname(self):
+        '''
+        Returns the name of the class.
+        '''
+        return type(self).__name__
+
+    def __repr__(self):
+        '''
+        Returns a short string representation of the object using the first
+        element from the properties() method.
+        '''
+        primary_property = self.properties()[0]
+        value = getattr(self, primary_property)
+        return '<%s %s>' % (self.classname(), str(value))
+
+    def __str__(self):
+        '''
+        Returns a human readable form of the object using the properties()
+        method.
+        '''
+        return '<%s %s>' % (self.classname(), self.json())
+
+    def not_null_constraints(self):
+        '''
+        Returns a list of properties that must be not NULL. Derived classes
+        should override this method if needed.
+        '''
+        return []
+
+    validation_message = \
+        "Validation failed because property '%s' must not be empty in object\n%s"
+
+    def validate(self):
+        '''
+        This function validates the not NULL constraints as returned by
+        not_null_constraints(). It raises the DBUpdateError exception if
+        validation fails.
+        '''
+        for property in self.not_null_constraints():
+            # TODO: It is a bit awkward that the mapper configuration allow
+            # directly setting the numeric _id columns. We should get rid of it
+            # in the long run.
+            if hasattr(self, property + '_id') and \
+                getattr(self, property + '_id') is not None:
+                continue
+            if not hasattr(self, property) or getattr(self, property) is None:
+                raise DBUpdateError(self.validation_message % \
+                    (property, str(self)))
+
+    @classmethod
+    @session_wrapper
+    def get(cls, primary_key,  session = None):
+        '''
+        This is a support function that allows getting an object by its primary
+        key.
+
+        Architecture.get(3[, session])
+
+        instead of the more verbose
+
+        session.query(Architecture).get(3)
+        '''
+        return session.query(cls).get(primary_key)
+
+__all__.append('ORMObject')
+
+################################################################################
+
+class Validator(MapperExtension):
+    '''
+    This class calls the validate() method for each instance for the
+    'before_update' and 'before_insert' events. A global object validator is
+    used for configuring the individual mappers.
+    '''
+
+    def before_update(self, mapper, connection, instance):
+        instance.validate()
+        return EXT_CONTINUE
+
+    def before_insert(self, mapper, connection, instance):
+        instance.validate()
+        return EXT_CONTINUE
+
+validator = Validator()
+
+################################################################################
+
+class Architecture(ORMObject):
     def __init__(self, arch_string = None, description = None):
         self.arch_string = arch_string
         self.description = description
@@ -173,8 +327,11 @@ class Architecture(object):
         # This signals to use the normal comparison operator
         return NotImplemented
 
-    def __repr__(self):
-        return '<Architecture %s>' % self.arch_string
+    def properties(self):
+        return ['arch_string', 'arch_id', 'suites_count']
+
+    def not_null_constraints(self):
+        return ['arch_string']
 
 __all__.append('Architecture')
 
@@ -1069,7 +1226,7 @@ __all__.append('get_dscfiles')
 
 ################################################################################
 
-class PoolFile(object):
+class PoolFile(ORMObject):
     def __init__(self, filename = None, location = None, filesize = -1, \
         md5sum = None):
         self.filename = filename
@@ -1077,15 +1234,19 @@ class PoolFile(object):
         self.filesize = filesize
         self.md5sum = md5sum
 
-    def __repr__(self):
-        return '<PoolFile %s>' % self.filename
-
     @property
     def fullpath(self):
         return os.path.join(self.location.path, self.filename)
 
     def is_valid(self, filesize = -1, md5sum = None):\
         return self.filesize == filesize and self.md5sum == md5sum
+
+    def properties(self):
+        return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
+            'sha256sum', 'location', 'source', 'last_used']
+
+    def not_null_constraints(self):
+        return ['filename', 'md5sum', 'location']
 
 __all__.append('PoolFile')
 
@@ -1197,12 +1358,16 @@ __all__.append('add_poolfile')
 
 ################################################################################
 
-class Fingerprint(object):
+class Fingerprint(ORMObject):
     def __init__(self, fingerprint = None):
         self.fingerprint = fingerprint
 
-    def __repr__(self):
-        return '<Fingerprint %s>' % self.fingerprint
+    def properties(self):
+        return ['fingerprint', 'fingerprint_id', 'keyring', 'uid', \
+            'binary_reject']
+
+    def not_null_constraints(self):
+        return ['fingerprint']
 
 __all__.append('Fingerprint')
 
@@ -1487,14 +1652,17 @@ __all__.append('get_dbchange')
 
 ################################################################################
 
-class Location(object):
+class Location(ORMObject):
     def __init__(self, path = None):
         self.path = path
         # the column 'type' should go away, see comment at mapper
         self.archive_type = 'pool'
 
-    def __repr__(self):
-        return '<Location %s (%s)>' % (self.path, self.location_id)
+    def properties(self):
+        return ['path', 'archive_type', 'component', 'files_count']
+
+    def not_null_constraints(self):
+        return ['path', 'archive_type']
 
 __all__.append('Location')
 
@@ -1534,12 +1702,15 @@ __all__.append('get_location')
 
 ################################################################################
 
-class Maintainer(object):
+class Maintainer(ORMObject):
     def __init__(self, name = None):
         self.name = name
 
-    def __repr__(self):
-        return '''<Maintainer '%s' (%s)>''' % (self.name, self.maintainer_id)
+    def properties(self):
+        return ['name', 'maintainer_id']
+
+    def not_null_constraints(self):
+        return ['name']
 
     def get_split_maintainer(self):
         if not hasattr(self, 'name') or self.name is None:
@@ -2073,7 +2244,7 @@ __all__.append('get_sections')
 
 ################################################################################
 
-class DBSource(object):
+class DBSource(ORMObject):
     def __init__(self, source = None, version = None, maintainer = None, \
         changedby = None, poolfile = None, install_date = None):
         self.source = source
@@ -2083,8 +2254,14 @@ class DBSource(object):
         self.poolfile = poolfile
         self.install_date = install_date
 
-    def __repr__(self):
-        return '<DBSource %s (%s)>' % (self.source, self.version)
+    def properties(self):
+        return ['source', 'source_id', 'maintainer', 'changedby', \
+            'fingerprint', 'poolfile', 'version', 'suites_count', \
+            'install_date']
+
+    def not_null_constraints(self):
+        return ['source', 'version', 'install_date', 'maintainer', \
+            'changedby', 'poolfile', 'install_date']
 
 __all__.append('DBSource')
 
@@ -2115,10 +2292,14 @@ def source_exists(source, source_version, suites = ["any"], session=None):
     """
 
     cnf = Config()
-    ret = 1
+    ret = True
+
+    from daklib.regexes import re_bin_only_nmu
+    orig_source_version = re_bin_only_nmu.sub('', source_version)
 
     for suite in suites:
-        q = session.query(DBSource).filter_by(source=source)
+        q = session.query(DBSource).filter_by(source=source). \
+            filter(DBSource.version.in_([source_version, orig_source_version]))
         if suite != "any":
             # source must exist in suite X, or in some other suite that's
             # mapped to X, recursively... silent-maps are counted too,
@@ -2133,24 +2314,13 @@ def source_exists(source, source_version, suites = ["any"], session=None):
                 if x[1] in s and x[0] not in s:
                     s.append(x[0])
 
-            q = q.join(SrcAssociation).join(Suite)
-            q = q.filter(Suite.suite_name.in_(s))
+            q = q.filter(DBSource.suites.any(Suite.suite_name.in_(s)))
 
-        # Reduce the query results to a list of version numbers
-        ql = [ j.version for j in q.all() ]
-
-        # Try (1)
-        if source_version in ql:
-            continue
-
-        # Try (2)
-        from daklib.regexes import re_bin_only_nmu
-        orig_source_version = re_bin_only_nmu.sub('', source_version)
-        if orig_source_version in ql:
+        if q.count() > 0:
             continue
 
         # No source found so return not ok
-        ret = 0
+        ret = False
 
     return ret
 
@@ -2168,7 +2338,7 @@ def get_suites_source_in(source, session=None):
     @return: list of Suite objects for the given source
     """
 
-    return session.query(Suite).join(SrcAssociation).join(DBSource).filter_by(source=source).all()
+    return session.query(Suite).filter(Suite.sources.any(source=source)).all()
 
 __all__.append('get_suites_source_in')
 
@@ -2207,10 +2377,12 @@ def get_sources_from_name(source, version=None, dm_upload_allowed=None, session=
 
 __all__.append('get_sources_from_name')
 
+# FIXME: This function fails badly if it finds more than 1 source package and
+# its implementation is trivial enough to be inlined.
 @session_wrapper
 def get_source_in_suite(source, suite, session=None):
     """
-    Returns list of DBSource objects for a combination of C{source} and C{suite}.
+    Returns a DBSource object for a combination of C{source} and C{suite}.
 
       - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
       - B{suite} - a suite name, eg. I{unstable}
@@ -2226,12 +2398,9 @@ def get_source_in_suite(source, suite, session=None):
 
     """
 
-    q = session.query(SrcAssociation)
-    q = q.join('source').filter_by(source=source)
-    q = q.join('suite').filter_by(suite_name=suite)
-
+    q = get_suite(suite, session).get_sources(source)
     try:
-        return q.one().source
+        return q.one()
     except NoResultFound:
         return None
 
@@ -2267,15 +2436,10 @@ def add_dsc_to_db(u, filename, session=None):
 
     source.poolfile_id = entry["files id"]
     session.add(source)
-    session.flush()
 
-    for suite_name in u.pkg.changes["distribution"].keys():
-        sa = SrcAssociation()
-        sa.source_id = source.source_id
-        sa.suite_id = get_suite(suite_name).suite_id
-        session.add(sa)
-
-    session.flush()
+    suite_names = u.pkg.changes["distribution"].keys()
+    source.suites = session.query(Suite). \
+        filter(Suite.suite_name.in_(suite_names)).all()
 
     # Add the source files to the DB (files and dsc_files)
     dscfile = DSCFile()
@@ -2324,8 +2488,6 @@ def add_dsc_to_db(u, filename, session=None):
 
         df.poolfile_id = files_id
         session.add(df)
-
-    session.flush()
 
     # Add the src_uploaders to the DB
     uploader_ids = [source.maintainer_id]
@@ -2431,17 +2593,6 @@ __all__.append('SourceACL')
 
 ################################################################################
 
-class SrcAssociation(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<SrcAssociation %s (%s, %s)>' % (self.sa_id, self.source, self.suite)
-
-__all__.append('SrcAssociation')
-
-################################################################################
-
 class SrcFormat(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2480,13 +2631,18 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
                  ('CopyChanges', 'copychanges'),
                  ('OverrideSuite', 'overridesuite')]
 
-class Suite(object):
+# Why the heck don't we have any UNIQUE constraints in table suite?
+# TODO: Add UNIQUE constraints for appropriate columns.
+class Suite(ORMObject):
     def __init__(self, suite_name = None, version = None):
         self.suite_name = suite_name
         self.version = version
 
-    def __repr__(self):
-        return '<Suite %s>' % self.suite_name
+    def properties(self):
+        return ['suite_name', 'version']
+
+    def not_null_constraints(self):
+        return ['suite_name', 'version']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -2525,13 +2681,30 @@ class Suite(object):
         @return: list of Architecture objects for the given name (may be empty)
         """
 
-        q = object_session(self).query(Architecture). \
-            filter(Architecture.suites.contains(self))
+        q = object_session(self).query(Architecture).with_parent(self)
         if skipsrc:
             q = q.filter(Architecture.arch_string != 'source')
         if skipall:
             q = q.filter(Architecture.arch_string != 'all')
         return q.order_by(Architecture.arch_string).all()
+
+    def get_sources(self, source):
+        """
+        Returns a query object representing DBSource that is part of C{suite}.
+
+          - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
+
+        @type source: string
+        @param source: source package name
+
+        @rtype: sqlalchemy.orm.query.Query
+        @return: a query of DBSource
+
+        """
+
+        session = object_session(self)
+        return session.query(DBSource).filter_by(source = source). \
+            with_parent(self)
 
 __all__.append('Suite')
 
@@ -2629,7 +2802,7 @@ __all__.append('get_suite_src_formats')
 
 ################################################################################
 
-class Uid(object):
+class Uid(ORMObject):
     def __init__(self, uid = None, name = None):
         self.uid = uid
         self.name = name
@@ -2646,8 +2819,11 @@ class Uid(object):
         # This signals to use the normal comparison operator
         return NotImplemented
 
-    def __repr__(self):
-        return '<Uid %s (%s)>' % (self.uid, self.name)
+    def properties(self):
+        return ['uid', 'name', 'fingerprint']
+
+    def not_null_constraints(self):
+        return ['uid']
 
 __all__.append('Uid')
 
@@ -2826,10 +3002,11 @@ class DBConn(object):
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
-           properties = dict(arch_id = self.tbl_architecture.c.id,
+            properties = dict(arch_id = self.tbl_architecture.c.id,
                suites = relation(Suite, secondary=self.tbl_suite_architectures,
                    order_by='suite_name',
-                   backref=backref('architectures', order_by='arch_string'))))
+                   backref=backref('architectures', order_by='arch_string'))),
+            extension = validator)
 
         mapper(Archive, self.tbl_archive,
                properties = dict(archive_id = self.tbl_archive.c.id,
@@ -2922,7 +3099,8 @@ class DBConn(object):
                                      # using lazy='dynamic' in the back
                                      # reference because we have A LOT of
                                      # files in one location
-                                     backref=backref('files', lazy='dynamic'))))
+                                     backref=backref('files', lazy='dynamic'))),
+                extension = validator)
 
         mapper(Fingerprint, self.tbl_fingerprint,
                properties = dict(fingerprint_id = self.tbl_fingerprint.c.id,
@@ -2931,7 +3109,8 @@ class DBConn(object):
                                  keyring_id = self.tbl_fingerprint.c.keyring,
                                  keyring = relation(Keyring),
                                  source_acl = relation(SourceACL),
-                                 binary_acl = relation(BinaryACL)))
+                                 binary_acl = relation(BinaryACL)),
+               extension = validator)
 
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
@@ -2997,14 +3176,16 @@ class DBConn(object):
                                  archive = relation(Archive),
                                  # FIXME: the 'type' column is old cruft and
                                  # should be removed in the future.
-                                 archive_type = self.tbl_location.c.type))
+                                 archive_type = self.tbl_location.c.type),
+               extension = validator)
 
         mapper(Maintainer, self.tbl_maintainer,
                properties = dict(maintainer_id = self.tbl_maintainer.c.id,
                    maintains_sources = relation(DBSource, backref='maintainer',
                        primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.maintainer)),
                    changed_sources = relation(DBSource, backref='changedby',
-                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))))
+                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))),
+                extension = validator)
 
         mapper(NewComment, self.tbl_new_comments,
                properties = dict(comment_id = self.tbl_new_comments.c.id))
@@ -3049,17 +3230,11 @@ class DBConn(object):
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
                                      backref='sources'),
-                                 srcuploaders = relation(SrcUploader)))
+                                 srcuploaders = relation(SrcUploader)),
+               extension = validator)
 
         mapper(SourceACL, self.tbl_source_acl,
                properties = dict(source_acl_id = self.tbl_source_acl.c.id))
-
-        mapper(SrcAssociation, self.tbl_src_associations,
-               properties = dict(sa_id = self.tbl_src_associations.c.id,
-                                 suite_id = self.tbl_src_associations.c.suite,
-                                 suite = relation(Suite),
-                                 source_id = self.tbl_src_associations.c.source,
-                                 source = relation(DBSource)))
 
         mapper(SrcFormat, self.tbl_src_format,
                properties = dict(src_format_id = self.tbl_src_format.c.id,
@@ -3077,7 +3252,9 @@ class DBConn(object):
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id,
                                  policy_queue = relation(PolicyQueue),
-                                 copy_queues = relation(BuildQueue, secondary=self.tbl_suite_build_queue_copy)))
+                                 copy_queues = relation(BuildQueue,
+                                     secondary=self.tbl_suite_build_queue_copy)),
+                extension = validator)
 
         mapper(SuiteSrcFormat, self.tbl_suite_src_formats,
                properties = dict(suite_id = self.tbl_suite_src_formats.c.suite,
@@ -3087,7 +3264,8 @@ class DBConn(object):
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
-                                 fingerprint = relation(Fingerprint)))
+                                 fingerprint = relation(Fingerprint)),
+               extension = validator)
 
         mapper(UploadBlock, self.tbl_upload_blocks,
                properties = dict(upload_block_id = self.tbl_upload_blocks.c.id,

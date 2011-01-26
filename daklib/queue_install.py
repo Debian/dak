@@ -35,24 +35,24 @@ from daklib.config import Config
 ################################################################################
 
 def package_to_suite(u, suite_name, session):
-    if not u.pkg.changes["distribution"].has_key(suite_name):
+    if suite_name not in u.pkg.changes["distribution"]:
         return False
 
-    ret = True
+    if 'source' in u.pkg.changes["architecture"]:
+        return True
 
-    if not u.pkg.changes["architecture"].has_key("source"):
-        q = session.query(SrcAssociation.sa_id)
-        q = q.join(Suite).filter_by(suite_name=suite_name)
-        q = q.join(DBSource).filter_by(source=u.pkg.changes['source'])
-        q = q.filter_by(version=u.pkg.changes['version']).limit(1)
+    q = session.query(Suite).filter_by(suite_name = suite_name). \
+        filter(Suite.sources.any( \
+            source = u.pkg.changes['source'], \
+            version = u.pkg.changes['version']))
 
-        # NB: Careful, this logic isn't what you would think it is
-        # Source is already in the target suite so no need to go to policy
-        # Instead, we don't move to the policy area, we just do an ACCEPT
-        if q.count() > 0:
-            ret = False
-
-    return ret
+    # NB: Careful, this logic isn't what you would think it is
+    # Source is already in the target suite so no need to go to policy
+    # Instead, we don't move to the policy area, we just do an ACCEPT
+    if q.count() > 0:
+        return False
+    else:
+        return True
 
 def package_to_queue(u, summary, short_summary, queue, chg, session, announce=None):
     cnf = Config()
