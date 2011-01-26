@@ -60,7 +60,7 @@ import commands
 import threading
 
 from daklib import utils
-from daklib.dbconn import DBConn, get_binary_from_name_suite
+from daklib.dbconn import DBConn, get_component_by_package_suite
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory
@@ -325,9 +325,9 @@ def read_changes_or_dsc (suite, filename, session = None):
 def create_depends_string (suite, depends_tree, session = None):
     result = ""
     if suite == 'experimental':
-        suite_where = "in ('experimental','unstable')"
+        suite_list = ['experimental','unstable']
     else:
-        suite_where = "= '%s'" % suite
+        suite_list = [suite]
 
     comma_count = 1
     for l in depends_tree:
@@ -339,17 +339,15 @@ def create_depends_string (suite, depends_tree, session = None):
                 result += " | "
             # doesn't do version lookup yet.
 
-            res = get_binary_from_name_suite(d['name'], suite_where, session)
-            if res.rowcount > 0:
-                i = res.fetchone()
-
+            component = get_component_by_package_suite(d['name'], suite_list, session)
+            if component is not None:
                 adepends = d['name']
                 if d['version'] != '' :
                     adepends += " (%s)" % (d['version'])
 
-                if i[2] == "contrib":
+                if component == "contrib":
                     result += colour_output(adepends, "contrib")
-                elif i[2] == "non-free":
+                elif component == "non-free":
                     result += colour_output(adepends, "nonfree")
                 else :
                     result += colour_output(adepends, "main")

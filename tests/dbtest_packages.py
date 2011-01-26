@@ -6,7 +6,8 @@ from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
     get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
     check_poolfile, get_poolfile_like_name, get_source_in_suite, \
     get_suites_source_in, add_dsc_to_db, source_exists, DBBinary, \
-    get_suites_binary_in, add_deb_to_db, Component
+    get_suites_binary_in, add_deb_to_db, Component, \
+    get_component_by_package_suite
 from daklib.queue_install import package_to_suite
 from daklib.queue import get_newest_source, get_suite_version_by_source, \
     get_source_by_package_and_suite, get_suite_version_by_package
@@ -522,6 +523,16 @@ class PackageTestCase(DBDakTestCase):
 
         self.assertEqual(self.loc['main'], self.comp['main'].location)
         self.assertEqual(self.loc['contrib'], self.comp['contrib'].location)
+
+    def test_get_component_by_package_suite(self):
+        'test get_component_by_package_suite()'
+
+        result = get_component_by_package_suite('hello', ['sid'], self.session)
+        self.assertEqual('main', result)
+        result = get_component_by_package_suite('hello', ['hamm'], self.session)
+        self.assertEqual(None, result)
+        result = get_component_by_package_suite('foobar', ['sid'], self.session)
+        self.assertEqual(None, result)
 
 if __name__ == '__main__':
     unittest.main()

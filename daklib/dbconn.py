@@ -472,24 +472,16 @@ def get_suites_binary_in(package, session=None):
 __all__.append('get_suites_binary_in')
 
 @session_wrapper
-def get_binary_from_name_suite(package, suitename, session=None):
+def get_component_by_package_suite(package, suite_list, session=None):
     ### For dak examine-package
-    ### XXX: Doesn't use object API yet
 
-    sql = """SELECT DISTINCT(b.package), b.version, c.name, su.suite_name
-             FROM binaries b, files fi, location l, component c, bin_associations ba, suite su
-             WHERE b.package='%(package)s'
-               AND b.file = fi.id
-               AND fi.location = l.id
-               AND l.component = c.id
-               AND ba.bin=b.id
-               AND ba.suite = su.id
-               AND su.suite_name %(suitename)s
-          ORDER BY b.version DESC"""
+    return session.query(Component.component_name). \
+        join(Component.location, Location.files, PoolFile.binary). \
+        filter_by(package = package). \
+        join(DBBinary.suites).filter(Suite.suite_name.in_(suite_list)). \
+        limit(1).scalar()
 
-    return session.execute(sql % {'package': package, 'suitename': suitename})
-
-__all__.append('get_binary_from_name_suite')
+__all__.append('get_component_by_package_suite')
 
 @session_wrapper
 def get_binary_components(package, suitename, arch, session=None):
