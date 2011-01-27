@@ -53,7 +53,7 @@ from tempfile import mkstemp, mkdtemp
 from inspect import getargspec
 
 import sqlalchemy
-from sqlalchemy import create_engine, Table, MetaData, Column, Integer
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
     backref, MapperExtension, EXT_CONTINUE
 from sqlalchemy import types as sqltypes
@@ -421,17 +421,6 @@ __all__.append('get_archive')
 
 ################################################################################
 
-class BinAssociation(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<BinAssociation %s (%s, %s)>' % (self.ba_id, self.binary, self.suite)
-
-__all__.append('BinAssociation')
-
-################################################################################
-
 class BinContents(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -443,12 +432,29 @@ __all__.append('BinContents')
 
 ################################################################################
 
-class DBBinary(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class DBBinary(ORMObject):
+    def __init__(self, package = None, source = None, version = None, \
+        maintainer = None, architecture = None, poolfile = None, \
+        binarytype = 'deb'):
+        self.package = package
+        self.source = source
+        self.version = version
+        self.maintainer = maintainer
+        self.architecture = architecture
+        self.poolfile = poolfile
+        self.binarytype = binarytype
 
-    def __repr__(self):
-        return '<DBBinary %s (%s, %s)>' % (self.package, self.version, self.architecture)
+    def properties(self):
+        return ['package', 'version', 'maintainer', 'source', 'architecture', \
+            'poolfile', 'binarytype', 'fingerprint', 'install_date', \
+            'suites_count', 'binary_id']
+
+    def not_null_constraints(self):
+        return ['package', 'version', 'maintainer', 'source',  'poolfile', \
+            'binarytype']
+
+    def get_component_name(self):
+        return self.poolfile.location.component.component_name
 
 __all__.append('DBBinary')
 
@@ -464,129 +470,42 @@ def get_suites_binary_in(package, session=None):
     @return: list of Suite objects for the given package
     """
 
-    return session.query(Suite).join(BinAssociation).join(DBBinary).filter_by(package=package).all()
+    return session.query(Suite).filter(Suite.binaries.any(DBBinary.package == package)).all()
 
 __all__.append('get_suites_binary_in')
 
 @session_wrapper
-def get_binary_from_id(binary_id, session=None):
-    """
-    Returns DBBinary object for given C{id}
-
-    @type binary_id: int
-    @param binary_id: Id of the required binary
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: DBBinary
-    @return: DBBinary object for the given binary (None if not present)
-    """
-
-    q = session.query(DBBinary).filter_by(binary_id=binary_id)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
-
-__all__.append('get_binary_from_id')
-
-@session_wrapper
-def get_binaries_from_name(package, version=None, architecture=None, session=None):
-    """
-    Returns list of DBBinary objects for given C{package} name
+def get_component_by_package_suite(package, suite_list, arch_list=[], session=None):
+    '''
+    Returns the component name of the newest binary package in suite_list or
+    None if no package is found. The result can be optionally filtered by a list
+    of architecture names.
 
     @type package: str
     @param package: DBBinary package name to search for
 
-    @type version: str or None
-    @param version: Version to search for (or None)
+    @type suite_list: list of str
+    @param suite_list: list of suite_name items
 
-    @type architecture: str, list or None
-    @param architecture: Architectures to limit to (or None if no limit)
+    @type arch_list: list of str
+    @param arch_list: optional list of arch_string items that defaults to []
 
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
+    @rtype: str or NoneType
+    @return: name of component or None
+    '''
 
-    @rtype: list
-    @return: list of DBBinary objects for the given name (may be empty)
-    """
+    q = session.query(DBBinary).filter_by(package = package). \
+        join(DBBinary.suites).filter(Suite.suite_name.in_(suite_list))
+    if len(arch_list) > 0:
+        q = q.join(DBBinary.architecture). \
+            filter(Architecture.arch_string.in_(arch_list))
+    binary = q.order_by(desc(DBBinary.version)).first()
+    if binary is None:
+        return None
+    else:
+        return binary.get_component_name()
 
-    q = session.query(DBBinary).filter_by(package=package)
-
-    if version is not None:
-        q = q.filter_by(version=version)
-
-    if architecture is not None:
-        if not isinstance(architecture, list):
-            architecture = [architecture]
-        q = q.join(Architecture).filter(Architecture.arch_string.in_(architecture))
-
-    ret = q.all()
-
-    return ret
-
-__all__.append('get_binaries_from_name')
-
-@session_wrapper
-def get_binaries_from_source_id(source_id, session=None):
-    """
-    Returns list of DBBinary objects for given C{source_id}
-
-    @type source_id: int
-    @param source_id: source_id to search for
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: list of DBBinary objects for the given name (may be empty)
-    """
-
-    return session.query(DBBinary).filter_by(source_id=source_id).all()
-
-__all__.append('get_binaries_from_source_id')
-
-@session_wrapper
-def get_binary_from_name_suite(package, suitename, session=None):
-    ### For dak examine-package
-    ### XXX: Doesn't use object API yet
-
-    sql = """SELECT DISTINCT(b.package), b.version, c.name, su.suite_name
-             FROM binaries b, files fi, location l, component c, bin_associations ba, suite su
-             WHERE b.package='%(package)s'
-               AND b.file = fi.id
-               AND fi.location = l.id
-               AND l.component = c.id
-               AND ba.bin=b.id
-               AND ba.suite = su.id
-               AND su.suite_name %(suitename)s
-          ORDER BY b.version DESC"""
-
-    return session.execute(sql % {'package': package, 'suitename': suitename})
-
-__all__.append('get_binary_from_name_suite')
-
-@session_wrapper
-def get_binary_components(package, suitename, arch, session=None):
-    # Check for packages that have moved from one component to another
-    query = """SELECT c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f
-    WHERE b.package=:package AND s.suite_name=:suitename
-      AND (a.arch_string = :arch OR a.arch_string = 'all')
-      AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id
-      AND f.location = l.id
-      AND l.component = c.id
-      AND b.file = f.id"""
-
-    vals = {'package': package, 'suitename': suitename, 'arch': arch}
-
-    return session.execute(query, vals)
-
-__all__.append('get_binary_components')
+__all__.append('get_component_by_package_suite')
 
 ################################################################################
 
@@ -929,9 +848,9 @@ __all__.append('ChangePendingSource')
 
 ################################################################################
 
-class Component(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class Component(ORMObject):
+    def __init__(self, component_name = None):
+        self.component_name = component_name
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -945,8 +864,12 @@ class Component(object):
         # This signals to use the normal comparison operator
         return NotImplemented
 
-    def __repr__(self):
-        return '<Component %s>' % self.component_name
+    def properties(self):
+        return ['component_name', 'component_id', 'description', 'location', \
+            'meets_dfsg']
+
+    def not_null_constraints(self):
+        return ['component_name']
 
 
 __all__.append('Component')
@@ -1243,7 +1166,7 @@ class PoolFile(ORMObject):
 
     def properties(self):
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
-            'sha256sum', 'location', 'source', 'last_used']
+            'sha256sum', 'location', 'source', 'binary', 'last_used']
 
     def not_null_constraints(self):
         return ['filename', 'md5sum', 'location']
@@ -1652,9 +1575,12 @@ __all__.append('get_dbchange')
 
 ################################################################################
 
+# TODO: Why do we have a separate Location class? Can't it be fully integrated
+# into class Component?
 class Location(ORMObject):
-    def __init__(self, path = None):
+    def __init__(self, path = None, component = None):
         self.path = path
+        self.component = component
         # the column 'type' should go away, see comment at mapper
         self.archive_type = 'pool'
 
@@ -2257,7 +2183,7 @@ class DBSource(ORMObject):
     def properties(self):
         return ['source', 'source_id', 'maintainer', 'changedby', \
             'fingerprint', 'poolfile', 'version', 'suites_count', \
-            'install_date']
+            'install_date', 'binaries_count']
 
     def not_null_constraints(self):
         return ['source', 'version', 'install_date', 'maintainer', \
@@ -2558,14 +2484,10 @@ def add_deb_to_db(u, filename, session=None):
 
     # Add and flush object so it has an ID
     session.add(bin)
-    session.flush()
 
-    # Add BinAssociations
-    for suite_name in u.pkg.changes["distribution"].keys():
-        ba = BinAssociation()
-        ba.binary_id = bin.binary_id
-        ba.suite_id = get_suite(suite_name).suite_id
-        session.add(ba)
+    suite_names = u.pkg.changes["distribution"].keys()
+    bin.suites = session.query(Suite). \
+        filter(Suite.suite_name.in_(suite_names)).all()
 
     session.flush()
 
@@ -2639,7 +2561,7 @@ class Suite(ORMObject):
         self.version = version
 
     def properties(self):
-        return ['suite_name', 'version']
+        return ['suite_name', 'version', 'sources_count', 'binaries_count']
 
     def not_null_constraints(self):
         return ['suite_name', 'version']
@@ -3012,13 +2934,6 @@ class DBConn(object):
                properties = dict(archive_id = self.tbl_archive.c.id,
                                  archive_name = self.tbl_archive.c.name))
 
-        mapper(BinAssociation, self.tbl_bin_associations,
-               properties = dict(ba_id = self.tbl_bin_associations.c.id,
-                                 suite_id = self.tbl_bin_associations.c.suite,
-                                 suite = relation(Suite),
-                                 binary_id = self.tbl_bin_associations.c.bin,
-                                 binary = relation(DBBinary)))
-
         mapper(PendingBinContents, self.tbl_pending_bin_contents,
                properties = dict(contents_id =self.tbl_pending_bin_contents.c.id,
                                  filename = self.tbl_pending_bin_contents.c.filename,
@@ -3057,17 +2972,18 @@ class DBConn(object):
                                  maintainer_id = self.tbl_binaries.c.maintainer,
                                  maintainer = relation(Maintainer),
                                  source_id = self.tbl_binaries.c.source,
-                                 source = relation(DBSource),
+                                 source = relation(DBSource, backref='binaries'),
                                  arch_id = self.tbl_binaries.c.architecture,
                                  architecture = relation(Architecture),
                                  poolfile_id = self.tbl_binaries.c.file,
-                                 poolfile = relation(PoolFile),
+                                 poolfile = relation(PoolFile, backref=backref('binary', uselist = False)),
                                  binarytype = self.tbl_binaries.c.type,
                                  fingerprint_id = self.tbl_binaries.c.sig_fpr,
                                  fingerprint = relation(Fingerprint),
                                  install_date = self.tbl_binaries.c.install_date,
-                                 binassociations = relation(BinAssociation,
-                                                            primaryjoin=(self.tbl_binaries.c.id==self.tbl_bin_associations.c.bin))))
+                                 suites = relation(Suite, secondary=self.tbl_bin_associations,
+                                     backref=backref('binaries', lazy='dynamic'))),
+                extension = validator)
 
         mapper(BinaryACL, self.tbl_binary_acl,
                properties = dict(binary_acl_id = self.tbl_binary_acl.c.id))
@@ -3079,7 +2995,8 @@ class DBConn(object):
 
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
-                                 component_name = self.tbl_component.c.name))
+                                 component_name = self.tbl_component.c.name),
+               extension = validator)
 
         mapper(DBConfig, self.tbl_config,
                properties = dict(config_id = self.tbl_config.c.id))
@@ -3171,7 +3088,8 @@ class DBConn(object):
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
                                  component_id = self.tbl_location.c.component,
-                                 component = relation(Component),
+                                 component = relation(Component, \
+                                     backref=backref('location', uselist = False)),
                                  archive_id = self.tbl_location.c.archive,
                                  archive = relation(Archive),
                                  # FIXME: the 'type' column is old cruft and
@@ -3229,7 +3147,7 @@ class DBConn(object):
                                  srcfiles = relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
-                                     backref='sources'),
+                                     backref=backref('sources', lazy='dynamic')),
                                  srcuploaders = relation(SrcUploader)),
                extension = validator)
 
