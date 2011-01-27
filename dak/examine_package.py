@@ -339,7 +339,8 @@ def create_depends_string (suite, depends_tree, session = None):
                 result += " | "
             # doesn't do version lookup yet.
 
-            component = get_component_by_package_suite(d['name'], suite_list, session)
+            component = get_component_by_package_suite(d['name'], suite_list, \
+                session = session)
             if component is not None:
                 adepends = d['name']
                 if d['version'] != '' :

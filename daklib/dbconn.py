@@ -475,10 +475,11 @@ def get_suites_binary_in(package, session=None):
 __all__.append('get_suites_binary_in')
 
 @session_wrapper
-def get_component_by_package_suite(package, suite_list, session=None):
+def get_component_by_package_suite(package, suite_list, arch_list=[], session=None):
     '''
     Returns the component name of the newest binary package in suite_list or
-    None if no package is found.
+    None if no package is found. The result can be optionally filtered by a list
+    of architecture names.
 
     @type package: str
     @param package: DBBinary package name to search for
@@ -486,36 +487,25 @@ def get_component_by_package_suite(package, suite_list, session=None):
     @type suite_list: list of str
     @param suite_list: list of suite_name items
 
+    @type arch_list: list of str
+    @param arch_list: optional list of arch_string items that defaults to []
+
     @rtype: str or NoneType
     @return: name of component or None
     '''
 
-    binary = session.query(DBBinary).filter_by(package = package). \
-        join(DBBinary.suites).filter(Suite.suite_name.in_(suite_list)). \
-        order_by(desc(DBBinary.version)).first()
+    q = session.query(DBBinary).filter_by(package = package). \
+        join(DBBinary.suites).filter(Suite.suite_name.in_(suite_list))
+    if len(arch_list) > 0:
+        q = q.join(DBBinary.architecture). \
+            filter(Architecture.arch_string.in_(arch_list))
+    binary = q.order_by(desc(DBBinary.version)).first()
     if binary is None:
         return None
     else:
         return binary.get_component_name()
 
 __all__.append('get_component_by_package_suite')
-
-@session_wrapper
-def get_binary_components(package, suitename, arch, session=None):
-    # Check for packages that have moved from one component to another
-    query = """SELECT c.name FROM binaries b, bin_associations ba, suite s, location l, component c, architecture a, files f
-    WHERE b.package=:package AND s.suite_name=:suitename
-      AND (a.arch_string = :arch OR a.arch_string = 'all')
-      AND ba.bin = b.id AND ba.suite = s.id AND b.architecture = a.id
-      AND f.location = l.id
-      AND l.component = c.id
-      AND b.file = f.id"""
-
-    vals = {'package': package, 'suitename': suitename, 'arch': arch}
-
-    return session.execute(query, vals)
-
-__all__.append('get_binary_components')
 
 ################################################################################
 

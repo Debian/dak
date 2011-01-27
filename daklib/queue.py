@@ -972,9 +972,11 @@ class Upload(object):
 
         # Check for packages that have moved from one component to another
         entry['suite'] = suite
-        res = get_binary_components(self.pkg.files[f]['package'], suite, entry["architecture"], session)
-        if res.rowcount > 0:
-            entry["othercomponents"] = res.fetchone()[0]
+        arch_list = [entry["architecture"], 'all']
+        component = get_component_by_package_suite(self.pkg.files[f]['package'], \
+            [suite], arch_list = arch_list, session = session)
+        if component is not None:
+            entry["othercomponents"] = component
 
     def check_files(self, action=True):
         file_keys = self.pkg.files.keys()

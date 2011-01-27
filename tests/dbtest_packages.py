@@ -544,17 +544,29 @@ class PackageTestCase(DBDakTestCase):
     def test_get_component_by_package_suite(self):
         'test get_component_by_package_suite()'
 
-        result = get_component_by_package_suite('hello', ['sid'], self.session)
+        result = get_component_by_package_suite('hello', ['sid'], \
+            session = self.session)
         self.assertEqual('main', result)
-        result = get_component_by_package_suite('hello', ['hamm'], self.session)
+        result = get_component_by_package_suite('hello', ['hamm'], \
+            session = self.session)
         self.assertEqual(None, result)
-        result = get_component_by_package_suite('foobar', ['sid'], self.session)
+        result = get_component_by_package_suite('foobar', ['sid'], \
+            session = self.session)
         self.assertEqual(None, result)
         # test that the newest version is returend
-        result = get_component_by_package_suite('gnome-hello', ['squeeze'], self.session)
+        result = get_component_by_package_suite('gnome-hello', ['squeeze'], \
+            session = self.session)
         self.assertEqual('main', result)
-        result = get_component_by_package_suite('gnome-hello', ['sid'], self.session)
+        result = get_component_by_package_suite('gnome-hello', ['sid'], \
+            session = self.session)
         self.assertEqual('contrib', result)
+        # test arch_list
+        result = get_component_by_package_suite('hello', ['sid'], \
+            arch_list = ['i386'], session = self.session)
+        self.assertEqual('main', result)
+        result = get_component_by_package_suite('hello', ['sid'], \
+            arch_list = ['amd64'], session = self.session)
+        self.assertEqual(None, result)
 
 if __name__ == '__main__':
     unittest.main()
