@@ -11,7 +11,7 @@ fi
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-WIN32_LOADER_FILE="$1"	# *-win32-loader{.exe,txt}
+WIN32_LOADER_FILE="$1"	# win32-loader_${VERSION}_${ARCH}{.exe,txt}
 VERSION="$2"
 ARCH="$3"
 CHANGES="$4"	# Changes file for the upload
@@ -35,12 +35,19 @@ esac
 # This must end with /
 TARGET="${ftpdir}/tools/win32-loader/${SUITE}/"
 
+# Prepare the target filename by removing the version and arch parts;
+# transforms any/path/win32-loader_${VERSION}_${ARCH}.${extension} to win32-loader.${extension}
+TARGET_FILENAME="${WIN32_LOADER_FILE%%_*}.${WIN32_LOADER_FILE##*.}"
+
 # Check validity of the target directory
 if [ ! -d "$TARGET" ]; then
 	mkdir -p "$TARGET"
 fi
 
 # Put said file into the tools directory
-cp "$WIN32_LOADER_FILE" "$TARGET"
+cp "$WIN32_LOADER_FILE" "${TARGET}${TARGET_FILENAME}"
+
+# Chmod it correctly
+chmod 0644 "${TARGET}${TARGET_FILENAME}"
 
 exit 0
