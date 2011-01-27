@@ -1575,8 +1575,6 @@ __all__.append('get_dbchange')
 
 ################################################################################
 
-# TODO: Why do we have a separate Location class? Can't it be fully integrated
-# into class Component?
 class Location(ORMObject):
     def __init__(self, path = None, component = None):
         self.path = path
