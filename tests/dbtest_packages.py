@@ -551,6 +551,8 @@ class PackageTestCase(DBDakTestCase):
         result = get_component_by_package_suite('foobar', ['sid'], self.session)
         self.assertEqual(None, result)
         # test that the newest version is returend
+        result = get_component_by_package_suite('gnome-hello', ['squeeze'], self.session)
+        self.assertEqual('main', result)
         result = get_component_by_package_suite('gnome-hello', ['sid'], self.session)
         self.assertEqual('contrib', result)
 
