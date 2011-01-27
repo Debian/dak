@@ -53,7 +53,7 @@ from tempfile import mkstemp, mkdtemp
 from inspect import getargspec
 
 import sqlalchemy
-from sqlalchemy import create_engine, Table, MetaData, Column, Integer
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
     backref, MapperExtension, EXT_CONTINUE
 from sqlalchemy import types as sqltypes
@@ -453,6 +453,9 @@ class DBBinary(ORMObject):
         return ['package', 'version', 'maintainer', 'source',  'poolfile', \
             'binarytype']
 
+    def get_component_name(self):
+        return self.poolfile.location.component.component_name
+
 __all__.append('DBBinary')
 
 @session_wrapper
@@ -473,13 +476,27 @@ __all__.append('get_suites_binary_in')
 
 @session_wrapper
 def get_component_by_package_suite(package, suite_list, session=None):
-    ### For dak examine-package
+    '''
+    Returns the component name of the newest binary package in suite_list or
+    None if no package is found.
 
-    return session.query(Component.component_name). \
-        join(Component.location, Location.files, PoolFile.binary). \
-        filter_by(package = package). \
+    @type package: str
+    @param package: DBBinary package name to search for
+
+    @type suite_list: list of str
+    @param suite_list: list of suite_name items
+
+    @rtype: str or NoneType
+    @return: name of component or None
+    '''
+
+    binary = session.query(DBBinary).filter_by(package = package). \
         join(DBBinary.suites).filter(Suite.suite_name.in_(suite_list)). \
-        limit(1).scalar()
+        order_by(desc(DBBinary.version)).first()
+    if binary is None:
+        return None
+    else:
+        return binary.get_component_name()
 
 __all__.append('get_component_by_package_suite')
 

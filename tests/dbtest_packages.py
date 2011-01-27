@@ -101,6 +101,9 @@ class PackageTestCase(DBDakTestCase):
             location = self.loc['main'], filesize = 0, md5sum = '')
         self.file['hello_2.2-1.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-1.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['gnome-hello_3.0-1.dsc'] = PoolFile( \
+            filename = 'main/g/gnome-hello/gnome-hello_3.0-1.dsc', \
+            location = self.loc['contrib'], filesize = 0, md5sum = '')
         self.file['hello_2.2-1_i386.deb'] = PoolFile( \
             filename = 'main/h/hello/hello_2.2-1_i386.deb', \
             location = self.loc['main'], filesize = 0, md5sum = '')
@@ -110,6 +113,9 @@ class PackageTestCase(DBDakTestCase):
         self.file['python-hello_2.2-1_all.deb'] = PoolFile( \
             filename = 'main/h/hello/python-hello_2.2-1_all.deb', \
             location = self.loc['main'], filesize = 0, md5sum = '')
+        self.file['gnome-hello_3.0-1_i386.deb'] = PoolFile( \
+            filename = 'main/g/gnome-hello/gnome-hello_3.0-1_i386.deb', \
+            location = self.loc['contrib'], filesize = 0, md5sum = '')
         self.file['sl_3.03-16.dsc'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
             location = self.loc['main'], filesize = 0, md5sum = '')
         self.file['python2.6_2.6.6-8.dsc'] = PoolFile( \
@@ -147,6 +153,11 @@ class PackageTestCase(DBDakTestCase):
             changedby = self.maintainer['uploader'], \
             poolfile = self.file['hello_2.2-1.dsc'], install_date = self.now())
         self.source['hello_2.2-1'].suites.append(self.suite['sid'])
+        self.source['gnome-hello_3.0-1'] = DBSource(source = 'gnome-hello', \
+            version = '3.0-1', maintainer = self.maintainer['maintainer'], \
+            changedby = self.maintainer['uploader'], \
+            poolfile = self.file['gnome-hello_3.0-1.dsc'], install_date = self.now())
+        self.source['gnome-hello_3.0-1'].suites.append(self.suite['sid'])
         self.source['sl_3.03-16'] = DBSource(source = 'sl', version = '3.03-16', \
             maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
@@ -177,6 +188,12 @@ class PackageTestCase(DBDakTestCase):
             poolfile = self.file['gnome-hello_2.2-1_i386.deb'])
         self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
         self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['sid'])
+        self.binary['gnome-hello_3.0-1_i386'] = DBBinary(package = 'gnome-hello', \
+            source = self.source['gnome-hello_3.0-1'], version = '3.0-1', \
+            maintainer = self.maintainer['maintainer'], \
+            architecture = self.arch['i386'], \
+            poolfile = self.file['gnome-hello_3.0-1_i386.deb'])
+        self.binary['gnome-hello_3.0-1_i386'].suites.append(self.suite['sid'])
         self.binary['python-hello_2.2-1_i386'] = DBBinary(package = 'python-hello', \
             source = self.source['hello_2.2-1'], version = '2.2-1', \
             maintainer = self.maintainer['maintainer'], \
@@ -238,9 +255,9 @@ class PackageTestCase(DBDakTestCase):
         main = self.loc['main']
         contrib = self.loc['contrib']
         self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', main.path)
-        count = len(self.file.keys())
+        count = len(self.file.keys()) - 2
         self.assertEqual(count, main.files.count())
-        self.assertEqual(0, contrib.files.count())
+        self.assertEqual(2, contrib.files.count())
         poolfile = main.files. \
                 filter(PoolFile.filename.like('%/hello/hello%')). \
                 order_by(PoolFile.filename)[0]
@@ -254,7 +271,7 @@ class PackageTestCase(DBDakTestCase):
         main.files.remove(self.file['sl_3.03-16.dsc'])
         contrib.files.append(self.file['sl_3.03-16.dsc'])
         self.assertEqual(count - 1, main.files.count())
-        self.assertEqual(1, contrib.files.count())
+        self.assertEqual(3, contrib.files.count())
         # test fullpath
         self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/main/s/sl/sl_3.03-16.dsc', \
             self.file['sl_3.03-16.dsc'].fullpath)
@@ -291,11 +308,11 @@ class PackageTestCase(DBDakTestCase):
         lazyguy = self.maintainer['lazyguy']
         self.assertEqual(lazyguy,
             self.session.query(Maintainer).get(lazyguy.maintainer_id))
-        self.assertEqual(3, len(maintainer.maintains_sources))
+        self.assertEqual(4, len(maintainer.maintains_sources))
         self.assertTrue(self.source['hello_2.2-2'] in maintainer.maintains_sources)
         self.assertEqual(maintainer.changed_sources, [])
         self.assertEqual(uploader.maintains_sources, [])
-        self.assertEqual(3, len(uploader.changed_sources))
+        self.assertEqual(4, len(uploader.changed_sources))
         self.assertTrue(self.source['sl_3.03-16'] in uploader.changed_sources)
         self.assertEqual(lazyguy.maintains_sources, [])
         self.assertEqual(lazyguy.changed_sources, [])
@@ -437,7 +454,7 @@ class PackageTestCase(DBDakTestCase):
         '''
 
         # test Suite relation
-        self.assertEqual(2, self.suite['sid'].binaries.count())
+        self.assertEqual(3, self.suite['sid'].binaries.count())
         self.assertTrue(self.binary['hello_2.2-1_i386'] in \
             self.suite['sid'].binaries.all())
         self.assertEqual(0, self.suite['lenny'].binaries.count())
@@ -533,6 +550,9 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(None, result)
         result = get_component_by_package_suite('foobar', ['sid'], self.session)
         self.assertEqual(None, result)
+        # test that the newest version is returend
+        result = get_component_by_package_suite('gnome-hello', ['sid'], self.session)
+        self.assertEqual('contrib', result)
 
 if __name__ == '__main__':
     unittest.main()
