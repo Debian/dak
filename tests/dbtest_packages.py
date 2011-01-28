@@ -107,6 +107,10 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual((True, self.file['sl_3.03-16.dsc']), \
             check_poolfile('main/s/sl/sl_3.03-16.dsc', 0, '', \
                 contrib.location_id, self.session))
+        # test string value of 2nd argument
+        self.assertEqual((True, self.file['sl_3.03-16.dsc']), \
+            check_poolfile('main/s/sl/sl_3.03-16.dsc', '0', '', \
+                contrib.location_id, self.session))
         self.assertEqual((False, None), \
             check_poolfile('foobar', 0, '', contrib.location_id, self.session))
         self.assertEqual((False, self.file['sl_3.03-16.dsc']), \
