@@ -2,12 +2,7 @@
 
 from db_test import DBDakTestCase
 
-from daklib.dbconn import Architecture, Suite, get_suite_architectures, \
-    get_architecture_suites, Maintainer, DBSource, Location, PoolFile, \
-    check_poolfile, get_poolfile_like_name, get_source_in_suite, \
-    get_suites_source_in, add_dsc_to_db, source_exists, DBBinary, \
-    get_suites_binary_in, add_deb_to_db, Component, \
-    get_component_by_package_suite
+from daklib.dbconn import *
 from daklib.queue_install import package_to_suite
 from daklib.queue import get_newest_source, get_suite_version_by_source, \
     get_source_by_package_and_suite, get_suite_version_by_package
@@ -34,173 +29,6 @@ class PackageTestCase(DBDakTestCase):
     PackageTestCase checks the handling of source and binary packages in dak's
     database.
     """
-
-    def setup_suites(self):
-        "setup a hash of Suite objects in self.suite"
-
-        if 'suite' in self.__dict__:
-            return
-        self.suite = {}
-        for suite_name in ('lenny', 'squeeze', 'sid'):
-            self.suite[suite_name] = Suite(suite_name = suite_name, version = '-')
-        self.session.add_all(self.suite.values())
-
-    def setup_architectures(self):
-        "setup Architecture objects in self.arch and connect to suites"
-
-        if 'arch' in self.__dict__:
-            return
-        self.setup_suites()
-        self.arch = {}
-        for arch_string in ('source', 'all', 'i386', 'amd64', 'kfreebsd-i386'):
-            self.arch[arch_string] = Architecture(arch_string)
-            if arch_string != 'kfreebsd-i386':
-                self.arch[arch_string].suites = self.suite.values()
-            else:
-                self.arch[arch_string].suites = [self.suite['squeeze'], self.suite['sid']]
-        # hard code ids for source and all
-        self.arch['source'].arch_id = 1
-        self.arch['all'].arch_id = 2
-        self.session.add_all(self.arch.values())
-
-    def setup_components(self):
-        'create some Component objects'
-
-        if 'comp' in self.__dict__:
-            return
-        self.comp = {}
-        self.comp['main'] = Component(component_name = 'main')
-        self.comp['contrib'] = Component(component_name = 'contrib')
-        self.session.add_all(self.comp.values())
-
-    def setup_locations(self):
-        'create some Location objects'
-
-        if 'loc' in self.__dict__:
-            return
-        self.setup_components()
-        self.loc = {}
-        self.loc['main'] = Location( \
-            path = '/srv/ftp-master.debian.org/ftp/pool/', \
-            component = self.comp['main'])
-        self.loc['contrib'] = Location( \
-            path = '/srv/ftp-master.debian.org/ftp/pool/', \
-            component = self.comp['contrib'])
-        self.session.add_all(self.loc.values())
-
-    def setup_poolfiles(self):
-        'create some PoolFile objects'
-
-        if 'file' in self.__dict__:
-            return
-        self.setup_locations()
-        self.file = {}
-        self.file['hello_2.2-3.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-3.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['hello_2.2-2.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-2.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['hello_2.2-1.dsc'] = PoolFile(filename = 'main/h/hello/hello_2.2-1.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['gnome-hello_3.0-1.dsc'] = PoolFile( \
-            filename = 'main/g/gnome-hello/gnome-hello_3.0-1.dsc', \
-            location = self.loc['contrib'], filesize = 0, md5sum = '')
-        self.file['hello_2.2-1_i386.deb'] = PoolFile( \
-            filename = 'main/h/hello/hello_2.2-1_i386.deb', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['gnome-hello_2.2-1_i386.deb'] = PoolFile( \
-            filename = 'main/h/hello/gnome-hello_2.2-1_i386.deb', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['python-hello_2.2-1_all.deb'] = PoolFile( \
-            filename = 'main/h/hello/python-hello_2.2-1_all.deb', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['gnome-hello_3.0-1_i386.deb'] = PoolFile( \
-            filename = 'main/g/gnome-hello/gnome-hello_3.0-1_i386.deb', \
-            location = self.loc['contrib'], filesize = 0, md5sum = '')
-        self.file['sl_3.03-16.dsc'] = PoolFile(filename = 'main/s/sl/sl_3.03-16.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.file['python2.6_2.6.6-8.dsc'] = PoolFile( \
-            filename = 'main/p/python2.6/python2.6_2.6.6-8.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.session.add_all(self.file.values())
-
-    def setup_maintainers(self):
-        'create some Maintainer objects'
-
-        if 'maintainer' in self.__dict__:
-            return
-        self.maintainer = {}
-        self.maintainer['maintainer'] = Maintainer(name = 'Mr. Maintainer')
-        self.maintainer['uploader'] = Maintainer(name = 'Mrs. Uploader')
-        self.maintainer['lazyguy'] = Maintainer(name = 'Lazy Guy')
-        self.session.add_all(self.maintainer.values())
-
-    def setup_sources(self):
-        'create DBSource objects'
-
-        if 'source' in self.__dict__:
-            return
-        self.setup_maintainers()
-        self.setup_suites()
-        self.setup_poolfiles()
-        self.source = {}
-        self.source['hello_2.2-2'] = DBSource(source = 'hello', version = '2.2-2', \
-            maintainer = self.maintainer['maintainer'], \
-            changedby = self.maintainer['uploader'], \
-            poolfile = self.file['hello_2.2-2.dsc'], install_date = self.now())
-        self.source['hello_2.2-2'].suites.append(self.suite['sid'])
-        self.source['hello_2.2-1'] = DBSource(source = 'hello', version = '2.2-1', \
-            maintainer = self.maintainer['maintainer'], \
-            changedby = self.maintainer['uploader'], \
-            poolfile = self.file['hello_2.2-1.dsc'], install_date = self.now())
-        self.source['hello_2.2-1'].suites.append(self.suite['sid'])
-        self.source['gnome-hello_3.0-1'] = DBSource(source = 'gnome-hello', \
-            version = '3.0-1', maintainer = self.maintainer['maintainer'], \
-            changedby = self.maintainer['uploader'], \
-            poolfile = self.file['gnome-hello_3.0-1.dsc'], install_date = self.now())
-        self.source['gnome-hello_3.0-1'].suites.append(self.suite['sid'])
-        self.source['sl_3.03-16'] = DBSource(source = 'sl', version = '3.03-16', \
-            maintainer = self.maintainer['maintainer'], \
-            changedby = self.maintainer['uploader'], \
-            poolfile = self.file['sl_3.03-16.dsc'], install_date = self.now())
-        self.source['sl_3.03-16'].suites.append(self.suite['squeeze'])
-        self.source['sl_3.03-16'].suites.append(self.suite['sid'])
-        self.session.add_all(self.source.values())
-
-    def setup_binaries(self):
-        'create DBBinary objects'
-
-        if 'binary' in self.__dict__:
-            return
-        self.setup_sources()
-        self.setup_architectures()
-        self.binary = {}
-        self.binary['hello_2.2-1_i386'] = DBBinary(package = 'hello', \
-            source = self.source['hello_2.2-1'], version = '2.2-1', \
-            maintainer = self.maintainer['maintainer'], \
-            architecture = self.arch['i386'], \
-            poolfile = self.file['hello_2.2-1_i386.deb'])
-        self.binary['hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
-        self.binary['hello_2.2-1_i386'].suites.append(self.suite['sid'])
-        self.binary['gnome-hello_2.2-1_i386'] = DBBinary(package = 'gnome-hello', \
-            source = self.source['hello_2.2-1'], version = '2.2-1', \
-            maintainer = self.maintainer['maintainer'], \
-            architecture = self.arch['i386'], \
-            poolfile = self.file['gnome-hello_2.2-1_i386.deb'])
-        self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
-        self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['sid'])
-        self.binary['gnome-hello_3.0-1_i386'] = DBBinary(package = 'gnome-hello', \
-            source = self.source['gnome-hello_3.0-1'], version = '3.0-1', \
-            maintainer = self.maintainer['maintainer'], \
-            architecture = self.arch['i386'], \
-            poolfile = self.file['gnome-hello_3.0-1_i386.deb'])
-        self.binary['gnome-hello_3.0-1_i386'].suites.append(self.suite['sid'])
-        self.binary['python-hello_2.2-1_i386'] = DBBinary(package = 'python-hello', \
-            source = self.source['hello_2.2-1'], version = '2.2-1', \
-            maintainer = self.maintainer['maintainer'], \
-            architecture = self.arch['all'], \
-            poolfile = self.file['python-hello_2.2-1_all.deb'])
-        self.binary['python-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
-        self.session.add_all(self.binary.values())
 
     def setUp(self):
         super(PackageTestCase, self).setUp()
@@ -557,7 +385,7 @@ class PackageTestCase(DBDakTestCase):
         result = get_component_by_package_suite('foobar', ['sid'], \
             session = self.session)
         self.assertEqual(None, result)
-        # test that the newest version is returend
+        # test that the newest version is returned
         result = get_component_by_package_suite('gnome-hello', ['squeeze'], \
             session = self.session)
         self.assertEqual('main', result)

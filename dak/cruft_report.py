@@ -42,6 +42,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
 from daklib.regexes import re_extract_src_version
+from daklib.cruft import *
 
 ################################################################################
 
@@ -188,39 +189,20 @@ def parse_nfu(architecture):
 ################################################################################
 
 def do_newer_version(lowersuite_name, highersuite_name, code, session):
-    lowersuite = get_suite(lowersuite_name, session)
-    if not lowersuite:
-        return
-
-    highersuite = get_suite(highersuite_name, session)
-    if not highersuite:
-        return
-
-    # Check for packages in $highersuite obsoleted by versions in $lowersuite
-    q = session.execute("""
-WITH highersuite_maxversion AS (SELECT s.source AS source, max(s.version) AS version
-  FROM src_associations sa, source s
-  WHERE sa.suite = :highersuite_id AND sa.source = s.id group by s.source)
-SELECT s.source, s.version AS lower, s2.version AS higher
-  FROM src_associations sa, source s, source s2, src_associations sa2, highersuite_maxversion hm
-  WHERE sa.suite = :highersuite_id AND sa2.suite = :lowersuite_id AND sa.source = s.id
-   AND sa2.source = s2.id AND s.source = s2.source
-   AND hm.source = s.source AND hm.version < s2.version
-   AND s.version < s2.version""", {'lowersuite_id': lowersuite.suite_id,
-                                    'highersuite_id': highersuite.suite_id})
-    ql = q.fetchall()
-    if ql:
+    list = newer_version(lowersuite_name, highersuite_name, session)
+    if len(list) > 0:
         nv_to_remove = []
-        print "Newer version in %s" % lowersuite.suite_name
-        print "-----------------" + "-" * len(lowersuite.suite_name)
+        title = "Newer version in %s" % lowersuite_name
+        print title
+        print "-" * len(title)
         print
-        for i in ql:
+        for i in list:
             (source, higher_version, lower_version) = i
             print " o %s (%s, %s)" % (source, higher_version, lower_version)
             nv_to_remove.append(source)
         print
         print "Suggested command:"
-        print " dak rm -m \"[auto-cruft] %s\" -s %s %s" % (code, highersuite.suite_name,
+        print " dak rm -m \"[auto-cruft] %s\" -s %s %s" % (code, highersuite_name,
                                                            " ".join(nv_to_remove))
         print
 
