@@ -1583,7 +1583,8 @@ class Location(ORMObject):
         self.archive_type = 'pool'
 
     def properties(self):
-        return ['path', 'archive_type', 'component', 'files_count']
+        return ['path', 'location_id', 'archive_type', 'component', \
+            'files_count']
 
     def not_null_constraints(self):
         return ['path', 'archive_type']
