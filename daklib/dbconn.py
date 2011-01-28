@@ -1161,7 +1161,7 @@ class PoolFile(ORMObject):
     def fullpath(self):
         return os.path.join(self.location.path, self.filename)
 
-    def is_valid(self, filesize = -1, md5sum = None):\
+    def is_valid(self, filesize = -1, md5sum = None):
         return self.filesize == long(filesize) and self.md5sum == md5sum
 
     def properties(self):
