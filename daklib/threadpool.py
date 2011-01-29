@@ -1,19 +1,21 @@
-import threading
-from time import sleep
+"""
+thread pool implementation for Python
 
-from daklib.config import Config
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2003 Tim Lesher
+@copyright: 2004 Carl Kleffner
+@copyright: 2010, 2011 Torsten Werner <twerner@debian.org>
+"""
 
 # This code is a modified copy of
 # http://code.activestate.com/recipes/203871-a-generic-programming-thread-pool/
 # and is licensed under the Python License. The full text of the license
 # is available in the file COPYING-PSF.
 
-# Ensure booleans exist (not needed for Python 2.2.1 or higher)
-try:
-    True
-except NameError:
-    False = 0
-    True = not False
+import threading
+from time import sleep
+
+from daklib.config import Config
 
 if Config().has_key('Common::ThreadCount'):
     defaultThreadCount = int(Config()['Common::ThreadCount'])
