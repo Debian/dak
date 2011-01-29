@@ -157,7 +157,7 @@ def do_nfu(nfu_packages):
         for architecture in a2p:
             if a2p[architecture]:
                 print (" dak rm -m \"[auto-cruft] NFU\" -s %s -a %s -b %s" % 
-                    (suite, architecture, " ".join(a2p[architecture])))
+                    (suite.suite_name, architecture, " ".join(a2p[architecture])))
         print
 
 def parse_nfu(architecture):
@@ -524,7 +524,7 @@ def main ():
         cnf["Cruft-Report::Options::Mode"] = "daily"
 
     if not cnf.has_key("Cruft-Report::Options::Wanna-Build-Dump"):
-        cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp.debian.org/scripts/nfu"
+        cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp-master.debian.org/scripts/nfu"
 
     apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
@@ -534,7 +534,7 @@ def main ():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = [ "nbs", "nviu", "nvit", "obsolete source" ]
+        checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu" ]
     elif Options["Mode"] == "full":
         checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
     else:
