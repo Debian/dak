@@ -31,6 +31,10 @@ wget -q -O${TMPFILE} http://qa.debian.org/data/bts/wnpp_rm
 chmod go+r ${TMPFILE}
 mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
 
+# Update wanna-build dump
+echo "Update wanna-build database dump"
+$base/dak/scripts/nfu/get-w-b-db
+
 reports
 
 clean_debbugs
