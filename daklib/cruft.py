@@ -118,3 +118,4 @@ def report_multiple_source(suite):
         binary = DejavuBinary(suite, package)
         if binary.has_multiple_sources():
             print binary
+    print
