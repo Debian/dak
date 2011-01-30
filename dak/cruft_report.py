@@ -551,7 +551,6 @@ def main ():
     source_versions = {}
 
     anais_output = ""
-    duplicate_bins = {}
 
     nfu_packages = {}
 
@@ -599,18 +598,10 @@ def main ():
             if "anais" in checks:
                 anais_output += do_anais(architecture, binaries_list, source, session)
 
-            # Check for duplicated packages and build indices for checking "no source" later
+            # build indices for checking "no source" later
             source_index = component + '/' + source
-            #if src_pkgs.has_key(source):
-            #    print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
             src_pkgs[source] = source_index
             for binary in binaries_list:
-                if bin_pkgs.has_key(binary):
-                    key_list = [ source, bin_pkgs[binary] ]
-                    key_list.sort()
-                    key = '_'.join(key_list)
-                    duplicate_bins.setdefault(key, [])
-                    duplicate_bins[key].append(binary)
                 bin_pkgs[binary] = source
             source_binaries[source] = binaries
             source_versions[source] = source_version
@@ -667,14 +658,6 @@ def main ():
                     nbs[source].setdefault(package, {})
                     nbs[source][package][version] = ""
                 else:
-                    previous_source = bin_pkgs[package]
-                    if previous_source != source:
-                        key_list = [ source, previous_source ]
-                        key_list.sort()
-                        key = '_'.join(key_list)
-                        duplicate_bins.setdefault(key, [])
-                        if package not in duplicate_bins[key]:
-                            duplicate_bins[key].append(package)
                     if "nfu" in checks:
                         if package in nfu_entries and \
                                version != source_versions[source]: # only suggest to remove out-of-date packages
@@ -722,15 +705,7 @@ def main ():
         print
 
     if "bms" in checks:
-        print "Built from multiple source packages"
-        print "-----------------------------------"
-        print
-        keys = duplicate_bins.keys()
-        keys.sort()
-        for key in keys:
-            (source_a, source_b) = key.split("_")
-            print " o %s & %s => %s" % (source_a, source_b, ", ".join(duplicate_bins[key]))
-        print
+        report_multiple_source(suite)
 
     if "anais" in checks:
         print "Architecture Not Allowed In Source"

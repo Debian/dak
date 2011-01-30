@@ -33,5 +33,38 @@ class CruftTestCase(DBDakTestCase):
         list = newer_version('squeeze', 'sid', self.session)
         self.assertEqual([('sl', '3.03-16', '3.03-17')], list)
 
+    def test_multiple_source(self):
+        'tests functions related to report_multiple_source()'
+
+        # test get_package_names()
+        suite = get_suite('sid', self.session)
+        self.assertEqual([('gnome-hello', ), ('hello', )], \
+            get_package_names(suite).all())
+        # test class NamedSource
+        src = NamedSource(suite, 'hello')
+        self.assertEqual('hello', src.source)
+        self.assertEqual(['2.2-1', '2.2-2'], src.versions)
+        self.assertEqual('hello(2.2-1, 2.2-2)', str(src))
+        # test class DejavuBinary
+        bin = DejavuBinary(suite, 'hello')
+        self.assertEqual(False, bin.has_multiple_sources())
+        # add another binary
+        self.file['hello_2.2-3'] = PoolFile(filename = 'main/s/sl/hello_2.2-3_i386.deb', \
+            location = self.loc['main'], filesize = 0, md5sum = '')
+        self.binary['hello_2.2-3_i386'] = DBBinary(package = 'hello', \
+            source = self.source['sl_3.03-16'], version = '2.2-3', \
+            maintainer = self.maintainer['maintainer'], \
+            architecture = self.arch['i386'], \
+            poolfile = self.file['hello_2.2-3'])
+        self.session.add(self.binary['hello_2.2-3_i386'])
+        bin = DejavuBinary(suite, 'hello')
+        self.assertEqual(False, bin.has_multiple_sources())
+        # add it to suite sid
+        self.binary['hello_2.2-3_i386'].suites.append(self.suite['sid'])
+        bin = DejavuBinary(suite, 'hello')
+        self.assertEqual(True, bin.has_multiple_sources())
+        self.assertEqual('hello built by: hello(2.2-1, 2.2-2), sl(3.03-16)', \
+            str(bin))
+
 if __name__ == '__main__':
     unittest.main()

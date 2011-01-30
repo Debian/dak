@@ -24,6 +24,7 @@ helper functions for cruft-report
 from daklib.dbconn import *
 
 from sqlalchemy import func
+from sqlalchemy.orm import object_session
 
 def newer_version(lowersuite_name, highersuite_name, session):
     '''
@@ -48,3 +49,72 @@ def newer_version(lowersuite_name, highersuite_name, session):
             list.append((source, higherversion, lowerversion))
     return list
 
+def get_package_names(suite):
+    '''
+    Returns a query that selects all distinct package names from suite ordered
+    by package name.
+    '''
+
+    session = object_session(suite)
+    return session.query(DBBinary.package).with_parent(suite). \
+        group_by(DBBinary.package).order_by(DBBinary.package)
+
+class NamedSource(object):
+    '''
+    A source package identified by its name with all of its versions in a
+    suite.
+    '''
+    def __init__(self, suite, source):
+        self.source = source
+        query = suite.sources.filter_by(source = source). \
+            order_by(DBSource.version)
+        self.versions = [src.version for src in query]
+
+    def __str__(self):
+        return "%s(%s)" % (self.source, ", ".join(self.versions))
+
+class DejavuBinary(object):
+    '''
+    A binary package identified by its name which gets built by multiple source
+    packages in a suite. The architecture is ignored which leads to the
+    following corner case, e.g.:
+
+    If a source package 'foo-mips' that builds a binary package 'foo' on mips
+    and another source package 'foo-mipsel' builds a binary package with the
+    same name 'foo' on mipsel then the binary package 'foo' will be reported as
+    built from multiple source packages.
+    '''
+
+    def __init__(self, suite, package):
+        self.package = package
+        session = object_session(suite)
+        # We need a subquery to make sure that both binary and source packages
+        # are in the right suite.
+        bin_query = suite.binaries.filter_by(package = package).subquery()
+        src_query = session.query(DBSource.source).with_parent(suite). \
+            join(bin_query).group_by(DBSource.source)
+        self.sources = []
+        if src_query.count() > 1:
+            for source, in src_query:
+                self.sources.append(str(NamedSource(suite, source)))
+
+    def has_multiple_sources(self):
+        'Has the package been built by multiple sources?'
+        return len(self.sources) > 1
+
+    def __str__(self):
+        return "%s built by: %s" % (self.package, ", ".join(self.sources))
+
+def report_multiple_source(suite):
+    '''
+    Reports binary packages built from multiple source package with different
+    names.
+    '''
+
+    print "Built from multiple source packages"
+    print "-----------------------------------"
+    print
+    for package, in get_package_names(suite):
+        binary = DejavuBinary(suite, package)
+        if binary.has_multiple_sources():
+            print binary
