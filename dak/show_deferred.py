@@ -88,7 +88,15 @@ def header():
         """
 
 def footer():
-    res = "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
+    res = """
+<p><img src="deferred-day.png" alt="deferred, last day"></p>
+<p><img src="deferred-week.png" alt="deferred, last week"></p>
+<p><img src="deferred-month.png" alt="deferred, last month"></p>
+<p><img src="deferred-year.png" alt="deferred, last year"></p>
+<p><img src="deferred-5years.png" alt="deferred, last 5 years"></p>
+<p><img src="deferred-10years.png" alt="deferred, last 10 years"></p>
+"""
+    res += "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     res += """<a href="http://validator.w3.org/check?uri=referer">
     <img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a>
         <a href="http://jigsaw.w3.org/css-validator/check/referer">

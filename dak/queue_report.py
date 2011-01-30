@@ -37,6 +37,10 @@
 from copy import copy
 import glob, os, stat, sys, time
 import apt_pkg
+try:
+    import rrdtool
+except ImportError:
+    pass
 
 from daklib import utils
 from daklib.queue import Upload
@@ -60,6 +64,7 @@ Prints a report of packages in queue directories (usually new and byhand).
   -s, --sort=key            sort output according to key, see below.
   -a, --age=key             if using sort by age, how should time be treated?
                             If not given a default of hours will be used.
+  -r, --rrd=key             Directory where rrd files to be updated are stored
   -d, --directories=key     A comma seperated list of queues to be scanned
 
      Sorting Keys: ao=age,   oldest first.   an=age,   newest first.
@@ -319,8 +324,41 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
 
 ############################################################
 
-def process_changes_files(changes_files, type, log):
-    session = DBConn().session()
+def update_graph_database(rrd_dir, type, n_source, n_binary):
+    if not rrd_dir:
+        return
+
+    rrd_file = os.path.join(rrd_dir, type.lower()+'.rrd')
+    update = [rrd_file, "N:%s:%s" % (n_source, n_binary)]
+
+    try:
+        rrdtool.update(*update)
+    except rrdtool.error:
+        create = [rrd_file]+"""
+--step
+300
+--start
+0
+DS:ds0:GAUGE:7200:0:1000
+DS:ds1:GAUGE:7200:0:1000
+RRA:AVERAGE:0.5:1:599
+RRA:AVERAGE:0.5:6:700
+RRA:AVERAGE:0.5:24:775
+RRA:AVERAGE:0.5:288:795
+RRA:MAX:0.5:1:600
+RRA:MAX:0.5:6:700
+RRA:MAX:0.5:24:775
+RRA:MAX:0.5:288:795
+""".strip().split("\n")
+        rrdtool.create(*create)
+        rrdtool.update(*update)
+    except NameError:
+        pass
+
+############################################################
+
+def process_changes_files(changes_files, type, log, rrd_dir):
+    #session = DBConn().session()
     msg = ""
     cache = {}
     # Read in all the .changes files
@@ -365,6 +403,8 @@ def process_changes_files(changes_files, type, log):
             per_source[source]["note_state"] = 2; # all
     per_source_items = per_source.items()
     per_source_items.sort(sg_compare)
+
+    update_graph_database(rrd_dir, type, len(per_source_items), len(changes_files))
 
     entries = []
     max_source_len = 0
@@ -562,6 +602,7 @@ def main():
                  ('8','822',"Queue-Report::Options::822"),
                  ('s',"sort","Queue-Report::Options::Sort", "HasArg"),
                  ('a',"age","Queue-Report::Options::Age", "HasArg"),
+                 ('r',"rrd","Queue-Report::Options::Rrd", "HasArg"),
                  ('d',"directories","Queue-Report::Options::Directories", "HasArg")]
     for i in [ "help" ]:
         if not Cnf.has_key("Queue-Report::Options::%s" % (i)):
@@ -589,6 +630,13 @@ def main():
     else:
         directories = [ "byhand", "new" ]
 
+    if Cnf.has_key("Queue-Report::Options::Rrd"):
+        rrd_dir = Cnf["Queue-Report::Options::Rrd"]
+    elif Cnf.has_key("Dir::Rrd"):
+        rrd_dir = Cnf["Dir::Rrd"]
+    else:
+        rrd_dir = None
+
     f = None
     if Cnf.has_key("Queue-Report::Options::822"):
         # Open the report file
@@ -596,10 +644,21 @@ def main():
 
     for directory in directories:
         changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::%s" % (directory)]))
-        process_changes_files(changes_files, directory, f)
+        process_changes_files(changes_files, directory, f, rrd_dir)
 
     if Cnf.has_key("Queue-Report::Options::822"):
         f.close()
+
+    if Cnf.has_key("Queue-Report::Options::New"):
+        for dir in directories:
+            print """
+<p><img src="%s-day.png" alt="%s, last day"></p>
+<p><img src="%s-week.png" alt="%s, last week"></p>
+<p><img src="%s-month.png" alt="%s, last month"></p>
+<p><img src="%s-year.png" alt="%s, last year"></p>
+<p><img src="%s-5years.png" alt="%s, last 5 years"></p>
+<p><img src="%s-10years.png" alt="%s, last 10 years"></p>
+""" % ((dir,)*12)
 
     if Cnf.has_key("Queue-Report::Options::New"):
         footer()

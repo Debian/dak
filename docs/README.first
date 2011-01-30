@@ -41,6 +41,7 @@ o Information display:
   * dak ls - shows information about package(s)
   * dak queue-report - shows information about package(s) in queue/
   * dak override - can show you individual override entries
+  * dak graph - creates some pretty graphs of queue sizes over time
 
 Generic and useful, but only for those with existing archives
 -------------------------------------------------------------

@@ -61,6 +61,8 @@ def init():
          "Output html for packages in NEW"),
         ("show-deferred",
          "Output html and symlinks for packages in DEFERRED"),
+        ("graph",
+         "Output graphs of number of packages in various queues"),
 
         ("rm",
          "Remove packages from suites"),

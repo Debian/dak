@@ -10,8 +10,9 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
-dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates
+dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates -r $webdir
 dak show-deferred > ${webdir}/deferred.html
+dak graph -n new,byhand,proposedupdates,oldproposedupdates,deferred -r $webdir -i $webdir -x $configdir/rrd-release-freeze-dates
 
 # do not run show-new and other stuff in parallel
 LOCKFILE="$lockdir/unchecked.lock"
