@@ -171,6 +171,7 @@ class DBDakTestCase(DakTestCase):
 
         if 'source' in self.__dict__:
             return
+        install_date = self.now()
         self.setup_maintainers()
         self.setup_suites()
         self.setup_poolfiles()
@@ -178,22 +179,22 @@ class DBDakTestCase(DakTestCase):
         self.source['hello_2.2-2'] = DBSource(source = 'hello', version = '2.2-2', \
             maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
-            poolfile = self.file['hello_2.2-2.dsc'], install_date = self.now())
+            poolfile = self.file['hello_2.2-2.dsc'], install_date = install_date)
         self.source['hello_2.2-2'].suites.append(self.suite['sid'])
         self.source['hello_2.2-1'] = DBSource(source = 'hello', version = '2.2-1', \
             maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
-            poolfile = self.file['hello_2.2-1.dsc'], install_date = self.now())
+            poolfile = self.file['hello_2.2-1.dsc'], install_date = install_date)
         self.source['hello_2.2-1'].suites.append(self.suite['sid'])
         self.source['gnome-hello_3.0-1'] = DBSource(source = 'gnome-hello', \
             version = '3.0-1', maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
-            poolfile = self.file['gnome-hello_3.0-1.dsc'], install_date = self.now())
+            poolfile = self.file['gnome-hello_3.0-1.dsc'], install_date = install_date)
         self.source['gnome-hello_3.0-1'].suites.append(self.suite['sid'])
         self.source['sl_3.03-16'] = DBSource(source = 'sl', version = '3.03-16', \
             maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
-            poolfile = self.file['sl_3.03-16.dsc'], install_date = self.now())
+            poolfile = self.file['sl_3.03-16.dsc'], install_date = install_date)
         self.source['sl_3.03-16'].suites.append(self.suite['squeeze'])
         self.source['sl_3.03-16'].suites.append(self.suite['sid'])
         self.session.add_all(self.source.values())
@@ -240,13 +241,14 @@ class DBDakTestCase(DakTestCase):
         self.session = DBConn().session()
 
     def now(self):
-        "returns the current time at the db server"
+        """
+        Returns the current time at the db server. Please note the function
+        returns the same value as long as it is in the same transaction. You
+        should self.session.rollback() (or commit) if you rely on getting a
+        fresh timestamp.
+        """
 
-        # we fetch a fresh session each time to avoid caching
-        local_session = DBConn().session()
-        current_time = local_session.query(func.now()).scalar()
-        local_session.close()
-        return current_time
+        return self.session.query(func.now()).scalar()
 
     def classes_to_clean(self):
         """

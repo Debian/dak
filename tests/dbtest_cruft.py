@@ -14,6 +14,7 @@ class CruftTestCase(DBDakTestCase):
 
     def setUp(self):
         super(CruftTestCase, self).setUp()
+        self.install_date = self.now()
         self.setup_binaries()
         # flush to make sure that the setup is correct
         self.session.flush()
@@ -28,7 +29,7 @@ class CruftTestCase(DBDakTestCase):
         self.source['sl_3.03-17'] = DBSource(source = 'sl', version = '3.03-17', \
             maintainer = self.maintainer['maintainer'], \
             changedby = self.maintainer['uploader'], \
-            poolfile = self.file['sl_3.03-17.dsc'], install_date = self.now())
+            poolfile = self.file['sl_3.03-17.dsc'], install_date = self.install_date)
         self.source['sl_3.03-17'].suites.append(self.suite['squeeze'])
         list = newer_version('squeeze', 'sid', self.session)
         self.assertEqual([('sl', '3.03-16', '3.03-17')], list)

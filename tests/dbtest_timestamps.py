@@ -20,6 +20,7 @@ class TimestampTestCase(DBDakTestCase):
 
     def test_timestamps(self):
         timestamp01 = self.now()
+        self.session.rollback()
         self.sleep()
         uid = Uid(uid = 'ftp-master@debian.org')
         self.session.add(uid)
@@ -28,6 +29,7 @@ class TimestampTestCase(DBDakTestCase):
         modified01 = uid.modified
         self.sleep()
         timestamp02 = self.now()
+        self.session.rollback()
         self.assertTrue(timestamp01 < created01)
         self.assertTrue(timestamp01 < modified01)
         self.assertTrue(created01 < timestamp02)
@@ -40,6 +42,7 @@ class TimestampTestCase(DBDakTestCase):
         self.assertEqual(created01, created02)
         self.assertTrue(modified01 < modified02)
         self.sleep()
+        self.session.rollback()
         timestamp03 = self.now()
         self.assertTrue(modified02 < timestamp03)
 
