@@ -92,7 +92,7 @@ class DejavuBinary(object):
         # are in the right suite.
         bin_query = suite.binaries.filter_by(package = package).subquery()
         src_query = session.query(DBSource.source).with_parent(suite). \
-            join(bin_query).group_by(DBSource.source)
+            join(bin_query).order_by(DBSource.source).group_by(DBSource.source)
         self.sources = []
         if src_query.count() > 1:
             for source, in src_query:
