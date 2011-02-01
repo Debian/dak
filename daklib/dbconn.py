@@ -55,7 +55,7 @@ from inspect import getargspec
 import sqlalchemy
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
-    backref, MapperExtension, EXT_CONTINUE
+    backref, MapperExtension, EXT_CONTINUE, object_mapper
 from sqlalchemy import types as sqltypes
 
 # Don't remove this, we re-export the exceptions to scripts which import us
@@ -286,6 +286,42 @@ class ORMObject(object):
         session.query(Architecture).get(3)
         '''
         return session.query(cls).get(primary_key)
+
+    def session(self, replace = False):
+        '''
+        Returns the current session that is associated with the object. May
+        return None is object is in detached state.
+        '''
+
+        return object_session(self)
+
+    def clone(self, session = None):
+        '''
+        Clones the current object in a new session and returns the new clone. A
+        fresh session is created if the optional session parameter is not
+        provided.
+
+        RATIONALE: SQLAlchemy's session is not thread safe. This method allows
+        cloning of an existing object to allow several threads to work with
+        their own instances of an ORMObject.
+
+        WARNING: Only persistent (committed) objects can be cloned.
+        '''
+
+        if session is None:
+            session = DBConn().session()
+        if self.session() is None:
+            raise RuntimeError('Method clone() failed for detached object:\n%s' %
+                self)
+        self.session().flush()
+        mapper = object_mapper(self)
+        primary_key = mapper.primary_key_from_instance(self)
+        object_class = self.__class__
+        new_object = session.query(object_class).get(primary_key)
+        if new_object is None:
+            raise RuntimeError( \
+                'Method clone() failed for non-persistent object:\n%s' % self)
+        return new_object
 
 __all__.append('ORMObject')
 
