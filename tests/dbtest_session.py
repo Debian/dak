@@ -168,6 +168,9 @@ class SessionTestCase(DBDakTestCase):
         uid3 = uid1.clone(session = new_session)
         self.assertEqual(uid1.uid, uid3.uid)
         self.assertTrue(uid3 in new_session)
+        # test for ressource leaks with mass cloning
+        for _ in xrange(1, 1000):
+            uid1.clone()
 
     def classes_to_clean(self):
         # We need to clean all Uid objects in case some test fails.

@@ -299,25 +299,33 @@ class ORMObject(object):
         '''
         Clones the current object in a new session and returns the new clone. A
         fresh session is created if the optional session parameter is not
-        provided.
+        provided. The function will fail if a session is provided and has
+        unflushed changes.
 
-        RATIONALE: SQLAlchemy's session is not thread safe. This method allows
-        cloning of an existing object to allow several threads to work with
-        their own instances of an ORMObject.
+        RATIONALE: SQLAlchemy's session is not thread safe. This method clones
+        an existing object to allow several threads to work with their own
+        instances of an ORMObject.
 
-        WARNING: Only persistent (committed) objects can be cloned.
+        WARNING: Only persistent (committed) objects can be cloned. Changes
+        made to the original object that are not committed yet will get lost.
+        The session of the new object will always be rolled back to avoid
+        ressource leaks.
         '''
 
-        if session is None:
-            session = DBConn().session()
         if self.session() is None:
-            raise RuntimeError('Method clone() failed for detached object:\n%s' %
-                self)
+            raise RuntimeError( \
+                'Method clone() failed for detached object:\n%s' % self)
         self.session().flush()
         mapper = object_mapper(self)
         primary_key = mapper.primary_key_from_instance(self)
         object_class = self.__class__
+        if session is None:
+            session = DBConn().session()
+        elif len(session.new) + len(session.dirty) + len(session.deleted) > 0:
+            raise RuntimeError( \
+                'Method clone() failed due to unflushed changes in session.')
         new_object = session.query(object_class).get(primary_key)
+        session.rollback()
         if new_object is None:
             raise RuntimeError( \
                 'Method clone() failed for non-persistent object:\n%s' % self)
