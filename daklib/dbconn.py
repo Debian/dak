@@ -53,7 +53,8 @@ from tempfile import mkstemp, mkdtemp
 from inspect import getargspec
 
 import sqlalchemy
-from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc, \
+    Text, ForeignKey
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
     backref, MapperExtension, EXT_CONTINUE, object_mapper
 from sqlalchemy import types as sqltypes
@@ -465,12 +466,9 @@ __all__.append('get_archive')
 
 ################################################################################
 
-class BinContents(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<BinContents (%s, %s)>' % (self.binary, self.filename)
+class BinContents(ORMObject):
+    def properties(silf):
+        return ['file', 'binary']
 
 __all__.append('BinContents')
 
@@ -491,7 +489,7 @@ class DBBinary(ORMObject):
     def properties(self):
         return ['package', 'version', 'maintainer', 'source', 'architecture', \
             'poolfile', 'binarytype', 'fingerprint', 'install_date', \
-            'suites_count', 'binary_id']
+            'suites_count', 'binary_id', 'contents_count']
 
     def not_null_constraints(self):
         return ['package', 'version', 'maintainer', 'source',  'poolfile', \
@@ -2909,7 +2907,6 @@ class DBConn(object):
         )
 
         tables_no_primary = (
-            'bin_contents',
             'changes_pending_files_map',
             'changes_pending_source_files',
             'changes_pool_files',
@@ -2960,6 +2957,14 @@ class DBConn(object):
         for table_name in tables_no_primary:
             table = Table(table_name, self.db_meta, autoload=True)
             setattr(self, 'tbl_%s' % table_name, table)
+
+        # bin_contents needs special attention until update #41 has been
+        # applied
+        self.tbl_bin_contents = Table('bin_contents', self.db_meta, \
+            Column('file', Text, primary_key = True),
+            Column('binary_id', Integer, ForeignKey('binaries.id'), \
+                primary_key = True),
+            autoload=True, useexisting=True)
 
         for view_name in views:
             view = Table(view_name, self.db_meta, autoload=True)
@@ -3232,6 +3237,12 @@ class DBConn(object):
                properties = dict(upload_block_id = self.tbl_upload_blocks.c.id,
                                  fingerprint = relation(Fingerprint, backref="uploadblocks"),
                                  uid = relation(Uid, backref="uploadblocks")))
+
+        mapper(BinContents, self.tbl_bin_contents,
+            properties = dict(
+                binary = relation(DBBinary,
+                    backref=backref('contents', lazy='dynamic')),
+                file = self.tbl_bin_contents.c.file))
 
     ## Connection functions
     def __createconn(self):
