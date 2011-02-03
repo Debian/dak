@@ -2,8 +2,8 @@
 # coding=utf8
 
 """
-Remove useless type casts from primary keys to support sqlalchemy's
-reflection mechanism for all tables. Rename 2 sequences.
+Remove useless type casts from primary keys to support sqlalchemy's reflection
+mechanism for all tables. Rename 2 sequences and add 1 primary key.
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2011 Torsten Werner <twerner@debian.org>
@@ -33,11 +33,14 @@ from socket import gethostname;
 ################################################################################
 def do_update(self):
     """
-    Remove useless type casts from primary keys and fix 2 sequences.
+    Remove useless type casts from primary keys, fix 2 sequences, and add 1
+    primary key.
     """
     print __doc__
     try:
         c = self.db.cursor()
+
+        # remove useless type casts
         for table in ('architecture', 'archive', 'bin_associations', \
             'binaries', 'component', 'dsc_files', 'files', \
             'fingerprint', 'location', 'maintainer', 'override_type', \
@@ -46,8 +49,14 @@ def do_update(self):
             c.execute("ALTER TABLE %s ALTER id SET DEFAULT nextval('%s_id_seq'::regclass)" % \
                 (table, table))
 
+        # rename sequences
         c.execute("ALTER SEQUENCE known_changes_id_seq RENAME TO changes_id_seq")
         c.execute("ALTER SEQUENCE queue_files_id_seq RENAME TO build_queue_files_id_seq")
+
+        # replace unique contraint by primary key
+        c.execute( \
+            "ALTER TABLE bin_contents DROP CONSTRAINT bin_contents_file_key");
+        c.execute("ALTER TABLE bin_contents ADD PRIMARY KEY (file, binary_id)");
 
         c.execute("UPDATE config SET value = '41' WHERE name = 'db_revision'")
         self.db.commit()
