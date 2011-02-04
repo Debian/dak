@@ -6,7 +6,7 @@ bindir=$base/bin
 ftpdir=$base/ftp
 webdir=$public/web
 indices=$ftpdir/indices
-archs="alpha amd64 arm armel hurd-i386 i386 ia64 mips mipsel powerpc s390 sparc kfreebsd-i386 kfreebsd-amd64 "
+archs=$(dak admin a list | tr '\n' ' ')
 
 scriptdir=$base/scripts
 masterdir=$base/dak/
