@@ -24,10 +24,10 @@ tree "dists/stable"
    FileList "/srv/ftp-master.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/srv/ftp-master.debian.org/database/dists/stable_$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sparc source";
-   BinOverride "override.lenny.$(SECTION)";
-   ExtraOverride "override.lenny.extra.$(SECTION)";
-   SrcOverride "override.lenny.$(SECTION).src";
+   Architectures "amd64 armel i386 ia64 mips mipsel powerpc s390 sparc kfreebsd-i386 kfreebsd-amd64 source";
+   BinOverride "override.squeeze.$(SECTION)";
+   ExtraOverride "override.squeeze.extra.$(SECTION)";
+   SrcOverride "override.squeeze.$(SECTION).src";
 };
 
 // debian-installer
@@ -36,9 +36,9 @@ tree "dists/stable/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/stable_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
-   Architectures "alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sparc";
-   BinOverride "override.lenny.main.$(SECTION)";
-   SrcOverride "override.lenny.main.src";
+   Architectures "amd64 armel i386 ia64 mips mipsel powerpc s390 sparc kfreebsd-i386 kfreebsd-amd64 source";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    Contents "$(DIST)/../Contents-udeb";
@@ -48,9 +48,9 @@ tree "dists/stable/non-free"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/stable_non-free_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
-   Architectures "alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sparc";
-   BinOverride "override.lenny.main.$(SECTION)";
-   SrcOverride "override.lenny.main.src";
+   Architectures "amd64 armel i386 ia64 mips mipsel powerpc s390 sparc kfreebsd-i386 kfreebsd-amd64 source";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    Contents "$(DIST)/../Contents-udeb-nf";

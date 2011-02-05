@@ -123,7 +123,7 @@ function i18n1() {
             # Lets check!
             if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
                 # Yay, worked, lets copy around
-                for dir in squeeze sid; do
+                for dir in wheezy sid; do
                     if [ -d dists/${dir}/ ]; then
                         cd dists/${dir}/main/i18n
                         rsync -aq --delete --delete-after  . ${ftpdir}/dists/${dir}/main/i18n/.
@@ -401,12 +401,12 @@ function mkfilesindices() {
     done
 
     (cd $base/ftp/
-	    for dist in sid squeeze; do
+	    for dist in sid wheezy; do
 		    find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
 	    done
     )
 
-    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-squeeze.list.gz) |
+    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-wheezy.list.gz) |
     sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
@@ -491,8 +491,8 @@ function i18n2() {
     STAMP=$(date "+%Y%m%d%H%M")
     mkdir -p ${scriptdir}/i18n/${STAMP}
     cd ${scriptdir}/i18n/${STAMP}
-    dak control-suite -l stable > lenny
-    dak control-suite -l testing > squeeze
+    dak control-suite -l stable > squeeze
+    dak control-suite -l testing > wheezy
     dak control-suite -l unstable > sid
     echo "${STAMP}" > timestamp
     gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o timestamp.gpg timestamp

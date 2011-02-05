@@ -30,7 +30,7 @@ exportpublic=$public/rsync/export/
 
 ftpgroup=debadmin
 
-copyoverrides="etch.contrib etch.contrib.src etch.main etch.main.src etch.non-free etch.non-free.src etch.extra.main etch.extra.non-free etch.extra.contrib etch.main.debian-installer sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src sid.extra.contrib sid.extra.main sid.extra.non-free lenny.contrib lenny.contrib.src lenny.main lenny.main.src lenny.non-free lenny.non-free.src lenny.extra.main lenny.extra.contrib lenny.extra.non-free squeeze.contrib squeeze.contrib.src squeeze.main squeeze.main.src squeeze.non-free squeeze.non-free.src squeeze.extra.main squeeze.extra.contrib squeeze.extra.non-free"
+copyoverrides="wheezy.contrib wheezy.contrib.src wheezy.main wheezy.main.src wheezy.non-free wheezy.non-free.src wheezy.extra.main wheezy.extra.non-free wheezy.extra.contrib wheezy.main.debian-installer sid.contrib sid.contrib.src sid.main sid.main.debian-installer sid.main.src sid.non-free sid.non-free.src sid.extra.contrib sid.extra.main sid.extra.non-free lenny.contrib lenny.contrib.src lenny.main lenny.main.src lenny.non-free lenny.non-free.src lenny.extra.main lenny.extra.contrib lenny.extra.non-free squeeze.contrib squeeze.contrib.src squeeze.main squeeze.main.src squeeze.non-free squeeze.non-free.src squeeze.extra.main squeeze.extra.contrib squeeze.extra.non-free"
 
 TMPDIR=${base}/tmp
 
