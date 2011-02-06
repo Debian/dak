@@ -24,10 +24,10 @@ tree "dists/oldstable"
    FileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_source.list";
    Sections "main contrib non-free";
-   Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc source";
-   BinOverride "override.etch.$(SECTION)";
-   ExtraOverride "override.etch.extra.$(SECTION)";
-   SrcOverride "override.etch.$(SECTION).src";
+   Architectures "alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sparc source";
+   BinOverride "override.lenny.$(SECTION)";
+   ExtraOverride "override.lenny.extra.$(SECTION)";
+   SrcOverride "override.lenny.$(SECTION).src";
 };
 
 // debian-installer
@@ -36,9 +36,9 @@ tree "dists/oldstable/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/oldstable_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
-   Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc";
-   BinOverride "override.etch.main.$(SECTION)";
-   SrcOverride "override.etch.main.src";
+   Architectures "alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sparc source";
+   BinOverride "override.lenny.main.$(SECTION)";
+   SrcOverride "override.lenny.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    Contents "$(DIST)/../Contents-udeb";
@@ -48,9 +48,9 @@ tree "dists/oldstable/non-free"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/oldstable_non-free_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
-   Architectures "alpha amd64 arm hppa i386 ia64 mips mipsel powerpc s390 sparc";
-   BinOverride "override.etch.main.$(SECTION)";
-   SrcOverride "override.etch.main.src";
+   Architectures "alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sparc source";
+   BinOverride "override.lenny.main.$(SECTION)";
+   SrcOverride "override.lenny.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    Contents "$(DIST)/../Contents-udeb-nf";

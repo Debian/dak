@@ -40,3 +40,16 @@ bindirectory "squeeze"
    PathPrefix "";
    Packages::Extensions ".deb .udeb";
 };
+
+bindirectory "wheezy"
+{
+   Packages "wheezy/Packages";
+   Sources "wheezy/Sources";
+   Contents " ";
+
+   BinOverride "override.wheezy.all3";
+   SrcOverride "override.wheezy.all3.src";
+   BinCacheDB "packages-accepted-squeeze.db";
+   PathPrefix "";
+   Packages::Extensions ".deb .udeb";
+};

@@ -69,6 +69,21 @@ if [ ! -z "$dists" ]; then
     done
     trap 'kill -TERM $SSH_PID' 0
     for d in $dists; do
-        ssh wbadm@buildd -S $SSH_SOCKET trigger.security $d
+        case $d in
+            oldstable)
+                send=lenny
+                ;;
+            stable)
+                send=squeeze
+                ;;
+            testing)
+                send=testing
+                ;;
+            *)
+                send=unknown
+                ;;
+        esac
+
+        ssh wbadm@buildd -S $SSH_SOCKET trigger.security $send
     done
 fi
