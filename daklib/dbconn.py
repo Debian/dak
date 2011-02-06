@@ -467,7 +467,11 @@ __all__.append('get_archive')
 ################################################################################
 
 class BinContents(ORMObject):
-    def properties(silf):
+    def __init__(self, file = None, binary = None):
+        self.file = file
+        self.binary = binary
+
+    def properties(self):
         return ['file', 'binary']
 
 __all__.append('BinContents')
