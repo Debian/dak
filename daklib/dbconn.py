@@ -2904,8 +2904,8 @@ class DBConn(object):
             # The following tables have primary keys but sqlalchemy
             # version 0.5 fails to reflect them correctly with database
             # versions before upgrade #41.
-            #'changes',
-            #'build_queue_files',
+            'changes',
+            'build_queue_files',
         )
 
         tables_no_primary = (
@@ -2920,8 +2920,8 @@ class DBConn(object):
             'suite_build_queue_copy',
             'udeb_contents',
             # see the comment above
-            'changes',
-            'build_queue_files',
+            #'changes',
+            #'build_queue_files',
         )
 
         views = (
