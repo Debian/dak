@@ -150,7 +150,7 @@ def print_sha1_files (tree, files):
 def print_sha256_files (tree, files):
     print_md5sha_files (tree, files, apt_pkg.sha256sum)
 
-def write_release_file (relpath, suite, component, origin, label, arch, version="", suite_suffix="", notautomatic=""):
+def write_release_file (relpath, suite, component, origin, label, arch, version="", suite_suffix="", notautomatic="", butautomaticupgrades=""):
     try:
         if os.access(relpath, os.F_OK):
             if os.stat(relpath).st_nlink > 1:
@@ -172,6 +172,8 @@ def write_release_file (relpath, suite, component, origin, label, arch, version=
     release.write("Label: %s\n" % (label))
     if notautomatic != "":
         release.write("NotAutomatic: %s\n" % (notautomatic))
+    if butautomaticupgrades != "":
+        release.write("ButAutomaticUpgrades: %s\n" % (butautomaticupgrades))
     release.write("Architecture: %s\n" % (arch))
     release.close()
 
@@ -237,6 +239,11 @@ def main ():
         else:
             notautomatic = ""
 
+        if suiteobj.butautomaticupgrades:
+            butautomaticupgrades = "yes"
+        else:
+            butautomaticupgrades = ""
+
         if SuiteBlock.has_key("Components"):
             components = SuiteBlock.ValueList("Components")
         else:
@@ -277,6 +284,8 @@ def main ():
 
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
+        if butautomaticupgrades != "":
+            release.write("ButAutomaticUpgrades: %s\n" % (butautomaticupgrades))
         out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
         if components:
             out.write("Components: %s\n" % (" ".join(components)))
@@ -322,7 +331,7 @@ def main ():
                     else:
                         rel = "%s/binary-%s/Release" % (sec, arch)
                     relpath = Cnf["Dir::Root"]+tree+"/"+rel
-                    write_release_file(relpath, suite, sec, origin, label, arch, version, suite_suffix, notautomatic)
+                    write_release_file(relpath, suite, sec, origin, label, arch, version, suite_suffix, notautomatic, butautomaticupgrades)
                     files.append(rel)
                 gen_i18n_index(files, tree, sec)
 
@@ -337,7 +346,7 @@ def main ():
                         if arch != "source":  # always true
                             rel = "%s/%s/binary-%s/Release" % (dis, sec, arch)
                             relpath = Cnf["Dir::Root"]+tree+"/"+rel
-                            write_release_file(relpath, suite, dis, origin, label, arch, version, suite_suffix, notautomatic)
+                            write_release_file(relpath, suite, dis, origin, label, arch, version, suite_suffix, notautomatic, butautomaticupgrades)
                             files.append(rel)
                             for cfile in compressnames("tree::%s/%s" % (tree,dis),
                                 "Packages",
