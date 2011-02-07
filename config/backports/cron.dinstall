@@ -190,6 +190,14 @@ lockfile "$LOCK_ACCEPTED"
 lockfile "$LOCK_NEW"
 
 GO=(
+    FUNC="punew"
+    TIME="p-u-new"
+    ARGS="proposedupdates"
+    ERR="false"
+)
+stage $GO
+
+GO=(
     FUNC="newstage"
     TIME="newstage"
     ARGS=""

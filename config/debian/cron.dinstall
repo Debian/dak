@@ -214,13 +214,13 @@ GO=(
 )
 stage $GO
 
-#GO=(
-#    FUNC="opunew"
-#    TIME="o-p-u-new"
-#    ARGS="oldproposedupdates"
-#    ERR="false"
-#)
-#stage $GO
+GO=(
+    FUNC="opunew"
+    TIME="o-p-u-new"
+    ARGS="oldproposedupdates"
+    ERR="false"
+)
+stage $GO
 
 GO=(
     FUNC="newstage"

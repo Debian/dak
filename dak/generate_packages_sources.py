@@ -111,9 +111,9 @@ tree "dists/testing"
    SourceFileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.$(SECTION)";
-   ExtraOverride "override.squeeze.extra.$(SECTION)";
-   SrcOverride "override.squeeze.$(SECTION).src";
+   BinOverride "override.wheezy.$(SECTION)";
+   ExtraOverride "override.wheezy.extra.$(SECTION)";
+   SrcOverride "override.wheezy.$(SECTION).src";
 };
 """
 
@@ -137,8 +137,8 @@ tree "dists/testing/main"
    FileList "/srv/ftp-master.debian.org/database/dists/testing_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.main.$(SECTION)";
-   SrcOverride "override.squeeze.main.src";
+   BinOverride "override.wheezy.main.$(SECTION)";
+   SrcOverride "override.wheezy.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    %(contentsline)s
@@ -149,8 +149,8 @@ tree "dists/testing/non-free"
    FileList "/srv/ftp-master.debian.org/database/dists/testing_non-free_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.main.$(SECTION)";
-   SrcOverride "override.squeeze.main.src";
+   BinOverride "override.wheezy.main.$(SECTION)";
+   SrcOverride "override.wheezy.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    %(contentsline)s
@@ -239,9 +239,9 @@ tree "dists/testing-proposed-updates"
    SourceFileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.$(SECTION)";
-   ExtraOverride "override.squeeze.extra.$(SECTION)";
-   SrcOverride "override.squeeze.$(SECTION).src";
+   BinOverride "override.wheezy.$(SECTION)";
+   ExtraOverride "override.wheezy.extra.$(SECTION)";
+   SrcOverride "override.wheezy.$(SECTION).src";
    Contents " ";
 };
 """
@@ -251,8 +251,8 @@ tree "dists/testing-proposed-updates/main"
    FileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.main.$(SECTION)";
-   SrcOverride "override.squeeze.main.src";
+   BinOverride "override.wheezy.main.$(SECTION)";
+   SrcOverride "override.wheezy.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    Contents " ";
@@ -266,9 +266,9 @@ tree "dists/proposed-updates"
    SourceFileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "%(arch)s";
-   BinOverride "override.lenny.$(SECTION)";
-   ExtraOverride "override.lenny.extra.$(SECTION)";
-   SrcOverride "override.lenny.$(SECTION).src";
+   BinOverride "override.squeeze.$(SECTION)";
+   ExtraOverride "override.squeeze.extra.$(SECTION)";
+   SrcOverride "override.squeeze.$(SECTION).src";
    Contents " ";
 };
 """
@@ -278,8 +278,8 @@ tree "dists/proposed-updates/main"
    FileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
-   BinOverride "override.lenny.main.$(SECTION)";
-   SrcOverride "override.lenny.main.src";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    Contents " ";
