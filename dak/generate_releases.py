@@ -285,7 +285,7 @@ def main ():
         if notautomatic != "":
             out.write("NotAutomatic: %s\n" % (notautomatic))
         if butautomaticupgrades != "":
-            release.write("ButAutomaticUpgrades: %s\n" % (butautomaticupgrades))
+            out.write("ButAutomaticUpgrades: %s\n" % (butautomaticupgrades))
         out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
         if components:
             out.write("Components: %s\n" % (" ".join(components)))
