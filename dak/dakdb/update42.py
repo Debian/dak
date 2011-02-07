@@ -39,7 +39,7 @@ def do_update(self):
         c = self.db.cursor()
 
         c.execute("ALTER TABLE suite ADD COLUMN butautomaticupgrades BOOLEAN NOT NULL DEFAULT FALSE;")
-        c.execute("ALTER TABLE suite ADD CONSTRAINT bau_needs_na_set CHECK (not butautomaticupgrades or notautomatic):")
+        c.execute("ALTER TABLE suite ADD CONSTRAINT bau_needs_na_set CHECK (not butautomaticupgrades or notautomatic);")
 
         c.execute("UPDATE config SET value = '42' WHERE name = 'db_revision'")
         self.db.commit()
