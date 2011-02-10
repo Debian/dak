@@ -159,7 +159,7 @@ state "Startup"
 
 lockfile -l 3600 "${LOCK_DAILY}"
 trap onerror ERR
-trap cleanup EXIT TERM HUP INT QUIT
+trap remove_daily_lock EXIT TERM HUP INT QUIT
 
 touch "${LOCK_BRITNEY}"
 
@@ -205,6 +205,7 @@ stage $GO
 
 lockfile "$LOCK_ACCEPTED"
 lockfile "$LOCK_NEW"
+trap remove_all_locks EXIT TERM HUP INT QUIT
 
 GO=(
     FUNC="punew"
@@ -381,7 +382,8 @@ GO=(
 )
 stage $GO
 
-remove_locks
+remove_all_locks
+trap - EXIT TERM HUP INT QUIT
 
 ts "locked part finished"
 state "postlock"
