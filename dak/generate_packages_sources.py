@@ -285,6 +285,32 @@ tree "dists/proposed-updates/main"
    Contents " ";
 };
 """
+    apt_trees["oldstable-proposed-updates"]="""
+tree "dists/proposed-updates"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.lenny.$(SECTION)";
+   ExtraOverride "override.lenny.extra.$(SECTION)";
+   SrcOverride "override.lenny.$(SECTION).src";
+   Contents " ";
+};
+"""
+    apt_trees["di"]["oldstable-proposed-updates"]="""
+tree "dists/proposed-updates/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.lenny.main.$(SECTION)";
+   SrcOverride "override.lenny.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents " ";
+};
+"""
 
     cnf = Config()
     try:
