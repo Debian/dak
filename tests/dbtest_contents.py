@@ -2,7 +2,8 @@
 
 from db_test import DBDakTestCase
 
-from daklib.dbconn import DBConn, BinContents, OverrideType, get_override_type
+from daklib.dbconn import DBConn, BinContents, OverrideType, get_override_type, \
+    Section, get_section, get_sections
 
 from sqlalchemy.exc import FlushError, IntegrityError
 import unittest
@@ -67,6 +68,21 @@ class ContentsTestCase(DBDakTestCase):
         self.assertEqual('deb', debtype.overridetype)
         self.assertEqual(0, debtype.overrides.count())
         self.assertEqual(debtype, get_override_type('deb', self.session))
+
+    def test_section(self):
+        '''
+        Test Section class.
+        '''
+        section = Section(section = 'python')
+        self.session.add(section)
+        self.session.flush()
+        self.assertEqual('python', section.section)
+        self.assertEqual('python', section)
+        self.assertTrue(section != 'java')
+        self.assertEqual(section, get_section('python', self.session))
+        all_sections = get_sections(self.session)
+        self.assertEqual(section.section_id, all_sections['python'])
+        self.assertEqual(0, section.overrides.count())
 
 if __name__ == '__main__':
     unittest.main()

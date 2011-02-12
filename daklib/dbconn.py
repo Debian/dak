@@ -1878,7 +1878,7 @@ class OverrideType(ORMObject):
         self.overridetype = overridetype
 
     def properties(self):
-        return ['overridetype', 'overridetype_id']
+        return ['overridetype', 'overridetype_id', 'overrides_count']
 
     def not_null_constraints(self):
         return ['overridetype']
@@ -2148,9 +2148,15 @@ __all__.append('get_priorities')
 
 ################################################################################
 
-class Section(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class Section(ORMObject):
+    def __init__(self, section = None):
+        self.section = section
+
+    def properties(self):
+        return ['section', 'section_id', 'overrides_count']
+
+    def not_null_constraints(self):
+        return ['section']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -2163,9 +2169,6 @@ class Section(object):
             return (self.section != val)
         # This signals to use the normal comparison operator
         return NotImplemented
-
-    def __repr__(self):
-        return '<Section %s>' % self.section
 
 __all__.append('Section')
 
@@ -3166,7 +3169,8 @@ class DBConn(object):
                                  priority_id = self.tbl_override.c.priority,
                                  priority = relation(Priority),
                                  section_id = self.tbl_override.c.section,
-                                 section = relation(Section),
+                                 section = relation(Section, \
+                                    backref=backref('overrides', lazy='dynamic')),
                                  overridetype_id = self.tbl_override.c.type,
                                  overridetype = relation(OverrideType, \
                                     backref=backref('overrides', lazy='dynamic'))))
