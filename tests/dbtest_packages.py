@@ -66,6 +66,8 @@ class PackageTestCase(DBDakTestCase):
         suites = get_architecture_suites('kfreebsd-i386', self.session)
         self.assertEqual(2, len(suites))
         self.assertTrue(self.suite['lenny'] not in suites)
+        # check overrides
+        self.assertEqual(0, self.suite['lenny'].overrides.count())
 
     def test_poolfiles(self):
         '''

@@ -2616,7 +2616,8 @@ class Suite(ORMObject):
         self.version = version
 
     def properties(self):
-        return ['suite_name', 'version', 'sources_count', 'binaries_count']
+        return ['suite_name', 'version', 'sources_count', 'binaries_count', \
+            'overrides_count']
 
     def not_null_constraints(self):
         return ['suite_name', 'version']
@@ -3165,7 +3166,8 @@ class DBConn(object):
 
         mapper(Override, self.tbl_override,
                properties = dict(suite_id = self.tbl_override.c.suite,
-                                 suite = relation(Suite),
+                                 suite = relation(Suite, \
+                                    backref=backref('overrides', lazy='dynamic')),
                                  package = self.tbl_override.c.package,
                                  component_id = self.tbl_override.c.component,
                                  component = relation(Component, \
