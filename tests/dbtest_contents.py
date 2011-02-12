@@ -3,7 +3,7 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import DBConn, BinContents, OverrideType, get_override_type, \
-    Section, get_section, get_sections
+    Section, get_section, get_sections, Priority, get_priority, get_priorities
 
 from sqlalchemy.exc import FlushError, IntegrityError
 import unittest
@@ -83,6 +83,22 @@ class ContentsTestCase(DBDakTestCase):
         all_sections = get_sections(self.session)
         self.assertEqual(section.section_id, all_sections['python'])
         self.assertEqual(0, section.overrides.count())
+
+    def test_priority(self):
+        '''
+        Test Priority class.
+        '''
+        priority = Priority(priority = 'standard', level = 7)
+        self.session.add(priority)
+        self.session.flush()
+        self.assertEqual('standard', priority.priority)
+        self.assertEqual(7, priority.level)
+        self.assertEqual('standard', priority)
+        self.assertTrue(priority != 'extra')
+        self.assertEqual(priority, get_priority('standard', self.session))
+        all_priorities = get_priorities(self.session)
+        self.assertEqual(priority.priority_id, all_priorities['standard'])
+        self.assertEqual(0, priority.overrides.count())
 
 if __name__ == '__main__':
     unittest.main()

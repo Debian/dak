@@ -2078,9 +2078,16 @@ __all__.append('get_policy_queue_from_path')
 
 ################################################################################
 
-class Priority(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class Priority(ORMObject):
+    def __init__(self, priority = None, level = None):
+        self.priority = priority
+        self.level = level
+
+    def properties(self):
+        return ['priority', 'priority_id', 'level', 'overrides_count']
+
+    def not_null_constraints(self):
+        return ['priority', 'level']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -2093,9 +2100,6 @@ class Priority(object):
             return (self.priority != val)
         # This signals to use the normal comparison operator
         return NotImplemented
-
-    def __repr__(self):
-        return '<Priority %s (%s)>' % (self.priority, self.priority_id)
 
 __all__.append('Priority')
 
@@ -3167,7 +3171,8 @@ class DBConn(object):
                                  component_id = self.tbl_override.c.component,
                                  component = relation(Component),
                                  priority_id = self.tbl_override.c.priority,
-                                 priority = relation(Priority),
+                                 priority = relation(Priority, \
+                                    backref=backref('overrides', lazy='dynamic')),
                                  section_id = self.tbl_override.c.section,
                                  section = relation(Section, \
                                     backref=backref('overrides', lazy='dynamic')),
