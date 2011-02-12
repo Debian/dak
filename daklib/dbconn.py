@@ -1873,12 +1873,15 @@ __all__.append('get_override')
 
 ################################################################################
 
-class OverrideType(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class OverrideType(ORMObject):
+    def __init__(self, overridetype = None):
+        self.overridetype = overridetype
 
-    def __repr__(self):
-        return '<OverrideType %s>' % self.overridetype
+    def properties(self):
+        return ['overridetype', 'overridetype_id']
+
+    def not_null_constraints(self):
+        return ['overridetype']
 
 __all__.append('OverrideType')
 
@@ -3165,7 +3168,8 @@ class DBConn(object):
                                  section_id = self.tbl_override.c.section,
                                  section = relation(Section),
                                  overridetype_id = self.tbl_override.c.type,
-                                 overridetype = relation(OverrideType)))
+                                 overridetype = relation(OverrideType, \
+                                    backref=backref('overrides', lazy='dynamic'))))
 
         mapper(OverrideType, self.tbl_override_type,
                properties = dict(overridetype = self.tbl_override_type.c.type,

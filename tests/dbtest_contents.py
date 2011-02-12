@@ -2,7 +2,7 @@
 
 from db_test import DBDakTestCase
 
-from daklib.dbconn import DBConn, BinContents
+from daklib.dbconn import DBConn, BinContents, OverrideType
 
 from sqlalchemy.exc import FlushError, IntegrityError
 import unittest
@@ -56,6 +56,16 @@ class ContentsTestCase(DBDakTestCase):
             binary = self.binary['gnome-hello_2.2-1_i386'])
         self.session.add(contents2)
         self.session.flush()
+
+    def test_overridetype(self):
+        '''
+        Test the OverrideType class.
+        '''
+        debtype = OverrideType(overridetype = 'deb')
+        self.session.add(debtype)
+        self.session.flush()
+        self.assertEqual('deb', debtype.overridetype)
+        self.assertEqual(0, debtype.overrides.count())
 
 if __name__ == '__main__':
     unittest.main()
