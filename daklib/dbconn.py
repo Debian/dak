@@ -911,8 +911,8 @@ class Component(ORMObject):
         return NotImplemented
 
     def properties(self):
-        return ['component_name', 'component_id', 'description', 'location', \
-            'meets_dfsg']
+        return ['component_name', 'component_id', 'description', \
+            'location_count', 'meets_dfsg', 'overrides_count']
 
     def not_null_constraints(self):
         return ['component_name']
@@ -3144,8 +3144,7 @@ class DBConn(object):
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
                                  component_id = self.tbl_location.c.component,
-                                 component = relation(Component, \
-                                     backref=backref('location', uselist = False)),
+                                 component = relation(Component, backref='location'),
                                  archive_id = self.tbl_location.c.archive,
                                  archive = relation(Archive),
                                  # FIXME: the 'type' column is old cruft and
@@ -3169,7 +3168,8 @@ class DBConn(object):
                                  suite = relation(Suite),
                                  package = self.tbl_override.c.package,
                                  component_id = self.tbl_override.c.component,
-                                 component = relation(Component),
+                                 component = relation(Component, \
+                                    backref=backref('overrides', lazy='dynamic')),
                                  priority_id = self.tbl_override.c.priority,
                                  priority = relation(Priority, \
                                     backref=backref('overrides', lazy='dynamic')),
