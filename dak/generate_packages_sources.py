@@ -286,7 +286,7 @@ tree "dists/proposed-updates/main"
 };
 """
     apt_trees["oldstable-proposed-updates"]="""
-tree "dists/proposed-updates"
+tree "dists/oldstable-proposed-updates"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_$(SECTION)_binary-$(ARCH).list";
    SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_$(SECTION)_source.list";
@@ -299,7 +299,7 @@ tree "dists/proposed-updates"
 };
 """
     apt_trees["di"]["oldstable-proposed-updates"]="""
-tree "dists/proposed-updates/main"
+tree "dists/oldstable-proposed-updates/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
