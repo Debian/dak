@@ -2876,7 +2876,9 @@ class DBConn(object):
             'binary_acl',
             'binary_acl_map',
             'build_queue',
+            'build_queue_files',
             'changelogs_text',
+            'changes',
             'component',
             'config',
             'changes_pending_binaries',
@@ -2903,11 +2905,6 @@ class DBConn(object):
             'suite',
             'uid',
             'upload_blocks',
-            # The following tables have primary keys but sqlalchemy
-            # version 0.5 fails to reflect them correctly with database
-            # versions before upgrade #41.
-            'changes',
-            'build_queue_files',
         )
 
         tables_no_primary = (
@@ -2920,9 +2917,6 @@ class DBConn(object):
             'suite_src_formats',
             'suite_build_queue_copy',
             'udeb_contents',
-            # see the comment above
-            #'changes',
-            #'build_queue_files',
         )
 
         views = (
