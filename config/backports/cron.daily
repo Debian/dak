@@ -13,7 +13,7 @@ dak clean-suites -m 10000
 dak clean-queues
 
 # Send a report on NEW/BYHAND packages
-dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" team@backports.debian.org
+dak queue-report -d new,proposedupdates | mail -e -s "NEW and BYHAND on $(date +%D)" team@backports.debian.org
 # and one on crufty packages
 
 dak cruft-report > $webdir/cruft-report-daily.txt

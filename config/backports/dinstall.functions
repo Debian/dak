@@ -83,7 +83,7 @@ function updates() {
 # Process (oldstable)-proposed-updates "NEW" queue
 function punew_do() {
     date -u -R >> REPORT
-    dak process-policy $1 | tee -a REPORT | mail -e -s "NEW changes in $1" debian-release@lists.debian.org
+    dak process-policy $1 | tee -a REPORT | mail -e -s "NEW changes in $1" team@backports.debian.org
     echo >> REPORT
 }
 function punew() {

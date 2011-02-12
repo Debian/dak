@@ -31,9 +31,7 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 
 # For debugging, you can override the path using
 # the WB_DB_DIR enviroment variable
-if [ -z "$WB_DB_DIR" ]; then
-	WB_DB_DIR=${scriptdir}/nfu
-fi
+WB_DB_DIR=${WB_DB_DIR:-${scriptdir}/nfu}
 
 for arch in $(dak admin s-a list-arch unstable); do
     wget -q http://buildd.debian.org/stats/$arch-all.txt -O ${WB_DB_DIR}/${arch}-all.txt
