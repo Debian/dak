@@ -57,3 +57,4 @@ export CDPATH=".:~:${base}:${public}:${queuedir}"
 
 alias base='cd ${base}'
 alias config='cd ${configdir}'
+alias psql='LD_PRELOAD=/lib/libreadline.so.5 psql'
