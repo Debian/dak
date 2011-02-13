@@ -34,7 +34,7 @@ case "$HOSTNAME" in
     morricone)
         export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
         ;;
-    chopin|ries)
+    chopin)
         export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
         ;;
     *)
