@@ -212,7 +212,7 @@ def export_files(session, pool, clpool, temppath):
         if not result:
             stats['unpack'] += 1
             for file in files:
-                for f in glob(os.path.join(tempdir, 'debian', '*%s*' % file)):
+                for f in glob(os.path.join(tempdir, 'debian', '*%s' % file)):
                     for s in unpack[p][1]:
                         suite = os.path.join(unpack[p][0], '%s.%s' \
                                 % (s, os.path.basename(f)))
