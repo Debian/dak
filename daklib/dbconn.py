@@ -2277,9 +2277,9 @@ def source_exists(source, source_version, suites = ["any"], session=None):
             maps = [ (x[1], x[2]) for x in maps
                             if x[0] == "map" or x[0] == "silent-map" ]
             s = [suite]
-            for x in maps:
-                if x[1] in s and x[0] not in s:
-                    s.append(x[0])
+            for (from_, to) in maps:
+                if from_ in s and to not in s:
+                    s.append(to)
 
             q = q.filter(DBSource.suites.any(Suite.suite_name.in_(s)))
 
