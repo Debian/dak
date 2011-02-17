@@ -109,9 +109,11 @@ def _do_Approve():
     spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
     print "Updating Release files..."
     spawn("dak generate-releases")
-    print "Triggering security mirrors..."
+    print "Triggering security mirrors... (this may take a while)"
     spawn("/srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh")
     spawn("sudo -u archvsync -H /home/archvsync/signal_security")
+    print "Triggering metadata export for packages.d.o and other consumers"
+    spawn("/srv/security-master.debian.org/dak/config/debian-security/export.sh")
 
 ########################################################################
 ########################################################################
@@ -167,17 +169,25 @@ def main():
 
     # Yes, we could do this inside do_Approve too. But this way we see who exactly
     # called it (ownership of the file)
-    dbchange=get_dbchange(os.path.basename(changes[0]), session)
-    # strip epoch from version
-    version=dbchange.version
-    version=version[(version.find(':')+1):]
-    acceptfilename="%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), dbchange.source, version)
+
+    acceptfiles={}
+    for change in changes:
+        dbchange=get_dbchange(os.path.basename(change), session)
+        # strip epoch from version
+        version=dbchange.version
+        version=version[(version.find(':')+1):]
+        acceptfilename="%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), dbchange.source, version)
+        acceptfiles[acceptfilename]=1
+
     if Options["No-Action"]:
-        print "Would create %s now and then go on to accept this package, but No-Action is set" % (acceptfilename)
+        print "Would create %s now and then go on to accept this package, but No-Action is set" % (acceptfiles.keys())
         sys.exit(0)
-    accept_file = file(acceptfilename, "w")
-    accept_file.write("OK\n")
-    accept_file.close()
+
+    for acceptfilename in acceptfiles.keys():
+        accept_file = file(acceptfilename, "w")
+        accept_file.write("OK\n")
+        accept_file.close()
+
     do_Approve()
 
 
