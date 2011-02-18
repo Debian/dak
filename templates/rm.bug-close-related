@@ -18,6 +18,9 @@ that we couldn't deal with your issue properly.
 
 For details on the removal, please see http://__BUG_SERVER__/__BUG_NUMBER__
 
+The version of this package that was in Debian prior to this removal
+can still be found using http://snapshot.debian.org/.
+
 This message was generated automatically; if you believe that there is
 a problem with it please contact the archive administrators by mailing
 __ADMIN_ADDRESS__.
