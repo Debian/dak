@@ -120,6 +120,14 @@ class ContentsTestCase(DBDakTestCase):
         self.assertEqual(2, len(list))
         self.assertTrue(self.override['hello_sid_main_udeb'] not in list)
         self.assertTrue(self.override['hello_squeeze_main_deb'] in list)
+        # test the backrefs
+        self.assertEqual(self.override['hello_sid_main_udeb'], \
+            self.suite['sid'].overrides.one())
+        self.assertEqual(2, self.comp['main'].overrides.count())
+        self.assertEqual(self.override['hello_sid_main_udeb'], \
+            self.comp['main'].overrides.filter_by(suite = self.suite['sid']).one())
+        self.assertEqual(self.override['hello_sid_main_udeb'], \
+            self.otype['udeb'].overrides.one())
 
 if __name__ == '__main__':
     unittest.main()
