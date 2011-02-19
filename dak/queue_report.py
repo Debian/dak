@@ -358,7 +358,6 @@ RRA:MAX:0.5:288:795
 ############################################################
 
 def process_changes_files(changes_files, type, log, rrd_dir):
-    #session = DBConn().session()
     msg = ""
     cache = {}
     # Read in all the .changes files
@@ -431,7 +430,9 @@ def process_changes_files(changes_files, type, log, rrd_dir):
         for j in i[1]["list"]:
             changesbase = os.path.basename(j["filename"])
             try:
+                session = DBConn().session()
                 dbc = session.query(DBChange).filter_by(changesname=changesbase).one()
+                session.close()
             except Exception, e:
                 print "Can't find changes file in NEW for %s (%s)" % (changesbase, e)
                 dbc = None
