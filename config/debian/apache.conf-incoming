@@ -169,6 +169,8 @@
    # amd64
     # fasch
     allow from 194.177.211.201
+    # fano
+    allow from 206.12.19.110
    # i386
     # himalai1, ganymede1
     allow from 129.175.22.65
