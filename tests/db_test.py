@@ -235,6 +235,39 @@ class DBDakTestCase(DakTestCase):
         self.binary['python-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
         self.session.add_all(self.binary.values())
 
+    def setup_overridetypes(self):
+        '''
+        Setup self.otype of class OverrideType.
+        '''
+        if 'otype' in self.__dict__:
+            return
+        self.otype = {}
+        self.otype['deb'] = OverrideType(overridetype = 'deb')
+        self.session.add_all(self.otype.values())
+        self.session.flush()
+
+    def setup_sections(self):
+        '''
+        Setup self.section of class Section.
+        '''
+        if 'section' in self.__dict__:
+            return
+        self.section = {}
+        self.section['python'] = Section(section = 'python')
+        self.session.add_all(self.section.values())
+        self.session.flush()
+
+    def setup_priorities(self):
+        '''
+        Setup self.prio of class Priority.
+        '''
+        if 'prio' in self.__dict__:
+            return
+        self.prio = {}
+        self.prio['standard'] = Priority(priority = 'standard', level = 7)
+        self.session.add_all(self.prio.values())
+        self.session.flush()
+
     def setUp(self):
         if self.metadata is None:
             self.initialize()

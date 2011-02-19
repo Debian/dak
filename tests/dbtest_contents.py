@@ -62,43 +62,37 @@ class ContentsTestCase(DBDakTestCase):
         '''
         Test the OverrideType class.
         '''
-        debtype = OverrideType(overridetype = 'deb')
-        self.session.add(debtype)
-        self.session.flush()
-        self.assertEqual('deb', debtype.overridetype)
-        self.assertEqual(0, debtype.overrides.count())
-        self.assertEqual(debtype, get_override_type('deb', self.session))
+        self.setup_overridetypes()
+        self.assertEqual('deb', self.otype['deb'].overridetype)
+        self.assertEqual(0, self.otype['deb'].overrides.count())
+        self.assertEqual(self.otype['deb'], get_override_type('deb', self.session))
 
     def test_section(self):
         '''
         Test Section class.
         '''
-        section = Section(section = 'python')
-        self.session.add(section)
-        self.session.flush()
-        self.assertEqual('python', section.section)
-        self.assertEqual('python', section)
-        self.assertTrue(section != 'java')
-        self.assertEqual(section, get_section('python', self.session))
+        self.setup_sections()
+        self.assertEqual('python', self.section['python'].section)
+        self.assertEqual('python', self.section['python'])
+        self.assertTrue(self.section['python'] != 'java')
+        self.assertEqual(self.section['python'], get_section('python', self.session))
         all_sections = get_sections(self.session)
-        self.assertEqual(section.section_id, all_sections['python'])
-        self.assertEqual(0, section.overrides.count())
+        self.assertEqual(self.section['python'].section_id, all_sections['python'])
+        self.assertEqual(0, self.section['python'].overrides.count())
 
     def test_priority(self):
         '''
         Test Priority class.
         '''
-        priority = Priority(priority = 'standard', level = 7)
-        self.session.add(priority)
-        self.session.flush()
-        self.assertEqual('standard', priority.priority)
-        self.assertEqual(7, priority.level)
-        self.assertEqual('standard', priority)
-        self.assertTrue(priority != 'extra')
-        self.assertEqual(priority, get_priority('standard', self.session))
+        self.setup_priorities()
+        self.assertEqual('standard', self.prio['standard'].priority)
+        self.assertEqual(7, self.prio['standard'].level)
+        self.assertEqual('standard', self.prio['standard'])
+        self.assertTrue(self.prio['standard'] != 'extra')
+        self.assertEqual(self.prio['standard'], get_priority('standard', self.session))
         all_priorities = get_priorities(self.session)
-        self.assertEqual(priority.priority_id, all_priorities['standard'])
-        self.assertEqual(0, priority.overrides.count())
+        self.assertEqual(self.prio['standard'].priority_id, all_priorities['standard'])
+        self.assertEqual(0, self.prio['standard'].overrides.count())
 
 if __name__ == '__main__':
     unittest.main()
