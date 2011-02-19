@@ -126,7 +126,8 @@
     allow from 206.12.19.15
   # mipsel
     # rem
-    allow from 195.71.99.217
+    allow from 82.195.75.68
+    allow from 2001:41b8:202:deb:202:4cff:fefe:d06
     # mayer
     allow from 140.211.166.78
     # monteverdi
