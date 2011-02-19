@@ -2933,6 +2933,7 @@ class DBConn(object):
             'changes_pending_source_files',
             'changes_pool_files',
             'deb_contents',
+            # TODO: the maintainer column in table override should be removed.
             'override',
             'suite_architectures',
             'suite_src_formats',
