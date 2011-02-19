@@ -1814,12 +1814,22 @@ __all__.append('get_new_comments')
 
 ################################################################################
 
-class Override(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class Override(ORMObject):
+    def __init__(self, package = None, suite = None, component = None, overridetype = None, \
+        section = None, priority = None):
+        self.package = package
+        self.suite = suite
+        self.component = component
+        self.overridetype = overridetype
+        self.section = section
+        self.priority = priority
 
-    def __repr__(self):
-        return '<Override %s (%s)>' % (self.package, self.suite_id)
+    def properties(self):
+        return ['package', 'suite', 'component', 'overridetype', 'section', \
+            'priority']
+
+    def not_null_constraints(self):
+        return ['package', 'suite', 'component', 'overridetype', 'section']
 
 __all__.append('Override')
 

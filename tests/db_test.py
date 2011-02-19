@@ -242,7 +242,8 @@ class DBDakTestCase(DakTestCase):
         if 'otype' in self.__dict__:
             return
         self.otype = {}
-        self.otype['deb'] = OverrideType(overridetype = 'deb')
+        for type_ in ('deb', 'udeb'):
+            self.otype[type_] = OverrideType(overridetype = type_)
         self.session.add_all(self.otype.values())
         self.session.flush()
 
@@ -266,6 +267,33 @@ class DBDakTestCase(DakTestCase):
         self.prio = {}
         self.prio['standard'] = Priority(priority = 'standard', level = 7)
         self.session.add_all(self.prio.values())
+        self.session.flush()
+
+    def setup_overrides(self):
+        '''
+        Setup self.override of class Override.
+        '''
+        if 'override' in self.__dict__:
+            return
+        self.setup_suites()
+        self.setup_components()
+        self.setup_overridetypes()
+        self.setup_sections()
+        self.setup_priorities()
+        self.override = {}
+        self.override['hello_sid_main_udeb'] = Override(package = 'hello', \
+            suite = self.suite['sid'], component = self.comp['main'], \
+            overridetype = self.otype['udeb'], \
+            section = self.section['python'], priority = self.prio['standard'])
+        self.override['hello_squeeze_main_deb'] = Override(package = 'hello', \
+            suite = self.suite['squeeze'], component = self.comp['main'], \
+            overridetype = self.otype['deb'], \
+            section = self.section['python'], priority = self.prio['standard'])
+        self.override['hello_lenny_contrib_deb'] = Override(package = 'hello', \
+            suite = self.suite['lenny'], component = self.comp['contrib'], \
+            overridetype = self.otype['deb'], \
+            section = self.section['python'], priority = self.prio['standard'])
+        self.session.add_all(self.override.values())
         self.session.flush()
 
     def setUp(self):

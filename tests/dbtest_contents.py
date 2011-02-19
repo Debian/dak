@@ -3,7 +3,8 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import DBConn, BinContents, OverrideType, get_override_type, \
-    Section, get_section, get_sections, Priority, get_priority, get_priorities
+    Section, get_section, get_sections, Priority, get_priority, get_priorities, \
+    Override, get_override
 
 from sqlalchemy.exc import FlushError, IntegrityError
 import unittest
@@ -93,6 +94,32 @@ class ContentsTestCase(DBDakTestCase):
         all_priorities = get_priorities(self.session)
         self.assertEqual(self.prio['standard'].priority_id, all_priorities['standard'])
         self.assertEqual(0, self.prio['standard'].overrides.count())
+
+    def test_override(self):
+        '''
+        Test Override class.
+        '''
+        self.setup_overrides()
+        list = get_override('hello', session = self.session)
+        self.assertEqual(3, len(list))
+        self.assertTrue(self.override['hello_sid_main_udeb'] in list)
+        self.assertTrue(self.override['hello_squeeze_main_deb'] in list)
+        list = get_override('hello', suite = 'sid', session = self.session)
+        self.assertEqual([self.override['hello_sid_main_udeb']], list)
+        list = get_override('hello', suite = ['sid'], session = self.session)
+        self.assertEqual([self.override['hello_sid_main_udeb']], list)
+        list = get_override('hello', component = 'contrib', session = self.session)
+        self.assertEqual([self.override['hello_lenny_contrib_deb']], list)
+        list = get_override('hello', component = ['contrib'], session = self.session)
+        self.assertEqual([self.override['hello_lenny_contrib_deb']], list)
+        list = get_override('hello', overridetype = 'deb', session = self.session)
+        self.assertEqual(2, len(list))
+        self.assertTrue(self.override['hello_sid_main_udeb'] not in list)
+        self.assertTrue(self.override['hello_squeeze_main_deb'] in list)
+        list = get_override('hello', overridetype = ['deb'], session = self.session)
+        self.assertEqual(2, len(list))
+        self.assertTrue(self.override['hello_sid_main_udeb'] not in list)
+        self.assertTrue(self.override['hello_squeeze_main_deb'] in list)
 
 if __name__ == '__main__':
     unittest.main()
