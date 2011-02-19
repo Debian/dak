@@ -66,6 +66,8 @@ class PackageTestCase(DBDakTestCase):
         suites = get_architecture_suites('kfreebsd-i386', self.session)
         self.assertEqual(2, len(suites))
         self.assertTrue(self.suite['lenny'] not in suites)
+        # check overrides
+        self.assertEqual(0, self.suite['lenny'].overrides.count())
 
     def test_poolfiles(self):
         '''
@@ -370,8 +372,9 @@ class PackageTestCase(DBDakTestCase):
     def test_components(self):
         'test class Component'
 
-        self.assertEqual(self.loc['main'], self.comp['main'].location)
-        self.assertEqual(self.loc['contrib'], self.comp['contrib'].location)
+        self.assertEqual([self.loc['main']], self.comp['main'].location)
+        self.assertEqual([self.loc['contrib']], self.comp['contrib'].location)
+        self.assertEqual(0, self.comp['main'].overrides.count())
 
     def test_get_component_by_package_suite(self):
         'test get_component_by_package_suite()'

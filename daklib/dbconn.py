@@ -467,7 +467,11 @@ __all__.append('get_archive')
 ################################################################################
 
 class BinContents(ORMObject):
-    def properties(silf):
+    def __init__(self, file = None, binary = None):
+        self.file = file
+        self.binary = binary
+
+    def properties(self):
         return ['file', 'binary']
 
 __all__.append('BinContents')
@@ -907,8 +911,8 @@ class Component(ORMObject):
         return NotImplemented
 
     def properties(self):
-        return ['component_name', 'component_id', 'description', 'location', \
-            'meets_dfsg']
+        return ['component_name', 'component_id', 'description', \
+            'location_count', 'meets_dfsg', 'overrides_count']
 
     def not_null_constraints(self):
         return ['component_name']
@@ -1810,12 +1814,22 @@ __all__.append('get_new_comments')
 
 ################################################################################
 
-class Override(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class Override(ORMObject):
+    def __init__(self, package = None, suite = None, component = None, overridetype = None, \
+        section = None, priority = None):
+        self.package = package
+        self.suite = suite
+        self.component = component
+        self.overridetype = overridetype
+        self.section = section
+        self.priority = priority
 
-    def __repr__(self):
-        return '<Override %s (%s)>' % (self.package, self.suite_id)
+    def properties(self):
+        return ['package', 'suite', 'component', 'overridetype', 'section', \
+            'priority']
+
+    def not_null_constraints(self):
+        return ['package', 'suite', 'component', 'overridetype', 'section']
 
 __all__.append('Override')
 
@@ -1869,12 +1883,15 @@ __all__.append('get_override')
 
 ################################################################################
 
-class OverrideType(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class OverrideType(ORMObject):
+    def __init__(self, overridetype = None):
+        self.overridetype = overridetype
 
-    def __repr__(self):
-        return '<OverrideType %s>' % self.overridetype
+    def properties(self):
+        return ['overridetype', 'overridetype_id', 'overrides_count']
+
+    def not_null_constraints(self):
+        return ['overridetype']
 
 __all__.append('OverrideType')
 
@@ -2071,9 +2088,16 @@ __all__.append('get_policy_queue_from_path')
 
 ################################################################################
 
-class Priority(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class Priority(ORMObject):
+    def __init__(self, priority = None, level = None):
+        self.priority = priority
+        self.level = level
+
+    def properties(self):
+        return ['priority', 'priority_id', 'level', 'overrides_count']
+
+    def not_null_constraints(self):
+        return ['priority', 'level']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -2086,9 +2110,6 @@ class Priority(object):
             return (self.priority != val)
         # This signals to use the normal comparison operator
         return NotImplemented
-
-    def __repr__(self):
-        return '<Priority %s (%s)>' % (self.priority, self.priority_id)
 
 __all__.append('Priority')
 
@@ -2141,9 +2162,15 @@ __all__.append('get_priorities')
 
 ################################################################################
 
-class Section(object):
-    def __init__(self, *args, **kwargs):
-        pass
+class Section(ORMObject):
+    def __init__(self, section = None):
+        self.section = section
+
+    def properties(self):
+        return ['section', 'section_id', 'overrides_count']
+
+    def not_null_constraints(self):
+        return ['section']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -2156,9 +2183,6 @@ class Section(object):
             return (self.section != val)
         # This signals to use the normal comparison operator
         return NotImplemented
-
-    def __repr__(self):
-        return '<Section %s>' % self.section
 
 __all__.append('Section')
 
@@ -2602,7 +2626,8 @@ class Suite(ORMObject):
         self.version = version
 
     def properties(self):
-        return ['suite_name', 'version', 'sources_count', 'binaries_count']
+        return ['suite_name', 'version', 'sources_count', 'binaries_count', \
+            'overrides_count']
 
     def not_null_constraints(self):
         return ['suite_name', 'version']
@@ -2872,7 +2897,9 @@ class DBConn(object):
             'binary_acl',
             'binary_acl_map',
             'build_queue',
+            'build_queue_files',
             'changelogs_text',
+            'changes',
             'component',
             'config',
             'changes_pending_binaries',
@@ -2899,11 +2926,6 @@ class DBConn(object):
             'suite',
             'uid',
             'upload_blocks',
-            # The following tables have primary keys but sqlalchemy
-            # version 0.5 fails to reflect them correctly with database
-            # versions before upgrade #41.
-            'changes',
-            'build_queue_files',
         )
 
         tables_no_primary = (
@@ -2911,14 +2933,12 @@ class DBConn(object):
             'changes_pending_source_files',
             'changes_pool_files',
             'deb_contents',
+            # TODO: the maintainer column in table override should be removed.
             'override',
             'suite_architectures',
             'suite_src_formats',
             'suite_build_queue_copy',
             'udeb_contents',
-            # see the comment above
-            #'changes',
-            #'build_queue_files',
         )
 
         views = (
@@ -3136,8 +3156,7 @@ class DBConn(object):
         mapper(Location, self.tbl_location,
                properties = dict(location_id = self.tbl_location.c.id,
                                  component_id = self.tbl_location.c.component,
-                                 component = relation(Component, \
-                                     backref=backref('location', uselist = False)),
+                                 component = relation(Component, backref='location'),
                                  archive_id = self.tbl_location.c.archive,
                                  archive = relation(Archive),
                                  # FIXME: the 'type' column is old cruft and
@@ -3158,16 +3177,21 @@ class DBConn(object):
 
         mapper(Override, self.tbl_override,
                properties = dict(suite_id = self.tbl_override.c.suite,
-                                 suite = relation(Suite),
+                                 suite = relation(Suite, \
+                                    backref=backref('overrides', lazy='dynamic')),
                                  package = self.tbl_override.c.package,
                                  component_id = self.tbl_override.c.component,
-                                 component = relation(Component),
+                                 component = relation(Component, \
+                                    backref=backref('overrides', lazy='dynamic')),
                                  priority_id = self.tbl_override.c.priority,
-                                 priority = relation(Priority),
+                                 priority = relation(Priority, \
+                                    backref=backref('overrides', lazy='dynamic')),
                                  section_id = self.tbl_override.c.section,
-                                 section = relation(Section),
+                                 section = relation(Section, \
+                                    backref=backref('overrides', lazy='dynamic')),
                                  overridetype_id = self.tbl_override.c.type,
-                                 overridetype = relation(OverrideType)))
+                                 overridetype = relation(OverrideType, \
+                                    backref=backref('overrides', lazy='dynamic'))))
 
         mapper(OverrideType, self.tbl_override_type,
                properties = dict(overridetype = self.tbl_override_type.c.type,
