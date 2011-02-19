@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
-""" Produces a set of graphs of NEW/BYHAND/DEFERRED"""
-# Copyright 2011 Paul Wise <pabs@debian.org>
+""" Produces a set of graphs of NEW/BYHAND/DEFERRED
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2011 Paul Wise <pabs@debian.org>
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +35,7 @@ default_names = ["byhand", "new", "deferred"]
 ################################################################################
 
 def usage(exit_code=0):
-    print """Usage: dak queue-graph
+    print """Usage: dak graph
 Graphs the number of packages in queue directories (usually new and byhand).
 
   -h, --help                show this help and exit.
