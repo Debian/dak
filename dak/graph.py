@@ -74,26 +74,26 @@ packages
 
     rrd_args += ("""
 DEF:ds1=%s:ds1:AVERAGE
-LINE2:ds1#D9382B:Total package count:
+LINE2:ds1#D9382B:changes count
 VDEF:lds1=ds1,LAST
 VDEF:minds1=ds1,MINIMUM
 VDEF:maxds1=ds1,MAXIMUM
 VDEF:avgds1=ds1,AVERAGE
-GPRINT:lds1:%%3.0lf
-GPRINT:minds1:\tMin\\: %%3.0lf
-GPRINT:maxds1:\tMax\\: %%3.0lf
-GPRINT:avgds1:\tAvg\\: %%3.0lf\\j
+GPRINT:lds1:cur\\: %%.0lf
+GPRINT:minds1:min\\: %%.0lf
+GPRINT:maxds1:max\\: %%.0lf
+GPRINT:avgds1:avg\\: %%.0lf\\j
 DEF:ds0=%s:ds0:AVERAGE
 VDEF:lds0=ds0,LAST
 VDEF:minds0=ds0,MINIMUM
 VDEF:maxds0=ds0,MAXIMUM
 VDEF:avgds0=ds0,AVERAGE
-LINE2:ds0#3069DA:Package count in %s:
-GPRINT:lds0:%%3.0lf
-GPRINT:minds0:\tMin\\: %%3.0lf
-GPRINT:maxds0:\tMax\\: %%3.0lf
-GPRINT:avgds0:\tAvg\\: %%3.0lf\\j
-""" % (rrd_file, rrd_file, name.upper())).strip().split("\n")
+LINE2:ds0#3069DA:src pkg count
+GPRINT:lds0:cur\\: %%.0lf
+GPRINT:minds0:min\\: %%.0lf
+GPRINT:maxds0:max\\: %%.0lf
+GPRINT:avgds0:avg\\: %%.0lf\\j
+""" % (rrd_file, rrd_file)).strip().split("\n")
 
     rrd_args += extra_args
     try:
