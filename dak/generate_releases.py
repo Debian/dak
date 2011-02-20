@@ -4,7 +4,7 @@
 
 @contact: Debian FTPMaster <ftpmaster@debian.org>
 @Copyright: 2001, 2002, 2006  Anthony Towns <ajt@debian.org>
-@copyright: 2009  Joerg Jaspert <joerg@debian.org>
+@copyright: 2009, 2011  Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
 """
 # This program is free software; you can redistribute it and/or modify
@@ -314,12 +314,12 @@ def main ():
                             files.append(cfile)
                         add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
                     else:
-                        disks = "%s/disks-%s" % (sec, arch)
-                        diskspath = Cnf["Dir::Root"]+tree+"/"+disks
-                        if os.path.exists(diskspath):
-                            for dir in os.listdir(diskspath):
-                                if os.path.exists("%s/%s/md5sum.txt" % (diskspath, dir)):
-                                    files.append("%s/%s/md5sum.txt" % (disks, dir))
+                        installer = "%s/installer-%s" % (sec, arch)
+                        installerpath = Cnf["Dir::Root"]+tree+"/"+installer
+                        if os.path.exists(installerpath):
+                            for directory in os.listdir(installerpath):
+                                if os.path.exists("%s/%s/images/MD5SUMS" % (installerpath, directory)):
+                                    files.append("%s/%s/images/MD5SUMS" % (installer, directory))
 
                         filepath = "%s/binary-%s/Packages" % (sec, arch)
                         for cfile in compressnames("tree::%s" % (tree), "Packages", filepath):
