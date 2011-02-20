@@ -63,11 +63,11 @@ now
 --vertical-label
 packages
 --title
-Package count: %s
+%s package count for the last %s
 --lower-limit
 0
 -E
-""" % title).strip().split("\n")
+""" % (name.upper(), title) ).strip().split("\n")
 
     if year_lines:
         rrd_args += ["--x-grid", "MONTH:1:YEAR:1:YEAR:1:31536000:%Y"]
