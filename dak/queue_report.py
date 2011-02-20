@@ -656,12 +656,12 @@ def main():
     if Cnf.has_key("Queue-Report::Options::New"):
         for dir in directories:
             print """
-<p><img src="%s-day.png" alt="%s, last day"></p>
-<p><img src="%s-week.png" alt="%s, last week"></p>
-<p><img src="%s-month.png" alt="%s, last month"></p>
-<p><img src="%s-year.png" alt="%s, last year"></p>
-<p><img src="%s-5years.png" alt="%s, last 5 years"></p>
-<p><img src="%s-10years.png" alt="%s, last 10 years"></p>
+<p><img src="stat/%s-day.png" alt="%s, last day"></p>
+<p><img src="stat/%s-week.png" alt="%s, last week"></p>
+<p><img src="stat/%s-month.png" alt="%s, last month"></p>
+<p><img src="stat/%s-year.png" alt="%s, last year"></p>
+<p><img src="stat/%s-5years.png" alt="%s, last 5 years"></p>
+<p><img src="stat/%s-10years.png" alt="%s, last 10 years"></p>
 """ % ((dir,)*12)
 
     if Cnf.has_key("Queue-Report::Options::New"):
