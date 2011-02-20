@@ -108,7 +108,7 @@ def compressnames (tree,type,file):
 decompressors = { 'zcat' : gzip.GzipFile,
                   'bzip2' : bz2.BZ2File }
 
-def print_md5sha_files (tree, files, hashop):
+def print_hash_files (tree, files, hashop):
     path = Cnf["Dir::Root"] + tree + "/"
     for name in files:
         hashvalue = ""
@@ -141,14 +141,11 @@ def print_md5sha_files (tree, files, hashop):
         else:
             out.write(" %s %8d %s\n" % (hashvalue, hashlen, name))
 
-def print_md5_files (tree, files):
-    print_md5sha_files (tree, files, apt_pkg.md5sum)
-
 def print_sha1_files (tree, files):
-    print_md5sha_files (tree, files, apt_pkg.sha1sum)
+    print_hash_files (tree, files, apt_pkg.sha1sum)
 
 def print_sha256_files (tree, files):
-    print_md5sha_files (tree, files, apt_pkg.sha256sum)
+    print_hash_files (tree, files, apt_pkg.sha256sum)
 
 def write_release_file (relpath, suite, component, origin, label, arch, version="", suite_suffix="", notautomatic="", butautomaticupgrades=""):
     try:
@@ -371,8 +368,6 @@ def main ():
         else:
             print "ALERT: no tree/bindirectory for %s" % (tree)
 
-        out.write("MD5Sum:\n")
-        print_md5_files(tree, files)
         out.write("SHA1:\n")
         print_sha1_files(tree, files)
         out.write("SHA256:\n")
