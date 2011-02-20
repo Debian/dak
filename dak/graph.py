@@ -98,7 +98,7 @@ GPRINT:avgds0:avg\\: %%.0lf\\j
     rrd_args += extra_args
     try:
         ret = rrdtool.graph(*rrd_args)
-    except rrdtool.error as e:
+    except rrdtool.error, e:
         print('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e))
 
 ################################################################################
