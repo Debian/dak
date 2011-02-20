@@ -222,6 +222,7 @@ def header():
 
 def footer():
     print "<p class=\"timestamp\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
+    print "<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>"
 
     print """
     <div class="footer">
@@ -652,17 +653,6 @@ def main():
 
     if Cnf.has_key("Queue-Report::Options::822"):
         f.close()
-
-    if Cnf.has_key("Queue-Report::Options::New"):
-        for dir in directories:
-            print """
-<p><img src="stat/%s-day.png" alt="%s, last day"></p>
-<p><img src="stat/%s-week.png" alt="%s, last week"></p>
-<p><img src="stat/%s-month.png" alt="%s, last month"></p>
-<p><img src="stat/%s-year.png" alt="%s, last year"></p>
-<p><img src="stat/%s-5years.png" alt="%s, last 5 years"></p>
-<p><img src="stat/%s-10years.png" alt="%s, last 10 years"></p>
-""" % ((dir,)*12)
 
     if Cnf.has_key("Queue-Report::Options::New"):
         footer()
