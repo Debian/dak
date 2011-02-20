@@ -101,8 +101,8 @@ class DBDakTestCase(DakTestCase):
         if 'comp' in self.__dict__:
             return
         self.comp = {}
-        self.comp['main'] = Component(component_name = 'main')
-        self.comp['contrib'] = Component(component_name = 'contrib')
+        for name in ('main', 'contrib', 'non-free'):
+            self.comp[name] = Component(component_name = name)
         self.session.add_all(self.comp.values())
 
     def setup_locations(self):
@@ -322,7 +322,8 @@ class DBDakTestCase(DakTestCase):
     def tearDown(self):
         self.session.rollback()
         for class_ in self.classes_to_clean():
-            self.session.query(class_).delete()
+            for object_ in self.session.query(class_):
+                self.session.delete(object_)
         self.session.commit()
         # usually there is no need to drop all tables here
         #self.metadata.drop_all()
