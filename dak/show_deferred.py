@@ -22,6 +22,7 @@
 
 import sys, os, re, time
 import apt_pkg
+import rrdtool
 
 try:
     # starting with squeeze
@@ -124,6 +125,59 @@ def table_row(changesname, delay, changed_by, closes):
     row_number+=1
     return res
 
+def update_graph_database(rrd_dir, *counts):
+    if not rrd_dir:
+        return
+
+    rrd_file = os.path.join(rrd_dir, 'deferred.rrd')
+    counts = [str(count) for count in counts]
+    update = [rrd_file, "N:"+":".join(counts)]
+
+    try:
+        rrdtool.update(*update)
+    except rrdtool.error:
+        create = [rrd_file]+"""
+--step
+300
+--start
+0
+DS:day0:GAUGE:7200:0:1000
+DS:day1:GAUGE:7200:0:1000
+DS:day2:GAUGE:7200:0:1000
+DS:day3:GAUGE:7200:0:1000
+DS:day4:GAUGE:7200:0:1000
+DS:day5:GAUGE:7200:0:1000
+DS:day6:GAUGE:7200:0:1000
+DS:day7:GAUGE:7200:0:1000
+DS:day8:GAUGE:7200:0:1000
+DS:day9:GAUGE:7200:0:1000
+DS:day10:GAUGE:7200:0:1000
+DS:day11:GAUGE:7200:0:1000
+DS:day12:GAUGE:7200:0:1000
+DS:day13:GAUGE:7200:0:1000
+DS:day14:GAUGE:7200:0:1000
+DS:day15:GAUGE:7200:0:1000
+RRA:AVERAGE:0.5:1:599
+RRA:AVERAGE:0.5:6:700
+RRA:AVERAGE:0.5:24:775
+RRA:AVERAGE:0.5:288:795
+RRA:MIN:0.5:1:600
+RRA:MIN:0.5:6:700
+RRA:MIN:0.5:24:775
+RRA:MIN:0.5:288:795
+RRA:MAX:0.5:1:600
+RRA:MAX:0.5:6:700
+RRA:MAX:0.5:24:775
+RRA:MAX:0.5:288:795
+""".strip().split("\n")
+        try:
+            rc = rrdtool.create(*create)
+            ru = rrdtool.update(*update)
+        except rrdtool.error, e:
+            print('warning: queue_report: rrdtool error, skipping %s.rrd: %s' % (type, e))
+    except NameError:
+        pass
+
 def get_upload_data(changesfn):
     achanges = deb822.Changes(file(changesfn))
     changesname = os.path.basename(changesfn)
@@ -134,6 +188,7 @@ def get_upload_data(changesfn):
         remainingtime = (delaydays>0)*max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
         delay = "%d days %02d:%02d" %(max(delaydays-1,0), int(remainingtime/3600),int(remainingtime/60)%60)
     else:
+        delaydays = 0
         remainingtime = 0
 
     uploader = achanges.get('changed-by')
@@ -160,9 +215,9 @@ def get_upload_data(changesfn):
                 if os.path.exists(qfn):
                     os.symlink(qfn,lfn)
                     os.chmod(qfn, 0644)
-    return (max(delaydays-1,0)*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes','').split(),achanges)
+    return (max(delaydays-1,0)*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes','').split(),achanges, delaydays)
 
-def list_uploads(filelist):
+def list_uploads(filelist, rrd_dir):
     uploads = map(get_upload_data, filelist)
     uploads.sort()
     # print the summary page
@@ -179,7 +234,9 @@ def list_uploads(filelist):
         fn = os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp')
         f = open(fn,"w")
         try:
+            counts = [0]*16
             for u in uploads:
+                counts[u[6]] += 1
                 print >> f, "Changes-file: %s"%u[1]
                 fields = """Location: DEFERRED
 Delayed-Until: %s
@@ -191,6 +248,7 @@ Delay-Remaining: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time
             f.close()
             os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp'),
                       os.path.join(Cnf["Show-Deferred::LinkPath"],'status'))
+            update_graph_database(rrd_dir, *counts)
         except:
             os.unlink(fn)
             raise
@@ -204,6 +262,7 @@ def usage (exit_code=0):
   -h, --help                    show this help and exit.
   -p, --link-path [path]        override output directory.
   -d, --deferred-queue [path]   path to the deferred queue
+  -r, --rrd=key                 Directory where rrd files to be updated are stored
   """
     sys.exit(exit_code)
 
@@ -212,7 +271,8 @@ def init():
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Show-Deferred::Options::Help"),
                  ("p","link-path","Show-Deferred::LinkPath","HasArg"),
-                 ("d","deferred-queue","Show-Deferred::DeferredQueue","HasArg")]
+                 ("d","deferred-queue","Show-Deferred::DeferredQueue","HasArg"),
+                 ('r',"rrd","Show-Deferred::Options::Rrd", "HasArg")]
     args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
     for i in ["help"]:
         if not Cnf.has_key("Show-Deferred::Options::%s" % (i)):
@@ -236,11 +296,18 @@ def main():
     if len(args)!=0:
         usage(1)
 
+    if Cnf.has_key("Show-Deferred::Options::Rrd"):
+        rrd_dir = Cnf["Show-Deferred::Options::Rrd"]
+    elif Cnf.has_key("Dir::Rrd"):
+        rrd_dir = Cnf["Dir::Rrd"]
+    else:
+        rrd_dir = None
+
     filelist = []
     for r,d,f  in os.walk(Cnf["Show-Deferred::DeferredQueue"]):
         filelist += map (lambda x: os.path.join(r,x),
                          filter(lambda x: x.endswith('.changes'), f))
-    list_uploads(filelist)
+    list_uploads(filelist, rrd_dir)
 
     available_changes = set(map(os.path.basename,filelist))
     if Cnf.has_key("Show-Deferred::LinkPath"):
@@ -251,3 +318,6 @@ def main():
                 if (not os.path.exists(afp) or
                     (af.endswith('.changes') and af not in available_changes)):
                     os.unlink(afp)
+
+if __name__ == '__main__':
+    main()
