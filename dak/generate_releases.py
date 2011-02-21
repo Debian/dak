@@ -108,6 +108,10 @@ def compressnames (tree,type,file):
 decompressors = { 'zcat' : gzip.GzipFile,
                   'bzip2' : bz2.BZ2File }
 
+hashfuncs = { 'MD5' : apt_pkg.md5sum,
+              'SHA1' : apt_pkg.sha1sum,
+              'SHA256' : apt_pkg.sha256sum }
+
 def print_hash_files (tree, files, hashop):
     path = Cnf["Dir::Root"] + tree + "/"
     for name in files:
@@ -120,12 +124,12 @@ def print_hash_files (tree, files, hashop):
                 (cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
                 file_handle = decompressors[ cat ]( "%s%s%s" % (path, name, ext) )
                 contents = file_handle.read()
-                hashvalue = hashop(contents)
+                hashvalue = hashfuncs[ hashop ](contents)
                 hashlen = len(contents)
             else:
                 try:
                     file_handle = utils.open_file(path + name)
-                    hashvalue = hashop(file_handle)
+                    hashvalue = hashfuncs[ hashop ](file_handle)
                     hashlen = os.stat(path + name).st_size
                 except:
                     raise
@@ -140,12 +144,6 @@ def print_hash_files (tree, files, hashop):
             raise
         else:
             out.write(" %s %8d %s\n" % (hashvalue, hashlen, name))
-
-def print_sha1_files (tree, files):
-    print_hash_files (tree, files, apt_pkg.sha1sum)
-
-def print_sha256_files (tree, files):
-    print_hash_files (tree, files, apt_pkg.sha256sum)
 
 def write_release_file (relpath, suite, component, origin, label, arch, version="", suite_suffix="", notautomatic="", butautomaticupgrades=""):
     try:
@@ -368,10 +366,10 @@ def main ():
         else:
             print "ALERT: no tree/bindirectory for %s" % (tree)
 
-        out.write("SHA1:\n")
-        print_sha1_files(tree, files)
-        out.write("SHA256:\n")
-        print_sha256_files(tree, files)
+        for hashvalue in cnf.SubTree("Generate-Releases").List():
+            if suite in [ i.lower() for i in cnf.ValueList("Generate-Releases::%s" % (hashvalue)) ]:
+                out.write("%s:\n" % (hashvalue))
+                print_hash_files(tree, files, hashvalue)
 
         out.close()
         if Cnf.has_key("Dinstall::SigningKeyring"):
