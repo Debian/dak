@@ -108,7 +108,7 @@ def compressnames (tree,type,file):
 decompressors = { 'zcat' : gzip.GzipFile,
                   'bzip2' : bz2.BZ2File }
 
-hashfuncs = { 'MD5' : apt_pkg.md5sum,
+hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
               'SHA1' : apt_pkg.sha1sum,
               'SHA256' : apt_pkg.sha256sum }
 
