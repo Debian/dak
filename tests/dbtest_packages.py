@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from db_test import DBDakTestCase
+from base_test import fixture
 
 from daklib.dbconn import *
 from daklib.queue_install import package_to_suite
@@ -84,7 +85,7 @@ class PackageTestCase(DBDakTestCase):
 
         main = self.loc['main']
         contrib = self.loc['contrib']
-        self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/', main.path)
+        self.assertEqual(fixture('ftp/pool/'), main.path)
         count = len(self.file.keys()) - 2
         self.assertEqual(count, main.files.count())
         self.assertEqual(2, contrib.files.count())
@@ -103,7 +104,7 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(count - 1, main.files.count())
         self.assertEqual(3, contrib.files.count())
         # test fullpath
-        self.assertEqual('/srv/ftp-master.debian.org/ftp/pool/main/s/sl/sl_3.03-16.dsc', \
+        self.assertEqual(fixture('ftp/pool/main/s/sl/sl_3.03-16.dsc'), \
             self.file['sl_3.03-16.dsc'].fullpath)
         # test check_poolfile()
         self.assertEqual((True, self.file['sl_3.03-16.dsc']), \

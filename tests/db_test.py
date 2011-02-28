@@ -113,11 +113,9 @@ class DBDakTestCase(DakTestCase):
         self.setup_components()
         self.loc = {}
         self.loc['main'] = Location( \
-            path = '/srv/ftp-master.debian.org/ftp/pool/', \
-            component = self.comp['main'])
+            path = fixture('ftp/pool/'), component = self.comp['main'])
         self.loc['contrib'] = Location( \
-            path = '/srv/ftp-master.debian.org/ftp/pool/', \
-            component = self.comp['contrib'])
+            path = fixture('ftp/pool/'), component = self.comp['contrib'])
         self.session.add_all(self.loc.values())
 
     def setup_poolfiles(self):
