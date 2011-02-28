@@ -155,6 +155,12 @@ class ContentsTestCase(DBDakTestCase):
         self.assertEqual('tests/fixtures/ftp/squeeze/main/Contents-i386.gz', \
             cw.output_filename())
 
+    def test_scan_contents(self):
+        self.setup_binaries()
+        filelist = [f for f in self.binary['hello_2.2-1_i386'].scan_contents()]
+        self.assertEqual(['usr/bin/hello', 'usr/share/doc/hello/copyright'],
+            filelist)
+
     def classes_to_clean(self):
         return [Override, Suite, BinContents, DBBinary, DBSource, Architecture, Section, \
             OverrideType, Maintainer, Component, Priority, PoolFile]

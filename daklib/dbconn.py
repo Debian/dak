@@ -34,6 +34,7 @@
 ################################################################################
 
 import os
+from os.path import normpath
 import re
 import psycopg2
 import traceback
@@ -49,6 +50,8 @@ except:
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
+from subprocess import Popen, PIPE
+from tarfile import TarFile
 
 from inspect import getargspec
 
@@ -501,6 +504,21 @@ class DBBinary(ORMObject):
 
     def get_component_name(self):
         return self.poolfile.location.component.component_name
+
+    def scan_contents(self):
+        '''
+        Yields the contents of the package. Only regular files are yielded and
+        the path names are normalized.
+        '''
+        fullpath = self.poolfile.fullpath
+        debdata = Popen(['dpkg-deb', '--fsys-tarfile', fullpath],
+            stdout = PIPE).stdout
+        tar = TarFile.open(fileobj = debdata, mode = 'r|')
+        for member in tar.getmembers():
+            if member.isfile():
+                yield normpath(member.name)
+        tar.close()
+        debdata.close()
 
 __all__.append('DBBinary')
 
