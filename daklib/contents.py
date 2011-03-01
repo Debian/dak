@@ -213,7 +213,7 @@ class ContentsScanner(object):
         argument.
         '''
         session = DBConn().session()
-        query = session.query(DBBinary)
+        query = session.query(DBBinary).filter(DBBinary.contents == None)
         if limit is not None:
             query = query.limit(limit)
         threadpool = ThreadPool()
