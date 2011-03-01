@@ -2,9 +2,8 @@
 
 from db_test import DBDakTestCase
 
-from daklib.dbconn import DBConn, BinContents, OverrideType, get_override_type, \
-    Section, get_section, get_sections, Priority, get_priority, get_priorities, \
-    Override, get_override
+from daklib.dbconn import *
+from daklib.contents import ContentsWriter, ContentsScanner
 
 from sqlalchemy.exc import FlushError, IntegrityError
 import unittest
@@ -128,6 +127,49 @@ class ContentsTestCase(DBDakTestCase):
             self.comp['main'].overrides.filter_by(suite = self.suite['sid']).one())
         self.assertEqual(self.override['hello_sid_main_udeb'], \
             self.otype['udeb'].overrides.one())
+
+    def test_contentswriter(self):
+        '''
+        Test the ContentsWriter class.
+        '''
+        self.setup_suites()
+        self.setup_architectures()
+        self.setup_overridetypes()
+        self.setup_binaries()
+        self.setup_overrides()
+        self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '/usr/bin/hello'))
+        self.session.commit()
+        cw = ContentsWriter(self.suite['squeeze'], self.arch['i386'], self.otype['deb'])
+        self.assertEqual(['/usr/bin/hello                                              python/hello\n'], \
+            cw.get_list())
+        # test formatline and sort order
+        self.assertEqual('/usr/bin/hello                                              python/hello\n', \
+            cw.formatline('/usr/bin/hello', ['python/hello']))
+        self.assertEqual('/usr/bin/hello                                              editors/emacs,python/hello,utils/sl\n', \
+            cw.formatline('/usr/bin/hello', ['editors/emacs', 'python/hello', 'utils/sl']))
+        # test output_filename
+        self.assertEqual('tests/fixtures/ftp/squeeze/Contents-i386.gz', \
+            cw.output_filename())
+        cw = ContentsWriter(self.suite['squeeze'], self.arch['i386'], \
+            self.otype['udeb'], self.comp['main'])
+        self.assertEqual('tests/fixtures/ftp/squeeze/main/Contents-i386.gz', \
+            cw.output_filename())
+
+    def test_scan_contents(self):
+        self.setup_binaries()
+        filelist = [f for f in self.binary['hello_2.2-1_i386'].scan_contents()]
+        self.assertEqual(['usr/bin/hello', 'usr/share/doc/hello/copyright'],
+            filelist)
+        self.session.commit()
+        ContentsScanner(self.binary['hello_2.2-1_i386']).scan()
+        bin_contents_list = self.binary['hello_2.2-1_i386'].contents.all()
+        self.assertEqual(2, len(bin_contents_list))
+        self.assertEqual('usr/bin/hello', bin_contents_list[0].file)
+        self.assertEqual('usr/share/doc/hello/copyright', bin_contents_list[1].file)
+
+    def classes_to_clean(self):
+        return [Override, Suite, BinContents, DBBinary, DBSource, Architecture, Section, \
+            OverrideType, Maintainer, Component, Priority, PoolFile]
 
 if __name__ == '__main__':
     unittest.main()
