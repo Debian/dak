@@ -27,6 +27,7 @@ Helper code for contents generation.
 
 from daklib.dbconn import *
 from daklib.config import Config
+from daklib.threadpool import ThreadPool
 
 from sqlalchemy import desc, or_
 from subprocess import Popen, PIPE
@@ -177,3 +178,46 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
             pipe.write(item)
         pipe.close()
         output_file.close()
+
+
+class ContentsScanner(object):
+    '''
+    ContentsScanner provides a threadsafe method scan() to scan the contents of
+    a DBBinary object.
+    '''
+    def __init__(self, binary):
+        '''
+        The argument binary is the actual DBBinary object that should be
+        scanned.
+        '''
+        self.binary_id = binary.binary_id
+
+    def scan(self, dummy_arg = None):
+        '''
+        This method does the actual scan and fills in the associated BinContents
+        property. It commits any changes to the database. The argument dummy_arg
+        is ignored but needed by our threadpool implementation.
+        '''
+        session = DBConn().session()
+        binary = session.query(DBBinary).get(self.binary_id)
+        for filename in binary.scan_contents():
+            binary.contents.append(BinContents(file = filename))
+        session.commit()
+        session.close()
+
+    @classmethod
+    def scan_all(class_, limit = None):
+        '''
+        The class method scan_all() scans all binaries using multiple threads.
+        The number of binaries to be scanned can be limited with the limit
+        argument.
+        '''
+        session = DBConn().session()
+        query = session.query(DBBinary)
+        if limit is not None:
+            query = query.limit(limit)
+        threadpool = ThreadPool()
+        for binary in query.yield_per(100):
+            threadpool.queueTask(ContentsScanner(binary).scan)
+        threadpool.joinAll()
+        session.close()

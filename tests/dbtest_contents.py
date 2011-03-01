@@ -3,7 +3,7 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import *
-from daklib.contents import ContentsWriter
+from daklib.contents import ContentsWriter, ContentsScanner
 
 from sqlalchemy.exc import FlushError, IntegrityError
 import unittest
@@ -160,6 +160,12 @@ class ContentsTestCase(DBDakTestCase):
         filelist = [f for f in self.binary['hello_2.2-1_i386'].scan_contents()]
         self.assertEqual(['usr/bin/hello', 'usr/share/doc/hello/copyright'],
             filelist)
+        self.session.commit()
+        ContentsScanner(self.binary['hello_2.2-1_i386']).scan()
+        bin_contents_list = self.binary['hello_2.2-1_i386'].contents.all()
+        self.assertEqual(2, len(bin_contents_list))
+        self.assertEqual('usr/bin/hello', bin_contents_list[0].file)
+        self.assertEqual('usr/share/doc/hello/copyright', bin_contents_list[1].file)
 
     def classes_to_clean(self):
         return [Override, Suite, BinContents, DBBinary, DBSource, Architecture, Section, \
