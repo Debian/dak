@@ -519,7 +519,7 @@ class DBBinary(ORMObject):
             if member.isfile():
                 try:
                     name = member.name.decode('utf-8')
-                catch UnicodeDecodeError:
+                except UnicodeDecodeError:
                     name = member.name.decode('iso8859-1')
                 yield normpath(name)
         tar.close()
