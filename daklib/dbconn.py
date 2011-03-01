@@ -508,8 +508,8 @@ class DBBinary(ORMObject):
     def scan_contents(self):
         '''
         Yields the contents of the package. Only regular files are yielded and
-        the path names are normalized after converting them from iso8859-1
-        encoding.
+        the path names are normalized after converting them from either utf-8 or
+        iso8859-1 encoding.
         '''
         fullpath = self.poolfile.fullpath
         debdata = Popen(['dpkg-deb', '--fsys-tarfile', fullpath],
@@ -517,7 +517,11 @@ class DBBinary(ORMObject):
         tar = TarFile.open(fileobj = debdata, mode = 'r|')
         for member in tar.getmembers():
             if member.isfile():
-                yield normpath(member.name.decode('iso8859-1'))
+                try:
+                    name = member.name.decode('utf-8')
+                catch UnicodeDecodeError:
+                    name = member.name.decode('iso8859-1')
+                yield normpath(name)
         tar.close()
         debdata.close()
 
