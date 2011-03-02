@@ -3288,7 +3288,7 @@ class DBConn(object):
         mapper(BinContents, self.tbl_bin_contents,
             properties = dict(
                 binary = relation(DBBinary,
-                    backref=backref('contents', lazy='dynamic')),
+                    backref=backref('contents', lazy='dynamic', cascade='all')),
                 file = self.tbl_bin_contents.c.file))
 
     ## Connection functions
