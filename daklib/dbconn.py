@@ -512,9 +512,8 @@ class DBBinary(ORMObject):
         iso8859-1 encoding.
         '''
         fullpath = self.poolfile.fullpath
-        debdata = Popen(['dpkg-deb', '--fsys-tarfile', fullpath],
-            stdout = PIPE).stdout
-        tar = TarFile.open(fileobj = debdata, mode = 'r|')
+        dpkg = Popen(['dpkg-deb', '--fsys-tarfile', fullpath], stdout = PIPE)
+        tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
         for member in tar.getmembers():
             if member.isfile():
                 try:
@@ -523,7 +522,8 @@ class DBBinary(ORMObject):
                     name = member.name.decode('iso8859-1')
                 yield normpath(name)
         tar.close()
-        debdata.close()
+        dpkg.stdout.close()
+        dpkg.wait()
 
 __all__.append('DBBinary')
 
