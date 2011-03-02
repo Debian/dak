@@ -210,14 +210,19 @@ class ContentsScanner(object):
         '''
         The class method scan_all() scans all binaries using multiple threads.
         The number of binaries to be scanned can be limited with the limit
-        argument.
+        argument. Returns the number of processed and remaining packages as a
+        dict.
         '''
         session = DBConn().session()
         query = session.query(DBBinary).filter(DBBinary.contents == None)
+        remaining = query.count
         if limit is not None:
             query = query.limit(limit)
+        processed = query.count()
         threadpool = ThreadPool()
         for binary in query.yield_per(100):
             threadpool.queueTask(ContentsScanner(binary).scan)
         threadpool.joinAll()
+        remaining = remaining()
         session.close()
+        return { 'processed': processed, 'remaining': remaining }
