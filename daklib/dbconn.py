@@ -512,9 +512,8 @@ class DBBinary(ORMObject):
         iso8859-1 encoding.
         '''
         fullpath = self.poolfile.fullpath
-        debdata = Popen(['dpkg-deb', '--fsys-tarfile', fullpath],
-            stdout = PIPE).stdout
-        tar = TarFile.open(fileobj = debdata, mode = 'r|')
+        dpkg = Popen(['dpkg-deb', '--fsys-tarfile', fullpath], stdout = PIPE)
+        tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
         for member in tar.getmembers():
             if member.isfile():
                 try:
@@ -523,7 +522,8 @@ class DBBinary(ORMObject):
                     name = member.name.decode('iso8859-1')
                 yield normpath(name)
         tar.close()
-        debdata.close()
+        dpkg.stdout.close()
+        dpkg.wait()
 
 __all__.append('DBBinary')
 
@@ -3306,8 +3306,14 @@ class DBConn(object):
             connstr = "postgres:///%s" % cnf["DB::Name"]
             if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
+        if not cnf.has_key('DB::PoolSize'):
+            cnf['DB::PoolSize'] = '5'
+        if not cnf.has_key('DB::MaxOverflow'):
+            cnf['DB::MaxOverflow'] = '10'
 
-        self.db_pg   = create_engine(connstr, echo=self.debug)
+        self.db_pg   = create_engine(connstr, echo=self.debug,
+            pool_size=int(cnf['DB::PoolSize']),
+            max_overflow=int(cnf['DB::MaxOverflow']))
         self.db_meta = MetaData()
         self.db_meta.bind = self.db_pg
         self.db_smaker = sessionmaker(bind=self.db_pg,
