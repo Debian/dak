@@ -154,6 +154,9 @@ class ContentsTestCase(DBDakTestCase):
             self.otype['udeb'], self.comp['main'])
         self.assertEqual('tests/fixtures/ftp/squeeze/main/Contents-i386.gz', \
             cw.output_filename())
+        # test unicode support
+        self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '\xc3\xb6'))
+        self.session.commit()
 
     def test_scan_contents(self):
         self.setup_binaries()
