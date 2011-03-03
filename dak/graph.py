@@ -22,7 +22,7 @@
 
 import os
 import sys
-import coloursys
+import colorsys
 
 import rrdtool
 import apt_pkg
