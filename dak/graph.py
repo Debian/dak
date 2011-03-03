@@ -22,6 +22,7 @@
 
 import os
 import sys
+import colorsys
 
 import rrdtool
 import apt_pkg
@@ -49,7 +50,65 @@ Graphs the number of packages in queue directories (usually new and byhand).
 
 ################################################################################
 
-def graph(rrd_dir, image_dir, name, extra_args, graph, title, start, year_lines=False):
+def graph(*args):
+    if args[2] == "deferred":
+        graph_deferred(*args)
+    else:
+        graph_normal(*args)
+
+def deferred_colours():
+    colours = [0]*16
+    for i in range(0,16):
+        colours[i] = colorsys.hsv_to_rgb(i/16.0, 1.0, 0.5+i/32.0)
+        colours[i] = ''.join(['%02X' % (c*255) for c in colours[i]])
+    return colours
+
+colours = deferred_colours()
+
+def graph_deferred(rrd_dir, image_dir, name, extra_args, graph, title, start, year_lines=False):
+    image_file = os.path.join(image_dir, "%s-%s.png" % (name, graph))
+    rrd_file = os.path.join(rrd_dir, "%s.rrd" % name)
+    rrd_args = [image_file, "--start", start]
+    rrd_args += ("""
+--end
+now
+--width
+600
+--height
+150
+--vertical-label
+changes
+--title
+%s changes count for the last %s
+--lower-limit
+0
+-E
+""" % (name.upper(), title) ).strip().split("\n")
+
+    if year_lines:
+        rrd_args += ["--x-grid", "MONTH:1:YEAR:1:YEAR:1:31536000:%Y"]
+
+    for i in range(0,16):
+        rrd_args += ("""
+DEF:d%i=%s:day%i:AVERAGE
+AREA:d%i#%s:%i-day changes count:STACK
+VDEF:ld%i=d%i,LAST
+VDEF:mind%i=d%i,MINIMUM
+VDEF:maxd%i=d%i,MAXIMUM
+VDEF:avgd%i=d%i,AVERAGE
+GPRINT:ld%i:cur\\: %%.0lf
+GPRINT:mind%i:min\\: %%.0lf
+GPRINT:maxd%i:max\\: %%.0lf
+GPRINT:avgd%i:avg\\: %%.0lf\\j
+""" % ((i, rrd_file, i, i, colours[i])+(i,)*13)).strip().split("\n")
+
+    rrd_args += extra_args
+    try:
+        ret = rrdtool.graph(*rrd_args)
+    except rrdtool.error, e:
+        print('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e))
+
+def graph_normal(rrd_dir, image_dir, name, extra_args, graph, title, start, year_lines=False):
     image_file = os.path.join(image_dir, "%s-%s.png" % (name, graph))
     rrd_file = os.path.join(rrd_dir, "%s.rrd" % name)
     rrd_args = [image_file, "--start", start]
