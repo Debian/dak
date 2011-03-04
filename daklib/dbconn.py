@@ -516,11 +516,13 @@ class DBBinary(ORMObject):
         tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
         for member in tar.getmembers():
             if member.isfile():
+                name = normpath(member.name)
+                # enforce proper utf-8 encoding
                 try:
-                    name = member.name.decode('utf-8')
+                    name.decode('utf-8')
                 except UnicodeDecodeError:
-                    name = member.name.decode('iso8859-1')
-                yield normpath(name)
+                    name = name.decode('iso8859-1').encode('utf-8')
+                yield name
         tar.close()
         dpkg.stdout.close()
         dpkg.wait()
