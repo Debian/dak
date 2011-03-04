@@ -107,3 +107,5 @@ if [ ! -z "$changes" ]; then
     do_buildd
     do_dists
 fi
+
+dak contents -l 1000 bootstrap_bin
