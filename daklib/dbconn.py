@@ -508,12 +508,14 @@ class DBBinary(ORMObject):
     def scan_contents(self):
         '''
         Yields the contents of the package. Only regular files are yielded and
-        the path names are normalized after converting them from either utf-8 or
-        iso8859-1 encoding.
+        the path names are normalized after converting them from either utf-8
+        or iso8859-1 encoding. It yields the string ' <EMPTY PACKAGE>' if the
+        package does not contain any regular file.
         '''
         fullpath = self.poolfile.fullpath
         dpkg = Popen(['dpkg-deb', '--fsys-tarfile', fullpath], stdout = PIPE)
         tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
+        anything_yielded = False
         for member in tar.getmembers():
             if member.isfile():
                 name = normpath(member.name)
@@ -523,6 +525,9 @@ class DBBinary(ORMObject):
                 except UnicodeDecodeError:
                     name = name.decode('iso8859-1').encode('utf-8')
                 yield name
+                anything_yielded = True
+        if not anything_yielded:
+            yield ' <EMPTY PACKAGE>'
         tar.close()
         dpkg.stdout.close()
         dpkg.wait()
