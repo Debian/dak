@@ -632,7 +632,7 @@ def scan_all(limit):
     result = ContentsScanner.scan_all(limit)
     processed = '%(processed)d packages processed' % result
     remaining = '%(remaining)d packages remaining' % result
-    Logger([processed, remaining])
+    Logger.log([processed, remaining])
 
 ################################################################################
 
@@ -673,16 +673,18 @@ def main():
                          stream = sys.stderr )
 
     global Logger
-    Logger = daklog.Loggor(cnf.Conf, 'contents')
+    Logger = daklog.Logger(cnf.Cnf, 'contents')
 
     limit = None
     if cnf.has_key("%s::%s" % (options_prefix,"Limit")):
         limit = cnf["%s::%s" % (options_prefix,"Limit")]
+
     if args[0] == 'bootstrap_bin':
         scan_all(limit)
-        return
+    else:
+        commands[args[0]](Contents())
 
-    commands[args[0]](Contents())
+    Logger.close()
 
 def which_suites(session):
     """
