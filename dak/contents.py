@@ -48,6 +48,10 @@ from daklib import utils
 from daklib.binary import Binary
 from daklib.config import Config
 from daklib.dbconn import *
+from daklib.contents import ContentsScanner
+from daklib import daklog
+
+Logger = None
 
 ################################################################################
 
@@ -79,6 +83,9 @@ OPTIONS
 
      -s, --suite={stable,testing,unstable,...}
         only operate on a single suite
+
+     -l, --limit=NUMBER
+        optional package limit for bootstrap_bin
 """
     sys.exit(exit_code)
 
@@ -621,6 +628,12 @@ class Contents(object):
         return arch_list
 
 
+def scan_all(limit):
+    result = ContentsScanner.scan_all(limit)
+    processed = '%(processed)d packages processed' % result
+    remaining = '%(remaining)d packages remaining' % result
+    Logger([processed, remaining])
+
 ################################################################################
 
 def main():
@@ -628,6 +641,7 @@ def main():
 
     arguments = [('h',"help", "%s::%s" % (options_prefix,"Help")),
                  ('s',"suite", "%s::%s" % (options_prefix,"Suite"),"HasArg"),
+                 ('l',"limit", "%s::%s" % (options_prefix,"Limit"),"HasArg"),
                  ('q',"quiet", "%s::%s" % (options_prefix,"Quiet")),
                  ('v',"verbose", "%s::%s" % (options_prefix,"Verbose")),
                 ]
@@ -657,6 +671,16 @@ def main():
     logging.basicConfig( level=level,
                          format='%(asctime)s %(levelname)s %(message)s',
                          stream = sys.stderr )
+
+    global Logger
+    Logger = daklog.Loggor(cnf.Conf, 'contents')
+
+    limit = None
+    if cnf.has_key("%s::%s" % (options_prefix,"Limit")):
+        limit = cnf["%s::%s" % (options_prefix,"Limit")]
+    if args[0] == 'bootstrap_bin':
+        scan_all(limit)
+        return
 
     commands[args[0]](Contents())
 
