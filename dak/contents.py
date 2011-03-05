@@ -40,7 +40,7 @@ import apt_pkg
 
 from daklib.config import Config
 from daklib.dbconn import *
-from daklib.contents import ContentsScanner
+from daklib.contents import ContentsScanner, ContentsWriter
 from daklib import daklog
 from daklib import utils
 
@@ -77,7 +77,7 @@ OPTIONS for scan
 
 def write_all(cnf, suite_names = [], force = None):
     Logger = daklog.Logger(cnf.Cnf, 'contents generate')
-    result = ContentsScanner.scan_all(limit)
+    ContentsWriter.write_all(suite_names, force)
     Logger.close()
 
 ################################################################################
