@@ -182,9 +182,10 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
             if header_file:
                 header_file.close()
 
-    def write_file(self):
+    def write_file(self, dummy_arg = None):
         '''
-        Write the output file.
+        Write the output file. The argument dummy_arg is ignored but needed by
+        our threadpool implementation.
         '''
         command = ['gzip', '--rsyncable']
         output_file = open(self.output_filename(), 'w')
@@ -194,6 +195,37 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
             pipe.write(item)
         pipe.close()
         output_file.close()
+
+    @classmethod
+    def write_all(class_, suite_names = [], force = False):
+        '''
+        Writes all Contents files for suites in list suite_names which defaults
+        to all 'touchable' suites if not specified explicitely. Untouchable
+        suites will be included if the force argument is set to True.
+        '''
+        session = DBConn().session()
+        suite_query = session.query(Suites)
+        if len(suite_names) > 0:
+            suite_query = suite_query.filter(Suite.suitename.in_(suite_names))
+        if not force:
+            suite_query = suite_query.filter_by(untouchable = False)
+        main = get_component('main', session)
+        non_free = get_component('non-free', session)
+        deb = get_override_type('deb', session)
+        udeb = get_override_type('udeb', session)
+        threadpool = ThreadPool()
+        for suite in suite_query:
+            for architecture in suite.architectures:
+                # handle 'deb' packages
+                writer = ContentsWriter(suite, architecture, deb)
+                threadpool.queueTask(writer.write_file)
+                # handle 'udeb' packages for 'main' and 'non-free'
+                writer = ContentsWriter(suite, architecture, udeb, component = main)
+                threadpool.queueTask(writer.write_file)
+                writer = ContentsWriter(suite, architecture, udeb, component = non_free)
+                threadpool.queueTask(writer.write_file)
+        threadpool.joinAll()
+        session.close()
 
 
 class ContentsScanner(object):
