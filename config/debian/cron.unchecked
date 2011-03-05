@@ -108,4 +108,4 @@ if [ ! -z "$changes" ]; then
     do_dists
 fi
 
-dak contents -l 1000 bootstrap_bin
+dak contents -l 5000 scan
