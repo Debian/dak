@@ -140,12 +140,12 @@ class ContentsTestCase(DBDakTestCase):
         self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '/usr/bin/hello'))
         self.session.commit()
         cw = ContentsWriter(self.suite['squeeze'], self.arch['i386'], self.otype['deb'])
-        self.assertEqual(['/usr/bin/hello                                              python/hello\n'], \
+        self.assertEqual(['/usr/bin/hello                                          python/hello\n'], \
             cw.get_list())
         # test formatline and sort order
-        self.assertEqual('/usr/bin/hello                                              python/hello\n', \
+        self.assertEqual('/usr/bin/hello                                          python/hello\n', \
             cw.formatline('/usr/bin/hello', ['python/hello']))
-        self.assertEqual('/usr/bin/hello                                              editors/emacs,python/hello,utils/sl\n', \
+        self.assertEqual('/usr/bin/hello                                          editors/emacs,python/hello,utils/sl\n', \
             cw.formatline('/usr/bin/hello', ['editors/emacs', 'python/hello', 'utils/sl']))
         # test output_filename
         self.assertEqual('tests/fixtures/ftp/squeeze/Contents-i386.gz', \
