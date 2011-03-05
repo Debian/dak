@@ -32,6 +32,8 @@ from daklib.threadpool import ThreadPool
 from sqlalchemy import desc, or_
 from subprocess import Popen, PIPE
 
+import os
+
 class ContentsWriter(object):
     '''
     ContentsWriter writes the Contents-$arch.gz files.
@@ -167,6 +169,18 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
         values['component'] = self.component.component_name
         return "%(root)s%(suite)s/%(component)s/Contents-%(architecture)s.gz" % values
 
+    def get_header(self):
+        '''
+        Returns the header for the Contents files as a string.
+        '''
+        try:
+            filename = os.join(Config()['Dir::Templates'], 'contents')
+            header_file = open(filename)
+            return header_file.read()
+        finally:
+            if header_file:
+                header_file.close()
+
     def write_file(self):
         '''
         Write the output file.
@@ -174,6 +188,7 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
         command = ['gzip', '--rsyncable']
         output_file = open(self.output_filename(), 'w')
         pipe = Popen(command, stdin = PIPE, stdout = output_file).stdin
+        pipe.write(self.get_header())
         for item in self.fetch():
             pipe.write(item)
         pipe.close()
