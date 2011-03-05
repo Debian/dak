@@ -66,7 +66,7 @@ class ContentsWriter(object):
         }
 
         if self.component is not None:
-            params['component'] = component.component_id
+            params['component'] = self.component.component_id
             sql = '''
 create temp table newest_binaries (
     id integer primary key,
@@ -145,7 +145,8 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
                 last_filename = filename
                 package_list = []
             package_list.append(package)
-        yield self.formatline(last_filename, package_list)
+        if last_filename is not None:
+            yield self.formatline(last_filename, package_list)
         # end transaction to return connection to pool
         self.session.rollback()
 
@@ -204,9 +205,9 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
         suites will be included if the force argument is set to True.
         '''
         session = DBConn().session()
-        suite_query = session.query(Suites)
+        suite_query = session.query(Suite)
         if len(suite_names) > 0:
-            suite_query = suite_query.filter(Suite.suitename.in_(suite_names))
+            suite_query = suite_query.filter(Suite.suite_name.in_(suite_names))
         if not force:
             suite_query = suite_query.filter_by(untouchable = False)
         main = get_component('main', session)
@@ -215,7 +216,7 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
         udeb = get_override_type('udeb', session)
         threadpool = ThreadPool()
         for suite in suite_query:
-            for architecture in suite.architectures:
+            for architecture in suite.get_architectures(skipsrc = True, skipall = True):
                 # handle 'deb' packages
                 writer = ContentsWriter(suite, architecture, deb)
                 threadpool.queueTask(writer.write_file)
