@@ -32,7 +32,7 @@ from daklib.threadpool import ThreadPool
 from sqlalchemy import desc, or_
 from subprocess import Popen, PIPE
 
-import os
+import os.path
 
 class ContentsWriter(object):
     '''
@@ -130,7 +130,7 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
         Returns a formatted string for the filename argument.
         '''
         package_list = ','.join(package_list)
-        return "%-60s%s\n" % (filename, package_list)
+        return "%-55s %s\n" % (filename, package_list)
 
     def fetch(self):
         '''
@@ -173,8 +173,9 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
         '''
         Returns the header for the Contents files as a string.
         '''
+        header_file = None
         try:
-            filename = os.join(Config()['Dir::Templates'], 'contents')
+            filename = os.path.join(Config()['Dir::Templates'], 'contents')
             header_file = open(filename)
             return header_file.read()
         finally:
