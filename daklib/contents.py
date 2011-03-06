@@ -166,9 +166,9 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
             'architecture': self.architecture.arch_string
         }
         if self.component is None:
-            return "%(root)s%(suite)s/Contents-%(architecture)s.gz" % values
+            return "%(root)s/dists/%(suite)s/Contents-%(architecture)s.gz" % values
         values['component'] = self.component.component_name
-        return "%(root)s%(suite)s/%(component)s/Contents-%(architecture)s.gz" % values
+        return "%(root)s/dists/%(suite)s/%(component)s/Contents-%(architecture)s.gz" % values
 
     def get_header(self):
         '''
