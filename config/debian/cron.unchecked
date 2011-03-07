@@ -108,4 +108,4 @@ if [ ! -z "$changes" ]; then
     do_dists
 fi
 
-dak contents -l 5000 scan
+dak contents -l 10000 scan
