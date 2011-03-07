@@ -515,9 +515,8 @@ class DBBinary(ORMObject):
         fullpath = self.poolfile.fullpath
         dpkg = Popen(['dpkg-deb', '--fsys-tarfile', fullpath], stdout = PIPE)
         tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
-        anything_yielded = False
         for member in tar.getmembers():
-            if member.isfile():
+            if not member.isdir():
                 name = normpath(member.name)
                 # enforce proper utf-8 encoding
                 try:
@@ -525,9 +524,6 @@ class DBBinary(ORMObject):
                 except UnicodeDecodeError:
                     name = name.decode('iso8859-1').encode('utf-8')
                 yield name
-                anything_yielded = True
-        if not anything_yielded:
-            yield ' <EMPTY PACKAGE>'
         tar.close()
         dpkg.stdout.close()
         dpkg.wait()
