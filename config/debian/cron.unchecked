@@ -88,10 +88,6 @@ function do_dists () {
 export LANG=C
 export LC_ALL=C
 
-#lockfile -r3 "$LOCK_NEW"
-# acceptnew
-#rm -f "$LOCK_NEW"
-
 # only run one cron.unchecked
 if ! lockfile -r8 $LOCKFILE; then
     echo "aborting cron.unchecked because $LOCKFILE has already been locked"
