@@ -525,16 +525,11 @@ function compress() {
     cd $base/backup/
     find -maxdepth 1 -mindepth 1 -type f -name 'dump_pre_*' -mtime +2 -print0 | xargs -0 --no-run-if-empty rm
 
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' \! -name '*.xz' -mmin +720 |
-    while read dumpname; do
-        echo "Compressing $dumpname"
-        bzip2 -9fv "$dumpname"
-    done
-    find -maxdepth 1 -mindepth 1 -type f -name "dumpall_*" \! -name '*.bz2' \! -name '*.gz' \! -name '*.xz' -mmin +720 |
-    while read dumpname; do
-        echo "Compressing $dumpname"
-        bzip2 -9fv "$dumpname"
-    done
+    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' \! -name '*.xz' -mmin +720 -print0 \
+        | xargs --no-run-if-empty -0 -P4 -n16 xz -9v
+
+    find -maxdepth 1 -mindepth 1 -type f -name "dumpall_*" \! -name '*.bz2' \! -name '*.gz' \! -name '*.xz' -mmin +720 \
+        | xargs --no-run-if-empty -0 -P4 -n16 xz -9v
     finddup -l -d $base/backup
 }
 
