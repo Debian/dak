@@ -77,7 +77,7 @@ function do_buildd () {
 function do_dists () {
     cd $configdir
     dak generate-filelist
-    dak generate-packages-sources >/dev/null
+    dak generate-packages-sources -s unstable experimental >/dev/null
 }
 
 ########################################################################
@@ -87,10 +87,6 @@ function do_dists () {
 # And use one locale, no matter what the caller has set
 export LANG=C
 export LC_ALL=C
-
-#lockfile -r3 "$LOCK_NEW"
-# acceptnew
-#rm -f "$LOCK_NEW"
 
 # only run one cron.unchecked
 if ! lockfile -r8 $LOCKFILE; then
