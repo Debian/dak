@@ -82,6 +82,21 @@ def write_all(cnf, suite_names = [], force = None):
 
 ################################################################################
 
+def write_helper(suite_name, argv):
+    session = DBConn().session()
+    suite = get_suite(suite_name, session)
+    architecture = get_architecture(argv[0], session)
+    debtype = get_overridetype(argv[1], session)
+    if len(argv) == 3:
+        component = get_component(argv[2], session)
+    else:
+        component = None
+    session.rollback()
+    ContentsWriter(suite, architecture, debtype, component).write_file()
+    session.close()
+
+################################################################################
+
 def scan_all(cnf, limit):
     Logger = daklog.Logger(cnf.Cnf, 'contents scan')
     result = ContentsScanner.scan_all(limit)
@@ -106,7 +121,7 @@ def main():
     args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments, sys.argv)
     options = cnf.SubTree('Contents::Options')
 
-    if (len(args) != 1) or options['Help']:
+    if (len(args) < 1) or options['Help']:
         usage()
 
     limit = None
@@ -123,6 +138,10 @@ def main():
 
     if args[0] == 'generate':
         write_all(cnf, suite_names, force)
+        return
+
+    if args[0] == 'generate_helper':
+        write_helper(suite_names[0], argv[1:])
         return
 
     usage()
