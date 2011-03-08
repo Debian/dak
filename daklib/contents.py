@@ -31,7 +31,7 @@ from daklib.threadpool import ThreadPool
 from multiprocessing import Pool
 
 from sqlalchemy import desc, or_
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 
 import os.path
 
@@ -45,14 +45,11 @@ class ContentsWriter(object):
         sure that the new ContentsWriter object can be executed in a different
         thread.
         '''
-        self.suite = suite.clone()
-        self.session = self.suite.session()
-        self.architecture = architecture.clone(self.session)
-        self.overridetype = overridetype.clone(self.session)
-        if component is not None:
-            self.component = component.clone(self.session)
-        else:
-            self.component = None
+        self.suite = suite
+        self.architecture = architecture
+        self.overridetype = overridetype
+        self.component = component
+        self.session = suite.session()
 
     def query(self):
         '''
@@ -211,21 +208,20 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
             suite_query = suite_query.filter(Suite.suite_name.in_(suite_names))
         if not force:
             suite_query = suite_query.filter_by(untouchable = False)
-        main = get_component('main', session)
-        non_free = get_component('non-free', session)
-        deb = get_override_type('deb', session)
-        udeb = get_override_type('udeb', session)
         pool = Pool()
         for suite in suite_query:
             for architecture in suite.get_architectures(skipsrc = True, skipall = True):
                 # handle 'deb' packages
-                writer = ContentsWriter(suite, architecture, deb)
-                pool.apply(writer.write_file)
+                command = ['dak', 'contents', '-s', suite.suite_name, \
+                    'generate_helper', architecture.arch_string, 'deb']
+                pool.apply_async(call, (command, ))
                 # handle 'udeb' packages for 'main' and 'non-free'
-                writer = ContentsWriter(suite, architecture, udeb, component = main)
-                pool.apply(writer.write_file)
-                writer = ContentsWriter(suite, architecture, udeb, component = non_free)
-                pool.apply(writer.write_file)
+                command = ['dak', 'contents', '-s', suite.suite_name, \
+                    'generate_helper', architecture.arch_string, 'udeb', 'main']
+                pool.apply_async(call, (command, ))
+                command = ['dak', 'contents', '-s', suite.suite_name, \
+                    'generate_helper', architecture.arch_string, 'udeb', 'non-free']
+                pool.apply_async(call, (command, ))
         pool.close()
         pool.join()
         session.close()
