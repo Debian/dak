@@ -28,9 +28,10 @@ Helper code for contents generation.
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.threadpool import ThreadPool
+from multiprocessing import Pool
 
 from sqlalchemy import desc, or_
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 
 import os.path
 
@@ -44,14 +45,11 @@ class ContentsWriter(object):
         sure that the new ContentsWriter object can be executed in a different
         thread.
         '''
-        self.suite = suite.clone()
-        self.session = self.suite.session()
-        self.architecture = architecture.clone(self.session)
-        self.overridetype = overridetype.clone(self.session)
-        if component is not None:
-            self.component = component.clone(self.session)
-        else:
-            self.component = None
+        self.suite = suite
+        self.architecture = architecture
+        self.overridetype = overridetype
+        self.component = component
+        self.session = suite.session()
 
     def query(self):
         '''
@@ -183,19 +181,19 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
             if header_file:
                 header_file.close()
 
-    def write_file(self, dummy_arg = None):
+    def write_file(self):
         '''
-        Write the output file. The argument dummy_arg is ignored but needed by
-        our threadpool implementation.
+        Write the output file.
         '''
         command = ['gzip', '--rsyncable']
         output_file = open(self.output_filename(), 'w')
-        pipe = Popen(command, stdin = PIPE, stdout = output_file).stdin
-        pipe.write(self.get_header())
+        gzip = Popen(command, stdin = PIPE, stdout = output_file)
+        gzip.stdin.write(self.get_header())
         for item in self.fetch():
-            pipe.write(item)
-        pipe.close()
+            gzip.stdin.write(item)
+        gzip.stdin.close()
         output_file.close()
+        gzip.wait()
 
     @classmethod
     def write_all(class_, suite_names = [], force = False):
@@ -210,22 +208,22 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
             suite_query = suite_query.filter(Suite.suite_name.in_(suite_names))
         if not force:
             suite_query = suite_query.filter_by(untouchable = False)
-        main = get_component('main', session)
-        non_free = get_component('non-free', session)
-        deb = get_override_type('deb', session)
-        udeb = get_override_type('udeb', session)
-        threadpool = ThreadPool()
+        pool = Pool()
         for suite in suite_query:
             for architecture in suite.get_architectures(skipsrc = True, skipall = True):
                 # handle 'deb' packages
-                writer = ContentsWriter(suite, architecture, deb)
-                threadpool.queueTask(writer.write_file)
+                command = ['dak', 'contents', '-s', suite.suite_name, \
+                    'generate_helper', architecture.arch_string, 'deb']
+                pool.apply_async(call, (command, ))
                 # handle 'udeb' packages for 'main' and 'non-free'
-                writer = ContentsWriter(suite, architecture, udeb, component = main)
-                threadpool.queueTask(writer.write_file)
-                writer = ContentsWriter(suite, architecture, udeb, component = non_free)
-                threadpool.queueTask(writer.write_file)
-        threadpool.joinAll()
+                command = ['dak', 'contents', '-s', suite.suite_name, \
+                    'generate_helper', architecture.arch_string, 'udeb', 'main']
+                pool.apply_async(call, (command, ))
+                command = ['dak', 'contents', '-s', suite.suite_name, \
+                    'generate_helper', architecture.arch_string, 'udeb', 'non-free']
+                pool.apply_async(call, (command, ))
+        pool.close()
+        pool.join()
         session.close()
 
 

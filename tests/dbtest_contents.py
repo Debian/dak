@@ -5,6 +5,7 @@ from db_test import DBDakTestCase
 from daklib.dbconn import *
 from daklib.contents import ContentsWriter, ContentsScanner
 
+from os.path import normpath
 from sqlalchemy.exc import FlushError, IntegrityError
 import unittest
 
@@ -148,12 +149,12 @@ class ContentsTestCase(DBDakTestCase):
         self.assertEqual('/usr/bin/hello                                          editors/emacs,python/hello,utils/sl\n', \
             cw.formatline('/usr/bin/hello', ['editors/emacs', 'python/hello', 'utils/sl']))
         # test output_filename
-        self.assertEqual('tests/fixtures/ftp/squeeze/Contents-i386.gz', \
-            cw.output_filename())
+        self.assertEqual('tests/fixtures/ftp/dists/squeeze/Contents-i386.gz', \
+            normpath(cw.output_filename()))
         cw = ContentsWriter(self.suite['squeeze'], self.arch['i386'], \
             self.otype['udeb'], self.comp['main'])
-        self.assertEqual('tests/fixtures/ftp/squeeze/main/Contents-i386.gz', \
-            cw.output_filename())
+        self.assertEqual('tests/fixtures/ftp/dists/squeeze/main/Contents-i386.gz', \
+            normpath(cw.output_filename()))
         # test unicode support
         self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '\xc3\xb6'))
         self.session.commit()
