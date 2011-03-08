@@ -55,12 +55,16 @@ class ContentsWriter(object):
         '''
         Returns a query object that is doing most of the work.
         '''
+        overridesuite = self.suite
+        if self.suite.overridesuite is not None:
+            overridesuite = self.suite.overridesuite
         params = {
-            'suite':    self.suite.suite_id,
-            'arch_all': get_architecture('all', self.session).arch_id,
-            'arch':     self.architecture.arch_id,
-            'type_id':  self.overridetype.overridetype_id,
-            'type':     self.overridetype.overridetype,
+            'suite':         self.suite.suite_id,
+            'overridesuite': overridesuite.suite_id
+            'arch_all':      get_architecture('all', self.session).arch_id,
+            'arch':          self.architecture.arch_id,
+            'type_id':       self.overridetype.overridetype_id,
+            'type':          self.overridetype.overridetype,
         }
 
         if self.component is not None:
@@ -84,7 +88,7 @@ with
 unique_override as
     (select o.package, s.section
         from override o, section s
-        where o.suite = :suite and o.type = :type_id and o.section = s.id and
+        where o.suite = :overridesuite and o.type = :type_id and o.section = s.id and
         o.component = :component)
 
 select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' || b.package as package
@@ -112,7 +116,7 @@ with
 unique_override as
     (select distinct on (o.package, s.section) o.package, s.section
         from override o, section s
-        where o.suite = :suite and o.type = :type_id and o.section = s.id
+        where o.suite = :overridesuite and o.type = :type_id and o.section = s.id
         order by o.package, s.section, o.modified desc)
 
 select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' || b.package as package
