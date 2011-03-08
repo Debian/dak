@@ -57,10 +57,10 @@ class ContentsWriter(object):
         '''
         overridesuite = self.suite
         if self.suite.overridesuite is not None:
-            overridesuite = self.suite.overridesuite
+            overridesuite = get_suite(self.suite.overridesuite, self.session)
         params = {
             'suite':         self.suite.suite_id,
-            'overridesuite': overridesuite.suite_id
+            'overridesuite': overridesuite.suite_id,
             'arch_all':      get_architecture('all', self.session).arch_id,
             'arch':          self.architecture.arch_id,
             'type_id':       self.overridetype.overridetype_id,
