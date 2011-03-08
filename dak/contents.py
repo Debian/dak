@@ -86,7 +86,7 @@ def write_helper(suite_name, argv):
     session = DBConn().session()
     suite = get_suite(suite_name, session)
     architecture = get_architecture(argv[0], session)
-    debtype = get_overridetype(argv[1], session)
+    debtype = get_override_type(argv[1], session)
     if len(argv) == 3:
         component = get_component(argv[2], session)
     else:
@@ -141,7 +141,7 @@ def main():
         return
 
     if args[0] == 'generate_helper':
-        write_helper(suite_names[0], argv[1:])
+        write_helper(suite_names[0], args[1:])
         return
 
     usage()
