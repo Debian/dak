@@ -28,6 +28,7 @@ Helper code for contents generation.
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.threadpool import ThreadPool
+from multiprocessing import Pool
 
 from sqlalchemy import desc, or_
 from subprocess import Popen, PIPE
@@ -183,19 +184,19 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
             if header_file:
                 header_file.close()
 
-    def write_file(self, dummy_arg = None):
+    def write_file(self):
         '''
-        Write the output file. The argument dummy_arg is ignored but needed by
-        our threadpool implementation.
+        Write the output file.
         '''
         command = ['gzip', '--rsyncable']
         output_file = open(self.output_filename(), 'w')
-        pipe = Popen(command, stdin = PIPE, stdout = output_file).stdin
-        pipe.write(self.get_header())
+        gzip = Popen(command, stdin = PIPE, stdout = output_file)
+        gzip.stdin.write(self.get_header())
         for item in self.fetch():
-            pipe.write(item)
-        pipe.close()
+            gzip.stdin.write(item)
+        gzip.stdin.close()
         output_file.close()
+        gzip.wait()
 
     @classmethod
     def write_all(class_, suite_names = [], force = False):
@@ -214,18 +215,19 @@ select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' 
         non_free = get_component('non-free', session)
         deb = get_override_type('deb', session)
         udeb = get_override_type('udeb', session)
-        threadpool = ThreadPool()
+        pool = Pool()
         for suite in suite_query:
             for architecture in suite.get_architectures(skipsrc = True, skipall = True):
                 # handle 'deb' packages
                 writer = ContentsWriter(suite, architecture, deb)
-                threadpool.queueTask(writer.write_file)
+                pool.apply(writer.write_file)
                 # handle 'udeb' packages for 'main' and 'non-free'
                 writer = ContentsWriter(suite, architecture, udeb, component = main)
-                threadpool.queueTask(writer.write_file)
+                pool.apply(writer.write_file)
                 writer = ContentsWriter(suite, architecture, udeb, component = non_free)
-                threadpool.queueTask(writer.write_file)
-        threadpool.joinAll()
+                pool.apply(writer.write_file)
+        pool.close()
+        pool.join()
         session.close()
 
 
