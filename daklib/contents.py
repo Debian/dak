@@ -31,6 +31,7 @@ from daklib.threadpool import ThreadPool
 from multiprocessing import Pool
 
 from sqlalchemy import desc, or_
+from sqlalchemy.exc import IntegrityError
 from subprocess import Popen, PIPE, call
 
 import os.path
@@ -253,7 +254,12 @@ class ContentsScanner(object):
         binary = session.query(DBBinary).get(self.binary_id)
         for filename in binary.scan_contents():
             binary.contents.append(BinContents(file = filename))
-        session.commit()
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            binary.contents.append(BinContents(file = 'DUPLICATE_FILENAMES'))
+            session.commit()
         session.close()
 
     @classmethod
