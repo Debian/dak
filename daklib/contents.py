@@ -92,7 +92,7 @@ unique_override as
         where o.suite = :overridesuite and o.type = :type_id and o.section = s.id and
         o.component = :component)
 
-select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' || b.package as package
+select bc.file, o.section || '/' || b.package as package
     from newest_binaries b, bin_contents bc, unique_override o
     where b.id = bc.binary_id and o.package = b.package
     order by bc.file, b.package'''
@@ -120,7 +120,7 @@ unique_override as
         where o.suite = :overridesuite and o.type = :type_id and o.section = s.id
         order by o.package, s.section, o.modified desc)
 
-select bc.file, substring(o.section from position('/' in o.section) + 1) || '/' || b.package as package
+select bc.file, o.section || '/' || b.package as package
     from newest_binaries b, bin_contents bc, unique_override o
     where b.id = bc.binary_id and o.package = b.package
     order by bc.file, b.package'''
