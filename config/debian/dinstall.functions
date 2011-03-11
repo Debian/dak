@@ -209,8 +209,7 @@ function packages() {
     cd $configdir
     #apt-ftparchive generate apt.conf
     dak generate-packages-sources
-    #TEST: try experimental
-    dak contents -s experimental generate
+    dak contents generate
 }
 
 function pdiff() {

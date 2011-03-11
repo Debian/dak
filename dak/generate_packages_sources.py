@@ -338,7 +338,7 @@ tree "dists/oldstable-proposed-updates/main"
         # it has errormessages we like to see
         os.environ['GZIP'] = '--rsyncable'
         os.chdir(tmppath)
-        (result, output) = commands.getstatusoutput('apt-ftparchive generate %s' % os.path.basename(ac_name))
+        (result, output) = commands.getstatusoutput('apt-ftparchive -o APT::FTPArchive::Contents=off generate %s' % os.path.basename(ac_name))
         sn="a-f %s,%s: " % (suite, arch)
         print sn + output.replace('\n', '\n%s' % (sn))
 
