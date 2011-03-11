@@ -373,7 +373,7 @@ def main ():
 
     # Safety/Sanity check
     # XXX: This should be stored in the database
-    if action == "set" and suite_name not in ["testing"]:
+    if action == "set" and suite_name not in ["testing", "squeeze-updates"]:
         utils.fubar("Will not reset suite %s" % (suite_name))
 
     britney = False
