@@ -440,7 +440,7 @@ function mirror() {
     echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
     echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
     cd ${mirrordir}
-    rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
+    rsync -aH --link-dest ${ftpdir} --delete --delete-after --delete-excluded --exclude Packages.*.new --exclude Sources.*.new  --ignore-errors ${ftpdir}/. .
 }
 
 function expire() {
