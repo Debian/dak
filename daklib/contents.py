@@ -191,7 +191,9 @@ select bc.file, o.section || '/' || b.package as package
         Write the output file.
         '''
         command = ['gzip', '--rsyncable']
-        output_file = open(self.output_filename(), 'w')
+        final_filename = self.output_filename()
+        temp_filename = final_filename + '.new'
+        output_file = open(temp_filename, 'w')
         gzip = Popen(command, stdin = PIPE, stdout = output_file)
         gzip.stdin.write(self.get_header())
         for item in self.fetch():
@@ -199,6 +201,9 @@ select bc.file, o.section || '/' || b.package as package
         gzip.stdin.close()
         output_file.close()
         gzip.wait()
+        os.remove(final_filename)
+        os.rename(temp_filename, final_filename)
+        os.chmod(final_filename, 0664)
 
     @classmethod
     def write_all(class_, suite_names = [], force = False):
