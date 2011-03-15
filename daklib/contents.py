@@ -257,18 +257,12 @@ class ContentsScanner(object):
         '''
         session = DBConn().session()
         binary = session.query(DBBinary).get(self.binary_id)
-        empty_package = True
-        for filename in binary.scan_contents():
+        fileset = set(binary.scan_contents())
+        if len(fileset) == 0:
+            fileset.add('EMPTY_PACKAGE')
+        for filename in fileset:
             binary.contents.append(BinContents(file = filename))
-            empty_package = False
-        if empty_package:
-            binary.contents.append(BinContents(file = 'EMPTY_PACKAGE'))
-        try:
-            session.commit()
-        except IntegrityError:
-            session.rollback()
-            binary.contents.append(BinContents(file = 'DUPLICATE_FILENAMES'))
-            session.commit()
+        session.commit()
         session.close()
 
     @classmethod
