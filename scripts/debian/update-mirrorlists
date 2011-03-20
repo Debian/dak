@@ -3,7 +3,8 @@
 # Very Very hackish script...  dont laugh.
 # Michael Beattie <mjb@debian.org>
 
-. vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
 
 prog=$scriptdir/mirrorlist/mirror_list.pl
 masterlist=$scriptdir/mirrorlist/Mirrors.masterlist

@@ -3,7 +3,8 @@
 # Fetches latest copy of mailing-lists.txt
 # Michael Beattie <mjb@debian.org>
 
-. vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
 
 cd $ftpdir/doc
 
