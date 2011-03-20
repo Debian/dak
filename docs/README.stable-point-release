@@ -11,6 +11,7 @@ o ask rms if they have RMs to do.
 o If you installed a debian-installer upload; migrate the relevant
   installer-*/$release directory from proposed-updates to stable.
   (Including potentially removing older versions)
+  dak copy-installer helps
 o Update version number in README, README.html and dists/README
 o Update the 'Debian<n>.<n>r<n>' symlink in dists/
 o Clean up dists/stable/ChangeLog (add header, basically)
@@ -44,10 +45,9 @@ o if so:
    sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
 
 
-
 begin;
-update suite set version = '5.0.8' where suite_name = 'stable';
-update suite set description = 'Debian 5.0.8 Released 22 Januar 2011' where suite_name = 'stable';
+update suite set version = '6.0.1' where suite_name = 'stable';
+update suite set description = 'Debian 6.0.1 Released 19 March 2011' where suite_name = 'stable';
 
 ------------------------------------------------------------------------
 Old doc:
