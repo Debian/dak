@@ -141,8 +141,6 @@ function filelist() {
 }
 
 function fingerprints() {
-    log "Not updating fingerprints - scripts needs checking"
-
     log "Updating fingerprints"
     dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
