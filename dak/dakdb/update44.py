@@ -44,9 +44,9 @@ def do_update(self):
         for table in ('pending_bin_contents', 'deb_contents', 'udeb_contents'):
             c.execute("DROP TABLE %s" % table)
 
-        c.execute("UPDATE config SET value = '43' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '44' WHERE name = 'db_revision'")
         self.db.commit()
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        raise DBUpdateError, 'Unable to apply sick update 43, rollback issued. Error message : %s' % (str(msg))
+        raise DBUpdateError, 'Unable to apply sick update 44, rollback issued. Error message : %s' % (str(msg))
