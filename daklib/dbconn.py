@@ -77,9 +77,6 @@ import warnings
 warnings.filterwarnings('ignore', \
     "The SQLAlchemy PostgreSQL dialect has been renamed from 'postgres' to 'postgresql'.*", \
     SADeprecationWarning)
-# TODO: sqlalchemy needs some extra configuration to correctly reflect
-# the ind_deb_contents_* indexes - we ignore the warnings at the moment
-warnings.filterwarnings("ignore", 'Predicate of partial index', SAWarning)
 
 
 ################################################################################
@@ -1948,111 +1945,6 @@ __all__.append('get_override_type')
 
 ################################################################################
 
-class DebContents(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<DebConetnts %s: %s>' % (self.package.package,self.file)
-
-__all__.append('DebContents')
-
-
-class UdebContents(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<UdebConetnts %s: %s>' % (self.package.package,self.file)
-
-__all__.append('UdebContents')
-
-class PendingBinContents(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<PendingBinContents %s>' % self.contents_id
-
-__all__.append('PendingBinContents')
-
-def insert_pending_content_paths(package,
-                                 is_udeb,
-                                 fullpaths,
-                                 session=None):
-    """
-    Make sure given paths are temporarily associated with given
-    package
-
-    @type package: dict
-    @param package: the package to associate with should have been read in from the binary control file
-    @type fullpaths: list
-    @param fullpaths: the list of paths of the file being associated with the binary
-    @type session: SQLAlchemy session
-    @param session: Optional SQLAlchemy session.  If this is passed, the caller
-    is responsible for ensuring a transaction has begun and committing the
-    results or rolling back based on the result code.  If not passed, a commit
-    will be performed at the end of the function
-
-    @return: True upon success, False if there is a problem
-    """
-
-    privatetrans = False
-
-    if session is None:
-        session = DBConn().session()
-        privatetrans = True
-
-    try:
-        arch = get_architecture(package['Architecture'], session)
-        arch_id = arch.arch_id
-
-        # Remove any already existing recorded files for this package
-        q = session.query(PendingBinContents)
-        q = q.filter_by(package=package['Package'])
-        q = q.filter_by(version=package['Version'])
-        q = q.filter_by(architecture=arch_id)
-        q.delete()
-
-        for fullpath in fullpaths:
-
-            if fullpath.startswith( "./" ):
-                fullpath = fullpath[2:]
-
-            pca = PendingBinContents()
-            pca.package = package['Package']
-            pca.version = package['Version']
-            pca.file = fullpath
-            pca.architecture = arch_id
-
-            if isudeb:
-                pca.type = 8 # gross
-            else:
-                pca.type = 7 # also gross
-            session.add(pca)
-
-        # Only commit if we set up the session ourself
-        if privatetrans:
-            session.commit()
-            session.close()
-        else:
-            session.flush()
-
-        return True
-    except Exception, e:
-        traceback.print_exc()
-
-        # Only rollback if we set up the session ourself
-        if privatetrans:
-            session.rollback()
-            session.close()
-
-        return False
-
-__all__.append('insert_pending_content_paths')
-
-################################################################################
-
 class PolicyQueue(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2940,7 +2832,6 @@ class DBConn(object):
             'maintainer',
             'new_comments',
             'override_type',
-            'pending_bin_contents',
             'policy_queue',
             'priority',
             'section',
@@ -2958,13 +2849,11 @@ class DBConn(object):
             'changes_pending_files_map',
             'changes_pending_source_files',
             'changes_pool_files',
-            'deb_contents',
             # TODO: the maintainer column in table override should be removed.
             'override',
             'suite_architectures',
             'suite_src_formats',
             'suite_build_queue_copy',
-            'udeb_contents',
         )
 
         views = (
@@ -3028,30 +2917,6 @@ class DBConn(object):
         mapper(Archive, self.tbl_archive,
                properties = dict(archive_id = self.tbl_archive.c.id,
                                  archive_name = self.tbl_archive.c.name))
-
-        mapper(PendingBinContents, self.tbl_pending_bin_contents,
-               properties = dict(contents_id =self.tbl_pending_bin_contents.c.id,
-                                 filename = self.tbl_pending_bin_contents.c.filename,
-                                 package = self.tbl_pending_bin_contents.c.package,
-                                 version = self.tbl_pending_bin_contents.c.version,
-                                 arch = self.tbl_pending_bin_contents.c.arch,
-                                 otype = self.tbl_pending_bin_contents.c.type))
-
-        mapper(DebContents, self.tbl_deb_contents,
-               properties = dict(binary_id=self.tbl_deb_contents.c.binary_id,
-                                 package=self.tbl_deb_contents.c.package,
-                                 suite=self.tbl_deb_contents.c.suite,
-                                 arch=self.tbl_deb_contents.c.arch,
-                                 section=self.tbl_deb_contents.c.section,
-                                 filename=self.tbl_deb_contents.c.filename))
-
-        mapper(UdebContents, self.tbl_udeb_contents,
-               properties = dict(binary_id=self.tbl_udeb_contents.c.binary_id,
-                                 package=self.tbl_udeb_contents.c.package,
-                                 suite=self.tbl_udeb_contents.c.suite,
-                                 arch=self.tbl_udeb_contents.c.arch,
-                                 section=self.tbl_udeb_contents.c.section,
-                                 filename=self.tbl_udeb_contents.c.filename))
 
         mapper(BuildQueue, self.tbl_build_queue,
                properties = dict(queue_id = self.tbl_build_queue.c.id))

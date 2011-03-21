@@ -41,6 +41,7 @@ from daklib.config import Config
 
 Options = None                 #: Commandline arguments parsed into this
 Logger = None                  #: Our logging object
+results = []                   #: Results of the subprocesses
 
 ################################################################################
 
@@ -360,11 +361,16 @@ tree "dists/oldstable-proposed-updates/main"
 def sname(arch):
     return arch.arch_string
 
+def get_result(arg):
+    global results
+    if arg:
+        results.append(arg)
+
 ########################################################################
 ########################################################################
 
 def main ():
-    global Options, Logger
+    global Options, Logger, results
 
     cnf = Config()
 
@@ -405,39 +411,27 @@ def main ():
     broken=[]
     # For each given suite, each architecture, run one apt-ftparchive
     for s in suites:
+        results=[]
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
         pool = Pool()
         arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=True, session=session)
         Logger.log(['generating output for Suite %s, Architectures %s' % (s.suite_name, map(sname, arch_list))])
         for a in arch_list:
-            try:
-                result=pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]))
-                # Get the result. Should it take too long (a-f hanging), break out.
-                r=result.get(timeout=3600)
-            except TimeoutError:
-                broken.append("Timeout: %s - %s" % (s.suite_name, a.arch_string))
-                # Now try the next architecture
-                continue
-
-            if r:
-                # As long as we get 0, we are fine. Otherwise we yell about it later.
-                broken.append("Breakage: %s - %s returned %s" % (s.suite_name, a.arch_string, r))
+            pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]), callback=get_result)
 
         # No more work will be added to our pool, close it and then wait for all to finish
         pool.close()
         pool.join()
 
-    if len(broken) > 0:
-        Logger.log(['Trouble: %s' % (broken)])
-        print "Trouble: %s" % (broken)
+    if len(results) > 0:
+        Logger.log(['Trouble, something with a-f broke, resultcodes: %s' % (results)])
+        print "Trouble, something with a-f broke, resultcodes: %s" % (results)
+        sys.exit(1)
 
     os.chdir(startdir)
     # this script doesn't change the database
     session.close()
     Logger.close()
-
-    if len(broken) > 0:
-        sys.exit(1)
 
 #######################################################################################
 
