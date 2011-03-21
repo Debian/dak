@@ -31,7 +31,7 @@ import sys
 import apt_pkg
 from tempfile import mkstemp, mkdtemp
 import commands
-from multiprocessing import Pool
+from multiprocessing import Pool, TimeoutError
 
 from daklib import daklog
 from daklib.dbconn import *
@@ -341,6 +341,7 @@ tree "dists/oldstable-proposed-updates/main"
         (result, output) = commands.getstatusoutput('apt-ftparchive -o APT::FTPArchive::Contents=off generate %s' % os.path.basename(ac_name))
         sn="a-f %s,%s: " % (suite, arch)
         print sn + output.replace('\n', '\n%s' % (sn))
+        return result
 
     # Clean up any left behind files
     finally:
@@ -401,6 +402,7 @@ def main ():
     startdir = os.getcwd()
     os.chdir(cnf["Dir::TempPath"])
 
+    broken=[]
     # For each given suite, each architecture, run one apt-ftparchive
     for s in suites:
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
@@ -408,16 +410,34 @@ def main ():
         arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=True, session=session)
         Logger.log(['generating output for Suite %s, Architectures %s' % (s.suite_name, map(sname, arch_list))])
         for a in arch_list:
-            pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]))
+            try:
+                result=pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]))
+                # Get the result. Should it take too long (a-f hanging), break out.
+                r=result.get(timeout=3600)
+            except TimeoutError:
+                broken.append("Timeout: %s - %s" % (s.suite_name, a.arch_string))
+                # Now try the next architecture
+                continue
+
+            if r:
+                # As long as we get 0, we are fine. Otherwise we yell about it later.
+                broken.append("Breakage: %s - %s returned %s" % (s.suite_name, a.arch_string, r))
 
         # No more work will be added to our pool, close it and then wait for all to finish
         pool.close()
         pool.join()
 
+    if len(broken) > 0:
+        Logger.log(['Trouble: %s' % (broken)])
+        print "Trouble: %s" % (broken)
+
     os.chdir(startdir)
     # this script doesn't change the database
     session.close()
     Logger.close()
+
+    if len(broken) > 0:
+        sys.exit(1)
 
 #######################################################################################
 
