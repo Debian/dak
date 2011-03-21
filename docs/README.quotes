@@ -346,3 +346,11 @@ Canadians: This is a lighthouse. Your call.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 <mhy> I wish they wouldnt leave biscuits out, thats just tempting. Damnit.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+< mvo> that screams for consolidation in libapt at least (that then in turn can use libdpkg … ) - I guess the "d" means delayed ;)
+
+(whilst discussing adding xz support to dak, and therefore python-apt, and
+therefore libapt-pkg)
+
