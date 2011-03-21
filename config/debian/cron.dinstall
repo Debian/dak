@@ -479,14 +479,6 @@ stage $GO &
 rm -f "${LOCK_BRITNEY}"
 
 GO=(
-    FUNC="pgdakdev"
-    TIME="dak-dev db"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
     FUNC="merkel3"
     TIME="merkel ddaccessible sync"
     ARGS=""

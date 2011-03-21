@@ -59,25 +59,6 @@ function pgdump_post() {
     #ln -sf $base/backup/dumpall_$POSTDUMP currentall
 }
 
-# Load the dak-dev projectb
-function pgdakdev() {
-    # Make sure to unset any possible psql variables so we don't drop the wrong
-    # f****** database by accident
-    local PGDATABASE
-    unset PGDATABASE
-    local PGHOST
-    unset PGHOST
-    local PGPORT
-    unset PGPORT
-    local PGUSER
-    unset PGUSER
-    cd $base/backup
-    echo "drop database projectb" | psql -p 5434 template1
-	#cat currentall | psql -p 5433 template1
-    createdb -p 5434 -T template1 projectb
-    fgrep -v '\connect' current | psql -p 5434 projectb
-}
-
 # Updating various files
 function updates() {
     log "Updating Bugs docu, Mirror list and mailing-lists.txt"
