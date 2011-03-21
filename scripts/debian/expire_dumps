@@ -59,7 +59,7 @@ def all_files(pattern, search_path, pathsep=os.pathsep):
 def parse_file_dates(list):
     out = []
     # dump_2006.05.02-11:52:01.bz2
-    p = re.compile('^\./dump_([0-9]{4})\.([0-9]{2})\.([0-9]{2})-([0-9]{2}):([0-9]{2}):([0-9]{2})(.bz2)?$')
+    p = re.compile('^\./dump_([0-9]{4})\.([0-9]{2})\.([0-9]{2})-([0-9]{2}):([0-9]{2}):([0-9]{2})(.xz)?$')
     for file in list:
         m = p.search(file)
         if m:
