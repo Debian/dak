@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 
-""" Cruft checker and hole filler for overrides """
-# Copyright (C) 2000, 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
-# Copyright (C) 2005  Jeroen van Wolffelaar <jeroen@wolffelaar.nl>
+""" Cruft checker and hole filler for overrides
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2000, 2001, 2002, 2004, 2006  James Troup <james@nocrew.org>
+@opyright: 2005  Jeroen van Wolffelaar <jeroen@wolffelaar.nl>
+@copyright: 2011  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+
+"""
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,8 +64,8 @@ from daklib import utils
 
 ################################################################################
 
-Options = None
-Logger = None
+Options = None                 #: Commandline arguments parsed into this
+Logger = None                  #: Our logging object
 sections = {}
 priorities = {}
 blacklist = {}
@@ -150,7 +156,8 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 if not Options["No-Action"]:
                     session.execute("""DELETE FROM override WHERE package = :package
                                           AND suite = :suite_id AND component = :component_id
-                                          AND type = :type_id""",
+                                          AND type = :type_id
+                                          AND created < now() - interval '14 days'""",
                                     {'package': package, 'suite_id': osuite_id,
                                      'component_id': component_id, 'type_id': type_id})
         # create source overrides based on binary overrides, as source
@@ -239,7 +246,8 @@ SELECT s.source FROM source s, src_associations sa, files f, location l,
                 if not Options["No-Action"]:
                     session.execute("""DELETE FROM override
                                         WHERE package = :package AND suite = :suite_id
-                                          AND component = :component_id AND type = :type_id""",
+                                          AND component = :component_id AND type = :type_id
+                                          AND created < now() - interval '14 days'""",
                                     {'package': package, 'suite_id': osuite_id,
                                      'component_id': component_id, 'type_id': type_id})
 
