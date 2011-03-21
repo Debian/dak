@@ -59,7 +59,7 @@ import sqlalchemy
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc, \
     Text, ForeignKey
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
-    backref, MapperExtension, EXT_CONTINUE, object_mapper
+    backref, MapperExtension, EXT_CONTINUE, object_mapper, clear_mappers
 from sqlalchemy import types as sqltypes
 
 # Don't remove this, we re-export the exceptions to scripts which import us
@@ -3197,6 +3197,15 @@ class DBConn(object):
 
     def session(self):
         return self.db_smaker()
+
+    def reset(self):
+        '''
+        Resets the DBConn object. This function must be called by subprocesses
+        created by the multiprocessing module. See tests/dbtest_multiproc.py
+        for an example.
+        '''
+        clear_mappers()
+        self.__createconn()
 
 __all__.append('DBConn')
 
