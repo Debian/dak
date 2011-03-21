@@ -95,6 +95,8 @@ if ! lockfile -r8 $LOCKFILE; then
 fi
 trap cleanup 0
 
+
+pg_timestamp preunchecked
 do_newstage
 do_unchecked
 
@@ -105,3 +107,4 @@ if [ ! -z "$changes" ]; then
 fi
 
 dak contents -l 10000 scan
+pg_timestamp postunchecked

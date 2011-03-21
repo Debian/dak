@@ -2893,8 +2893,9 @@ class DBConn(object):
             table = Table(table_name, self.db_meta, autoload=True)
             setattr(self, 'tbl_%s' % table_name, table)
 
-        # bin_contents needs special attention until update #41 has been
-        # applied
+        # bin_contents needs special attention until the SERIAL type is
+        # correctly detected and the workaround has been removed; see comment
+        # above
         self.tbl_bin_contents = Table('bin_contents', self.db_meta, \
             Column('file', Text, primary_key = True),
             Column('binary_id', Integer, ForeignKey('binaries.id'), \

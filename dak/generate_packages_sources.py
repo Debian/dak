@@ -31,7 +31,7 @@ import sys
 import apt_pkg
 from tempfile import mkstemp, mkdtemp
 import commands
-from multiprocessing import Pool
+from multiprocessing import Pool, TimeoutError
 
 from daklib import daklog
 from daklib.dbconn import *
@@ -41,6 +41,7 @@ from daklib.config import Config
 
 Options = None                 #: Commandline arguments parsed into this
 Logger = None                  #: Our logging object
+results = []                   #: Results of the subprocesses
 
 ################################################################################
 
@@ -341,6 +342,7 @@ tree "dists/oldstable-proposed-updates/main"
         (result, output) = commands.getstatusoutput('apt-ftparchive -o APT::FTPArchive::Contents=off generate %s' % os.path.basename(ac_name))
         sn="a-f %s,%s: " % (suite, arch)
         print sn + output.replace('\n', '\n%s' % (sn))
+        return result
 
     # Clean up any left behind files
     finally:
@@ -359,11 +361,16 @@ tree "dists/oldstable-proposed-updates/main"
 def sname(arch):
     return arch.arch_string
 
+def get_result(arg):
+    global results
+    if arg:
+        results.append(arg)
+
 ########################################################################
 ########################################################################
 
 def main ():
-    global Options, Logger
+    global Options, Logger, results
 
     cnf = Config()
 
@@ -401,18 +408,25 @@ def main ():
     startdir = os.getcwd()
     os.chdir(cnf["Dir::TempPath"])
 
+    broken=[]
     # For each given suite, each architecture, run one apt-ftparchive
     for s in suites:
+        results=[]
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
         pool = Pool()
         arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=True, session=session)
         Logger.log(['generating output for Suite %s, Architectures %s' % (s.suite_name, map(sname, arch_list))])
         for a in arch_list:
-            pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]))
+            pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]), callback=get_result)
 
         # No more work will be added to our pool, close it and then wait for all to finish
         pool.close()
         pool.join()
+
+    if len(results) > 0:
+        Logger.log(['Trouble, something with a-f broke, resultcodes: %s' % (results)])
+        print "Trouble, something with a-f broke, resultcodes: %s" % (results)
+        sys.exit(1)
 
     os.chdir(startdir)
     # this script doesn't change the database

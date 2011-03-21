@@ -59,25 +59,6 @@ function pgdump_post() {
     #ln -sf $base/backup/dumpall_$POSTDUMP currentall
 }
 
-# Load the dak-dev projectb
-function pgdakdev() {
-    # Make sure to unset any possible psql variables so we don't drop the wrong
-    # f****** database by accident
-    local PGDATABASE
-    unset PGDATABASE
-    local PGHOST
-    unset PGHOST
-    local PGPORT
-    unset PGPORT
-    local PGUSER
-    unset PGUSER
-    cd $base/backup
-    echo "drop database projectb" | psql -p 5434 template1
-	#cat currentall | psql -p 5433 template1
-    createdb -p 5434 -T template1 projectb
-    fgrep -v '\connect' current | psql -p 5434 projectb
-}
-
 # Updating various files
 function updates() {
     log "Updating Bugs docu, Mirror list and mailing-lists.txt"
@@ -521,17 +502,10 @@ function aptftpcleanup() {
     apt-ftparchive -q clean apt.conf
 }
 
-function compress() {
-    log "Compress old psql backups"
+function cleantransactions() {
+    log "Cleanup transaction ids older than 3 months"
     cd $base/backup/
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_pre_*' -mtime +2 -print0 | xargs -0 --no-run-if-empty rm
-
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' \! -name '*.xz' -mmin +720 -print0 \
-        | xargs --no-run-if-empty -0 -P4 -n1 xz -9v
-
-    find -maxdepth 1 -mindepth 1 -type f -name "dumpall_*" \! -name '*.bz2' \! -name '*.gz' \! -name '*.xz' -mmin +720 \
-        | xargs --no-run-if-empty -0 -P4 -n1 xz -9v
-    finddup -l -d $base/backup
+    find -maxdepth 1 -mindepth 1 -type f -name 'txid_*' -mtime +90 -print0 | xargs -0 --no-run-if-empty rm
 }
 
 function logstats() {
