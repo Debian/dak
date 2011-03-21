@@ -42,7 +42,7 @@ CREATE TABLE extra_src_references (
     bin_id      INT4 NOT NULL REFERENCES binaries(id) ON DELETE CASCADE,
     src_id      INT4 NOT NULL REFERENCES source(id) ON DELETE RESTRICT,
 
-    UNIQUE (bin_id, src_id)
+    PRIMARY KEY (bin_id, src_id)
 )""")
 
         c.execute("UPDATE config SET value = '45' WHERE name = 'db_revision'")

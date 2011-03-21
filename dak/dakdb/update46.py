@@ -43,7 +43,9 @@ def do_update(self):
         c.execute("""
 CREATE TABLE metadata_keys (
     key_id       SERIAL NOT NULL UNIQUE,
-    key          TEXT NOT NULL UNIQUE
+    key          TEXT NOT NULL UNIQUE,
+
+    PRIMARY KEY (key_id)
 )
 """)
 
@@ -52,7 +54,8 @@ CREATE TABLE binaries_metadata (
     bin_id       INT4 NOT NULL REFERENCES binaries(id) ON DELETE CASCADE,
     key_id       INT4 NOT NULL REFERENCES metadata_keys(key_id),
     value        TEXT NOT NULL,
-    UNIQUE (bin_id, key_id)
+
+    PRIMARY KEY (bin_id, key_id)
 )
 """)
 
@@ -61,7 +64,8 @@ CREATE TABLE source_metadata (
     src_id       INT4 NOT NULL REFERENCES source(id) ON DELETE CASCADE,
     key_id       INT4 NOT NULL REFERENCES metadata_keys(key_id),
     value        TEXT NOT NULL,
-    UNIQUE (src_id, key_id)
+
+    PRIMARY KEY (src_id, key_id)
 )
 """)
 
