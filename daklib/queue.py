@@ -53,7 +53,6 @@ from dbconn import *
 from summarystats import SummaryStats
 from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
-from binary import Binary
 from lintian import parse_lintian_output, generate_reject_messages
 
 # suppress some deprecation warnings in squeeze related to apt_pkg
@@ -865,13 +864,6 @@ class Upload(object):
 
         # Check the version and for file overwrites
         self.check_binary_against_db(f, session)
-
-        # Temporarily disable contents generation until we change the table storage layout
-        #b = Binary(f)
-        #b.scan_package()
-        #if len(b.rejects) > 0:
-        #    for j in b.rejects:
-        #        self.rejects.append(j)
 
     def source_file_checks(self, f, session):
         entry = self.pkg.files[f]
