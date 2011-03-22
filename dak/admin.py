@@ -343,10 +343,13 @@ def show_config(command):
 
     if mode == 'db':
         connstr = ""
-        if cnf["DB::Host"]:
+        if cnf.has_key("DB::Service"):
+            # Service mode
+            connstr = "postgresql://service=%s" % cnf["DB::Service"]
+        elif cnf.has_key("DB::Host"):
             # TCP/IP
             connstr = "postgres://%s" % cnf["DB::Host"]
-            if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+            if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
                 connstr += ":%s" % cnf["DB::Port"]
             connstr += "/%s" % cnf["DB::Name"]
         else:
@@ -356,12 +359,16 @@ def show_config(command):
                 connstr += "?port=%s" % cnf["DB::Port"]
         print connstr
     elif mode == 'db-shell':
-        e = ['PGDATABASE']
-        print "PGDATABASE=%s" % cnf["DB::Name"]
-        if cnf["DB::Host"]:
+        if cnf.has_key("DB::Service"):
+            e.append('PGSERVICE')
+            print "PGSERVICE=%s" % cnf["DB::Service"]
+        if cnf.has_key("DB::Name"):
+            e.append('PGDATABASE')
+            print "PGDATABASE=%s" % cnf["DB::Name"]
+        if cnf.has_key("DB::Host"):
             print "PGHOST=%s" % cnf["DB::Host"]
             e.append('PGHOST')
-        if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+        if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
             print "PGPORT=%s" % cnf["DB::Port"]
             e.append('PGPORT')
         print "export " + " ".join(e)

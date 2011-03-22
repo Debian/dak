@@ -3164,18 +3164,18 @@ class DBConn(object):
     def __createconn(self):
         from config import Config
         cnf = Config()
-        if cnf["DB::Service"]:
+        if cnf.has_key("DB::Service"):
             connstr = "postgresql://service=%s" % cnf["DB::Service"]
-        elif cnf["DB::Host"]:
+        elif cnf.has_key("DB::Host"):
             # TCP/IP
             connstr = "postgresql://%s" % cnf["DB::Host"]
-            if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+            if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
                 connstr += ":%s" % cnf["DB::Port"]
             connstr += "/%s" % cnf["DB::Name"]
         else:
             # Unix Socket
             connstr = "postgresql:///%s" % cnf["DB::Name"]
-            if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+            if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
 
         engine_args = { 'echo': self.debug }
