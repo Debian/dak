@@ -359,6 +359,7 @@ def show_config(command):
                 connstr += "?port=%s" % cnf["DB::Port"]
         print connstr
     elif mode == 'db-shell':
+        e = []
         if cnf.has_key("DB::Service"):
             e.append('PGSERVICE')
             print "PGSERVICE=%s" % cnf["DB::Service"]
