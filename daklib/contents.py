@@ -92,10 +92,10 @@ unique_override as
         where o.suite = :overridesuite and o.type = :type_id and o.section = s.id and
         o.component = :component)
 
-select bc.file, o.section || '/' || b.package as package
+select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package) as pkglist
     from newest_binaries b, bin_contents bc, unique_override o
     where b.id = bc.binary_id and o.package = b.package
-    order by bc.file, b.package'''
+    group by bc.file'''
 
         else:
             sql = '''
@@ -120,36 +120,26 @@ unique_override as
         where o.suite = :overridesuite and o.type = :type_id and o.section = s.id
         order by o.package, s.section, o.modified desc)
 
-select bc.file, o.section || '/' || b.package as package
+select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package) as pkglist
     from newest_binaries b, bin_contents bc, unique_override o
     where b.id = bc.binary_id and o.package = b.package
-    order by bc.file, b.package'''
+    group by bc.file'''
 
-        return self.session.query("file", "package").from_statement(sql). \
+        return self.session.query("file", "pkglist").from_statement(sql). \
             params(params)
 
     def formatline(self, filename, package_list):
         '''
         Returns a formatted string for the filename argument.
         '''
-        package_list = ','.join(package_list)
         return "%-55s %s\n" % (filename, package_list)
 
     def fetch(self):
         '''
         Yields a new line of the Contents-$arch.gz file in filename order.
         '''
-        last_filename = None
-        package_list = []
-        for filename, package in self.query().yield_per(100):
-            if filename != last_filename:
-                if last_filename is not None:
-                    yield self.formatline(last_filename, package_list)
-                last_filename = filename
-                package_list = []
-            package_list.append(package)
-        if last_filename is not None:
-            yield self.formatline(last_filename, package_list)
+        for filename, package_list in self.query().yield_per(100):
+            yield self.formatline(filename, package_list)
         # end transaction to return connection to pool
         self.session.rollback()
 

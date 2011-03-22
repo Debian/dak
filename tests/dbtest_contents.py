@@ -145,9 +145,7 @@ class ContentsTestCase(DBDakTestCase):
             cw.get_list())
         # test formatline and sort order
         self.assertEqual('/usr/bin/hello                                          python/hello\n', \
-            cw.formatline('/usr/bin/hello', ['python/hello']))
-        self.assertEqual('/usr/bin/hello                                          editors/emacs,python/hello,utils/sl\n', \
-            cw.formatline('/usr/bin/hello', ['editors/emacs', 'python/hello', 'utils/sl']))
+            cw.formatline('/usr/bin/hello', 'python/hello'))
         # test output_filename
         self.assertEqual('tests/fixtures/ftp/dists/squeeze/Contents-i386.gz', \
             normpath(cw.output_filename()))
