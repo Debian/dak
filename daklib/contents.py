@@ -32,7 +32,7 @@ from multiprocessing import Pool
 
 from sqlalchemy import desc, or_
 from sqlalchemy.exc import IntegrityError
-from subprocess import Popen, PIPE, call
+from subprocess import Popen, PIPE
 
 import os.path
 
@@ -92,10 +92,10 @@ unique_override as
         where o.suite = :overridesuite and o.type = :type_id and o.section = s.id and
         o.component = :component)
 
-select bc.file, o.section || '/' || b.package as package
+select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package) as pkglist
     from newest_binaries b, bin_contents bc, unique_override o
     where b.id = bc.binary_id and o.package = b.package
-    order by bc.file, b.package'''
+    group by bc.file'''
 
         else:
             sql = '''
@@ -120,36 +120,26 @@ unique_override as
         where o.suite = :overridesuite and o.type = :type_id and o.section = s.id
         order by o.package, s.section, o.modified desc)
 
-select bc.file, o.section || '/' || b.package as package
+select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package) as pkglist
     from newest_binaries b, bin_contents bc, unique_override o
     where b.id = bc.binary_id and o.package = b.package
-    order by bc.file, b.package'''
+    group by bc.file'''
 
-        return self.session.query("file", "package").from_statement(sql). \
+        return self.session.query("file", "pkglist").from_statement(sql). \
             params(params)
 
     def formatline(self, filename, package_list):
         '''
         Returns a formatted string for the filename argument.
         '''
-        package_list = ','.join(package_list)
         return "%-55s %s\n" % (filename, package_list)
 
     def fetch(self):
         '''
         Yields a new line of the Contents-$arch.gz file in filename order.
         '''
-        last_filename = None
-        package_list = []
-        for filename, package in self.query().yield_per(100):
-            if filename != last_filename:
-                if last_filename is not None:
-                    yield self.formatline(last_filename, package_list)
-                last_filename = filename
-                package_list = []
-            package_list.append(package)
-        if last_filename is not None:
-            yield self.formatline(last_filename, package_list)
+        for filename, package_list in self.query().yield_per(100):
+            yield self.formatline(filename, package_list)
         # end transaction to return connection to pool
         self.session.rollback()
 
@@ -201,40 +191,73 @@ select bc.file, o.section || '/' || b.package as package
         gzip.stdin.close()
         output_file.close()
         gzip.wait()
-        os.remove(final_filename)
+        try:
+            os.remove(final_filename)
+        except:
+            pass
         os.rename(temp_filename, final_filename)
         os.chmod(final_filename, 0664)
 
     @classmethod
-    def write_all(class_, suite_names = [], force = False):
+    def log_result(class_, result):
+        '''
+        Writes a result message to the logfile.
+        '''
+        class_.logger.log(result)
+
+    @classmethod
+    def write_all(class_, logger, suite_names = [], force = False):
         '''
         Writes all Contents files for suites in list suite_names which defaults
         to all 'touchable' suites if not specified explicitely. Untouchable
         suites will be included if the force argument is set to True.
         '''
+        class_.logger = logger
         session = DBConn().session()
         suite_query = session.query(Suite)
         if len(suite_names) > 0:
             suite_query = suite_query.filter(Suite.suite_name.in_(suite_names))
         if not force:
             suite_query = suite_query.filter_by(untouchable = False)
+        deb_id = get_override_type('deb', session).overridetype_id
+        udeb_id = get_override_type('udeb', session).overridetype_id
+        main_id = get_component('main', session).component_id
+        non_free_id = get_component('non-free', session).component_id
         pool = Pool()
         for suite in suite_query:
+            suite_id = suite.suite_id
             for architecture in suite.get_architectures(skipsrc = True, skipall = True):
+                arch_id = architecture.arch_id
                 # handle 'deb' packages
-                command = ['dak', 'contents', '-s', suite.suite_name, \
-                    'generate_helper', architecture.arch_string, 'deb']
-                pool.apply_async(call, (command, ))
+                pool.apply_async(generate_helper, (suite_id, arch_id, deb_id), \
+                    callback = class_.log_result)
                 # handle 'udeb' packages for 'main' and 'non-free'
-                command = ['dak', 'contents', '-s', suite.suite_name, \
-                    'generate_helper', architecture.arch_string, 'udeb', 'main']
-                pool.apply_async(call, (command, ))
-                command = ['dak', 'contents', '-s', suite.suite_name, \
-                    'generate_helper', architecture.arch_string, 'udeb', 'non-free']
-                pool.apply_async(call, (command, ))
+                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, main_id), \
+                    callback = class_.log_result)
+                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, non_free_id), \
+                    callback = class_.log_result)
         pool.close()
         pool.join()
         session.close()
+
+def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
+    '''
+    This function is called in a new subprocess.
+    '''
+    DBConn().reset()
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    architecture = Architecture.get(arch_id, session)
+    overridetype = OverrideType.get(overridetype_id, session)
+    log_message = [suite.suite_name, architecture.arch_string, overridetype.overridetype]
+    if component_id is None:
+        component = None
+    else:
+        component = Component.get(component_id, session)
+        log_message.append(component.component_name)
+    contents_writer = ContentsWriter(suite, architecture, overridetype, component)
+    contents_writer.write_file()
+    return log_message
 
 
 class ContentsScanner(object):
