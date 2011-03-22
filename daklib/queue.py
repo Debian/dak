@@ -772,6 +772,30 @@ class Upload(object):
                 if not re_valid_pkg_name.match(prov):
                     self.rejects.append("%s: Invalid Provides field content %s." % (f, prov))
 
+        # If there is a Built-Using field, we need to check we can find the
+        # exact source version
+        built_using = control.Find("Built-Using")
+        if built_using:
+            try:
+                entry["built-using"] = []
+                for dep in apt_pkg.parse_depends(built_using):
+                    bu_s, bu_v, bu_e = dep[0]
+                    # Check that it's an exact match dependency and we have
+                    # some form of version
+                    if bu_e != "=" or len(bu_v) < 1:
+                        self.rejects.append("%s: Built-Using contains non strict dependency (%s %s %s)" % (f, bu_s, bu_e, bu_v))
+                    else:
+                        # Find the source id for this version
+                        bu_so = get_sources_from_name(bu_s, version=bu_v, session = session)
+                        if len(bu_so) != 1:
+                            self.rejects.append("%s: Built-Using (%s = %s): Cannot find source package" % (f, bu_s, bu_v))
+                        else:
+                            entry["built-using"].append( (bu_so[0].source, bu_so[0].version, ) )
+
+            except ValueError, e:
+                self.rejects.append("%s: Cannot parse Built-Using field: %s" % (f, str(e)))
+
+
         # Check the section & priority match those given in the .changes (non-fatal)
         if     control.Find("Section") and entry["section"] != "" \
            and entry["section"] != control.Find("Section"):

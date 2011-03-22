@@ -493,7 +493,7 @@ class DBBinary(ORMObject):
     def properties(self):
         return ['package', 'version', 'maintainer', 'source', 'architecture', \
             'poolfile', 'binarytype', 'fingerprint', 'install_date', \
-            'suites_count', 'binary_id', 'contents_count']
+            'suites_count', 'binary_id', 'contents_count', 'extra_sources']
 
     def not_null_constraints(self):
         return ['package', 'version', 'maintainer', 'source',  'poolfile', \
@@ -2465,6 +2465,16 @@ def add_deb_to_db(u, filename, session=None):
 
     bin.source_id = bin_sources[0].source_id
 
+    if entry.has_key("built-using"):
+        for srcname, version in entry["built-using"]:
+            exsources = get_sources_from_name(srcname, version, session=session)
+            if len(exsources) != 1:
+                raise NoSourceFieldError, "Unable to find source package (%s = %s) in Built-Using for %s (%s), %s, file %s, type %s, signed by %s" % \
+                                          (srcname, version, bin.package, bin.version, entry["architecture"],
+                                           filename, bin.binarytype, u.pkg.changes["fingerprint"])
+
+            bin.extra_sources.append(exsources[0])
+
     # Add and flush object so it has an ID
     session.add(bin)
 
@@ -2849,6 +2859,7 @@ class DBConn(object):
             'changes_pending_files_map',
             'changes_pending_source_files',
             'changes_pool_files',
+            'extra_src_references',
             # TODO: the maintainer column in table override should be removed.
             'override',
             'suite_architectures',
@@ -2942,7 +2953,9 @@ class DBConn(object):
                                  fingerprint = relation(Fingerprint),
                                  install_date = self.tbl_binaries.c.install_date,
                                  suites = relation(Suite, secondary=self.tbl_bin_associations,
-                                     backref=backref('binaries', lazy='dynamic'))),
+                                     backref=backref('binaries', lazy='dynamic')),
+                                 extra_sources = relation(DBSource, secondary=self.tbl_extra_src_references,
+                                     backref=backref('extra_binary_references', lazy='dynamic'))),
                 extension = validator)
 
         mapper(BinaryACL, self.tbl_binary_acl,
