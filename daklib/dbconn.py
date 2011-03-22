@@ -2802,6 +2802,52 @@ __all__.append('UploadBlock')
 
 ################################################################################
 
+class MetadataKey(ORMObject):
+    def __init__(self, key = None):
+        self.key = key
+
+    def properties(self):
+        return ['key']
+
+    def not_null_constraints(self):
+        return ['key']
+
+__all__.append('MetadataKey')
+
+################################################################################
+
+class BinaryMetadata(ORMObject):
+    def __init__(self, binary = None, key = None, value = None):
+        self.binary = binary
+        self.key = key
+        self.value = value
+
+    def properties(self):
+        return ['binary', 'key', 'value']
+
+    def not_null_constraints(self):
+        return ['value']
+
+__all__.append('BinaryMetadata')
+
+################################################################################
+
+class SourceMetadata(ORMObject):
+    def __init__(self, source = None, key = None, value = None):
+        self.source = source
+        self.key = key
+        self.value = value
+
+    def properties(self):
+        return ['source', 'key', 'value']
+
+    def not_null_constraints(self):
+        return ['value']
+
+__all__.append('SourceMetadata')
+
+################################################################################
+
 class DBConn(object):
     """
     database module init.
@@ -2817,11 +2863,13 @@ class DBConn(object):
             self.__createconn()
 
     def __setuptables(self):
-        tables_with_primary = (
+        tables = (
             'architecture',
             'archive',
             'bin_associations',
+            'bin_contents',
             'binaries',
+            'binaries_metadata',
             'binary_acl',
             'binary_acl_map',
             'build_queue',
@@ -2833,38 +2881,37 @@ class DBConn(object):
             'changes_pending_binaries',
             'changes_pending_files',
             'changes_pending_source',
+            'changes_pending_files_map',
+            'changes_pending_source_files',
+            'changes_pool_files',
             'dsc_files',
+            'extra_src_references',
             'files',
             'fingerprint',
             'keyrings',
             'keyring_acl_map',
             'location',
             'maintainer',
+            'metadata_keys',
             'new_comments',
+            # TODO: the maintainer column in table override should be removed.
+            'override',
             'override_type',
             'policy_queue',
             'priority',
             'section',
             'source',
             'source_acl',
+            'source_metadata',
             'src_associations',
             'src_format',
             'src_uploaders',
             'suite',
+            'suite_architectures',
+            'suite_build_queue_copy',
+            'suite_src_formats',
             'uid',
             'upload_blocks',
-        )
-
-        tables_no_primary = (
-            'changes_pending_files_map',
-            'changes_pending_source_files',
-            'changes_pool_files',
-            'extra_src_references',
-            # TODO: the maintainer column in table override should be removed.
-            'override',
-            'suite_architectures',
-            'suite_src_formats',
-            'suite_build_queue_copy',
         )
 
         views = (
@@ -2891,27 +2938,10 @@ class DBConn(object):
             'suite_arch_by_name',
         )
 
-        # Sqlalchemy version 0.5 fails to reflect the SERIAL type
-        # correctly and that is why we have to use a workaround. It can
-        # be removed as soon as we switch to version 0.6.
-        for table_name in tables_with_primary:
+        for table_name in tables:
             table = Table(table_name, self.db_meta, \
-                Column('id', Integer, primary_key = True), \
                 autoload=True, useexisting=True)
             setattr(self, 'tbl_%s' % table_name, table)
-
-        for table_name in tables_no_primary:
-            table = Table(table_name, self.db_meta, autoload=True)
-            setattr(self, 'tbl_%s' % table_name, table)
-
-        # bin_contents needs special attention until the SERIAL type is
-        # correctly detected and the workaround has been removed; see comment
-        # above
-        self.tbl_bin_contents = Table('bin_contents', self.db_meta, \
-            Column('file', Text, primary_key = True),
-            Column('binary_id', Integer, ForeignKey('binaries.id'), \
-                primary_key = True),
-            autoload=True, useexisting=True)
 
         for view_name in views:
             view = Table(view_name, self.db_meta, autoload=True)
@@ -3172,6 +3202,27 @@ class DBConn(object):
                 binary = relation(DBBinary,
                     backref=backref('contents', lazy='dynamic', cascade='all')),
                 file = self.tbl_bin_contents.c.file))
+
+        mapper(MetadataKey, self.tbl_metadata_keys,
+            properties = dict(
+                key_id = self.tbl_metadata_keys.c.key_id,
+                key = self.tbl_metadata_keys.c.key))
+
+        mapper(BinaryMetadata, self.tbl_binaries_metadata,
+            properties = dict(
+                binary_id = self.tbl_binaries_metadata.c.bin_id,
+                binary = relation(DBBinary),
+                key_id = self.tbl_binaries_metadata.c.key_id,
+                key = relation(MetadataKey),
+                value = self.tbl_binaries_metadata.c.value))
+
+        mapper(SourceMetadata, self.tbl_source_metadata,
+            properties = dict(
+                source_id = self.tbl_source_metadata.c.src_id,
+                source = relation(DBSource),
+                key_id = self.tbl_source_metadata.c.key_id,
+                key = relation(MetadataKey),
+                value = self.tbl_source_metadata.c.value))
 
     ## Connection functions
     def __createconn(self):
