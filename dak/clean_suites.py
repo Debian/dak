@@ -254,7 +254,8 @@ def clean(now_date, delete_date, max_delete, session):
     q = session.execute("""
 SELECT s.id, f.filename FROM source s, files f
   WHERE f.last_used <= :deletedate
-        AND s.file = f.id""", {'deletedate': delete_date})
+        AND s.file = f.id
+        AND s.id NOT IN (SELECT src_id FROM extra_src_references)""", {'deletedate': delete_date})
     for s in q.fetchall():
         Logger.log(["delete source", s[1], s[0]])
         if not Options["No-Action"]:
