@@ -172,7 +172,7 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="merkel1"
+    FUNC="qa1"
     TIME="init"
     ARGS=""
     ERR="false"
@@ -437,14 +437,6 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="merkel2"
-    TIME="merkel projectb push"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
     FUNC="mirrorpush"
     TIME="mirrorpush"
     ARGS=""
@@ -479,8 +471,8 @@ stage $GO &
 rm -f "${LOCK_BRITNEY}"
 
 GO=(
-    FUNC="merkel3"
-    TIME="merkel ddaccessible sync"
+    FUNC="ddaccess"
+    TIME="ddaccessible sync"
     ARGS=""
     ERR="false"
 )

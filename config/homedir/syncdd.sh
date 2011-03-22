@@ -26,6 +26,43 @@ export LC_ALL=C
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
+EXTRA=""
+
+check_commandline() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            sync)
+                EXTRA="--exclude ftp/"
+                ;;
+            pool)
+                ;;
+            *)
+                echo "Unknown option ${1} ignored"
+                ;;
+        esac
+        shift  # Check next set of parameters.
+    done
+}
+
+if [ $# -gt 0 ]; then
+    ORIGINAL_COMMAND=$*
+else
+    ORIGINAL_COMMAND=""
+fi
+
+SSH_ORIGINAL_COMMAND=${SSH_ORIGINAL_COMMAND:-""}
+if [ -n "${SSH_ORIGINAL_COMMAND}" ]; then
+    set "nothing" "${SSH_ORIGINAL_COMMAND}"
+    shift
+    check_commandline $*
+fi
+
+if [ -n "${ORIGINAL_COMMAND}" ]; then
+    set ${ORIGINAL_COMMAND}
+    check_commandline $*
+fi
+
+
 cleanup() {
     rm -f "${HOME}/sync.lock"
 }
@@ -40,8 +77,8 @@ if lockfile -r3 ${HOME}/sync.lock; then
     rsync -aH -B8192 \
 	    --exclude backup/*.xz \
 	    --exclude backup/dump* \
-	    --exclude ftp/ \
-	    --exclude mirror/ \
+        ${EXTRA} \
+	    --exclude mirror \
 	    --exclude morgue/ \
 	    --exclude=lost+found/ \
 	    --exclude .da-backup.trace \

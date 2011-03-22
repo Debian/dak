@@ -38,25 +38,9 @@ function onerror() {
 ########################################################################
 
 # pushing merkels QA user, part one
-function merkel1() {
-    log "Telling merkels QA user that we start dinstall"
+function qa1() {
+    log "Telling QA user that we start dinstall"
     ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 qa@qa.debian.org sleep 1
-}
-
-# Create the postgres dump files
-function pgdump_pre() {
-    log "Creating pre-daily-cron-job backup of $PGDATABASE database..."
-    pg_dump > $base/backup/dump_pre_$(date +%Y.%m.%d-%H:%M:%S)
-}
-
-function pgdump_post() {
-    log "Creating post-daily-cron-job backup of $PGDATABASE database..."
-    cd $base/backup
-    POSTDUMP=$(date +%Y.%m.%d-%H:%M:%S)
-    pg_dump > $base/backup/dump_$POSTDUMP
-    #pg_dumpall --globals-only > $base/backup/dumpall_$POSTDUMP
-    ln -sf $base/backup/dump_$POSTDUMP current
-    #ln -sf $base/backup/dumpall_$POSTDUMP currentall
 }
 
 # Updating various files
@@ -444,18 +428,10 @@ function bts() {
     dak bts-categorize
 }
 
-function merkel2() {
-    # Push dak@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
-    log "Trigger merkel/flotows $PGDATABASE sync"
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb dak@merkel.debian.org sleep 1
-    # Also trigger flotow, the ftpmaster test box
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_flotow_projectb dak@flotow.debconf.org sleep 1
-}
-
-function merkel3() {
-    # Push dak@merkel to tell it to sync the dd accessible parts. Returns immediately, the sync runs detached
-    log "Trigger merkels dd accessible parts sync"
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_ddaccess dak@merkel.debian.org sleep 1
+function ddaccess() {
+    # Tell our dd accessible mirror to sync itself up. Including ftp dir.
+    log "Trigger dd accessible parts sync including ftp dir"
+    ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 -i ${base}/s3kr1t/pushddmirror dak@ries.debian.org pool
 }
 
 function mirrorpush() {
