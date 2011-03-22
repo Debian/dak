@@ -191,7 +191,10 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         gzip.stdin.close()
         output_file.close()
         gzip.wait()
-        os.remove(final_filename)
+        try:
+            os.remove(final_filename)
+        except:
+            pass
         os.rename(temp_filename, final_filename)
         os.chmod(final_filename, 0664)
 
