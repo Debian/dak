@@ -52,7 +52,7 @@ if lockfile -r3 ${HOME}/sync.lock; then
 	    ftpmaster-sync:/srv/ftp-master.debian.org/ .
 
     cd $public/
-    rsync -avH -B8192 \
+    rsync -aH -B8192 \
 	    --exclude mirror \
 	    --exclude rsync/ \
 	    --exclude=lost+found/ \
