@@ -6,6 +6,7 @@
 @copyright: 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>
 @copyright: 2009  Mark Hymers <mhy@debian.org>
 @copyright: 2010  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
 
 """
 
