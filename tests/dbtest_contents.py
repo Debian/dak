@@ -166,8 +166,8 @@ class ContentsTestCase(DBDakTestCase):
         self.assertEqual(['usr/bin/hello', 'usr/share/doc/hello/copyright'],
             filelist)
         self.session.commit()
-        ContentsScanner(self.binary['hello_2.2-1_i386']).scan()
-        bin_contents_list = self.binary['hello_2.2-1_i386'].contents.all()
+        ContentsScanner(self.binary['hello_2.2-1_i386'].binary_id).scan()
+        bin_contents_list = self.binary['hello_2.2-1_i386'].contents.order_by('file').all()
         self.assertEqual(2, len(bin_contents_list))
         self.assertEqual('usr/bin/hello', bin_contents_list[0].file)
         self.assertEqual('usr/share/doc/hello/copyright', bin_contents_list[1].file)
