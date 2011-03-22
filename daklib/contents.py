@@ -241,7 +241,6 @@ def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
     '''
     This function is called in a new subprocess.
     '''
-    DBConn().reset()
     session = DBConn().session()
     suite = Suite.get(suite_id, session)
     architecture = Architecture.get(arch_id, session)
@@ -308,15 +307,9 @@ class ContentsScanner(object):
         session.close()
         return { 'processed': processed, 'remaining': remaining }
 
-reset = False
-
 def scan_helper(binary_id):
     '''
     This function runs in a subprocess.
     '''
-    global reset
-    if not reset:
-        DBConn().reset()
-        reset = True
     scanner = ContentsScanner(binary_id)
     scanner.scan()

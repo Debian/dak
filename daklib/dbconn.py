@@ -3223,18 +3223,14 @@ class DBConn(object):
 
         self.__setuptables()
         self.__setupmappers()
+        self.pid = os.getpid()
 
     def session(self):
+        # reinitialize DBConn in new processes
+        if self.pid != os.getpid():
+            clear_mappers()
+            self.__createconn()
         return self.db_smaker()
-
-    def reset(self):
-        '''
-        Resets the DBConn object. This function must be called by subprocesses
-        created by the multiprocessing module. See tests/dbtest_multiproc.py
-        for an example.
-        '''
-        clear_mappers()
-        self.__createconn()
 
 __all__.append('DBConn')
 

@@ -9,7 +9,6 @@ from time import sleep
 import unittest
 
 def read_number():
-    DBConn().reset()
     session = DBConn().session()
     result = session.query('foo').from_statement('select 7 as foo').scalar()
     sleep(0.1)
@@ -18,9 +17,7 @@ def read_number():
 
 class MultiProcTestCase(DBDakTestCase):
     """
-    This TestCase checks that DBConn works with multiprocessing. A fresh
-    subprocess needs to call reset() on DBConn(). See function read_number()
-    for an example.
+    This TestCase checks that DBConn works with multiprocessing.
     """
 
     def save_result(self, result):
