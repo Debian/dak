@@ -199,12 +199,20 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         os.chmod(final_filename, 0664)
 
     @classmethod
-    def write_all(class_, suite_names = [], force = False):
+    def log_result(class_, result):
+        '''
+        Writes a result message to the logfile.
+        '''
+        class_.logger.log(result)
+
+    @classmethod
+    def write_all(class_, logger, suite_names = [], force = False):
         '''
         Writes all Contents files for suites in list suite_names which defaults
         to all 'touchable' suites if not specified explicitely. Untouchable
         suites will be included if the force argument is set to True.
         '''
+        class_.logger = logger
         session = DBConn().session()
         suite_query = session.query(Suite)
         if len(suite_names) > 0:
@@ -221,10 +229,13 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
             for architecture in suite.get_architectures(skipsrc = True, skipall = True):
                 arch_id = architecture.arch_id
                 # handle 'deb' packages
-                pool.apply_async(generate_helper, (suite_id, arch_id, deb_id))
+                pool.apply_async(generate_helper, (suite_id, arch_id, deb_id), \
+                    callback = class_.log_result)
                 # handle 'udeb' packages for 'main' and 'non-free'
-                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, main_id))
-                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, non_free_id))
+                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, main_id), \
+                    callback = class_.log_result)
+                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, non_free_id), \
+                    callback = class_.log_result)
         pool.close()
         pool.join()
         session.close()
@@ -238,12 +249,15 @@ def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
     suite = Suite.get(suite_id, session)
     architecture = Architecture.get(arch_id, session)
     overridetype = OverrideType.get(overridetype_id, session)
+    log_message = [suite.suite_name, architecture.arch_string, overridetype.overridetype]
     if component_id is None:
         component = None
     else:
         component = Component.get(component_id, session)
+        log_message.append(component.component_name)
     contents_writer = ContentsWriter(suite, architecture, overridetype, component)
     contents_writer.write_file()
+    return log_message
 
 
 class ContentsScanner(object):

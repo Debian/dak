@@ -77,7 +77,7 @@ OPTIONS for scan
 
 def write_all(cnf, suite_names = [], force = None):
     Logger = daklog.Logger(cnf.Cnf, 'contents generate')
-    ContentsWriter.write_all(suite_names, force)
+    ContentsWriter.write_all(Logger, suite_names, force)
     Logger.close()
 
 ################################################################################
