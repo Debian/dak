@@ -32,7 +32,7 @@ from multiprocessing import Pool
 
 from sqlalchemy import desc, or_
 from sqlalchemy.exc import IntegrityError
-from subprocess import Popen, PIPE, call
+from subprocess import Popen, PIPE
 
 import os.path
 
@@ -208,23 +208,39 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
             suite_query = suite_query.filter(Suite.suite_name.in_(suite_names))
         if not force:
             suite_query = suite_query.filter_by(untouchable = False)
+        deb_id = get_override_type('deb', session).overridetype_id
+        udeb_id = get_override_type('udeb', session).overridetype_id
+        main_id = get_component('main', session).component_id
+        non_free_id = get_component('non-free', session).component_id
         pool = Pool()
         for suite in suite_query:
+            suite_id = suite.suite_id
             for architecture in suite.get_architectures(skipsrc = True, skipall = True):
+                arch_id = architecture.arch_id
                 # handle 'deb' packages
-                command = ['dak', 'contents', '-s', suite.suite_name, \
-                    'generate_helper', architecture.arch_string, 'deb']
-                pool.apply_async(call, (command, ))
+                pool.apply_async(generate_helper, (suite_id, arch_id, deb_id))
                 # handle 'udeb' packages for 'main' and 'non-free'
-                command = ['dak', 'contents', '-s', suite.suite_name, \
-                    'generate_helper', architecture.arch_string, 'udeb', 'main']
-                pool.apply_async(call, (command, ))
-                command = ['dak', 'contents', '-s', suite.suite_name, \
-                    'generate_helper', architecture.arch_string, 'udeb', 'non-free']
-                pool.apply_async(call, (command, ))
+                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, main_id))
+                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, non_free_id))
         pool.close()
         pool.join()
         session.close()
+
+def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
+    '''
+    This function is called in a new subprocess.
+    '''
+    DBConn().reset()
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    architecture = Architecture.get(arch_id, session)
+    overridetype = OverrideType.get(overridetype_id, session)
+    if component_id is None:
+        component = None
+    else:
+        component = Component.get(component_id, session)
+    contents_writer = ContentsWriter(suite, architecture, overridetype, component)
+    contents_writer.write_file()
 
 
 class ContentsScanner(object):
