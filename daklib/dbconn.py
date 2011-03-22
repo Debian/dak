@@ -3164,15 +3164,17 @@ class DBConn(object):
     def __createconn(self):
         from config import Config
         cnf = Config()
-        if cnf["DB::Host"]:
+        if cnf["DB::Service"]:
+            connstr = "postgresql://service=%s" % cnf["DB::Service"]
+        elif cnf["DB::Host"]:
             # TCP/IP
-            connstr = "postgres://%s" % cnf["DB::Host"]
+            connstr = "postgresql://%s" % cnf["DB::Host"]
             if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
                 connstr += ":%s" % cnf["DB::Port"]
             connstr += "/%s" % cnf["DB::Name"]
         else:
             # Unix Socket
-            connstr = "postgres:///%s" % cnf["DB::Name"]
+            connstr = "postgresql:///%s" % cnf["DB::Name"]
             if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
 
@@ -3184,6 +3186,20 @@ class DBConn(object):
         if sa_major_version == '0.6' and cnf.has_key('DB::Unicode') and \
             cnf['DB::Unicode'] == 'false':
             engine_args['use_native_unicode'] = False
+
+        # Monkey patch a new dialect in in order to support service= syntax
+        import sqlalchemy.dialects.postgresql
+        from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
+        class PGDialect_psycopg2_dak(PGDialect_psycopg2):
+            def create_connect_args(self, url):
+                if str(url).startswith('postgresql://service='):
+                    # Eww
+                    servicename = str(url)[21:]
+                    return (['service=%s' % servicename], {})
+                else:
+                    return PGDialect_psycopg2.create_connect_args(self, url)
+
+        sqlalchemy.dialects.postgresql.base.dialect = PGDialect_psycopg2_dak
 
         self.db_pg   = create_engine(connstr, **engine_args)
         self.db_meta = MetaData()
