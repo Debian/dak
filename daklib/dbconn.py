@@ -2992,7 +2992,7 @@ class DBConn(object):
                                      backref=backref('binaries', lazy='dynamic')),
                                  extra_sources = relation(DBSource, secondary=self.tbl_extra_src_references,
                                      backref=backref('extra_binary_references', lazy='dynamic')),
-                                 key = relation(BinaryMetadata,
+                                 key = relation(BinaryMetadata, cascade='all',
                                      collection_class=attribute_mapped_collection('key'))),
                 extension = validator)
 
@@ -3164,7 +3164,7 @@ class DBConn(object):
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
                                      backref=backref('sources', lazy='dynamic')),
                                  srcuploaders = relation(SrcUploader),
-                                 key = relation(SourceMetadata,
+                                 key = relation(SourceMetadata, cascade='all',
                                      collection_class=attribute_mapped_collection('key'))),
                extension = validator)
 
