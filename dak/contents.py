@@ -53,8 +53,13 @@ SUBCOMMANDS
     generate
         generate Contents-$arch.gz files
 
-    scan
-        scan the debs in the existing pool and load contents into the bin_contents table
+    binary-scan
+        scan the (u)debs in the existing pool and load contents into the
+        bin_contents table
+
+    source-scan
+        scan the source packages in the existing pool and load contents into
+        the src_contents table
 
 OPTIONS
      -h, --help
@@ -67,7 +72,7 @@ OPTIONS for generate
      -f, --force
         write Contents files for suites marked as untouchable, too
 
-OPTIONS for scan
+OPTIONS for binary-scan and source-scan
      -l, --limit=NUMBER
         maximum number of packages to scan
 """
@@ -82,9 +87,19 @@ def write_all(cnf, suite_names = [], force = None):
 
 ################################################################################
 
-def scan_all(cnf, limit):
-    Logger = daklog.Logger(cnf.Cnf, 'contents scan')
+def binary_scan_all(cnf, limit):
+    Logger = daklog.Logger(cnf.Cnf, 'contents binary_scan')
     result = BinaryContentsScanner.scan_all(limit)
+    processed = '%(processed)d packages processed' % result
+    remaining = '%(remaining)d packages remaining' % result
+    Logger.log([processed, remaining])
+    Logger.close()
+
+################################################################################
+
+def source_scan_all(cnf, limit):
+    Logger = daklog.Logger(cnf.Cnf, 'contents source_scan')
+    result = SourceContentsScanner.scan_all(limit)
     processed = '%(processed)d packages processed' % result
     remaining = '%(remaining)d packages remaining' % result
     Logger.log([processed, remaining])
@@ -113,8 +128,12 @@ def main():
     if len(options['Limit']) > 0:
         limit = int(options['Limit'])
 
-    if args[0] == 'scan':
-        scan_all(cnf, limit)
+    if args[0] == 'binary_scan':
+        binary_scan_all(cnf, limit)
+        return
+
+    if args[0] == 'source_scan':
+        source_scan_all(cnf, limit)
         return
 
     suite_names = utils.split_args(options['Suite'])
