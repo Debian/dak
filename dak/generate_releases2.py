@@ -116,7 +116,7 @@ def generate_release_files(suite, tmppath):
                  ('Version', 'version'))
     # Boolean stuff. If we find it true in database, write out "yes" into the release file
     boolattrs=('notautomatic', 'butautomaticupgrades')
-    KEYWORD = 0;
+    KEYWORD = 0
     DBFIELD = 1
 
     cnf = Config()
