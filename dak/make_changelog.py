@@ -225,9 +225,8 @@ def export_files(session, pool, clpool, temppath):
                         os.link(version, suite)
                         stats['created'] += 1
             unpacked.cleanup()
-        except:
-            print 'make-changelog: unable to unpack %s_%s: %s' \
-                   % (package[0], package[1], output)
+        except Exception, e:
+            print 'make-changelog: unable to unpack %s\n%s' % (p, e)
             stats['errors'] += 1
 
     for root, dirs, files in os.walk(clpool):
