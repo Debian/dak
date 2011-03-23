@@ -346,11 +346,11 @@ class Validator(MapperExtension):
     '''
 
     def before_update(self, mapper, connection, instance):
-        #instance.validate()
+        instance.validate()
         return EXT_CONTINUE
 
     def before_insert(self, mapper, connection, instance):
-        #instance.validate()
+        instance.validate()
         return EXT_CONTINUE
 
 validator = Validator()
@@ -2692,7 +2692,7 @@ class Suite(ORMObject):
             'overrides_count']
 
     def not_null_constraints(self):
-        return ['suite_name', 'version']
+        return ['suite_name']
 
     def __eq__(self, val):
         if isinstance(val, str):
