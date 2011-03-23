@@ -46,7 +46,7 @@ from daklib.daklog import Logger
 ################################################################################
 
 Cnf = None
-required_database_schema = 47
+required_database_schema = 48
 
 ################################################################################
 
@@ -123,9 +123,12 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         try:
             # Build a connect string
-            connect_str = "dbname=%s"% (cnf["DB::Name"])
-            if cnf["DB::Host"] != '': connect_str += " host=%s" % (cnf["DB::Host"])
-            if cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(cnf["DB::Port"]))
+            if cnf["DB::Service"]:
+                connect_str = "service=%s" % cnf["DB::Service"]
+            else:
+                connect_str = "dbname=%s"% (cnf["DB::Name"])
+                if cnf["DB::Host"] != '': connect_str += " host=%s" % (cnf["DB::Host"])
+                if cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(cnf["DB::Port"]))
 
             self.db = psycopg2.connect(connect_str)
 

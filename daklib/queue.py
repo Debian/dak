@@ -54,6 +54,7 @@ from summarystats import SummaryStats
 from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
 from lintian import parse_lintian_output, generate_reject_messages
+from contents import UnpackedSource
 
 # suppress some deprecation warnings in squeeze related to apt_pkg
 # module
@@ -1265,11 +1266,10 @@ class Upload(object):
             os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
 
         # Extract the source
-        cmd = "dpkg-source -sn -x %s" % (dsc_filename)
-        (result, output) = commands.getstatusoutput(cmd)
-        if (result != 0):
-            self.rejects.append("'dpkg-source -x' failed for %s [return code: %s]." % (dsc_filename, result))
-            self.rejects.append(utils.prefix_multi_line_string(output, " [dpkg-source output:] "))
+        try:
+            unpacked = UnpackedSource(dsc_filename)
+        except:
+            self.rejects.append("'dpkg-source -x' failed for %s." % dsc_filename)
             return
 
         if not cnf.Find("Dir::Queue::BTSVersionTrack"):
@@ -1281,19 +1281,19 @@ class Upload(object):
             upstr_version = re_strip_revision.sub('', upstr_version)
 
         # Ensure the changelog file exists
-        changelog_filename = "%s-%s/debian/changelog" % (self.pkg.dsc["source"], upstr_version)
-        if not os.path.exists(changelog_filename):
+        changelog_file = unpacked.get_changelog_file()
+        if changelog_file is None:
             self.rejects.append("%s: debian/changelog not found in extracted source." % (dsc_filename))
             return
 
         # Parse the changelog
         self.pkg.dsc["bts changelog"] = ""
-        changelog_file = utils.open_file(changelog_filename)
         for line in changelog_file.readlines():
             m = re_changelog_versions.match(line)
             if m:
                 self.pkg.dsc["bts changelog"] += line
         changelog_file.close()
+        unpacked.cleanup()
 
         # Check we found at least one revision in the changelog
         if not self.pkg.dsc["bts changelog"]:

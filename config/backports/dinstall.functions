@@ -322,7 +322,7 @@ function mkfilesindices() {
 
     ARCHLIST=$(tempfile)
 
-    log "Querying $PGDATABASE..."
+    log "Querying postgres..."
     echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql -At | sed 's/|//;s,^/srv/ftp-master.debian.org/ftp,.,' | sort >$ARCHLIST
 
     includedirs () {
