@@ -430,6 +430,9 @@ def source_scan_helper(source_id):
     '''
     This function runs in a subprocess.
     '''
-    scanner = SourceContentsScanner(source_id)
-    scanner.scan()
+    try:
+        scanner = SourceContentsScanner(source_id)
+        scanner.scan()
+    except Exception, e:
+        print e
 

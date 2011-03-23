@@ -89,7 +89,7 @@ def write_all(cnf, suite_names = [], force = None):
 ################################################################################
 
 def binary_scan_all(cnf, limit):
-    Logger = daklog.Logger(cnf.Cnf, 'contents binary_scan')
+    Logger = daklog.Logger(cnf.Cnf, 'contents scan-binary')
     result = BinaryContentsScanner.scan_all(limit)
     processed = '%(processed)d packages processed' % result
     remaining = '%(remaining)d packages remaining' % result
@@ -99,7 +99,7 @@ def binary_scan_all(cnf, limit):
 ################################################################################
 
 def source_scan_all(cnf, limit):
-    Logger = daklog.Logger(cnf.Cnf, 'contents source_scan')
+    Logger = daklog.Logger(cnf.Cnf, 'contents scan-source')
     result = SourceContentsScanner.scan_all(limit)
     processed = '%(processed)d packages processed' % result
     remaining = '%(remaining)d packages remaining' % result
