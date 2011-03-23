@@ -61,6 +61,8 @@ from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc, \
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
     backref, MapperExtension, EXT_CONTINUE, object_mapper, clear_mappers
 from sqlalchemy import types as sqltypes
+from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.ext.associationproxy import association_proxy
 
 # Don't remove this, we re-export the exceptions to scripts which import us
 from sqlalchemy.exc import *
@@ -498,6 +500,8 @@ class DBBinary(ORMObject):
     def not_null_constraints(self):
         return ['package', 'version', 'maintainer', 'source',  'poolfile', \
             'binarytype']
+
+    metadata = association_proxy('key', 'value')
 
     def get_component_name(self):
         return self.poolfile.location.component.component_name
@@ -2172,6 +2176,8 @@ class DBSource(ORMObject):
         return ['source', 'version', 'install_date', 'maintainer', \
             'changedby', 'poolfile', 'install_date']
 
+    metadata = association_proxy('key', 'value')
+
 __all__.append('DBSource')
 
 @session_wrapper
@@ -2817,10 +2823,10 @@ __all__.append('MetadataKey')
 ################################################################################
 
 class BinaryMetadata(ORMObject):
-    def __init__(self, binary = None, key = None, value = None):
-        self.binary = binary
+    def __init__(self, key = None, value = None, binary = None):
         self.key = key
         self.value = value
+        self.binary = binary
 
     def properties(self):
         return ['binary', 'key', 'value']
@@ -2833,10 +2839,10 @@ __all__.append('BinaryMetadata')
 ################################################################################
 
 class SourceMetadata(ORMObject):
-    def __init__(self, source = None, key = None, value = None):
-        self.source = source
+    def __init__(self, key = None, value = None, source = None):
         self.key = key
         self.value = value
+        self.source = source
 
     def properties(self):
         return ['source', 'key', 'value']
@@ -2985,7 +2991,9 @@ class DBConn(object):
                                  suites = relation(Suite, secondary=self.tbl_bin_associations,
                                      backref=backref('binaries', lazy='dynamic')),
                                  extra_sources = relation(DBSource, secondary=self.tbl_extra_src_references,
-                                     backref=backref('extra_binary_references', lazy='dynamic'))),
+                                     backref=backref('extra_binary_references', lazy='dynamic')),
+                                 key = relation(BinaryMetadata,
+                                     collection_class=attribute_mapped_collection('key'))),
                 extension = validator)
 
         mapper(BinaryACL, self.tbl_binary_acl,
@@ -3155,7 +3163,9 @@ class DBConn(object):
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
                                      backref=backref('sources', lazy='dynamic')),
-                                 srcuploaders = relation(SrcUploader)),
+                                 srcuploaders = relation(SrcUploader),
+                                 key = relation(SourceMetadata,
+                                     collection_class=attribute_mapped_collection('key'))),
                extension = validator)
 
         mapper(SourceACL, self.tbl_source_acl,
