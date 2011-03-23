@@ -54,13 +54,13 @@ SUBCOMMANDS
     generate
         generate Contents-$arch.gz files
 
-    binary-scan
-        scan the (u)debs in the existing pool and load contents into the
-        bin_contents table
-
-    source-scan
+    scan-source
         scan the source packages in the existing pool and load contents into
         the src_contents table
+
+    scan-binary
+        scan the (u)debs in the existing pool and load contents into the
+        bin_contents table
 
 OPTIONS
      -h, --help
@@ -73,7 +73,7 @@ OPTIONS for generate
      -f, --force
         write Contents files for suites marked as untouchable, too
 
-OPTIONS for binary-scan and source-scan
+OPTIONS for scan-source and scan-binary
      -l, --limit=NUMBER
         maximum number of packages to scan
 """
@@ -129,12 +129,12 @@ def main():
     if len(options['Limit']) > 0:
         limit = int(options['Limit'])
 
-    if args[0] == 'binary-scan':
-        binary_scan_all(cnf, limit)
+    if args[0] == 'scan-source':
+        source_scan_all(cnf, limit)
         return
 
-    if args[0] == 'source-scan':
-        source_scan_all(cnf, limit)
+    if args[0] == 'scan-binary':
+        binary_scan_all(cnf, limit)
         return
 
     suite_names = utils.split_args(options['Suite'])
