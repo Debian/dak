@@ -40,7 +40,8 @@ import apt_pkg
 
 from daklib.config import Config
 from daklib.dbconn import *
-from daklib.contents import BinaryContentsScanner, ContentsWriter
+from daklib.contents import BinaryContentsScanner, ContentsWriter, \
+    SourceContentsScanner
 from daklib import daklog
 from daklib import utils
 
@@ -128,11 +129,11 @@ def main():
     if len(options['Limit']) > 0:
         limit = int(options['Limit'])
 
-    if args[0] == 'binary_scan':
+    if args[0] == 'binary-scan':
         binary_scan_all(cnf, limit)
         return
 
-    if args[0] == 'source_scan':
+    if args[0] == 'source-scan':
         source_scan_all(cnf, limit)
         return
 

@@ -426,7 +426,7 @@ class SourceContentsScanner(object):
         session.close()
         return { 'processed': processed, 'remaining': remaining }
 
-def source_scan_helper(binary_id):
+def source_scan_helper(source_id):
     '''
     This function runs in a subprocess.
     '''
