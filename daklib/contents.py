@@ -258,10 +258,10 @@ def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
     return log_message
 
 
-class ContentsScanner(object):
+class BinaryContentsScanner(object):
     '''
-    ContentsScanner provides a threadsafe method scan() to scan the contents of
-    a DBBinary object.
+    BinaryContentsScanner provides a threadsafe method scan() to scan the
+    contents of a DBBinary object.
     '''
     def __init__(self, binary_id):
         '''
@@ -313,7 +313,7 @@ def scan_helper(binary_id):
     '''
     This function runs in a subprocess.
     '''
-    scanner = ContentsScanner(binary_id)
+    scanner = BinaryContentsScanner(binary_id)
     scanner.scan()
 
 

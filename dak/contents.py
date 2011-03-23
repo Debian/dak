@@ -40,7 +40,7 @@ import apt_pkg
 
 from daklib.config import Config
 from daklib.dbconn import *
-from daklib.contents import ContentsScanner, ContentsWriter
+from daklib.contents import BinaryContentsScanner, ContentsWriter
 from daklib import daklog
 from daklib import utils
 
@@ -84,7 +84,7 @@ def write_all(cnf, suite_names = [], force = None):
 
 def scan_all(cnf, limit):
     Logger = daklog.Logger(cnf.Cnf, 'contents scan')
-    result = ContentsScanner.scan_all(limit)
+    result = BinaryContentsScanner.scan_all(limit)
     processed = '%(processed)d packages processed' % result
     remaining = '%(remaining)d packages remaining' % result
     Logger.log([processed, remaining])
