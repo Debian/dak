@@ -2692,7 +2692,7 @@ class Suite(ORMObject):
             'overrides_count']
 
     def not_null_constraints(self):
-        return ['suite_name', 'version']
+        return ['suite_name']
 
     def __eq__(self, val):
         if isinstance(val, str):
