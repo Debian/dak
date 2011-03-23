@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-from db_test import DBDakTestCase
+from db_test import DBDakTestCase, fixture
 
 from daklib.dbconn import *
-from daklib.contents import ContentsWriter, ContentsScanner
+from daklib.contents import ContentsWriter, ContentsScanner, UnpackedSource
 
 from os.path import normpath
 from sqlalchemy.exc import FlushError, IntegrityError
+from subprocess import CalledProcessError
 import unittest
 
 class ContentsTestCase(DBDakTestCase):
@@ -171,6 +172,21 @@ class ContentsTestCase(DBDakTestCase):
         self.assertEqual(2, len(bin_contents_list))
         self.assertEqual('usr/bin/hello', bin_contents_list[0].file)
         self.assertEqual('usr/share/doc/hello/copyright', bin_contents_list[1].file)
+
+    def test_unpack(self):
+        '''
+        Tests the UnpackedSource class.
+        '''
+        self.setup_poolfiles()
+        dscfilename = fixture('ftp/pool/' + self.file['hello_2.2-1.dsc'].filename)
+        unpacked = UnpackedSource(dscfilename)
+        self.assertTrue(len(unpacked.get_root_directory()) > 0)
+        self.assertEqual('hello (2.2-1) unstable; urgency=low\n',
+            unpacked.get_changelog_file().readline())
+        all_filenames = set(unpacked.get_all_filenames())
+        self.assertEqual(8, len(all_filenames))
+        self.assertTrue('debian/rules' in all_filenames)
+        self.assertRaises(CalledProcessError, lambda: UnpackedSource('invalidname'))
 
     def classes_to_clean(self):
         return [Override, Suite, BinContents, DBBinary, DBSource, Architecture, Section, \

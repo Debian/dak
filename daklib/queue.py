@@ -54,6 +54,7 @@ from summarystats import SummaryStats
 from utils import parse_changes, check_dsc_files
 from textutils import fix_maintainer
 from lintian import parse_lintian_output, generate_reject_messages
+from contents import UnpackedSource
 
 # suppress some deprecation warnings in squeeze related to apt_pkg
 # module
@@ -1265,11 +1266,10 @@ class Upload(object):
             os.symlink(self.pkg.orig_files[orig_file]["path"], dest)
 
         # Extract the source
-        cmd = "dpkg-source -sn -x %s" % (dsc_filename)
-        (result, output) = commands.getstatusoutput(cmd)
-        if (result != 0):
-            self.rejects.append("'dpkg-source -x' failed for %s [return code: %s]." % (dsc_filename, result))
-            self.rejects.append(utils.prefix_multi_line_string(output, " [dpkg-source output:] "))
+        try:
+            unpacked = UnpackedSource(dsc_filename)
+        except:
+            self.rejects.append("'dpkg-source -x' failed for %s." % dsc_filename)
             return
 
         if not cnf.Find("Dir::Queue::BTSVersionTrack"):
@@ -1281,19 +1281,19 @@ class Upload(object):
             upstr_version = re_strip_revision.sub('', upstr_version)
 
         # Ensure the changelog file exists
-        changelog_filename = "%s-%s/debian/changelog" % (self.pkg.dsc["source"], upstr_version)
-        if not os.path.exists(changelog_filename):
+        changelog_file = unpacked.get_changelog_file()
+        if changelog_file is None:
             self.rejects.append("%s: debian/changelog not found in extracted source." % (dsc_filename))
             return
 
         # Parse the changelog
         self.pkg.dsc["bts changelog"] = ""
-        changelog_file = utils.open_file(changelog_filename)
         for line in changelog_file.readlines():
             m = re_changelog_versions.match(line)
             if m:
                 self.pkg.dsc["bts changelog"] += line
         changelog_file.close()
+        unpacked.cleanup()
 
         # Check we found at least one revision in the changelog
         if not self.pkg.dsc["bts changelog"]:
@@ -2025,6 +2025,7 @@ distribution."""
         print "Installing."
         self.logger.log(["installing changes", self.pkg.changes_file])
 
+        binaries = []
         poolfiles = []
 
         # Add the .dsc file to the DB first
@@ -2037,7 +2038,9 @@ distribution."""
         # Add .deb / .udeb files to the DB (type is always deb, dbtype is udeb/deb)
         for newfile, entry in self.pkg.files.items():
             if entry["type"] == "deb":
-                poolfiles.append(add_deb_to_db(self, newfile, session))
+                b, pf = add_deb_to_db(self, newfile, session)
+                binaries.append(b)
+                poolfiles.append(pf)
 
         # If this is a sourceful diff only upload that is moving
         # cross-component we need to copy the .orig files into the new
@@ -2121,6 +2124,18 @@ distribution."""
         session.commit()
         # Our SQL session will automatically start a new transaction after
         # the last commit
+
+        # Now ensure that the metadata has been added
+        # This has to be done after we copy the files into the pool
+        # For source if we have it:
+        if self.pkg.changes["architecture"].has_key("source"):
+            import_metadata_into_db(source, session)
+
+        # Now for any of our binaries
+        for b in binaries:
+            import_metadata_into_db(b, session)
+
+        session.commit()
 
         # Move the .changes into the 'done' directory
         utils.move(self.pkg.changes_file,
