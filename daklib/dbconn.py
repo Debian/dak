@@ -525,6 +525,25 @@ class DBBinary(ORMObject):
         dpkg.stdout.close()
         dpkg.wait()
 
+    def read_control(self):
+        '''
+        Reads the control information from a binary.
+
+        @rtype: tuple
+        @return: (stanza, controldict)  stanza is the text of the control
+                 section.  controldict is the information in a dictionary
+                 form
+        '''
+        import apt_inst, apt_pk
+        fullpath = self.poolfile.fullpath
+        deb_file = open(fullpath, 'r')
+        stanza = apt_inst.debExtractControl(deb_file).rstrip()
+        control = dict(apt_pkg.TagSection(stanza))
+        deb_file.close()
+
+        return stanza, control
+
+
 __all__.append('DBBinary')
 
 @session_wrapper
@@ -2171,6 +2190,20 @@ class DBSource(ORMObject):
     def not_null_constraints(self):
         return ['source', 'version', 'install_date', 'maintainer', \
             'changedby', 'poolfile', 'install_date']
+
+    def read_control(self):
+        '''
+        Reads the control information from a dsc
+
+        @rtype: tuple
+        @return: (stanza, controldict)  stanza is the text of the control
+                 section.  controldict is the information in a dictionary
+                 form
+        '''
+        from debian.debfile import Deb822
+        fullpath = self.poolfile.fullpath
+        fields = Deb822(open(self.poolfile.fullpath, 'r'))
+        return fields
 
 __all__.append('DBSource')
 
