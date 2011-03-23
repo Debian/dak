@@ -76,5 +76,18 @@ class MetadataTestCase(DBDakTestCase):
         self.assertEqual('http://debian.org', self.src_hello.metadata[self.homepage])
         self.assertTrue(self.depends not in self.src_hello.metadata)
 
+    def test_delete(self):
+        '''
+        Tests the delete / cascading behaviour.
+        '''
+        self.setup_metadata()
+        self.session.delete(self.bin_hello)
+        # Remove associated binaries because we have no cascading rule for
+        # them.
+        for binary in self.src_hello.binaries:
+            self.session.delete(binary)
+        self.session.delete(self.src_hello)
+        self.session.flush()
+
 if __name__ == '__main__':
     unittest.main()
