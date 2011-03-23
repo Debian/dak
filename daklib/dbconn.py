@@ -204,7 +204,9 @@ class ORMObject(object):
                     # list
                     value = len(value)
                 elif hasattr(value, 'count'):
-                    # query
+                    # query (but not during validation)
+                    if self.in_validation:
+                        continue
                     value = value.count()
                 else:
                     raise KeyError('Do not understand property %s.' % property)
@@ -258,6 +260,8 @@ class ORMObject(object):
     validation_message = \
         "Validation failed because property '%s' must not be empty in object\n%s"
 
+    in_validation = False
+
     def validate(self):
         '''
         This function validates the not NULL constraints as returned by
@@ -272,8 +276,11 @@ class ORMObject(object):
                 getattr(self, property + '_id') is not None:
                 continue
             if not hasattr(self, property) or getattr(self, property) is None:
-                raise DBUpdateError(self.validation_message % \
-                    (property, str(self)))
+                # str() might lead to races due to a 2nd flush
+                self.in_validation = True
+                message = self.validation_message % (property, str(self))
+                self.in_validation = False
+                raise DBUpdateError(message)
 
     @classmethod
     @session_wrapper
