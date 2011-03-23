@@ -109,11 +109,15 @@ def generate_release_files(suite, tmppath):
 
     # Attribs contains a list of field names to fetch from suite table. Should the entry in the
     # suite table be named differently, |realname will help it out.
-    attribs=('origin', 'label', 'suite|suite_name', 'version', 'codename', 'description')
+    attribs = ( ('Origin', 'origin'), ('Label', 'label'), ('Suite', 'suite_name'),
+                ('Version', 'version'), ('Codename', 'codename'), ('Description', 'description'))
     # A "Sub" Release file has slightly different fields
-    subattribs=('origin', 'label', 'archive|suite_name', 'version')
+    subattribs=( ('Origin', 'origin'), ('Label', 'label'), ('Archive', 'suite_name'),
+                 ('Version', 'version'))
     # Boolean stuff. If we find it true in database, write out "yes" into the release file
     boolattrs=('notautomatic', 'butautomaticupgrades')
+    KEYWORD = 0;
+    DBFIELD = 1
 
     cnf = Config()
 
@@ -123,17 +127,10 @@ def generate_release_files(suite, tmppath):
     out = open("/tmp/lala", "w")
 
     for key in attribs:
-        query=pout=""
-        if key.find('|') > 0:
-            k=key.split('|')
-            pout=k[0]
-            query=k[1]
-        else:
-            query=pout=key
-
-        if getattr(suite, query) is None:
+        if getattr(suite, key[DBFIELD]) is None:
             continue
-        out.write("%s: %s\n" % (pout.capitalize(), getattr(suite, query)))
+        out.write("%s: %s\n" % (key[KEYWORD], getattr(suite, key[DBFIELD])))
+
     out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
     if suite.validtime:
         validtime=float(suite.validtime)
@@ -159,18 +156,11 @@ def generate_release_files(suite, tmppath):
             subrel = open("/tmp/lala2", "w")
 
             ## FIXME: code dupe, line 127.
-            for key in attribs:
-                query=pout=""
-                if key.find('|') > 0:
-                    k=key.split('|')
-                    pout=k[0]
-                    query=k[1]
-                else:
-                    query=pout=key
-
-                if getattr(suite, query) is None:
+            for key in subattribs:
+                if getattr(suite, key[DBFIELD]) is None:
                     continue
-                subrel.write("%s: %s\n" % (pout.capitalize(), getattr(suite, query)))
+                subrel.write("%s: %s\n" % (key[KEYWORD], getattr(suite, key[DBFIELD])))
+
             for key in boolattrs:
                 if hasattr(suite, key):
                     if getattr(suite, key):
