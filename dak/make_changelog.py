@@ -52,12 +52,12 @@ Generate changelog entry between two suites
 import os
 import sys
 import apt_pkg
-from commands import getstatusoutput
 from glob import glob
 from shutil import rmtree
 from daklib.dbconn import *
 from daklib import utils
 from daklib.config import Config
+from daklib.contents import UnpackedSource
 from daklib.regexes import re_no_epoch
 
 ################################################################################
@@ -202,14 +202,11 @@ def export_files(session, pool, clpool, temppath):
                         pass
                     os.link(os.path.join(path, file), os.path.join(path, link))
 
-    tempdir = utils.temp_dirname(parent=temppath)
-    os.rmdir(tempdir)
-
     for p in unpack.keys():
         package = os.path.splitext(os.path.basename(p))[0].split('_')
-        cmd = 'dpkg-source --no-check --no-copy -x %s %s' % (p, tempdir)
-        (result, output) = getstatusoutput(cmd)
-        if not result:
+        try:
+            unpacked = UnpackedSource(p)
+            tempdir = unpacked.get_root_directory()
             stats['unpack'] += 1
             for file in files:
                 for f in glob(os.path.join(tempdir, 'debian', '*%s' % file)):
@@ -227,12 +224,11 @@ def export_files(session, pool, clpool, temppath):
                             pass
                         os.link(version, suite)
                         stats['created'] += 1
-        else:
+            unpacked.cleanup()
+        except:
             print 'make-changelog: unable to unpack %s_%s: %s' \
                    % (package[0], package[1], output)
             stats['errors'] += 1
-
-        rmtree(tempdir)
 
     for root, dirs, files in os.walk(clpool):
         if len(files):
