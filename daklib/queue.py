@@ -2025,6 +2025,7 @@ distribution."""
         print "Installing."
         self.logger.log(["installing changes", self.pkg.changes_file])
 
+        binaries = []
         poolfiles = []
 
         # Add the .dsc file to the DB first
@@ -2037,7 +2038,9 @@ distribution."""
         # Add .deb / .udeb files to the DB (type is always deb, dbtype is udeb/deb)
         for newfile, entry in self.pkg.files.items():
             if entry["type"] == "deb":
-                poolfiles.append(add_deb_to_db(self, newfile, session))
+                b, pf = add_deb_to_db(self, newfile, session)
+                binaries.append(b)
+                poolfiles.append(pf)
 
         # If this is a sourceful diff only upload that is moving
         # cross-component we need to copy the .orig files into the new
@@ -2121,6 +2124,18 @@ distribution."""
         session.commit()
         # Our SQL session will automatically start a new transaction after
         # the last commit
+
+        # Now ensure that the metadata has been added
+        # This has to be done after we copy the files into the pool
+        # For source if we have it:
+        if self.pkg.changes["architecture"].has_key("source"):
+            import_metadata_into_db(source, session)
+
+        # Now for any of our binaries
+        for b in binaries:
+            import_metadata_into_db(b, session)
+
+        session.commit()
 
         # Move the .changes into the 'done' directory
         utils.move(self.pkg.changes_file,

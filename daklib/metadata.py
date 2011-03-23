@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Helper code for packages generation.
+Helper code for packages and sources generation.
 
 @contact: Debian FTPMaster <ftpmaster@debian.org>
 @copyright: 2011 Torsten Werner <twerner@debian.org>
@@ -34,17 +34,20 @@ from subprocess import Popen, PIPE
 
 import os.path
 
-class PackagesScanner(object):
+class MetadataScanner(object):
     '''
-    PackagesScanner provides a threadsafe method scan() to scan the metadata of
-    a DBBinary object.
-    '''
-    def __init__(self, binary_id):
+    MetadataScanner provides a threadsafe method scan() to scan the metadata of
+    a DBSource or DBBinary object depending on what is passed as dbclass'''
+
+    def __init__(self, dbclass, pkid, verbose=True):
         '''
         The argument binary_id is the id of the DBBinary object that
+
         should be scanned.
         '''
-        self.binary_id = binary_id
+        self.verbose = True
+        self.dbclass = dbclass
+        self.pkid = pkid
 
     def scan(self, dummy_arg = None):
         '''
@@ -52,43 +55,59 @@ class PackagesScanner(object):
         property. It commits any changes to the database. The argument dummy_arg
         is ignored but needed by our threadpool implementation.
         '''
+        obj = None
+        fullpath = 'UNKNOWN PATH'
+
         session = DBConn().session()
-        binary = session.query(DBBinary).get(self.binary_id)
-        fileset = set(binary.read_control())
-        print fileset
-        #if len(fileset) == 0:
-        #    fileset.add('EMPTY_PACKAGE')
-        #for filename in fileset:
-        #    binary.contents.append(BinContents(file = filename))
-        #session.commit()
+        try:
+            obj = session.query(self.dbclass).get(self.pkid)
+            fullpath = obj.poolfile.fullpath
+            import_metadata_into_db(obj, session=session)
+            if self.verbose:
+                print "Imported %s (%s)" % (self.pkid, fullpath)
+            session.commit()
+        except Exception, e:
+            print "Failed to import %s [id=%s; fullpath=%s]" % (self.dbclass.__name__, self.pkid, fullpath)
+            print "Exception: ", e
+            session.rollback()
+
         session.close()
 
     @classmethod
-    def scan_all(class_, limit = None):
+    def scan_all(class_, scantype='source', limit = None):
         '''
-        The class method scan_all() scans all binaries using multiple threads.
-        The number of binaries to be scanned can be limited with the limit
-        argument. Returns the number of processed and remaining packages as a
+        The class method scan_all() scans all sources using multiple threads.
+        The number of sources to be scanned can be limited with the limit
+        argument. Returns the number of processed and remaining files as a
         dict.
         '''
         session = DBConn().session()
-        query = session.query(DBBinary).filter(DBBinary.contents == None)
+        if scantype == 'source':
+            dbclass = DBSource
+            query = session.query(DBSource).filter(~DBSource.source_id.in_(session.query(SourceMetadata.source_id.distinct())))
+            t = 'sources'
+        else:
+            # Otherwise binary
+            dbclass = DBBinary
+            query = session.query(DBBinary).filter(~DBBinary.binary_id.in_(session.query(BinaryMetadata.binary_id.distinct())))
+            t = 'binaries'
+
         remaining = query.count
         if limit is not None:
             query = query.limit(limit)
         processed = query.count()
-        pool = Pool()
-        for binary in query.yield_per(100):
-            pool.apply_async(scan_helper, (binary.binary_id, ))
+        pool = Pool(processes=10)
+        for obj in query.yield_per(100):
+            pool.apply_async(scan_helper, (dbclass, obj.pkid, ))
         pool.close()
         pool.join()
         remaining = remaining()
         session.close()
-        return { 'processed': processed, 'remaining': remaining }
+        return { 'processed': processed, 'remaining': remaining , 'type': t}
 
-def scan_helper(binary_id):
+def scan_helper(dbclass, source_id):
     '''
     This function runs in a subprocess.
     '''
-    scanner = PackagesScanner(binary_id)
+    scanner = MetadataScanner(dbclass, source_id)
     scanner.scan()

@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 """
-Import data for Packages files from .deb files
-
-@contact: Debian FTPMaster <ftpmaster@debian.org>
-@copyright: 2008, 2009 Michael Casadevall <mcasadevall@debian.org>
-@copyright: 2009 Mike O'Connor <stew@debian.org>
+Import data for Package/Sources files from .deb and .dsc files
 @copyright: 2011 Torsten Werner <twerner@debian.org>
 @copyright: 2011 Mark Hymers <mhy@debian.org>
 @license: GNU General Public License version 2 or later
@@ -41,18 +37,21 @@ import apt_pkg
 
 from daklib.config import Config
 from daklib.dbconn import *
-from daklib.packages import PackagesScanner
+from daklib.metadata import MetadataScanner
 from daklib import daklog
 from daklib import utils
 
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: dak packagescan [options] subcommand
+    print """Usage: dak metadata [options] subcommand
 
 SUBCOMMANDS
-    scan
-        scan the debs in the existing pool and load metadata into the database
+    scan-source
+        scan the dsc files in the existing pool and load metadata into the database
+
+    scan-binary
+        scan the deb files in the existing pool and load metadata into the database
 
 OPTIONS
      -h, --help
@@ -60,17 +59,17 @@ OPTIONS
 
 OPTIONS for scan
      -l, --limit=NUMBER
-        maximum number of packages to scan
+        maximum number of items to scan
 """
     sys.exit(exit_code)
 
 ################################################################################
 
-def scan_all(cnf, limit):
-    Logger = daklog.Logger(cnf.Cnf, 'packages scan')
-    result = PackagesScanner.scan_all(limit)
-    processed = '%(processed)d packages processed' % result
-    remaining = '%(remaining)d packages remaining' % result
+def scan_all(cnf, mode, limit):
+    Logger = daklog.Logger(cnf.Cnf, 'metadata scan (%s)' % mode)
+    result = MetadataScanner.scan_all(mode, limit)
+    processed = '%(processed)d %(type)s processed' % result
+    remaining = '%(remaining)d %(type)s remaining' % result
     Logger.log([processed, remaining])
     Logger.close()
 
@@ -78,17 +77,17 @@ def scan_all(cnf, limit):
 
 def main():
     cnf = Config()
-    cnf['Packages::Options::Help'] = ''
-    cnf['Packages::Options::Suite'] = ''
-    cnf['Packages::Options::Limit'] = ''
-    cnf['Packages::Options::Force'] = ''
-    arguments = [('h', "help",  'Packages::Options::Help'),
-                 ('s', "suite", 'Packages::Options::Suite', "HasArg"),
-                 ('l', "limit", 'Packages::Options::Limit', "HasArg"),
-                 ('f', "force", 'Packages::Options::Force'),
+    cnf['Metadata::Options::Help'] = ''
+    cnf['Metadata::Options::Suite'] = ''
+    cnf['Metadata::Options::Limit'] = ''
+    cnf['Metadata::Options::Force'] = ''
+    arguments = [('h', "help",  'Metadata::Options::Help'),
+                 ('s', "suite", 'Metadata::Options::Suite', "HasArg"),
+                 ('l', "limit", 'Metadata::Options::Limit', "HasArg"),
+                 ('f', "force", 'Metadata::Options::Force'),
                 ]
     args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments, sys.argv)
-    options = cnf.SubTree('Packages::Options')
+    options = cnf.SubTree('Metadata::Options')
 
     if (len(args) != 1) or options['Help']:
         usage()
@@ -97,8 +96,11 @@ def main():
     if len(options['Limit']) > 0:
         limit = int(options['Limit'])
 
-    if args[0] == 'scan':
-        scan_all(cnf, limit)
+    if args[0] == 'scan-source':
+        scan_all(cnf, 'source', limit)
+        return
+    elif args[0] == 'scan-binary':
+        scan_all(cnf, 'binary', limit)
         return
 
     suite_names = utils.split_args(options['Suite'])
