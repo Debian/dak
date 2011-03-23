@@ -29,7 +29,9 @@ from daklib.dbconn import *
 from daklib.config import Config
 
 from multiprocessing import Pool
-from subprocess import Popen, PIPE
+from shutil import rmtree
+from subprocess import Popen, PIPE, check_call
+from tempfile import mkdtemp
 
 import os.path
 
@@ -313,3 +315,64 @@ def scan_helper(binary_id):
     '''
     scanner = ContentsScanner(binary_id)
     scanner.scan()
+
+
+class UnpackedSource(object):
+    '''
+    UnpackedSource extracts a source package into a temporary location and
+    gives you some convinient function for accessing it.
+    '''
+    def __init__(self, dscfilename):
+        '''
+        The dscfilename is a name of a DSC file that will be extracted.
+        '''
+        self.root_directory = os.path.join(mkdtemp(), 'root')
+        command = ('dpkg-source', '--no-copy', '--no-check', '-x', dscfilename,
+            self.root_directory)
+        # dpkg-source does not have a --quiet option
+        devnull = open(os.devnull, 'w')
+        check_call(command, stdout = devnull, stderr = devnull)
+        devnull.close()
+
+    def get_root_directory(self):
+        '''
+        Returns the name of the package's root directory which is the directory
+        where the debian subdirectory is located.
+        '''
+        return self.root_directory
+
+    def get_changelog_file(self):
+        '''
+        Returns a file object for debian/changelog or None if no such file exists.
+        '''
+        changelog_name = os.path.join(self.root_directory, 'debian', 'changelog')
+        try:
+            return open(changelog_name)
+        except IOError:
+            return None
+
+    def get_all_filenames(self):
+        '''
+        Returns an iterator over all filenames. The filenames will be relative
+        to the root directory.
+        '''
+        skip = len(self.root_directory) + 1
+        for root, _, files in os.walk(self.root_directory):
+            for name in files:
+                yield os.path.join(root[skip:], name)
+
+    def cleanup(self):
+        '''
+        Removes all temporary files.
+        '''
+        if self.root_directory is None:
+            return
+        parent_directory = os.path.dirname(self.root_directory)
+        rmtree(parent_directory)
+        self.root_directory = None
+
+    def __del__(self):
+        '''
+        Enforce cleanup.
+        '''
+        self.cleanup()
