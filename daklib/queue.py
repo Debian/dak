@@ -2188,8 +2188,13 @@ distribution."""
         session.commit()
 
         # Move the .changes into the 'done' directory
+        ye, mo, da = time.gmtime()[0:3]
+        donedir = os.path.join(cnf["Dir::Queue::Done"], str(ye), str(mo), str(da))
+        if not os.path.isdir(donedir):
+            os.makedirs(donedir)
+
         utils.move(self.pkg.changes_file,
-                   os.path.join(cnf["Dir::Queue::Done"], os.path.basename(self.pkg.changes_file)))
+                   os.path.join(donedir, os.path.basename(self.pkg.changes_file)))
 
         if self.pkg.changes["architecture"].has_key("source") and cnf.get("Dir::UrgencyLog"):
             UrgencyLog().log(self.pkg.dsc["source"], self.pkg.dsc["version"], self.pkg.changes["urgency"])
