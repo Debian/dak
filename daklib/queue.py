@@ -1709,22 +1709,22 @@ class Upload(object):
         # Check any one-off upload blocks
         self.check_upload_blocks(fpr, session)
 
-        # Start with DM as a special case
+        # If the source_acl is None, source is never allowed
+        if fpr.source_acl is None:
+            if self.pkg.changes["architecture"].has_key("source"):
+                rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
+                rej += '\nPlease contact ftpmaster if you think this is incorrect'
+                self.rejects.append(rej)
+                return
+        # Do DM as a special case
         # DM is a special case unfortunately, so we check it first
         # (keys with no source access get more access than DMs in one
         #  way; DMs can only upload for their packages whether source
         #  or binary, whereas keys with no access might be able to
         #  upload some binaries)
-        if fpr.source_acl.access_level == 'dm':
+        elif fpr.source_acl.access_level == 'dm':
             self.check_dm_upload(fpr, session)
         else:
-            # Check source-based permissions for other types
-            if self.pkg.changes["architecture"].has_key("source") and \
-                fpr.source_acl.access_level is None:
-                rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
-                rej += '\nPlease contact ftpmaster if you think this is incorrect'
-                self.rejects.append(rej)
-                return
             # If not a DM, we allow full upload rights
             uid_email = "%s@debian.org" % (fpr.uid.uid)
             self.check_if_upload_is_sponsored(uid_email, fpr.uid.name)
