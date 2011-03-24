@@ -34,6 +34,7 @@ from subprocess import Popen, PIPE, check_call
 from tempfile import mkdtemp
 
 import os.path
+import signal
 
 class BinaryContentsWriter(object):
     '''
@@ -426,6 +427,11 @@ def binary_scan_helper(binary_id):
     scanner.scan()
 
 
+def subprocess_setup():
+    # Python installs a SIGPIPE handler by default. This is usually not what
+    # non-Python subprocesses expect.
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
 class UnpackedSource(object):
     '''
     UnpackedSource extracts a source package into a temporary location and
@@ -436,12 +442,9 @@ class UnpackedSource(object):
         The dscfilename is a name of a DSC file that will be extracted.
         '''
         self.root_directory = os.path.join(mkdtemp(), 'root')
-        command = ('dpkg-source', '--no-copy', '--no-check', '-x', dscfilename,
-            self.root_directory)
-        # dpkg-source does not have a --quiet option
-        devnull = open(os.devnull, 'w')
-        check_call(command, stdout = devnull, stderr = devnull)
-        devnull.close()
+        command = ('dpkg-source', '--no-copy', '--no-check', '-q', '-x',
+            dscfilename, self.root_directory)
+        check_call(command, preexec_fn = subprocess_setup)
 
     def get_root_directory(self):
         '''
