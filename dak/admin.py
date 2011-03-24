@@ -25,6 +25,7 @@ import apt_pkg
 
 from daklib import utils
 from daklib.dbconn import *
+from sqlalchemy.orm.exc import NoResultFound
 
 ################################################################################
 
@@ -83,6 +84,15 @@ Perform administrative work on the dak database.
      s-a add SUITE ARCH     add ARCH to suite
      s-a rm SUITE ARCH      remove ARCH from suite (will only work if
                             no packages remain for the arch in the suite)
+
+  version-check / v-c:
+     v-c list                        show version checks for all suites
+     v-c list-suite SUITE            show version checks for suite SUITE
+     v-c add SUITE CHECK REFERENCE   add a version check for suite SUITE
+     v-c rm SUITE CHECK REFERENCE    rmove a version check
+       where
+         CHECK     is one of Enhances, MustBeNewerThan, MustBeOlderThan
+	 REFERENCE is another suite name
 """
     sys.exit(exit_code)
 
@@ -330,6 +340,78 @@ def suite_architecture(command):
 
 dispatch['suite-architecture'] = suite_architecture
 dispatch['s-a'] = suite_architecture
+
+################################################################################
+
+def __version_check_list(d):
+    session = d.session()
+    for s in session.query(Suite).order_by('suite_name'):
+        __version_check_list_suite(d, s.suite_name)
+
+def __version_check_list_suite(d, suite_name):
+    vcs = get_version_checks(suite_name)
+    for vc in vcs:
+        print "%s %s %s" % (suite_name, vc.check, vc.reference.suite_name)
+
+def __version_check_add(d, suite_name, check, reference_name):
+    suite = get_suite(suite_name)
+    if not suite:
+        die("E: Could not find suite %s." % (suite_name))
+    reference = get_suite(reference_name)
+    if not reference:
+        die("E: Could not find reference suite %s." % (reference_name))
+
+    session = d.session()
+    vc = VersionCheck()
+    vc.suite = suite
+    vc.check = check
+    vc.reference = reference
+    session.add(vc)
+    session.commit()
+
+def __version_check_rm(d, suite_name, check, reference_name):
+    suite = get_suite(suite_name)
+    if not suite:
+        die("E: Could not find suite %s." % (suite_name))
+    reference = get_suite(reference_name)
+    if not reference:
+        die("E: Could not find reference suite %s." % (reference_name))
+
+    session = d.session()
+    try:
+      vc = session.query(VersionCheck).filter_by(suite=suite, check=check, reference=reference).one()
+      session.delete(vc)
+      session.commit()
+    except NoResultFound:
+      print "W: version-check not found."
+
+def version_check(command):
+    args = [str(x) for x in command]
+    Cnf = utils.get_conf()
+    d = DBConn()
+
+    die_arglen(args, 2, "E: version-check needs at least a command")
+    mode = args[1].lower()
+
+    if mode == 'list':
+        __version_check_list(d)
+    elif mode == 'list-suite':
+        if len(args) != 3:
+            die("E: version-check list-suite needs a single parameter")
+        __version_check_list_suite(d, args[2])
+    elif mode == 'add':
+        if len(args) != 5:
+            die("E: version-check add needs three parameters")
+        __version_check_add(d, args[2], args[3], args[4])
+    elif mode == 'rm':
+        if len(args) != 5:
+            die("E: version-check rm needs three parameters")
+        __version_check_rm(d, args[2], args[3], args[4])
+    else:
+        die("E: version-check command unknown")
+
+dispatch['version-check'] = version_check
+dispatch['v-c'] = version_check
 
 ################################################################################
 
