@@ -77,7 +77,7 @@ INSERT INTO b_candidates (id, source, file, architecture)
         FROM binaries b
         JOIN bin_associations ba ON b.id = ba.bin
         WHERE b.type = :type AND ba.suite = :suite AND
-            b.architecture IN (2, :architecture) %s;
+            b.architecture IN (:arch_all, :architecture) %s;
 
 CREATE TEMP TABLE gf_candidates (
     id integer,
@@ -98,17 +98,17 @@ INSERT INTO gf_candidates (id, filename, path, architecture, src, source)
 WITH arch_any AS
 
     (SELECT id, path, filename FROM gf_candidates
-        WHERE architecture > 2),
+        WHERE architecture <> :arch_all),
 
      arch_all_with_any AS
     (SELECT id, path, filename FROM gf_candidates
-        WHERE architecture = 2 AND
-              src IN (SELECT src FROM gf_candidates WHERE architecture > 2)),
+        WHERE architecture = :arch_all AND
+              src IN (SELECT src FROM gf_candidates WHERE architecture <> :arch_all)),
 
      arch_all_without_any AS
     (SELECT id, path, filename FROM gf_candidates
-        WHERE architecture = 2 AND
-              source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture > 2)),
+        WHERE architecture = :arch_all AND
+              source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture <> :arch_all)),
 
      filelist AS
     (SELECT * FROM arch_any
@@ -122,6 +122,7 @@ WITH arch_any AS
     args = { 'suite': suite.suite_id,
              'component': component.component_id,
              'architecture': architecture.arch_id,
+             'arch_all': get_architecture('all', session).arch_id,
              'type': type }
     return fetch(query, args, session)
 
