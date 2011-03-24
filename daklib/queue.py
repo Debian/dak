@@ -51,7 +51,7 @@ from holding import Holding
 from urgencylog import UrgencyLog
 from dbconn import *
 from summarystats import SummaryStats
-from utils import parse_changes, check_dsc_files
+from utils import parse_changes, check_dsc_files, build_package_set
 from textutils import fix_maintainer
 from lintian import parse_lintian_output, generate_reject_messages
 from contents import UnpackedSource
@@ -102,7 +102,7 @@ def get_type(f, session):
 
 # Determine what parts in a .changes are NEW
 
-def determine_new(filename, changes, files, warn=1, session = None):
+def determine_new(filename, changes, files, warn=1, session = None, dsc = None):
     """
     Determine what parts in a C{changes} file are NEW.
 
@@ -118,6 +118,9 @@ def determine_new(filename, changes, files, warn=1, session = None):
     @type warn: bool
     @param warn: Warn if overrides are added for (old)stable
 
+    @type dsc: Upload.Pkg.dsc dict
+    @param dsc: (optional); Dsc dictionary
+
     @rtype: dict
     @return: dictionary of NEW components.
 
@@ -130,6 +133,10 @@ def determine_new(filename, changes, files, warn=1, session = None):
     dbchg = get_dbchange(filename, session)
     if dbchg is None:
         print "Warning: cannot find changes file in database; won't check byhand"
+
+    # Try to get the Package-Set field from an included .dsc file (if possible).
+    if dsc:
+        new = build_package_set(dsc, session)
 
     # Build up a list of potentially new things
     for name, f in files.items():

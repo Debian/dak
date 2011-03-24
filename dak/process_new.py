@@ -424,11 +424,17 @@ def do_new(upload, session):
     # Make a copy of distribution we can happily trample on
     changes["suite"] = copy.copy(changes["distribution"])
 
+    # Try to get an included dsc
+    dsc = None
+    (status, _) = upload.load_dsc()
+    if status:
+        dsc = upload.pkg.dsc
+
     # The main NEW processing loop
     done = 0
     while not done:
         # Find out what's new
-        new, byhand = determine_new(upload.pkg.changes_file, changes, files, session=session)
+        new, byhand = determine_new(upload.pkg.changes_file, changes, files, dsc=dsc, session=session)
 
         if not new:
             break
@@ -667,6 +673,12 @@ def do_pkg(changes_full_path, session):
     u.logger = Logger
     origchanges = os.path.abspath(u.pkg.changes_file)
 
+    # Try to get an included dsc
+    dsc = None
+    (status, _) = u.load_dsc()
+    if status:
+        dsc = u.pkg.dsc
+
     cnf = Config()
     bcc = "X-DAK: dak process-new"
     if cnf.has_key("Dinstall::Bcc"):
@@ -691,7 +703,7 @@ def do_pkg(changes_full_path, session):
                 if not recheck(u, session):
                     return
 
-                new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, session=session)
+                new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, dsc=dsc, session=session)
                 if byhand:
                     do_byhand(u, session)
                 elif new:
