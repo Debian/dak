@@ -306,7 +306,7 @@ def source_helper(suite_id, component_id):
     session = DBConn().session()
     suite = Suite.get(suite_id, session)
     component = Component.get(component_id, session)
-    log_message = [suite.suite_name, component.component_name]
+    log_message = [suite.suite_name, 'source', component.component_name]
     contents_writer = SourceContentsWriter(suite, component)
     contents_writer.write_file()
     return log_message
