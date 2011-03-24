@@ -279,9 +279,10 @@ select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
         os.rename(temp_filename, final_filename)
 
 
-def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
+def binary_helper(suite_id, arch_id, overridetype_id, component_id = None):
     '''
-    This function is called in a new subprocess.
+    This function is called in a new subprocess and multiprocessing wants a top
+    level function.
     '''
     session = DBConn().session()
     suite = Suite.get(suite_id, session)
@@ -294,6 +295,19 @@ def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
         component = Component.get(component_id, session)
         log_message.append(component.component_name)
     contents_writer = BinaryContentsWriter(suite, architecture, overridetype, component)
+    contents_writer.write_file()
+    return log_message
+
+def source_helper(suite_id, component_id):
+    '''
+    This function is called in a new subprocess and multiprocessing wants a top
+    level function.
+    '''
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    component = Component.get(component_id, session)
+    log_message = [suite.suite_name, component.component_name]
+    contents_writer = SourceContentsWriter(suite, component)
     contents_writer.write_file()
     return log_message
 
@@ -326,19 +340,27 @@ class ContentsWriter(object):
         deb_id = get_override_type('deb', session).overridetype_id
         udeb_id = get_override_type('udeb', session).overridetype_id
         main_id = get_component('main', session).component_id
+        contrib_id = get_component('contrib', session).component_id
         non_free_id = get_component('non-free', session).component_id
         pool = Pool()
         for suite in suite_query:
             suite_id = suite.suite_id
+            # handle source packages
+            pool.apply_async(source_helper, (suite_id, main_id),
+                callback = class_.log_result)
+            pool.apply_async(source_helper, (suite_id, contrib_id),
+                callback = class_.log_result)
+            pool.apply_async(source_helper, (suite_id, non_free_id),
+                callback = class_.log_result)
             for architecture in suite.get_architectures(skipsrc = True, skipall = True):
                 arch_id = architecture.arch_id
                 # handle 'deb' packages
-                pool.apply_async(generate_helper, (suite_id, arch_id, deb_id), \
+                pool.apply_async(binary_helper, (suite_id, arch_id, deb_id), \
                     callback = class_.log_result)
                 # handle 'udeb' packages for 'main' and 'non-free'
-                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, main_id), \
+                pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, main_id), \
                     callback = class_.log_result)
-                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, non_free_id), \
+                pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, non_free_id), \
                     callback = class_.log_result)
         pool.close()
         pool.join()
