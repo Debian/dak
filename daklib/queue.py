@@ -2189,7 +2189,7 @@ distribution."""
 
         # Move the .changes into the 'done' directory
         ye, mo, da = time.gmtime()[0:3]
-        donedir = os.path.join(cnf["Dir::Queue::Done"], str(ye), str(mo), str(da))
+        donedir = os.path.join(cnf["Dir::Queue::Done"], str(ye), "%0.2d" % mo, "%0.2d" % da)
         if not os.path.isdir(donedir):
             os.makedirs(donedir)
 
