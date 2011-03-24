@@ -2278,7 +2278,7 @@ class DBSource(ORMObject):
     def properties(self):
         return ['source', 'source_id', 'maintainer', 'changedby', \
             'fingerprint', 'poolfile', 'version', 'suites_count', \
-            'install_date', 'binaries_count']
+            'install_date', 'binaries_count', 'uploaders_count']
 
     def not_null_constraints(self):
         return ['source', 'version', 'install_date', 'maintainer', \
