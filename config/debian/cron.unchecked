@@ -106,5 +106,6 @@ if [ ! -z "$changes" ]; then
     do_dists
 fi
 
-dak contents -l 10000 scan
+dak contents -l 10000 scan-binary
+dak contents -l 1000 scan-source
 pg_timestamp postunchecked

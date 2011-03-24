@@ -2195,6 +2195,18 @@ __all__.append('get_sections')
 
 ################################################################################
 
+class SrcContents(ORMObject):
+    def __init__(self, file = None, source = None):
+        self.file = file
+        self.source = source
+
+    def properties(self):
+        return ['file', 'source']
+
+__all__.append('SrcContents')
+
+################################################################################
+
 from debian.debfile import Deb822
 
 # Temporary Deb822 subclass to fix bugs with : handling; see #597249
@@ -2266,7 +2278,7 @@ class DBSource(ORMObject):
     def properties(self):
         return ['source', 'source_id', 'maintainer', 'changedby', \
             'fingerprint', 'poolfile', 'version', 'suites_count', \
-            'install_date', 'binaries_count']
+            'install_date', 'binaries_count', 'uploaders_count']
 
     def not_null_constraints(self):
         return ['source', 'version', 'install_date', 'maintainer', \
@@ -2284,6 +2296,25 @@ class DBSource(ORMObject):
         return fields
 
     metadata = association_proxy('key', 'value')
+
+    def scan_contents(self):
+        '''
+        Returns a set of names for non directories. The path names are
+        normalized after converting them from either utf-8 or iso8859-1
+        encoding.
+        '''
+        fullpath = self.poolfile.fullpath
+        from daklib.contents import UnpackedSource
+        unpacked = UnpackedSource(fullpath)
+        fileset = set()
+        for name in unpacked.get_all_filenames():
+            # enforce proper utf-8 encoding
+            try:
+                name.decode('utf-8')
+            except UnicodeDecodeError:
+                name = name.decode('iso8859-1').encode('utf-8')
+            fileset.add(name)
+        return fileset
 
 __all__.append('DBSource')
 
@@ -2540,25 +2571,11 @@ def add_dsc_to_db(u, filename, session=None):
         session.add(df)
 
     # Add the src_uploaders to the DB
-    uploader_ids = [source.maintainer_id]
+    source.uploaders = [source.maintainer]
     if u.pkg.dsc.has_key("uploaders"):
         for up in u.pkg.dsc["uploaders"].replace(">, ", ">\t").split("\t"):
             up = up.strip()
-            uploader_ids.append(get_or_set_maintainer(up, session).maintainer_id)
-
-    added_ids = {}
-    for up_id in uploader_ids:
-        if added_ids.has_key(up_id):
-            import utils
-            utils.warn("Already saw uploader %s for source %s" % (up_id, source.source))
-            continue
-
-        added_ids[up_id]=1
-
-        su = SrcUploader()
-        su.maintainer_id = up_id
-        su.source_id = source.source_id
-        session.add(su)
+            source.uploaders.append(get_or_set_maintainer(up, session))
 
     session.flush()
 
@@ -2657,17 +2674,6 @@ class SrcFormat(object):
         return '<SrcFormat %s>' % (self.format_name)
 
 __all__.append('SrcFormat')
-
-################################################################################
-
-class SrcUploader(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<SrcUploader %s>' % self.uploader_id
-
-__all__.append('SrcUploader')
 
 ################################################################################
 
@@ -3104,6 +3110,7 @@ class DBConn(object):
             'source_acl',
             'source_metadata',
             'src_associations',
+            'src_contents',
             'src_format',
             'src_uploaders',
             'suite',
@@ -3358,7 +3365,8 @@ class DBConn(object):
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
                                      backref=backref('sources', lazy='dynamic')),
-                                 srcuploaders = relation(SrcUploader),
+                                 uploaders = relation(Maintainer,
+                                     secondary=self.tbl_src_uploaders),
                                  key = relation(SourceMetadata, cascade='all',
                                      collection_class=attribute_mapped_collection('key'))),
                extension = validator)
@@ -3369,15 +3377,6 @@ class DBConn(object):
         mapper(SrcFormat, self.tbl_src_format,
                properties = dict(src_format_id = self.tbl_src_format.c.id,
                                  format_name = self.tbl_src_format.c.format_name))
-
-        mapper(SrcUploader, self.tbl_src_uploaders,
-               properties = dict(uploader_id = self.tbl_src_uploaders.c.id,
-                                 source_id = self.tbl_src_uploaders.c.source,
-                                 source = relation(DBSource,
-                                                   primaryjoin=(self.tbl_src_uploaders.c.source==self.tbl_source.c.id)),
-                                 maintainer_id = self.tbl_src_uploaders.c.maintainer,
-                                 maintainer = relation(Maintainer,
-                                                       primaryjoin=(self.tbl_src_uploaders.c.maintainer==self.tbl_maintainer.c.id))))
 
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id,
@@ -3407,6 +3406,12 @@ class DBConn(object):
                 binary = relation(DBBinary,
                     backref=backref('contents', lazy='dynamic', cascade='all')),
                 file = self.tbl_bin_contents.c.file))
+
+        mapper(SrcContents, self.tbl_src_contents,
+            properties = dict(
+                source = relation(DBSource,
+                    backref=backref('contents', lazy='dynamic', cascade='all')),
+                file = self.tbl_src_contents.c.file))
 
         mapper(MetadataKey, self.tbl_metadata_keys,
             properties = dict(
