@@ -3,7 +3,7 @@
 from db_test import DBDakTestCase, fixture
 
 from daklib.dbconn import *
-from daklib.contents import ContentsWriter, BinaryContentsScanner, \
+from daklib.contents import BinaryContentsWriter, BinaryContentsScanner, \
     UnpackedSource, SourceContentsScanner
 
 from os.path import normpath
@@ -131,9 +131,9 @@ class ContentsTestCase(DBDakTestCase):
         self.assertEqual(self.override['hello_sid_main_udeb'], \
             self.otype['udeb'].overrides.one())
 
-    def test_contentswriter(self):
+    def test_binarycontentswriter(self):
         '''
-        Test the ContentsWriter class.
+        Test the BinaryContentsWriter class.
         '''
         self.setup_suites()
         self.setup_architectures()
@@ -142,7 +142,7 @@ class ContentsTestCase(DBDakTestCase):
         self.setup_overrides()
         self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '/usr/bin/hello'))
         self.session.commit()
-        cw = ContentsWriter(self.suite['squeeze'], self.arch['i386'], self.otype['deb'])
+        cw = BinaryContentsWriter(self.suite['squeeze'], self.arch['i386'], self.otype['deb'])
         self.assertEqual(['/usr/bin/hello                                          python/hello\n'], \
             cw.get_list())
         # test formatline and sort order
@@ -151,7 +151,7 @@ class ContentsTestCase(DBDakTestCase):
         # test output_filename
         self.assertEqual('tests/fixtures/ftp/dists/squeeze/Contents-i386.gz', \
             normpath(cw.output_filename()))
-        cw = ContentsWriter(self.suite['squeeze'], self.arch['i386'], \
+        cw = BinaryContentsWriter(self.suite['squeeze'], self.arch['i386'], \
             self.otype['udeb'], self.comp['main'])
         self.assertEqual('tests/fixtures/ftp/dists/squeeze/main/Contents-i386.gz', \
             normpath(cw.output_filename()))

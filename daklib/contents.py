@@ -35,16 +35,11 @@ from tempfile import mkdtemp
 
 import os.path
 
-class ContentsWriter(object):
+class BinaryContentsWriter(object):
     '''
-    ContentsWriter writes the Contents-$arch.gz files.
+    BinaryContentsWriter writes the Contents-$arch.gz files.
     '''
     def __init__(self, suite, architecture, overridetype, component = None):
-        '''
-        The constructor clones its arguments into a new session object to make
-        sure that the new ContentsWriter object can be executed in a different
-        thread.
-        '''
         self.suite = suite
         self.architecture = architecture
         self.overridetype = overridetype
@@ -193,6 +188,30 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         os.chmod(temp_filename, 0664)
         os.rename(temp_filename, final_filename)
 
+
+def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
+    '''
+    This function is called in a new subprocess.
+    '''
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    architecture = Architecture.get(arch_id, session)
+    overridetype = OverrideType.get(overridetype_id, session)
+    log_message = [suite.suite_name, architecture.arch_string, overridetype.overridetype]
+    if component_id is None:
+        component = None
+    else:
+        component = Component.get(component_id, session)
+        log_message.append(component.component_name)
+    contents_writer = BinaryContentsWriter(suite, architecture, overridetype, component)
+    contents_writer.write_file()
+    return log_message
+
+class ContentsWriter(object):
+    '''
+    Loop over all suites, architectures, overridetypes, and components to write
+    all contents files.
+    '''
     @classmethod
     def log_result(class_, result):
         '''
@@ -234,24 +253,6 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         pool.close()
         pool.join()
         session.close()
-
-def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
-    '''
-    This function is called in a new subprocess.
-    '''
-    session = DBConn().session()
-    suite = Suite.get(suite_id, session)
-    architecture = Architecture.get(arch_id, session)
-    overridetype = OverrideType.get(overridetype_id, session)
-    log_message = [suite.suite_name, architecture.arch_string, overridetype.overridetype]
-    if component_id is None:
-        component = None
-    else:
-        component = Component.get(component_id, session)
-        log_message.append(component.component_name)
-    contents_writer = ContentsWriter(suite, architecture, overridetype, component)
-    contents_writer.write_file()
-    return log_message
 
 
 class BinaryContentsScanner(object):
