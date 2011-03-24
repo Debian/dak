@@ -3021,6 +3021,33 @@ __all__.append('SourceMetadata')
 
 ################################################################################
 
+class VersionCheck(ORMObject):
+    def __init__(self, *args, **kwargs):
+	pass
+
+    def properties(self):
+        #return ['suite_id', 'check', 'reference_id']
+        return ['check']
+
+    def not_null_constraints(self):
+        return ['suite', 'check', 'reference']
+
+__all__.append('VersionCheck')
+
+@session_wrapper
+def get_version_checks(suite_name, check = None, session = None):
+    suite = get_suite(suite_name, session)
+    if not suite:
+        return None
+    q = session.query(VersionCheck).filter_by(suite=suite)
+    if check:
+        q = q.filter_by(check=check)
+    return q.all()
+
+__all__.append('get_version_checks')
+
+################################################################################
+
 class DBConn(object):
     """
     database module init.
@@ -3085,6 +3112,7 @@ class DBConn(object):
             'suite_src_formats',
             'uid',
             'upload_blocks',
+            'version_check',
         )
 
         views = (
@@ -3400,6 +3428,13 @@ class DBConn(object):
                 key_id = self.tbl_source_metadata.c.key_id,
                 key = relation(MetadataKey),
                 value = self.tbl_source_metadata.c.value))
+
+	mapper(VersionCheck, self.tbl_version_check,
+	    properties = dict(
+		suite_id = self.tbl_version_check.c.suite,
+		suite = relation(Suite, primaryjoin=self.tbl_version_check.c.suite==self.tbl_suite.c.id),
+		reference_id = self.tbl_version_check.c.reference,
+		reference = relation(Suite, primaryjoin=self.tbl_version_check.c.reference==self.tbl_suite.c.id, lazy='joined')))
 
     ## Connection functions
     def __createconn(self):
