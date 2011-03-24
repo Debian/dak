@@ -31,6 +31,16 @@ Generate Maintainers file used by e.g. the Debian Bug Tracking System
 
 ################################################################################
 
+from daklib import utils
+from daklib.config import Config
+from daklib.dbconn import *
+from daklib.regexes import re_comments
+
+import apt_pkg
+import sys
+
+################################################################################
+
 def usage (exit_code=0):
     print """Usage: dak make-maintainers [OPTION] EXTRA_FILE[...]
 Generate an index of packages <=> Maintainers / Uploaders.
@@ -89,6 +99,18 @@ def main():
         if binary.package not in maintainers:
             maintainers[binary.package] = binary.maintainer.name
             uploaders[binary.package] = uploader_list(binary.source)
+
+    # Process any additional Maintainer files (e.g. from pseudo
+    # packages)
+    for filename in extra_files:
+        extrafile = utils.open_file(filename)
+        for line in extrafile.readlines():
+            line = re_comments.sub('', line).strip()
+            if line == "":
+                continue
+            (package, maintainer) = line.split(None, 1)
+            maintainers[package] = maintainer
+            uploaders[package] = [maintainer]
 
     maintainer_file = open('Maintainers', 'w')
     uploader_file = open('Uploaders', 'w')
