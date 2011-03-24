@@ -51,7 +51,7 @@ from holding import Holding
 from urgencylog import UrgencyLog
 from dbconn import *
 from summarystats import SummaryStats
-from utils import parse_changes, check_dsc_files
+from utils import parse_changes, check_dsc_files, build_package_set
 from textutils import fix_maintainer
 from lintian import parse_lintian_output, generate_reject_messages
 from contents import UnpackedSource
@@ -102,7 +102,7 @@ def get_type(f, session):
 
 # Determine what parts in a .changes are NEW
 
-def determine_new(filename, changes, files, warn=1, session = None):
+def determine_new(filename, changes, files, warn=1, session = None, dsc = None, new = {}):
     """
     Determine what parts in a C{changes} file are NEW.
 
@@ -118,18 +118,29 @@ def determine_new(filename, changes, files, warn=1, session = None):
     @type warn: bool
     @param warn: Warn if overrides are added for (old)stable
 
+    @type dsc: Upload.Pkg.dsc dict
+    @param dsc: (optional); Dsc dictionary
+
+    @type new: dict
+    @param new: new packages as returned by a previous call to this function, but override information may have changed
+
     @rtype: dict
     @return: dictionary of NEW components.
 
     """
     # TODO: This should all use the database instead of parsing the changes
     # file again
-    new = {}
     byhand = {}
 
     dbchg = get_dbchange(filename, session)
     if dbchg is None:
         print "Warning: cannot find changes file in database; won't check byhand"
+
+    # Try to get the Package-Set field from an included .dsc file (if possible).
+    if dsc:
+        for package, entry in build_package_set(dsc, session).items():
+            if not new.has_key(package):
+                new[package] = entry
 
     # Build up a list of potentially new things
     for name, f in files.items():
@@ -1105,40 +1116,76 @@ class Upload(object):
                 self.rejects.append("source only uploads are not supported.")
 
     ###########################################################################
+
+    def __dsc_filename(self):
+        """
+        Returns: (Status, Dsc_Filename)
+        where
+          Status: Boolean; True when there was no error, False otherwise
+          Dsc_Filename: String; name of the dsc file if Status is True, reason for the error otherwise
+        """
+        dsc_filename = None
+
+        # find the dsc
+        for name, entry in self.pkg.files.items():
+            if entry.has_key("type") and entry["type"] == "dsc":
+                if dsc_filename:
+                    return False, "cannot process a .changes file with multiple .dsc's."
+                else:
+                    dsc_filename = name
+
+        if not dsc_filename:
+            return False, "source uploads must contain a dsc file"
+
+        return True, dsc_filename
+
+    def load_dsc(self, action=True, signing_rules=1):
+        """
+        Find and load the dsc from self.pkg.files into self.dsc
+
+        Returns: (Status, Reason)
+        where
+          Status: Boolean; True when there was no error, False otherwise
+          Reason: String; When Status is False this describes the error
+        """
+
+        # find the dsc
+        (status, dsc_filename) = self.__dsc_filename()
+        if not status:
+            # If status is false, dsc_filename has the reason
+            return False, dsc_filename
+
+        try:
+            self.pkg.dsc.update(utils.parse_changes(dsc_filename, signing_rules=signing_rules, dsc_file=1))
+        except CantOpenError:
+            if not action:
+                return False, "%s: can't read file." % (dsc_filename)
+        except ParseChangesError, line:
+            return False, "%s: parse error, can't grok: %s." % (dsc_filename, line)
+        except InvalidDscError, line:
+            return False, "%s: syntax error on line %s." % (dsc_filename, line)
+        except ChangesUnicodeError:
+            return False, "%s: dsc file not proper utf-8." % (dsc_filename)
+
+        return True, None
+
+    ###########################################################################
+
     def check_dsc(self, action=True, session=None):
         """Returns bool indicating whether or not the source changes are valid"""
         # Ensure there is source to check
         if not self.pkg.changes["architecture"].has_key("source"):
             return True
 
-        # Find the .dsc
-        dsc_filename = None
-        for f, entry in self.pkg.files.items():
-            if entry["type"] == "dsc":
-                if dsc_filename:
-                    self.rejects.append("can not process a .changes file with multiple .dsc's.")
-                    return False
-                else:
-                    dsc_filename = f
-
-        # If there isn't one, we have nothing to do. (We have reject()ed the upload already)
-        if not dsc_filename:
-            self.rejects.append("source uploads must contain a dsc file")
+        (status, reason) = self.load_dsc(action=action)
+        if not status:
+            self.rejects.append(reason)
             return False
-
-        # Parse the .dsc file
-        try:
-            self.pkg.dsc.update(utils.parse_changes(dsc_filename, signing_rules=1, dsc_file=1))
-        except CantOpenError:
-            # if not -n copy_to_holding() will have done this for us...
-            if not action:
-                self.rejects.append("%s: can't read file." % (dsc_filename))
-        except ParseChangesError, line:
-            self.rejects.append("%s: parse error, can't grok: %s." % (dsc_filename, line))
-        except InvalidDscError, line:
-            self.rejects.append("%s: syntax error on line %s." % (dsc_filename, line))
-        except ChangesUnicodeError:
-            self.rejects.append("%s: dsc file not proper utf-8." % (dsc_filename))
+        (status, dsc_filename) = self.__dsc_filename()
+        if not status:
+            # If status is false, dsc_filename has the reason
+            self.rejects.append(dsc_filename)
+            return False
 
         # Build up the file list of files mentioned by the .dsc
         try:
@@ -1495,7 +1542,7 @@ class Upload(object):
 
         # If we do not have a tagfile, don't do anything
         tagfile = cnf.get("Dinstall::LintianTags")
-        if tagfile is None:
+        if not tagfile:
             return
 
         # Parse the yaml file

@@ -180,7 +180,7 @@ def do_pkg(changes_file):
             u.check_source_against_db(deb_filename, session)
     u.pkg.changes["suite"] = u.pkg.changes["distribution"]
 
-    new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, 0, session)
+    new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, 0, dsc=u.pkg.dsc, session=session)
 
     outfile = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
 
