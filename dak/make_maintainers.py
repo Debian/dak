@@ -31,6 +31,7 @@ Generate Maintainers file used by e.g. the Debian Bug Tracking System
 
 ################################################################################
 
+from daklib import daklog
 from daklib import utils
 from daklib.config import Config
 from daklib.dbconn import *
@@ -76,6 +77,7 @@ def main():
     if Options["Help"]:
         usage()
 
+    Logger = daklog.Logger(cnf.Cnf, 'make-maintainers')
     session = DBConn().session()
 
     # dictionary packages to maintainer names
@@ -91,15 +93,18 @@ def main():
         select distinct on (package) * from binaries
             order by package, version desc''')
 
+    Logger.log(['sources'])
     for source in source_query:
         maintainers[source.source] = source.maintainer.name
         uploaders[source.source] = uploader_list(source)
 
+    Logger.log(['binaries'])
     for binary in binary_query:
         if binary.package not in maintainers:
             maintainers[binary.package] = binary.maintainer.name
             uploaders[binary.package] = uploader_list(binary.source)
 
+    Logger.log(['files'])
     # Process any additional Maintainer files (e.g. from pseudo
     # packages)
     for filename in extra_files:
@@ -120,6 +125,7 @@ def main():
             uploader_file.write(format(package, uploader))
     uploader_file.close()
     maintainer_file.close()
+    Logger.close()
 
 ################################################################################
 
