@@ -28,7 +28,7 @@ from daklib import utils
 def main():
     Cnf = utils.get_conf()
     count = 0
-    move_date = int(time.time())-(30*84600)
+    move_date = int(time.time())
     os.chdir(Cnf["Dir::Queue::Done"])
     files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]))
     for filename in files:
