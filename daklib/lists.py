@@ -24,6 +24,8 @@ Helper functions for list generating commands (Packages, Sources).
 
 ################################################################################
 
+from dbconn import get_architecture
+
 def fetch(query, args, session):
     for (id, path, filename) in session.execute(query, args).fetchall():
         yield (id, path + filename)
