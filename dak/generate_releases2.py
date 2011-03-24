@@ -181,9 +181,31 @@ def generate_release_files(suite, tmppath):
         for entry in filenames:
             if not re_includeinarelease.match(entry):
                 continue
-            filename=os.path.join(dirpath.lstrip('./'), entry)
+            if entry.endswith(".gz"):
+                filename="zcat|%s" % (os.path.join(dirpath.lstrip('./'), entry))
+            elif entry.endswith(".bz2"):
+                filename="bzcat|%s" % (os.path.join(dirpath.lstrip('./'), entry))
+            else:
+                filename=os.path.join(dirpath.lstrip('./'), entry)
             files.append(filename)
 
+    decompressors = { 'zcat' : gzip.GzipFile,
+                      'bzcat' : bz2.BZ2File }
+
+    hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
+                  'SHA1' : apt_pkg.sha1sum,
+                  'SHA256' : apt_pkg.sha256sum }
+
+    for entry in files:
+        entryhash = ""
+        entrylen = ""
+        comp = None
+        if entry.find('|') > 0:
+            k=entry.split('|')
+            comp=k[0]
+            filename=k[1]
+        else:
+            filename=entry
 
     os.chdir(oldcwd)
     return
