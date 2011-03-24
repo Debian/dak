@@ -126,5 +126,5 @@ re_parse_lintian = re.compile(r"^(?P<level>W|E|O): (?P<package>.*?): (?P<tag>[^ 
 re_match_expired = re.compile(r"^The key used to sign .+ has expired on .+$")
 
 # in generate-releases
-re_getsarelease = re.compile (r".*/(binary-[0-9a-z-]+|source)$")
-re_includeinarelease = re.compile (r"(Contents-[0-9a-z-]+.gz|Index|Packages(.gz|.bz2)?|Sources(.gz|.bz2)?|MD5SUMS|Release)$")
+re_gensubrelease = re.compile (r".*/(binary-[0-9a-z-]+|source)$")
+re_includeinrelease = re.compile (r"(Contents-[0-9a-z-]+.gz|Index|Packages(.gz|.bz2)?|Sources(.gz|.bz2)?|MD5SUMS|Release)$")
