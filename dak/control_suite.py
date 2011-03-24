@@ -179,14 +179,14 @@ def version_checks(package, architecture, target_suite, new_version, session, fo
     for suite, version in suite_version_list:
         cmp = apt_pkg.VersionCompare(new_version, version)
         if suite in must_be_newer_than and cmp < 1:
-            utils.warn("%s (%s): version check violated: %s in %s is *not* newer than %s targeted at %s" % (package, architecture, version, suite, new_version, target_suite))
+            utils.warn("%s (%s): version check violated: %s targeted at %s is *not* newer than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
             violations = True
         if suite in must_be_older_than and cmp > 1:
-            utils.warn("%s (%s): version check violated: %s in %s is *not* older than %s targeted at %s" % (package, architecture, version, suite, new_version, target_suite))
+            utils.warn("%s (%s): version check violated: %s targeted at %s is *not* older than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
             violations = True
 
     if violations:
-        if forced:
+        if force:
             utils.warn("Continuing anyway (forced)...")
         else:
             utils.fubar("Aborting. Version checks violated and not forced.")
