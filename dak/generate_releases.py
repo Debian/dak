@@ -149,7 +149,7 @@ class ReleaseWriter(object):
 
         cnf = Config()
 
-        outfile = os.path.join(cnf["Dir::Root"][1:], 'dists', suite.suite_name, "Release")
+        outfile = os.path.join(cnf["Dir::Root"], 'dists', suite.suite_name, "Release")
         print outfile
         out = open(outfile, "w")
 
@@ -187,7 +187,7 @@ class ReleaseWriter(object):
                 if not re_gensubrelease.match(dirpath):
                     continue
 
-                subfile = os.path.join(dirpath[1:], "Release")
+                subfile = os.path.join(dirpath, "Release")
                 subrel = open(subfile, "w")
 
                 for key, dbfield in subattribs:
