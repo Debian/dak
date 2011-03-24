@@ -1746,8 +1746,11 @@ class Upload(object):
 
         if len(tmparches.keys()) > 0:
             if fpr.binary_reject:
-                rej = ".changes file contains files of architectures not permitted for fingerprint %s" % fpr.fingerprint
-                rej += "\narchitectures involved are: ", ",".join(tmparches.keys())
+                rej = "changes file contains files of architectures not permitted for fingerprint %s" % fpr.fingerprint
+                if len(tmparches.keys()) == 1:
+                    rej += "\n\narchitecture involved is: %s" % ",".join(tmparches.keys())
+                else:
+                    rej += "\n\narchitectures involved are: %s" % ",".join(tmparches.keys())
                 self.rejects.append(rej)
             else:
                 # TODO: This is where we'll implement reject vs throw away binaries later
