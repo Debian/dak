@@ -102,7 +102,7 @@ def get_type(f, session):
 
 # Determine what parts in a .changes are NEW
 
-def determine_new(filename, changes, files, warn=1, session = None, dsc = None):
+def determine_new(filename, changes, files, warn=1, session = None, dsc = None, new = {}):
     """
     Determine what parts in a C{changes} file are NEW.
 
@@ -121,13 +121,15 @@ def determine_new(filename, changes, files, warn=1, session = None, dsc = None):
     @type dsc: Upload.Pkg.dsc dict
     @param dsc: (optional); Dsc dictionary
 
+    @type new: dict
+    @param new: new packages as returned by a previous call to this function, but override information may have changed
+
     @rtype: dict
     @return: dictionary of NEW components.
 
     """
     # TODO: This should all use the database instead of parsing the changes
     # file again
-    new = {}
     byhand = {}
 
     dbchg = get_dbchange(filename, session)
@@ -136,7 +138,9 @@ def determine_new(filename, changes, files, warn=1, session = None, dsc = None):
 
     # Try to get the Package-Set field from an included .dsc file (if possible).
     if dsc:
-        new = build_package_set(dsc, session)
+        for package, entry in build_package_set(dsc, session).items():
+            if not new.has_key(package):
+                new[package] = entry
 
     # Build up a list of potentially new things
     for name, f in files.items():

@@ -432,9 +432,10 @@ def do_new(upload, session):
 
     # The main NEW processing loop
     done = 0
+    new = {}
     while not done:
         # Find out what's new
-        new, byhand = determine_new(upload.pkg.changes_file, changes, files, dsc=dsc, session=session)
+        new, byhand = determine_new(upload.pkg.changes_file, changes, files, dsc=dsc, session=session, new=new)
 
         if not new:
             break
