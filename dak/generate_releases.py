@@ -150,7 +150,6 @@ class ReleaseWriter(object):
         cnf = Config()
 
         outfile = os.path.join(cnf["Dir::Root"], 'dists', suite.suite_name, "Release")
-        print outfile
         out = open(outfile, "w")
 
         for key, dbfield in attribs:
