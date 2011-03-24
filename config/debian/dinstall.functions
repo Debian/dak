@@ -235,36 +235,9 @@ function mkmaintainers() {
     log 'Creating Maintainers index ... '
 
     cd $indices
-    dak make-maintainers ${scriptdir}/masterfiles/pseudo-packages.maintainers | \
-        sed -e "s/~[^  ]*\([   ]\)/\1/"  | \
-        awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
-
-    if ! cmp -s .new-maintainers Maintainers || [ ! -f Maintainers ]; then
-	    log "installing Maintainers ... "
-	    mv -f .new-maintainers Maintainers
-	    gzip -9v <Maintainers >.new-maintainers.gz
-	    mv -f .new-maintainers.gz Maintainers.gz
-    else
-        rm -f .new-maintainers
-    fi
-}
-
-function mkuploaders() {
-    log 'Creating Uploaders index ... '
-
-    cd $indices
-    dak make-maintainers -u ${scriptdir}/masterfiles/pseudo-packages.maintainers | \
-        sed -e "s/~[^  ]*\([   ]\)/\1/"  | \
-        awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-uploaders
-
-    if ! cmp -s .new-uploaders Uploaders || [ ! -f Uploaders ]; then
-	    log "installing Uploaders ... "
-	    mv -f .new-uploaders Uploaders
-	    gzip -9v <Uploaders >.new-uploaders.gz
-	    mv -f .new-uploaders.gz Uploaders.gz
-    else
-        rm -f .new-uploaders
-    fi
+    dak make-maintainers ${scriptdir}/masterfiles/pseudo-packages.maintainers
+    gzip -9v --rsyncable <Maintainers >Maintainers.gz
+    gzip -9v --rsyncable <Uploaders >Uploaders.gz
 }
 
 function copyoverrides() {
