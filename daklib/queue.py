@@ -1495,7 +1495,7 @@ class Upload(object):
 
         # If we do not have a tagfile, don't do anything
         tagfile = cnf.get("Dinstall::LintianTags")
-        if tagfile is None:
+        if not tagfile:
             return
 
         # Parse the yaml file
