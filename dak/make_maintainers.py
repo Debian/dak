@@ -4,6 +4,7 @@
 Generate Maintainers file used by e.g. the Debian Bug Tracking System
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2000, 2001, 2002, 2003, 2004, 2006  James Troup <james@nocrew.org>
+@copyright: 2011 Torsten Werner <twerner@debian.org>
 @license: GNU General Public License version 2 or later
 
 """
@@ -30,94 +31,34 @@ Generate Maintainers file used by e.g. the Debian Bug Tracking System
 
 ################################################################################
 
-import sys
-import apt_pkg
-
-from daklib.config import Config
-from daklib.dbconn import *
-from daklib import utils
-from daklib import textutils
-from daklib.regexes import re_comments
-
-################################################################################
-
-maintainer_from_source_cache = {}   #: caches the maintainer name <email> per source_id
-packages = {}                       #: packages data to write out
-fixed_maintainer_cache = {}         #: caches fixed ( L{daklib.textutils.fix_maintainer} ) maintainer data
-
-################################################################################
-
 def usage (exit_code=0):
     print """Usage: dak make-maintainers [OPTION] EXTRA_FILE[...]
-Generate an index of packages <=> Maintainers.
+Generate an index of packages <=> Maintainers / Uploaders.
 
-  -u, --uploaders            create uploaders index
   -h, --help                 show this help and exit
 """
     sys.exit(exit_code)
 
 ################################################################################
 
-def fix_maintainer (maintainer):
-    """
-    Fixup maintainer entry, cache the result.
+def format(package, person):
+    '''Return a string nicely formatted for writing to the output file.'''
+    return '%-20s %s\n' % (package, person)
 
-    @type maintainer: string
-    @param maintainer: A maintainer entry as passed to L{daklib.textutils.fix_maintainer}
+################################################################################
 
-    @rtype: tuple
-    @returns: fixed maintainer tuple
-    """
-    global fixed_maintainer_cache
-
-    if not fixed_maintainer_cache.has_key(maintainer):
-        fixed_maintainer_cache[maintainer] = textutils.fix_maintainer(maintainer)[0]
-
-    return fixed_maintainer_cache[maintainer]
-
-def get_maintainer(maintainer, session):
-    """
-    Retrieves maintainer name from database, passes it through fix_maintainer and
-    passes on whatever that returns.
-
-    @type maintainer: int
-    @param maintainer: maintainer_id
-    """
-    q = session.execute("SELECT name FROM maintainer WHERE id = :id", {'id': maintainer}).fetchall()
-    return fix_maintainer(q[0][0])
-
-def get_maintainer_from_source(source_id, session):
-    """
-    Returns maintainer name for given source_id.
-
-    @type source_id: int
-    @param source_id: source package id
-
-    @rtype: string
-    @return: maintainer name/email
-    """
-    global maintainer_from_source_cache
-
-    if not maintainer_from_source_cache.has_key(source_id):
-        q = session.execute("""SELECT m.name FROM maintainer m, source s
-                                WHERE s.id = :sourceid AND s.maintainer = m.id""",
-                            {'sourceid': source_id})
-        maintainer = q.fetchall()[0][0]
-        maintainer_from_source_cache[source_id] = fix_maintainer(maintainer)
-
-    return maintainer_from_source_cache[source_id]
+def uploader_list(source):
+    '''Return a sorted list of uploader names for source package.'''
+    return sorted([uploader.name for uploader in source.uploaders])
 
 ################################################################################
 
 def main():
     cnf = Config()
 
-    Arguments = [('h',"help","Make-Maintainers::Options::Help"),
-                 ('u',"uploaders","Make-Maintainers::Options::Uploaders")]
+    Arguments = [('h',"help","Make-Maintainers::Options::Help")]
     if not cnf.has_key("Make-Maintainers::Options::Help"):
         cnf["Make-Maintainers::Options::Help"] = ""
-    if not cnf.has_key("Make-Maintainers::Options::Uploaders"):
-        cnf["Make-Maintainers::Options::Uploaders"] = ""
 
     extra_files = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.SubTree("Make-Maintainers::Options")
@@ -125,122 +66,38 @@ def main():
     if Options["Help"]:
         usage()
 
-    gen_uploaders = False
-    if Options["Uploaders"]:
-        gen_uploaders = True
-
     session = DBConn().session()
 
-    for suite in session.query(Suite).all():
-        suite_name = suite.suite_name
-        suite_priority = suite.priority
+    # dictionary packages to maintainer names
+    maintainers = dict()
+    # dictionary packages to list of uploader names
+    uploaders = dict()
 
-        # Source packages
-        if gen_uploaders:
-            q = session.execute("""SELECT s.source, s.version, m.name
-                                     FROM src_associations sa, source s, suite su, maintainer m, src_uploaders srcu
-                                    WHERE su.suite_name = :suite_name
-                                      AND sa.suite = su.id AND sa.source = s.id
-                                      AND m.id = srcu.maintainer
-                                      AND srcu.source = s.id""",
-                                    {'suite_name': suite_name})
-        else:
-            q = session.execute("""SELECT s.source, s.version, m.name
-                                     FROM src_associations sa, source s, suite su, maintainer m
-                                    WHERE su.suite_name = :suite_name
-                                      AND sa.suite = su.id AND sa.source = s.id
-                                      AND m.id = s.maintainer""",
-                                    {'suite_name': suite_name})
+    source_query = session.query(DBSource).from_statement('''
+        select distinct on (source) * from source
+            order by source, version desc''')
 
-        for source in q.fetchall():
-            package = source[0]
-            version = source[1]
-            maintainer = fix_maintainer(source[2])
-            if gen_uploaders:
-                key = (package, maintainer)
-            else:
-                key = package
+    binary_query = session.query(DBBinary).from_statement('''
+        select distinct on (package) * from binaries
+            order by package, version desc''')
 
-            if packages.has_key(key):
-                if packages[key]["priority"] <= suite_priority:
-                    if apt_pkg.VersionCompare(packages[key]["version"], version) < 0:
-                        packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
-            else:
-                packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
+    for source in source_query:
+        maintainers[source.source] = source.maintainer.name
+        uploaders[source.source] = uploader_list(source)
 
-        # Binary packages
-        if gen_uploaders:
-            q = session.execute("""SELECT b.package, b.source, srcu.maintainer, b.version
-                                     FROM bin_associations ba, binaries b, suite s, src_uploaders srcu
-                                    WHERE s.suite_name = :suite_name
-                                      AND ba.suite = s.id AND ba.bin = b.id
-                                      AND b.source = srcu.source""",
-                                   {'suite_name': suite_name})
-        else:
-            q = session.execute("""SELECT b.package, b.source, b.maintainer, b.version
-                                     FROM bin_associations ba, binaries b, suite s
-                                    WHERE s.suite_name = :suite_name
-                                      AND ba.suite = s.id AND ba.bin = b.id""",
-                                   {'suite_name': suite_name})
+    for binary in binary_query:
+        if binary.package not in maintainers:
+            maintainers[binary.package] = binary.maintainer.name
+            uploaders[binary.package] = uploader_list(binary.source)
 
-
-        for binary in q.fetchall():
-            package = binary[0]
-            source_id = binary[1]
-            version = binary[3]
-            # Use the source maintainer first; falling back on the binary maintainer as a last resort only
-            if source_id and not gen_uploaders:
-                maintainer = get_maintainer_from_source(source_id, session)
-            else:
-                maintainer = get_maintainer(binary[2], session)
-            if gen_uploaders:
-                key = (package, maintainer)
-            else:
-                key = package
-
-            if packages.has_key(key):
-                if packages[key]["priority"] <= suite_priority:
-                    if apt_pkg.VersionCompare(packages[key]["version"], version) < 0:
-                        packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
-            else:
-                packages[key] = { "maintainer": maintainer, "priority": suite_priority, "version": version }
-
-    # Process any additional Maintainer files (e.g. from pseudo packages)
-    for filename in extra_files:
-        extrafile = utils.open_file(filename)
-        for line in extrafile.readlines():
-            line = re_comments.sub('', line).strip()
-            if line == "":
-                continue
-            split = line.split()
-            lhs = split[0]
-            maintainer = fix_maintainer(" ".join(split[1:]))
-            if lhs.find('~') != -1:
-                (package, version) = lhs.split('~', 1)
-            else:
-                package = lhs
-                version = '*'
-            if not gen_uploaders:
-                key = package
-            else:
-                key = (package, maintainer)
-            # A version of '*' overwhelms all real version numbers
-            if not packages.has_key(key) or version == '*' \
-               or apt_pkg.VersionCompare(packages[key]["version"], version) < 0:
-                packages[key] = { "maintainer": maintainer, "version": version }
-        extrafile.close()
-
-    package_keys = packages.keys()
-    package_keys.sort()
-    if gen_uploaders:
-        for (package, maintainer) in package_keys:
-            key = (package, maintainer)
-            lhs = "~".join([package, packages[key]["version"]])
-            print "%-30s %s" % (lhs, maintainer)
-    else:
-        for package in package_keys:
-            lhs = "~".join([package, packages[package]["version"]])
-            print "%-30s %s" % (lhs, packages[package]["maintainer"])
+    maintainer_file = open('Maintainers', 'w')
+    uploader_file = open('Uploaders', 'w')
+    for package in sorted(uploaders):
+        maintainer_file.write(format(package, maintainers[package]))
+        for uploader in uploaders[package]:
+            uploader_file.write(format(package, uploader))
+    uploader_file.close()
+    maintainer_file.close()
 
 ################################################################################
 
