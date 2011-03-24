@@ -149,7 +149,9 @@ class ReleaseWriter(object):
 
         cnf = Config()
 
-        outfile = os.path.join(cnf["Dir::Root"], 'dists', suite.suite_name, "Release")
+        suite_suffix = "%s" % (cnf.Find("Dinstall::SuiteSuffix"))
+
+        outfile = os.path.join(cnf["Dir::Root"], 'dists', "%s%s" % (suite.suite_name, suite_suffix), "Release")
         out = open(outfile, "w")
 
         for key, dbfield in attribs:
@@ -167,8 +169,6 @@ class ReleaseWriter(object):
                 out.write("%s: yes\n" % (key))
 
         out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
-
-        suite_suffix = "%s" % (cnf.Find("Dinstall::SuiteSuffix"))
 
         ## FIXME: Components need to be adjusted to whatever will be in the db
         ## Needs putting in the DB
