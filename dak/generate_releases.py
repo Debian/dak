@@ -204,7 +204,7 @@ class ReleaseWriter(object):
         # their checksums to the main Release file
         oldcwd = os.getcwd()
 
-        os.chdir("%sdists/%s" % (cnf["Dir::Root"], suite.suite_name))
+        os.chdir("%sdists/%s%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix))
 
         hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
                       'SHA1' : apt_pkg.sha1sum,
