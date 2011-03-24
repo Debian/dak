@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
-""" Create all the Release files
+"""
+Create all the Release files
 
 @contact: Debian FTPMaster <ftpmaster@debian.org>
-@Copyright: 2001, 2002, 2006  Anthony Towns <ajt@debian.org>
-@copyright: 2009, 2011  Joerg Jaspert <joerg@debian.org>
+@copyright: 2011  Joerg Jaspert <joerg@debian.org>
+@copyright: 2011  Mark Hymers <mhy@debian.org>
 @license: GNU General Public License version 2 or later
+
 """
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -21,383 +24,338 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#   ``Bored now''
+################################################################################
+
+# <mhy> I wish they wouldnt leave biscuits out, thats just tempting. Damnit.
 
 ################################################################################
 
 import sys
 import os
+import os.path
 import stat
 import time
 import gzip
 import bz2
 import apt_pkg
+from tempfile import mkstemp, mkdtemp
+import commands
+from multiprocessing import Pool, TimeoutError
+from sqlalchemy.orm import object_session
 
-from daklib import utils
+from daklib import utils, daklog
+from daklib.regexes import re_gensubrelease, re_includeinrelease
 from daklib.dak_exceptions import *
 from daklib.dbconn import *
 from daklib.config import Config
 
 ################################################################################
-
-Cnf = None
-out = None
-AptCnf = None
+Logger = None                  #: Our logging object
+results = []                   #: Results of the subprocesses
 
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: dak generate-releases [OPTION]... [SUITE]...
-Generate Release files (for SUITE).
+    """ Usage information"""
 
+    print """Usage: dak generate-releases [OPTIONS]
+Generate the Release files
+
+  -s, --suite=SUITE(s)       process this suite
+                             Default: All suites not marked 'untouchable'
+  -f, --force                Allow processing of untouchable suites
+                             CAREFUL: Only to be used at (point) release time!
   -h, --help                 show this help and exit
-  -a, --apt-conf FILE        use FILE instead of default apt.conf
-  -f, --force-touch          ignore Untouchable directives in dak.conf
 
-If no SUITE is given Release files are generated for all suites."""
-
+SUITE can be a space seperated list, e.g.
+   --suite=unstable testing
+  """
     sys.exit(exit_code)
 
-################################################################################
+########################################################################
 
-def add_tiffani (files, path, indexstem):
-    index = "%s.diff/Index" % (indexstem)
-    filepath = "%s/%s" % (path, index)
-    if os.path.exists(filepath):
-        #print "ALERT: there was a tiffani file %s" % (filepath)
-        files.append(index)
+def get_result(arg):
+    global results
+    if arg:
+        results.append(arg)
 
-def gen_i18n_index (files, tree, sec):
-    path = Cnf["Dir::Root"] + tree + "/"
-    i18n_path = "%s/i18n" % (sec)
-    if os.path.exists("%s/%s" % (path, i18n_path)):
-        index = "%s/Index" % (i18n_path)
-        out = open("%s/%s" % (path, index), "w")
-        out.write("SHA1:\n")
-        for x in os.listdir("%s/%s" % (path, i18n_path)):
-            if x.startswith('Translation-'):
-                f = open("%s/%s/%s" % (path, i18n_path, x), "r")
-                size = os.fstat(f.fileno())[6]
-                f.seek(0)
-                sha1sum = apt_pkg.sha1sum(f)
-                f.close()
-                out.write(" %s %7d %s\n" % (sha1sum, size, x))
-        out.close()
-        files.append(index)
-
-def compressnames (tree,type,file):
-    compress = AptCnf.get("%s::%s::Compress" % (tree,type), AptCnf.get("Default::%s::Compress" % (type), ". gzip"))
-    result = []
-    cl = compress.split()
-    uncompress = ("." not in cl)
-    for mode in compress.split():
-        if mode == ".":
-            result.append(file)
-        elif mode == "gzip":
-            if uncompress:
-                result.append("<zcat/.gz>" + file)
-                uncompress = 0
-            result.append(file + ".gz")
-        elif mode == "bzip2":
-            if uncompress:
-                result.append("<bzcat/.bz2>" + file)
-                uncompress = 0
-            result.append(file + ".bz2")
-    return result
-
-decompressors = { 'zcat' : gzip.GzipFile,
-                  'bzip2' : bz2.BZ2File }
-
-hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
-              'SHA1' : apt_pkg.sha1sum,
-              'SHA256' : apt_pkg.sha256sum }
-
-def print_hash_files (tree, files, hashop):
-    path = Cnf["Dir::Root"] + tree + "/"
-    for name in files:
-        hashvalue = ""
-        hashlen = 0
-        try:
-            if name[0] == "<":
-                j = name.index("/")
-                k = name.index(">")
-                (cat, ext, name) = (name[1:j], name[j+1:k], name[k+1:])
-                file_handle = decompressors[ cat ]( "%s%s%s" % (path, name, ext) )
-                contents = file_handle.read()
-                hashvalue = hashfuncs[ hashop ](contents)
-                hashlen = len(contents)
-            else:
-                try:
-                    file_handle = utils.open_file(path + name)
-                    hashvalue = hashfuncs[ hashop ](file_handle)
-                    hashlen = os.stat(path + name).st_size
-                except:
-                    raise
-                else:
-                    if file_handle:
-                        file_handle.close()
-
-        except CantOpenError:
-            print "ALERT: Couldn't open " + path + name
-        except IOError:
-            print "ALERT: IOError when reading %s" % (path + name)
-            raise
-        else:
-            out.write(" %s %8d %s\n" % (hashvalue, hashlen, name))
-
-def write_release_file (relpath, suite, component, origin, label, arch, version="", suite_suffix="", notautomatic="", butautomaticupgrades=""):
-    try:
-        if os.access(relpath, os.F_OK):
-            if os.stat(relpath).st_nlink > 1:
-                os.unlink(relpath)
-        release = open(relpath, "w")
-    except IOError:
-        utils.fubar("Couldn't write to " + relpath)
-
-    release.write("Archive: %s\n" % (suite))
-    if version != "":
-        release.write("Version: %s\n" % (version))
-
-    if suite_suffix:
-        release.write("Component: %s/%s\n" % (suite_suffix,component))
-    else:
-        release.write("Component: %s\n" % (component))
-
-    release.write("Origin: %s\n" % (origin))
-    release.write("Label: %s\n" % (label))
-    if notautomatic != "":
-        release.write("NotAutomatic: %s\n" % (notautomatic))
-    if butautomaticupgrades != "":
-        release.write("ButAutomaticUpgrades: %s\n" % (butautomaticupgrades))
-    release.write("Architecture: %s\n" % (arch))
-    release.close()
-
-################################################################################
-
-def main ():
-    global Cnf, AptCnf, out
-    out = sys.stdout
-
-    Cnf = utils.get_conf()
+def sign_release_dir(dirname):
     cnf = Config()
 
-    Arguments = [('h',"help","Generate-Releases::Options::Help"),
-                 ('a',"apt-conf","Generate-Releases::Options::Apt-Conf", "HasArg"),
-                 ('f',"force-touch","Generate-Releases::Options::Force-Touch"),
-                ]
-    for i in [ "help", "apt-conf", "force-touch" ]:
-        if not Cnf.has_key("Generate-Releases::Options::%s" % (i)):
-            Cnf["Generate-Releases::Options::%s" % (i)] = ""
+    if cnf.has_key("Dinstall::SigningKeyring"):
+        keyring = "--secret-keyring \"%s\"" % cnf["Dinstall::SigningKeyring"]
+        if cnf.has_key("Dinstall::SigningPubKeyring"):
+            keyring += " --keyring \"%s\"" % cnf["Dinstall::SigningPubKeyring"]
 
-    suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Generate-Releases::Options")
+        arguments = "--no-options --batch --no-tty --armour"
+        signkeyids = cnf.signingkeyids.split()
+
+        relname = os.path.join(dirname, 'Release')
+
+        dest = os.path.join(dirname, 'Release.gpg')
+        if os.path.exists(dest):
+            os.unlink(dest)
+
+        inlinedest = os.path.join(dirname, 'InRelease')
+        if os.path.exists(inlinedest):
+            os.unlink(inlinedest)
+
+        for keyid in signkeyids:
+            if keyid != "":
+                defkeyid = "--default-key %s" % keyid
+            else:
+                defkeyid = ""
+
+            os.system("gpg %s %s %s --detach-sign <%s >>%s" %
+                    (keyring, defkeyid, arguments, relname, dest))
+
+            os.system("gpg %s %s %s --clearsign <%s >>%s" %
+                    (keyring, defkeyid, arguments, relname, inlinedest))
+
+class ReleaseWriter(object):
+    def __init__(self, suite):
+        self.suite = suite
+
+    def generate_release_files(self):
+        """
+        Generate Release files for the given suite
+
+        @type suite: string
+        @param suite: Suite name
+        """
+
+        suite = self.suite
+        session = object_session(suite)
+
+        architectures = get_suite_architectures(suite.suite_name, skipall=True, skipsrc=True, session=session)
+
+        # Attribs contains a tuple of field names and the database names to use to
+        # fill them in
+        attribs = ( ('Origin',      'origin'),
+                    ('Label',       'label'),
+                    ('Suite',       'suite_name'),
+                    ('Version',     'version'),
+                    ('Codename',    'codename') )
+
+        # A "Sub" Release file has slightly different fields
+        subattribs = ( ('Origin',   'origin'),
+                       ('Label',    'label'),
+                       ('Archive',  'suite_name'),
+                       ('Version',  'version') )
+
+        # Boolean stuff. If we find it true in database, write out "yes" into the release file
+        boolattrs = ( ('NotAutomatic',         'notautomatic'),
+                      ('ButAutomaticUpgrades', 'butautomaticupgrades') )
+
+        cnf = Config()
+
+        outfile = os.path.join("/tmp/mhy", cnf["Dir::Root"][1:], 'dists', suite.suite_name, "Release")
+        print outfile
+        out = open(outfile, "w")
+
+        for key, dbfield in attribs:
+            if getattr(suite, dbfield) is not None:
+                out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
+
+        out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
+
+        if suite.validtime:
+            validtime=float(suite.validtime)
+            out.write("Valid-Until: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()+validtime))))
+
+        for key, dbfield in boolattrs:
+            if getattr(suite, dbfield, False):
+                out.write("%s: yes\n" % (key))
+
+        out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
+
+        suite_suffix = "%s" % (cnf.Find("Dinstall::SuiteSuffix"))
+
+        ## FIXME: Components need to be adjusted to whatever will be in the db
+        ## Needs putting in the DB
+        components = ['main', 'contrib', 'non-free']
+
+        out.write("Components: %s\n" % ( " ".join(map(lambda x: "%s%s" % (suite_suffix, x), components ))))
+
+        # For exact compatibility with old g-r, write out Description here instead
+        # of with the rest of the DB fields above
+        if getattr(suite, 'description') is not None:
+            out.write("Description: %s\n" % suite.description)
+
+        for comp in components:
+            for dirpath, dirnames, filenames in os.walk("%sdists/%s/%s" % (cnf["Dir::Root"], suite.suite_name, comp), topdown=True):
+                if not re_gensubrelease.match(dirpath):
+                    continue
+
+                subfile = os.path.join("/tmp/mhy", dirpath[1:], "Release")
+                subrel = open(subfile, "w")
+
+                for key, dbfield in subattribs:
+                    if getattr(suite, dbfield) is not None:
+                        subrel.write("%s: %s\n" % (key, getattr(suite, dbfield)))
+
+                for key, dbfield in boolattrs:
+                    if getattr(suite, dbfield, False):
+                        subrel.write("%s: yes\n" % (key))
+
+                subrel.write("Component: %s%s\n" % (suite_suffix, comp))
+                subrel.close()
+
+        # Now that we have done the groundwork, we want to get off and add the files with
+        # their checksums to the main Release file
+        oldcwd = os.getcwd()
+
+        os.chdir("%sdists/%s" % (cnf["Dir::Root"], suite.suite_name))
+
+        hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
+                      'SHA1' : apt_pkg.sha1sum,
+                      'SHA256' : apt_pkg.sha256sum }
+
+        fileinfo = {}
+
+        uncompnotseen = {}
+
+        for dirpath, dirnames, filenames in os.walk(".", followlinks=True, topdown=True):
+            for entry in filenames:
+                # Skip things we don't want to include
+                if not re_includeinrelease.match(entry):
+                    continue
+
+                if dirpath == '.' and entry in ["Release", "Release.gpg", "InRelease"]:
+                    continue
+
+                filename = os.path.join(dirpath.lstrip('./'), entry)
+                fileinfo[filename] = {}
+                contents = open(filename, 'r').read()
+
+                # If we find a file for which we have a compressed version and
+                # haven't yet seen the uncompressed one, store the possibility
+                # for future use
+                if entry.endswith(".gz") and entry[:-3] not in uncompnotseen.keys():
+                    uncompnotseen[filename[:-3]] = (gzip.GzipFile, filename)
+                elif entry.endswith(".bz2") and entry[:-4] not in uncompnotseen.keys():
+                    uncompnotseen[filename[:-4]] = (bz2.BZ2File, filename)
+
+                fileinfo[filename]['len'] = len(contents)
+
+                for hf, func in hashfuncs.items():
+                    fileinfo[filename][hf] = func(contents)
+
+        for filename, comp in uncompnotseen.items():
+            # If we've already seen the uncompressed file, we don't
+            # need to do anything again
+            if filename in fileinfo.keys():
+                continue
+
+            # Skip uncompressed Contents files as they're huge, take ages to
+            # checksum and we checksum the compressed ones anyways
+            if os.path.basename(filename).startswith("Contents"):
+                continue
+
+            fileinfo[filename] = {}
+
+            # File handler is comp[0], filename of compressed file is comp[1]
+            contents = comp[0](comp[1], 'r').read()
+
+            fileinfo[filename]['len'] = len(contents)
+
+            for hf, func in hashfuncs.items():
+                fileinfo[filename][hf] = func(contents)
+
+
+        for h in sorted(hashfuncs.keys()):
+            out.write('%s:\n' % h)
+            for filename in sorted(fileinfo.keys()):
+                out.write(" %s %8d %s\n" % (fileinfo[filename][h], fileinfo[filename]['len'], filename))
+
+        out.close()
+
+        sign_release_dir(os.path.dirname(outfile))
+
+        os.chdir(oldcwd)
+
+        return
+
+
+def main ():
+    global Logger, results
+
+    cnf = Config()
+
+    for i in ["Help", "Suite", "Force"]:
+        if not cnf.has_key("Generate-Releases::Options::%s" % (i)):
+            cnf["Generate-Releases::Options::%s" % (i)] = ""
+
+    Arguments = [('h',"help","Generate-Releases::Options::Help"),
+                 ('s',"suite","Generate-Releases::Options::Suite"),
+                 ('f',"force","Generate-Releases::Options::Force")]
+
+    suite_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.SubTree("Generate-Releases::Options")
 
     if Options["Help"]:
         usage()
 
-    if not Options["Apt-Conf"]:
-        Options["Apt-Conf"] = utils.which_apt_conf_file()
+    Logger = daklog.Logger(cnf, 'generate-releases')
 
-    AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf, Options["Apt-Conf"])
+    session = DBConn().session()
 
-    if not suites:
-        suites = Cnf.SubTree("Suite").List()
-
-    for suitename in suites:
-        print "Processing: " + suitename
-        SuiteBlock = Cnf.SubTree("Suite::" + suitename)
-        suiteobj = get_suite(suitename.lower())
-        if not suiteobj:
-            print "ALERT: Cannot find suite %s!" % (suitename.lower())
-            continue
-
-        # Use the canonical name
-        suite = suiteobj.suite_name.lower()
-
-        if suiteobj.untouchable and not Options["Force-Touch"]:
-            print "Skipping: " + suite + " (untouchable)"
-            continue
-
-        origin = suiteobj.origin
-        label = suiteobj.label or suiteobj.origin
-        codename = suiteobj.codename or ""
-        version = ""
-        if suiteobj.version and suiteobj.version != '-':
-            version = suiteobj.version
-        description = suiteobj.description or ""
-
-        architectures = get_suite_architectures(suite, skipall=True, skipsrc=True)
-
-        if suiteobj.notautomatic:
-            notautomatic = "yes"
-        else:
-            notautomatic = ""
-
-        if suiteobj.butautomaticupgrades:
-            butautomaticupgrades = "yes"
-        else:
-            butautomaticupgrades = ""
-
-        if SuiteBlock.has_key("Components"):
-            components = SuiteBlock.ValueList("Components")
-        else:
-            components = []
-
-        suite_suffix = Cnf.Find("Dinstall::SuiteSuffix")
-        if components and suite_suffix:
-            longsuite = suite + "/" + suite_suffix
-        else:
-            longsuite = suite
-
-        tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
-
-        if AptCnf.has_key("tree::%s" % (tree)):
-            pass
-        elif AptCnf.has_key("bindirectory::%s" % (tree)):
-            pass
-        else:
-            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
-            print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
-            continue
-
-        print Cnf["Dir::Root"] + tree + "/Release"
-        out = open(Cnf["Dir::Root"] + tree + "/Release", "w")
-
-        out.write("Origin: %s\n" % (suiteobj.origin))
-        out.write("Label: %s\n" % (label))
-        out.write("Suite: %s\n" % (suite))
-        if version != "":
-            out.write("Version: %s\n" % (version))
-        if codename != "":
-            out.write("Codename: %s\n" % (codename))
-        out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
-
-        if suiteobj.validtime:
-            validtime=float(suiteobj.validtime)
-            out.write("Valid-Until: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()+validtime))))
-
-        if notautomatic != "":
-            out.write("NotAutomatic: %s\n" % (notautomatic))
-        if butautomaticupgrades != "":
-            out.write("ButAutomaticUpgrades: %s\n" % (butautomaticupgrades))
-        out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
-        if components:
-            out.write("Components: %s\n" % (" ".join(components)))
-
-        if description:
-            out.write("Description: %s\n" % (description))
-
-        files = []
-
-        if AptCnf.has_key("tree::%s" % (tree)):
-            if AptCnf.has_key("tree::%s::Contents" % (tree)):
-                pass
+    if Options["Suite"]:
+        suites = []
+        for s in suite_names:
+            suite = get_suite(s.lower(), session)
+            if suite:
+                suites.append(suite)
             else:
-                for x in os.listdir("%s/%s" % (Cnf["Dir::Root"], tree)):
-                    if x.startswith('Contents-'):
-                        if x.endswith('.diff'):
-                            files.append("%s/Index" % (x))
-                        else:
-                            files.append(x)
+                print "cannot find suite %s" % s
+                Logger.log(['cannot find suite %s' % s])
+    else:
+        suites = session.query(Suite).filter(Suite.untouchable == False).all()
 
-            for sec in AptCnf["tree::%s::Sections" % (tree)].split():
-                for arch in AptCnf["tree::%s::Architectures" % (tree)].split():
-                    if arch == "source":
-                        filepath = "%s/%s/Sources" % (sec, arch)
-                        for cfile in compressnames("tree::%s" % (tree), "Sources", filepath):
-                            files.append(cfile)
-                        add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
-                    else:
-                        installer = "%s/installer-%s" % (sec, arch)
-                        installerpath = Cnf["Dir::Root"]+tree+"/"+installer
-                        if os.path.exists(installerpath):
-                            for directory in os.listdir(installerpath):
-                                if os.path.exists("%s/%s/images/MD5SUMS" % (installerpath, directory)):
-                                    files.append("%s/%s/images/MD5SUMS" % (installer, directory))
+    broken=[]
+    # For each given suite, run one process
+    results = []
 
-                        filepath = "%s/binary-%s/Packages" % (sec, arch)
-                        for cfile in compressnames("tree::%s" % (tree), "Packages", filepath):
-                            files.append(cfile)
-                        add_tiffani(files, Cnf["Dir::Root"] + tree, filepath)
+    pool = Pool()
 
-                    if arch == "source":
-                        rel = "%s/%s/Release" % (sec, arch)
-                    else:
-                        rel = "%s/binary-%s/Release" % (sec, arch)
-                    relpath = Cnf["Dir::Root"]+tree+"/"+rel
-                    write_release_file(relpath, suite, sec, origin, label, arch, version, suite_suffix, notautomatic, butautomaticupgrades)
-                    files.append(rel)
-                gen_i18n_index(files, tree, sec)
+    for s in suites:
+        # Setup a multiprocessing Pool. As many workers as we have CPU cores.
+        if s.untouchable and not Options["Force"]:
+            print "Skipping %s (untouchable)" % s.suite_name
+            continue
 
-            if AptCnf.has_key("tree::%s/main" % (tree)):
-                for dis in ["main", "contrib", "non-free"]:
-                    if not AptCnf.has_key("tree::%s/%s" % (tree, dis)): continue
-                    sec = AptCnf["tree::%s/%s::Sections" % (tree,dis)].split()[0]
-                    if sec != "debian-installer":
-                        print "ALERT: weird non debian-installer section in %s" % (tree)
+        print "Processing %s" % s.suite_name
+        Logger.log(['Processing release file for Suite: %s' % (s.suite_name)])
+        pool.apply_async(generate_helper, (s.suite_id, ), callback=get_result)
 
-                    for arch in AptCnf["tree::%s/%s::Architectures" % (tree,dis)].split():
-                        if arch != "source":  # always true
-                            rel = "%s/%s/binary-%s/Release" % (dis, sec, arch)
-                            relpath = Cnf["Dir::Root"]+tree+"/"+rel
-                            write_release_file(relpath, suite, dis, origin, label, arch, version, suite_suffix, notautomatic, butautomaticupgrades)
-                            files.append(rel)
-                            for cfile in compressnames("tree::%s/%s" % (tree,dis),
-                                "Packages",
-                                "%s/%s/binary-%s/Packages" % (dis, sec, arch)):
-                                files.append(cfile)
-            elif AptCnf.has_key("tree::%s::FakeDI" % (tree)):
-                usetree = AptCnf["tree::%s::FakeDI" % (tree)]
-                sec = AptCnf["tree::%s/main::Sections" % (usetree)].split()[0]
-                if sec != "debian-installer":
-                    print "ALERT: weird non debian-installer section in %s" % (usetree)
+    # No more work will be added to our pool, close it and then wait for all to finish
+    pool.close()
+    pool.join()
 
-                for arch in AptCnf["tree::%s/main::Architectures" % (usetree)].split():
-                    if arch != "source":  # always true
-                        for cfile in compressnames("tree::%s/main" % (usetree), "Packages", "main/%s/binary-%s/Packages" % (sec, arch)):
-                            files.append(cfile)
+    retcode = 0
 
-        elif AptCnf.has_key("bindirectory::%s" % (tree)):
-            for cfile in compressnames("bindirectory::%s" % (tree), "Packages", AptCnf["bindirectory::%s::Packages" % (tree)]):
-                files.append(cfile.replace(tree+"/","",1))
-            for cfile in compressnames("bindirectory::%s" % (tree), "Sources", AptCnf["bindirectory::%s::Sources" % (tree)]):
-                files.append(cfile.replace(tree+"/","",1))
-        else:
-            print "ALERT: no tree/bindirectory for %s" % (tree)
+    if len(results) > 0:
+        Logger.log(['Release file generation broken: %s' % (results)])
+        print "Release file generation broken:\n", '\n'.join(results)
+        retcode = 1
 
-        for hashvalue in cnf.SubTree("Generate-Releases").List():
-            if suite in [ i.lower() for i in cnf.ValueList("Generate-Releases::%s" % (hashvalue)) ]:
-                out.write("%s:\n" % (hashvalue))
-                print_hash_files(tree, files, hashvalue)
+    Logger.close()
 
-        out.close()
-        if Cnf.has_key("Dinstall::SigningKeyring"):
-            keyring = "--secret-keyring \"%s\"" % Cnf["Dinstall::SigningKeyring"]
-            if Cnf.has_key("Dinstall::SigningPubKeyring"):
-                keyring += " --keyring \"%s\"" % Cnf["Dinstall::SigningPubKeyring"]
+    sys.exit(retcode)
 
-            arguments = "--no-options --batch --no-tty --armour"
-            signkeyids=cnf.signingkeyids.split()
+def generate_helper(suite_id):
+    '''
+    This function is called in a new subprocess.
+    '''
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    try:
+        rw = ReleaseWriter(suite)
+        rw.generate_release_files()
+    except Exception, e:
+        return str(e)
 
-            dest = Cnf["Dir::Root"] + tree + "/Release.gpg"
-            if os.path.exists(dest):
-                os.unlink(dest)
-            inlinedest = Cnf["Dir::Root"] + tree + "/InRelease"
-            if os.path.exists(inlinedest):
-                os.unlink(inlinedest)
-
-            for keyid in signkeyids:
-                if keyid != "":
-                    defkeyid = "--default-key %s" % keyid
-                else:
-                    defkeyid = ""
-                os.system("gpg %s %s %s --detach-sign <%s >>%s" %
-                        (keyring, defkeyid, arguments,
-                        Cnf["Dir::Root"] + tree + "/Release", dest))
-                os.system("gpg %s %s %s --clearsign <%s >>%s" %
-                        (keyring, defkeyid, arguments,
-                        Cnf["Dir::Root"] + tree + "/Release", inlinedest))
+    return
 
 #######################################################################################
 
