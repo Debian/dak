@@ -1336,7 +1336,7 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
         return (None, rejects)
 
     if not keyrings:
-        keyrings = [ x.keyring_name for x in DBConn().session().query(Keyring).all() ]
+        keyrings = [ x.keyring_name for x in DBConn().session().query(Keyring).filter(Keyring.active == True).all() ]
 
     # Autofetch the signing key if that's enabled
     if autofetch == None:
