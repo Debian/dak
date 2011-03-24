@@ -39,7 +39,7 @@ import re
 import email as modemail
 import subprocess
 
-from dbconn import DBConn, get_architecture, get_component, get_suite
+from dbconn import DBConn, get_architecture, get_component, get_suite, get_override_type, Keyring
 from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
@@ -585,6 +585,46 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
         files[name][hashname] = md5
 
     return files
+
+################################################################################
+
+# see http://bugs.debian.org/619131
+def build_package_set(dsc, session = None):
+    if not dsc.has_key("package-set"):
+        return {}
+
+    packages = {}
+
+    for line in dsc["package-set"].split("\n"):
+        if not line:
+            break
+
+        (name, section, priority) = line.split()
+        (section, component) = extract_component_from_section(section)
+
+        package_type = "deb"
+        if name.find(":") != -1:
+            (package_type, name) = name.split(":", 1)
+        if package_type == "src":
+            package_type = "dsc"
+
+        # Validate type if we have a session
+        if session and get_override_type(package_type, session) is None:
+            # Maybe just warn and ignore? exit(1) might be a bit hard...
+            utils.fubar("invalid type (%s) in Package-Set." % (package_type))
+
+        if section == "":
+            section = "-"
+        if priority == "":
+            priority = "-"
+
+        if package_type == "dsc":
+            priority = "source"
+
+        if not packages.has_key(name) or packages[name]["type"] == "dsc":
+            packages[name] = dict(priority=priority, section=section, type=package_type, component=component, files=[])
+
+    return packages
 
 ################################################################################
 
@@ -1296,7 +1336,7 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
         return (None, rejects)
 
     if not keyrings:
-        keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
+        keyrings = [ x.keyring_name for x in DBConn().session().query(Keyring).filter(Keyring.active == True).all() ]
 
     # Autofetch the signing key if that's enabled
     if autofetch == None:

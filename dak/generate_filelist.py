@@ -41,90 +41,7 @@ from daklib.threadpool import ThreadPool
 from daklib import utils
 import apt_pkg, os, stat, sys
 
-def fetch(query, args, session):
-    return [path + filename for (path, filename) in \
-        session.execute(query, args).fetchall()]
-
-def getSources(suite, component, session, timestamp):
-    extra_cond = ""
-    if timestamp:
-        extra_cond = "AND extract(epoch from sa.created) > %d" % timestamp
-    query = """
-        SELECT l.path, f.filename
-            FROM source s
-            JOIN src_associations sa
-                ON s.id = sa.source AND sa.suite = :suite %s
-            JOIN files f
-                ON s.file = f.id
-            JOIN location l
-                ON f.location = l.id AND l.component = :component
-            ORDER BY filename
-    """ % extra_cond
-    args = { 'suite': suite.suite_id,
-             'component': component.component_id }
-    return fetch(query, args, session)
-
-def getBinaries(suite, component, architecture, type, session, timestamp):
-    extra_cond = ""
-    if timestamp:
-        extra_cond = "AND extract(epoch from ba.created) > %d" % timestamp
-    query = """
-CREATE TEMP TABLE b_candidates (
-    source integer,
-    file integer,
-    architecture integer);
-
-INSERT INTO b_candidates (source, file, architecture)
-    SELECT b.source, b.file, b.architecture
-        FROM binaries b
-        JOIN bin_associations ba ON b.id = ba.bin
-        WHERE b.type = :type AND ba.suite = :suite AND
-            b.architecture IN (2, :architecture) %s;
-
-CREATE TEMP TABLE gf_candidates (
-    filename text,
-    path text,
-    architecture integer,
-    src integer,
-    source text);
-
-INSERT INTO gf_candidates (filename, path, architecture, src, source)
-    SELECT f.filename, l.path, bc.architecture, bc.source as src, s.source
-        FROM b_candidates bc
-        JOIN source s ON bc.source = s.id
-        JOIN files f ON bc.file = f.id
-        JOIN location l ON f.location = l.id
-        WHERE l.component = :component;
-
-WITH arch_any AS
-
-    (SELECT path, filename FROM gf_candidates
-        WHERE architecture > 2),
-
-     arch_all_with_any AS
-    (SELECT path, filename FROM gf_candidates
-        WHERE architecture = 2 AND
-              src IN (SELECT src FROM gf_candidates WHERE architecture > 2)),
-
-     arch_all_without_any AS
-    (SELECT path, filename FROM gf_candidates
-        WHERE architecture = 2 AND
-              source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture > 2)),
-
-     filelist AS
-    (SELECT * FROM arch_any
-    UNION
-    SELECT * FROM arch_all_with_any
-    UNION
-    SELECT * FROM arch_all_without_any)
-
-    SELECT * FROM filelist ORDER BY filename
-    """ % extra_cond
-    args = { 'suite': suite.suite_id,
-             'component': component.component_id,
-             'architecture': architecture.arch_id,
-             'type': type }
-    return fetch(query, args, session)
+from daklib.lists import getSources, getBinaries
 
 def listPath(suite, component, architecture = None, type = None,
         incremental_mode = False):
@@ -152,7 +69,7 @@ def writeSourceList(args):
     (file, timestamp) = listPath(suite, component,
             incremental_mode = incremental_mode)
     session = DBConn().session()
-    for filename in getSources(suite, component, session, timestamp):
+    for _, filename in getSources(suite, component, session, timestamp):
         file.write(filename + '\n')
     session.close()
     file.close()
@@ -162,7 +79,7 @@ def writeBinaryList(args):
     (file, timestamp) = listPath(suite, component, architecture, type,
             incremental_mode)
     session = DBConn().session()
-    for filename in getBinaries(suite, component, architecture, type,
+    for _, filename in getBinaries(suite, component, architecture, type,
             session, timestamp):
         file.write(filename + '\n')
     session.close()
