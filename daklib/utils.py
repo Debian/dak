@@ -39,7 +39,7 @@ import re
 import email as modemail
 import subprocess
 
-from dbconn import DBConn, get_architecture, get_component, get_suite
+from dbconn import DBConn, get_architecture, get_component, get_suite, Keyring
 from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
@@ -1296,7 +1296,7 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
         return (None, rejects)
 
     if not keyrings:
-        keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
+        keyrings = [ x.keyring_name for x in DBConn().session().query(Keyring).all() ]
 
     # Autofetch the signing key if that's enabled
     if autofetch == None:
