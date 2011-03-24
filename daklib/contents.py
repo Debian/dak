@@ -189,6 +189,96 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         os.rename(temp_filename, final_filename)
 
 
+class SourceContentsWriter(object):
+    '''
+    SourceContentsWriter writes the Contents-source.gz files.
+    '''
+    def __init__(self, suite, component):
+        self.suite = suite
+        self.component = component
+        self.session = suite.session()
+
+    def query(self):
+        '''
+        Returns a query object that is doing most of the work.
+        '''
+        params = {
+            'suite_id':     self.suite.suite_id,
+            'component_id': self.component.component_id,
+        }
+
+        sql = '''
+create temp table newest_sources (
+    id integer primary key,
+    source text);
+
+create index sources_binaries_by_source on newest_sources (source);
+
+insert into newest_sources (id, source)
+    select distinct on (source) s.id, s.source from source s
+        join files f on f.id = s.file
+        join location l on l.id = f.location
+        where s.id in (select source from src_associations where suite = :suite_id)
+            and l.component = :component_id
+        order by source, version desc;
+
+select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
+    from newest_sources s, src_contents sc
+    where s.id = sc.source_id group by sc.file'''
+
+        return self.session.query("file", "pkglist").from_statement(sql). \
+            params(params)
+
+    def formatline(self, filename, package_list):
+        '''
+        Returns a formatted string for the filename argument.
+        '''
+        return "%s\t%s\n" % (filename, package_list)
+
+    def fetch(self):
+        '''
+        Yields a new line of the Contents-source.gz file in filename order.
+        '''
+        for filename, package_list in self.query().yield_per(100):
+            yield self.formatline(filename, package_list)
+        # end transaction to return connection to pool
+        self.session.rollback()
+
+    def get_list(self):
+        '''
+        Returns a list of lines for the Contents-source.gz file.
+        '''
+        return [item for item in self.fetch()]
+
+    def output_filename(self):
+        '''
+        Returns the name of the output file.
+        '''
+        values = {
+            'root':      Config()['Dir::Root'],
+            'suite':     self.suite.suite_name,
+            'component': self.component.component_name
+        }
+        return "%(root)s/dists/%(suite)s/%(component)s/Contents-source.gz" % values
+
+    def write_file(self):
+        '''
+        Write the output file.
+        '''
+        command = ['gzip', '--rsyncable']
+        final_filename = self.output_filename()
+        temp_filename = final_filename + '.new'
+        output_file = open(temp_filename, 'w')
+        gzip = Popen(command, stdin = PIPE, stdout = output_file)
+        for item in self.fetch():
+            gzip.stdin.write(item)
+        gzip.stdin.close()
+        output_file.close()
+        gzip.wait()
+        os.chmod(temp_filename, 0664)
+        os.rename(temp_filename, final_filename)
+
+
 def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
     '''
     This function is called in a new subprocess.

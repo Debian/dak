@@ -4,7 +4,7 @@ from db_test import DBDakTestCase, fixture
 
 from daklib.dbconn import *
 from daklib.contents import BinaryContentsWriter, BinaryContentsScanner, \
-    UnpackedSource, SourceContentsScanner
+    UnpackedSource, SourceContentsScanner, SourceContentsWriter
 
 from os.path import normpath
 from sqlalchemy.exc import FlushError, IntegrityError
@@ -200,6 +200,22 @@ class ContentsTestCase(DBDakTestCase):
         self.assertTrue(source.contents.count() == 0)
         SourceContentsScanner(source.source_id).scan()
         self.assertTrue(source.contents.count() > 0)
+
+    def test_sourcecontentswriter(self):
+        '''
+        Test the SourceContentsWriter class.
+        '''
+        self.setup_sources()
+        self.session.flush()
+        # remove newer package from sid because it disturbs the test
+        self.source['hello_2.2-2'].suites = []
+        self.session.commit()
+        source = self.source['hello_2.2-1']
+        SourceContentsScanner(source.source_id).scan()
+        cw = SourceContentsWriter(source.suites[0], source.poolfile.location.component)
+        result = cw.get_list()
+        self.assertEqual(8, len(result))
+        self.assertTrue('debian/changelog\thello\n' in result)
 
     def classes_to_clean(self):
         return [Override, Suite, BinContents, DBBinary, DBSource, Architecture, Section, \
