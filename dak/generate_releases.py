@@ -151,7 +151,7 @@ class ReleaseWriter(object):
 
         suite_suffix = "%s" % (cnf.Find("Dinstall::SuiteSuffix"))
 
-        outfile = os.path.join(cnf["Dir::Root"], 'dists', "%s%s" % (suite.suite_name, suite_suffix), "Release")
+        outfile = os.path.join(cnf["Dir::Root"], 'dists', "%s/%s" % (suite.suite_name, suite_suffix), "Release")
         out = open(outfile, "w")
 
         for key, dbfield in attribs:
@@ -204,7 +204,7 @@ class ReleaseWriter(object):
         # their checksums to the main Release file
         oldcwd = os.getcwd()
 
-        os.chdir("%sdists/%s%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix))
+        os.chdir("%sdists/%s/%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix))
 
         hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
                       'SHA1' : apt_pkg.sha1sum,
