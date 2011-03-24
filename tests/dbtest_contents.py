@@ -3,7 +3,8 @@
 from db_test import DBDakTestCase, fixture
 
 from daklib.dbconn import *
-from daklib.contents import ContentsWriter, ContentsScanner, UnpackedSource
+from daklib.contents import ContentsWriter, BinaryContentsScanner, \
+    UnpackedSource, SourceContentsScanner
 
 from os.path import normpath
 from sqlalchemy.exc import FlushError, IntegrityError
@@ -161,13 +162,16 @@ class ContentsTestCase(DBDakTestCase):
         self.session.delete(self.binary['hello_2.2-1_i386'])
         self.session.commit()
 
-    def test_scan_contents(self):
+    def test_binary_scan_contents(self):
+        '''
+        Tests the BinaryContentsScanner.
+        '''
         self.setup_binaries()
         filelist = [f for f in self.binary['hello_2.2-1_i386'].scan_contents()]
         self.assertEqual(['usr/bin/hello', 'usr/share/doc/hello/copyright'],
             filelist)
         self.session.commit()
-        ContentsScanner(self.binary['hello_2.2-1_i386'].binary_id).scan()
+        BinaryContentsScanner(self.binary['hello_2.2-1_i386'].binary_id).scan()
         bin_contents_list = self.binary['hello_2.2-1_i386'].contents.order_by('file').all()
         self.assertEqual(2, len(bin_contents_list))
         self.assertEqual('usr/bin/hello', bin_contents_list[0].file)
@@ -175,10 +179,11 @@ class ContentsTestCase(DBDakTestCase):
 
     def test_unpack(self):
         '''
-        Tests the UnpackedSource class.
+        Tests the UnpackedSource class and the SourceContentsScanner.
         '''
-        self.setup_poolfiles()
-        dscfilename = fixture('ftp/pool/' + self.file['hello_2.2-1.dsc'].filename)
+        self.setup_sources()
+        source = self.source['hello_2.2-1']
+        dscfilename = fixture('ftp/pool/' + source.poolfile.filename)
         unpacked = UnpackedSource(dscfilename)
         self.assertTrue(len(unpacked.get_root_directory()) > 0)
         self.assertEqual('hello (2.2-1) unstable; urgency=low\n',
@@ -186,7 +191,15 @@ class ContentsTestCase(DBDakTestCase):
         all_filenames = set(unpacked.get_all_filenames())
         self.assertEqual(8, len(all_filenames))
         self.assertTrue('debian/rules' in all_filenames)
+        # method scan_contents()
+        self.assertEqual(all_filenames, source.scan_contents())
+        # exception with invalid files
         self.assertRaises(CalledProcessError, lambda: UnpackedSource('invalidname'))
+        # SourceContentsScanner
+        self.session.commit()
+        self.assertTrue(source.contents.count() == 0)
+        SourceContentsScanner(source.source_id).scan()
+        self.assertTrue(source.contents.count() > 0)
 
     def classes_to_clean(self):
         return [Override, Suite, BinContents, DBBinary, DBSource, Architecture, Section, \

@@ -2195,6 +2195,18 @@ __all__.append('get_sections')
 
 ################################################################################
 
+class SrcContents(ORMObject):
+    def __init__(self, file = None, source = None):
+        self.file = file
+        self.source = source
+
+    def properties(self):
+        return ['file', 'source']
+
+__all__.append('SrcContents')
+
+################################################################################
+
 from debian.debfile import Deb822
 
 # Temporary Deb822 subclass to fix bugs with : handling; see #597249
@@ -2284,6 +2296,25 @@ class DBSource(ORMObject):
         return fields
 
     metadata = association_proxy('key', 'value')
+
+    def scan_contents(self):
+        '''
+        Returns a set of names for non directories. The path names are
+        normalized after converting them from either utf-8 or iso8859-1
+        encoding.
+        '''
+        fullpath = self.poolfile.fullpath
+        from daklib.contents import UnpackedSource
+        unpacked = UnpackedSource(fullpath)
+        fileset = set()
+        for name in unpacked.get_all_filenames():
+            # enforce proper utf-8 encoding
+            try:
+                name.decode('utf-8')
+            except UnicodeDecodeError:
+                name = name.decode('iso8859-1').encode('utf-8')
+            fileset.add(name)
+        return fileset
 
 __all__.append('DBSource')
 
@@ -3077,6 +3108,7 @@ class DBConn(object):
             'source_acl',
             'source_metadata',
             'src_associations',
+            'src_contents',
             'src_format',
             'src_uploaders',
             'suite',
@@ -3379,6 +3411,12 @@ class DBConn(object):
                 binary = relation(DBBinary,
                     backref=backref('contents', lazy='dynamic', cascade='all')),
                 file = self.tbl_bin_contents.c.file))
+
+        mapper(SrcContents, self.tbl_src_contents,
+            properties = dict(
+                source = relation(DBSource,
+                    backref=backref('contents', lazy='dynamic', cascade='all')),
+                file = self.tbl_src_contents.c.file))
 
         mapper(MetadataKey, self.tbl_metadata_keys,
             properties = dict(

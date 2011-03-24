@@ -40,7 +40,8 @@ import apt_pkg
 
 from daklib.config import Config
 from daklib.dbconn import *
-from daklib.contents import ContentsScanner, ContentsWriter
+from daklib.contents import BinaryContentsScanner, ContentsWriter, \
+    SourceContentsScanner
 from daklib import daklog
 from daklib import utils
 
@@ -53,8 +54,13 @@ SUBCOMMANDS
     generate
         generate Contents-$arch.gz files
 
-    scan
-        scan the debs in the existing pool and load contents into the bin_contents table
+    scan-source
+        scan the source packages in the existing pool and load contents into
+        the src_contents table
+
+    scan-binary
+        scan the (u)debs in the existing pool and load contents into the
+        bin_contents table
 
 OPTIONS
      -h, --help
@@ -67,7 +73,7 @@ OPTIONS for generate
      -f, --force
         write Contents files for suites marked as untouchable, too
 
-OPTIONS for scan
+OPTIONS for scan-source and scan-binary
      -l, --limit=NUMBER
         maximum number of packages to scan
 """
@@ -82,9 +88,19 @@ def write_all(cnf, suite_names = [], force = None):
 
 ################################################################################
 
-def scan_all(cnf, limit):
-    Logger = daklog.Logger(cnf.Cnf, 'contents scan')
-    result = ContentsScanner.scan_all(limit)
+def binary_scan_all(cnf, limit):
+    Logger = daklog.Logger(cnf.Cnf, 'contents scan-binary')
+    result = BinaryContentsScanner.scan_all(limit)
+    processed = '%(processed)d packages processed' % result
+    remaining = '%(remaining)d packages remaining' % result
+    Logger.log([processed, remaining])
+    Logger.close()
+
+################################################################################
+
+def source_scan_all(cnf, limit):
+    Logger = daklog.Logger(cnf.Cnf, 'contents scan-source')
+    result = SourceContentsScanner.scan_all(limit)
     processed = '%(processed)d packages processed' % result
     remaining = '%(remaining)d packages remaining' % result
     Logger.log([processed, remaining])
@@ -113,8 +129,12 @@ def main():
     if len(options['Limit']) > 0:
         limit = int(options['Limit'])
 
-    if args[0] == 'scan':
-        scan_all(cnf, limit)
+    if args[0] == 'scan-source':
+        source_scan_all(cnf, limit)
+        return
+
+    if args[0] == 'scan-binary':
+        binary_scan_all(cnf, limit)
         return
 
     suite_names = utils.split_args(options['Suite'])

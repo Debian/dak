@@ -190,12 +190,8 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         gzip.stdin.close()
         output_file.close()
         gzip.wait()
-        try:
-            os.remove(final_filename)
-        except:
-            pass
+        os.chmod(temp_filename, 0664)
         os.rename(temp_filename, final_filename)
-        os.chmod(final_filename, 0664)
 
     @classmethod
     def log_result(class_, result):
@@ -258,10 +254,10 @@ def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
     return log_message
 
 
-class ContentsScanner(object):
+class BinaryContentsScanner(object):
     '''
-    ContentsScanner provides a threadsafe method scan() to scan the contents of
-    a DBBinary object.
+    BinaryContentsScanner provides a threadsafe method scan() to scan the
+    contents of a DBBinary object.
     '''
     def __init__(self, binary_id):
         '''
@@ -302,18 +298,18 @@ class ContentsScanner(object):
         processed = query.count()
         pool = Pool()
         for binary in query.yield_per(100):
-            pool.apply_async(scan_helper, (binary.binary_id, ))
+            pool.apply_async(binary_scan_helper, (binary.binary_id, ))
         pool.close()
         pool.join()
         remaining = remaining()
         session.close()
         return { 'processed': processed, 'remaining': remaining }
 
-def scan_helper(binary_id):
+def binary_scan_helper(binary_id):
     '''
     This function runs in a subprocess.
     '''
-    scanner = ContentsScanner(binary_id)
+    scanner = BinaryContentsScanner(binary_id)
     scanner.scan()
 
 
@@ -376,3 +372,63 @@ class UnpackedSource(object):
         Enforce cleanup.
         '''
         self.cleanup()
+
+
+class SourceContentsScanner(object):
+    '''
+    SourceContentsScanner provides a method scan() to scan the contents of a
+    DBSource object.
+    '''
+    def __init__(self, source_id):
+        '''
+        The argument source_id is the id of the DBSource object that
+        should be scanned.
+        '''
+        self.source_id = source_id
+
+    def scan(self):
+        '''
+        This method does the actual scan and fills in the associated SrcContents
+        property. It commits any changes to the database.
+        '''
+        session = DBConn().session()
+        source = session.query(DBSource).get(self.source_id)
+        fileset = set(source.scan_contents())
+        for filename in fileset:
+            source.contents.append(SrcContents(file = filename))
+        session.commit()
+        session.close()
+
+    @classmethod
+    def scan_all(class_, limit = None):
+        '''
+        The class method scan_all() scans all source using multiple processes.
+        The number of sources to be scanned can be limited with the limit
+        argument. Returns the number of processed and remaining packages as a
+        dict.
+        '''
+        session = DBConn().session()
+        query = session.query(DBSource).filter(DBSource.contents == None)
+        remaining = query.count
+        if limit is not None:
+            query = query.limit(limit)
+        processed = query.count()
+        pool = Pool()
+        for source in query.yield_per(100):
+            pool.apply_async(source_scan_helper, (source.source_id, ))
+        pool.close()
+        pool.join()
+        remaining = remaining()
+        session.close()
+        return { 'processed': processed, 'remaining': remaining }
+
+def source_scan_helper(source_id):
+    '''
+    This function runs in a subprocess.
+    '''
+    try:
+        scanner = SourceContentsScanner(source_id)
+        scanner.scan()
+    except Exception, e:
+        print e
+
