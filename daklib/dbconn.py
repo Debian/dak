@@ -204,7 +204,9 @@ class ORMObject(object):
                     # list
                     value = len(value)
                 elif hasattr(value, 'count'):
-                    # query
+                    # query (but not during validation)
+                    if self.in_validation:
+                        continue
                     value = value.count()
                 else:
                     raise KeyError('Do not understand property %s.' % property)
@@ -258,6 +260,8 @@ class ORMObject(object):
     validation_message = \
         "Validation failed because property '%s' must not be empty in object\n%s"
 
+    in_validation = False
+
     def validate(self):
         '''
         This function validates the not NULL constraints as returned by
@@ -272,8 +276,11 @@ class ORMObject(object):
                 getattr(self, property + '_id') is not None:
                 continue
             if not hasattr(self, property) or getattr(self, property) is None:
-                raise DBUpdateError(self.validation_message % \
-                    (property, str(self)))
+                # str() might lead to races due to a 2nd flush
+                self.in_validation = True
+                message = self.validation_message % (property, str(self))
+                self.in_validation = False
+                raise DBUpdateError(message)
 
     @classmethod
     @session_wrapper
@@ -492,6 +499,10 @@ class DBBinary(ORMObject):
         self.poolfile = poolfile
         self.binarytype = binarytype
 
+    @property
+    def pkid(self):
+        return self.binary_id
+
     def properties(self):
         return ['package', 'version', 'maintainer', 'source', 'architecture', \
             'poolfile', 'binarytype', 'fingerprint', 'install_date', \
@@ -528,6 +539,33 @@ class DBBinary(ORMObject):
         tar.close()
         dpkg.stdout.close()
         dpkg.wait()
+
+    def read_control(self):
+        '''
+        Reads the control information from a binary.
+
+        @rtype: text
+        @return: stanza text of the control section.
+        '''
+        import apt_inst
+        fullpath = self.poolfile.fullpath
+        deb_file = open(fullpath, 'r')
+        stanza = apt_inst.debExtractControl(deb_file)
+        deb_file.close()
+
+        return stanza
+
+    def read_control_fields(self):
+        '''
+        Reads the control information from a binary and return
+        as a dictionary.
+
+        @rtype: dict
+        @return: fields of the control section as a dictionary.
+        '''
+        import apt_pkg
+        stanza = self.read_control()
+        return apt_pkg.TagSection(stanza)
 
 __all__.append('DBBinary')
 
@@ -2169,6 +2207,60 @@ __all__.append('SrcContents')
 
 ################################################################################
 
+from debian.debfile import Deb822
+
+# Temporary Deb822 subclass to fix bugs with : handling; see #597249
+class Dak822(Deb822):
+    def _internal_parser(self, sequence, fields=None):
+        # The key is non-whitespace, non-colon characters before any colon.
+        key_part = r"^(?P<key>[^: \t\n\r\f\v]+)\s*:\s*"
+        single = re.compile(key_part + r"(?P<data>\S.*?)\s*$")
+        multi = re.compile(key_part + r"$")
+        multidata = re.compile(r"^\s(?P<data>.+?)\s*$")
+
+        wanted_field = lambda f: fields is None or f in fields
+
+        if isinstance(sequence, basestring):
+            sequence = sequence.splitlines()
+
+        curkey = None
+        content = ""
+        for line in self.gpg_stripped_paragraph(sequence):
+            m = single.match(line)
+            if m:
+                if curkey:
+                    self[curkey] = content
+
+                if not wanted_field(m.group('key')):
+                    curkey = None
+                    continue
+
+                curkey = m.group('key')
+                content = m.group('data')
+                continue
+
+            m = multi.match(line)
+            if m:
+                if curkey:
+                    self[curkey] = content
+
+                if not wanted_field(m.group('key')):
+                    curkey = None
+                    continue
+
+                curkey = m.group('key')
+                content = ""
+                continue
+
+            m = multidata.match(line)
+            if m:
+                content += '\n' + line # XXX not m.group('data')?
+                continue
+
+        if curkey:
+            self[curkey] = content
+
+
 class DBSource(ORMObject):
     def __init__(self, source = None, version = None, maintainer = None, \
         changedby = None, poolfile = None, install_date = None):
@@ -2179,6 +2271,10 @@ class DBSource(ORMObject):
         self.poolfile = poolfile
         self.install_date = install_date
 
+    @property
+    def pkid(self):
+        return self.source_id
+
     def properties(self):
         return ['source', 'source_id', 'maintainer', 'changedby', \
             'fingerprint', 'poolfile', 'version', 'suites_count', \
@@ -2187,6 +2283,17 @@ class DBSource(ORMObject):
     def not_null_constraints(self):
         return ['source', 'version', 'install_date', 'maintainer', \
             'changedby', 'poolfile', 'install_date']
+
+    def read_control_fields(self):
+        '''
+        Reads the control information from a dsc
+
+        @rtype: tuple
+        @return: fields is the dsc information in a dictionary form
+        '''
+        fullpath = self.poolfile.fullpath
+        fields = Dak822(open(self.poolfile.fullpath, 'r'))
+        return fields
 
     metadata = association_proxy('key', 'value')
 
@@ -2351,6 +2458,34 @@ def get_source_in_suite(source, suite, session=None):
         return None
 
 __all__.append('get_source_in_suite')
+
+@session_wrapper
+def import_metadata_into_db(obj, session=None):
+    """
+    This routine works on either DBBinary or DBSource objects and imports
+    their metadata into the database
+    """
+    fields = obj.read_control_fields()
+    for k in fields.keys():
+        try:
+            # Try raw ASCII
+            val = str(fields[k])
+        except UnicodeEncodeError:
+            # Fall back to UTF-8
+            try:
+                val = fields[k].encode('utf-8')
+            except UnicodeEncodeError:
+                # Finally try iso8859-1
+                val = fields[k].encode('iso8859-1')
+                # Otherwise we allow the exception to percolate up and we cause
+                # a reject as someone is playing silly buggers
+
+        obj.metadata[get_or_set_metadatakey(k, session)] = val
+
+    session.commit_or_flush()
+
+__all__.append('import_metadata_into_db')
+
 
 ################################################################################
 
@@ -2528,7 +2663,7 @@ def add_deb_to_db(u, filename, session=None):
     #    session.rollback()
     #    raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
 
-    return poolfile
+    return bin, poolfile
 
 __all__.append('add_deb_to_db')
 
@@ -2595,7 +2730,7 @@ class Suite(ORMObject):
             'overrides_count']
 
     def not_null_constraints(self):
-        return ['suite_name', 'version']
+        return ['suite_name']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -2850,6 +2985,38 @@ class MetadataKey(ORMObject):
         return ['key']
 
 __all__.append('MetadataKey')
+
+@session_wrapper
+def get_or_set_metadatakey(keyname, session=None):
+    """
+    Returns MetadataKey object for given uidname.
+
+    If no matching keyname is found, a row is inserted.
+
+    @type uidname: string
+    @param uidname: The keyname to add
+
+    @type session: SQLAlchemy
+    @param session: Optional SQL session object (a temporary one will be
+    generated if not supplied).  If not passed, a commit will be performed at
+    the end of the function, otherwise the caller is responsible for commiting.
+
+    @rtype: MetadataKey
+    @return: the metadatakey object for the given keyname
+    """
+
+    q = session.query(MetadataKey).filter_by(key=keyname)
+
+    try:
+        ret = q.one()
+    except NoResultFound:
+        ret = MetadataKey(keyname)
+        session.add(ret)
+        session.commit_or_flush()
+
+    return ret
+
+__all__.append('get_or_set_metadatakey')
 
 ################################################################################
 

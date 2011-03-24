@@ -86,6 +86,8 @@ def init():
          "Generate Packages/Sources files"),
         ("contents",
          "Generate content files"),
+        ("metadata",
+         "Load data for packages/sources files"),
         ("generate-index-diffs",
          "Generate .diff/Index files"),
         ("clean-suites",

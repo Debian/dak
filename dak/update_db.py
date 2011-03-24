@@ -46,7 +46,7 @@ from daklib.daklog import Logger
 ################################################################################
 
 Cnf = None
-required_database_schema = 48
+required_database_schema = 49
 
 ################################################################################
 
@@ -123,7 +123,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         try:
             # Build a connect string
-            if cnf["DB::Service"]:
+            if cnf.has_key("DB::Service"):
                 connect_str = "service=%s" % cnf["DB::Service"]
             else:
                 connect_str = "dbname=%s"% (cnf["DB::Name"])
@@ -134,7 +134,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         except:
             print "FATAL: Failed connect to database"
-            pass
+            sys.exit(1)
 
         database_revision = int(self.get_db_rev())
         logger.log(['transaction id before update: %s' % self.get_transaction_id()])

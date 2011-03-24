@@ -3,6 +3,7 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import Architecture, Suite
+from daklib.dak_exceptions import DBUpdateError
 
 try:
     # python >= 2.6
@@ -34,6 +35,11 @@ class ORMObjectTestCase(DBDakTestCase):
         squeeze = Suite(suite_name = 'squeeze')
         architecture.suites = [sid, squeeze]
         self.assertTrue(re.search('"suites_count": 2', str(architecture)))
+
+    def test_validation(self):
+        suite = Suite()
+        self.session.add(suite)
+        self.assertRaises(DBUpdateError, self.session.flush)
 
 if __name__ == '__main__':
     unittest.main()
