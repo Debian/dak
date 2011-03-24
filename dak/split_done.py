@@ -43,7 +43,8 @@ def main():
                 os.makedirs(dirname)
             dest = dirname + '/' + os.path.basename(filename)
             if os.path.exists(dest):
-                utils.fubar("%s already exists." % (dest))
+                utils.warn("%s already exists." % (dest))
+                continue
             print "Move: %s -> %s" % (filename, dest)
             os.rename(filename, dest)
             count = count + 1
