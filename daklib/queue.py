@@ -1819,10 +1819,10 @@ class Upload(object):
         ## experimental lists the uploader in the Maintainer: or Uploaders: fields (ie,
         ## non-developer maintainers cannot NMU or hijack packages)
 
-        # srcuploaders includes the maintainer
+        # uploader includes the maintainer
         accept = False
-        for sup in r.srcuploaders:
-            (rfc822, rfc2047, name, email) = sup.maintainer.get_split_maintainer()
+        for uploader in r.uploaders:
+            (rfc822, rfc2047, name, email) = uploader.get_split_maintainer()
             # Eww - I hope we never have two people with the same name in Debian
             if email == fpr.uid.uid or name == fpr.uid.name:
                 accept = True
