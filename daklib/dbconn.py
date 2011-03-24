@@ -2571,25 +2571,11 @@ def add_dsc_to_db(u, filename, session=None):
         session.add(df)
 
     # Add the src_uploaders to the DB
-    uploader_ids = [source.maintainer_id]
+    source.uploaders = [source.maintainer]
     if u.pkg.dsc.has_key("uploaders"):
         for up in u.pkg.dsc["uploaders"].replace(">, ", ">\t").split("\t"):
             up = up.strip()
-            uploader_ids.append(get_or_set_maintainer(up, session).maintainer_id)
-
-    added_ids = {}
-    for up_id in uploader_ids:
-        if added_ids.has_key(up_id):
-            import utils
-            utils.warn("Already saw uploader %s for source %s" % (up_id, source.source))
-            continue
-
-        added_ids[up_id]=1
-
-        su = SrcUploader()
-        su.maintainer_id = up_id
-        su.source_id = source.source_id
-        session.add(su)
+            source.uploaders.append(get_or_set_maintainer(up, session))
 
     session.flush()
 
@@ -2688,17 +2674,6 @@ class SrcFormat(object):
         return '<SrcFormat %s>' % (self.format_name)
 
 __all__.append('SrcFormat')
-
-################################################################################
-
-class SrcUploader(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<SrcUploader %s>' % self.uploader_id
-
-__all__.append('SrcUploader')
 
 ################################################################################
 
@@ -3362,7 +3337,8 @@ class DBConn(object):
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
                                  suites = relation(Suite, secondary=self.tbl_src_associations,
                                      backref=backref('sources', lazy='dynamic')),
-                                 srcuploaders = relation(SrcUploader),
+                                 uploaders = relation(Maintainer,
+                                     secondary=self.tbl_src_uploaders),
                                  key = relation(SourceMetadata, cascade='all',
                                      collection_class=attribute_mapped_collection('key'))),
                extension = validator)
@@ -3373,15 +3349,6 @@ class DBConn(object):
         mapper(SrcFormat, self.tbl_src_format,
                properties = dict(src_format_id = self.tbl_src_format.c.id,
                                  format_name = self.tbl_src_format.c.format_name))
-
-        mapper(SrcUploader, self.tbl_src_uploaders,
-               properties = dict(uploader_id = self.tbl_src_uploaders.c.id,
-                                 source_id = self.tbl_src_uploaders.c.source,
-                                 source = relation(DBSource,
-                                                   primaryjoin=(self.tbl_src_uploaders.c.source==self.tbl_source.c.id)),
-                                 maintainer_id = self.tbl_src_uploaders.c.maintainer,
-                                 maintainer = relation(Maintainer,
-                                                       primaryjoin=(self.tbl_src_uploaders.c.maintainer==self.tbl_maintainer.c.id))))
 
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id,
