@@ -172,7 +172,7 @@ for file in $(ls -1 ${INCOMING}/*.del ); do
     ARCHKEYRING="${base}/${ARCH}/keyring.gpg"
 
     # Is the key in there?
-    KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys ${KEYID} | grep -c '^pub:')
+    KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys ${KEYID} | grep -c '^pub:' || /bin/true )
 
     if [ $KEYNO -eq 1 ]; then
         # Right, exactly one there, lets get rid of it
