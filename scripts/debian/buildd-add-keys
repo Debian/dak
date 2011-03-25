@@ -56,7 +56,7 @@ trap cleanup ERR EXIT TERM HUP INT QUIT
 base="${base}/scripts/builddkeyrings"
 INCOMING="${base}/incoming"
 ERRORS="${base}/errors"
-ADMINS="${base}/admins"
+ADMINS="${base}/adminkeys.gpg"
 
 # Default options for our gpg calls
 DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting"
@@ -121,7 +121,7 @@ for file in $(ls -1 ${INCOMING}/*.key); do
     exec 5> "${GPGLOGS}"
 
     # So lets run gpg, status/logger into the two files, to "decrypt" the keyfile
-    if ! gpg ${DEFGPGOPT} --keyring "${ADMINS}/${ARCH}.gpg" --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
+    if ! gpg ${DEFGPGOPT} --keyring "${ADMINS}" --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
         ret=$?
         log "gpg returned with ${ret}, not adding key from file ${file}"
         DATE=$(date -Is)
