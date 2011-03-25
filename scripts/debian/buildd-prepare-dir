@@ -28,8 +28,6 @@ set -E
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-umask 027
-
 # And use one locale, no matter what the caller has set
 export LANG=C
 export LC_ALL=C
