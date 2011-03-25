@@ -56,16 +56,6 @@ from textutils import fix_maintainer
 from lintian import parse_lintian_output, generate_reject_messages
 from contents import UnpackedSource
 
-# suppress some deprecation warnings in squeeze related to apt_pkg
-# module
-import warnings
-warnings.filterwarnings('ignore', \
-    "apt_pkg.ParseSection\(\) is deprecated. Please see apt_pkg\.TagSection\(\) for the replacement\.", \
-    DeprecationWarning)
-warnings.filterwarnings('ignore', \
-    "Attribute '.*' of the 'apt_pkg\.TagSection' object is deprecated, use '.*' instead\.", \
-    DeprecationWarning)
-
 ###############################################################################
 
 def get_type(f, session):

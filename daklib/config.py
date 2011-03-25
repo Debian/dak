@@ -43,10 +43,7 @@ warnings.filterwarnings('ignore', \
     "Attribute '.*' of the 'apt_pkg.*' object is deprecated, use '.*' instead\.", \
     DeprecationWarning)
 warnings.filterwarnings('ignore', \
-    "apt_pkg\.newConfiguration\(\) is deprecated\. Use apt_pkg\.Configuration\(\) instead\.", \
-    DeprecationWarning)
-warnings.filterwarnings('ignore', \
-    "apt_pkg\.ParseTagFile\(\) is deprecated\. Please see apt_pkg\.TagFile\(\) for the replacement\.", \
+    "apt_pkg.*\(\) is deprecated\. Please see apt_pkg.*\(\) for the replacement\.", \
     DeprecationWarning)
 
 ################################################################################
