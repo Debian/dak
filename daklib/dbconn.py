@@ -3591,12 +3591,21 @@ class DBConn(object):
         self.__setupmappers()
         self.pid = os.getpid()
 
-    def session(self):
+    def session(self, work_mem = 0):
+        '''
+        Returns a new session object. If a work_mem parameter is provided a new
+        transaction is started and the work_mem parameter is set for this
+        transaction. The work_mem parameter is measured in MB. A default value
+        will be used if the parameter is not set.
+        '''
         # reinitialize DBConn in new processes
         if self.pid != os.getpid():
             clear_mappers()
             self.__createconn()
-        return self.db_smaker()
+        session = self.db_smaker()
+        if work_mem > 0:
+            session.execute("SET LOCAL work_mem TO '%d MB'" % work_mem)
+        return session
 
 __all__.append('DBConn')
 
