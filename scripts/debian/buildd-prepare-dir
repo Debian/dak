@@ -47,13 +47,13 @@ mkdir -p "${TARGET}/keyrings"
 
 for arch in $archs; do
     if [ -f ${base}/${arch}/keyring.gpg ]; then
-        cp -al ${base}/${arch}/keyring.gpg ${TARGET}/keyrings/buildd-${arch}-keyring.gpg
-        chmod 0644 ${TARGET}/keyrings/buildd-${arch}-keyring.gpg
+        cp -al ${base}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
+        chmod 0644 ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
     fi
 done
 
 cd ${TARGET}
-sha512sum keyrings/* > sha512sums
+sha512sum buildd-keyrings/* > sha512sums
 
 rm -f ${TARGET}/sha512sums.txt
 SIGNINGKEY=B1326A8D
