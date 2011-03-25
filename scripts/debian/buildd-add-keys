@@ -221,7 +221,6 @@ for file in $(ls -1 ${INCOMING}/*.key); do
     # rollover works. 3 won't, they have to rm one first
     # We need to check for the amount of keys
     ARCHKEYRING="${base}/${ARCH}/keyring.gpg"
-    trap - ERR EXIT TERM HUP INT QUIT
 
     KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys "buildd_${ARCH}-${BUILDD}@buildd.debian.org" | grep -c '^pub:' || /bin/true )
     if [ ${KEYNO} -gt 2 ]; then
