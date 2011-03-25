@@ -59,6 +59,7 @@ Perform administrative work on the dak database.
   config / c:
      c db                   show db config
      c db-shell             show db config in a usable form for psql
+     c NAME                 show option NAME as set in configuration table
 
   architecture / a:
      a list                 show a list of architectures
@@ -456,7 +457,12 @@ def show_config(command):
             e.append('PGPORT')
         print "export " + " ".join(e)
     else:
-        die("E: config command unknown")
+        session = DBConn().session()
+        try:
+            o = session.query(DBConfig).filter_by(name = mode).one()
+            print o.value
+        except NoResultFound:
+            print "W: option '%s' not set" % mode
 
 dispatch['config'] = show_config
 dispatch['c'] = show_config
