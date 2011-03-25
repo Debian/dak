@@ -182,7 +182,7 @@ class ReleaseWriter(object):
             out.write("Description: %s\n" % suite.description)
 
         for comp in components:
-            for dirpath, dirnames, filenames in os.walk("%sdists/%s/%s" % (cnf["Dir::Root"], suite.suite_name, comp), topdown=True):
+            for dirpath, dirnames, filenames in os.walk("%sdists/%s/%s%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix, comp), topdown=True):
                 if not re_gensubrelease.match(dirpath):
                     continue
 
