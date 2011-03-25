@@ -703,6 +703,7 @@ class BuildQueue(object):
         try:
             # Grab files we want to include
             newer = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) > starttime).all()
+            newer += session.query(BuildQueuePolicyFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueuePolicyFile.lastused + timedelta(seconds=self.stay_of_execution) > starttime).all()
             # Write file list with newer files
             (fl_fd, fl_name) = mkstemp()
             for n in newer:
@@ -795,6 +796,7 @@ class BuildQueue(object):
 
         # Grab files older than our execution time
         older = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) <= starttime).all()
+        older += session.query(BuildQueuePolicyFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueuePolicyFile.lastused + timedelta(seconds=self.stay_of_execution) <= starttime).all()
 
         for o in older:
             killdb = False
@@ -822,9 +824,7 @@ class BuildQueue(object):
             if f.startswith('Packages') or f.startswith('Source') or f.startswith('Release') or f.startswith('advisory'):
                 continue
 
-            try:
-                r = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter_by(filename = f).one()
-            except NoResultFound:
+            if not self.contains_filename(f):
                 fp = os.path.join(self.path, f)
                 if dryrun:
                     Logger.log(["I: Would remove unused link %s" % fp])
@@ -834,6 +834,18 @@ class BuildQueue(object):
                         os.unlink(fp)
                     except OSError:
                         Logger.log(["E: Failed to unlink unreferenced file %s" % r.fullpath])
+
+    def contains_filename(self, filename):
+        """
+        @rtype Boolean
+        @returns True if filename is supposed to be in the queue; False otherwise
+        """
+        session = DBConn().session().object_session(self)
+        if session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id, filename = filename).count() > 0:
+            return True
+        elif session.query(BuildQueuePolicyFile).filter_by(build_queue = self, filename = filename).count() > 0:
+            return True
+        return False
 
     def add_file_from_pool(self, poolfile):
         """Copies a file into the pool.  Assumes that the PoolFile object is
@@ -879,6 +891,61 @@ class BuildQueue(object):
 
         return qf
 
+    def add_changes_from_policy_queue(self, policyqueue, changes):
+        """
+        Copies a changes from a policy queue together with its poolfiles.
+
+        @type policyqueue: PolicyQueue
+        @param policyqueue: policy queue to copy the changes from
+
+        @type changes: DBChange
+        @param changes: changes to copy to this build queue
+        """
+        for policyqueuefile in changes.files:
+            self.add_file_from_policy_queue(policyqueue, policyqueuefile)
+        for poolfile in changes.poolfiles:
+            self.add_file_from_pool(poolfile)
+
+    def add_file_from_policy_queue(self, policyqueue, policyqueuefile):
+        """
+        Copies a file from a policy queue.
+        Assumes that the policyqueuefile is attached to the same SQLAlchemy
+        session as the Queue object is.  The caller is responsible for
+        committing after calling this function.
+
+        @type policyqueue: PolicyQueue
+        @param policyqueue: policy queue to copy the file from
+
+        @type policyqueuefile: ChangePendingFile
+        @param policyqueuefile: file to be added to the build queue
+        """
+        session = DBConn().session().object_session(policyqueuefile)
+
+        # Is the file already there?
+        try:
+            f = session.query(BuildQueuePolicyFile).filter_by(build_queue=self, file=policyqueuefile).one()
+            f.lastused = datetime.now()
+            return f
+        except NoResultFound:
+            pass # continue below
+
+        # We have to add the file.
+        f = BuildQueuePolicyFile()
+        f.build_queue = self
+        f.file = policyqueuefile
+        f.filename = policyqueuefile.filename
+
+        source = os.path.join(policyqueue.path, policyqueuefile.filename)
+        target = f.fullpath
+        try:
+            # Always copy files from policy queues as they might move around.
+            import utils
+            utils.copy(source, target)
+        except OSError:
+            return None
+
+        session.add(f)
+        return f
 
 __all__.append('BuildQueue')
 
@@ -911,6 +978,10 @@ __all__.append('get_build_queue')
 ################################################################################
 
 class BuildQueueFile(object):
+    """
+    BuildQueueFile represents a file in a build queue coming from a pool.
+    """
+
     def __init__(self, *args, **kwargs):
         pass
 
@@ -923,6 +994,27 @@ class BuildQueueFile(object):
 
 
 __all__.append('BuildQueueFile')
+
+################################################################################
+
+class BuildQueuePolicyFile(object):
+    """
+    BuildQueuePolicyFile represents a file in a build queue that comes from a
+    policy queue (and not a pool).
+    """
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    #@property
+    #def filename(self):
+    #    return self.file.filename
+
+    @property
+    def fullpath(self):
+        return os.path.join(self.build_queue.path, self.filename)
+
+__all__.append('BuildQueuePolicyFile')
 
 ################################################################################
 
@@ -3080,6 +3172,7 @@ class DBConn(object):
             'binary_acl_map',
             'build_queue',
             'build_queue_files',
+            'build_queue_policy_files',
             'changelogs_text',
             'changes',
             'component',
@@ -3173,6 +3266,11 @@ class DBConn(object):
         mapper(BuildQueueFile, self.tbl_build_queue_files,
                properties = dict(buildqueue = relation(BuildQueue, backref='queuefiles'),
                                  poolfile = relation(PoolFile, backref='buildqueueinstances')))
+
+        mapper(BuildQueuePolicyFile, self.tbl_build_queue_policy_files,
+               properties = dict(
+                build_queue = relation(BuildQueue, backref='policy_queue_files'),
+                file = relation(ChangePendingFile, lazy='joined')))
 
         mapper(DBBinary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
