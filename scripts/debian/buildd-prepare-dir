@@ -39,8 +39,9 @@ PROGRAM="buildd-prepare-dir"
 . "${configdir}/common"
 
 # should be relative to the general base dir later
-TARGET="${base}/scripts/builddkeyrings"
 COPYTARGET="${base}/keyrings"
+base="${base}/scripts/builddkeyrings"
+TARGET="${base}/keyrings"
 REMOVED="${base}/removed-buildd-keys.gpg"
 
 mkdir -p "${TARGET}/keyrings"

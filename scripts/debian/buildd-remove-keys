@@ -53,7 +53,7 @@ function cleanup() {
 }
 trap cleanup ERR EXIT TERM HUP INT QUIT
 
-base=="${base}/scripts/builddkeyrings"
+base="${base}/scripts/builddkeyrings"
 INCOMING="${base}/incoming"
 ERRORS="${base}/errors"
 ADMINS="${base}/admins"
