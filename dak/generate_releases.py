@@ -138,9 +138,9 @@ class ReleaseWriter(object):
                     ('Codename',    'codename') )
 
         # A "Sub" Release file has slightly different fields
-        subattribs = ( ('Origin',   'origin'),
+        subattribs = ( ('Archive',  'suite_name'),
+                       ('Origin',   'origin'),
                        ('Label',    'label'),
-                       ('Archive',  'suite_name'),
                        ('Version',  'version') )
 
         # Boolean stuff. If we find it true in database, write out "yes" into the release file
@@ -182,12 +182,12 @@ class ReleaseWriter(object):
             out.write("Description: %s\n" % suite.description)
 
         for comp in components:
-            for dirpath, dirnames, filenames in os.walk("%sdists/%s/%s" % (cnf["Dir::Root"], suite.suite_name, comp), topdown=True):
+            for dirpath, dirnames, filenames in os.walk("%sdists/%s/%s%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix, comp), topdown=True):
                 if not re_gensubrelease.match(dirpath):
                     continue
 
                 subfile = os.path.join(dirpath, "Release")
-                subrel = open(subfile, "w")
+                subrel = open(subfile + '.new', "w")
 
                 for key, dbfield in subattribs:
                     if getattr(suite, dbfield) is not None:
@@ -198,7 +198,17 @@ class ReleaseWriter(object):
                         subrel.write("%s: yes\n" % (key))
 
                 subrel.write("Component: %s%s\n" % (suite_suffix, comp))
+
+                # Urgh, but until we have all the suite/component/arch stuff in the DB,
+                # this'll have to do
+                arch = os.path.split(dirpath)[-1]
+                if arch.startswith('binary-'):
+                    arch = arch[7:]
+
+                subrel.write("Architecture: %s\n" % (arch))
                 subrel.close()
+
+                os.rename(subfile + '.new', subfile)
 
         # Now that we have done the groundwork, we want to get off and add the files with
         # their checksums to the main Release file

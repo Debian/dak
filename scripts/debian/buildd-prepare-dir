@@ -28,8 +28,6 @@ set -E
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-umask 027
-
 # And use one locale, no matter what the caller has set
 export LANG=C
 export LC_ALL=C
@@ -49,15 +47,15 @@ mkdir -p "${TARGET}/keyrings"
 
 for arch in $archs; do
     if [ -f ${base}/${arch}/keyring.gpg ]; then
-        cp -al ${base}/${arch}/keyring.gpg ${TARGET}/keyrings/buildd-${arch}-keyring.gpg
-        chmod 0644 ${TARGET}/keyrings/buildd-${arch}-keyring.gpg
+        cp -afl ${base}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
+        chmod 0644 ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
     fi
 done
 
 cd ${TARGET}
-sha512sum keyrings/* > sha512sums
+sha512sum buildd-keyrings/* > sha512sums
 
 rm -f ${TARGET}/sha512sums.txt
-SIGNINGKEY=$(dak admin c signingkeyids)
+SIGNINGKEY=B1326A8D
 GNUPGHOME=${GNUPGHOME} gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/sha512sums.txt" "${TARGET}/sha512sums"
 rm -f ${TARGET}/sha512sums
