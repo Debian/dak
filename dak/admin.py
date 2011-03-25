@@ -61,6 +61,11 @@ Perform administrative work on the dak database.
      c db-shell             show db config in a usable form for psql
      c NAME                 show option NAME as set in configuration table
 
+  keyring / k:
+     k list-all             list all keyrings
+     k list-binary          list all keyrings with a NULL source acl
+     k list-source          list all keyrings with a non NULL source acl
+
   architecture / a:
      a list                 show a list of architectures
      a rm ARCH              remove an architecture (will only work if
@@ -466,6 +471,35 @@ def show_config(command):
 
 dispatch['config'] = show_config
 dispatch['c'] = show_config
+
+################################################################################
+
+def show_keyring(command):
+    args = [str(x) for x in command]
+    cnf = utils.get_conf()
+
+    die_arglen(args, 2, "E: keyring needs at least a command")
+
+    mode = args[1].lower()
+
+    d = DBConn()
+
+    q = d.session().query(Keyring).filter(Keyring.active == True)
+
+    if mode == 'list-all':
+        pass
+    elif mode == 'list-binary':
+        q = q.filter(Keyring.default_source_acl_id == None)
+    elif mode == 'list-source':
+        q = q.filter(Keyring.default_source_acl_id != None)
+    else:
+        die("E: keyring command unknown")
+
+    for k in q.all():
+        print k.keyring_name
+
+dispatch['keyring'] = show_keyring
+dispatch['k'] = show_keyring
 
 ################################################################################
 
