@@ -34,6 +34,16 @@
 
 ################################################################################
 
+import warnings
+warnings.filterwarnings('ignore', \
+    "apt_pkg\.ParseTagFile\(\) is deprecated\. Please see apt_pkg\.TagFile\(\) for the replacement\.", \
+    DeprecationWarning)
+warnings.filterwarnings('ignore', \
+    "Attribute '.*' of the 'apt_pkg\.TagFile' object is deprecated, use '.*' instead\.", \
+    DeprecationWarning)
+
+################################################################################
+
 from copy import copy
 import glob, os, stat, sys, time
 import apt_pkg

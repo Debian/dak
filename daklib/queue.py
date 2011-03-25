@@ -63,7 +63,7 @@ warnings.filterwarnings('ignore', \
     "apt_pkg.ParseSection\(\) is deprecated. Please see apt_pkg\.TagSection\(\) for the replacement\.", \
     DeprecationWarning)
 warnings.filterwarnings('ignore', \
-    "Attribute 'Find' of the 'apt_pkg\.TagSection' object is deprecated, use 'find' instead\.", \
+    "Attribute '.*' of the 'apt_pkg\.TagSection' object is deprecated, use '.*' instead\.", \
     DeprecationWarning)
 
 ###############################################################################
