@@ -64,6 +64,14 @@ def package_to_queue(u, summary, short_summary, queue, chg, session, announce=No
     u.move_to_queue(queue)
     chg.in_queue_id = queue.policy_queue_id
     session.add(chg)
+
+    # send to build queues
+    if queue.send_to_build_queues:
+        for suite_name in u.pkg.changes["distribution"].keys():
+            suite = get_suite(suite_name, session)
+            for q in suite.copy_queues:
+                q.add_changes_from_policy_queue(queue, chg)
+
     session.commit()
 
     # Check for override disparities
@@ -126,11 +134,6 @@ def do_unembargo(u, summary, short_summary, chg, session=None):
     package_to_queue(u, summary, short_summary,
                      polq, chg, session,
                      announce=None)
-    for suite_name in u.pkg.changes["distribution"].keys():
-        suite = get_suite(suite_name, session)
-        for q in suite.copy_queues:
-            for f in u.pkg.files.keys():
-                copyfile(os.path.join(polq.path, f), os.path.join(q.path, f))
 #
 #################################################################################
 #
@@ -152,11 +155,6 @@ def do_embargo(u, summary, short_summary, chg, session=None):
     package_to_queue(u, summary, short_summary,
                      polq, chg, session,
                      announce=None)
-    for suite_name in u.pkg.changes["distribution"].keys():
-        suite = get_suite(suite_name, session)
-        for q in suite.copy_queues:
-            for f in u.pkg.files.keys():
-                copyfile(os.path.join(polq.path, f), os.path.join(q.path, f))
 
 ################################################################################
 
