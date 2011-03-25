@@ -58,5 +58,5 @@ sha512sum keyrings/* > sha512sums
 
 rm -f ${TARGET}/sha512sums.txt
 SIGNINGKEY=$(dak admin c signingkeyids)
-gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINKEY} --clearsign -o "${TARGET}/sha512sums.txt" "${TARGET}/sha512sums"
+gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/sha512sums.txt" "${TARGET}/sha512sums"
 rm -f ${TARGET}/sha512sums
