@@ -64,7 +64,7 @@ def getArchAll(suite, component, architecture, type, session, timestamp = None):
     full pathname to the u(deb) file. See function writeAllList() in
     dak/generate_filelist.py for an example that uses this function.
     '''
-    query = suite.binaries.filter_by(architecture = architecture, type = type)
+    query = suite.binaries.filter_by(architecture = architecture, binarytype = type)
     if timestamp is not None:
         extra_cond = 'extract(epoch from bin_associations.created) > %d' % timestamp
         query = query.filter(extra_cond)
