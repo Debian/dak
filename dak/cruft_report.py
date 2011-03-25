@@ -42,6 +42,9 @@ warnings.filterwarnings('ignore', \
 warnings.filterwarnings('ignore', \
     "Attribute '.*' of the 'apt_pkg\.TagFile' object is deprecated, use '.*' instead\.", \
     DeprecationWarning)
+warnings.filterwarnings('ignore', \
+    "Attribute 'Find' of the 'apt_pkg\.TagSection' object is deprecated, use 'find' instead\.", \
+    DeprecationWarning)
 
 ################################################################################
 
