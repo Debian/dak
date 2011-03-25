@@ -24,6 +24,8 @@ Helper functions for list generating commands (Packages, Sources).
 
 ################################################################################
 
+from dbconn import get_architecture
+
 def fetch(query, args, session):
     for (id, path, filename) in session.execute(query, args).fetchall():
         yield (id, path + filename)
@@ -54,6 +56,22 @@ def getSources(suite, component, session, timestamp = None):
              'component': component.component_id }
     return fetch(query, args, session)
 
+def getArchAll(suite, component, architecture, type, session, timestamp = None):
+    '''
+    Calculates all binaries in suite and component of architecture 'all' (and
+    only 'all') and type 'deb' or 'udeb' optionally limited to binaries newer
+    than timestamp.  Returns a generator that yields a tuple of binary id and
+    full pathname to the u(deb) file. See function writeAllList() in
+    dak/generate_filelist.py for an example that uses this function.
+    '''
+    query = suite.clone(session).binaries. \
+        filter_by(architecture = architecture, binarytype = type)
+    if timestamp is not None:
+        extra_cond = 'extract(epoch from bin_associations.created) > %d' % timestamp
+        query = query.filter(extra_cond)
+    for binary in query:
+        yield (binary.binary_id, binary.poolfile.fullpath)
+
 def getBinaries(suite, component, architecture, type, session, timestamp = None):
     '''
     Calculates the binaries in suite and component of architecture and
@@ -77,7 +95,7 @@ INSERT INTO b_candidates (id, source, file, architecture)
         FROM binaries b
         JOIN bin_associations ba ON b.id = ba.bin
         WHERE b.type = :type AND ba.suite = :suite AND
-            b.architecture IN (2, :architecture) %s;
+            b.architecture IN (:arch_all, :architecture) %s;
 
 CREATE TEMP TABLE gf_candidates (
     id integer,
@@ -98,17 +116,17 @@ INSERT INTO gf_candidates (id, filename, path, architecture, src, source)
 WITH arch_any AS
 
     (SELECT id, path, filename FROM gf_candidates
-        WHERE architecture > 2),
+        WHERE architecture <> :arch_all),
 
      arch_all_with_any AS
     (SELECT id, path, filename FROM gf_candidates
-        WHERE architecture = 2 AND
-              src IN (SELECT src FROM gf_candidates WHERE architecture > 2)),
+        WHERE architecture = :arch_all AND
+              src IN (SELECT src FROM gf_candidates WHERE architecture <> :arch_all)),
 
      arch_all_without_any AS
     (SELECT id, path, filename FROM gf_candidates
-        WHERE architecture = 2 AND
-              source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture > 2)),
+        WHERE architecture = :arch_all AND
+              source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture <> :arch_all)),
 
      filelist AS
     (SELECT * FROM arch_any
@@ -122,6 +140,7 @@ WITH arch_any AS
     args = { 'suite': suite.suite_id,
              'component': component.component_id,
              'architecture': architecture.arch_id,
+             'arch_all': get_architecture('all', session).arch_id,
              'type': type }
     return fetch(query, args, session)
 

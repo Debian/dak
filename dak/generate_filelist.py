@@ -41,7 +41,7 @@ from daklib.threadpool import ThreadPool
 from daklib import utils
 import apt_pkg, os, stat, sys
 
-from daklib.lists import getSources, getBinaries
+from daklib.lists import getSources, getBinaries, getArchAll
 
 def listPath(suite, component, architecture = None, type = None,
         incremental_mode = False):
@@ -70,6 +70,17 @@ def writeSourceList(args):
             incremental_mode = incremental_mode)
     session = DBConn().session()
     for _, filename in getSources(suite, component, session, timestamp):
+        file.write(filename + '\n')
+    session.close()
+    file.close()
+
+def writeAllList(args):
+    (suite, component, architecture, type, incremental_mode) = args
+    (file, timestamp) = listPath(suite, component, architecture, type,
+            incremental_mode)
+    session = DBConn().session()
+    for _, filename in getArchAll(suite, component, architecture, type,
+            session, timestamp):
         file.write(filename + '\n')
     session.close()
     file.close()
@@ -144,7 +155,14 @@ def main():
                 elif architecture.arch_string == 'source':
                     threadpool.queueTask(writeSourceList,
                         (suite, component, Options['Incremental']))
-                elif architecture.arch_string != 'all':
+                elif architecture.arch_string == 'all':
+                    threadpool.queueTask(writeAllList,
+                        (suite, component, architecture, 'deb',
+                            Options['Incremental']))
+                    threadpool.queueTask(writeAllList,
+                        (suite, component, architecture, 'udeb',
+                            Options['Incremental']))
+                else: # arch any
                     threadpool.queueTask(writeBinaryList,
                         (suite, component, architecture, 'deb',
                             Options['Incremental']))

@@ -87,6 +87,9 @@ def get_type(f, session):
         file_type = f["dbtype"]
     elif re_source_ext.match(f["type"]):
         file_type = "dsc"
+    elif f['architecture'] == 'source' and f["type"] == 'unreadable':
+        utils.warn('unreadable source file (will continue and hope for the best)')
+        return f["type"]
     else:
         file_type = f["type"]
         utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (file_type))
@@ -1711,22 +1714,22 @@ class Upload(object):
         # Check any one-off upload blocks
         self.check_upload_blocks(fpr, session)
 
-        # Start with DM as a special case
+        # If the source_acl is None, source is never allowed
+        if fpr.source_acl is None:
+            if self.pkg.changes["architecture"].has_key("source"):
+                rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
+                rej += '\nPlease contact ftpmaster if you think this is incorrect'
+                self.rejects.append(rej)
+                return
+        # Do DM as a special case
         # DM is a special case unfortunately, so we check it first
         # (keys with no source access get more access than DMs in one
         #  way; DMs can only upload for their packages whether source
         #  or binary, whereas keys with no access might be able to
         #  upload some binaries)
-        if fpr.source_acl.access_level == 'dm':
+        elif fpr.source_acl.access_level == 'dm':
             self.check_dm_upload(fpr, session)
         else:
-            # Check source-based permissions for other types
-            if self.pkg.changes["architecture"].has_key("source") and \
-                fpr.source_acl.access_level is None:
-                rej = 'Fingerprint %s may not upload source' % fpr.fingerprint
-                rej += '\nPlease contact ftpmaster if you think this is incorrect'
-                self.rejects.append(rej)
-                return
             # If not a DM, we allow full upload rights
             uid_email = "%s@debian.org" % (fpr.uid.uid)
             self.check_if_upload_is_sponsored(uid_email, fpr.uid.name)
@@ -1748,8 +1751,11 @@ class Upload(object):
 
         if len(tmparches.keys()) > 0:
             if fpr.binary_reject:
-                rej = ".changes file contains files of architectures not permitted for fingerprint %s" % fpr.fingerprint
-                rej += "\narchitectures involved are: ", ",".join(tmparches.keys())
+                rej = "changes file contains files of architectures not permitted for fingerprint %s" % fpr.fingerprint
+                if len(tmparches.keys()) == 1:
+                    rej += "\n\narchitecture involved is: %s" % ",".join(tmparches.keys())
+                else:
+                    rej += "\n\narchitectures involved are: %s" % ",".join(tmparches.keys())
                 self.rejects.append(rej)
             else:
                 # TODO: This is where we'll implement reject vs throw away binaries later
@@ -1818,10 +1824,10 @@ class Upload(object):
         ## experimental lists the uploader in the Maintainer: or Uploaders: fields (ie,
         ## non-developer maintainers cannot NMU or hijack packages)
 
-        # srcuploaders includes the maintainer
+        # uploader includes the maintainer
         accept = False
-        for sup in r.srcuploaders:
-            (rfc822, rfc2047, name, email) = sup.maintainer.get_split_maintainer()
+        for uploader in r.uploaders:
+            (rfc822, rfc2047, name, email) = uploader.get_split_maintainer()
             # Eww - I hope we never have two people with the same name in Debian
             if email == fpr.uid.uid or name == fpr.uid.name:
                 accept = True
@@ -2187,8 +2193,13 @@ distribution."""
         session.commit()
 
         # Move the .changes into the 'done' directory
+        ye, mo, da = time.gmtime()[0:3]
+        donedir = os.path.join(cnf["Dir::Queue::Done"], str(ye), "%0.2d" % mo, "%0.2d" % da)
+        if not os.path.isdir(donedir):
+            os.makedirs(donedir)
+
         utils.move(self.pkg.changes_file,
-                   os.path.join(cnf["Dir::Queue::Done"], os.path.basename(self.pkg.changes_file)))
+                   os.path.join(donedir, os.path.basename(self.pkg.changes_file)))
 
         if self.pkg.changes["architecture"].has_key("source") and cnf.get("Dir::UrgencyLog"):
             UrgencyLog().log(self.pkg.dsc["source"], self.pkg.dsc["version"], self.pkg.changes["urgency"])
@@ -2516,7 +2527,7 @@ distribution."""
         """
         Cnf = Config()
         anyversion = None
-        anysuite = [suite] + Cnf.ValueList("Suite::%s::VersionChecks::Enhances" % (suite))
+        anysuite = [suite] + [ vc.reference.suite_name for vc in get_version_checks(suite, "Enhances") ]
         for (s, v) in sv_list:
             if s in [ x.lower() for x in anysuite ]:
                 if not anyversion or apt_pkg.VersionCompare(anyversion, v) <= 0:
@@ -2546,8 +2557,8 @@ distribution."""
 
         # Check versions for each target suite
         for target_suite in self.pkg.changes["distribution"].keys():
-            must_be_newer_than = [ i.lower() for i in cnf.ValueList("Suite::%s::VersionChecks::MustBeNewerThan" % (target_suite)) ]
-            must_be_older_than = [ i.lower() for i in cnf.ValueList("Suite::%s::VersionChecks::MustBeOlderThan" % (target_suite)) ]
+            must_be_newer_than = [ vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeNewerThan") ]
+            must_be_older_than = [ vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeOlderThan") ]
 
             # Enforce "must be newer than target suite" even if conffile omits it
             if target_suite not in must_be_newer_than:

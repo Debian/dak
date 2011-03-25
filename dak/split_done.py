@@ -28,7 +28,7 @@ from daklib import utils
 def main():
     Cnf = utils.get_conf()
     count = 0
-    move_date = int(time.time())-(30*84600)
+    move_date = int(time.time())
     os.chdir(Cnf["Dir::Queue::Done"])
     files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]))
     for filename in files:
@@ -43,7 +43,8 @@ def main():
                 os.makedirs(dirname)
             dest = dirname + '/' + os.path.basename(filename)
             if os.path.exists(dest):
-                utils.fubar("%s already exists." % (dest))
+                utils.warn("%s already exists." % (dest))
+                continue
             print "Move: %s -> %s" % (filename, dest)
             os.rename(filename, dest)
             count = count + 1

@@ -34,17 +34,13 @@ from subprocess import Popen, PIPE, check_call
 from tempfile import mkdtemp
 
 import os.path
+import signal
 
-class ContentsWriter(object):
+class BinaryContentsWriter(object):
     '''
-    ContentsWriter writes the Contents-$arch.gz files.
+    BinaryContentsWriter writes the Contents-$arch.gz files.
     '''
     def __init__(self, suite, architecture, overridetype, component = None):
-        '''
-        The constructor clones its arguments into a new session object to make
-        sure that the new ContentsWriter object can be executed in a different
-        thread.
-        '''
         self.suite = suite
         self.architecture = architecture
         self.overridetype = overridetype
@@ -193,6 +189,134 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         os.chmod(temp_filename, 0664)
         os.rename(temp_filename, final_filename)
 
+
+class SourceContentsWriter(object):
+    '''
+    SourceContentsWriter writes the Contents-source.gz files.
+    '''
+    def __init__(self, suite, component):
+        self.suite = suite
+        self.component = component
+        self.session = suite.session()
+
+    def query(self):
+        '''
+        Returns a query object that is doing most of the work.
+        '''
+        params = {
+            'suite_id':     self.suite.suite_id,
+            'component_id': self.component.component_id,
+        }
+
+        sql = '''
+create temp table newest_sources (
+    id integer primary key,
+    source text);
+
+create index sources_binaries_by_source on newest_sources (source);
+
+insert into newest_sources (id, source)
+    select distinct on (source) s.id, s.source from source s
+        join files f on f.id = s.file
+        join location l on l.id = f.location
+        where s.id in (select source from src_associations where suite = :suite_id)
+            and l.component = :component_id
+        order by source, version desc;
+
+select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
+    from newest_sources s, src_contents sc
+    where s.id = sc.source_id group by sc.file'''
+
+        return self.session.query("file", "pkglist").from_statement(sql). \
+            params(params)
+
+    def formatline(self, filename, package_list):
+        '''
+        Returns a formatted string for the filename argument.
+        '''
+        return "%s\t%s\n" % (filename, package_list)
+
+    def fetch(self):
+        '''
+        Yields a new line of the Contents-source.gz file in filename order.
+        '''
+        for filename, package_list in self.query().yield_per(100):
+            yield self.formatline(filename, package_list)
+        # end transaction to return connection to pool
+        self.session.rollback()
+
+    def get_list(self):
+        '''
+        Returns a list of lines for the Contents-source.gz file.
+        '''
+        return [item for item in self.fetch()]
+
+    def output_filename(self):
+        '''
+        Returns the name of the output file.
+        '''
+        values = {
+            'root':      Config()['Dir::Root'],
+            'suite':     self.suite.suite_name,
+            'component': self.component.component_name
+        }
+        return "%(root)s/dists/%(suite)s/%(component)s/Contents-source.gz" % values
+
+    def write_file(self):
+        '''
+        Write the output file.
+        '''
+        command = ['gzip', '--rsyncable']
+        final_filename = self.output_filename()
+        temp_filename = final_filename + '.new'
+        output_file = open(temp_filename, 'w')
+        gzip = Popen(command, stdin = PIPE, stdout = output_file)
+        for item in self.fetch():
+            gzip.stdin.write(item)
+        gzip.stdin.close()
+        output_file.close()
+        gzip.wait()
+        os.chmod(temp_filename, 0664)
+        os.rename(temp_filename, final_filename)
+
+
+def binary_helper(suite_id, arch_id, overridetype_id, component_id = None):
+    '''
+    This function is called in a new subprocess and multiprocessing wants a top
+    level function.
+    '''
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    architecture = Architecture.get(arch_id, session)
+    overridetype = OverrideType.get(overridetype_id, session)
+    log_message = [suite.suite_name, architecture.arch_string, overridetype.overridetype]
+    if component_id is None:
+        component = None
+    else:
+        component = Component.get(component_id, session)
+        log_message.append(component.component_name)
+    contents_writer = BinaryContentsWriter(suite, architecture, overridetype, component)
+    contents_writer.write_file()
+    return log_message
+
+def source_helper(suite_id, component_id):
+    '''
+    This function is called in a new subprocess and multiprocessing wants a top
+    level function.
+    '''
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    component = Component.get(component_id, session)
+    log_message = [suite.suite_name, 'source', component.component_name]
+    contents_writer = SourceContentsWriter(suite, component)
+    contents_writer.write_file()
+    return log_message
+
+class ContentsWriter(object):
+    '''
+    Loop over all suites, architectures, overridetypes, and components to write
+    all contents files.
+    '''
     @classmethod
     def log_result(class_, result):
         '''
@@ -217,41 +341,31 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         deb_id = get_override_type('deb', session).overridetype_id
         udeb_id = get_override_type('udeb', session).overridetype_id
         main_id = get_component('main', session).component_id
+        contrib_id = get_component('contrib', session).component_id
         non_free_id = get_component('non-free', session).component_id
         pool = Pool()
         for suite in suite_query:
             suite_id = suite.suite_id
+            # handle source packages
+            pool.apply_async(source_helper, (suite_id, main_id),
+                callback = class_.log_result)
+            pool.apply_async(source_helper, (suite_id, contrib_id),
+                callback = class_.log_result)
+            pool.apply_async(source_helper, (suite_id, non_free_id),
+                callback = class_.log_result)
             for architecture in suite.get_architectures(skipsrc = True, skipall = True):
                 arch_id = architecture.arch_id
                 # handle 'deb' packages
-                pool.apply_async(generate_helper, (suite_id, arch_id, deb_id), \
+                pool.apply_async(binary_helper, (suite_id, arch_id, deb_id), \
                     callback = class_.log_result)
                 # handle 'udeb' packages for 'main' and 'non-free'
-                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, main_id), \
+                pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, main_id), \
                     callback = class_.log_result)
-                pool.apply_async(generate_helper, (suite_id, arch_id, udeb_id, non_free_id), \
+                pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, non_free_id), \
                     callback = class_.log_result)
         pool.close()
         pool.join()
         session.close()
-
-def generate_helper(suite_id, arch_id, overridetype_id, component_id = None):
-    '''
-    This function is called in a new subprocess.
-    '''
-    session = DBConn().session()
-    suite = Suite.get(suite_id, session)
-    architecture = Architecture.get(arch_id, session)
-    overridetype = OverrideType.get(overridetype_id, session)
-    log_message = [suite.suite_name, architecture.arch_string, overridetype.overridetype]
-    if component_id is None:
-        component = None
-    else:
-        component = Component.get(component_id, session)
-        log_message.append(component.component_name)
-    contents_writer = ContentsWriter(suite, architecture, overridetype, component)
-    contents_writer.write_file()
-    return log_message
 
 
 class BinaryContentsScanner(object):
@@ -313,6 +427,11 @@ def binary_scan_helper(binary_id):
     scanner.scan()
 
 
+def subprocess_setup():
+    # Python installs a SIGPIPE handler by default. This is usually not what
+    # non-Python subprocesses expect.
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
 class UnpackedSource(object):
     '''
     UnpackedSource extracts a source package into a temporary location and
@@ -322,13 +441,11 @@ class UnpackedSource(object):
         '''
         The dscfilename is a name of a DSC file that will be extracted.
         '''
-        self.root_directory = os.path.join(mkdtemp(), 'root')
-        command = ('dpkg-source', '--no-copy', '--no-check', '-x', dscfilename,
-            self.root_directory)
-        # dpkg-source does not have a --quiet option
-        devnull = open(os.devnull, 'w')
-        check_call(command, stdout = devnull, stderr = devnull)
-        devnull.close()
+        temp_directory = mkdtemp(dir = Config()['Dir::TempPath'])
+        self.root_directory = os.path.join(temp_directory, 'root')
+        command = ('dpkg-source', '--no-copy', '--no-check', '-q', '-x',
+            dscfilename, self.root_directory)
+        check_call(command, preexec_fn = subprocess_setup)
 
     def get_root_directory(self):
         '''
