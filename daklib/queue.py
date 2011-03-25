@@ -87,6 +87,9 @@ def get_type(f, session):
         file_type = f["dbtype"]
     elif re_source_ext.match(f["type"]):
         file_type = "dsc"
+    elif f['architecture'] == 'source' and f["type"] == 'unreadable':
+        utils.warn('unreadable source file (will continue and hope for the best)')
+        return f["type"]
     else:
         file_type = f["type"]
         utils.fubar("invalid type (%s) for new.  Dazed, confused and sure as heck not continuing." % (file_type))
