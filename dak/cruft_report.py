@@ -35,6 +35,16 @@ Check for obsolete binary packages
 
 ################################################################################
 
+import warnings
+warnings.filterwarnings('ignore', \
+    "apt_pkg\.ParseTagFile\(\) is deprecated\. Please see apt_pkg\.TagFile\(\) for the replacement\.", \
+    DeprecationWarning)
+warnings.filterwarnings('ignore', \
+    "Attribute '.*' of the 'apt_pkg\.TagFile' object is deprecated, use '.*' instead\.", \
+    DeprecationWarning)
+
+################################################################################
+
 import commands, os, sys, re
 import apt_pkg
 
