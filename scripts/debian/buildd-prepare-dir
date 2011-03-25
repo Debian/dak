@@ -47,7 +47,7 @@ mkdir -p "${TARGET}/keyrings"
 
 for arch in $archs; do
     if [ -f ${base}/${arch}/keyring.gpg ]; then
-        cp -al ${base}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
+        cp -afl ${base}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
         chmod 0644 ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
     fi
 done
