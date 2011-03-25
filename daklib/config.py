@@ -40,11 +40,16 @@ default_config = "/etc/dak/dak.conf" #: default dak config, defines host propert
 # module
 import warnings
 warnings.filterwarnings('ignore', \
-    "Attribute '.*' of the 'apt_pkg\.Configuration' object is deprecated, use '.*' instead\.", \
+    "Attribute '.*' of the 'apt_pkg.*' object is deprecated, use '.*' instead\.", \
     DeprecationWarning)
 warnings.filterwarnings('ignore', \
     "apt_pkg\.newConfiguration\(\) is deprecated\. Use apt_pkg\.Configuration\(\) instead\.", \
     DeprecationWarning)
+warnings.filterwarnings('ignore', \
+    "apt_pkg\.ParseTagFile\(\) is deprecated\. Please see apt_pkg\.TagFile\(\) for the replacement\.", \
+    DeprecationWarning)
+
+################################################################################
 
 def which_conf_file():
     return os.getenv("DAK_CONFIG", default_config)
