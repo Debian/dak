@@ -160,7 +160,7 @@ def display_changes(uploads, index):
         print upload[index]
         prev_upload = upload[0]
 
-def export_files(session, pool, clpool, temppath):
+def export_files(session, pool, clpool):
     """
     Export interesting files from source packages.
     """
@@ -282,7 +282,7 @@ def main():
     if export:
         if cnf.exportpath:
             exportpath = os.path.join(Cnf['Dir::Export'], cnf.exportpath)
-            export_files(session, Cnf['Dir::Pool'], exportpath, Cnf['Dir::TempPath'])
+            export_files(session, Cnf['Dir::Pool'], exportpath)
         else:
             utils.fubar('No changelog export path defined')
     elif binnmu:

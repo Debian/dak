@@ -441,7 +441,8 @@ class UnpackedSource(object):
         '''
         The dscfilename is a name of a DSC file that will be extracted.
         '''
-        self.root_directory = os.path.join(mkdtemp(), 'root')
+        temp_directory = mkdtemp(dir = Config()['Dir::TempPath'])
+        self.root_directory = os.path.join(temp_directory, 'root')
         command = ('dpkg-source', '--no-copy', '--no-check', '-q', '-x',
             dscfilename, self.root_directory)
         check_call(command, preexec_fn = subprocess_setup)
