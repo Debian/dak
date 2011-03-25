@@ -56,6 +56,22 @@ def getSources(suite, component, session, timestamp = None):
              'component': component.component_id }
     return fetch(query, args, session)
 
+def getArchAll(suite, component, architecture, type, session, timestamp = None):
+    '''
+    Calculates all binaries in suite and component of architecture 'all' (and
+    only 'all') and type 'deb' or 'udeb' optionally limited to binaries newer
+    than timestamp.  Returns a generator that yields a tuple of binary id and
+    full pathname to the u(deb) file. See function writeAllList() in
+    dak/generate_filelist.py for an example that uses this function.
+    '''
+    query = suite.clone(session).binaries. \
+        filter_by(architecture = architecture, binarytype = type)
+    if timestamp is not None:
+        extra_cond = 'extract(epoch from bin_associations.created) > %d' % timestamp
+        query = query.filter(extra_cond)
+    for binary in query:
+        yield (binary.binary_id, binary.poolfile.fullpath)
+
 def getBinaries(suite, component, architecture, type, session, timestamp = None):
     '''
     Calculates the binaries in suite and component of architecture and
