@@ -43,7 +43,7 @@ warnings.filterwarnings('ignore', \
     "Attribute '.*' of the 'apt_pkg.*' object is deprecated, use '.*' instead\.", \
     DeprecationWarning)
 warnings.filterwarnings('ignore', \
-    "apt_pkg.*\(\) is deprecated\. Please see apt_pkg.*\(\) for the replacement\.", \
+    "apt_pkg.*\(\) is deprecated\. .* apt_pkg.*\(\) for the replacement\.", \
     DeprecationWarning)
 
 ################################################################################
