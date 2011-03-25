@@ -102,7 +102,7 @@ def get_type(f, session):
 
 # Determine what parts in a .changes are NEW
 
-def determine_new(filename, changes, files, warn=1, session = None, dsc = None, new = {}):
+def determine_new(filename, changes, files, warn=1, session = None, dsc = None, new = None):
     """
     Determine what parts in a C{changes} file are NEW.
 
@@ -131,6 +131,8 @@ def determine_new(filename, changes, files, warn=1, session = None, dsc = None, 
     # TODO: This should all use the database instead of parsing the changes
     # file again
     byhand = {}
+    if new is None:
+        new = {}
 
     dbchg = get_dbchange(filename, session)
     if dbchg is None:
