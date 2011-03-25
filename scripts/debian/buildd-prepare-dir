@@ -40,6 +40,7 @@ PROGRAM="buildd-prepare-dir"
 
 # should be relative to the general base dir later
 COPYTARGET="${base}/keyrings"
+GNUPGHOME="${base}/s3kr1t/dot-gnupg"
 base="${base}/scripts/builddkeyrings"
 TARGET="${base}/keyrings"
 REMOVED="${base}/removed-buildd-keys.gpg"
@@ -57,6 +58,6 @@ cd ${TARGET}
 sha512sum keyrings/* > sha512sums
 
 rm -f ${TARGET}/sha512sums.txt
-SIGNINGKEY=$(dak admin c signingkeyids)
-gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/sha512sums.txt" "${TARGET}/sha512sums"
+SIGNINGKEY=B1326A8D
+GNUPGHOME=${GNUPGHOME} gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/sha512sums.txt" "${TARGET}/sha512sums"
 rm -f ${TARGET}/sha512sums
