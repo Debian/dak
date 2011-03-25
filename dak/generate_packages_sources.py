@@ -494,7 +494,7 @@ def main ():
         results=[]
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
         pool = Pool()
-        arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=True, session=session)
+        arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=False, session=session)
         Logger.log(['generating output for Suite %s, Architectures %s' % (s.suite_name, map(sname, arch_list))])
         for a in arch_list:
             pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]), callback=get_result)
