@@ -121,7 +121,7 @@ for file in $(ls -1 ${INCOMING}/*.key); do
     exec 5> "${GPGLOGS}"
 
     # So lets run gpg, status/logger into the two files, to "decrypt" the keyfile
-    if ! gpg ${DEFGPGOPT} --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
+    if ! gpg ${DEFGPGOPT} --keyring "${ADMINS}/${ARCH}.gpg" --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
         ret=$?
         log "gpg returned with ${ret}, not adding key from file ${file}"
         DATE=$(date -Is)
