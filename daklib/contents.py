@@ -285,7 +285,7 @@ def binary_helper(suite_id, arch_id, overridetype_id, component_id = None):
     This function is called in a new subprocess and multiprocessing wants a top
     level function.
     '''
-    session = DBConn().session()
+    session = DBConn().session(work_mem = 1000)
     suite = Suite.get(suite_id, session)
     architecture = Architecture.get(arch_id, session)
     overridetype = OverrideType.get(overridetype_id, session)
@@ -304,7 +304,7 @@ def source_helper(suite_id, component_id):
     This function is called in a new subprocess and multiprocessing wants a top
     level function.
     '''
-    session = DBConn().session()
+    session = DBConn().session(work_mem = 1000)
     suite = Suite.get(suite_id, session)
     component = Component.get(component_id, session)
     log_message = [suite.suite_name, 'source', component.component_name]

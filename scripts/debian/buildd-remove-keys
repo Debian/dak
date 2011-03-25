@@ -1,0 +1,196 @@
+#!/bin/bash
+# No way I try to deal with a crippled sh just for POSIX foo.
+
+# Copyright (C) 2011 Joerg Jaspert <joerg@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
+# exit on errors
+set -e
+# make sure to only use defined variables
+set -u
+# ERR traps should be inherited from functions too.
+set -E
+
+# import the general variable set.
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
+umask 027
+
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
+PROGRAM="buildd-remove-keys"
+
+# common functions are "outsourced"
+. "${configdir}/common"
+
+function cleanup() {
+    ERRVAL=$?
+    trap - ERR EXIT TERM HUP INT QUIT
+
+    for TEMPFILE in GPGSTATUS GPGLOGS GPGOUTF TEMPKEYDATA; do
+        TFILE=${TEMPFILE:=$TEMPFILE}
+        DELF=${!TFILE:-""}
+        if [ -n "${DELF}" ] && [ -f "${DELF}" ]; then
+            rm -f "${DELF}"
+        fi
+    done
+    exit $ERRVAL
+}
+trap cleanup ERR EXIT TERM HUP INT QUIT
+
+base="${base}/scripts/builddkeyrings"
+INCOMING="${base}/incoming"
+ERRORS="${base}/errors"
+ADMINS="${base}/adminkeys.gpg"
+REMOVED="${base}/removed-buildd-keys.gpg"
+
+# Default options for our gpg calls
+DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting"
+
+if ! [ -d "${INCOMING}" ]; then
+    log "Missing incoming dir, nothing to do"
+    exit 1
+fi
+
+# Whenever something goes wrong, its put in there.
+mkdir -p "${ERRORS}"
+
+# We process all new files in our incoming directory
+for file in $(ls -1 ${INCOMING}/*.del ); do
+    file=${file##*/}
+    # First we want to see if we recognize the filename. The buildd people have
+    # to follow a certain schema:
+    # architecture_builddname.YEAR-MONTH-DAY_HOUR:MINUTE.del
+    if [[ $file =~ (.*)_(.*).([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}:[0-9]{2}).del ]]; then
+        ARCH=${BASH_REMATCH[1]}
+        BUILDD=${BASH_REMATCH[2]}
+        # Right now timestamp is unused
+        TIMESTAMP=${BASH_REMATCH[3]}
+    else
+        log "Unknown file ${file}, not processing"
+        mv "${INCOMING}/${file}" "${ERRORS}/unknown.${file}.$(date -Is)"
+        continue
+    fi
+
+    # Do we know the architecture?
+    found=0
+    for carch in ${archs}; do
+        if [ "${ARCH}" == "${carch}" ]; then
+            log "Known arch ${ARCH}, buildd ${BUILDD}"
+            found=1
+            break
+        fi
+    done
+
+    if [ ${found} -eq 0 ]; then
+        log "Unknown architecture ${ARCH}"
+        mv "${INCOMING}/${file}" "${ERRORS}/unknownarch.${file}.$(date -Is)"
+        continue
+    fi
+
+    # If we did have a file with this name already somethings wrong
+    if [ -f "${base}/${ARCH}/${file}" ]; then
+        log "Already processed this file"
+        mv "${INCOMING}/${file}" "${ERRORS}/duplicate.${file}.$(date -Is)"
+        continue
+    fi
+
+    # Where we want the status-fd from gpgv turn up
+    GPGSTATUS=$(mktemp -p "${TMPDIR}" GPGSTATUS.XXXXXX)
+    # Same for the loggger-fd
+    GPGLOGS=$(mktemp -p "${TMPDIR}" GPGLOGS.XXXXXX)
+    # And "decrypt" gives us output, the key without the pgp sig around it
+    GPGOUTF=$(mktemp -p "${TMPDIR}" GPGOUTF.XXXXXX)
+
+    # Open the filehandles, assigning them to the two files, so we can let gpg use them
+    exec 4> "${GPGSTATUS}"
+    exec 5> "${GPGLOGS}"
+
+    # So lets run gpg, status/logger into the two files, to "decrypt" the keyfile
+    if ! gpg ${DEFGPGOPT} --keyring "${ADMINS}" --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
+        ret=$?
+        log "gpg returned with ${ret}, not removing key using ${file}"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/gpgerror.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/gpgerror.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/gpgerror.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+        continue
+    fi
+
+    # Read in the status output
+    GPGSTAT=$(cat "${GPGSTATUS}")
+    # And check if we like the sig. It has to be both, GOODISG and VALIDSIG or we don't accept it
+    if [[ ${GPGSTAT} =~ "GOODSIG" ]] && [[ ${GPGSTAT} =~ "VALIDSIG" ]]; then
+        log "Signature for ${file} accepted"
+    else
+        log "We are missing one of GOODSIG or VALIDSIG"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/badsig.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/badsig.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/badsig.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+        continue
+    fi
+
+    # So at this point we know we accepted the signature of the file as valid,
+    # that is it is from a key allowed for this architecture. Which only
+    # leaves us with the task of checking if there is a key to remove, and then remove
+    # it. We won't even check they have a key left, so if they want to they can
+    # empty out the set for an architecture
+
+    # Read in the GPGOUTF, but avoid using a subshell like a
+    # while read line otherwise would do
+    exec 4<> "${GPGOUTF}"
+    error=""
+    while read line <&4; do
+        if [[ $line =~ key:.([0-9A-F]{16}) ]]; then
+            KEYID=${BASH_REMATCH[1]}
+        elif [[ $line =~ comment:.(.*) ]]; then
+            COMMENT=${BASH_REMATCH[1]}
+        else
+            echo "Nay"
+        fi
+    done
+
+    # Right, we have the keyid, know the arch, lets see if we can remove it
+    ARCHKEYRING="${base}/${ARCH}/keyring.gpg"
+
+    # Is the key in there?
+    KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys ${KEYID} | grep -c '^pub:')
+
+    if [ $KEYNO -eq 1 ]; then
+        # Right, exactly one there, lets get rid of it
+        # So put it into the removed keyring
+        gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --export ${KEYID} | gpg ${DEFGPGOPT} --keyring "${REMOVED}" --import 2>/dev/null
+        if gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --yes --delete-keys ${KEYID}; then
+            log "Removed key ${KEYID}, reason: ${COMMENT}"
+            mv "${INCOMING}/${file}" "${base}/${ARCH}"
+            continue
+        fi
+    else
+        log "Found more (or less) than one key I could delete. Not doing anything"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/toomanykeys.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/toomanykeys.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/toomanykeys.${file}.gpglogs.${DATE}"
+        echo "${error}" >> "${ERRORS}/toomanykeys.${file}.error.${DATE}"
+        rm -f "${GPGOUTF}"
+        continue
+    fi
+done

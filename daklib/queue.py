@@ -56,16 +56,6 @@ from textutils import fix_maintainer
 from lintian import parse_lintian_output, generate_reject_messages
 from contents import UnpackedSource
 
-# suppress some deprecation warnings in squeeze related to apt_pkg
-# module
-import warnings
-warnings.filterwarnings('ignore', \
-    "apt_pkg.ParseSection\(\) is deprecated. Please see apt_pkg\.TagSection\(\) for the replacement\.", \
-    DeprecationWarning)
-warnings.filterwarnings('ignore', \
-    "Attribute 'Find' of the 'apt_pkg\.TagSection' object is deprecated, use 'find' instead\.", \
-    DeprecationWarning)
-
 ###############################################################################
 
 def get_type(f, session):
@@ -105,7 +95,7 @@ def get_type(f, session):
 
 # Determine what parts in a .changes are NEW
 
-def determine_new(filename, changes, files, warn=1, session = None, dsc = None, new = {}):
+def determine_new(filename, changes, files, warn=1, session = None, dsc = None, new = None):
     """
     Determine what parts in a C{changes} file are NEW.
 
@@ -134,6 +124,8 @@ def determine_new(filename, changes, files, warn=1, session = None, dsc = None, 
     # TODO: This should all use the database instead of parsing the changes
     # file again
     byhand = {}
+    if new is None:
+        new = {}
 
     dbchg = get_dbchange(filename, session)
     if dbchg is None:

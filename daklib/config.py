@@ -39,12 +39,9 @@ default_config = "/etc/dak/dak.conf" #: default dak config, defines host propert
 # suppress some deprecation warnings in squeeze related to apt_pkg
 # module
 import warnings
-warnings.filterwarnings('ignore', \
-    "Attribute '.*' of the 'apt_pkg\.Configuration' object is deprecated, use '.*' instead\.", \
-    DeprecationWarning)
-warnings.filterwarnings('ignore', \
-    "apt_pkg\.newConfiguration\(\) is deprecated\. Use apt_pkg\.Configuration\(\) instead\.", \
-    DeprecationWarning)
+warnings.filterwarnings('ignore', ".*apt_pkg.* is deprecated.*", DeprecationWarning)
+
+################################################################################
 
 def which_conf_file():
     return os.getenv("DAK_CONFIG", default_config)
