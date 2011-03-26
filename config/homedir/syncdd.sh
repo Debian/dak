@@ -75,32 +75,32 @@ trap cleanup EXIT TERM HUP INT QUIT
 if lockfile -r3 ${HOME}/sync.lock; then
     cd $base/
     rsync -aH -B8192 \
-	    --exclude backup/*.xz \
-	    --exclude backup/dump* \
+        --exclude backup/*.xz \
+        --exclude backup/dump* \
         ${EXTRA} \
-	    --exclude mirror \
-	    --exclude morgue/ \
-	    --exclude=lost+found/ \
-	    --exclude .da-backup.trace \
-            --exclude lock/stages/ \
-	    --delete \
-	    --delete-after \
-	    --timeout 3600 \
-	    -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
-	    ftpmaster-sync:/srv/ftp-master.debian.org/ .
+        --exclude mirror \
+        --exclude morgue/ \
+        --exclude=lost+found/ \
+        --exclude .da-backup.trace \
+        --exclude lock/stages/ \
+        --delete \
+        --delete-after \
+        --timeout 3600 \
+        -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
+        ftpmaster-sync:/srv/ftp-master.debian.org/ .
 
     cd $public/
     rsync -aH -B8192 \
-	    --exclude mirror \
-	    --exclude rsync/ \
-	    --exclude=lost+found/ \
-	    --exclude .da-backup.trace \
-	    --exclude web-users/ \
-	    --delete \
-	    --delete-after \
-	    --timeout 3600 \
-	    -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
-	    ftpmaster-sync2:/srv/ftp.debian.org/ .
+        --exclude mirror \
+        --exclude rsync/ \
+        --exclude=lost+found/ \
+        --exclude .da-backup.trace \
+        --exclude web-users/ \
+        --delete \
+        --delete-after \
+        --timeout 3600 \
+        -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
+        ftpmaster-sync2:/srv/ftp.debian.org/ .
 
 else
     echo "Couldn't get the lock, not syncing"
