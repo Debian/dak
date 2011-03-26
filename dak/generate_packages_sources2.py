@@ -65,7 +65,7 @@ SELECT
          WHEN key = 'Checksums-Sha1' THEN E'Checksums-Sha1\:\n ' || f.sha1sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
          WHEN key = 'Checksums-Sha256' THEN E'Checksums-Sha256\:\n ' || f.sha256sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
          ELSE key || '\: '
-       END || value, E'\n' ORDER BY mk.order)
+       END || value, E'\n' ORDER BY mk.order, mk.key)
    FROM
      source_metadata sm
      JOIN metadata_keys mk ON mk.key_id = sm.key_id
@@ -162,7 +162,7 @@ WITH
 
 SELECT
   (SELECT
-     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY mk.order)
+     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY mk.order, mk.key)
    FROM
      binaries_metadata bm
      JOIN metadata_keys mk ON mk.key_id = bm.key_id
@@ -194,6 +194,8 @@ WHERE
   )
   AND
     o.type = :type_id AND o.suite = :suite AND o.component = :component
+
+ORDER BY tmp.package, tmp.version
 """
 
 def open_packages(suite, component, architecture, type_name):
@@ -233,6 +235,7 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
         "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id})
     for (stanza,) in r:
         print >>output, stanza
+        print >>output, ""
 
     session.close()
 
