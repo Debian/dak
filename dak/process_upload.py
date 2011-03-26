@@ -503,6 +503,13 @@ def main():
                                                 utils.size_type(int(summarystats.accept_bytes)))
         Logger.log(["total", summarystats.accept_count, summarystats.accept_bytes])
 
+    if summarystats.reject_count:
+        sets = "set"
+        if summarystats.reject_count > 1:
+            sets = "sets"
+        print "Rejected %d package %s." % (summarystats.reject_count, sets)
+        Logger.log(["rejected", summarystats.reject_count])
+
     byebye()
 
     if not Options["No-Action"]:
