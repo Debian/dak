@@ -98,3 +98,18 @@ class BinaryContentsFileWriter(BaseFileWriter):
         else:
             template = "dists/%(suite)s/Contents-%(architecture)s"
         BaseFileWriter.__init__(self, template, **flags)
+
+class SourceContentsFileWriter(BaseFileWriter):
+    def __init__(self, **keywords):
+        '''
+        The value of the keywords suite and component are strings.
+        Output files are gzip compressed only.
+        '''
+        flags = {
+            'uncompressed': False,
+            'gzip':         True,
+            'bzip2':        False
+        }
+        flags.update(keywords)
+        template = "dists/%(suite)s/%(component)s/Contents-source"
+        BaseFileWriter.__init__(self, template, **flags)
