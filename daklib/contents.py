@@ -144,19 +144,17 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         '''
         return [item for item in self.fetch()]
 
-    def output_filename(self):
+    def writer(self):
         '''
-        Returns the name of the output file.
+        Returns a writer object.
         '''
         values = {
-            'root': Config()['Dir::Root'],
-            'suite': self.suite.suite_name,
-            'architecture': self.architecture.arch_string
+            'suite':        self.suite.suite_name,
+            'architecture': self.architecture.arch_string,
         }
-        if self.component is None:
-            return "%(root)s/dists/%(suite)s/Contents-%(architecture)s.gz" % values
-        values['component'] = self.component.component_name
-        return "%(root)s/dists/%(suite)s/%(component)s/Contents-%(architecture)s.gz" % values
+        if self.component is not None:
+            values['component'] = self.component.component_name
+        return BinaryContentsWriter(values)
 
     def get_header(self):
         '''
@@ -175,19 +173,12 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         '''
         Write the output file.
         '''
-        command = ['gzip', '--rsyncable']
-        final_filename = self.output_filename()
-        temp_filename = final_filename + '.new'
-        output_file = open(temp_filename, 'w')
-        gzip = Popen(command, stdin = PIPE, stdout = output_file)
-        gzip.stdin.write(self.get_header())
+        writer = self.writer()
+        file = writer.open()
+        file.write(self.get_header())
         for item in self.fetch():
-            gzip.stdin.write(item)
-        gzip.stdin.close()
-        output_file.close()
-        gzip.wait()
-        os.chmod(temp_filename, 0664)
-        os.rename(temp_filename, final_filename)
+            file.write(item)
+        writer.close()
 
 
 class SourceContentsWriter(object):
