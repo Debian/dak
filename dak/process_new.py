@@ -688,7 +688,7 @@ def do_pkg(changes_full_path, session):
         u.Subst["__BCC__"] = bcc
 
     files = u.pkg.files
-    u.check_distribution()
+    u.check_distributions()
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
             u.binary_file_checks(deb_filename, session)
