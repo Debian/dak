@@ -1264,7 +1264,7 @@ class Upload(object):
 
         session.close()
 
-        return True
+        return (len(rejects) == 0)
 
     ###########################################################################
 
