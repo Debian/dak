@@ -26,6 +26,14 @@ multiprocessing for DAK
 ###############################################################################
 
 import multiprocessing
+import sqlalchemy.orm.session
+
+def _func_wrapper(func, *args, **kwds):
+    try:
+        return func(*args, **kwds)
+    finally:
+        # Make sure connections are closed. We might die otherwise.
+        sqlalchemy.orm.session.Session.close_all()
 
 class Pool():
     def __init__(self, *args, **kwds):
@@ -33,7 +41,9 @@ class Pool():
         self.results = []
 
     def apply_async(self, func, args=(), kwds={}, callback=None):
-        self.results.append(self.pool.apply_async(func, args, kwds, callback))
+        wrapper_args = list(args)
+        wrapper_args.insert(0, func)
+        self.results.append(self.pool.apply_async(_func_wrapper, wrapper_args, kwds, callback))
 
     def close(self):
         self.pool.close()
