@@ -177,55 +177,82 @@ for file in ${KEYS}; do
     # Read in the TEMPKEYDATAFILE, but avoid using a subshell like a
     # while read line otherwise would do
     exec 4<> "${TEMPKEYDATA}"
-    error=""
-    while read line <&4; do
-        #pub:-:4096:1:FAB983612A6554FA:2011-03-24:2011-07-22::-:buildd autosigning key poulenc <buildd_powerpc-poulenc@buildd.debian.org>:
+    KEYUID=""
+    #pub:-:4096:1:FAB983612A6554FA:2011-03-24:2011-07-22::-:buildd autosigning key poulenc <buildd_powerpc-poulenc@buildd.debian.org>:
 
-        # Besides fiddling out the data we need to check later, this regex also check:
-        # - the keytype (:1:, 1 there means RSA)
-        # - the UID
-        # - that the key does have an expiration date (or it wont match, the second date
-        #   field would be empty
-        regex="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]{4}-[0-9]{2}-[0-9]{2}):([0-9]{4}-[0-9]{2}-[0-9]{2})::-:buildd autosigning key ${BUILDD} <buildd_${ARCH}-${BUILDD}@buildd.debian.org>:$"
+    # Of course this sucky gpg crapshit of an "interface" does give you different things depending on how people
+    # created their keys. And of course the buildd people created the test keys differently to what they now do
+    # which just means extra work for nothing. So as they now do other steps, the thing we get back suddenly looks like
+
+    #pub:-:4096:1:99595DC7865BEAD2:2011-03-26:2011-07-24::-:
+    #uid:::::::::buildd autosigning key corelli <buildd_mips-corelli@buildd.debian.org>:
+
+    # Besides fiddling out the data we need to check later, this regex also check:
+    # - the keytype (:1:, 1 there means RSA)
+    # - the UID
+    # - that the key does have an expiration date (or it wont match, the second date
+    #   field would be empty
+    regex="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]{4}-[0-9]{2}-[0-9]{2}):([0-9]{4}-[0-9]{2}-[0-9]{2})::-:(buildd autosigning key ${BUILDD} <buildd_${ARCH}-${BUILDD}@buildd.debian.org>):$"
+    regex2="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]{4}-[0-9]{2}-[0-9]{2}):([0-9]{4}-[0-9]{2}-[0-9]{2})::-:$"
+    regex3="^uid:::::::::(buildd autosigning key ${BUILDD} <buildd_${ARCH}-${BUILDD}@buildd.debian.org>):$"
+    while read line <&4; do
         if [[ $line =~ $regex ]]; then
             KEYSIZE=${BASH_REMATCH[1]}
             KEYID=${BASH_REMATCH[2]}
             KEYCREATE=${BASH_REMATCH[3]}
             KEYEXPIRE=${BASH_REMATCH[4]}
-
-            # We do want 4096 or anything above
-            if [ ${KEYSIZE} -lt 4096 ]; then
-                log "Keysize ${KEYSIZE} too small"
-                error="${error} Keysize ${KEYSIZE} too small"
-                continue
-            fi
-
-            # We want a maximum lifetime of 120 days, so check that.
-            # Easiest to compare in epoch, so lets see, 120 days midnight from now,
-            # compared with their set expiration date at midnight
-            # maxdate should turn out higher. just in case we make it 121 for this check
-            maxdate=$(date -d '121 day 00:00:00' +%s)
-            theirexpire=$(date -d "${KEYEXPIRE} 00:00:00" +%s)
-            if [ ${theirexpire} -gt ${maxdate} ]; then
-                log "Key expiry ${KEYEXPIRE} wrong"
-                error="${error} Key expiry ${KEYEXPIRE} wrong"
-                continue
-            fi
-        else
-            log "Unknown line $line, sod off"
-            error="${error} Unknown line $line, sod off"
-            continue
-        fi
-    done
-    if [ -n "${error}" ]; then
-        log ${error}
-        DATE=$(date -Is)
-        mv "${INCOMING}/${file}" "${ERRORS}/badkey.${file}.${DATE}"
-        mv "${GPGSTATUS}" "${ERRORS}/badkey.${file}.gpgstatus.${DATE}"
-        mv "${GPGLOGS}" "${ERRORS}/badkey.${file}.gpglogs.${DATE}"
-        echo "${error}" >> "${ERRORS}/badkey.${file}.error.${DATE}"
-        rm -f "${GPGOUTF}"
+        KEYUID=${BASH_REMATCH[5]}
+    elif [[ $line =~ $regex2 ]]; then
+        KEYSIZE=${BASH_REMATCH[1]}
+            KEYID=${BASH_REMATCH[2]}
+            KEYCREATE=${BASH_REMATCH[3]}
+            KEYEXPIRE=${BASH_REMATCH[4]}
+    elif [[ $line =~ $regex3 ]]; then
+        KEYUID=${BASH_REMATCH[1]}
+    else
+        log "Didn't recognize the key. Go kiss gpg"
+            DATE=$(date -Is)
+            mv "${INCOMING}/${file}" "${ERRORS}/badkey.${file}.${DATE}"
+            mv "${GPGSTATUS}" "${ERRORS}/badkey.${file}.gpgstatus.${DATE}"
+            mv "${GPGLOGS}" "${ERRORS}/badkey.${file}.gpglogs.${DATE}"
+            rm -f "${GPGOUTF}"
         continue
+    fi
+    done
+    if [ -z "${KEYUID}" ]; then
+    log "Did not recognize the UID format"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/keyuid.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/keyuid.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/keyuid.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+    continue
+    fi
+    # We do want 4096 or anything above
+    if [ ${KEYSIZE} -lt 4096 ]; then
+        log "Keysize ${KEYSIZE} too small"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/keysize.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/keysize.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/keysize.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+    continue
+    fi
+
+    # We want a maximum lifetime of 120 days, so check that.
+    # Easiest to compare in epoch, so lets see, 120 days midnight from now,
+    # compared with their set expiration date at midnight
+    # maxdate should turn out higher. just in case we make it 121 for this check
+    maxdate=$(date -d '121 day 00:00:00' +%s)
+    theirexpire=$(date -d "${KEYEXPIRE} 00:00:00" +%s)
+    if [ ${theirexpire} -gt ${maxdate} ]; then
+        log "Key expiry ${KEYEXPIRE} wrong"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/keyexpire.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/keyexpire.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/keyexpire.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+    continue
     fi
 
     # And now lets check how many keys this buildd already has. 2 is the maximum, so key
