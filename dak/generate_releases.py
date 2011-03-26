@@ -79,7 +79,7 @@ def get_result(arg):
     if arg:
         results.append(arg)
 
-def sign_release_dir(dirname):
+def sign_release_dir(suite, dirname):
     cnf = Config()
 
     if cnf.has_key("Dinstall::SigningKeyring"):
@@ -88,7 +88,6 @@ def sign_release_dir(dirname):
             keyring += " --keyring \"%s\"" % cnf["Dinstall::SigningPubKeyring"]
 
         arguments = "--no-options --batch --no-tty --armour"
-        signkeyids = cnf.signingkeyids.split()
 
         relname = os.path.join(dirname, 'Release')
 
@@ -100,17 +99,20 @@ def sign_release_dir(dirname):
         if os.path.exists(inlinedest):
             os.unlink(inlinedest)
 
-        for keyid in signkeyids:
-            if keyid != "":
-                defkeyid = "--default-key %s" % keyid
-            else:
-                defkeyid = ""
+        # We can only use one key for inline signing so use the first one in
+        # the array for consistency
+        firstkey = False
+
+        for keyid in suite.signingkeyids:
+            defkeyid = "--default-key %s" % keyid
 
             os.system("gpg %s %s %s --detach-sign <%s >>%s" %
                     (keyring, defkeyid, arguments, relname, dest))
 
-            os.system("gpg %s %s %s --clearsign <%s >>%s" %
-                    (keyring, defkeyid, arguments, relname, inlinedest))
+            if firstkey:
+                os.system("gpg %s %s %s --clearsign <%s >>%s" %
+                        (keyring, defkeyid, arguments, relname, inlinedest))
+                firstkey = False
 
 class ReleaseWriter(object):
     def __init__(self, suite):
@@ -279,7 +281,7 @@ class ReleaseWriter(object):
 
         out.close()
 
-        sign_release_dir(os.path.dirname(outfile))
+        sign_release_dir(suite, os.path.dirname(outfile))
 
         os.chdir(oldcwd)
 
