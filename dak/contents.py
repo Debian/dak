@@ -70,6 +70,9 @@ OPTIONS for generate
      -s, --suite={stable,testing,unstable,...}
         only operate on specified suite names
 
+     -c, --component={main,contrib,non-free}
+        only operate on specified components
+
      -f, --force
         write Contents files for suites marked as untouchable, too
 
@@ -81,9 +84,9 @@ OPTIONS for scan-source and scan-binary
 
 ################################################################################
 
-def write_all(cnf, suite_names = [], force = None):
+def write_all(cnf, suite_names = [], component_names = [], force = None):
     Logger = daklog.Logger(cnf.Cnf, 'contents generate')
-    ContentsWriter.write_all(Logger, suite_names, force)
+    ContentsWriter.write_all(Logger, suite_names, component_names, force)
     Logger.close()
 
 ################################################################################
@@ -112,12 +115,14 @@ def main():
     cnf = Config()
     cnf['Contents::Options::Help'] = ''
     cnf['Contents::Options::Suite'] = ''
+    cnf['Contents::Options::Component'] = ''
     cnf['Contents::Options::Limit'] = ''
     cnf['Contents::Options::Force'] = ''
-    arguments = [('h', "help",  'Contents::Options::Help'),
-                 ('s', "suite", 'Contents::Options::Suite', "HasArg"),
-                 ('l', "limit", 'Contents::Options::Limit', "HasArg"),
-                 ('f', "force", 'Contents::Options::Force'),
+    arguments = [('h', "help",      'Contents::Options::Help'),
+                 ('s', "suite",     'Contents::Options::Suite',     "HasArg"),
+                 ('c', "component", 'Contents::Options::Component', "HasArg"),
+                 ('l', "limit",     'Contents::Options::Limit',     "HasArg"),
+                 ('f', "force",     'Contents::Options::Force'),
                 ]
     args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments, sys.argv)
     options = cnf.SubTree('Contents::Options')
@@ -137,12 +142,13 @@ def main():
         binary_scan_all(cnf, limit)
         return
 
-    suite_names = utils.split_args(options['Suite'])
+    suite_names     = utils.split_args(options['Suite'])
+    component_names = utils.split_args(options['Component'])
 
     force = bool(options['Force'])
 
     if args[0] == 'generate':
-        write_all(cnf, suite_names, force)
+        write_all(cnf, suite_names, component_names, force)
         return
 
     usage()
