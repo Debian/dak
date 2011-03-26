@@ -1352,6 +1352,17 @@ __all__.append('get_dscfiles')
 
 ################################################################################
 
+class ExternalOverride(ORMObject):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return '<ExternalOverride %s = %s: %s>' % (self.package, self.key, self.value)
+
+__all__.append('ExternalOverride')
+
+################################################################################
+
 class PoolFile(ORMObject):
     def __init__(self, filename = None, location = None, filesize = -1, \
         md5sum = None):
@@ -3184,6 +3195,7 @@ class DBConn(object):
             'changes_pending_source_files',
             'changes_pool_files',
             'dsc_files',
+            'external_overrides',
             'extra_src_references',
             'files',
             'fingerprint',
@@ -3317,6 +3329,8 @@ class DBConn(object):
                                  source = relation(DBSource),
                                  poolfile_id = self.tbl_dsc_files.c.file,
                                  poolfile = relation(PoolFile)))
+
+        mapper(ExternalOverride, self.tbl_external_overrides)
 
         mapper(PoolFile, self.tbl_files,
                properties = dict(file_id = self.tbl_files.c.id,
