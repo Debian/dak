@@ -101,9 +101,9 @@ def sign_release_dir(suite, dirname):
 
         # We can only use one key for inline signing so use the first one in
         # the array for consistency
-        firstkey = False
+        firstkey = True
 
-        for keyid in suite.signingkeyids:
+        for keyid in suite.signingkeys:
             defkeyid = "--default-key %s" % keyid
 
             os.system("gpg %s %s %s --detach-sign <%s >>%s" %
@@ -154,7 +154,7 @@ class ReleaseWriter(object):
         suite_suffix = "%s" % (cnf.Find("Dinstall::SuiteSuffix"))
 
         outfile = os.path.join(cnf["Dir::Root"], 'dists', "%s/%s" % (suite.suite_name, suite_suffix), "Release")
-        out = open(outfile, "w")
+        out = open(outfile + ".new", "w")
 
         for key, dbfield in attribs:
             if getattr(suite, dbfield) is not None:
@@ -280,6 +280,7 @@ class ReleaseWriter(object):
                 out.write(" %s %8d %s\n" % (fileinfo[filename][h], fileinfo[filename]['len'], filename))
 
         out.close()
+        os.rename(outfile + '.new', outfile)
 
         sign_release_dir(suite, os.path.dirname(outfile))
 
