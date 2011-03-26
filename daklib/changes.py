@@ -190,8 +190,13 @@ class Changes(object):
     def __get_file_from_pool(self, filename, entry, session):
         cnf = Config()
 
-        poolname = poolify(entry["source"], entry["component"])
-        l = get_location(cnf["Dir::Pool"], entry["component"], session=session)
+        if cnf.has_key("Dinstall::SuiteSuffix"):
+            component = cnf["Dinstall::SuiteSuffix"] + entry["component"]
+        else:
+            component = entry["component"]
+
+        poolname = poolify(entry["source"], component)
+        l = get_location(cnf["Dir::Pool"], component, session=session)
 
         found, poolfile = check_poolfile(os.path.join(poolname, filename),
                                          entry['size'],
@@ -200,14 +205,14 @@ class Changes(object):
                                          session=session)
 
         if found is None:
-            Logger.log(["E: Found multiple files for pool (%s) for %s" % (chg_fn, entry["component"])])
+            Logger.log(["E: Found multiple files for pool (%s) for %s" % (filename, component)])
             return None
         elif found is False and poolfile is not None:
-            Logger.log(["E: md5sum/size mismatch for %s in pool" % (chg_fn)])
+            Logger.log(["E: md5sum/size mismatch for %s in pool" % (filename)])
             return None
         else:
             if poolfile is None:
-                Logger.log(["E: Could not find %s in pool" % (chg_fn)])
+                Logger.log(["E: Could not find %s in pool" % (filename)])
                 return None
             else:
                 return poolfile

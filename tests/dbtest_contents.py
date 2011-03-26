@@ -142,19 +142,13 @@ class ContentsTestCase(DBDakTestCase):
         self.setup_overrides()
         self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '/usr/bin/hello'))
         self.session.commit()
-        cw = BinaryContentsWriter(self.suite['squeeze'], self.arch['i386'], self.otype['deb'])
+        cw = BinaryContentsWriter(self.suite['squeeze'], self.arch['i386'], \
+            self.otype['deb'], self.comp['main'])
         self.assertEqual(['/usr/bin/hello                                          python/hello\n'], \
             cw.get_list())
         # test formatline and sort order
         self.assertEqual('/usr/bin/hello                                          python/hello\n', \
             cw.formatline('/usr/bin/hello', 'python/hello'))
-        # test output_filename
-        self.assertEqual('tests/fixtures/ftp/dists/squeeze/Contents-i386.gz', \
-            normpath(cw.output_filename()))
-        cw = BinaryContentsWriter(self.suite['squeeze'], self.arch['i386'], \
-            self.otype['udeb'], self.comp['main'])
-        self.assertEqual('tests/fixtures/ftp/dists/squeeze/main/Contents-i386.gz', \
-            normpath(cw.output_filename()))
         # test unicode support
         self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '\xc3\xb6'))
         self.session.commit()

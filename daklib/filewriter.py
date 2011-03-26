@@ -54,6 +54,11 @@ class BaseFileWriter(object):
         '''
         Returns a file object for writing.
         '''
+        # create missing directories
+        try:
+            os.makedirs(os.path.dirname(self.path))
+        except:
+            pass
         self.file = open(self.path + '.new', 'w')
         return self.file
 
@@ -93,10 +98,10 @@ class BinaryContentsFileWriter(BaseFileWriter):
             'bzip2':        False
         }
         flags.update(keywords)
-        if 'component' in flags:
+        if flags['debtype'] == 'deb':
             template = "dists/%(suite)s/%(component)s/Contents-%(architecture)s"
-        else:
-            template = "dists/%(suite)s/Contents-%(architecture)s"
+        else: # udeb
+            template = "dists/%(suite)s/%(component)s/Contents-udeb-%(architecture)s"
         BaseFileWriter.__init__(self, template, **flags)
 
 class SourceContentsFileWriter(BaseFileWriter):

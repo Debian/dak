@@ -22,164 +22,105 @@
 
   <DirectoryMatch ~ "^/srv/(incoming\.debian\.org/(dists/|builddweb)|ftp\.debian\.org/mirror)">
     Order allow,deny
-  # buildd.d.o, cimarosa
+
+    Use DebianBuilddHostList
+
+    # buildd.d.o, cimarosa
     allow from 206.12.19.8
-  # franck.d.o
+
+    # franck.d.o
     allow from 128.148.34.3
-  # test access to check functionality, ganneff
+
+    # test access to check functionality, ganneff
     allow from 213.146.108.162
-  # alpha
-    # goetz
-    allow from 193.62.202.26
-    # goedel (temporarily allow two addresses; see RT#1287)
-    allow from 213.188.99.214
-    allow from 213.188.99.208
-  # amd64
-    # barber
-    allow from 194.177.211.203
-    allow from 2001:648:2ffc:deb:214:22ff:feb2:2370
-    # brahms
-    Allow from 206.12.19.115
+
+    # Should be in DSA list
+    # amd64
     # vitry (archive rebuild)
     allow from 194.177.211.206
     allow from 2001:648:2ffc:deb:214:22ff:feb2:122c
     # krenek (archive rebuild)
     allow from 194.177.211.207
     allow from 2001:648:2ffc:deb:214:22ff:feb1:ff56
-  # arm
-    # netwinder
+
+    # Known Extras
+
+    # No idea about
+    # arm
+    ## netwinder
     allow from 192.133.104.24
-    #
+    ##
     allow from 217.147.81.26
-    # toffee
+    ## toffee
     allow from 78.32.9.218
-    #
+    ##
     allow from 86.3.74.169
-    # nw1.xandros
+    ## nw1.xandros
     allow from 67.210.160.89
-    # nw2.xandros
+    ## nw2.xandros
     allow from 67.210.160.90
-    # hdges.billgatliff
+    ## hdges.billgatliff
     allow from 209.251.101.204
-  # armel
-    # arcadelt
-    allow from 82.195.75.87
-    # argento
-    allow from 93.94.130.160
-    # allegri
+
+    # armel
+    ## allegri
     allow from 157.193.39.233
-    # ancina
-    allow from 157.193.39.13
-    # arnold
-    allow from 217.140.96.57
-    # alain
-    allow from 217.140.96.58
-    # alwyn
-    allow from 217.140.96.59
-    # antheil
-    allow from 217.140.96.60
-  # hppa
-    # sarti
-    allow from 193.201.200.199
-    # bld3.mmjgroup
+
+    # hppa
+    ## bld3.mmjgroup
     allow from 192.25.206.243
-    # peri
-    allow from 192.25.206.15
-    #
-    allow from 192.25.206.68
-    # lafayette
-    allow from 147.215.7.160
-    # paer
+    ## paer
     allow from 192.25.206.11
-  # hurd-i386
-    # rossini (NOT .debian.org)
+
+    # hurd-i386
+    ## rossini (NOT .debian.org)
     allow from 192.33.98.55
-    # back / mozart (xen domains; NOT .debian.org)
+    ## back / mozart (xen domains; NOT .debian.org)
     allow from 80.87.129.151
-  # i386
-    # murphy
-    Allow from 70.103.162.31
-    # biber
-    allow from 194.177.211.204
-    allow from 2001:648:2ffc:deb:214:22ff:feb2:1268
-  # ia64
-    # caballero
-    allow from 193.201.200.200
-    # mundi
+
+    # ia64
+    ## mundi
     allow from 192.25.206.62
-    # alkman
-    allow from 192.25.206.63
-  # mips
-    #
+
+    # mips
+    ##
     allow from 217.147.81.21
-    # ball
-    allow from 82.195.75.70
-    allow from 2001:41b8:202:deb:202:4cff:fefe:d09
-    # mayr
-    allow from 140.211.166.58
-    # sigrun, aba
+    ## sigrun, aba
     allow from 82.195.75.68
     allow from 2001:41b8:202:deb:a00:69ff:fe08:30c6
-    # corelli
-    allow from 206.12.19.16
-    # lucatelli
-    allow from 206.12.19.15
-  # mipsel
-    # rem
-    allow from 82.195.75.68
-    allow from 2001:41b8:202:deb:202:4cff:fefe:d06
-    # mayer
-    allow from 140.211.166.78
-    # monteverdi
+
+    # mipsel
+    ## monteverdi
     allow from 78.47.2.111
-    # kritias, aba
+    ## kritias, aba
     allow from 78.46.213.163
-  # powerpc
-    # static-72-66-115-54.washdc.fios.verizon.net
-    allow from 72.66.115.54
-    # praetorius
-    allow from 130.239.18.121
-    # poulenc
-    allow from 144.32.168.77
-    # porpora
-    allow from 144.32.168.78
-  # s390
-    # debian01.zseries
+
+    # s390
+    ## debian01.zseries
     allow from 195.243.109.161
-    # l003092.zseriespenguins.ihost.com
+    ## l003092.zseriespenguins.ihost.com
     allow from 32.97.40.46
-    #
+    ##
     allow from 148.100.96.45
-    #
+    ##
     allow from 148.100.96.52
-    # lxdebian.bfinv
+    ## lxdebian.bfinv
     allow from 80.245.147.60
-    # zandonai
-    allow from 80.245.147.46
-  # sparc
-    # spontini
-    allow from 206.12.19.14
-    # lebrun
-    allow from 193.198.184.10
-    # schroeder
-    allow from 193.198.184.11
-    # titan.ayous.org ('non-standard' buildd; contact HE)
+
+    # sparc
+    ## titan.ayous.org ('non-standard' buildd; contact HE)
     allow from 82.195.75.33
-  # kfreebsd
-   # amd64
-    # fasch
-    allow from 194.177.211.201
-    # fano
-    allow from 206.12.19.110
-   # i386
+
+    # kfreebsd
+    ## i386
     # himalai1, ganymede1
     allow from 129.175.22.65
-    # field
-    allow from 194.177.211.210
-    # luchesi
-    # Password based due to being KVM instance
-    #   allow from 137.82.84.78
-# dynamics use password auth
+    ## luchesi
+    ## Password based due to being KVM instance
+    ##   allow from 137.82.84.78
+
+    # Dynamics use password auth
+
     AuthType Basic
     AuthName "incoming.debian.org"
     AuthUserFile /srv/incoming.debian.org/htpasswd

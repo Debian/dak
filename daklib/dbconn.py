@@ -856,8 +856,8 @@ class BuildQueue(object):
 
         # Check if we have a file of this name or this ID already
         for f in self.queuefiles:
-            if f.fileid is not None and f.fileid == poolfile.file_id or \
-               f.poolfile.filename == poolfile_basename:
+            if (f.fileid is not None and f.fileid == poolfile.file_id) or \
+               (f.poolfile is not None and f.poolfile.filename == poolfile_basename):
                    # In this case, update the BuildQueueFile entry so we
                    # don't remove it too early
                    f.lastused = datetime.now()
