@@ -89,7 +89,7 @@ JOIN priority pri ON o.priority = pri.id
 
 WHERE
   sa.suite = :suite
-  AND o.suite = :suite AND o.component = :component AND o.type = :dsc_type
+  AND o.suite = :overridesuite AND o.component = :component AND o.type = :dsc_type
 
 ORDER BY
 s.source, s.version
@@ -104,11 +104,13 @@ def generate_sources(suite_id, component_id):
     suite = session.query(Suite).get(suite_id)
     component = session.query(Component).get(component_id)
 
+    overridesuite_id = suite.get_overridesuite().suite_id
+
     writer = SourcesFileWriter(suite=suite.suite_name, component=component.component_name)
     output = writer.open()
 
     # run query and write Sources
-    r = session.execute(_sources_query, {"suite": suite_id, "component": component_id, "dsc_type": dsc_type})
+    r = session.execute(_sources_query, {"suite": suite_id, "component": component_id, "dsc_type": dsc_type, "overridesuite": overridesuite_id})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
@@ -188,7 +190,7 @@ WHERE
       (architecture = :arch_all AND source NOT IN (SELECT DISTINCT source FROM tmp WHERE architecture <> :arch_all))
   )
   AND
-    o.type = :type_id AND o.suite = :suite AND o.component = :component
+    o.type = :type_id AND o.suite = :overridesuite AND o.component = :component
 
 ORDER BY tmp.package, tmp.version
 """
@@ -204,12 +206,15 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     component = session.query(Component).get(component_id)
     architecture = session.query(Architecture).get(architecture_id)
 
+    overridesuite_id = suite.get_overridesuite().suite_id
+
     writer = PackagesFileWriter(suite=suite.suite_name, component=component.component_name,
             architecture=architecture.arch_string, debtype=type_name)
     output = writer.open()
 
     r = session.execute(_packages_query, {"suite": suite_id, "component": component_id,
-        "arch": architecture_id, "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id})
+        "arch": architecture_id, "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id,
+        "overridesuite": overridesuite_id})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
