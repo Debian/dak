@@ -122,6 +122,7 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         '''
         values = {
             'suite':        self.suite.suite_name,
+            'component':    self.component.component_name,
             'debtype':      self.overridetype.overridetype,
             'architecture': self.architecture.arch_string,
         }

@@ -367,7 +367,7 @@ def main():
                     maxsuite = maxpackages
                     # Process Contents
                     file = "%s/%s/Contents-%s" % (Cnf["Dir::Root"] + tree, component,
-                            longarch)
+                            architecture)
                     storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
                     genchanges(Options, file + ".diff", storename, file, \
                       Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::Contents" % (suite), maxcontents))
