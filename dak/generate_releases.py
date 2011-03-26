@@ -154,7 +154,7 @@ class ReleaseWriter(object):
         suite_suffix = "%s" % (cnf.Find("Dinstall::SuiteSuffix"))
 
         outfile = os.path.join(cnf["Dir::Root"], 'dists', "%s/%s" % (suite.suite_name, suite_suffix), "Release")
-        out = open(outfile, "w")
+        out = open(outfile + ".new", "w")
 
         for key, dbfield in attribs:
             if getattr(suite, dbfield) is not None:
@@ -280,6 +280,7 @@ class ReleaseWriter(object):
                 out.write(" %s %8d %s\n" % (fileinfo[filename][h], fileinfo[filename]['len'], filename))
 
         out.close()
+        os.rename(outfile + '.new', outfile)
 
         sign_release_dir(suite, os.path.dirname(outfile))
 
