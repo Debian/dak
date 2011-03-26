@@ -41,7 +41,7 @@ class BinaryContentsWriter(object):
     '''
     BinaryContentsWriter writes the Contents-$arch.gz files.
     '''
-    def __init__(self, suite, architecture, overridetype, component = None):
+    def __init__(self, suite, architecture, overridetype, component):
         self.suite = suite
         self.architecture = architecture
         self.overridetype = overridetype
@@ -58,15 +58,14 @@ class BinaryContentsWriter(object):
         params = {
             'suite':         self.suite.suite_id,
             'overridesuite': overridesuite.suite_id,
+            'component':     self.component.component_id,
             'arch_all':      get_architecture('all', self.session).arch_id,
             'arch':          self.architecture.arch_id,
             'type_id':       self.overridetype.overridetype_id,
             'type':          self.overridetype.overridetype,
         }
 
-        if self.component is not None:
-            params['component'] = self.component.component_id
-            sql = '''
+        sql = '''
 create temp table newest_binaries (
     id integer primary key,
     package text);
@@ -87,34 +86,6 @@ unique_override as
         from override o, section s
         where o.suite = :overridesuite and o.type = :type_id and o.section = s.id and
         o.component = :component)
-
-select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package) as pkglist
-    from newest_binaries b, bin_contents bc, unique_override o
-    where b.id = bc.binary_id and o.package = b.package
-    group by bc.file'''
-
-        else:
-            sql = '''
-create temp table newest_binaries (
-    id integer primary key,
-    package text);
-
-create index newest_binaries_by_package on newest_binaries (package);
-
-insert into newest_binaries (id, package)
-    select distinct on (package) id, package from binaries
-        where type = :type and
-            (architecture = :arch_all or architecture = :arch) and
-            id in (select bin from bin_associations where suite = :suite)
-        order by package, version desc;
-
-with
-
-unique_override as
-    (select distinct on (o.package, s.section) o.package, s.section
-        from override o, section s
-        where o.suite = :overridesuite and o.type = :type_id and o.section = s.id
-        order by o.package, s.section, o.modified desc)
 
 select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package) as pkglist
     from newest_binaries b, bin_contents bc, unique_override o
@@ -151,10 +122,9 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         '''
         values = {
             'suite':        self.suite.suite_name,
+            'debtype':      self.overridetype.overridetype,
             'architecture': self.architecture.arch_string,
         }
-        if self.component is not None:
-            values['component'] = self.component.component_name
         return BinaryContentsFileWriter(**values)
 
     def get_header(self):
@@ -264,7 +234,7 @@ select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
         writer.close()
 
 
-def binary_helper(suite_id, arch_id, overridetype_id, component_id = None):
+def binary_helper(suite_id, arch_id, overridetype_id, component_id):
     '''
     This function is called in a new subprocess and multiprocessing wants a top
     level function.
@@ -273,12 +243,9 @@ def binary_helper(suite_id, arch_id, overridetype_id, component_id = None):
     suite = Suite.get(suite_id, session)
     architecture = Architecture.get(arch_id, session)
     overridetype = OverrideType.get(overridetype_id, session)
-    log_message = [suite.suite_name, architecture.arch_string, overridetype.overridetype]
-    if component_id is None:
-        component = None
-    else:
-        component = Component.get(component_id, session)
-        log_message.append(component.component_name)
+    component = Component.get(component_id, session)
+    log_message = [suite.suite_name, architecture.arch_string, \
+        overridetype.overridetype, component.component_name]
     contents_writer = BinaryContentsWriter(suite, architecture, overridetype, component)
     contents_writer.write_file()
     return log_message
@@ -309,7 +276,7 @@ class ContentsWriter(object):
         class_.logger.log(result)
 
     @classmethod
-    def write_all(class_, logger, suite_names = [], force = False):
+    def write_all(class_, logger, suite_names = [], component_names = [], force = False):
         '''
         Writes all Contents files for suites in list suite_names which defaults
         to all 'touchable' suites if not specified explicitely. Untouchable
@@ -320,33 +287,29 @@ class ContentsWriter(object):
         suite_query = session.query(Suite)
         if len(suite_names) > 0:
             suite_query = suite_query.filter(Suite.suite_name.in_(suite_names))
+        component_query = session.query(Component)
+        if len(component_names) > 0:
+            component_query = component_query.filter(Component.component_name.in_(component_names))
         if not force:
             suite_query = suite_query.filter_by(untouchable = False)
         deb_id = get_override_type('deb', session).overridetype_id
         udeb_id = get_override_type('udeb', session).overridetype_id
-        main_id = get_component('main', session).component_id
-        contrib_id = get_component('contrib', session).component_id
-        non_free_id = get_component('non-free', session).component_id
         pool = Pool()
         for suite in suite_query:
             suite_id = suite.suite_id
-            # handle source packages
-            pool.apply_async(source_helper, (suite_id, main_id),
-                callback = class_.log_result)
-            pool.apply_async(source_helper, (suite_id, contrib_id),
-                callback = class_.log_result)
-            pool.apply_async(source_helper, (suite_id, non_free_id),
-                callback = class_.log_result)
-            for architecture in suite.get_architectures(skipsrc = True, skipall = True):
-                arch_id = architecture.arch_id
-                # handle 'deb' packages
-                pool.apply_async(binary_helper, (suite_id, arch_id, deb_id), \
+            for component in component_query:
+                component_id = component.component_id
+                # handle source packages
+                pool.apply_async(source_helper, (suite_id, component_id),
                     callback = class_.log_result)
-                # handle 'udeb' packages for 'main' and 'non-free'
-                pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, main_id), \
-                    callback = class_.log_result)
-                pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, non_free_id), \
-                    callback = class_.log_result)
+                for architecture in suite.get_architectures(skipsrc = True, skipall = True):
+                    arch_id = architecture.arch_id
+                    # handle 'deb' packages
+                    pool.apply_async(binary_helper, (suite_id, arch_id, deb_id, component_id), \
+                        callback = class_.log_result)
+                    # handle 'udeb' packages
+                    pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, component_id), \
+                        callback = class_.log_result)
         pool.close()
         pool.join()
         session.close()

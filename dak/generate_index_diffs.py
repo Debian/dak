@@ -352,14 +352,6 @@ def main():
         for archobj in architectures:
             architecture = archobj.arch_string
 
-            if architecture != "source":
-                # Process Contents
-                file = "%s/Contents-%s" % (Cnf["Dir::Root"] + tree,
-                        architecture)
-                storename = "%s/%s_contents_%s" % (Options["TempDir"], suite, architecture)
-                genchanges(Options, file + ".diff", storename, file, \
-                  Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::Contents" % (suite), maxcontents))
-
             # use sections instead of components since dak.conf
             # treats "foo/bar main" as suite "foo", suitesuffix "bar" and
             # component "bar/main". suck.
@@ -373,6 +365,12 @@ def main():
                     longarch = "binary-%s"% (architecture)
                     packages = "Packages"
                     maxsuite = maxpackages
+                    # Process Contents
+                    file = "%s/%s/Contents-%s" % (Cnf["Dir::Root"] + tree, component,
+                            longarch)
+                    storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
+                    genchanges(Options, file + ".diff", storename, file, \
+                      Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::Contents" % (suite), maxcontents))
 
                 file = "%s/%s/%s/%s" % (Cnf["Dir::Root"] + tree,
                            component, longarch, packages)
