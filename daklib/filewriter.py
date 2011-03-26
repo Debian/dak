@@ -93,10 +93,10 @@ class BinaryContentsFileWriter(BaseFileWriter):
             'bzip2':        False
         }
         flags.update(keywords)
-        if 'component' in flags:
+        if flags['debtype'] == 'deb':
             template = "dists/%(suite)s/%(component)s/Contents-%(architecture)s"
-        else:
-            template = "dists/%(suite)s/Contents-%(architecture)s"
+        else: # udeb
+            template = "dists/%(suite)s/%(component)s/Contents-udeb-%(architecture)s"
         BaseFileWriter.__init__(self, template, **flags)
 
 class SourceContentsFileWriter(BaseFileWriter):
