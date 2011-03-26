@@ -27,6 +27,7 @@ Helper code for contents generation.
 
 from daklib.dbconn import *
 from daklib.config import Config
+from daklib.filewriter import BinaryContentsFileWriter
 
 from multiprocessing import Pool
 from shutil import rmtree
@@ -154,7 +155,7 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         }
         if self.component is not None:
             values['component'] = self.component.component_name
-        return BinaryContentsWriter(values)
+        return BinaryContentsFileWriter(**values)
 
     def get_header(self):
         '''

@@ -35,7 +35,7 @@ class BaseFileWriter(object):
     '''
     Base class for compressed and uncompressed file writing.
     '''
-    def __init__(template, **keywords):
+    def __init__(self, template, **keywords):
         '''
         The template argument is a string template like
         "dists/%(suite)s/%(component)s/Contents-%(architecture)s.gz" that
@@ -54,7 +54,8 @@ class BaseFileWriter(object):
         '''
         Returns a file object for writing.
         '''
-        self.file = open(self.path + '.new')
+        self.file = open(self.path + '.new', 'w')
+        return self.file
 
     # internal helper function
     def rename(self, filename):
@@ -77,10 +78,10 @@ class BaseFileWriter(object):
         if self.uncompressed:
             self.rename(self.path)
         else:
-            os.unlink(self.path)
+            os.unlink(self.path + '.new')
 
-class BinaryContentsWriter(BaseFileWriter):
-    def __init__(**keywords):
+class BinaryContentsFileWriter(BaseFileWriter):
+    def __init__(self, **keywords):
         '''
         The value of the keywords suite, component, and architecture are
         strings. The value of component may be omitted if not applicable.
@@ -93,7 +94,7 @@ class BinaryContentsWriter(BaseFileWriter):
         }
         flags.update(keywords)
         if 'component' in flags:
-            template "dists/%(suite)s/%(component)s/Contents-%(architecture)s.gz" % values
+            template = "dists/%(suite)s/%(component)s/Contents-%(architecture)s"
         else:
-            template = "dists/%(suite)s/Contents-%(architecture)s.gz" % values
+            template = "dists/%(suite)s/Contents-%(architecture)s"
         BaseFileWriter.__init__(self, template, **flags)
