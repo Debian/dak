@@ -273,7 +273,7 @@ for file in ${KEYS}; do
     # Right. At this point everything should be in order, which means we should put the key into
     # the keyring
     KEYSUBMITTER=$(cat "${GPGSTATUS}"|grep GOODSIG)
-    KEYSUBMITTER=${KEYSUBMITTER##*]}
+    KEYSUBMITTER=${KEYSUBMITTER##*GOODSIG}
     log "${KEYSUBMITTER} added key ${KEYID} for ${ARCH} buildd ${BUILDD}, expire ${KEYEXPIRE}"
     gpg ${DEFGPGOPT} --status-fd 4 --logger-fd 5 --keyring "${ARCHKEYRING}" --import "${GPGOUTF}" 2>/dev/null
 
