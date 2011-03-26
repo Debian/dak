@@ -84,6 +84,8 @@ def init():
          "Generate Release files"),
         ("generate-packages-sources",
          "Generate Packages/Sources files"),
+        ("generate-packages-sources2",
+         "Generate Packages/Sources files [directly from database]"),
         ("contents",
          "Generate content files"),
         ("metadata",
