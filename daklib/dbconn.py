@@ -2872,6 +2872,12 @@ class Suite(ORMObject):
         return session.query(DBSource).filter_by(source = source). \
             with_parent(self)
 
+    def get_overridesuite(self):
+        if self.overridesuite is None:
+            return self
+        else:
+            return object_session(self).query(Suite).filter_by(suite_name=self.overridesuite).one()
+
 __all__.append('Suite')
 
 @session_wrapper

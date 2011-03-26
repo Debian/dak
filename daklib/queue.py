@@ -2451,6 +2451,8 @@ distribution."""
         if self.logger:
             self.logger.log(["rejected", self.pkg.changes_file])
 
+        stats = SummaryStats()
+        stats.reject_count += 1
         return 0
 
     ################################################################################
