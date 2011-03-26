@@ -77,7 +77,7 @@ if lockfile -r3 ${HOME}/sync.lock; then
     rsync -aH -B8192 \
         --exclude backup/*.xz \
         --exclude backup/dump* \
-        --exclude database/*.db \
+        --exclude database/\*.db \
         ${EXTRA} \
         --exclude mirror \
         --exclude morgue/ \
