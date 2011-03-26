@@ -63,7 +63,7 @@ SELECT
          WHEN key = 'Checksums-Sha1' THEN E'Checksums-Sha1\:\n ' || f.sha1sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
          WHEN key = 'Checksums-Sha256' THEN E'Checksums-Sha256\:\n ' || f.sha256sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
          ELSE key || '\: '
-       END || value, E'\n' ORDER BY mk.order, mk.key)
+       END || value, E'\n' ORDER BY mk.ordering, mk.key)
    FROM
      source_metadata sm
      JOIN metadata_keys mk ON mk.key_id = sm.key_id
@@ -162,7 +162,7 @@ WITH
 
 SELECT
   (SELECT
-     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY mk.order, mk.key)
+     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY mk.ordering, mk.key)
    FROM
      binaries_metadata bm
      JOIN metadata_keys mk ON mk.key_id = bm.key_id

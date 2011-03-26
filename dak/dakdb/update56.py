@@ -37,7 +37,7 @@ def do_update(self):
     try:
         c = self.db.cursor()
 
-        c.execute("ALTER TABLE metadata_keys ADD COLUMN order INTEGER NOT NULL DEFAULT 0")
+        c.execute("ALTER TABLE metadata_keys ADD COLUMN ordering INTEGER NOT NULL DEFAULT 0")
 
         initial_order = {
                 'Package': -2600,
@@ -80,7 +80,7 @@ def do_update(self):
                 }
 
         for key, order in initial_order.items():
-            c.execute("""UPDATE metadata_keys SET "order" = '%s' WHERE key ILIKE '%s'""" % (order, key))
+            c.execute("""UPDATE metadata_keys SET ordering = '%s' WHERE key ILIKE '%s'""" % (order, key))
 
         c.execute("UPDATE config SET value = '56' WHERE name = 'db_revision'")
         self.db.commit()
