@@ -207,6 +207,8 @@ def byebye():
 
 
 def action(u, session):
+    global Logger
+
     cnf = Config()
     holding = Holding()
 
@@ -293,7 +295,7 @@ def action(u, session):
         u.do_reject(0, pi)
     elif answer == 'A':
         if not chg:
-            chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
+            chg = u.pkg.add_known_changes(holding.holding_dir, session=session, logger=Logger)
         session.commit()
         u.accept(summary, short_summary, session)
         u.check_override()
@@ -302,13 +304,13 @@ def action(u, session):
         u.remove()
     elif answer == 'P':
         if not chg:
-            chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
+            chg = u.pkg.add_known_changes(holding.holding_dir, session=session, logger=Logger)
         package_to_queue(u, summary, short_summary, policyqueue, chg, session)
         session.commit()
         u.remove()
     elif answer == queuekey:
         if not chg:
-            chg = u.pkg.add_known_changes(holding.holding_dir, session=session)
+            chg = u.pkg.add_known_changes(holding.holding_dir, session=session, logger=Logger)
         QueueInfo[qu]["process"](u, summary, short_summary, chg, session)
         session.commit()
         u.remove()
