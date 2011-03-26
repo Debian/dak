@@ -54,6 +54,11 @@ class BaseFileWriter(object):
         '''
         Returns a file object for writing.
         '''
+        # create missing directories
+        try:
+            os.makedirs(os.path.dirname(self.path))
+        except:
+            pass
         self.file = open(self.path + '.new', 'w')
         return self.file
 
