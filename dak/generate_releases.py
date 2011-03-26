@@ -101,7 +101,7 @@ def sign_release_dir(suite, dirname):
 
         # We can only use one key for inline signing so use the first one in
         # the array for consistency
-        firstkey = False
+        firstkey = True
 
         for keyid in suite.signingkeys:
             defkeyid = "--default-key %s" % keyid
