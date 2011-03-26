@@ -103,7 +103,7 @@ def sign_release_dir(suite, dirname):
         # the array for consistency
         firstkey = False
 
-        for keyid in suite.signingkeyids:
+        for keyid in suite.signingkeys:
             defkeyid = "--default-key %s" % keyid
 
             os.system("gpg %s %s %s --detach-sign <%s >>%s" %
