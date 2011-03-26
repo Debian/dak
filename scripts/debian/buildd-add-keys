@@ -74,6 +74,9 @@ fi
 
 trap cleanup ERR EXIT TERM HUP INT QUIT
 
+# Tell prepare-dir that there is an update and it can run
+touch "${STAMPFILE}"
+
 # Whenever something goes wrong, its put in there.
 mkdir -p "${ERRORS}"
 
