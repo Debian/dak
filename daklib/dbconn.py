@@ -3219,7 +3219,6 @@ class DBConn(object):
             'almost_obsolete_all_associations',
             'almost_obsolete_src_associations',
             'any_associations_source',
-            'bin_assoc_by_arch',
             'bin_associations_binaries',
             'binaries_suite_arch',
             'binfiles_suite_component_arch',
