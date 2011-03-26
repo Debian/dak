@@ -170,8 +170,8 @@ function mpfm() {
 function packages() {
     log "Generating Packages and Sources files"
     cd $configdir
-    #apt-ftparchive generate apt.conf
     dak generate-packages-sources
+    dak generate-packages-sources2
     dak contents generate
 }
 
