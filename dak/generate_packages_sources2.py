@@ -31,7 +31,7 @@ Generate Packages/Sources files
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import utils, daklog
-from multiprocessing import Pool
+from daklib.dakmultiprocessing import Pool
 import apt_pkg, os, stat, sys
 
 def usage():
@@ -127,7 +127,9 @@ def generate_sources(suite_id, component_id):
         print >>output, stanza
         print >>output, ""
 
-    return ["generate sources", suite.suite_name, component.component_name]
+    message = ["generate sources", suite.suite_name, component.component_name]
+    session.rollback()
+    return message
 
 #############################################################################
 
@@ -237,9 +239,9 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
         print >>output, stanza
         print >>output, ""
 
-    session.close()
-
-    return ["generate-packages", suite.suite_name, component.component_name, architecture.arch_string]
+    message = ["generate-packages", suite.suite_name, component.component_name, architecture.arch_string]
+    session.rollback()
+    return message
 
 #############################################################################
 
@@ -289,9 +291,8 @@ def main():
         for c in component_ids:
             pool.apply_async(generate_sources, [s.suite_id, c], callback=log)
             for a in s.architectures:
-                #pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=log)
-                apply(generate_packages, [s.suite_id, c, a.arch_id, 'deb'])
-                #pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=log)
+                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=log)
+                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=log)
 
     pool.close()
     pool.join()
