@@ -34,8 +34,6 @@ from daklib import utils, daklog
 from multiprocessing import Pool
 import apt_pkg, os, stat, sys
 
-from daklib.lists import getSources, getBinaries, getArchAll
-
 def usage():
     print """Usage: dak generate-packages-sources2 [OPTIONS]
 Generate the Packages/Sources files
@@ -81,13 +79,15 @@ SELECT
 FROM
 
 source s
+JOIN src_associations sa ON s.id = sa.source
 JOIN files f ON s.file=f.id
 JOIN override o ON o.package = s.source
 JOIN section sec ON o.section = sec.id
 JOIN priority pri ON o.priority = pri.id
 
 WHERE
-o.suite = :suite AND o.component = :component AND o.type = :dsc_type
+  sa.suite = :suite
+  AND o.suite = :suite AND o.component = :component AND o.type = :dsc_type
 
 ORDER BY
 s.source, s.version
@@ -155,7 +155,7 @@ WITH
       JOIN location l ON l.id = f.location
       JOIN source s ON b.source = s.id
     WHERE
-      (b.architecture = :arch_all OR b.architecture = :all) AND b.type = :type_name
+      (b.architecture = :arch_all OR b.architecture = :arch) AND b.type = :type_name
       AND ba.suite = :suite
       AND l.component = :component
   )
@@ -172,7 +172,7 @@ SELECT
   )
   || E'\nSection\: ' || sec.section
   || E'\nPriority\: ' || pri.priority
-  || E'\nFilename\: ' || tmp.filename
+  || E'\nFilename\: pool/' || tmp.filename
   || E'\nSize\: ' || tmp.size
   || E'\nMD5sum\: ' || tmp.md5sum
   || E'\nSHA1\: ' || tmp.sha1sum
@@ -232,7 +232,7 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     output = open_packages(suite, component, architecture, type_name)
 
     r = session.execute(_packages_query, {"suite": suite_id, "component": component_id,
-        "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id})
+        "arch": architecture_id, "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
@@ -275,6 +275,8 @@ def main():
     else:
         suites = session.query(Suite).filter(Suite.untouchable == False).all()
 
+    force = Options.has_key("Force") and Options["Force"]
+
     component_ids = [ c.component_id for c in session.query(Component).all() ]
 
     def log(details):
@@ -282,6 +284,8 @@ def main():
 
     pool = Pool()
     for s in suites:
+        if s.untouchable and not force:
+            utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
         for c in component_ids:
             pool.apply_async(generate_sources, [s.suite_id, c], callback=log)
             for a in s.architectures:
