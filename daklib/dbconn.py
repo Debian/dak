@@ -3147,7 +3147,9 @@ __all__.append('VersionCheck')
 def get_version_checks(suite_name, check = None, session = None):
     suite = get_suite(suite_name, session)
     if not suite:
-        return None
+        # Make sure that what we return is iterable so that list comprehensions
+        # involving this don't cause a traceback
+        return []
     q = session.query(VersionCheck).filter_by(suite=suite)
     if check:
         q = q.filter_by(check=check)

@@ -2547,6 +2547,12 @@ distribution."""
 
         # Check versions for each target suite
         for target_suite in self.pkg.changes["distribution"].keys():
+            # Check we can find the target suite
+            ts = get_suite(target_suite)
+            if ts is None:
+                self.rejects.append("Cannot find target suite %s to perform version checks" % target_suite)
+                continue
+
             must_be_newer_than = [ vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeNewerThan") ]
             must_be_older_than = [ vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeOlderThan") ]
 
