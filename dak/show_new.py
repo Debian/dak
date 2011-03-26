@@ -37,7 +37,7 @@ from daklib.regexes import re_source_ext
 from daklib.config import Config
 from daklib import daklog
 from daklib.changesutils import *
-from daklib.threadpool import ThreadPool
+from daklib.dakmultiprocessing import Pool
 
 # Globals
 Cnf = None
@@ -250,14 +250,15 @@ def main():
 
     examine_package.use_html=1
 
-    threadpool = ThreadPool()
+    pool = Pool()
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
             continue
         print "\n" + changes_file
-        threadpool.queueTask(do_pkg, changes_file)
-    threadpool.joinAll()
+        pool.apply_async(do_pkg, (changes_file,))
+    pool.close()
+    pool.join()
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))

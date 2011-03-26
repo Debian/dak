@@ -39,7 +39,7 @@ Generate file lists for apt-ftparchive.
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import utils, daklog
-from multiprocessing import Pool
+from daklib.dakmultiprocessing import Pool
 import apt_pkg, os, stat, sys
 
 from daklib.lists import getSources, getBinaries, getArchAll
@@ -72,11 +72,13 @@ def writeSourceList(suite_id, component_id, incremental_mode):
     (file, timestamp) = listPath(suite, component,
             incremental_mode = incremental_mode)
 
+    message = "sources list for %s %s" % (suite.suite_name, component.component_name)
+
     for _, filename in getSources(suite, component, session, timestamp):
         file.write(filename + '\n')
-    session.close()
+    session.rollback()
     file.close()
-    return "sources list for %s %s" % (suite.suite_name, component.component_name)
+    return message
 
 def writeAllList(suite_id, component_id, architecture_id, type, incremental_mode):
     session = DBConn().session()
@@ -86,12 +88,14 @@ def writeAllList(suite_id, component_id, architecture_id, type, incremental_mode
     (file, timestamp) = listPath(suite, component, architecture, type,
             incremental_mode)
 
+    message = "all list for %s %s (arch=%s, type=%s)" % (suite.suite_name, component.component_name, architecture.arch_string, type)
+
     for _, filename in getArchAll(suite, component, architecture, type,
             session, timestamp):
         file.write(filename + '\n')
-    session.close()
+    session.rollback()
     file.close()
-    return "all list for %s %s (arch=%s, type=%s)" % (suite.suite_name, component.component_name, architecture.arch_string, type)
+    return message
 
 def writeBinaryList(suite_id, component_id, architecture_id, type, incremental_mode):
     session = DBConn().session()
@@ -101,12 +105,14 @@ def writeBinaryList(suite_id, component_id, architecture_id, type, incremental_m
     (file, timestamp) = listPath(suite, component, architecture, type,
             incremental_mode)
 
+    message = "binary list for %s %s (arch=%s, type=%s)" % (suite.suite_name, component.component_name, architecture.arch_string, type)
+
     for _, filename in getBinaries(suite, component, architecture, type,
             session, timestamp):
         file.write(filename + '\n')
-    session.close()
+    session.rollback()
     file.close()
-    return "binary list for %s %s (arch=%s, type=%s)" % (suite.suite_name, component.component_name, architecture.arch_string, type)
+    return message
 
 def usage():
     print """Usage: dak generate_filelist [OPTIONS]
