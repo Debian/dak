@@ -242,8 +242,9 @@ def list_uploads(filelist, rrd_dir):
 Delayed-Until: %s
 Delay-Remaining: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u[0])),u[2])
                 print >> f, fields
-                print >> f, str(u[5]).rstrip()
-                open(os.path.join(Cnf["Show-Deferred::LinkPath"],u[1]),"w").write(str(u[5])+fields+'\n')
+                encoded = unicode(u[5]).encode('utf-8')
+                print >> f, encoded.rstrip()
+                open(os.path.join(Cnf["Show-Deferred::LinkPath"],u[1]),"w").write(encoded+fields+'\n')
                 print >> f
             f.close()
             os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp'),
