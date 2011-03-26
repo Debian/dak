@@ -153,6 +153,8 @@ def init():
          "Copies the installer from one suite to another"),
         ("override-disparity",
          "Generate a list of override disparities"),
+        ("external-overrides",
+         "Modify external overrides"),
         ]
     return functionality
 

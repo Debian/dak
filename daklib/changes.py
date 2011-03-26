@@ -187,7 +187,7 @@ class Changes(object):
             if (not self.changes.has_key(key)) or (not self.changes[key]):
                 self.changes[key]='missing'
 
-    def __get_file_from_pool(self, filename, entry, session):
+    def __get_file_from_pool(self, filename, entry, session, logger):
         cnf = Config()
 
         if cnf.has_key("Dinstall::SuiteSuffix"):
@@ -205,20 +205,23 @@ class Changes(object):
                                          session=session)
 
         if found is None:
-            Logger.log(["E: Found multiple files for pool (%s) for %s" % (filename, component)])
+            if logger is not None:
+                logger.log(["E: Found multiple files for pool (%s) for %s" % (filename, component)])
             return None
         elif found is False and poolfile is not None:
-            Logger.log(["E: md5sum/size mismatch for %s in pool" % (filename)])
+            if logger is not None:
+                logger.log(["E: md5sum/size mismatch for %s in pool" % (filename)])
             return None
         else:
             if poolfile is None:
-                Logger.log(["E: Could not find %s in pool" % (filename)])
+                if logger is not None:
+                    logger.log(["E: Could not find %s in pool" % (filename)])
                 return None
             else:
                 return poolfile
 
     @session_wrapper
-    def add_known_changes(self, dirpath, in_queue=None, session=None):
+    def add_known_changes(self, dirpath, in_queue=None, session=None, logger=None):
         """add "missing" in fields which we will require for the known_changes table"""
         cnf = Config()
 
@@ -290,7 +293,7 @@ class Changes(object):
                 continue
 
             entry['source'] = self.changes['source']
-            poolfile = self.__get_file_from_pool(name, entry, session)
+            poolfile = self.__get_file_from_pool(name, entry, session, logger)
             if poolfile:
                 chg.poolfiles.append(poolfile)
 

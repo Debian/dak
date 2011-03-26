@@ -160,6 +160,11 @@ SELECT
      bm.bin_id = tmp.binary_id
      AND key != 'Section' AND key != 'Priority'
   )
+  || COALESCE(E'\n' || (SELECT
+     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY key)
+   FROM external_overrides eo
+   WHERE eo.package = tmp.package
+  ), '')
   || E'\nSection\: ' || sec.section
   || E'\nPriority\: ' || pri.priority
   || E'\nFilename\: pool/' || tmp.filename
