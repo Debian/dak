@@ -190,7 +190,9 @@ for file in ${KEYS}; do
         # So put it into the removed keyring
         gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --export ${KEYID} | gpg ${DEFGPGOPT} --keyring "${REMOVED}" --import 2>/dev/null
         if gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --yes --delete-keys ${KEYID}; then
-            log "Removed key ${KEYID}, reason: ${COMMENT}"
+            KEYSUBMITTER=$(cat "${GPGSTATUS}"|grep GOODSIG)
+            KEYSUBMITTER=${KEYSUBMITTER##*GOODSIG}
+            log "${KEYSUBMITTER} removed key ${KEYID} for ${ARCH} buildd ${BUILDD}, reason: ${COMMENT}"
             mv "${INCOMING}/${file}" "${base}/${ARCH}"
             continue
         fi
