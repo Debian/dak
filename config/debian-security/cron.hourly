@@ -8,7 +8,7 @@ set -u
 export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
-# dak import-users-from-passwd
+dak import-users-from-passwd
 # dak queue-report -n > $webdir/new.html
 # dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates -r $webdir/stat
 # dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
