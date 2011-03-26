@@ -113,3 +113,36 @@ class SourceContentsFileWriter(BaseFileWriter):
         flags.update(keywords)
         template = "dists/%(suite)s/%(component)s/Contents-source"
         BaseFileWriter.__init__(self, template, **flags)
+
+class PackagesFileWriter(BaseFileWriter):
+    def __init__(self, **keywords):
+        '''
+        The value of the keywords suite, component, debtype and architecture
+        are strings.  Output files are gzip compressed only.
+        '''
+        flags = {
+            'uncompressed': False,
+            'gzip':         True,
+            'bzip2':        True
+        }
+        flags.update(keywords)
+        if flags['debtype'] == 'deb':
+            template = "dists/%(suite)s/%(component)s/binary-%(architecture)s/Packages"
+        else: # udeb
+            template = "dists/%(suite)s/%(component)s/debian-installer/binary-%(architecture)s/Packages"
+        BaseFileWriter.__init__(self, template, **flags)
+
+class SourcesFileWriter(BaseFileWriter):
+    def __init__(self, **keywords):
+        '''
+        The value of the keywords suite and component are strings. Output
+        files are gzip compressed only.
+        '''
+        flags = {
+            'uncompressed': False,
+            'gzip':         True,
+            'bzip2':        True
+        }
+        flags.update(keywords)
+        template = "dists/%(suite)s/%(component)s/source/Sources"
+        BaseFileWriter.__init__(self, template, **flags)
