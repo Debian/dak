@@ -32,6 +32,8 @@ from daklib.dbconn import *
 from daklib.config import Config
 from daklib import utils, daklog
 from daklib.dakmultiprocessing import Pool
+from daklib.filewriter import PackagesFileWriter, SourcesFileWriter
+
 import apt_pkg, os, stat, sys
 
 def usage():
@@ -93,23 +95,6 @@ ORDER BY
 s.source, s.version
 """
 
-def open_sources(suite, component):
-    cnf = Config()
-    dest = os.path.join(cnf['Dir::Root'], 'dists', suite.suite_name, component.component_name, 'source', 'Sources')
-
-    # create queue if it does not exist yet
-    if os.path.exists(dest) and os.path.isdir(dest):
-        dest_dir = dest
-    else:
-        dest_dir = os.path.dirname(dest)
-    if not os.path.exists(dest_dir):
-        umask = os.umask(00000)
-        os.makedirs(dest_dir, 02775)
-        os.umask(umask)
-
-    f = open(dest, 'w')
-    return f
-
 def generate_sources(suite_id, component_id):
     global _sources_query
 
@@ -119,13 +104,16 @@ def generate_sources(suite_id, component_id):
     suite = session.query(Suite).get(suite_id)
     component = session.query(Component).get(component_id)
 
-    output = open_sources(suite, component)
+    writer = SourcesFileWriter(suite=suite.suite_name, component=component.component_name)
+    output = writer.open()
 
     # run query and write Sources
     r = session.execute(_sources_query, {"suite": suite_id, "component": component_id, "dsc_type": dsc_type})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
+
+    writer.close()
 
     message = ["generate sources", suite.suite_name, component.component_name]
     session.rollback()
@@ -200,26 +188,6 @@ WHERE
 ORDER BY tmp.package, tmp.version
 """
 
-def open_packages(suite, component, architecture, type_name):
-    cnf = Config()
-    if type_name == 'udeb':
-        dest = os.path.join(cnf['Dir::Root'], 'dists', suite.suite_name, component.component_name, 'debian-installer', 'binary-%s' % architecture.arch_string, 'Packages')
-    else:
-        dest = os.path.join(cnf['Dir::Root'], 'dists', suite.suite_name, component.component_name, 'binary-%s' % architecture.arch_string, 'Packages')
-
-    # create queue if it does not exist yet
-    if os.path.exists(dest) and os.path.isdir(dest):
-        dest_dir = dest
-    else:
-        dest_dir = os.path.dirname(dest)
-    if not os.path.exists(dest_dir):
-        umask = os.umask(00000)
-        os.makedirs(dest_dir, 02775)
-        os.umask(umask)
-
-    f = open(dest, 'w')
-    return f
-
 def generate_packages(suite_id, component_id, architecture_id, type_name):
     global _packages_query
 
@@ -231,13 +199,17 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     component = session.query(Component).get(component_id)
     architecture = session.query(Architecture).get(architecture_id)
 
-    output = open_packages(suite, component, architecture, type_name)
+    writer = PackagesFileWriter(suite=suite.suite_name, component=component.component_name,
+            architecture=architecture.arch_string, debtype=type_name)
+    output = writer.open()
 
     r = session.execute(_packages_query, {"suite": suite_id, "component": component_id,
         "arch": architecture_id, "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
+
+    writer.close()
 
     message = ["generate-packages", suite.suite_name, component.component_name, architecture.arch_string]
     session.rollback()
