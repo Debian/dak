@@ -42,20 +42,24 @@ GNUPGHOME="${base}/s3kr1t/dot-gnupg"
 base="${base}/scripts/builddkeyrings"
 TARGET="${base}/keyrings"
 REMOVED="${base}/removed-buildd-keys.gpg"
+STAMPFILE="${base}/updatedkeyring"
 
-mkdir -p "${TARGET}/keyrings"
+mkdir -p "${TARGET}/buildd-keyrings"
 
-for arch in $archs; do
-    if [ -f ${base}/${arch}/keyring.gpg ]; then
-        cp -afl ${base}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
-        chmod 0644 ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
-    fi
-done
+if [ -f "${STAMPFILE}" ]; then
+    rm -f "${STAMPFILE}"
+    for arch in $archs; do
+        if [ -f ${base}/${arch}/keyring.gpg ]; then
+            cp -afl ${base}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
+            chmod 0644 ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
+        fi
+    done
 
-cd ${TARGET}
-sha512sum buildd-keyrings/* > sha512sums
+    cd ${TARGET}
+    sha512sum buildd-keyrings/* > sha512sums
 
-rm -f ${TARGET}/sha512sums.txt
-SIGNINGKEY=B1326A8D
-GNUPGHOME=${GNUPGHOME} gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/sha512sums.txt" "${TARGET}/sha512sums"
-rm -f ${TARGET}/sha512sums
+    rm -f ${TARGET}/sha512sums.txt
+    SIGNINGKEY=B1326A8D
+    GNUPGHOME=${GNUPGHOME} gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/sha512sums.txt" "${TARGET}/sha512sums"
+    rm -f ${TARGET}/sha512sums
+fi

@@ -51,13 +51,13 @@ function cleanup() {
     done
     exit $ERRVAL
 }
-trap cleanup ERR EXIT TERM HUP INT QUIT
 
 base="${base}/scripts/builddkeyrings"
 INCOMING="${base}/incoming"
 ERRORS="${base}/errors"
 ADMINS="${base}/adminkeys.gpg"
 REMOVED="${base}/removed-buildd-keys.gpg"
+STAMPFILE="${base}/updatedkeyring"
 
 # Default options for our gpg calls
 DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting"
@@ -67,11 +67,22 @@ if ! [ -d "${INCOMING}" ]; then
     exit 1
 fi
 
+cd "${INCOMING}"
+KEYS=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.del | sed -e "s,./,," | xargs)
+if [ -z "${KEYS}" ]; then
+    exit 0
+fi
+
+trap cleanup ERR EXIT TERM HUP INT QUIT
+
+# Tell prepare-dir that there is an update and it can run
+touch "${STAMPFILE}"
+
 # Whenever something goes wrong, its put in there.
 mkdir -p "${ERRORS}"
 
 # We process all new files in our incoming directory
-for file in $(ls -1 ${INCOMING}/*.del ); do
+for file in ${KEYS}; do
     file=${file##*/}
     # First we want to see if we recognize the filename. The buildd people have
     # to follow a certain schema:
