@@ -179,24 +179,24 @@ def main():
                 if architecture not in suite.architectures:
                     pass
                 elif architecture.arch_string == 'source':
-                    log(writeSourceList(suite_id, component_id, Options['Incremental']))
+                    log([writeSourceList(suite_id, component_id, Options['Incremental'])])
                     #pool.apply_async(writeSourceList,
                     #    (suite_id, component_id, Options['Incremental']), callback=log)
                 elif architecture.arch_string == 'all':
-                    log(writeAllList, suite_id, component_id, 'deb', Options['Incremental'])
+                    log([writeAllList, suite_id, component_id, 'deb', Options['Incremental']])
                     #pool.apply_async(writeAllList,
                     #    (suite_id, component_id, architecture_id, 'deb',
                     #        Options['Incremental']), callback=log)
-                    log(writeAllList, suite_id, component_id, 'udeb', Options['Incremental'])
+                    log([writeAllList, suite_id, component_id, 'udeb', Options['Incremental']])
                     #pool.apply_async(writeAllList,
                     #    (suite_id, component_id, architecture_id, 'udeb',
                     #        Options['Incremental']), callback=log)
                 else: # arch any
-                    log(writeBinaryList, suite_id, component_id, architecture_id, 'deb', Options['Incremental'])
+                    log([writeBinaryList, suite_id, component_id, architecture_id, 'deb', Options['Incremental']])
                     #pool.apply_async(writeBinaryList,
                     #    (suite_id, component_id, architecture_id, 'deb',
                     #        Options['Incremental']), callback=log)
-                    log(writeBinaryList, suite_id, component_id, architecture_id, 'udeb', Options['Incremental'])
+                    log([writeBinaryList, suite_id, component_id, architecture_id, 'udeb', Options['Incremental']])
                     #pool.apply_async(writeBinaryList,
                     #    (suite_id, component_id, architecture_id, 'udeb',
                     #        Options['Incremental']), callback=log)
