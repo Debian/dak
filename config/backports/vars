@@ -48,7 +48,7 @@ override_types="deb dsc udeb"
 # export TMP=/srv/backports-master.debian.org/tmp
 # export TEMP=/srv/backports-master.debian.org/tmp
 
-TMPDIR==$base/tmp
+TMPDIR=$base/tmp
 
 PATH=$masterdir:$PATH
 umask 022
