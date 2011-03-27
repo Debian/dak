@@ -159,7 +159,7 @@ def main():
     Options = cnf.SubTree("Filelist::Options")
     if Options['Help']:
         usage()
-    pool = Pool()
+    #pool = Pool()
     query_suites = query_suites. \
         filter(Suite.suite_name.in_(utils.split_args(Options['Suite'])))
     query_components = query_components. \
@@ -179,24 +179,29 @@ def main():
                 if architecture not in suite.architectures:
                     pass
                 elif architecture.arch_string == 'source':
-                    pool.apply_async(writeSourceList,
-                        (suite_id, component_id, Options['Incremental']), callback=log)
+                    log(writeSourceList(suite_id, component_id, Options['Incremental']))
+                    #pool.apply_async(writeSourceList,
+                    #    (suite_id, component_id, Options['Incremental']), callback=log)
                 elif architecture.arch_string == 'all':
-                    pool.apply_async(writeAllList,
-                        (suite_id, component_id, architecture_id, 'deb',
-                            Options['Incremental']), callback=log)
-                    pool.apply_async(writeAllList,
-                        (suite_id, component_id, architecture_id, 'udeb',
-                            Options['Incremental']), callback=log)
+                    log(writeAllList, suite_id, component_id, 'deb', Options['Incremental'])
+                    #pool.apply_async(writeAllList,
+                    #    (suite_id, component_id, architecture_id, 'deb',
+                    #        Options['Incremental']), callback=log)
+                    log(writeAllList, suite_id, component_id, 'udeb', Options['Incremental'])
+                    #pool.apply_async(writeAllList,
+                    #    (suite_id, component_id, architecture_id, 'udeb',
+                    #        Options['Incremental']), callback=log)
                 else: # arch any
-                    pool.apply_async(writeBinaryList,
-                        (suite_id, component_id, architecture_id, 'deb',
-                            Options['Incremental']), callback=log)
-                    pool.apply_async(writeBinaryList,
-                        (suite_id, component_id, architecture_id, 'udeb',
-                            Options['Incremental']), callback=log)
-    pool.close()
-    pool.join()
+                    log(writeBinaryList, suite_id, component_id, architecture_id, 'deb', Options['Incremental'])
+                    #pool.apply_async(writeBinaryList,
+                    #    (suite_id, component_id, architecture_id, 'deb',
+                    #        Options['Incremental']), callback=log)
+                    log(writeBinaryList, suite_id, component_id, architecture_id, 'udeb', Options['Incremental'])
+                    #pool.apply_async(writeBinaryList,
+                    #    (suite_id, component_id, architecture_id, 'udeb',
+                    #        Options['Incremental']), callback=log)
+    #pool.close()
+    #pool.join()
     # this script doesn't change the database
     session.close()
 

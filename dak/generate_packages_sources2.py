@@ -266,18 +266,21 @@ def main():
     def log(details):
         logger.log(details)
 
-    pool = Pool()
+    #pool = Pool()
     for s in suites:
         if s.untouchable and not force:
             utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
         for c in component_ids:
-            pool.apply_async(generate_sources, [s.suite_id, c], callback=log)
+            log(generate_sources(s.suite_id, c))
+            #pool.apply_async(generate_sources, [s.suite_id, c], callback=log)
             for a in s.architectures:
-                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=log)
-                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=log)
+                log(generate_sources(s.suite_id, c, a.arch_id, 'deb'))
+                #pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=log)
+                log(generate_sources(s.suite_id, c, a.arch_id, 'udeb'))
+                #pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=log)
 
-    pool.close()
-    pool.join()
+    #pool.close()
+    #pool.join()
     # this script doesn't change the database
     session.close()
 
