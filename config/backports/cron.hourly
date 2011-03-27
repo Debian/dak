@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # Executed hourly via cron, out of dak's crontab.
 

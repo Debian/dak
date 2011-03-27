@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/bash
 #
 # Run at the beginning of the month via cron, out of dak's crontab.
 

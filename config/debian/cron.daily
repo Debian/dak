@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/bash
 #
 # Run daily via cron, out of dak's crontab.
 
