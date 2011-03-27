@@ -183,11 +183,11 @@ def main():
                     #pool.apply_async(writeSourceList,
                     #    (suite_id, component_id, Options['Incremental']), callback=log)
                 elif architecture.arch_string == 'all':
-                    log([writeAllList(suite_id, component_id, 'deb', Options['Incremental'])])
+                    log([writeAllList(suite_id, component_id, architecture_id, 'deb', Options['Incremental'])])
                     #pool.apply_async(writeAllList,
                     #    (suite_id, component_id, architecture_id, 'deb',
                     #        Options['Incremental']), callback=log)
-                    log([writeAllList(suite_id, component_id, 'udeb', Options['Incremental'])])
+                    log([writeAllList(suite_id, component_id, architecture_id, 'udeb', Options['Incremental'])])
                     #pool.apply_async(writeAllList,
                     #    (suite_id, component_id, architecture_id, 'udeb',
                     #        Options['Incremental']), callback=log)
