@@ -200,6 +200,8 @@ def main():
     # this script doesn't change the database
     session.close()
 
+    Logger.close()
+
 if __name__ == '__main__':
     main()
 
