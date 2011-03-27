@@ -45,7 +45,10 @@ mv "$OUTNONFREE"        "$TARGET"tag.non-free
 chmod 644 "$TARGET"tag "$TARGET"tag.contrib "$TARGET"tag.non-free
 
 (cd $TARGET && $scriptsdir/mk-extra-overrides.sh)
-(cd "$TARGET" && cat tag tag.contrib tag.non-free | dak external-overrides import Tag)
+(cd "$TARGET" \
+  && dak external-overrides import unstable main Tag <tag \
+  && dak external-overrides import unstable contrib Tag <tag.contrib \
+  && dak external-overrides import unstable non-free Tag <tag.non-free)
 
 trap - EXIT
 
