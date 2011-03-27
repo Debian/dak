@@ -50,7 +50,7 @@ class Pool():
 
     def join(self):
         self.pool.join()
-        for r in self.results:
-            # return values were already handled in the callbacks, but asking
-            # for them might raise exceptions which would otherwise be lost
-            r.get()
+        #for r in self.results:
+        #    # return values were already handled in the callbacks, but asking
+        #    # for them might raise exceptions which would otherwise be lost
+        #    r.get()
