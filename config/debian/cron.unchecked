@@ -96,7 +96,7 @@ fi
 trap cleanup 0
 
 
-pg_timestamp preunchecked
+pg_timestamp preunchecked >/dev/null
 do_newstage
 do_unchecked
 
@@ -108,4 +108,4 @@ fi
 
 dak contents -l 10000 scan-binary
 dak contents -l 1000 scan-source
-pg_timestamp postunchecked
+pg_timestamp postunchecked >/dev/null
