@@ -284,5 +284,7 @@ def main():
     # this script doesn't change the database
     session.close()
 
+    logger.close()
+
 if __name__ == '__main__':
     main()
