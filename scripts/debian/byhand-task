@@ -65,6 +65,7 @@ mv "$OUTMAIN"           "$TARGET"task
 chmod 644 "$TARGET"task
 
 (cd $TARGET && $scriptsdir/mk-extra-overrides.sh)
+dak external-overrides import Task <"$TARGET"task
 
 trap - EXIT
 
