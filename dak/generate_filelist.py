@@ -44,8 +44,6 @@ import apt_pkg, os, stat, sys
 
 from daklib.lists import getSources, getBinaries, getArchAll
 
-EXIT_STATUS = 0
-
 def listPath(suite, component, architecture = None, type = None,
         incremental_mode = False):
     """returns full path to the list file"""

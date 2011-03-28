@@ -36,8 +36,6 @@ from daklib.filewriter import PackagesFileWriter, SourcesFileWriter
 
 import apt_pkg, os, stat, sys
 
-EXIT_STATUS = 0
-
 def usage():
     print """Usage: dak generate-packages-sources2 [OPTIONS]
 Generate the Packages/Sources files
