@@ -374,6 +374,14 @@ GO=(
 )
 stage $GO
 
+GO=(
+    FUNC="ddaccess"
+    TIME="ddaccessible sync"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
 remove_all_locks
 trap - EXIT TERM HUP INT QUIT
 
@@ -461,14 +469,6 @@ GO=(
 stage $GO &
 
 rm -f "${LOCK_BRITNEY}"
-
-GO=(
-    FUNC="ddaccess"
-    TIME="ddaccessible sync"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
 
 GO=(
     FUNC="cleantransactions"
