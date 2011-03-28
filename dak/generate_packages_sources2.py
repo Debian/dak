@@ -269,11 +269,11 @@ def main():
         # Split out into (code, msg)
         code, msg = message
         if code == PROC_STATUS_SUCCESS:
-            Logger.log([msg])
+            logger.log([msg])
         elif code == PROC_STATUS_SIGNALRAISED:
-            Logger.log(['E: Subprocess recieved signal ', msg])
+            logger.log(['E: Subprocess recieved signal ', msg])
         else:
-            Logger.log(['E: ', msg])
+            logger.log(['E: ', msg])
 
     pool = DakProcessPool()
     for s in suites:
