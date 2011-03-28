@@ -280,10 +280,10 @@ def main():
         if s.untouchable and not force:
             utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
         for c in component_ids:
-            pool.apply_async(generate_sources, [s.suite_id, c], callback=parse_result)
+            pool.apply_async(generate_sources, [s.suite_id, c], callback=parse_results)
             for a in s.architectures:
-                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=parse_result)
-                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=parse_result)
+                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=parse_results)
+                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=parse_results)
 
     pool.close()
     pool.join()
