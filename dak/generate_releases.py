@@ -330,16 +330,17 @@ def main ():
 
         print "Processing %s" % s.suite_name
         Logger.log(['Processing release file for Suite: %s' % (s.suite_name)])
-        pool.apply_async(generate_helper, (s.suite_id, ), callback=get_result)
+        pool.apply_async(generate_helper, (s.suite_id, ))
 
     # No more work will be added to our pool, close it and then wait for all to finish
     pool.close()
     pool.join()
 
-    retcode = p.overall_status()
+    retcode = pool.overall_status()
 
     if retcode > 0:
-        Logger.log(['Release file generation broken: %s' % (p.results)])
+        # TODO: CENTRAL FUNCTION FOR THIS / IMPROVE LOGGING
+        Logger.log(['Release file generation broken: %s' % (','.join([str(x[1]) for x in pool.results]))])
 
     Logger.close()
 
