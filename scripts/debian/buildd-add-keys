@@ -43,8 +43,7 @@ function cleanup() {
     trap - ERR EXIT TERM HUP INT QUIT
 
     for TEMPFILE in GPGSTATUS GPGLOGS GPGOUTF TEMPKEYDATA; do
-        TFILE=${TEMPFILE:=$TEMPFILE}
-        DELF=${!TFILE:-""}
+        DELF=${!TEMPFILE:-""}
         if [ -n "${DELF}" ] && [ -f "${DELF}" ]; then
             rm -f "${DELF}"
         fi
