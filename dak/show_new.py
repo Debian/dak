@@ -37,7 +37,7 @@ from daklib.regexes import re_source_ext
 from daklib.config import Config
 from daklib import daklog
 from daklib.changesutils import *
-from daklib.dakmultiprocessing import Pool
+from daklib.dakmultiprocessing import DakProcessPool
 
 # Globals
 Cnf = None
@@ -250,7 +250,7 @@ def main():
 
     examine_package.use_html=1
 
-    pool = Pool()
+    pool = DakProcessPool()
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
