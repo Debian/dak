@@ -78,7 +78,7 @@ def writeSourceList(suite_id, component_id, incremental_mode):
         file.write(filename + '\n')
     session.rollback()
     file.close()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 def writeAllList(suite_id, component_id, architecture_id, type, incremental_mode):
     session = DBConn().session()
@@ -95,7 +95,7 @@ def writeAllList(suite_id, component_id, architecture_id, type, incremental_mode
         file.write(filename + '\n')
     session.rollback()
     file.close()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 def writeBinaryList(suite_id, component_id, architecture_id, type, incremental_mode):
     session = DBConn().session()
@@ -112,7 +112,7 @@ def writeBinaryList(suite_id, component_id, architecture_id, type, incremental_m
         file.write(filename + '\n')
     session.rollback()
     file.close()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 def usage():
     print """Usage: dak generate_filelist [OPTIONS]

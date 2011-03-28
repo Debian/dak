@@ -169,7 +169,7 @@ def do_pkg(changes_file):
     if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
             session.close()
-            return
+            return (PROC_STATUS_SUCCESS, '%s already up-to-date' % htmlfile)
 
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
@@ -204,6 +204,8 @@ def do_pkg(changes_file):
 
     outfile.close()
     session.close()
+
+    return (PROC_STATUS_SUCCESS, '%s already updated' % htmlfile)
 
 ################################################################################
 

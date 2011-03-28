@@ -119,7 +119,7 @@ def generate_sources(suite_id, component_id):
 
     message = ["generate sources", suite.suite_name, component.component_name]
     session.rollback()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 #############################################################################
 
@@ -223,7 +223,7 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
 
     message = ["generate-packages", suite.suite_name, component.component_name, architecture.arch_string]
     session.rollback()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 #############################################################################
 
@@ -291,7 +291,7 @@ def main():
 
     logger.close()
 
-    sys.exit(pool.output_status())
+    sys.exit(pool.overall_status())
 
 if __name__ == '__main__':
     main()

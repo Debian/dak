@@ -26,7 +26,7 @@ multiprocessing for DAK
 ###############################################################################
 
 from multiprocessing.pool import Pool
-from signal import signal, SIGHUP, SIGTERM, SIGPIPE, SIGCHLD, SIGALRM
+from signal import signal, SIGHUP, SIGTERM, SIGPIPE, SIGALRM
 
 import sqlalchemy.orm.session
 
@@ -57,7 +57,6 @@ def _func_wrapper(func, *args, **kwds):
     signal(SIGHUP, signal_handler)
     signal(SIGTERM, signal_handler)
     signal(SIGPIPE, signal_handler)
-    signal(SIGCHLD, signal_handler)
     signal(SIGALRM, signal_handler)
 
     # We expect our callback function to return:

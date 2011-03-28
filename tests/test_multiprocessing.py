@@ -11,7 +11,7 @@ def test_function(num, num2):
     from os import kill, getpid
 
     if num == 1:
-        sigs = [signal.SIGTERM, signal.SIGCHLD, signal.SIGALRM, signal.SIGHUP]
+        sigs = [signal.SIGTERM, signal.SIGPIPE, signal.SIGALRM, signal.SIGHUP]
         kill(getpid(), sigs[num2])
 
     if num2 == 3:
@@ -47,7 +47,7 @@ class DakProcessPoolTestCase(DakTestCase):
                     (PROC_STATUS_SUCCESS,      'blah, 0, 2'),
                     (PROC_STATUS_EXCEPTION,    'Test uncaught exception handling'),
                     (PROC_STATUS_SIGNALRAISED, 15),
-                    (PROC_STATUS_SIGNALRAISED, 17),
+                    (PROC_STATUS_SIGNALRAISED, 13),
                     (PROC_STATUS_SIGNALRAISED, 14),
                     (PROC_STATUS_SIGNALRAISED, 1),
                     (PROC_STATUS_SUCCESS,      'blah, 2, 0'),
