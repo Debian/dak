@@ -46,7 +46,8 @@ class Logger(object):
             # To be backwards compatibile, dump the first argument if it's a
             # Config object.  TODO: Fix up all callers and remove this
             if len(args) > 0 and isinstance(args[0], Config):
-                args=list(args).pop(0)
+                args = list(args)
+                args.pop(0)
 
             self.__setup(*args, **kwargs)
 
