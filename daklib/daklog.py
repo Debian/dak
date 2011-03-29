@@ -40,7 +40,14 @@ class Logger(object):
         self.__dict__ = self.__shared_state
 
         if not getattr(self, 'initialised', False):
+            from daklib.config import Config
             self.initialised = True
+
+            # To be backwards compatibile, dump the first argument if it's a
+            # Config object.  TODO: Fix up all callers and remove this
+            if len(args) > 0 and isinstance(args[0], Config):
+                args.pop(0)
+
             self.__setup(*args, **kwargs)
 
 
