@@ -32,32 +32,45 @@ import utils
 
 ################################################################################
 
-class Logger:
+class Logger(object):
     "Logger object"
-    Cnf = None
-    logfile = None
-    program = None
+    __shared_state = {}
 
-    def __init__ (self, Cnf, program, debug=0, print_starting=True):
+    def __init__(self, *args, **kwargs):
+        self.__dict__ = self.__shared_state
+
+        if not getattr(self, 'initialised', False):
+            self.initialised = True
+            self.__setup(*args, **kwargs)
+
+
+    def __setup(self, program='unknown', debug=False, print_starting=True, include_pid=False):
         "Initialize a new Logger object"
-        self.Cnf = Cnf
         self.program = program
+        self.debug = debug
+        self.include_pid = include_pid
+
         # Create the log directory if it doesn't exist
-        logdir = Cnf["Dir::Log"]
+        from daklib.config import Config
+        logdir = Config()["Dir::Log"]
         if not os.path.exists(logdir):
             umask = os.umask(00000)
             os.makedirs(logdir, 02775)
             os.umask(umask)
+
         # Open the logfile
         logfilename = "%s/%s" % (logdir, time.strftime("%Y-%m"))
         logfile = None
+
         if debug:
             logfile = sys.stderr
         else:
             umask = os.umask(00002)
             logfile = utils.open_file(logfilename, 'a')
             os.umask(umask)
+
         self.logfile = logfile
+
         if print_starting:
             self.log(["program start"])
 
