@@ -484,7 +484,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+#stage $GO
 
 # we need to wait for the background processes before the end of dinstall
 wait
