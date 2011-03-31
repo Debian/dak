@@ -49,6 +49,7 @@ chmod 644 "$TARGET"tag "$TARGET"tag.contrib "$TARGET"tag.non-free
   && dak external-overrides import unstable main Tag <tag \
   && dak external-overrides import unstable contrib Tag <tag.contrib \
   && dak external-overrides import unstable non-free Tag <tag.non-free)
+dak external-overrides copy unstable testing
 
 trap - EXIT
 
