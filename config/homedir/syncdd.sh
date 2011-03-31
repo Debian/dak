@@ -83,7 +83,12 @@ if lockfile -r3 ${HOME}/sync.lock; then
         --exclude morgue/ \
         --exclude=lost+found/ \
         --exclude .da-backup.trace \
+        --exclude lock/new/ \
         --exclude lock/stages/ \
+        --exclude queue/holding/ \
+        --exclude queue/newstage/ \
+        --exclude queue/unchecked/ \
+        --exclude tmp/ \
         --delete \
         --delete-after \
         --timeout 3600 \
