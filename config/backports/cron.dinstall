@@ -179,9 +179,9 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="pgdump_pre"
+    FUNC="pg_timestamp"
     TIME="pg_dump1"
-    ARGS=""
+    ARGS="predinstall"
     ERR=""
 )
 stage $GO
@@ -309,14 +309,6 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="mkuploaders"
-    TIME="mkuploaders"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
     FUNC="copyoverrides"
     TIME="copyoverrides"
     ARGS=""
@@ -364,9 +356,9 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="pgdump_post"
+    FUNC="pg_timestamp"
     TIME="pg_dump2"
-    ARGS=""
+    ARGS="postdinstall"
     ERR=""
 )
 stage $GO &
@@ -406,8 +398,8 @@ stage $GO &
 rm -f "${LOCK_BRITNEY}"
 
 GO=(
-    FUNC="compress"
-    TIME="compress"
+    FUNC="cleantransactions"
+    TIME=""
     ARGS=""
     ERR=""
 )

@@ -22,53 +22,21 @@ function onerror() {
     fi
     subject="${subject} dinstall error at ${ERRDATE} in ${STAGEFILE} - (Be quiet, Brain, or I'll stab you with a Q-tip)"
 
-    cat "${STAGEFILE}.log" | mail -s "${subject}" -a "X-Debian: DAK" cron@backports.debian.org
+    if [ -r "${STAGEFILE}.log" ]; then
+        cat "${STAGEFILE}.log"
+    else
+        echo  "file ${STAGEFILE}.log does not exist, sorry"
+    fi | mail -s "${subject}" -a "X-Debian: DAK" cron@backports.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
 }
 
 ########################################################################
 # the actual dinstall functions follow                                 #
 ########################################################################
 
-# pushing merkels QA user, part one
-function merkel1() {
-    log "Telling merkels QA user that we start dinstall"
-    ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 qa@merkel.debian.org sleep 1
-}
-
-# Create the postgres dump files
-function pgdump_pre() {
-    log "Creating pre-daily-cron-job backup of $PGDATABASE database..."
-    pg_dump > $base/backup/dump_pre_$(date +%Y.%m.%d-%H:%M:%S)
-}
-
-function pgdump_post() {
-    log "Creating post-daily-cron-job backup of $PGDATABASE database..."
-    cd $base/backup
-    POSTDUMP=$(date +%Y.%m.%d-%H:%M:%S)
-    pg_dump > $base/backup/dump_$POSTDUMP
-    #pg_dumpall --globals-only > $base/backup/dumpall_$POSTDUMP
-    ln -sf $base/backup/dump_$POSTDUMP current
-    #ln -sf $base/backup/dumpall_$POSTDUMP currentall
-}
-
-# Load the dak-dev projectb
-function pgdakdev() {
-    # Make sure to unset any possible psql variables so we don't drop the wrong
-    # f****** database by accident
-    local PGDATABASE
-    unset PGDATABASE
-    local PGHOST
-    unset PGHOST
-    local PGPORT
-    unset PGPORT
-    local PGUSER
-    unset PGUSER
-    cd $base/backup
-    echo "drop database projectb" | psql -p 5434 template1
-	#cat currentall | psql -p 5433 template1
-    createdb -p 5434 -T template1 projectb
-    fgrep -v '\connect' current | psql -p 5434 projectb
-}
+function qa1() {
+    log "Telling QA user that we start dinstall"
+    ssh -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 qa@qa.debian.org sleep 1
+ }
 
 # Updating various files
 function updates() {
@@ -83,7 +51,7 @@ function updates() {
 # Process (oldstable)-proposed-updates "NEW" queue
 function punew_do() {
     date -u -R >> REPORT
-    dak process-policy $1 | tee -a REPORT | mail -e -s "NEW changes in $1" team@backports.debian.org
+    dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "NEW changes in $1" team@backports.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
     echo >> REPORT
 }
 function punew() {
@@ -115,7 +83,7 @@ function i18n1() {
             # Lets check!
             if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
                 # Yay, worked, lets copy around
-                for dir in squeeze sid; do
+                for dir in wheezy sid; do
                     if [ -d dists/${dir}/ ]; then
                         cd dists/${dir}/main/i18n
                         rsync -aq --delete --delete-after  . ${ftpdir}/dists/${dir}/main/i18n/.
@@ -124,15 +92,15 @@ function i18n1() {
                 done
             else
                 echo "ARRRR, bad guys, wrong files, ARRR"
-                echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail -s "Don't you kids take anything. I'm watching you. I've got eye implants in the back of my head." debian-l10n-devel@lists.alioth.debian.org
+                echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail -a "X-Debian: DAK" -s "Don't you kids take anything. I'm watching you. I've got eye implants in the back of my head." debian-l10n-devel@lists.alioth.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
             fi
         else
             echo "ARRRR, missing the timestamp ${TSTAMP} directory, not updating i18n, ARRR"
-            echo "Arf, Arf, Arf, missing the timestamp ${TSTAMP} directory, not updating i18n, arf, arf, arf" | mail -s "Lisa, if you don't like your job you don't strike. You just go in every day and do it really half-assed. That's the American way." debian-l10n-devel@lists.alioth.debian.org
+            echo "Arf, Arf, Arf, missing the timestamp ${TSTAMP} directory, not updating i18n, arf, arf, arf" | mail -a "X-Debian: DAK" -s "Lisa, if you don't like your job you don't strike. You just go in every day and do it really half-assed. That's the American way." debian-l10n-devel@lists.alioth.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
         fi
     else
         echo "ARRRRRRR, could not verify our timestamp signature, ARRR. Don't mess with our files, i18n guys, ARRRRR."
-        echo "Arf, Arf, Arf, could not verify our timestamp signature, arf. Don't mess with our files, i18n guys, arf, arf, arf" | mail -s "You can't keep blaming yourself. Just blame yourself once, and move on." debian-l10n-devel@lists.alioth.debian.org
+        echo "Arf, Arf, Arf, could not verify our timestamp signature, arf. Don't mess with our files, i18n guys, arf, arf, arf" | mail -a "X-Debian: DAK" -s "You can't keep blaming yourself. Just blame yourself once, and move on." debian-l10n-devel@lists.alioth.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
     fi
 }
 
@@ -152,8 +120,6 @@ function filelist() {
 }
 
 function fingerprints() {
-    log "Not updating fingerprints - scripts needs checking"
-
     log "Updating fingerprints"
     dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 
@@ -166,6 +132,7 @@ From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
 To: <debian-project@lists.debian.org>
 Subject: Debian Maintainers Keyring changes
 Content-Type: text/plain; charset=utf-8
+X-Debian: DAK
 MIME-Version: 1.0
 
 The following changes to the debian-maintainers keyring have just been activated:
@@ -262,36 +229,9 @@ function mkmaintainers() {
     log 'Creating Maintainers index ... '
 
     cd $indices
-    dak make-maintainers ${scriptdir}/masterfiles/pseudo-packages.maintainers | \
-        sed -e "s/~[^  ]*\([   ]\)/\1/"  | \
-        awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-maintainers
-
-    if ! cmp -s .new-maintainers Maintainers || [ ! -f Maintainers ]; then
-	    log "installing Maintainers ... "
-	    mv -f .new-maintainers Maintainers
-	    gzip -9v <Maintainers >.new-maintainers.gz
-	    mv -f .new-maintainers.gz Maintainers.gz
-    else
-        rm -f .new-maintainers
-    fi
-}
-
-function mkuploaders() {
-    log 'Creating Uploaders index ... '
-
-    cd $indices
-    dak make-maintainers -u ${scriptdir}/masterfiles/pseudo-packages.maintainers | \
-        sed -e "s/~[^  ]*\([   ]\)/\1/"  | \
-        awk '{printf "%-20s ", $1; for (i=2; i<=NF; i++) printf "%s ", $i; printf "\n";}' > .new-uploaders
-
-    if ! cmp -s .new-uploaders Uploaders || [ ! -f Uploaders ]; then
-	    log "installing Uploaders ... "
-	    mv -f .new-uploaders Uploaders
-	    gzip -9v <Uploaders >.new-uploaders.gz
-	    mv -f .new-uploaders.gz Uploaders.gz
-    else
-        rm -f .new-uploaders
-    fi
+    dak make-maintainers ${scriptdir}/masterfiles/pseudo-packages.maintainers
+    gzip -9v --rsyncable <Maintainers >Maintainers.gz
+    gzip -9v --rsyncable <Uploaders >Uploaders.gz
 }
 
 function copyoverrides() {
@@ -322,7 +262,7 @@ function mkfilesindices() {
 
     ARCHLIST=$(tempfile)
 
-    log "Querying postgres..."
+    log "Querying postgres"
     echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql -At | sed 's/|//;s,^/srv/ftp-master.debian.org/ftp,.,' | sort >$ARCHLIST
 
     includedirs () {
@@ -392,12 +332,12 @@ function mkfilesindices() {
     done
 
     (cd $base/ftp/
-	    for dist in sid squeeze; do
+	    for dist in sid wheezy; do
 		    find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
 	    done
     )
 
-    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-squeeze.list.gz) |
+    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-wheezy.list.gz) |
     sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
@@ -430,7 +370,7 @@ function mirror() {
     echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
     echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
     cd ${mirrordir}
-    rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
+    rsync -aH --link-dest ${ftpdir} --delete --delete-after --delete-excluded --exclude Packages.*.new --exclude Sources.*.new  --ignore-errors ${ftpdir}/. .
 }
 
 function expire() {
@@ -455,18 +395,10 @@ function bts() {
     dak bts-categorize
 }
 
-function merkel2() {
-    # Push dak@merkel so it syncs the projectb there. Returns immediately, the sync runs detached
-    log "Trigger merkel/flotows $PGDATABASE sync"
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_projectb dak@merkel.debian.org sleep 1
-    # Also trigger flotow, the ftpmaster test box
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_flotow_projectb dak@flotow.debconf.org sleep 1
-}
-
-function merkel3() {
-    # Push dak@merkel to tell it to sync the dd accessible parts. Returns immediately, the sync runs detached
-    log "Trigger merkels dd accessible parts sync"
-    ssh -2 -o BatchMode=yes -o SetupTimeOut=30 -o ConnectTimeout=30 -i ~/.ssh/push_merkel_ddaccess dak@merkel.debian.org sleep 1
+function ddaccess() {
+    # Tell our dd accessible mirror to sync itself up. Including ftp dir.
+    log "Trigger dd accessible parts sync including ftp dir"
+    ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 -i ${base}/s3kr1t/pushddmirror dak@ries.debian.org pool
 }
 
 function mirrorpush() {
@@ -482,8 +414,8 @@ function i18n2() {
     STAMP=$(date "+%Y%m%d%H%M")
     mkdir -p ${scriptdir}/i18n/${STAMP}
     cd ${scriptdir}/i18n/${STAMP}
-    dak control-suite -l stable > lenny
-    dak control-suite -l testing > squeeze
+    dak control-suite -l stable > squeeze
+    dak control-suite -l testing > wheezy
     dak control-suite -l unstable > sid
     echo "${STAMP}" > timestamp
     gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o timestamp.gpg timestamp
@@ -511,22 +443,10 @@ function aptftpcleanup() {
     apt-ftparchive -q clean apt.conf
 }
 
-function compress() {
-    log "Compress old psql backups"
+function cleantransactions() {
+    log "Cleanup transaction ids older than 3 months"
     cd $base/backup/
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_pre_*' -mtime +2 -print0 | xargs -0 --no-run-if-empty rm
-
-    find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mmin +720 |
-    while read dumpname; do
-        echo "Compressing $dumpname"
-        bzip2 -9fv "$dumpname"
-    done
-    find -maxdepth 1 -mindepth 1 -type f -name "dumpall_*" \! -name '*.bz2' \! -name '*.gz' -mmin +720 |
-    while read dumpname; do
-        echo "Compressing $dumpname"
-        bzip2 -9fv "$dumpname"
-    done
-    finddup -l -d $base/backup
+    find -maxdepth 1 -mindepth 1 -type f -name 'txid_*' -mtime +90 -print0 | xargs -0 --no-run-if-empty rm
 }
 
 function logstats() {
@@ -540,7 +460,7 @@ function savetimestamp() {
 }
 
 function maillogfile() {
-    cat "$LOGFILE" | mail -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org
+    cat "$LOGFILE" | mail -a "X-Debian: DAK" -s "Log for dinstall run of ${NOW}" cron@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
 }
 
 function renamelogfile() {

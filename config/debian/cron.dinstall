@@ -374,6 +374,14 @@ GO=(
 )
 stage $GO
 
+GO=(
+    FUNC="ddaccess"
+    TIME="ddaccessible sync"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
 remove_all_locks
 trap - EXIT TERM HUP INT QUIT
 
@@ -463,14 +471,6 @@ stage $GO &
 rm -f "${LOCK_BRITNEY}"
 
 GO=(
-    FUNC="ddaccess"
-    TIME="ddaccessible sync"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
     FUNC="cleantransactions"
     TIME=""
     ARGS=""
@@ -484,7 +484,7 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+#stage $GO
 
 # we need to wait for the background processes before the end of dinstall
 wait
