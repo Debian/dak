@@ -224,7 +224,7 @@ def list_uploads(filelist, rrd_dir):
     print header()
     if uploads:
         print table_header()
-        print ''.join(map(lambda x: table_row(*x[1:5]), uploads))
+        print ''.join(map(lambda x: table_row(*x[1:5]), uploads)).encode('utf-8')
         print table_footer()
     else:
         print '<h1>Currently no deferred uploads to Debian</h1>'
