@@ -250,7 +250,7 @@ def main():
 
     examine_package.use_html=1
 
-    pool = Pool()
+    pool = Pool(processes=1)
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
