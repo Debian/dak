@@ -154,7 +154,7 @@ def do_pkg(changes_file):
     session = DBConn().session()
     u = Upload()
     u.pkg.changes_file = changes_file
-    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
+    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
     u.load_changes(changes_file)
     new_queue = get_policy_queue('new', session );
     u.pkg.directory = new_queue.path
