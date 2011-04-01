@@ -11,15 +11,15 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
 dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates -r $webdir/stat
-dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
-dak graph -n new,byhand,proposedupdates,oldproposedupdates,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
+#dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
+#dak graph -n new,byhand,proposedupdates,oldproposedupdates,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
 
 # do not run show-new and other stuff in parallel
-LOCKFILE="$lockdir/unchecked.lock"
-if lockfile -r16 $LOCKFILE 2> /dev/null; then
-    dak show-new > /dev/null
-    rm -f $LOCKFILE
-fi
+#LOCKFILE="$lockdir/unchecked.lock"
+#if lockfile -r16 $LOCKFILE 2> /dev/null; then
+#    dak show-new > /dev/null
+#    rm -f $LOCKFILE
+#fi
 
 cd $webdir
 cat removals-20*.txt > removals-full.txt
@@ -27,7 +27,7 @@ cat removals.txt >> removals-full.txt
 cat removals-20*.822 > removals-full.822
 cat removals.822 >> removals-full.822
 
-$base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
+#$base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
 $base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 
 
