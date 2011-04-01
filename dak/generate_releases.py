@@ -158,7 +158,11 @@ class ReleaseWriter(object):
 
         for key, dbfield in attribs:
             if getattr(suite, dbfield) is not None:
-                out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
+                # TEMPORARY HACK HACK HACK until we change the way we store the suite names etc
+                if key == 'Suite' and getattr(suite, dbfield) == 'squeeze-updates':
+                    out.write("Suite: stable-updates\n"
+                else:
+                    out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
 
         out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
 
