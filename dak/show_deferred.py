@@ -98,7 +98,7 @@ def footer():
      height="31" width="88"></a>
     """
     res += "</body></html>"
-    return res
+    return res.encode('utf-8')
 
 def table_header():
     return """<h1>Deferred uploads</h1>
