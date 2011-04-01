@@ -101,3 +101,9 @@ function reports() {
 #    dak cruft-report -s experimental >> $webdir/cruft-report-daily.txt
     cat $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" team@backports.debian.org
 }
+
+function pg_timestamp() {
+    tsname=${1:-"unknown"}
+    log "Saving postgres transaction id for ${tsname}"
+    psql -tAc 'select txid_current();' > $base/backup/txid_${tsname}_$(date +%Y.%m.%d-%H:%M:%S)
+}
