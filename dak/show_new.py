@@ -174,6 +174,7 @@ def do_pkg(changes_file):
     # Have we already processed this?
     if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
+            sources.add(htmlname)
             session.close()
             return
 
@@ -185,7 +186,6 @@ def do_pkg(changes_file):
     files = u.pkg.files
     changes = u.pkg.changes
     sources.add(htmlname)
-
 
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
