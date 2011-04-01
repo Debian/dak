@@ -154,22 +154,38 @@ def do_pkg(changes_file):
     session = DBConn().session()
     u = Upload()
     u.pkg.changes_file = changes_file
-    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
+    # We can afoord not to check the signature before loading the changes file
+    # as we've validated it already (otherwise it couldn't be in new)
+    # and we can more quickly skip over already processed files this way
     u.load_changes(changes_file)
-    new_queue = get_policy_queue('new', session );
-    u.pkg.directory = new_queue.path
-    u.update_subst()
-    origchanges = os.path.abspath(u.pkg.changes_file)
-    files = u.pkg.files
-    changes = u.pkg.changes
-    htmlname = changes["source"] + "_" + changes["version"] + ".html"
-    sources.add(htmlname)
 
-    htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
+    origchanges = os.path.abspath(u.pkg.changes_file)
+
+    # Still be cautious in case paring the changes file went badly
+    if u.pkg.changes.has_key('source') and u.pkg.changes.has_key('version'):
+        htmlname = u.pkg.changes["source"] + "_" + u.pkg.changes["version"] + ".html"
+        htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
+    else:
+        # Changes file was bad
+        print "Changes file %s missing source or version field" % changes_file
+        session.close()
+        return
+
+    # Have we already processed this?
     if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
             session.close()
             return
+
+    # Now we'll load the fingerprint
+    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
+    new_queue = get_policy_queue('new', session );
+    u.pkg.directory = new_queue.path
+    u.update_subst()
+    files = u.pkg.files
+    changes = u.pkg.changes
+    sources.add(htmlname)
+
 
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
