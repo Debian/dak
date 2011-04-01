@@ -160,7 +160,7 @@ class ReleaseWriter(object):
             if getattr(suite, dbfield) is not None:
                 # TEMPORARY HACK HACK HACK until we change the way we store the suite names etc
                 if key == 'Suite' and getattr(suite, dbfield) == 'squeeze-updates':
-                    out.write("Suite: stable-updates\n"
+                    out.write("Suite: stable-updates\n")
                 else:
                     out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
 
