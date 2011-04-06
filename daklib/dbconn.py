@@ -2681,6 +2681,8 @@ def add_dsc_to_db(u, filename, session=None):
         session.add(df)
 
     # Add the src_uploaders to the DB
+    session.flush()
+    session.refresh(source)
     source.uploaders = [source.maintainer]
     if u.pkg.dsc.has_key("uploaders"):
         for up in u.pkg.dsc["uploaders"].replace(">, ", ">\t").split("\t"):
