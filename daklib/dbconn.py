@@ -3347,7 +3347,12 @@ class DBConn(object):
                                  poolfile_id = self.tbl_dsc_files.c.file,
                                  poolfile = relation(PoolFile)))
 
-        mapper(ExternalOverride, self.tbl_external_overrides)
+        mapper(ExternalOverride, self.tbl_external_overrides,
+                properties = dict(
+                    suite_id = self.tbl_external_overrides.c.suite,
+                    suite = relation(Suite),
+                    component_id = self.tbl_external_overrides.c.component,
+                    component = relation(Component)))
 
         mapper(PoolFile, self.tbl_files,
                properties = dict(file_id = self.tbl_files.c.id,

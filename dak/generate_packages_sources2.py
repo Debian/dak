@@ -165,7 +165,9 @@ SELECT
   || COALESCE(E'\n' || (SELECT
      STRING_AGG(key || '\: ' || value, E'\n' ORDER BY key)
    FROM external_overrides eo
-   WHERE eo.package = tmp.package
+   WHERE
+     eo.package = tmp.package
+     AND eo.suite = :overridesuite AND eo.component = :component
   ), '')
   || E'\nSection\: ' || sec.section
   || E'\nPriority\: ' || pri.priority
