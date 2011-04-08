@@ -39,7 +39,7 @@ import re
 import email as modemail
 import subprocess
 
-from dbconn import DBConn, get_architecture, get_component, get_suite, get_override_type, Keyring
+from dbconn import DBConn, get_architecture, get_component, get_suite, get_override_type, Keyring, session_wrapper
 from dak_exceptions import *
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
@@ -1307,8 +1307,8 @@ def gpg_keyring_args(keyrings=None):
     return " ".join(["--keyring %s" % x for x in keyrings])
 
 ################################################################################
-
-def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=None):
+@session_wrapper
+def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=None, session=None):
     """
     Check the signature of a file and return the fingerprint if the
     signature is valid or 'None' if it's not.  The first argument is the
@@ -1336,7 +1336,7 @@ def check_signature (sig_filename, data_filename="", keyrings=None, autofetch=No
         return (None, rejects)
 
     if not keyrings:
-        keyrings = [ x.keyring_name for x in DBConn().session().query(Keyring).filter(Keyring.active == True).all() ]
+        keyrings = [ x.keyring_name for x in session.query(Keyring).filter(Keyring.active == True).all() ]
 
     # Autofetch the signing key if that's enabled
     if autofetch == None:

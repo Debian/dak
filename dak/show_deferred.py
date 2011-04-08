@@ -98,7 +98,7 @@ def footer():
      height="31" width="88"></a>
     """
     res += "</body></html>"
-    return res
+    return res.encode('utf-8')
 
 def table_header():
     return """<h1>Deferred uploads</h1>
@@ -224,7 +224,7 @@ def list_uploads(filelist, rrd_dir):
     print header()
     if uploads:
         print table_header()
-        print ''.join(map(lambda x: table_row(*x[1:5]), uploads))
+        print ''.join(map(lambda x: table_row(*x[1:5]), uploads)).encode('utf-8')
         print table_footer()
     else:
         print '<h1>Currently no deferred uploads to Debian</h1>'

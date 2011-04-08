@@ -17,12 +17,7 @@ from datetime import datetime
 
 import PyRSS2Gen
 
-try:
-    # starting with squeeze
-    from debian.deb822 import Changes
-except:
-    # up to lenny
-    from debian_bundle.deb822 import Changes
+from debian.deb822 import Changes
 
 inrss_filename = "NEW_in.rss"
 outrss_filename = "NEW_out.rss"
