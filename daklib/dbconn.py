@@ -39,6 +39,7 @@ import re
 import psycopg2
 import traceback
 import commands
+import signal
 
 try:
     # python >= 2.6
@@ -487,6 +488,11 @@ __all__.append('BinContents')
 
 ################################################################################
 
+def subprocess_setup():
+    # Python installs a SIGPIPE handler by default. This is usually not what
+    # non-Python subprocesses expect.
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
 class DBBinary(ORMObject):
     def __init__(self, package = None, source = None, version = None, \
         maintainer = None, architecture = None, poolfile = None, \
@@ -525,7 +531,8 @@ class DBBinary(ORMObject):
         package does not contain any regular file.
         '''
         fullpath = self.poolfile.fullpath
-        dpkg = Popen(['dpkg-deb', '--fsys-tarfile', fullpath], stdout = PIPE)
+        dpkg = Popen(['dpkg-deb', '--fsys-tarfile', fullpath], stdout = PIPE,
+            preexec_fn = subprocess_setup)
         tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
         for member in tar.getmembers():
             if not member.isdir():
@@ -2674,6 +2681,8 @@ def add_dsc_to_db(u, filename, session=None):
         session.add(df)
 
     # Add the src_uploaders to the DB
+    session.flush()
+    session.refresh(source)
     source.uploaders = [source.maintainer]
     if u.pkg.dsc.has_key("uploaders"):
         for up in u.pkg.dsc["uploaders"].replace(">, ", ">\t").split("\t"):
@@ -3338,7 +3347,12 @@ class DBConn(object):
                                  poolfile_id = self.tbl_dsc_files.c.file,
                                  poolfile = relation(PoolFile)))
 
-        mapper(ExternalOverride, self.tbl_external_overrides)
+        mapper(ExternalOverride, self.tbl_external_overrides,
+                properties = dict(
+                    suite_id = self.tbl_external_overrides.c.suite,
+                    suite = relation(Suite),
+                    component_id = self.tbl_external_overrides.c.component,
+                    component = relation(Component)))
 
         mapper(PoolFile, self.tbl_files,
                properties = dict(file_id = self.tbl_files.c.id,
