@@ -337,33 +337,29 @@ def edit_overrides (new, upload, session):
 ################################################################################
 
 def check_pkg (upload):
+    save_stdout = sys.stdout
     try:
-        less_fd = os.popen("less -R -", 'w', 0)
-        stdout_fd = sys.stdout
-        try:
-            sys.stdout = less_fd
-            changes = utils.parse_changes (upload.pkg.changes_file)
-            print examine_package.display_changes(changes['distribution'], upload.pkg.changes_file)
-            files = upload.pkg.files
-            for f in files.keys():
-                if files[f].has_key("new"):
-                    ftype = files[f]["type"]
-                    if ftype == "deb":
-                        print examine_package.check_deb(changes['distribution'], f)
-                    elif ftype == "dsc":
-                        print examine_package.check_dsc(changes['distribution'], f)
-        finally:
-            print examine_package.output_package_relations()
-            sys.stdout = stdout_fd
+        sys.stdout = os.popen("less -R -", 'w', 0)
+        changes = utils.parse_changes (upload.pkg.changes_file)
+        print examine_package.display_changes(changes['distribution'], upload.pkg.changes_file)
+        files = upload.pkg.files
+        for f in files.keys():
+            if files[f].has_key("new"):
+                ftype = files[f]["type"]
+                if ftype == "deb":
+                    print examine_package.check_deb(changes['distribution'], f)
+                elif ftype == "dsc":
+                    print examine_package.check_dsc(changes['distribution'], f)
+        print examine_package.output_package_relations()
     except IOError, e:
         if e.errno == errno.EPIPE:
             utils.warn("[examine_package] Caught EPIPE; skipping.")
-            pass
         else:
+            sys.stdout = save_stdout
             raise
     except KeyboardInterrupt:
         utils.warn("[examine_package] Caught C-c; skipping.")
-        pass
+    sys.stdout = save_stdout
 
 ################################################################################
 
