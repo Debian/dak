@@ -2608,7 +2608,11 @@ def add_dsc_to_db(u, filename, session=None):
     source.source = u.pkg.dsc["source"]
     source.version = u.pkg.dsc["version"] # NB: not files[file]["version"], that has no epoch
     source.maintainer_id = get_or_set_maintainer(u.pkg.dsc["maintainer"], session).maintainer_id
-    source.changedby_id = get_or_set_maintainer(u.pkg.changes["changed-by"], session).maintainer_id
+    # If Changed-By isn't available, fall back to maintainer
+    if u.pkg.changes.has_key("changed-by"):
+        source.changedby_id = get_or_set_maintainer(u.pkg.changes["changed-by"], session).maintainer_id
+    else:
+        source.changedby_id = get_or_set_maintainer(u.pkg.dsc["maintainer"], session).maintainer_id
     source.fingerprint_id = get_or_set_fingerprint(u.pkg.changes["fingerprint"], session).fingerprint_id
     source.install_date = datetime.now().date()
 

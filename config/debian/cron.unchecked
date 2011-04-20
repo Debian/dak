@@ -76,7 +76,7 @@ function do_buildd () {
 
 function do_dists () {
     cd $configdir
-    dak generate-filelist
+    dak generate-filelist -s unstable,experimental -i
     dak generate-packages-sources -s unstable experimental >/dev/null
 }
 
