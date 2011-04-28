@@ -194,7 +194,7 @@ WHERE
   AND
     o.type = :type_id AND o.suite = :overridesuite AND o.component = :component
 
-ORDER BY tmp.package, tmp.version
+ORDER BY tmp.source, tmp.package, tmp.version
 """
 
 def generate_packages(suite_id, component_id, architecture_id, type_name):
