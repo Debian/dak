@@ -194,7 +194,7 @@ WHERE
   AND
     o.type = :type_id AND o.suite = :overridesuite AND o.component = :component
 
-ORDER BY tmp.package, tmp.version
+ORDER BY tmp.source, tmp.package, tmp.version
 """
 
 def generate_packages(suite_id, component_id, architecture_id, type_name):
@@ -276,6 +276,8 @@ def main():
             logger.log(generate_sources(s.suite_id, c))
             #pool.apply_async(generate_sources, [s.suite_id, c], callback=log)
             for a in s.architectures:
+                if a == 'source':
+                    continue
                 logger.log(generate_packages(s.suite_id, c, a.arch_id, 'deb'))
                 #pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=log)
                 logger.log(generate_packages(s.suite_id, c, a.arch_id, 'udeb'))
