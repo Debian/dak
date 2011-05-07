@@ -123,6 +123,9 @@ def generate_sources(suite_id, component_id):
 
 #############################################################################
 
+# We currently filter out the "Tag" line. They are set by external overrides and
+# NOT by the maintainer. And actually having it set by maintainer means we output
+# it twice at the moment -> which breaks dselect.
 # Here be large dragons.
 _packages_query = R"""
 WITH
@@ -160,7 +163,7 @@ SELECT
      JOIN metadata_keys mk ON mk.key_id = bm.key_id
    WHERE
      bm.bin_id = tmp.binary_id
-     AND key != 'Section' AND key != 'Priority'
+     AND key != 'Section' AND key != 'Priority' AND key != 'Tag'
   )
   || COALESCE(E'\n' || (SELECT
      STRING_AGG(key || '\: ' || value, E'\n' ORDER BY key)
