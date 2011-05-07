@@ -37,7 +37,7 @@ from daklib.regexes import re_source_ext
 from daklib.config import Config
 from daklib import daklog
 from daklib.changesutils import *
-from daklib.dakmultiprocessing import Pool
+from daklib.dakmultiprocessing import DakProcessPool
 
 # Globals
 Cnf = None
@@ -176,7 +176,7 @@ def do_pkg(changes_file):
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
             sources.add(htmlname)
             session.close()
-            return
+            return (PROC_STATUS_SUCCESS, '%s already up-to-date' % htmlfile)
 
     # Now we'll load the fingerprint
     (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
@@ -220,6 +220,8 @@ def do_pkg(changes_file):
 
     outfile.close()
     session.close()
+
+    return (PROC_STATUS_SUCCESS, '%s already updated' % htmlfile)
 
 ################################################################################
 
@@ -266,16 +268,16 @@ def main():
 
     examine_package.use_html=1
 
-    #pool = Pool(processes=1)
+    pool = DakProcessPool()
     for changes_file in changes_files:
         changes_file = utils.validate_changes_file_arg(changes_file, 0)
         if not changes_file:
             continue
         print "\n" + changes_file
-        #pool.apply_async(do_pkg, (changes_file,))
+        pool.apply_async(do_pkg, (changes_file,))
         do_pkg(changes_file)
-    #pool.close()
-    #pool.join()
+    pool.close()
+    pool.join()
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))

@@ -31,7 +31,7 @@ Generate Packages/Sources files
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import utils, daklog
-from daklib.dakmultiprocessing import Pool
+from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
 from daklib.filewriter import PackagesFileWriter, SourcesFileWriter
 
 import apt_pkg, os, stat, sys
@@ -119,7 +119,7 @@ def generate_sources(suite_id, component_id):
 
     message = ["generate sources", suite.suite_name, component.component_name]
     session.rollback()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 #############################################################################
 
@@ -225,7 +225,7 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
 
     message = ["generate-packages", suite.suite_name, component.component_name, architecture.arch_string]
     session.rollback()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 #############################################################################
 
@@ -265,30 +265,37 @@ def main():
 
     component_ids = [ c.component_id for c in session.query(Component).all() ]
 
-    def log(details):
-        logger.log(details)
+    def parse_results(message):
+        # Split out into (code, msg)
+        code, msg = message
+        if code == PROC_STATUS_SUCCESS:
+            logger.log([msg])
+        elif code == PROC_STATUS_SIGNALRAISED:
+            logger.log(['E: Subprocess recieved signal ', msg])
+        else:
+            logger.log(['E: ', msg])
 
-    #pool = Pool()
+    pool = DakProcessPool()
     for s in suites:
         if s.untouchable and not force:
             utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
         for c in component_ids:
-            logger.log(generate_sources(s.suite_id, c))
-            #pool.apply_async(generate_sources, [s.suite_id, c], callback=log)
+            pool.apply_async(generate_sources, [s.suite_id, c], callback=parse_results)
             for a in s.architectures:
                 if a == 'source':
                     continue
-                logger.log(generate_packages(s.suite_id, c, a.arch_id, 'deb'))
-                #pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=log)
-                logger.log(generate_packages(s.suite_id, c, a.arch_id, 'udeb'))
-                #pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=log)
+                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=parse_results)
+                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=parse_results)
 
-    #pool.close()
-    #pool.join()
+    pool.close()
+    pool.join()
+
     # this script doesn't change the database
     session.close()
 
     logger.close()
+
+    sys.exit(pool.overall_status())
 
 if __name__ == '__main__':
     main()

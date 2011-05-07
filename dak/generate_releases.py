@@ -40,7 +40,6 @@ import bz2
 import apt_pkg
 from tempfile import mkstemp, mkdtemp
 import commands
-from multiprocessing import Pool, TimeoutError
 from sqlalchemy.orm import object_session
 
 from daklib import utils, daklog
@@ -48,10 +47,10 @@ from daklib.regexes import re_gensubrelease, re_includeinrelease
 from daklib.dak_exceptions import *
 from daklib.dbconn import *
 from daklib.config import Config
+from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS
 
 ################################################################################
 Logger = None                  #: Our logging object
-results = []                   #: Results of the subprocesses
 
 ################################################################################
 
@@ -73,11 +72,6 @@ SUITE can be a space seperated list, e.g.
     sys.exit(exit_code)
 
 ########################################################################
-
-def get_result(arg):
-    global results
-    if arg:
-        results.append(arg)
 
 def sign_release_dir(suite, dirname):
     cnf = Config()
@@ -294,7 +288,7 @@ class ReleaseWriter(object):
 
 
 def main ():
-    global Logger, results
+    global Logger
 
     cnf = Config()
 
@@ -329,10 +323,8 @@ def main ():
         suites = session.query(Suite).filter(Suite.untouchable == False).all()
 
     broken=[]
-    # For each given suite, run one process
-    results = []
 
-    pool = Pool()
+    pool = DakProcessPool()
 
     for s in suites:
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
@@ -342,18 +334,17 @@ def main ():
 
         print "Processing %s" % s.suite_name
         Logger.log(['Processing release file for Suite: %s' % (s.suite_name)])
-        pool.apply_async(generate_helper, (s.suite_id, ), callback=get_result)
+        pool.apply_async(generate_helper, (s.suite_id, ))
 
     # No more work will be added to our pool, close it and then wait for all to finish
     pool.close()
     pool.join()
 
-    retcode = 0
+    retcode = pool.overall_status()
 
-    if len(results) > 0:
-        Logger.log(['Release file generation broken: %s' % (results)])
-        print "Release file generation broken:\n", '\n'.join(results)
-        retcode = 1
+    if retcode > 0:
+        # TODO: CENTRAL FUNCTION FOR THIS / IMPROVE LOGGING
+        Logger.log(['Release file generation broken: %s' % (','.join([str(x[1]) for x in pool.results]))])
 
     Logger.close()
 
@@ -365,13 +356,12 @@ def generate_helper(suite_id):
     '''
     session = DBConn().session()
     suite = Suite.get(suite_id, session)
-    try:
-        rw = ReleaseWriter(suite)
-        rw.generate_release_files()
-    except Exception, e:
-        return str(e)
 
-    return
+    # We allow the process handler to catch and deal with any exceptions
+    rw = ReleaseWriter(suite)
+    rw.generate_release_files()
+
+    return (PROC_STATUS_SUCCESS, 'Release file written for %s' % suite.suite_name)
 
 #######################################################################################
 

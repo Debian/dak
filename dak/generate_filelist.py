@@ -39,7 +39,7 @@ Generate file lists for apt-ftparchive.
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import utils, daklog
-from daklib.dakmultiprocessing import Pool
+from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
 import apt_pkg, os, stat, sys
 
 from daklib.lists import getSources, getBinaries, getArchAll
@@ -78,7 +78,7 @@ def writeSourceList(suite_id, component_id, incremental_mode):
         file.write(filename + '\n')
     session.rollback()
     file.close()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 def writeAllList(suite_id, component_id, architecture_id, type, incremental_mode):
     session = DBConn().session()
@@ -95,7 +95,7 @@ def writeAllList(suite_id, component_id, architecture_id, type, incremental_mode
         file.write(filename + '\n')
     session.rollback()
     file.close()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 def writeBinaryList(suite_id, component_id, architecture_id, type, incremental_mode):
     session = DBConn().session()
@@ -112,7 +112,7 @@ def writeBinaryList(suite_id, component_id, architecture_id, type, incremental_m
         file.write(filename + '\n')
     session.rollback()
     file.close()
-    return message
+    return (PROC_STATUS_SUCCESS, message)
 
 def usage():
     print """Usage: dak generate_filelist [OPTIONS]
@@ -159,7 +159,7 @@ def main():
     Options = cnf.SubTree("Filelist::Options")
     if Options['Help']:
         usage()
-    #pool = Pool()
+    pool = DakProcessPool()
     query_suites = query_suites. \
         filter(Suite.suite_name.in_(utils.split_args(Options['Suite'])))
     query_components = query_components. \
@@ -167,8 +167,15 @@ def main():
     query_architectures = query_architectures. \
         filter(Architecture.arch_string.in_(utils.split_args(Options['Architecture'])))
 
-    def log(message):
-        Logger.log([message])
+    def parse_results(message):
+        # Split out into (code, msg)
+        code, msg = message
+        if code == PROC_STATUS_SUCCESS:
+            Logger.log([msg])
+        elif code == PROC_STATUS_SIGNALRAISED:
+            Logger.log(['E: Subprocess recieved signal ', msg])
+        else:
+            Logger.log(['E: ', msg])
 
     for suite in query_suites:
         suite_id = suite.suite_id
@@ -179,33 +186,31 @@ def main():
                 if architecture not in suite.architectures:
                     pass
                 elif architecture.arch_string == 'source':
-                    Logger.log([writeSourceList(suite_id, component_id, Options['Incremental'])])
-                    #pool.apply_async(writeSourceList,
-                    #    (suite_id, component_id, Options['Incremental']), callback=log)
+                    pool.apply_async(writeSourceList,
+                        (suite_id, component_id, Options['Incremental']), callback=parse_results)
                 elif architecture.arch_string == 'all':
-                    Logger.log([writeAllList(suite_id, component_id, architecture_id, 'deb', Options['Incremental'])])
-                    #pool.apply_async(writeAllList,
-                    #    (suite_id, component_id, architecture_id, 'deb',
-                    #        Options['Incremental']), callback=log)
-                    Logger.log([writeAllList(suite_id, component_id, architecture_id, 'udeb', Options['Incremental'])])
-                    #pool.apply_async(writeAllList,
-                    #    (suite_id, component_id, architecture_id, 'udeb',
-                    #        Options['Incremental']), callback=log)
+                    pool.apply_async(writeAllList,
+                        (suite_id, component_id, architecture_id, 'deb',
+                            Options['Incremental']), callback=parse_results)
+                    pool.apply_async(writeAllList,
+                        (suite_id, component_id, architecture_id, 'udeb',
+                            Options['Incremental']), callback=parse_results)
                 else: # arch any
-                    Logger.log([writeBinaryList(suite_id, component_id, architecture_id, 'deb', Options['Incremental'])])
-                    #pool.apply_async(writeBinaryList,
-                    #    (suite_id, component_id, architecture_id, 'deb',
-                    #        Options['Incremental']), callback=log)
-                    Logger.log([writeBinaryList(suite_id, component_id, architecture_id, 'udeb', Options['Incremental'])])
-                    #pool.apply_async(writeBinaryList,
-                    #    (suite_id, component_id, architecture_id, 'udeb',
-                    #        Options['Incremental']), callback=log)
-    #pool.close()
-    #pool.join()
+                    pool.apply_async(writeBinaryList,
+                        (suite_id, component_id, architecture_id, 'deb',
+                            Options['Incremental']), callback=parse_results)
+                    pool.apply_async(writeBinaryList,
+                        (suite_id, component_id, architecture_id, 'udeb',
+                            Options['Incremental']), callback=parse_results)
+    pool.close()
+    pool.join()
+
     # this script doesn't change the database
     session.close()
 
     Logger.close()
+
+    sys.exit(pool.overall_status())
 
 if __name__ == '__main__':
     main()
