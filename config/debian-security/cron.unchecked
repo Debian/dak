@@ -17,8 +17,8 @@ doanything=false
 dopolicy=false
 
 # So first we should go and see if any process-policy action is done
-dak process-policy embargo | mail -a "X-Debian: DAK" -e -s "Automatically accepted from embargoed" team@security.debian.org -- -F "Debian FTP Masters" -f ftonaster@ftp-master.debian.org
-dak process-policy disembargo | mail -a "X-Debian: DAK" -e -s "Automatically accepted from unembargoed" team@security.debian.org -- -F "Debian FTP Masters" -f ftonaster@ftp-master.debian.org
+dak process-policy embargo | mail -a "X-Debian: DAK" -e -s "Automatically accepted from embargoed" team@security.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+dak process-policy disembargo | mail -a "X-Debian: DAK" -e -s "Automatically accepted from unembargoed" team@security.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
 
 # Now, if this really did anything, we can then sync it over. Files
 # in newstage mean they are (late) accepts of security stuff, need

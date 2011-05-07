@@ -33,6 +33,7 @@
 
 ################################################################################
 
+import apt_pkg
 import os
 from os.path import normpath
 import re
@@ -73,7 +74,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # in the database
 from config import Config
 from textutils import fix_maintainer
-from dak_exceptions import DBUpdateError, NoSourceFieldError
+from dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
@@ -890,6 +891,9 @@ class BuildQueue(object):
             else:
                 os.symlink(targetpath, queuepath)
                 qf.fileid = poolfile.file_id
+        except FileExistsError:
+            if not poolfile.identical_to(queuepath):
+                raise
         except OSError:
             return None
 
@@ -948,6 +952,9 @@ class BuildQueue(object):
             # Always copy files from policy queues as they might move around.
             import utils
             utils.copy(source, target)
+        except FileExistsError:
+            if not policyqueuefile.identical_to(target):
+                raise
         except OSError:
             return None
 
@@ -1042,6 +1049,24 @@ class ChangePendingFile(object):
 
     def __repr__(self):
         return '<ChangePendingFile %s>' % self.change_pending_file_id
+
+    def identical_to(self, filename):
+        """
+        compare size and hash with the given file
+
+        @rtype: bool
+        @return: true if the given file has the same size and hash as this object; false otherwise
+        """
+        st = os.stat(filename)
+        if self.size != st.st_size:
+            return False
+
+        f = open(filename, "r")
+        sha256sum = apt_pkg.sha256sum(f)
+        if sha256sum != self.sha256sum:
+            return False
+
+        return True
 
 __all__.append('ChangePendingFile')
 
@@ -1391,6 +1416,24 @@ class PoolFile(ORMObject):
 
     def not_null_constraints(self):
         return ['filename', 'md5sum', 'location']
+
+    def identical_to(self, filename):
+        """
+        compare size and hash with the given file
+
+        @rtype: bool
+        @return: true if the given file has the same size and hash as this object; false otherwise
+        """
+        st = os.stat(filename)
+        if self.filesize != st.st_size:
+            return False
+
+        f = open(filename, "r")
+        sha256sum = apt_pkg.sha256sum(f)
+        if sha256sum != self.sha256sum:
+            return False
+
+        return True
 
 __all__.append('PoolFile')
 

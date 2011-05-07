@@ -225,7 +225,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
         return
 
     if oldstat[1:3] == origstat[1:3]:
-        print "%s: hardlink unbroken, assuming unchanged" % (origfile)
+        #print "%s: hardlink unbroken, assuming unchanged" % (origfile)
         return
 
     oldf = smartopen(oldfile)
@@ -234,9 +234,9 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
     # should probably early exit if either of these checks fail
     # alternatively (optionally?) could just trim the patch history
 
-    if upd.filesizesha1:
-        if upd.filesizesha1 != oldsizesha1:
-            print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
+    #if upd.filesizesha1:
+    #    if upd.filesizesha1 != oldsizesha1:
+    #        print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
 
     if Options.has_key("CanonicalPath"): upd.can_path=Options["CanonicalPath"]
 
@@ -249,7 +249,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
     if newsizesha1 == oldsizesha1:
         os.unlink(newfile)
         oldf.close()
-        print "%s: unchanged" % (origfile)
+        #print "%s: unchanged" % (origfile)
     else:
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
