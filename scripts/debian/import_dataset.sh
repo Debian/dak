@@ -70,7 +70,7 @@ if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
 fi
 
 echo "Regenerating Packages/Sources files, be patient"
-dak generate-packages-sources -s ${IMPORTSUITE} >/dev/null
+dak generate-packages-sources2 -s ${IMPORTSUITE} >/dev/null
 
 echo "Done"
 
