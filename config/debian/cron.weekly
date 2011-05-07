@@ -44,12 +44,6 @@ git update-server-info
 # (fix in development, but until it reached backports.org.......)
 chmod -R g+w logs/
 
-# Clean up apt-ftparchive's databases
-cd $configdir
-echo "Cleanup apt-ftparchive's database"
-apt-ftparchive -q clean apt.conf
-apt-ftparchive -q clean apt.conf.buildd
-
 echo "Fixing symlinks in $ftpdir"
 symlinks -d -r $ftpdir
 
