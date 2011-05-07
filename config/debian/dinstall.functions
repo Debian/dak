@@ -169,8 +169,8 @@ function mpfm() {
 
 function packages() {
     log "Generating Packages and Sources files"
-    cd $configdir
-    dak generate-packages-sources
+    #cd $configdir
+    #dak generate-packages-sources
     dak generate-packages-sources2
     dak contents generate
 }

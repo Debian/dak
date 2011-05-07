@@ -132,13 +132,9 @@ class PackagesFileWriter(BaseFileWriter):
         }
         flags.update(keywords)
         if flags['debtype'] == 'deb':
-            #TODO: for our initial tests of g-p-s2 we use a different location
-            #template = "dists/%(suite)s/%(component)s/binary-%(architecture)s/Packages"
-            template = "../../ftp.debian.org/web/newdists/%(suite)s/%(component)s/binary-%(architecture)s/Packages"
+            template = "dists/%(suite)s/%(component)s/binary-%(architecture)s/Packages"
         else: # udeb
-            #TODO: for our initial tests of g-p-s2 we use a different location
-            #template = "dists/%(suite)s/%(component)s/debian-installer/binary-%(architecture)s/Packages"
-            template = "../../ftp.debian.org/web/newdists/%(suite)s/%(component)s/debian-installer/binary-%(architecture)s/Packages"
+            template = "dists/%(suite)s/%(component)s/debian-installer/binary-%(architecture)s/Packages"
         BaseFileWriter.__init__(self, template, **flags)
 
 class SourcesFileWriter(BaseFileWriter):
@@ -153,7 +149,5 @@ class SourcesFileWriter(BaseFileWriter):
             'bzip2':        True
         }
         flags.update(keywords)
-        #TODO: for our initial tests of g-p-s2 we use a different location
-        #template = "dists/%(suite)s/%(component)s/source/Sources"
-        template = "../../ftp.debian.org/web/newdists/%(suite)s/%(component)s/source/Sources"
+        template = "dists/%(suite)s/%(component)s/source/Sources"
         BaseFileWriter.__init__(self, template, **flags)
