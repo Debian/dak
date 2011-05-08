@@ -408,6 +408,53 @@ function ddaccess() {
 }
 
 function mirrorpush() {
+    log "Checking the public archive copy"
+    cd ${mirrordir}/dists
+
+    broken=0
+    for release in $(find . -name "InRelease"); do
+        echo "Processing: ${release}"
+        subdir=${release%/InRelease}
+        while read SHASUM SIZE NAME; do
+            if ! [ -f "${subdir}/${NAME}" ]; then
+               bname=$(basename ${NAME})
+                if [ "${bname}" = "Packages" ] || [ "${bname}" = "Sources" ]; then
+                    # We don't keep unpacked files, don't check for their existance.
+                    # We might want to go and check their unpacked shasum, but right now
+                    # I don't care. I believe it should be enough if all the packed shasums
+                    # match.
+                    continue
+                fi
+               broken=$(( broken + 1 ))
+                echo "File ${subdir}/${NAME} is missing"
+                continue
+            fi
+
+           # We do have symlinks in the tree (see the contents files currently).
+           # So we use "readlink -f" to check the size of the target, as thats basically
+           # what gen-releases does
+            fsize=$(stat -c %s $(readlink -f "${subdir}/${NAME}"))
+            if [ ${fsize} -ne ${SIZE} ]; then
+                broken=$(( broken + 1 ))
+                echo "File ${subdir}/${NAME} has size ${fsize}, expected is ${SIZE}"
+                continue
+            fi
+
+            fshasum=$(sha1sum $(readlink -f "${subdir}/${NAME}"))
+            fshasum=${fshasum%% *}
+            if [ "${fshasum}" != "${SHASUM}" ]; then
+                broken=$(( broken + 1 ))
+                echo "File ${subdir}/${NAME} has checksum ${fshasum}, expected is ${SHASUM}"
+                continue
+            fi
+        done < <(sed '1,/SHA1:/d' "${release}" | sed '/SHA256:/,$d')
+    done
+
+    if [ $broken -gt 0 ]; then
+        log_error "Trouble with the public mirror, found ${broken} errors"
+        return 21
+    fi
+
     log "Starting the mirrorpush"
     date -u > /srv/ftp.debian.org/web/mirrorstart
     echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
