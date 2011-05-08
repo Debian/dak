@@ -592,11 +592,11 @@ function gitpdiff() {
     # Also, we only want contents, packages and sources.
     for file in $(find ../dists/ -regex ".*/\(Contents-\($archs\)\|\(Packages\|Sources\)\).gz"); do
         log "${file}"
-        base=${file%%.gz};
-        base=${base##../};
-        dir=${base%/*};
+        basen=${file%%.gz};
+        basen=${basen##../};
+        dir=${basen%/*};
         mkdir -p $dir;
-        zcat $file > $base;
+        zcat $file > $basen;
     done
 
     # Second, add all there is into git
