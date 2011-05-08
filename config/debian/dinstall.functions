@@ -596,7 +596,7 @@ function gitpdiff() {
         base=${base##../};
         dir=${base%/*};
         mkdir -p $dir;
-        zcat $file > $foo;
+        zcat $file > $base;
     done
 
     # Second, add all there is into git
