@@ -288,14 +288,20 @@ GO=(
     ARGS=""
     ERR=""
 )
-# Careful: When we ever go and remove this monster-long thing, we have to check the backgrounded
-# functions before it. We no longer have a 1.5hour sync point then.
 stage $GO
 
 state "dists/"
 GO=(
     FUNC="pdiff"
     TIME="pdiff"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="gitpdiff"
+    TIME="gitpdiff"
     ARGS=""
     ERR=""
 )
