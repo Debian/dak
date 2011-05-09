@@ -103,7 +103,7 @@ do_unchecked
 if [ ! -z "$changes" ]; then
     sync_debbugs
     do_buildd
-    do_dists
+    #do_dists
 fi
 
 dak contents -l 10000 scan-binary
