@@ -28,13 +28,7 @@ Generate Packages/Sources files
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from daklib.dbconn import *
-from daklib.config import Config
-from daklib import utils, daklog
-from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
-from daklib.filewriter import PackagesFileWriter, SourcesFileWriter
-
-import apt_pkg, os, stat, sys
+import apt_pkg, sys
 
 def usage():
     print """Usage: dak generate-packages-sources2 [OPTIONS]
@@ -97,6 +91,8 @@ s.source, s.version
 
 def generate_sources(suite_id, component_id):
     global _sources_query
+    from daklib.filewriter import SourcesFileWriter
+    from daklib.dbconn import Component, DBConn, OverrideType, Suite
 
     session = DBConn().session()
     dsc_type = session.query(OverrideType).filter_by(overridetype='dsc').one().overridetype_id
@@ -202,6 +198,8 @@ ORDER BY tmp.source, tmp.package, tmp.version
 
 def generate_packages(suite_id, component_id, architecture_id, type_name):
     global _packages_query
+    from daklib.filewriter import PackagesFileWriter
+    from daklib.dbconn import Architecture, Component, DBConn, OverrideType, Suite
 
     session = DBConn().session()
     arch_all_id = session.query(Architecture).filter_by(arch_string='all').one().arch_id
@@ -233,6 +231,13 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
 #############################################################################
 
 def main():
+    from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
+    pool = DakProcessPool()
+
+    from daklib.dbconn import Component, DBConn, get_suite
+    from daklib.config import Config
+    from daklib import daklog
+
     cnf = Config()
 
     Arguments = [('h',"help","Generate-Packages-Sources::Options::Help"),
@@ -278,7 +283,6 @@ def main():
         else:
             logger.log(['E: ', msg])
 
-    pool = DakProcessPool()
     for s in suites:
         if s.untouchable and not force:
             utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
