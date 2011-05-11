@@ -234,7 +234,7 @@ def main():
     from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
     pool = DakProcessPool()
 
-    from daklib.dbconn import Component, DBConn, get_suite
+    from daklib.dbconn import Component, DBConn, get_suite, Suite
     from daklib.config import Config
     from daklib import daklog
 
