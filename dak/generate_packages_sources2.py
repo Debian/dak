@@ -93,6 +93,7 @@ def generate_sources(suite_id, component_id):
     global _sources_query
     from daklib.filewriter import SourcesFileWriter
     from daklib.dbconn import Component, DBConn, OverrideType, Suite
+    from daklib.dakmultiprocessing import PROC_STATUS_SUCCESS
 
     session = DBConn().session()
     dsc_type = session.query(OverrideType).filter_by(overridetype='dsc').one().overridetype_id
@@ -200,6 +201,7 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     global _packages_query
     from daklib.filewriter import PackagesFileWriter
     from daklib.dbconn import Architecture, Component, DBConn, OverrideType, Suite
+    from daklib.dakmultiprocessing import PROC_STATUS_SUCCESS
 
     session = DBConn().session()
     arch_all_id = session.query(Architecture).filter_by(arch_string='all').one().arch_id
