@@ -74,7 +74,7 @@ class BaseFileWriter(object):
         '''
         self.file.close()
         if self.gzip:
-            check_call('gzip --rsyncable <%s.new >%s.gz.new' % (self.path, self.path),
+            check_call('gzip -9cn --rsyncable <%s.new >%s.gz.new' % (self.path, self.path),
                 shell = True)
             self.rename('%s.gz' % self.path)
         if self.bzip2:
