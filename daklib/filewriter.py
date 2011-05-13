@@ -78,7 +78,7 @@ class BaseFileWriter(object):
                 shell = True)
             self.rename('%s.gz' % self.path)
         if self.bzip2:
-            check_call('bzip2 <%s.new >%s.bz2.new' % (self.path, self.path), shell = True)
+            check_call('bzip2 -9 <%s.new >%s.bz2.new' % (self.path, self.path), shell = True)
             self.rename('%s.bz2' % self.path)
         if self.uncompressed:
             self.rename(self.path)
