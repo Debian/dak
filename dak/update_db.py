@@ -119,7 +119,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
         # Ok, try and find the configuration table
         print "Determining dak database revision ..."
         cnf = Config()
-        logger = Logger(cnf.Cnf, 'update-db')
+        logger = Logger('update-db')
 
         try:
             # Build a connect string

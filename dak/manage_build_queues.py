@@ -73,7 +73,7 @@ def main ():
     if Options["Help"]:
         usage()
 
-    Logger = daklog.Logger(cnf, 'manage-build-queues', Options['No-Action'])
+    Logger = daklog.Logger('manage-build-queues', Options['No-Action'])
 
     starttime = datetime.now()
 

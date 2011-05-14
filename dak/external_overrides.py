@@ -125,7 +125,7 @@ def main():
     if Options.has_key("Force") and Options["Force"]:
         force = True
 
-    logger = daklog.Logger(cnf, 'external-overrides')
+    logger = daklog.Logger('external-overrides')
 
     command = args[0]
     if command in ('import', 'i'):

@@ -341,9 +341,9 @@ def main ():
         priorities[entry] = name
 
     if not Options["No-Action"]:
-        Logger = daklog.Logger(cnf, "check-overrides")
+        Logger = daklog.Logger("check-overrides")
     else:
-        Logger = daklog.Logger(cnf, "check-overrides", 1)
+        Logger = daklog.Logger("check-overrides", 1)
 
     for osuite in cnf.SubTree("Check-Overrides::OverrideSuites").List():
         if "1" != cnf["Check-Overrides::OverrideSuites::%s::Process" % osuite]:

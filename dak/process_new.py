@@ -784,7 +784,7 @@ def main():
 
     if not Options["No-Action"]:
         try:
-            Logger = daklog.Logger(cnf, "process-new")
+            Logger = daklog.Logger("process-new")
         except CantOpenError, e:
             Options["Trainee"] = "True"
 

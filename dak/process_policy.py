@@ -141,7 +141,7 @@ def main():
 
     if not Options["No-Action"]:
         try:
-            Logger = daklog.Logger(cnf, "process-policy")
+            Logger = daklog.Logger("process-policy")
         except CantOpenError, e:
             Logger = None
 

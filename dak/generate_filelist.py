@@ -132,7 +132,7 @@ Incremental mode appends only newer files to existing lists."""
 
 def main():
     cnf = Config()
-    Logger = daklog.Logger(cnf, 'generate-filelist')
+    Logger = daklog.Logger('generate-filelist')
     Arguments = [('h', "help",         "Filelist::Options::Help"),
                  ('s', "suite",        "Filelist::Options::Suite", "HasArg"),
                  ('c', "component",    "Filelist::Options::Component", "HasArg"),

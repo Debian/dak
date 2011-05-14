@@ -255,7 +255,7 @@ def main():
     if Options.has_key("Help"):
         usage()
 
-    logger = daklog.Logger(cnf, 'generate-packages-sources2')
+    logger = daklog.Logger('generate-packages-sources2')
 
     session = DBConn().session()
 
