@@ -306,7 +306,7 @@ def main ():
     if Options["Help"]:
         usage()
 
-    Logger = daklog.Logger(cnf, 'generate-releases')
+    Logger = daklog.Logger('generate-releases')
 
     session = DBConn().session()
 

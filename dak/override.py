@@ -254,7 +254,7 @@ def main ():
 
     game_over()
 
-    Logger = daklog.Logger(cnf.Cnf, "override")
+    Logger = daklog.Logger("override")
 
     dsc_otype_id = get_override_type('dsc').overridetype_id
 

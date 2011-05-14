@@ -469,7 +469,7 @@ def main():
             log_urgency = True
             UrgencyLog()
 
-    Logger = daklog.Logger(cnf, "process-upload", Options["No-Action"])
+    Logger = daklog.Logger("process-upload", Options["No-Action"])
 
     # If we have a directory flag, use it to find our files
     if cnf["Dinstall::Options::Directory"] != "":

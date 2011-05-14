@@ -353,7 +353,7 @@ def main ():
             utils.warn("In No-Action Mode")
             action = False
 
-        Logger = daklog.Logger(cnf.Cnf, "control-overrides", mode)
+        Logger = daklog.Logger("control-overrides", mode)
         if file_list:
             for f in file_list:
                 process_file(utils.open_file(f), suite, component, otype, mode, action, session)

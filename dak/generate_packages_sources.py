@@ -468,7 +468,7 @@ def main ():
     if Options["Help"]:
         usage()
 
-    Logger = daklog.Logger(cnf, 'generate-packages-sources')
+    Logger = daklog.Logger('generate-packages-sources')
 
     session = DBConn().session()
 

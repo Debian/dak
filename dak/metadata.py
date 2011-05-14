@@ -66,7 +66,7 @@ OPTIONS for scan
 ################################################################################
 
 def scan_all(cnf, mode, limit):
-    Logger = daklog.Logger(cnf.Cnf, 'metadata scan (%s)' % mode)
+    Logger = daklog.Logger('metadata scan (%s)' % mode)
     result = MetadataScanner.scan_all(mode, limit)
     processed = '%(processed)d %(type)s processed' % result
     remaining = '%(remaining)d %(type)s remaining' % result

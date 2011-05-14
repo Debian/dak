@@ -36,28 +36,20 @@ class Logger(object):
     "Logger object"
     __shared_state = {}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, program='unknown', debug=False, print_starting=True, include_pid=False):
         self.__dict__ = self.__shared_state
 
-        if not getattr(self, 'initialised', False):
-            from daklib.config import Config
-            self.initialised = True
-
-            # To be backwards compatibile, dump the first argument if it's a
-            # Config object.  TODO: Fix up all callers and remove this
-            if len(args) > 0 and isinstance(args[0], Config):
-                args = list(args)
-                args.pop(0)
-
-            self.__setup(*args, **kwargs)
-
-
-    def __setup(self, program='unknown', debug=False, print_starting=True, include_pid=False):
-        "Initialize a new Logger object"
         self.program = program
         self.debug = debug
         self.include_pid = include_pid
 
+        if not getattr(self, 'logfile', None):
+            self._open_log(debug)
+
+        if print_starting:
+            self.log(["program start"])
+
+    def _open_log(self, debug):
         # Create the log directory if it doesn't exist
         from daklib.config import Config
         logdir = Config()["Dir::Log"]
@@ -78,9 +70,6 @@ class Logger(object):
             os.umask(umask)
 
         self.logfile = logfile
-
-        if print_starting:
-            self.log(["program start"])
 
     def log (self, details):
         "Log an event"

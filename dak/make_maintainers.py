@@ -77,7 +77,7 @@ def main():
     if Options["Help"]:
         usage()
 
-    Logger = daklog.Logger(cnf.Cnf, 'make-maintainers')
+    Logger = daklog.Logger('make-maintainers')
     session = DBConn().session()
 
     # dictionary packages to maintainer names
