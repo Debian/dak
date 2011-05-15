@@ -392,7 +392,7 @@ def add_overrides (new, upload, session):
             type_id = get_override_type(new[pkg]["type"]).overridetype_id
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
-            Logger.log(["%s overrides" % (srcpkg), suite, new[pkg]["component"], new[pkg]["type"], new[pkg]["priority"], new[pkg]["section"]])
+            Logger.log(["%s (%s) overrides" % (pkg, srcpkg), suite, new[pkg]["component"], new[pkg]["type"], new[pkg]["priority"], new[pkg]["section"]])
             session.execute("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (:sid, :cid, :tid, :pkg, :pid, :sectid, '')",
                             { 'sid': suite_id, 'cid': component_id, 'tid':type_id, 'pkg': pkg, 'pid': priority_id, 'sectid': section_id})
             for f in new[pkg]["files"]:
