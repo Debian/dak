@@ -38,11 +38,13 @@ from daklib.config import Config
 from daklib import daklog
 from daklib.changesutils import *
 from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
+from multiprocessing import Manager
 
 # Globals
 Cnf = None
 Options = None
-sources = set()
+manager = Manager()
+sources = manager.list()
 
 
 ################################################################################
@@ -151,6 +153,11 @@ def html_footer():
 
 
 def do_pkg(changes_file):
+    changes_file = utils.validate_changes_file_arg(changes_file, 0)
+    if not changes_file:
+        return
+    print "\n" + changes_file
+
     session = DBConn().session()
     u = Upload()
     u.pkg.changes_file = changes_file
@@ -174,7 +181,7 @@ def do_pkg(changes_file):
     # Have we already processed this?
     if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
-            sources.add(htmlname)
+            sources.append(htmlname)
             session.close()
             return (PROC_STATUS_SUCCESS, '%s already up-to-date' % htmlfile)
 
@@ -185,7 +192,7 @@ def do_pkg(changes_file):
     u.update_subst()
     files = u.pkg.files
     changes = u.pkg.changes
-    sources.add(htmlname)
+    sources.append(htmlname)
 
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
@@ -270,17 +277,12 @@ def main():
 
     pool = DakProcessPool()
     for changes_file in changes_files:
-        changes_file = utils.validate_changes_file_arg(changes_file, 0)
-        if not changes_file:
-            continue
-        print "\n" + changes_file
         pool.apply_async(do_pkg, (changes_file,))
-        do_pkg(changes_file)
     pool.close()
     pool.join()
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
-    to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))
+    to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
     for f in to_delete:
         os.remove(os.path.join(cnf["Show-New::HTMLPath"],f))
 
