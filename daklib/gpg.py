@@ -86,30 +86,33 @@ class SignedFile(object):
         with _Pipe() as stdin:
          with _Pipe() as contents:
           with _Pipe() as status:
+           with _Pipe() as stderr:
             pid = os.fork()
             if pid == 0:
-                self._exec_gpg(stdin.r, contents.w, sys.stderr.fileno(), status.w)
+                self._exec_gpg(stdin.r, contents.w, stderr.w, status.w)
             else:
                 stdin.close_r()
                 contents.close_w()
+                stderr.close_w()
                 status.close_w()
 
-                read = self._do_io([contents.r, status.r], {stdin.w: data})
+                read = self._do_io([contents.r, stderr.r, status.r], {stdin.w: data})
                 stdin.w = None # was closed by _do_io
 
                 (pid_, exit_code, usage_) = os.wait4(pid, 0)
 
                 self.contents = read[contents.r]
                 self.status   = read[status.r]
+                self.stderr   = read[stderr.r]
 
                 if self.status == "":
-                    raise GpgException("No status output from GPG. (GPG exited with status code %s)" % exit_code)
+                    raise GpgException("No status output from GPG. (GPG exited with status code %s)\n%s" % (exit_code, self.stderr))
 
                 for line in self.status.splitlines():
                     self._parse_status(line)
 
                 if require_signature and not self.valid:
-                    raise GpgException("No valid signature found. (GPG exited with status code %s)" % exit_code)
+                    raise GpgException("No valid signature found. (GPG exited with status code %s)\n%s" % (exit_code, self.stderr))
 
     def _do_io(self, read, write):
         read_lines = dict( (fd, []) for fd in read )
