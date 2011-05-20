@@ -4,18 +4,21 @@ from base_test import DakTestCase, fixture
 
 import unittest
 
+from daklib.gpg import GpgException
 from daklib.utils import parse_changes
 from daklib.dak_exceptions import InvalidDscError, ParseChangesError
 
 class ParseChangesTestCase(DakTestCase):
     def assertParse(self, filename, *args):
-        return parse_changes(fixture(filename), *args)
+        return parse_changes(fixture(filename), *args, keyrings=())
 
     def assertFails(self, filename, line=None, *args):
         try:
             self.assertParse(filename, *args)
             self.fail('%s was not recognised as invalid' % filename)
         except ParseChangesError:
+            pass
+        except GpgException:
             pass
         except InvalidDscError, actual_line:
             if line is not None:
