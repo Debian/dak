@@ -117,6 +117,7 @@ ansi_colours = {
   'main': "\033[36m",
   'contrib': "\033[33m",
   'nonfree': "\033[31m",
+  'provides': "\033[35m",
   'arch': "\033[32m",
   'end': "\033[0m",
   'bold': "\033[1m",
@@ -127,6 +128,7 @@ html_colours = {
   'main': ('<span style="color: aqua">',"</span>"),
   'contrib': ('<span style="color: yellow">',"</span>"),
   'nonfree': ('<span style="color: red">',"</span>"),
+  'provides': ('<span style="color: magenta">',"</span>"),
   'arch': ('<span style="color: green">',"</span>"),
   'bold': ('<span style="font-weight: bold">',"</span>"),
   'maintainer': ('<span style="color: green">',"</span>"),
@@ -322,6 +324,29 @@ def read_changes_or_dsc (suite, filename, session = None):
     filecontents = '\n'.join(map(lambda x: format_field(x,dsc[x.lower()]), keysinorder))+'\n'
     return filecontents
 
+def get_provides(suite):
+    provides = set()
+    session = DBConn().session()
+    query = '''SELECT DISTINCT value
+               FROM binaries_metadata m
+               JOIN bin_associations b
+               ON b.bin = m.bin_id
+               WHERE key_id = (
+                 SELECT key_id
+                 FROM metadata_keys
+                 WHERE key = 'Provides' )
+               AND b.suite = (
+                 SELECT id
+                 FROM suite
+                 WHERE suite_name = '%(suite)s')''' % \
+            {'suite': suite}
+    for p in session.execute(query):
+        for e in p:
+            for i in e.split(','):
+                provides.add(i.strip())
+    session.close()
+    return provides
+
 def create_depends_string (suite, depends_tree, session = None):
     result = ""
     if suite == 'experimental':
@@ -329,6 +354,7 @@ def create_depends_string (suite, depends_tree, session = None):
     else:
         suite_list = [suite]
 
+    provides = set()
     comma_count = 1
     for l in depends_tree:
         if (comma_count >= 2):
@@ -356,7 +382,12 @@ def create_depends_string (suite, depends_tree, session = None):
                 adepends = d['name']
                 if d['version'] != '' :
                     adepends += " (%s)" % (d['version'])
-                result += colour_output(adepends, "bold")
+                if not provides:
+                    provides = get_provides(suite)
+                if d['name'] in provides:
+                    result += colour_output(adepends, "provides")
+                else:
+                    result += colour_output(adepends, "bold")
             or_count += 1
         comma_count += 1
     return result
