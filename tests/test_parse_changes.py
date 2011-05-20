@@ -43,7 +43,7 @@ class ParseDscTestCase(ParseChangesTestCase):
 
     def test_4(self):
         # No blank lines at all
-        self.assertParse('dsc/4.dsc', 0, 1)
+        self.assertFails('dsc/4.dsc', 0, 1)
 
     def test_5(self):
         # Extra blank line before signature body
