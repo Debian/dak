@@ -77,5 +77,10 @@ class ParseChangesTestCase(ParseChangesTestCase):
                 )
                 self.failIf(changes.get('you'))
 
+    def test_4(self):
+        changes = self.assertParse('changes/two-beginnings.changes', -1, 1)
+        self.assert_(changes['question'] == 'Is this a bug?')
+        self.failIf(changes.get('this'))
+
 if __name__ == '__main__':
     unittest.main()
