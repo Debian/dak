@@ -209,7 +209,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None):
             continue
         error += line
 
-    changes["filecontents"] = "".join(lines)
+    changes["filecontents"] = armored_contents
 
     if changes.has_key("source"):
         # Strip the source version in brackets from the source field,
