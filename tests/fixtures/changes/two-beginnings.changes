@@ -1,0 +1,25 @@
+-----BEGIN PGP SIGNED MESSAGE OR SO-----
+Hash: SHA512
+
+This: is a bug.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Question: Is this a bug?
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIcBAEBCgAGBQJN1s1eAAoJEIATJTTdNH3Is4IP/3ppCve+jzobPjacyqYGyAec
+Op2rnYkQulfln1tyaxr8A40MHSWUly1kFebPgO3XNgAQ8mIh7FCeL7tSsaDnrBwq
+v/S/6JK1ZGCSuL6dleoqxoBgViJWQEvd297zAe0CzIdJ+JYgTPxX5cHh4E23rWmG
+zG9ct3v+5J4mSeEGksZPn8/YalnWRwb72hj/0WTagA2SY89TVZ9onT6p8ftWf6aO
+ODXDtclP56GixfnA3jR3reKI5/aLHXSLSYWGDOyEXffr0NoFvgtbsO4Y0FF2+Np3
+MpmJitoIRuJWk3zInYt0GeJskhEbvuF5Fnhiqrg43W5tFxB8pz5QHpDa/oq8Gfea
+MU/2p6FHA12nwD7CVdKWv/ra3nAWcJPqqfV//xgnZaBdS7d4G+3+tMFFYk8sWqc1
+JphkXJ9M8eX67oEuKgwhwHGV/wGu96nkTergnvlqpxk6uesfnsy0ixXX0UgLzwEZ
+ty1sZcCgq8dhdnEatkvRy2M13pS8S9iONmrowAck15YZuHcudBmvh5PFeNbpldmM
+ABLFApnjtD3DljzrjBgnHQS5UHDzDhDiEEAiQrUM3nu/CNi6UPoxasGszJK8W0iV
+MQmYVybk2L2lVV3b1qXURMyaFRcmVnLBNad/IiCbQiWTUCwg8zxzJoty1+f7+EDa
+rPpj3R0qGxz01UsVtS3W
+=/dES
+-----END PGP SIGNATURE-----

@@ -61,6 +61,7 @@ import threading
 
 from daklib import utils
 from daklib.dbconn import DBConn, get_component_by_package_suite
+from daklib.gpg import SignedFile
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory
@@ -558,30 +559,10 @@ def check_deb (suite, deb_filename, session = None):
 # Read a file, strip the signature and return the modified contents as
 # a string.
 def strip_pgp_signature (filename):
-    inputfile = utils.open_file (filename)
-    contents = ""
-    inside_signature = 0
-    skip_next = 0
-    for line in inputfile.readlines():
-        if line[:-1] == "":
-            continue
-        if inside_signature:
-            continue
-        if skip_next:
-            skip_next = 0
-            continue
-        if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
-            skip_next = 1
-            continue
-        if line.startswith("-----BEGIN PGP SIGNATURE"):
-            inside_signature = 1
-            continue
-        if line.startswith("-----END PGP SIGNATURE"):
-            inside_signature = 0
-            continue
-        contents += line
-    inputfile.close()
-    return contents
+    with utils.open_file(filename) as f:
+        data = f.read()
+        signedfile = SignedFile(data, keyrings=(), require_signature=False)
+        return signedfile.contents
 
 def display_changes(suite, changes_filename):
     global printed
