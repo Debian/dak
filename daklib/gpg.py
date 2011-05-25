@@ -23,7 +23,6 @@ import errno
 import fcntl
 import os
 import select
-import sys
 
 try:
     _MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -185,6 +184,6 @@ class SignedFile(object):
 
             os.execvp(self.gpg, args)
         finally:
-            sys.exit(1)
+            os._exit(1)
 
 # vim: set sw=4 et:
