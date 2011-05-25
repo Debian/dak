@@ -10,7 +10,7 @@ from daklib.dak_exceptions import InvalidDscError, ParseChangesError
 
 class ParseChangesTestCase(DakTestCase):
     def assertParse(self, filename, *args):
-        return parse_changes(fixture(filename), *args, keyrings=())
+        return parse_changes(fixture(filename), *args)
 
     def assertFails(self, filename, line=None, *args):
         try:

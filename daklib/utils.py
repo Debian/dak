@@ -152,12 +152,10 @@ def extract_component_from_section(section):
 
 ################################################################################
 
-@session_wrapper
 def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None):
-    if keyrings == None:
-        keyrings = [ k.keyring_name for k in session.query(Keyring).filter(Keyring.active == True).all() ]
     require_signature = True
-    if signing_rules == -1:
+    if keyrings == None:
+        keyrings = []
         require_signature = False
 
     signed_file = SignedFile(armored_contents, keyrings=keyrings, require_signature=require_signature)
@@ -227,8 +225,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
 
 ################################################################################
 
-@session_wrapper
-def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None, session=None):
+def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
     """
     Parses a changes file and returns a dictionary where each field is a
     key.  The mandatory first argument is the filename of the .changes
@@ -257,7 +254,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None, session=
         unicode(content, 'utf-8')
     except UnicodeError:
         raise ChangesUnicodeError, "Changes file not proper utf-8"
-    changes = parse_deb822(content, signing_rules, keyrings=keyrings, session=session)
+    changes = parse_deb822(content, signing_rules, keyrings=keyrings)
 
 
     if not dsc_file:
