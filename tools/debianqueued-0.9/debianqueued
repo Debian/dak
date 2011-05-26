@@ -720,7 +720,7 @@ outer_loop: while (<CHANGES>) {
       next;
     }
     if ( $pgplines < 1 or $pgplines >= 3 ) {
-      $extralines++;
+      $extralines++ if length;
       next;
     }
     if (/^Maintainer:\s*/i) {
