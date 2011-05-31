@@ -193,7 +193,7 @@ def main ():
     if Options["Help"]:
         usage()
 
-    Logger = daklog.Logger(cnf, 'clean-queues', Options['No-Action'])
+    Logger = daklog.Logger('clean-queues', Options['No-Action'])
 
     init(cnf)
 

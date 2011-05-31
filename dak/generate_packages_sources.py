@@ -6,6 +6,7 @@
 @copyright: 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>
 @copyright: 2009  Mark Hymers <mhy@debian.org>
 @copyright: 2010  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
 
 """
 
@@ -31,7 +32,7 @@ import sys
 import apt_pkg
 from tempfile import mkstemp, mkdtemp
 import commands
-from multiprocessing import Pool
+from multiprocessing import Pool, TimeoutError
 
 from daklib import daklog
 from daklib.dbconn import *
@@ -41,6 +42,7 @@ from daklib.config import Config
 
 Options = None                 #: Commandline arguments parsed into this
 Logger = None                  #: Our logging object
+results = []                   #: Results of the subprocesses
 
 ################################################################################
 
@@ -103,17 +105,82 @@ TreeDefault
 
     apt_trees={}
     apt_trees["di"]={}
-    apt_trees["testing"]="""
-tree "dists/testing"
+
+    apt_trees["oldstable"]="""
+tree "dists/oldstable"
 {
-   FakeDI "dists/unstable";
-   FileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_source.list";
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.lenny.$(SECTION)";
+   ExtraOverride "override.lenny.extra.$(SECTION)";
+   SrcOverride "override.lenny.$(SECTION).src";
+};
+"""
+
+    apt_trees["di"]["oldstable"]="""
+tree "dists/oldstable/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.lenny.main.$(SECTION)";
+   SrcOverride "override.lenny.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   %(contentsline)s
+};
+
+tree "dists/oldstable/non-free"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_non-free_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.lenny.main.$(SECTION)";
+   SrcOverride "override.lenny.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   %(contentsline)s
+};
+"""
+
+    apt_trees["stable"]="""
+tree "dists/stable"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/stable_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "%(arch)s";
    BinOverride "override.squeeze.$(SECTION)";
    ExtraOverride "override.squeeze.extra.$(SECTION)";
    SrcOverride "override.squeeze.$(SECTION).src";
+};
+"""
+
+    apt_trees["di"]["stable"]="""
+tree "dists/stable/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/stable_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   %(contentsline)s
+};
+
+tree "dists/stable/non-free"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/stable_non-free_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   %(contentsline)s
 };
 """
 
@@ -131,14 +198,28 @@ tree "dists/squeeze-updates"
 };
 """
 
+    apt_trees["testing"]="""
+tree "dists/testing"
+{
+   FakeDI "dists/unstable";
+   FileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.wheezy.$(SECTION)";
+   ExtraOverride "override.wheezy.extra.$(SECTION)";
+   SrcOverride "override.wheezy.$(SECTION).src";
+};
+"""
+
     apt_trees["di"]["testing"]="""
 tree "dists/testing/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/testing_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.main.$(SECTION)";
-   SrcOverride "override.squeeze.main.src";
+   BinOverride "override.wheezy.main.$(SECTION)";
+   SrcOverride "override.wheezy.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    %(contentsline)s
@@ -149,8 +230,8 @@ tree "dists/testing/non-free"
    FileList "/srv/ftp-master.debian.org/database/dists/testing_non-free_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.main.$(SECTION)";
-   SrcOverride "override.squeeze.main.src";
+   BinOverride "override.wheezy.main.$(SECTION)";
+   SrcOverride "override.wheezy.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    %(contentsline)s
@@ -239,9 +320,9 @@ tree "dists/testing-proposed-updates"
    SourceFileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.$(SECTION)";
-   ExtraOverride "override.squeeze.extra.$(SECTION)";
-   SrcOverride "override.squeeze.$(SECTION).src";
+   BinOverride "override.wheezy.$(SECTION)";
+   ExtraOverride "override.wheezy.extra.$(SECTION)";
+   SrcOverride "override.wheezy.$(SECTION).src";
    Contents " ";
 };
 """
@@ -251,8 +332,8 @@ tree "dists/testing-proposed-updates/main"
    FileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
-   BinOverride "override.squeeze.main.$(SECTION)";
-   SrcOverride "override.squeeze.main.src";
+   BinOverride "override.wheezy.main.$(SECTION)";
+   SrcOverride "override.wheezy.main.src";
    BinCacheDB "packages-debian-installer-$(ARCH).db";
    Packages::Extensions ".udeb";
    Contents " ";
@@ -266,9 +347,9 @@ tree "dists/proposed-updates"
    SourceFileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "%(arch)s";
-   BinOverride "override.lenny.$(SECTION)";
-   ExtraOverride "override.lenny.extra.$(SECTION)";
-   SrcOverride "override.lenny.$(SECTION).src";
+   BinOverride "override.squeeze.$(SECTION)";
+   ExtraOverride "override.squeeze.extra.$(SECTION)";
+   SrcOverride "override.squeeze.$(SECTION).src";
    Contents " ";
 };
 """
@@ -276,6 +357,32 @@ tree "dists/proposed-updates"
 tree "dists/proposed-updates/main"
 {
    FileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
+   Sections "debian-installer";
+   Architectures "%(arch)s";
+   BinOverride "override.squeeze.main.$(SECTION)";
+   SrcOverride "override.squeeze.main.src";
+   BinCacheDB "packages-debian-installer-$(ARCH).db";
+   Packages::Extensions ".udeb";
+   Contents " ";
+};
+"""
+    apt_trees["oldstable-proposed-updates"]="""
+tree "dists/oldstable-proposed-updates"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_$(SECTION)_source.list";
+   Sections "main contrib non-free";
+   Architectures "%(arch)s";
+   BinOverride "override.lenny.$(SECTION)";
+   ExtraOverride "override.lenny.extra.$(SECTION)";
+   SrcOverride "override.lenny.$(SECTION).src";
+   Contents " ";
+};
+"""
+    apt_trees["di"]["oldstable-proposed-updates"]="""
+tree "dists/oldstable-proposed-updates/main"
+{
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
    BinOverride "override.lenny.main.$(SECTION)";
@@ -312,9 +419,10 @@ tree "dists/proposed-updates/main"
         # it has errormessages we like to see
         os.environ['GZIP'] = '--rsyncable'
         os.chdir(tmppath)
-        (result, output) = commands.getstatusoutput('apt-ftparchive generate %s' % os.path.basename(ac_name))
+        (result, output) = commands.getstatusoutput('apt-ftparchive -o APT::FTPArchive::Contents=off generate %s' % os.path.basename(ac_name))
         sn="a-f %s,%s: " % (suite, arch)
         print sn + output.replace('\n', '\n%s' % (sn))
+        return result
 
     # Clean up any left behind files
     finally:
@@ -333,11 +441,16 @@ tree "dists/proposed-updates/main"
 def sname(arch):
     return arch.arch_string
 
+def get_result(arg):
+    global results
+    if arg:
+        results.append(arg)
+
 ########################################################################
 ########################################################################
 
 def main ():
-    global Options, Logger
+    global Options, Logger, results
 
     cnf = Config()
 
@@ -355,7 +468,7 @@ def main ():
     if Options["Help"]:
         usage()
 
-    Logger = daklog.Logger(cnf, 'generate-packages-sources')
+    Logger = daklog.Logger('generate-packages-sources')
 
     session = DBConn().session()
 
@@ -375,18 +488,25 @@ def main ():
     startdir = os.getcwd()
     os.chdir(cnf["Dir::TempPath"])
 
+    broken=[]
     # For each given suite, each architecture, run one apt-ftparchive
     for s in suites:
+        results=[]
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
         pool = Pool()
-        arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=True, session=session)
+        arch_list=get_suite_architectures(s.suite_name, skipsrc=False, skipall=False, session=session)
         Logger.log(['generating output for Suite %s, Architectures %s' % (s.suite_name, map(sname, arch_list))])
         for a in arch_list:
-            pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]))
+            pool.apply_async(generate_packages_sources, (a.arch_string, s.suite_name, cnf["Dir::TempPath"]), callback=get_result)
 
         # No more work will be added to our pool, close it and then wait for all to finish
         pool.close()
         pool.join()
+
+    if len(results) > 0:
+        Logger.log(['Trouble, something with a-f broke, resultcodes: %s' % (results)])
+        print "Trouble, something with a-f broke, resultcodes: %s" % (results)
+        sys.exit(1)
 
     os.chdir(startdir)
     # this script doesn't change the database

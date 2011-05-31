@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # Executed hourly via cron, out of dak's crontab.
 
@@ -10,9 +10,16 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
-dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates
-dak show-deferred > ${webdir}/deferred.html
-dak show-new > /dev/null
+dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates -r $webdir/stat
+dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
+dak graph -n new,byhand,proposedupdates,oldproposedupdates,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
+
+# do not run show-new and other stuff in parallel
+LOCKFILE="$lockdir/unchecked.lock"
+if lockfile -r16 $LOCKFILE 2> /dev/null; then
+    dak show-new > /dev/null || true
+    rm -f $LOCKFILE
+fi
 
 cd $webdir
 cat removals-20*.txt > removals-full.txt
@@ -23,4 +30,26 @@ cat removals.822 >> removals-full.822
 $base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
 $base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 
+
+# Tell ries to sync its tree
+ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 -i ${base}/s3kr1t/pushddmirror dak@ries.debian.org sync
+
 $scriptsdir/generate-di
+
+
+# do the buildd key updates
+BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
+exec >> "${BUILDDFUN}" 2>&1
+${scriptsdir}/buildd-remove-keys
+${scriptsdir}/buildd-add-keys
+${scriptsdir}/buildd-prepare-dir
+
+for keyring in $(dak admin k list-binary); do
+    dak import-keyring --generate-users "%s" ${keyring}
+done
+exec >>/dev/null 2>&1
+
+DATE=$(date -Is)
+cat "${BUILDDFUN}" | mail -a "X-Debian: DAK" -e -s "[$(hostname -s)] Buildd key changes ${DATE}" buildd-keys@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+
+rm -f "${BUILDDFUN}"

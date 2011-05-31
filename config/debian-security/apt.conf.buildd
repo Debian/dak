@@ -2,9 +2,9 @@ APT::FTPArchive::Contents off;
 
 Dir 
 {
-   ArchiveDir "/srv/security.debian.org/buildd/";
-   OverrideDir "/srv/security.debian.org/override/";
-   CacheDir "/srv/security.debian.org/dak-database/";
+   ArchiveDir "/srv/security-master.debian.org/buildd/";
+   OverrideDir "/srv/security-master.debian.org/override/";
+   CacheDir "/srv/security-master.debian.org/dak-database/";
 };
 
 Default
@@ -14,19 +14,6 @@ Default
    DeLinkLimit 0;
    FileMode 0664;
 }
-
-bindirectory "etch"
-{
-   Packages "etch/Packages";
-   Sources "etch/Sources";
-   Contents " ";
-
-   BinOverride "override.etch.all3";
-   SrcOverride "override.etch.all3.src";
-   BinCacheDB "packages-accepted-etch.db";
-   PathPrefix "";
-   Packages::Extensions ".deb .udeb";
-};
 
 bindirectory "lenny"
 {
@@ -54,3 +41,15 @@ bindirectory "squeeze"
    Packages::Extensions ".deb .udeb";
 };
 
+bindirectory "wheezy"
+{
+   Packages "wheezy/Packages";
+   Sources "wheezy/Sources";
+   Contents " ";
+
+   BinOverride "override.wheezy.all3";
+   SrcOverride "override.wheezy.all3.src";
+   BinCacheDB "packages-accepted-squeeze.db";
+   PathPrefix "";
+   Packages::Extensions ".deb .udeb";
+};

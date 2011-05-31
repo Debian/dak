@@ -1,0 +1,53 @@
+#!/bin/sh
+
+set -u
+set -e
+
+if [ $# -lt 4 ]; then
+	echo "Usage: $0 filename version arch changes_file"
+	exit 1
+fi
+
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
+WIN32_LOADER_FILE="$1"	# win32-loader_${VERSION}_${ARCH}{.exe,txt}
+VERSION="$2"
+ARCH="$3"
+CHANGES="$4"	# Changes file for the upload
+
+# Get the target suite from the Changes file
+# NOTE: it may be better to pass this to the script as a parameter!
+SUITE="$(grep "^Distribution:" "$CHANGES" | awk '{print $2}')"
+case $SUITE in
+    "")
+	    echo "Error: unable to determine suite from Changes file"
+        exit 1
+	    ;;
+    unstable|sid)
+	    : # nothing to do
+	    ;;
+    *)
+	    SUITE="${SUITE}-proposed-updates"
+	    ;;
+esac
+
+# This must end with /
+TARGET="${ftpdir}/tools/win32-loader/${SUITE}/"
+
+# Prepare the target filename by removing the version and arch parts;
+# transforms any/path/win32-loader_${VERSION}_${ARCH}.${extension} to win32-loader.${extension}
+TARGET_FILENAME="${WIN32_LOADER_FILE%%_*}.${WIN32_LOADER_FILE##*.}"
+
+# Check validity of the target directory
+if [ ! -d "$TARGET" ]; then
+	mkdir -p "$TARGET"
+fi
+
+# Put said file into the tools directory
+cp "$WIN32_LOADER_FILE" "${TARGET}${TARGET_FILENAME}"
+
+# Chmod it correctly
+chmod 0644 "${TARGET}${TARGET_FILENAME}"
+
+exit 0

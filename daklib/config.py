@@ -36,6 +36,13 @@ import socket
 
 default_config = "/etc/dak/dak.conf" #: default dak config, defines host properties
 
+# suppress some deprecation warnings in squeeze related to apt_pkg
+# module
+import warnings
+warnings.filterwarnings('ignore', ".*apt_pkg.* is deprecated.*", DeprecationWarning)
+
+################################################################################
+
 def which_conf_file():
     return os.getenv("DAK_CONFIG", default_config)
 
@@ -108,7 +115,6 @@ class Config(object):
         """
         for field in [('db_revision',      None,       int),
                       ('defaultsuitename', 'unstable', str),
-                      ('signingkeyids',    '',         str),
                       ('exportpath',       '',         str)
                       ]:
             setattr(self, 'get_%s' % field[0], lambda s=None, x=field[0], y=field[1], z=field[2]: self.get_db_value(x, y, z))

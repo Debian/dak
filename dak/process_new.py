@@ -337,33 +337,29 @@ def edit_overrides (new, upload, session):
 ################################################################################
 
 def check_pkg (upload):
+    save_stdout = sys.stdout
     try:
-        less_fd = os.popen("less -R -", 'w', 0)
-        stdout_fd = sys.stdout
-        try:
-            sys.stdout = less_fd
-            changes = utils.parse_changes (upload.pkg.changes_file)
-            print examine_package.display_changes(changes['distribution'], upload.pkg.changes_file)
-            files = upload.pkg.files
-            for f in files.keys():
-                if files[f].has_key("new"):
-                    ftype = files[f]["type"]
-                    if ftype == "deb":
-                        print examine_package.check_deb(changes['distribution'], f)
-                    elif ftype == "dsc":
-                        print examine_package.check_dsc(changes['distribution'], f)
-        finally:
-            print examine_package.output_package_relations()
-            sys.stdout = stdout_fd
+        sys.stdout = os.popen("less -R -", 'w', 0)
+        changes = utils.parse_changes (upload.pkg.changes_file)
+        print examine_package.display_changes(changes['distribution'], upload.pkg.changes_file)
+        files = upload.pkg.files
+        for f in files.keys():
+            if files[f].has_key("new"):
+                ftype = files[f]["type"]
+                if ftype == "deb":
+                    print examine_package.check_deb(changes['distribution'], f)
+                elif ftype == "dsc":
+                    print examine_package.check_dsc(changes['distribution'], f)
+        print examine_package.output_package_relations()
     except IOError, e:
         if e.errno == errno.EPIPE:
             utils.warn("[examine_package] Caught EPIPE; skipping.")
-            pass
         else:
+            sys.stdout = save_stdout
             raise
     except KeyboardInterrupt:
         utils.warn("[examine_package] Caught C-c; skipping.")
-        pass
+    sys.stdout = save_stdout
 
 ################################################################################
 
@@ -396,7 +392,7 @@ def add_overrides (new, upload, session):
             type_id = get_override_type(new[pkg]["type"]).overridetype_id
             priority_id = new[pkg]["priority id"]
             section_id = new[pkg]["section id"]
-            Logger.log(["%s overrides" % (srcpkg), suite, new[pkg]["component"], new[pkg]["type"], new[pkg]["priority"], new[pkg]["section"]])
+            Logger.log(["%s (%s) overrides" % (pkg, srcpkg), suite, new[pkg]["component"], new[pkg]["type"], new[pkg]["priority"], new[pkg]["section"]])
             session.execute("INSERT INTO override (suite, component, type, package, priority, section, maintainer) VALUES (:sid, :cid, :tid, :pkg, :pid, :sectid, '')",
                             { 'sid': suite_id, 'cid': component_id, 'tid':type_id, 'pkg': pkg, 'pid': priority_id, 'sectid': section_id})
             for f in new[pkg]["files"]:
@@ -424,11 +420,18 @@ def do_new(upload, session):
     # Make a copy of distribution we can happily trample on
     changes["suite"] = copy.copy(changes["distribution"])
 
+    # Try to get an included dsc
+    dsc = None
+    (status, _) = upload.load_dsc()
+    if status:
+        dsc = upload.pkg.dsc
+
     # The main NEW processing loop
     done = 0
+    new = {}
     while not done:
         # Find out what's new
-        new, byhand = determine_new(upload.pkg.changes_file, changes, files, session=session)
+        new, byhand = determine_new(upload.pkg.changes_file, changes, files, dsc=dsc, session=session, new=new)
 
         if not new:
             break
@@ -667,6 +670,12 @@ def do_pkg(changes_full_path, session):
     u.logger = Logger
     origchanges = os.path.abspath(u.pkg.changes_file)
 
+    # Try to get an included dsc
+    dsc = None
+    (status, _) = u.load_dsc()
+    if status:
+        dsc = u.pkg.dsc
+
     cnf = Config()
     bcc = "X-DAK: dak process-new"
     if cnf.has_key("Dinstall::Bcc"):
@@ -675,6 +684,7 @@ def do_pkg(changes_full_path, session):
         u.Subst["__BCC__"] = bcc
 
     files = u.pkg.files
+    u.check_distributions()
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
             u.binary_file_checks(deb_filename, session)
@@ -691,7 +701,7 @@ def do_pkg(changes_full_path, session):
                 if not recheck(u, session):
                     return
 
-                new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, session=session)
+                new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, dsc=dsc, session=session)
                 if byhand:
                     do_byhand(u, session)
                 elif new:
@@ -774,7 +784,7 @@ def main():
 
     if not Options["No-Action"]:
         try:
-            Logger = daklog.Logger(cnf, "process-new")
+            Logger = daklog.Logger("process-new")
         except CantOpenError, e:
             Options["Trainee"] = "True"
 

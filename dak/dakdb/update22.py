@@ -69,7 +69,7 @@ def do_update(self):
 
         for q in c.fetchall():
             queues[q[0]] = q[1]
-            if q[1] in ['accepted', 'buildd']:
+            if q[1] in ['accepted', 'buildd', 'embargoed', 'unembargoed']:
                 # Move to build_queue_table
                 c.execute("""INSERT INTO build_queue (queue_name, path, copy_files)
                                    VALUES ('%s', '%s', '%s')""" % (q[1], q[2], q[3]))

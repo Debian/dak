@@ -41,11 +41,12 @@ import errno
 from daklib import utils
 from daklib.config import Config
 from daklib.dak_exceptions import DBUpdateError
+from daklib.daklog import Logger
 
 ################################################################################
 
 Cnf = None
-required_database_schema = 40
+required_database_schema = 60
 
 ################################################################################
 
@@ -102,24 +103,41 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
 ################################################################################
 
+    def get_transaction_id(self):
+        '''
+        Returns the current transaction id as a string.
+        '''
+        cursor = self.db.cursor()
+        cursor.execute("SELECT txid_current();")
+        id = cursor.fetchone()[0]
+        cursor.close()
+        return id
+
+################################################################################
+
     def update_db(self):
         # Ok, try and find the configuration table
         print "Determining dak database revision ..."
         cnf = Config()
+        logger = Logger('update-db')
 
         try:
             # Build a connect string
-            connect_str = "dbname=%s"% (cnf["DB::Name"])
-            if cnf["DB::Host"] != '': connect_str += " host=%s" % (cnf["DB::Host"])
-            if cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(cnf["DB::Port"]))
+            if cnf.has_key("DB::Service"):
+                connect_str = "service=%s" % cnf["DB::Service"]
+            else:
+                connect_str = "dbname=%s"% (cnf["DB::Name"])
+                if cnf["DB::Host"] != '': connect_str += " host=%s" % (cnf["DB::Host"])
+                if cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(cnf["DB::Port"]))
 
             self.db = psycopg2.connect(connect_str)
 
         except:
             print "FATAL: Failed connect to database"
-            pass
+            sys.exit(1)
 
         database_revision = int(self.get_db_rev())
+        logger.log(['transaction id before update: %s' % self.get_transaction_id()])
 
         if database_revision == -1:
             print "dak database schema predates update-db."
@@ -140,20 +158,26 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         if database_revision == required_database_schema:
             print "no updates required"
+            logger.log(["no updates required"])
             sys.exit(0)
 
         for i in range (database_revision, required_database_schema):
-            print "updating database schema from %d to %d" % (database_revision, i+1)
             try:
                 dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i+1)])
                 update_module = getattr(dakdb, "update"+str(i+1))
                 update_module.do_update(self)
+                message = "updated database schema from %d to %d" % (database_revision, i+1)
+                print message
+                logger.log([message])
             except DBUpdateError, e:
                 # Seems the update did not work.
                 print "Was unable to update database schema from %d to %d." % (database_revision, i+1)
                 print "The error message received was %s" % (e)
+                logger.log(["DB Schema upgrade failed"])
+                logger.close()
                 utils.fubar("DB Schema upgrade failed")
             database_revision += 1
+        logger.close()
 
 ################################################################################
 

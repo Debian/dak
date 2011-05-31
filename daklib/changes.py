@@ -187,8 +187,41 @@ class Changes(object):
             if (not self.changes.has_key(key)) or (not self.changes[key]):
                 self.changes[key]='missing'
 
+    def __get_file_from_pool(self, filename, entry, session, logger):
+        cnf = Config()
+
+        if cnf.has_key("Dinstall::SuiteSuffix"):
+            component = cnf["Dinstall::SuiteSuffix"] + entry["component"]
+        else:
+            component = entry["component"]
+
+        poolname = poolify(entry["source"], component)
+        l = get_location(cnf["Dir::Pool"], component, session=session)
+
+        found, poolfile = check_poolfile(os.path.join(poolname, filename),
+                                         entry['size'],
+                                         entry["md5sum"],
+                                         l.location_id,
+                                         session=session)
+
+        if found is None:
+            if logger is not None:
+                logger.log(["E: Found multiple files for pool (%s) for %s" % (filename, component)])
+            return None
+        elif found is False and poolfile is not None:
+            if logger is not None:
+                logger.log(["E: md5sum/size mismatch for %s in pool" % (filename)])
+            return None
+        else:
+            if poolfile is None:
+                if logger is not None:
+                    logger.log(["E: Could not find %s in pool" % (filename)])
+                return None
+            else:
+                return poolfile
+
     @session_wrapper
-    def add_known_changes(self, dirpath, in_queue=None, session=None):
+    def add_known_changes(self, dirpath, in_queue=None, session=None, logger=None):
         """add "missing" in fields which we will require for the known_changes table"""
         cnf = Config()
 
@@ -248,26 +281,21 @@ class Changes(object):
 
             except IOError:
                 # Can't find the file, try to look it up in the pool
-                poolname = poolify(entry["source"], entry["component"])
-                l = get_location(cnf["Dir::Pool"], entry["component"], session=session)
-
-                found, poolfile = check_poolfile(os.path.join(poolname, chg_fn),
-                                                 entry['size'],
-                                                 entry["md5sum"],
-                                                 l.location_id,
-                                                 session=session)
-
-                if found is None:
-                    Logger.log(["E: Found multiple files for pool (%s) for %s" % (chg_fn, entry["component"])])
-                elif found is False and poolfile is not None:
-                    Logger.log(["E: md5sum/size mismatch for %s in pool" % (chg_fn)])
-                else:
-                    if poolfile is None:
-                        Logger.log(["E: Could not find %s in pool" % (chg_fn)])
-                    else:
-                        chg.poolfiles.append(poolfile)
+                poolfile = self.__get_file_from_pool(chg_fn, entry, session)
+                if poolfile:
+                    chg.poolfiles.append(poolfile)
 
         chg.files = files
+
+        # Add files referenced in .dsc, but not included in .changes
+        for name, entry in self.dsc_files.items():
+            if self.files.has_key(name):
+                continue
+
+            entry['source'] = self.changes['source']
+            poolfile = self.__get_file_from_pool(name, entry, session, logger)
+            if poolfile:
+                chg.poolfiles.append(poolfile)
 
         session.commit()
         chg = session.query(DBChange).filter_by(changesname = self.changes_file).one();

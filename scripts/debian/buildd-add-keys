@@ -1,0 +1,280 @@
+#!/bin/bash
+# No way I try to deal with a crippled sh just for POSIX foo.
+
+# Copyright (C) 2011 Joerg Jaspert <joerg@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
+# exit on errors
+set -e
+# make sure to only use defined variables
+set -u
+# ERR traps should be inherited from functions too.
+set -E
+
+# import the general variable set.
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
+umask 027
+
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
+PROGRAM="buildd-add-keys"
+
+# common functions are "outsourced"
+. "${configdir}/common"
+
+function cleanup() {
+    ERRVAL=$?
+    trap - ERR EXIT TERM HUP INT QUIT
+
+    for TEMPFILE in GPGSTATUS GPGLOGS GPGOUTF TEMPKEYDATA; do
+        DELF=${!TEMPFILE:-""}
+        if [ -n "${DELF}" ] && [ -f "${DELF}" ]; then
+            rm -f "${DELF}"
+        fi
+    done
+    exit $ERRVAL
+}
+
+base="${base}/scripts/builddkeyrings"
+INCOMING="${base}/incoming"
+ERRORS="${base}/errors"
+ADMINS="${base}/adminkeys.gpg"
+STAMPFILE="${base}/updatedkeyring"
+
+# Default options for our gpg calls
+DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting"
+
+if ! [ -d "${INCOMING}" ]; then
+    log "Missing incoming dir, nothing to do"
+    exit 1
+fi
+
+cd "${INCOMING}"
+KEYS=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.key | sed -e "s,./,," | xargs)
+if [ -z "${KEYS}" ]; then
+    exit 0
+fi
+
+trap cleanup ERR EXIT TERM HUP INT QUIT
+
+# Tell prepare-dir that there is an update and it can run
+touch "${STAMPFILE}"
+
+# Whenever something goes wrong, its put in there.
+mkdir -p "${ERRORS}"
+
+# We process all new files in our incoming directory
+for file in ${KEYS}; do
+    file=${file##*/}
+    # First we want to see if we recognize the filename. The buildd people have
+    # to follow a certain schema:
+    # architecture_builddname.YEAR-MONTH-DAY_HOURMINUTE.key
+    if [[ $file =~ (.*)_(.*).([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}[0-9]{2}).key ]]; then
+        ARCH=${BASH_REMATCH[1]}
+        BUILDD=${BASH_REMATCH[2]}
+        # Right now timestamp is unused
+        TIMESTAMP=${BASH_REMATCH[3]}
+    else
+        log "Unknown file ${file}, not processing"
+        mv "${INCOMING}/${file}" "${ERRORS}/unknown.${file}.$(date -Is)"
+        continue
+    fi
+
+    # Do we know the architecture?
+    found=0
+    for carch in ${archs}; do
+        if [ "${ARCH}" == "${carch}" ]; then
+            log "Known arch ${ARCH}, buildd ${BUILDD}"
+            found=1
+            break
+        fi
+    done
+
+    if [ ${found} -eq 0 ]; then
+        log "Unknown architecture ${ARCH}"
+        mv "${INCOMING}/${file}" "${ERRORS}/unknownarch.${file}.$(date -Is)"
+        continue
+    fi
+
+    # If we did have a file with this name already somethings wrong
+    if [ -f "${base}/${ARCH}/${file}" ]; then
+        log "Already processed this file"
+        mv "${INCOMING}/${file}" "${ERRORS}/duplicate.${file}.$(date -Is)"
+        continue
+    fi
+
+    # Where we want the status-fd from gpgv turn up
+    GPGSTATUS=$(mktemp -p "${TMPDIR}" GPGSTATUS.XXXXXX)
+    # Same for the loggger-fd
+    GPGLOGS=$(mktemp -p "${TMPDIR}" GPGLOGS.XXXXXX)
+    # And "decrypt" gives us output, the key without the pgp sig around it
+    GPGOUTF=$(mktemp -p "${TMPDIR}" GPGOUTF.XXXXXX)
+
+    # Open the filehandles, assigning them to the two files, so we can let gpg use them
+    exec 4> "${GPGSTATUS}"
+    exec 5> "${GPGLOGS}"
+
+    # So lets run gpg, status/logger into the two files, to "decrypt" the keyfile
+    if ! gpg ${DEFGPGOPT} --keyring "${ADMINS}" --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
+        ret=$?
+        log "gpg returned with ${ret}, not adding key from file ${file}"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/gpgerror.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/gpgerror.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/gpgerror.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+        continue
+    fi
+
+    # Read in the status output
+    GPGSTAT=$(cat "${GPGSTATUS}")
+    # And check if we like the sig. It has to be both, GOODISG and VALIDSIG or we don't accept it
+    if [[ ${GPGSTAT} =~ "GOODSIG" ]] && [[ ${GPGSTAT} =~ "VALIDSIG" ]]; then
+        log "Signature for ${file} accepted"
+    else
+        log "We are missing one of GOODSIG or VALIDSIG"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/badsig.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/badsig.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/badsig.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+        continue
+    fi
+
+    # So at this point we know we accepted the signature of the file as valid,
+    # that is it is from a key allowed for this architecture. Which only
+    # leaves us with the task of checking if the key fulfills the requirements
+    # before we add it to the architectures keyring.
+
+    # Those currently are:
+    # - keysize 4096 or larger
+    # - RSA key, no encryption capability
+    # - UID matching "buildd autosigning key BUILDDNAME <buildd_ARCH-BUILDDNAME@buildd.debian.org>
+    # - expire within a 120 days
+    # - maximum 2 keys per architecture and buildd
+
+    TEMPKEYDATA=$(mktemp -p "${TMPDIR}" BDKEYS.XXXXXX)
+
+    gpg ${DEFGPGOPT} --with-colons "${GPGOUTF}" > "${TEMPKEYDATA}"
+
+    # Read in the TEMPKEYDATAFILE, but avoid using a subshell like a
+    # while read line otherwise would do
+    exec 4<> "${TEMPKEYDATA}"
+    KEYUID=""
+    #pub:-:4096:1:FAB983612A6554FA:2011-03-24:2011-07-22::-:buildd autosigning key poulenc <buildd_powerpc-poulenc@buildd.debian.org>:
+
+    # Of course this sucky gpg crapshit of an "interface" does give you different things depending on how people
+    # created their keys. And of course the buildd people created the test keys differently to what they now do
+    # which just means extra work for nothing. So as they now do other steps, the thing we get back suddenly looks like
+
+    #pub:-:4096:1:99595DC7865BEAD2:2011-03-26:2011-07-24::-:
+    #uid:::::::::buildd autosigning key corelli <buildd_mips-corelli@buildd.debian.org>:
+
+    # Besides fiddling out the data we need to check later, this regex also check:
+    # - the keytype (:1:, 1 there means RSA)
+    # - the UID
+    # - that the key does have an expiration date (or it wont match, the second date
+    #   field would be empty
+    regex="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]{4}-[0-9]{2}-[0-9]{2}):([0-9]{4}-[0-9]{2}-[0-9]{2})::-:(buildd autosigning key ${BUILDD} <buildd_${ARCH}-${BUILDD}@buildd.debian.org>):$"
+    regex2="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]{4}-[0-9]{2}-[0-9]{2}):([0-9]{4}-[0-9]{2}-[0-9]{2})::-:$"
+    regex3="^uid:::::::::(buildd autosigning key ${BUILDD} <buildd_${ARCH}-${BUILDD}@buildd.debian.org>):$"
+    while read line <&4; do
+        if [[ $line =~ $regex ]]; then
+            KEYSIZE=${BASH_REMATCH[1]}
+            KEYID=${BASH_REMATCH[2]}
+            KEYCREATE=${BASH_REMATCH[3]}
+            KEYEXPIRE=${BASH_REMATCH[4]}
+        KEYUID=${BASH_REMATCH[5]}
+    elif [[ $line =~ $regex2 ]]; then
+        KEYSIZE=${BASH_REMATCH[1]}
+            KEYID=${BASH_REMATCH[2]}
+            KEYCREATE=${BASH_REMATCH[3]}
+            KEYEXPIRE=${BASH_REMATCH[4]}
+    elif [[ $line =~ $regex3 ]]; then
+        KEYUID=${BASH_REMATCH[1]}
+    else
+        log "Didn't recognize the key. Go kiss gpg"
+            DATE=$(date -Is)
+            mv "${INCOMING}/${file}" "${ERRORS}/badkey.${file}.${DATE}"
+            mv "${GPGSTATUS}" "${ERRORS}/badkey.${file}.gpgstatus.${DATE}"
+            mv "${GPGLOGS}" "${ERRORS}/badkey.${file}.gpglogs.${DATE}"
+            rm -f "${GPGOUTF}"
+        continue
+    fi
+    done
+    if [ -z "${KEYUID}" ]; then
+    log "Did not recognize the UID format"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/keyuid.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/keyuid.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/keyuid.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+    continue
+    fi
+    # We do want 4096 or anything above
+    if [ ${KEYSIZE} -lt 4096 ]; then
+        log "Keysize ${KEYSIZE} too small"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/keysize.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/keysize.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/keysize.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+    continue
+    fi
+
+    # We want a maximum lifetime of 120 days, so check that.
+    # Easiest to compare in epoch, so lets see, 120 days midnight from now,
+    # compared with their set expiration date at midnight
+    # maxdate should turn out higher. just in case we make it 121 for this check
+    maxdate=$(date -d '121 day 00:00:00' +%s)
+    theirexpire=$(date -d "${KEYEXPIRE} 00:00:00" +%s)
+    if [ ${theirexpire} -gt ${maxdate} ]; then
+        log "Key expiry ${KEYEXPIRE} wrong"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/keyexpire.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/keyexpire.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/keyexpire.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+    continue
+    fi
+
+    # And now lets check how many keys this buildd already has. 2 is the maximum, so key
+    # rollover works. 3 won't, they have to rm one first
+    # We need to check for the amount of keys
+    ARCHKEYRING="${base}/${ARCH}/keyring.gpg"
+
+    KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys "buildd_${ARCH}-${BUILDD}@buildd.debian.org" | grep -c '^pub:' || /bin/true )
+    if [ ${KEYNO} -gt 2 ]; then
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/toomany.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/toomany.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/toomany.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+        continue
+    fi
+
+    # Right. At this point everything should be in order, which means we should put the key into
+    # the keyring
+    KEYSUBMITTER=$(cat "${GPGSTATUS}"|grep GOODSIG)
+    KEYSUBMITTER=${KEYSUBMITTER##*GOODSIG}
+    log "${KEYSUBMITTER} added key ${KEYID} for ${ARCH} buildd ${BUILDD}, expire ${KEYEXPIRE}"
+    gpg ${DEFGPGOPT} --status-fd 4 --logger-fd 5 --keyring "${ARCHKEYRING}" --import "${GPGOUTF}" 2>/dev/null
+
+    mv "${INCOMING}/${file}" "${base}/${ARCH}"
+done

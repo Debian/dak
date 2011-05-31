@@ -1,6 +1,7 @@
 #!/bin/sh -e
 
-. vars
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
 
 export TERM=linux
 

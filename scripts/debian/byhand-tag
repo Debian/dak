@@ -1,4 +1,7 @@
-#!/bin/sh -ue
+#!/bin/sh
+
+set -u
+set -e
 
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
@@ -42,6 +45,11 @@ mv "$OUTNONFREE"        "$TARGET"tag.non-free
 chmod 644 "$TARGET"tag "$TARGET"tag.contrib "$TARGET"tag.non-free
 
 (cd $TARGET && $scriptsdir/mk-extra-overrides.sh)
+(cd "$TARGET" \
+  && dak external-overrides import unstable main Tag <tag \
+  && dak external-overrides import unstable contrib Tag <tag.contrib \
+  && dak external-overrides import unstable non-free Tag <tag.non-free)
+dak external-overrides copy unstable testing
 
 trap - EXIT
 

@@ -25,7 +25,7 @@ o To process queue/:
 
 o To generate indices files:
 
-  * dak dominate          - removes obsolete packages from suites 
+  * dak dominate          - removes obsolete packages from suites
   * dak generate-filelist - generates file lists for apt-ftparchive
   * dak generate-releases - generates Release
 
@@ -41,6 +41,7 @@ o Information display:
   * dak ls - shows information about package(s)
   * dak queue-report - shows information about package(s) in queue/
   * dak override - can show you individual override entries
+  * dak graph - creates some pretty graphs of queue sizes over time
 
 Generic and useful, but only for those with existing archives
 -------------------------------------------------------------

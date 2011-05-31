@@ -42,6 +42,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
 from daklib.regexes import re_extract_src_version
+from daklib.cruft import *
 
 ################################################################################
 
@@ -156,7 +157,7 @@ def do_nfu(nfu_packages):
         for architecture in a2p:
             if a2p[architecture]:
                 print (" dak rm -m \"[auto-cruft] NFU\" -s %s -a %s -b %s" % 
-                    (suite, architecture, " ".join(a2p[architecture])))
+                    (suite.suite_name, architecture, " ".join(a2p[architecture])))
         print
 
 def parse_nfu(architecture):
@@ -188,39 +189,20 @@ def parse_nfu(architecture):
 ################################################################################
 
 def do_newer_version(lowersuite_name, highersuite_name, code, session):
-    lowersuite = get_suite(lowersuite_name, session)
-    if not lowersuite:
-        return
-
-    highersuite = get_suite(highersuite_name, session)
-    if not highersuite:
-        return
-
-    # Check for packages in $highersuite obsoleted by versions in $lowersuite
-    q = session.execute("""
-WITH highersuite_maxversion AS (SELECT s.source AS source, max(s.version) AS version
-  FROM src_associations sa, source s
-  WHERE sa.suite = :highersuite_id AND sa.source = s.id group by s.source)
-SELECT s.source, s.version AS lower, s2.version AS higher
-  FROM src_associations sa, source s, source s2, src_associations sa2, highersuite_maxversion hm
-  WHERE sa.suite = :highersuite_id AND sa2.suite = :lowersuite_id AND sa.source = s.id
-   AND sa2.source = s2.id AND s.source = s2.source
-   AND hm.source = s.source AND hm.version < s2.version
-   AND s.version < s2.version""", {'lowersuite_id': lowersuite.suite_id,
-                                    'highersuite_id': highersuite.suite_id})
-    ql = q.fetchall()
-    if ql:
+    list = newer_version(lowersuite_name, highersuite_name, session)
+    if len(list) > 0:
         nv_to_remove = []
-        print "Newer version in %s" % lowersuite.suite_name
-        print "-----------------" + "-" * len(lowersuite.suite_name)
+        title = "Newer version in %s" % lowersuite_name
+        print title
+        print "-" * len(title)
         print
-        for i in ql:
+        for i in list:
             (source, higher_version, lower_version) = i
             print " o %s (%s, %s)" % (source, higher_version, lower_version)
             nv_to_remove.append(source)
         print
         print "Suggested command:"
-        print " dak rm -m \"[auto-cruft] %s\" -s %s %s" % (code, highersuite.suite_name,
+        print " dak rm -m \"[auto-cruft] %s\" -s %s %s" % (code, highersuite_name,
                                                            " ".join(nv_to_remove))
         print
 
@@ -542,7 +524,7 @@ def main ():
         cnf["Cruft-Report::Options::Mode"] = "daily"
 
     if not cnf.has_key("Cruft-Report::Options::Wanna-Build-Dump"):
-        cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp.debian.org/scripts/nfu"
+        cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp-master.debian.org/scripts/nfu"
 
     apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
 
@@ -552,7 +534,7 @@ def main ():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = [ "nbs", "nviu", "nvit", "obsolete source" ]
+        checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu" ]
     elif Options["Mode"] == "full":
         checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
     else:
@@ -569,7 +551,6 @@ def main ():
     source_versions = {}
 
     anais_output = ""
-    duplicate_bins = {}
 
     nfu_packages = {}
 
@@ -617,18 +598,10 @@ def main ():
             if "anais" in checks:
                 anais_output += do_anais(architecture, binaries_list, source, session)
 
-            # Check for duplicated packages and build indices for checking "no source" later
+            # build indices for checking "no source" later
             source_index = component + '/' + source
-            #if src_pkgs.has_key(source):
-            #    print " %s is a duplicated source package (%s and %s)" % (source, source_index, src_pkgs[source])
             src_pkgs[source] = source_index
             for binary in binaries_list:
-                if bin_pkgs.has_key(binary):
-                    key_list = [ source, bin_pkgs[binary] ]
-                    key_list.sort()
-                    key = '_'.join(key_list)
-                    duplicate_bins.setdefault(key, [])
-                    duplicate_bins[key].append(binary)
                 bin_pkgs[binary] = source
             source_binaries[source] = binaries
             source_versions[source] = source_version
@@ -685,14 +658,6 @@ def main ():
                     nbs[source].setdefault(package, {})
                     nbs[source][package][version] = ""
                 else:
-                    previous_source = bin_pkgs[package]
-                    if previous_source != source:
-                        key_list = [ source, previous_source ]
-                        key_list.sort()
-                        key = '_'.join(key_list)
-                        duplicate_bins.setdefault(key, [])
-                        if package not in duplicate_bins[key]:
-                            duplicate_bins[key].append(package)
                     if "nfu" in checks:
                         if package in nfu_entries and \
                                version != source_versions[source]: # only suggest to remove out-of-date packages
@@ -740,15 +705,7 @@ def main ():
         print
 
     if "bms" in checks:
-        print "Built from multiple source packages"
-        print "-----------------------------------"
-        print
-        keys = duplicate_bins.keys()
-        keys.sort()
-        for key in keys:
-            (source_a, source_b) = key.split("_")
-            print " o %s & %s => %s" % (source_a, source_b, ", ".join(duplicate_bins[key]))
-        print
+        report_multiple_source(suite)
 
     if "anais" in checks:
         print "Architecture Not Allowed In Source"

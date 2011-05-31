@@ -37,12 +37,14 @@ from daklib.regexes import re_source_ext
 from daklib.config import Config
 from daklib import daklog
 from daklib.changesutils import *
-from daklib.threadpool import ThreadPool
+from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
+from multiprocessing import Manager
 
 # Globals
 Cnf = None
 Options = None
-sources = set()
+manager = Manager()
+sources = manager.list()
 
 
 ################################################################################
@@ -151,17 +153,46 @@ def html_footer():
 
 
 def do_pkg(changes_file):
+    changes_file = utils.validate_changes_file_arg(changes_file, 0)
+    if not changes_file:
+        return
+    print "\n" + changes_file
+
     session = DBConn().session()
     u = Upload()
     u.pkg.changes_file = changes_file
-    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file)
+    # We can afoord not to check the signature before loading the changes file
+    # as we've validated it already (otherwise it couldn't be in new)
+    # and we can more quickly skip over already processed files this way
     u.load_changes(changes_file)
+
+    origchanges = os.path.abspath(u.pkg.changes_file)
+
+    # Still be cautious in case paring the changes file went badly
+    if u.pkg.changes.has_key('source') and u.pkg.changes.has_key('version'):
+        htmlname = u.pkg.changes["source"] + "_" + u.pkg.changes["version"] + ".html"
+        htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
+    else:
+        # Changes file was bad
+        print "Changes file %s missing source or version field" % changes_file
+        session.close()
+        return
+
+    # Have we already processed this?
+    if os.path.exists(htmlfile) and \
+        os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
+            sources.append(htmlname)
+            session.close()
+            return (PROC_STATUS_SUCCESS, '%s already up-to-date' % htmlfile)
+
+    # Now we'll load the fingerprint
+    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
     new_queue = get_policy_queue('new', session );
     u.pkg.directory = new_queue.path
     u.update_subst()
-    origchanges = os.path.abspath(u.pkg.changes_file)
     files = u.pkg.files
     changes = u.pkg.changes
+    sources.append(htmlname)
 
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
@@ -172,34 +203,32 @@ def do_pkg(changes_file):
             u.check_source_against_db(deb_filename, session)
     u.pkg.changes["suite"] = u.pkg.changes["distribution"]
 
-    new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, 0, session)
+    new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, 0, dsc=u.pkg.dsc, session=session)
 
-    htmlname = changes["source"] + "_" + changes["version"] + ".html"
-    sources.add(htmlname)
-    # do not generate html output if that source/version already has one.
-    if not os.path.exists(os.path.join(cnf["Show-New::HTMLPath"],htmlname)):
-        outfile = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
+    outfile = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
 
-        filestoexamine = []
-        for pkg in new.keys():
-            for fn in new[pkg]["files"]:
-                filestoexamine.append(fn)
+    filestoexamine = []
+    for pkg in new.keys():
+        for fn in new[pkg]["files"]:
+            filestoexamine.append(fn)
 
-        print >> outfile, html_header(changes["source"], filestoexamine)
+    print >> outfile, html_header(changes["source"], filestoexamine)
 
-        check_valid(new, session)
-        distribution = changes["distribution"].keys()[0]
-        print >> outfile, examine_package.display_changes(distribution, changes_file)
+    check_valid(new, session)
+    distribution = changes["distribution"].keys()[0]
+    print >> outfile, examine_package.display_changes(distribution, changes_file)
 
-        for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-            print >> outfile, examine_package.check_dsc(distribution, fn, session)
-        for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-            print >> outfile, examine_package.check_deb(distribution, fn, session)
+    for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
+        print >> outfile, examine_package.check_dsc(distribution, fn, session)
+    for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
+        print >> outfile, examine_package.check_deb(distribution, fn, session)
 
-        print >> outfile, html_footer()
+    print >> outfile, html_footer()
 
-	outfile.close()
+    outfile.close()
     session.close()
+
+    return (PROC_STATUS_SUCCESS, '%s already updated' % htmlfile)
 
 ################################################################################
 
@@ -246,17 +275,14 @@ def main():
 
     examine_package.use_html=1
 
-    threadpool = ThreadPool()
+    pool = DakProcessPool()
     for changes_file in changes_files:
-        changes_file = utils.validate_changes_file_arg(changes_file, 0)
-        if not changes_file:
-            continue
-        print "\n" + changes_file
-        threadpool.queueTask(do_pkg, changes_file)
-    threadpool.joinAll()
+        pool.apply_async(do_pkg, (changes_file,))
+    pool.close()
+    pool.join()
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
-    to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))
+    to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
     for f in to_delete:
         os.remove(os.path.join(cnf["Show-New::HTMLPath"],f))
 

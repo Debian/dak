@@ -1,78 +1,84 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Executed daily via cron, out of dak's crontab.
 
 set -e
-export SCRIPTVARS=/org/security.debian.org/dak/config/debian-security/vars
+export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
 ################################################################################
 
 # Fix overrides
 
-rsync --delete -r --include=override\* --exclude=\* --password-file /srv/non-us.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
+rsync --delete -r --include=override\* --exclude=\* --password-file /srv/security-master.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
 
 cd $overridedir
 for file in override*.gz; do
-	zcat $file > $(basename $file .gz)
+    zcat $file > $(basename $file .gz)
 done
 find . -maxdepth 1 -mindepth 1 -type l | xargs --no-run-if-empty rm
 
 for suite in $suites; do
     case $suite in
-		oldstable) override_suite=etch;;
-		stable) override_suite=lenny;;
-		testing) override_suite=squeeze;;
-		*) echo "Unknown suite type ($suite)"; exit 1;;
+        oldstable) override_suite=lenny;;
+        stable) override_suite=squeeze;;
+        testing) override_suite=wheezy;;
+        *) echo "Unknown suite type ($suite)"; exit 1;;
     esac
     for component in $components; do
-		for override_type in $override_types; do
-			case $override_type in
-				deb) type="" ;;
-				dsc) type=".src" ;;
-				udeb) type=".debian-installer" ;;
-			esac
+        for override_type in $override_types; do
+            case $override_type in
+                deb) type="" ;;
+                dsc) type=".src" ;;
+                udeb) type=".debian-installer" ;;
+            esac
 
-			if [ "$override_type" = "udeb" ]; then
-				if [ ! "$component" = "main" ]; then
-					continue
-				fi
-			fi
-			zcat override.$override_suite.$component$type.gz | dak control-overrides -q -a -t $override_type -s $suite -c updates/$component
-		done
+            if [ "$override_type" = "udeb" ]; then
+                if [ ! "$component" = "main" ]; then
+                    continue
+                fi
+            fi
+
+            OFILE="override.$override_suite.$component$type.gz"
+            if [ -r "$OFILE" ]; then
+                zcat "$OFILE" | dak control-overrides -q -a -t $override_type -s $suite -c updates/$component
+            fi
+        done
     done
 done
 
 # Generate .all3 overides for the buildd support
-for dist in etch lenny squeeze; do
+for dist in lenny squeeze wheezy; do
     rm -f override.$dist.all3
     components="main contrib non-free";
     if [ -f override.$dist.main.debian-installer.gz ]; then
-		components="$components main.debian-installer"
+        components="$components main.debian-installer"
     fi
     for component in $components; do
-		zcat override.$dist.$component.gz >> override.$dist.all3
+        zcat override.$dist.$component.gz >> override.$dist.all3
         if [ -e "override.$dist.$component.src.gz" ]; then
-			zcat override.$dist.$component.src.gz >> override.$dist.all3.src
-		fi
+            zcat override.$dist.$component.src.gz >> override.$dist.all3.src
+        fi
     done
 done
 
 ################################################################################
 
-cd $masterdir
+cd $configdir
+dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
 dak clean-queues
+dak clean-queues -i $disembargo
 dak clean-suites
-apt-ftparchive -q clean apt.conf
-apt-ftparchive -q clean apt.conf.buildd
 
 symlinks -d -r $ftpdir
 
-pg_dump obscurity > /org/security.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+pg_dump obscurity > /org/security-master.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
+find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mmin +720 |
+while read dumpname; do
+    bzip2 -9fv "$dumpname"
+done
 
-# Vacuum the database
-set +e
-echo "VACUUM; VACUUM ANALYZE;" | psql obscurity 2>&1 | egrep -v "^NOTICE:  Skipping \"pg_.*only table or database owner can VACUUM it$|^VACUUM$"
-set -e
+apt-ftparchive -q clean apt.conf
+apt-ftparchive -q clean apt.conf.buildd
 
 ################################################################################

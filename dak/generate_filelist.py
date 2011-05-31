@@ -5,6 +5,7 @@ Generate file lists for apt-ftparchive.
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
 @copyright: 2009  Torsten Werner <twerner@debian.org>
+@copyright: 2011  Ansgar Burchardt <ansgar@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -37,94 +38,11 @@ Generate file lists for apt-ftparchive.
 
 from daklib.dbconn import *
 from daklib.config import Config
-from daklib.threadpool import ThreadPool
-from daklib import utils
+from daklib import utils, daklog
+from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
 import apt_pkg, os, stat, sys
 
-def fetch(query, args, session):
-    return [path + filename for (path, filename) in \
-        session.execute(query, args).fetchall()]
-
-def getSources(suite, component, session, timestamp):
-    extra_cond = ""
-    if timestamp:
-        extra_cond = "AND extract(epoch from sa.created) > %d" % timestamp
-    query = """
-        SELECT l.path, f.filename
-            FROM source s
-            JOIN src_associations sa
-                ON s.id = sa.source AND sa.suite = :suite %s
-            JOIN files f
-                ON s.file = f.id
-            JOIN location l
-                ON f.location = l.id AND l.component = :component
-            ORDER BY filename
-    """ % extra_cond
-    args = { 'suite': suite.suite_id,
-             'component': component.component_id }
-    return fetch(query, args, session)
-
-def getBinaries(suite, component, architecture, type, session, timestamp):
-    extra_cond = ""
-    if timestamp:
-        extra_cond = "AND extract(epoch from ba.created) > %d" % timestamp
-    query = """
-CREATE TEMP TABLE b_candidates (
-    source integer,
-    file integer,
-    architecture integer);
-
-INSERT INTO b_candidates (source, file, architecture)
-    SELECT b.source, b.file, b.architecture
-        FROM binaries b
-        JOIN bin_associations ba ON b.id = ba.bin
-        WHERE b.type = :type AND ba.suite = :suite AND
-            b.architecture IN (2, :architecture) %s;
-
-CREATE TEMP TABLE gf_candidates (
-    filename text,
-    path text,
-    architecture integer,
-    src integer,
-    source text);
-
-INSERT INTO gf_candidates (filename, path, architecture, src, source)
-    SELECT f.filename, l.path, bc.architecture, bc.source as src, s.source
-        FROM b_candidates bc
-        JOIN source s ON bc.source = s.id
-        JOIN files f ON bc.file = f.id
-        JOIN location l ON f.location = l.id
-        WHERE l.component = :component;
-
-WITH arch_any AS
-
-    (SELECT path, filename FROM gf_candidates
-        WHERE architecture > 2),
-
-     arch_all_with_any AS
-    (SELECT path, filename FROM gf_candidates
-        WHERE architecture = 2 AND
-              src IN (SELECT src FROM gf_candidates WHERE architecture > 2)),
-
-     arch_all_without_any AS
-    (SELECT path, filename FROM gf_candidates
-        WHERE architecture = 2 AND
-              source NOT IN (SELECT DISTINCT source FROM gf_candidates WHERE architecture > 2)),
-
-     filelist AS
-    (SELECT * FROM arch_any
-    UNION
-    SELECT * FROM arch_all_with_any
-    UNION
-    SELECT * FROM arch_all_without_any)
-
-    SELECT * FROM filelist ORDER BY filename
-    """ % extra_cond
-    args = { 'suite': suite.suite_id,
-             'component': component.component_id,
-             'architecture': architecture.arch_id,
-             'type': type }
-    return fetch(query, args, session)
+from daklib.lists import getSources, getBinaries, getArchAll
 
 def listPath(suite, component, architecture = None, type = None,
         incremental_mode = False):
@@ -147,26 +65,54 @@ def listPath(suite, component, architecture = None, type = None,
         file.truncate()
     return (file, timestamp)
 
-def writeSourceList(args):
-    (suite, component, incremental_mode) = args
+def writeSourceList(suite_id, component_id, incremental_mode):
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    component = Component.get(component_id, session)
     (file, timestamp) = listPath(suite, component,
             incremental_mode = incremental_mode)
-    session = DBConn().session()
-    for filename in getSources(suite, component, session, timestamp):
-        file.write(filename + '\n')
-    session.close()
-    file.close()
 
-def writeBinaryList(args):
-    (suite, component, architecture, type, incremental_mode) = args
+    message = "sources list for %s %s" % (suite.suite_name, component.component_name)
+
+    for _, filename in getSources(suite, component, session, timestamp):
+        file.write(filename + '\n')
+    session.rollback()
+    file.close()
+    return (PROC_STATUS_SUCCESS, message)
+
+def writeAllList(suite_id, component_id, architecture_id, type, incremental_mode):
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    component = Component.get(component_id, session)
+    architecture = Architecture.get(architecture_id, session)
     (file, timestamp) = listPath(suite, component, architecture, type,
             incremental_mode)
-    session = DBConn().session()
-    for filename in getBinaries(suite, component, architecture, type,
+
+    message = "all list for %s %s (arch=%s, type=%s)" % (suite.suite_name, component.component_name, architecture.arch_string, type)
+
+    for _, filename in getArchAll(suite, component, architecture, type,
             session, timestamp):
         file.write(filename + '\n')
-    session.close()
+    session.rollback()
     file.close()
+    return (PROC_STATUS_SUCCESS, message)
+
+def writeBinaryList(suite_id, component_id, architecture_id, type, incremental_mode):
+    session = DBConn().session()
+    suite = Suite.get(suite_id, session)
+    component = Component.get(component_id, session)
+    architecture = Architecture.get(architecture_id, session)
+    (file, timestamp) = listPath(suite, component, architecture, type,
+            incremental_mode)
+
+    message = "binary list for %s %s (arch=%s, type=%s)" % (suite.suite_name, component.component_name, architecture.arch_string, type)
+
+    for _, filename in getBinaries(suite, component, architecture, type,
+            session, timestamp):
+        file.write(filename + '\n')
+    session.rollback()
+    file.close()
+    return (PROC_STATUS_SUCCESS, message)
 
 def usage():
     print """Usage: dak generate_filelist [OPTIONS]
@@ -186,6 +132,7 @@ Incremental mode appends only newer files to existing lists."""
 
 def main():
     cnf = Config()
+    Logger = daklog.Logger('generate-filelist')
     Arguments = [('h', "help",         "Filelist::Options::Help"),
                  ('s', "suite",        "Filelist::Options::Suite", "HasArg"),
                  ('c', "component",    "Filelist::Options::Component", "HasArg"),
@@ -193,53 +140,77 @@ def main():
                  ('i', "incremental",  "Filelist::Options::Incremental")]
     session = DBConn().session()
     query_suites = session.query(Suite)
-    suites = [suite.suite_name for suite in query_suites.all()]
+    suites = [suite.suite_name for suite in query_suites]
     if not cnf.has_key('Filelist::Options::Suite'):
-        cnf['Filelist::Options::Suite'] = ','.join(suites)
+        cnf['Filelist::Options::Suite'] = ','.join(suites).encode()
     query_components = session.query(Component)
     components = \
-        [component.component_name for component in query_components.all()]
+        [component.component_name for component in query_components]
     if not cnf.has_key('Filelist::Options::Component'):
-        cnf['Filelist::Options::Component'] = ','.join(components)
+        cnf['Filelist::Options::Component'] = ','.join(components).encode()
     query_architectures = session.query(Architecture)
     architectures = \
-        [architecture.arch_string for architecture in query_architectures.all()]
+        [architecture.arch_string for architecture in query_architectures]
     if not cnf.has_key('Filelist::Options::Architecture'):
-        cnf['Filelist::Options::Architecture'] = ','.join(architectures)
+        cnf['Filelist::Options::Architecture'] = ','.join(architectures).encode()
     cnf['Filelist::Options::Help'] = ''
     cnf['Filelist::Options::Incremental'] = ''
     apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.SubTree("Filelist::Options")
     if Options['Help']:
         usage()
-    suite_arch = session.query(SuiteArchitecture)
-    threadpool = ThreadPool()
-    for suite_name in utils.split_args(Options['Suite']):
-        suite = query_suites.filter_by(suite_name = suite_name).one()
-        join = suite_arch.filter_by(suite_id = suite.suite_id)
-        for component_name in utils.split_args(Options['Component']):
-            component = session.query(Component).\
-                filter_by(component_name = component_name).one()
-            for architecture_name in utils.split_args(Options['Architecture']):
-                architecture = query_architectures.\
-                    filter_by(arch_string = architecture_name).one()
-                try:
-                    join.filter_by(arch_id = architecture.arch_id).one()
-                    if architecture_name == 'source':
-                        threadpool.queueTask(writeSourceList,
-                            (suite, component, Options['Incremental']))
-                    elif architecture_name != 'all':
-                        threadpool.queueTask(writeBinaryList,
-                            (suite, component, architecture, 'deb',
-                                Options['Incremental']))
-                        threadpool.queueTask(writeBinaryList,
-                            (suite, component, architecture, 'udeb',
-                                Options['Incremental']))
-                except:
+    pool = DakProcessPool()
+    query_suites = query_suites. \
+        filter(Suite.suite_name.in_(utils.split_args(Options['Suite'])))
+    query_components = query_components. \
+        filter(Component.component_name.in_(utils.split_args(Options['Component'])))
+    query_architectures = query_architectures. \
+        filter(Architecture.arch_string.in_(utils.split_args(Options['Architecture'])))
+
+    def parse_results(message):
+        # Split out into (code, msg)
+        code, msg = message
+        if code == PROC_STATUS_SUCCESS:
+            Logger.log([msg])
+        elif code == PROC_STATUS_SIGNALRAISED:
+            Logger.log(['E: Subprocess recieved signal ', msg])
+        else:
+            Logger.log(['E: ', msg])
+
+    for suite in query_suites:
+        suite_id = suite.suite_id
+        for component in query_components:
+            component_id = component.component_id
+            for architecture in query_architectures:
+                architecture_id = architecture.arch_id
+                if architecture not in suite.architectures:
                     pass
-    threadpool.joinAll()
+                elif architecture.arch_string == 'source':
+                    pool.apply_async(writeSourceList,
+                        (suite_id, component_id, Options['Incremental']), callback=parse_results)
+                elif architecture.arch_string == 'all':
+                    pool.apply_async(writeAllList,
+                        (suite_id, component_id, architecture_id, 'deb',
+                            Options['Incremental']), callback=parse_results)
+                    pool.apply_async(writeAllList,
+                        (suite_id, component_id, architecture_id, 'udeb',
+                            Options['Incremental']), callback=parse_results)
+                else: # arch any
+                    pool.apply_async(writeBinaryList,
+                        (suite_id, component_id, architecture_id, 'deb',
+                            Options['Incremental']), callback=parse_results)
+                    pool.apply_async(writeBinaryList,
+                        (suite_id, component_id, architecture_id, 'udeb',
+                            Options['Incremental']), callback=parse_results)
+    pool.close()
+    pool.join()
+
     # this script doesn't change the database
     session.close()
+
+    Logger.close()
+
+    sys.exit(pool.overall_status())
 
 if __name__ == '__main__':
     main()

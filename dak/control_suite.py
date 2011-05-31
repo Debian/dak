@@ -49,6 +49,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib import daklog
 from daklib import utils
+from daklib.queue import get_suite_version_by_package, get_suite_version_by_source
 
 #######################################################################################
 
@@ -160,7 +161,39 @@ def britney_changelog(packages, suite, session):
 
 #######################################################################################
 
-def set_suite(file, suite, session, britney=False):
+def version_checks(package, architecture, target_suite, new_version, session, force = False):
+    if architecture == "source":
+        suite_version_list = get_suite_version_by_source(package, session)
+    else:
+        suite_version_list = get_suite_version_by_package(package, architecture, session)
+
+    must_be_newer_than = [ vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeNewerThan") ]
+    must_be_older_than = [ vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeOlderThan") ]
+
+    # Must be newer than an existing version in target_suite
+    if target_suite not in must_be_newer_than:
+        must_be_newer_than.append(target_suite)
+
+    violations = False
+
+    for suite, version in suite_version_list:
+        cmp = apt_pkg.VersionCompare(new_version, version)
+        if suite in must_be_newer_than and cmp < 1:
+            utils.warn("%s (%s): version check violated: %s targeted at %s is *not* newer than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
+            violations = True
+        if suite in must_be_older_than and cmp > 1:
+            utils.warn("%s (%s): version check violated: %s targeted at %s is *not* older than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
+            violations = True
+
+    if violations:
+        if force:
+            utils.warn("Continuing anyway (forced)...")
+        else:
+            utils.fubar("Aborting. Version checks violated and not forced.")
+
+#######################################################################################
+
+def set_suite(file, suite, session, britney=False, force=False):
     suite_id = suite.suite_id
     lines = file.readlines()
 
@@ -209,6 +242,7 @@ def set_suite(file, suite, session, britney=False):
     for key in desired.keys():
         if not current.has_key(key):
             (package, version, architecture) = key.split()
+            version_checks(package, architecture, suite.suite_name, version, session, force)
             pkid = get_id (package, version, architecture, session)
             if not pkid:
                 continue
@@ -227,9 +261,9 @@ def set_suite(file, suite, session, britney=False):
 
 #######################################################################################
 
-def process_file(file, suite, action, session, britney=False):
+def process_file(file, suite, action, session, britney=False, force=False):
     if action == "set":
-        set_suite(file, suite, session, britney)
+        set_suite(file, suite, session, britney, force)
         return
 
     suite_id = suite.suite_id
@@ -248,6 +282,10 @@ def process_file(file, suite, action, session, britney=False):
         pkid = get_id(package, version, architecture, session)
         if not pkid:
             continue
+
+        # Do version checks when adding packages
+        if action == "add":
+            version_checks(package, architecture, suite.suite_name, version, session, force)
 
         if architecture == "source":
             # Find the existing association ID, if any
@@ -333,6 +371,7 @@ def main ():
 
     Arguments = [('a',"add","Control-Suite::Options::Add", "HasArg"),
                  ('b',"britney","Control-Suite::Options::Britney"),
+                 ('f','force','Control-Suite::Options::Force'),
                  ('h',"help","Control-Suite::Options::Help"),
                  ('l',"list","Control-Suite::Options::List","HasArg"),
                  ('r',"remove", "Control-Suite::Options::Remove", "HasArg"),
@@ -354,6 +393,8 @@ def main ():
 
     session = DBConn().session()
 
+    force = Options.has_key("Force") and Options["Force"]
+
     action = None
 
     for i in ("add", "list", "remove", "set"):
@@ -373,7 +414,7 @@ def main ():
 
     # Safety/Sanity check
     # XXX: This should be stored in the database
-    if action == "set" and suite_name not in ["testing"]:
+    if action == "set" and suite_name not in ["testing", "squeeze-updates"]:
         utils.fubar("Will not reset suite %s" % (suite_name))
 
     britney = False
@@ -383,12 +424,12 @@ def main ():
     if action == "list":
         get_list(suite, session)
     else:
-        Logger = daklog.Logger(cnf.Cnf, "control-suite")
+        Logger = daklog.Logger("control-suite")
         if file_list:
             for f in file_list:
-                process_file(utils.open_file(f), suite, action, session, britney)
+                process_file(utils.open_file(f), suite, action, session, britney, force)
         else:
-            process_file(sys.stdin, suite, action, session, britney)
+            process_file(sys.stdin, suite, action, session, britney, force)
         Logger.close()
 
 #######################################################################################

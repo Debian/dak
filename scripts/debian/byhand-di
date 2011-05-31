@@ -1,4 +1,7 @@
-#!/bin/sh -ue
+#!/bin/sh
+
+set -u
+set -e
 
 if [ $# -lt 4 ]; then
 	echo "Usage: $0 filename version arch changes_file"
@@ -16,8 +19,8 @@ error() {
 }
 
 # Check validity of version number
-# Expected are: YYYYMMDD, YYYYMMDD.x, YYYYMMDD<suite>x and the +b[0-9] on the end
-if ! echo "$VERSION" | grep -Eq "^[0-9]{8}(|(\.|[a-z]+)[0-9]+)(\+b[0-9])?$"; then
+# Expected are: YYYYMMDD, YYYYMMDD.x, YYYYMMDD<suite>x, YYYYMMDD+<suite>x and the +b[0-9] on the end
+if ! echo "$VERSION" | grep -Eq "^[0-9]{8}(|(\.|\+?[a-z]+)[0-9]+)(\+b[0-9])?$"; then
 	error "Invalid version: '$VERSION'"
 fi
 

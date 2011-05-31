@@ -25,6 +25,7 @@ import apt_pkg
 
 from daklib import utils
 from daklib.dbconn import *
+from sqlalchemy.orm.exc import NoResultFound
 
 ################################################################################
 
@@ -58,6 +59,12 @@ Perform administrative work on the dak database.
   config / c:
      c db                   show db config
      c db-shell             show db config in a usable form for psql
+     c NAME                 show option NAME as set in configuration table
+
+  keyring / k:
+     k list-all             list all keyrings
+     k list-binary          list all keyrings with a NULL source acl
+     k list-source          list all keyrings with a non NULL source acl
 
   architecture / a:
      a list                 show a list of architectures
@@ -77,11 +84,21 @@ Perform administrative work on the dak database.
                             description, origin and codename are optional.
 
   suite-architecture / s-a:
+     s-a list               show the architectures for all suites
      s-a list-suite ARCH    show the suites an ARCH is in
      s-a list-arch SUITE    show the architectures in a SUITE
      s-a add SUITE ARCH     add ARCH to suite
      s-a rm SUITE ARCH      remove ARCH from suite (will only work if
                             no packages remain for the arch in the suite)
+
+  version-check / v-c:
+     v-c list                        show version checks for all suites
+     v-c list-suite SUITE            show version checks for suite SUITE
+     v-c add SUITE CHECK REFERENCE   add a version check for suite SUITE
+     v-c rm SUITE CHECK REFERENCE    rmove a version check
+       where
+         CHECK     is one of Enhances, MustBeNewerThan, MustBeOlderThan
+	 REFERENCE is another suite name
 """
     sys.exit(exit_code)
 
@@ -96,10 +113,11 @@ def __architecture_list(d, args):
     sys.exit(0)
 
 def __architecture_add(d, args):
-    die_arglen(args, 3, "E: adding an architecture requires a name and a description")
+    die_arglen(args, 4, "E: adding an architecture requires a name and a description")
     print "Adding architecture %s" % args[2]
     suites = [str(x) for x in args[4:]]
-    print suites
+    if len(suites) > 0:
+        print "Adding to suites %s" % ", ".join(suites)
     if not dryrun:
         try:
             s = d.session()
@@ -108,12 +126,9 @@ def __architecture_add(d, args):
             a.description = str(args[3])
             s.add(a)
             for sn in suites:
-                su = get_suite(sn ,s)
+                su = get_suite(sn, s)
                 if su is not None:
-                    archsu = SuiteArchitecture()
-                    archsu.arch_id = a.arch_id
-                    archsu.suite_id = su.suite_id
-                    s.add(archsu)
+                    a.suites.append(su)
                 else:
                     warn("W: Cannot find suite %s" % su)
             s.commit()
@@ -234,22 +249,27 @@ dispatch['s'] = suite
 
 def __suite_architecture_list(d, args):
     s = d.session()
-    for j in s.query(Suite).order_by('suite_name').all():
-        print j.suite_name + ' ' + \
-              ','.join([a.architecture.arch_string for a in j.suitearchitectures])
+    for j in s.query(Suite).order_by('suite_name'):
+        architectures = j.get_architectures(skipsrc = True, skipall = True)
+        print j.suite_name + ': ' + \
+              ', '.join([a.arch_string for a in architectures])
 
 def __suite_architecture_listarch(d, args):
     die_arglen(args, 3, "E: suite-architecture list-arch requires a suite")
-    a = get_suite_architectures(args[2].lower())
+    suite = get_suite(args[2].lower(), d.session())
+    if suite is None:
+        die('E: suite %s is invalid' % args[2].lower())
+    a = suite.get_architectures(skipsrc = True, skipall = True)
     for j in a:
-        # HACK: We should get rid of source from the arch table
-        if j.arch_string != 'source':
-            print j.arch_string
+        print j.arch_string
 
 
 def __suite_architecture_listsuite(d, args):
     die_arglen(args, 3, "E: suite-architecture list-suite requires an arch")
-    for j in get_architecture_suites(args[2].lower()):
+    architecture = get_architecture(args[2].lower(), d.session())
+    if architecture is None:
+        die("E: architecture %s is invalid" % args[2].lower())
+    for j in architecture.suites:
         print j.suite_name
 
 
@@ -267,10 +287,7 @@ def __suite_architecture_add(d, args):
 
     if not dryrun:
         try:
-            sa = SuiteArchitecture()
-            sa.arch_id = arch.arch_id
-            sa.suite_id = suite.suite_id
-            s.add(sa)
+            suite.architectures.append(arch)
             s.commit()
         except IntegrityError, e:
             die("E: Can't add suite-architecture entry (%s, %s) - probably already exists" % (args[2].lower(), args[3].lower()))
@@ -287,10 +304,15 @@ def __suite_architecture_rm(d, args):
     s = d.session()
     if not dryrun:
         try:
-            sa = get_suite_architecture(args[2].lower(), args[3].lower(), s)
-            if sa is None:
-                die("E: can't find suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower()))
-            s.delete(sa)
+            suite_name = args[2].lower()
+            suite = get_suite(suite_name, s)
+            if suite is None:
+                die('E: no such suite %s' % suite_name)
+            arch_string = args[3].lower()
+            architecture = get_architecture(arch_string, s)
+            if architecture not in suite.architectures:
+                die("E: architecture %s not found in suite %s" % (arch_string, suite_name))
+            suite.architectures.remove(architecture)
             s.commit()
         except IntegrityError, e:
             die("E: Can't remove suite-architecture entry (%s, %s) - it's probably referenced" % (args[2].lower(), args[3].lower()))
@@ -327,6 +349,78 @@ dispatch['s-a'] = suite_architecture
 
 ################################################################################
 
+def __version_check_list(d):
+    session = d.session()
+    for s in session.query(Suite).order_by('suite_name'):
+        __version_check_list_suite(d, s.suite_name)
+
+def __version_check_list_suite(d, suite_name):
+    vcs = get_version_checks(suite_name)
+    for vc in vcs:
+        print "%s %s %s" % (suite_name, vc.check, vc.reference.suite_name)
+
+def __version_check_add(d, suite_name, check, reference_name):
+    suite = get_suite(suite_name)
+    if not suite:
+        die("E: Could not find suite %s." % (suite_name))
+    reference = get_suite(reference_name)
+    if not reference:
+        die("E: Could not find reference suite %s." % (reference_name))
+
+    session = d.session()
+    vc = VersionCheck()
+    vc.suite = suite
+    vc.check = check
+    vc.reference = reference
+    session.add(vc)
+    session.commit()
+
+def __version_check_rm(d, suite_name, check, reference_name):
+    suite = get_suite(suite_name)
+    if not suite:
+        die("E: Could not find suite %s." % (suite_name))
+    reference = get_suite(reference_name)
+    if not reference:
+        die("E: Could not find reference suite %s." % (reference_name))
+
+    session = d.session()
+    try:
+      vc = session.query(VersionCheck).filter_by(suite=suite, check=check, reference=reference).one()
+      session.delete(vc)
+      session.commit()
+    except NoResultFound:
+      print "W: version-check not found."
+
+def version_check(command):
+    args = [str(x) for x in command]
+    Cnf = utils.get_conf()
+    d = DBConn()
+
+    die_arglen(args, 2, "E: version-check needs at least a command")
+    mode = args[1].lower()
+
+    if mode == 'list':
+        __version_check_list(d)
+    elif mode == 'list-suite':
+        if len(args) != 3:
+            die("E: version-check list-suite needs a single parameter")
+        __version_check_list_suite(d, args[2])
+    elif mode == 'add':
+        if len(args) != 5:
+            die("E: version-check add needs three parameters")
+        __version_check_add(d, args[2], args[3], args[4])
+    elif mode == 'rm':
+        if len(args) != 5:
+            die("E: version-check rm needs three parameters")
+        __version_check_rm(d, args[2], args[3], args[4])
+    else:
+        die("E: version-check command unknown")
+
+dispatch['version-check'] = version_check
+dispatch['v-c'] = version_check
+
+################################################################################
+
 def show_config(command):
     args = [str(x) for x in command]
     cnf = utils.get_conf()
@@ -337,10 +431,13 @@ def show_config(command):
 
     if mode == 'db':
         connstr = ""
-        if cnf["DB::Host"]:
+        if cnf.has_key("DB::Service"):
+            # Service mode
+            connstr = "postgresql://service=%s" % cnf["DB::Service"]
+        elif cnf.has_key("DB::Host"):
             # TCP/IP
             connstr = "postgres://%s" % cnf["DB::Host"]
-            if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+            if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
                 connstr += ":%s" % cnf["DB::Port"]
             connstr += "/%s" % cnf["DB::Name"]
         else:
@@ -350,20 +447,59 @@ def show_config(command):
                 connstr += "?port=%s" % cnf["DB::Port"]
         print connstr
     elif mode == 'db-shell':
-        e = ['PGDATABASE']
-        print "PGDATABASE=%s" % cnf["DB::Name"]
-        if cnf["DB::Host"]:
+        e = []
+        if cnf.has_key("DB::Service"):
+            e.append('PGSERVICE')
+            print "PGSERVICE=%s" % cnf["DB::Service"]
+        if cnf.has_key("DB::Name"):
+            e.append('PGDATABASE')
+            print "PGDATABASE=%s" % cnf["DB::Name"]
+        if cnf.has_key("DB::Host"):
             print "PGHOST=%s" % cnf["DB::Host"]
             e.append('PGHOST')
-        if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
+        if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
             print "PGPORT=%s" % cnf["DB::Port"]
             e.append('PGPORT')
         print "export " + " ".join(e)
     else:
-        die("E: config command unknown")
+        session = DBConn().session()
+        try:
+            o = session.query(DBConfig).filter_by(name = mode).one()
+            print o.value
+        except NoResultFound:
+            print "W: option '%s' not set" % mode
 
 dispatch['config'] = show_config
 dispatch['c'] = show_config
+
+################################################################################
+
+def show_keyring(command):
+    args = [str(x) for x in command]
+    cnf = utils.get_conf()
+
+    die_arglen(args, 2, "E: keyring needs at least a command")
+
+    mode = args[1].lower()
+
+    d = DBConn()
+
+    q = d.session().query(Keyring).filter(Keyring.active == True)
+
+    if mode == 'list-all':
+        pass
+    elif mode == 'list-binary':
+        q = q.filter(Keyring.default_source_acl_id == None)
+    elif mode == 'list-source':
+        q = q.filter(Keyring.default_source_acl_id != None)
+    else:
+        die("E: keyring command unknown")
+
+    for k in q.all():
+        print k.keyring_name
+
+dispatch['keyring'] = show_keyring
+dispatch['k'] = show_keyring
 
 ################################################################################
 

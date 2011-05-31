@@ -3,25 +3,25 @@
 my %data;
 my %data2;
 my @archs = ("source", "all", "amd64", "i386", "alpha", "arm", "armel", "hppa",
-	"hurd-i386", "ia64", "kfreebsd-amd64", "kfreebsd-i386", "mips", "mipsel", "powerpc", "s390",
-	"sparc");
+             "hurd-i386", "ia64", "kfreebsd-amd64", "kfreebsd-i386", "mips", "mipsel", "powerpc", "s390",
+             "sparc");
 
 while (<>) {
-	if (/^(\d{8})\d{6}\|(?:k(?:atie|elly)|process-accepted)\|installed\|[^|]+\|[^|]+\|(\d+)\|([-\w]+)$/) {
-		if (not defined $data{$1}) {
-			foreach $a (@archs) {
-				$data{$1}{$a} = 0;
-			}
-		}
-		$data{$1}{$3} += $2;
-		$data2{$1}{$3}++;
-	}
+  if (/^(\d{8})\d{6}\|(?:k(?:atie|elly)|process-(?:accepted|upload))(?:\|dak)?\|installed\|[^|]+\|[^|]+\|(\d+)\|([-\w]+)$/) {
+    if (not defined $data{$1}) {
+      foreach $a (@archs) {
+        $data{$1}{$a} = 0;
+      }
+    }
+    $data{$1}{$3} += $2;
+    $data2{$1}{$3}++;
+  }
 }
 
 foreach $p (sort keys %data) {
-	print "$p";
-	foreach $a (@archs) {
-		print ", $data{$p}{$a}";
-	}
-	print "\n";
+  print "$p";
+  foreach $a (@archs) {
+    print ", $data{$p}{$a}";
+  }
+  print "\n";
 }

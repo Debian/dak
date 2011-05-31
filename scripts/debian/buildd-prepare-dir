@@ -1,0 +1,65 @@
+#!/bin/bash
+# No way I try to deal with a crippled sh just for POSIX foo.
+
+# Copyright (C) 2011 Joerg Jaspert <joerg@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
+# exit on errors
+set -e
+# make sure to only use defined variables
+set -u
+# ERR traps should be inherited from functions too.
+set -E
+
+# import the general variable set.
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
+PROGRAM="buildd-prepare-dir"
+
+# common functions are "outsourced"
+. "${configdir}/common"
+
+# should be relative to the general base dir later
+COPYTARGET="${base}/keyrings"
+GNUPGHOME="${base}/s3kr1t/dot-gnupg"
+base="${base}/scripts/builddkeyrings"
+TARGET="${base}/keyrings"
+REMOVED="${base}/removed-buildd-keys.gpg"
+STAMPFILE="${base}/updatedkeyring"
+
+mkdir -p "${TARGET}/buildd-keyrings"
+
+if [ -f "${STAMPFILE}" ]; then
+    rm -f "${STAMPFILE}"
+    for arch in $archs; do
+        if [ -f ${base}/${arch}/keyring.gpg ]; then
+            cp -afl ${base}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
+            chmod 0644 ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
+        fi
+    done
+
+    cd ${TARGET}
+    sha512sum buildd-keyrings/* > sha512sums
+
+    rm -f ${TARGET}/sha512sums.txt
+    SIGNINGKEY=B1326A8D
+    GNUPGHOME=${GNUPGHOME} gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/sha512sums.txt" "${TARGET}/sha512sums"
+    rm -f ${TARGET}/sha512sums
+fi

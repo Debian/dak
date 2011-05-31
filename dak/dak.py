@@ -37,7 +37,6 @@ import os
 import sys
 import traceback
 import daklib.utils
-import warnings
 
 from daklib.daklog import Logger
 from daklib.config import Config
@@ -62,6 +61,8 @@ def init():
          "Output html for packages in NEW"),
         ("show-deferred",
          "Output html and symlinks for packages in DEFERRED"),
+        ("graph",
+         "Output graphs of number of packages in various queues"),
 
         ("rm",
          "Remove packages from suites"),
@@ -83,8 +84,12 @@ def init():
          "Generate Release files"),
         ("generate-packages-sources",
          "Generate Packages/Sources files"),
+        ("generate-packages-sources2",
+         "Generate Packages/Sources files [directly from database]"),
         ("contents",
          "Generate content files"),
+        ("metadata",
+         "Load data for packages/sources files"),
         ("generate-index-diffs",
          "Generate .diff/Index files"),
         ("clean-suites",
@@ -144,6 +149,12 @@ def init():
          "Add a user to the archive"),
         ("make-changelog",
          "Generate changelog between two suites"),
+        ("copy-installer",
+         "Copies the installer from one suite to another"),
+        ("override-disparity",
+         "Generate a list of override disparities"),
+        ("external-overrides",
+         "Modify external overrides"),
         ]
     return functionality
 
@@ -167,7 +178,7 @@ def main():
 
 
     try:
-        logger = Logger(Config(), 'dak top-level', print_starting=False)
+        logger = Logger('dak top-level', print_starting=False)
     except CantOpenError:
         logger = None
 
@@ -204,10 +215,6 @@ def main():
             else:
                 daklib.utils.warn("unknown command '%s'" % (cmdname))
                 usage(functionality, 1)
-
-    # We do not care. No idea wth sqlalchemy warns about them, makes no sense,
-    # so we ignore it.
-    warnings.filterwarnings("ignore", 'Predicate of partial index')
 
     # Invoke the module
     module = __import__(cmdname.replace("-","_"))

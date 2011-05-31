@@ -159,7 +159,7 @@ state "Startup"
 
 lockfile -l 3600 "${LOCK_DAILY}"
 trap onerror ERR
-trap cleanup EXIT TERM HUP INT QUIT
+trap remove_daily_lock EXIT TERM HUP INT QUIT
 
 touch "${LOCK_BRITNEY}"
 
@@ -172,7 +172,7 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="merkel1"
+    FUNC="qa1"
     TIME="init"
     ARGS=""
     ERR="false"
@@ -180,9 +180,9 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="pgdump_pre"
+    FUNC="pg_timestamp"
     TIME="pg_dump1"
-    ARGS=""
+    ARGS="predinstall"
     ERR=""
 )
 stage $GO
@@ -205,6 +205,7 @@ stage $GO
 
 lockfile "$LOCK_ACCEPTED"
 lockfile "$LOCK_NEW"
+trap remove_all_locks EXIT TERM HUP INT QUIT
 
 GO=(
     FUNC="punew"
@@ -214,13 +215,13 @@ GO=(
 )
 stage $GO
 
-#GO=(
-#    FUNC="opunew"
-#    TIME="o-p-u-new"
-#    ARGS="oldproposedupdates"
-#    ERR="false"
-#)
-#stage $GO
+GO=(
+    FUNC="opunew"
+    TIME="o-p-u-new"
+    ARGS="oldproposedupdates"
+    ERR="false"
+)
+stage $GO
 
 GO=(
     FUNC="newstage"
@@ -254,7 +255,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO
+#stage $GO
 
 GO=(
     FUNC="fingerprints"
@@ -287,14 +288,20 @@ GO=(
     ARGS=""
     ERR=""
 )
-# Careful: When we ever go and remove this monster-long thing, we have to check the backgrounded
-# functions before it. We no longer have a 1.5hour sync point then.
 stage $GO
 
 state "dists/"
 GO=(
     FUNC="pdiff"
     TIME="pdiff"
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
+    FUNC="gitpdiff"
+    TIME="gitpdiff"
     ARGS=""
     ERR=""
 )
@@ -328,14 +335,6 @@ state "scripts"
 GO=(
     FUNC="mkmaintainers"
     TIME="mkmaintainers"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="mkuploaders"
-    TIME="mkuploaders"
     ARGS=""
     ERR=""
 )
@@ -381,9 +380,16 @@ GO=(
 )
 stage $GO
 
-rm -f "$LOCK_ACCEPTED"
-rm -f "$LOCK_NEW"
-rm -f "${LOCK_DAILY}"
+GO=(
+    FUNC="ddaccess"
+    TIME="ddaccessible sync"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
+remove_all_locks
+trap - EXIT TERM HUP INT QUIT
 
 ts "locked part finished"
 state "postlock"
@@ -397,12 +403,12 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="pgdump_post"
+    FUNC="pg_timestamp"
     TIME="pg_dump2"
-    ARGS=""
+    ARGS="postdinstall"
     ERR=""
 )
-stage $GO &
+stage $GO
 
 GO=(
     FUNC="expire"
@@ -431,14 +437,6 @@ stage $GO &
 GO=(
     FUNC="bts"
     TIME=""
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="merkel2"
-    TIME="merkel projectb push"
     ARGS=""
     ERR="false"
 )
@@ -479,28 +477,12 @@ stage $GO &
 rm -f "${LOCK_BRITNEY}"
 
 GO=(
-    FUNC="pgdakdev"
-    TIME="dak-dev db"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="merkel3"
-    TIME="merkel ddaccessible sync"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="compress"
-    TIME="compress"
+    FUNC="cleantransactions"
+    TIME=""
     ARGS=""
     ERR=""
 )
-stage $GO &
+stage $GO
 
 GO=(
     FUNC="aptftpcleanup"
@@ -508,7 +490,10 @@ GO=(
     ARGS=""
     ERR="false"
 )
-stage $GO
+#stage $GO
+
+# we need to wait for the background processes before the end of dinstall
+wait
 
 log "Daily cron scripts successful, all done"
 

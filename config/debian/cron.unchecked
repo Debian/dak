@@ -75,10 +75,9 @@ function do_buildd () {
 }
 
 function do_dists () {
-    cd $configdir
-    dak generate-filelist
-    GZIP='--rsyncable' ; export GZIP
-    dak generate-packages-sources >/dev/null
+    #cd $configdir
+    #dak generate-filelist -s unstable,experimental -i
+    dak generate-packages-sources2 -s unstable experimental >/dev/null
 }
 
 ########################################################################
@@ -89,19 +88,24 @@ function do_dists () {
 export LANG=C
 export LC_ALL=C
 
-#lockfile -r3 "$LOCK_NEW"
-# acceptnew
-#rm -f "$LOCK_NEW"
-
 # only run one cron.unchecked
-lockfile -r3 $LOCKFILE || exit 0
+if ! lockfile -r8 $LOCKFILE; then
+    echo "aborting cron.unchecked because $LOCKFILE has already been locked"
+    exit 0
+fi
 trap cleanup 0
 
+
+pg_timestamp preunchecked >/dev/null
 do_newstage
 do_unchecked
 
 if [ ! -z "$changes" ]; then
     sync_debbugs
     do_buildd
-    do_dists
+    #do_dists
 fi
+
+dak contents -l 10000 scan-binary
+dak contents -l 1000 scan-source
+pg_timestamp postunchecked >/dev/null

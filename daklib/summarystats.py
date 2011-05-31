@@ -35,8 +35,11 @@ class SummaryStats(object):
         if not getattr(self, 'initialised', False):
             self.initialised = True
             self.reset_accept()
+            self.reset_reject()
 
     def reset_accept(self):
         self.accept_count = 0
         self.accept_bytes = 0
 
+    def reset_reject(self):
+        self.reject_count = 0

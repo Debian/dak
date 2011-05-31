@@ -179,15 +179,23 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="pgdump_pre"
+    FUNC="pg_timestamp"
     TIME="pg_dump1"
-    ARGS=""
+    ARGS="predinstall"
     ERR=""
 )
 stage $GO
 
 lockfile "$LOCK_ACCEPTED"
 lockfile "$LOCK_NEW"
+
+GO=(
+    FUNC="punew"
+    TIME="p-u-new"
+    ARGS="proposedupdates"
+    ERR="false"
+)
+stage $GO
 
 GO=(
     FUNC="newstage"
@@ -301,14 +309,6 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="mkuploaders"
-    TIME="mkuploaders"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
     FUNC="copyoverrides"
     TIME="copyoverrides"
     ARGS=""
@@ -348,9 +348,17 @@ ts "locked part finished"
 state "postlock"
 
 GO=(
-    FUNC="pgdump_post"
-    TIME="pg_dump2"
+    FUNC="changelogs"
+    TIME="changelogs"
     ARGS=""
+    ERR="false"
+)
+stage $GO &
+
+GO=(
+    FUNC="pg_timestamp"
+    TIME="pg_dump2"
+    ARGS="postdinstall"
     ERR=""
 )
 stage $GO &
@@ -390,8 +398,8 @@ stage $GO &
 rm -f "${LOCK_BRITNEY}"
 
 GO=(
-    FUNC="compress"
-    TIME="compress"
+    FUNC="cleantransactions"
+    TIME=""
     ARGS=""
     ERR=""
 )
@@ -404,6 +412,9 @@ stage $GO &
 #     ERR="false"
 # )
 # stage $GO
+
+# we need to wait for the background processes before the end of dinstall
+wait
 
 log "Daily cron scripts successful, all done"
 

@@ -69,6 +69,9 @@ if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     find . -maxdepth 1 -mindepth 1 -type f -mmin +2880 -name 'ChangeLog.*' -delete
 fi
 
+#echo "Regenerating Packages/Sources files, be patient"
+#dak generate-packages-sources2 -s ${IMPORTSUITE} >/dev/null
+
 echo "Done"
 
 exit 0

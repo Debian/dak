@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # Executed hourly via cron, out of dak's crontab.
 
@@ -10,8 +10,9 @@ export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
 
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
-dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates
-#dak show-deferred > ${webdir}/deferred.html
+dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates -r $webdir/stat
+#dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
+dak graph -n new,byhand,proposedupdates,oldproposedupdates,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
 dak show-new > /dev/null
 
 # cd $webdir
@@ -24,3 +25,19 @@ dak show-new > /dev/null
 $base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/removals.rss
 
 #$scriptsdir/generate-di
+
+# do the buildd key updates
+BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
+exec >> "${BUILDDFUN}" 2>&1
+#${scriptsdir}/buildd-remove-keys
+#${scriptsdir}/buildd-add-keys
+#${scriptsdir}/buildd-prepare-dir
+for keyring in $(dak admin k list-binary); do
+    dak import-keyring --generate-users "%s" ${keyring}
+done
+exec >>/dev/null 2>&1
+
+DATE=$(date -Is)
+cat "${BUILDDFUN}" | mail -a "X-Debian: DAK" -e -s "[$(hostname -s)] Buildd key changes ${DATE}" buildd-keys@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+
+rm -f "${BUILDDFUN}"

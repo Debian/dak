@@ -1,4 +1,7 @@
-#!/bin/sh -ue
+#!/bin/sh
+
+set -u
+set -e
 
 if [ $# -lt 4 ]; then
         echo "Usage: $0 filename version arch changes_file"
@@ -62,6 +65,8 @@ mv "$OUTMAIN"           "$TARGET"task
 chmod 644 "$TARGET"task
 
 (cd $TARGET && $scriptsdir/mk-extra-overrides.sh)
+dak external-overrides import unstable main Task <"$TARGET"task
+dak external-overrides copy unstable testing
 
 trap - EXIT
 

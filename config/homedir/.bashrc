@@ -34,7 +34,7 @@ case "$HOSTNAME" in
     morricone)
         export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
         ;;
-    chopin|ries)
+    chopin)
         export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
         ;;
     *)
@@ -57,3 +57,4 @@ export CDPATH=".:~:${base}:${public}:${queuedir}"
 
 alias base='cd ${base}'
 alias config='cd ${configdir}'
+alias psql='LD_PRELOAD=/lib/libreadline.so.5 psql'

@@ -26,6 +26,7 @@ Utility functions for process-upload
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import os
+from shutil import copyfile
 
 from daklib import utils
 from daklib.dbconn import *
@@ -34,24 +35,24 @@ from daklib.config import Config
 ################################################################################
 
 def package_to_suite(u, suite_name, session):
-    if not u.pkg.changes["distribution"].has_key(suite_name):
+    if suite_name not in u.pkg.changes["distribution"]:
         return False
 
-    ret = True
+    if 'source' in u.pkg.changes["architecture"]:
+        return True
 
-    if not u.pkg.changes["architecture"].has_key("source"):
-        q = session.query(SrcAssociation.sa_id)
-        q = q.join(Suite).filter_by(suite_name=suite_name)
-        q = q.join(DBSource).filter_by(source=u.pkg.changes['source'])
-        q = q.filter_by(version=u.pkg.changes['version']).limit(1)
+    q = session.query(Suite).filter_by(suite_name = suite_name). \
+        filter(Suite.sources.any( \
+            source = u.pkg.changes['source'], \
+            version = u.pkg.changes['version']))
 
-        # NB: Careful, this logic isn't what you would think it is
-        # Source is already in the target suite so no need to go to policy
-        # Instead, we don't move to the policy area, we just do an ACCEPT
-        if q.count() > 0:
-            ret = False
-
-    return ret
+    # NB: Careful, this logic isn't what you would think it is
+    # Source is already in the target suite so no need to go to policy
+    # Instead, we don't move to the policy area, we just do an ACCEPT
+    if q.count() > 0:
+        return False
+    else:
+        return True
 
 def package_to_queue(u, summary, short_summary, queue, chg, session, announce=None):
     cnf = Config()
@@ -63,6 +64,14 @@ def package_to_queue(u, summary, short_summary, queue, chg, session, announce=No
     u.move_to_queue(queue)
     chg.in_queue_id = queue.policy_queue_id
     session.add(chg)
+
+    # send to build queues
+    if queue.send_to_build_queues:
+        for suite_name in u.pkg.changes["distribution"].keys():
+            suite = get_suite(suite_name, session)
+            for q in suite.copy_queues:
+                q.add_changes_from_policy_queue(queue, chg)
+
     session.commit()
 
     # Check for override disparities
@@ -125,11 +134,6 @@ def do_unembargo(u, summary, short_summary, chg, session=None):
     package_to_queue(u, summary, short_summary,
                      polq, chg, session,
                      announce=None)
-    for suite_name in u.pkg.changes["distribution"].keys():
-        suite = get_suite(suite_name, session)
-        for q in suite.copy_queues:
-            for f in u.pkg.files.keys():
-                os.symlink(os.path.join(polq.path, f), os.path.join(q.path, f))
 #
 #################################################################################
 #
@@ -151,11 +155,6 @@ def do_embargo(u, summary, short_summary, chg, session=None):
     package_to_queue(u, summary, short_summary,
                      polq, chg, session,
                      announce=None)
-    for suite_name in u.pkg.changes["distribution"].keys():
-        suite = get_suite(suite_name, session)
-        for q in suite.copy_queues:
-            for f in u.pkg.files.keys():
-                os.symlink(os.path.join(polq.path, f), os.path.join(q.path, f))
 
 ################################################################################
 
