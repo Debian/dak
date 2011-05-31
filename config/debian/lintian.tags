@@ -18,6 +18,7 @@ lintian:
     - control-interpreter-without-depends
     - dir-or-file-in-var-www
     - wrong-file-owner-uid-or-gid
+    - install-info-used-in-maintainer-script
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
