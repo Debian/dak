@@ -114,6 +114,10 @@ class SignedFile(object):
                     raise GpgException("No valid signature found. (GPG exited with status code %s)\n%s" % (exit_code, self.stderr))
 
     def _do_io(self, read, write):
+        for fd in write.keys():
+            old = fcntl.fcntl(fd, fcntl.F_GETFL)
+            fcntl.fcntl(fd, fcntl.F_SETFL, old | os.O_NONBLOCK)
+
         read_lines = dict( (fd, []) for fd in read )
         write_pos = dict( (fd, 0) for fd in write )
 
