@@ -276,7 +276,7 @@ def main():
 
     examine_package.use_html=1
 
-    pool = DakProcessPool()
+    pool = DakProcessPool(processes=5)
     p = pool.map_async(do_pkg, changes_files)
     pool.close()
     p.wait(timeout=600)
