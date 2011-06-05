@@ -159,7 +159,6 @@ def do_pkg(changes_file):
         return
     print "\n" + changes_file
 
-    session = DBConn().session()
     u = Upload()
     u.pkg.changes_file = changes_file
     # We can afoord not to check the signature before loading the changes file
@@ -177,17 +176,16 @@ def do_pkg(changes_file):
     else:
         # Changes file was bad
         print "Changes file %s missing source or version field" % changes_file
-        session.close()
         return
 
     # Have we already processed this?
     if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
             sources.append(htmlname)
-            session.close()
             return (PROC_STATUS_SUCCESS, '%s already up-to-date' % htmlfile)
 
     # Now we'll load the fingerprint
+    session = DBConn().session()
     (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
     new_queue = get_policy_queue('new', session );
     u.pkg.directory = new_queue.path
