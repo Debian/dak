@@ -279,12 +279,10 @@ def main():
     pool = DakProcessPool()
     p = pool.map_async(do_pkg, changes_files)
     pool.close()
-    try:
-        p.get(timeout=600)
-    except TimeoutError:
-        for htmlfile in htmlfiles_to_process:
-            with open(htmlfile, "w") as fd:
-                fd.write("Timed out while processing")
+    p.wait(timeout=600)
+    for htmlfile in htmlfiles_to_process:
+        with open(htmlfile, "w") as fd:
+            fd.write("Timed out while processing")
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
