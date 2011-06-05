@@ -38,13 +38,14 @@ from daklib.config import Config
 from daklib import daklog
 from daklib.changesutils import *
 from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
-from multiprocessing import Manager
+from multiprocessing import Manager, TimeoutError
 
 # Globals
 Cnf = None
 Options = None
 manager = Manager()
 sources = manager.list()
+htmlfiles_to_process = manager.list()
 
 
 ################################################################################
@@ -172,6 +173,7 @@ def do_pkg(changes_file):
     if u.pkg.changes.has_key('source') and u.pkg.changes.has_key('version'):
         htmlname = u.pkg.changes["source"] + "_" + u.pkg.changes["version"] + ".html"
         htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
+        htmlfiles_to_process.append(htmlfile)
     else:
         # Changes file was bad
         print "Changes file %s missing source or version field" % changes_file
@@ -228,6 +230,7 @@ def do_pkg(changes_file):
     outfile.close()
     session.close()
 
+    htmlfiles_to_process.remove(htmlfile)
     return (PROC_STATUS_SUCCESS, '%s already updated' % htmlfile)
 
 ################################################################################
@@ -276,10 +279,14 @@ def main():
     examine_package.use_html=1
 
     pool = DakProcessPool()
-    for changes_file in changes_files:
-        pool.apply_async(do_pkg, (changes_file,))
+    p = pool.map_async(do_pkg, changes_files)
     pool.close()
-    pool.join()
+    try:
+        p.get(timeout=600)
+    except TimeoutError:
+        for htmlfile in htmlfiles_to_process:
+            with open(htmlfile, "w") as fd:
+                fd.write("Timed out while processing")
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
