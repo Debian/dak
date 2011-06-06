@@ -46,6 +46,7 @@ Options = None
 manager = Manager()
 sources = manager.list()
 htmlfiles_to_process = manager.list()
+timeout_str = "Timed out while processing"
 
 
 ################################################################################
@@ -172,7 +173,6 @@ def do_pkg(changes_file):
     if u.pkg.changes.has_key('source') and u.pkg.changes.has_key('version'):
         htmlname = u.pkg.changes["source"] + "_" + u.pkg.changes["version"] + ".html"
         htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
-        htmlfiles_to_process.append(htmlfile)
     else:
         # Changes file was bad
         print "Changes file %s missing source or version field" % changes_file
@@ -181,11 +181,15 @@ def do_pkg(changes_file):
     # Have we already processed this?
     if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
-            sources.append(htmlname)
-            return (PROC_STATUS_SUCCESS, '%s already up-to-date' % htmlfile)
+            with open(htmlfile, "r") as fd:
+                if fd.read() != timeout_str:
+                    sources.append(htmlname)
+                    return (PROC_STATUS_SUCCESS,
+                            '%s already up-to-date' % htmlfile)
 
     # Now we'll load the fingerprint
     session = DBConn().session()
+    htmlfiles_to_process.append(htmlfile)
     (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
     new_queue = get_policy_queue('new', session );
     u.pkg.directory = new_queue.path
@@ -282,7 +286,7 @@ def main():
     p.wait(timeout=600)
     for htmlfile in htmlfiles_to_process:
         with open(htmlfile, "w") as fd:
-            fd.write("Timed out while processing")
+            fd.write(timeout_str)
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
