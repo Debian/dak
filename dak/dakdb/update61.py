@@ -46,6 +46,7 @@ def do_update(self):
         ORDER BY source_suite, condition, target_suite;
         """)
 
+        c.execute("GRANT SELECT on version_checks TO PUBLIC;")
         c.execute("UPDATE config SET value = '61' WHERE name = 'db_revision'")
         self.db.commit()
 
