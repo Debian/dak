@@ -2507,20 +2507,13 @@ def source_exists(source, source_version, suites = ["any"], session=None):
         q = session.query(DBSource).filter_by(source=source). \
             filter(DBSource.version.in_([source_version, orig_source_version]))
         if suite != "any":
-            # source must exist in suite X, or in some other suite that's
-            # mapped to X, recursively... silent-maps are counted too,
-            # unreleased-maps aren't.
-            maps = cnf.ValueList("SuiteMappings")[:]
-            maps.reverse()
-            maps = [ m.split() for m in maps ]
-            maps = [ (x[1], x[2]) for x in maps
-                            if x[0] == "map" or x[0] == "silent-map" ]
-            s = [suite]
-            for (from_, to) in maps:
-                if from_ in s and to not in s:
-                    s.append(to)
+            # source must exist in 'suite' or a suite that is enhanced by 'suite'
+            s = get_suite(suite, session)
+            enhances_vcs = session.query(VersionCheck).filter(VersionCheck.suite==s).filter_by(check='Enhances')
+            considered_suites = [ vc.reference for vc in enhances_vcs ]
+            considered_suites.append(s)
 
-            q = q.filter(DBSource.suites.any(Suite.suite_name.in_(s)))
+            q = q.filter(DBSource.suites.any(Suite.suite_id.in_([s.suite_id for s in considered_suites])))
 
         if q.count() > 0:
             continue
