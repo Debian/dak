@@ -288,10 +288,10 @@ class TarTime(object):
         self.future_files = {}
         self.ancient_files = {}
 
-    def callback(self, Kind, Name, Link, Mode, UID, GID, Size, MTime, Major, Minor):
-        if MTime > self.future_cutoff:
+    def callback(self, member, data):
+        if member.mtime > self.future_cutoff:
             self.future_files[Name] = MTime
-        if MTime < self.past_cutoff:
+        if member.mtime < self.past_cutoff:
             self.ancient_files[Name] = MTime
 
 ###############################################################################
@@ -1620,19 +1620,8 @@ class Upload(object):
             if entry["type"] == "deb":
                 tar.reset()
                 try:
-                    deb_file = utils.open_file(filename)
-                    apt_inst.debExtract(deb_file, tar.callback, "control.tar.gz")
-                    deb_file.seek(0)
-                    try:
-                        apt_inst.debExtract(deb_file, tar.callback, "data.tar.gz")
-                    except SystemError, e:
-                        # If we can't find a data.tar.gz, look for data.tar.bz2 instead.
-                        if not re.search(r"Cannot f[ui]nd chunk data.tar.gz$", str(e)):
-                            raise
-                        deb_file.seek(0)
-                        apt_inst.debExtract(deb_file,tar.callback,"data.tar.bz2")
-
-                    deb_file.close()
+                    deb = apt_inst.DebFile(filename)
+                    deb.control.go(tar.callback)
 
                     future_files = tar.future_files.keys()
                     if future_files:
