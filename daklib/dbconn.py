@@ -2635,6 +2635,14 @@ __all__.append('import_metadata_into_db')
 
 ################################################################################
 
+def split_uploaders(uploaders_list):
+    '''
+    Split the Uploaders field into the individual uploaders and yield each of
+    them. Beware: email addresses might contain commas.
+    '''
+    for uploader in uploaders_list.replace(">, ", ">\t").split("\t"):
+        yield uploader.strip()
+
 @session_wrapper
 def add_dsc_to_db(u, filename, session=None):
     entry = u.pkg.files[filename]
@@ -2725,8 +2733,7 @@ def add_dsc_to_db(u, filename, session=None):
     session.refresh(source)
     source.uploaders = [source.maintainer]
     if u.pkg.dsc.has_key("uploaders"):
-        for up in u.pkg.dsc["uploaders"].replace(">, ", ">\t").split("\t"):
-            up = up.strip()
+        for up in split_uploaders(u.pkg.dsc["uploaders"]):
             source.uploaders.append(get_or_set_maintainer(up, session))
 
     session.flush()
