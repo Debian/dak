@@ -2640,7 +2640,8 @@ def split_uploaders(uploaders_list):
     Split the Uploaders field into the individual uploaders and yield each of
     them. Beware: email addresses might contain commas.
     '''
-    for uploader in uploaders_list.replace(">, ", ">\t").split("\t"):
+    import re
+    for uploader in re.sub(">[ ]*,", ">\t", uploaders_list).split("\t"):
         yield uploader.strip()
 
 @session_wrapper
