@@ -44,7 +44,7 @@ cd $masterdir
 
 echo "Performing cleanup on ${SUITE}"
 
-cat ${INPUTFILE} | dak control-suite --remove ${SUITE}
+cat ${IMPORTFILE} | dak control-suite --remove ${SUITE}
 
 if [ $? -eq 0 ]; then
     NOW=$(date "+%Y%m%d%H%M")
