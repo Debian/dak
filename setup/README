@@ -16,27 +16,35 @@ The following roles are assumed to exist:
 For the purposes of this document, we'll be working in /srv/dak
 
 Set up the dak user on both the system and in postgres:
-sudo adduser dak
-sudo addgroup ftpmaster
-sudo addgroup dak ftpmaster
-sudo -u postgres createuser -s dak
+# sudo adduser dak
+# sudo addgroup ftpmaster
+# sudo addgroup dak ftpmaster
+# sudo -u postgres createuser -s dak
 
 Set up the dak directory:
-sudo mkdir /srv/dak
-sudo chown dak:ftpmaster /srv/dak
-sudo chmod 2775 /srv/dak
+# sudo mkdir /srv/dak
+# sudo chown dak:ftpmaster /srv/dak
+# sudo chmod 2775 /srv/dak
 
 Become the dak user:
-sudo -u dak -s -H
+# sudo -u dak -s -H
 
 Create the additional roles:
-createuser -S -R -D ftpmaster
-createuser -S -R -D ftpteam
-createuser -S -R -D ftptrainee
+# createuser -S -R -D ftpmaster
+# createuser -S -R -D ftpteam
+# createuser -S -R -D ftptrainee
 
 Create an empty database with SQL_ASCII encoding:
-createdb -T template0 -E SQL_ASCII -O dak projectb
+# createdb -T template0 -E SQL_ASCII -O dak projectb
 
 Import the schema:
-psql -f current_schema.sql -d projectb
+# psql -f current_schema.sql -d projectb
+
+Set up some core data in projectb to get started (read the init_vars file if
+you wish to customise various aspects):
+# ./init_core
+
+Add some architectures you care about:
+# dak admin architecture add i386 "Intel x86 port"
+# dak admin architecture add amd64 "AMD64 port"
 

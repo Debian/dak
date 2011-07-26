@@ -1,0 +1,54 @@
+#!/bin/sh
+
+set -e
+set -u
+
+echo "Setting up metadata key ordering"
+
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Package', -2600)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Source', -2500)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Binary', -2400)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Version', -2300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Essential', -2250)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Installed-Size', -2200)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Maintainer', -2100)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Uploaders', -2090)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Original-Maintainer', -2080)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Build-Depends', -2000)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Build-Depends-Indep', -1990)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Build-Conflicts', -1980)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Build-Conflicts-Indep', -1970)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Architecture', -1800)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Standards-Version', -1700)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Format', -1600)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Files', -1500)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Dm-Upload-Allowed', -1400)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Browse', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Hg', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Darcs', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Svn', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Git', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Browser', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Arch', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Bzr', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Mtn', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Vcs-Cvs', -1300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Checksums-Sha256', -1200)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Checksums-Sha1', -1200)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Replaces', -1100)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Provides', -1000)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Depends', -900)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Pre-Depends', -850)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Recommends', -800)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Suggests', -700)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Enhances', -650)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Conflicts', -600)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Breaks', -500)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Description', -400)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Origin', -300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Bugs', -200)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Multi-Arch', -150)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Homepage', -100)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Tag', 300)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Package-Type', 400)" >/dev/null
+psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ('Installer-Menu-Item', 500)" >/dev/null

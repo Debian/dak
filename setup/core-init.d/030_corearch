@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+set -u
+
+echo "Setting up source and all architectures"
+
+psql -c "INSERT INTO architecture (arch_string, description)
+                           VALUES ('source', 'Source')" >/dev/null
+
+psql -c "INSERT INTO architecture (arch_string, description)
+                           VALUES ('all', 'Architecture Independent')" >/dev/null
+

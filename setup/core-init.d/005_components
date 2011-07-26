@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+set -u
+
+echo "Creating components"
+
+psql -c "INSERT INTO component (name, description, meets_dfsg)
+                        VALUES ('main', 'Main', TRUE)" >/dev/null
+
+psql -c "INSERT INTO component (name, description, meets_dfsg)
+                        VALUES ('contrib', 'Contrib', TRUE)" >/dev/null
+
+psql -c "INSERT INTO component (name, description, meets_dfsg)
+                        VALUES ('non-free', 'Software that fails to meet the DFSG', FALSE)" >/dev/null

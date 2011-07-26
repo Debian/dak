@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# The following variables are required by these scripts:
+
+## DAKBASE: The directory in which the dak install is to exist
+DAKBASE=${DAKBASE:-/srv/dak}
+export DAKBASE
+
+## DAKFQDN: The fqdn of the dak host
+DAKFQDN=${DAKFQDN:-$(hostname -f)}
+export DAKFQDN
+
+## DAKHOST: The short name used for the dak host
+DAKHOST=${DAKHOST:-$(hostname)}
+export DAKHOST
+
+## PGDATABASE: The postgresql database to use
+## (other PG* variables can also be exported by the user if needed)
+PGDATABASE=${PGDATABASE:-projectb}
+export PGDATABASE

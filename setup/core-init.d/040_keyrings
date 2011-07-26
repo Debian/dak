@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+set -u
+
+echo "Setting up default keyrings"
+
+psql -c "INSERT INTO binary_acl (access_level) VALUES ('full')" >/dev/null
+psql -c "INSERT INTO binary_acl (access_level) VALUES ('map')" >/dev/null
+
+psql -c "INSERT INTO source_acl (access_level) VALUES ('full')" >/dev/null
+psql -c "INSERT INTO source_acl (access_level) VALUES ('dm')" >/dev/null
+
+psql -c "INSERT INTO keyrings (name, default_source_acl_id, default_binary_acl_id)
+                       VALUES ('${DAKBASE}/keyrings/upload-keyring.gpg',
+                               (SELECT id FROM binary_acl WHERE access_level = 'full'),
+                               (SELECT id FROM source_acl WHERE access_level = 'full'))" >/dev/null
+
