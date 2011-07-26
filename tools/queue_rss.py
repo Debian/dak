@@ -198,10 +198,6 @@ if __name__ == "__main__":
         status = Status()
 
     current_queue = parse_queuedir(settings.queuedir)
-    if not current_queue:
-        sys.stderr.write("Unable to scan queuedir '%s'\n" % settings.queuedir)
-        parser.print_help()
-        sys.exit(1)
 
     update_feeds(current_queue, status, settings)
 
