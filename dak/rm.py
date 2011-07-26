@@ -335,7 +335,10 @@ def main ():
     carbon_copy = []
     for copy_to in utils.split_args(Options.get("Carbon-Copy")):
         if copy_to.isdigit():
-            carbon_copy.append(copy_to + "@" + cnf["Dinstall::BugServer"])
+            if cnf.has_key("Dinstall::BugServer"):
+                carbon_copy.append(copy_to + "@" + cnf["Dinstall::BugServer"])
+            else:
+                utils.fubar("Asked to send mail to #%s in BTS but Dinstall::BugServer is not configured" % copy_to)
         elif copy_to == 'package':
             for package in arguments:
                 if cnf.has_key("Dinstall::PackagesServer"):
@@ -585,6 +588,19 @@ def main ():
                 session.execute("DELETE FROM override WHERE package = :package AND type = :typeid AND suite = :suiteid %s" % (over_con_components), {'package': package, 'typeid': type_id, 'suiteid': suite_id})
     session.commit()
     print "done."
+
+    # If we don't have a Bug server configured, we're done
+    if not cnf.has_key("Dinstall::BugServer"):
+        if Options["Done"] or Options["Do-Close"]:
+            print "Cannot send mail to BugServer as Dinstall::BugServer is not configured"
+
+        logfile.write("=========================================================================\n")
+        logfile.close()
+
+        logfile822.write("\n")
+        logfile822.close()
+
+        return
 
     # read common subst variables for all bug closure mails
     Subst_common = {}

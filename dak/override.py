@@ -286,6 +286,11 @@ def main ():
     session.commit()
 
     if Options.has_key("Done"):
+        if not cnf.has_key("Dinstall::BugServer"):
+            utils.warn("Asked to send Done message but Dinstall::BugServer is not configured")
+            Logger.close()
+            return
+
         Subst = {}
         Subst["__OVERRIDE_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
         Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
