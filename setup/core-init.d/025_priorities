@@ -1,0 +1,14 @@
+#!/bin/sh
+
+echo "Creating default priorities"
+
+set -e
+set -u
+
+psql -c "INSERT INTO priority (priority, level) VALUES ('required', 1)" >/dev/null
+psql -c "INSERT INTO priority (priority, level) VALUES ('important', 2)" >/dev/null
+psql -c "INSERT INTO priority (priority, level) VALUES ('standard', 3)" >/dev/null
+psql -c "INSERT INTO priority (priority, level) VALUES ('optional', 4)" >/dev/null
+psql -c "INSERT INTO priority (priority, level) VALUES ('extra', 5)" >/dev/null
+psql -c "INSERT INTO priority (priority, level) VALUES ('source', 0)" >/dev/null
+

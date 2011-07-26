@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+set -u
+
+POOLPATH="${DAKBASE}/ftp/pool"
+
+echo "Setting up archive and locations"
+psql -c "INSERT INTO archive (name, origin_server, description)
+                      VALUES ('${DAKHOST}', '${DAKFQDN}', 'Master server')" >/dev/null
+
+for component in main contrib non-free; do
+    psql -c "INSERT INTO location (path, type, component, archive)
+                          VALUES ('${POOLPATH}', 'pool',
+                                  (SELECT id FROM component WHERE name = '${component}'),
+                                  (SELECT id FROM archive WHERE name = '${DAKHOST}'))" >/dev/null
+done

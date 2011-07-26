@@ -443,7 +443,8 @@ class Upload(object):
         cnf = Config()
         self.Subst = {}
         self.Subst["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
-        self.Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
+        if cnf.has_key("Dinstall::BugServer"):
+            self.Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
         self.Subst["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
         self.Subst["__DAK_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
 
@@ -2027,7 +2028,7 @@ distribution."""
 
                 del self.Subst["__ANNOUNCE_LIST_ADDRESS__"]
 
-        if cnf.FindB("Dinstall::CloseBugs"):
+        if cnf.FindB("Dinstall::CloseBugs") and cnf.has_key("Dinstall::BugServer"):
             summary = self.close_bugs(summary, action)
 
         del self.Subst["__SHORT_SUMMARY__"]
