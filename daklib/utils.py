@@ -395,10 +395,10 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
         (r'orig.tar.gz',               ('orig_tar_gz', 'orig_tar')),
         (r'diff.gz',                   ('debian_diff',)),
         (r'tar.gz',                    ('native_tar_gz', 'native_tar')),
-        (r'debian\.tar\.(gz|bz2)',     ('debian_tar',)),
-        (r'orig\.tar\.(gz|bz2)',       ('orig_tar',)),
-        (r'tar\.(gz|bz2)',             ('native_tar',)),
-        (r'orig-.+\.tar\.(gz|bz2)',    ('more_orig_tar',)),
+        (r'debian\.tar\.(gz|bz2|xz)',  ('debian_tar',)),
+        (r'orig\.tar\.(gz|bz2|xz)',    ('orig_tar',)),
+        (r'tar\.(gz|bz2|xz)',          ('native_tar',)),
+        (r'orig-.+\.tar\.(gz|bz2|xz)', ('more_orig_tar',)),
     )
 
     for f in dsc_files.keys():
