@@ -338,7 +338,8 @@ def main ():
             carbon_copy.append(copy_to + "@" + cnf["Dinstall::BugServer"])
         elif copy_to == 'package':
             for package in arguments:
-                carbon_copy.append(package + "@" + cnf["Dinstall::PackagesServer"])
+                if cnf.has_key("Dinstall::PackagesServer"):
+                    carbon_copy.append(package + "@" + cnf["Dinstall::PackagesServer"])
                 if cnf.has_key("Dinstall::TrackingServer"):
                     carbon_copy.append(package + "@" + cnf["Dinstall::TrackingServer"])
         elif '@' in copy_to:
