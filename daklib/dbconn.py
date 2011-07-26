@@ -752,7 +752,7 @@ class BuildQueue(object):
             # Crude hack with open and append, but this whole section is and should be redone.
             if self.notautomatic:
                 release=open("Release", "a")
-                release.write("NotAutomatic: yes")
+                release.write("NotAutomatic: yes\n")
                 release.close()
 
             # Sign if necessary
