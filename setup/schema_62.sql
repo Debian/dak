@@ -3043,6 +3043,14 @@ ALTER TABLE ONLY suite_architectures
 
 
 --
+-- Name: suite_name_unique; Type: CONSTRAINT; Schema: public; Owner: dak; Tablespace: 
+--
+
+ALTER TABLE ONLY suite
+    ADD CONSTRAINT suite_name_unique UNIQUE (suite_name);
+
+
+--
 -- Name: suite_pkey; Type: CONSTRAINT; Schema: public; Owner: dak; Tablespace: 
 --
 
@@ -5578,4 +5586,5 @@ GRANT SELECT ON TABLE version_checks TO PUBLIC;
 --
 
 -- Set schema version
-INSERT INTO config (name, value) VALUES ('db_revision', 61);
+INSERT INTO config (name, value) VALUES ('db_revision', 62);
+
