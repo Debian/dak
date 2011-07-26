@@ -83,6 +83,9 @@ Perform administrative work on the dak database.
                             add suite SUITE, version VERSION. label,
                             description, origin and codename are optional.
 
+     s add-all-arches SUITE VERSION... as "s add" but adds suite-architecture
+                            relationships for all architectures
+
   suite-architecture / s-a:
      s-a list               show the architectures for all suites
      s-a list-suite ARCH    show the suites an ARCH is in
@@ -193,7 +196,7 @@ def __suite_show(d, args):
 
     print su.details()
 
-def __suite_add(d, args):
+def __suite_add(d, args, addallarches=False):
     die_arglen(args, 4, "E: adding a suite requires at least a name and a version")
     suite_name = args[2].lower()
     version = args[3]
@@ -217,12 +220,24 @@ def __suite_add(d, args):
             suite.origin = get_field('origin')
             suite.codename = get_field('codename')
             s.add(suite)
-            s.commit()
+            s.flush()
         except IntegrityError, e:
             die("E: Integrity error adding suite %s (it probably already exists)" % suite_name)
         except SQLAlchemyError, e:
             die("E: Error adding suite %s (%s)" % (suite_name, e))
     print "Suite %s added" % (suite_name)
+
+    if addallarches:
+        arches = []
+        q = s.query(Architecture).order_by('arch_string')
+        for arch in q.all():
+            suite.architectures.append(arch)
+            arches.append(arch.arch_string)
+
+        print "Architectures %s added to %s" % (','.join(arches), suite_name)
+
+    s.commit()
+
 
 def suite(command):
     args = [str(x) for x in command]
@@ -238,7 +253,9 @@ def suite(command):
     elif mode == 'show':
         __suite_show(d, args)
     elif mode == 'add':
-        __suite_add(d, args)
+        __suite_add(d, args, False)
+    elif mode == 'add-all-arches':
+        __suite_add(d, args, True)
     else:
         die("E: suite command unknown")
 
