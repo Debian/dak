@@ -13,8 +13,18 @@ The following roles are assumed to exist:
  * ftpteam: people who can do NEW processing, overrides, removals, etc
  * ftptrainee: people who can add notes to packages in NEW
 
+For the purposes of this document, we'll be working in /srv/dak
+
+Set up the dak user on both the system and in postgres:
 sudo adduser dak
+sudo addgroup ftpmaster
+sudo addgroup dak ftpmaster
 sudo -u postgres createuser -s dak
+
+Set up the dak directory:
+sudo mkdir /srv/dak
+sudo chown dak:ftpmaster /srv/dak
+sudo chmod 2775 /srv/dak
 
 Become the dak user:
 sudo -u dak -s -H
@@ -30,4 +40,3 @@ createdb -T template0 -E SQL_ASCII -O dak projectb
 Import the schema:
 psql -f current_schema.sql -d projectb
 
-TODO: Directory creation
