@@ -37,12 +37,16 @@ from daklib.regexes import re_source_ext
 from daklib.config import Config
 from daklib import daklog
 from daklib.changesutils import *
-from daklib.dakmultiprocessing import Pool
+from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
+from multiprocessing import Manager, TimeoutError
 
 # Globals
 Cnf = None
 Options = None
-sources = set()
+manager = Manager()
+sources = manager.list()
+htmlfiles_to_process = manager.list()
+timeout_str = "Timed out while processing"
 
 
 ################################################################################
@@ -151,7 +155,11 @@ def html_footer():
 
 
 def do_pkg(changes_file):
-    session = DBConn().session()
+    changes_file = utils.validate_changes_file_arg(changes_file, 0)
+    if not changes_file:
+        return
+    print "\n" + changes_file
+
     u = Upload()
     u.pkg.changes_file = changes_file
     # We can afoord not to check the signature before loading the changes file
@@ -168,24 +176,27 @@ def do_pkg(changes_file):
     else:
         # Changes file was bad
         print "Changes file %s missing source or version field" % changes_file
-        session.close()
         return
 
     # Have we already processed this?
     if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
-            sources.add(htmlname)
-            session.close()
-            return
+            with open(htmlfile, "r") as fd:
+                if fd.read() != timeout_str:
+                    sources.append(htmlname)
+                    return (PROC_STATUS_SUCCESS,
+                            '%s already up-to-date' % htmlfile)
 
     # Now we'll load the fingerprint
+    session = DBConn().session()
+    htmlfiles_to_process.append(htmlfile)
     (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
     new_queue = get_policy_queue('new', session );
     u.pkg.directory = new_queue.path
     u.update_subst()
     files = u.pkg.files
     changes = u.pkg.changes
-    sources.add(htmlname)
+    sources.append(htmlname)
 
     for deb_filename, f in files.items():
         if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
@@ -220,6 +231,9 @@ def do_pkg(changes_file):
 
     outfile.close()
     session.close()
+
+    htmlfiles_to_process.remove(htmlfile)
+    return (PROC_STATUS_SUCCESS, '%s already updated' % htmlfile)
 
 ################################################################################
 
@@ -266,19 +280,16 @@ def main():
 
     examine_package.use_html=1
 
-    #pool = Pool(processes=1)
-    for changes_file in changes_files:
-        changes_file = utils.validate_changes_file_arg(changes_file, 0)
-        if not changes_file:
-            continue
-        print "\n" + changes_file
-        #pool.apply_async(do_pkg, (changes_file,))
-        do_pkg(changes_file)
-    #pool.close()
-    #pool.join()
+    pool = DakProcessPool(processes=5)
+    p = pool.map_async(do_pkg, changes_files)
+    pool.close()
+    p.wait(timeout=600)
+    for htmlfile in htmlfiles_to_process:
+        with open(htmlfile, "w") as fd:
+            fd.write(timeout_str)
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
-    to_delete = filter(lambda x: x.endswith(".html"), files.difference(sources))
+    to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
     for f in to_delete:
         os.remove(os.path.join(cnf["Show-New::HTMLPath"],f))
 

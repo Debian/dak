@@ -694,7 +694,7 @@ sub process_changes($\@) {
        $pgplines,     @files,     @filenames,  @changes_stats,
        $failure_file, $retries,   $last_retry, $upload_time,
        $file,         $do_report, $ls_l,       $problems_reported,
-       $errs,         $pkgname,   $signator
+       $errs,         $pkgname,   $signator,   $extralines
      );
   local (*CHANGES);
   local (*FAILS);
@@ -711,12 +711,19 @@ sub process_changes($\@) {
   open( CHANGES, "<$changes" )
     or die "Cannot open ${main::current_incoming_short}/$changes: $!\n";
   $pgplines        = 0;
+  $extralines      = 0;
   $main::mail_addr = "";
   @files           = ();
 outer_loop: while (<CHANGES>) {
     if (/^---+(BEGIN|END) PGP .*---+$/) {
       ++$pgplines;
-    } elsif (/^Maintainer:\s*/i) {
+      next;
+    }
+    if ( $pgplines < 1 or $pgplines >= 3 ) {
+      $extralines++ if length $_ > 1;
+      next;
+    }
+    if (/^Maintainer:\s*/i) {
       chomp( $main::mail_addr = $' );
       $main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
     } elsif (/^Source:\s*/i) {
@@ -762,6 +769,12 @@ outer_loop: while (<CHANGES>) {
   @$keep_list = @filenames;
 
   # some consistency checks
+  if ( $extralines ) {
+    msg( "log,mail",
+"$main::current_incoming_short/$changes contained lines outside the pgp signed "
+."part, cannot process\n" );
+    goto remove_only_changes;
+  } ## end if ( $extralines )
   if ( !$main::mail_addr ) {
     msg( "log,mail",
 "$main::current_incoming_short/$changes doesn't contain a Maintainer: field; "

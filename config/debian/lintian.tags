@@ -11,13 +11,15 @@ lintian:
     - package-contains-info-dir-file
     - binary-or-shlib-defines-rpath
     - non-etc-file-marked-as-conffile
-    - embedded-zlib
+    - embedded-library
     - no-shlibs-control-file
     - copyright-contains-dh_make-todo-boilerplate
     - preinst-interpreter-without-predepends
     - control-interpreter-without-depends
     - dir-or-file-in-var-www
     - wrong-file-owner-uid-or-gid
+    - install-info-used-in-maintainer-script
+    - missing-pre-dependency-on-multiarch-support
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
@@ -33,7 +35,7 @@ lintian:
     - binary-in-etc
     - missing-dependency-on-perlapi
     - section-is-dh_make-template
-    - package-installs-python-pyc
+    - package-installs-python-bytecode
     - library-in-debug-or-profile-should-not-be-stripped
     - binary-file-compressed-with-upx
     - file-in-usr-marked-as-conffile

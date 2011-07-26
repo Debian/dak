@@ -136,7 +136,7 @@ def main():
     Options = cnf.SubTree("Obsolete::Options")
     if Options['Help']:
         usage()
-    Logger = daklog.Logger(cnf.Cnf, "dominate")
+    Logger = daklog.Logger("dominate")
     session = DBConn().session()
     for suite_name in utils.split_args(Options['Suite']):
         suite = session.query(Suite).filter_by(suite_name = suite_name).one()

@@ -426,7 +426,7 @@ def main():
     if Options["Help"]:
         usage()
 
-    Logger = daklog.Logger(cnf, "clean-suites", debug=Options["No-Action"])
+    Logger = daklog.Logger("clean-suites", debug=Options["No-Action"])
 
     session = DBConn().session()
 

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Copyright (C) 2008,2010 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2011 Mark Hymers <mhy@debian.org>
 
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -29,48 +30,26 @@ set -u
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-IMPORTSUITE=${1:-"testing"}
-BRITNEY=""
+SUITE="testing-proposed-updates"
+IMPORTDIR="/srv/release.debian.org/sets/tpu-removals"
+IMPORTFILE="${IMPORTDIR}/current"
 
-case "${IMPORTSUITE}" in
-    testing)
-        # What file we look at.
-        INPUTFILE="/srv/release.debian.org/britney/Heidi/set/current"
-        DO_CHANGELOG="true"
-        ;;
-    squeeze-updates)
-        # What file we look at.
-        INPUTFILE="/srv/release.debian.org/sets/squeeze-updates/current"
-        DO_CHANGELOG="false"
-        ;;
-    *)
-        echo "You are so wrong here that I can't even believe it. Sod off."
-        exit 42
-        ;;
-esac
+if [ ! -e "${IMPORTFILE}" ]; then
+    echo "${IMPORTFILE} not found"
+    exit 1
+fi
 
 # Change to a known safe location
 cd $masterdir
 
-echo "Importing new data for ${IMPORTSUITE} into database"
+echo "Performing cleanup on ${SUITE}"
 
-if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
-    rm -f ${ftpdir}/dists/${IMPORTSUITE}/ChangeLog
-    BRITNEY=" --britney"
-fi
+dak control-suite --remove ${SUITE} < ${IMPORTFILE}
 
-cat ${INPUTFILE} | dak control-suite --set ${IMPORTSUITE} ${BRITNEY}
-
-if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
+if [ $? -eq 0 ]; then
     NOW=$(date "+%Y%m%d%H%M")
-    cd ${ftpdir}/dists/${IMPORTSUITE}/
-    mv ChangeLog ChangeLog.${NOW}
-    ln -s ChangeLog.${NOW} ChangeLog
-    find . -maxdepth 1 -mindepth 1 -type f -mmin +2880 -name 'ChangeLog.*' -delete
+    mv "${IMPORTFILE}" "${IMPORTDIR}/processed.${NOW}"
 fi
-
-#echo "Regenerating Packages/Sources files, be patient"
-#dak generate-packages-sources2 -s ${IMPORTSUITE} >/dev/null
 
 echo "Done"
 

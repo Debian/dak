@@ -33,6 +33,7 @@
 
 ################################################################################
 
+import apt_pkg
 import os
 from os.path import normpath
 import re
@@ -73,7 +74,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # in the database
 from config import Config
 from textutils import fix_maintainer
-from dak_exceptions import DBUpdateError, NoSourceFieldError
+from dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
@@ -890,6 +891,9 @@ class BuildQueue(object):
             else:
                 os.symlink(targetpath, queuepath)
                 qf.fileid = poolfile.file_id
+        except FileExistsError:
+            if not poolfile.identical_to(queuepath):
+                raise
         except OSError:
             return None
 
@@ -948,6 +952,9 @@ class BuildQueue(object):
             # Always copy files from policy queues as they might move around.
             import utils
             utils.copy(source, target)
+        except FileExistsError:
+            if not policyqueuefile.identical_to(target):
+                raise
         except OSError:
             return None
 
@@ -1042,6 +1049,24 @@ class ChangePendingFile(object):
 
     def __repr__(self):
         return '<ChangePendingFile %s>' % self.change_pending_file_id
+
+    def identical_to(self, filename):
+        """
+        compare size and hash with the given file
+
+        @rtype: bool
+        @return: true if the given file has the same size and hash as this object; false otherwise
+        """
+        st = os.stat(filename)
+        if self.size != st.st_size:
+            return False
+
+        f = open(filename, "r")
+        sha256sum = apt_pkg.sha256sum(f)
+        if sha256sum != self.sha256sum:
+            return False
+
+        return True
 
 __all__.append('ChangePendingFile')
 
@@ -1391,6 +1416,24 @@ class PoolFile(ORMObject):
 
     def not_null_constraints(self):
         return ['filename', 'md5sum', 'location']
+
+    def identical_to(self, filename):
+        """
+        compare size and hash with the given file
+
+        @rtype: bool
+        @return: true if the given file has the same size and hash as this object; false otherwise
+        """
+        st = os.stat(filename)
+        if self.filesize != st.st_size:
+            return False
+
+        f = open(filename, "r")
+        sha256sum = apt_pkg.sha256sum(f)
+        if sha256sum != self.sha256sum:
+            return False
+
+        return True
 
 __all__.append('PoolFile')
 
@@ -2464,20 +2507,13 @@ def source_exists(source, source_version, suites = ["any"], session=None):
         q = session.query(DBSource).filter_by(source=source). \
             filter(DBSource.version.in_([source_version, orig_source_version]))
         if suite != "any":
-            # source must exist in suite X, or in some other suite that's
-            # mapped to X, recursively... silent-maps are counted too,
-            # unreleased-maps aren't.
-            maps = cnf.ValueList("SuiteMappings")[:]
-            maps.reverse()
-            maps = [ m.split() for m in maps ]
-            maps = [ (x[1], x[2]) for x in maps
-                            if x[0] == "map" or x[0] == "silent-map" ]
-            s = [suite]
-            for (from_, to) in maps:
-                if from_ in s and to not in s:
-                    s.append(to)
+            # source must exist in 'suite' or a suite that is enhanced by 'suite'
+            s = get_suite(suite, session)
+            enhances_vcs = session.query(VersionCheck).filter(VersionCheck.suite==s).filter_by(check='Enhances')
+            considered_suites = [ vc.reference for vc in enhances_vcs ]
+            considered_suites.append(s)
 
-            q = q.filter(DBSource.suites.any(Suite.suite_name.in_(s)))
+            q = q.filter(DBSource.suites.any(Suite.suite_id.in_([s.suite_id for s in considered_suites])))
 
         if q.count() > 0:
             continue
@@ -2599,6 +2635,15 @@ __all__.append('import_metadata_into_db')
 
 ################################################################################
 
+def split_uploaders(uploaders_list):
+    '''
+    Split the Uploaders field into the individual uploaders and yield each of
+    them. Beware: email addresses might contain commas.
+    '''
+    import re
+    for uploader in re.sub(">[ ]*,", ">\t", uploaders_list).split("\t"):
+        yield uploader.strip()
+
 @session_wrapper
 def add_dsc_to_db(u, filename, session=None):
     entry = u.pkg.files[filename]
@@ -2689,8 +2734,7 @@ def add_dsc_to_db(u, filename, session=None):
     session.refresh(source)
     source.uploaders = [source.maintainer]
     if u.pkg.dsc.has_key("uploaders"):
-        for up in u.pkg.dsc["uploaders"].replace(">, ", ">\t").split("\t"):
-            up = up.strip()
+        for up in split_uploaders(u.pkg.dsc["uploaders"]):
             source.uploaders.append(get_or_set_maintainer(up, session))
 
     session.flush()

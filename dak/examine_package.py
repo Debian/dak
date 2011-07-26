@@ -61,6 +61,7 @@ import threading
 
 from daklib import utils
 from daklib.dbconn import DBConn, get_component_by_package_suite
+from daklib.gpg import SignedFile
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory
@@ -117,6 +118,7 @@ ansi_colours = {
   'main': "\033[36m",
   'contrib': "\033[33m",
   'nonfree': "\033[31m",
+  'provides': "\033[35m",
   'arch': "\033[32m",
   'end': "\033[0m",
   'bold': "\033[1m",
@@ -127,6 +129,7 @@ html_colours = {
   'main': ('<span style="color: aqua">',"</span>"),
   'contrib': ('<span style="color: yellow">',"</span>"),
   'nonfree': ('<span style="color: red">',"</span>"),
+  'provides': ('<span style="color: magenta">',"</span>"),
   'arch': ('<span style="color: green">',"</span>"),
   'bold': ('<span style="font-weight: bold">',"</span>"),
   'maintainer': ('<span style="color: green">',"</span>"),
@@ -322,6 +325,30 @@ def read_changes_or_dsc (suite, filename, session = None):
     filecontents = '\n'.join(map(lambda x: format_field(x,dsc[x.lower()]), keysinorder))+'\n'
     return filecontents
 
+def get_provides(suite):
+    provides = set()
+    session = DBConn().session()
+    query = '''SELECT DISTINCT value
+               FROM binaries_metadata m
+               JOIN bin_associations b
+               ON b.bin = m.bin_id
+               WHERE key_id = (
+                 SELECT key_id
+                 FROM metadata_keys
+                 WHERE key = 'Provides' )
+               AND b.suite = (
+                 SELECT id
+                 FROM suite
+                 WHERE suite_name = '%(suite)s'
+                 OR codename = '%(suite)s')''' % \
+            {'suite': suite}
+    for p in session.execute(query):
+        for e in p:
+            for i in e.split(','):
+                provides.add(i.strip())
+    session.close()
+    return provides
+
 def create_depends_string (suite, depends_tree, session = None):
     result = ""
     if suite == 'experimental':
@@ -329,6 +356,7 @@ def create_depends_string (suite, depends_tree, session = None):
     else:
         suite_list = [suite]
 
+    provides = set()
     comma_count = 1
     for l in depends_tree:
         if (comma_count >= 2):
@@ -356,7 +384,12 @@ def create_depends_string (suite, depends_tree, session = None):
                 adepends = d['name']
                 if d['version'] != '' :
                     adepends += " (%s)" % (d['version'])
-                result += colour_output(adepends, "bold")
+                if not provides:
+                    provides = get_provides(suite)
+                if d['name'] in provides:
+                    result += colour_output(adepends, "provides")
+                else:
+                    result += colour_output(adepends, "bold")
             or_count += 1
         comma_count += 1
     return result
@@ -526,30 +559,10 @@ def check_deb (suite, deb_filename, session = None):
 # Read a file, strip the signature and return the modified contents as
 # a string.
 def strip_pgp_signature (filename):
-    inputfile = utils.open_file (filename)
-    contents = ""
-    inside_signature = 0
-    skip_next = 0
-    for line in inputfile.readlines():
-        if line[:-1] == "":
-            continue
-        if inside_signature:
-            continue
-        if skip_next:
-            skip_next = 0
-            continue
-        if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
-            skip_next = 1
-            continue
-        if line.startswith("-----BEGIN PGP SIGNATURE"):
-            inside_signature = 1
-            continue
-        if line.startswith("-----END PGP SIGNATURE"):
-            inside_signature = 0
-            continue
-        contents += line
-    inputfile.close()
-    return contents
+    with utils.open_file(filename) as f:
+        data = f.read()
+        signedfile = SignedFile(data, keyrings=(), require_signature=False)
+        return signedfile.contents
 
 def display_changes(suite, changes_filename):
     global printed

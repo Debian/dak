@@ -424,7 +424,7 @@ def main ():
     if action == "list":
         get_list(suite, session)
     else:
-        Logger = daklog.Logger(cnf.Cnf, "control-suite")
+        Logger = daklog.Logger("control-suite")
         if file_list:
             for f in file_list:
                 process_file(utils.open_file(f), suite, action, session, britney, force)

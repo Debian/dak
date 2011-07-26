@@ -41,6 +41,7 @@ import subprocess
 
 from dbconn import DBConn, get_architecture, get_component, get_suite, get_override_type, Keyring, session_wrapper
 from dak_exceptions import *
+from gpg import SignedFile
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
@@ -151,7 +152,15 @@ def extract_component_from_section(section):
 
 ################################################################################
 
-def parse_deb822(contents, signing_rules=0):
+def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None):
+    require_signature = True
+    if keyrings == None:
+        keyrings = []
+        require_signature = False
+
+    signed_file = SignedFile(armored_contents, keyrings=keyrings, require_signature=require_signature)
+    contents = signed_file.contents
+
     error = ""
     changes = {}
 
@@ -169,38 +178,16 @@ def parse_deb822(contents, signing_rules=0):
         index += 1
         indexed_lines[index] = line[:-1]
 
-    inside_signature = 0
-
     num_of_lines = len(indexed_lines.keys())
     index = 0
     first = -1
     while index < num_of_lines:
         index += 1
         line = indexed_lines[index]
-        if line == "":
-            if signing_rules == 1:
-                index += 1
-                if index > num_of_lines:
-                    raise InvalidDscError, index
-                line = indexed_lines[index]
-                if not line.startswith("-----BEGIN PGP SIGNATURE"):
-                    raise InvalidDscError, index
-                inside_signature = 0
-                break
-            else:
-                continue
-        if line.startswith("-----BEGIN PGP SIGNATURE"):
+        if line == "" and signing_rules == 1:
+            if index != num_of_lines:
+                raise InvalidDscError, index
             break
-        if line.startswith("-----BEGIN PGP SIGNED MESSAGE"):
-            inside_signature = 1
-            if signing_rules == 1:
-                while index < num_of_lines and line != "":
-                    index += 1
-                    line = indexed_lines[index]
-            continue
-        # If we're not inside the signed data, don't process anything
-        if signing_rules >= 0 and not inside_signature:
-            continue
         slf = re_single_line_field.match(line)
         if slf:
             field = slf.groups()[0].lower()
@@ -221,10 +208,7 @@ def parse_deb822(contents, signing_rules=0):
             continue
         error += line
 
-    if signing_rules == 1 and inside_signature:
-        raise InvalidDscError, index
-
-    changes["filecontents"] = "".join(lines)
+    changes["filecontents"] = armored_contents
 
     if changes.has_key("source"):
         # Strip the source version in brackets from the source field,
@@ -241,7 +225,7 @@ def parse_deb822(contents, signing_rules=0):
 
 ################################################################################
 
-def parse_changes(filename, signing_rules=0, dsc_file=0):
+def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
     """
     Parses a changes file and returns a dictionary where each field is a
     key.  The mandatory first argument is the filename of the .changes
@@ -270,7 +254,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0):
         unicode(content, 'utf-8')
     except UnicodeError:
         raise ChangesUnicodeError, "Changes file not proper utf-8"
-    changes = parse_deb822(content, signing_rules)
+    changes = parse_deb822(content, signing_rules, keyrings=keyrings)
 
 
     if not dsc_file:
@@ -411,10 +395,10 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
         (r'orig.tar.gz',               ('orig_tar_gz', 'orig_tar')),
         (r'diff.gz',                   ('debian_diff',)),
         (r'tar.gz',                    ('native_tar_gz', 'native_tar')),
-        (r'debian\.tar\.(gz|bz2)',     ('debian_tar',)),
-        (r'orig\.tar\.(gz|bz2)',       ('orig_tar',)),
-        (r'tar\.(gz|bz2)',             ('native_tar',)),
-        (r'orig-.+\.tar\.(gz|bz2)',    ('more_orig_tar',)),
+        (r'debian\.tar\.(gz|bz2|xz)',  ('debian_tar',)),
+        (r'orig\.tar\.(gz|bz2|xz)',    ('orig_tar',)),
+        (r'tar\.(gz|bz2|xz)',          ('native_tar',)),
+        (r'orig-.+\.tar\.(gz|bz2|xz)', ('more_orig_tar',)),
     )
 
     for f in dsc_files.keys():

@@ -155,7 +155,7 @@ def main():
         Options["Sudo"] = ""
 
     if not Options["Sudo"] and not Options["No-Action"]:
-        Logger = daklog.Logger(cnf.Cnf, "security-install")
+        Logger = daklog.Logger("security-install")
 
     session = DBConn().session()
 

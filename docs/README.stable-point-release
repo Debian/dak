@@ -20,8 +20,8 @@ o Update fields in suite table in postgresql (see below)
 o dak dominate --force -s stable
 o dak generate-filelist -s stable
 o Let SRM see if all is ok
-o cd $configdir ; apt-ftparchive generate apt.conf.stable
-o dak generate-releases --force-touch --apt-conf apt.conf.stable stable
+o dak generate-packages-sources -s stable ; dak contents generate -f -s stable
+o dak generate-releases -f -s stable
 o Check if a mirror push is needed or next dinstall is enough. for a push
 o if so:
    TRACEFILE="${ftpdir}/project/trace/ftp-master.debian.org"
@@ -46,8 +46,8 @@ o if so:
 
 
 begin;
-update suite set version = '6.0.1' where suite_name = 'stable';
-update suite set description = 'Debian 6.0.1 Released 19 March 2011' where suite_name = 'stable';
+update suite set version = '6.0.2' where suite_name = 'stable';
+update suite set description = 'Debian 6.0.2 Released 25 June 2011' where suite_name = 'stable';
 
 ------------------------------------------------------------------------
 Old doc:

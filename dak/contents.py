@@ -85,14 +85,14 @@ OPTIONS for scan-source and scan-binary
 ################################################################################
 
 def write_all(cnf, suite_names = [], component_names = [], force = None):
-    Logger = daklog.Logger(cnf.Cnf, 'contents generate')
+    Logger = daklog.Logger('contents generate')
     ContentsWriter.write_all(Logger, suite_names, component_names, force)
     Logger.close()
 
 ################################################################################
 
 def binary_scan_all(cnf, limit):
-    Logger = daklog.Logger(cnf.Cnf, 'contents scan-binary')
+    Logger = daklog.Logger('contents scan-binary')
     result = BinaryContentsScanner.scan_all(limit)
     processed = '%(processed)d packages processed' % result
     remaining = '%(remaining)d packages remaining' % result
@@ -102,7 +102,7 @@ def binary_scan_all(cnf, limit):
 ################################################################################
 
 def source_scan_all(cnf, limit):
-    Logger = daklog.Logger(cnf.Cnf, 'contents scan-source')
+    Logger = daklog.Logger('contents scan-source')
     result = SourceContentsScanner.scan_all(limit)
     processed = '%(processed)d packages processed' % result
     remaining = '%(remaining)d packages remaining' % result
