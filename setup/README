@@ -1,0 +1,33 @@
+Initialising a dak database schema
+==================================
+
+The following packages are needed:
+ * postgresql-9.0 postgresql-client-9.0 postgresql-plperl-9.0 postgresql-plpython-9.0 postgresql-9.0-debversion 
+
+(the schema assumes at least postgresql 9.0; ftpmaster in Debian currently uses
+the squeeze postgresql 9.0 backport)
+
+The following roles are assumed to exist:
+ * dak: database superuser: needs to be an actual user
+ * ftpmaster: role which should be given to archive administrators
+ * ftpteam: people who can do NEW processing, overrides, removals, etc
+ * ftptrainee: people who can add notes to packages in NEW
+
+sudo adduser dak
+sudo -u postgres createuser -s dak
+
+Become the dak user:
+sudo -u dak -s -H
+
+Create the additional roles:
+createuser -S -R -D ftpmaster
+createuser -S -R -D ftpteam
+createuser -S -R -D ftptrainee
+
+Create an empty database with SQL_ASCII encoding:
+createdb -T template0 -E SQL_ASCII -O dak projectb
+
+Import the schema:
+psql -f current_schema.sql -d projectb
+
+TODO: Directory creation
