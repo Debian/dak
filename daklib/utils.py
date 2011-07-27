@@ -143,10 +143,11 @@ def extract_component_from_section(section):
 
     # Expand default component
     if component == "":
-        if Cnf.has_key("Component::%s" % section):
-            component = section
-        else:
+        comp = get_component(section)
+        if comp is None:
             component = "main"
+        else:
+            component = comp.componant_name
 
     return (section, component)
 
