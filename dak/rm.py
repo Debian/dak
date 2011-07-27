@@ -630,10 +630,17 @@ def main ():
         summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (summary, Options["Reason"])
         summarymail += "----------------------------------------------\n"
         Subst_close_rm["__SUMMARY__"] = summarymail
+
         whereami = utils.where_am_i()
-        Archive = cnf.SubTree("Archive::%s" % (whereami))
-        Subst_close_rm["__MASTER_ARCHIVE__"] = Archive["OriginServer"]
-        Subst_close_rm["__PRIMARY_MIRROR__"] = Archive["PrimaryMirror"]
+        Archive = get_archive(whereami, session)
+        if Archive is None:
+            utils.warn("Cannot find archive %s.  Setting blank values for origin" % whereami)
+            Subst_close_rm["__MASTER_ARCHIVE__"] = ""
+            Subst_close_rm["__PRIMARY_MIRROR__"] = ""
+        else:
+            Subst_close_rm["__MASTER_ARCHIVE__"] = Archive.origin_server
+            Subst_close_rm["__PRIMARY_MIRROR__"] = Archive.primary_mirror
+
         for bug in utils.split_args(Options["Done"]):
             Subst_close_rm["__BUG_NUMBER__"] = bug
             if Options["Do-Close"]:
