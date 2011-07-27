@@ -1840,7 +1840,7 @@ class Upload(object):
 
         # Also only check if there is a file defined (and existant) with
         # checks.
-        transpath = cnf.get("Dinstall::Reject::ReleaseTransitions", "")
+        transpath = cnf.get("Dinstall::ReleaseTransitions", "")
         if transpath == "" or not os.path.exists(transpath):
             return
 

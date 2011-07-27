@@ -255,7 +255,7 @@ def write_transitions(from_trans):
 
     """
 
-    trans_file = Cnf["Dinstall::Reject::ReleaseTransitions"]
+    trans_file = Cnf["Dinstall::ReleaseTransitions"]
     trans_temp = trans_file + ".tmp"
 
     trans_lock = lock_file(trans_file)
@@ -328,7 +328,7 @@ def temp_transitions_file(transitions):
 
 def edit_transitions():
     """ Edit the defined transitions. """
-    trans_file = Cnf["Dinstall::Reject::ReleaseTransitions"]
+    trans_file = Cnf["Dinstall::ReleaseTransitions"]
     edit_file = temp_transitions_file(load_transitions(trans_file))
 
     editor = os.environ.get("EDITOR", "vi")
@@ -568,13 +568,13 @@ def main():
     init()
 
     # Check if there is a file defined (and existant)
-    transpath = Cnf.get("Dinstall::Reject::ReleaseTransitions", "")
+    transpath = Cnf.get("Dinstall::ReleaseTransitions", "")
     if transpath == "":
-        utils.warn("Dinstall::Reject::ReleaseTransitions not defined")
+        utils.warn("Dinstall::ReleaseTransitions not defined")
         sys.exit(1)
     if not os.path.exists(transpath):
         utils.warn("ReleaseTransitions file, %s, not found." %
-                          (Cnf["Dinstall::Reject::ReleaseTransitions"]))
+                          (Cnf["Dinstall::ReleaseTransitions"]))
         sys.exit(1)
     # Also check if our temp directory is defined and existant
     temppath = Cnf.get("Dir::TempPath", "")
