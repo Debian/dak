@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from base_test import DakTestCase
+from db_test import DBDakTestCase
 
 import unittest
 
 from daklib.utils import extract_component_from_section
 
-class ExtractComponentTestCase(DakTestCase):
+class ExtractComponentTestCase(DBDakTestCase):
     """
     prefix: non-US
     component: main, contrib, non-free
