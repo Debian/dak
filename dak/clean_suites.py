@@ -298,12 +298,10 @@ SELECT s.id, f.filename FROM source s, files f
 
             if not Options["No-Action"]:
                 session.delete(pf)
+                session.commit()
 
         else:
             utils.fubar("%s is neither symlink nor file?!" % (filename))
-
-    if not Options["No-Action"]:
-        session.commit()
 
     if count > 0:
         Logger.log(["total", count, utils.size_type(size)])
