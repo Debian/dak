@@ -22,7 +22,7 @@ import sys
 import apt_pkg
 
 from daklib import utils
-from daklib.dbconn import DBConn, get_or_set_uid
+from daklib.dbconn import DBConn, get_or_set_uid, get_active_keyring_paths
 from daklib.regexes import re_gpg_fingerprint_colon, re_user_address, re_user_mails, re_user_name
 
 ################################################################################
@@ -124,7 +124,7 @@ def main():
     session = DBConn().session()
 
     if not keyrings:
-        keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
+        keyrings = get_active_keyring_paths()
 
     cmd = "gpg --with-colons --no-secmem-warning --no-auto-check-trustdb --no-default-keyring %s --with-fingerprint --list-key %s" \
            % (utils.gpg_keyring_args(keyrings),

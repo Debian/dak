@@ -39,7 +39,10 @@ import re
 import email as modemail
 import subprocess
 
-from dbconn import DBConn, get_architecture, get_component, get_suite, get_override_type, Keyring, session_wrapper
+from dbconn import DBConn, get_architecture, get_component, get_suite, \
+                   get_override_type, Keyring, session_wrapper, \
+                   get_active_keyring_paths, get_primary_keyring_path
+from sqlalchemy import desc
 from dak_exceptions import *
 from gpg import SignedFile
 from textutils import fix_maintainer
@@ -1250,7 +1253,7 @@ def retrieve_key (filename, keyserver=None, keyring=None):
     if not keyserver:
         keyserver = Cnf["Dinstall::KeyServer"]
     if not keyring:
-        keyring = Cnf.ValueList("Dinstall::GPGKeyring")[0]
+        keyring = get_primary_keyring_path()
 
     # Ensure the filename contains no shell meta-characters or other badness
     if not re_taint_free.match(filename):
@@ -1287,7 +1290,7 @@ def retrieve_key (filename, keyserver=None, keyring=None):
 
 def gpg_keyring_args(keyrings=None):
     if not keyrings:
-        keyrings = Cnf.ValueList("Dinstall::GPGKeyring")
+        keyrings = get_active_keyring_paths()
 
     return " ".join(["--keyring %s" % x for x in keyrings])
 

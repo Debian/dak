@@ -751,7 +751,7 @@ class Upload(object):
             self.rejects.append("%s: invalid version number '%s'." % (f, version))
 
         # Ensure the architecture of the .deb is one we know about.
-        default_suite = cnf.get("Dinstall::DefaultSuite", "Unstable")
+        default_suite = cnf.get("Dinstall::DefaultSuite", "unstable")
         architecture = control.Find("Architecture")
         upload_suite = self.pkg.changes["distribution"].keys()[0]
 
@@ -1108,7 +1108,7 @@ class Upload(object):
             if not has_source:
                 self.rejects.append("no source found and Architecture line in changes mention source.")
 
-            if not has_binaries and cnf.FindB("Dinstall::Reject::NoSourceOnly"):
+            if (not has_binaries) and (not cnf.FindB("Dinstall::AllowSourceOnlyUploads")):
                 self.rejects.append("source only uploads are not supported.")
 
     ###########################################################################
