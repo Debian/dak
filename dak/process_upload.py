@@ -424,7 +424,6 @@ def main():
 
     cnf = Config()
     summarystats = SummaryStats()
-    log_urgency = False
 
     DBConn()
 
@@ -464,10 +463,10 @@ def main():
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-upload' is already running.")
             else:
                 raise
-        if cnf.get("Dir::UrgencyLog"):
-            # Initialise UrgencyLog()
-            log_urgency = True
-            UrgencyLog()
+
+        # Initialise UrgencyLog() - it will deal with the case where we don't
+        # want to log urgencies
+        urgencylog = UrgencyLog()
 
     Logger = daklog.Logger("process-upload", Options["No-Action"])
 
@@ -513,8 +512,7 @@ def main():
     byebye()
 
     if not Options["No-Action"]:
-        if log_urgency:
-            UrgencyLog().close()
+        urgencylog.close()
 
     Logger.close()
 

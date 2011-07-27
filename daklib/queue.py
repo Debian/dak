@@ -2181,7 +2181,7 @@ distribution."""
         utils.move(self.pkg.changes_file,
                    os.path.join(donedir, os.path.basename(self.pkg.changes_file)))
 
-        if self.pkg.changes["architecture"].has_key("source") and cnf.get("Dir::UrgencyLog"):
+        if self.pkg.changes["architecture"].has_key("source"):
             UrgencyLog().log(self.pkg.dsc["source"], self.pkg.dsc["version"], self.pkg.changes["urgency"])
 
         self.update_subst()

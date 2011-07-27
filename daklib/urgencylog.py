@@ -47,26 +47,43 @@ class UrgencyLog(object):
 
             self.timestamp = time.strftime("%Y%m%d%H%M%S")
 
-            # Create the log directory if it doesn't exist
-            self.log_dir = Config()["Dir::UrgencyLog"]
+            cnf = Config()
+            if cnf.has_key("Dir::UrgencyLog"):
+                # Create the log directory if it doesn't exist
+                self.log_dir = cnf["Dir::UrgencyLog"]
 
-            if not os.path.exists(self.log_dir) or not os.access(self.log_dir, os.W_OK):
-                warn("UrgencyLog directory %s does not exist or is not writeable, using /srv/ftp.debian.org/tmp/ instead" % (self.log_dir))
-                self.log_dir = '/srv/ftp.debian.org/tmp/'
+                if not os.path.exists(self.log_dir) or not os.access(self.log_dir, os.W_OK):
+                    warn("UrgencyLog directory %s does not exist or is not writeable, using /srv/ftp.debian.org/tmp/ instead" % (self.log_dir))
+                    self.log_dir = '/srv/ftp.debian.org/tmp/'
 
-            # Open the logfile
-            self.log_filename = "%s/.install-urgencies-%s.new" % (self.log_dir, self.timestamp)
-            self.log_file = open_file(self.log_filename, 'w')
+                # Open the logfile
+                self.log_filename = "%s/.install-urgencies-%s.new" % (self.log_dir, self.timestamp)
+                self.log_file = open_file(self.log_filename, 'w')
+
+            else:
+                self.log_dir = None
+                self.log_filename = None
+                self.log_file = None
+
             self.writes = 0
 
     def log(self, source, version, urgency):
         "Log an event"
+
+        # Don't try and log if Dir::UrgencyLog is not configured
+        if self.log_file is None:
+            return
+
         self.log_file.write(" ".join([source, version, urgency])+'\n')
         self.log_file.flush()
         self.writes += 1
 
     def close(self):
         "Close a Logger object"
+        # Don't try and log if Dir::UrgencyLog is not configured
+        if self.log_file is None:
+            return
+
         self.log_file.flush()
         self.log_file.close()
 
