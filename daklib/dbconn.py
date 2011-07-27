@@ -1777,6 +1777,34 @@ def get_keyring(keyring, session=None):
 
 __all__.append('get_keyring')
 
+@session_wrapper
+def get_active_keyring_paths(session=None):
+    """
+    @rtype: list
+    @return: list of active keyring paths
+    """
+    return [ x.keyring_name for x in session.query(Keyring).filter(Keyring.active == True).order_by(desc(Keyring.priority)).all() ]
+
+__all__.append('get_active_keyring_paths')
+
+@session_wrapper
+def get_primary_keyring_path(session=None):
+    """
+    Get the full path to the highest priority active keyring
+
+    @rtype: str or None
+    @return: path to the active keyring with the highest priority or None if no
+             keyring is configured
+    """
+    keyrings = get_active_keyring_paths()
+
+    if len(keyrings) > 0:
+        return keyrings[0]
+    else:
+        return None
+
+__all__.append('get_primary_keyring_path')
+
 ################################################################################
 
 class KeyringACLMap(object):
