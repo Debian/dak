@@ -518,7 +518,8 @@ def main ():
     for i in [ "help" ]:
         if not cnf.has_key("Cruft-Report::Options::%s" % (i)):
             cnf["Cruft-Report::Options::%s" % (i)] = ""
-    cnf["Cruft-Report::Options::Suite"] = cnf["Dinstall::DefaultSuite"]
+
+    cnf["Cruft-Report::Options::Suite"] = cnf.get("Dinstall::DefaultSuite", "unstable")
 
     if not cnf.has_key("Cruft-Report::Options::Mode"):
         cnf["Cruft-Report::Options::Mode"] = "daily"
