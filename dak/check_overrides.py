@@ -372,9 +372,12 @@ def main ():
         for component in cnf.SubTree("Component").List():
             # It is crucial for the dsc override creation based on binary
             # overrides that 'dsc' goes first
-            otypes = cnf.ValueList("OverrideType")
-            otypes.remove("dsc")
-            otypes = ["dsc"] + otypes
+            otypes = ['dsc']
+            for ot in session.query(OverrideType):
+                if ot.overridetype == 'dsc':
+                    continue
+                otypes.append(ot.overridetype)
+
             for otype in otypes:
                 print "Processing %s [%s - %s]" \
                     % (osuite, component, otype)

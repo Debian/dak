@@ -122,26 +122,24 @@ def main ():
         sys.stderr.write("Processing %s...\n" % (suite.suite_name))
         override_suite = suite.overridecodename
 
-        for component_name in cnf.SubTree("Component").List():
-            component = get_component(component_name, session)
-            if not component:
-                utils.fubar('Component %s not found' % component_name)
+        for component in session.query(Component).all():
+            for otype in session.query(OverrideType).all():
+                otype_name = otype.overridetype
+                cname = component.component_name
 
-            for otype_name in cnf.ValueList("OverrideType"):
-                otype = get_override_type(otype_name, session)
-                if not otype:
-                    utils.fubar('OverrideType %s not found' % otype_name)
-
+                # TODO: Stick suffix info in database (or get rid of it)
                 if otype_name == "deb":
                     suffix = ""
                 elif otype_name == "udeb":
-                    if component == "contrib":
+                    if cname == "contrib":
                         continue # Ick2
                     suffix = ".debian-installer"
                 elif otype_name == "dsc":
                     suffix = ".src"
+                else:
+                    utils.fubar("Don't understand OverrideType %s" % otype.overridetype)
 
-                cname = component.component_name.replace('/', '_')
+                cname = cname.replace('/', '_')
                 filename = os.path.join(cnf["Dir::Override"], "override.%s.%s%s" % (override_suite, cname, suffix))
 
                 output_file = utils.open_file(filename, 'w')
