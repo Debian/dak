@@ -1108,7 +1108,7 @@ class Upload(object):
             if not has_source:
                 self.rejects.append("no source found and Architecture line in changes mention source.")
 
-            if not has_binaries and cnf.FindB("Dinstall::Reject::NoSourceOnly"):
+            if (not has_binaries) and (not cnf.FindB("Dinstall::AllowSourceOnlyUploads")):
                 self.rejects.append("source only uploads are not supported.")
 
     ###########################################################################
