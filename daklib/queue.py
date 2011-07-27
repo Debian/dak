@@ -751,7 +751,7 @@ class Upload(object):
             self.rejects.append("%s: invalid version number '%s'." % (f, version))
 
         # Ensure the architecture of the .deb is one we know about.
-        default_suite = cnf.get("Dinstall::DefaultSuite", "Unstable")
+        default_suite = cnf.get("Dinstall::DefaultSuite", "unstable")
         architecture = control.Find("Architecture")
         upload_suite = self.pkg.changes["distribution"].keys()[0]
 
