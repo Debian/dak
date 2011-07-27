@@ -22,8 +22,9 @@ class ExtractComponentTestCase(DBDakTestCase):
     """
 
     def assertExtract(self, input, output):
+        self.setup_components()
         self.assertEqual(
-            extract_component_from_section(input)[1],
+            extract_component_from_section(input, self.session)[1],
             output,
         )
 
