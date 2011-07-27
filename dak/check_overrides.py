@@ -369,9 +369,10 @@ def main ():
         if len(suiteids) < 1:
             utils.fubar("Couldn't find id's of all suites: %s" % suiteids)
 
-        for component in cnf.SubTree("Component").List():
+        for component in session.query(Component).all():
             # It is crucial for the dsc override creation based on binary
             # overrides that 'dsc' goes first
+            component_name = component.component_name
             otypes = ['dsc']
             for ot in session.query(OverrideType):
                 if ot.overridetype == 'dsc':
@@ -380,9 +381,9 @@ def main ():
 
             for otype in otypes:
                 print "Processing %s [%s - %s]" \
-                    % (osuite, component, otype)
+                    % (osuite, component_name, otype)
                 sys.stdout.flush()
-                process(osuite, suiteids, originosuite, component, otype, session)
+                process(osuite, suiteids, originosuite, component_name, otype, session)
 
     Logger.close()
 
