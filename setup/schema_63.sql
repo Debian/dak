@@ -981,7 +981,8 @@ CREATE TABLE archive (
     origin_server text,
     description text,
     created timestamp with time zone DEFAULT now() NOT NULL,
-    modified timestamp with time zone DEFAULT now() NOT NULL
+    modified timestamp with time zone DEFAULT now() NOT NULL,
+    primary_mirror text
 );
 
 
@@ -5585,6 +5586,9 @@ GRANT SELECT ON TABLE version_checks TO PUBLIC;
 -- PostgreSQL database dump complete
 --
 
--- Set schema version
-INSERT INTO config (name, value) VALUES ('db_revision', 62);
+--
+-- PostgreSQL database dump complete
+--
 
+-- Set schema version
+INSERT INTO config (name, value) VALUES ('db_revision', 63);
