@@ -41,6 +41,7 @@ import apt_inst
 from daklib.dbconn import *
 from daklib import utils
 from daklib.config import Config
+from daklib.dak_exceptions import InvalidDscError, ChangesUnicodeError, CantOpenError
 
 ################################################################################
 
@@ -150,15 +151,21 @@ def check_dscs():
 
     count = 0
 
-    for dsc_file in DBConn().session().query(DSCFile):
-        f = dsc_file.poolfile.fullpath
+    for src in DBConn().session().query(DBSource).order_by(DBSource.source, DBSource.version):
+        f = src.poolfile.fullpath
         try:
             utils.parse_changes(f, signing_rules=1, dsc_file=1)
-        except InvalidDscError, line:
+        except InvalidDscError:
             utils.warn("syntax error in .dsc file %s" % f)
             count += 1
         except ChangesUnicodeError:
             utils.warn("found invalid dsc file (%s), not properly utf-8 encoded" % f)
+            count += 1
+        except CantOpenError:
+            utils.warn("missing dsc file (%s)" % f)
+            count += 1
+        except Exception, e:
+            utils.warn("miscellaneous error parsing dsc file (%s): %s" % (f, str(e)))
             count += 1
 
     if count:
