@@ -148,26 +148,18 @@ def check_dscs():
     Parse every .dsc file in the archive and check for it's validity.
     """
 
-    cnf = Config()
-
     count = 0
-    suite = 'unstable'
 
-    for component in cnf.SubTree("Component").List():
-        component = component.lower()
-        list_filename = '%s%s_%s_source.list' % (cnf["Dir::Lists"], suite, component)
-        list_file = utils.open_file(list_filename)
-
-        for line in list_file.readlines():
-            f = line[:-1]
-            try:
-                utils.parse_changes(f, signing_rules=1, dsc_file=1)
-            except InvalidDscError, line:
-                utils.warn("syntax error in .dsc file '%s', line %s." % (f, line))
-                count += 1
-            except ChangesUnicodeError:
-                utils.warn("found invalid changes file, not properly utf-8 encoded")
-                count += 1
+    for dsc_file in DBConn().session().query(DSCFile):
+        f = dsc_file.poolfile.fullpath
+        try:
+            utils.parse_changes(f, signing_rules=1, dsc_file=1)
+        except InvalidDscError, line:
+            utils.warn("syntax error in .dsc file %s" % f)
+            count += 1
+        except ChangesUnicodeError:
+            utils.warn("found invalid dsc file (%s), not properly utf-8 encoded" % f)
+            count += 1
 
     if count:
         utils.warn("Found %s invalid .dsc files." % (count))
