@@ -1315,7 +1315,7 @@ class Upload(object):
             self.rejects.append("'dpkg-source -x' failed for %s." % dsc_filename)
             return
 
-        if not cnf.Find("Dir::Queue::BTSVersionTrack"):
+        if not cnf.Find("Dir::BTSVersionTrack"):
             return
 
         # Get the upstream version
@@ -2192,19 +2192,19 @@ distribution."""
         self.announce(short_summary, 1)
 
         ## Helper stuff for DebBugs Version Tracking
-        if cnf.Find("Dir::Queue::BTSVersionTrack"):
+        if cnf.Find("Dir::BTSVersionTrack"):
             if self.pkg.changes["architecture"].has_key("source"):
-                (fd, temp_filename) = utils.temp_filename(cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+                (fd, temp_filename) = utils.temp_filename(cnf["Dir::BTSVersionTrack"], prefix=".")
                 version_history = os.fdopen(fd, 'w')
                 version_history.write(self.pkg.dsc["bts changelog"])
                 version_history.close()
-                filename = "%s/%s" % (cnf["Dir::Queue::BTSVersionTrack"],
+                filename = "%s/%s" % (cnf["Dir::BTSVersionTrack"],
                                       self.pkg.changes_file[:-8]+".versions")
                 os.rename(temp_filename, filename)
                 os.chmod(filename, 0644)
 
             # Write out the binary -> source mapping.
-            (fd, temp_filename) = utils.temp_filename(cnf["Dir::Queue::BTSVersionTrack"], prefix=".")
+            (fd, temp_filename) = utils.temp_filename(cnf["Dir::BTSVersionTrack"], prefix=".")
             debinfo = os.fdopen(fd, 'w')
             for name, entry in sorted(self.pkg.files.items()):
                 if entry["type"] == "deb":
@@ -2213,7 +2213,7 @@ distribution."""
                                      entry["source version"]])
                     debinfo.write(line+"\n")
             debinfo.close()
-            filename = "%s/%s" % (cnf["Dir::Queue::BTSVersionTrack"],
+            filename = "%s/%s" % (cnf["Dir::BTSVersionTrack"],
                                   self.pkg.changes_file[:-8]+".debinfo")
             os.rename(temp_filename, filename)
             os.chmod(filename, 0644)
