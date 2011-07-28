@@ -364,7 +364,7 @@ def process_it(changes_file, session):
         # If this is the Real Thing(tm), copy things into a private
         # holding directory first to avoid replacable file races.
         if not Options["No-Action"]:
-            os.chdir(cnf["Dir::Queue::Holding"])
+            holding.chdir_to_holding()
 
             # Absolutize the filename to avoid the requirement of being in the
             # same directory as the .changes file.
