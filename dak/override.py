@@ -61,7 +61,7 @@ def check_override_compliance(package, priority, suite, cnf, session):
 
     depends = set()
     rdepends = set()
-    components = cnf.ValueList("Suite::%s::Components" % suite)
+    components = get_component_names(session)
     arches = set([x.arch_string for x in get_suite_architectures(suite)])
     arches -= set(["source", "all"])
     for arch in arches:

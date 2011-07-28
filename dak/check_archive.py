@@ -424,7 +424,7 @@ def check_indices_files_exist():
     Ensure files mentioned in Packages & Sources exist
     """
     for suite in [ "stable", "testing", "unstable" ]:
-        for component in Cnf.ValueList("Suite::%s::Components" % (suite)):
+        for component in get_component_names():
             architectures = get_suite_architectures(suite)
             for arch in [ i.arch_string.lower() for i in architectures ]:
                 if arch == "source":

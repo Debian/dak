@@ -250,7 +250,7 @@ def parse_packages():
     # Parse the Packages files (since it's a sub-second operation on auric)
     suite = "stable"
     stable = {}
-    components = cnf.ValueList("Suite::%s::Components" % (suite))
+    components = get_component_names()
     architectures = [ a.arch_string for a in get_suite_architectures(suite, skipsrc=True, skipall=True) ]
     for component in components:
         for architecture in architectures:

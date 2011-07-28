@@ -102,7 +102,7 @@ def reverse_depends_check(removals, suites, arches=None):
     cnf = Config()
 
     print "Checking reverse dependencies..."
-    components = cnf.ValueList("Suite::%s::Components" % suites[0])
+    components = get_component_names()
     dep_problem = 0
     p2c = {}
     all_broken = {}

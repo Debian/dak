@@ -571,7 +571,7 @@ def main ():
         bins_in_suite = get_suite_binaries(suite, session)
 
     # Checks based on the Sources files
-    components = cnf.ValueList("Suite::%s::Components" % (suite_name))
+    components = get_component_names(session)
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite_name, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...

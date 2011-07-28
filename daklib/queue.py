@@ -961,8 +961,7 @@ class Upload(object):
                 entry["component"] = dest
 
         # Ensure the component is valid for the target suite
-        if cnf.has_key("Suite:%s::Components" % (suite)) and \
-           entry["component"] not in cnf.ValueList("Suite::%s::Components" % (suite)):
+        if entry["component"] not in get_component_names(session):
             self.rejects.append("unknown component `%s' for suite `%s'." % (entry["component"], suite))
             return
 
