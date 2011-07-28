@@ -1132,6 +1132,19 @@ def get_component(component, session=None):
 
 __all__.append('get_component')
 
+@session_wrapper
+def get_component_names(session=None):
+    """
+    Returns list of strings of component names.
+
+    @rtype: list
+    @return: list of strings of component names
+    """
+
+    return [ x.component_name for x in session.query(Component).all() ]
+
+__all__.append('get_component_names')
+
 ################################################################################
 
 class DBConfig(object):
