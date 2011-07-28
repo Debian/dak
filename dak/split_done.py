@@ -29,8 +29,8 @@ def main():
     Cnf = utils.get_conf()
     count = 0
     move_date = int(time.time())
-    os.chdir(Cnf["Dir::Queue::Done"])
-    files = glob.glob("%s/*" % (Cnf["Dir::Queue::Done"]))
+    os.chdir(Cnf["Dir::Done"])
+    files = glob.glob("%s/*" % (Cnf["Dir::Done"]))
     for filename in files:
         if os.path.isfile(filename):
             filemtime = os.stat(filename)[stat.ST_MTIME]
