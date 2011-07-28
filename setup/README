@@ -48,6 +48,10 @@ Create a minimal dak.conf
 # ./init_minimal_conf
 # cp dak-minimal.conf /etc/dak/dak.conf
 
+Set up a symlink somewhere
+# mkdir ~dak/bin
+# ln -s /path/to/dak.py ~dak/bin/dak
+
 Add some architectures you care about:
 # dak admin architecture add i386 "Intel x86 port"
 # dak admin architecture add amd64 "AMD64 port"
