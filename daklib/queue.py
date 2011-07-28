@@ -700,7 +700,7 @@ class Upload(object):
 
         # Ensure target distributions exist
         for suite in self.pkg.changes["distribution"].keys():
-            if not Cnf.has_key("Suite::%s" % (suite)):
+            if not get_suite(suite.lower()):
                 self.rejects.append("Unknown distribution `%s'." % (suite))
 
     ###########################################################################
