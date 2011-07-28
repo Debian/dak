@@ -138,7 +138,7 @@ def our_raw_input(prompt=""):
 
 ################################################################################
 
-def extract_component_from_section(section):
+def extract_component_from_section(section, session=None):
     component = ""
 
     if section.find('/') != -1:
@@ -146,11 +146,11 @@ def extract_component_from_section(section):
 
     # Expand default component
     if component == "":
-        comp = get_component(section)
+        comp = get_component(section, session)
         if comp is None:
             component = "main"
         else:
-            component = comp.componant_name
+            component = comp.component_name
 
     return (section, component)
 
