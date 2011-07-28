@@ -4948,7 +4948,7 @@ REVOKE ALL ON TABLE changes_pool_files FROM dak;
 GRANT ALL ON TABLE changes_pool_files TO dak;
 GRANT SELECT ON TABLE changes_pool_files TO PUBLIC;
 GRANT ALL ON TABLE changes_pool_files TO ftpmaster;
-GRANT INSERT ON TABLE changes_pool_files TO ftpteam;
+GRANT DELETE ON TABLE changes_pool_files TO ftpteam;
 
 
 --
@@ -5586,9 +5586,6 @@ GRANT SELECT ON TABLE version_checks TO PUBLIC;
 -- PostgreSQL database dump complete
 --
 
---
--- PostgreSQL database dump complete
---
-
 -- Set schema version
-INSERT INTO config (name, value) VALUES ('db_revision', 63);
+INSERT INTO config (name, value) VALUES ('db_revision', 64);
+
