@@ -44,9 +44,14 @@ Set up some core data in projectb to get started (read the init_vars file if
 you wish to customise various aspects):
 # ./init_core
 
+Create a minimal dak.conf
+# ./init_minimal_conf
+# cp dak-minimal.conf /etc/dak/dak.conf
+
 Add some architectures you care about:
 # dak admin architecture add i386 "Intel x86 port"
 # dak admin architecture add amd64 "AMD64 port"
 
 Add a suite (origin=, label= and codename= are optional)
 # dak admin suite add-all-arches unstable x.y.z origin=MyDistro label=Master codename=sid
+
