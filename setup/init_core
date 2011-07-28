@@ -1,5 +1,5 @@
 #!/bin/sh
 
-. init_vars
+. ./init_vars
 
 run-parts --exit-on-error core-init.d/
