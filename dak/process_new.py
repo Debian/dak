@@ -611,13 +611,16 @@ def check_daily_lock():
 
     cnf = Config()
     try:
-        os.open(cnf["Process-New::DinstallLockFile"],
+        lockfile = cnf.get("Process-New::DinstallLockFile",
+                           os.path.join(cnf['Dir::Lock'], 'processnew.lock'))
+
+        os.open(lockfile,
                 os.O_RDONLY | os.O_CREAT | os.O_EXCL)
     except OSError, e:
         if e.errno == errno.EEXIST or e.errno == errno.EACCES:
             raise CantGetLockError
 
-    os.unlink(cnf["Process-New::DinstallLockFile"])
+    os.unlink(lockfile)
 
 
 @contextlib.contextmanager
@@ -629,7 +632,10 @@ def lock_package(package):
     @param package: source package name to lock
     """
 
-    path = os.path.join(Config()["Process-New::LockDir"], package)
+    cnf = Config()
+
+    path = os.path.join(cnf.get("Process-New::LockDir", cnf['Dir::Lock']), package)
+
     try:
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDONLY)
     except OSError, e:

@@ -226,6 +226,12 @@ def __suite_add(d, args, addallarches=False):
                 suite.signingkeys = [signingkey.upper()]
             s.add(suite)
             s.flush()
+            for sf in s.query(SrcFormat).all():
+                ssf = SuiteSrcFormat()
+                ssf.suite = suite
+                ssf.src_format = sf
+                s.add(ssf)
+                s.flush()
         except IntegrityError, e:
             die("E: Integrity error adding suite %s (it probably already exists)" % suite_name)
         except SQLAlchemyError, e:
