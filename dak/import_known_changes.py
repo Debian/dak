@@ -200,8 +200,18 @@ class ChangesGenerator(threading.Thread):
     def run(self):
         cnf = Config()
         count = 1
-        for directory in [ "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
-            checkdir = cnf["Dir::Queue::%s" % (directory) ]
+
+        dirs = []
+        dirs.append(cnf['Dir::Done'])
+
+        for queue_name in [ "byhand", "new", "proposedupdates", "oldproposedupdates" ]:
+            queue = get_policy_queue(queue_name)
+            if queue:
+                dirs.append(os.path.abspath(queue.path))
+            else:
+                utils.warn("Could not find queue %s in database" % queue_name)
+
+        for checkdir in dirs
             if os.path.exists(checkdir):
                 print "Looking into %s" % (checkdir)
 
