@@ -244,10 +244,18 @@ def clean(now_date, delete_date, max_delete, session):
 
     print "Cleaning out packages..."
 
-    cur_date = now_date.strftime("%Y-%m-%d")
-    dest = os.path.join(cnf["Dir::Morgue"], cnf["Clean-Suites::MorgueSubDir"], cur_date)
+    morguedir = cnf.get("Dir::Morgue", os.path.join("Dir::Pool", 'morgue'))
+    morguesubdir = cnf.get("Clean-Suites::MorgueSubDir", 'pool')
+
+    # Build directory as morguedir/morguesubdir/year/month/day
+    dest = os.path.join(morguedir,
+                        morguesubdir,
+                        str(now_date.year),
+                        '%.2d' % now_date.month,
+                        '%.2d' % now_date.day)
+
     if not Options["No-Action"] and not os.path.exists(dest):
-        os.mkdir(dest)
+        os.makedirs(dest)
 
     # Delete from source
     print "Deleting from source table... "
@@ -429,7 +437,11 @@ def main():
     session = DBConn().session()
 
     now_date = datetime.now()
-    delete_date = now_date - timedelta(seconds=int(cnf['Clean-Suites::StayOfExecution']))
+
+    # Stay of execution; default to 1.5 days
+    soe = int(cnf.get('Clean-Suites::StayOfExecution', '129600'))
+
+    delete_date = now_date - timedelta(seconds=soe)
 
     check_binaries(now_date, delete_date, max_delete, session)
     clean_binaries(now_date, delete_date, max_delete, session)

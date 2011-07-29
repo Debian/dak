@@ -33,7 +33,8 @@
 
 ################################################################################
 
-import os, os.path, stat, sys, time
+import os, os.path, stat, sys
+from datetime import datetime, timedelta
 import apt_pkg
 from daklib import utils
 from daklib import daklog
@@ -66,9 +67,19 @@ Clean out incoming directories.
 def init (cnf):
     global delete_date, del_dir
 
-    delete_date = int(time.time())-(int(Options["Days"])*84600)
-    date = time.strftime("%Y-%m-%d")
-    del_dir = os.path.join(cnf["Dir::Morgue"], cnf["Clean-Queues::MorgueSubDir"], date)
+    now_date = datetime.now()
+
+    delete_date = now_date - timedelta(seconds=int(Options["Days"]) * 84600)
+
+    morguedir = cnf.get("Dir::Morgue", os.path.join("Dir::Pool", 'morgue'))
+    morguesubdir = cnf.get("Clean-Queues::MorgueSubDir", 'queue')
+
+    # Build directory as morguedir/morguesubdir/year/month/day
+    del_dir = os.path.join(morguedir,
+                           morguesubdir,
+                           str(now_date.year),
+                           '%.2d' % now_date.month,
+                           '%.2d' % now_date.day)
 
     # Ensure a directory exists to remove files to
     if not Options["No-Action"]:
