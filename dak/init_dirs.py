@@ -77,6 +77,29 @@ def process_morguesubdir(subdir):
         target = os.path.join(Cnf["Dir::Morgue"], Cnf[config_name])
         do_dir(target, config_name)
 
+def process_keyring(fullpath, secret=False):
+    """Create empty keyring if necessary."""
+
+    if os.path.exists(fullpath):
+        return
+
+    keydir = os.path.dirname(fullpath)
+
+    if not os.path.isdir(keydir):
+        print "Creating %s ..." % (keydir)
+        os.makedirs(keydir)
+        if secret:
+            # Make sure secret keyring directories are 0700
+            os.chmod(keydir, 0700)
+
+    # Touch the file
+    print "Creating %s ..." % (fullpath)
+    file(fullpath, 'w')
+    if secret:
+        os.chmod(fullpath, 0600)
+    else:
+        os.chmod(fullpath, 0644)
+
 ######################################################################
 
 def create_directories():
@@ -99,6 +122,17 @@ def create_directories():
         process_morguesubdir(subdir)
 
     suite_suffix = "%s" % (Cnf.Find("Dinstall::SuiteSuffix"))
+
+    # Process secret keyrings
+    if Cnf.has_key('Dinstall::SigningKeyring'):
+        process_keyring(Cnf['Dinstall::SigningKeyring'], secret=True)
+
+    if Cnf.has_key('Dinstall::SigningPubKeyring'):
+        process_keyring(Cnf['Dinstall::SigningPubKeyring'], secret=True)
+
+    # Process public keyrings
+    for keyring in session.query(Keyring).all():
+        process_keyring(keyring.keyring_name)
 
     # Process pool directories
     for component in session.query(Component):
