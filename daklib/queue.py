@@ -879,15 +879,22 @@ class Upload(object):
                 # Check in one of the other directories
                 source_epochless_version = re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
-                if os.path.exists(os.path.join(cnf["Dir::Queue::Byhand"], dsc_filename)):
+
+                byhand_dir = get_policy_queue('byhand', session).path
+                new_dir = get_policy_queue('new', session).path
+
+                if os.path.exists(os.path.join(byhand_dir, dsc_filename)):
                     entry["byhand"] = 1
-                elif os.path.exists(os.path.join(cnf["Dir::Queue::New"], dsc_filename)):
+                elif os.path.exists(os.path.join(new_dir, dsc_filename)):
                     entry["new"] = 1
                 else:
                     dsc_file_exists = False
-                    for myq in ["Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
-                        if cnf.has_key("Dir::Queue::%s" % (myq)):
-                            if os.path.exists(os.path.join(cnf["Dir::Queue::" + myq], dsc_filename)):
+                    # TODO: Don't hardcode this list: use all relevant queues
+                    #       The question is how to determine what is relevant
+                    for queue_name in ["embargoed", "unembargoed", "proposedupdates", "oldproposedupdates"]:
+                        queue = get_policy_queue(queue_name, session)
+                        if queue:
+                            if os.path.exists(os.path.join(queue.path, dsc_filename)):
                                 dsc_file_exists = True
                                 break
 
