@@ -22,11 +22,11 @@
 import os, sys
 import apt_pkg
 from daklib import utils
+from daklib.dbconn import *
 
 ################################################################################
 
 Cnf = None
-AptCnf = None
 
 ################################################################################
 
@@ -65,9 +65,6 @@ def process_tree(config, tree):
 
     for entry in config.SubTree(tree).List():
         entry = entry.lower()
-        if tree == "Dir":
-            if entry in [ "poolroot", "queue" , "morguereject" ]:
-                continue
         config_name = "%s::%s" % (tree, entry)
         target = config[config_name]
         do_dir(target, config_name)
@@ -85,44 +82,68 @@ def process_morguesubdir(subdir):
 def create_directories():
     """Create directories referenced in dak.conf and apt.conf."""
 
+    session = DBConn().session()
+
     # Process directories from dak.conf
     process_tree(Cnf, "Dir")
-    process_tree(Cnf, "Dir::Queue")
-    for config_name in [ "Dinstall::LockFile", "Rm::LogFile",
+
+    # Process queue directories
+    for queue in session.query(PolicyQueue):
+        do_dir(queue.path, '%s queue' % queue.queue_name)
+
+    for config_name in [ "Rm::LogFile",
                          "Import-Archive::ExportDir" ]:
         process_file(Cnf, config_name)
+
     for subdir in [ "Clean-Queues", "Clean-Suites" ]:
         process_morguesubdir(subdir)
 
-    # Process directories from apt.conf
-    process_tree(AptCnf, "Dir")
-    for tree in AptCnf.SubTree("Tree").List():
-        config_name = "Tree::%s" % (tree)
-        tree_dir = os.path.join(Cnf["Dir::Root"], tree)
-        do_dir(tree_dir, tree)
-        for filename in [ "FileList", "SourceFileList" ]:
-            process_file(AptCnf, "%s::%s" % (config_name, filename))
-        for component in AptCnf["%s::Sections" % (config_name)].split():
-            for architecture in AptCnf["%s::Architectures" \
-                                       % (config_name)].split():
-                if architecture != "source":
-                    architecture = "binary-"+architecture
-                target = os.path.join(tree_dir, component, architecture)
-                do_dir(target, "%s, %s, %s" % (tree, component, architecture))
+    suite_suffix = "%s" % (Cnf.Find("Dinstall::SuiteSuffix"))
 
+    # Process pool directories
+    for component in session.query(Component):
+        directory = os.path.join( Cnf['Dir::Pool'], component.component_name )
+
+        do_dir(directory, '%s pool' % component.component_name)
+
+
+    # Process dists directories
+    # TODO: Store location of each suite in database
+    for suite in session.query(Suite):
+        suite_dir = os.path.join( Cnf['Dir::Root'], 'dists', "%s/%s" % (suite.suite_name, suite_suffix) )
+
+        # TODO: Store valid suite/component mappings in database
+        for component in session.query(Component):
+            component_name = component.component_name
+
+            sc_dir = os.path.join(suite_dir, component_name)
+
+            do_dir(sc_dir, "%s/%s" % (suite.suite_name, component_name))
+
+            for arch in suite.architectures:
+                if arch.arch_string == 'source':
+                    arch_string = 'source'
+                else:
+                    arch_string = 'binary-%s' % arch.arch_string
+
+                suite_arch_dir = os.path.join(sc_dir, arch_string)
+
+                do_dir(suite_arch_dir, "%s/%s/%s" % (suite.suite_name, component_name, arch_string))
 
 ################################################################################
 
 def main ():
     """Initial setup of an archive."""
 
-    global AptCnf, Cnf
+    global Cnf
 
     Cnf = utils.get_conf()
     arguments = [('h', "help", "Init-Dirs::Options::Help")]
     for i in [ "help" ]:
         if not Cnf.has_key("Init-Dirs::Options::%s" % (i)):
             Cnf["Init-Dirs::Options::%s" % (i)] = ""
+
+    d = DBConn()
 
     arguments = apt_pkg.ParseCommandLine(Cnf, arguments, sys.argv)
 
@@ -132,9 +153,6 @@ def main ():
     elif arguments:
         utils.warn("dak init-dirs takes no arguments.")
         usage(exit_code=1)
-
-    AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf, utils.which_apt_conf_file())
 
     create_directories()
 
