@@ -1055,10 +1055,11 @@ class Upload(object):
 
         for f, entry in self.pkg.files.items():
             # Ensure the file does not already exist in one of the accepted directories
-            for d in [ "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
-                if not cnf.has_key("Dir::Queue::%s" % (d)): continue
-                if os.path.exists(os.path.join(cnf["Dir::Queue::%s" % (d) ], f)):
-                    self.rejects.append("%s file already exists in the %s directory." % (f, d))
+            # TODO: Dynamically generate this list
+            for queue_name in [ "byhand", "new", "proposedupdates", "oldproposedupdates", "embargoed", "unembargoed" ]:
+                queue = get_policy_queue(queue_name, session)
+                if queue and os.path.exists(queue.path, f)):
+                    self.rejects.append("%s file already exists in the %s queue." % (f, queue_name))
 
             if not re_taint_free.match(f):
                 self.rejects.append("!!WARNING!! tainted filename: '%s'." % (f))
