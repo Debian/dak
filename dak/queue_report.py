@@ -56,7 +56,7 @@ row_number = 0
 
 def usage(exit_code=0):
     print """Usage: dak queue-report
-Prints a report of packages in queue directories (usually new and byhand).
+Prints a report of packages in queues (usually new and byhand).
 
   -h, --help                show this help and exit.
   -8, --822                 writes 822 formated output to the location set in dak.conf
@@ -625,15 +625,15 @@ def main():
     # Initialize db so we can get the NEW comments
     dbconn = DBConn()
 
-    directories = [ ]
+    queue_names = [ ]
 
     if Cnf.has_key("Queue-Report::Options::Directories"):
         for i in Cnf["Queue-Report::Options::Directories"].split(","):
-            directories.append(i)
+            queue_names.append(i)
     elif Cnf.has_key("Queue-Report::Directories"):
-        directories = Cnf.ValueList("Queue-Report::Directories")
+        queue_names = Cnf.ValueList("Queue-Report::Directories")
     else:
-        directories = [ "byhand", "new" ]
+        queue_names = [ "byhand", "new" ]
 
     if Cnf.has_key("Queue-Report::Options::Rrd"):
         rrd_dir = Cnf["Queue-Report::Options::Rrd"]
@@ -647,9 +647,16 @@ def main():
         # Open the report file
         f = open(Cnf["Queue-Report::ReportLocations::822Location"], "w")
 
-    for directory in directories:
-        changes_files = glob.glob("%s/*.changes" % (Cnf["Dir::Queue::%s" % (directory)]))
-        process_changes_files(changes_files, directory, f, rrd_dir)
+    session = dbconn.session()
+
+    for queue_name in queue_names:
+        queue = get_policy_queue(queue_name, session)
+        if queue:
+            directory = os.path.abspath(queue.path)
+            changes_files = glob.glob("%s/*.changes" % (directory))
+            process_changes_files(changes_files, directory, f, rrd_dir)
+        else:
+            utils.warn("Cannot find queue %s" % queue_name)
 
     if Cnf.has_key("Queue-Report::Options::822"):
         f.close()
