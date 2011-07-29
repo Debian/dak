@@ -46,7 +46,6 @@ o Information display:
 Generic and useful, but only for those with existing archives
 -------------------------------------------------------------
 
-o dak poolize - migrates packages from legacy locations to the pool
 o dak init-archive - initializes a projectb database from an exisiting archive
 
 Generic but not overly useful (in normal use)
@@ -88,7 +87,6 @@ Scripts invoked by other scripts
 --------------------------------
 
 o dak examine-package - invoked by 'dak process-new' to "check" NEW packages
-o dak symlink-dists - invoked by 'dak poolize' to determine packages still in legacy locations
 
 			How do I get started?
 			=====================

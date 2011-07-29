@@ -353,7 +353,6 @@ ls                        X		 X
 make-maintainers          X		 X
 make-overrides            X
 make-suite-file-list      X
-poolize                   X		 X
 process-accepted          X		 X
 process-new               X		 X
 process-unchecked         X
