@@ -368,8 +368,8 @@ def main ():
             s = get_suite(suite, session=session)
             if s is not None:
                 suite_ids_list.append(s.suite_id)
-            if suite == "stable":
-                print "**WARNING** About to remove from the stable suite!"
+            if suite in ("oldstable", "stable"):
+                print "**WARNING** About to remove from the (old)stable suite!"
                 print "This should only be done just prior to a (point) release and not at"
                 print "any other time."
                 game_over()
