@@ -11,10 +11,6 @@
 Others
 ------
 
-  o 'dak reject-proposed-updates' should only start an editor once to
-    capture a message; it will usually be the same message for all
-    files on the same command line.
-
   o drop map-unreleased
 
   o check email only portions of addresses match too, iff the names
@@ -67,16 +63,6 @@ Others
 
   o 'dak control-suite' should have a diff mode that accepts diff output!
 
-  o 'dak clean-proposed-updates' doesn't deal with 'dak rm'-d
-     packages, partial replacements etc. and more.
-
-  o 'dak reject-proposed-updates' blindly deletes with no check that
-    the delete failed which it might well given we only look for
-    package/version, not package/version _in p-u_.  duh.
-
-  o 'dak rm' should remove obsolete changes when removing from p-u, or
-    at least warn.  or 'dak reject-proposed-updates' should handle it.
-
   o 'dak process-unchecked' crashes if run as a user in -n mode when
     orig.tar.gz is in queue/new...
 
@@ -104,11 +90,6 @@ Others
     null and s.name linked from it != the source given in
     -S/--source-and-binary ignore.
 
-  o 'dak reject-proposed-updates' sucks; it should a) only spam d-i
-   for sourceful rejections, b) sort stuff so it rejects sourceful
-   stuff first.  the non-sourceful should probably get a form mail, c)
-   automate the non-sourceful stuff (see b).
-
   o 'dak process-unchecked' should do q-d stuff for faster AA [ryan]
 
   o split the morgue into source and binary so binaries can be purged first!
@@ -119,8 +100,6 @@ Others
   o use postgres 7.2's built-in stat features to figure out how indices are used etc.
 
   o 'dak init-archive' shouldn't be using location, it should run down suites instead
-
-  o 'dak clean-proposed-updates' needs to know about udebs
 
   o by default hamstring dak's mail sending so that it won't send
     anything until someone edits a script; it's been used far too
@@ -302,9 +281,6 @@ Less Urgent
     o check linking of .tar.gz's to .dsc's.. see proftpd 1.2.1 as an example
     o archive needs md5sum'ed regularly, but takes too long to do all
       in one go; make progressive or weekly.
-    o something needs to clear out .changes files from p-u when
-      removing stuff superseded by newer versions.  [but for now we have
-      'dak clean-proposed-updates']
     o test sig checking stuff in test/ (stupid thing is not modularized due to global abuse)
     o when encountering suspicous things (e.g. file tainting) do something more drastic
 
@@ -360,8 +336,6 @@ Packaging
 -----------------------------------------------------------------------------
 check-archive	          X
 check-overrides           X		 X
-check-proposed-updates    X
-clean-proposed-updates    X
 clean-queues  	          X
 clean-suites  	          X		 X
 compare-suites	          X

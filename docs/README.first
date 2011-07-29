@@ -74,9 +74,6 @@ Mostly Debian(.org) specific
 ----------------------------
 
 o dak security-install - wrapper for Debian security team
-o dak clean-proposed-updates - removes obsolete .changes files from proposed-updates
-o dak check-proposed-updates - basic dependency checking for proposed-updates
-o dak reject-proposed-updates - manually reject packages from proposed-updates
 o dak import-ldap-fingerprints - syncs fingerprint and uid information with a debian.org LDAP DB
 
 Very Incomplete or otherwise not generally useful
