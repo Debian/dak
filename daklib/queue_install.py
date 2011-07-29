@@ -89,11 +89,11 @@ def package_to_queue(u, summary, short_summary, queue, chg, session, announce=No
 
 def is_unembargo(u):
    session = DBConn().session()
-   cnf = Config()
 
    # If we dont have the disembargo queue we are not on security and so not interested
    # in doing any security queue handling
-   if not get_policy_queue("disembargo"):
+   disembargo_queue = get_policy_queue("disembargo")
+   if not disembargo_queue:
        return False
 
    # If we already are in newstage, then it means this just got passed through and accepted
@@ -109,10 +109,8 @@ def is_unembargo(u):
        session.close()
        return True
 
-   oldcwd = os.getcwd()
-   os.chdir(cnf["Dir::Queue::Disembargo"])
-   disdir = os.getcwd()
-   os.chdir(oldcwd)
+   # Ensure we don't have a / on the end or something
+   disdir = os.path.abspath(disembargo_queue.path)
 
    ret = False
 
