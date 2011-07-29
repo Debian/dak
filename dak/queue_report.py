@@ -655,7 +655,7 @@ def main():
         if queue:
             directory = os.path.abspath(queue.path)
             changes_files = glob.glob("%s/*.changes" % (directory))
-            process_changes_files(changes_files, directory, f, rrd_dir)
+            process_changes_files(changes_files, os.path.basename(directory), f, rrd_dir)
         else:
             utils.warn("Cannot find queue %s" % queue_name)
 
