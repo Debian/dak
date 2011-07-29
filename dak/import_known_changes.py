@@ -209,7 +209,7 @@ class ChangesGenerator(threading.Thread):
             if queue:
                 dirs.append(os.path.abspath(queue.path))
             else:
-                utils.warn("Could not find queue %s in database" % queue_name)
+                warn("Could not find queue %s in database" % queue_name)
 
         for checkdir in dirs:
             if os.path.exists(checkdir):
@@ -298,7 +298,7 @@ class ImportKnownChanges(object):
 
         except KeyboardInterrupt:
             print("Caught C-c; terminating.")
-            utils.warn("Caught C-c; terminating.")
+            warn("Caught C-c; terminating.")
             self.plsDie()
 
     def plsDie(self):
