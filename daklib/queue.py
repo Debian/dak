@@ -1318,8 +1318,8 @@ class Upload(object):
         # Extract the source
         try:
             unpacked = UnpackedSource(dsc_filename)
-        except:
-            self.rejects.append("'dpkg-source -x' failed for %s." % dsc_filename)
+        except Exception, e:
+            self.rejects.append("'dpkg-source -x' failed for %s. (%s)" % (dsc_filename, str(e)))
             return
 
         if not cnf.Find("Dir::BTSVersionTrack"):
