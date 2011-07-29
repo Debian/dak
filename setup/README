@@ -52,10 +52,19 @@ Set up a symlink somewhere
 # mkdir ~dak/bin
 # ln -s /path/to/dak.py ~dak/bin/dak
 
+Set up a private signing key
+# gpg --no-default-keyring --secret-keyring /srv/dak/keyrings/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/dak/keyrings/s3kr1t/dot-gnupg/pubring.gpg --gen-key
+Remember the signing key id for when creating the suite below.
+Here we'll pretend it is DDDDDDDD for convenience
+
+Import some developer keys (here AAAAAAAA)
+# gpg --no-default-keyring --keyring /srv/dak/keyrings/upload-keyring.gpg --recv-key AAAAAAAA
+
 Add some architectures you care about:
 # dak admin architecture add i386 "Intel x86 port"
 # dak admin architecture add amd64 "AMD64 port"
 
 Add a suite (origin=, label= and codename= are optional)
-# dak admin suite add-all-arches unstable x.y.z origin=MyDistro label=Master codename=sid
+signingkey= will ensure that Release files are signed
+# dak admin suite add-all-arches unstable x.y.z origin=MyDistro label=Master codename=sid signingkey=DDDDDDDD
 

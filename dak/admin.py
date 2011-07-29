@@ -80,8 +80,10 @@ Perform administrative work on the dak database.
      s show SUITE           show config details for a suite
      s add SUITE VERSION [ label=LABEL ] [ description=DESCRIPTION ]
                          [ origin=ORIGIN ] [ codename=CODENAME ]
-                            add suite SUITE, version VERSION. label,
-                            description, origin and codename are optional.
+                         [ signingkey=SIGNINGKEY ]
+                            add suite SUITE, version VERSION.
+                            label, description, origin, codename
+                            and signingkey are optional.
 
      s add-all-arches SUITE VERSION... as "s add" but adds suite-architecture
                             relationships for all architectures
@@ -219,6 +221,9 @@ def __suite_add(d, args, addallarches=False):
             suite.description = get_field('description')
             suite.origin = get_field('origin')
             suite.codename = get_field('codename')
+            signingkey = get_field('signingkey')
+            if signingkey is not None:
+                suite.signingkeys = [signingkey.upper()]
             s.add(suite)
             s.flush()
         except IntegrityError, e:

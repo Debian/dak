@@ -18,7 +18,6 @@ Dinstall
 {
    SigningKeyring "__DAKBASE__/keyrings/s3kr1t/dot-gnupg/secring.gpg";
    SigningPubKeyring "__DAKBASE__/keyrings/s3kr1t/dot-gnupg/pubring.gpg";
-   SigningKeyIds "__ARCHIVEKEYID__";
 
    Options
    {
