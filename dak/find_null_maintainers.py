@@ -24,6 +24,7 @@ import apt_pkg
 
 from daklib.dbconn import *
 from daklib.config import Config
+from daklib.utils import fubar
 
 ################################################################################
 
@@ -57,6 +58,12 @@ def main():
     Options = cnf.SubTree("Find-Null-Maintainers::Options")
     if Options["Help"]:
         usage()
+
+    if not cnf.has_key('Import-LDAP-Fingerprints::LDAPServer'):
+        fubar("Import-LDAP-Fingerprints::LDAPServer not configured")
+
+    if not cnf.has_key('Import-LDAP-Fingerprints::LDAPDn'):
+        fubar("Import-LDAP-Fingerprints::LDAPDn not configured")
 
     session = DBConn().session()
 
