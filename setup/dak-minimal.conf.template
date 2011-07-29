@@ -49,14 +49,6 @@ Dir
   Holding "__DAKBASE__/holding/";
   Done "__DAKBASE__/done/";
   Reject "__DAKBASE__/reject/";
-
-  Queue
-  {
-    Byhand "__DAKBASE__/queue/byhand/";
-    New "__DAKBASE__/queue/new/";
-    NewStage "__DAKBASE__/queue/newstage/";
-    Unchecked "__DAKBASE__/queue/unchecked/";
-  };
 };
 
 Urgency
