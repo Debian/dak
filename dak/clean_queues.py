@@ -38,6 +38,7 @@ import apt_pkg
 from daklib import utils
 from daklib import daklog
 from daklib.config import Config
+from daklib.dbconn import get_policy_queue
 
 ################################################################################
 
@@ -79,8 +80,15 @@ def init (cnf):
     # Move to the directory to clean
     incoming = Options["Incoming"]
     if incoming == "":
-        incoming = cnf["Dir::Queue::Unchecked"]
-    os.chdir(incoming)
+        incoming_queue = get_policy_queue('unchecked')
+        if not incoming_queue:
+            utils.fubar("Cannot find 'unchecked' queue")
+        incoming = incoming_queue.path
+
+    try:
+        os.chdir(incoming)
+    except OSError, e:
+        utils.fubar("Cannot chdir to %s" % incoming)
 
 # Remove a file to the morgue
 def remove (from_dir, f):
