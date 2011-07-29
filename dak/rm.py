@@ -99,10 +99,10 @@ def game_over():
 ################################################################################
 
 def reverse_depends_check(removals, suite, arches=None, session=None):
+    dbsuite = get_suite(suite, session)
     cnf = Config()
 
     print "Checking reverse dependencies..."
-    components = get_component_names()
     dep_problem = 0
     p2c = {}
     all_broken = {}
@@ -111,54 +111,56 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
     else:
         all_arches = set([x.arch_string for x in get_suite_architectures(suite)])
     all_arches -= set(["source", "all"])
+    metakey_d = get_or_set_metadatakey("Depends", session)
+    metakey_p = get_or_set_metadatakey("Provides", session)
+    params = {
+        'suite_id':     dbsuite.suite_id,
+        'metakey_d_id': metakey_d.key_id,
+        'metakey_p_id': metakey_p.key_id,
+        'arch_all_id' : get_architecture('all', session).arch_id,
+    }
     for architecture in all_arches:
         deps = {}
         sources = {}
         virtual_packages = {}
-        for component in components:
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suite, component, architecture)
-            # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-            (fd, temp_filename) = utils.temp_filename()
-            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
-            if (result != 0):
-                utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
-            # Also check for udebs
-            filename = "%s/dists/%s/%s/debian-installer/binary-%s/Packages.gz" % (cnf["Dir::Root"], suite, component, architecture)
-            if os.path.exists(filename):
-                (result, output) = commands.getstatusoutput("gunzip -c %s >> %s" % (filename, temp_filename))
-                if (result != 0):
-                    utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
-            packages = utils.open_file(temp_filename)
-            Packages = apt_pkg.ParseTagFile(packages)
-            while Packages.Step():
-                package = Packages.Section.Find("Package")
-                source = Packages.Section.Find("Source")
-                if not source:
-                    source = package
-                elif ' ' in source:
-                    source = source.split(' ', 1)[0]
-                sources[package] = source
-                depends = Packages.Section.Find("Depends")
-                if depends:
-                    deps[package] = depends
-                provides = Packages.Section.Find("Provides")
-                # Maintain a counter for each virtual package.  If a
-                # Provides: exists, set the counter to 0 and count all
-                # provides by a package not in the list for removal.
-                # If the counter stays 0 at the end, we know that only
-                # the to-be-removed packages provided this virtual
-                # package.
-                if provides:
-                    for virtual_pkg in provides.split(","):
-                        virtual_pkg = virtual_pkg.strip()
-                        if virtual_pkg == package: continue
-                        if not virtual_packages.has_key(virtual_pkg):
-                            virtual_packages[virtual_pkg] = 0
-                        if package not in removals:
-                            virtual_packages[virtual_pkg] += 1
-                p2c[package] = component
-            packages.close()
-            os.unlink(temp_filename)
+        params['arch_id'] = get_architecture(architecture, session).arch_id
+
+        statement = '''
+            SELECT b.id, b.package, s.source, c.name as component,
+                bmd.value as depends, bmp.value as provides
+                FROM binaries b
+                LEFT OUTER JOIN binaries_metadata bmd
+                    ON b.id = bmd.bin_id AND bmd.key_id = :metakey_d_id
+                LEFT OUTER JOIN binaries_metadata bmp
+                    ON b.id = bmp.bin_id AND bmp.key_id = :metakey_p_id
+                JOIN source s ON b.source = s.id
+                JOIN files f ON b.file = f.id
+                JOIN location l ON f.location = l.id
+                JOIN component c ON l.component = c.id
+                WHERE b.id in
+                    (SELECT bin FROM bin_associations WHERE suite = :suite_id)
+                    AND b.architecture in (:arch_id, :arch_all_id)'''
+        query = session.query('id', 'package', 'source', 'component', 'depends', 'provides'). \
+            from_statement(statement).params(params)
+        for binary_id, package, source, component, depends, provides in query:
+            sources[package] = source
+            p2c[package] = component
+            if depends is not None:
+                deps[package] = depends
+            # Maintain a counter for each virtual package.  If a
+            # Provides: exists, set the counter to 0 and count all
+            # provides by a package not in the list for removal.
+            # If the counter stays 0 at the end, we know that only
+            # the to-be-removed packages provided this virtual
+            # package.
+            if provides is not None:
+                for virtual_pkg in provides.split(","):
+                    virtual_pkg = virtual_pkg.strip()
+                    if virtual_pkg == package: continue
+                    if not virtual_packages.has_key(virtual_pkg):
+                        virtual_packages[virtual_pkg] = 0
+                    if package not in removals:
+                        virtual_packages[virtual_pkg] += 1
 
         # If a virtual package is only provided by the to-be-removed
         # packages, treat the virtual package as to-be-removed too.
@@ -206,7 +208,6 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
 
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
     all_broken.clear()
-    dbsuite = get_suite(suite, session)
     metakey_bd = get_or_set_metadatakey("Build-Depends", session)
     metakey_bdi = get_or_set_metadatakey("Build-Depends-Indep", session)
     params = {
