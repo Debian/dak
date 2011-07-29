@@ -2491,6 +2491,9 @@ class DBSource(ORMObject):
 
     metadata = association_proxy('key', 'value')
 
+    def get_component_name(self):
+        return self.poolfile.location.component.component_name
+
     def scan_contents(self):
         '''
         Returns a set of names for non directories. The path names are

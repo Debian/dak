@@ -98,7 +98,7 @@ def game_over():
 
 ################################################################################
 
-def reverse_depends_check(removals, suite, arches=None):
+def reverse_depends_check(removals, suite, arches=None, session=None):
     cnf = Config()
 
     print "Checking reverse dependencies..."
@@ -206,41 +206,45 @@ def reverse_depends_check(removals, suite, arches=None):
 
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
     all_broken.clear()
-    for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite, component)
-        # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
-        (fd, temp_filename) = utils.temp_filename()
-        result, output = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
-        if result != 0:
-            sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
-            sys.exit(result)
-        sources = utils.open_file(temp_filename, "r")
-        Sources = apt_pkg.ParseTagFile(sources)
-        while Sources.Step():
-            source = Sources.Section.Find("Package")
-            if source in removals: continue
-            parsed_dep = []
-            for build_dep_type in ["Build-Depends", "Build-Depends-Indep"]:
-                build_dep = Sources.Section.get(build_dep_type)
-                if build_dep:
-                    # Remove [arch] information since we want to see breakage on all arches
-                    build_dep = re_build_dep_arch.sub("", build_dep)
-                    try:
-                        parsed_dep += apt_pkg.ParseDepends(build_dep)
-                    except ValueError, e:
-                        print "Error for source %s: %s" % (source, e)
-            for dep in parsed_dep:
-                unsat = 0
-                for dep_package, _, _ in dep:
-                    if dep_package in removals:
-                        unsat += 1
-                if unsat == len(dep):
-                    if component != "main":
-                        source = "%s/%s" % (source, component)
-                    all_broken.setdefault(source, set()).add(utils.pp_deps(dep))
-                    dep_problem = 1
-        sources.close()
-        os.unlink(temp_filename)
+    dbsuite = get_suite(suite, session)
+    metakey_bd = get_or_set_metadatakey("Build-Depends", session)
+    metakey_bdi = get_or_set_metadatakey("Build-Depends-Indep", session)
+    params = {
+        'suite_id':    dbsuite.suite_id,
+        'metakey_ids': (metakey_bd.key_id, metakey_bdi.key_id),
+    }
+    statement = '''
+        SELECT s.id, s.source, string_agg(sm.value, ', ') as build_dep
+           FROM source s
+           JOIN source_metadata sm ON s.id = sm.src_id
+           WHERE s.id in
+               (SELECT source FROM src_associations
+                   WHERE suite = :suite_id)
+               AND sm.key_id in :metakey_ids
+           GROUP BY s.id, s.source'''
+    query = session.query('id', 'source', 'build_dep').from_statement(statement). \
+        params(params)
+    for source_id, source, build_dep in query:
+        if source in removals: continue
+        parsed_dep = []
+        if build_dep is not None:
+            # Remove [arch] information since we want to see breakage on all arches
+            build_dep = re_build_dep_arch.sub("", build_dep)
+            try:
+                parsed_dep += apt_pkg.ParseDepends(build_dep)
+            except ValueError, e:
+                print "Error for source %s: %s" % (source, e)
+        for dep in parsed_dep:
+            unsat = 0
+            for dep_package, _, _ in dep:
+                if dep_package in removals:
+                    unsat += 1
+            if unsat == len(dep):
+                component = DBSource.get(source_id, session).get_component_name()
+                if component != "main":
+                    source = "%s/%s" % (source, component)
+                all_broken.setdefault(source, set()).add(utils.pp_deps(dep))
+                dep_problem = 1
 
     if all_broken:
         print "# Broken Build-Depends:"
@@ -512,7 +516,7 @@ def main ():
 
     if Options["Rdep-Check"]:
         arches = utils.split_args(Options["Architecture"])
-        reverse_depends_check(removals, suites[0], arches)
+        reverse_depends_check(removals, suites[0], arches, session)
 
     # If -n/--no-action, drop out here
     if Options["No-Action"]:
