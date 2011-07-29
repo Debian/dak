@@ -2809,10 +2809,10 @@ distribution."""
                     source_epochless_version = re_no_epoch.sub('', source_version)
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                     found = False
-                    for q in ["Embargoed", "Unembargoed", "Newstage"]:
-                        if cnf.has_key("Dir::Queue::%s" % (q)):
-                            if os.path.exists(cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
-                                found = True
+                    for queue_name in ["embargoed", "unembargoed", "newstage"]:
+                        queue = get_policy_queue(queue_name, session)
+                        if queue and os.path.exists(os.path.join(queue.path, dsc_filename)):
+                            found = True
                     if not found:
                         self.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, f))
 
