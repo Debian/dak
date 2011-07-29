@@ -201,10 +201,10 @@ def main ():
         print "Processing incoming..."
     flush_orphans()
 
-    reject = cnf["Dir::Queue::Reject"]
+    reject = cnf["Dir::Reject"]
     if os.path.exists(reject) and os.path.isdir(reject):
         if Options["Verbose"]:
-            print "Processing incoming/REJECT..."
+            print "Processing reject directory..."
         os.chdir(reject)
         flush_old()
 

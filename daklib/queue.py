@@ -2314,7 +2314,7 @@ distribution."""
             if os.access(file_entry, os.R_OK) == 0:
                 continue
 
-            dest_file = os.path.join(cnf["Dir::Queue::Reject"], file_entry)
+            dest_file = os.path.join(cnf["Dir::Reject"], file_entry)
 
             try:
                 dest_fd = os.open(dest_file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
@@ -2326,7 +2326,7 @@ distribution."""
                     except NoFreeFilenameError:
                         # Something's either gone badly Pete Tong, or
                         # someone is trying to exploit us.
-                        utils.warn("**WARNING** failed to find a free filename for %s in %s." % (file_entry, cnf["Dir::Queue::Reject"]))
+                        utils.warn("**WARNING** failed to find a free filename for %s in %s." % (file_entry, cnf["Dir::Reject"]))
                         return
 
                     # Make sure we really got it
@@ -2396,7 +2396,7 @@ distribution."""
         cnf = Config()
 
         reason_filename = self.pkg.changes_file[:-8] + ".reason"
-        reason_filename = os.path.join(cnf["Dir::Queue::Reject"], reason_filename)
+        reason_filename = os.path.join(cnf["Dir::Reject"], reason_filename)
 
         # Move all the files into the reject directory
         reject_files = self.pkg.files.keys() + [self.pkg.changes_file]
