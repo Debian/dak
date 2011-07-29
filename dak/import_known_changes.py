@@ -211,7 +211,7 @@ class ChangesGenerator(threading.Thread):
             else:
                 utils.warn("Could not find queue %s in database" % queue_name)
 
-        for checkdir in dirs
+        for checkdir in dirs:
             if os.path.exists(checkdir):
                 print "Looking into %s" % (checkdir)
 
