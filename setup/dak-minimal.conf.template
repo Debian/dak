@@ -48,6 +48,7 @@ Dir
   Holding "__DAKBASE__/holding/";
   Done "__DAKBASE__/done/";
   Reject "__DAKBASE__/reject/";
+  TempPath "__DAKBASE__/tmp/";
 };
 
 Urgency

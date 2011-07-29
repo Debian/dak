@@ -3,7 +3,7 @@
 set -e
 set -u
 
-POOLPATH="${DAKBASE}/ftp/pool"
+POOLPATH="${DAKBASE}/ftp/pool/"
 
 echo "Setting up archive and locations"
 psql -c "INSERT INTO archive (name, origin_server, description)
