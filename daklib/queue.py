@@ -1502,16 +1502,16 @@ class Upload(object):
                 continue
 
             # Look in some other queues for the file
-            queues = ('New', 'Byhand', 'ProposedUpdates',
-                'OldProposedUpdates', 'Embargoed', 'Unembargoed')
+            queue_names = ['new', 'byhand',
+                           'proposedupdates', 'oldproposedupdates',
+                           'embargoed', 'unembargoed']
 
-            for queue in queues:
-                if not cnf.get('Dir::Queue::%s' % queue):
+            for queue_name in queue_names:
+                queue = get_policy_queue(queue_name, session)
+                if not queue:
                     continue
 
-                queuefile_path = os.path.join(
-                    cnf['Dir::Queue::%s' % queue], filename
-                )
+                queuefile_path = os.path.join(queue.path, filename)
 
                 if not os.path.exists(queuefile_path):
                     # Does not exist in this queue
