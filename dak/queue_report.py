@@ -44,7 +44,8 @@ except ImportError:
 
 from daklib import utils
 from daklib.queue import Upload
-from daklib.dbconn import DBConn, has_new_comment, DBChange, DBSource, get_uid_from_fingerprint
+from daklib.dbconn import DBConn, has_new_comment, DBChange, DBSource, \
+                          get_uid_from_fingerprint, get_policy_queue
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
