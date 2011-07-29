@@ -67,9 +67,11 @@ Clean out incoming directories.
 def init (cnf):
     global delete_date, del_dir
 
+    # Used for directory naming
     now_date = datetime.now()
 
-    delete_date = now_date - timedelta(seconds=int(Options["Days"]) * 84600)
+    # Used for working out times
+    delete_date = int(time.time())-(int(Options["Days"])*84600)
 
     morguedir = cnf.get("Dir::Morgue", os.path.join("Dir::Pool", 'morgue'))
     morguesubdir = cnf.get("Clean-Queues::MorgueSubDir", 'queue')
