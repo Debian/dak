@@ -98,7 +98,7 @@ def game_over():
 
 ################################################################################
 
-def reverse_depends_check(removals, suites, arches=None):
+def reverse_depends_check(removals, suite, arches=None):
     cnf = Config()
 
     print "Checking reverse dependencies..."
@@ -109,21 +109,21 @@ def reverse_depends_check(removals, suites, arches=None):
     if arches:
         all_arches = set(arches)
     else:
-        all_arches = set([x.arch_string for x in get_suite_architectures(suites[0])])
+        all_arches = set([x.arch_string for x in get_suite_architectures(suite)])
     all_arches -= set(["source", "all"])
     for architecture in all_arches:
         deps = {}
         sources = {}
         virtual_packages = {}
         for component in components:
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suites[0], component, architecture)
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suite, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
             (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
                 utils.fubar("Gunzip invocation failed!\n%s\n" % (output), result)
             # Also check for udebs
-            filename = "%s/dists/%s/%s/debian-installer/binary-%s/Packages.gz" % (cnf["Dir::Root"], suites[0], component, architecture)
+            filename = "%s/dists/%s/%s/debian-installer/binary-%s/Packages.gz" % (cnf["Dir::Root"], suite, component, architecture)
             if os.path.exists(filename):
                 (result, output) = commands.getstatusoutput("gunzip -c %s >> %s" % (filename, temp_filename))
                 if (result != 0):
@@ -207,7 +207,7 @@ def reverse_depends_check(removals, suites, arches=None):
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
     all_broken.clear()
     for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suites[0], component)
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
         (fd, temp_filename) = utils.temp_filename()
         result, output = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
@@ -386,6 +386,10 @@ def main ():
     # Additional component processing
     over_con_components = con_components.replace("c.id", "component")
 
+    # Don't do dependency checks on multiple suites
+    if Options["Rdep-Check"] and len(suites) > 1:
+        utils.fubar("Reverse dependency check on multiple suites is not implemented.")
+
     print "Working...",
     sys.stdout.flush()
     to_remove = []
@@ -508,7 +512,7 @@ def main ():
 
     if Options["Rdep-Check"]:
         arches = utils.split_args(Options["Architecture"])
-        reverse_depends_check(removals, suites, arches)
+        reverse_depends_check(removals, suites[0], arches)
 
     # If -n/--no-action, drop out here
     if Options["No-Action"]:
