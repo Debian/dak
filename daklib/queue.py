@@ -1058,7 +1058,7 @@ class Upload(object):
             # TODO: Dynamically generate this list
             for queue_name in [ "byhand", "new", "proposedupdates", "oldproposedupdates", "embargoed", "unembargoed" ]:
                 queue = get_policy_queue(queue_name, session)
-                if queue and os.path.exists(queue.path, f):
+                if queue and os.path.exists(os.path.join(queue.path, f)):
                     self.rejects.append("%s file already exists in the %s queue." % (f, queue_name))
 
             if not re_taint_free.match(f):
