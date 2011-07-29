@@ -32,7 +32,7 @@ import sys
 import os
 import logging
 import threading
-from daklib.dbconn import DBConn, get_dbchange, get_known_changes
+from daklib.dbconn import DBConn, get_dbchange, get_policy_queue
 from daklib.config import Config
 import apt_pkg
 from daklib.dak_exceptions import DBUpdateError, InvalidDscError, ChangesUnicodeError
