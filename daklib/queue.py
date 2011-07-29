@@ -2754,12 +2754,15 @@ distribution."""
                     orig_files[dsc_name]["path"] = old_file
                     orig_files[dsc_name]["location"] = x.location.location_id
                 else:
-                    # TODO: Record the queues and info in the DB so we don't hardcode all this crap
+                    # TODO: Determine queue list dynamically
                     # Not there? Check the queue directories...
-                    for directory in [ "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
-                        if not Cnf.has_key("Dir::Queue::%s" % (directory)):
+                    for queue_name in [ "byhand", "new", "proposedupdates", "oldproposedupdates", "embargoed", "unembargoed" ]:
+                        queue = get_policy_queue(queue_name, session)
+                        if not queue:
                             continue
-                        in_otherdir = os.path.join(Cnf["Dir::Queue::%s" % (directory)], dsc_name)
+
+                        in_otherdir = os.path.join(queue.path, dsc_name)
+
                         if os.path.exists(in_otherdir):
                             in_otherdir_fh = utils.open_file(in_otherdir)
                             actual_md5 = apt_pkg.md5sum(in_otherdir_fh)
