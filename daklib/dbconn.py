@@ -3036,42 +3036,6 @@ __all__.append('get_suite_architectures')
 
 ################################################################################
 
-class SuiteSrcFormat(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<SuiteSrcFormat (%s, %s)>' % (self.suite_id, self.src_format_id)
-
-__all__.append('SuiteSrcFormat')
-
-@session_wrapper
-def get_suite_src_formats(suite, session=None):
-    """
-    Returns list of allowed SrcFormat for C{suite}.
-
-    @type suite: str
-    @param suite: Suite name to search for
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: the list of allowed source formats for I{suite}
-    """
-
-    q = session.query(SrcFormat)
-    q = q.join(SuiteSrcFormat)
-    q = q.join(Suite).filter_by(suite_name=suite)
-    q = q.order_by('format_name')
-
-    return q.all()
-
-__all__.append('get_suite_src_formats')
-
-################################################################################
-
 class Uid(ORMObject):
     def __init__(self, uid = None, name = None):
         self.uid = uid
@@ -3604,14 +3568,10 @@ class DBConn(object):
                properties = dict(suite_id = self.tbl_suite.c.id,
                                  policy_queue = relation(PolicyQueue),
                                  copy_queues = relation(BuildQueue,
-                                     secondary=self.tbl_suite_build_queue_copy)),
+                                     secondary=self.tbl_suite_build_queue_copy),
+                                 srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
+                                     backref=backref('suites', lazy='dynamic'))),
                 extension = validator)
-
-        mapper(SuiteSrcFormat, self.tbl_suite_src_formats,
-               properties = dict(suite_id = self.tbl_suite_src_formats.c.suite,
-                                 suite = relation(Suite, backref='suitesrcformats'),
-                                 src_format_id = self.tbl_suite_src_formats.c.src_format,
-                                 src_format = relation(SrcFormat)))
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,

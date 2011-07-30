@@ -1217,7 +1217,7 @@ class Upload(object):
 
         # Only a limited list of source formats are allowed in each suite
         for dist in self.pkg.changes["distribution"].keys():
-            allowed = [ x.format_name for x in get_suite_src_formats(dist, session) ]
+            allowed = [ x.format_name for x in dist.srcformats ]
             if self.pkg.dsc["format"] not in allowed:
                 self.rejects.append("%s: source format '%s' not allowed in %s (accepted: %s) " % (dsc_filename, self.pkg.dsc["format"], dist, ", ".join(allowed)))
 
