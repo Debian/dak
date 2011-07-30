@@ -2012,6 +2012,10 @@ distribution."""
 
         self.Subst["__SHORT_SUMMARY__"] = short_summary
 
+        # Skip all of this if not sending mail to avoid confusing people
+        if cnf.has_key("Dinstall::Options::No-Mail") and cnf["Dinstall::Options::No-Mail"]:
+            return summary
+
         for dist in self.pkg.changes["distribution"].keys():
             suite = get_suite(dist)
             if suite is None: continue
