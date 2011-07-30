@@ -1180,6 +1180,9 @@ class Upload(object):
         if not self.pkg.changes["architecture"].has_key("source"):
             return True
 
+        if session is None:
+            session = DBConn().session()
+
         (status, reason) = self.load_dsc(action=action)
         if not status:
             self.rejects.append(reason)
@@ -1217,7 +1220,11 @@ class Upload(object):
 
         # Only a limited list of source formats are allowed in each suite
         for dist in self.pkg.changes["distribution"].keys():
-            allowed = [ x.format_name for x in dist.srcformats ]
+            suite = get_suite(dist, session=session)
+            if not suite:
+                self.rejects.append("%s: cannot find suite %s when checking source formats" % (dsc_filename, dist))
+                continue
+            allowed = [ x.format_name for x in suite.srcformats ]
             if self.pkg.dsc["format"] not in allowed:
                 self.rejects.append("%s: source format '%s' not allowed in %s (accepted: %s) " % (dsc_filename, self.pkg.dsc["format"], dist, ", ".join(allowed)))
 
