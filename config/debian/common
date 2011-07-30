@@ -36,6 +36,8 @@ function make_buildd_dir () {
     dak manage-build-queues -a
 
     for dist in $(ls -1 ${incoming}/dists/); do
+        # Skip project trace directory
+        if [ "${dist}x" = "projectx" ]; then continue; fi
         cd ${incoming}/dists/${dist}
         mkdir -p tree/${STAMP}
         cp -al ${incoming}/dists/${dist}/buildd/. tree/${STAMP}/
