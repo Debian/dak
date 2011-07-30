@@ -3664,15 +3664,21 @@ class DBConn(object):
 
         sqlalchemy.dialects.postgresql.base.dialect = PGDialect_psycopg2_dak
 
-        self.db_pg   = create_engine(connstr, **engine_args)
-        self.db_meta = MetaData()
-        self.db_meta.bind = self.db_pg
-        self.db_smaker = sessionmaker(bind=self.db_pg,
-                                      autoflush=True,
-                                      autocommit=False)
+        try:
+            self.db_pg   = create_engine(connstr, **engine_args)
+            self.db_meta = MetaData()
+            self.db_meta.bind = self.db_pg
+            self.db_smaker = sessionmaker(bind=self.db_pg,
+                                          autoflush=True,
+                                          autocommit=False)
 
-        self.__setuptables()
-        self.__setupmappers()
+            self.__setuptables()
+            self.__setupmappers()
+
+        except OperationalError, e:
+            import utils
+            utils.fubar("Cannot connect to database (%s)" % str(e))
+
         self.pid = os.getpid()
 
     def session(self, work_mem = 0):
