@@ -41,8 +41,9 @@ Create the additional roles:
 Create an empty database with SQL_ASCII encoding:
 # createdb -T template0 -E SQL_ASCII -O dak projectb
 
-Import the schema:
-# psql -f current_schema.sql -d projectb
+Import the schema.  We redirect STDOUT to /dev/null as otherwise it's
+impossible to see if something fails.
+# psql -1 -f current_schema.sql -d projectb >/dev/null
 
 Set up some core data in projectb to get started (read the init_vars file if
 you wish to customise various aspects):
