@@ -556,6 +556,9 @@ def main ():
     nfu_packages = {}
 
     suite = get_suite(Options["Suite"].lower(), session)
+    if not suite:
+        utils.fubar("Cannot find suite %s" % Options["Suite"].lower())
+
     suite_id = suite.suite_id
     suite_name = suite.suite_name.lower()
 
