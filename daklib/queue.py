@@ -2007,6 +2007,11 @@ distribution."""
         """
 
         cnf = Config()
+
+        # Skip all of this if not sending mail to avoid confusing people
+        if cnf.has_key("Dinstall::Options::No-Mail") and cnf["Dinstall::Options::No-Mail"]:
+            return summary
+
         announcetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.announce')
 
         # Only do announcements for source uploads with a recent dpkg-dev installed
