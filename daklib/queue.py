@@ -2010,14 +2010,14 @@ distribution."""
 
         # Skip all of this if not sending mail to avoid confusing people
         if cnf.has_key("Dinstall::Options::No-Mail") and cnf["Dinstall::Options::No-Mail"]:
-            return summary
-
-        announcetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.announce')
+            return ""
 
         # Only do announcements for source uploads with a recent dpkg-dev installed
         if float(self.pkg.changes.get("format", 0)) < 1.6 or not \
            self.pkg.changes["architecture"].has_key("source"):
             return ""
+
+        announcetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.announce')
 
         lists_done = {}
         summary = ""
