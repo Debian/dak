@@ -2019,19 +2019,19 @@ distribution."""
 
         announcetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.announce')
 
-        lists_done = {}
+        lists_todo = {}
         summary = ""
 
-        self.Subst["__SHORT_SUMMARY__"] = short_summary
-
+        # Get a unique list of target lists
         for dist in self.pkg.changes["distribution"].keys():
             suite = get_suite(dist)
             if suite is None: continue
-            announce_list = suite.announce
-            if announce_list == "" or lists_done.has_key(announce_list):
-                continue
+            for tgt in suite.announce:
+                lists_todo[tgt] = 1
 
-            lists_done[announce_list] = 1
+        self.Subst["__SHORT_SUMMARY__"] = short_summary
+
+        for announce_list in lists_todo.keys():
             summary += "Announcing to %s\n" % (announce_list)
 
             if action:
