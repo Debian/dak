@@ -3005,11 +3005,11 @@ __all__.append('get_suite')
 
 ################################################################################
 
-# TODO: should be removed because the implementation is too trivial
 @session_wrapper
 def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     """
-    Returns list of Architecture objects for given C{suite} name
+    Returns list of Architecture objects for given C{suite} name or None if
+    suite does not exist
 
     @type suite: str
     @param suite: Suite name to search for
@@ -3030,7 +3030,10 @@ def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     @return: list of Architecture objects for the given name (may be empty)
     """
 
-    return get_suite(suite, session).get_architectures(skipsrc, skipall)
+    try:
+        return get_suite(suite, session).get_architectures(skipsrc, skipall)
+    except AttributeError:
+        return None
 
 __all__.append('get_suite_architectures')
 
