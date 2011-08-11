@@ -1,8 +1,12 @@
 Initialising a dak database schema
 ==================================
 
-The following packages are needed:
+The following packages are needed for the database:
  * postgresql-9.0 postgresql-client-9.0 postgresql-plperl-9.0 postgresql-plpython-9.0 postgresql-9.0-debversion 
+and the following packages for dak itself:
+ * python-psycopg2 python-sqlalchemy python-apt gnupg dpkg-dev lintian
+   binutils-multiarch python-yaml less python-ldap python-pyrss2gen python-rrdtool
+   symlinks
 
 (the schema assumes at least postgresql 9.0; ftpmaster in Debian currently uses
 the squeeze postgresql 9.0 backport)
@@ -16,15 +20,19 @@ The following roles are assumed to exist:
 For the purposes of this document, we'll be working in /srv/dak
 
 Set up the dak user on both the system and in postgres:
-# sudo adduser dak
-# sudo addgroup ftpmaster
-# sudo addgroup dak ftpmaster
+# sudo addgroup --system ftpmaster
+# sudo adduser --system dak --ingroup ftpmaster --shell /bin/bash
 # sudo -u postgres createuser -s dak
 
 Set up the dak directory:
+# sudo mkdir /etc/dak
 # sudo mkdir /srv/dak
 # sudo chown dak:ftpmaster /srv/dak
 # sudo chmod 2775 /srv/dak
+
+Create a symlink to /srv/dak/dak.conf in /etc/dak
+(we'll create the config file in a bit)
+# sudo ln -s /srv/dak/dak.conf /etc/dak/dak.conf
 
 Become the dak user:
 # sudo -u dak -s -H
@@ -37,25 +45,195 @@ Create the additional roles:
 Create an empty database with SQL_ASCII encoding:
 # createdb -T template0 -E SQL_ASCII -O dak projectb
 
-Import the schema:
-# psql -f current_schema.sql -d projectb
+Import the schema.  We redirect STDOUT to /dev/null as otherwise it's
+impossible to see if something fails.
+# psql -1 -f current_schema.sql -d projectb >/dev/null
 
 Set up some core data in projectb to get started (read the init_vars file if
 you wish to customise various aspects):
 # ./init_core
 
 Create a minimal dak.conf
-# ./init_minimal_conf
-# cp dak-minimal.conf /etc/dak/dak.conf
+# ./init_minimal_conf > /srv/dak/dak.conf
 
 Set up a symlink somewhere
 # mkdir ~dak/bin
 # ln -s /path/to/dak.py ~dak/bin/dak
+
+At this point, you should be able to test that the database schema is
+up-to-date
+# dak update-db
+
+Run dak init-dirs to set up the initial /srv/dak tree
+# dak init-dirs
+
+Copy the email templates into the /srv/dak tree.
+WARNING: Please check these templates over and customise as necessary
+# cp templates/* /srv/dak/templates/
+
+Set up a private signing key: don't set a passphrase as dak will not
+pass one through to gpg.  Guard this key carefully!
+The key only needs to be able to sign, it doesn't need to be able
+to encrypt.
+# gpg --no-default-keyring --secret-keyring /srv/dak/keyrings/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/dak/keyrings/s3kr1t/dot-gnupg/pubring.gpg --gen-key
+Remember the signing key id for when creating the suite below.
+Here we'll pretend it is DDDDDDDD for convenience
+
+Import some developer keys.
+Either import from keyservers (here AAAAAAAA):
+# gpg --no-default-keyring --keyring /srv/dak/keyrings/upload-keyring.gpg --recv-key AAAAAAAA
+or import from files:
+# gpg --no-default-keyring --keyring /srv/dak/keyrings/upload-keyring.gpg --import /path/to/keyfile
+
+Import the developer keys into the database
+The -U '%s' tells dak to add UIDs automatically
+# dak import-keyring -U '%s' /srv/dak/keyrings/upload-keyring.gpg
 
 Add some architectures you care about:
 # dak admin architecture add i386 "Intel x86 port"
 # dak admin architecture add amd64 "AMD64 port"
 
 Add a suite (origin=, label= and codename= are optional)
-# dak admin suite add-all-arches unstable x.y.z origin=MyDistro label=Master codename=sid
+signingkey= will ensure that Release files are signed
+# dak admin suite add-all-arches unstable x.y.z origin=MyDistro label=Master codename=sid signingkey=DDDDDDDD
 
+Re-run dak init-dirs to add new suite directories to /srv/dak
+# dak init-dirs
+
+#######################################################################
+# Example package flow
+#######################################################################
+
+For this example, we've grabbed and built the hello source package
+for AMD64 and copied it into /srv/dak/queue/unchecked.
+
+We start by performing initial package checks which will
+result in the package being moved to NEW
+# cd /srv/dak/queue/unchecked
+# dak process-upload *.changes
+
+-----------------------------------------------------------------------
+hello_2.6-1_amd64.changes
+NEW for unstable
+
+
+(new) hello_2.6-1.debian.tar.gz optional devel
+(new) hello_2.6-1.dsc optional devel
+(new) hello_2.6-1_amd64.deb optional devel
+The classic greeting, and a good example
+ The GNU hello program produces a familiar, friendly greeting.  It
+ allows non-programmers to use a classic computer science tool which
+ would otherwise be unavailable to them.
+ .
+ Seriously, though: this is an example of how to do a Debian package.
+ It is the Debian version of the GNU Project's `hello world' program
+ (which is itself an example for the GNU Project).
+(new) hello_2.6.orig.tar.gz optional devel
+Changes: hello (2.6-1) unstable; urgency=low
+ .
+  * New upstream release.
+  * Drop unused INSTALL_PROGRAM stuff.
+  * Switch to 3.0 (quilt) source format.
+  * Standards-Version: 3.9.1 (no special changes for this).
+
+
+Override entries for your package:
+
+Announcing to debian-devel-changes@lists.debian.org
+
+[N]ew, Skip, Quit ?N
+Moving to NEW queue.
+Sending new ack.
+-----------------------------------------------------------------------
+
+We can now look at the NEW queue-report
+# dak queue-report
+-----------------------------------------------------------------------
+NEW
+---
+
+hello | 2.6-1 | source amd64 | 5 seconds old
+
+1 new source package / 1 new package in total.
+-----------------------------------------------------------------------
+
+And we can then process the NEW queue:
+# cd /srv/dak/queue/new
+# dak process-new *.changes
+
+-----------------------------------------------------------------------
+hello_2.6-1_amd64.changes
+NEW
+
+hello                optional             devel
+Add overrides, Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?A
+ACCEPT
+-----------------------------------------------------------------------
+
+At this stage, the package has been ACCEPTed from NEW into NEWSTAGE.
+We now need to finally ACCEPT it into the pool:
+
+# cd /srv/dak/queue/newstage
+# dak process-upload *.changes
+
+-----------------------------------------------------------------------
+hello_2.6-1_amd64.changes
+ACCEPT
+
+
+hello_2.6-1.debian.tar.gz
+  to main/h/hello/hello_2.6-1.debian.tar.gz
+hello_2.6-1.dsc
+  to main/h/hello/hello_2.6-1.dsc
+hello_2.6-1_amd64.deb
+  to main/h/hello/hello_2.6-1_amd64.deb
+hello_2.6.orig.tar.gz
+  to main/h/hello/hello_2.6.orig.tar.gz
+
+
+Override entries for your package:
+hello_2.6-1.dsc - optional devel
+hello_2.6-1_amd64.deb - optional devel
+
+Announcing to debian-devel-changes@lists.debian.org
+[A]ccept, Skip, Quit ?A
+Installing.
+Installed 1 package set, 646 KB.
+-----------------------------------------------------------------------
+
+We can now see that dak knows about the package:
+# dak ls -S hello
+
+-----------------------------------------------------------------------
+     hello |      2.6-1 |      unstable | source, amd64
+-----------------------------------------------------------------------
+
+# dak control-suite -l unstable
+
+-----------------------------------------------------------------------
+hello 2.6-1 amd64
+hello 2.6-1 source
+-----------------------------------------------------------------------
+
+Next, we can generate the packages and sources files:
+# dak generate-packages-sources2
+(zcat /srv/dak/ftp/dists/unstable/main/binary-amd64/Packages.gz for instance)
+
+And finally, we can generate the signed Release files:
+# dak generate-release
+
+-----------------------------------------------------------------------
+Processing unstable
+-----------------------------------------------------------------------
+(Look at /srv/dak/ftp/dists/unstable/Release, Release.gpg and InRelease)
+
+
+#######################################################################
+# Next steps
+#######################################################################
+
+The debian archive automates most of these steps in jobs called
+cron.unchecked, cron.hourly and cron.dinstall.
+
+TODO: Write example (simplified) versions of these cronjobs which will
+do for most installs.

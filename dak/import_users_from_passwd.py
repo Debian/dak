@@ -115,7 +115,12 @@ def main ():
                     # NB: I never figured out how to use a bind parameter for this query
                     # XXX: Fix this as it looks like a potential SQL injection attack to me
                     #      (hence the safe_name match we do)
-                    q = session.execute('CREATE USER "%s"' % (uname))
+                    try:
+                        q = session.execute('CREATE USER "%s"' % (uname))
+                        session.commit()
+                    except Exception, e:
+                        utils.warn("Could not create user %s (%s)" % (uname, str(e)))
+                        session.rollback()
                 else:
                     print "NOT CREATING USER %s.  Doesn't match safety regex" % uname
 

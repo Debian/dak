@@ -3008,11 +3008,11 @@ __all__.append('get_suite')
 
 ################################################################################
 
-# TODO: should be removed because the implementation is too trivial
 @session_wrapper
 def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     """
-    Returns list of Architecture objects for given C{suite} name
+    Returns list of Architecture objects for given C{suite} name. The list is
+    empty if suite does not exist.
 
     @type suite: str
     @param suite: Suite name to search for
@@ -3033,45 +3033,12 @@ def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     @return: list of Architecture objects for the given name (may be empty)
     """
 
-    return get_suite(suite, session).get_architectures(skipsrc, skipall)
+    try:
+        return get_suite(suite, session).get_architectures(skipsrc, skipall)
+    except AttributeError:
+        return []
 
 __all__.append('get_suite_architectures')
-
-################################################################################
-
-class SuiteSrcFormat(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<SuiteSrcFormat (%s, %s)>' % (self.suite_id, self.src_format_id)
-
-__all__.append('SuiteSrcFormat')
-
-@session_wrapper
-def get_suite_src_formats(suite, session=None):
-    """
-    Returns list of allowed SrcFormat for C{suite}.
-
-    @type suite: str
-    @param suite: Suite name to search for
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: the list of allowed source formats for I{suite}
-    """
-
-    q = session.query(SrcFormat)
-    q = q.join(SuiteSrcFormat)
-    q = q.join(Suite).filter_by(suite_name=suite)
-    q = q.order_by('format_name')
-
-    return q.all()
-
-__all__.append('get_suite_src_formats')
 
 ################################################################################
 
@@ -3607,14 +3574,10 @@ class DBConn(object):
                properties = dict(suite_id = self.tbl_suite.c.id,
                                  policy_queue = relation(PolicyQueue),
                                  copy_queues = relation(BuildQueue,
-                                     secondary=self.tbl_suite_build_queue_copy)),
+                                     secondary=self.tbl_suite_build_queue_copy),
+                                 srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
+                                     backref=backref('suites', lazy='dynamic'))),
                 extension = validator)
-
-        mapper(SuiteSrcFormat, self.tbl_suite_src_formats,
-               properties = dict(suite_id = self.tbl_suite_src_formats.c.suite,
-                                 suite = relation(Suite, backref='suitesrcformats'),
-                                 src_format_id = self.tbl_suite_src_formats.c.src_format,
-                                 src_format = relation(SrcFormat)))
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
@@ -3707,15 +3670,21 @@ class DBConn(object):
 
         sqlalchemy.dialects.postgresql.base.dialect = PGDialect_psycopg2_dak
 
-        self.db_pg   = create_engine(connstr, **engine_args)
-        self.db_meta = MetaData()
-        self.db_meta.bind = self.db_pg
-        self.db_smaker = sessionmaker(bind=self.db_pg,
-                                      autoflush=True,
-                                      autocommit=False)
+        try:
+            self.db_pg   = create_engine(connstr, **engine_args)
+            self.db_meta = MetaData()
+            self.db_meta.bind = self.db_pg
+            self.db_smaker = sessionmaker(bind=self.db_pg,
+                                          autoflush=True,
+                                          autocommit=False)
 
-        self.__setuptables()
-        self.__setupmappers()
+            self.__setuptables()
+            self.__setupmappers()
+
+        except OperationalError, e:
+            import utils
+            utils.fubar("Cannot connect to database (%s)" % str(e))
+
         self.pid = os.getpid()
 
     def session(self, work_mem = 0):

@@ -34,10 +34,12 @@
 ################################################################################
 
 import os, os.path, stat, sys, time
+from datetime import datetime, timedelta
 import apt_pkg
 from daklib import utils
 from daklib import daklog
 from daklib.config import Config
+from daklib.dbconn import get_policy_queue
 
 ################################################################################
 
@@ -65,9 +67,21 @@ Clean out incoming directories.
 def init (cnf):
     global delete_date, del_dir
 
+    # Used for directory naming
+    now_date = datetime.now()
+
+    # Used for working out times
     delete_date = int(time.time())-(int(Options["Days"])*84600)
-    date = time.strftime("%Y-%m-%d")
-    del_dir = os.path.join(cnf["Dir::Morgue"], cnf["Clean-Queues::MorgueSubDir"], date)
+
+    morguedir = cnf.get("Dir::Morgue", os.path.join("Dir::Pool", 'morgue'))
+    morguesubdir = cnf.get("Clean-Queues::MorgueSubDir", 'queue')
+
+    # Build directory as morguedir/morguesubdir/year/month/day
+    del_dir = os.path.join(morguedir,
+                           morguesubdir,
+                           str(now_date.year),
+                           '%.2d' % now_date.month,
+                           '%.2d' % now_date.day)
 
     # Ensure a directory exists to remove files to
     if not Options["No-Action"]:
@@ -79,8 +93,15 @@ def init (cnf):
     # Move to the directory to clean
     incoming = Options["Incoming"]
     if incoming == "":
-        incoming = cnf["Dir::Queue::Unchecked"]
-    os.chdir(incoming)
+        incoming_queue = get_policy_queue('unchecked')
+        if not incoming_queue:
+            utils.fubar("Cannot find 'unchecked' queue")
+        incoming = incoming_queue.path
+
+    try:
+        os.chdir(incoming)
+    except OSError, e:
+        utils.fubar("Cannot chdir to %s" % incoming)
 
 # Remove a file to the morgue
 def remove (from_dir, f):
@@ -201,10 +222,10 @@ def main ():
         print "Processing incoming..."
     flush_orphans()
 
-    reject = cnf["Dir::Queue::Reject"]
+    reject = cnf["Dir::Reject"]
     if os.path.exists(reject) and os.path.isdir(reject):
         if Options["Verbose"]:
-            print "Processing incoming/REJECT..."
+            print "Processing reject directory..."
         os.chdir(reject)
         flush_old()
 

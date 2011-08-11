@@ -46,7 +46,7 @@ from daklib.daklog import Logger
 ################################################################################
 
 Cnf = None
-required_database_schema = 64
+required_database_schema = 65
 
 ################################################################################
 
@@ -127,13 +127,15 @@ Updates dak's database schema to the lastest version. You should disable crontab
                 connect_str = "service=%s" % cnf["DB::Service"]
             else:
                 connect_str = "dbname=%s"% (cnf["DB::Name"])
-                if cnf["DB::Host"] != '': connect_str += " host=%s" % (cnf["DB::Host"])
-                if cnf["DB::Port"] != '-1': connect_str += " port=%d" % (int(cnf["DB::Port"]))
+                if cnf.has_key("DB::Host") and cnf["DB::Host"] != '':
+                    connect_str += " host=%s" % (cnf["DB::Host"])
+                if cnf.has_key("DB::Port") and cnf["DB::Port"] != '-1':
+                    connect_str += " port=%d" % (int(cnf["DB::Port"]))
 
             self.db = psycopg2.connect(connect_str)
 
-        except:
-            print "FATAL: Failed connect to database"
+        except Exception, e:
+            print "FATAL: Failed connect to database (%s)" % str(e)
             sys.exit(1)
 
         database_revision = int(self.get_db_rev())
@@ -198,8 +200,11 @@ Updates dak's database schema to the lastest version. You should disable crontab
             self.usage(exit_code=1)
 
         try:
-            lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'dinstall.lock'), os.O_RDWR | os.O_CREAT)
-            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if os.path.isdir(cnf["Dir::Lock"]):
+                lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'dinstall.lock'), os.O_RDWR | os.O_CREAT)
+                fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            else:
+                utils.warn("Lock directory doesn't exist yet - not locking")
         except IOError, e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")

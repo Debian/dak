@@ -1041,7 +1041,6 @@ CREATE TABLE suite (
     label text,
     description text,
     untouchable boolean DEFAULT false NOT NULL,
-    announce text DEFAULT 'debian-devel-changes@lists.debian.org'::text NOT NULL,
     codename text,
     overridecodename text,
     validtime integer DEFAULT 604800 NOT NULL,
@@ -1055,6 +1054,7 @@ CREATE TABLE suite (
     changelog text,
     butautomaticupgrades boolean DEFAULT false NOT NULL,
     signingkeys text[],
+    announce text[],
     CONSTRAINT bau_needs_na_set CHECK (((NOT butautomaticupgrades) OR notautomatic))
 );
 
@@ -5587,5 +5587,5 @@ GRANT SELECT ON TABLE version_checks TO PUBLIC;
 --
 
 -- Set schema version
-INSERT INTO config (name, value) VALUES ('db_revision', 64);
+INSERT INTO config (name, value) VALUES ('db_revision', 65);
 

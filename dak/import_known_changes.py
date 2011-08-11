@@ -32,7 +32,7 @@ import sys
 import os
 import logging
 import threading
-from daklib.dbconn import DBConn, get_dbchange
+from daklib.dbconn import DBConn, get_dbchange, get_policy_queue
 from daklib.config import Config
 import apt_pkg
 from daklib.dak_exceptions import DBUpdateError, InvalidDscError, ChangesUnicodeError
@@ -200,8 +200,18 @@ class ChangesGenerator(threading.Thread):
     def run(self):
         cnf = Config()
         count = 1
-        for directory in [ "Byhand", "Done", "New", "ProposedUpdates", "OldProposedUpdates" ]:
-            checkdir = cnf["Dir::Queue::%s" % (directory) ]
+
+        dirs = []
+        dirs.append(cnf['Dir::Done'])
+
+        for queue_name in [ "byhand", "new", "proposedupdates", "oldproposedupdates" ]:
+            queue = get_policy_queue(queue_name)
+            if queue:
+                dirs.append(os.path.abspath(queue.path))
+            else:
+                warn("Could not find queue %s in database" % queue_name)
+
+        for checkdir in dirs:
             if os.path.exists(checkdir):
                 print "Looking into %s" % (checkdir)
 
@@ -288,7 +298,7 @@ class ImportKnownChanges(object):
 
         except KeyboardInterrupt:
             print("Caught C-c; terminating.")
-            utils.warn("Caught C-c; terminating.")
+            warn("Caught C-c; terminating.")
             self.plsDie()
 
     def plsDie(self):

@@ -129,8 +129,6 @@ def init():
          "Generates Maintainers file for BTS etc"),
         ("make-overrides",
          "Generates override files"),
-        ("poolize",
-         "Move packages from dists/ to pool/"),
         ("new-security-install",
          "New way to install a security upload into the archive"),
         ("split-done",

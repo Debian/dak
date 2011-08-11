@@ -18,7 +18,6 @@ Dinstall
 {
    SigningKeyring "__DAKBASE__/keyrings/s3kr1t/dot-gnupg/secring.gpg";
    SigningPubKeyring "__DAKBASE__/keyrings/s3kr1t/dot-gnupg/pubring.gpg";
-   SigningKeyIds "__ARCHIVEKEYID__";
 
    Options
    {
@@ -28,8 +27,6 @@ Dinstall
    MyEmailAddress "Archive Installer <dak@__DAKFQDN__>";
    MyAdminAddress "dak@__DAKFQDN__";
    MyDistribution "TestDakInstance";
-
-   LockFile "__DAKBASE__/lock/dinstall.lock";
 
    FutureTimeTravelGrace 28800; // 8 hours
    PastCutoffYear "1984";
@@ -48,15 +45,8 @@ Dir
   Morgue "__DAKBASE__/morgue/";
   Holding "__DAKBASE__/holding/";
   Done "__DAKBASE__/done/";
-
-  Queue
-  {
-    Byhand "__DAKBASE__/queue/byhand/";
-    New "__DAKBASE__/queue/new/";
-    NewStage "__DAKBASE__/queue/newstage/";
-    Reject "__DAKBASE__/queue/reject/";
-    Unchecked "__DAKBASE__/queue/unchecked/";
-  };
+  Reject "__DAKBASE__/reject/";
+  TempPath "__DAKBASE__/tmp/";
 };
 
 Urgency

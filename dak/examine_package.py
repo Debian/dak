@@ -65,6 +65,7 @@ from daklib.gpg import SignedFile
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory
+from daklib.dak_exceptions import ChangesUnicodeError
 
 ################################################################################
 

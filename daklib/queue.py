@@ -879,15 +879,22 @@ class Upload(object):
                 # Check in one of the other directories
                 source_epochless_version = re_no_epoch.sub('', source_version)
                 dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
-                if os.path.exists(os.path.join(cnf["Dir::Queue::Byhand"], dsc_filename)):
+
+                byhand_dir = get_policy_queue('byhand', session).path
+                new_dir = get_policy_queue('new', session).path
+
+                if os.path.exists(os.path.join(byhand_dir, dsc_filename)):
                     entry["byhand"] = 1
-                elif os.path.exists(os.path.join(cnf["Dir::Queue::New"], dsc_filename)):
+                elif os.path.exists(os.path.join(new_dir, dsc_filename)):
                     entry["new"] = 1
                 else:
                     dsc_file_exists = False
-                    for myq in ["Embargoed", "Unembargoed", "ProposedUpdates", "OldProposedUpdates"]:
-                        if cnf.has_key("Dir::Queue::%s" % (myq)):
-                            if os.path.exists(os.path.join(cnf["Dir::Queue::" + myq], dsc_filename)):
+                    # TODO: Don't hardcode this list: use all relevant queues
+                    #       The question is how to determine what is relevant
+                    for queue_name in ["embargoed", "unembargoed", "proposedupdates", "oldproposedupdates"]:
+                        queue = get_policy_queue(queue_name, session)
+                        if queue:
+                            if os.path.exists(os.path.join(queue.path, dsc_filename)):
                                 dsc_file_exists = True
                                 break
 
@@ -1048,10 +1055,11 @@ class Upload(object):
 
         for f, entry in self.pkg.files.items():
             # Ensure the file does not already exist in one of the accepted directories
-            for d in [ "Byhand", "New", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
-                if not cnf.has_key("Dir::Queue::%s" % (d)): continue
-                if os.path.exists(os.path.join(cnf["Dir::Queue::%s" % (d) ], f)):
-                    self.rejects.append("%s file already exists in the %s directory." % (f, d))
+            # TODO: Dynamically generate this list
+            for queue_name in [ "byhand", "new", "proposedupdates", "oldproposedupdates", "embargoed", "unembargoed" ]:
+                queue = get_policy_queue(queue_name, session)
+                if queue and os.path.exists(os.path.join(queue.path, f)):
+                    self.rejects.append("%s file already exists in the %s queue." % (f, queue_name))
 
             if not re_taint_free.match(f):
                 self.rejects.append("!!WARNING!! tainted filename: '%s'." % (f))
@@ -1172,6 +1180,9 @@ class Upload(object):
         if not self.pkg.changes["architecture"].has_key("source"):
             return True
 
+        if session is None:
+            session = DBConn().session()
+
         (status, reason) = self.load_dsc(action=action)
         if not status:
             self.rejects.append(reason)
@@ -1209,7 +1220,11 @@ class Upload(object):
 
         # Only a limited list of source formats are allowed in each suite
         for dist in self.pkg.changes["distribution"].keys():
-            allowed = [ x.format_name for x in get_suite_src_formats(dist, session) ]
+            suite = get_suite(dist, session=session)
+            if not suite:
+                self.rejects.append("%s: cannot find suite %s when checking source formats" % (dsc_filename, dist))
+                continue
+            allowed = [ x.format_name for x in suite.srcformats ]
             if self.pkg.dsc["format"] not in allowed:
                 self.rejects.append("%s: source format '%s' not allowed in %s (accepted: %s) " % (dsc_filename, self.pkg.dsc["format"], dist, ", ".join(allowed)))
 
@@ -1310,8 +1325,8 @@ class Upload(object):
         # Extract the source
         try:
             unpacked = UnpackedSource(dsc_filename)
-        except:
-            self.rejects.append("'dpkg-source -x' failed for %s." % dsc_filename)
+        except Exception, e:
+            self.rejects.append("'dpkg-source -x' failed for %s. (%s)" % (dsc_filename, str(e)))
             return
 
         if not cnf.Find("Dir::BTSVersionTrack"):
@@ -1494,16 +1509,16 @@ class Upload(object):
                 continue
 
             # Look in some other queues for the file
-            queues = ('New', 'Byhand', 'ProposedUpdates',
-                'OldProposedUpdates', 'Embargoed', 'Unembargoed')
+            queue_names = ['new', 'byhand',
+                           'proposedupdates', 'oldproposedupdates',
+                           'embargoed', 'unembargoed']
 
-            for queue in queues:
-                if not cnf.get('Dir::Queue::%s' % queue):
+            for queue_name in queue_names:
+                queue = get_policy_queue(queue_name, session)
+                if not queue:
                     continue
 
-                queuefile_path = os.path.join(
-                    cnf['Dir::Queue::%s' % queue], filename
-                )
+                queuefile_path = os.path.join(queue.path, filename)
 
                 if not os.path.exists(queuefile_path):
                     # Does not exist in this queue
@@ -1992,26 +2007,31 @@ distribution."""
         """
 
         cnf = Config()
-        announcetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.announce')
+
+        # Skip all of this if not sending mail to avoid confusing people
+        if cnf.has_key("Dinstall::Options::No-Mail") and cnf["Dinstall::Options::No-Mail"]:
+            return ""
 
         # Only do announcements for source uploads with a recent dpkg-dev installed
         if float(self.pkg.changes.get("format", 0)) < 1.6 or not \
            self.pkg.changes["architecture"].has_key("source"):
             return ""
 
-        lists_done = {}
+        announcetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.announce')
+
+        lists_todo = {}
         summary = ""
 
-        self.Subst["__SHORT_SUMMARY__"] = short_summary
-
+        # Get a unique list of target lists
         for dist in self.pkg.changes["distribution"].keys():
             suite = get_suite(dist)
             if suite is None: continue
-            announce_list = suite.announce
-            if announce_list == "" or lists_done.has_key(announce_list):
-                continue
+            for tgt in suite.announce:
+                lists_todo[tgt] = 1
 
-            lists_done[announce_list] = 1
+        self.Subst["__SHORT_SUMMARY__"] = short_summary
+
+        for announce_list in lists_todo.keys():
             summary += "Announcing to %s\n" % (announce_list)
 
             if action:
@@ -2314,7 +2334,7 @@ distribution."""
             if os.access(file_entry, os.R_OK) == 0:
                 continue
 
-            dest_file = os.path.join(cnf["Dir::Queue::Reject"], file_entry)
+            dest_file = os.path.join(cnf["Dir::Reject"], file_entry)
 
             try:
                 dest_fd = os.open(dest_file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
@@ -2326,7 +2346,7 @@ distribution."""
                     except NoFreeFilenameError:
                         # Something's either gone badly Pete Tong, or
                         # someone is trying to exploit us.
-                        utils.warn("**WARNING** failed to find a free filename for %s in %s." % (file_entry, cnf["Dir::Queue::Reject"]))
+                        utils.warn("**WARNING** failed to find a free filename for %s in %s." % (file_entry, cnf["Dir::Reject"]))
                         return
 
                     # Make sure we really got it
@@ -2396,7 +2416,7 @@ distribution."""
         cnf = Config()
 
         reason_filename = self.pkg.changes_file[:-8] + ".reason"
-        reason_filename = os.path.join(cnf["Dir::Queue::Reject"], reason_filename)
+        reason_filename = os.path.join(cnf["Dir::Reject"], reason_filename)
 
         # Move all the files into the reject directory
         reject_files = self.pkg.files.keys() + [self.pkg.changes_file]
@@ -2746,12 +2766,15 @@ distribution."""
                     orig_files[dsc_name]["path"] = old_file
                     orig_files[dsc_name]["location"] = x.location.location_id
                 else:
-                    # TODO: Record the queues and info in the DB so we don't hardcode all this crap
+                    # TODO: Determine queue list dynamically
                     # Not there? Check the queue directories...
-                    for directory in [ "New", "Byhand", "ProposedUpdates", "OldProposedUpdates", "Embargoed", "Unembargoed" ]:
-                        if not Cnf.has_key("Dir::Queue::%s" % (directory)):
+                    for queue_name in [ "byhand", "new", "proposedupdates", "oldproposedupdates", "embargoed", "unembargoed" ]:
+                        queue = get_policy_queue(queue_name, session)
+                        if not queue:
                             continue
-                        in_otherdir = os.path.join(Cnf["Dir::Queue::%s" % (directory)], dsc_name)
+
+                        in_otherdir = os.path.join(queue.path, dsc_name)
+
                         if os.path.exists(in_otherdir):
                             in_otherdir_fh = utils.open_file(in_otherdir)
                             actual_md5 = apt_pkg.md5sum(in_otherdir_fh)
@@ -2798,10 +2821,10 @@ distribution."""
                     source_epochless_version = re_no_epoch.sub('', source_version)
                     dsc_filename = "%s_%s.dsc" % (source_package, source_epochless_version)
                     found = False
-                    for q in ["Embargoed", "Unembargoed", "Newstage"]:
-                        if cnf.has_key("Dir::Queue::%s" % (q)):
-                            if os.path.exists(cnf["Dir::Queue::%s" % (q)] + '/' + dsc_filename):
-                                found = True
+                    for queue_name in ["embargoed", "unembargoed", "newstage"]:
+                        queue = get_policy_queue(queue_name, session)
+                        if queue and os.path.exists(os.path.join(queue.path, dsc_filename)):
+                            found = True
                     if not found:
                         self.rejects.append("no source found for %s %s (%s)." % (source_package, source_version, f))
 

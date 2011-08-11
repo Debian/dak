@@ -146,6 +146,7 @@ def main():
         session.rollback()
     else:
         session.commit()
+    Logger.close()
 
 if __name__ == '__main__':
     main()
