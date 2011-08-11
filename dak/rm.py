@@ -126,9 +126,19 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
         params['arch_id'] = get_architecture(architecture, session).arch_id
 
         statement = '''
+            create temp table suite_binaries (
+                id integer,
+                package text,
+                source integer,
+                file integer);
+            insert into suite_binaries
+                select b.id, b.package, b.source, b.file
+                    from binaries b WHERE b.id in
+                        (SELECT bin FROM bin_associations WHERE suite = 5)
+                        AND b.architecture in (16, 2);
             SELECT b.id, b.package, s.source, c.name as component,
                 bmd.value as depends, bmp.value as provides
-                FROM binaries b
+                FROM suite_binaries b
                 LEFT OUTER JOIN binaries_metadata bmd
                     ON b.id = bmd.bin_id AND bmd.key_id = :metakey_d_id
                 LEFT OUTER JOIN binaries_metadata bmp
@@ -136,10 +146,8 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
                 JOIN source s ON b.source = s.id
                 JOIN files f ON b.file = f.id
                 JOIN location l ON f.location = l.id
-                JOIN component c ON l.component = c.id
-                WHERE b.id in
-                    (SELECT bin FROM bin_associations WHERE suite = :suite_id)
-                    AND b.architecture in (:arch_id, :arch_all_id)'''
+                JOIN component c ON l.component = c.id'''
+        session.rollback()
         query = session.query('id', 'package', 'source', 'component', 'depends', 'provides'). \
             from_statement(statement).params(params)
         for binary_id, package, source, component, depends, provides in query:
