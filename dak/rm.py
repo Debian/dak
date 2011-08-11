@@ -127,7 +127,7 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
 
         statement = '''
             create temp table suite_binaries (
-                id integer,
+                id integer primary key,
                 package text,
                 source integer,
                 file integer);
