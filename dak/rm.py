@@ -134,8 +134,8 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
             insert into suite_binaries
                 select b.id, b.package, b.source, b.file
                     from binaries b WHERE b.id in
-                        (SELECT bin FROM bin_associations WHERE suite = 5)
-                        AND b.architecture in (16, 2);
+                        (SELECT bin FROM bin_associations WHERE suite = :suite_id)
+                        AND b.architecture in (:arch_id, :arch_all_id);
             SELECT b.id, b.package, s.source, c.name as component,
                 bmd.value as depends, bmp.value as provides
                 FROM suite_binaries b
