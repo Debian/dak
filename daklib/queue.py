@@ -1666,8 +1666,12 @@ class Upload(object):
                 sponsored = True
         else:
             sponsored = True
+            sponsor_addresses = utils.gpg_get_key_addresses(self.pkg.changes["fingerprint"])
+            debian_emails = filter(lambda addr: addr.endswith('@debian.org'), sponsor_addresses)
+            if uid_email not in debian_emails:
+                if debian_emails:
+                    uid_email = debian_emails[0]
             if ("source" in self.pkg.changes["architecture"] and uid_email and utils.is_email_alias(uid_email)):
-                sponsor_addresses = utils.gpg_get_key_addresses(self.pkg.changes["fingerprint"])
                 if (self.pkg.changes["maintaineremail"] not in sponsor_addresses and
                     self.pkg.changes["changedbyemail"] not in sponsor_addresses):
                         self.pkg.changes["sponsoremail"] = uid_email
