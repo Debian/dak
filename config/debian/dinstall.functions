@@ -243,22 +243,9 @@ function mkmaintainers() {
 function copyoverrides() {
     log 'Copying override files into public view ...'
 
-    for ofile in $copyoverrides ; do
-	    cd $overridedir
-	    chmod g+w override.$ofile
-
-	    cd $indices
-
-	    newofile=override.$ofile.gz
-	    rm -f .newover-$ofile.gz
-	    pc="`gzip 2>&1 -9nv <$overridedir/override.$ofile >.newover-$ofile.gz`"
-        if ! cmp -s .newover-$ofile.gz $newofile || [ ! -f $newofile ]; then
-		    log "   installing new $newofile $pc"
-		    mv -f .newover-$ofile.gz $newofile
-		    chmod g+w $newofile
-        else
-		    rm -f .newover-$ofile.gz
-	    fi
+    for ofile in ${overridedir}/override.{lenny,squeeze,wheezy,sid}.{,extra.}{main,contrib,non-free}*; do
+        gzip -9v --rsyncable ${ofile} > ${indices}/${ofile}.gz
+        chmod g+w ${indices}/${ofile}.gz
     done
 }
 
