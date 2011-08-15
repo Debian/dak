@@ -59,193 +59,130 @@ def do_update(self):
         c.execute("GRANT SELECT ON audit.package_changes TO PUBLIC")
 
         c.execute("""CREATE OR REPLACE FUNCTION trigger_binsrc_assoc_update() RETURNS TRIGGER AS $$
-tablename = TD["table_name"]
-event = TD["event"]
+DECLARE
+  v_data RECORD;
 
-# We only handle bin/src_associations in this trigger
-if tablename not in ['bin_associations', 'src_associations']:
-    return None
+  v_package audit.package_changes.package%TYPE;
+  v_version audit.package_changes.version%TYPE;
+  v_architecture audit.package_changes.architecture%TYPE;
+  v_suite audit.package_changes.suite%TYPE;
+  v_event audit.package_changes.event%TYPE;
+  v_priority audit.package_changes.priority%TYPE;
+  v_component audit.package_changes.component%TYPE;
+  v_section audit.package_changes.section%TYPE;
+BEGIN
+  CASE TG_OP
+    WHEN 'INSERT' THEN v_event := 'I'; v_data := NEW;
+    WHEN 'DELETE' THEN v_event := 'D'; v_data := OLD;
+    ELSE RAISE EXCEPTION 'trigger called for invalid operation (%)', TG_OP;
+  END CASE;
 
-if event == 'INSERT':
-    dat = TD['new']
-    pkg_event = 'I'
-elif event == 'DELETE':
-    dat = TD['old']
-    pkg_event = 'D'
-else:
-    # We don't handle other changes on these tables
-    return None
+  SELECT suite_name INTO STRICT v_suite FROM suite WHERE id = v_data.suite;
 
-# Find suite information
-suite_info = plpy.execute(plpy.prepare("SELECT suite_name FROM suite WHERE id = $1", ["int"]), [dat["suite"]])
-# Couldn't find suite
-if len(suite_info) != 1:
-    plpy.warning('Could not find suite for id %s' % dat['suite'])
-    return None
-suite_name = suite_info[0]['suite_name']
+  CASE TG_TABLE_NAME
+    WHEN 'bin_associations' THEN
+      SELECT package, version, arch_string
+        INTO STRICT v_package, v_version, v_architecture
+        FROM binaries LEFT JOIN architecture ON (architecture.id = binaries.architecture)
+        WHERE binaries.id = v_data.bin;
 
-# Some defaults in case we can't find the overrides
-component = None
-section = None
-priority = None
+      SELECT component.name, priority.priority, section.section
+        INTO v_component, v_priority, v_section
+        FROM override
+             JOIN override_type ON (override.type = override_type.id)
+             JOIN priority ON (priority.id = override.priority)
+             JOIN section ON (section.id = override.section)
+             JOIN component ON (override.component = component.id)
+             JOIN suite ON (suite.id = override.suite)
+        WHERE override_type.type != 'dsc'
+              AND override.package = v_package AND suite.id = v_data.suite;
 
-if tablename == 'bin_associations':
-    pkg_info = plpy.execute(plpy.prepare("SELECT package, version, arch_string FROM binaries LEFT JOIN architecture ON (architecture.id = binaries.architecture) WHERE binaries.id = $1", ["int"]), [dat["bin"]])
+    WHEN 'src_associations' THEN
+      SELECT source, version
+        INTO STRICT v_package, v_version
+        FROM source WHERE source.id = v_data.source;
+      v_architecture := 'source';
 
-    # Couldn't find binary: shouldn't happen, but be careful
-    if len(pkg_info) != 1:
-        plpy.warning('Could not find binary for id %s' % dat["bin"])
-        return None
+      SELECT component.name, priority.priority, section.section
+        INTO v_component, v_priority, v_section
+        FROM override
+             JOIN override_type ON (override.type = override_type.id)
+             JOIN priority ON (priority.id = override.priority)
+             JOIN section ON (section.id = override.section)
+             JOIN component ON (override.component = component.id)
+             JOIN suite ON (suite.id = override.suite)
+        WHERE override_type.type = 'dsc'
+              AND override.package = v_package AND suite.id = v_data.suite;
 
-    package = pkg_info[0]['package']
-    version = pkg_info[0]['version']
-    arch = pkg_info[0]['arch_string']
+    ELSE RAISE EXCEPTION 'trigger called for invalid table (%)', TG_TABLE_NAME;
+  END CASE;
 
-    bin_override_q = '''SELECT component.name AS component,
-                             priority.priority AS priority,
-                             section.section AS section,
-                             override_type.type
-                        FROM override
-                   LEFT JOIN override_type ON (override.type = override_type.id)
-                   LEFT JOIN priority ON (priority.id = override.priority)
-                   LEFT JOIN section ON (section.id = override.section)
-                   LEFT JOIN component ON (override.component = component.id)
-                   LEFT JOIN suite ON (suite.id = override.suite)
-                       WHERE override_type.type != 'dsc'
-                         AND package = $1
-                         AND suite.id = $2'''
+  INSERT INTO audit.package_changes
+    (package, version, architecture, suite, event, priority, component, section)
+    VALUES (v_package, v_version, v_architecture, v_suite, v_event, v_priority, v_component, v_section);
 
-    bin_overrides = plpy.execute(plpy.prepare(bin_override_q, ["text", "int"]), [package, dat["suite"]])
-    # Only fill in the values if we find the unique override
-    if len(bin_overrides) == 1:
-        component = bin_overrides[0]['component']
-        priority = bin_overrides[0]['priority']
-        section = bin_overrides[0]['section']
-
-elif tablename == 'src_associations':
-    pkg_info = plpy.execute(plpy.prepare("SELECT source, version FROM source WHERE source.id = $1", ["int"]), [dat["source"]])
-
-    # Couldn't find source: shouldn't happen, but be careful
-    if len(pkg_info) != 1:
-        plpy.warning('Could not find source for id %s' % dat["source"])
-        return None
-
-    package = pkg_info[0]['source']
-    version = pkg_info[0]['version']
-    arch = 'source'
-
-    src_override_q = '''SELECT component.name AS component,
-                             priority.priority AS priority,
-                             section.section AS section,
-                             override_type.type
-                        FROM override
-                   LEFT JOIN override_type ON (override.type = override_type.id)
-                   LEFT JOIN priority ON (priority.id = override.priority)
-                   LEFT JOIN section ON (section.id = override.section)
-                   LEFT JOIN component ON (override.component = component.id)
-                   LEFT JOIN suite ON (suite.id = override.suite)
-                       WHERE override_type.type = 'dsc'
-                         AND package = $1
-                         AND suite.id = $2'''
-
-    src_overrides = plpy.execute(plpy.prepare(src_override_q, ["text", "int"]), [package, dat["suite"]])
-    # Only fill in the values if we find the unique override
-    if len(src_overrides) == 1:
-        component = src_overrides[0]['component']
-        priority = src_overrides[0]['priority']
-        section = src_overrides[0]['section']
-
-# Insert the audit row
-plpy.execute(plpy.prepare("INSERT INTO audit.package_changes (package, version, architecture, suite, event, priority, component, section) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-             ["text", "text", "text", "text", "text", "text", "text", "text"]),
-             [package, version, arch, suite_name, pkg_event, priority, component, section])
-
-$$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER""")
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER""");
 
         c.execute("""CREATE OR REPLACE FUNCTION trigger_override_update() RETURNS TRIGGER AS $$
-tablename = TD["table_name"]
-event = TD["event"]
+DECLARE
+  v_src_override_id override_type.id%TYPE;
 
-if tablename != 'override':
-    return None
+  v_priority audit.package_changes.priority%TYPE := NULL;
+  v_component audit.package_changes.component%TYPE := NULL;
+  v_section audit.package_changes.section%TYPE := NULL;
+BEGIN
 
-if event != 'UPDATE':
-    # We only care about UPDATE event here
-    return None
+  IF TG_TABLE_NAME != 'override' THEN
+    RAISE EXCEPTION 'trigger called for invalid table (%)', TG_TABLE_NAME;
+  END IF;
+  IF TG_OP != 'UPDATE' THEN
+    RAISE EXCEPTION 'trigger called for invalid event (%)', TG_OP;
+  END IF;
 
-# Deal with some pathologically stupid cases we ignore
-if (TD['new']['package'] != TD['old']['package']) or \
-   (TD['new']['type'] != TD['old']['type']) or \
-   (TD['new']['suite'] != TD['old']['suite']):
-    return None
+  IF OLD.package != NEW.package OR OLD.type != NEW.type OR OLD.suite != NEW.suite THEN
+    RETURN NEW;
+  END IF;
 
-package = TD['old']['package']
+  IF OLD.priority != NEW.priority THEN
+    SELECT priority INTO STRICT v_priority FROM priority WHERE id = NEW.priority;
+  END IF;
 
-# Get the priority, component and section out
-if TD['new']['priority'] == TD['old']['priority']:
-    priority = None
-else:
-    priority_row = plpy.execute(plpy.prepare("SELECT priority FROM priority WHERE id = $1", ["int"]), [TD['new']['priority']])
-    if len(priority_row) != 1:
-        plpy.warning('Could not find priority for id %s' % TD['new']['priority'])
-        return None
-    priority = priority_row[0]['priority']
+  IF OLD.component != NEW.component THEN
+    SELECT name INTO STRICT v_component FROM component WHERE id = NEW.component;
+  END IF;
 
-if TD['new']['component'] == TD['old']['component']:
-    component = None
-else:
-    component_row = plpy.execute(plpy.prepare("SELECT name AS component FROM component WHERE id = $1", ["int"]), [TD['new']['component']])
-    if len(component_row) != 1:
-        plpy.warning('Could not find component for id %s' % TD['new']['component'])
-        return None
-    component = component_row[0]['component']
+  IF OLD.section != NEW.section THEN
+    SELECT section INTO STRICT v_section FROM section WHERE id = NEW.section;
+  END IF;
 
-if TD['new']['section'] == TD['old']['section']:
-    section = None
-else:
-    section_row = plpy.execute(plpy.prepare("SELECT section FROM section WHERE id = $1", ["int"]), [TD['new']['section']])
-    if len(section_row) != 1:
-        plpy.warning('Could not find section for id %s' % TD['new']['section'])
-        return None
-    section = section_row[0]['section']
+  -- Find out if we're doing src or binary overrides
+  SELECT id INTO STRICT v_src_override_id FROM override_type WHERE type = 'dsc';
+  IF OLD.type = v_src_override_id THEN
+    -- Doing a src_association link
+    INSERT INTO audit.package_changes
+      (package, version, architecture, suite, event, priority, component, section)
+      SELECT NEW.package, source.version, 'source', suite.suite_name, 'U', v_priority, v_component, v_section
+        FROM source
+          JOIN src_associations ON (source.id = src_associations.source)
+          JOIN suite ON (suite.id = src_associations.suite)
+        WHERE source.source = NEW.package AND src_associations.suite = NEW.suite;
+  ELSE
+    -- Doing a bin_association link
+    INSERT INTO audit.package_changes
+      (package, version, architecture, suite, event, priority, component, section)
+      SELECT NEW.package, binaries.version, architecture.arch_string, suite.suite_name, 'U', v_priority, v_component, v_section
+        FROM binaries
+          JOIN bin_associations ON (binaries.id = bin_associations.bin)
+          JOIN architecture ON (architecture.id = binaries.architecture)
+          JOIN suite ON (suite.id = bin_associations.suite)
+        WHERE binaries.package = NEW.package AND bin_associations.suite = NEW.suite;
+  END IF;
 
-# Find out if we're doing src or binary overrides
-src_override_types = plpy.execute(plpy.prepare("SELECT id FROM override_type WHERE type = 'dsc'"), [])
-if len(src_override_types) != 1:
-    return None
-src_override_id = src_override_types[0]['id']
-
-if TD['old']['type'] == src_override_id:
-    # Doing a src_association link
-    ## Find all of the relevant suites to work on
-    for suite_row in plpy.execute(plpy.prepare('''SELECT source.version, suite_name
-                                            FROM source
-                                       LEFT JOIN src_associations ON (source.id = src_associations.source)
-                                       LEFT JOIN suite ON (suite.id = src_associations.suite)
-                                       WHERE source.source = $1
-                                       AND suite = $2''', ["text", "int"]), [package, TD['new']['suite']]):
-        # INSERT one row per affected source package
-        plpy.execute(plpy.prepare("INSERT INTO audit.package_changes (package, version, architecture, suite, event, priority, component, section) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-             ["text", "text", "text", "text", "text", "text", "text", "text"]),
-             [package, suite_row['version'], 'source', suite_row['suite_name'],
-              'U', priority, component, section])
-else:
-    # Doing a bin_association link; Find all of the relevant suites to work on
-    for suite_row in plpy.execute(plpy.prepare('''SELECT binaries.version, arch_string, suite_name
-                                            FROM binaries
-                                       LEFT JOIN bin_associations ON (binaries.id = bin_associations.bin)
-                                       LEFT JOIN architecture ON (architecture.id = binaries.architecture)
-                                       LEFT JOIN suite ON (suite.id = bin_associations.suite)
-                                       WHERE package = $1
-                                       AND suite = $2''', ["text", "int"]), [package, TD['new']['suite']]):
-        # INSERT one row per affected binary
-        plpy.execute(plpy.prepare("INSERT INTO audit.package_changes (package, version, architecture, suite, event, priority, component, section) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-             ["text", "text", "text", "text", "text", "text", "text", "text"]),
-             [package, suite_row['version'], suite_row['arch_string'], suite_row['suite_name'],
-              'U', priority, component, section])
-
-$$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
-""")
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER""");
 
         c.execute("CREATE TRIGGER trigger_bin_associations_audit AFTER INSERT OR DELETE ON bin_associations FOR EACH ROW EXECUTE PROCEDURE trigger_binsrc_assoc_update()")
         c.execute("CREATE TRIGGER trigger_src_associations_audit AFTER INSERT OR DELETE ON src_associations FOR EACH ROW EXECUTE PROCEDURE trigger_binsrc_assoc_update()")
