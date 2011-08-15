@@ -80,19 +80,21 @@ else:
 suite_info = plpy.execute(plpy.prepare("SELECT suite_name FROM suite WHERE id = $1", ["int"]), [dat["suite"]])
 # Couldn't find suite
 if len(suite_info) != 1:
+    plpy.warning('Could not find suite for id %s' % dat['suite'])
     return None
 suite_name = suite_info[0]['suite_name']
 
 # Some defaults in case we can't find the overrides
-component = ""
-section = ""
-priority = ""
+component = None
+section = None
+priority = None
 
 if tablename == 'bin_associations':
     pkg_info = plpy.execute(plpy.prepare("SELECT package, version, arch_string FROM binaries LEFT JOIN architecture ON (architecture.id = binaries.architecture) WHERE binaries.id = $1", ["int"]), [dat["bin"]])
 
     # Couldn't find binary: shouldn't happen, but be careful
     if len(pkg_info) != 1:
+        plpy.warning('Could not find binary for id %s' % dat["bin"])
         return None
 
     package = pkg_info[0]['package']
@@ -125,6 +127,7 @@ elif tablename == 'src_associations':
 
     # Couldn't find source: shouldn't happen, but be careful
     if len(pkg_info) != 1:
+        plpy.warning('Could not find source for id %s' % dat["source"])
         return None
 
     package = pkg_info[0]['source']
@@ -179,20 +182,32 @@ if (TD['new']['package'] != TD['old']['package']) or \
 package = TD['old']['package']
 
 # Get the priority, component and section out
-priority_row = plpy.execute(plpy.prepare("SELECT priority FROM priority WHERE id = $1", ["int"]), [TD['new']['priority']])
-if len(priority_row) != 1:
-    return None
-priority = priority_row[0]['priority']
+if TD['new']['priority'] == TD['old']['priority']:
+    priority = None
+else:
+    priority_row = plpy.execute(plpy.prepare("SELECT priority FROM priority WHERE id = $1", ["int"]), [TD['new']['priority']])
+    if len(priority_row) != 1:
+        plpy.warning('Could not find priority for id %s' % TD['new']['priority'])
+        return None
+    priority = priority_row[0]['priority']
 
-component_row = plpy.execute(plpy.prepare("SELECT name AS component FROM component WHERE id = $1", ["int"]), [TD['new']['component']])
-if len(component_row) != 1:
-    return None
-component = component_row[0]['component']
+if TD['new']['component'] == TD['old']['component']:
+    component = None
+else:
+    component_row = plpy.execute(plpy.prepare("SELECT name AS component FROM component WHERE id = $1", ["int"]), [TD['new']['component']])
+    if len(component_row) != 1:
+        plpy.warning('Could not find component for id %s' % TD['new']['component'])
+        return None
+    component = component_row[0]['component']
 
-section_row = plpy.execute(plpy.prepare("SELECT section FROM section WHERE id = $1", ["int"]), [TD['new']['section']])
-if len(section_row) != 1:
-    return None
-section = section_row[0]['section']
+if TD['new']['section'] == TD['old']['section']:
+    section = None
+else:
+    section_row = plpy.execute(plpy.prepare("SELECT section FROM section WHERE id = $1", ["int"]), [TD['new']['section']])
+    if len(section_row) != 1:
+        plpy.warning('Could not find section for id %s' % TD['new']['section'])
+        return None
+    section = section_row[0]['section']
 
 # Find out if we're doing src or binary overrides
 src_override_types = plpy.execute(plpy.prepare("SELECT id FROM override_type WHERE type = 'dsc'"), [])
