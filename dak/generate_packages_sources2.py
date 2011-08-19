@@ -120,9 +120,6 @@ def generate_sources(suite_id, component_id):
 
 #############################################################################
 
-# We currently filter out the "Tag" line. They are set by external overrides and
-# NOT by the maintainer. And actually having it set by maintainer means we output
-# it twice at the moment -> which breaks dselect.
 # Here be large dragons.
 _packages_query = R"""
 WITH
@@ -160,7 +157,7 @@ SELECT
      JOIN metadata_keys mk ON mk.key_id = bm.key_id
    WHERE
      bm.bin_id = tmp.binary_id
-     AND key != 'Section' AND key != 'Priority' AND key != 'Tag'
+     AND key != ALL (:metadata_skip)
   )
   || COALESCE(E'\n' || (SELECT
      STRING_AGG(key || '\: ' || value, E'\n' ORDER BY key)
@@ -213,13 +210,23 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
 
     overridesuite_id = suite.get_overridesuite().suite_id
 
+    # We currently filter out the "Tag" line. They are set by external
+    # overrides and NOT by the maintainer. And actually having it set by
+    # maintainer means we output it twice at the moment -> which breaks
+    # dselect.
+    metadata_skip = ["Section", "Priority", "Tag"]
+    if suite.include_long_description:
+        metadata_skip.append("Description-md5")
+    else:
+        metadata_skip.append("Description")
+
     writer = PackagesFileWriter(suite=suite.suite_name, component=component.component_name,
             architecture=architecture.arch_string, debtype=type_name)
     output = writer.open()
 
     r = session.execute(_packages_query, {"suite": suite_id, "component": component_id,
         "arch": architecture_id, "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id,
-        "overridesuite": overridesuite_id})
+        "overridesuite": overridesuite_id, "metadata_skip": metadata_skip})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
@@ -227,6 +234,54 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     writer.close()
 
     message = ["generate-packages", suite.suite_name, component.component_name, architecture.arch_string]
+    session.rollback()
+    return (PROC_STATUS_SUCCESS, message)
+
+#############################################################################
+
+_translations_query = """
+SELECT
+     'Package\: ' || b.package
+  || E'\nDescription-md5\: ' || bm_description_md5.value
+  || E'\nDescription-en\: ' || bm_description.value
+  || E'\n'
+FROM binaries b
+  -- join tables for suite and component
+  JOIN bin_associations ba ON b.id = ba.bin
+  JOIN override o ON b.package = o.package AND o.suite = :suite AND o.type = (SELECT id FROM override_type WHERE type = 'deb')
+
+  -- join tables for Description and Description-md5
+  JOIN binaries_metadata bm_description ON b.id = bm_description.bin_id AND bm_description.key_id = (SELECT key_id FROM metadata_keys WHERE key = 'Description')
+  JOIN binaries_metadata bm_description_md5 ON b.id = bm_description_md5.bin_id AND bm_description_md5.key_id = (SELECT key_id FROM metadata_keys WHERE key = 'Description-md5')
+
+  -- we want to sort by source name
+  JOIN source s ON b.source = s.id
+
+WHERE ba.suite = :suite AND o.component = :component
+GROUP BY s.source, b.package, bm_description_md5.value, bm_description.value
+ORDER BY s.source, b.package, bm_description_md5.value
+"""
+
+def generate_translations(suite_id, component_id):
+    global _translations_query
+    from daklib.filewriter import TranslationFileWriter
+    from daklib.dbconn import DBConn, Suite, Component
+    from daklib.dakmultiprocessing import PROC_STATUS_SUCCESS
+
+    session = DBConn().session()
+    suite = session.query(Suite).get(suite_id)
+    component = session.query(Component).get(component_id)
+
+    writer = TranslationFileWriter(suite=suite.suite_name, component=component.component_name, language="en")
+    output = writer.open()
+
+    r = session.execute(_translations_query, {"suite": suite_id, "component": component_id})
+    for (stanza,) in r:
+        print >>output, stanza
+
+    writer.close()
+
+    message = ["generate-translations", suite.suite_name, component.component_name]
     session.rollback()
     return (PROC_STATUS_SUCCESS, message)
 
@@ -258,6 +313,8 @@ def main():
     logger = daklog.Logger('generate-packages-sources2')
 
     session = DBConn().session()
+    session.execute("SELECT add_missing_description_md5()")
+    session.commit()
 
     if Options.has_key("Suite"):
         suites = []
@@ -290,6 +347,7 @@ def main():
             utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
         for c in component_ids:
             pool.apply_async(generate_sources, [s.suite_id, c], callback=parse_results)
+            pool.apply_async(generate_translations, [s.suite_id, c], callback=parse_results)
             for a in s.architectures:
                 if a == 'source':
                     continue
