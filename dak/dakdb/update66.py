@@ -123,7 +123,8 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER""");
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = public, pg_temp""");
 
         c.execute("""CREATE OR REPLACE FUNCTION trigger_override_update() RETURNS TRIGGER AS $$
 DECLARE
@@ -182,7 +183,8 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER""");
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = public, pg_temp""");
 
         c.execute("CREATE TRIGGER trigger_bin_associations_audit AFTER INSERT OR DELETE ON bin_associations FOR EACH ROW EXECUTE PROCEDURE trigger_binsrc_assoc_update()")
         c.execute("CREATE TRIGGER trigger_src_associations_audit AFTER INSERT OR DELETE ON src_associations FOR EACH ROW EXECUTE PROCEDURE trigger_binsrc_assoc_update()")
