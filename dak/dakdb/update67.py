@@ -60,7 +60,7 @@ DECLARE
     SELECT
       bm.bin_id AS bin_id,
       description_md5_key_id AS key_id,
-      MD5(bm.value) AS value
+      MD5(bm.value || E'\n') AS value
     FROM binaries_metadata AS bm
     WHERE
       bm.key_id = description_key_id
