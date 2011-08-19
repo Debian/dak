@@ -151,3 +151,19 @@ class SourcesFileWriter(BaseFileWriter):
         flags.update(keywords)
         template = "dists/%(suite)s/%(component)s/source/Sources"
         BaseFileWriter.__init__(self, template, **flags)
+
+class TranslationFileWriter(BaseFileWriter):
+    def __init__(self, **keywords):
+        '''
+        The value of the keywords suite, component and language are strings.
+        Output files are bzip2 compressed only.
+        '''
+        flags = {
+            'uncompressed': False,
+            'gzip':         False,
+            'bzip2':        True,
+            'language':     'en',
+        }
+        flags.update(keywords)
+        template = "dists/%(suite)s/%(component)s/i18n/Translation-%(language)s"
+        super(TranslationFileWriter, self).__init__(template, **flags)
