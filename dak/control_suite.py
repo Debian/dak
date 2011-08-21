@@ -238,17 +238,6 @@ def set_suite(file, suite, session, britney=False, force=False):
         key = " ".join(split_line)
         desired[key] = ""
 
-    # Check to see which packages need removed and remove them
-    for key in current.keys():
-        if not desired.has_key(key):
-            (package, version, architecture) = key.split()
-            pkid = current[key]
-            if architecture == "source":
-                session.execute("""DELETE FROM src_associations WHERE id = :pkid""", {'pkid': pkid})
-            else:
-                session.execute("""DELETE FROM bin_associations WHERE id = :pkid""", {'pkid': pkid})
-            Logger.log(["removed", key, pkid])
-
     # Check to see which packages need added and add them
     for key in sorted(desired.keys(), cmp=cmp_package_version):
         if not current.has_key(key):
@@ -264,6 +253,17 @@ def set_suite(file, suite, session, britney=False, force=False):
                 session.execute("""INSERT INTO bin_associations (suite, bin)
                                         VALUES (:suiteid, :pkid)""", {'suiteid': suite_id, 'pkid': pkid})
             Logger.log(["added", key, pkid])
+
+    # Check to see which packages need removed and remove them
+    for key in current.keys():
+        if not desired.has_key(key):
+            (package, version, architecture) = key.split()
+            pkid = current[key]
+            if architecture == "source":
+                session.execute("""DELETE FROM src_associations WHERE id = :pkid""", {'pkid': pkid})
+            else:
+                session.execute("""DELETE FROM bin_associations WHERE id = :pkid""", {'pkid': pkid})
+            Logger.log(["removed", key, pkid])
 
     session.commit()
 
