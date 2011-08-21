@@ -193,6 +193,17 @@ def version_checks(package, architecture, target_suite, new_version, session, fo
 
 #######################################################################################
 
+def cmp_package_version(a, b):
+    """
+    comparison function for tuples of the form (package-name, version ...)
+    """
+    cmp_package = cmp(a[0], b[0])
+    if cmp_package != 0:
+        return cmp_package
+    return apt_pkg.VersionCompare(a[1], b[1])
+
+#######################################################################################
+
 def set_suite(file, suite, session, britney=False, force=False):
     suite_id = suite.suite_id
     lines = file.readlines()
@@ -239,7 +250,7 @@ def set_suite(file, suite, session, britney=False, force=False):
             Logger.log(["removed", key, pkid])
 
     # Check to see which packages need added and add them
-    for key in desired.keys():
+    for key in sorted(desired.keys(), cmp=cmp_package_version):
         if not current.has_key(key):
             (package, version, architecture) = key.split()
             version_checks(package, architecture, suite.suite_name, version, session, force)
@@ -268,17 +279,19 @@ def process_file(file, suite, action, session, britney=False, force=False):
 
     suite_id = suite.suite_id
 
-    lines = file.readlines()
+    request = []
 
     # Our session is already in a transaction
-    for line in lines:
+    for line in file:
         split_line = line.strip().split()
         if len(split_line) != 3:
             utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
             continue
+        request.append(split_line)
 
-        (package, version, architecture) = split_line
+    request.sort(cmp=cmp_package_version)
 
+    for package, version, architecture in request:
         pkid = get_id(package, version, architecture, session)
         if not pkid:
             continue
