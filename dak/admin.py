@@ -100,7 +100,7 @@ Perform administrative work on the dak database.
      v-c list                        show version checks for all suites
      v-c list-suite SUITE            show version checks for suite SUITE
      v-c add SUITE CHECK REFERENCE   add a version check for suite SUITE
-     v-c rm SUITE CHECK REFERENCE    rmove a version check
+     v-c rm SUITE CHECK REFERENCE    remove a version check
        where
          CHECK     is one of Enhances, MustBeNewerThan, MustBeOlderThan
 	 REFERENCE is another suite name
