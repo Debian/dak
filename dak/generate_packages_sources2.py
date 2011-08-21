@@ -38,6 +38,11 @@ Generate the Packages/Sources files
                                Default: All suites not marked 'untouchable'
   -f, --force                  Allow processing of untouchable suites
                                CAREFUL: Only to be used at point release time!
+  -5, --description-md5        Allow to use Description-md5 instead of
+                               Description for Packages index and generate
+                               Translation-en
+                               NOTE: suite.include_long_descriptions needs to
+                               be set to false for this.
   -h, --help                   show this help and exit
 
 SUITE can be a space seperated list, e.g.
@@ -194,7 +199,7 @@ WHERE
 ORDER BY tmp.source, tmp.package, tmp.version
 """
 
-def generate_packages(suite_id, component_id, architecture_id, type_name):
+def generate_packages(suite_id, component_id, architecture_id, type_name, use_description_md5):
     global _packages_query
     from daklib.filewriter import PackagesFileWriter
     from daklib.dbconn import Architecture, Component, DBConn, OverrideType, Suite
@@ -215,7 +220,7 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     # maintainer means we output it twice at the moment -> which breaks
     # dselect.
     metadata_skip = ["Section", "Priority", "Tag"]
-    if suite.include_long_description:
+    if suite.include_long_description or not use_description_md5:
         metadata_skip.append("Description-md5")
     else:
         metadata_skip.append("Description")
@@ -298,6 +303,7 @@ def main():
     cnf = Config()
 
     Arguments = [('h',"help","Generate-Packages-Sources::Options::Help"),
+                 ('5','description-md5',"Generate-Packages-Sources::Options::Description-md5"),
                  ('s',"suite","Generate-Packages-Sources::Options::Suite"),
                  ('f',"force","Generate-Packages-Sources::Options::Force")]
 
@@ -328,6 +334,7 @@ def main():
     else:
         suites = session.query(Suite).filter(Suite.untouchable == False).all()
 
+    use_description_md5 = Options.has_key("Description-md5") and Options["Description-md5"]
     force = Options.has_key("Force") and Options["Force"]
 
     component_ids = [ c.component_id for c in session.query(Component).all() ]
@@ -347,12 +354,13 @@ def main():
             utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
         for c in component_ids:
             pool.apply_async(generate_sources, [s.suite_id, c], callback=parse_results)
-            pool.apply_async(generate_translations, [s.suite_id, c], callback=parse_results)
+            if use_description_md5 and not s.include_long_description:
+                pool.apply_async(generate_translations, [s.suite_id, c], callback=parse_results)
             for a in s.architectures:
                 if a == 'source':
                     continue
-                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb'], callback=parse_results)
-                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb'], callback=parse_results)
+                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'deb', use_description_md5], callback=parse_results)
+                pool.apply_async(generate_packages, [s.suite_id, c, a.arch_id, 'udeb', use_description_md5], callback=parse_results)
 
     pool.close()
     pool.join()
