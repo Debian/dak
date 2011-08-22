@@ -216,32 +216,31 @@ def set_suite(file, suite, session, britney=False, force=False):
                              FROM binaries b, bin_associations ba, architecture a
                             WHERE ba.suite = :suiteid
                               AND ba.bin = b.id AND b.architecture = a.id""", {'suiteid': suite_id})
-    for i in q.fetchall():
-        key = " ".join(i[:3])
+    for i in q:
+        key = i[:3]
         current[key] = i[3]
 
-    q = session.execute("""SELECT s.source, s.version, sa.id
+    q = session.execute("""SELECT s.source, s.version, 'source', sa.id
                              FROM source s, src_associations sa
                             WHERE sa.suite = :suiteid
                               AND sa.source = s.id""", {'suiteid': suite_id})
-    for i in q.fetchall():
-        key = " ".join(i[:2]) + " source"
-        current[key] = i[2]
+    for i in q:
+        key = i[:3]
+        current[key] = i[3]
 
     # Build up a dictionary of what should be in the suite
-    desired = {}
+    desired = set()
     for line in lines:
         split_line = line.strip().split()
         if len(split_line) != 3:
             utils.warn("'%s' does not break into 'package version architecture'." % (line[:-1]))
             continue
-        key = " ".join(split_line)
-        desired[key] = ""
+        desired.add(tuple(split_line))
 
     # Check to see which packages need added and add them
-    for key in sorted(desired.keys(), cmp=cmp_package_version):
-        if not current.has_key(key):
-            (package, version, architecture) = key.split()
+    for key in sorted(desired, cmp=cmp_package_version):
+        if key not in current:
+            (package, version, architecture) = key
             version_checks(package, architecture, suite.suite_name, version, session, force)
             pkid = get_id (package, version, architecture, session)
             if not pkid:
@@ -252,18 +251,17 @@ def set_suite(file, suite, session, britney=False, force=False):
             else:
                 session.execute("""INSERT INTO bin_associations (suite, bin)
                                         VALUES (:suiteid, :pkid)""", {'suiteid': suite_id, 'pkid': pkid})
-            Logger.log(["added", key, pkid])
+            Logger.log(["added", " ".join(key), pkid])
 
     # Check to see which packages need removed and remove them
-    for key in current.keys():
-        if not desired.has_key(key):
-            (package, version, architecture) = key.split()
-            pkid = current[key]
+    for key, pkid in current.iteritems():
+        if key not in desired:
+            (package, version, architecture) = key
             if architecture == "source":
                 session.execute("""DELETE FROM src_associations WHERE id = :pkid""", {'pkid': pkid})
             else:
                 session.execute("""DELETE FROM bin_associations WHERE id = :pkid""", {'pkid': pkid})
-            Logger.log(["removed", key, pkid])
+            Logger.log(["removed", " ".join(key), pkid])
 
     session.commit()
 
