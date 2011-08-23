@@ -51,7 +51,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
-from daklib.regexes import re_strip_source_version, re_build_dep_arch
+from daklib.regexes import re_strip_source_version, re_build_dep_arch, re_bin_only_nmu
 import debianbts as bts
 
 ################################################################################
@@ -666,6 +666,7 @@ def main ():
         Subst_close_other = Subst_common
         bcc = []
         wnpp = utils.parse_wnpp_bug_file()
+        versions = list(set([re_bin_only_nmu.sub('', v) for v in versions]))
         if len(versions) == 1:
             Subst_close_other["__VERSION__"] = versions[0]
         else:
