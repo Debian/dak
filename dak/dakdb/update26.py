@@ -63,5 +63,5 @@ def do_update(self):
 
     except psycopg2.InternalError as msg:
             self.db.rollback()
-            raise DBUpdateError, "Database error, rollback issued. Error message : %s" % (str(msg))
+            raise DBUpdateError("Database error, rollback issued. Error message : %s" % (str(msg)))
 

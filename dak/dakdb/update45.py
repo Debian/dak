@@ -50,4 +50,4 @@ CREATE TABLE extra_src_references (
 
     except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError, 'Unable to apply update 45, rollback issued. Error message : %s' % (str(msg))
+        raise DBUpdateError('Unable to apply update 45, rollback issued. Error message : %s' % (str(msg)))

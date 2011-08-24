@@ -97,4 +97,4 @@ def do_update(self):
 
     except psycopg2.InternalError as msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to apply debversion update 20, rollback issued. Error message : %s" % (str(msg))
+        raise DBUpdateError("Unable to apply debversion update 20, rollback issued. Error message : %s" % (str(msg)))

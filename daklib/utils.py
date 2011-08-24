@@ -115,7 +115,7 @@ def open_file(filename, mode='r'):
     try:
         f = open(filename, mode)
     except IOError:
-        raise CantOpenError, filename
+        raise CantOpenError(filename)
     return f
 
 ################################################################################
@@ -172,7 +172,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
     lines = contents.splitlines(True)
 
     if len(lines) == 0:
-        raise ParseChangesError, "[Empty changes file]"
+        raise ParseChangesError("[Empty changes file]")
 
     # Reindex by line number so we can easily verify the format of
     # .dsc files...
@@ -190,7 +190,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
         line = indexed_lines[index]
         if line == "" and signing_rules == 1:
             if index != num_of_lines:
-                raise InvalidDscError, index
+                raise InvalidDscError(index)
             break
         slf = re_single_line_field.match(line)
         if slf:
@@ -204,7 +204,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
         mlf = re_multi_line_field.match(line)
         if mlf:
             if first == -1:
-                raise ParseChangesError, "'%s'\n [Multi-line field continuing on from nothing?]" % (line)
+                raise ParseChangesError("'%s'\n [Multi-line field continuing on from nothing?]" % (line))
             if first == 1 and changes[field] != "":
                 changes[field] += '\n'
             first = 0
@@ -223,7 +223,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
             changes["source-version"] = srcver.group(2)
 
     if error:
-        raise ParseChangesError, error
+        raise ParseChangesError(error)
 
     return changes
 
@@ -257,7 +257,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
     try:
         unicode(content, 'utf-8')
     except UnicodeError:
-        raise ChangesUnicodeError, "Changes file not proper utf-8"
+        raise ChangesUnicodeError("Changes file not proper utf-8")
     changes = parse_deb822(content, signing_rules, keyrings=keyrings)
 
 
@@ -272,7 +272,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
                 missingfields.append(keyword)
 
                 if len(missingfields):
-                    raise ParseChangesError, "Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields)
+                    raise ParseChangesError("Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields))
 
     return changes
 
@@ -559,7 +559,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
             else:
                 (md5, size, name) = s
         except ValueError:
-            raise ParseChangesError, i
+            raise ParseChangesError(i)
 
         if section == "":
             section = "-"
@@ -694,7 +694,7 @@ def send_mail (message, filename=""):
     # Invoke sendmail
     (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
     if (result != 0):
-        raise SendmailFailedError, output
+        raise SendmailFailedError(output)
 
     # Clean up any temporary files
     if message:

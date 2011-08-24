@@ -2824,9 +2824,9 @@ def add_deb_to_db(u, filename, session=None):
     # Find source id
     bin_sources = get_sources_from_name(entry["source package"], entry["source version"], session=session)
     if len(bin_sources) != 1:
-        raise NoSourceFieldError, "Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
+        raise NoSourceFieldError("Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
                                   (bin.package, bin.version, entry["architecture"],
-                                   filename, bin.binarytype, u.pkg.changes["fingerprint"])
+                                   filename, bin.binarytype, u.pkg.changes["fingerprint"]))
 
     bin.source_id = bin_sources[0].source_id
 
@@ -2834,9 +2834,9 @@ def add_deb_to_db(u, filename, session=None):
         for srcname, version in entry["built-using"]:
             exsources = get_sources_from_name(srcname, version, session=session)
             if len(exsources) != 1:
-                raise NoSourceFieldError, "Unable to find source package (%s = %s) in Built-Using for %s (%s), %s, file %s, type %s, signed by %s" % \
+                raise NoSourceFieldError("Unable to find source package (%s = %s) in Built-Using for %s (%s), %s, file %s, type %s, signed by %s" % \
                                           (srcname, version, bin.package, bin.version, entry["architecture"],
-                                           filename, bin.binarytype, u.pkg.changes["fingerprint"])
+                                           filename, bin.binarytype, u.pkg.changes["fingerprint"]))
 
             bin.extra_sources.append(exsources[0])
 

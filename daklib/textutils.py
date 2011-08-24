@@ -88,7 +88,7 @@ def fix_maintainer(maintainer):
     else:
         m = re_parse_maintainer.match(maintainer)
         if not m:
-            raise ParseMaintError, "Doesn't parse as a valid Maintainer field."
+            raise ParseMaintError("Doesn't parse as a valid Maintainer field.")
         name = m.group(1)
         email = m.group(2)
 
@@ -106,7 +106,7 @@ def fix_maintainer(maintainer):
         rfc2047_maint = "%s <%s>" % (rfc2047_name, email)
 
     if email.find("@") == -1 and email.find("buildd_") != 0:
-        raise ParseMaintError, "No @ found in email address part."
+        raise ParseMaintError("No @ found in email address part.")
 
     return (rfc822_maint, rfc2047_maint, name, email)
 

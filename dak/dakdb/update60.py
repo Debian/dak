@@ -53,4 +53,4 @@ def do_update(self):
 
     except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError, 'Unable to apply sick update 60, rollback issued. Error message : %s' % (str(msg))
+        raise DBUpdateError('Unable to apply sick update 60, rollback issued. Error message : %s' % (str(msg)))

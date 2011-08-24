@@ -81,7 +81,7 @@ def smartlink(f, t):
         os.system("bzip2 -d < %s.bz2 > %s" % (f, t))
     else:
         print "missing: %s" % (f)
-        raise IOError, f
+        raise IOError(f)
 
 def smartopen(file):
     if os.path.isfile(file):

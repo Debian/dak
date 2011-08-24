@@ -639,7 +639,7 @@ def lock_package(package):
     except OSError as e:
         if e.errno == errno.EEXIST or e.errno == errno.EACCES:
             user = pwd.getpwuid(os.stat(path)[stat.ST_UID])[4].split(',')[0].replace('.', '')
-            raise AlreadyLockedError, user
+            raise AlreadyLockedError(user)
 
     try:
         yield fd
