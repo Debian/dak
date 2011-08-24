@@ -157,7 +157,7 @@ def flush_orphans ():
             changes = utils.parse_changes(changes_filename)
             files = utils.build_file_list(changes)
         except:
-            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
+            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_info()[0]))
             continue
 
         dsc_files = {}
@@ -167,7 +167,7 @@ def flush_orphans ():
                     dsc = utils.parse_changes(f, dsc_file=1)
                     dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
                 except:
-                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (f, sys.exc_type))
+                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (f, sys.exc_info()[0]))
                     continue
 
         # Ensure all the files we've seen aren't deleted

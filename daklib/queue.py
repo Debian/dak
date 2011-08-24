@@ -714,7 +714,7 @@ class Upload(object):
         try:
             control = apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))
         except:
-            self.rejects.append("%s: debExtractControl() raised %s." % (f, sys.exc_type))
+            self.rejects.append("%s: debExtractControl() raised %s." % (f, sys.exc_info()[0]))
             deb_file.close()
             # Can't continue, none of the checks on control would work.
             return
@@ -1654,7 +1654,7 @@ class Upload(object):
                         self.rejects.append("%s: has %s file(s) with a time stamp too ancient (e.g. %s [%s])."
                                % (filename, num_ancient_files, ancient_file, time.ctime(ancient_date)))
                 except:
-                    self.rejects.append("%s: deb contents timestamp check failed [%s: %s]" % (filename, sys.exc_type, sys.exc_value))
+                    self.rejects.append("%s: deb contents timestamp check failed [%s: %s]" % (filename, sys.exc_info()[0], sys.exc_info()[1]))
 
     def check_if_upload_is_sponsored(self, uid_email, uid_name):
         uid_email = '@'.join(uid_email.split('@')[:2])
