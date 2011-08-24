@@ -1686,7 +1686,7 @@ class Keyring(object):
         key = None
         signingkey = False
 
-        for line in k.xreadlines():
+        for line in k:
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
