@@ -51,7 +51,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
-from daklib.regexes import re_strip_source_version, re_build_dep_arch
+from daklib.regexes import re_strip_source_version, re_build_dep_arch, re_bin_only_nmu
 import debianbts as bts
 
 ################################################################################
@@ -126,16 +126,11 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
         params['arch_id'] = get_architecture(architecture, session).arch_id
 
         statement = '''
-            create temp table suite_binaries (
-                id integer primary key,
-                package text,
-                source integer,
-                file integer);
-            insert into suite_binaries
-                select b.id, b.package, b.source, b.file
+            WITH suite_binaries AS
+                (select b.id, b.package, b.source, b.file
                     from binaries b WHERE b.id in
                         (SELECT bin FROM bin_associations WHERE suite = :suite_id)
-                        AND b.architecture in (:arch_id, :arch_all_id);
+                        AND b.architecture in (:arch_id, :arch_all_id))
             SELECT b.id, b.package, s.source, c.name as component,
                 bmd.value as depends, bmp.value as provides
                 FROM suite_binaries b
@@ -671,6 +666,7 @@ def main ():
         Subst_close_other = Subst_common
         bcc = []
         wnpp = utils.parse_wnpp_bug_file()
+        versions = list(set([re_bin_only_nmu.sub('', v) for v in versions]))
         if len(versions) == 1:
             Subst_close_other["__VERSION__"] = versions[0]
         else:

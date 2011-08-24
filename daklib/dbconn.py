@@ -81,6 +81,9 @@ import warnings
 warnings.filterwarnings('ignore', \
     "The SQLAlchemy PostgreSQL dialect has been renamed from 'postgres' to 'postgresql'.*", \
     SADeprecationWarning)
+warnings.filterwarnings('ignore', \
+    "Predicate of partial index .* ignored during reflection", \
+    SAWarning)
 
 
 ################################################################################
