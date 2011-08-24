@@ -60,7 +60,7 @@ class Holding(object):
         try:
             fd = os.open(dest, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0640)
             os.close(fd)
-        except OSError, e:
+        except OSError as e:
             # Shouldn't happen, but will if, for example, someone lists a
             # file twice in the .changes.
             if e.errno == EEXIST:
@@ -68,7 +68,7 @@ class Holding(object):
 
         try:
             shutil.copy(filename, dest)
-        except IOError, e:
+        except IOError as e:
             # In either case (ENOENT or EACCES) we want to remove the
             # O_CREAT | O_EXCLed ghost file, so add the file to the list
             # of 'in holding' even if it's not the real file.

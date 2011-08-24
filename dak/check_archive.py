@@ -164,7 +164,7 @@ def check_dscs():
         except CantOpenError:
             utils.warn("missing dsc file (%s)" % f)
             count += 1
-        except Exception, e:
+        except Exception as e:
             utils.warn("miscellaneous error parsing dsc file (%s): %s" % (f, str(e)))
             count += 1
 

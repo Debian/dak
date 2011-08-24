@@ -66,9 +66,9 @@ def _func_wrapper(func, *args, **kwds):
     #  messages is a string used for logging
     try:
         return (func(*args, **kwds))
-    except SignalException, e:
+    except SignalException as e:
         return (PROC_STATUS_SIGNALRAISED, e.signum)
-    except Exception, e:
+    except Exception as e:
         return (PROC_STATUS_EXCEPTION, str(e))
     finally:
         # Make sure connections are closed. We might die otherwise.

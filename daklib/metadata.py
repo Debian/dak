@@ -66,7 +66,7 @@ class MetadataScanner(object):
             if self.verbose:
                 print "Imported %s (%s)" % (self.pkid, fullpath)
             session.commit()
-        except Exception, e:
+        except Exception as e:
             print "Failed to import %s [id=%s; fullpath=%s]" % (self.dbclass.__name__, self.pkid, fullpath)
             print "Exception: ", e
             session.rollback()

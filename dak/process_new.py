@@ -351,7 +351,7 @@ def check_pkg (upload):
                 elif ftype == "dsc":
                     print examine_package.check_dsc(changes['distribution'], f)
         print examine_package.output_package_relations()
-    except IOError, e:
+    except IOError as e:
         if e.errno == errno.EPIPE:
             utils.warn("[examine_package] Caught EPIPE; skipping.")
         else:
@@ -616,7 +616,7 @@ def check_daily_lock():
 
         os.open(lockfile,
                 os.O_RDONLY | os.O_CREAT | os.O_EXCL)
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.EEXIST or e.errno == errno.EACCES:
             raise CantGetLockError
 
@@ -638,7 +638,7 @@ def lock_package(package):
 
     try:
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDONLY)
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.EEXIST or e.errno == errno.EACCES:
             user = pwd.getpwuid(os.stat(path)[stat.ST_UID])[4].split(',')[0].replace('.', '')
             raise AlreadyLockedError, user
@@ -720,7 +720,7 @@ def do_pkg(changes_full_path, session):
                         print "Hello? Operator! Give me the number for 911!"
                         print "Dinstall in the locked area, cant process packages, come back later"
 
-    except AlreadyLockedError, e:
+    except AlreadyLockedError as e:
         print "Seems to be locked by %s already, skipping..." % (e)
 
 def show_new_comments(changes_files, session):
@@ -791,7 +791,7 @@ def main():
     if not Options["No-Action"]:
         try:
             Logger = daklog.Logger("process-new")
-        except CantOpenError, e:
+        except CantOpenError as e:
             Options["Trainee"] = "True"
 
     Sections = Section_Completer(session)

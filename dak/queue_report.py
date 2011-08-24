@@ -312,7 +312,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
         try:
             (login, domain) = sponsor.split("@", 1)
             print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
-        except Exception, e:
+        except Exception as e:
             pass
 
     print "<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint)
@@ -355,7 +355,7 @@ RRA:MAX:0.5:288:795
         try:
             rc = rrdtool.create(*create)
             ru = rrdtool.update(*update)
-        except rrdtool.error, e:
+        except rrdtool.error as e:
             print('warning: queue_report: rrdtool error, skipping %s.rrd: %s' % (type, e))
     except NameError:
         pass
@@ -372,7 +372,7 @@ def process_changes_files(changes_files, type, log, rrd_dir):
             u.load_changes(filename)
             cache[filename] = copy(u.pkg.changes)
             cache[filename]["filename"] = filename
-        except Exception, e:
+        except Exception as e:
             print "WARNING: Exception %s" % e
             continue
     # Divide the .changes into per-source groups
@@ -438,7 +438,7 @@ def process_changes_files(changes_files, type, log, rrd_dir):
                 session = DBConn().session()
                 dbc = session.query(DBChange).filter_by(changesname=changesbase).one()
                 session.close()
-            except Exception, e:
+            except Exception as e:
                 print "Can't find changes file in NEW for %s (%s)" % (changesbase, e)
                 dbc = None
 
@@ -447,7 +447,7 @@ def process_changes_files(changes_files, type, log, rrd_dir):
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
                     fix_maintainer (j["maintainer"])
-                except ParseMaintError, msg:
+                except ParseMaintError as msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
                     maintainer["maintaineremail"] = "Unknown"
@@ -457,7 +457,7 @@ def process_changes_files(changes_files, type, log, rrd_dir):
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
                      fix_maintainer (j["changed-by"])
-                except ParseMaintError, msg:
+                except ParseMaintError as msg:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
                      ("", "", "", "")

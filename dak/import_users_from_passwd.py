@@ -118,7 +118,7 @@ def main ():
                     try:
                         q = session.execute('CREATE USER "%s"' % (uname))
                         session.commit()
-                    except Exception, e:
+                    except Exception as e:
                         utils.warn("Could not create user %s (%s)" % (uname, str(e)))
                         session.rollback()
                 else:

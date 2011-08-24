@@ -74,7 +74,7 @@ def do_update(self):
                 f = c.fetchone()
                 c.execute("""INSERT INTO queue_files (queueid, lastused, filename, fileid) VALUES
                                                      (%s, now(), %s, %s)""", (queue, filename[filename.rindex('/')+1:], f[0]))
-            except OSError, e:
+            except OSError as e:
                 print "Can't find file %s (%s)" % (filename, e)
 
         print "Dropping old queue_build table"
@@ -124,6 +124,6 @@ def do_update(self):
         c.execute("UPDATE config SET value = '21' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.InternalError, msg:
+    except psycopg2.InternalError as msg:
         self.db.rollback()
         raise DBUpdateError, "Unable to apply queue_build 21, rollback issued. Error message : %s" % (str(msg))

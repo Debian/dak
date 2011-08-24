@@ -43,6 +43,6 @@ def do_update(self):
         c.execute("UPDATE config SET value = '36' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
         raise DBUpdateError, 'Unable to apply build_queue update 36, rollback issued. Error message : %s' % (str(msg))

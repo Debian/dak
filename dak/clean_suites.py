@@ -424,7 +424,7 @@ def main():
             max_delete = int(cnf["Clean-Suites::Options::Maximum"])
             if max_delete < 1:
                 utils.fubar("If given, Maximum must be at least 1")
-        except ValueError, e:
+        except ValueError as e:
             utils.fubar("If given, Maximum must be an integer")
     else:
         max_delete = None

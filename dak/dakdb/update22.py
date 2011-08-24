@@ -235,6 +235,6 @@ def do_update(self):
         c.execute("UPDATE config SET value = '22' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.InternalError, msg:
+    except psycopg2.InternalError as msg:
         self.db.rollback()
         raise DBUpdateError, "Unable to apply queue_build 21, rollback issued. Error message : %s" % (str(msg))

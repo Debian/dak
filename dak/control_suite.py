@@ -396,7 +396,7 @@ def main ():
 
     try:
         file_list = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv);
-    except SystemError, e:
+    except SystemError as e:
         print "%s\n" % e
         usage(1)
     Options = cnf.SubTree("Control-Suite::Options")

@@ -269,7 +269,7 @@ class ImportThread(threading.Thread):
                 changes.add_known_changes(to_import.dirpath, session=self.session)
                 self.session.commit()
 
-            except InvalidDscError, line:
+            except InvalidDscError as line:
                 warn("syntax error in .dsc file '%s', line %s." % (f, line))
 
             except ChangesUnicodeError:

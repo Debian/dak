@@ -64,6 +64,6 @@ def do_update(self):
         print "Pausing for five seconds ..."
         time.sleep (5)
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
         raise DBUpdateError, "Unable to appy DM table updates, rollback issued. Error message : %s" % (str(msg))

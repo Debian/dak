@@ -72,6 +72,6 @@ CREATE TABLE source_metadata (
         c.execute("UPDATE config SET value = '46' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
         raise DBUpdateError, 'Unable to apply update 46, rollback issued. Error message : %s' % (str(msg))

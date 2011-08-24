@@ -494,6 +494,6 @@ def source_scan_helper(source_id):
     try:
         scanner = SourceContentsScanner(source_id)
         scanner.scan()
-    except Exception, e:
+    except Exception as e:
         print e
 

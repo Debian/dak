@@ -229,7 +229,7 @@ def action(u, session):
 
     try:
         chg = session.query(DBChange).filter_by(changesname=os.path.basename(u.pkg.changes_file)).one()
-    except NoResultFound, e:
+    except NoResultFound as e:
         chg = None
 
     if len(u.rejects) > 0:
@@ -458,7 +458,7 @@ def main():
         lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'dinstall.lock'), os.O_RDWR | os.O_CREAT)
         try:
             fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except IOError, e:
+        except IOError as e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-upload' is already running.")
             else:

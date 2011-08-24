@@ -177,7 +177,7 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
             parsed_dep = []
             try:
                 parsed_dep += apt_pkg.ParseDepends(deps[package])
-            except ValueError, e:
+            except ValueError as e:
                 print "Error for package %s: %s" % (package, e)
             for dep in parsed_dep:
                 # Check for partial breakage.  If a package has a ORed
@@ -236,7 +236,7 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
             build_dep = re_build_dep_arch.sub("", build_dep)
             try:
                 parsed_dep += apt_pkg.ParseDepends(build_dep)
-            except ValueError, e:
+            except ValueError as e:
                 print "Error for source %s: %s" % (source, e)
         for dep in parsed_dep:
             unsat = 0

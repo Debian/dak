@@ -144,13 +144,13 @@ def do_update(self):
                         changes.changes = parse_changes(changesfile, signing_rules=-1)
                         changes.changes["fingerprint"] = check_signature(changesfile)
                         changes.add_known_changes(directory)
-                    except InvalidDscError, line:
+                    except InvalidDscError as line:
                         warn("syntax error in .dsc file '%s', line %s." % (f, line))
                         failure += 1
                     except ChangesUnicodeError:
                         warn("found invalid changes file, not properly utf-8 encoded")
                         failure += 1
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
         raise DBUpdateError, "Unable to apply knownchanges update 18, rollback issued. Error message : %s" % (str(msg))

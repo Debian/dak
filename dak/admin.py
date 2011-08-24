@@ -137,9 +137,9 @@ def __architecture_add(d, args):
                 else:
                     warn("W: Cannot find suite %s" % su)
             s.commit()
-        except IntegrityError, e:
+        except IntegrityError as e:
             die("E: Integrity error adding architecture %s (it probably already exists)" % args[2])
-        except SQLAlchemyError, e:
+        except SQLAlchemyError as e:
             die("E: Error adding architecture %s (%s)" % (args[2], e))
     print "Architecture %s added" % (args[2])
 
@@ -154,9 +154,9 @@ def __architecture_rm(d, args):
                 die("E: Cannot find architecture %s" % args[2])
             s.delete(a)
             s.commit()
-        except IntegrityError, e:
+        except IntegrityError as e:
             die("E: Integrity error removing architecture %s (suite-arch entries probably still exist)" % args[2])
-        except SQLAlchemyError, e:
+        except SQLAlchemyError as e:
             die("E: Error removing architecture %s (%s)" % (args[2], e))
     print "Architecture %s removed" % args[2]
 
@@ -228,9 +228,9 @@ def __suite_add(d, args, addallarches=False):
             suite.srcformats = s.query(SrcFormat).all()
             s.add(suite)
             s.flush()
-        except IntegrityError, e:
+        except IntegrityError as e:
             die("E: Integrity error adding suite %s (it probably already exists)" % suite_name)
-        except SQLAlchemyError, e:
+        except SQLAlchemyError as e:
             die("E: Error adding suite %s (%s)" % (suite_name, e))
     print "Suite %s added" % (suite_name)
 
@@ -313,9 +313,9 @@ def __suite_architecture_add(d, args):
         try:
             suite.architectures.append(arch)
             s.commit()
-        except IntegrityError, e:
+        except IntegrityError as e:
             die("E: Can't add suite-architecture entry (%s, %s) - probably already exists" % (args[2].lower(), args[3].lower()))
-        except SQLAlchemyError, e:
+        except SQLAlchemyError as e:
             die("E: Can't add suite-architecture entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
 
     print "Added suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower())
@@ -338,9 +338,9 @@ def __suite_architecture_rm(d, args):
                 die("E: architecture %s not found in suite %s" % (arch_string, suite_name))
             suite.architectures.remove(architecture)
             s.commit()
-        except IntegrityError, e:
+        except IntegrityError as e:
             die("E: Can't remove suite-architecture entry (%s, %s) - it's probably referenced" % (args[2].lower(), args[3].lower()))
-        except SQLAlchemyError, e:
+        except SQLAlchemyError as e:
             die("E: Can't remove suite-architecture entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
 
     print "Removed suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower())

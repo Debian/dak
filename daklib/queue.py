@@ -557,7 +557,7 @@ class Upload(object):
         except CantOpenError:
             self.rejects.append("%s: can't read file." % (filename))
             return False
-        except ParseChangesError, line:
+        except ParseChangesError as line:
             self.rejects.append("%s: parse error, can't grok: %s." % (filename, line))
             return False
         except ChangesUnicodeError:
@@ -567,10 +567,10 @@ class Upload(object):
         # Parse the Files field from the .changes into another dictionary
         try:
             self.pkg.files.update(utils.build_file_list(self.pkg.changes))
-        except ParseChangesError, line:
+        except ParseChangesError as line:
             self.rejects.append("%s: parse error, can't grok: %s." % (filename, line))
             return False
-        except UnknownFormatError, format:
+        except UnknownFormatError as format:
             self.rejects.append("%s: unknown format '%s'." % (filename, format))
             return False
 
@@ -608,7 +608,7 @@ class Upload(object):
              self.pkg.changes["maintainername"],
              self.pkg.changes["maintaineremail"]) = \
                    fix_maintainer (self.pkg.changes["maintainer"])
-        except ParseMaintError, msg:
+        except ParseMaintError as msg:
             self.rejects.append("%s: Maintainer field ('%s') failed to parse: %s" \
                    % (filename, self.pkg.changes["maintainer"], msg))
 
@@ -619,7 +619,7 @@ class Upload(object):
              self.pkg.changes["changedbyname"],
              self.pkg.changes["changedbyemail"]) = \
                    fix_maintainer (self.pkg.changes.get("changed-by", ""))
-        except ParseMaintError, msg:
+        except ParseMaintError as msg:
             self.pkg.changes["changedby822"] = ""
             self.pkg.changes["changedby2047"] = ""
             self.pkg.changes["changedbyname"] = ""
@@ -800,7 +800,7 @@ class Upload(object):
                         else:
                             entry["built-using"].append( (bu_so[0].source, bu_so[0].version, ) )
 
-            except ValueError, e:
+            except ValueError as e:
                 self.rejects.append("%s: Cannot parse Built-Using field: %s" % (f, str(e)))
 
 
@@ -1046,7 +1046,7 @@ class Upload(object):
                    or (dbc.in_queue is not None
                        and dbc.in_queue.queue_name not in ["unchecked", "newstage"]):
                 self.rejects.append("%s file already known to dak" % base_filename)
-        except NoResultFound, e:
+        except NoResultFound as e:
             # not known, good
             pass
 
@@ -1163,9 +1163,9 @@ class Upload(object):
         except CantOpenError:
             if not action:
                 return False, "%s: can't read file." % (dsc_filename)
-        except ParseChangesError, line:
+        except ParseChangesError as line:
             return False, "%s: parse error, can't grok: %s." % (dsc_filename, line)
-        except InvalidDscError, line:
+        except InvalidDscError as line:
             return False, "%s: syntax error on line %s." % (dsc_filename, line)
         except ChangesUnicodeError:
             return False, "%s: dsc file not proper utf-8." % (dsc_filename)
@@ -1199,10 +1199,10 @@ class Upload(object):
         except NoFilesFieldError:
             self.rejects.append("%s: no Files: field." % (dsc_filename))
             return False
-        except UnknownFormatError, format:
+        except UnknownFormatError as format:
             self.rejects.append("%s: unknown format '%s'." % (dsc_filename, format))
             return False
-        except ParseChangesError, line:
+        except ParseChangesError as line:
             self.rejects.append("%s: parse error, can't grok: %s." % (dsc_filename, line))
             return False
 
@@ -1232,7 +1232,7 @@ class Upload(object):
         try:
             # We ignore the return value
             fix_maintainer(self.pkg.dsc["maintainer"])
-        except ParseMaintError, msg:
+        except ParseMaintError as msg:
             self.rejects.append("%s: Maintainer field ('%s') failed to parse: %s" \
                                  % (dsc_filename, self.pkg.dsc["maintainer"], msg))
 
@@ -1325,7 +1325,7 @@ class Upload(object):
         # Extract the source
         try:
             unpacked = UnpackedSource(dsc_filename)
-        except Exception, e:
+        except Exception as e:
             self.rejects.append("'dpkg-source -x' failed for %s. (%s)" % (dsc_filename, str(e)))
             return
 
@@ -1376,7 +1376,7 @@ class Upload(object):
 
         try:
             shutil.rmtree(tmpdir)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EACCES:
                 print "foobar"
                 utils.fubar("%s: couldn't remove tmp dir for source tree." % (self.pkg.dsc["source"]))
@@ -1389,7 +1389,7 @@ class Upload(object):
             if result != 0:
                 utils.fubar("'%s' failed with result %s." % (cmd, result))
             shutil.rmtree(tmpdir)
-        except Exception, e:
+        except Exception as e:
             print "foobar2 (%s)" % e
             utils.fubar("%s: couldn't remove tmp dir for source tree." % (self.pkg.dsc["source"]))
 
@@ -1562,7 +1562,7 @@ class Upload(object):
 
         try:
             lintiantags = yaml.load(sourcecontent)['lintian']
-        except yaml.YAMLError, msg:
+        except yaml.YAMLError as msg:
             utils.fubar("Can not read the lintian tags file %s, YAML error: %s." % (tagfile, msg))
             return
 
@@ -1868,7 +1868,7 @@ class Upload(object):
         sourcecontent = sourcefile.read()
         try:
             transitions = yaml.load(sourcecontent)
-        except yaml.YAMLError, msg:
+        except yaml.YAMLError as msg:
             # This shouldn't happen, there is a wrapper to edit the file which
             # checks it, but we prefer to be safe than ending up rejecting
             # everything.
@@ -2343,7 +2343,7 @@ distribution."""
 
             try:
                 dest_fd = os.open(dest_file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
-            except OSError, e:
+            except OSError as e:
                 # File exists?  Let's find a new name by adding a number
                 if e.errno == errno.EEXIST:
                     try:
@@ -2357,7 +2357,7 @@ distribution."""
                     # Make sure we really got it
                     try:
                         dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
-                    except OSError, e:
+                    except OSError as e:
                         # Likewise
                         utils.warn("**WARNING** failed to claim %s in the reject directory." % (file_entry))
                         return

@@ -142,7 +142,7 @@ def main():
     if not Options["No-Action"]:
         try:
             Logger = daklog.Logger("process-policy")
-        except CantOpenError, e:
+        except CantOpenError as e:
             Logger = None
 
     # Find policy queue

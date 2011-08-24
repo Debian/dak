@@ -105,7 +105,7 @@ GPRINT:avgd%i:avg\\: %%.0lf\\j
     rrd_args += extra_args
     try:
         ret = rrdtool.graph(*rrd_args)
-    except rrdtool.error, e:
+    except rrdtool.error as e:
         print('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e))
 
 def graph_normal(rrd_dir, image_dir, name, extra_args, graph, title, start, year_lines=False):
@@ -157,7 +157,7 @@ GPRINT:avgds0:avg\\: %%.0lf\\j
     rrd_args += extra_args
     try:
         ret = rrdtool.graph(*rrd_args)
-    except rrdtool.error, e:
+    except rrdtool.error as e:
         print('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e))
 
 ################################################################################

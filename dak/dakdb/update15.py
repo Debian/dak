@@ -79,6 +79,6 @@ def do_update(self):
         c.execute("UPDATE config SET value = '15' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
         raise DBUpdateError, "Unable to apply source format update 15, rollback issued. Error message : %s" % (str(msg))

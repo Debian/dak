@@ -818,7 +818,7 @@ class BuildQueue(object):
                     Logger.log(["I: Removing %s from the queue" % o.fullpath])
                     os.unlink(o.fullpath)
                     killdb = True
-            except OSError, e:
+            except OSError as e:
                 # If it wasn't there, don't worry
                 if e.errno == ENOENT:
                     killdb = True
@@ -3684,7 +3684,7 @@ class DBConn(object):
             self.__setuptables()
             self.__setupmappers()
 
-        except OperationalError, e:
+        except OperationalError as e:
             import utils
             utils.fubar("Cannot connect to database (%s)" % str(e))
 

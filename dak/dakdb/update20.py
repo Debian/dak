@@ -95,6 +95,6 @@ def do_update(self):
         c.execute("UPDATE config SET value = '20' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.InternalError, msg:
+    except psycopg2.InternalError as msg:
         self.db.rollback()
         raise DBUpdateError, "Unable to apply debversion update 20, rollback issued. Error message : %s" % (str(msg))

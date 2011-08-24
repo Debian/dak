@@ -225,7 +225,7 @@ def export_files(session, pool, clpool):
                         os.link(version, suite)
                         stats['created'] += 1
             unpacked.cleanup()
-        except Exception, e:
+        except Exception as e:
             print 'make-changelog: unable to unpack %s\n%s' % (p, e)
             stats['errors'] += 1
 

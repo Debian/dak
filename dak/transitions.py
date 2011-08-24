@@ -135,7 +135,7 @@ def load_transitions(trans_file):
     failure = False
     try:
         trans = yaml.load(sourcecontent)
-    except yaml.YAMLError, exc:
+    except yaml.YAMLError as exc:
         # Someone fucked it up
         print "ERROR: %s" % (exc)
         return None
@@ -225,7 +225,7 @@ def lock_file(f):
         try:
             fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             return lock_fd
-        except OSError, e:
+        except OSError as e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
                 print "Unable to get lock for %s (try %d of 10)" % \
                         (file, retry+1)
@@ -589,7 +589,7 @@ def main():
     if Options["import"]:
         try:
             write_transitions_from_file(Options["import"])
-        except TransitionsError, m:
+        except TransitionsError as m:
             print m
             sys.exit(2)
         sys.exit(0)

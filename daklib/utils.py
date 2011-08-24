@@ -350,7 +350,7 @@ def check_size(where, files):
     for f in files.keys():
         try:
             entry = os.stat(f)
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno == 2:
                 # TODO: This happens when the file is in the pool.
                 continue
@@ -1549,7 +1549,7 @@ def get_changes_files(from_dir):
         # Much of the rest of p-u/p-a depends on being in the right place
         os.chdir(from_dir)
         changes_files = [x for x in os.listdir(from_dir) if x.endswith('.changes')]
-    except OSError, e:
+    except OSError as e:
         fubar("Failed to read list from directory %s (%s)" % (from_dir, e))
 
     return changes_files
@@ -1581,7 +1581,7 @@ def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/w
     try:
         f = open(file)
         lines = f.readlines()
-    except IOError, e:
+    except IOError as e:
         print "Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file
 	lines = []
     wnpp = {}

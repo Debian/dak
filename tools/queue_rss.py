@@ -103,7 +103,7 @@ def parse_leave_reason(fname):
 
     try:
         f = open(fname)
-    except IOError, e:
+    except IOError as e:
         sys.stderr.write("Can't open %s: %s\n" % (fname, e))
         return {}
 
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     try:
         status.feed_in.write_xml(file(feed_in_file, "w+"), "utf-8")
         status.feed_out.write_xml(file(feed_out_file, "w+"), "utf-8")
-    except IOError, why:
+    except IOError as why:
         sys.stderr.write("Unable to write feeds: %s\n", why)
         sys.exit(1)
 
@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
     try:
         cPickle.dump(status, open(status_db, "w+"))
-    except IOError, why:
+    except IOError as why:
         sys.stderr.write("Unable to save status: %s\n", why)
         sys.exit(1)
 

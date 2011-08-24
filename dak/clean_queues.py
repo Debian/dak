@@ -100,7 +100,7 @@ def init (cnf):
 
     try:
         os.chdir(incoming)
-    except OSError, e:
+    except OSError as e:
         utils.fubar("Cannot chdir to %s" % incoming)
 
 # Remove a file to the morgue
