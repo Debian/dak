@@ -280,7 +280,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 def main():
     global Cnf, Options, Logger
 
-    os.umask(0002)
+    os.umask(0o002)
 
     Cnf = utils.get_conf()
     Arguments = [ ('h', "help", "Generate-Index-Diffs::Options::Help"),

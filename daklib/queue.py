@@ -2225,7 +2225,7 @@ distribution."""
                 filename = "%s/%s" % (cnf["Dir::BTSVersionTrack"],
                                       self.pkg.changes_file[:-8]+".versions")
                 os.rename(temp_filename, filename)
-                os.chmod(filename, 0644)
+                os.chmod(filename, 0o644)
 
             # Write out the binary -> source mapping.
             (fd, temp_filename) = utils.temp_filename(cnf["Dir::BTSVersionTrack"], prefix=".")
@@ -2240,7 +2240,7 @@ distribution."""
             filename = "%s/%s" % (cnf["Dir::BTSVersionTrack"],
                                   self.pkg.changes_file[:-8]+".debinfo")
             os.rename(temp_filename, filename)
-            os.chmod(filename, 0644)
+            os.chmod(filename, 0o644)
 
         session.commit()
 
@@ -2342,7 +2342,7 @@ distribution."""
             dest_file = os.path.join(cnf["Dir::Reject"], file_entry)
 
             try:
-                dest_fd = os.open(dest_file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
+                dest_fd = os.open(dest_file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o644)
             except OSError as e:
                 # File exists?  Let's find a new name by adding a number
                 if e.errno == errno.EEXIST:
@@ -2356,7 +2356,7 @@ distribution."""
 
                     # Make sure we really got it
                     try:
-                        dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
+                        dest_fd = os.open(dest_file, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0o644)
                     except OSError as e:
                         # Likewise
                         utils.warn("**WARNING** failed to claim %s in the reject directory." % (file_entry))
@@ -2365,7 +2365,7 @@ distribution."""
                     raise
             # If we got here, we own the destination file, so we can
             # safely overwrite it.
-            utils.move(file_entry, dest_file, 1, perms=0660)
+            utils.move(file_entry, dest_file, 1, perms=0o660)
             os.close(dest_fd)
 
     ###########################################################################
@@ -2431,7 +2431,7 @@ distribution."""
         # so let's just raise an exception ...
         if os.path.exists(reason_filename):
             os.unlink(reason_filename)
-        reason_fd = os.open(reason_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0644)
+        reason_fd = os.open(reason_filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0o644)
 
         rej_template = os.path.join(cnf["Dir::Templates"], "queue.rejected")
 

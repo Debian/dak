@@ -58,7 +58,7 @@ class Holding(object):
 
         dest = os.path.join(self.holding_dir, base_filename)
         try:
-            fd = os.open(dest, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0640)
+            fd = os.open(dest, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o640)
             os.close(fd)
         except OSError as e:
             # Shouldn't happen, but will if, for example, someone lists a

@@ -687,7 +687,7 @@ def send_mail (message, filename=""):
                     os.unlink (filename);
                 return;
 
-        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0700);
+        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0o700);
         os.write (fd, message_raw.as_string(True));
         os.close (fd);
 
@@ -712,14 +712,14 @@ def poolify (source, component):
 
 ################################################################################
 
-def move (src, dest, overwrite = 0, perms = 0664):
+def move (src, dest, overwrite = 0, perms = 0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
         dest_dir = os.path.dirname(dest)
     if not os.path.exists(dest_dir):
         umask = os.umask(00000)
-        os.makedirs(dest_dir, 02775)
+        os.makedirs(dest_dir, 0o2775)
         os.umask(umask)
     #print "Moving %s to %s..." % (src, dest)
     if os.path.exists(dest) and os.path.isdir(dest):
@@ -735,14 +735,14 @@ def move (src, dest, overwrite = 0, perms = 0664):
     os.chmod(dest, perms)
     os.unlink(src)
 
-def copy (src, dest, overwrite = 0, perms = 0664):
+def copy (src, dest, overwrite = 0, perms = 0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
         dest_dir = os.path.dirname(dest)
     if not os.path.exists(dest_dir):
         umask = os.umask(00000)
-        os.makedirs(dest_dir, 02775)
+        os.makedirs(dest_dir, 0o2775)
         os.umask(umask)
     #print "Copying %s to %s..." % (src, dest)
     if os.path.exists(dest) and os.path.isdir(dest):

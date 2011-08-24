@@ -319,7 +319,7 @@ def temp_transitions_file(transitions):
     """
 
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Dir::TempPath"])
-    os.chmod(path, 0644)
+    os.chmod(path, 0o644)
     f = open(path, "w")
     yaml.dump(transitions, f, default_flow_style=False)
     return path

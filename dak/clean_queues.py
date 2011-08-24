@@ -86,7 +86,7 @@ def init (cnf):
     # Ensure a directory exists to remove files to
     if not Options["No-Action"]:
         if not os.path.exists(del_dir):
-            os.makedirs(del_dir, 02775)
+            os.makedirs(del_dir, 0o2775)
         if not os.path.isdir(del_dir):
             utils.fubar("%s must be a directory." % (del_dir))
 
@@ -118,7 +118,7 @@ def remove (from_dir, f):
         if os.path.exists(dest_filename):
             dest_filename = utils.find_next_free(dest_filename, 10)
             Logger.log(["change destination file name", os.path.basename(dest_filename)])
-        utils.move(f, dest_filename, 0660)
+        utils.move(f, dest_filename, 0o660)
     else:
         Logger.log(["skipping file because of permission problem", fname])
         utils.warn("skipping '%s', permission denied." % fname)
