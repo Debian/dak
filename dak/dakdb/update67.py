@@ -191,9 +191,9 @@ SET search_path = public, pg_temp""");
         c.execute("CREATE TRIGGER trigger_src_associations_audit AFTER INSERT OR DELETE ON src_associations FOR EACH ROW EXECUTE PROCEDURE trigger_binsrc_assoc_update()")
         c.execute("CREATE TRIGGER trigger_override_audit AFTER UPDATE ON override FOR EACH ROW EXECUTE PROCEDURE trigger_override_update()")
 
-        c.execute("UPDATE config SET value = '66' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '67' WHERE name = 'db_revision'")
         self.db.commit()
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        raise DBUpdateError('Unable to apply sick update 66, rollback issued. Error message : %s' % (str(msg)))
+        raise DBUpdateError('Unable to apply sick update 67, rollback issued. Error message : %s' % (str(msg)))
