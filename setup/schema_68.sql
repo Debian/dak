@@ -10,13 +10,13 @@ SET client_min_messages = warning;
 SET escape_string_warning = off;
 
 --
--- Name: plperl; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: dak
+-- Name: audit; Type: SCHEMA; Schema: -; Owner: dak
 --
 
-CREATE OR REPLACE PROCEDURAL LANGUAGE plperl;
+CREATE SCHEMA audit;
 
 
-ALTER PROCEDURAL LANGUAGE plperl OWNER TO dak;
+ALTER SCHEMA audit OWNER TO dak;
 
 --
 -- Name: plpgsql; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: dak
@@ -26,15 +26,6 @@ CREATE OR REPLACE PROCEDURAL LANGUAGE plpgsql;
 
 
 ALTER PROCEDURAL LANGUAGE plpgsql OWNER TO dak;
-
---
--- Name: plpythonu; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: dak
---
-
-CREATE OR REPLACE PROCEDURAL LANGUAGE plpythonu;
-
-
-ALTER PROCEDURAL LANGUAGE plpythonu OWNER TO dak;
 
 SET search_path = public, pg_catalog;
 
@@ -163,83 +154,6 @@ ALTER FUNCTION public.debversion_cmp(version1 debversion, version2 debversion) O
 --
 
 COMMENT ON FUNCTION debversion_cmp(version1 debversion, version2 debversion) IS 'Compare Debian versions';
-
-
---
--- Name: debversion_compare_single(text, text); Type: FUNCTION; Schema: public; Owner: dak
---
-
-CREATE FUNCTION debversion_compare_single(version1 text, version2 text) RETURNS integer
-    LANGUAGE plperl IMMUTABLE STRICT
-    AS $_$
-     sub order{
-	  my ($x) = @_;
-	  ##define order(x) ((x) == '~' ? -1 	  #           : cisdigit((x)) ? 0 	  #           : !(x) ? 0 	  #           : cisalpha((x)) ? (x) 	  #           : (x) + 256)
-	  # This comparison is out of dpkg's order to avoid
-	  # comparing things to undef and triggering warnings.
-	  if (not defined $x or not length $x) {
-	       return 0;
-	  }
-	  elsif ($x eq '~') {
-	       return -1;
-	  }
-	  elsif ($x =~ /^\d$/) {
-	       return 0;
-	  }
-	  elsif ($x =~ /^[A-Z]$/i) {
-	       return ord($x);
-	  }
-	  else {
-	       return ord($x) + 256;
-	  }
-     }
-
-     sub next_elem(\@){
-	  my $a = shift;
-	  return @{$a} ? shift @{$a} : undef;
-     }
-     my ($val, $ref) = @_;
-     $val = "" if not defined $val;
-     $ref = "" if not defined $ref;
-     my @val = split //,$val;
-     my @ref = split //,$ref;
-     my $vc = next_elem @val;
-     my $rc = next_elem @ref;
-     while (defined $vc or defined $rc) {
-	  my $first_diff = 0;
-	  while ((defined $vc and $vc !~ /^\d$/) or
-		 (defined $rc and $rc !~ /^\d$/)) {
-	       my $vo = order($vc); my $ro = order($rc);
-	       # Unlike dpkg's verrevcmp, we only return 1 or -1 here.
-	       return (($vo - $ro > 0) ? 1 : -1) if $vo != $ro;
-	       $vc = next_elem @val; $rc = next_elem @ref;
-	  }
-	  while (defined $vc and $vc eq '0') {
-	       $vc = next_elem @val;
-	  }
-	  while (defined $rc and $rc eq '0') {
-	       $rc = next_elem @ref;
-	  }
-	  while (defined $vc and $vc =~ /^\d$/ and
-		 defined $rc and $rc =~ /^\d$/) {
-	       $first_diff = ord($vc) - ord($rc) if !$first_diff;
-	       $vc = next_elem @val; $rc = next_elem @ref;
-	  }
-	  return 1 if defined $vc and $vc =~ /^\d$/;
-	  return -1 if defined $rc and $rc =~ /^\d$/;
-	  return (($first_diff  > 0) ? 1 : -1) if $first_diff;
-     }
-     return 0;
-$_$;
-
-
-ALTER FUNCTION public.debversion_compare_single(version1 text, version2 text) OWNER TO dak;
-
---
--- Name: FUNCTION debversion_compare_single(version1 text, version2 text); Type: COMMENT; Schema: public; Owner: dak
---
-
-COMMENT ON FUNCTION debversion_compare_single(version1 text, version2 text) IS 'Compare upstream or revision parts of Debian versions';
 
 
 --
@@ -489,6 +403,152 @@ CREATE FUNCTION tfunc_set_modified() RETURNS trigger
 ALTER FUNCTION public.tfunc_set_modified() OWNER TO dak;
 
 --
+-- Name: trigger_binsrc_assoc_update(); Type: FUNCTION; Schema: public; Owner: dak
+--
+
+CREATE FUNCTION trigger_binsrc_assoc_update() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO public, pg_temp
+    AS $$
+DECLARE
+  v_data RECORD;
+
+  v_package audit.package_changes.package%TYPE;
+  v_version audit.package_changes.version%TYPE;
+  v_architecture audit.package_changes.architecture%TYPE;
+  v_suite audit.package_changes.suite%TYPE;
+  v_event audit.package_changes.event%TYPE;
+  v_priority audit.package_changes.priority%TYPE;
+  v_component audit.package_changes.component%TYPE;
+  v_section audit.package_changes.section%TYPE;
+BEGIN
+  CASE TG_OP
+    WHEN 'INSERT' THEN v_event := 'I'; v_data := NEW;
+    WHEN 'DELETE' THEN v_event := 'D'; v_data := OLD;
+    ELSE RAISE EXCEPTION 'trigger called for invalid operation (%)', TG_OP;
+  END CASE;
+
+  SELECT suite_name INTO STRICT v_suite FROM suite WHERE id = v_data.suite;
+
+  CASE TG_TABLE_NAME
+    WHEN 'bin_associations' THEN
+      SELECT package, version, arch_string
+        INTO STRICT v_package, v_version, v_architecture
+        FROM binaries LEFT JOIN architecture ON (architecture.id = binaries.architecture)
+        WHERE binaries.id = v_data.bin;
+
+      SELECT component.name, priority.priority, section.section
+        INTO v_component, v_priority, v_section
+        FROM override
+             JOIN override_type ON (override.type = override_type.id)
+             JOIN priority ON (priority.id = override.priority)
+             JOIN section ON (section.id = override.section)
+             JOIN component ON (override.component = component.id)
+             JOIN suite ON (suite.id = override.suite)
+        WHERE override_type.type != 'dsc'
+              AND override.package = v_package AND suite.id = v_data.suite;
+
+    WHEN 'src_associations' THEN
+      SELECT source, version
+        INTO STRICT v_package, v_version
+        FROM source WHERE source.id = v_data.source;
+      v_architecture := 'source';
+
+      SELECT component.name, priority.priority, section.section
+        INTO v_component, v_priority, v_section
+        FROM override
+             JOIN override_type ON (override.type = override_type.id)
+             JOIN priority ON (priority.id = override.priority)
+             JOIN section ON (section.id = override.section)
+             JOIN component ON (override.component = component.id)
+             JOIN suite ON (suite.id = override.suite)
+        WHERE override_type.type = 'dsc'
+              AND override.package = v_package AND suite.id = v_data.suite;
+
+    ELSE RAISE EXCEPTION 'trigger called for invalid table (%)', TG_TABLE_NAME;
+  END CASE;
+
+  INSERT INTO audit.package_changes
+    (package, version, architecture, suite, event, priority, component, section)
+    VALUES (v_package, v_version, v_architecture, v_suite, v_event, v_priority, v_component, v_section);
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trigger_binsrc_assoc_update() OWNER TO dak;
+
+--
+-- Name: trigger_override_update(); Type: FUNCTION; Schema: public; Owner: dak
+--
+
+CREATE FUNCTION trigger_override_update() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO public, pg_temp
+    AS $$
+DECLARE
+  v_src_override_id override_type.id%TYPE;
+
+  v_priority audit.package_changes.priority%TYPE := NULL;
+  v_component audit.package_changes.component%TYPE := NULL;
+  v_section audit.package_changes.section%TYPE := NULL;
+BEGIN
+
+  IF TG_TABLE_NAME != 'override' THEN
+    RAISE EXCEPTION 'trigger called for invalid table (%)', TG_TABLE_NAME;
+  END IF;
+  IF TG_OP != 'UPDATE' THEN
+    RAISE EXCEPTION 'trigger called for invalid event (%)', TG_OP;
+  END IF;
+
+  IF OLD.package != NEW.package OR OLD.type != NEW.type OR OLD.suite != NEW.suite THEN
+    RETURN NEW;
+  END IF;
+
+  IF OLD.priority != NEW.priority THEN
+    SELECT priority INTO STRICT v_priority FROM priority WHERE id = NEW.priority;
+  END IF;
+
+  IF OLD.component != NEW.component THEN
+    SELECT name INTO STRICT v_component FROM component WHERE id = NEW.component;
+  END IF;
+
+  IF OLD.section != NEW.section THEN
+    SELECT section INTO STRICT v_section FROM section WHERE id = NEW.section;
+  END IF;
+
+  -- Find out if we're doing src or binary overrides
+  SELECT id INTO STRICT v_src_override_id FROM override_type WHERE type = 'dsc';
+  IF OLD.type = v_src_override_id THEN
+    -- Doing a src_association link
+    INSERT INTO audit.package_changes
+      (package, version, architecture, suite, event, priority, component, section)
+      SELECT NEW.package, source.version, 'source', suite.suite_name, 'U', v_priority, v_component, v_section
+        FROM source
+          JOIN src_associations ON (source.id = src_associations.source)
+          JOIN suite ON (suite.id = src_associations.suite)
+        WHERE source.source = NEW.package AND src_associations.suite = NEW.suite;
+  ELSE
+    -- Doing a bin_association link
+    INSERT INTO audit.package_changes
+      (package, version, architecture, suite, event, priority, component, section)
+      SELECT NEW.package, binaries.version, architecture.arch_string, suite.suite_name, 'U', v_priority, v_component, v_section
+        FROM binaries
+          JOIN bin_associations ON (binaries.id = bin_associations.bin)
+          JOIN architecture ON (architecture.id = binaries.architecture)
+          JOIN suite ON (suite.id = bin_associations.suite)
+        WHERE binaries.package = NEW.package AND bin_associations.suite = NEW.suite;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trigger_override_update() OWNER TO dak;
+
+--
 -- Name: >; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -731,6 +791,31 @@ CREATE CAST (text AS public.debversion) WITHOUT FUNCTION AS ASSIGNMENT;
 CREATE CAST (character varying AS public.debversion) WITHOUT FUNCTION AS ASSIGNMENT;
 
 
+SET search_path = audit, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: package_changes; Type: TABLE; Schema: audit; Owner: dak; Tablespace: 
+--
+
+CREATE TABLE package_changes (
+    changedate timestamp without time zone DEFAULT now() NOT NULL,
+    package text NOT NULL,
+    version public.debversion NOT NULL,
+    architecture text NOT NULL,
+    suite text NOT NULL,
+    event text NOT NULL,
+    priority text,
+    component text,
+    section text
+);
+
+
+ALTER TABLE audit.package_changes OWNER TO dak;
+
 SET search_path = public, pg_catalog;
 
 --
@@ -746,10 +831,6 @@ CREATE SEQUENCE bin_associations_id_seq
 
 
 ALTER TABLE public.bin_associations_id_seq OWNER TO dak;
-
-SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: bin_associations; Type: TABLE; Schema: public; Owner: dak; Tablespace: 
@@ -3185,6 +3266,20 @@ CREATE INDEX binaries_maintainer ON binaries USING btree (maintainer);
 
 
 --
+-- Name: binaries_metadata_depends; Type: INDEX; Schema: public; Owner: dak; Tablespace: 
+--
+
+CREATE INDEX binaries_metadata_depends ON binaries_metadata USING btree (bin_id) WHERE (key_id = 44);
+
+
+--
+-- Name: binaries_metadata_provides; Type: INDEX; Schema: public; Owner: dak; Tablespace: 
+--
+
+CREATE INDEX binaries_metadata_provides ON binaries_metadata USING btree (bin_id) WHERE (key_id = 51);
+
+
+--
 -- Name: binaries_package_key; Type: INDEX; Schema: public; Owner: dak; Tablespace: 
 --
 
@@ -3756,6 +3851,27 @@ CREATE TRIGGER modified_uid BEFORE UPDATE ON uid FOR EACH ROW EXECUTE PROCEDURE 
 --
 
 CREATE TRIGGER modified_upload_blocks BEFORE UPDATE ON upload_blocks FOR EACH ROW EXECUTE PROCEDURE tfunc_set_modified();
+
+
+--
+-- Name: trigger_bin_associations_audit; Type: TRIGGER; Schema: public; Owner: dak
+--
+
+CREATE TRIGGER trigger_bin_associations_audit AFTER INSERT OR DELETE ON bin_associations FOR EACH ROW EXECUTE PROCEDURE trigger_binsrc_assoc_update();
+
+
+--
+-- Name: trigger_override_audit; Type: TRIGGER; Schema: public; Owner: dak
+--
+
+CREATE TRIGGER trigger_override_audit AFTER UPDATE ON override FOR EACH ROW EXECUTE PROCEDURE trigger_override_update();
+
+
+--
+-- Name: trigger_src_associations_audit; Type: TRIGGER; Schema: public; Owner: dak
+--
+
+CREATE TRIGGER trigger_src_associations_audit AFTER INSERT OR DELETE ON src_associations FOR EACH ROW EXECUTE PROCEDURE trigger_binsrc_assoc_update();
 
 
 --
@@ -4375,6 +4491,18 @@ ALTER TABLE ONLY version_check
 
 
 --
+-- Name: audit; Type: ACL; Schema: -; Owner: dak
+--
+
+REVOKE ALL ON SCHEMA audit FROM PUBLIC;
+REVOKE ALL ON SCHEMA audit FROM dak;
+GRANT ALL ON SCHEMA audit TO dak;
+GRANT USAGE ON SCHEMA audit TO PUBLIC;
+GRANT USAGE ON SCHEMA audit TO ftpteam;
+GRANT USAGE ON SCHEMA audit TO ftpmaster;
+
+
+--
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -4383,6 +4511,20 @@ REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
+
+SET search_path = audit, pg_catalog;
+
+--
+-- Name: package_changes; Type: ACL; Schema: audit; Owner: dak
+--
+
+REVOKE ALL ON TABLE package_changes FROM PUBLIC;
+REVOKE ALL ON TABLE package_changes FROM dak;
+GRANT ALL ON TABLE package_changes TO dak;
+GRANT SELECT ON TABLE package_changes TO PUBLIC;
+
+
+SET search_path = public, pg_catalog;
 
 --
 -- Name: bin_associations_id_seq; Type: ACL; Schema: public; Owner: dak
@@ -5587,5 +5729,5 @@ GRANT SELECT ON TABLE version_checks TO PUBLIC;
 --
 
 -- Set schema version
-INSERT INTO config (name, value) VALUES ('db_revision', 65);
+INSERT INTO config (name, value) VALUES ('db_revision', 68);
 
