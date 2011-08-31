@@ -126,13 +126,10 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
 
         statement = '''
             SELECT b.id, b.package, s.source, c.name as component,
-                bmd.value as depends, bmp.value as provides
+                (SELECT bmd.value FROM binaries_metadata bmd WHERE bmd.bin_id = b.id AND bmd.key_id = :metakey_d_id) AS depends,
+                (SELECT bmp.value FROM binaries_metadata bmp WHERE bmp.bin_id = b.id AND bmp.key_id = :metakey_p_id) AS provides
                 FROM binaries b
                 JOIN bin_associations ba ON b.id = ba.bin AND ba.suite = :suite_id
-                LEFT OUTER JOIN binaries_metadata bmd
-                    ON b.id = bmd.bin_id AND bmd.key_id = :metakey_d_id
-                LEFT OUTER JOIN binaries_metadata bmp
-                    ON b.id = bmp.bin_id AND bmp.key_id = :metakey_p_id
                 JOIN source s ON b.source = s.id
                 JOIN files f ON b.file = f.id
                 JOIN location l ON f.location = l.id
