@@ -196,4 +196,4 @@ SET search_path = public, pg_temp""");
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        raise DBUpdateError, 'Unable to apply sick update 66, rollback issued. Error message : %s' % (str(msg))
+        raise DBUpdateError('Unable to apply sick update 66, rollback issued. Error message : %s' % (str(msg)))
