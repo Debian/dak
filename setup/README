@@ -41,6 +41,9 @@ Create the additional roles:
 # createuser -S -R -D ftpmaster
 # createuser -S -R -D ftpteam
 # createuser -S -R -D ftptrainee
+# psql -d projectb -c "ALTER GROUP ftpteam ADD USER ftpmaster"
+# psql -d projectb -c "ALTER GROUP ftptrainee ADD USER ftpmaster"
+# psql -d projectb -c "ALTER GROUP ftptrainee ADD USER ftpteam"
 
 Create an empty database with SQL_ASCII encoding:
 # createdb -T template0 -E SQL_ASCII -O dak projectb
