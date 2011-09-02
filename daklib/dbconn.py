@@ -2823,6 +2823,21 @@ def add_deb_to_db(u, filename, session=None):
 
     # Find source id
     bin_sources = get_sources_from_name(entry["source package"], entry["source version"], session=session)
+
+    # If we couldn't find anything and the upload contains Arch: source,
+    # fall back to trying the source package, source version uploaded
+    # This maintains backwards compatibility with previous dak behaviour
+    # and deals with slightly broken binary debs which don't properly
+    # declare their source package name
+    if len(bin_sources) == 0:
+        if u.pkg.changes["architecture"].has_key("source") \
+           and u.pkg.dsc.has_key("source") and u.pkg.dsc.has_key("version"):
+            bin_sources = get_sources_from_name(u.pkg.dsc["source"], u.pkg.dsc["version"], session=session)
+
+    # If we couldn't find a source here, we reject
+    # TODO: Fix this so that it doesn't kill process-upload and instead just
+    #       performs a reject.  To be honest, we should probably spot this
+    #       *much* earlier than here
     if len(bin_sources) != 1:
         raise NoSourceFieldError("Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
                                   (bin.package, bin.version, entry["architecture"],
