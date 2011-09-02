@@ -112,11 +112,9 @@ def main ():
     d = DBConn()
     session = d.session()
 
-    for suite_name in cnf.SubTree("Check-Overrides::OverrideSuites").List():
-        suite = get_suite(suite_name.lower(), session)
-        if not suite:
-            utils.fubar('Suite %s not found' % suite_name)
+    for suite in session.query(Suite).filter(Suite.overrideprocess==True):
         if suite.untouchable:
+            print "Skipping %s as it is marked as untouchable" % suite.suite_name
             continue
 
         sys.stderr.write("Processing %s...\n" % (suite.suite_name))
