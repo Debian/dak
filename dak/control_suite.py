@@ -421,14 +421,16 @@ def main ():
                     utils.fubar("Can only perform one action at a time.")
                 action = i
 
+                # Safety/Sanity check
+                if action == "set" and (not suite.allowcsset):
+                    if force:
+                        utils.warn("Would not normally allow setting suite %s (allowsetcs is FALSE), but --force used" % (suite_name))
+                    else:
+                        utils.fubar("Will not reset suite %s due to its database configuration (allowsetcs is FALSE)" % (suite_name))
+
     # Need an action...
     if action == None:
         utils.fubar("No action specified.")
-
-    # Safety/Sanity check
-    # XXX: This should be stored in the database
-    if action == "set" and suite_name not in ["testing", "squeeze-updates"]:
-        utils.fubar("Will not reset suite %s" % (suite_name))
 
     britney = False
     if action == "set" and cnf["Control-Suite::Options::Britney"]:
