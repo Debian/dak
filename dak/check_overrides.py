@@ -345,26 +345,25 @@ def main ():
     else:
         Logger = daklog.Logger("check-overrides", 1)
 
-    for osuite in cnf.SubTree("Check-Overrides::OverrideSuites").List():
-        if "1" != cnf["Check-Overrides::OverrideSuites::%s::Process" % osuite]:
-            continue
-
-        osuite = osuite.lower()
-
+    for suite in session.query(Suite).filter(Suite.overrideprocess==True):
         originosuite = None
-        originremark = ""
-        try:
-            originosuite = cnf["Check-Overrides::OverrideSuites::%s::OriginSuite" % osuite]
-            originosuite = originosuite.lower()
-            originremark = " taking missing from %s" % originosuite
-        except KeyError:
-            pass
+        originremark = ''
 
-        print "Processing %s%s..." % (osuite, originremark)
-        suiteobj = get_suite(osuite)
-        # Get a list of all suites that use the override file of 'osuite'
-        ocodename = suiteobj.codename
+        if suite.overrideorigin is not None:
+            originosuite = get_suite(suite.overrideorigin, session)
+            if originosuite is None:
+                utils.fubar("%s has an override origin suite of %s but it doesn't exist!" % (suite.suite_name, suite.overrideorigin))
+            originosuite = originosuite.suite_name
+            originremark = " taking missing from %s" % originosuite
+
+        print "Processing %s%s..." % (suite.suite_name, originremark)
+
+        # Get a list of all suites that use the override file of 'suite.suite_name' as
+        # well as the suite
+        ocodename = suite.codename
         suiteids = [x.suite_id for x in session.query(Suite).filter(Suite.overridecodename == ocodename).all()]
+        if suite.suite_id not in suiteids:
+            suiteids.append(suite.suite_id)
 
         if len(suiteids) < 1:
             utils.fubar("Couldn't find id's of all suites: %s" % suiteids)
@@ -381,9 +380,9 @@ def main ():
 
             for otype in otypes:
                 print "Processing %s [%s - %s]" \
-                    % (osuite, component_name, otype)
+                    % (suite.suite_name, component_name, otype)
                 sys.stdout.flush()
-                process(osuite, suiteids, originosuite, component_name, otype, session)
+                process(suite.suite_name, suiteids, originosuite, component_name, otype, session)
 
     Logger.close()
 
