@@ -71,9 +71,9 @@ $function$""")
 
         c.execute("ALTER TABLE suite ADD COLUMN include_long_description BOOLEAN NOT NULL DEFAULT 't'")
 
-        c.execute("UPDATE config SET value = '67' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '69' WHERE name = 'db_revision'")
         self.db.commit()
 
     except psycopg2.ProgrammingError, msg:
         self.db.rollback()
-        raise DBUpdateError, 'Unable to apply sick update 67, rollback issued. Error message : %s' % (str(msg))
+        raise DBUpdateError('Unable to apply sick update 69, rollback issued. Error message : %s' % (str(msg)))
