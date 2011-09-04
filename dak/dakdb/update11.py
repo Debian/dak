@@ -58,6 +58,6 @@ def do_update(self):
         c.execute("UPDATE config SET value = '11' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to apply process-new comments update, rollback issued. Error message : %s" % (str(msg))
+        raise DBUpdateError("Unable to apply process-new comments update, rollback issued. Error message : %s" % (str(msg)))

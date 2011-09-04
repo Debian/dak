@@ -135,7 +135,7 @@ def load_transitions(trans_file):
     failure = False
     try:
         trans = yaml.load(sourcecontent)
-    except yaml.YAMLError, exc:
+    except yaml.YAMLError as exc:
         # Someone fucked it up
         print "ERROR: %s" % (exc)
         return None
@@ -225,7 +225,7 @@ def lock_file(f):
         try:
             fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             return lock_fd
-        except OSError, e:
+        except OSError as e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
                 print "Unable to get lock for %s (try %d of 10)" % \
                         (file, retry+1)
@@ -297,7 +297,7 @@ def write_transitions_from_file(from_file):
     else:
         trans = load_transitions(from_file)
         if trans is None:
-            raise TransitionsError, "Unparsable transitions file %s" % (file)
+            raise TransitionsError("Unparsable transitions file %s" % (file))
         write_transitions(trans)
 
 ################################################################################
@@ -319,7 +319,7 @@ def temp_transitions_file(transitions):
     """
 
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Dir::TempPath"])
-    os.chmod(path, 0644)
+    os.chmod(path, 0o644)
     f = open(path, "w")
     yaml.dump(transitions, f, default_flow_style=False)
     return path
@@ -589,7 +589,7 @@ def main():
     if Options["import"]:
         try:
             write_transitions_from_file(Options["import"])
-        except TransitionsError, m:
+        except TransitionsError as m:
             print m
             sys.exit(2)
         sys.exit(0)

@@ -115,7 +115,7 @@ def open_file(filename, mode='r'):
     try:
         f = open(filename, mode)
     except IOError:
-        raise CantOpenError, filename
+        raise CantOpenError(filename)
     return f
 
 ################################################################################
@@ -172,7 +172,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
     lines = contents.splitlines(True)
 
     if len(lines) == 0:
-        raise ParseChangesError, "[Empty changes file]"
+        raise ParseChangesError("[Empty changes file]")
 
     # Reindex by line number so we can easily verify the format of
     # .dsc files...
@@ -190,7 +190,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
         line = indexed_lines[index]
         if line == "" and signing_rules == 1:
             if index != num_of_lines:
-                raise InvalidDscError, index
+                raise InvalidDscError(index)
             break
         slf = re_single_line_field.match(line)
         if slf:
@@ -204,7 +204,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
         mlf = re_multi_line_field.match(line)
         if mlf:
             if first == -1:
-                raise ParseChangesError, "'%s'\n [Multi-line field continuing on from nothing?]" % (line)
+                raise ParseChangesError("'%s'\n [Multi-line field continuing on from nothing?]" % (line))
             if first == 1 and changes[field] != "":
                 changes[field] += '\n'
             first = 0
@@ -223,7 +223,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
             changes["source-version"] = srcver.group(2)
 
     if error:
-        raise ParseChangesError, error
+        raise ParseChangesError(error)
 
     return changes
 
@@ -257,7 +257,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
     try:
         unicode(content, 'utf-8')
     except UnicodeError:
-        raise ChangesUnicodeError, "Changes file not proper utf-8"
+        raise ChangesUnicodeError("Changes file not proper utf-8")
     changes = parse_deb822(content, signing_rules, keyrings=keyrings)
 
 
@@ -272,7 +272,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
                 missingfields.append(keyword)
 
                 if len(missingfields):
-                    raise ParseChangesError, "Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields)
+                    raise ParseChangesError("Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields))
 
     return changes
 
@@ -350,7 +350,7 @@ def check_size(where, files):
     for f in files.keys():
         try:
             entry = os.stat(f)
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno == 2:
                 # TODO: This happens when the file is in the pool.
                 continue
@@ -559,7 +559,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
             else:
                 (md5, size, name) = s
         except ValueError:
-            raise ParseChangesError, i
+            raise ParseChangesError(i)
 
         if section == "":
             section = "-"
@@ -687,14 +687,14 @@ def send_mail (message, filename=""):
                     os.unlink (filename);
                 return;
 
-        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0700);
+        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0o700);
         os.write (fd, message_raw.as_string(True));
         os.close (fd);
 
     # Invoke sendmail
     (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
     if (result != 0):
-        raise SendmailFailedError, output
+        raise SendmailFailedError(output)
 
     # Clean up any temporary files
     if message:
@@ -712,14 +712,14 @@ def poolify (source, component):
 
 ################################################################################
 
-def move (src, dest, overwrite = 0, perms = 0664):
+def move (src, dest, overwrite = 0, perms = 0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
         dest_dir = os.path.dirname(dest)
     if not os.path.exists(dest_dir):
         umask = os.umask(00000)
-        os.makedirs(dest_dir, 02775)
+        os.makedirs(dest_dir, 0o2775)
         os.umask(umask)
     #print "Moving %s to %s..." % (src, dest)
     if os.path.exists(dest) and os.path.isdir(dest):
@@ -735,14 +735,14 @@ def move (src, dest, overwrite = 0, perms = 0664):
     os.chmod(dest, perms)
     os.unlink(src)
 
-def copy (src, dest, overwrite = 0, perms = 0664):
+def copy (src, dest, overwrite = 0, perms = 0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
         dest_dir = os.path.dirname(dest)
     if not os.path.exists(dest_dir):
         umask = os.umask(00000)
-        os.makedirs(dest_dir, 02775)
+        os.makedirs(dest_dir, 0o2775)
         os.umask(umask)
     #print "Copying %s to %s..." % (src, dest)
     if os.path.exists(dest) and os.path.isdir(dest):
@@ -1549,7 +1549,7 @@ def get_changes_files(from_dir):
         # Much of the rest of p-u/p-a depends on being in the right place
         os.chdir(from_dir)
         changes_files = [x for x in os.listdir(from_dir) if x.endswith('.changes')]
-    except OSError, e:
+    except OSError as e:
         fubar("Failed to read list from directory %s (%s)" % (from_dir, e))
 
     return changes_files
@@ -1581,7 +1581,7 @@ def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/w
     try:
         f = open(file)
         lines = f.readlines()
-    except IOError, e:
+    except IOError as e:
         print "Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file
 	lines = []
     wnpp = {}

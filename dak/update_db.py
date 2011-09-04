@@ -134,7 +134,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
             self.db = psycopg2.connect(connect_str)
 
-        except Exception, e:
+        except Exception as e:
             print "FATAL: Failed connect to database (%s)" % str(e)
             sys.exit(1)
 
@@ -171,7 +171,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
                 message = "updated database schema from %d to %d" % (database_revision, i+1)
                 print message
                 logger.log([message])
-            except DBUpdateError, e:
+            except DBUpdateError as e:
                 # Seems the update did not work.
                 print "Was unable to update database schema from %d to %d." % (database_revision, i+1)
                 print "The error message received was %s" % (e)
@@ -205,7 +205,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
                 fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             else:
                 utils.warn("Lock directory doesn't exist yet - not locking")
-        except IOError, e:
+        except IOError as e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
 

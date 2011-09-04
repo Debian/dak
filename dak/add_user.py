@@ -66,7 +66,7 @@ def HashPass(Password):
         Salt = Salt + SaltVals[ord(Rand.read(1)[0]) % len(SaltVals)]
     Pass = crypt.crypt(Password,Salt)
     if len(Pass) < 14:
-        raise "Password Error", "MD5 password hashing failed, not changing the password!"
+        raise RuntimeError("MD5 password hashing failed, not changing the password!")
     return Pass
 
 ################################################################################

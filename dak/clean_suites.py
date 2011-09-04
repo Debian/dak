@@ -128,6 +128,7 @@ SELECT s.id, s.file, f.filename
         (SELECT sa.source FROM src_associations sa)
    AND s.id NOT IN
         (SELECT b.source FROM binaries b)
+   AND s.id NOT IN (SELECT esr.src_id FROM extra_src_references esr)
    AND f.id NOT IN
         (SELECT bqf.fileid FROM build_queue_files bqf)""")
 
@@ -171,6 +172,7 @@ SELECT s.id, s.file, f.filename
 SELECT f.id, f.filename FROM source s, files f, dsc_files df
   WHERE f.last_used IS NOT NULL AND s.id = df.source AND df.file = f.id
     AND ((EXISTS (SELECT 1 FROM src_associations sa WHERE sa.source = s.id))
+      OR (EXISTS (SELECT 1 FROM extra_src_references esr WHERE esr.src_id = s.id))
       OR (EXISTS (SELECT 1 FROM binaries b WHERE b.source = s.id))
       OR (EXISTS (SELECT 1 FROM build_queue_files bqf WHERE bqf.fileid = s.file)))""")
 
@@ -424,7 +426,7 @@ def main():
             max_delete = int(cnf["Clean-Suites::Options::Maximum"])
             if max_delete < 1:
                 utils.fubar("If given, Maximum must be at least 1")
-        except ValueError, e:
+        except ValueError as e:
             utils.fubar("If given, Maximum must be an integer")
     else:
         max_delete = None

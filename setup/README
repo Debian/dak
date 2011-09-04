@@ -6,7 +6,7 @@ The following packages are needed for the database:
 and the following packages for dak itself:
  * python-psycopg2 python-sqlalchemy python-apt gnupg dpkg-dev lintian
    binutils-multiarch python-yaml less python-ldap python-pyrss2gen python-rrdtool
-   symlinks
+   symlinks python-debian
 
 (the schema assumes at least postgresql 9.0; ftpmaster in Debian currently uses
 the squeeze postgresql 9.0 backport)
@@ -41,6 +41,9 @@ Create the additional roles:
 # createuser -S -R -D ftpmaster
 # createuser -S -R -D ftpteam
 # createuser -S -R -D ftptrainee
+# psql -d projectb -c "ALTER GROUP ftpteam ADD USER ftpmaster"
+# psql -d projectb -c "ALTER GROUP ftptrainee ADD USER ftpmaster"
+# psql -d projectb -c "ALTER GROUP ftptrainee ADD USER ftpteam"
 
 Create an empty database with SQL_ASCII encoding:
 # createdb -T template0 -E SQL_ASCII -O dak projectb

@@ -90,15 +90,15 @@ def process_keyring(fullpath, secret=False):
         os.makedirs(keydir)
         if secret:
             # Make sure secret keyring directories are 0700
-            os.chmod(keydir, 0700)
+            os.chmod(keydir, 0o700)
 
     # Touch the file
     print "Creating %s ..." % (fullpath)
     file(fullpath, 'w')
     if secret:
-        os.chmod(fullpath, 0600)
+        os.chmod(fullpath, 0o600)
     else:
-        os.chmod(fullpath, 0644)
+        os.chmod(fullpath, 0o644)
 
 ######################################################################
 

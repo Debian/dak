@@ -183,7 +183,7 @@ CREATE VIEW obsolete_all_associations AS
         c.execute("UPDATE config SET value = '25' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.InternalError, msg:
+    except psycopg2.InternalError as msg:
         self.db.rollback()
-        raise DBUpdateError, "Database error, rollback issued. Error message : %s" % (str(msg))
+        raise DBUpdateError("Database error, rollback issued. Error message : %s" % (str(msg)))
 

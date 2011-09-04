@@ -173,7 +173,7 @@ RRA:MAX:0.5:288:795
         try:
             rc = rrdtool.create(*create)
             ru = rrdtool.update(*update)
-        except rrdtool.error, e:
+        except rrdtool.error as e:
             print('warning: queue_report: rrdtool error, skipping %s.rrd: %s' % (type, e))
     except NameError:
         pass
@@ -214,7 +214,7 @@ def get_upload_data(changesfn):
                     os.unlink(lfn)
                 if os.path.exists(qfn):
                     os.symlink(qfn,lfn)
-                    os.chmod(qfn, 0644)
+                    os.chmod(qfn, 0o644)
     return (max(delaydays-1,0)*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes','').split(),achanges, delaydays)
 
 def list_uploads(filelist, rrd_dir):

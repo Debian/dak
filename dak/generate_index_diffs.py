@@ -81,7 +81,7 @@ def smartlink(f, t):
         os.system("bzip2 -d < %s.bz2 > %s" % (f, t))
     else:
         print "missing: %s" % (f)
-        raise IOError, f
+        raise IOError(f)
 
 def smartopen(file):
     if os.path.isfile(file):
@@ -280,7 +280,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
 def main():
     global Cnf, Options, Logger
 
-    os.umask(0002)
+    os.umask(0o002)
 
     Cnf = utils.get_conf()
     Arguments = [ ('h', "help", "Generate-Index-Diffs::Options::Help"),

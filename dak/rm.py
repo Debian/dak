@@ -51,7 +51,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
-from daklib.regexes import re_strip_source_version, re_build_dep_arch
+from daklib.regexes import re_strip_source_version, re_build_dep_arch, re_bin_only_nmu
 import debianbts as bts
 
 ################################################################################
@@ -177,7 +177,7 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
             parsed_dep = []
             try:
                 parsed_dep += apt_pkg.ParseDepends(deps[package])
-            except ValueError, e:
+            except ValueError as e:
                 print "Error for package %s: %s" % (package, e)
             for dep in parsed_dep:
                 # Check for partial breakage.  If a package has a ORed
@@ -236,7 +236,7 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
             build_dep = re_build_dep_arch.sub("", build_dep)
             try:
                 parsed_dep += apt_pkg.ParseDepends(build_dep)
-            except ValueError, e:
+            except ValueError as e:
                 print "Error for source %s: %s" % (source, e)
         for dep in parsed_dep:
             unsat = 0
@@ -666,6 +666,7 @@ def main ():
         Subst_close_other = Subst_common
         bcc = []
         wnpp = utils.parse_wnpp_bug_file()
+        versions = list(set([re_bin_only_nmu.sub('', v) for v in versions]))
         if len(versions) == 1:
             Subst_close_other["__VERSION__"] = versions[0]
         else:

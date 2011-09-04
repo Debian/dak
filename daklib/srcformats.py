@@ -48,7 +48,7 @@ def get_format_from_string(txt):
         if format.re_format.match(txt):
             return format
 
-    raise UnknownFormatError, "Unknown format %r" % txt
+    raise UnknownFormatError("Unknown format %r" % txt)
 
 class SourceFormat(type):
     def __new__(cls, name, bases, attrs):

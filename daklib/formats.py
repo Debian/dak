@@ -58,7 +58,7 @@ def parse_format(txt):
     format = re_verwithext.search(txt)
 
     if format is None:
-        raise UnknownFormatError, txt
+        raise UnknownFormatError(txt)
 
     format = format.groups()
 
@@ -80,7 +80,7 @@ def validate_changes_format(format, field):
     """
 
     if (format < (1, 5) or format > (1, 8)):
-        raise UnknownFormatError, repr(format)
+        raise UnknownFormatError(repr(format))
 
     if field != 'files' and format < (1, 8):
-        raise UnknownFormatError, repr(format)
+        raise UnknownFormatError(repr(format))

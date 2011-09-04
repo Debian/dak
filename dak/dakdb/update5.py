@@ -46,6 +46,6 @@ def do_update(self):
 
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to recreate bin_assoc_by_arch view, rollback issued. Error message : %s" % (str(msg))
+        raise DBUpdateError("Unable to recreate bin_assoc_by_arch view, rollback issued. Error message : %s" % (str(msg)))

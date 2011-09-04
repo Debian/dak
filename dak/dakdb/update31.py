@@ -94,7 +94,7 @@ $$ LANGUAGE plpythonu VOLATILE SECURITY DEFINER;
         c.execute("UPDATE config SET value = '31' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError, "Unable to apply process-new update 31, rollback issued. Error message : %s" % (str(msg))
+        raise DBUpdateError("Unable to apply process-new update 31, rollback issued. Error message : %s" % (str(msg)))
 

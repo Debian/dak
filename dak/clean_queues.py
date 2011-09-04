@@ -86,7 +86,7 @@ def init (cnf):
     # Ensure a directory exists to remove files to
     if not Options["No-Action"]:
         if not os.path.exists(del_dir):
-            os.makedirs(del_dir, 02775)
+            os.makedirs(del_dir, 0o2775)
         if not os.path.isdir(del_dir):
             utils.fubar("%s must be a directory." % (del_dir))
 
@@ -100,7 +100,7 @@ def init (cnf):
 
     try:
         os.chdir(incoming)
-    except OSError, e:
+    except OSError as e:
         utils.fubar("Cannot chdir to %s" % incoming)
 
 # Remove a file to the morgue
@@ -118,7 +118,7 @@ def remove (from_dir, f):
         if os.path.exists(dest_filename):
             dest_filename = utils.find_next_free(dest_filename, 10)
             Logger.log(["change destination file name", os.path.basename(dest_filename)])
-        utils.move(f, dest_filename, 0660)
+        utils.move(f, dest_filename, 0o660)
     else:
         Logger.log(["skipping file because of permission problem", fname])
         utils.warn("skipping '%s', permission denied." % fname)
@@ -157,7 +157,7 @@ def flush_orphans ():
             changes = utils.parse_changes(changes_filename)
             files = utils.build_file_list(changes)
         except:
-            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_type))
+            utils.warn("error processing '%s'; skipping it. [Got %s]" % (changes_filename, sys.exc_info()[0]))
             continue
 
         dsc_files = {}
@@ -167,7 +167,7 @@ def flush_orphans ():
                     dsc = utils.parse_changes(f, dsc_file=1)
                     dsc_files = utils.build_file_list(dsc, is_a_dsc=1)
                 except:
-                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (f, sys.exc_type))
+                    utils.warn("error processing '%s'; skipping it. [Got %s]" % (f, sys.exc_info()[0]))
                     continue
 
         # Ensure all the files we've seen aren't deleted

@@ -65,7 +65,7 @@ class BaseFileWriter(object):
     # internal helper function
     def rename(self, filename):
         tempfilename = filename + '.new'
-        os.chmod(tempfilename, 0664)
+        os.chmod(tempfilename, 0o664)
         os.rename(tempfilename, filename)
 
     def close(self):

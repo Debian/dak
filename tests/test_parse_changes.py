@@ -20,7 +20,7 @@ class ParseChangesTestCase(DakTestCase):
             pass
         except GpgException:
             pass
-        except InvalidDscError, actual_line:
+        except InvalidDscError as actual_line:
             if line is not None:
                 assertEqual(actual_line, line)
 

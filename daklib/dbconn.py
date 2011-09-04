@@ -818,7 +818,7 @@ class BuildQueue(object):
                     Logger.log(["I: Removing %s from the queue" % o.fullpath])
                     os.unlink(o.fullpath)
                     killdb = True
-            except OSError, e:
+            except OSError as e:
                 # If it wasn't there, don't worry
                 if e.errno == ENOENT:
                     killdb = True
@@ -1686,7 +1686,7 @@ class Keyring(object):
         key = None
         signingkey = False
 
-        for line in k.xreadlines():
+        for line in k:
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
@@ -2823,10 +2823,25 @@ def add_deb_to_db(u, filename, session=None):
 
     # Find source id
     bin_sources = get_sources_from_name(entry["source package"], entry["source version"], session=session)
+
+    # If we couldn't find anything and the upload contains Arch: source,
+    # fall back to trying the source package, source version uploaded
+    # This maintains backwards compatibility with previous dak behaviour
+    # and deals with slightly broken binary debs which don't properly
+    # declare their source package name
+    if len(bin_sources) == 0:
+        if u.pkg.changes["architecture"].has_key("source") \
+           and u.pkg.dsc.has_key("source") and u.pkg.dsc.has_key("version"):
+            bin_sources = get_sources_from_name(u.pkg.dsc["source"], u.pkg.dsc["version"], session=session)
+
+    # If we couldn't find a source here, we reject
+    # TODO: Fix this so that it doesn't kill process-upload and instead just
+    #       performs a reject.  To be honest, we should probably spot this
+    #       *much* earlier than here
     if len(bin_sources) != 1:
-        raise NoSourceFieldError, "Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
+        raise NoSourceFieldError("Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
                                   (bin.package, bin.version, entry["architecture"],
-                                   filename, bin.binarytype, u.pkg.changes["fingerprint"])
+                                   filename, bin.binarytype, u.pkg.changes["fingerprint"]))
 
     bin.source_id = bin_sources[0].source_id
 
@@ -2834,9 +2849,9 @@ def add_deb_to_db(u, filename, session=None):
         for srcname, version in entry["built-using"]:
             exsources = get_sources_from_name(srcname, version, session=session)
             if len(exsources) != 1:
-                raise NoSourceFieldError, "Unable to find source package (%s = %s) in Built-Using for %s (%s), %s, file %s, type %s, signed by %s" % \
+                raise NoSourceFieldError("Unable to find source package (%s = %s) in Built-Using for %s (%s), %s, file %s, type %s, signed by %s" % \
                                           (srcname, version, bin.package, bin.version, entry["architecture"],
-                                           filename, bin.binarytype, u.pkg.changes["fingerprint"])
+                                           filename, bin.binarytype, u.pkg.changes["fingerprint"]))
 
             bin.extra_sources.append(exsources[0])
 
@@ -3684,7 +3699,7 @@ class DBConn(object):
             self.__setuptables()
             self.__setupmappers()
 
-        except OperationalError, e:
+        except OperationalError as e:
             import utils
             utils.fubar("Cannot connect to database (%s)" % str(e))
 

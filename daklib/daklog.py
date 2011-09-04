@@ -55,7 +55,7 @@ class Logger(object):
         logdir = Config()["Dir::Log"]
         if not os.path.exists(logdir):
             umask = os.umask(00000)
-            os.makedirs(logdir, 02775)
+            os.makedirs(logdir, 0o2775)
             os.umask(umask)
 
         # Open the logfile
@@ -65,7 +65,7 @@ class Logger(object):
         if debug:
             logfile = sys.stderr
         else:
-            umask = os.umask(00002)
+            umask = os.umask(0o0002)
             logfile = utils.open_file(logfilename, 'a')
             os.umask(umask)
 
