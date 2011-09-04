@@ -20,6 +20,7 @@ lintian:
     - wrong-file-owner-uid-or-gid
     - install-info-used-in-maintainer-script
     - missing-pre-dependency-on-multiarch-support
+    - bad-perm-for-file-in-etc-sudoers.d
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
