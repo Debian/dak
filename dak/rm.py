@@ -117,32 +117,24 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
         'suite_id':     dbsuite.suite_id,
         'metakey_d_id': metakey_d.key_id,
         'metakey_p_id': metakey_p.key_id,
-        'arch_all_id' : get_architecture('all', session).arch_id,
     }
-    for architecture in all_arches:
+    for architecture in all_arches | set(['all']):
         deps = {}
         sources = {}
         virtual_packages = {}
         params['arch_id'] = get_architecture(architecture, session).arch_id
 
         statement = '''
-            WITH suite_binaries AS
-                (select b.id, b.package, b.source, b.file
-                    from binaries b WHERE b.id in
-                        (SELECT bin FROM bin_associations WHERE suite = :suite_id)
-                        AND b.architecture in (:arch_id, :arch_all_id))
             SELECT b.id, b.package, s.source, c.name as component,
-                bmd.value as depends, bmp.value as provides
-                FROM suite_binaries b
-                LEFT OUTER JOIN binaries_metadata bmd
-                    ON b.id = bmd.bin_id AND bmd.key_id = :metakey_d_id
-                LEFT OUTER JOIN binaries_metadata bmp
-                    ON b.id = bmp.bin_id AND bmp.key_id = :metakey_p_id
+                (SELECT bmd.value FROM binaries_metadata bmd WHERE bmd.bin_id = b.id AND bmd.key_id = :metakey_d_id) AS depends,
+                (SELECT bmp.value FROM binaries_metadata bmp WHERE bmp.bin_id = b.id AND bmp.key_id = :metakey_p_id) AS provides
+                FROM binaries b
+                JOIN bin_associations ba ON b.id = ba.bin AND ba.suite = :suite_id
                 JOIN source s ON b.source = s.id
                 JOIN files f ON b.file = f.id
                 JOIN location l ON f.location = l.id
-                JOIN component c ON l.component = c.id'''
-        session.rollback()
+                JOIN component c ON l.component = c.id
+                WHERE b.architecture = :arch_id'''
         query = session.query('id', 'package', 'source', 'component', 'depends', 'provides'). \
             from_statement(statement).params(params)
         for binary_id, package, source, component, depends, provides in query:
@@ -200,7 +192,7 @@ def reverse_depends_check(removals, suite, arches=None, session=None):
         for source, bindict in sorted(all_broken.items()):
             lines = []
             for binary, arches in sorted(bindict.items()):
-                if arches == all_arches:
+                if arches == all_arches or 'all' in arches:
                     lines.append(binary)
                 else:
                     lines.append('%s [%s]' % (binary, ' '.join(sorted(arches))))

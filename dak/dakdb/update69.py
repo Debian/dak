@@ -2,10 +2,10 @@
 # coding=utf8
 
 """
-Add suite options for overrides and control-suite to DB
+Add support for Description-md5
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
-@copyright: 2011 Mark Hymers <mhy@debian.org>
+@copyright: 2011 Ansgar Burchardt <ansgar@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -32,7 +32,7 @@ from daklib.config import Config
 ################################################################################
 def do_update(self):
     """
-    Add suite options for overrides and control-suite to DB
+    Add support for Description-md5
     """
     print __doc__
     try:
@@ -40,32 +40,40 @@ def do_update(self):
 
         c = self.db.cursor()
 
-        c.execute("ALTER TABLE suite ADD COLUMN overrideprocess BOOLEAN NOT NULL DEFAULT FALSE")
-        c.execute("COMMENT ON COLUMN suite.overrideprocess IS %s", ['If true, check-overrides will process the suite by default'])
-        c.execute("ALTER TABLE suite ADD COLUMN overrideorigin TEXT DEFAULT NULL")
-        c.execute("COMMENT ON COLUMN suite.overrideprocess IS %s", ['If NOT NULL, check-overrides will take missing overrides from the named suite'])
+        c.execute("""CREATE OR REPLACE FUNCTION public.add_missing_description_md5()
+  RETURNS VOID
+  VOLATILE
+  LANGUAGE plpgsql
+AS $function$
+DECLARE
+  description_key_id metadata_keys.key_id%TYPE;
+  description_md5_key_id metadata_keys.key_id%TYPE;
+  BEGIN
+    SELECT key_id INTO STRICT description_key_id FROM metadata_keys WHERE key='Description';
+    SELECT key_id INTO description_md5_key_id FROM metadata_keys WHERE key='Description-md5';
+    IF NOT FOUND THEN
+      INSERT INTO metadata_keys (key) VALUES ('Description-md5') RETURNING key_id INTO description_md5_key_id;
+    END IF;
 
-        # Migrate config file values into database
-        if cnf.has_key("Check-Overrides::OverrideSuites"):
-            for suitename in cnf.SubTree("Check-Overrides::OverrideSuites").List():
-                if cnf.get("Check-Overrides::OverrideSuites::%s::Process" % suitename, "0") == "1":
-                    print "Marking %s to have overrides processed automatically" % suitename.lower()
-                    c.execute("UPDATE suite SET overrideprocess = TRUE WHERE suite_name = %s", [suitename.lower()])
+    INSERT INTO binaries_metadata
+      (bin_id, key_id, value)
+    SELECT
+      bm.bin_id AS bin_id,
+      description_md5_key_id AS key_id,
+      MD5(bm.value || E'\n') AS value
+    FROM binaries_metadata AS bm
+    WHERE
+      bm.key_id = description_key_id
+      AND
+      NOT EXISTS (SELECT 1 FROM binaries_metadata AS bm2 WHERE bm.bin_id = bm2.bin_id AND bm2.key_id = description_md5_key_id);
+END;
+$function$""")
 
-                originsuite = cnf.get("Check-Overrides::OverrideSuites::%s::OriginSuite" % suitename, '')
-                if originsuite != '':
-                    print "Setting %s to use %s as origin for overrides" % (suitename.lower(), originsuite.lower())
-                    c.execute("UPDATE suite SET overrideorigin = %s WHERE suite_name = %s", [originsuite.lower(), suitename.lower()])
-
-        c.execute("ALTER TABLE suite ADD COLUMN allowcsset BOOLEAN NOT NULL DEFAULT FALSE")
-        c.execute("COMMENT ON COLUMN suite.allowcsset IS %s", ['Allow control-suite to be used with the --set option without forcing'])
-
-        # Import historical hard-coded values
-        c.execute("UPDATE suite SET allowcsset = TRUE WHERE suite_name IN ('testing', 'squeeze-updates')")
+        c.execute("ALTER TABLE suite ADD COLUMN include_long_description BOOLEAN NOT NULL DEFAULT 't'")
 
         c.execute("UPDATE config SET value = '69' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError as msg:
+    except psycopg2.ProgrammingError, msg:
         self.db.rollback()
         raise DBUpdateError('Unable to apply sick update 69, rollback issued. Error message : %s' % (str(msg)))
