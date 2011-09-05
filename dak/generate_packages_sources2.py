@@ -305,7 +305,8 @@ def main():
     Arguments = [('h',"help","Generate-Packages-Sources::Options::Help"),
                  ('5','description-md5',"Generate-Packages-Sources::Options::Description-md5"),
                  ('s',"suite","Generate-Packages-Sources::Options::Suite"),
-                 ('f',"force","Generate-Packages-Sources::Options::Force")]
+                 ('f',"force","Generate-Packages-Sources::Options::Force"),
+                 ('o','option','','ArbItem')]
 
     suite_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     try:
