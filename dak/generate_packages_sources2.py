@@ -293,10 +293,6 @@ def generate_translations(suite_id, component_id):
 #############################################################################
 
 def main():
-    from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
-    pool = DakProcessPool()
-
-    from daklib.dbconn import Component, DBConn, get_suite, Suite
     from daklib.config import Config
     from daklib import daklog
 
@@ -305,7 +301,8 @@ def main():
     Arguments = [('h',"help","Generate-Packages-Sources::Options::Help"),
                  ('5','description-md5',"Generate-Packages-Sources::Options::Description-md5"),
                  ('s',"suite","Generate-Packages-Sources::Options::Suite"),
-                 ('f',"force","Generate-Packages-Sources::Options::Force")]
+                 ('f',"force","Generate-Packages-Sources::Options::Force"),
+                 ('o','option','','ArbItem')]
 
     suite_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     try:
@@ -316,8 +313,12 @@ def main():
     if Options.has_key("Help"):
         usage()
 
+    from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
+    pool = DakProcessPool()
+
     logger = daklog.Logger('generate-packages-sources2')
 
+    from daklib.dbconn import Component, DBConn, get_suite, Suite
     session = DBConn().session()
     session.execute("SELECT add_missing_description_md5()")
     session.commit()
