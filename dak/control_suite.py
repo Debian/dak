@@ -122,7 +122,6 @@ def britney_changelog(packages, suite, session):
     for p in q.fetchall():
         current[p[0]] = p[1]
     for p in packages.keys():
-        p = p.split()
         if p[2] == "source":
             old[p[0]] = p[1]
 
