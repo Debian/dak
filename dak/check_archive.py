@@ -479,11 +479,40 @@ def check_build_depends():
 
 ################################################################################
 
+_add_missing_source_checksums_query = R"""
+INSERT INTO source_metadata
+  (src_id, key_id, value)
+SELECT
+  s.id,
+  :checksum_key,
+  E'\n' ||
+    (SELECT STRING_AGG(' ' || tmp.checksum || ' ' || tmp.size || ' ' || tmp.basename, E'\n' ORDER BY tmp.basename)
+     FROM
+       (SELECT
+            CASE :checksum_type
+              WHEN 'Files' THEN f.md5sum
+              WHEN 'Checksums-Sha1' THEN f.sha1sum
+              WHEN 'Checksums-Sha256' THEN f.sha256sum
+            END AS checksum,
+            f.size,
+            SUBSTRING(f.filename FROM E'/([^/]*)\\Z') AS basename
+          FROM files f JOIN dsc_files ON f.id = dsc_files.file
+          WHERE dsc_files.source = s.id AND f.id != s.file
+       ) AS tmp
+    )
+
+  FROM
+    source s
+  WHERE NOT EXISTS (SELECT 1 FROM source_metadata md WHERE md.src_id=s.id AND md.key_id = :checksum_key);
+"""
+
 def add_missing_source_checksums():
     """ Add missing source checksums to source_metadata """
     session = DBConn().session()
     for checksum in ['Files', 'Checksums-Sha1', 'Checksums-Sha256']:
-        rows = session.execute('SELECT source_metadata_add_missing_checksum(:type)', {'type': checksum}).scalar()
+        checksum_key = get_or_set_metadatakey(checksum, session).key_id
+        rows = session.execute(_add_missing_source_checksums_query,
+            {'checksum_key': checksum_key, 'checksum_type': checksum}).rowcount
         if rows > 0:
             print "Added {0} missing entries for {1}".format(rows, checksum)
     session.commit()
