@@ -1,101 +1,104 @@
 Rough Guide to doing Stable Point Releases in Debian
 ----------------------------------------------------
 
-o Dump projectb for backup purposes.
-o get everything listed, dak control-suite -l proposed-updates > p-u.list
-o generate the changelog using dak make-changelog -s proposed-updates -b stable | cat - ${ftpdir}/dists/stable/ChangeLog | sponge ${ftpdir}/dists/stable/ChangeLog
-o add everything to stable:  cat p-u.list |dak control-suite --add stable
-o remove everything from proposed-updates, dak control-suite -r proposed-updates < p-u.list
-o sync with stable RM if there is any propup needed. do it, if so.
-o ask rms if they have RMs to do.
-o If you installed a debian-installer upload; migrate the relevant
-  installer-*/$release directory from proposed-updates to stable.
-  (Including potentially removing older versions)
-  dak copy-installer helps
-o Update version number in README, README.html and dists/README
-o Update the 'Debian<n>.<n>r<n>' symlink in dists/
-o Clean up dists/stable/ChangeLog (add header, basically)
-o Update fields in suite table in postgresql (see below)
+- sudo to dak
+- bash:
+suite=oldstable
+suitename=lenny
+pusuite=oldstable-proposed-updates
+oldrev=5.0.8
+newrev=5.0.9
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+. "${configdir}/common"
+. "${configdir}/dinstall.functions"
+umask 022
+export LANG=C
+export LC_ALL=C
+pg_timestamp pre_${suite}_${newrev}
+cd ~
+mkdir -p ${suite}_${newrev}
+cd ${suite}_${newrev}
+dak control-suite -l ${pusuite} > ${pusuite}.list
+dak control-suite -l ${suite} > ${suite}.list
 
-o dak dominate --force -s stable
-o dak generate-filelist -s stable
-o Let SRM see if all is ok
-o dak generate-packages-sources -s stable ; dak contents generate -f -s stable
-o dak generate-releases -f -s stable
-o Check if a mirror push is needed or next dinstall is enough. for a push
-o if so:
-   TRACEFILE="${ftpdir}/project/trace/ftp-master.debian.org"
-   DATE_SERIAL=$(date +"%Y%m%d01")
-   FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
-   if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
-       SERIAL="$DATE_SERIAL"
-   else
-       SERIAL="$FILESOAPLUS1"
-   fi
-   date -u > ${TRACEFILE}
-   echo "Using dak v1" >> ${TRACEFILE}
-   echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
-   echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
-   cd ${mirrordir}
-   rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
+- ask SRMs if there is anything to be skipped from this release. If so
+  edit ${pusuite}.list (and later the Changelog too)
+- bash:
+dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/ChangeLog | sponge ${ftpdir}/dists/${suite}/ChangeLog
+cat ${pusuite}.list | dak control-suite --add ${suite}
+dak control-suite --remove ${pusuite} < ${pusuite}.list
 
-   date -u > /srv/ftp.debian.org/web/mirrorstart
-   echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
-   echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
-   sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
+- sync with stable RM if there is any propup needed. do it, if so.
+- ask rms if they have RMs to do.
+- and then check if they have a d-i update. if so, bash:
+# set dioldver to "empty" if there is no old to remove
+diver=20090123lenny9
+dioldver=20090123lenny8
+dak copy-installer -s ${pusuite} -d ${suite} ${diver}
+cd $ftpdir/dists/${suite}/main
+if [ "${dioldver}" != "empty" ]; then
+    for iarch in $(dak admin s-a list-arch ${suite}); do
+        if [ -d "installer-${iarch}/${dioldver}" ]; then
+            echo "Moving installer-${iarch}/${dioldver} to morgue"
+            mkdir -p "${base}/morgue/d-i/installer-${iarch}/"
+            mv "installer-${iarch}/${dioldver}" "${base}/morgue/d-i/installer-${iarch}/"
+        fi
+    done
+fi
+cd $ftpdir/dists/${suite}
 
+- Update version number in README, README.html and dists/README,
+  Clean up dists/stable/ChangeLog (add header, basically). bash:
+  $EDITOR ChangeLog ../README ../../README*
+  rm -f *~ ../*~ ../../*~
 
+- Update the 'Debian<n>.<n>r<n>' symlink in dists/
+cd $ftpdir/dists/
+rm -f Debian${oldrev}
+ln -s ${suitename} Debian${newrev}
+
+- Update fields in suite table in postgresql.
+  bash:
+
+mdate=$(date +"%d %B %Y")
+psql projectb <<EOF
 begin;
-update suite set version = '6.0.2' where suite_name = 'stable';
-update suite set description = 'Debian 6.0.2 Released 25 June 2011' where suite_name = 'stable';
+update suite set version = '${newrev}' where suite_name = '${suite}';
+update suite set description = 'Debian ${newrev} Released ${mdate}' where suite_name = '${suite}';
+commit;
+EOF
 
-------------------------------------------------------------------------
-Old doc:
+- prepare for gps. bash:
+dak dominate --force -s ${suite}
+dak generate-filelist -s ${suite}
 
+- Let SRM see if all is ok
 
-o run 'dak clean-proposed-updates' to get rid of obsolete .changes
-  from p-u ['dak clean-proposed-updates *.changes' from within p-u]
-o [also check for obsolete .changes caused by 'dak rm'-ing from p-u]
-o Update dak.conf (at least the section for Reject-Proposed-Updates,
-  before using 'dak reject-proposed-updates')
-o Install, reject and remove packages as directed by the SRM using
-  'dak process-accepted' (installs), 'dak reject-proposed-updates'
-  (rejects) and 'dak rm' (removals)
+- then:
+dak generate-packages-sources -s ${suite} ; dak contents generate -f -s ${suite}
+dak generate-releases -f -s ${suite}
 
-  NB: removing packages are not logged to the stable ChangeLog; you
-      need to do that byhand.
+- have the SRMs sign it and put the signature in.
+- Check if a mirror push is needed or next dinstall is enough. for a push
+o if so, bash:
 
+TRACEFILE="${ftpdir}/project/trace/ftp-master.debian.org"
+DATE_SERIAL=$(date +"%Y%m%d01")
+FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
+if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
+    SERIAL="$DATE_SERIAL"
+else
+    SERIAL="$FILESOAPLUS1"
+fi
+date -u > ${TRACEFILE}
+echo "Using dak v1" >> ${TRACEFILE}
+echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
+echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
+cd ${mirrordir}
+rsync -aH --link-dest ${ftpdir} --delete --delete-after --ignore-errors ${ftpdir}/. .
+date -u > /srv/ftp.debian.org/web/mirrorstart
+echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
+echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
+sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
 
-o Decruft stable in coordination with SRMs
-
-o Do anything in proposed-updates/TODO
-o Close any applicable stable bugs
-  (hint: http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=ftp.debian.org&include=etch)
-o Update version number in README, README.html and dists/README
-o Update the 'Debian<n>.<n>r<n>' symlink in dists/
-o Clean up dists/stable/ChangeLog (add header, basically)
-o Update version fields in dak.conf
-o Update fields in suite table in postgresql (see below)
-
-o Run 'dak make-suite-file-list --force -s stable'
-o Run apt-ftparchive generate apt.conf.stable
-o Run 'dak generate-releases --force-touch --apt-conf apt.conf.stable stable'
-
-[Yes, this sucks and more of it should be automated. c.f. ~ajt/pointupdate]
-
-#######################################################
-
-update suite set version = '4.0r3' where suite_name = 'stable';
-update suite set description = 'Debian 4.0r3 Released 16th February 2008' where suite_name = 'stable';
-
-Rough Guide to doing Old-Stable Point Releases in Debian
---------------------------------------------------------
-
-Pretty much as above, except that process-accepted doesn't know about
-oldstable, so you have to do some surgery on it first to make it
-support that.  Probably want to disable cron.daily whilst doing so.
-Also watch out for the installing_to_stable detection which doesn't
-work well with the current layout of oldstable-proposed-updates (as a
-symlink to $distro-proposed-updates).  clean-proposed-updates,
-cruft-report and most everything else support a -s/--suite so they
-sould be fine to use.
