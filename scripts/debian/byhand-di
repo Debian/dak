@@ -54,7 +54,8 @@ if [ -d "$TARGET/$VERSION" ]; then
 fi
 
 # We know the VERSION is sane by here, we just need to make sure we escape the + in +b1 (if any)
-VERSIONREGEXP="$(echo $VERSION | sed 's@+@\\\+@')"
+# It needs 'g' as well as we may have +$DIST+b[0-9]
+VERSIONREGEXP="$(echo $VERSION | sed 's@+@\\\+@g')"
 
 # We know all data to be in ./installer-<arch>/<version>; see if there's
 # anything else in the tarball except that and the 'current' symlink
