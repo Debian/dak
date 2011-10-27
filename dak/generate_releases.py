@@ -298,7 +298,8 @@ def main ():
 
     Arguments = [('h',"help","Generate-Releases::Options::Help"),
                  ('s',"suite","Generate-Releases::Options::Suite"),
-                 ('f',"force","Generate-Releases::Options::Force")]
+                 ('f',"force","Generate-Releases::Options::Force"),
+                 ('o','option','','ArbItem')]
 
     suite_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.SubTree("Generate-Releases::Options")
