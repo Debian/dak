@@ -171,6 +171,8 @@ function packages() {
     log "Generating Packages and Sources files"
     #cd $configdir
     #dak generate-packages-sources
+    # XXX: disable again later
+    dak generate-packages-sources2 --description-md5 -o Dir::Root=$webdir/newdists/
     dak generate-packages-sources2
     dak contents generate
 }
@@ -183,6 +185,8 @@ function pdiff() {
 function release() {
     log "Generating Release files"
     dak generate-releases
+    # XXX: disable again later
+    dak generate-releases -o Dir::Root=$webdir/newdists/
 }
 
 function dakcleanup() {
