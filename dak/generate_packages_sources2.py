@@ -245,6 +245,13 @@ def generate_packages(suite_id, component_id, architecture_id, type_name, use_de
 #############################################################################
 
 _translations_query = """
+WITH
+  override_suite AS
+    (SELECT
+      s.id AS id,
+      COALESCE(os.id, s.id) AS overridesuite_id
+      FROM suite AS s LEFT JOIN suite AS os ON s.overridesuite = os.suite_name)
+
 SELECT
      'Package\: ' || b.package
   || E'\nDescription-md5\: ' || bm_description_md5.value
@@ -253,7 +260,8 @@ SELECT
 FROM binaries b
   -- join tables for suite and component
   JOIN bin_associations ba ON b.id = ba.bin
-  JOIN override o ON b.package = o.package AND o.suite = :suite AND o.type = (SELECT id FROM override_type WHERE type = 'deb')
+  JOIN override_suite os ON os.id = ba.suite
+  JOIN override o ON b.package = o.package AND o.suite = os.overridesuite_id AND o.type = (SELECT id FROM override_type WHERE type = 'deb')
 
   -- join tables for Description and Description-md5
   JOIN binaries_metadata bm_description ON b.id = bm_description.bin_id AND bm_description.key_id = (SELECT key_id FROM metadata_keys WHERE key = 'Description')
