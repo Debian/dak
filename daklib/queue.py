@@ -51,7 +51,7 @@ from holding import Holding
 from urgencylog import UrgencyLog
 from dbconn import *
 from summarystats import SummaryStats
-from utils import parse_changes, check_dsc_files, build_package_set
+from utils import parse_changes, check_dsc_files, build_package_list
 from textutils import fix_maintainer
 from lintian import parse_lintian_output, generate_reject_messages
 from contents import UnpackedSource
@@ -133,8 +133,8 @@ def determine_new(filename, changes, files, warn=1, session = None, dsc = None, 
 
     # Try to get the Package-Set field from an included .dsc file (if possible).
     if dsc:
-        for package, entry in build_package_set(dsc, session).items():
-            if not new.has_key(package):
+        for package, entry in build_package_list(dsc, session).items():
+            if package not in new:
                 new[package] = entry
 
     # Build up a list of potentially new things
