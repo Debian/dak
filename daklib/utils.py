@@ -577,39 +577,28 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 ################################################################################
 
 # see http://bugs.debian.org/619131
-def build_package_set(dsc, session = None):
-    if not dsc.has_key("package-set"):
+def build_package_list(dsc, session = None):
+    if not dsc.has_key("package-list"):
         return {}
 
     packages = {}
 
-    for line in dsc["package-set"].split("\n"):
+    for line in dsc["package-list"].split("\n"):
         if not line:
             break
 
-        (name, section, priority) = line.split()
-        (section, component) = extract_component_from_section(section)
-
-        package_type = "deb"
-        if name.find(":") != -1:
-            (package_type, name) = name.split(":", 1)
-        if package_type == "src":
-            package_type = "dsc"
+        fields = line.split()
+        name = fields[0]
+        package_type = fields[1]
+        (section, component) = extract_component_from_section(fields[2])
+        priority = fields[3]
 
         # Validate type if we have a session
         if session and get_override_type(package_type, session) is None:
             # Maybe just warn and ignore? exit(1) might be a bit hard...
-            utils.fubar("invalid type (%s) in Package-Set." % (package_type))
+            utils.fubar("invalid type (%s) in Package-List." % (package_type))
 
-        if section == "":
-            section = "-"
-        if priority == "":
-            priority = "-"
-
-        if package_type == "dsc":
-            priority = "source"
-
-        if not packages.has_key(name) or packages[name]["type"] == "dsc":
+        if name not in packages or packages[name]["type"] == "dsc":
             packages[name] = dict(priority=priority, section=section, type=package_type, component=component, files=[])
 
     return packages
