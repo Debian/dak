@@ -1,5 +1,6 @@
 input: /srv/backports-web.debian.org/underlay/removals.txt
 items: 16
+titlelength: 80
 
 title: Removals from Debian Backports
 link: http://backports-master.debian.org/dak/removals.txt

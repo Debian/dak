@@ -78,7 +78,7 @@ $rss->channel(
 
 my $num_to_display = $config->{items};
 for my $removal (@removals ) {
-  my ($null, $date, $ftpmaster, $body, $reason);
+  my ($null, $date, $ftpmaster, $body, $packages, $reason);
   $removal =~ s/=========================================================================//g;
   $removal =~ m/\[Date: ([^]]+)\] \[ftpmaster: ([^]]+)\]/;
   $date = $1;
@@ -87,10 +87,18 @@ for my $removal (@removals ) {
   chomp $body;
   $body =~ m/---- Reason ---.*\n(.*)/;
   $reason = $1;
+  $packages = join( ", ",
+    map { ( my $p = $_ ) =~ s/^\s*(.+?) \|.+/$1/; $p }
+    grep {/.+\|.+\|.+/} split( /\n/, $body ) );
+  $packages
+    = ( substr $packages, 0,
+    ( $config->{titlelength} - length($reason) - 6 ) )
+    . " ..."
+    if length("$packages: $reason") > $config->{titlelength};
   my $link =  encode_base64($date . $ftpmaster);
   chomp($link);
 
-  $rss->add_item(title       => "$reason",
+  $rss->add_item(title       => "$packages: $reason",
 				 link        => $config->{link} . "?" . $link,
 				 description => qq[<pre>$body</pre>],
 				 dc => {

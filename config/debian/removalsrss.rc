@@ -1,5 +1,6 @@
 input: /srv/ftp.debian.org/web/removals.txt
 items: 16
+titlelength: 80
 
 title: Removals from Debian
 link: http://ftp-master.debian.org/removals.txt
